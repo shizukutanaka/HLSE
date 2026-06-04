@@ -1,0 +1,34 @@
+# Build artifacts
+hlse_core
+hlse_core_static
+hlse_core_cov
+libhlse.so
+*.o
+*.so
+
+# Test binaries (built by make)
+tests/property_tests
+tests/protect_tests
+tests/secrets_tests
+tests/supply_tests
+tests/file_audit_tests
+tests/util_tests
+tests/corpus_ext
+tests/fuzz
+tests/fuzz_asan
+
+# Coverage
+*.gcov
+*.gcda
+*.gcno
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

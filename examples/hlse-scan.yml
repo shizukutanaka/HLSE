@@ -1,0 +1,54 @@
+name: HLSE Security Scan
+
+# Example GitHub Actions workflow using HLSE Core for CI/CD.
+# Scans for leaked secrets, malicious files, and package typosquats.
+#
+# Install in your repo:
+#   mkdir -p .github/workflows
+#   cp examples/hlse-scan.yml .github/workflows/
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  hlse-scan:
+    name: HLSE Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build HLSE Core
+        run: |
+          git clone --depth 1 https://github.com/shizukutanaka/hlse /tmp/hlse
+          cd /tmp/hlse && make all
+          sudo cp hlse_core /usr/local/bin/
+
+      - name: Scan for secrets and malicious files
+        run: hlse_core scan .
+
+      - name: Check dependencies for typosquats
+        run: |
+          # Extract package names from requirements.txt / package.json
+          if [ -f requirements.txt ]; then
+            while IFS= read -r line; do
+              pkg=$(echo "$line" | sed 's/[>=<].*//' | tr -d ' ')
+              [ -n "$pkg" ] && hlse_core package "$pkg" pip || true
+            done < requirements.txt
+          fi
+          if [ -f package.json ]; then
+            python3 -c '
+            import json, subprocess, sys
+            with open("package.json") as f:
+                data = json.load(f)
+            for section in ["dependencies", "devDependencies"]:
+                for pkg in data.get(section, {}):
+                    r = subprocess.run(["hlse_core", "package", pkg, "npm"],
+                                       capture_output=True, text=True)
+                    if r.returncode != 0:
+                        print(r.stdout)
+                        sys.exit(1)
+            '
+          fi

@@ -1,0 +1,146 @@
+.TH HLSE 1 "2026-05-31" "HLSE 0.9.0" "User Commands"
+.SH NAME
+hlse \- Human-Layer Security Engine: phishing, scam, and threat detection
+.SH SYNOPSIS
+.B hlse_core
+.I url
+.br
+.B hlse_core
+.B text
+.I "message"
+.br
+.B hlse_core
+.B scan
+.I directory
+.RB [ --json | --sarif ]
+.br
+.B hlse_core
+.B protect
+.I path
+.RB [ --ransomware | --smb | --mbr | --net ]
+.br
+.B hlse_core
+.RB [ --json | --quiet | --stdin | --self-test | --benchmark | --version ]
+.SH DESCRIPTION
+.B hlse
+is a zero-dependency security detection engine written in pure C. It
+detects phishing URLs, scam and social-engineering text, leaked
+credentials, ransomware activity, supply-chain typosquats, file
+masquerade, and system-hardening gaps. All analysis is performed locally:
+the tool makes no network calls and collects no telemetry.
+.PP
+Each scan produces a score from 0 to 100 mapped to an action:
+.RS
+.TP
+.B 0\(en14
+SAFE \(em no action
+.TP
+.B 15\(en39
+LOG \(em record for review
+.TP
+.B 40\(en59
+ALERT \(em warn the user
+.TP
+.B 60\(en79
+BLOCK \(em prevent the action
+.TP
+.B 80\(en100
+ISOLATE \(em quarantine immediately
+.RE
+.SH COMMANDS
+.TP
+.I url
+Scan a URL for phishing: homoglyphs, typosquatting, suspicious TLDs,
+subdomain spoofing, IP-host brand abuse, percent-encoded paths,
+brand-hyphen patterns, and high-entropy (DGA) domains.
+.TP
+.B text \fI"message"\fR
+Scan text for scam patterns: urgency, financial bait, authority
+impersonation, ransom and BEC language, across English, Japanese,
+Chinese, and Korean. Resists zero-width, homoglyph, HTML-entity,
+l33tspeak, and full-width evasion.
+.TP
+.B scan \fIdirectory\fR
+Recursively scan a directory for leaked secrets, file masquerade, and
+embedded phishing URLs. Skips vendor and build directories. Intended for
+CI/CD use.
+.TP
+.B protect \fIpath\fR
+Behavioral protection checks: ransomware entropy and ransom-note
+detection, SMB canary files, mounted network drives, and MBR/GPT
+integrity (the last needs root and a device path).
+.TP
+.B package \fIname\fR [\fIecosystem\fR]
+Check a package name for typosquatting against known popular packages
+(pip, npm, cargo, go).
+.TP
+.B paste \fI"command"\fR
+Detect pastejacking and dangerous shell one-liners (e.g. curl piped to a
+shell).
+.TP
+.B network
+Check ARP, DNS, and hosts-file state for tampering.
+.TP
+.B file \fIpath\fR
+Detect file masquerade: double extensions, magic-byte mismatch, polyglot
+payloads, and bidi-override filenames. Analyzes the name even if the file
+is absent.
+.TP
+.B audit
+Audit system hardening: SSH configuration, file permissions, DNS, and
+cron.
+.SH OPTIONS
+.TP
+.B --json
+Emit machine-readable JSON instead of human-readable output.
+.TP
+.B --sarif
+Emit SARIF 2.1.0 (GitHub code-scanning compatible). Supported by the
+.B scan
+command.
+.TP
+.BR -q ", " --quiet
+Suppress output; communicate only through the exit code (CI/CD mode).
+.TP
+.B --stdin
+Pipe mode: read one input per line from standard input.
+.TP
+.B --self-test
+Run the built-in test suite.
+.TP
+.B --benchmark
+Run the in-distribution corpus benchmark and print F1.
+.TP
+.BR -V ", " --version
+Print version and exit.
+.SH EXIT STATUS
+.TP
+.B 0
+No threat (score below 60).
+.TP
+.B 1
+Threat detected (score 60 or above).
+.TP
+.B 2
+Usage error (bad arguments or inaccessible path).
+.SH EXAMPLES
+.TP
+Scan a suspicious URL:
+.B hlse_core https://paypa1.com/signin
+.TP
+Scan text from the clipboard:
+.B xclip -o | hlse_core --stdin
+.TP
+Pre-commit secret scan emitting SARIF:
+.B hlse_core --sarif scan .
+.SH PRIVACY
+HLSE performs all detection locally. It makes no network connections,
+writes no telemetry, and reads no files outside the paths given on the
+command line. This is enforced in CI by a tripwire that fails the build
+if any network syscall appears in the source.
+.SH SEE ALSO
+Project home and documentation:
+.UR https://github.com/shizukutanaka/hlse
+.UE
+.SH LICENSE
+MIT.
