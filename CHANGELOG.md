@@ -2,6 +2,47 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.1] — 2026-06-04
+
+Security-hardening release. No detection-logic changes: in- and
+out-of-distribution corpora remain F1 = 1.000 and all 237+ tests pass.
+
+### Security
+- **Exploit-mitigation build flags** (`Makefile`): the binaries are now
+  compiled with `-fstack-protector-strong` and `-D_FORTIFY_SOURCE=2`, and
+  linked as PIE with Full RELRO, `BIND_NOW`, and a non-executable stack on
+  Linux (`-static-pie` for the static target). Previously the security
+  tool itself shipped with no hardening (`-O2 -Wall -Wextra`, empty
+  `LDFLAGS`). macOS builds are unaffected (uname-guarded linker flags).
+- **Symlink / special-file safety** (`hlse_file.c`, `hlse_audit.c`): file
+  reads now use `O_NOFOLLOW | O_NONBLOCK` and require `S_ISREG` via
+  `fstat()`. A symlink can no longer redirect a scan to an arbitrary file
+  (e.g. `/etc/shadow`) and a FIFO/device node can no longer block the
+  scanner. Brings both modules in line with `hlse_protect.c`.
+
+### Changed
+- **Bounded string construction** (`hlse_core.c`): replaced an unbounded
+  `strcpy`/`strcat` pair in the homoglyph `ii→ll` path and the default
+  path assignment with clamped `memcpy`/explicit writes. Behaviour is
+  unchanged; removes latent overflow hazards.
+- **DRY** (`hlse_util.c`): the benign high-entropy magic-byte table
+  (ZIP/GZIP/JPEG/PNG/…) used by the ransomware entropy heuristic moved
+  into a shared `hlse_is_high_entropy_benign_magic()`.
+- **`hlse_scan` reason copy** (`hlse_core.c`): bound the copy loop by the
+  source `Verdict.reasons` size instead of a mismatched literal.
+
+### Added
+- **Static analysis config** (`.clang-tidy`): a bugprone/cert/
+  clang-analyzer check set for local runs
+  (`clang-tidy hlse_*.c -- -I. -std=c99 ...`). Companion CI jobs — a
+  cppcheck `error`-severity gate (with documented inline suppressions)
+  and a CodeQL `security-and-quality` workflow for C — plus a
+  `release.yml` version-gate fix are maintained alongside the
+  repository's GitHub Actions workflows.
+- **cppcheck-driven fixes** (`hlse_core.c`): bound the `hlse_scan`
+  reason copy by the source `Verdict.reasons` size, and document a
+  `legacyUninitvar` false positive with an inline suppression.
+
 ## [0.9.0] — 2026-05-31
 
 ### Added
