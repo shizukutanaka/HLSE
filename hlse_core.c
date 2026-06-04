@@ -218,7 +218,8 @@ parse_url(const char *raw, ParsedUrl *out) {
             *w = '\0';
         }
     } else {
-        strcpy(out->path, "/");
+        out->path[0] = '/';
+        out->path[1] = '\0';
     }
 
     /* Check if host is an IP address (no dots-separated-letters).
@@ -382,11 +383,21 @@ detect_homoglyph(const ParsedUrl *u, Verdict *v) {
         char *p = strstr(normalized, "ii");
         if (p) {
             char alt[MAX_HOST];
+            /* Rebuild "<prefix>ll<suffix>" with bounded memcpy. The source
+             * (normalized) already fits in MAX_HOST so the result does too;
+             * the explicit clamps keep every write provably in-bounds (no
+             * unbounded strcat).                                          */
             size_t prefix_len = (size_t)(p - normalized);
-            strncpy(alt, normalized, prefix_len);
-            alt[prefix_len] = '\0';
-            strcat(alt, "ll");
-            strcat(alt, p + 2);
+            size_t suffix_len = strlen(p + 2);
+            size_t avail;
+            if (prefix_len > sizeof(alt) - 3) prefix_len = sizeof(alt) - 3;
+            memcpy(alt, normalized, prefix_len);
+            alt[prefix_len]     = 'l';
+            alt[prefix_len + 1] = 'l';
+            avail = sizeof(alt) - prefix_len - 3;  /* room for suffix + NUL */
+            if (suffix_len > avail) suffix_len = avail;
+            memcpy(alt + prefix_len + 2, p + 2, suffix_len);
+            alt[prefix_len + 2 + suffix_len] = '\0';
             /* Try matching with this alternative form */
             for (i = 0; BRANDS[i] != NULL; i++) {
                 if (contains(alt, BRANDS[i]) && !contains(u->host, BRANDS[i])) {
