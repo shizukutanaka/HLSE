@@ -52,7 +52,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.0"
+#define HLSE_VERSION       "0.9.1"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -950,7 +950,11 @@ hlse_scan(const char *input) {
         r.score = uv.score;
         r.is_url = 1;
         r.n_reasons = uv.n_reasons;
-        { int i; for (i = 0; i < uv.n_reasons && i < 16; i++)
+        /* Copy uv's reasons into r. Bound by the SOURCE array size
+         * (uv.reasons has fewer slots than r.reasons); n_reasons is
+         * already capped at that size by add_reason().                 */
+        { int i; const int cap = (int)(sizeof(uv.reasons) / sizeof(uv.reasons[0]));
+          for (i = 0; i < uv.n_reasons && i < cap; i++)
             memcpy(r.reasons[i], uv.reasons[i],
                    sizeof(uv.reasons[0]) < sizeof(r.reasons[0])
                    ? sizeof(uv.reasons[0]) : sizeof(r.reasons[0])); }
@@ -1715,6 +1719,7 @@ main(int argc, char **argv) {
             struct { char path[4096]; int depth; } stack[512];
             int sp = 0;
 
+            /* cppcheck-suppress legacyUninitvar  ; snprintf writes stack[0].path, it is not read uninitialized */
             snprintf(stack[0].path, sizeof(stack[0].path), "%s", root);
             stack[0].depth = 0;
             sp = 1;
