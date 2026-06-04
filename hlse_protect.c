@@ -215,41 +215,8 @@ hlse_ransomware_check_directory(const char *dir_path) {
                      * ransomware signal. Ransomware-encrypted files do NOT
                      * carry these signatures (the original header is
                      * encrypted away).                                    */
-                    int is_known_compressed = 0;
-                    if (n >= 4) {
-                        /* ZIP/JAR/DOCX/XLSX: PK\x03\x04 */
-                        if (buf[0]==0x50 && buf[1]==0x4B &&
-                            buf[2]==0x03 && buf[3]==0x04) is_known_compressed = 1;
-                        /* GZIP: 1F 8B */
-                        else if (buf[0]==0x1F && buf[1]==0x8B) is_known_compressed = 1;
-                        /* RAR: Rar! */
-                        else if (buf[0]==0x52 && buf[1]==0x61 &&
-                                 buf[2]==0x72 && buf[3]==0x21) is_known_compressed = 1;
-                        /* 7z: 37 7A BC AF */
-                        else if (buf[0]==0x37 && buf[1]==0x7A &&
-                                 buf[2]==0xBC && buf[3]==0xAF) is_known_compressed = 1;
-                        /* JPEG: FF D8 FF */
-                        else if (buf[0]==0xFF && buf[1]==0xD8 &&
-                                 buf[2]==0xFF) is_known_compressed = 1;
-                        /* PNG: 89 50 4E 47 */
-                        else if (buf[0]==0x89 && buf[1]==0x50 &&
-                                 buf[2]==0x4E && buf[3]==0x47) is_known_compressed = 1;
-                        /* MP4/MOV ftyp (offset 4): ....ftyp */
-                        else if (n >= 8 && buf[4]==0x66 && buf[5]==0x74 &&
-                                 buf[6]==0x79 && buf[7]==0x70) is_known_compressed = 1;
-                        /* PDF: %PDF (compressed streams inside) */
-                        else if (buf[0]==0x25 && buf[1]==0x50 &&
-                                 buf[2]==0x44 && buf[3]==0x46) is_known_compressed = 1;
-                        /* XZ: FD 37 7A 58 */
-                        else if (buf[0]==0xFD && buf[1]==0x37 &&
-                                 buf[2]==0x7A && buf[3]==0x58) is_known_compressed = 1;
-                        /* BZIP2: BZh */
-                        else if (buf[0]==0x42 && buf[1]==0x5A &&
-                                 buf[2]==0x68) is_known_compressed = 1;
-                        /* Zstandard: 28 B5 2F FD */
-                        else if (buf[0]==0x28 && buf[1]==0xB5 &&
-                                 buf[2]==0x2F && buf[3]==0xFD) is_known_compressed = 1;
-                    }
+                    int is_known_compressed =
+                        hlse_is_high_entropy_benign_magic(buf, n);
 
                     if (is_known_compressed) {
                         /* Counts as a scanned file, but its high entropy
