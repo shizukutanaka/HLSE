@@ -12,11 +12,31 @@
 #   PREFIX=/usr/local make install   Install to system
 
 CC      ?= gcc
-CFLAGS  := -O2 -Wall -Wextra -D_POSIX_C_SOURCE=200809L
+
+# Security hardening. -fstack-protector-strong and _FORTIFY_SOURCE are
+# portable across GCC/Clang on Linux and macOS and apply to every object
+# (CLI, shared lib, tests). -fPIE + the linker flags below are added only
+# to the standalone executables (see PIE_CFLAGS / PIE_LDFLAGS) so they do
+# not collide with the -fPIC -shared library build.
+HARDEN_CFLAGS := -fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
+CFLAGS  := -O2 -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(HARDEN_CFLAGS)
 CFLAGS_STRICT := -O2 -Wall -Wextra -Wpedantic -Wshadow -Wconversion \
                  -Wformat-truncation=2 -Wformat-overflow=2 \
-                 -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE
+                 -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE $(HARDEN_CFLAGS)
 LDFLAGS :=
+
+# Position-independent executable + linker hardening, applied to the CLI
+# and static binaries only. RELRO/BIND_NOW/noexecstack are GNU ld features
+# (Linux); Apple's ld rejects -Wl,-z,..., so guard by OS.
+UNAME_S    := $(shell uname -s)
+PIE_CFLAGS := -fPIE
+ifeq ($(UNAME_S),Linux)
+PIE_LDFLAGS    := -pie -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack
+STATIC_LDFLAGS := -static-pie
+else
+PIE_LDFLAGS    := -pie
+STATIC_LDFLAGS := -static
+endif
 
 PREFIX  ?= $(HOME)/.local
 DESTDIR ?=
@@ -52,7 +72,7 @@ cli: $(BINARY)         ## build CLI binary only
 lib: $(SHARED)         ## build shared library only
 
 $(BINARY): $(CORE_SRC) hlse_text.h hlse_core.h hlse_protect.h
-	$(CC) $(CFLAGS) -D_GNU_SOURCE -o $@ $(CORE_SRC) -I. -lm
+	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE -o $@ $(CORE_SRC) $(PIE_LDFLAGS) -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(SHARED): $(CORE_SRC) hlse_text.h hlse_core.h hlse_protect.h
@@ -92,7 +112,7 @@ $(UTIL_BIN): tests/hlse_util_tests.c hlse_util.c hlse_util.h
 
 $(FUZZ_BIN): tests/hlse_fuzz.c hlse_text.c hlse_text.h
 	@mkdir -p tests
-	$(CC) $(CFLAGS) -o $@ tests/hlse_fuzz.c hlse_text.c -I.
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L -o $@ tests/hlse_fuzz.c hlse_text.c -I.
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(FUZZ_ASAN): tests/hlse_fuzz.c hlse_text.c hlse_text.h
@@ -309,7 +329,7 @@ bench: $(BINARY)
 static: hlse_core_static
 
 hlse_core_static: $(CORE_SRC) hlse_text.h hlse_core.h hlse_protect.h
-	$(CC) $(CFLAGS) -D_GNU_SOURCE -static -o $@ $(CORE_SRC) -I. -lm
+	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE $(STATIC_LDFLAGS) -o $@ $(CORE_SRC) -I. -lm
 	strip $@
 	@printf '  %-20s %s (%s bytes)\n' "CC (static)" "$@" "$$(wc -c < $@)"
 
