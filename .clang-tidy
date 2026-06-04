@@ -1,0 +1,23 @@
+# clang-tidy configuration for HLSE.
+#
+# Focused on correctness and security-relevant checks for portable C99.
+# Run locally with:
+#   clang-tidy hlse_*.c -- -I. -std=c99 -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE
+#
+# Style/readability noise is intentionally excluded; the strict GCC/Clang
+# warning gate (make check-warnings) and the cppcheck job in CI cover the
+# compiler-visible issues, while these checks add data-flow and CERT-secure
+# coding analysis.
+Checks: >
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  misc-*,
+  performance-*,
+  -bugprone-easily-swappable-parameters,
+  -misc-no-recursion,
+  -cert-err33-c
+
+WarningsAsErrors: ''
+HeaderFilterRegex: 'hlse_.*\.h'
+FormatStyle: none
