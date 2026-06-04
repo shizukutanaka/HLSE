@@ -25,6 +25,7 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <pwd.h>
 
@@ -324,8 +325,21 @@ hlse_audit_cron(void) {
                     if (ent->d_name[0] == '.') continue;
                     snprintf(path, sizeof(path), "%s%s",
                              cron_paths[pi], ent->d_name);
-                    fp = fopen(path, "r");
-                    if (!fp) continue;
+                    /* Open with O_NOFOLLOW|O_NONBLOCK and require a regular
+                     * file: a FIFO planted in the cron dir would otherwise
+                     * block fopen()/fgets() indefinitely, and a symlink
+                     * could redirect the read elsewhere.                 */
+                    {
+                        int cfd = open(path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+                        struct stat cst;
+                        if (cfd < 0) continue;
+                        if (fstat(cfd, &cst) != 0 || !S_ISREG(cst.st_mode)) {
+                            close(cfd);
+                            continue;
+                        }
+                        fp = fdopen(cfd, "r");
+                        if (!fp) { close(cfd); continue; }
+                    }
 
                     while (fgets(line, sizeof(line), fp)) {
                         int i;

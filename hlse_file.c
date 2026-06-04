@@ -238,13 +238,21 @@ hlse_check_file(const char *filepath) {
         return v;
     }
 
-    /* Read first 4KB for magic byte analysis */
+    /* Read first 4KB for magic byte analysis.
+     *
+     * O_NOFOLLOW refuses to open a symlink target: a hostile path could
+     * otherwise redirect the read to e.g. /etc/shadow. O_NONBLOCK plus an
+     * fstat()/S_ISREG() check ensures we only read regular files — opening
+     * a FIFO or device node could block indefinitely or have side effects.
+     * Mirrors the hardened open() already used in hlse_protect.c.        */
     {
-        int fd = open(filepath, O_RDONLY);
+        int fd = open(filepath, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
         if (fd >= 0) {
-            head_len = read(fd, head, sizeof(head));
+            if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
+                head_len = read(fd, head, sizeof(head));
+                if (head_len < 0) head_len = 0;
+            }
             close(fd);
-            if (head_len < 0) head_len = 0;
         }
     }
 
