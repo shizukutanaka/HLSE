@@ -220,15 +220,120 @@ one place.
 
 ---
 
+## 8. System audit — hardening index + CIS mapping (P2)
+
+**Current:** `hlse_audit.c` checks a handful of items: SSH config, file
+permissions, DNS/`/etc/hosts`/`resolv.conf`, and cron entries.
+
+**What the comparable tool (Lynis) does:** Lynis runs **300+ controls**, emits a
+single **"hardening index" score (0–100)**, and maps every finding to **CIS
+Benchmark** controls (which PCI-DSS/HIPAA/ISO 27001 reference). It covers
+authentication, kernel `sysctl` parameters, network config, logging/`auditd`,
+package state, and integrity monitoring — "a server with no unpatched CVEs can
+still score 50" because hardening ≠ patching.
+
+**Improvement (on-brand — read-only local checks, no net):**
+- Emit a **0–100 hardening score** (HLSE already produces per-check verdicts;
+  aggregate them) so users get the same at-a-glance signal Lynis gives.
+- Add high-value, well-defined checks HLSE lacks: **kernel `sysctl`**
+  (`kernel.randomize_va_space`, `net.ipv4.*` rp_filter/redirects),
+  **`auditd`/logging present**, **world-writable files / SUID inventory**,
+  **umask**, **password policy** — all flat-file reads.
+- **Tag each finding with its CIS Benchmark ID** so output is compliance-useful.
+  This is a data/labelling change, not new machinery.
+
+Sources: [Lynis (CISOfy)](https://cisofy.com/lynis/),
+[Lynis on GitHub — 300+ controls, compliance mapping](https://github.com/CISOfy/lynis),
+[CIS Benchmark audits on Ubuntu](https://oneuptime.com/blog/post/2026-03-02-how-to-run-cis-benchmark-audits-on-ubuntu/view).
+
+---
+
+## 9. Boot integrity — modernize from MBR to UEFI/ESP (P2)
+
+**Current:** `hlse_protect.c` inspects the **legacy MBR** (boot signature,
+bootkit strings, first-instruction byte, sector entropy). This only covers
+BIOS/MBR-era threats.
+
+**What the threat landscape shows:** the live boot-level threat is **UEFI
+bootkits** — **BlackLotus** (2023, first to bypass Secure Boot on fully-patched
+Windows 11, CVE-2022-21894 / CVE-2023-24932) and **Bootkitty** (first **Linux**
+UEFI bootkit, 2024). These do **not** touch the MBR; they tamper with the **EFI
+System Partition (ESP)**. Documented indicators: **unrecognized/unsigned `.efi`
+files**, modified bootloaders, altered boot entries.
+
+**Improvement:** add an **ESP integrity check** alongside the MBR check — scan
+`/boot/efi/EFI/**` for unexpected/unsigned `.efi` binaries, flag modified
+bootloader files, and (optionally) compare against a recorded baseline hash set.
+Pure filesystem reads, no net. Keep the MBR check for legacy systems but
+document that **MBR detection is historical** and ESP is where current attacks
+live.
+
+Sources: [BlackLotus analysis (WeLiveSecurity/ESET)](https://www.welivesecurity.com/2023/03/01/blacklotus-uefi-bootkit-myth-confirmed/),
+[NSA BlackLotus mitigation guide](https://thehackernews.com/2023/06/nsa-releases-guide-to-combat-powerful.html),
+[Binarly: untold story of BlackLotus](https://www.binarly.io/blog/the-untold-story-of-the-blacklotus-uefi-bootkit).
+
+---
+
+## 10. Clipboard crypto-swap — exploit the visual-similarity signal (P2)
+
+**Current:** `hlse_check_crypto_swap` flags when a copied address differs from a
+pasted one (BTC/ETH), scoring any mismatch as a swap.
+
+**What research adds (EthClipper, arXiv 2108.14004):** sophisticated clippers
+(Laplas, Clipminer, the Linux **ClipXDaemon**, 2024) don't pick a *random*
+replacement — they **select an address with maximum visual similarity** to the
+original (same leading/trailing characters) so a glancing check passes. The
+*degree of visual similarity* is itself the strongest evidence of a deliberate
+clipper rather than a benign edit.
+
+**Improvement:** score the swap **higher when the replacement shares the
+original's prefix/suffix** (the deliberate-clipper signature) using a
+prefix/suffix-match length on top of the existing equality check — reusing
+`hlse_edit_distance`/simple char comparison, no net. This raises confidence and
+explains *why* a swap is malicious.
+
+Sources: [EthClipper (arXiv 2108.14004)](https://arxiv.org/abs/2108.14004),
+[Clipboard hijacker replaces addresses with lookalikes (BleepingComputer)](https://www.bleepingcomputer.com/news/security/new-clipboard-hijacker-replaces-crypto-wallet-addresses-with-lookalikes/),
+[ClipXDaemon Linux clipper (Cyble)](https://cyble.com/blog/clipxdaemon-autonomous-x11-clipboard-hijacker/).
+
+---
+
+## 11. Pastejacking — cover the ClickFix evolution (P1/P2)
+
+**Current:** the `paste` subcommand flags `curl … | bash` style pastejacking.
+
+**What's new:** the dominant 2024–2025 variant is **ClickFix** — a fake "Verify
+you are human" / "Fix It" prompt that silently writes a command to the clipboard
+for the user to paste into a terminal or Run dialog. Payloads hide behind
+encoding (`base64 -d | sh`, `powershell -enc`), embedded newlines that
+auto-execute on paste, and multi-stage downloaders.
+
+**Improvement (string analysis, no net):** extend the `paste` detector to flag
+**encoded-payload pipelines** (`base64`/`xxd`/`-enc` feeding a shell),
+**embedded newline/carriage-return auto-run**, `mshta`/`powershell -w hidden`,
+and the **ClickFix lure phrasing** ("verify you are human", "press Win+R") when
+co-located with a command. Reuses HLSE's existing text-normalization
+(de-obfuscation) machinery.
+
+Sources: [ClickFix attack vector (Unit 42 / Palo Alto)](https://unit42.paloaltonetworks.com/preventing-clickfix-attack-vector/),
+[Pastejacking detection (Palo Alto LIVEcommunity)](https://live.paloaltonetworks.com/t5/community-blogs/detection-of-pastejacking-social-engineering-tactics/ba-p/1247439),
+[Clipboard hijacking (HackTricks)](https://book.hacktricks.wiki/en/generic-methodologies-and-resources/phishing-methodology/clipboard-hijacking.html).
+
+---
+
 ## Priority summary
 
 | # | Area | Change | On-brand? | Priority |
 |---|------|--------|-----------|----------|
 | 1 | URL phishing | Punycode `xn--` decode + UTS-39 skeleton/confusables | ✅ pure C, no net | **P1** |
 | 4 | Secrets | Offline checksum/structural validation (GitHub CRC32 …) | ✅ no net | **P1** |
+| 11 | Pastejacking | ClickFix lures + encoded-payload pipelines | ✅ reuses normaliser | **P1/P2** |
 | 3 | Ransomware | Chi-square test + multi-segment sampling | ✅ reuses histogram | **P1/P2** |
 | 2 | Typosquat | Popularity gate + confusion taxonomy + slopsquatting | ✅ bundled data | **P1/P2** |
 | 5 | Email/BEC | Lookalike-domain distance + DMARC alignment | ✅ header-only | **P2** |
+| 8 | System audit | Hardening index score + CIS mapping + more checks | ✅ flat-file reads | **P2** |
+| 9 | Boot integrity | Add UEFI/ESP check (MBR is legacy-only) | ✅ fs reads | **P2** |
+| 10 | Clipboard swap | Visual-similarity (prefix/suffix) scoring | ✅ no net | **P2** |
 | 6 | Methodology | Gate OOD F1, add benign baseline corpus | ✅ | **P2** |
 | 7 | File masquerade | More polyglot combos, unify magic tables | ✅ | **P3** |
 
