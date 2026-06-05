@@ -2,6 +2,26 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.2] — 2026-06-05
+
+### Added
+- **IDN homograph detection via Punycode** (`hlse_core.c`): `xn--` labels are
+  now decoded per RFC 3492 and analysed UTS-39 style. Cyrillic/Greek/Armenian
+  homographs delivered as Punycode (which is pure ASCII and so invisible to the
+  existing UTF-8 mixed-script check) are caught: a confusable-folded label that
+  resembles a brand, or a label mixing Latin with another script, is flagged.
+  `xn--pple-43d` (аpple), `xn--ggle-55da` (gооgle), `xn--pypl-53dc` (pаypаl) and
+  `xn--mirosoft-gch` (miсrosoft) now score BLOCK. Legitimate single-script IDNs
+  — `xn--mnchen-3ya` (münchen), `xn--wgv71a` (日本), `xn--e1afmkfd` (пример) —
+  are deliberately **not** flagged, preserving the 0.0% false-positive posture.
+  Closes the largest detection gap identified in `docs/RESEARCH_IMPROVEMENTS.md`
+  (item #1). Pure C, no network, no new dependencies.
+
+### Changed
+- 7 IDN regression cases added to the in-binary `--self-test`; in- and
+  out-of-distribution corpora remain F1 = 1.000; ASan/UBSan clean (including
+  malformed Punycode); strict warnings and cppcheck clean.
+
 ## [0.9.1] — 2026-06-04
 
 Security-hardening release. No detection-logic changes: in- and

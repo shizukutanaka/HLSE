@@ -34,6 +34,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <math.h>
 
 #include "hlse_core.h"   /* Verdict, ScanResult, public API declarations */
@@ -52,7 +53,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.1"
+#define HLSE_VERSION       "0.9.2"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -857,6 +858,190 @@ detect_mixed_script(const ParsedUrl *u, Verdict *v) {
     }
 }
 
+/* 9. IDN homograph detection via Punycode decoding (UTS-39 aligned).
+ *
+ * Cyrillic/Greek homograph attacks are usually delivered as Punycode
+ * (`xn--`) labels, which are pure ASCII — so detect_mixed_script (which
+ * only fires on raw UTF-8 bytes) never sees them. We decode each `xn--`
+ * label per RFC 3492, then flag only the genuinely suspicious cases:
+ *   - a label that MIXES Latin with Cyrillic/Greek/Armenian (classic
+ *     homograph), or
+ *   - a confusable-folded form that resembles a known brand.
+ * A label that is purely one non-Latin script and matches no brand is
+ * legitimate internationalisation (e.g. xn--wgv71a = 日本) and is left
+ * alone — this is the UTS-39 distinction that avoids false positives on
+ * real IDNs.                                                            */
+
+/* RFC 3492 Punycode decode of one label (the part after "xn--").
+ * Writes Unicode code points to out[]; returns count, or -1 on error.   */
+static int
+punycode_decode(const char *input, uint32_t *out, int out_cap) {
+    const uint32_t base = 36, tmin = 1, tmax = 26, skew = 38, damp = 700;
+    const uint32_t initial_bias = 72, initial_n = 0x80;
+    uint32_t n = initial_n, bias = initial_bias, i = 0;
+    int out_len = 0;
+    size_t len = strlen(input);
+    size_t in_pos = 0, last_delim = (size_t)-1, j;
+
+    /* Basic (ASCII) code points precede the last hyphen delimiter. */
+    for (j = 0; j < len; j++) if (input[j] == '-') last_delim = j;
+    if (last_delim != (size_t)-1) {
+        for (j = 0; j < last_delim; j++) {
+            unsigned char c = (unsigned char)input[j];
+            if (c >= 0x80) return -1;
+            if (out_len >= out_cap) return -1;
+            out[out_len++] = c;
+        }
+        in_pos = last_delim + 1;
+    }
+
+    while (in_pos < len) {
+        uint32_t oldi = i, w = 1, k;
+        for (k = base; ; k += base) {
+            uint32_t digit, t;
+            char c;
+            if (in_pos >= len) return -1;
+            c = input[in_pos++];
+            if (c >= '0' && c <= '9') digit = (uint32_t)(c - '0') + 26;
+            else if (c >= 'a' && c <= 'z') digit = (uint32_t)(c - 'a');
+            else if (c >= 'A' && c <= 'Z') digit = (uint32_t)(c - 'A');
+            else return -1;
+            if (w != 0 && digit > (0xFFFFFFFFu - i) / w) return -1;  /* overflow */
+            i += digit * w;
+            t = (k <= bias) ? tmin : (k >= bias + tmax) ? tmax : (k - bias);
+            if (digit < t) break;
+            if (base - t != 0 && w > 0xFFFFFFFFu / (base - t)) return -1;
+            w *= (base - t);
+        }
+        {
+            uint32_t numpoints = (uint32_t)out_len + 1;
+            uint32_t delta = (oldi == 0) ? (i - oldi) / damp : (i - oldi) / 2;
+            delta += delta / numpoints;
+            k = 0;
+            while (delta > ((base - tmin) * tmax) / 2) {
+                delta /= (base - tmin);
+                k += base;
+            }
+            bias = k + ((base - tmin + 1) * delta) / (delta + skew);
+            n += i / numpoints;
+            i %= numpoints;
+            if (n > 0x10FFFF) return -1;
+            if (out_len >= out_cap) return -1;
+            {   /* insert code point n at position i */
+                int m;
+                for (m = out_len; m > (int)i; m--) out[m] = out[m - 1];
+                out[i] = n;
+                out_len++;
+            }
+            i++;
+        }
+    }
+    return out_len;
+}
+
+/* Script of a code point, restricted to what we need for homograph
+ * analysis. Digits, hyphens and other scripts (CJK, Arabic, …) are
+ * "neutral" and ignored by the mixing test.                            */
+enum { SCR_NEUTRAL = 0, SCR_LATIN = 1, SCR_CONFUSABLE = 2 };
+static int
+cp_script(uint32_t cp) {
+    if ((cp >= 'a' && cp <= 'z') || (cp >= 'A' && cp <= 'Z')) return SCR_LATIN;
+    if (cp >= 0x00C0 && cp <= 0x024F) return SCR_LATIN;        /* Latin-1 + ext */
+    if (cp >= 0x0400 && cp <= 0x04FF) return SCR_CONFUSABLE;   /* Cyrillic */
+    if (cp >= 0x0370 && cp <= 0x03FF) return SCR_CONFUSABLE;   /* Greek */
+    if (cp >= 0x0530 && cp <= 0x058F) return SCR_CONFUSABLE;   /* Armenian */
+    return SCR_NEUTRAL;
+}
+
+/* Fold a code point to its ASCII confusable, or 0 if none. ASCII passes
+ * through. Conservative, high-confidence mappings only.                 */
+static char
+cp_fold(uint32_t cp) {
+    if (cp < 0x80) return (char)cp;
+    switch (cp) {
+        /* Cyrillic */
+        case 0x0430: return 'a';  case 0x0435: return 'e';
+        case 0x043E: return 'o';  case 0x0440: return 'p';
+        case 0x0441: return 'c';  case 0x0443: return 'y';
+        case 0x0445: return 'x';  case 0x0456: return 'i';
+        case 0x0458: return 'j';  case 0x0455: return 's';
+        case 0x04BB: return 'h';  case 0x04CF: return 'l';
+        case 0x043A: return 'k';
+        /* Greek */
+        case 0x03BF: return 'o';  case 0x03B1: return 'a';
+        case 0x03C1: return 'p';  case 0x03B5: return 'e';
+        default: return 0;
+    }
+}
+
+static void
+detect_idn_homograph(const ParsedUrl *u, Verdict *v) {
+    char host_copy[MAX_HOST];
+    char folded[MAX_HOST];
+    size_t fi = 0;
+    int any_idn = 0, any_mixed = 0, saw_confusable = 0;
+    char *label, *save;
+
+    if (!strstr(u->host, "xn--")) return;
+
+    strncpy(host_copy, u->host, sizeof(host_copy) - 1);
+    host_copy[sizeof(host_copy) - 1] = '\0';
+
+    label = strtok_r(host_copy, ".", &save);
+    while (label) {
+        if (strncmp(label, "xn--", 4) == 0) {
+            uint32_t cps[MAX_HOST];
+            int n = punycode_decode(label + 4, cps,
+                                    (int)(sizeof(cps) / sizeof(cps[0])));
+            if (n > 0) {
+                int scripts = 0, t;
+                any_idn = 1;
+                for (t = 0; t < n; t++) {
+                    int s = cp_script(cps[t]);
+                    char f = cp_fold(cps[t]);
+                    if (s == SCR_LATIN) scripts |= 1;
+                    else if (s == SCR_CONFUSABLE) { scripts |= 2; saw_confusable = 1; }
+                    if (fi < sizeof(folded) - 1) folded[fi++] = f ? f : '?';
+                }
+                if ((scripts & 1) && (scripts & 2)) any_mixed = 1;
+            } else {
+                size_t t2, L = strlen(label);
+                for (t2 = 0; t2 < L && fi < sizeof(folded) - 1; t2++)
+                    folded[fi++] = label[t2];
+            }
+        } else {
+            size_t t2, L = strlen(label);
+            for (t2 = 0; t2 < L && fi < sizeof(folded) - 1; t2++)
+                folded[fi++] = label[t2];
+        }
+        if (fi < sizeof(folded) - 1) folded[fi++] = '.';
+        label = strtok_r(NULL, ".", &save);
+    }
+    folded[fi] = '\0';
+    if (!any_idn) return;
+
+    /* A confusable-folded brand only appears via decoding (the raw host is
+     * ASCII Punycode), so require that at least one non-Latin confusable
+     * actually participated before declaring a brand homograph.          */
+    if (saw_confusable) {
+        int i;
+        for (i = 0; BRANDS[i] != NULL; i++) {
+            if (contains(folded, BRANDS[i])) {
+                add_reason(v, 65,
+                    "IDN homograph: Punycode '%s' decodes to resemble '%s'",
+                    u->host, BRANDS[i]);
+                return;
+            }
+        }
+    }
+    if (any_mixed) {
+        add_reason(v, 50,
+            "IDN homograph: Punycode label mixes Latin and non-Latin scripts ('%s')",
+            u->host);
+    }
+    /* Pure single-script i18n with no brand resemblance: benign — no flag. */
+}
+
 /* ───────────────────────── public API ────────────────────────────────── */
 
 /* check_url — returns a Verdict.
@@ -884,6 +1069,7 @@ check_url(const char *raw_url) {
 
     detect_homoglyph(&u, &v);
     detect_mixed_script(&u, &v);
+    detect_idn_homograph(&u, &v);
     detect_typosquat(&u, &v);
     detect_suspicious_tld(&u, &v);
     detect_phishing_path(&u, &v);
@@ -1129,6 +1315,22 @@ self_test(void) {
           "Brand-hyphen phishing: apple-support" },
         { "https://x7k2p9qzr4mw.com/login",               40, 100,
           "DGA: high-entropy random domain with digits" },
+        /* IDN homograph via Punycode (xn--) — decode then confusable-fold */
+        { "https://xn--pple-43d.com",                     60, 100,
+          "IDN homograph: xn--pple-43d = аpple (Cyrillic a)" },
+        { "https://xn--ggle-55da.com",                    60, 100,
+          "IDN homograph: xn--ggle-55da = gооgle (Cyrillic o)" },
+        { "https://xn--pypl-53dc.com",                    60, 100,
+          "IDN homograph: xn--pypl-53dc = pаypаl (Cyrillic a)" },
+        { "https://xn--mirosoft-gch.com",                 60, 100,
+          "IDN homograph: xn--mirosoft-gch = miсrosoft (Cyrillic c)" },
+        /* Legitimate IDNs — must NOT be flagged as homographs (UTS-39) */
+        { "https://xn--mnchen-3ya.com",                    0, 14,
+          "Legit IDN: xn--mnchen-3ya = münchen (German, single-script)" },
+        { "https://xn--wgv71a.com",                        0, 14,
+          "Legit IDN: xn--wgv71a = 日本 (Japanese, single-script)" },
+        { "https://xn--e1afmkfd.com",                      0, 14,
+          "Legit IDN: xn--e1afmkfd = пример (pure Cyrillic, not a brand)" },
     };
     int n = sizeof(cases) / sizeof(cases[0]);
     int i;
