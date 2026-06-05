@@ -192,6 +192,17 @@ static void test_crypto_eth_swap(void) {
     else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
 }
 
+static void test_crypto_vanity_swap(void) {
+    TEST("Clipboard: vanity look-alike swap (shared ends) → score 100");
+    /* Two distinct ETH addresses sharing first 6 and last 6 hex digits —
+     * the deliberate-clipper (EthClipper) signature. */
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "0xabcdef0000000000000000000000000000c0ffee",
+        "0xabcdef1111111111111111111111111111c0ffee");
+    if (v.score == 100 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
 static void test_crypto_non_crypto(void) {
     TEST("Clipboard: non-crypto text → score 0");
     CryptoSwapVerdict v = hlse_check_crypto_swap(
@@ -252,6 +263,7 @@ int main(void) {
     test_crypto_no_swap();
     test_crypto_btc_swap();
     test_crypto_eth_swap();
+    test_crypto_vanity_swap();
     test_crypto_non_crypto();
     test_crypto_validate_btc();
     test_crypto_validate_eth();

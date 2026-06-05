@@ -2,6 +2,19 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.3] — 2026-06-05
+
+### Added
+- **Clipboard clipper "vanity look-alike" signal** (`hlse_secrets.c`): when a
+  same-type crypto address is swapped, `hlse_check_crypto_swap` now measures the
+  shared leading/trailing characters between the original and the replacement.
+  Real clipboard hijackers (per EthClipper, arXiv 2108.14004) grind a
+  replacement that shares the victim address's ends so a glance misses the
+  swap; a shared tail of 4+ chars between two *different* addresses is
+  essentially impossible by chance. Such swaps now escalate from BLOCK (95) to
+  ISOLATE (100) with an explanatory reason. Purely additive — detection is never
+  weakened; addresses with no shared ends keep their existing score.
+
 ## [0.9.2] — 2026-06-05
 
 ### Added

@@ -671,6 +671,27 @@ crypto_type_name(CryptoType t) {
     }
 }
 
+/* Count matching leading / trailing characters between two strings.
+ * The EthClipper finding (arXiv 2108.14004): a real clipper does not pick
+ * a random replacement — it grinds one that shares the victim address's
+ * first and last characters, so a glance at "bc1q…wr5" doesn't reveal the
+ * swap. A shared tail of 4+ chars between two *different* addresses is
+ * astronomically unlikely by chance (random/checksum suffix), so it is a
+ * high-confidence "deliberate look-alike" signal.                       */
+static int
+common_prefix_len(const char *a, const char *b) {
+    int n = 0;
+    while (a[n] && a[n] == b[n]) n++;
+    return n;
+}
+static int
+common_suffix_len(const char *a, const char *b) {
+    size_t la = strlen(a), lb = strlen(b);
+    size_t n = 0;
+    while (n < la && n < lb && a[la - 1 - n] == b[lb - 1 - n]) n++;
+    return (int)n;
+}
+
 CryptoSwapVerdict
 hlse_check_crypto_swap(const char *copied, const char *pasted) {
     CryptoSwapVerdict v;
@@ -692,14 +713,29 @@ hlse_check_crypto_swap(const char *copied, const char *pasted) {
     if (type_copied != CRYPTO_NONE && type_pasted != CRYPTO_NONE
         && type_copied == type_pasted)
     {
+        int pre = common_prefix_len(copied, pasted);
+        int suf = common_suffix_len(copied, pasted);
         v.score = 95; /* Near-certain clipboard hijack */
         v.is_swap = 1;
         snprintf(v.original, sizeof(v.original), "%s", copied);
         snprintf(v.swapped, sizeof(v.swapped), "%s", pasted);
-        snprintf(v.reason, sizeof(v.reason),
-            "CLIPBOARD HIJACK: %s address swapped. "
-            "Original: %.12s... Pasted: %.12s...",
-            crypto_type_name(type_copied), copied, pasted);
+        /* Deliberate "vanity" look-alike: the replacement was ground to
+         * match the original's ends. A shared tail of 4+ chars (beyond the
+         * format prefix every same-type address shares) is the clipper
+         * tell — escalate to ISOLATE.                                    */
+        if (suf >= 4) {
+            v.score = 100;
+            snprintf(v.reason, sizeof(v.reason),
+                "CLIPBOARD HIJACK (deliberate look-alike): %s address swapped; "
+                "replacement shares first %d and last %d chars. "
+                "Original: %.10s... Pasted: %.10s...",
+                crypto_type_name(type_copied), pre, suf, copied, pasted);
+        } else {
+            snprintf(v.reason, sizeof(v.reason),
+                "CLIPBOARD HIJACK: %s address swapped. "
+                "Original: %.12s... Pasted: %.12s...",
+                crypto_type_name(type_copied), copied, pasted);
+        }
         return v;
     }
 
