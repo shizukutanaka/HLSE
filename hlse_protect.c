@@ -681,6 +681,143 @@ hlse_gpt_verify(const char *device_path) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+ * Module: EFI System Partition (ESP) integrity
+ *
+ * The MBR check above only covers legacy BIOS boot. The live boot-level
+ * threat is UEFI bootkits (BlackLotus, Linux Bootkitty) which tamper with
+ * the EFI System Partition rather than the MBR. Without a recorded
+ * baseline or kernel keyring access we cannot validate Authenticode
+ * signatures offline, so this check uses the same low-false-positive
+ * signal as the MBR string scan: ransom/bootkit *text* embedded in a
+ * boot binary. The MBR's generic single-word tokens ("decrypt", "locked",
+ * "send") are deliberately NOT reused — they occur legitimately inside
+ * multi-megabyte signed bootloaders. Only high-specificity multi-word
+ * ransom-note phrases are matched here.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+static const char *ESP_INDICATORS[] = {
+    "your files have been encrypted",
+    "your files are encrypted",
+    "all your files",
+    "your important files",
+    "to decrypt your files",
+    "pay bitcoin",
+    "send bitcoin",
+    "petya",
+    NULL
+};
+
+/* Case-insensitive substring search over a (possibly NUL-containing)
+ * binary buffer. `needle` must already be lowercase. */
+static int
+esp_buf_contains(const unsigned char *hay, size_t haylen, const char *needle) {
+    size_t nl = strlen(needle);
+    size_t i, j;
+    if (nl == 0 || haylen < nl) return 0;
+    for (i = 0; i + nl <= haylen; i++) {
+        for (j = 0; j < nl; j++) {
+            unsigned char c = hay[i + j];
+            if (c >= 'A' && c <= 'Z') c = (unsigned char)(c + 32);
+            if (c != (unsigned char)needle[j]) break;
+        }
+        if (j == nl) return 1;
+    }
+    return 0;
+}
+
+/* Read up to ESP_SCAN_BYTES of a regular .efi file into a shared buffer and
+ * flag any ESP_INDICATORS phrase. Returns 1 if the file was scanned. */
+#define ESP_SCAN_BYTES (256 * 1024)
+static unsigned char esp_buf[ESP_SCAN_BYTES];
+
+static int
+esp_has_efi_ext(const char *name) {
+    size_t L = strlen(name);
+    if (L < 4) return 0;
+    return (name[L-4] == '.'
+            && (name[L-3] == 'e' || name[L-3] == 'E')
+            && (name[L-2] == 'f' || name[L-2] == 'F')
+            && (name[L-1] == 'i' || name[L-1] == 'I'));
+}
+
+static void
+esp_scan_dir(const char *dir_path, int depth,
+             ProtectionVerdict *v, int *file_count) {
+    DIR *dir;
+    struct dirent *ent;
+
+    if (depth > 8) return;                 /* bound recursion */
+    if (*file_count > 5000) return;        /* bound work */
+    dir = opendir(dir_path);
+    if (!dir) return;
+
+    while ((ent = readdir(dir)) != NULL) {
+        char fullpath[4096];
+        struct stat st;
+        if (ent->d_name[0] == '.') continue;
+        if ((size_t)snprintf(fullpath, sizeof(fullpath), "%s/%s",
+                             dir_path, ent->d_name) >= sizeof(fullpath))
+            continue;
+        /* lstat: never follow symlinks into or out of the ESP. */
+        if (lstat(fullpath, &st) != 0) continue;
+        if (S_ISDIR(st.st_mode)) {
+            esp_scan_dir(fullpath, depth + 1, v, file_count);
+            continue;
+        }
+        if (!S_ISREG(st.st_mode) || !esp_has_efi_ext(ent->d_name)) continue;
+
+        {
+            int fd = open(fullpath, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+            ssize_t n;
+            if (fd < 0) continue;
+            n = read(fd, esp_buf, sizeof(esp_buf));
+            close(fd);
+            if (n <= 0) continue;
+            (*file_count)++;
+            {
+                int i;
+                for (i = 0; ESP_INDICATORS[i]; i++) {
+                    if (esp_buf_contains(esp_buf, (size_t)n, ESP_INDICATORS[i])) {
+                        pv_add_reason(v, 70,
+                            "E3: Ransom/bootkit string '%s' in ESP binary: %s",
+                            ESP_INDICATORS[i], ent->d_name);
+                        break;  /* one reason per file */
+                    }
+                }
+            }
+        }
+    }
+    closedir(dir);
+}
+
+ProtectionVerdict
+hlse_esp_verify(const char *esp_path) {
+    ProtectionVerdict v;
+    struct stat st;
+    int file_count = 0;
+    const char *path = (esp_path && esp_path[0]) ? esp_path : "/boot/efi";
+
+    memset(&v, 0, sizeof(v));
+    v.module = HLSE_PROTECT_ESP;
+
+    if (stat(path, &st) != 0 || !S_ISDIR(st.st_mode)) {
+        pv_add_reason(&v, 0,
+            "No EFI System Partition at %s (UEFI not in use or not mounted)",
+            path);
+        return v;
+    }
+
+    esp_scan_dir(path, 0, &v, &file_count);
+
+    if (v.n_reasons == 0) {
+        pv_add_reason(&v, 0,
+            "ESP clean: scanned %d .efi binaries under %s, no ransom/bootkit "
+            "strings", file_count, path);
+    }
+    return v;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
  * Unified protection scan
  * ═══════════════════════════════════════════════════════════════════════ */
 

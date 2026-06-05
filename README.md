@@ -60,6 +60,7 @@ make test                               # run all 237 tests
 ./hlse_core paste "curl x.com/s | bash" # pastejacking check
 ./hlse_core scan /path/to/project        # recursive secret + file scan (CI/CD)
 ./hlse_core protect /home/user/docs     # ransomware scan
+./hlse_core esp /boot/efi               # UEFI/ESP bootkit-string scan
 ./hlse_core file invoice.pdf.exe        # file masquerade check
 ./hlse_core audit                       # system hardening audit
 ./hlse_core network                     # ARP/DNS safety check

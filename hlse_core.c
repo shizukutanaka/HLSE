@@ -53,7 +53,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.3"
+#define HLSE_VERSION       "0.9.4"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -2222,6 +2222,34 @@ main(int argc, char **argv) {
             }
             return pv.score >= 60 ? 1 : 0;
         }
+    }
+
+    if (strcmp(argv[idx], "esp") == 0) {
+        /* EFI System Partition integrity (UEFI bootkit indicators). */
+        const char *path = (argc > idx + 1) ? argv[idx + 1] : NULL;
+        ProtectionVerdict pv = hlse_esp_verify(path);
+        if (json_out) {
+            int i;
+            printf("{\"kind\":\"esp\",\"score\":%d,\"action\":\"%s\","
+                   "\"reasons\":[", pv.score, hlse_action_for_score(pv.score));
+            for (i = 0; i < pv.n_reasons; i++) {
+                char esc[512];
+                json_escape(pv.reasons[i], esc, sizeof(esc));
+                printf("%s\"%s\"", i > 0 ? "," : "", esc);
+            }
+            printf("]}\n");
+        } else if (pv.score == 0) {
+            printf("OK    (esp)%s%s\n",
+                   pv.n_reasons ? " — " : "",
+                   pv.n_reasons ? pv.reasons[0] : "");
+        } else {
+            int i;
+            printf("%-7s [%d]  (esp)\n",
+                   hlse_action_for_score(pv.score), pv.score);
+            for (i = 0; i < pv.n_reasons; i++)
+                printf("  \xc2\xb7 %s\n", pv.reasons[i]);
+        }
+        return pv.score >= 60 ? 1 : 0;
     }
 
     /* ── Supply Chain Defense subcommands ───────────────────────────── */

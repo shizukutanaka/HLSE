@@ -2,6 +2,25 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.4] — 2026-06-05
+
+### Added
+- **EFI System Partition (ESP) integrity check** (`hlse_protect.c`, new `esp`
+  subcommand): `hlse_esp_verify` walks the ESP (default `/boot/efi`) and flags
+  `.efi` binaries containing high-specificity ransom/bootkit text. The legacy
+  MBR check only covers BIOS boot; the live boot-level threat is UEFI bootkits
+  (BlackLotus, Linux Bootkitty) that tamper with the ESP. Unlike the MBR scan,
+  this uses only multi-word ransom-note phrases (`"all your files have been
+  encrypted"`, `"pay bitcoin"`, …) — the MBR's generic single-word tokens
+  (`decrypt`, `locked`) would false-positive inside legitimate multi-MB signed
+  bootloaders. Read-only, never follows symlinks, depth- and count-bounded.
+  `--json esp` supported. 6 CLI regression cases added.
+
+### Notes
+- ESP signature (Authenticode) validation is intentionally deferred: it cannot
+  be done safely offline without a baseline, and a wrong implementation would
+  risk false negatives. See `docs/RESEARCH_IMPROVEMENTS.md` #8.
+
 ## [0.9.3] — 2026-06-05
 
 ### Added

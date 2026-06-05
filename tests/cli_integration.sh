@@ -159,6 +159,45 @@ assert "reasons" in data
 
 rm -rf "$PROT_DIR"
 
+# ─── esp subcommand (UEFI/ESP integrity) ────────────────────────────
+
+# Clean ESP (benign .efi, no ransom text) → exit 0
+ESP_DIR=$(mktemp -d)
+mkdir -p "$ESP_DIR/EFI/BOOT"
+head -c 4096 /dev/urandom > "$ESP_DIR/EFI/BOOT/BOOTX64.EFI"
+./hlse_core esp "$ESP_DIR" >/dev/null 2>&1
+check "esp: clean ESP exits 0" "0" "$?"
+
+# Malicious .efi carrying a ransom-note phrase → BLOCK (exit 1)
+printf 'MZ payload all your files have been encrypted pay bitcoin' \
+    > "$ESP_DIR/EFI/BOOT/evil.efi"
+./hlse_core esp "$ESP_DIR" 2>&1 | grep -qE "E3|encrypted" \
+    && check "esp: detects ransom string in .efi" "0" "0" \
+    || check "esp: detects ransom string in .efi" "0" "1"
+./hlse_core esp "$ESP_DIR" >/dev/null 2>&1 && rc=0 || rc=$?
+check "esp: malicious ESP exits 1" "1" "$rc"
+
+# Non-.efi file with the same text must NOT be scanned (extension filter)
+ESP_DIR2=$(mktemp -d); mkdir -p "$ESP_DIR2/EFI"
+printf 'all your files have been encrypted pay bitcoin' > "$ESP_DIR2/EFI/notes.txt"
+./hlse_core esp "$ESP_DIR2" >/dev/null 2>&1
+check "esp: ignores non-.efi files" "0" "$?"
+
+# Missing ESP path → graceful exit 0
+./hlse_core esp "$ESP_DIR/nope" >/dev/null 2>&1
+check "esp: missing path exits 0 (graceful)" "0" "$?"
+
+# JSON parseable
+./hlse_core --json esp "$ESP_DIR" 2>&1 | python3 -c '
+import sys, json
+data = json.loads(sys.stdin.read())
+assert data["kind"] == "esp"
+assert "reasons" in data
+' && check "--json esp parseable" "0" "0" \
+   || check "--json esp parseable" "0" "1"
+
+rm -rf "$ESP_DIR" "$ESP_DIR2"
+
 # ─── package subcommand ─────────────────────────────────────────────
 
 # Exact match → safe
