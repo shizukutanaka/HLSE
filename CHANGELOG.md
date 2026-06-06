@@ -2,6 +2,21 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.7] — 2026-06-06
+
+### Security
+- **`scan` no longer follows symlinks** (`hlse_core.c`; SPECIFICATION.md §1,
+  GAP-E). A second spec audit found the recursive directory walker classified
+  entries with `stat()` (follows links) and read files with `fopen()` (no
+  `O_NOFOLLOW`). A symlinked directory could make the scan escape the target
+  tree (and risk symlink cycles); a symlinked file such as `x.env ->
+  /etc/shadow` was opened and scanned for secrets, disclosing a file outside
+  the scanned tree. Now classified with `lstat()` (symlinks become `S_ISLNK`
+  and are skipped) and re-opened with `O_NOFOLLOW | O_NONBLOCK` + `S_ISREG`
+  (TOCTOU defence), matching the hardened pattern already used in
+  `hlse_file.c`, `hlse_audit.c`, and the ESP scan. Real in-tree files are still
+  scanned; a regression test plus an ASan symlink-cycle test were added.
+
 ## [0.9.6] — 2026-06-06
 
 ### Added

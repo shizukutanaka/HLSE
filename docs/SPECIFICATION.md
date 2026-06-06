@@ -135,5 +135,19 @@ binary. Resolved here:
 - **GAP-D — `esp` documentation**: implemented in 0.9.4 but absent from
   `print_usage()` and `hlse.1`. → document it.
 
+GAP-A..D resolved in 0.9.6. A second audit of §1 against the implementation
+found a security-relevant invariant breach:
+
+- **GAP-E — `scan` followed symlinks** (violates §1 "never follow symlinks"):
+  the directory walker classified entries with `stat()` (which follows links)
+  and read files with `fopen()` (no `O_NOFOLLOW`). A symlinked directory let the
+  scan escape the target tree (and risk cycles); a symlinked file such as
+  `x.env -> /etc/shadow` was read and scanned for secrets, leaking a file
+  outside the tree. → classify with `lstat()` (symlinks become `S_ISLNK` and are
+  skipped) and re-open the file with `O_NOFOLLOW` + `S_ISREG` (TOCTOU defence).
+  Fixed in 0.9.7. Matches the hardened open pattern already used in
+  `hlse_file.c`, `hlse_audit.c`, and the ESP scan.
+
 Each resolution is a thin CLI wrapper over the existing library function (per
-§6), with `--json` support, usage/man entries, and CLI integration tests.
+§6) or an invariant fix, with `--json` support where applicable, usage/man
+entries, and CLI integration tests.

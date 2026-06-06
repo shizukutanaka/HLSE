@@ -315,6 +315,18 @@ echo "AKIAIOSFODNN7EXAMPLE" > "$SCAN_DIR/config.env"
     && check "scan: detects leaked AWS key" "0" "0" \
     || check "scan: detects leaked AWS key" "0" "1"
 
+# Symlink-escape: a symlink in the tree pointing OUTSIDE must NOT be
+# followed/read (SPECIFICATION.md §1 — never follow symlinks).
+SYM_ROOT=$(mktemp -d); SYM_OUT=$(mktemp -d)
+printf 'aws_access_key_id = AKIA2E3MWORQXYZ4567PQ\n' > "$SYM_OUT/secret.env"
+ln -s "$SYM_OUT/secret.env" "$SYM_ROOT/leak.env"   # symlink file → outside
+ln -s "$SYM_OUT" "$SYM_ROOT/leakdir"               # symlink dir  → outside
+echo "harmless" > "$SYM_ROOT/ok.txt"
+./hlse_core scan "$SYM_ROOT" 2>&1 | grep -q "0 threats" \
+    && check "scan: does not follow symlinks (no scope escape)" "0" "0" \
+    || check "scan: does not follow symlinks (no scope escape)" "0" "1"
+rm -rf "$SYM_ROOT" "$SYM_OUT"
+
 # Scan with double extension
 touch "$SCAN_DIR/invoice.pdf.exe"
 ./hlse_core --json scan "$SCAN_DIR" 2>&1 | python3 -c '

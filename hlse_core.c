@@ -49,11 +49,12 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <errno.h>
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.6"
+#define HLSE_VERSION       "0.9.7"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -1964,7 +1965,12 @@ main(int argc, char **argv) {
                     snprintf(fullpath, sizeof(fullpath), "%s/%s",
                              cur_path, ent->d_name);
 
-                    if (stat(fullpath, &st) != 0) continue;
+                    /* lstat (not stat): a symlink is classified as S_ISLNK,
+                     * so it is neither recursed into (a symlinked dir would
+                     * let the scan escape the target tree or loop) nor read
+                     * (a symlinked file like x.env -> /etc/shadow would leak
+                     * a file outside the tree). Per SPECIFICATION.md §1.   */
+                    if (lstat(fullpath, &st) != 0) continue;
 
                     if (S_ISDIR(st.st_mode)) {
                         /* Skip vendor/build directories that produce
@@ -2036,7 +2042,17 @@ main(int argc, char **argv) {
 
                     /* Check 2: secrets in text files (< 1MB) */
                     if (st.st_size > 0 && st.st_size < 1048576) {
-                        FILE *fp = fopen(fullpath, "r");
+                        /* Re-open with O_NOFOLLOW + S_ISREG (defends the
+                         * lstat→open TOCTOU window); never follow a symlink
+                         * swapped in after classification. */
+                        FILE *fp = NULL;
+                        int sfd = open(fullpath, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+                        if (sfd >= 0) {
+                            struct stat sst;
+                            if (fstat(sfd, &sst) == 0 && S_ISREG(sst.st_mode))
+                                fp = fdopen(sfd, "r");
+                            if (!fp) close(sfd);
+                        }
                         if (fp) {
                             char line[4096];
                             int lineno = 0;
