@@ -418,3 +418,13 @@ hlse_audit_all(void) {
     if (combined.score > 100) combined.score = 100;
     return combined;
 }
+
+int
+hlse_audit_hardening_index(const AuditVerdict *v) {
+    int risk;
+    if (!v) return 0;
+    risk = v->score;
+    if (risk < 0) risk = 0;
+    if (risk > 100) risk = 100;
+    return 100 - risk;
+}

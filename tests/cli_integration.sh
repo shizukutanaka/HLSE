@@ -281,8 +281,17 @@ import sys, json
 data = json.loads(sys.stdin.read())
 assert data["kind"] == "audit"
 assert "findings" in data
-' && check "--json audit parseable" "0" "0" \
-   || check "--json audit parseable" "0" "1"
+hi = data["hardening_index"]
+assert 0 <= hi <= 100
+assert hi == 100 - min(data["score"], 100)
+assert data["hardening_band"] in ("hardened", "good", "fair", "weak")
+' && check "--json audit has hardening_index" "0" "0" \
+   || check "--json audit has hardening_index" "0" "1"
+
+# Human-readable output shows the hardening index
+./hlse_core audit 2>&1 | grep -q "Hardening index:" \
+    && check "audit: prints hardening index" "0" "0" \
+    || check "audit: prints hardening index" "0" "1"
 
 # ─── compound detection ────────────────────────────────────────────
 

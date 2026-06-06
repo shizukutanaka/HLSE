@@ -224,6 +224,20 @@ static void test_audit_all(void) {
     else FAIL("invalid");
 }
 
+static void test_audit_hardening_index(void) {
+    TEST("Audit: hardening index = 100 - clamped risk");
+    AuditVerdict a;
+    int ok = 1;
+    memset(&a, 0, sizeof(a));
+    a.score = 0;   if (hlse_audit_hardening_index(&a) != 100) ok = 0;
+    a.score = 30;  if (hlse_audit_hardening_index(&a) != 70)  ok = 0;
+    a.score = 100; if (hlse_audit_hardening_index(&a) != 0)   ok = 0;
+    a.score = 150; if (hlse_audit_hardening_index(&a) != 0)   ok = 0; /* clamp hi */
+    a.score = -5;  if (hlse_audit_hardening_index(&a) != 100) ok = 0; /* clamp lo */
+    if (hlse_audit_hardening_index(NULL) != 0) ok = 0;               /* NULL safe */
+    if (ok) PASS(); else FAIL("index mismatch");
+}
+
 /* ─── Main ────────────────────────────────────────────────────────────── */
 
 int main(void) {
@@ -251,6 +265,7 @@ int main(void) {
     test_audit_dns();
     test_audit_cron();
     test_audit_all();
+    test_audit_hardening_index();
 
     printf("\n══════════════════════════════════════════\n");
     printf("File/Audit tests: %d/%d passed", passed, total);

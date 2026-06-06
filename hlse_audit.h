@@ -46,6 +46,12 @@ AuditVerdict hlse_audit_cron(void);
 /* Run all audits and combine results */
 AuditVerdict hlse_audit_all(void);
 
+/* Lynis-style hardening index: 0..100 where 100 = fully hardened.
+ * Derived as 100 minus the (clamped) finding-weighted risk score, so it
+ * is the complementary "how hardened am I" view of any AuditVerdict
+ * (combined or per-module). Stateless; safe to call on any verdict.    */
+int hlse_audit_hardening_index(const AuditVerdict *v);
+
 #ifdef __cplusplus
 }
 #endif

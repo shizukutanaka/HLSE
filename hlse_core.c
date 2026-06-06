@@ -53,7 +53,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.4"
+#define HLSE_VERSION       "0.9.5"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -2392,10 +2392,15 @@ main(int argc, char **argv) {
 
     if (strcmp(argv[idx], "audit") == 0) {
         AuditVerdict av = hlse_audit_all();
+        int hi = hlse_audit_hardening_index(&av);
+        const char *band = hi >= 90 ? "hardened"
+                         : hi >= 70 ? "good"
+                         : hi >= 50 ? "fair" : "weak";
         if (json_out) {
             int i;
-            printf("{\"kind\":\"audit\",\"score\":%d,\"findings\":[",
-                   av.score);
+            printf("{\"kind\":\"audit\",\"score\":%d,"
+                   "\"hardening_index\":%d,\"hardening_band\":\"%s\","
+                   "\"findings\":[", av.score, hi, band);
             for (i = 0; i < av.n_findings; i++) {
                 char esc[512];
                 json_escape(av.findings[i].description, esc, sizeof(esc));
@@ -2405,11 +2410,12 @@ main(int argc, char **argv) {
             }
             printf("]}\n");
         } else if (av.score == 0) {
-            printf("OK    (audit — no issues found)\n");
+            printf("OK    (audit — no issues found)  "
+                   "Hardening index: %d/100 (%s)\n", hi, band);
         } else {
             int i;
-            printf("%-7s [%d]  (system audit)\n",
-                   hlse_action_for_score(av.score), av.score);
+            printf("%-7s [%d]  (system audit)  Hardening index: %d/100 (%s)\n",
+                   hlse_action_for_score(av.score), av.score, hi, band);
             for (i = 0; i < av.n_findings; i++) {
                 const char *sev_str[] = {
                     "PASS", "INFO", "LOW", "MED", "HIGH", "CRIT"

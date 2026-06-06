@@ -2,6 +2,17 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.5] — 2026-06-05
+
+### Added
+- **Lynis-style hardening index** (`hlse_audit.c`): new
+  `hlse_audit_hardening_index()` returns a 0..100 score where 100 = fully
+  hardened (the complementary view of the finding-weighted risk score). The
+  `audit` subcommand now prints `Hardening index: N/100 (hardened|good|fair|
+  weak)` and exposes `hardening_index` / `hardening_band` in `--json audit`,
+  giving the same at-a-glance posture signal Lynis provides. Stateless helper;
+  no detection logic changed. (Research backlog #7.)
+
 ## [0.9.4] — 2026-06-05
 
 ### Added
