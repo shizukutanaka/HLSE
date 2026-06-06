@@ -95,13 +95,16 @@ in `print_usage()` and the man page (`hlse.1`).
 `<ACTION> [<score>]  <subject>` followed by ` · <reason>` lines, or `OK    <subject>` when safe.
 
 ### 5.2 JSON (`--json`)
-Object with a `"kind"` discriminator and `"score"`; reason/finding arrays vary by kind:
-- `url`/`text`/`network`/`paste`/`protect`/`esp`: `{kind, score, reasons:[...]}` (+`action` where present)
-- `package`: `{kind, name, score, matches:[{name,registry,distance}]}`
-- `audit`: `{kind, score, hardening_index, hardening_band, findings:[{severity,description}]}`
-- `secret`: `{kind, score, findings:[{type,description}]}`
-- `email`: `{kind, score, reasons:[...]}`
-- `clipboard`: `{kind, score, is_swap, original, swapped, reason}`
+Every object carries a `"kind"` discriminator, an integer `"score"`, and an
+`"action"` string (the §2 band: `SAFE`/`LOG`/`ALERT`/`BLOCK`/`ISOLATE`), so a
+consumer never has to re-derive the band. Additional fields vary by kind:
+- `url`/`text`/`network`/`paste`/`protect`/`esp`/`email`: `reasons:[...]`
+- `package`: `name`, `matches:[{name,registry,distance}]`
+- `audit`: `hardening_index`, `hardening_band`, `findings:[{severity,description}]`
+- `secret`: `findings:[{type,description}]`
+- `clipboard`: `is_swap`, `original`, `swapped`, `reason`
+- `file`: `path`, `reasons:[...]`
+- streaming `scan` records add `path`/`line`/`url` as applicable.
 
 ### 5.3 SARIF (`--sarif scan <dir>`)
 SARIF 2.1.0 with rule definitions and `security-severity`.
@@ -158,6 +161,14 @@ A third audit, of documented capability vs. implementation, found:
   Isolated to the clipboard-swap comparison and the validator (not the
   URL/text path), so F1 is unaffected. Fixed in 0.9.8.
 
+A fourth audit, of §5.2, found:
+
+- **GAP-G — inconsistent JSON `action`**: only 4 of 12 JSON kinds (`url`,
+  `text`, `protect`, `esp`) emitted the `action` band; the other 8 plus the
+  streaming `scan` records omitted it, forcing consumers to re-derive the band
+  from `score`. → emit `"action"` (from `hlse_action_for_score`) on every
+  score-bearing JSON object. Fixed in 0.9.9.
+
 Each resolution is a thin CLI wrapper over the existing library function (per
-§6) or an invariant/coverage fix, with `--json` support where applicable,
-usage/man entries, and tests.
+§6) or an invariant/coverage/consistency fix, with `--json` support where
+applicable, usage/man entries, and tests.

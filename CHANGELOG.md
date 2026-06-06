@@ -2,6 +2,17 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.9] — 2026-06-06
+
+### Changed
+- **Consistent JSON `action` band** (`hlse_core.c`; SPECIFICATION.md §5.2,
+  GAP-G). Only 4 of 12 `--json` kinds (`url`, `text`, `protect`, `esp`) emitted
+  the `action` band; the other 8 (`package`, `paste`, `network`, `secret`,
+  `email`, `clipboard`, `audit`, `file`) plus the streaming `scan` records
+  omitted it, forcing consumers to re-derive the band from `score`. Every
+  score-bearing JSON object now carries `"action"` (from
+  `hlse_action_for_score`). 10 CLI action-consistency tests added.
+
 ## [0.9.8] — 2026-06-06
 
 ### Fixed

