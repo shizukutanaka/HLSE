@@ -169,6 +169,16 @@ A fourth audit, of §5.2, found:
   from `score`. → emit `"action"` (from `hlse_action_for_score`) on every
   score-bearing JSON object. Fixed in 0.9.9.
 
+A fifth audit, of README numeric claims vs measured reality, found:
+
+- **GAP-H — stale README numbers**: "Structured tests: 237" and "Binary size:
+  53 KB (dynamic), 932 KB (static)" no longer matched reality (≈328 checks;
+  ≈140 KB dynamic / ≈1.0 MB static-pie after the feature and hardening work).
+  The detection/evasion example claims, F1, and 0% FP all verified accurate.
+  → update the counts to a non-drifting `320+` and the sizes to measured
+  approximate values; drop the brittle exact "237" from the `make test`
+  comment. Docs-only; fixed in 0.9.10.
+
 Each resolution is a thin CLI wrapper over the existing library function (per
-§6) or an invariant/coverage/consistency fix, with `--json` support where
-applicable, usage/man entries, and tests.
+§6) or an invariant/coverage/consistency/accuracy fix, with tests where code
+changed.

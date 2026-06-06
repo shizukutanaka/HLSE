@@ -2,6 +2,17 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.10] — 2026-06-06
+
+### Fixed
+- **README accuracy** (SPECIFICATION.md §8, GAP-H). "Structured tests: 237" and
+  "Binary size: 53 KB (dynamic), 932 KB (static)" had drifted — actual is ≈328
+  checks across the suites + CLI integration, and ≈140 KB dynamic / ≈1.0 MB
+  static-pie (stripped) after the feature and hardening work. Updated to a
+  non-drifting `320+` and measured approximate sizes; dropped the brittle exact
+  count from the `make test` comment. The detection/evasion examples, F1=1.000,
+  and 0% FP claims were re-verified and are accurate.
+
 ## [0.9.9] — 2026-06-06
 
 ### Changed

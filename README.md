@@ -24,12 +24,12 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             237
+  Structured tests:             320+ (8 suites + corpus + CLI integration)
   Fuzz iterations:              100,000 (0 crashes)
   ASan + UBSan:                 0 errors
   Compiler warnings:            0 (-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
 
-Binary size:   53 KB (dynamic), 932 KB (static, stripped)
+Binary size:   ~140 KB (dynamic, stripped), ~1.0 MB (static-pie, stripped)
 Dependencies:  libc + libm only
 Platform:      Linux, macOS (partial)
 ```
@@ -52,7 +52,7 @@ Platform:      Linux, macOS (partial)
 
 ```bash
 make                                    # build CLI + shared library
-make test                               # run all 237 tests
+make test                               # run all test suites
 ./hlse_core                             # interactive demo
 ./hlse_core "https://g00gle.com"        # scan a URL
 ./hlse_core text "URGENT: wire $5000"   # scan text
