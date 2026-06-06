@@ -148,6 +148,16 @@ found a security-relevant invariant breach:
   Fixed in 0.9.7. Matches the hardened open pattern already used in
   `hlse_file.c`, `hlse_audit.c`, and the ESP scan.
 
+A third audit, of documented capability vs. implementation, found:
+
+- **GAP-F — Solana not detected**: `hlse_secrets.h` advertised crypto-swap
+  support for "BTC, ETH, XMR, SOL, USDT", the `CRYPTO_SOL` enum and the
+  `"SOL (Solana)"` name existed, but `detect_crypto_type()` had no Solana
+  branch, so a Solana clipper swap was never flagged. → add a base58 32–44
+  Solana branch, evaluated last so prefixed/fixed-length formats still win.
+  Isolated to the clipboard-swap comparison and the validator (not the
+  URL/text path), so F1 is unaffected. Fixed in 0.9.8.
+
 Each resolution is a thin CLI wrapper over the existing library function (per
-§6) or an invariant fix, with `--json` support where applicable, usage/man
-entries, and CLI integration tests.
+§6) or an invariant/coverage fix, with `--json` support where applicable,
+usage/man entries, and tests.

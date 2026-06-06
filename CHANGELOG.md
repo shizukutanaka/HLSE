@@ -2,6 +2,19 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.8] — 2026-06-06
+
+### Fixed
+- **Solana clipboard-swap detection** (`hlse_secrets.c`; SPECIFICATION.md §8,
+  GAP-F). The header advertised crypto-swap support for "BTC, ETH, XMR, SOL,
+  USDT" and the `CRYPTO_SOL` enum / `"SOL (Solana)"` name existed, but
+  `detect_crypto_type()` had no Solana branch, so a Solana clipper swap was
+  silently never flagged. Add a base58 32–44 Solana branch, evaluated last so
+  the prefixed/fixed-length formats (BTC `1`/`3`, USDT `T`, ETH `0x`, …) keep
+  precedence. Detection is confined to the clipboard-swap comparison and the
+  (test-only) validator — it does not feed the URL/text path, so phishing/scam
+  F1 is unaffected. Adds validate + swap regression tests.
+
 ## [0.9.7] — 2026-06-06
 
 ### Security

@@ -227,6 +227,23 @@ static void test_crypto_validate_eth(void) {
     else FAIL("not recognized");
 }
 
+static void test_crypto_validate_sol(void) {
+    TEST("Validate: Solana base58 (44) is recognized");
+    int t = hlse_validate_crypto_address(
+        "So11111111111111111111111111111111111111112");
+    if (t != 0) PASS();  /* CRYPTO_SOL */
+    else FAIL("SOL not recognized");
+}
+
+static void test_crypto_sol_swap(void) {
+    TEST("Clipboard: SOL address swapped → score 95");
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "So11111111111111111111111111111111111111112",
+        "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
 static void test_crypto_validate_garbage(void) {
     TEST("Validate: garbage → CRYPTO_NONE");
     int t = hlse_validate_crypto_address("not-a-crypto-address");
@@ -267,6 +284,8 @@ int main(void) {
     test_crypto_non_crypto();
     test_crypto_validate_btc();
     test_crypto_validate_eth();
+    test_crypto_validate_sol();
+    test_crypto_sol_swap();
     test_crypto_validate_garbage();
 
     printf("\n══════════════════════════════════════════\n");

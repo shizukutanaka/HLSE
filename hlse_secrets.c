@@ -654,6 +654,20 @@ detect_crypto_type(const char *addr) {
         if (ok) return CRYPTO_USDT_TRC20;
     }
 
+    /* Solana: base58, 32-44 chars, no fixed prefix. Checked LAST so the
+     * prefixed / fixed-length formats above (BTC 1/3, USDT T, ETH 0x, …)
+     * win; only an otherwise-unclassified base58 string of Solana length
+     * lands here. detect_crypto_type feeds only the clipboard-swap
+     * comparison and the (test-only) validator, never the URL/text path,
+     * so this cannot affect phishing/scam scoring.                       */
+    if (len >= 32 && len <= 44) {
+        int i, ok = 1;
+        for (i = 0; i < (int)len; i++) {
+            if (!is_base58(addr[i])) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_SOL;
+    }
+
     return CRYPTO_NONE;
 }
 
