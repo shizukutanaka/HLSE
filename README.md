@@ -61,6 +61,9 @@ make test                               # run all 237 tests
 ./hlse_core scan /path/to/project        # recursive secret + file scan (CI/CD)
 ./hlse_core protect /home/user/docs     # ransomware scan
 ./hlse_core esp /boot/efi               # UEFI/ESP bootkit-string scan
+./hlse_core secret "key=AKIA..."         # scan text/stdin for leaked secrets
+./hlse_core email --stdin < msg.eml      # email-header forensics (SPF/DKIM, BEC)
+./hlse_core clipboard "<copied>" "<pasted>"  # crypto address-swap (clipper) check
 ./hlse_core file invoice.pdf.exe        # file masquerade check
 ./hlse_core audit                       # system hardening audit
 ./hlse_core network                     # ARP/DNS safety check

@@ -70,6 +70,27 @@ Behavioral protection checks: ransomware entropy and ransom-note
 detection, SMB canary files, mounted network drives, and MBR/GPT
 integrity (the last needs root and a device path).
 .TP
+.B esp \fR[\fIpath\fR]
+Scan the EFI System Partition (default
+.IR /boot/efi )
+for .efi binaries containing ransom/bootkit strings \(em UEFI-era boot
+integrity, complementing the legacy MBR check. Read-only; never follows
+symlinks.
+.TP
+.B secret \fI"text"\fR\fR | \fB--stdin\fR
+Scan a text blob or standard input for leaked credentials (AWS, GitHub,
+Stripe, Slack, SSH keys, .env passwords), excluding documented
+placeholder/example keys.
+.TP
+.B email \fI"headers"\fR\fR | \fB--stdin\fR
+Email-header forensics: SPF/DKIM failure, Reply-To mismatch, display-name
+spoofing, and free-mail corporate impersonation (BEC).
+.TP
+.B clipboard \fI"copied"\fR \fI"pasted"\fR
+Compare a copied and a pasted string; if both are crypto addresses of the
+same type but differ, flag a clipboard hijack, escalating when the
+replacement was ground to share the original's leading/trailing characters.
+.TP
 .B package \fIname\fR [\fIecosystem\fR]
 Check a package name for typosquatting against known popular packages
 (pip, npm, cargo, go).

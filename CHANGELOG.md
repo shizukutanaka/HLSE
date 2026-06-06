@@ -2,6 +2,28 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.6] — 2026-06-06
+
+### Added
+- **Formal specification** (`docs/SPECIFICATION.md`): the CLI contract, scoring
+  model, per-module behaviour, output schemas, design invariants, and a gap
+  analysis. Writing it surfaced that several documented/library capabilities had
+  no CLI access — resolved below.
+- **`secret` subcommand**: scan a text argument or stdin for leaked credentials
+  (`hlse_scan_secrets`), previously reachable only via a directory `scan`.
+- **`email` subcommand**: email-header forensics (`hlse_check_email_headers`) —
+  SPF/DKIM, Reply-To mismatch, display-name/BEC spoofing. Arg or `--stdin`.
+- **`clipboard` subcommand**: crypto address-swap / clipper detection
+  (`hlse_check_crypto_swap`, including the 0.9.3 vanity look-alike escalation),
+  previously library-only.
+- All three honour `--json`; `esp` (added in 0.9.4) plus the three new commands
+  are now documented in `--help`/`print_usage`, the man page, and the README.
+
+### Notes
+- These are thin CLI wrappers over existing, tested library functions — no
+  detection logic changed. 14 new CLI integration tests; ASan/UBSan clean
+  (empty/large/binary stdin); strict warnings + cppcheck clean.
+
 ## [0.9.5] — 2026-06-05
 
 ### Added

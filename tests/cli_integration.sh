@@ -465,6 +465,78 @@ if command -v python3 >/dev/null 2>&1; then
     rm -rf "$JE_DIR"
 fi
 
+# ─── secret / email / clipboard subcommands (CLI exposure of library) ─
+
+# secret: detects a leaked key from an argument
+./hlse_core secret "aws_access_key_id = AKIA2E3MWORQXYZ4567PQ" 2>&1 \
+    | grep -qE "AWS|ISOLATE|BLOCK" \
+    && check "secret: detects AWS key (arg)" "0" "0" \
+    || check "secret: detects AWS key (arg)" "0" "1"
+
+# secret: reads from stdin
+printf 'token: ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij\n' \
+    | ./hlse_core secret --stdin 2>&1 | grep -q "GitHub" \
+    && check "secret: detects from stdin" "0" "0" \
+    || check "secret: detects from stdin" "0" "1"
+
+# secret: clean text → exit 0
+./hlse_core secret "just some normal prose" >/dev/null 2>&1
+check "secret: clean text exits 0" "0" "$?"
+
+# secret: leaked key → exit 1
+./hlse_core secret "key=AKIA2E3MWORQXYZ4567PQ" >/dev/null 2>&1 && rc=0 || rc=$?
+check "secret: leaked key exits 1" "1" "$rc"
+
+# secret: JSON parseable with findings
+./hlse_core --json secret "key=AKIA2E3MWORQXYZ4567PQ" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["kind"] == "secret" and "findings" in d
+' && check "--json secret parseable" "0" "0" \
+   || check "--json secret parseable" "0" "1"
+
+# email: display-name spoof detected from stdin
+printf 'From: Microsoft Support <hacker@gmail.com>\nSubject: Verify\n' \
+    | ./hlse_core email --stdin 2>&1 | grep -qE "E1|microsoft|spoof|Display" \
+    && check "email: display-name spoof detected" "0" "0" \
+    || check "email: display-name spoof detected" "0" "1"
+
+# email: JSON parseable
+./hlse_core --json email "From: a@b.com" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["kind"] == "email" and "reasons" in d
+' && check "--json email parseable" "0" "0" \
+   || check "--json email parseable" "0" "1"
+
+# clipboard: same address → no swap (exit 0)
+./hlse_core clipboard \
+    "bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5" \
+    "bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5" >/dev/null 2>&1
+check "clipboard: identical address exits 0" "0" "$?"
+
+# clipboard: swapped address → BLOCK (exit 1)
+./hlse_core clipboard \
+    "bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5" \
+    "bc1q9h6tq358tcssvfjafy2dajfu7lk6f35c9cn3t2" >/dev/null 2>&1 && rc=0 || rc=$?
+check "clipboard: swapped address exits 1" "1" "$rc"
+
+# clipboard: JSON has is_swap
+./hlse_core --json clipboard \
+    "0xabcdef0000000000000000000000000000c0ffee" \
+    "0xabcdef1111111111111111111111111111c0ffee" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["kind"] == "clipboard" and d["is_swap"] == 1 and d["score"] == 100
+' && check "--json clipboard vanity → score 100" "0" "0" \
+   || check "--json clipboard vanity → score 100" "0" "1"
+
+# Help lists all subcommands documented in the spec
+./hlse_core --help 2>&1 | grep -q "esp"       && check "help: lists esp" "0" "0"       || check "help: lists esp" "0" "1"
+./hlse_core --help 2>&1 | grep -q "secret"    && check "help: lists secret" "0" "0"    || check "help: lists secret" "0" "1"
+./hlse_core --help 2>&1 | grep -q "email"     && check "help: lists email" "0" "0"     || check "help: lists email" "0" "1"
+./hlse_core --help 2>&1 | grep -q "clipboard" && check "help: lists clipboard" "0" "0" || check "help: lists clipboard" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

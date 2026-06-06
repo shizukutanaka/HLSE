@@ -53,7 +53,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.5"
+#define HLSE_VERSION       "0.9.6"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -1747,7 +1747,11 @@ print_usage(const char *prog) {
         "Protection:\n"
         "  %s protect <path>           Ransomware / SMB / canary check\n"
         "  %s protect /dev/sda --mbr   MBR/GPT integrity (needs root)\n"
+        "  %s esp [path]               UEFI/ESP bootkit-string scan\n"
         "  %s scan <directory>          Recursive secret + file scan (CI/CD)\n"
+        "  %s secret \"<text>\"          Scan text/stdin for leaked credentials\n"
+        "  %s email \"<headers>\"        Email-header forensics (SPF/DKIM, BEC)\n"
+        "  %s clipboard <copied> <pasted>  Crypto address-swap (clipper) check\n"
         "  %s package <name> [eco]     Package typosquat check\n"
         "  %s paste \"<command>\"        Pastejacking detection\n"
         "  %s network                  ARP / DNS / hosts safety check\n"
@@ -1765,9 +1769,21 @@ print_usage(const char *prog) {
         "\n"
         "Exit code: 0 = safe, 1 = threat (score >= 60), 2 = usage error\n",
         HLSE_VERSION,
-        prog, prog, prog,
-        prog, prog, prog, prog, prog, prog, prog, prog,
-        prog, prog, prog, prog, prog, prog, prog);
+        prog, prog, prog,                                /* scanning: 3 */
+        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 12 */
+        prog, prog, prog, prog, prog, prog, prog);       /* options: 7 */
+}
+
+/* Read all of stdin into buf (NUL-terminated, truncated to cap-1 bytes). */
+static size_t
+read_stdin_all(char *buf, size_t cap) {
+    size_t total = 0, r;
+    if (cap == 0) return 0;
+    while (total < cap - 1 &&
+           (r = fread(buf + total, 1, cap - 1 - total, stdin)) > 0)
+        total += r;
+    buf[total] = '\0';
+    return total;
 }
 
 int
@@ -2345,6 +2361,113 @@ main(int argc, char **argv) {
                 printf("  \xc2\xb7 %s\n", nv.reasons[i]);
         }
         return nv.score >= 60 ? 1 : 0;
+    }
+
+    if (strcmp(argv[idx], "secret") == 0) {
+        char stdin_buf[65536];
+        const char *text;
+        if (argc > idx + 1 && strcmp(argv[idx + 1], "--stdin") != 0) {
+            text = argv[idx + 1];
+        } else if (!isatty(0)) {
+            read_stdin_all(stdin_buf, sizeof(stdin_buf));
+            text = stdin_buf;
+        } else {
+            fprintf(stderr, "Usage: %s secret \"<text>\" | ... | %s secret --stdin\n",
+                    argv[0], argv[0]);
+            return 2;
+        }
+        {
+            SecretVerdict sv = hlse_scan_secrets(text);
+            if (json_out) {
+                int i;
+                printf("{\"kind\":\"secret\",\"score\":%d,\"findings\":[",
+                       sv.score);
+                for (i = 0; i < sv.n_findings; i++) {
+                    char et[64], ed[512];
+                    json_escape(sv.findings[i].type, et, sizeof(et));
+                    json_escape(sv.findings[i].description, ed, sizeof(ed));
+                    printf("%s{\"type\":\"%s\",\"description\":\"%s\"}",
+                           i > 0 ? "," : "", et, ed);
+                }
+                printf("]}\n");
+            } else if (sv.score == 0) {
+                printf("OK    (secret — no credentials found)\n");
+            } else {
+                int i;
+                printf("%-7s [%d]  (secret scan)\n",
+                       hlse_action_for_score(sv.score), sv.score);
+                for (i = 0; i < sv.n_findings; i++)
+                    printf("  \xc2\xb7 [%s] %s\n",
+                           sv.findings[i].type, sv.findings[i].description);
+            }
+            return sv.score >= 60 ? 1 : 0;
+        }
+    }
+
+    if (strcmp(argv[idx], "email") == 0) {
+        char stdin_buf[65536];
+        const char *headers;
+        if (argc > idx + 1 && strcmp(argv[idx + 1], "--stdin") != 0) {
+            headers = argv[idx + 1];
+        } else if (!isatty(0)) {
+            read_stdin_all(stdin_buf, sizeof(stdin_buf));
+            headers = stdin_buf;
+        } else {
+            fprintf(stderr, "Usage: %s email \"<headers>\" | ... | %s email --stdin\n",
+                    argv[0], argv[0]);
+            return 2;
+        }
+        {
+            EmailVerdict ev = hlse_check_email_headers(headers);
+            if (json_out) {
+                int i;
+                printf("{\"kind\":\"email\",\"score\":%d,\"reasons\":[", ev.score);
+                for (i = 0; i < ev.n_reasons; i++) {
+                    char esc[512];
+                    json_escape(ev.reasons[i], esc, sizeof(esc));
+                    printf("%s\"%s\"", i > 0 ? "," : "", esc);
+                }
+                printf("]}\n");
+            } else if (ev.score == 0) {
+                printf("OK    (email — no spoofing signals)\n");
+            } else {
+                int i;
+                printf("%-7s [%d]  (email forensics)\n",
+                       hlse_action_for_score(ev.score), ev.score);
+                for (i = 0; i < ev.n_reasons; i++)
+                    printf("  \xc2\xb7 %s\n", ev.reasons[i]);
+            }
+            return ev.score >= 60 ? 1 : 0;
+        }
+    }
+
+    if (strcmp(argv[idx], "clipboard") == 0) {
+        if (argc < idx + 3) {
+            fprintf(stderr,
+                    "Usage: %s clipboard \"<copied addr>\" \"<pasted addr>\"\n",
+                    argv[0]);
+            return 2;
+        }
+        {
+            CryptoSwapVerdict cv =
+                hlse_check_crypto_swap(argv[idx + 1], argv[idx + 2]);
+            if (json_out) {
+                char eo[256], es[256], er[512];
+                json_escape(cv.original, eo, sizeof(eo));
+                json_escape(cv.swapped, es, sizeof(es));
+                json_escape(cv.reason, er, sizeof(er));
+                printf("{\"kind\":\"clipboard\",\"score\":%d,\"is_swap\":%d,"
+                       "\"original\":\"%s\",\"swapped\":\"%s\",\"reason\":\"%s\"}\n",
+                       cv.score, cv.is_swap, eo, es, er);
+            } else if (cv.score == 0) {
+                printf("OK    (clipboard — no address swap detected)\n");
+            } else {
+                printf("%-7s [%d]  (clipboard)\n",
+                       hlse_action_for_score(cv.score), cv.score);
+                if (cv.reason[0]) printf("  \xc2\xb7 %s\n", cv.reason);
+            }
+            return cv.score >= 60 ? 1 : 0;
+        }
     }
 
     if (strcmp(argv[idx], "file") == 0) {
