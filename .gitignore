@@ -16,6 +16,12 @@ tests/util_tests
 tests/corpus_ext
 tests/fuzz
 tests/fuzz_asan
+tests/fuzz_secrets
+tests/fuzz_secrets_asan
+tests/fuzz_supply
+tests/fuzz_supply_asan
+tests/fuzz_file
+tests/fuzz_file_asan
 
 # Coverage
 *.gcov
