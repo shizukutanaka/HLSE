@@ -2,6 +2,15 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.25] — 2026-06-08
+
+### Fixed
+- **Spec §3.1 subcommand table listed wrong library function for `text`**
+  (docs; SPECIFICATION.md §3.1, GAP-W). The table said `hlse_check_text`
+  but the `text` subcommand was updated to call `hlse_scan()` in 0.9.15
+  (GAP-N) to add embedded URL extraction. The table and purpose description
+  are now aligned with the implementation. Docs-only — no code change.
+
 ## [0.9.24] — 2026-06-08
 
 ### Fixed

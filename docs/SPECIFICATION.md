@@ -45,7 +45,7 @@ Every detector returns an integer `score` in `0..100`, mapped to an action:
 | Subcommand | Arguments | Purpose | Library fn | Status |
 |------------|-----------|---------|-----------|--------|
 | *(none)* | `<url\|text>` | auto-detect URL vs text, scan | `hlse_scan` | ✅ |
-| `text` | `"<message>"` | scam/social-engineering text scan | `hlse_check_text` | ✅ |
+| `text` | `"<message>"` | scam/social-engineering text scan + embedded URL extraction | `hlse_scan` | ✅ |
 | `scan` | `<directory>` | recursive secret + file masquerade scan (CI/CD) | `hlse_scan_secrets`, `hlse_check_file` | ✅ |
 | `protect` | `<path> [--ransomware\|--smb\|--mbr\|--net]` | ransomware / SMB / MBR / netdrive | `hlse_protect_scan` | ✅ |
 | `esp` | `[path]` | EFI System Partition bootkit-string scan (default `/boot/efi`) | `hlse_esp_verify` | ✅ (was undocumented — **GAP-D**) |
@@ -339,6 +339,17 @@ A fifteenth audit, using a strict §5.2 baseline (no implicit fields), found:
   to list `url`, `text`, and `protect` separately with their `target` fields.
   `network`, `esp`, and `email` have no `target` equivalent and remain
   grouped. Docs-only; fixed in 0.9.23.
+
+A sixteenth audit, of the §3.1 subcommand table's "Library fn" column vs.
+the actual call in `hlse_core.c`, found:
+
+- **GAP-V — `scan --json` missing `scan_summary` terminator from spec §5.2**:
+  documented; fixed in 0.9.24.
+
+- **GAP-W — `text` subcommand table lists wrong library function**: the §3.1
+  table said `hlse_check_text` but the code was changed to `hlse_scan()` in
+  GAP-N (0.9.15) to add embedded URL extraction. The purpose column was also
+  updated to mention embedded URL extraction. Docs-only; fixed in 0.9.25.
 
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code
