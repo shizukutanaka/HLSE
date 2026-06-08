@@ -2,6 +2,19 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.26] — 2026-06-08
+
+### Fixed
+- **CONTRIBUTING.md carried stale test counts and an incomplete test-axis
+  table** (docs; GAP-X). Three errors corrected:
+  - "200+ tests" → "320+" (matches current measured total)
+  - "All 7 suites" → "All 8 suites" (util_tests added in 0.9.12)
+  - "100K random inputs" → "4 harnesses × 100K iterations" (matches GAP-I)
+  The "Six-axis" section was retitled "Seven-axis" and the table extended
+  from 4 rows to 7 to include Behavioral tests, CLI integration, and Fuzz
+  harnesses — all of which previously had no guidance on when to add a test.
+  Docs-only — no code or detection change.
+
 ## [0.9.25] — 2026-06-08
 
 ### Fixed

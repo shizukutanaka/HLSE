@@ -351,6 +351,17 @@ the actual call in `hlse_core.c`, found:
   GAP-N (0.9.15) to add embedded URL extraction. The purpose column was also
   updated to mention embedded URL extraction. Docs-only; fixed in 0.9.25.
 
+A seventeenth audit, of CONTRIBUTING.md vs. the current test suite, found:
+
+- **GAP-X — CONTRIBUTING.md had three stale test counts and an incomplete
+  test-axis table**: "200+ tests" (actual: 320+), "7 suites" (actual: 8 —
+  util_tests added in 0.9.12), "100K fuzz" (actual: 4 × 100K since GAP-I).
+  The "Six-axis" section listed only 4 of 7 axes — Behavioral tests, CLI
+  integration, and Fuzz harnesses were missing, leaving contributors with no
+  guidance on when to add tests there. Updated counts, renamed to
+  "Seven-axis", and extended the table to all 7 axes. Docs-only;
+  fixed in 0.9.26.
+
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code
 changed.
