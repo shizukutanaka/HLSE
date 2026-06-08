@@ -28,6 +28,10 @@ tests/fuzz_file_asan
 *.gcda
 *.gcno
 
+# Python (examples/python_integration.py byte-cache)
+__pycache__/
+*.pyc
+
 # OS
 .DS_Store
 Thumbs.db
