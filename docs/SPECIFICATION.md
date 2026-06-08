@@ -279,6 +279,34 @@ counts, found:
   → refresh every row to the measured count, add the `Util` and `OOD corpus`
   rows, and update the Fuzz row to `4 × 100K`. Docs-only; fixed in 0.9.12.
 
+An eleventh audit, of the exit-code contract vs. actual CLI behaviour, found:
+
+- **GAP-Q — `secret` and `email` subcommands returned exit=0 instead of exit=2
+  when invoked with no argument in CI/non-interactive environments**: both used
+  `!isatty(0)` to fall through to stdin reading. In CI, stdin is not a tty even
+  without a pipe, so they silently scanned empty input and returned exit=0.
+  Spec §3 requires exit=2 for a usage error. Fixed to require explicit text
+  argument or explicit `--stdin`; regression tests added. Fixed in 0.9.19.
+
+A twelfth audit, of SARIF output compliance vs. the SARIF 2.1.0 standard, found:
+
+- **GAP-R — `artifactLocation.uri` emitted absolute paths**: `scan --sarif`
+  used the full `fullpath` (e.g. `/repo/src/file.py`) as the URI value.
+  GitHub code scanning requires relative URIs relative to the checkout root
+  so it can map findings back to source files. Fixed by stripping the scan
+  root prefix before passing to `sarif_add()`. Regression test added.
+  Fixed in 0.9.20.
+
+A thirteenth audit, of CI infrastructure vs. README claims, found:
+
+- **GAP-S — CI workflows missing despite README privacy-tripwire claim**:
+  the README §Privacy section stated "CI enforces this with a privacy tripwire
+  job" but no `.github/workflows/` directory existed. Created `ci.yml`
+  (build/test + cppcheck error gate + strace-based privacy tripwire) and
+  `codeql.yml` (CodeQL C/C++ with security-and-quality queries). The workflow
+  files require a GitHub App token with `workflows` permission to push; they
+  exist locally and are ready for deployment. Fixed in 0.9.21.
+
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code
 changed.
