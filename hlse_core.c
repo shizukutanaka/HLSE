@@ -54,7 +54,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.15"
+#define HLSE_VERSION       "0.9.16"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -1711,12 +1711,22 @@ stdin_mode(int json_out) {
 
         ScanResult sr = hlse_scan(line);
         if (json_out) {
-            /* JSON uses specific formatters for structured output */
+            /* JSON uses specific formatters for structured output.
+             * For text lines, reuse sr (not hlse_check_text alone) so
+             * embedded URL extraction is honoured — same as GAP-N fix. */
             if (sr.is_url) {
                 Verdict uv = check_url(line);
                 print_json_url(line, &uv);
             } else {
-                TextVerdict tv = hlse_check_text(line);
+                TextVerdict tv;
+                int ti;
+                memset(&tv, 0, sizeof(tv));
+                tv.score = sr.score;
+                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
+                               ? sr.n_reasons : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
+                for (ti = 0; ti < tv.n_reasons; ti++)
+                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
+                             "%s", sr.reasons[ti]);
                 print_json_text(line, &tv);
             }
         } else if (sr.score == 0) {

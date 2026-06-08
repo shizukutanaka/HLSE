@@ -2,6 +2,22 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.16] — 2026-06-08
+
+### Fixed
+- **`--stdin --json` dropped embedded URL scores** (`hlse_core.c`
+  `stdin_mode()`; companion to GAP-N). The `--stdin --json` path had the
+  identical bug as the `text`/auto-detect JSON paths fixed in 0.9.15:
+  `hlse_check_text(line)` was called instead of reusing the `ScanResult`
+  already computed by `hlse_scan(line)`, so text lines with embedded
+  phishing URLs returned score=0 in JSON mode while human output showed
+  the correct BLOCK.
+
+### Changed
+- **README docs**: property table corrected `P1–P12` → `P1–P13` (P13
+  full-width Unicode evasion was already implemented and passing); CLI
+  integration count updated 86 → 87.
+
 ## [0.9.15] — 2026-06-08
 
 ### Fixed
