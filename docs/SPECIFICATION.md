@@ -201,6 +201,19 @@ A sixth audit, of §7 (build/test contract) against the fuzz harness coverage, f
   `make fuzz` now runs all four harnesses; `make fuzz-asan` runs all four
   under ASan/UBSan. Fixed in 0.9.11.
 
+A seventh audit, of the README "Test architecture" table vs. measured suite
+counts, found:
+
+- **GAP-J — stale test-architecture table**: the per-suite counts had drifted
+  far from reality (table said Unit-URL 13 / Unit-text 14 / Property 60 /
+  Secrets 20 / File-Audit 14 / CLI 45; actual is 23 / 15 / 64 / 25 / 17 / 86),
+  and two whole suites — `util_tests` (14) and the out-of-distribution corpus
+  (25) — were missing from the table; the Fuzz row predated GAP-I (one text
+  harness, now four). The at-a-glance `320+` floor was re-verified and still
+  holds (≈303 suite/corpus checks + 36 in-distribution benchmark cases ≈ 339).
+  → refresh every row to the measured count, add the `Util` and `OOD corpus`
+  rows, and update the Fuzz row to `4 × 100K`. Docs-only; fixed in 0.9.12.
+
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code
 changed.

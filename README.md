@@ -171,15 +171,17 @@ Every subcommand supports `--json`:
 
 | Suite | Count | What it verifies |
 |-------|-------|------------------|
-| Unit (URL) | 13 | Individual URL detector accuracy |
-| Unit (text) | 14 | Individual text signal accuracy |
-| Property invariants | 60 | Monotonicity, bounds, determinism, case, evasion (P1–P12) |
-| Protection | 17 | Ransomware, network drive, SMB, MBR/GPT |
-| Secrets | 20 | Credentials, email headers, crypto addresses |
+| Unit (URL) | 23 | Individual URL detector accuracy (incl. IDN/Punycode homograph) |
+| Unit (text) | 15 | Individual text signal accuracy |
+| Property invariants | 64 | Monotonicity, bounds, determinism, case, evasion (P1–P12) |
+| Protection | 17 | Ransomware, network drive, SMB, MBR/GPT, ESP |
+| Secrets | 25 | Credentials, email headers, crypto addresses (incl. Solana) |
 | Supply chain | 17 | Package typosquat, pastejacking, network |
-| File/Audit | 14 | File masquerade, system hardening |
-| CLI integration | 45 | All 12 subcommands, JSON output, exit codes, scan, evasion |
-| Fuzz | 100K | Random bytes, truncated UTF-8, keyword stuffing |
+| File/Audit | 17 | File masquerade, system hardening + hardening index |
+| Util | 14 | Entropy, Damerau-Levenshtein, benign-magic helpers |
+| OOD corpus | 25 | Out-of-distribution F1 (held-out phishing/scam) |
+| CLI integration | 86 | All 12 subcommands, JSON action band, exit codes, scan, ESP, symlink-escape, evasion |
+| Fuzz | 4 × 100K | text / secrets / supply-chain / file harnesses (random bytes, truncated UTF-8, keyword stuffing, typosquat mutation, bidi/control) |
 
 ## Privacy
 

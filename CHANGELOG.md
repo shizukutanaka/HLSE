@@ -2,6 +2,19 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.12] — 2026-06-08
+
+### Fixed
+- **README test-architecture accuracy** (SPECIFICATION.md §8, GAP-J). The
+  per-suite counts in the "Test architecture" table had drifted from reality
+  (Unit-URL 13→23, Unit-text 14→15, Property 60→64, Secrets 20→25,
+  File/Audit 14→17, CLI integration 45→86), and the `util_tests` (14) and
+  out-of-distribution corpus (25) suites were missing entirely. The Fuzz row
+  predated GAP-I (one text harness → four). Refreshed all rows to measured
+  counts, added the two missing suites, and updated the Fuzz row to `4 × 100K`.
+  The at-a-glance `320+` floor was re-verified and still holds (≈339
+  suite/corpus + in-distribution benchmark checks). Docs-only.
+
 ## [0.9.11] — 2026-06-08
 
 ### Added
