@@ -2,6 +2,18 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.29] — 2026-06-08
+
+### Fixed
+- **`hlse_audit.c:240` for-loop accessed array index before bounds check**
+  (code quality). The hosts-file scan lowercased an input string with
+  `for (k = 0; p[k] && k < sizeof(lower) - 1; k++)`, testing `p[k]` before the
+  bounds check on the output buffer. Although functionally correct (reading `p`
+  never overflows; the bound check is on the output `lower`), cppcheck
+  `--enable=portability` flagged it as `arrayIndexThenCheck`. Reordered to
+  `k < sizeof(lower) - 1 && p[k]` to match the conventional bounds-first
+  pattern. Zero behaviour change; cppcheck warning eliminated.
+
 ## [0.9.28] — 2026-06-08
 
 ### Fixed

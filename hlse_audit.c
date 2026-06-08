@@ -237,7 +237,7 @@ hlse_audit_dns(void) {
             int i;
             char lower[1024];
             size_t k;
-            for (k = 0; p[k] && k < sizeof(lower) - 1; k++)
+            for (k = 0; k < sizeof(lower) - 1 && p[k]; k++)
                 lower[k] = (char)tolower((unsigned char)p[k]);
             lower[k] = '\0';
 
