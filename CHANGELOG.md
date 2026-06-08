@@ -2,6 +2,15 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.14] — 2026-06-08
+
+### Fixed
+- **`-h | --help` absent from help output** (`hlse_core.c` `print_usage()`;
+  SPECIFICATION.md §8, GAP-L). Spec §3.2 lists `-h`, `--help` as a global
+  flag; all other 7 flags appeared in the "Options" block but `--help` did
+  not self-reference. Added `%s -h | --help  Show this help` as the final
+  option line (1 `printf` arg added; arg count in comment updated to 8).
+
 ## [0.9.13] — 2026-06-08
 
 ### Fixed

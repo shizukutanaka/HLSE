@@ -203,6 +203,14 @@ A sixth audit, of §7 (build/test contract) against the fuzz harness coverage, f
   `make fuzz` now runs all four harnesses; `make fuzz-asan` runs all four
   under ASan/UBSan. Fixed in 0.9.11.
 
+A ninth audit, of the `print_usage()` output vs. spec §3.2 global flags, found:
+
+- **GAP-L — `-h | --help` absent from its own help output**: spec §3.2 lists
+  `-h`, `--help` as a global flag; all other 7 flags appeared in the "Options"
+  block of `print_usage()` but `--help` itself did not. → added
+  `%s -h | --help  Show this help` as the last option line. Code-only (no
+  detection change), 1 `printf` arg added. Fixed in 0.9.14.
+
 An eighth audit, of the README "C library API" section vs. `nm -D libhlse.so`, found:
 
 - **GAP-K — stale library export count and incomplete API example**: the

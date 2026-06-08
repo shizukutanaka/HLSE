@@ -54,7 +54,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.13"
+#define HLSE_VERSION       "0.9.14"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -1767,12 +1767,13 @@ print_usage(const char *prog) {
         "  %s --self-test              Built-in tests\n"
         "  %s --benchmark              Corpus benchmark\n"
         "  %s --version | -V           Version\n"
+        "  %s -h | --help              Show this help\n"
         "\n"
         "Exit code: 0 = safe, 1 = threat (score >= 60), 2 = usage error\n",
         HLSE_VERSION,
         prog, prog, prog,                                /* scanning: 3 */
         prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 12 */
-        prog, prog, prog, prog, prog, prog, prog);       /* options: 7 */
+        prog, prog, prog, prog, prog, prog, prog, prog); /* options: 8 */
 }
 
 /* Read all of stdin into buf (NUL-terminated, truncated to cap-1 bytes). */
