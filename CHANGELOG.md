@@ -2,6 +2,24 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.15] — 2026-06-08
+
+### Fixed
+- **`--json text` dropped embedded URL scores** (`hlse_core.c`;
+  SPECIFICATION.md §8, GAP-N). When a text message contained an embedded
+  phishing URL (e.g. `"click https://paypa1.com/signin"`), the human-readable
+  path called `hlse_scan()` (embedded URL extraction → score 60) but the
+  `--json` path re-called `hlse_check_text()` alone, returning score 0 for
+  the same input. Same flaw in the auto-detect JSON path. Both paths now
+  reuse the `ScanResult` already computed by `hlse_scan()` to build the
+  `TextVerdict` for JSON output. Regression guard added to CLI integration
+  (now 87 tests). Man page `.TH` header version/date also updated.
+
+- **Man page version frozen at 0.9.0** (`hlse.1`; SPECIFICATION.md §8,
+  GAP-M). `.TH` header still read `"HLSE 0.9.0"` / `"2026-05-31"`, and the
+  OPTIONS section omitted `-h | --help`. Updated header to `0.9.15` /
+  `2026-06-08` and added the missing option entry.
+
 ## [0.9.14] — 2026-06-08
 
 ### Fixed

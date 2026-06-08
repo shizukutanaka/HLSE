@@ -54,7 +54,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.14"
+#define HLSE_VERSION       "0.9.15"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -2589,7 +2589,17 @@ main(int argc, char **argv) {
              * embedded URLs. This catches "Click here: https://g00gle.com" */
             ScanResult sr = hlse_scan(argv[idx + 1]);
             if (json_out) {
-                TextVerdict tv = hlse_check_text(argv[idx + 1]);
+                /* Build TextVerdict from the unified ScanResult so the JSON
+                 * path honours embedded URL extraction (same as human path). */
+                TextVerdict tv;
+                int ti;
+                memset(&tv, 0, sizeof(tv));
+                tv.score = sr.score;
+                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
+                               ? sr.n_reasons : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
+                for (ti = 0; ti < tv.n_reasons; ti++)
+                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
+                             "%s", sr.reasons[ti]);
                 print_json_text(argv[idx + 1], &tv);
             } else if (sr.score == 0) {
                 printf("OK    (text)\n");
@@ -2619,12 +2629,22 @@ main(int argc, char **argv) {
         /* Use unified scan API */
         ScanResult sr = hlse_scan(input);
         if (json_out) {
-            /* For JSON, delegate to the appropriate printer */
+            /* For JSON, delegate to the appropriate printer. For text
+             * inputs use the ScanResult directly (not hlse_check_text
+             * alone) so embedded URL extraction is honoured. */
             if (sr.is_url) {
                 Verdict uv = check_url(input);
                 print_json_url(input, &uv);
             } else {
-                TextVerdict tv = hlse_check_text(input);
+                TextVerdict tv;
+                int ti;
+                memset(&tv, 0, sizeof(tv));
+                tv.score = sr.score;
+                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
+                               ? sr.n_reasons : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
+                for (ti = 0; ti < tv.n_reasons; ti++)
+                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
+                             "%s", sr.reasons[ti]);
                 print_json_text(input, &tv);
             }
         } else if (sr.score == 0) {

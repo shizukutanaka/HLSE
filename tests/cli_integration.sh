@@ -399,6 +399,13 @@ rm -rf "$SKIP_DIR"
     && check "text: embedded phishing URL detected" "0" "0" \
     || check "text: embedded phishing URL detected" "0" "1"
 
+# --json text with embedded phishing URL must NOT return score=0
+# (regression guard for the bug where JSON path skipped URL extraction)
+rc=0; json=$(./hlse_core --json text "click https://paypa1.com/signin" 2>/dev/null) || rc=$?
+echo "$json" | python3 -c "import sys,json; d=json.load(sys.stdin); exit(0 if d['score']>=15 else 1)" 2>/dev/null \
+    && check "--json text: embedded URL score included in JSON" "0" "0" \
+    || check "--json text: embedded URL score included in JSON" "0" "1"
+
 # ─── error handling for nonexistent paths ──────────────────────────
 
 ./hlse_core scan /tmp/hlse_nonexistent_$$ 2>&1 | grep -q "cannot access" \

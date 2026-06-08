@@ -203,6 +203,19 @@ A sixth audit, of §7 (build/test contract) against the fuzz harness coverage, f
   `make fuzz` now runs all four harnesses; `make fuzz-asan` runs all four
   under ASan/UBSan. Fixed in 0.9.11.
 
+A tenth audit, of the JSON output path vs. the human-readable path, found:
+
+- **GAP-N — `--json text` ignores embedded URL extraction**: when text input
+  contained an embedded phishing URL (e.g. `"click https://paypa1.com/signin"`),
+  the human-readable `text` subcommand path called `hlse_scan()` (which runs
+  embedded URL extraction and returns score 60), but the `--json` path
+  redundantly called `hlse_check_text()` alone (which returns score 0 for
+  the same input). The same divergence existed in the auto-detect JSON path.
+  Both were already computing `ScanResult sr = hlse_scan(...)` before the
+  `json_out` branch — the fix reuses `sr` to build the `TextVerdict` rather
+  than discarding it and re-calling `hlse_check_text`. A regression test was
+  added to CLI integration. Fixed in 0.9.15.
+
 A ninth audit, of the `print_usage()` output vs. spec §3.2 global flags, found:
 
 - **GAP-L — `-h | --help` absent from its own help output**: spec §3.2 lists
