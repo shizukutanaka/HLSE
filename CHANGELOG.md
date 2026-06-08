@@ -2,6 +2,20 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.31] — 2026-06-08
+
+### Fixed
+- **`examples/pre-commit-hook.sh` used wrong subcommand for secret detection**:
+  the "Secret scan" section called `hlse_core text "$line"` (the scam-text
+  pattern scanner) rather than `hlse_core secret` (the credential-pattern
+  scanner `hlse_scan_secrets`). The `text` subcommand looks for urgency,
+  financial bait, and authority signals — it does not match API keys, tokens,
+  or `.env`-style secrets. A staged file containing `AWS_SECRET_ACCESS_KEY=…`
+  or a GitHub PAT would pass the hook silently. Replaced the per-line `text`
+  loop with a single `secret --stdin < "$file"` call using `--quiet` for
+  the exit-code check, then re-running without `--quiet` to surface the
+  finding detail. The fix also removes 5 lines of unnecessary shell loop.
+
 ## [0.9.30] — 2026-06-08
 
 ### Fixed
