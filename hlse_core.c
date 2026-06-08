@@ -54,7 +54,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.16"
+#define HLSE_VERSION       "0.9.17"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -1607,9 +1607,24 @@ sarif_level(int score) {
 static void
 sarif_emit(const char *tool_version) {
     int i;
-    /* Distinct rule ids actually used — declared in tool.driver.rules. */
-    static const char *RULES[] = {
-        "secret", "phishing-url", "file-masquerade", NULL
+    /* Rule metadata — id, display name, short description, and
+     * security-severity (CVSS-like 0–10 for GitHub code scanning).    */
+    static const struct {
+        const char *id;
+        const char *name;
+        const char *description;
+        const char *severity; /* string to avoid float formatting issues */
+    } RULES[] = {
+        { "secret",         "Credential Leak",
+          "Exposed API key, token, or private key found in source file.",
+          "9.0" },
+        { "phishing-url",   "Phishing URL",
+          "URL exhibits homoglyph, typosquat, or subdomain-spoof phishing indicators.",
+          "7.5" },
+        { "file-masquerade","File Masquerade",
+          "File extension or magic bytes indicate the file is disguised malware.",
+          "8.0" },
+        { NULL, NULL, NULL, NULL }
     };
     char esc[1280];
 
@@ -1622,10 +1637,14 @@ sarif_emit(const char *tool_version) {
     printf("          \"informationUri\": \"https://github.com/shizukutanaka/hlse\",\n");
     printf("          \"version\": \"%s\",\n", tool_version);
     printf("          \"rules\": [\n");
-    for (i = 0; RULES[i]; i++) {
-        printf("            { \"id\": \"%s\", \"name\": \"%s\","
-               " \"shortDescription\": { \"text\": \"HLSE %s detector\" } }%s\n",
-               RULES[i], RULES[i], RULES[i], RULES[i+1] ? "," : "");
+    for (i = 0; RULES[i].id; i++) {
+        printf("            {\n"
+               "              \"id\": \"%s\", \"name\": \"%s\",\n"
+               "              \"shortDescription\": { \"text\": \"%s\" },\n"
+               "              \"properties\": { \"security-severity\": \"%s\" }\n"
+               "            }%s\n",
+               RULES[i].id, RULES[i].name, RULES[i].description,
+               RULES[i].severity, RULES[i+1].id ? "," : "");
     }
     printf("          ]\n        }\n      },\n");
     printf("      \"results\": [\n");
@@ -2154,9 +2173,18 @@ main(int argc, char **argv) {
                                                     json_escape(url_buf, eu, sizeof(eu));
                                                     printf("{\"kind\":\"url\",\"path\":\"%s\","
                                                            "\"line\":%d,\"url\":\"%s\","
-                                                           "\"score\":%d,\"action\":\"%s\"}\n",
+                                                           "\"score\":%d,\"action\":\"%s\","
+                                                           "\"reasons\":[",
                                                            fullpath, lineno, eu, uv.score,
                                                            hlse_action_for_score(uv.score));
+                                                    { int kr;
+                                                      for (kr = 0; kr < uv.n_reasons; kr++) {
+                                                          char er[256];
+                                                          json_escape(uv.reasons[kr], er, sizeof(er));
+                                                          printf("%s\"%s\"", kr>0?",":"", er);
+                                                      }
+                                                    }
+                                                    printf("]}\n");
                                                 } else {
                                                     int k;
                                                     printf("%-7s [%d]  %s:%d  %s\n",

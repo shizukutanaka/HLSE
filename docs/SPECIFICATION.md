@@ -203,6 +203,19 @@ A sixth audit, of §7 (build/test contract) against the fuzz harness coverage, f
   `make fuzz` now runs all four harnesses; `make fuzz-asan` runs all four
   under ASan/UBSan. Fixed in 0.9.11.
 
+An eleventh audit, of the SARIF output (§5.3) and scan JSON records (§5.2), found:
+
+- **GAP-O — SARIF rule definitions missing `security-severity`; scan `url`
+  records missing `reasons`**: (a) the SARIF `tool.driver.rules` array had
+  no `properties.security-severity` on rule definitions — GitHub code
+  scanning requires this to classify severity; individual results had the
+  field but rules did not. Fixed by adding `security-severity` per rule
+  (`secret`=9.0, `file-masquerade`=8.0, `phishing-url`=7.5) and improving
+  `shortDescription` text. (b) When the `scan` walker detected a phishing
+  URL inside a source file, the `--json` `url` record omitted `"reasons"`
+  even though the human output printed them and §5.2 mandates `reasons:[...]`
+  on every `url` kind. Fixed in 0.9.17.
+
 A tenth audit, of the JSON output path vs. the human-readable path, found:
 
 - **GAP-N — `--json text` ignores embedded URL extraction**: when text input

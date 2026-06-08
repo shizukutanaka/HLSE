@@ -2,6 +2,25 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.17] — 2026-06-08
+
+### Fixed
+- **SARIF rule definitions missing `security-severity`** (`hlse_core.c`
+  `sarif_emit()`; SPECIFICATION.md §5.3, GAP-O). The SARIF output had
+  `security-severity` on individual result objects but not on rule
+  definitions, which GitHub code scanning requires to classify vulnerability
+  severity. Added `"properties": { "security-severity": "X.X" }` to each
+  rule (`secret`=9.0, `file-masquerade`=8.0, `phishing-url`=7.5). Also
+  improved rule `shortDescription` text from the generic "HLSE X detector"
+  to human-readable descriptions.
+
+- **`scan --json` `url` records missing `reasons` field** (`hlse_core.c`
+  scan walker; SPECIFICATION.md §5.2, GAP-O companion). When the `scan`
+  directory walker found a phishing URL embedded in a source file, the
+  human-readable output included the reason strings but the `--json` URL
+  record did not emit `"reasons"`. Fixed to match the spec §5.2 requirement
+  that `url` JSON objects carry `reasons:[...]`.
+
 ## [0.9.16] — 2026-06-08
 
 ### Fixed
