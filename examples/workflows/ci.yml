@@ -1,0 +1,92 @@
+# Install: mkdir -p .github/workflows && cp examples/workflows/ci.yml .github/workflows/
+name: CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build (CLI + shared library)
+        run: make all
+
+      - name: Run test suites
+        run: make test
+
+      - name: Verify zero compiler warnings
+        run: make check-warnings
+
+      - name: Run tests under ASan / UBSan
+        run: make asan-test
+
+  cppcheck:
+    name: cppcheck static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cppcheck
+        run: sudo apt-get update -qq && sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck (error gate)
+        # --error-exitcode=1: fail on errors, not informational/style
+        # --inline-suppr: honour // cppcheck-suppress comments in source
+        run: |
+          cppcheck --std=c99 --error-exitcode=1 --inline-suppr \
+            --suppress=missingIncludeSystem \
+            *.c
+
+      - name: Run cppcheck (informational — advisory only)
+        continue-on-error: true
+        run: |
+          cppcheck --std=c99 --enable=all --inline-suppr \
+            --suppress=missingIncludeSystem \
+            *.c 2>&1 | tee cppcheck-advisory.txt
+          cat cppcheck-advisory.txt
+
+  privacy-tripwire:
+    name: Verify zero network calls
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: make all
+
+      - name: Install strace
+        run: sudo apt-get update -qq && sudo apt-get install -y strace
+
+      - name: Verify no socket syscalls during analysis functions
+        # Runs a representative set of library entry points (URL, text,
+        # secret, package) under strace and asserts that no socket()/
+        # connect()/getaddrinfo() syscalls are made.  The `network`
+        # subcommand is excluded — it explicitly reads ARP/DNS state as
+        # its purpose.
+        run: |
+          strace -e trace=network -f \
+            ./hlse_core "https://paypa1.com/login" \
+            2>&1 | grep -vE '^strace:|^\+\+\+ exited|^---' > net_trace.txt || true
+          strace -e trace=network -f \
+            ./hlse_core text "URGENT: wire \$5000" \
+            2>&1 | grep -vE '^strace:|^\+\+\+ exited|^---' >> net_trace.txt || true
+          strace -e trace=network -f \
+            ./hlse_core secret "key=AKIA2E3MWORQXYZ4567PQ" \
+            2>&1 | grep -vE '^strace:|^\+\+\+ exited|^---' >> net_trace.txt || true
+          strace -e trace=network -f \
+            ./hlse_core package reqeusts pip \
+            2>&1 | grep -vE '^strace:|^\+\+\+ exited|^---' >> net_trace.txt || true
+          echo "--- network syscall trace ---"
+          cat net_trace.txt
+          echo "--- end trace ---"
+          if grep -qE 'socket\(|connect\(|bind\(|getaddrinfo\(' net_trace.txt; then
+            echo "FAIL: unexpected network syscalls detected"
+            exit 1
+          fi
+          echo "PASS: no network syscalls"
