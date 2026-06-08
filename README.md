@@ -42,7 +42,7 @@ Platform:      Linux, macOS (partial)
 | **Text scam** | hlse_text.c | Urgency, financial bait, authority impersonation, ransom, BEC |
 | **Ransomware** | hlse_protect.c | Entropy spike, ransom notes, extension mutation, shadow deletion |
 | **MBR/GPT** | hlse_protect.c | Boot signature, bootkit strings, obfuscation detection |
-| **Credential leak** | hlse_secrets.c | AWS keys, GitHub PATs, Stripe keys, SSH keys, .env passwords (excludes doc/example/placeholder keys to cut false positives) |
+| **Credential leak** | hlse_secrets.c | 25 token patterns — AWS (incl. STS), GitHub, GitLab, Google, npm, OpenAI/Anthropic, Stripe, Shopify, Slack, SSH keys, .env passwords (excludes doc/example/placeholder keys to cut false positives) |
 | **Email forensics** | hlse_secrets.c | SPF/DKIM fail, Reply-To mismatch, display-name spoofing |
 | **Supply chain** | hlse_supply.c | Package typosquat (pip/npm/cargo/go), pastejacking, ARP/DNS safety |
 | **File masquerade** | hlse_file.c | Double extensions, magic byte mismatch, suspicious filenames |
@@ -183,7 +183,7 @@ Every subcommand supports `--json`:
 | Unit (text) | 15 | Individual text signal accuracy |
 | Property invariants | 64 | Monotonicity, bounds, determinism, case, evasion (P1–P13) |
 | Protection | 17 | Ransomware, network drive, SMB, MBR/GPT, ESP |
-| Secrets | 25 | Credentials, email headers, crypto addresses (incl. Solana) |
+| Secrets | 32 | Credentials (25 token patterns), email headers, crypto addresses (incl. Solana) |
 | Supply chain | 17 | Package typosquat, pastejacking, network |
 | File/Audit | 17 | File masquerade, system hardening + hardening index |
 | Util | 14 | Entropy, Damerau-Levenshtein, benign-magic helpers |

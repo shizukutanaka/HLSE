@@ -82,7 +82,7 @@ in `print_usage()` and the man page (`hlse.1`).
 | Text scam / BEC | `hlse_text.c` | text | urgency, financial bait, authority, ransom, BEC amplifiers; evasion-normalised | `text` |
 | Ransomware | `hlse_protect.c` | dir | entropy spike (+magic exclusion), ransom notes, ext mutation, shadow delete | `protect` |
 | Boot integrity | `hlse_protect.c` | device / ESP | MBR signature/strings/entropy; ESP ransom/bootkit strings | `protect --mbr`, `esp` |
-| Credential leak | `hlse_secrets.c` | text/dir | AWS/GitHub/Stripe/Slack/SSH/.env, placeholder exclusion | `scan`, `secret` |
+| Credential leak | `hlse_secrets.c` | text/dir | 25 token patterns: AWS(+STS)/GitHub/GitLab/Google/npm/OpenAI/Anthropic/Stripe/Shopify/Slack/SSH/.env, placeholder exclusion | `scan`, `secret` |
 | Email forensics | `hlse_secrets.c` | headers | SPF/DKIM fail, Reply-To mismatch, display-name spoof, BEC | `email` |
 | Clipboard swap | `hlse_secrets.c` | copied,pasted | same-type address swap + vanity look-alike | `clipboard` |
 | Supply chain | `hlse_supply.c` | pkg / paste / — | typosquat, pastejacking, ARP/DNS | `package`, `paste`, `network` |
@@ -404,6 +404,21 @@ A nineteenth audit, of the property test file header vs. the actual tests, found
   Unicode), the file header comment was not updated. A reader saw 7 properties
   listed even though 13 were enforced. Updated the header to enumerate all 13,
   consistent with the §4.1 table added in 0.9.27. Docs-only; fixed in 0.9.28.
+
+A twentieth review — a competitive scan of peer open-source tools (gitleaks,
+TruffleHog, detect-secrets) against HLSE's credential scanner — found:
+
+- **GAP-AA — credential-pattern coverage lagged peer scanners**: gitleaks ships
+  150+ token patterns; HLSE's `SECRET_PATTERNS` table carried 14. The missing
+  formats were all high-confidence, distinctive-prefix tokens with negligible
+  false-positive risk: Google API Key (`AIza`), GitLab PAT (`glpat-`), npm token
+  (`npm_`), OpenAI (`sk-proj-`) and Anthropic (`sk-ant-`) keys, Shopify tokens
+  (`shpat_`/`shpss_`/`shppa_`), Stripe restricted key (`rk_live_`), AWS temporary
+  STS key (`ASIA`), and GitHub refresh token (`ghr_`). Added 11 entries
+  (14 → 25). These live entirely in `hlse_secrets.c`, orthogonal to the
+  URL/text F1 corpus, so F1=1.000 is unaffected (verified in- and
+  out-of-distribution). 7 new behavioral tests including a prose
+  false-positive guard; secrets suite 25 → 32. Fixed in 0.9.32.
 
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code

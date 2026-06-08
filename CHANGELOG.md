@@ -2,6 +2,29 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.32] — 2026-06-08
+
+### Added
+- **11 new credential patterns in the secret scanner** (14 → 25), closing the
+  coverage gap against peer scanners (gitleaks/TruffleHog/detect-secrets) found
+  in a competitive review. All additions are high-confidence, distinctive-prefix
+  tokens with negligible false-positive risk:
+  - Google API Key (`AIza` + 35)
+  - GitLab Personal Access Token (`glpat-` + 20)
+  - npm Access Token (`npm_` + 36)
+  - OpenAI Project Key (`sk-proj-`) and Anthropic API Key (`sk-ant-`)
+  - Shopify Access Token / Shared Secret / Private App (`shpat_`/`shpss_`/`shppa_` + 32 hex)
+  - Stripe Restricted Key (`rk_live_`)
+  - AWS Temporary/STS Access Key (`ASIA` + 16)
+  - GitHub Refresh Token (`ghr_` + 36)
+  These live entirely in `hlse_secrets.c` and are orthogonal to the URL/text
+  detection corpus, so **F1=1.000 is unaffected** (verified in- and
+  out-of-distribution). The placeholder/example exclusion still applies to all
+  new patterns.
+- **7 new secrets behavioral tests** (suite 25 → 32), including a prose
+  false-positive guard asserting that prefix-sharing words (`npm_config`,
+  `Asian`, `glpat`, `shppa`) in ordinary text produce zero findings.
+
 ## [0.9.31] — 2026-06-08
 
 ### Fixed

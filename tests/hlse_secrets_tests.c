@@ -110,6 +110,85 @@ static void test_generic_hex(void) {
     else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
 }
 
+/* These fixtures assemble each token at RUNTIME from a split prefix + body so
+ * the contiguous credential string never appears literally in this source
+ * file. That keeps push-protection / secret scanners (incl. GitHub's, which
+ * shares the same vendor formats HLSE now detects) from flagging the test
+ * data, while hlse_scan_secrets() still sees the fully-joined token. */
+
+static void test_google_api_key(void) {
+    TEST("Secret: Google API key (AIza) detected");
+    char text[160];
+    snprintf(text, sizeof(text), "GOOGLE_API_KEY=%s%s\n",
+             "AIza", "SyB1cD3fGh4Jk5lMn6oPq7rStUv8wXyZ0aB");
+    SecretVerdict v = hlse_scan_secrets(text);
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_gitlab_pat(void) {
+    TEST("Secret: GitLab PAT (glpat-) detected");
+    char text[160];
+    snprintf(text, sizeof(text), "token = %s%s\n",
+             "glpat-", "Ab3dEf6hIj9lMn2pQr5t");
+    SecretVerdict v = hlse_scan_secrets(text);
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_npm_token(void) {
+    TEST("Secret: npm access token (npm_) detected");
+    char text[160];
+    snprintf(text, sizeof(text), "_authToken=%s%s\n",
+             "npm_", "0123456789abcdefghijklmnopqrstuvwxyz");
+    SecretVerdict v = hlse_scan_secrets(text);
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_llm_provider_keys(void) {
+    TEST("Secret: OpenAI + Anthropic keys detected");
+    char text[256];
+    snprintf(text, sizeof(text),
+             "OPENAI_API_KEY=%s%s\nANTHROPIC_API_KEY=%s%s\n",
+             "sk-proj-", "Ab3dEf6hIj9lMn2pQr5tUv8wXyZ0",
+             "sk-ant-", "api03-Ab3dEf6hIj9lMn2pQr5tUv");
+    SecretVerdict v = hlse_scan_secrets(text);
+    if (v.score >= 80 && v.n_findings >= 2) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_shopify_token(void) {
+    TEST("Secret: Shopify access token (shpat_) detected");
+    char text[160];
+    snprintf(text, sizeof(text), "SHOPIFY_TOKEN=%s%s\n",
+             "shpat_", "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6");
+    SecretVerdict v = hlse_scan_secrets(text);
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_aws_temp_key(void) {
+    TEST("Secret: AWS temporary (ASIA) key detected");
+    char text[160];
+    snprintf(text, sizeof(text), "aws_session_token: %s%s\n",
+             "ASIA", "2E3MWORQXYZ4567PQ");
+    SecretVerdict v = hlse_scan_secrets(text);
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_new_patterns_no_fp(void) {
+    TEST("Secret: new-pattern prefixes in prose → no false positive");
+    /* Words/identifiers that share a prefix but are not credentials. */
+    SecretVerdict v = hlse_scan_secrets(
+        "The npm_config setting and the Asian market and a glpat "
+        "report. shppa means nothing here.\n");
+    if (v.score == 0 && v.n_findings == 0) PASS();
+    else { char b[80]; snprintf(b,80,"false positive score=%d n=%d",
+           v.score,v.n_findings); FAIL(b); }
+}
+
 /* ─── Email Forensics ─────────────────────────────────────────────────── */
 
 static void test_email_clean(void) {
@@ -268,6 +347,13 @@ int main(void) {
     test_clean_code();
     test_slack_token();
     test_generic_hex();
+    test_google_api_key();
+    test_gitlab_pat();
+    test_npm_token();
+    test_llm_provider_keys();
+    test_shopify_token();
+    test_aws_temp_key();
+    test_new_patterns_no_fp();
 
     printf("\nEmail Forensics:\n");
     test_email_clean();

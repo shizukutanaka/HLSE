@@ -77,13 +77,17 @@ is_alnum_or_dash(char c) {
  *
  * Detects high-entropy strings matching known API key formats:
  *
- *   - AWS Access Key ID:    AKIA[0-9A-Z]{16}
+ *   - AWS Access/STS Key:   AKIA|ABIA|ACCA|ASIA[0-9A-Z]{16}
  *   - AWS Secret Key:       40-char base64 after "aws_secret"
- *   - GitHub PAT:           ghp_[A-Za-z0-9]{36}
- *   - GitHub OAuth:         gho_[A-Za-z0-9]{36}
- *   - Stripe Live Key:      sk_live_[A-Za-z0-9]{24,}
- *   - Stripe Publishable:   pk_live_[A-Za-z0-9]{24,}
- *   - Slack Token:          xoxb-[0-9]{10,}
+ *   - GitHub token family:  ghp_|gho_|ghu_|ghs_|ghr_[A-Za-z0-9]{36}
+ *   - GitHub fine-grained:  github_pat_[A-Za-z0-9_]{20,}
+ *   - Stripe key family:    (sk|rk)_live_ / pk_live_ / sk_test_[A-Za-z0-9]{24,}
+ *   - Google API Key:       AIza[A-Za-z0-9_-]{35}
+ *   - GitLab PAT:           glpat-[A-Za-z0-9_-]{20}
+ *   - npm Access Token:     npm_[A-Za-z0-9]{36}
+ *   - OpenAI / Anthropic:   sk-proj-... / sk-ant-... (dash-prefixed LLM keys)
+ *   - Shopify tokens:       shpat_|shpss_|shppa_[0-9a-f]{32}
+ *   - Slack Token:          xoxb-|xoxp-|xoxs-[0-9A-Za-z-]{10,}
  *   - Slack Webhook:        hooks.slack.com/services/T
  *   - Generic high-entropy: 32+ hex chars after "key" / "secret" / "token"
  *   - SSH Private Key:      -----BEGIN (RSA|OPENSSH) PRIVATE KEY-----
@@ -112,16 +116,19 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "AKIA",          4,  16, char_upper_digit,   "AWS Access Key ID",     80 },
     { "ABIA",          4,  16, char_upper_digit,   "AWS STS Token",         80 },
     { "ACCA",          4,  16, char_upper_digit,   "AWS CloudFront Key",    70 },
+    { "ASIA",          4,  16, char_upper_digit,   "AWS Temporary (STS) Access Key", 80 },
 
     /* GitHub */
     { "ghp_",          4,  36, is_alnum_or_dash,   "GitHub Personal Access Token", 90 },
     { "gho_",          4,  36, is_alnum_or_dash,   "GitHub OAuth Token",    85 },
     { "ghu_",          4,  36, is_alnum_or_dash,   "GitHub User Token",     85 },
     { "ghs_",          4,  36, is_alnum_or_dash,   "GitHub Server Token",   85 },
+    { "ghr_",          4,  36, is_alnum_or_dash,   "GitHub Refresh Token",  85 },
     { "github_pat_",  11,  20, is_alnum_or_dash,   "GitHub Fine-grained PAT", 90 },
 
     /* Stripe */
     { "sk_live_",      8,  24, is_alnum_or_dash,   "Stripe Live Secret Key", 95 },
+    { "rk_live_",      8,  24, is_alnum_or_dash,   "Stripe Restricted Key", 90 },
     { "pk_live_",      8,  24, is_alnum_or_dash,   "Stripe Live Publishable", 50 },
     { "sk_test_",      8,  24, is_alnum_or_dash,   "Stripe Test Key",       30 },
 
@@ -129,6 +136,24 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "xoxb-",         5,  10, is_alnum_or_dash,   "Slack Bot Token",       80 },
     { "xoxp-",         5,  10, is_alnum_or_dash,   "Slack User Token",      85 },
     { "xoxs-",         5,  10, is_alnum_or_dash,   "Slack Session Token",   85 },
+
+    /* Google */
+    { "AIza",          4,  35, is_alnum_or_dash,   "Google API Key",        80 },
+
+    /* GitLab */
+    { "glpat-",        6,  20, is_alnum_or_dash,   "GitLab Personal Access Token", 90 },
+
+    /* npm */
+    { "npm_",          4,  36, is_alnum_or_dash,   "npm Access Token",      85 },
+
+    /* OpenAI / Anthropic (distinctive dash-prefixed LLM provider keys) */
+    { "sk-proj-",      8,  20, is_alnum_or_dash,   "OpenAI Project Key",    90 },
+    { "sk-ant-",       7,  20, is_alnum_or_dash,   "Anthropic API Key",     90 },
+
+    /* Shopify (32-hex body — very low false-positive prefix) */
+    { "shpat_",        6,  32, is_hex,             "Shopify Access Token",  85 },
+    { "shpss_",        6,  32, is_hex,             "Shopify Shared Secret", 85 },
+    { "shppa_",        6,  32, is_hex,             "Shopify Private App Token", 85 },
 
     /* Generic */
     { "hooks.slack.com/services/T", 27, 5, is_alnum_or_dash,
