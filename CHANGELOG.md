@@ -2,6 +2,20 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.19] — 2026-06-08
+
+### Fixed
+- **`secret` and `email` subcommands returned exit=0 when invoked with no
+  argument in non-interactive (CI/script) environments** (`hlse_core.c`;
+  SPECIFICATION.md §3). Both subcommands used `!isatty(0)` to fall through to
+  stdin reading when no argument was provided. In CI pipelines, stdin is not a
+  tty even without a pipe, so they silently scanned empty input and exited
+  clean. Fixed by requiring either an explicit text argument or the explicit
+  `--stdin` flag; no argument at all now returns exit=2 with a usage error,
+  consistent with `text`, `scan`, `protect`, `file`, and `package`.
+- Added regression tests: `secret: no-arg exits 2` and `email: no-arg exits 2`
+  (CLI integration suite now has 89 tests).
+
 ## [0.9.18] — 2026-06-08
 
 ### Fixed

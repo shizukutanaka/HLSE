@@ -54,7 +54,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.18"
+#define HLSE_VERSION       "0.9.19"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -2428,15 +2428,15 @@ main(int argc, char **argv) {
     if (strcmp(argv[idx], "secret") == 0) {
         char stdin_buf[65536];
         const char *text;
-        if (argc > idx + 1 && strcmp(argv[idx + 1], "--stdin") != 0) {
-            text = argv[idx + 1];
-        } else if (!isatty(0)) {
+        if (argc < idx + 2) {
+            fprintf(stderr, "Usage: %s secret \"<text>\" | %s secret --stdin\n",
+                    argv[0], argv[0]);
+            return 2;
+        } else if (strcmp(argv[idx + 1], "--stdin") == 0) {
             read_stdin_all(stdin_buf, sizeof(stdin_buf));
             text = stdin_buf;
         } else {
-            fprintf(stderr, "Usage: %s secret \"<text>\" | ... | %s secret --stdin\n",
-                    argv[0], argv[0]);
-            return 2;
+            text = argv[idx + 1];
         }
         {
             SecretVerdict sv = hlse_scan_secrets(text);
@@ -2469,15 +2469,15 @@ main(int argc, char **argv) {
     if (strcmp(argv[idx], "email") == 0) {
         char stdin_buf[65536];
         const char *headers;
-        if (argc > idx + 1 && strcmp(argv[idx + 1], "--stdin") != 0) {
-            headers = argv[idx + 1];
-        } else if (!isatty(0)) {
+        if (argc < idx + 2) {
+            fprintf(stderr, "Usage: %s email \"<headers>\" | %s email --stdin\n",
+                    argv[0], argv[0]);
+            return 2;
+        } else if (strcmp(argv[idx + 1], "--stdin") == 0) {
             read_stdin_all(stdin_buf, sizeof(stdin_buf));
             headers = stdin_buf;
         } else {
-            fprintf(stderr, "Usage: %s email \"<headers>\" | ... | %s email --stdin\n",
-                    argv[0], argv[0]);
-            return 2;
+            headers = argv[idx + 1];
         }
         {
             EmailVerdict ev = hlse_check_email_headers(headers);

@@ -506,6 +506,10 @@ check "secret: clean text exits 0" "0" "$?"
 ./hlse_core secret "key=AKIA2E3MWORQXYZ4567PQ" >/dev/null 2>&1 && rc=0 || rc=$?
 check "secret: leaked key exits 1" "1" "$rc"
 
+# secret: no-arg → exit 2 (usage error; must not treat non-tty CI stdin as input)
+./hlse_core secret </dev/null >/dev/null 2>&1 && rc=0 || rc=$?
+check "secret: no-arg exits 2" "2" "$rc"
+
 # secret: JSON parseable with findings
 ./hlse_core --json secret "key=AKIA2E3MWORQXYZ4567PQ" 2>&1 | python3 -c '
 import sys, json
@@ -519,6 +523,10 @@ printf 'From: Microsoft Support <hacker@gmail.com>\nSubject: Verify\n' \
     | ./hlse_core email --stdin 2>&1 | grep -qE "E1|microsoft|spoof|Display" \
     && check "email: display-name spoof detected" "0" "0" \
     || check "email: display-name spoof detected" "0" "1"
+
+# email: no-arg → exit 2
+./hlse_core email </dev/null >/dev/null 2>&1 && rc=0 || rc=$?
+check "email: no-arg exits 2" "2" "$rc"
 
 # email: JSON parseable
 ./hlse_core --json email "From: a@b.com" 2>&1 | python3 -c '
