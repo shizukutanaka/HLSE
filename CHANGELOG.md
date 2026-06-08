@@ -2,6 +2,22 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.13] — 2026-06-08
+
+### Fixed
+- **README C library API accuracy** (SPECIFICATION.md §8, GAP-K). The README
+  claimed "29 functions exported in `libhlse.so`" but `nm -D libhlse.so`
+  reports 35 (six additions since the original count: `hlse_esp_verify`,
+  `hlse_audit_hardening_index`, `hlse_validate_crypto_address`,
+  `hlse_is_high_entropy_benign_magic`, `hlse_shannon_entropy_str`,
+  `hlse_text_action_for_score`). The code example also omitted `hlse_util.h`
+  and six entry points (`scan_secrets`, `check_email_headers`,
+  `check_crypto_swap`, `esp_verify`, `audit_hardening_index`, `validate_crypto`).
+  The "All pure functions, thread-safe" note was inaccurate — filesystem/host
+  functions (protect/audit/network) are process-level. Updated count to 35,
+  added missing examples, corrected thread-safety note. Also updated spec §7
+  fuzz description from `100K` to `4 × 100K`. Docs-only.
+
 ## [0.9.12] — 2026-06-08
 
 ### Fixed

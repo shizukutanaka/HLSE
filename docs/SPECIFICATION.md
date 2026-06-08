@@ -119,7 +119,9 @@ the CLI.
 ## 7. Build / test contract
 `make all` (CLI + shared lib), `make static` (`-static-pie`), `make test`
 (all suites + property + corpus + CLI integration), `make check-warnings`
-(strict, zero), `make asan-test`, `make fuzz` (100K), `make coverage`.
+(strict, zero), `make asan-test`, `make fuzz` (4 harnesses × 100K iterations:
+text, secrets, supply-chain, file-masquerade), `make fuzz-asan` (same under
+ASan/UBSan, 10K each), `make coverage`.
 Hardening flags: FORTIFY, stack-protector, PIE, RELRO/BIND_NOW, NX.
 
 ## 8. Gap analysis
@@ -200,6 +202,23 @@ A sixth audit, of §7 (build/test contract) against the fuzz harness coverage, f
   Each harness runs 100K iterations (10K under ASan). New Makefile targets:
   `make fuzz` now runs all four harnesses; `make fuzz-asan` runs all four
   under ASan/UBSan. Fixed in 0.9.11.
+
+An eighth audit, of the README "C library API" section vs. `nm -D libhlse.so`, found:
+
+- **GAP-K — stale library export count and incomplete API example**: the
+  README claimed "29 functions exported in `libhlse.so`"; `nm -D libhlse.so`
+  reports 35 (additions since the original count: `hlse_esp_verify`,
+  `hlse_audit_hardening_index`, `hlse_validate_crypto_address`,
+  `hlse_is_high_entropy_benign_magic`, `hlse_shannon_entropy_str`,
+  `hlse_text_action_for_score`). The code snippet also omitted `hlse_util.h`,
+  `hlse_scan_secrets`, `hlse_check_email_headers`, `hlse_check_crypto_swap`,
+  `hlse_esp_verify`, and `hlse_audit_hardening_index`, so a reader of the README
+  had no example of using six of the twelve CLI-visible entry points as library
+  calls. The "All pure functions, thread-safe" line was also inaccurate —
+  filesystem/host functions (`protect`, `audit`, `network`) are process-level,
+  not reentrant. → update count to 35, add missing examples, correct
+  thread-safety note. §7 `make fuzz (100K)` also updated to `4 × 100K`.
+  Docs-only; fixed in 0.9.13.
 
 A seventh audit, of the README "Test architecture" table vs. measured suite
 counts, found:

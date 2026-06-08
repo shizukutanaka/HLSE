@@ -128,23 +128,31 @@ matching, defeating common evasion techniques:
 #include "hlse_text.h"     // TextVerdict
 #include "hlse_protect.h"  // ProtectionVerdict
 #include "hlse_supply.h"   // PackageVerdict, PasteVerdict, NetworkVerdict
-#include "hlse_secrets.h"  // SecretVerdict, EmailVerdict
+#include "hlse_secrets.h"  // SecretVerdict, EmailVerdict, CryptoSwapVerdict
 #include "hlse_file.h"     // FileVerdict
 #include "hlse_audit.h"    // AuditVerdict
+#include "hlse_util.h"     // hlse_shannon_entropy, hlse_edit_distance
 
 // Unified scan (auto-detects URL vs text)
-ScanResult    r = hlse_scan("https://g00gle.com");
+ScanResult         r  = hlse_scan("https://g00gle.com");
 
 // Typed entry points
-Verdict       v = hlse_check_url("https://g00gle.com");
-TextVerdict   t = hlse_check_text("URGENT: wire $5000");
-PackageVerdict p = hlse_check_package("reqeusts", "pip");
-PasteVerdict  pv = hlse_check_paste("curl x | bash");
-NetworkVerdict n = hlse_check_network();
+Verdict            v  = hlse_check_url("https://g00gle.com");
+TextVerdict        t  = hlse_check_text("URGENT: wire $5000");
+PackageVerdict     p  = hlse_check_package("reqeusts", "pip");
+PasteVerdict       pv = hlse_check_paste("curl x | bash");
+NetworkVerdict     n  = hlse_check_network();
+SecretVerdict      sv = hlse_scan_secrets("AKIA...");
+EmailVerdict       ev = hlse_check_email_headers(raw_headers);
+CryptoSwapVerdict  cv = hlse_check_crypto_swap(copied, pasted);
+ProtectionVerdict  bv = hlse_esp_verify("/boot/efi");
+int                hi = hlse_audit_hardening_index(&audit_verdict);
 ```
 
-29 functions exported in `libhlse.so`. All pure functions, thread-safe,
-zero allocation.
+35 functions exported in `libhlse.so`. Analysis functions (URL, text,
+secret, email, clipboard, file, package, paste) are pure, reentrant, and
+zero-allocation. Filesystem/host functions (protect, audit, network) are
+process-level.
 
 ## Score thresholds
 
