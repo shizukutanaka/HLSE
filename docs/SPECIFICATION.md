@@ -108,7 +108,10 @@ consumer never has to re-derive the band. Additional fields vary by kind:
 - `secret`: `findings:[{type,description}]`
 - `clipboard`: `is_swap`, `original`, `swapped`, `reason`
 - `file`: `path`, `reasons:[...]`
-- streaming `scan` records add `path`/`line`/`url` as applicable.
+- streaming `scan` records add `path`/`line`/`url` as applicable (record
+  kinds are `url`, `file`, and `secret`).
+- `scan` emits a final `kind=scan_summary` terminator:
+  `target` (scanned root path), `files_scanned` (integer), `threats` (integer).
 
 ### 5.3 SARIF (`--sarif scan <dir>`)
 SARIF 2.1.0 with rule definitions and `security-severity`.

@@ -2,6 +2,17 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.24] — 2026-06-08
+
+### Fixed
+- **Spec §5.2 omitted the `scan_summary` terminator record** (docs + test;
+  SPECIFICATION.md §5.2, GAP-V). `scan --json` emits a final
+  `{"kind":"scan_summary","target":"...","files_scanned":N,"threats":N}`
+  line after all per-finding records. Spec §5.2 mentioned streaming
+  `scan` records but said nothing about the terminator. Documented it;
+  also tightened the existing `--json scan with summary line` regression
+  test to assert the `target` field.
+
 ## [0.9.23] — 2026-06-08
 
 ### Fixed

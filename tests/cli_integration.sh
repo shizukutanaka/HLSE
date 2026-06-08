@@ -341,6 +341,7 @@ summary = json.loads(lines[-1])
 assert summary["kind"] == "scan_summary", f"last line is {summary['kind']}"
 assert "files_scanned" in summary
 assert "threats" in summary
+assert "target" in summary, "scan_summary missing target field"
 ' && check "--json scan with summary line" "0" "0" \
    || check "--json scan with summary line" "0" "1"
 
