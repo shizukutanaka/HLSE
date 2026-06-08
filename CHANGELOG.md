@@ -2,6 +2,19 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.23] — 2026-06-08
+
+### Fixed
+- **Spec §5.2 omitted the `target` field for `url`, `text`, and `protect`
+  JSON output** (docs; SPECIFICATION.md §5.2, GAP-U). A strict per-kind
+  audit (no implicit fields) revealed that `url`, `text`, and `protect` all
+  emit a `target` string (scanned URL / text string / directory path) that
+  was never mentioned in §5.2. The field is useful to consumers — it
+  disambiguates which record belongs to which scan — so it is documented
+  rather than removed. §5.2 is split to list `url`, `text`, and `protect`
+  separately with their `target` fields; `network`, `esp`, and `email` (no
+  `target`) remain grouped. Docs-only — no code or detection change.
+
 ## [0.9.22] — 2026-06-08
 
 ### Fixed

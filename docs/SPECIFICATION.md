@@ -98,7 +98,10 @@ in `print_usage()` and the man page (`hlse.1`).
 Every object carries a `"kind"` discriminator, an integer `"score"`, and an
 `"action"` string (the §2 band: `SAFE`/`LOG`/`ALERT`/`BLOCK`/`ISOLATE`), so a
 consumer never has to re-derive the band. Additional fields vary by kind:
-- `url`/`text`/`network`/`protect`/`esp`/`email`: `reasons:[...]`
+- `url`: `target` (the scanned URL), `reasons:[...]`
+- `text`: `target` (the scanned string), `reasons:[...]`
+- `protect`: `target` (the scanned path), `reasons:[...]`
+- `network`/`esp`/`email`: `reasons:[...]`
 - `paste`: `signals` (integer count of fired pastejacking signals), `reasons:[...]`
 - `package`: `name`, `matches:[{name,registry,distance}]`
 - `audit`: `hardening_index`, `hardening_band`, `findings:[{severity,description}]`
@@ -320,6 +323,19 @@ field inventory, found:
   (`url`, `text`, `network`, `protect`, `esp`, `email`, `package`, `audit`,
   `secret`, `clipboard`, `file`) were verified to match their §5.2 inventories
   exactly. Docs-only; fixed in 0.9.22.
+
+A fifteenth audit, using a strict §5.2 baseline (no implicit fields), found:
+
+- **GAP-U — `url`, `text`, and `protect` emit an undocumented `target` field**:
+  all three kinds include a `target` string (the scanned URL, text string, or
+  directory path respectively) in their JSON output. Spec §5.2 grouped these
+  kinds with `network`/`esp`/`email` under a single `reasons:[...]` bullet,
+  omitting `target`. Since `target` is the natural echo of the input and is
+  consumed by tools and dashboards (it disambiguates which record corresponds
+  to which scan), it is documented rather than removed. §5.2 is now split
+  to list `url`, `text`, and `protect` separately with their `target` fields.
+  `network`, `esp`, and `email` have no `target` equivalent and remain
+  grouped. Docs-only; fixed in 0.9.23.
 
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code
