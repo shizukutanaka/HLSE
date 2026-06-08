@@ -62,6 +62,13 @@ UTIL_BIN  := tests/util_tests
 FUZZ_BIN  := tests/fuzz
 FUZZ_ASAN := tests/fuzz_asan
 
+FUZZ_SECRETS      := tests/fuzz_secrets
+FUZZ_SECRETS_ASAN := tests/fuzz_secrets_asan
+FUZZ_SUPPLY       := tests/fuzz_supply
+FUZZ_SUPPLY_ASAN  := tests/fuzz_supply_asan
+FUZZ_FILE         := tests/fuzz_file
+FUZZ_FILE_ASAN    := tests/fuzz_file_asan
+
 # ─── primary targets ─────────────────────────────────────────────────────
 
 .PHONY: all cli lib static test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test
@@ -120,6 +127,45 @@ $(FUZZ_ASAN): tests/hlse_fuzz.c hlse_text.c hlse_text.h
 	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
 		-fsanitize=address,undefined \
 		-o $@ tests/hlse_fuzz.c hlse_text.c -I.
+	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
+
+$(FUZZ_SECRETS): tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_secrets.h
+	@mkdir -p tests
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
+		-o $@ tests/hlse_secrets_fuzz.c hlse_secrets.c -I.
+	@printf '  %-20s %s\n' "CC" "$@"
+
+$(FUZZ_SECRETS_ASAN): tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_secrets.h
+	@mkdir -p tests
+	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
+		-fsanitize=address,undefined \
+		-o $@ tests/hlse_secrets_fuzz.c hlse_secrets.c -I.
+	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
+
+$(FUZZ_SUPPLY): tests/hlse_supply_fuzz.c hlse_supply.c hlse_supply.h hlse_util.c
+	@mkdir -p tests
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
+		-o $@ tests/hlse_supply_fuzz.c hlse_supply.c hlse_util.c -I. -lm
+	@printf '  %-20s %s\n' "CC" "$@"
+
+$(FUZZ_SUPPLY_ASAN): tests/hlse_supply_fuzz.c hlse_supply.c hlse_supply.h hlse_util.c
+	@mkdir -p tests
+	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
+		-fsanitize=address,undefined \
+		-o $@ tests/hlse_supply_fuzz.c hlse_supply.c hlse_util.c -I. -lm
+	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
+
+$(FUZZ_FILE): tests/hlse_file_fuzz.c hlse_file.c hlse_file.h
+	@mkdir -p tests
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE \
+		-o $@ tests/hlse_file_fuzz.c hlse_file.c -I.
+	@printf '  %-20s %s\n' "CC" "$@"
+
+$(FUZZ_FILE_ASAN): tests/hlse_file_fuzz.c hlse_file.c hlse_file.h
+	@mkdir -p tests
+	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE \
+		-fsanitize=address,undefined \
+		-o $@ tests/hlse_file_fuzz.c hlse_file.c -I.
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
 # Extended (out-of-distribution) corpus
@@ -235,11 +281,25 @@ coverage:
 
 # ─── fuzz ────────────────────────────────────────────────────────────────
 
-fuzz: $(FUZZ_BIN)
+fuzz: $(FUZZ_BIN) $(FUZZ_SECRETS) $(FUZZ_SUPPLY) $(FUZZ_FILE)
+	@echo "--- text fuzz ---"
 	./$(FUZZ_BIN) 100000 1
+	@echo "--- secrets fuzz ---"
+	./$(FUZZ_SECRETS) 100000 1
+	@echo "--- supply-chain fuzz ---"
+	./$(FUZZ_SUPPLY) 100000 1
+	@echo "--- file-masquerade fuzz ---"
+	./$(FUZZ_FILE) 100000 1
 
-fuzz-asan: $(FUZZ_ASAN)
+fuzz-asan: $(FUZZ_ASAN) $(FUZZ_SECRETS_ASAN) $(FUZZ_SUPPLY_ASAN) $(FUZZ_FILE_ASAN)
+	@echo "--- text fuzz (ASan) ---"
 	./$(FUZZ_ASAN) 10000 1
+	@echo "--- secrets fuzz (ASan) ---"
+	./$(FUZZ_SECRETS_ASAN) 10000 1
+	@echo "--- supply-chain fuzz (ASan) ---"
+	./$(FUZZ_SUPPLY_ASAN) 10000 1
+	@echo "--- file-masquerade fuzz (ASan) ---"
+	./$(FUZZ_FILE_ASAN) 10000 1
 
 # ─── quality gates (used by CI) ──────────────────────────────────────────
 
@@ -357,6 +417,11 @@ uninstall:
 # ─── clean ───────────────────────────────────────────────────────────────
 
 clean:
-	rm -f $(BINARY) $(SHARED) $(PROP_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAUD_BIN) $(UTIL_BIN) $(FUZZ_BIN) $(FUZZ_ASAN) $(EXT_BIN)
+	rm -f $(BINARY) $(SHARED) $(PROP_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAUD_BIN) $(UTIL_BIN) \
+		$(FUZZ_BIN) $(FUZZ_ASAN) \
+		$(FUZZ_SECRETS) $(FUZZ_SECRETS_ASAN) \
+		$(FUZZ_SUPPLY) $(FUZZ_SUPPLY_ASAN) \
+		$(FUZZ_FILE) $(FUZZ_FILE_ASAN) \
+		$(EXT_BIN)
 	rm -f hlse_core_static hlse_core_cov *.gcov *.gcda *.gcno *.o
 	@echo "Clean complete"

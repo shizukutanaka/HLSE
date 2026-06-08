@@ -179,6 +179,28 @@ A fifth audit, of README numeric claims vs measured reality, found:
   approximate values; drop the brittle exact "237" from the `make test`
   comment. Docs-only; fixed in 0.9.10.
 
+A sixth audit, of §7 (build/test contract) against the fuzz harness coverage, found:
+
+- **GAP-I — fuzz coverage only for `hlse_text.c`**: `tests/hlse_fuzz.c`
+  exercised only `hlse_check_text()`; the five other parser modules
+  (`hlse_secrets.c`, `hlse_supply.c`, `hlse_file.c`) had zero fuzz coverage,
+  leaving their string-parsing paths unverified under pathological input.
+  → add three portable smoke-fuzz harnesses following the same pattern
+  (deterministic PRNG, signal-handler crash detection, score-range assertion):
+  - `tests/hlse_secrets_fuzz.c` — covers `hlse_scan_secrets`,
+    `hlse_check_email_headers`, `hlse_check_crypto_swap`,
+    `hlse_validate_crypto_address` (4 entry points, 4 input generators:
+    random bytes, credential fragments, email headers, crypto addresses)
+  - `tests/hlse_supply_fuzz.c` — covers `hlse_check_package`,
+    `hlse_check_paste` (2 entry points, 3 generators: random bytes,
+    typosquat-mutated package names, pastejacking commands)
+  - `tests/hlse_file_fuzz.c` — covers `hlse_check_filename` (the
+    disk-free entry point; 1 entry point, 4 generators: random bytes,
+    double-extension, bidi/control characters, social-engineering lures)
+  Each harness runs 100K iterations (10K under ASan). New Makefile targets:
+  `make fuzz` now runs all four harnesses; `make fuzz-asan` runs all four
+  under ASan/UBSan. Fixed in 0.9.11.
+
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code
 changed.

@@ -2,6 +2,26 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.11] — 2026-06-08
+
+### Added
+- **Multi-module fuzz harnesses** (`tests/hlse_secrets_fuzz.c`,
+  `tests/hlse_supply_fuzz.c`, `tests/hlse_file_fuzz.c`;
+  SPECIFICATION.md §8, GAP-I). Previously `make fuzz` / `make fuzz-asan`
+  covered only `hlse_text.c`; the five other parser modules had zero fuzz
+  coverage. Three portable smoke-fuzz harnesses added — same pattern as the
+  original: deterministic PRNG, signal-handler crash detection, score-range
+  assertion, 100K iterations (10K under ASan):
+  - `hlse_secrets_fuzz.c` — `hlse_scan_secrets`, `hlse_check_email_headers`,
+    `hlse_check_crypto_swap`, `hlse_validate_crypto_address` (4 entry points;
+    generators: random bytes, credential fragments, email headers, crypto addresses)
+  - `hlse_supply_fuzz.c` — `hlse_check_package`, `hlse_check_paste`
+    (generators: random bytes, typosquat-mutated names, pastejacking commands)
+  - `hlse_file_fuzz.c` — `hlse_check_filename` (disk-free path; generators:
+    random bytes, double-extension, bidi/control characters, social-engineering lures)
+- `make fuzz` now runs all four harnesses sequentially; `make fuzz-asan` runs
+  all four under ASan/UBSan. `make clean` removes all harness binaries.
+
 ## [0.9.10] — 2026-06-06
 
 ### Fixed
