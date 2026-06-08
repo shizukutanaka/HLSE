@@ -2,6 +2,19 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.27] — 2026-06-08
+
+### Fixed
+- **Spec §4 did not enumerate the 13 text-detection property invariants**
+  (docs; GAP-Y). Spec §7 stated `make test` runs "all suites + property + corpus +
+  CLI integration" but never named what the property suite verifies. Added §4.1
+  "Text-detection property invariants (P1–P13)" — a table listing all 13 formal
+  guarantees (score monotonicity, bounds, determinism, case insensitivity,
+  whitespace/HTML entity/zero-width/l33tspeak/Cyrillic/full-width evasion
+  resistance, combined evasion, multilingual parity, and safe-corpus FP ≤ 5%).
+  A spec reader can now verify what "property tests pass" means without reading
+  the test source. Docs-only — no code or detection change.
+
 ## [0.9.26] — 2026-06-08
 
 ### Fixed

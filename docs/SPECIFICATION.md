@@ -89,6 +89,28 @@ in `print_usage()` and the man page (`hlse.1`).
 | File masquerade | `hlse_file.c` | path/name | double-extension, magic mismatch, bidi, polyglot | `file` |
 | System audit | `hlse_audit.c` | host | SSH/perm/DNS/cron + hardening index | `audit` |
 
+### 4.1 Text-detection property invariants (P1–P13)
+
+The `hlse_text.c` detection engine MUST satisfy all thirteen of the following
+properties at every version. `make test` verifies these via
+`tests/hlse_property_tests.c`.
+
+| ID | Name | Requirement |
+|----|------|-------------|
+| P1 | Score monotonicity | Adding a recognised threat signal can only raise the score; removing one can only lower it. |
+| P2 | Score bounds | Output is always an integer in `[0, 100]`. |
+| P3 | Determinism | Same input → same score on every call, regardless of call order or count. |
+| P4 | Case insensitivity | English-language signals are case-folded: `"URGENT"` and `"urgent"` score within 5 points of each other. |
+| P5 | Whitespace evasion resistance | Replacing spaces with tabs, newlines, or repeated spaces does not lower a high-scoring input below the detection threshold. |
+| P6 | Safe corpus FP ≤ 5% | The top-500 Alexa domains score below the LOG threshold (score < 15), capped at a 5% false-positive rate. |
+| P7 | Multilingual parity | Japanese, Chinese, and other CJK scam phrases score ≥ 30 (LOG band), matching English equivalents. |
+| P8 | HTML entity evasion | `U&#82;GENT`, `&#x55;RGENT`, and unterminated entities are normalised before scoring; they score the same as the plain text. |
+| P9 | Zero-width Unicode evasion | U+200B (zero-width space), U+200D (zero-width joiner), and similar invisible code points are stripped before scoring. |
+| P10 | L33tspeak evasion | Common letter-digit substitutions (`3→e`, `1→i`, `$→s`) are normalised. Long hex tokens and currency amounts are preserved. |
+| P11 | Cyrillic/Greek homoglyph evasion | Cyrillic look-alikes (е, а, о, і, …) and Greek omicron are mapped to their Latin equivalents before scoring. |
+| P12 | Combined evasion resistance | Two or three simultaneous evasion techniques (l33t + HTML entity, Cyrillic + zero-width, triple combo) do not produce a score lower than any single technique alone. |
+| P13 | Full-width Unicode evasion | UTF-8 full-width variants of ASCII letters and digits are normalised to ASCII before scoring. |
+
 ## 5. Output formats
 
 ### 5.1 Human
@@ -361,6 +383,18 @@ A seventeenth audit, of CONTRIBUTING.md vs. the current test suite, found:
   guidance on when to add tests there. Updated counts, renamed to
   "Seven-axis", and extended the table to all 7 axes. Docs-only;
   fixed in 0.9.26.
+
+An eighteenth audit, of §4 (Modules) vs. the test suite's property contract, found:
+
+- **GAP-Y — property invariants P1–P13 undocumented in the spec**: spec §7
+  stated `make test` runs "all suites + property + corpus + CLI integration"
+  but the 13 formal properties the property suite verifies were documented only
+  in `tests/hlse_property_tests.c`'s header comment — not in the spec. A reader
+  of the spec could not determine what guarantees the text-detection engine must
+  uphold (monotonicity, bounds, determinism, evasion-resistance categories,
+  safe-corpus FP rate, multilingual parity) without reading the test source.
+  Added §4.1 "Text-detection property invariants (P1–P13)" with a table
+  enumerating all 13 properties. Docs-only; fixed in 0.9.27.
 
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code
