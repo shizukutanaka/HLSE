@@ -2,6 +2,19 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.20] — 2026-06-08
+
+### Fixed
+- **SARIF `artifactLocation.uri` emitted absolute paths** (`hlse_core.c`
+  `sarif_emit()`; SPECIFICATION.md §5.3). The `scan` subcommand's SARIF output
+  used the full absolute `fullpath` as the URI value (e.g.
+  `/repo/src/file.py`). GitHub code scanning and the SARIF standard require
+  relative URIs (relative to the checkout root) so the tool can map findings
+  back to source files. Fixed by stripping the scan root prefix from each path
+  before passing it to `sarif_add()`, yielding URIs like `src/file.py`.
+  Added regression test `SARIF: artifactLocation URIs are relative`
+  (CLI integration suite now has 90 tests).
+
 ## [0.9.19] — 2026-06-08
 
 ### Fixed

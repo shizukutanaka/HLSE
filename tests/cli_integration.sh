@@ -468,6 +468,20 @@ if command -v python3 >/dev/null 2>&1; then
         python3 -c "import json,sys; json.load(sys.stdin)" 2>/dev/null \
         && check "SARIF: valid parseable JSON" "0" "0" \
         || check "SARIF: valid parseable JSON" "0" "1"
+
+    # SARIF URIs must be relative (no leading /) for GitHub code scanning
+    ./hlse_core --sarif scan "$SARIF_DIR" 2>/dev/null | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+uris = [loc['physicalLocation']['artifactLocation']['uri']
+        for run in d['runs']
+        for result in run['results']
+        for loc in result.get('locations', [])]
+assert uris, 'no results'
+assert all(not u.startswith('/') for u in uris), 'absolute URI found: ' + str(uris)
+" 2>/dev/null \
+        && check "SARIF: artifactLocation URIs are relative" "0" "0" \
+        || check "SARIF: artifactLocation URIs are relative" "0" "1"
 fi
 rm -rf "$SARIF_DIR"
 

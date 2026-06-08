@@ -54,7 +54,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.19"
+#define HLSE_VERSION       "0.9.20"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -1995,6 +1995,18 @@ main(int argc, char **argv) {
                     snprintf(fullpath, sizeof(fullpath), "%s/%s",
                              cur_path, ent->d_name);
 
+                    /* Compute path relative to scan root for SARIF URIs.
+                     * GitHub code scanning requires relative URIs so it can
+                     * map findings back to repo files.                       */
+                    const char *sarif_path = fullpath;
+                    {
+                        size_t rlen = strlen(root);
+                        while (rlen > 1 && root[rlen - 1] == '/') rlen--;
+                        if (strncmp(fullpath, root, rlen) == 0 &&
+                            fullpath[rlen] == '/')
+                            sarif_path = fullpath + rlen + 1;
+                    }
+
                     /* lstat (not stat): a symlink is classified as S_ISLNK,
                      * so it is neither recursed into (a symlinked dir would
                      * let the scan escape the target tree or loop) nor read
@@ -2047,7 +2059,7 @@ main(int argc, char **argv) {
                                 snprintf(msg + l, sizeof(msg) - l, "%s%s",
                                          i ? "; " : "", fv.reasons[i]);
                             }
-                            sarif_add(fullpath, 1, "file-masquerade",
+                            sarif_add(sarif_path, 1, "file-masquerade",
                                       msg[0] ? msg : "file masquerade", fv.score);
                         } else if (json_out) {
                             int i;
@@ -2101,7 +2113,7 @@ main(int argc, char **argv) {
                                                      i ? "; " : "",
                                                      sv.findings[i].description);
                                         }
-                                        sarif_add(fullpath, lineno, "secret",
+                                        sarif_add(sarif_path, lineno, "secret",
                                                   msg[0] ? msg : "secret", sv.score);
                                     } else if (json_out) {
                                         int i;
@@ -2168,7 +2180,7 @@ main(int argc, char **argv) {
                                                                  "%s%s", k ? "; " : "",
                                                                  uv.reasons[k]);
                                                     }
-                                                    sarif_add(fullpath, lineno,
+                                                    sarif_add(sarif_path, lineno,
                                                               "phishing-url", msg, uv.score);
                                                 } else if (json_out) {
                                                     char eu[2048];
