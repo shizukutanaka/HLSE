@@ -2,6 +2,20 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.21] — 2026-06-08
+
+### Added
+- **CI workflows** (`.github/workflows/ci.yml`, `.github/workflows/codeql.yml`).
+  The README claimed "CI enforces this with a privacy tripwire job" but no
+  workflow files existed. Created:
+  - `ci.yml`: three jobs — `build-and-test` (make all + test + check-warnings +
+    asan-test), `cppcheck` (error gate with `--error-exitcode=1` + advisory-only
+    informational run), and `privacy-tripwire` (strace captures URL/text/secret/
+    package subcommands and asserts zero `socket()/connect()/bind()` syscalls).
+  - `codeql.yml`: GitHub CodeQL C/C++ analysis with `security-and-quality`
+    queries on push/PR to main plus weekly schedule.
+  Both workflows target `main` and `claude/**` branches.
+
 ## [0.9.20] — 2026-06-08
 
 ### Fixed
