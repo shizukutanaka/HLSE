@@ -2,6 +2,17 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.28] — 2026-06-08
+
+### Fixed
+- **Property test file header listed only P1–P7; implementation tests P1–P13**
+  (docs; GAP-Z). When P8–P13 (HTML entity, zero-width Unicode, l33tspeak,
+  Cyrillic/Greek homoglyph, combined, and full-width evasion) were added to
+  `tests/hlse_property_tests.c`, the file's own header comment was not updated.
+  A reader of the test file saw only 7 properties listed even though the suite
+  enforces 13. Updated the file header to enumerate all 13 (now consistent with
+  spec §4.1 added in 0.9.27). Docs-only — no code or detection change.
+
 ## [0.9.27] — 2026-06-08
 
 ### Fixed

@@ -396,6 +396,15 @@ An eighteenth audit, of §4 (Modules) vs. the test suite's property contract, fo
   Added §4.1 "Text-detection property invariants (P1–P13)" with a table
   enumerating all 13 properties. Docs-only; fixed in 0.9.27.
 
+A nineteenth audit, of the property test file header vs. the actual tests, found:
+
+- **GAP-Z — `tests/hlse_property_tests.c` header listed only P1–P7 while the
+  implementation tests P1–P13**: when P8–P13 were added (HTML entity, zero-width
+  Unicode, l33tspeak, Cyrillic/Greek homoglyph, combined evasion, full-width
+  Unicode), the file header comment was not updated. A reader saw 7 properties
+  listed even though 13 were enforced. Updated the header to enumerate all 13,
+  consistent with the §4.1 table added in 0.9.27. Docs-only; fixed in 0.9.28.
+
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code
 changed.

@@ -5,13 +5,19 @@
  *
  * Unlike example-based tests (self-test), these test UNIVERSAL properties:
  *
- *   P1. Score monotonicity  — adding a red-flag word can only raise score
- *   P2. Score bounds        — output always in [0, 100]
- *   P3. Determinism         — same input produces same score every time
- *   P4. Case insensitivity  — "URGENT" == "urgent" for EN signals
- *   P5. Whitespace evasion  — tabs/newlines don't evade detection
- *   P6. Safe corpus         — top-500 domains have FP rate <= 5%
- *   P7. Multilingual parity — JP scam scores >= 30 (same as EN)
+ *   P1.  Score monotonicity  — adding a red-flag word can only raise score
+ *   P2.  Score bounds        — output always in [0, 100]
+ *   P3.  Determinism         — same input produces same score every time
+ *   P4.  Case insensitivity  — "URGENT" == "urgent" for EN signals
+ *   P5.  Whitespace evasion  — tabs/newlines don't evade detection
+ *   P6.  Safe corpus         — top-500 domains have FP rate <= 5%
+ *   P7.  Multilingual parity — JP/CJK scam scores >= 30 (same as EN)
+ *   P8.  HTML entity evasion — &#82; / &#x55; entities normalised before score
+ *   P9.  Zero-width Unicode  — U+200B/U+200D stripped before scoring
+ *   P10. L33tspeak evasion   — 3→e, 1→i, $→s normalised; hex/currency preserved
+ *   P11. Cyrillic/Greek homoglyphs — Cyrillic е/а/о/і and Greek ο mapped to ASCII
+ *   P12. Combined evasion    — two/three simultaneous techniques ≥ single alone
+ *   P13. Full-width Unicode  — full-width ASCII variants normalised to ASCII
  *
  * Build: gcc -O2 -Wall -Wextra -o property_tests tests/hlse_property_tests.c hlse_text.c -I.
  * Run:   ./property_tests
