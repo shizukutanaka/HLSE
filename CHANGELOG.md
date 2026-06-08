@@ -2,6 +2,16 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.30] — 2026-06-08
+
+### Fixed
+- **README "Test architecture" table had stale CLI integration count: 87 → 90**
+  (docs). The table was last updated in GAP-J (0.9.12, 45→86) but three more
+  tests were added since: two for GAP-Q (secret/email no-arg exit=2 regression,
+  0.9.19) and one for GAP-R (SARIF relative-URI regression, 0.9.20). Updated
+  count to 90 and added "SARIF relative URIs, no-arg exit=2" to the row's
+  description. Docs-only — no code or detection change.
+
 ## [0.9.29] — 2026-06-08
 
 ### Fixed

@@ -188,7 +188,7 @@ Every subcommand supports `--json`:
 | File/Audit | 17 | File masquerade, system hardening + hardening index |
 | Util | 14 | Entropy, Damerau-Levenshtein, benign-magic helpers |
 | OOD corpus | 25 | Out-of-distribution F1 (held-out phishing/scam) |
-| CLI integration | 87 | All 12 subcommands, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON |
+| CLI integration | 90 | All 12 subcommands, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON, SARIF relative URIs, no-arg exit=2 |
 | Fuzz | 4 × 100K | text / secrets / supply-chain / file harnesses (random bytes, truncated UTF-8, keyword stuffing, typosquat mutation, bidi/control) |
 
 ## Privacy
