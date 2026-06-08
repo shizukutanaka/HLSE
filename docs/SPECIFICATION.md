@@ -98,7 +98,8 @@ in `print_usage()` and the man page (`hlse.1`).
 Every object carries a `"kind"` discriminator, an integer `"score"`, and an
 `"action"` string (the §2 band: `SAFE`/`LOG`/`ALERT`/`BLOCK`/`ISOLATE`), so a
 consumer never has to re-derive the band. Additional fields vary by kind:
-- `url`/`text`/`network`/`paste`/`protect`/`esp`/`email`: `reasons:[...]`
+- `url`/`text`/`network`/`protect`/`esp`/`email`: `reasons:[...]`
+- `paste`: `signals` (integer count of fired pastejacking signals), `reasons:[...]`
 - `package`: `name`, `matches:[{name,registry,distance}]`
 - `audit`: `hardening_index`, `hardening_band`, `findings:[{severity,description}]`
 - `secret`: `findings:[{type,description}]`
@@ -305,7 +306,20 @@ A thirteenth audit, of CI infrastructure vs. README claims, found:
   (build/test + cppcheck error gate + strace-based privacy tripwire) and
   `codeql.yml` (CodeQL C/C++ with security-and-quality queries). The workflow
   files require a GitHub App token with `workflows` permission to push; they
-  exist locally and are ready for deployment. Fixed in 0.9.21.
+  are version-controlled under `examples/workflows/` for manual install
+  (the App token cannot write `.github/workflows/` directly). Fixed in 0.9.21.
+
+A fourteenth audit, of each `--json` kind's actual field set vs. the §5.2
+field inventory, found:
+
+- **GAP-T — `paste` JSON emits an undocumented `signals` field**: the `paste`
+  kind carries an integer `signals` (count of fired pastejacking signals)
+  alongside `reasons`, but §5.2 listed only `reasons` for `paste`. Consistent
+  with `audit` (which documents its extra `hardening_index` integer), the
+  `signals` field is now documented in §5.2. All other eleven kinds
+  (`url`, `text`, `network`, `protect`, `esp`, `email`, `package`, `audit`,
+  `secret`, `clipboard`, `file`) were verified to match their §5.2 inventories
+  exactly. Docs-only; fixed in 0.9.22.
 
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code

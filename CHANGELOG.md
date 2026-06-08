@@ -2,6 +2,18 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.22] — 2026-06-08
+
+### Fixed
+- **Spec §5.2 omitted the `paste` JSON `signals` field** (docs;
+  SPECIFICATION.md §5.2, GAP-T). The `paste` kind emits an integer `signals`
+  field (count of fired pastejacking signals) alongside `reasons`, but the
+  §5.2 field inventory documented only `reasons`. Documented `signals` for
+  consistency with `audit` (whose extra `hardening_index` integer is already
+  documented). Audited all twelve `--json` kinds against §5.2; the other
+  eleven match their inventories exactly. Docs-only — no code or detection
+  change.
+
 ## [0.9.21] — 2026-06-08
 
 ### Added
