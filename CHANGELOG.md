@@ -2,6 +2,19 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.18] — 2026-06-08
+
+### Fixed
+- **`scan --json` `secret` records used `reasons` schema instead of
+  `findings`** (`hlse_core.c` scan walker; SPECIFICATION.md §5.2, GAP-P).
+  The spec §5.2 defines `kind=secret` as carrying
+  `findings:[{type,description}]`. The standalone `secret` subcommand
+  already emitted the correct structured schema; however the `scan` walker's
+  JSON branch emitted a flat `reasons:["description string", ...]` array
+  instead. Fixed the scan walker to emit
+  `findings:[{"type":"...","description":"..."}]` objects, making all
+  `kind=secret` records consistent across both code paths.
+
 ## [0.9.17] — 2026-06-08
 
 ### Fixed

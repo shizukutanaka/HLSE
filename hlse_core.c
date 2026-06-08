@@ -54,7 +54,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.17"
+#define HLSE_VERSION       "0.9.18"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -2105,19 +2105,21 @@ main(int argc, char **argv) {
                                                   msg[0] ? msg : "secret", sv.score);
                                     } else if (json_out) {
                                         int i;
-                                        char esc_p[512], esc_r[512];
+                                        char esc_p[512], et[64], ed[512];
                                         json_escape(fullpath, esc_p, sizeof(esc_p));
+                                        /* Emit findings:[{type,description}] per spec §5.2
+                                         * (same schema as the standalone secret subcommand). */
                                         printf("{\"kind\":\"secret\","
                                                "\"path\":\"%s\","
                                                "\"line\":%d,\"score\":%d,"
-                                               "\"action\":\"%s\",\"reasons\":[",
+                                               "\"action\":\"%s\",\"findings\":[",
                                                esc_p, lineno, sv.score,
                                                hlse_action_for_score(sv.score));
                                         for (i = 0; i < sv.n_findings; i++) {
-                                            json_escape(sv.findings[i].description, esc_r,
-                                                        sizeof(esc_r));
-                                            printf("%s\"%s\"", i ? "," : "",
-                                                   esc_r);
+                                            json_escape(sv.findings[i].type, et, sizeof(et));
+                                            json_escape(sv.findings[i].description, ed, sizeof(ed));
+                                            printf("%s{\"type\":\"%s\",\"description\":\"%s\"}",
+                                                   i ? "," : "", et, ed);
                                         }
                                         printf("]}\n");
                                     } else {

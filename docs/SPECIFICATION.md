@@ -203,6 +203,18 @@ A sixth audit, of §7 (build/test contract) against the fuzz harness coverage, f
   `make fuzz` now runs all four harnesses; `make fuzz-asan` runs all four
   under ASan/UBSan. Fixed in 0.9.11.
 
+A twelfth audit, of cross-subcommand JSON schema consistency (§5.2), found:
+
+- **GAP-P — `scan` `secret` records used wrong schema**: the `scan` walker's
+  `--json` branch for secret findings emitted `"reasons":["description"...]`
+  (a flat string array) while the standalone `secret` subcommand correctly
+  emitted `"findings":[{"type":"...","description":"..."}]`. Spec §5.2
+  defines `kind=secret` exclusively with `findings:[{type,description}]`.
+  Both `kind=secret` contexts now emit the same structured schema. Confirmed
+  all other JSON kinds (`audit`, `file`, `protect`, `esp`, `email`,
+  `clipboard`, `package`, `paste`, `network`) match their spec §5.2
+  definitions. Fixed in 0.9.18.
+
 An eleventh audit, of the SARIF output (§5.3) and scan JSON records (§5.2), found:
 
 - **GAP-O — SARIF rule definitions missing `security-severity`; scan `url`
