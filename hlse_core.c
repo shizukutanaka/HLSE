@@ -54,7 +54,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.43"
+#define HLSE_VERSION       "0.9.44"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -92,6 +92,16 @@ static const char *BRANDS[] = {
     "rakuten", "docomo", "softbank", "line", "paypay",
     "mufg", "smbc", "mizuho",
     "anthropic", "openai", "cloudflare", "stripe", "twilio",
+    /* Crypto exchanges — active phishing targets */
+    "coinbase", "binance", "kraken", "coincheck",
+    /* Logistics — package delivery phishing */
+    "fedex", "dhlexpress",
+    /* Gaming / collaboration */
+    "discord", "steam", "epicgames", "roblox",
+    /* E-commerce */
+    "ebay", "shopify",
+    /* Emerging targets */
+    "tiktok", "wordpress",
     NULL
 };
 
@@ -103,6 +113,7 @@ static const char *SUSPICIOUS_TLDS[] = {
     ".link", ".info", ".monster", ".rest", ".cyou",
     ".zip", ".mov", ".country", ".kim", ".date",
     ".review", ".faith", ".science", ".party", ".gdn",
+    ".cc", ".icu", ".biz", ".space", ".buzz",
     NULL
 };
 
@@ -112,6 +123,8 @@ static const char *PATH_PATTERNS[] = {
     "/secure", "/reset", "/recover", "/confirm", "/auth",
     "/wallet", "/billing", "/suspended", "/locked", "/unlock",
     "/claim", "/refund", "/relief", "/file", "/payment",
+    "/identity", "/verification", "/validate", "/activate",
+    "/token", "/session",
     NULL
 };
 
@@ -121,6 +134,7 @@ static const char *SECURITY_WORDS[] = {
     "signin", "reset", "recover", "support", "help",
     "webmail", "mail", "payment", "portal", "relief",
     "refund", "claim", "billing", "suspend", "locked",
+    "identity", "validate", "activate", "alert", "urgent",
     NULL
 };
 

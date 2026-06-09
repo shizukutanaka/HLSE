@@ -2,6 +2,27 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.44] — 2026-06-09
+
+### Added
+- **URL phishing: detection tables expanded** (GAP-AP):
+  - `BRANDS` +14: crypto exchanges (`coinbase`, `binance`, `kraken`,
+    `coincheck`), logistics (`fedex`, `dhlexpress`), gaming/collaboration
+    (`discord`, `steam`, `epicgames`, `roblox`), e-commerce (`ebay`,
+    `shopify`), emerging targets (`tiktok`, `wordpress`). Each new brand
+    fires the +45 brand-homoglyph signal when a confusable-normalized domain
+    contains the brand but the real hostname doesn't.
+  - `SUSPICIOUS_TLDS` +5: `.cc`, `.icu`, `.biz`, `.space`, `.buzz` —
+    confirmed in phishing-kit datasets; `.cc` and `.icu` rank among the
+    top-5 phishing TLDs in recent PhishTank/APWG reports.
+  - `PATH_PATTERNS` +6: `/identity`, `/verification`, `/validate`,
+    `/activate`, `/token`, `/session` — common in banking and OAuth
+    credential-harvesting pages.
+  - `SECURITY_WORDS` +5: `"identity"`, `"validate"`, `"activate"`,
+    `"alert"`, `"urgent"` — extends hyphenated-domain detection
+    (e.g. `paypal-alert.com` now triggers).
+  Zero regressions; F1=1.000; zero strict warnings; ASan clean.
+
 ## [0.9.43] — 2026-06-09
 
 ### Added
