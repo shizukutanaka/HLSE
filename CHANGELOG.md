@@ -2,6 +2,14 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.65] — 2026-06-09
+
+### Added
+- **Supply chain: Cargo package set +11** (GAP-SC-CARGO): Added tauri, leptos,
+  dioxus, bevy, embassy (embedded), tokio-tungstenite, axum-core, tower-http,
+  sea-orm, sea-query, dotenvy — high-growth 2024 crates that are active
+  typosquat targets. Total packages: 229 → 240 (cargo=47 → 58).
+
 ## [0.9.64] — 2026-06-09
 
 ### Added

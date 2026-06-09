@@ -95,6 +95,10 @@ static const char *CARGO_TOP[] = {
     "serde_yaml", "toml", "indexmap", "itertools", "uuid",
     /* Additional popular crates */
     "rocket", "jsonwebtoken", "mongodb", "openssl", "curve25519-dalek",
+    /* 2024 high-growth / high-value typosquat targets */
+    "tauri", "leptos", "dioxus", "bevy", "embassy",
+    "tokio-tungstenite", "axum-core", "tower-http",
+    "sea-orm", "sea-query", "dotenvy",
     NULL
 };
 
