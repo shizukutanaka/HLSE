@@ -58,6 +58,9 @@ static const char *PIP_TOP[] = {
     "transformers", "langchain", "chromadb", "pinecone",
     "scikit-learn", "xgboost", "lightgbm", "huggingface-hub", "datasets",
     "wandb", "mlflow", "click", "rich", "typer",
+    /* High-growth data / infrastructure — active typosquat targets */
+    "polars", "dask", "numba", "sympy", "statsmodels",
+    "gunicorn", "psycopg2", "redis", "python-dotenv", "pycryptodome",
     NULL
 };
 
@@ -74,6 +77,9 @@ static const char *NPM_TOP[] = {
     "openai", "langchain", "firebase", "stripe", "aws-sdk",
     "underscore", "rxjs", "date-fns", "zod", "three",
     "d3", "svelte", "nuxt", "graphql", "webpack-cli",
+    /* Modern tooling — high-value typosquat targets */
+    "vitest", "playwright", "dayjs", "turbo", "esbuild",
+    "framer-motion", "storybook", "remix", "astro", "typeorm",
     NULL
 };
 
@@ -87,6 +93,8 @@ static const char *CARGO_TOP[] = {
     "sha2", "aes", "ring", "rustls",
     "nom", "syn", "bytes", "futures", "async-trait",
     "serde_yaml", "toml", "indexmap", "itertools", "uuid",
+    /* Additional popular crates */
+    "rocket", "jsonwebtoken", "mongodb", "openssl", "curve25519-dalek",
     NULL
 };
 

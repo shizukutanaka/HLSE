@@ -85,6 +85,10 @@ static const char *URGENCY_WORDS[] = {
     "final warning", "last warning",
     "action required", "your account has been flagged", "must respond",
     "confirm within", "failure to respond",
+    "account closed", "access suspended", "verify immediately",
+    /* Package delivery scam urgency */
+    "claim package", "redelivery required", "delivery attempt failed",
+    "package on hold", "customs clearance required",
     /* Japanese (UTF-8) */
     "至急", "緊急", "即座", "本日中", "24時間以内", "48時間以内",
     "停止", "凍結", "ロック", "不正アクセス", "確認してください",
@@ -110,6 +114,10 @@ static const char *BAIT_WORDS[] = {
     /* Crypto wallet theft */
     "seed phrase", "recovery phrase", "mnemonic", "private key",
     "connect wallet", "wallet passphrase",
+    /* Account takeover / 2FA bypass bait */
+    "two-factor code", "verification code", "one-time code", "otp code",
+    "phone number", "confirm identity", "verify your identity",
+    "update billing", "payment method expired", "update payment",
     /* Money transfer platforms common in elder/tech-support fraud */
     "zelle", "western union", "moneygram",
     /* Japanese */
@@ -207,6 +215,9 @@ static const char *RANSOM_WORDS[] = {
     /* Double-extortion phrases (2020+ threat landscape) */
     "data has been exfiltrated", "your data will be published",
     "contact us to decrypt",
+    "backup deleted", "your documents will be published",
+    "darknet", "dark web", "data leak site",
+    "decryption tool", "restore your files",
     /* Japanese */
     "ファイルが暗号化", "復号キー", "身代金",
     NULL

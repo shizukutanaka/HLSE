@@ -54,7 +54,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.49"
+#define HLSE_VERSION       "0.9.50"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -102,6 +102,18 @@ static const char *BRANDS[] = {
     "ebay", "shopify",
     /* Emerging targets */
     "tiktok", "wordpress",
+    /* Streaming — active phishing targets for subscription fraud */
+    "hulu", "spotify", "disney", "hbo", "twitch", "peacock",
+    /* Telecom — SMS / carrier spoofing */
+    "verizon", "tmobile",
+    /* Social platforms */
+    "reddit", "snapchat", "telegram", "whatsapp",
+    /* Retail / logistics */
+    "walmart", "bestbuy", "homedepot", "usps", "dhl",
+    /* Brokerage / fintech */
+    "robinhood", "etrade", "fidelity", "schwab",
+    /* Enterprise SaaS — BEC targets */
+    "zoom", "salesforce", "adobe", "slack", "oracle",
     NULL
 };
 

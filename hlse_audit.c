@@ -187,6 +187,12 @@ hlse_audit_permissions(void) {
                 { ".netrc",            0077, 35, "A2: ~/.netrc (FTP/curl credentials) is group/world-accessible" },
                 { ".pgpass",           0077, 30, "A2: ~/.pgpass (PostgreSQL passwords) is group/world-accessible" },
                 { ".gnupg/secring.gpg",0077, 35, "A2: GPG secret keyring is group/world-accessible" },
+                /* Container / cloud / package credential files */
+                { ".docker/config.json", 0077, 35, "A2: ~/.docker/config.json (Docker auth) is group/world-accessible" },
+                { ".kube/config",        0077, 40, "A2: ~/.kube/config (Kubernetes credentials) is group/world-accessible" },
+                { ".npmrc",              0077, 30, "A2: ~/.npmrc (npm auth token) is group/world-accessible" },
+                { ".pypirc",             0077, 25, "A2: ~/.pypirc (PyPI credentials) is group/world-accessible" },
+                { ".git-credentials",    0077, 35, "A2: ~/.git-credentials (Git HTTP credentials) is group/world-accessible" },
                 { NULL, 0, 0, NULL }
             };
             int i;

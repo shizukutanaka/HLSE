@@ -164,6 +164,14 @@ static const char *EXECUTABLE_EXTS[] = {
     ".rb", ".pl", ".tcl", ".lua",
     /* Windows HTML Application — runs JScript/VBScript with no sandbox */
     ".mshta",
+    /* PHP archive — executes like a PHP binary */
+    ".phar",
+    /* JSP variants */
+    ".jspx", ".jsw",
+    /* JVM scripting */
+    ".groovy",
+    /* Windows ClickOnce / WPF browser application */
+    ".application", ".xbap",
     NULL
 };
 

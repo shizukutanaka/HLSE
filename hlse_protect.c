@@ -138,6 +138,11 @@ static const char *RANSOM_NOTE_NAMES[] = {
     "!decrypt!.txt",
     /* Japanese ransomware notes */
     "身代金.txt", "ファイル復元.txt",
+    /* 2023-2025 active families */
+    "contact_us.txt", "contact_us.html",
+    "recovery_instructions.html", "recovery_instructions.txt",
+    "readme_now.txt",             /* Babuk variant */
+    "!!readme!!.txt", "!!!files_encrypted!!!.txt",
     NULL
 };
 
@@ -165,6 +170,16 @@ static const char *RANSOM_EXTENSIONS[] = {
     ".monti",       /* Monti (Conti fork) */
     ".cactus",      /* Cactus (2023+) */
     ".cryptolocker",/* CryptoLocker (classic 2013) */
+    /* Emerging 2024+ families */
+    ".black",       /* BlackCat/ALPHV variant */
+    ".alphv",       /* ALPHV (BlackCat) */
+    ".play",        /* Play ransomware (2022+) */
+    ".royal",       /* Royal ransomware (2022+) */
+    ".blacksuit",   /* BlackSuit (Royal fork) */
+    ".fog",         /* Fog ransomware (2024) */
+    ".hunters",     /* Hunters International (2023+) */
+    ".cicada",      /* Cicada3301 (2024) */
+    ".qilin",       /* Qilin/Agenda (2022+) */
     NULL
 };
 

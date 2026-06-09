@@ -2,6 +2,38 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.50] — 2026-06-09
+
+### Added
+- **Audit: HOME_SECRETS expanded** (GAP-AV): Added 5 critical credential files to A2
+  permissions check: `.docker/config.json` (Docker auth tokens), `.kube/config`
+  (Kubernetes credentials), `.npmrc` (npm tokens), `.pypirc` (PyPI credentials),
+  `.git-credentials` (Git HTTP credentials). Total HOME_SECRETS entries: 8 → 13.
+- **URL: BRANDS expanded** (GAP-AW): Added 25 commonly phished brands —
+  streaming (hulu, spotify, disney, hbo, twitch, peacock), telecom (verizon,
+  tmobile), social (reddit, snapchat, telegram, whatsapp), retail (walmart,
+  bestbuy, homedepot, usps, dhl), fintech (robinhood, etrade, fidelity, schwab),
+  enterprise SaaS (zoom, salesforce, adobe, slack, oracle).
+- **Text: Signal words expanded** (GAP-AX): URGENCY_WORDS +5 (account closed,
+  access suspended, verify immediately, package delivery scam phrases); BAIT_WORDS
+  +9 (2FA bypass: two-factor code, verification code, OTP; identity: confirm
+  identity, verify your identity; billing: update billing, payment method expired,
+  update payment); RANSOM_WORDS +5 (backup deleted, your documents will be
+  published, darknet, dark web, data leak site, decryption tool, restore your files).
+- **Ransomware: RANSOM_EXTENSIONS +9 families** (GAP-AY): .black, .alphv, .play,
+  .royal, .blacksuit, .fog, .hunters, .cicada, .qilin (all active 2022-2024).
+- **Ransomware: RANSOM_NOTE_NAMES +6 variants** (GAP-AY): contact_us.txt/html,
+  recovery_instructions.html/txt, readme_now.txt, !!readme!!.txt,
+  !!!files_encrypted!!!.txt.
+- **Supply chain: Package lists expanded** (GAP-AZ): pip 59→69 (+polars, dask,
+  numba, sympy, statsmodels, gunicorn, psycopg2, redis, python-dotenv,
+  pycryptodome); npm 58→68 (+vitest, playwright, dayjs, turbo, esbuild,
+  framer-motion, storybook, remix, astro, typeorm); cargo 42→47 (+rocket,
+  jsonwebtoken, mongodb, openssl, curve25519-dalek). Total packages: 186 → 213.
+- **File: EXECUTABLE_EXTS +6** (GAP-BA): .phar (PHP archive), .jspx/.jsw (JSP
+  variants), .groovy (Groovy scripts), .application (ClickOnce), .xbap (WPF XBAP).
+- **Version bump**: 0.9.49 → 0.9.50.
+
 ## [0.9.49] — 2026-06-09
 
 ### Added
