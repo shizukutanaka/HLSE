@@ -319,6 +319,85 @@ static void test_audit_shellrc_clean(void) {
     cleanup();
 }
 
+static void test_audit_perm_aws_creds(void) {
+    char saved[512], cred_path[512], aws_dir[512];
+    const char *orig;
+
+    setup();
+    snprintf(aws_dir, sizeof(aws_dir), "%s/.aws", tmpdir);
+    mkdir(aws_dir, 0755);
+    snprintf(cred_path, sizeof(cred_path), "%s/.aws/credentials", tmpdir);
+    {
+        FILE *fp = fopen(cred_path, "w");
+        if (fp) {
+            fputs("[default]\naws_secret_access_key=AAAA\n", fp);
+            fclose(fp);
+        }
+    }
+    /* Make world-readable (0644) — should trigger A2 */
+    chmod(cred_path, 0644);
+    orig = getenv("HOME");
+    snprintf(saved, sizeof(saved), "%s", orig ? orig : "");
+    setenv("HOME", tmpdir, 1);
+    {
+        AuditVerdict v = hlse_audit_permissions();
+        setenv("HOME", saved, 1);
+        unlink(cred_path); rmdir(aws_dir); cleanup();
+        TEST("Audit A2: world-readable .aws/credentials → flagged");
+        if (v.score > 0) PASS();
+        else FAIL("AWS credentials exposure not detected");
+    }
+}
+
+static void test_audit_perm_ssh_key(void) {
+    char saved[512], key_path[512], ssh_dir[512];
+    const char *orig;
+
+    setup();
+    snprintf(ssh_dir, sizeof(ssh_dir), "%s/.ssh", tmpdir);
+    mkdir(ssh_dir, 0755);
+    snprintf(key_path, sizeof(key_path), "%s/.ssh/id_rsa", tmpdir);
+    {
+        FILE *fp = fopen(key_path, "w");
+        if (fp) {
+            fputs("-----BEGIN OPENSSH PRIVATE KEY-----\nAAAA\n"
+                  "-----END OPENSSH PRIVATE KEY-----\n", fp);
+            fclose(fp);
+        }
+    }
+    /* Make group-readable (0640) — should trigger A2 */
+    chmod(key_path, 0640);
+    orig = getenv("HOME");
+    snprintf(saved, sizeof(saved), "%s", orig ? orig : "");
+    setenv("HOME", tmpdir, 1);
+    {
+        AuditVerdict v = hlse_audit_permissions();
+        setenv("HOME", saved, 1);
+        unlink(key_path); rmdir(ssh_dir); cleanup();
+        TEST("Audit A2: group-readable ~/.ssh/id_rsa → flagged");
+        if (v.score > 0) PASS();
+        else FAIL("SSH key exposure not detected");
+    }
+}
+
+static void test_file_php_executable(void) {
+    /* Single-extension .php: executable-extension informational (+5).
+     * Two lure words needed for the F6 signal; this verifies PHP is
+     * at least recognized as an executable extension (score > 0).     */
+    TEST("File: invoice_payment.php → F6 lure + PHP executable");
+    FileVerdict v = hlse_check_filename("invoice_payment.php");
+    if (v.score >= 40) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
+static void test_file_kyc_lure(void) {
+    /* kyc + document → two lure words → F6 fires when combined with .exe */
+    TEST("File: kyc_document.exe → F6 kyc+document lure + executable");
+    FileVerdict v = hlse_check_filename("kyc_document.exe");
+    if (v.score >= 40) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
 static void test_audit_all(void) {
     TEST("Audit: combined audit completes without crash");
     AuditVerdict v = hlse_audit_all();
@@ -353,6 +432,8 @@ int main(void) {
     test_rlo_filename();
     test_lure_exe();
     test_normal_txt();
+    test_file_php_executable();
+    test_file_kyc_lure();
 
     printf("\nFile masquerade (with disk access):\n");
     test_pe_in_pdf();
@@ -372,6 +453,8 @@ int main(void) {
     test_audit_path_clean();
     test_audit_shellrc_backdoor();
     test_audit_shellrc_clean();
+    test_audit_perm_aws_creds();
+    test_audit_perm_ssh_key();
     test_audit_all();
     test_audit_hardening_index();
 

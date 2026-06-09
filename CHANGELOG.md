@@ -2,6 +2,20 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.47] — 2026-06-09
+
+### Added
+- **File/Audit: 4 new targeted tests** (GAP-AS — 23→27 tests):
+  - `test_audit_perm_aws_creds` — creates world-readable `~/.aws/credentials`
+    temp file, verifies A2 permission check fires (score > 0).
+  - `test_audit_perm_ssh_key` — creates group-readable `~/.ssh/id_rsa` temp
+    file, verifies A2 SSH key exposure detection fires.
+  - `test_file_php_executable` — `invoice_payment.php` (2 lure words + PHP
+    executable extension) → F6 signal fires at score ≥ 40.
+  - `test_file_kyc_lure` — `kyc_document.exe` (kyc + document lure words +
+    executable extension) → F6 fires at score ≥ 40.
+  Total structured tests: 350 → 354.
+
 ## [0.9.46] — 2026-06-09
 
 ### Fixed
