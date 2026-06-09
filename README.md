@@ -42,7 +42,7 @@ Platform:      Linux, macOS (partial)
 | **Text scam** | hlse_text.c | Urgency, financial bait, authority impersonation, ransom, BEC |
 | **Ransomware** | hlse_protect.c | Entropy spike, ransom notes, extension mutation, shadow deletion |
 | **MBR/GPT** | hlse_protect.c | Boot signature, bootkit strings, obfuscation detection |
-| **Credential leak** | hlse_secrets.c | 36 token patterns — AWS (incl. STS), GitHub, GitLab, Google, npm, OpenAI/Anthropic, Stripe, Shopify, HuggingFace, PyPI, Postman, Square, Doppler, Grafana, Linear, New Relic, Databricks, Slack/Discord webhooks, SSH keys, .env passwords (excludes doc/example/placeholder keys to cut false positives) |
+| **Credential leak** | hlse_secrets.c | 39 token patterns — AWS (incl. STS), GitHub, GitLab, Google, npm, OpenAI/Anthropic, Stripe, Shopify, HuggingFace, PyPI, Postman, Square, Doppler, Grafana, Linear, New Relic, Databricks, PlanetScale, HashiCorp Vault, Slack/Discord webhooks, SSH keys, .env passwords (Twilio, SendGrid, Firebase, Cloudflare added; excludes doc/example/placeholder keys to cut false positives) |
 | **Email forensics** | hlse_secrets.c | SPF/DKIM fail, Reply-To mismatch, display-name spoofing |
 | **Supply chain** | hlse_supply.c | Package typosquat (pip/npm/cargo/go — 186 packages), pastejacking (Unix curl\|sh + Windows ClickFix LOLBins), ARP/DNS safety |
 | **File masquerade** | hlse_file.c | Double extensions, magic byte mismatch, suspicious filenames |

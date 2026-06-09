@@ -201,6 +201,12 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* Databricks */
     { "dapi",          4,  32, is_hex,             "Databricks Access Token", 80 },
 
+    /* PlanetScale (highly distinctive 11-char prefix) */
+    { "pscale_tkn_",   11, 40, is_alnum_or_dash, "PlanetScale Service Token", 85 },
+
+    /* HashiCorp Vault service token v2 (hvs. prefix, long body) */
+    { "hvs.",           4, 50, is_alnum_or_dash, "HashiCorp Vault Token",     80 },
+
     /* Webhook URLs (URL-anchored — essentially zero false positives) */
     { "hooks.slack.com/services/T", 27, 5, is_alnum_or_dash,
                                             "Slack Webhook URL",     70 },
@@ -245,6 +251,8 @@ check_env_passwords(const char *text, SecretVerdict *v) {
         "API_KEY=", "API_SECRET=", "SECRET_KEY=",
         "AWS_SECRET_ACCESS_KEY=", "ANTHROPIC_API_KEY=",
         "OPENAI_API_KEY=", "STRIPE_SECRET_KEY=",
+        "TWILIO_AUTH_TOKEN=", "SENDGRID_API_KEY=",
+        "FIREBASE_PRIVATE_KEY=", "CLOUDFLARE_API_TOKEN=",
         NULL
     };
     int found = 0;

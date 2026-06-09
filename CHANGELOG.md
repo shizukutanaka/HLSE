@@ -2,6 +2,21 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.43] — 2026-06-09
+
+### Added
+- **Credential scanner: 6 new patterns** (GAP-AO — 37→39 table + 4 env vars):
+  - `pscale_tkn_` — PlanetScale service token (11-char prefix + 40 alnum chars;
+    highly distinctive, near-zero false positives)
+  - `hvs.` — HashiCorp Vault v2 service token (long ≥50-char base64 body required
+    to prevent matches on short `hvs.` occurrences in documentation)
+  - `TWILIO_AUTH_TOKEN=` added to .env credential patterns
+  - `SENDGRID_API_KEY=` added to .env credential patterns
+  - `FIREBASE_PRIVATE_KEY=` added to .env credential patterns
+  - `CLOUDFLARE_API_TOKEN=` added to .env credential patterns
+  Total credential pattern count: ~36 → ~39 patterns. README description updated.
+  Zero regressions; F1=1.000; zero strict warnings; ASan clean.
+
 ## [0.9.42] — 2026-06-09
 
 ### Added
