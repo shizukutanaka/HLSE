@@ -412,6 +412,23 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "rundll32") &&
                    (ci_contains(text, "http") || ci_contains(text, "javascript"))) {
             what = "rundll32 remote/script execution (LOLBin)";
+        } else if (ci_contains(text, "powershell") &&
+                   (ci_contains(text, "invoke-restmethod") ||
+                    ci_contains(text, "invoke-webrequest") ||
+                    ci_contains(text, "iwr ") || ci_contains(text, "irm ") ||
+                    ci_contains(text, "iwr\t") || ci_contains(text, "irm\t"))) {
+            what = "PowerShell web download (iwr/irm)";
+        } else if (ci_contains(text, "forfiles") &&
+                   (ci_contains(text, "/p ") || ci_contains(text, "/m ")) &&
+                   ci_contains(text, "/c ")) {
+            what = "forfiles command execution (LOLBin)";
+        } else if (ci_contains(text, "odbcconf") &&
+                   (ci_contains(text, "regsvr") || ci_contains(text, "/a "))) {
+            what = "odbcconf REGSVR execution (LOLBin)";
+        } else if (ci_contains(text, "ms-appinstaller:") ||
+                   (ci_contains(text, "appinstaller") &&
+                    ci_contains(text, "http"))) {
+            what = "ms-appinstaller URI bypass (ClickFix 2025)";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

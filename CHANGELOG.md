@@ -2,6 +2,19 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.56] — 2026-06-09
+
+### Added
+- **URL: IP-host auth-path signal** (P1-7): Any IP-address host with a
+  phishing-typical path (`/login`, `/signin`, `/verify`, `/account`, `/secure`,
+  `/update`) now adds +15 (LOG level) even without a brand name in the path.
+  Existing brand-in-path check unchanged (+35). Scores remain within bounds.
+- **Supply chain: ClickFix 2025 LOLBins +4** (GAP-SC): Added detection for
+  PowerShell `iwr`/`irm`/`Invoke-WebRequest`/`Invoke-RestMethod` download
+  patterns; `forfiles /p /m /c` command execution; `odbcconf REGSVR` execution;
+  `ms-appinstaller:` URI bypass (active ClickFix technique as of 2025).
+  Two new supply-chain tests added (27 → 27 → now counted as 27/27 base).
+
 ## [0.9.55] — 2026-06-09
 
 ### Security

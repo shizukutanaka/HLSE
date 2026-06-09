@@ -1134,7 +1134,7 @@ check_url(const char *raw_url) {
             h++;
         }
         if (is_ip && strchr(u.host, '.')) {
-            /* Check path for brand names */
+            /* Brand name in path of an IP URL is high-confidence phishing */
             int i;
             for (i = 0; BRANDS[i]; i++) {
                 if (strstr(u.path, BRANDS[i])) {
@@ -1144,6 +1144,15 @@ check_url(const char *raw_url) {
                         BRANDS[i]);
                     break;
                 }
+            }
+            /* Any phishing-typical path on an IP host is suspicious even
+             * without a brand name (e.g. 10.0.0.1/login is a LOG signal) */
+            if (strstr(u.path, "login") || strstr(u.path, "signin") ||
+                strstr(u.path, "verify") || strstr(u.path, "account") ||
+                strstr(u.path, "secure") || strstr(u.path, "update")) {
+                add_reason(&v, 15,
+                    "IP-address host with auth/security path — "
+                    "legitimate services use domain names");
             }
         }
     }
