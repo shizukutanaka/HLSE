@@ -2,6 +2,18 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.66] — 2026-06-09
+
+### Added
+- **Text: emergency/grandparent scam detection** (GAP-TX-EMG): New signal
+  `EMERGENCY_SCAM_WORDS` (15 EN + 7 JP phrases) covering the grandparent
+  scam (jail/accident + bail + secrecy), lottery release-fee scams, and
+  Japanese ore-ore fraud (振り込め詐欺). Base=20, per_hit=15, cap=45.
+  Two compound amplifiers in Pass 2: emergency + secrecy → +25 (grandparent
+  pattern); emergency + financial/urgency → +20 (bail fraud). Benign accident
+  descriptions score SAFE. Grandparent scam text scores ISOLATE. JP ore-ore
+  fraud detected via native phrases. P6 FP gate passes.
+
 ## [0.9.65] — 2026-06-09
 
 ### Added

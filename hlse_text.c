@@ -169,6 +169,24 @@ static const char *AUTHORITY_WORDS[] = {
     NULL
 };
 
+static const char *EMERGENCY_SCAM_WORDS[] = {
+    /* Grandparent scam / family emergency (AI voice-clone 2024-2025) */
+    "i'm in jail", "i got arrested", "had an accident",
+    "i'm in the hospital", "please don't call mom", "please don't call dad",
+    "please don't tell anyone", "need bail money", "post bail",
+    "my lawyer will call you", "send money for bail",
+    "need cash immediately", "send it right away",
+    "i'm in trouble", "please help me", "i was in a car accident",
+    /* Lottery/prize emergency variant */
+    "claim your prize today or lose it", "prize expires today",
+    "processing fee to claim", "shipping fee to claim",
+    "customs fee to release", "release fee",
+    /* Japanese emergency scam (ore ore fraud / 振り込め詐欺) */
+    "俺だよ俺", "息子だよ", "事故を起こした", "警察に捕まった",
+    "今すぐ送金して", "誰にも言わないで", "弁護士から電話",
+    NULL
+};
+
 static const char *SECRECY_WORDS[] = {
     /* English */
     "don't tell", "do not tell", "keep this secret", "between us",
@@ -315,6 +333,7 @@ static const Signal SIGNALS[] = {
     { "Shell-pipe-to-interpreter",  SHELL_PIPE_WORDS,40,  0, 40 },
     { "QR code phishing (quishing)",QR_PHISH_WORDS,  20, 10, 30 },
     { "Callback/TOAD/smishing",     CALLBACK_PHISH_WORDS, 15, 10, 30 },
+    { "Emergency/grandparent scam", EMERGENCY_SCAM_WORDS, 20, 15, 45 },
     { NULL, NULL, 0, 0, 0 }
 };
 
@@ -659,6 +678,7 @@ hlse_check_text(const char *raw_text) {
     int  fired_ransom = 0, fired_authority = 0, fired_secrecy = 0;
     int  fired_qr = 0;
     int  fired_callback = 0;
+    int  fired_emergency = 0;
 
     memset(&v, 0, sizeof(v));
     if (!raw_text) return v;
@@ -733,6 +753,7 @@ hlse_check_text(const char *raw_text) {
         else if (strcmp(sig->name, "Secrecy/grooming") == 0) fired_secrecy = 1;
         else if (strcmp(sig->name, "QR code phishing (quishing)") == 0) fired_qr = 1;
         else if (strcmp(sig->name, "Callback/TOAD/smishing") == 0) fired_callback = 1;
+        else if (strcmp(sig->name, "Emergency/grandparent scam") == 0) fired_emergency = 1;
     }
 
     #undef MATCH
@@ -817,6 +838,18 @@ hlse_check_text(const char *raw_text) {
                 add_text_reason(&v, 15,
                     "Amplifier: wallet key + financial/credential context");
             }
+        }
+    }
+
+    /* Emergency / grandparent scam amplifiers */
+    if (fired_emergency) {
+        if (fired_secrecy) {
+            add_text_reason(&v, 25,
+                "Amplifier: emergency + secrecy = grandparent/family scam pattern");
+        }
+        if (fired_bait || fired_urgency) {
+            add_text_reason(&v, 20,
+                "Amplifier: emergency + financial/urgency = bail/emergency fraud");
         }
     }
 
