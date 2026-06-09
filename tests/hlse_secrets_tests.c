@@ -488,6 +488,22 @@ static void test_azure_sas_token(void) {
     else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
 }
 
+static void test_render_api_key(void) {
+    TEST("Secret: Render API key detected");
+    SecretVerdict v = hlse_scan_secrets(
+        "RENDER_API_KEY=rnd_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0");
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_fly_token(void) {
+    TEST("Secret: Fly.io API token detected");
+    SecretVerdict v = hlse_scan_secrets(
+        "Authorization: Bearer FlyV1fm2lJPECAAAAAAAAAAAAACDsometoken1234abcd");
+    if (v.score >= 75 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
 /* ─── Main ────────────────────────────────────────────────────────────── */
 
 int main(void) {
@@ -547,6 +563,8 @@ int main(void) {
     printf("\nCloud credential checks:\n");
     test_gcp_service_account();
     test_azure_sas_token();
+    test_render_api_key();
+    test_fly_token();
 
     printf("\n══════════════════════════════════════════\n");
     printf("Secrets tests: %d/%d passed", passed, total);

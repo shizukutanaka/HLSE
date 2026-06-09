@@ -218,6 +218,18 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "discordapp.com/api/webhooks/",  28, 17, is_digit_c,
                                             "Discord Webhook URL",   75 },
 
+    /* Render (cloud PaaS) */
+    { "rnd_",            4, 36, is_alnum_or_dash,   "Render API Key",        80 },
+
+    /* Fly.io — distinctive 5-char prefix before long base64 body */
+    { "FlyV1",           5, 30, is_alnum_or_dash,   "Fly.io API Token",      85 },
+
+    /* CircleCI personal API token */
+    { "CCIPAT_",         7, 32, is_alnum_or_dash,   "CircleCI API Token",    85 },
+
+    /* Contentful personal access token */
+    { "CFPAT-",          6, 43, is_alnum_or_dash,   "Contentful PAT",        85 },
+
     { NULL, 0, 0, NULL, NULL, 0 }
 };
 
