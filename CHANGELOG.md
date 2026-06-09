@@ -2,6 +2,30 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.45] — 2026-06-09
+
+### Added
+- **Email forensics: expanded detection coverage** (GAP-AQ):
+  - `FREE_EMAIL_DOMAINS` 12→26: +7 disposable/temp services
+    (mailinator.com, guerrillamail.com, 10minutemail.com, tempmail.com,
+    throwam.com, trashmail.com, sharklasers.com) and +6 Asian free providers
+    (qq.com, 163.com, 126.com, naver.com, daum.net, yahoo.co.jp).
+    Disposable email services show disproportionately high BEC fraud rates.
+  - E1 display name brand list +11: facebook, netflix, linkedin, twitter,
+    instagram, irs, fbi, government, treasury, customs, accounts,
+    notifications, "it department".
+  - E3 corporate title words +7: coo, "accounts payable", accounting,
+    finance, payroll, treasurer, "vp ", "vice president".
+  - E6 urgent-subject keywords +5: payment, invoice, overdue,
+    confirmation, verify, suspended, locked.
+- **Pastejacking: additional LOLBin and payload patterns** (GAP-AR):
+  - P5 encoded payload: +2 interpreter one-liners — `node -e`, `php -r`.
+  - P8 Windows ClickFix: +3 LOLBin patterns —
+    `wscript`/`cscript` + URL/.vbs/.js (Windows Script Host remote exec),
+    `wmic process call create` (WMI process creation),
+    `rundll32` + http/javascript.
+  Zero regressions; F1=1.000; zero strict warnings; ASan clean.
+
 ## [0.9.44] — 2026-06-09
 
 ### Added

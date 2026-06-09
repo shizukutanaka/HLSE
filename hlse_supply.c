@@ -333,6 +333,7 @@ hlse_check_paste(const char *text) {
     if (strstr(text, "base64 -d") || strstr(text, "base64 --decode") ||
         strstr(text, "python -c") || strstr(text, "python3 -c") ||
         strstr(text, "perl -e") || strstr(text, "ruby -e") ||
+        strstr(text, "node -e") || strstr(text, "php -r") ||
         (strstr(text, "echo ") && strstr(text, "| base64"))) {
         v.signals |= PASTE_ENCODED_PAYLOAD;
         v.score += 30;
@@ -392,6 +393,17 @@ hlse_check_paste(const char *text) {
             what = "bitsadmin remote file transfer (LOLBin)";
         } else if (ci_contains(text, "msiexec") && ci_contains(text, "http")) {
             what = "msiexec remote MSI install";
+        } else if ((ci_contains(text, "wscript") || ci_contains(text, "cscript")) &&
+                   (ci_contains(text, "http") || ci_contains(text, ".vbs") ||
+                    ci_contains(text, ".js"))) {
+            what = "wscript/cscript remote/script execution (LOLBin)";
+        } else if (ci_contains(text, "wmic") &&
+                   (ci_contains(text, "process call create") ||
+                    ci_contains(text, "os get") )) {
+            what = "wmic process creation (LOLBin)";
+        } else if (ci_contains(text, "rundll32") &&
+                   (ci_contains(text, "http") || ci_contains(text, "javascript"))) {
+            what = "rundll32 remote/script execution (LOLBin)";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

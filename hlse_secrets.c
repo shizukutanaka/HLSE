@@ -501,6 +501,13 @@ static const char *FREE_EMAIL_DOMAINS[] = {
     "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
     "aol.com", "protonmail.com", "icloud.com", "mail.com",
     "yandex.com", "zoho.com", "gmx.com", "live.com",
+    /* Disposable/temporary email services — very high fraud association */
+    "mailinator.com", "guerrillamail.com", "10minutemail.com",
+    "tempmail.com", "throwam.com", "trashmail.com", "sharklasers.com",
+    /* Asian free email providers */
+    "qq.com", "163.com", "126.com",         /* China */
+    "naver.com", "daum.net",                 /* Korea */
+    "yahoo.co.jp",                           /* Japan */
     NULL
 };
 
@@ -539,6 +546,9 @@ hlse_check_email_headers(const char *raw_headers) {
         const char *known[] = {
             "microsoft", "apple", "google", "amazon", "paypal",
             "bank", "support", "security", "admin", "helpdesk",
+            "facebook", "netflix", "linkedin", "twitter", "instagram",
+            "irs", "fbi", "government", "treasury", "customs",
+            "accounts", "notifications", "it department",
             NULL
         };
         int i;
@@ -578,8 +588,10 @@ hlse_check_email_headers(const char *raw_headers) {
     if (from_domain[0] && is_free_email(from_domain)) {
         if (display_name[0]) {
             const char *corp_words[] = {
-                "ceo", "cfo", "director", "manager", "president",
+                "ceo", "cfo", "coo", "director", "manager", "president",
                 "department", "hr ", "legal", "invoice",
+                "accounts payable", "accounting", "finance", "payroll",
+                "treasurer", "vp ", "vice president",
                 NULL
             };
             char lower_dn[256];
@@ -625,6 +637,8 @@ hlse_check_email_headers(const char *raw_headers) {
         const char *urgency[] = {
             "urgent", "immediately", "wire", "transfer",
             "asap", "time sensitive", "action required",
+            "payment", "invoice", "overdue", "confirmation",
+            "verify", "suspended", "locked",
             NULL
         };
         char lower_subj[512];
