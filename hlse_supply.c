@@ -209,7 +209,24 @@ hlse_check_package(const char *pkg_name, const char *ecosystem) {
  *   P5. Encoded payloads   — base64 -d | sh, python -c "..."
  *   P6. History evasion    — commands starting with space (bash)
  *   P7. Background exec    — trailing & hides process
+ *   P8. Windows LOLBin     — "ClickFix" PowerShell/mshta/certutil one-liners
  * ═══════════════════════════════════════════════════════════════════════ */
+
+/* Case-insensitive substring search. `needle` MUST be lowercase ASCII.
+ * O(n*m), fine for paste-sized text; avoids allocating a lowercased copy. */
+static int
+ci_contains(const char *hay, const char *needle) {
+    size_t nl = strlen(needle);
+    if (nl == 0) return 1;
+    for (; *hay; hay++) {
+        size_t k = 0;
+        while (k < nl && hay[k] &&
+               (char)tolower((unsigned char)hay[k]) == needle[k])
+            k++;
+        if (k == nl) return 1;
+    }
+    return 0;
+}
 
 PasteVerdict
 hlse_check_paste(const char *text) {
@@ -337,6 +354,44 @@ hlse_check_paste(const char *text) {
                 snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
                     "P7: Trailing '&' — command runs in background, "
                     "harder to notice");
+        }
+    }
+
+    /* P8: Windows "ClickFix" / LOLBin remote execution. ClickFix lures (fake
+     * CAPTCHA or browser-update pages) tell the victim to press Win+R and
+     * paste a one-liner that runs PowerShell or a living-off-the-land binary.
+     * None of the Unix-centric checks above fire on these, yet ClickFix is the
+     * dominant 2024-2025 initial-access technique. Matching is case-insensitive
+     * and requires a download/exec qualifier so legitimate admin one-liners do
+     * not trip it. */
+    {
+        const char *what = NULL;
+        if (ci_contains(text, "powershell") &&
+            (ci_contains(text, "-enc ")        || ci_contains(text, "encodedcommand") ||
+             ci_contains(text, "downloadstring")|| ci_contains(text, "frombase64string") ||
+             ci_contains(text, "iex")          || ci_contains(text, "invoke-expression") ||
+             ci_contains(text, "-w hidden")    || ci_contains(text, "windowstyle hidden"))) {
+            what = "PowerShell hidden/encoded/download-execute";
+        } else if (ci_contains(text, "mshta") &&
+                   (ci_contains(text, "http")  || ci_contains(text, "vbscript:") ||
+                    ci_contains(text, "javascript:"))) {
+            what = "mshta remote/script execution";
+        } else if (ci_contains(text, "certutil") &&
+                   (ci_contains(text, "urlcache") || ci_contains(text, "-decode"))) {
+            what = "certutil download/decode (LOLBin)";
+        } else if (ci_contains(text, "regsvr32") && ci_contains(text, "scrobj")) {
+            what = "regsvr32 scrobj.dll (Squiblydoo)";
+        } else if (ci_contains(text, "bitsadmin") && ci_contains(text, "/transfer")) {
+            what = "bitsadmin remote file transfer (LOLBin)";
+        } else if (ci_contains(text, "msiexec") && ci_contains(text, "http")) {
+            what = "msiexec remote MSI install";
+        }
+        if (what) {
+            v.signals |= PASTE_WINDOWS_LOLBIN;
+            v.score += 45;
+            if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+                snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                    "P8: Windows ClickFix / LOLBin — %s", what);
         }
     }
 

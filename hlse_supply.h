@@ -49,6 +49,7 @@ PackageVerdict hlse_check_package(const char *pkg_name,
 #define PASTE_ENCODED_PAYLOAD 0x10
 #define PASTE_HISTORY_EVASION 0x20
 #define PASTE_BACKGROUND_EXEC 0x40
+#define PASTE_WINDOWS_LOLBIN  0x80   /* ClickFix: PowerShell/mshta/certutil etc. */
 
 typedef struct {
     int  score;              /* 0..100 */

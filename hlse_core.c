@@ -54,7 +54,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.36"
+#define HLSE_VERSION       "0.9.37"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 

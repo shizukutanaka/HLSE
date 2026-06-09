@@ -2,6 +2,28 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.37] — 2026-06-09
+
+### Added
+- **Windows ClickFix / LOLBin detection in pastejacking** (GAP-AF, signal
+  `PASTE_WINDOWS_LOLBIN`). The paste analyzer covered Unix `curl|sh`
+  pastejacking thoroughly but had no coverage for ClickFix — the dominant
+  2024–2025 initial-access technique, where a fake CAPTCHA / browser-update
+  page tells the victim to press Win+R and paste a one-liner. New P8 check
+  (case-insensitive, via a new `ci_contains` helper) flags, with a
+  download/exec qualifier to stay precise:
+  - PowerShell with `-enc `/`encodedcommand`, `downloadstring`,
+    `frombase64string`, `iex`/`invoke-expression`, or `-w hidden`/`windowstyle hidden`;
+  - `mshta` with `http`/`vbscript:`/`javascript:`;
+  - `certutil` with `urlcache`/`-decode`;
+  - `regsvr32` + `scrobj.dll` (Squiblydoo); `bitsadmin /transfer`;
+    `msiexec` + `http`.
+  Scores +45. A benign `powershell ... -Encoding utf8` one-liner does NOT trip
+  it (the `-enc ` token requires a trailing space, distinguishing it from
+  `-Encoding`). 4 new tests (PowerShell, mshta, mixed-case, benign non-FP);
+  Supply suite 17 → 21. Additive, outside the URL/text corpus; F1=1.000
+  unaffected; ASan fuzzer clean over 20k iterations.
+
 ## [0.9.36] — 2026-06-08
 
 ### Added

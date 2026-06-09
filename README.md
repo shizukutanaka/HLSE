@@ -44,7 +44,7 @@ Platform:      Linux, macOS (partial)
 | **MBR/GPT** | hlse_protect.c | Boot signature, bootkit strings, obfuscation detection |
 | **Credential leak** | hlse_secrets.c | 36 token patterns — AWS (incl. STS), GitHub, GitLab, Google, npm, OpenAI/Anthropic, Stripe, Shopify, HuggingFace, PyPI, Postman, Square, Doppler, Grafana, Linear, New Relic, Databricks, Slack/Discord webhooks, SSH keys, .env passwords (excludes doc/example/placeholder keys to cut false positives) |
 | **Email forensics** | hlse_secrets.c | SPF/DKIM fail, Reply-To mismatch, display-name spoofing |
-| **Supply chain** | hlse_supply.c | Package typosquat (pip/npm/cargo/go), pastejacking, ARP/DNS safety |
+| **Supply chain** | hlse_supply.c | Package typosquat (pip/npm/cargo/go), pastejacking (Unix curl\|sh + Windows ClickFix LOLBins), ARP/DNS safety |
 | **File masquerade** | hlse_file.c | Double extensions, magic byte mismatch, suspicious filenames |
 | **System audit** | hlse_audit.c | SSH hardening, file permissions, DNS, cron jobs |
 
@@ -184,7 +184,7 @@ Every subcommand supports `--json`:
 | Property invariants | 64 | Monotonicity, bounds, determinism, case, evasion (P1–P13) |
 | Protection | 17 | Ransomware, network drive, SMB, MBR/GPT, ESP |
 | Secrets | 34 | Credentials (36 token patterns), email headers, crypto addresses (incl. Solana) |
-| Supply chain | 17 | Package typosquat, pastejacking, network |
+| Supply chain | 21 | Package typosquat, pastejacking (incl. Windows ClickFix), network |
 | File/Audit | 19 | File masquerade (PE/ELF/Mach-O), system hardening + hardening index |
 | Util | 18 | Entropy, Damerau-Levenshtein, benign-magic + safe system-file open (FIFO/symlink) |
 | OOD corpus | 25 | Out-of-distribution F1 (held-out phishing/scam) |

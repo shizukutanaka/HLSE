@@ -484,6 +484,21 @@ A twenty-second review — a coverage audit of the file-masquerade magic table
   tests (masquerade flagged, legitimate `.dylib` spared); File/Audit suite
   17 → 19. F1=1.000 unaffected. Fixed in 0.9.36.
 
+A twenty-third review — a current-threat coverage audit of the pastejacking
+detector (`hlse_supply.c`) — found:
+
+- **GAP-AF — Windows ClickFix was undetected**: the paste analyzer's seven
+  signals (P1–P7) were all Unix/`curl|sh`-centric, so the dominant 2024–2025
+  initial-access technique — ClickFix, where a fake CAPTCHA or browser-update
+  page directs the victim to Win+R and a pasted PowerShell/LOLBin one-liner —
+  passed clean. Added signal `PASTE_WINDOWS_LOLBIN` (P8): case-insensitive
+  (`ci_contains` helper) detection of PowerShell encoded/hidden/download-execute
+  invocations, `mshta` remote/script, `certutil` urlcache/decode, `regsvr32`
+  Squiblydoo, `bitsadmin /transfer`, and remote `msiexec` (+45). Each match
+  requires a download/exec qualifier so legitimate admin one-liners (e.g.
+  `-Encoding utf8`) don't trip it. 4 tests; Supply suite 17 → 21. F1=1.000
+  unaffected; ASan fuzzer clean. Fixed in 0.9.37.
+
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code
 changed.
