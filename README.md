@@ -24,7 +24,7 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             342 (8 suites + corpus + CLI integration)
+  Structured tests:             350 (8 suites + corpus + CLI integration)
   Fuzz iterations:              100,000 (0 crashes)
   ASan + UBSan:                 0 errors
   Compiler warnings:            0 (-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
@@ -44,7 +44,7 @@ Platform:      Linux, macOS (partial)
 | **MBR/GPT** | hlse_protect.c | Boot signature, bootkit strings, obfuscation detection |
 | **Credential leak** | hlse_secrets.c | 36 token patterns — AWS (incl. STS), GitHub, GitLab, Google, npm, OpenAI/Anthropic, Stripe, Shopify, HuggingFace, PyPI, Postman, Square, Doppler, Grafana, Linear, New Relic, Databricks, Slack/Discord webhooks, SSH keys, .env passwords (excludes doc/example/placeholder keys to cut false positives) |
 | **Email forensics** | hlse_secrets.c | SPF/DKIM fail, Reply-To mismatch, display-name spoofing |
-| **Supply chain** | hlse_supply.c | Package typosquat (pip/npm/cargo/go), pastejacking (Unix curl\|sh + Windows ClickFix LOLBins), ARP/DNS safety |
+| **Supply chain** | hlse_supply.c | Package typosquat (pip/npm/cargo/go — 186 packages), pastejacking (Unix curl\|sh + Windows ClickFix LOLBins), ARP/DNS safety |
 | **File masquerade** | hlse_file.c | Double extensions, magic byte mismatch, suspicious filenames |
 | **System audit** | hlse_audit.c | SSH hardening, file permissions, DNS, cron jobs, insecure $PATH, shell-rc backdoors |
 
@@ -186,7 +186,7 @@ Every subcommand supports `--json`:
 | Secrets | 40 | Credentials (36 token patterns), email headers, crypto addresses (BTC/ETH/SOL/XMR/LTC/DOGE/XRP/DASH/XLM) |
 | Supply chain | 21 | Package typosquat, pastejacking (incl. Windows ClickFix), network |
 | File/Audit | 23 | File masquerade (PE/ELF/Mach-O), system hardening (SSH/perms/DNS/cron/PATH/shell-rc) + hardening index |
-| Util | 18 | Entropy, Damerau-Levenshtein, benign-magic + safe system-file open (FIFO/symlink) |
+| Util | 26 | Entropy, Damerau-Levenshtein, benign-magic (17 formats) + safe system-file open (FIFO/symlink) |
 | OOD corpus | 29 | Out-of-distribution F1 (held-out phishing/scam) |
 | CLI integration | 90 | All 12 subcommands, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON, SARIF relative URIs, no-arg exit=2 |
 | Fuzz | 4 × 100K | text / secrets / supply-chain / file harnesses (random bytes, truncated UTF-8, keyword stuffing, typosquat mutation, bidi/control) |

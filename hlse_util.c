@@ -112,6 +112,21 @@ hlse_is_high_entropy_benign_magic(const unsigned char *buf, size_t n) {
     if (buf[0]==0x42 && buf[1]==0x5A && buf[2]==0x68) return 1;
     /* Zstandard: 28 B5 2F FD */
     if (buf[0]==0x28 && buf[1]==0xB5 && buf[2]==0x2F && buf[3]==0xFD) return 1;
+    /* LZ4 frame: 04 22 4D 18 */
+    if (buf[0]==0x04 && buf[1]==0x22 && buf[2]==0x4D && buf[3]==0x18) return 1;
+    /* WebP: RIFF....WEBP (bytes 0-3 = "RIFF", 8-11 = "WEBP") */
+    if (n >= 12 &&
+        buf[0]==0x52 && buf[1]==0x49 && buf[2]==0x46 && buf[3]==0x46 &&
+        buf[8]==0x57 && buf[9]==0x45 && buf[10]==0x42 && buf[11]==0x50) return 1;
+    /* FLAC lossless audio: fLaC */
+    if (buf[0]==0x66 && buf[1]==0x4C && buf[2]==0x61 && buf[3]==0x43) return 1;
+    /* GIF: GIF87a / GIF89a */
+    if (buf[0]==0x47 && buf[1]==0x49 && buf[2]==0x46 && buf[3]==0x38) return 1;
+    /* OGG container (Ogg Vorbis/Opus/FLAC streams): OggS */
+    if (buf[0]==0x4F && buf[1]==0x67 && buf[2]==0x67 && buf[3]==0x53) return 1;
+    /* SQLite database: SQLite format 3 */
+    if (n >= 6 && buf[0]==0x53 && buf[1]==0x51 && buf[2]==0x4C &&
+        buf[3]==0x69 && buf[4]==0x74 && buf[5]==0x65) return 1;
 
     return 0;
 }

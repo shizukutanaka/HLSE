@@ -56,6 +56,8 @@ static const char *PIP_TOP[] = {
     "paramiko", "fabric", "ansible", "docker", "kubernetes",
     "stripe", "twilio", "sendgrid", "openai", "anthropic",
     "transformers", "langchain", "chromadb", "pinecone",
+    "scikit-learn", "xgboost", "lightgbm", "huggingface-hub", "datasets",
+    "wandb", "mlflow", "click", "rich", "typer",
     NULL
 };
 
@@ -70,6 +72,8 @@ static const char *NPM_TOP[] = {
     "chalk", "commander", "inquirer", "yargs", "debug",
     "fs-extra", "glob", "rimraf", "cross-env", "concurrently",
     "openai", "langchain", "firebase", "stripe", "aws-sdk",
+    "underscore", "rxjs", "date-fns", "zod", "three",
+    "d3", "svelte", "nuxt", "graphql", "webpack-cli",
     NULL
 };
 
@@ -81,6 +85,8 @@ static const char *CARGO_TOP[] = {
     "rayon", "crossbeam", "parking_lot", "dashmap",
     "tracing", "tower", "tonic", "prost",
     "sha2", "aes", "ring", "rustls",
+    "nom", "syn", "bytes", "futures", "async-trait",
+    "serde_yaml", "toml", "indexmap", "itertools", "uuid",
     NULL
 };
 
@@ -91,6 +97,7 @@ static const char *GO_TOP[] = {
     "zap", "logrus", "zerolog", "viper", "cobra",
     "testify", "gomock", "ginkgo",
     "aws-sdk-go", "azure-sdk-for-go", "google-cloud-go",
+    "redis", "jwt-go", "validator", "cron", "migrate",
     NULL
 };
 

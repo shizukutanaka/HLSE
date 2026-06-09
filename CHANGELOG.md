@@ -2,6 +2,30 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.41] — 2026-06-09
+
+### Added
+- **Benign magic-byte expansion** (GAP-AJ): `hlse_is_high_entropy_benign_magic()` gains
+  6 new format signatures, reducing false-positive ransomware alerts on legitimate files:
+  - `LZ4 frame` — magic `04 22 4D 18`; widely-used compression (kernels, databases)
+  - `WebP` — `RIFF....WEBP` header at bytes 0-3/8-11; dominant browser image format
+  - `FLAC` — `fLaC` magic; lossless audio archives trigger entropy checks
+  - `GIF` — `GIF87a`/`GIF89a` header; animated images can hit entropy threshold
+  - `OGG` — `OggS` container (Vorbis/Opus/FLAC streams)
+  - `SQLite` — `SQLite format 3` header; DB files common in repos and backups
+  Total format table: 11 → 17 entries.
+- **Package typosquat list expansion** (GAP-AK): 30 new high-value targets across all
+  4 ecosystems (pip: +10, npm: +10, cargo: +10, go: +5):
+  - pip: `scikit-learn`, `xgboost`, `lightgbm`, `huggingface-hub`, `datasets`,
+    `wandb`, `mlflow`, `click`, `rich`, `typer`
+  - npm: `underscore`, `rxjs`, `date-fns`, `zod`, `three`, `d3`, `svelte`, `nuxt`,
+    `graphql`, `webpack-cli`
+  - cargo: `nom`, `syn`, `bytes`, `futures`, `async-trait`, `serde_yaml`, `toml`,
+    `indexmap`, `itertools`, `uuid`
+  - go: `redis`, `jwt-go`, `validator`, `cron`, `migrate`
+  Total package coverage: pip 49→59, npm 45→55, cargo 34→44, go 23→28.
+  Zero regressions; F1=1.000; zero strict warnings; ASan clean.
+
 ## [0.9.40] — 2026-06-09
 
 ### Added

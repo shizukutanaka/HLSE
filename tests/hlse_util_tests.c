@@ -156,6 +156,61 @@ static void test_sysopen_directory(void) {
     else { fclose(fp); FAIL("directory must be rejected"); }
 }
 
+/* ─── Benign high-entropy magic bytes ────────────────────────────────── */
+
+static void test_benign_zip(void) {
+    TEST("benign-magic: ZIP PK\\x03\\x04 → 1 (regression)");
+    unsigned char b[] = {0x50, 0x4B, 0x03, 0x04};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 4) == 1, "ZIP must be benign");
+}
+
+static void test_benign_lz4(void) {
+    TEST("benign-magic: LZ4 frame 04 22 4D 18 → 1");
+    unsigned char b[] = {0x04, 0x22, 0x4D, 0x18, 0x60, 0x70};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 6) == 1, "LZ4 must be benign");
+}
+
+static void test_benign_webp(void) {
+    TEST("benign-magic: WebP RIFF....WEBP → 1");
+    unsigned char b[12] = {
+        0x52,0x49,0x46,0x46,  /* RIFF */
+        0x00,0x00,0x00,0x00,  /* size (dummy) */
+        0x57,0x45,0x42,0x50   /* WEBP */
+    };
+    CHECK(hlse_is_high_entropy_benign_magic(b, 12) == 1, "WebP must be benign");
+}
+
+static void test_benign_flac(void) {
+    TEST("benign-magic: FLAC fLaC → 1");
+    unsigned char b[] = {0x66, 0x4C, 0x61, 0x43, 0x00, 0x00};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 6) == 1, "FLAC must be benign");
+}
+
+static void test_benign_gif(void) {
+    TEST("benign-magic: GIF89a → 1");
+    unsigned char b[] = {0x47, 0x49, 0x46, 0x38, 0x39, 0x61};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 6) == 1, "GIF must be benign");
+}
+
+static void test_benign_ogg(void) {
+    TEST("benign-magic: OGG OggS → 1");
+    unsigned char b[] = {0x4F, 0x67, 0x67, 0x53, 0x00, 0x02};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 6) == 1, "OGG must be benign");
+}
+
+static void test_benign_sqlite(void) {
+    TEST("benign-magic: SQLite 'SQLite format 3' → 1");
+    unsigned char b[] = {0x53, 0x51, 0x4C, 0x69, 0x74, 0x65};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 6) == 1, "SQLite must be benign");
+}
+
+static void test_benign_random(void) {
+    TEST("benign-magic: random-looking bytes → 0");
+    unsigned char b[] = {0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x01};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 6) == 0,
+          "unknown bytes must not be whitelisted");
+}
+
 static void test_sysopen_missing(void) {
     TEST("sysopen: missing path / NULL → NULL (no crash)");
     FILE *fp = hlse_open_system_file("/no/such/hlse/path/xyz");
@@ -186,6 +241,16 @@ int main(void) {
     test_edit_empty();
     test_edit_overlong();
     test_edit_symmetry();
+
+    printf("\nBenign high-entropy magic bytes:\n");
+    test_benign_zip();
+    test_benign_lz4();
+    test_benign_webp();
+    test_benign_flac();
+    test_benign_gif();
+    test_benign_ogg();
+    test_benign_sqlite();
+    test_benign_random();
 
     printf("\nSafe system-file open:\n");
     test_sysopen_regular();
