@@ -698,6 +698,7 @@ typedef enum {
     CRYPTO_XRP,           /* r... (25-34 chars, base58-like) */
     CRYPTO_DASH,          /* X... (34 chars, base58) */
     CRYPTO_XLM,           /* G... (56 chars, Stellar base32) */
+    CRYPTO_ADA,           /* addr1... or stake1... (58-110 chars, bech32) */
 } CryptoType;
 
 static int
@@ -808,6 +809,22 @@ detect_crypto_type(const char *addr) {
         if (ok) return CRYPTO_XRP;
     }
 
+    /* Cardano: addr1... (58-110 chars, bech32 lowercase + digits) or
+     * stake1... stake address (~55-65 chars). The 5-char "addr1" and
+     * 6-char "stake1" prefixes are uniquely Cardano — essentially zero FP. */
+    if (len >= 55 && len <= 110 &&
+        (strncmp(addr, "addr1", 5) == 0 || strncmp(addr, "stake1", 6) == 0)) {
+        int i, ok = 1;
+        int start = (addr[4] == '1') ? 5 : 6;
+        for (i = start; i < (int)len; i++) {
+            char c = addr[i];
+            if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))) {
+                ok = 0; break;
+            }
+        }
+        if (ok) return CRYPTO_ADA;
+    }
+
     /* Solana: base58, 32-44 chars, no fixed prefix. Checked LAST so the
      * prefixed / fixed-length formats above (BTC 1/3, USDT T, ETH 0x, …)
      * win; only an otherwise-unclassified base58 string of Solana length
@@ -841,6 +858,7 @@ crypto_type_name(CryptoType t) {
         case CRYPTO_XRP:         return "XRP (Ripple)";
         case CRYPTO_DASH:        return "DASH";
         case CRYPTO_XLM:         return "XLM (Stellar)";
+        case CRYPTO_ADA:         return "ADA (Cardano)";
         default:                 return "Unknown";
     }
 }

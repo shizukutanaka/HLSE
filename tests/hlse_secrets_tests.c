@@ -426,6 +426,24 @@ static void test_crypto_validate_xrp(void) {
     else FAIL("XRP not recognized");
 }
 
+static void test_crypto_ada_swap(void) {
+    TEST("Clipboard: ADA (addr1) address swapped → score 95");
+    /* Two structurally valid Cardano payment addresses (addr1 + 54 bech32 chars) */
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "addr1qpzry9x8gf2tvdw0s3jn54khce6mua7lmqqq0xvwyz3rp8s9x2yy7p",
+        "addr1vqpzry9x8gf2tvdw0s3jn54khce6mua7lmqqq0xvwyz3rp8s9x2yy");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+static void test_crypto_validate_ada(void) {
+    TEST("Validate: Cardano addr1 address recognized");
+    int t = hlse_validate_crypto_address(
+        "addr1qpzry9x8gf2tvdw0s3jn54khce6mua7lmqqq0xvwyz3rp8s9x2yy7p");
+    if (t != 0) PASS();
+    else FAIL("ADA not recognized");
+}
+
 /* ─── Main ────────────────────────────────────────────────────────────── */
 
 int main(void) {
@@ -476,6 +494,8 @@ int main(void) {
     test_crypto_validate_ltc();
     test_crypto_validate_doge();
     test_crypto_validate_xrp();
+    test_crypto_ada_swap();
+    test_crypto_validate_ada();
     test_crypto_validate_garbage();
 
     printf("\n══════════════════════════════════════════\n");

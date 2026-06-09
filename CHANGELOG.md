@@ -2,6 +2,21 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.49] — 2026-06-09
+
+### Added
+- **Clipboard: ADA (Cardano) crypto-swap detection** (GAP-AU):
+  - `detect_crypto_type()` now recognizes `addr1...` (payment) and `stake1...`
+    (staking) Cardano addresses (55–110 chars, bech32 lowercase alphanum).
+  - `crypto_type_name()` returns `"ADA (Cardano)"` for the new type.
+  - `hlse_check_crypto_swap()` detects clipboard-hijack for all 11 supported
+    chains: BTC (Legacy/SegWit/Taproot), ETH, XMR, SOL, USDT (TRC20),
+    LTC, DOGE, XRP, DASH, XLM, ADA.
+  - 2 new secrets tests (`test_crypto_ada_swap`, `test_crypto_validate_ada`);
+    Secrets suite: 40 → 42.
+  - Updated `hlse_secrets.h` docstring and `README.md` module table.
+  Total structured tests: 358 → 360.
+
 ## [0.9.48] — 2026-06-09
 
 ### Added

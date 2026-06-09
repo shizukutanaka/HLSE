@@ -24,7 +24,7 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             358 (8 suites + corpus + CLI integration)
+  Structured tests:             360 (8 suites + corpus + CLI integration)
   Fuzz iterations:              100,000 (0 crashes)
   ASan + UBSan:                 0 errors
   Compiler warnings:            0 (-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
@@ -42,7 +42,7 @@ Platform:      Linux, macOS (partial)
 | **Text scam** | hlse_text.c | Urgency, financial bait, authority impersonation, ransom, BEC |
 | **Ransomware** | hlse_protect.c | Entropy spike, ransom notes, extension mutation, shadow deletion |
 | **MBR/GPT** | hlse_protect.c | Boot signature, bootkit strings, obfuscation detection |
-| **Credential leak** | hlse_secrets.c | 39 token patterns — AWS (incl. STS), GitHub, GitLab, Google, npm, OpenAI/Anthropic, Stripe, Shopify, HuggingFace, PyPI, Postman, Square, Doppler, Grafana, Linear, New Relic, Databricks, PlanetScale, HashiCorp Vault, Slack/Discord webhooks, SSH keys, .env passwords (Twilio, SendGrid, Firebase, Cloudflare added; excludes doc/example/placeholder keys to cut false positives) |
+| **Credential leak** | hlse_secrets.c | 39 token patterns — AWS (incl. STS), GitHub, GitLab, Google, npm, OpenAI/Anthropic, Stripe, Shopify, HuggingFace, PyPI, Postman, Square, Doppler, Grafana, Linear, New Relic, Databricks, PlanetScale, HashiCorp Vault, Slack/Discord webhooks, SSH keys, .env passwords (Twilio, SendGrid, Firebase, Cloudflare added; excludes doc/example/placeholder keys to cut false positives); clipboard crypto-swap for 11 chains (BTC/ETH/XMR/SOL/USDT-TRC20/LTC/DOGE/XRP/DASH/XLM/ADA) |
 | **Email forensics** | hlse_secrets.c | SPF/DKIM fail, Reply-To mismatch, display-name spoofing |
 | **Supply chain** | hlse_supply.c | Package typosquat (pip/npm/cargo/go — 186 packages), pastejacking (Unix curl\|sh + Windows ClickFix LOLBins), ARP/DNS safety |
 | **File masquerade** | hlse_file.c | Double extensions, magic byte mismatch, suspicious filenames |
@@ -183,7 +183,7 @@ Every subcommand supports `--json`:
 | Unit (text) | 15 | Individual text signal accuracy |
 | Property invariants | 64 | Monotonicity, bounds, determinism, case, evasion (P1–P13) |
 | Protection | 19 | Ransomware, network drive, SMB, MBR/GPT, ESP |
-| Secrets | 40 | Credentials (39 token patterns), email headers, crypto addresses (BTC/ETH/SOL/XMR/LTC/DOGE/XRP/DASH/XLM) |
+| Secrets | 42 | Credentials (39 token patterns), email headers, crypto addresses (BTC/ETH/SOL/XMR/LTC/DOGE/XRP/DASH/XLM/ADA) |
 | Supply chain | 25 | Package typosquat, pastejacking (incl. Windows ClickFix + wscript/wmic/rundll32), network |
 | File/Audit | 27 | File masquerade (PE/ELF/Mach-O), system hardening (SSH/perms/DNS/cron/PATH/shell-rc) + hardening index |
 | Util | 26 | Entropy, Damerau-Levenshtein, benign-magic (17 formats) + safe system-file open (FIFO/symlink) |
