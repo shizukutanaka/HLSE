@@ -2,6 +2,15 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.67] — 2026-06-09
+
+### Security
+- **Ransomware: R5 shadow-deletion scan implemented** (GAP-RS-R5): The R5
+  check (`hlse_ransomware_check_shadow_deletion()`) was previously a stub.
+  Now scans `/proc/<pid>/cmdline` (O_NOFOLLOW + O_NONBLOCK + S_ISREG guard)
+  for vssadmin, wmic shadow, lvremove, bcdedit, wbadmin shadow-deletion
+  commands running as live processes. Fires +60 (BLOCK) on detection.
+
 ## [0.9.66] — 2026-06-09
 
 ### Added

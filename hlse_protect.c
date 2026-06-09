@@ -330,23 +330,57 @@ hlse_ransomware_check_shadow_deletion(void) {
     memset(&v, 0, sizeof(v));
     v.module = HLSE_PROTECT_RANSOMWARE;
 
-    /* Check /proc for vssadmin or wmic processes (Linux: check for
-     * equivalent btrfs/LVM snapshot deletion commands) */
+    /* Scan /proc/<pid>/cmdline for snapshot/backup deletion commands.
+     * Uses O_NOFOLLOW + O_NONBLOCK to avoid symlink traps and FIFOs. */
     {
-        const char *dangerous_cmds[] = {
-            "vssadmin delete shadows",
-            "wmic shadowcopy delete",
-            "btrfs subvolume delete",
-            "lvremove -f",
-            /* PowerShell variants */
-            "Get-WmiObject Win32_Shadowcopy | ForEach-Object",
+        static const char *dangerous_cmds[] = {
+            "vssadmin", "shadowcopy delete", "wmic shadow",
+            "btrfs subvolume delete", "lvremove",
+            "bcdedit /set", "wbadmin delete",
             NULL
         };
-        /* In a real implementation, this would scan
-         * /proc/<pid>/cmdline or audit logs. For the reference
-         * implementation, we provide the detection API that a
-         * daemon would call.                                         */
-        (void)dangerous_cmds;
+        DIR *proc = opendir("/proc");
+        if (proc) {
+            struct dirent *de;
+            while ((de = readdir(proc)) != NULL) {
+                /* Only numeric directories (PIDs) */
+                const char *np = de->d_name;
+                while (*np >= '0' && *np <= '9') np++;
+                if (*np || de->d_name[0] == '\0') continue;
+
+                char cpath[320];  /* /proc/ + NAME_MAX(255) + /cmdline + NUL */
+                snprintf(cpath, sizeof(cpath), "/proc/%s/cmdline", de->d_name);
+                int cfd = open(cpath, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+                if (cfd < 0) continue;
+                {
+                    struct stat cst;
+                    if (fstat(cfd, &cst) != 0 || !S_ISREG(cst.st_mode)) {
+                        close(cfd);
+                        continue;
+                    }
+                    char cmd[512];
+                    ssize_t nr = read(cfd, cmd, sizeof(cmd) - 1);
+                    close(cfd);
+                    if (nr <= 0) continue;
+                    /* cmdline uses NUL separators — replace with spaces */
+                    ssize_t i;
+                    for (i = 0; i < nr; i++) {
+                        if (cmd[i] == '\0') cmd[i] = ' ';
+                    }
+                    cmd[nr] = '\0';
+                    int j;
+                    for (j = 0; dangerous_cmds[j]; j++) {
+                        if (strstr(cmd, dangerous_cmds[j])) {
+                            pv_add_reason(&v, 60,
+                                "R5: Shadow/backup deletion command running: "
+                                "%.80s", cmd);
+                            break;
+                        }
+                    }
+                }
+            }
+            closedir(proc);
+        }
     }
 
     return v;
