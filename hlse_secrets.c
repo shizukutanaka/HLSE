@@ -428,6 +428,21 @@ hlse_scan_secrets(const char *text) {
     check_env_passwords(text, &v);
     check_generic_hex_secret(text, &v);
 
+    /* GCP service account JSON — contains "type": "service_account" and
+     * "private_key" together. Near-zero false positives.               */
+    if (strstr(text, "\"type\"") && strstr(text, "service_account") &&
+        strstr(text, "\"private_key\"")) {
+        sv_add(&v, 90, "GCP_SERVICE_ACCOUNT",
+               "GCP service account JSON (type+private_key fields)");
+    }
+
+    /* Azure SAS token — highly distinctive shared-access-signature pattern */
+    if ((strstr(text, "sv=") || strstr(text, "SharedAccessSignature")) &&
+        strstr(text, "sig=") && strstr(text, "se=")) {
+        sv_add(&v, 85, "AZURE_SAS",
+               "Azure SAS token (sv/sig/se fields)");
+    }
+
     return v;
 }
 

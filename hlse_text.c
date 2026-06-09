@@ -195,9 +195,19 @@ static const char *GROOMING_WORDS[] = {
     /* Romance scam openers */
     "i'm a widower", "my wife passed away", "working on an oil rig",
     "military overseas", "doctor without borders",
+    /* Additional pig-butchering patterns 2024-2025 */
+    "my mentor taught me", "my uncle works in finance",
+    "i only share this with special people", "exclusive trading group",
+    "vip trading room", "vip signal group",
+    "arbitrage opportunity", "yield farming opportunity",
+    "my portfolio grew", "monthly passive income",
+    "usdt income", "usdt profit", "tether income",
+    "transfer to the platform", "deposit to start",
+    "minimum deposit", "proof of earnings",
     /* Japanese */
     "投資してあげる", "必ず儲かる", "絶対に儲かる",
     "取引プラットフォーム", "出金手数料",
+    "VIP投資グループ", "裁定取引",
     NULL
 };
 

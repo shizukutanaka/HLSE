@@ -2,6 +2,20 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.64] — 2026-06-09
+
+### Added
+- **Secrets: GCP service account JSON detection** (GAP-SEC-GCP): Structural
+  check for `"type": "service_account"` + `"private_key"` co-occurrence —
+  a near-zero-FP pattern. Scores +90 (ISOLATE). Test added.
+- **Secrets: Azure SAS token detection** (GAP-SEC-AZURE): Structural check for
+  `SharedAccessSignature` or `sv=`+`sig=`+`se=` combination. Scores +85
+  (ISOLATE). Test added. Total secrets tests: 44 → 46.
+- **Text: pig-butchering / crypto-romance scam +14 phrases** (GAP-TX-PB):
+  Added `"my mentor taught me"`, `"exclusive trading group"`, `"vip signal group"`,
+  `"arbitrage opportunity"`, `"usdt income"`, `"deposit to start"`, etc. covering
+  2024-2025 pig-butchering language evolution. JP phrases added.
+
 ## [0.9.63] — 2026-06-09
 
 ### Security

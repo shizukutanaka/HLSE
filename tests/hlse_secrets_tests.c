@@ -465,6 +465,29 @@ static void test_crypto_validate_ada(void) {
     else FAIL("ADA not recognized");
 }
 
+/* ─── Cloud Credential Checks ─────────────────────────────────────────── */
+
+static void test_gcp_service_account(void) {
+    TEST("Secret: GCP service account JSON detected");
+    SecretVerdict v = hlse_scan_secrets(
+        "{\"type\": \"service_account\", "
+        "\"project_id\": \"myproject\", "
+        "\"private_key\": \"-----BEGIN RSA PRIVATE KEY-----\\nMIIEpAIBAAK...\", "
+        "\"client_email\": \"sa@myproject.iam.gserviceaccount.com\"}");
+    if (v.score >= 85 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_azure_sas_token(void) {
+    TEST("Secret: Azure SAS token detected");
+    SecretVerdict v = hlse_scan_secrets(
+        "BlobEndpoint=https://myaccount.blob.core.windows.net;"
+        "SharedAccessSignature=sv=2021-06-08&ss=b&srt=sco&sp=rwdlacupiytfx"
+        "&se=2024-01-01T00:00:00Z&st=2023-01-01T00:00:00Z&sig=XXXXXXXXXXX");
+    if (v.score >= 80 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
 /* ─── Main ────────────────────────────────────────────────────────────── */
 
 int main(void) {
@@ -520,6 +543,10 @@ int main(void) {
     test_crypto_ada_swap();
     test_crypto_validate_ada();
     test_crypto_validate_garbage();
+
+    printf("\nCloud credential checks:\n");
+    test_gcp_service_account();
+    test_azure_sas_token();
 
     printf("\n══════════════════════════════════════════\n");
     printf("Secrets tests: %d/%d passed", passed, total);
