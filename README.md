@@ -24,7 +24,7 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             354 (8 suites + corpus + CLI integration)
+  Structured tests:             358 (8 suites + corpus + CLI integration)
   Fuzz iterations:              100,000 (0 crashes)
   ASan + UBSan:                 0 errors
   Compiler warnings:            0 (-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
@@ -184,7 +184,7 @@ Every subcommand supports `--json`:
 | Property invariants | 64 | Monotonicity, bounds, determinism, case, evasion (P1–P13) |
 | Protection | 19 | Ransomware, network drive, SMB, MBR/GPT, ESP |
 | Secrets | 40 | Credentials (39 token patterns), email headers, crypto addresses (BTC/ETH/SOL/XMR/LTC/DOGE/XRP/DASH/XLM) |
-| Supply chain | 21 | Package typosquat, pastejacking (incl. Windows ClickFix), network |
+| Supply chain | 25 | Package typosquat, pastejacking (incl. Windows ClickFix + wscript/wmic/rundll32), network |
 | File/Audit | 27 | File masquerade (PE/ELF/Mach-O), system hardening (SSH/perms/DNS/cron/PATH/shell-rc) + hardening index |
 | Util | 26 | Entropy, Damerau-Levenshtein, benign-magic (17 formats) + safe system-file open (FIFO/symlink) |
 | OOD corpus | 29 | Out-of-distribution F1 (held-out phishing/scam) |
