@@ -114,7 +114,17 @@ static const char *BRANDS[] = {
     "robinhood", "etrade", "fidelity", "schwab",
     /* Enterprise SaaS — BEC targets */
     "zoom", "salesforce", "adobe", "slack", "oracle",
+    /* P2P payments — high-fraud targets */
+    "venmo", "zelle", "cashapp", "payoneer",
+    /* Logistics — package delivery phishing */
+    "ups",
+    /* Crypto exchange — active phishing campaigns */
+    "crypto",
     NULL
+    /* NOTE: government agencies (irs, medicare) intentionally omitted —
+     * their .gov TLD cannot be registered by attackers, so the only real
+     * risk is brand-in-path on a suspicious domain, which the text-scan
+     * compound signal already covers without URL false-positives.      */
 };
 
 /* High-risk top-level domains: legitimate sites rarely use these,
@@ -132,6 +142,8 @@ static const char *SUSPICIOUS_TLDS[] = {
     ".cfd",    /* Cheap, heavily abused in 2024 campaigns */
     ".hair",   /* Near-zero legitimate use, high phishing density */
     ".boats",  /* Very rarely legitimate, common in phishing kits */
+    ".sbs",    /* Near-zero legitimate use, observed in 2024-2025 phishing kits */
+    ".fit",    /* Minimal legitimate use, actively abused in phishing campaigns */
     NULL
 };
 
@@ -143,6 +155,12 @@ static const char *PATH_PATTERNS[] = {
     "/claim", "/refund", "/relief", "/file", "/payment",
     "/identity", "/verification", "/validate", "/activate",
     "/token", "/session",
+    /* 2FA/OTP bypass phishing */
+    "/2fa", "/otp", "/mfa",
+    /* Crypto onboarding phishing */
+    "/kyc",
+    /* Financial transfer phishing */
+    "/transfer", "/wire",
     NULL
 };
 
@@ -1216,10 +1234,24 @@ hlse_scan(const char *input) {
                    ? sizeof(uv.reasons[0]) : sizeof(r.reasons[0])); }
 
         /* Also check text content in the URL for compound signals —
-         * a phishing link that says "urgent" in the path is worse     */
+         * a phishing link that says "urgent" in the path is worse.
+         *
+         * Skip the text scan for government/military TLDs (.gov, .mil,
+         * .edu) — these are registry-restricted and cannot be registered
+         * by attackers, so authority-impersonation hits (e.g. "irs" in
+         * irs.gov) would be false positives.                           */
         {
-            TextVerdict tv = hlse_check_text(input);
-            if (tv.score > 0 && tv.n_reasons > 0) {
+            int suppress_text = 0;
+            {
+                const char *host_end = strstr(input + 8, "/");
+                size_t hlen = host_end ? (size_t)(host_end - input) : strlen(input);
+                if ((hlen > 4 && strncmp(input + hlen - 4, ".gov", 4) == 0) ||
+                    (hlen > 4 && strncmp(input + hlen - 4, ".mil", 4) == 0) ||
+                    (hlen > 4 && strncmp(input + hlen - 4, ".edu", 4) == 0))
+                    suppress_text = 1;
+            }
+            TextVerdict tv = suppress_text ? (TextVerdict){0,0,{{0}}} : hlse_check_text(input);
+            if (!suppress_text && tv.score > 0 && tv.n_reasons > 0) {
                 int j;
                 for (j = 0; j < tv.n_reasons && r.n_reasons < 16; j++) {
                     memcpy(r.reasons[r.n_reasons], tv.reasons[j],
@@ -1229,6 +1261,7 @@ hlse_scan(const char *input) {
                 /* Take the higher score */
                 if (tv.score > r.score) r.score = tv.score;
             }
+            (void)suppress_text;
         }
     } else {
         TextVerdict tv = hlse_check_text(input);
