@@ -2,6 +2,40 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.75] — 2026-06-09
+
+### Security
+- **Secrets: Render, Fly.io, CircleCI, Contentful token patterns** (GAP-SECRET-PATTERNS):
+  Added 4 new CI/CD and cloud platform token patterns: `rnd_` (Render, +80),
+  `FlyV1` (Fly.io, +85), `CCIPAT_` (CircleCI, +85), `CFPAT-` (Contentful, +85).
+  Total patterns: 39 → 43.
+
+- **URL: Government TLD (.gov/.mil/.edu) text-scan suppression** (GAP-URL-GOV-FP):
+  `hlse_scan()` now skips the text compound-signal scan for registry-restricted
+  TLDs (.gov, .mil, .edu). These TLDs cannot be registered by attackers, so
+  authority-impersonation hits (e.g. "irs" in `irs.gov/refund`) were false
+  positives. `irs.gov/refund`: ALERT[47] → LOG[15]. Phishing domains like
+  `irs-refund-alert.com` still score ALERT[47].
+
+- **URL: Brand/path/TLD expansion** (GAP-URL-BRANDS): Added brands: venmo, zelle,
+  cashapp, payoneer, ups, crypto. Added PATH_PATTERNS: /2fa, /otp, /mfa, /kyc,
+  /transfer, /wire. Added SUSPICIOUS_TLDS: .sbs, .fit.
+
+- **Audit: SSH X11Forwarding, AllowTcpForwarding, LoginGraceTime checks** (GAP-AUDIT-SSH):
+  SSH audit (A1) now detects X11Forwarding yes (+15), AllowTcpForwarding yes (+15),
+  LoginGraceTime > 60 or unlimited (+5) — common lateral-movement enablers.
+
+- **Audit: Shell RC PROMPT_COMMAND injection and function override detection** (GAP-AUDIT-SHELLRC):
+  A6 shellrc scan now detects `PROMPT_COMMAND=` injection (+40, every-prompt
+  payload) and system-command function overrides for ls/ps/top/netstat/etc. (+35).
+  Classic rootkit persistence not previously covered.
+
+### Added
+- **File: 7-Zip, Cabinet, WebAssembly magic byte detection** (GAP-FILE-MAGIC):
+  MAGIC_TABLE gains 7-Zip (6-byte header), Cabinet/MSCF (Windows dropper),
+  WebAssembly (\0asm). F2 mismatch: WASM with non-.wasm → +55; Cabinet with
+  non-.cab/.msi → +40. Both added to polyglot-with-executable-ext check (+50).
+
 ## [0.9.70] — 2026-06-09
 
 ### Security
