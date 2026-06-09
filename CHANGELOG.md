@@ -2,6 +2,16 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.60] — 2026-06-09
+
+### Added
+- **Email forensics: E5 Received-chain anomaly** (GAP-EM-E5): Implements the
+  previously documented but unimplemented E5 check. Scores +20 for zero
+  Received headers (direct injection / header stripping) and +15 for a single
+  Received hop from a free email domain (atypical of legitimate multi-hop
+  delivery). Two new secrets tests added (44 total). Comments updated to
+  reflect E5 is now active.
+
 ## [0.9.59] — 2026-06-09
 
 ### Added

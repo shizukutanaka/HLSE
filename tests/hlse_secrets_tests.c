@@ -287,6 +287,27 @@ static void test_email_ceo_gmail_urgent(void) {
     else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
 }
 
+static void test_email_no_received_headers(void) {
+    TEST("Email: 0 Received headers → E5 injection signal");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: attacker@gmail.com\n"
+        "Subject: Urgent payment needed\n"
+        "To: victim@company.com\n");
+    if (v.score >= 20) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
+static void test_email_single_hop_free(void) {
+    TEST("Email: 1 Received hop from free email → E5 signal");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: boss@gmail.com\n"
+        "Subject: Wire transfer request\n"
+        "Received: from mail.gmail.com ([10.0.0.1]) by mx.victim.com\n"
+        "To: finance@victim.com\n");
+    if (v.score >= 15) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
 /* ─── Clipboard Crypto-Swap ───────────────────────────────────────────── */
 
 static void test_crypto_no_swap(void) {
@@ -477,6 +498,8 @@ int main(void) {
     test_email_reply_to_mismatch();
     test_email_spf_fail();
     test_email_ceo_gmail_urgent();
+    test_email_no_received_headers();
+    test_email_single_hop_free();
 
     printf("\nClipboard Crypto-Swap:\n");
     test_crypto_no_swap();

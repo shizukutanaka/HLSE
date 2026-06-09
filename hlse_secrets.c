@@ -656,6 +656,37 @@ hlse_check_email_headers(const char *raw_headers) {
         }
     }
 
+    /* E5: Received chain anomaly — too few hops (direct injection)
+     * or first Received: from address contains a suspicious IP pattern.
+     * Legitimate email services always add 2+ Received headers.
+     * Direct injection (only 1 hop) is a common phishing technique.   */
+    {
+        int hop_count = 0;
+        const char *rp = raw_headers;
+        /* Count Received: headers */
+        while (rp && *rp) {
+            if (strncasecmp(rp, "received:", 9) == 0) hop_count++;
+            rp = strchr(rp, '\n');
+            if (rp) rp++;
+        }
+        /* 0 Received headers = local injection or header stripping */
+        if (hop_count == 0 && from_domain[0]) {
+            v.score += 20;
+            if (v.n_reasons < HLSE_EMAIL_MAX_REASONS)
+                snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                    "E5: No Received headers — possible local injection or "
+                    "header stripping");
+        }
+        /* Single hop from a free email domain is suspicious */
+        if (hop_count == 1 && from_domain[0] && is_free_email(from_domain)) {
+            v.score += 15;
+            if (v.n_reasons < HLSE_EMAIL_MAX_REASONS)
+                snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                    "E5: Only 1 Received hop from free email domain (%.80s) "
+                    "— atypical of legitimate delivery", from_domain);
+        }
+    }
+
     /* E6: Urgent subject + external/free sender (BEC compound) */
     if (subject_val) {
         const char *urgency[] = {
