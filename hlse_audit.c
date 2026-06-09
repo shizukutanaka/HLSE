@@ -127,6 +127,27 @@ hlse_audit_ssh(void) {
                         "A1: PermitEmptyPasswords yes — accounts with no "
                         "password are accessible over SSH");
                 }
+                if (strncmp(p, "X11Forwarding", 13) == 0 && strstr(p, "yes")) {
+                    av_add(&v, 15, AUDIT_MEDIUM,
+                        "A1: X11Forwarding yes — enables display forwarding "
+                        "which can be abused for screen capture / keylogging");
+                }
+                if (strncmp(p, "AllowTcpForwarding", 18) == 0 && strstr(p, "yes")) {
+                    av_add(&v, 15, AUDIT_MEDIUM,
+                        "A1: AllowTcpForwarding yes — enables TCP tunneling, "
+                        "allowing port-forwarding pivots through this host");
+                }
+                if (strncmp(p, "LoginGraceTime", 14) == 0) {
+                    int grace = 0;
+                    const char *gp = p + 14;
+                    while (*gp == ' ' || *gp == '\t') gp++;
+                    grace = atoi(gp);
+                    if (grace > 60 || grace == 0) {
+                        av_add(&v, 5, AUDIT_LOW,
+                            "A1: LoginGraceTime %d — consider setting to 30s "
+                            "to limit connection slot exhaustion", grace);
+                    }
+                }
             }
             fclose(fp);
 
@@ -590,6 +611,34 @@ hlse_audit_shellrc(void) {
                 av_add(&v, 45, AUDIT_CRITICAL,
                     "A6: named-pipe reverse shell (mkfifo+nc) in ~/%s:%d",
                     files[fi], lineno);
+            }
+            /* PROMPT_COMMAND injection — every command prompt executes payload */
+            if (strstr(p, "PROMPT_COMMAND") &&
+                (strstr(p, "curl ") || strstr(p, "wget ") ||
+                 strstr(p, "/dev/tcp") || strstr(p, "nc ") ||
+                 strstr(p, "eval ") || strstr(p, "base64"))) {
+                av_add(&v, 40, AUDIT_CRITICAL,
+                    "A6: PROMPT_COMMAND injection in ~/%s:%d — "
+                    "payload runs on every shell prompt", files[fi], lineno);
+            }
+            /* function() override of system commands — rootkit-style hiding */
+            if (strncmp(p, "function ", 9) == 0 || strncmp(p, "function\t", 9) == 0) {
+                /* common commands hijacked to hide malware from ps/ls/top */
+                static const char *hid[] = {
+                    "ls(", "ps(", "top(", "netstat(", "ss(", "lsof(",
+                    "find(", "grep(", "who(", "id(", "ifconfig(", NULL
+                };
+                int hi;
+                for (hi = 0; hid[hi]; hi++) {
+                    if (strstr(p, hid[hi])) {
+                        av_add(&v, 35, AUDIT_HIGH,
+                            "A6: system command '%.*s' overridden by shell "
+                            "function in ~/%s:%d — possible rootkit persistence",
+                            (int)(strchr(hid[hi], '(') - hid[hi]),
+                            hid[hi], files[fi], lineno);
+                        break;
+                    }
+                }
             }
         }
         fclose(fp);

