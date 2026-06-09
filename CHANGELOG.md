@@ -2,6 +2,16 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.68] — 2026-06-09
+
+### Added
+- **Secrets: IaC / CI/CD secret patterns** (GAP-SEC-IAC): Added to
+  `env_passwords` watchlist: `TF_VAR_` (Terraform variables), `PULUMI_ACCESS_TOKEN`,
+  `PULUMI_CONFIG_PASSPHRASE`, `ARM_CLIENT_SECRET` / `ARM_SUBSCRIPTION_ID`
+  (Azure ARM), `GOOGLE_CREDENTIALS` / `GOOGLE_APPLICATION_CREDENTIALS` (GCP),
+  `TF_TOKEN_app_terraform_io`, `ACTIONS_RUNTIME_TOKEN` / `ACTIONS_ID_TOKEN_REQUEST_TOKEN`
+  (GitHub Actions). Covers IaC credential leakage common in misconfigured CI logs.
+
 ## [0.9.67] — 2026-06-09
 
 ### Security

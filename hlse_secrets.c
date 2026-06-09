@@ -265,6 +265,13 @@ check_env_passwords(const char *text, SecretVerdict *v) {
         "DATABASE_URL=", "MONGODB_URI=", "REDIS_URL=",
         /* Generic secrets commonly leaked in .env */
         "JWT_SECRET=", "JWT_SECRET_KEY=", "APP_SECRET=",
+        /* IaC / cloud provisioning */
+        "TF_VAR_", "PULUMI_ACCESS_TOKEN=", "PULUMI_CONFIG_PASSPHRASE=",
+        "ARM_CLIENT_SECRET=", "ARM_SUBSCRIPTION_ID=",
+        "GOOGLE_CREDENTIALS=", "GOOGLE_APPLICATION_CREDENTIALS=",
+        "TF_TOKEN_app_terraform_io=",
+        /* GitHub Actions secrets in plaintext */
+        "ACTIONS_RUNTIME_TOKEN=", "ACTIONS_ID_TOKEN_REQUEST_TOKEN=",
         NULL
     };
     int found = 0;
