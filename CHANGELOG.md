@@ -2,6 +2,15 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.70] — 2026-06-09
+
+### Security
+- **URL: IPv6 literal host phishing detection** (GAP-URL-IPV6): The IP-based
+  phishing detector (brand-in-path +35, auth-path +15) now also fires on IPv6
+  literal hosts (`[2001:db8::1]/paypal/signin`). Previously only IPv4 dot-
+  notation was handled. `http://[2001:db8::1]/paypal/signin` now scores ISOLATE
+  vs. ALERT before.
+
 ## [0.9.69] — 2026-06-09
 
 ### Security

@@ -1151,7 +1151,9 @@ check_url(const char *raw_url) {
             }
             h++;
         }
-        if (is_ip && strchr(u.host, '.')) {
+        /* IPv6 literal: host starts with '[' */
+        int is_ipv6 = (u.host[0] == '[');
+        if ((is_ip && strchr(u.host, '.')) || is_ipv6) {
             /* Brand name in path of an IP URL is high-confidence phishing */
             int i;
             for (i = 0; BRANDS[i]; i++) {
@@ -1163,8 +1165,7 @@ check_url(const char *raw_url) {
                     break;
                 }
             }
-            /* Any phishing-typical path on an IP host is suspicious even
-             * without a brand name (e.g. 10.0.0.1/login is a LOG signal) */
+            /* Any phishing-typical path on an IP/IPv6 host is suspicious */
             if (strstr(u.path, "login") || strstr(u.path, "signin") ||
                 strstr(u.path, "verify") || strstr(u.path, "account") ||
                 strstr(u.path, "secure") || strstr(u.path, "update")) {
