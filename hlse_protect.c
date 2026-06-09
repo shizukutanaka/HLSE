@@ -143,6 +143,12 @@ static const char *RANSOM_NOTE_NAMES[] = {
     "recovery_instructions.html", "recovery_instructions.txt",
     "readme_now.txt",             /* Babuk variant */
     "!!readme!!.txt", "!!!files_encrypted!!!.txt",
+    /* Akira / Rhysida / newer families */
+    "akira_readme.txt", "rhysida.readme.txt",
+    "fog_readme.txt", "interlock_note.txt",
+    "how_to_back_files.html",     /* INC Ransom */
+    "decrypt.txt",                /* generic */
+    "look_at_me.txt",             /* Lookout/generic */
     NULL
 };
 
@@ -180,6 +186,11 @@ static const char *RANSOM_EXTENSIONS[] = {
     ".hunters",     /* Hunters International (2023+) */
     ".cicada",      /* Cicada3301 (2024) */
     ".qilin",       /* Qilin/Agenda (2022+) */
+    ".interlock",   /* Interlock (2024) */
+    ".embargo",     /* Embargo (2024) */
+    ".lynx",        /* Lynx ransomware (2024, INC fork) */
+    ".sarcoma",     /* Sarcoma (2024) */
+    ".meow",        /* Meow ransomware (2024) */
     NULL
 };
 

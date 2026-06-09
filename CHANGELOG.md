@@ -2,6 +2,20 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.58] — 2026-06-09
+
+### Added
+- **Ransomware: 2024-2025 families +5** (GAP-RS-EXT): New ransom extensions:
+  `.interlock` (Interlock 2024), `.embargo`, `.lynx` (INC fork), `.sarcoma`,
+  `.meow`. New ransom note names: `akira_readme.txt`, `rhysida.readme.txt`,
+  `fog_readme.txt`, `interlock_note.txt`, `how_to_back_files.html` (INC),
+  `decrypt.txt`, `look_at_me.txt`.
+- **File: executable extension set +4** (GAP-FILE-EXT): Added `.msc` (MMC
+  snap-in runs JScript), `.wsc` (Windows Script Component), `.ps1xml`/`.cdxml`
+  (PowerShell XML formats), `.url` (Internet Shortcut auto-execute). These
+  are common file-masquerade final extensions in double-extension lures
+  (e.g., `invoice.pdf.msc`).
+
 ## [0.9.57] — 2026-06-09
 
 ### Added

@@ -172,6 +172,12 @@ static const char *EXECUTABLE_EXTS[] = {
     ".groovy",
     /* Windows ClickOnce / WPF browser application */
     ".application", ".xbap",
+    /* Windows Management / Script Component */
+    ".msc", ".wsc",
+    /* PowerShell XML formats */
+    ".ps1xml", ".cdxml",
+    /* Internet Shortcut (can embed URLs that auto-execute) */
+    ".url",
     NULL
 };
 
