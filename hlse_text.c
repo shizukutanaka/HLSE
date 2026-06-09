@@ -600,6 +600,11 @@ normalize_homoglyphs(char *buf, size_t len) {
         { 0xD2, 0xBB, 'h' },  /* һ → h */
         { 0xD1, 0x85, 'x' },  /* х → x */
         { 0xD1, 0x95, 'j' },  /* ј → j */
+        { 0xD0, 0xBD, 'n' },  /* н → n */
+        { 0xD1, 0x82, 't' },  /* т → t */
+        { 0xD0, 0xBC, 'm' },  /* м → m */
+        { 0xD0, 0xBA, 'k' },  /* к → k */
+        { 0xD0, 0xB2, 'v' },  /* в → v (in sans-serif looks like v/b) */
         /* Greek (CE/CF prefix) — most commonly used in phishing      */
         { 0xCE, 0xBF, 'o' },  /* ο (omicron) → o */
         { 0xCE, 0xB1, 'a' },  /* α (alpha) → a — some fonts match */

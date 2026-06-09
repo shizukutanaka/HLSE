@@ -2,6 +2,16 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.63] — 2026-06-09
+
+### Security
+- **Text + URL: Cyrillic homoglyph map expanded +5** (GAP-HG): Added
+  `н→n`, `т→t`, `м→m`, `к→k` (was in URL but not text), `в→v` to
+  `normalize_homoglyphs()` in `hlse_text.c`. Synchronized `detect_mixed_script()`
+  in `hlse_core.c` with same set (also adding `х→x`, `ј→j`, `т→t`). Covers
+  additional visually-indistinguishable Cyrillic characters used in phishing
+  domains and scam messages.
+
 ## [0.9.62] — 2026-06-09
 
 ### Added

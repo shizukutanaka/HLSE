@@ -855,20 +855,23 @@ detect_mixed_script(const ParsedUrl *u, Verdict *v) {
                 if (*q == 0xD0) {
                     switch (b2) {
                         case 0xB0: rep = 'a'; break;  /* а */
+                        case 0xB2: rep = 'v'; break;  /* в */
                         case 0xB5: rep = 'e'; break;  /* е */
-                        case 0xBE: rep = 'o'; break;  /* о */
-                        case 0xBF: rep = 'p'; break;  /* р is D1 80, but be safe */
                         case 0xBA: rep = 'k'; break;  /* к */
-                        case 0xBC: rep = 'm'; break;  /* м not exact but close */
+                        case 0xBC: rep = 'm'; break;  /* м */
+                        case 0xBD: rep = 'n'; break;  /* н */
+                        case 0xBE: rep = 'o'; break;  /* о */
                         default:   rep = '?';
                     }
                 } else { /* 0xD1 */
                     switch (b2) {
                         case 0x80: rep = 'p'; break;  /* р */
                         case 0x81: rep = 'c'; break;  /* с */
+                        case 0x82: rep = 't'; break;  /* т */
                         case 0x83: rep = 'y'; break;  /* у */
+                        case 0x85: rep = 'x'; break;  /* х */
+                        case 0x95: rep = 'j'; break;  /* ј */
                         case 0x96: rep = 'i'; break;  /* і */
-                        case 0xA1: rep = 'a'; break;  /* і variants */
                         default:   rep = '?';
                     }
                 }
