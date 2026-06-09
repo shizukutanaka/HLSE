@@ -106,6 +106,9 @@ static const unsigned char MAGIC_PNG[]  = { 0x89, 0x50, 0x4E, 0x47 };
 static const unsigned char MAGIC_JPG[]  = { 0xFF, 0xD8, 0xFF };
 static const unsigned char MAGIC_GIF[]  = { 0x47, 0x49, 0x46, 0x38 };   /* GIF8 */
 static const unsigned char MAGIC_OLE[]  = { 0xD0, 0xCF, 0x11, 0xE0 };   /* OLE compound (doc/xls/ppt) */
+static const unsigned char MAGIC_7ZIP[] = { 0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C }; /* 7-Zip */
+static const unsigned char MAGIC_CAB[]  = { 0x4D, 0x53, 0x43, 0x46 };   /* MSCF — Windows Cabinet */
+static const unsigned char MAGIC_WASM[] = { 0x00, 0x61, 0x73, 0x6D };   /* \0asm — WebAssembly */
 /* Mach-O (macOS executables). Four unambiguous thin-binary magics, both
  * endiannesses / word sizes. The fat/universal magic 0xCAFEBABE is omitted
  * deliberately: it is indistinguishable from a Java .class file by header
@@ -125,6 +128,9 @@ static const MagicSig MAGIC_TABLE[] = {
     { MAGIC_ZIP,   4, "ZIP" },
     { MAGIC_GZIP,  2, "GZIP" },
     { MAGIC_RAR,   4, "RAR" },
+    { MAGIC_7ZIP,  6, "7ZIP" },
+    { MAGIC_CAB,   4, "Cabinet" },
+    { MAGIC_WASM,  4, "WebAssembly" },
     { MAGIC_PNG,   4, "PNG" },
     { MAGIC_JPG,   3, "JPEG" },
     { MAGIC_GIF,   4, "GIF" },
@@ -362,14 +368,31 @@ hlse_check_file(const char *filepath) {
          * .exe, or a valid JPEG that is also a runnable script). The file
          * presents as benign content but carries an executable name.    */
         if (is_executable_ext(ext) &&
-            (strcmp(magic_type, "GIF")  == 0 ||
-             strcmp(magic_type, "JPEG") == 0 ||
-             strcmp(magic_type, "PNG")  == 0 ||
-             strcmp(magic_type, "ZIP")  == 0 ||
-             strcmp(magic_type, "GZIP") == 0)) {
+            (strcmp(magic_type, "GIF")         == 0 ||
+             strcmp(magic_type, "JPEG")        == 0 ||
+             strcmp(magic_type, "PNG")         == 0 ||
+             strcmp(magic_type, "ZIP")         == 0 ||
+             strcmp(magic_type, "GZIP")        == 0 ||
+             strcmp(magic_type, "7ZIP")        == 0 ||
+             strcmp(magic_type, "Cabinet")     == 0 ||
+             strcmp(magic_type, "WebAssembly") == 0)) {
             fv_add(&v, 50,
                 "F2: %s content with executable extension '%s' — "
                 "possible polyglot/payload disguise", magic_type, ext);
+        }
+        /* WebAssembly binary masquerading as non-wasm — emerging attack vector */
+        if (strcmp(magic_type, "WebAssembly") == 0 &&
+            strcmp(ext, ".wasm") != 0 && strcmp(ext, ".wat") != 0) {
+            fv_add(&v, 55,
+                "F2: WebAssembly binary with extension '%s' — "
+                "possible WASM payload disguise", ext);
+        }
+        /* Cabinet file with non-cab extension — common for dropper delivery */
+        if (strcmp(magic_type, "Cabinet") == 0 &&
+            strcmp(ext, ".cab") != 0 && strcmp(ext, ".msi") != 0) {
+            fv_add(&v, 40,
+                "F2: Windows Cabinet (MSCF) magic with extension '%s' — "
+                "possible dropper disguise", ext);
         }
     }
 

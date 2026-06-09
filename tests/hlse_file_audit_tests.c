@@ -421,6 +421,58 @@ static void test_audit_hardening_index(void) {
 
 /* ─── Main ────────────────────────────────────────────────────────────── */
 
+static void test_7zip_disguised_as_exe(void) {
+    setup();
+    unsigned char buf[128];
+    memset(buf, 0x41, sizeof(buf));
+    buf[0]=0x37; buf[1]=0x7A; buf[2]=0xBC; buf[3]=0xAF; buf[4]=0x27; buf[5]=0x1C;
+    create("payload.exe", buf, sizeof(buf));
+
+    char path[512];
+    snprintf(path, sizeof(path), "%s/payload.exe", tmpdir);
+
+    TEST("File: 7-Zip magic in .exe → polyglot flagged");
+    FileVerdict v = hlse_check_file(path);
+    if (v.score >= 50) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+    cleanup();
+}
+
+static void test_wasm_disguised(void) {
+    setup();
+    unsigned char buf[64];
+    memset(buf, 0, sizeof(buf));
+    buf[0]=0x00; buf[1]=0x61; buf[2]=0x73; buf[3]=0x6D; /* \0asm */
+    buf[4]=0x01; /* version 1 */
+    create("module.bin", buf, sizeof(buf));
+
+    char path[512];
+    snprintf(path, sizeof(path), "%s/module.bin", tmpdir);
+
+    TEST("File: WebAssembly magic with .bin extension → flagged");
+    FileVerdict v = hlse_check_file(path);
+    if (v.score >= 40) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+    cleanup();
+}
+
+static void test_cabinet_disguised(void) {
+    setup();
+    unsigned char buf[64];
+    memset(buf, 0x41, sizeof(buf));
+    buf[0]=0x4D; buf[1]=0x53; buf[2]=0x43; buf[3]=0x46; /* MSCF */
+    create("update.pdf", buf, sizeof(buf));
+
+    char path[512];
+    snprintf(path, sizeof(path), "%s/update.pdf", tmpdir);
+
+    TEST("File: Cabinet (MSCF) magic with .pdf extension → flagged");
+    FileVerdict v = hlse_check_file(path);
+    if (v.score >= 40) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+    cleanup();
+}
+
 int main(void) {
     printf("HLSE File Masquerade + System Audit — Tests\n");
     printf("══════════════════════════════════════════\n\n");
@@ -443,6 +495,9 @@ int main(void) {
     test_polyglot_gif_exe();
     test_real_gif_ok();
     test_ole_with_vba();
+    test_7zip_disguised_as_exe();
+    test_wasm_disguised();
+    test_cabinet_disguised();
 
     printf("\nSystem audit:\n");
     test_audit_ssh();
