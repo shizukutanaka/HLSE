@@ -2,6 +2,18 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.59] — 2026-06-09
+
+### Added
+- **URL: suspicious TLD set +3** (GAP-TLD): Added `.cfd`, `.hair`, `.boats`
+  — three TLDs with near-zero legitimate use and high phishing-kit density
+  per 2024-2025 threat intelligence. Conservative selection avoids FP on
+  legitimate business TLDs (.shop, .tech, etc.).
+- **Supply chain: Go package set +15** (GAP-SC-GO): Added mux, httprouter,
+  negroni, iris, urfave, spf13, hashicorp, golang-jwt, paseto, casbin,
+  sarama, confluent-kafka-go, nats, docker, kubernetes, helm.
+  Total packages: 213 → 229 (pip=69, npm=68, cargo=47, go=45).
+
 ## [0.9.58] — 2026-06-09
 
 ### Added

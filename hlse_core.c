@@ -128,6 +128,10 @@ static const char *SUSPICIOUS_TLDS[] = {
     ".cc", ".icu", ".biz", ".space", ".buzz",
     /* Additional heavily abused TLDs */
     ".pw", ".su", ".vip", ".win", ".download", ".stream",
+    /* 2024-2025 heavily abused (minimal legitimate use, high phishing volume) */
+    ".cfd",    /* Cheap, heavily abused in 2024 campaigns */
+    ".hair",   /* Near-zero legitimate use, high phishing density */
+    ".boats",  /* Very rarely legitimate, common in phishing kits */
     NULL
 };
 

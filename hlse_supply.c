@@ -106,6 +106,12 @@ static const char *GO_TOP[] = {
     "testify", "gomock", "ginkgo",
     "aws-sdk-go", "azure-sdk-for-go", "google-cloud-go",
     "redis", "jwt-go", "validator", "cron", "migrate",
+    /* High-value additions 2024 */
+    "mux", "httprouter", "negroni", "iris",
+    "urfave", "spf13", "hashicorp",
+    "golang-jwt", "paseto", "casbin",
+    "sarama", "confluent-kafka-go", "nats",
+    "docker", "kubernetes", "helm",
     NULL
 };
 

