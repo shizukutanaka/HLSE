@@ -149,6 +149,10 @@ static const char *RANSOM_NOTE_NAMES[] = {
     "how_to_back_files.html",     /* INC Ransom */
     "decrypt.txt",                /* generic */
     "look_at_me.txt",             /* Lookout/generic */
+    "medusa_readme.txt",          /* Medusa ransomware */
+    "ransomhub_readme.txt",       /* RansomHub */
+    "!_readme_!.txt",             /* RansomHub variant */
+    "dragonforce_readme.txt",     /* DragonForce */
     NULL
 };
 
@@ -191,6 +195,11 @@ static const char *RANSOM_EXTENSIONS[] = {
     ".lynx",        /* Lynx ransomware (2024, INC fork) */
     ".sarcoma",     /* Sarcoma (2024) */
     ".meow",        /* Meow ransomware (2024) */
+    ".medusa",      /* Medusa ransomware (2023+, CISA advisory 2025) */
+    ".incransom",   /* INC Ransom (2024-2025) */
+    ".ransomhub",   /* RansomHub (2024-2025, high-volume successor to ALPHV) */
+    ".dragonforce", /* DragonForce (2024-2025) */
+    ".safepay",     /* SafePay (2024, LockBit-based) */
     NULL
 };
 
