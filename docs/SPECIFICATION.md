@@ -87,7 +87,7 @@ in `print_usage()` and the man page (`hlse.1`).
 | Clipboard swap | `hlse_secrets.c` | copied,pasted | same-type address swap + vanity look-alike | `clipboard` |
 | Supply chain | `hlse_supply.c` | pkg / paste / — | typosquat, pastejacking, ARP/DNS | `package`, `paste`, `network` |
 | File masquerade | `hlse_file.c` | path/name | double-extension, magic mismatch (PE/ELF/Mach-O), bidi, polyglot | `file` |
-| System audit | `hlse_audit.c` | host | SSH/perm/DNS/cron + hardening index | `audit` |
+| System audit | `hlse_audit.c` | host | SSH/perm/DNS/cron/PATH/shell-rc + hardening index | `audit` |
 
 ### 4.1 Text-detection property invariants (P1–P13)
 
@@ -498,6 +498,20 @@ detector (`hlse_supply.c`) — found:
   requires a download/exec qualifier so legitimate admin one-liners (e.g.
   `-Encoding utf8`) don't trip it. 4 tests; Supply suite 17 → 21. F1=1.000
   unaffected; ASan fuzzer clean. Fixed in 0.9.37.
+
+A twenty-fourth review — a coverage audit of the system-hardening module
+(`hlse_audit.c`) — added two read-only, high-precision checks (GAP-AG):
+
+- **A5 — Insecure `$PATH`**: flags `.`/empty element (current dir in PATH) and
+  world-writable non-sticky directories in PATH; user-owned dirs like
+  `~/.local/bin` are deliberately not flagged.
+- **A6 — Shell startup-file backdoors**: scans the common login/rc files for
+  reverse-shell device paths (`/dev/tcp`, `/dev/udp`), `nc -e`/`ncat -e`,
+  download-piped-to-shell, and `LD_PRELOAD=` — a classic persistence vector.
+  Symlinked dotfiles are read via `hlse_open_system_file` (FIFO-safe).
+
+  Both join `hlse_audit_all()` so the `audit` command surfaces them. 4 tests;
+  File/Audit suite 19 → 23. F1=1.000 unaffected. Fixed in 0.9.38.
 
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code

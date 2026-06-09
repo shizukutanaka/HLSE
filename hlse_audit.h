@@ -6,6 +6,8 @@
  *   A2. File permissions (world-readable secrets, .env exposure)
  *   A3. DNS/hosts poisoning (banking domains redirected)
  *   A4. Cron persistence (suspicious scheduled tasks)
+ *   A5. Insecure $PATH ('.'/empty or world-writable dir)
+ *   A6. Shell startup-file backdoors (reverse shells, curl|sh)
  */
 
 #ifndef HLSE_AUDIT_H
@@ -42,6 +44,8 @@ AuditVerdict hlse_audit_ssh(void);
 AuditVerdict hlse_audit_permissions(void);
 AuditVerdict hlse_audit_dns(void);
 AuditVerdict hlse_audit_cron(void);
+AuditVerdict hlse_audit_path(void);
+AuditVerdict hlse_audit_shellrc(void);
 
 /* Run all audits and combine results */
 AuditVerdict hlse_audit_all(void);

@@ -392,13 +392,142 @@ hlse_audit_cron(void) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+ * A5: Insecure $PATH
+ *
+ * A writable or current-directory entry in PATH lets an attacker plant a
+ * binary that runs under the user's identity for any unqualified command.
+ * We flag two well-known footguns: '.' / an empty element (the current
+ * directory), and a world-writable directory without the sticky bit.
+ * User-owned dirs (e.g. ~/.local/bin) are intentionally NOT flagged.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+AuditVerdict
+hlse_audit_path(void) {
+    AuditVerdict v;
+    const char *path = getenv("PATH");
+    const char *s;
+    int flagged_cwd = 0;
+
+    memset(&v, 0, sizeof(v));
+    if (!path || !*path) {
+        av_add(&v, 0, AUDIT_INFO, "A5: PATH is empty or unset");
+        return v;
+    }
+
+    for (s = path; ; ) {
+        const char *colon = strchr(s, ':');
+        size_t len = colon ? (size_t)(colon - s) : strlen(s);
+
+        if (len == 0 || (len == 1 && s[0] == '.')) {
+            if (!flagged_cwd) {
+                av_add(&v, 30, AUDIT_HIGH,
+                    "A5: current directory ('.' or empty element) in PATH — "
+                    "a planted binary in any cwd can hijack commands");
+                flagged_cwd = 1;
+            }
+        } else if (len < 1024) {
+            char dir[1024];
+            struct stat st;
+            memcpy(dir, s, len);
+            dir[len] = '\0';
+            if (stat(dir, &st) == 0 && S_ISDIR(st.st_mode) &&
+                (st.st_mode & S_IWOTH) && !(st.st_mode & S_ISVTX)) {
+                av_add(&v, 35, AUDIT_HIGH,
+                    "A5: world-writable directory in PATH: %.180s (mode %04o)",
+                    dir, (unsigned)(st.st_mode & 07777));
+            }
+        }
+
+        if (!colon) break;
+        s = colon + 1;
+    }
+
+    if (v.n_findings == 0)
+        av_add(&v, 0, AUDIT_PASS, "A5: PATH has no writable or '.' entries");
+    return v;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * A6: Shell startup-file backdoors
+ *
+ * Appending to ~/.bashrc / ~/.zshrc / ~/.profile is a classic, low-effort
+ * persistence and reverse-shell mechanism. We scan the common login/rc files
+ * for a small set of HIGH-confidence execution patterns; benign rc lines do
+ * not contain reverse-shell device paths or download-piped-to-shell.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+AuditVerdict
+hlse_audit_shellrc(void) {
+    AuditVerdict v;
+    const char *home = getenv("HOME");
+    const char *files[] = {
+        ".bashrc", ".bash_profile", ".bash_login",
+        ".profile", ".zshrc", ".zprofile", NULL
+    };
+    int fi;
+
+    memset(&v, 0, sizeof(v));
+    if (!home) {
+        av_add(&v, 0, AUDIT_INFO, "A6: HOME unset — cannot check shell rc files");
+        return v;
+    }
+
+    for (fi = 0; files[fi]; fi++) {
+        char path[512];
+        FILE *fp;
+        char line[2048];
+        int lineno = 0;
+
+        snprintf(path, sizeof(path), "%s/%s", home, files[fi]);
+        fp = hlse_open_system_file(path);   /* follows symlinked dotfiles */
+        if (!fp) continue;
+
+        while (fgets(line, sizeof(line), fp)) {
+            char *p = line;
+            lineno++;
+            while (*p == ' ' || *p == '\t') p++;
+            if (*p == '#' || *p == '\n' || *p == '\0') continue;
+
+            if (strstr(p, "/dev/tcp/") || strstr(p, "/dev/udp/")) {
+                av_add(&v, 45, AUDIT_CRITICAL,
+                    "A6: reverse-shell device path (/dev/tcp) in ~/%s:%d",
+                    files[fi], lineno);
+            }
+            if (strstr(p, "nc -e") || strstr(p, "ncat -e") ||
+                strstr(p, "nc.traditional -e")) {
+                av_add(&v, 40, AUDIT_CRITICAL,
+                    "A6: netcat -e reverse shell in ~/%s:%d", files[fi], lineno);
+            }
+            if ((strstr(p, "curl ") || strstr(p, "wget ")) &&
+                (strstr(p, "| sh")   || strstr(p, "|sh") ||
+                 strstr(p, "| bash") || strstr(p, "|bash"))) {
+                av_add(&v, 35, AUDIT_HIGH,
+                    "A6: download-piped-to-shell in ~/%s:%d "
+                    "(persistence/backdoor)", files[fi], lineno);
+            }
+            if (strstr(p, "LD_PRELOAD=")) {
+                av_add(&v, 20, AUDIT_MEDIUM,
+                    "A6: LD_PRELOAD set in ~/%s:%d — verify the library is "
+                    "trusted", files[fi], lineno);
+            }
+        }
+        fclose(fp);
+    }
+
+    if (v.n_findings == 0)
+        av_add(&v, 0, AUDIT_PASS,
+               "A6: No backdoor patterns in shell startup files");
+    return v;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
  * Unified audit
  * ═══════════════════════════════════════════════════════════════════════ */
 
 AuditVerdict
 hlse_audit_all(void) {
     AuditVerdict combined;
-    AuditVerdict parts[4];
+    AuditVerdict parts[6];
     int n = 0, i, j;
 
     memset(&combined, 0, sizeof(combined));
@@ -407,6 +536,8 @@ hlse_audit_all(void) {
     parts[n++] = hlse_audit_permissions();
     parts[n++] = hlse_audit_dns();
     parts[n++] = hlse_audit_cron();
+    parts[n++] = hlse_audit_path();
+    parts[n++] = hlse_audit_shellrc();
 
     for (i = 0; i < n; i++) {
         for (j = 0; j < parts[i].n_findings

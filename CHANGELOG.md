@@ -2,6 +2,25 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.38] — 2026-06-09
+
+### Added
+- **Two new system-audit checks** (GAP-AG), both read-only and high-precision:
+  - **A5 — Insecure `$PATH`** (`hlse_audit_path`): flags `.` / an empty element
+    (current directory in PATH) and world-writable non-sticky directories in
+    PATH — classic command-hijack footguns. User-owned dirs (e.g.
+    `~/.local/bin`) are intentionally not flagged.
+  - **A6 — Shell startup-file backdoors** (`hlse_audit_shellrc`): scans
+    `~/.bashrc`, `~/.bash_profile`, `~/.bash_login`, `~/.profile`, `~/.zshrc`,
+    `~/.zprofile` for reverse-shell device paths (`/dev/tcp`, `/dev/udp`),
+    `nc -e`/`ncat -e`, download-piped-to-shell (`curl|sh`/`wget|bash`), and
+    `LD_PRELOAD=` — a classic low-effort persistence vector. Symlinked dotfiles
+    are handled via `hlse_open_system_file` (FIFO-safe).
+  Both are wired into `hlse_audit_all()` (parts 4 → 6) so the `audit` command
+  surfaces them automatically. 4 new tests (PATH `.`/clean, rc backdoor/benign);
+  File/Audit suite 19 → 23. Additive, outside the URL/text corpus; F1=1.000
+  unaffected; zero strict warnings; cppcheck clean.
+
 ## [0.9.37] — 2026-06-09
 
 ### Added
