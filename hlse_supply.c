@@ -538,14 +538,22 @@ hlse_check_network(void) {
                 char ip[64];
                 if (sscanf(line, "nameserver %63s", ip) == 1) {
                     ns_count++;
-                    /* Known safe DNS: 1.1.1.1, 8.8.8.8, 9.9.9.9,
-                     * 127.0.0.53 (systemd-resolved) */
+                    /* Known safe DNS: major public resolvers + RFC-1918 +
+                     * 127.0.0.53 (systemd-resolved), 149.112 (Quad9),
+                     * 208.67 (OpenDNS), 64.6 (Verisign), 185.228 (CleanBrowsing) */
                     int is_known = (
                         strcmp(ip, "1.1.1.1") == 0 ||
                         strcmp(ip, "1.0.0.1") == 0 ||
                         strcmp(ip, "8.8.8.8") == 0 ||
                         strcmp(ip, "8.8.4.4") == 0 ||
                         strcmp(ip, "9.9.9.9") == 0 ||
+                        strcmp(ip, "149.112.112.112") == 0 || /* Quad9 secondary */
+                        strcmp(ip, "208.67.222.222") == 0 ||  /* OpenDNS */
+                        strcmp(ip, "208.67.220.220") == 0 ||
+                        strcmp(ip, "64.6.64.6") == 0 ||       /* Verisign */
+                        strcmp(ip, "64.6.65.6") == 0 ||
+                        strcmp(ip, "185.228.168.9") == 0 ||   /* CleanBrowsing */
+                        strcmp(ip, "185.228.169.9") == 0 ||
                         strcmp(ip, "127.0.0.1") == 0 ||
                         strcmp(ip, "127.0.0.53") == 0 ||
                         strcmp(ip, "::1") == 0 ||

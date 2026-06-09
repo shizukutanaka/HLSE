@@ -2,6 +2,18 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.61] — 2026-06-09
+
+### Added
+- **Audit: SSH hardening checks +3** (GAP-SSH): `sshd_config` parser now
+  detects `Protocol 1` (SSHv1, +40 HIGH), `MaxAuthTries > 3` (+10 LOW), and
+  `PermitEmptyPasswords yes` (+50 HIGH). All are security anti-patterns that
+  allow brute-force or no-credential access.
+- **Network: safe DNS resolver list expanded** (GAP-DNS): Added Quad9 secondary
+  (149.112.112.112), OpenDNS (208.67.x.x), Verisign (64.6.x.x), and
+  CleanBrowsing (185.228.x.x) to the known-safe resolver set, reducing false
+  positives for users of these public resolvers.
+
 ## [0.9.60] — 2026-06-09
 
 ### Added

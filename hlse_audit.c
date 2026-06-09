@@ -106,6 +106,27 @@ hlse_audit_ssh(void) {
                             "A1: PasswordAuthentication yes — brute-force risk");
                     }
                 }
+                if (strncmp(p, "Protocol", 8) == 0 && strstr(p, "1")) {
+                    av_add(&v, 40, AUDIT_HIGH,
+                        "A1: Protocol 1 enabled — SSHv1 is cryptographically broken");
+                }
+                if (strncmp(p, "MaxAuthTries", 12) == 0) {
+                    int tries = 0;
+                    const char *tp = p + 12;
+                    while (*tp == ' ' || *tp == '\t') tp++;
+                    tries = atoi(tp);
+                    if (tries > 3) {
+                        av_add(&v, 10, AUDIT_LOW,
+                            "A1: MaxAuthTries %d > 3 — consider reducing to "
+                            "limit brute-force attempts", tries);
+                    }
+                }
+                if (strncmp(p, "PermitEmptyPasswords", 20) == 0
+                    && strstr(p, "yes")) {
+                    av_add(&v, 50, AUDIT_HIGH,
+                        "A1: PermitEmptyPasswords yes — accounts with no "
+                        "password are accessible over SSH");
+                }
             }
             fclose(fp);
 
