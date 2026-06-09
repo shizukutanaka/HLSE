@@ -2,6 +2,21 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.36] — 2026-06-08
+
+### Added
+- **Mach-O executable detection in file masquerade** (GAP-AE). The magic table
+  covered PE/EXE and ELF but not Mach-O, so a macOS binary renamed
+  `invoice.pdf` / `salary.docx` slipped past the F2 magic-mismatch check on the
+  macOS platform the tool targets. Added the four unambiguous thin-binary
+  Mach-O magics (`CE/CF FA ED FE` little-endian and the big-endian mirrors) and
+  an F2 branch mirroring ELF (score 70), with `.dylib`/`.bundle`/`.o`
+  whitelisted as legitimate Mach-O containers. The fat/universal magic
+  `0xCAFEBABE` is intentionally NOT added — it is indistinguishable from a Java
+  `.class` file by header alone, so flagging it would cause false positives.
+  Additive detection outside the URL/text corpus; F1=1.000 unaffected. 2 new
+  tests (masquerade flagged, real `.dylib` spared); File/Audit suite 17 → 19.
+
 ## [0.9.35] — 2026-06-08
 
 ### Security

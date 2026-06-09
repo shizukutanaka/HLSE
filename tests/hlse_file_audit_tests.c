@@ -117,6 +117,45 @@ static void test_pe_in_pdf(void) {
     cleanup();
 }
 
+static void test_macho_in_docx(void) {
+    setup();
+    /* Mach-O 64-bit little-endian header (CF FA ED FE) with a .docx name —
+     * a macOS executable masquerading as an Office document. */
+    unsigned char macho_head[64];
+    memset(macho_head, 0, sizeof(macho_head));
+    macho_head[0] = 0xCF; macho_head[1] = 0xFA;
+    macho_head[2] = 0xED; macho_head[3] = 0xFE;
+    create("salary.docx", macho_head, sizeof(macho_head));
+
+    char path[512];
+    snprintf(path, sizeof(path), "%s/salary.docx", tmpdir);
+
+    TEST("File: Mach-O header in .docx → MAGIC MISMATCH");
+    FileVerdict v = hlse_check_file(path);
+    if (v.score >= 60) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+    cleanup();
+}
+
+static void test_macho_dylib_ok(void) {
+    setup();
+    /* A legitimate .dylib IS Mach-O — must NOT be flagged as a mismatch. */
+    unsigned char macho_head[64];
+    memset(macho_head, 0, sizeof(macho_head));
+    macho_head[0] = 0xCF; macho_head[1] = 0xFA;
+    macho_head[2] = 0xED; macho_head[3] = 0xFE;
+    create("libfoo.dylib", macho_head, sizeof(macho_head));
+
+    char path[512];
+    snprintf(path, sizeof(path), "%s/libfoo.dylib", tmpdir);
+
+    TEST("File: Mach-O .dylib → not a mismatch (low score)");
+    FileVerdict v = hlse_check_file(path);
+    if (v.score < 60) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+    cleanup();
+}
+
 static void test_real_pdf(void) {
     setup();
     unsigned char pdf_head[] = "%PDF-1.4 real pdf content here\n";
@@ -254,6 +293,8 @@ int main(void) {
 
     printf("\nFile masquerade (with disk access):\n");
     test_pe_in_pdf();
+    test_macho_in_docx();
+    test_macho_dylib_ok();
     test_real_pdf();
     test_polyglot_gif_exe();
     test_real_gif_ok();

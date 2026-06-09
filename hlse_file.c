@@ -106,9 +106,21 @@ static const unsigned char MAGIC_PNG[]  = { 0x89, 0x50, 0x4E, 0x47 };
 static const unsigned char MAGIC_JPG[]  = { 0xFF, 0xD8, 0xFF };
 static const unsigned char MAGIC_GIF[]  = { 0x47, 0x49, 0x46, 0x38 };   /* GIF8 */
 static const unsigned char MAGIC_OLE[]  = { 0xD0, 0xCF, 0x11, 0xE0 };   /* OLE compound (doc/xls/ppt) */
+/* Mach-O (macOS executables). Four unambiguous thin-binary magics, both
+ * endiannesses / word sizes. The fat/universal magic 0xCAFEBABE is omitted
+ * deliberately: it is indistinguishable from a Java .class file by header
+ * alone, so flagging it would risk false positives on legitimate bytecode. */
+static const unsigned char MAGIC_MACHO_32LE[] = { 0xCE, 0xFA, 0xED, 0xFE };
+static const unsigned char MAGIC_MACHO_64LE[] = { 0xCF, 0xFA, 0xED, 0xFE };
+static const unsigned char MAGIC_MACHO_32BE[] = { 0xFE, 0xED, 0xFA, 0xCE };
+static const unsigned char MAGIC_MACHO_64BE[] = { 0xFE, 0xED, 0xFA, 0xCF };
 static const MagicSig MAGIC_TABLE[] = {
     { MAGIC_PE,    2, "PE/EXE" },
     { MAGIC_ELF,   4, "ELF" },
+    { MAGIC_MACHO_32LE, 4, "Mach-O" },
+    { MAGIC_MACHO_64LE, 4, "Mach-O" },
+    { MAGIC_MACHO_32BE, 4, "Mach-O" },
+    { MAGIC_MACHO_64BE, 4, "Mach-O" },
     { MAGIC_PDF,   4, "PDF" },
     { MAGIC_ZIP,   4, "ZIP" },
     { MAGIC_GZIP,  2, "GZIP" },
@@ -299,6 +311,16 @@ hlse_check_file(const char *filepath) {
         {
             fv_add(&v, 70,
                 "F2: MAGIC MISMATCH — file has ELF header but extension '%s'",
+                ext);
+        }
+        /* Mach-O (macOS) header with a non-executable extension. .dylib,
+         * .bundle and .o are legitimate Mach-O containers, like .so/.o above. */
+        if (strcmp(magic_type, "Mach-O") == 0 && !is_executable_ext(ext)
+            && strcmp(ext, ".dylib") != 0 && strcmp(ext, ".bundle") != 0
+            && strcmp(ext, ".o") != 0)
+        {
+            fv_add(&v, 70,
+                "F2: MAGIC MISMATCH — file has Mach-O header but extension '%s'",
                 ext);
         }
         /* PDF magic with executable extension */

@@ -86,7 +86,7 @@ in `print_usage()` and the man page (`hlse.1`).
 | Email forensics | `hlse_secrets.c` | headers | SPF/DKIM fail, Reply-To mismatch, display-name spoof, BEC | `email` |
 | Clipboard swap | `hlse_secrets.c` | copied,pasted | same-type address swap + vanity look-alike | `clipboard` |
 | Supply chain | `hlse_supply.c` | pkg / paste / — | typosquat, pastejacking, ARP/DNS | `package`, `paste`, `network` |
-| File masquerade | `hlse_file.c` | path/name | double-extension, magic mismatch, bidi, polyglot | `file` |
+| File masquerade | `hlse_file.c` | path/name | double-extension, magic mismatch (PE/ELF/Mach-O), bidi, polyglot | `file` |
 | System audit | `hlse_audit.c` | host | SSH/perm/DNS/cron + hardening index | `audit` |
 
 ### 4.1 Text-detection property invariants (P1–P13)
@@ -468,6 +468,21 @@ output is zero-initialised at declaration):
   Damerau-Levenshtein transposition uses the canonical `+1` (behaviour-
   identical). No detection logic changed; F1=1.000 and ASan/UBSan clean.
   Fixed in 0.9.35.
+
+A twenty-second review — a coverage audit of the file-masquerade magic table
+(`hlse_file.c`) for the macOS platform the tool targets — found:
+
+- **GAP-AE — Mach-O executables were not detected**: the magic table covered
+  PE/EXE and ELF but not Mach-O, so a macOS binary renamed `invoice.pdf` or
+  `salary.docx` passed the F2 magic-mismatch check. Added the four unambiguous
+  thin-binary Mach-O magics (`CE/CF FA ED FE` and the big-endian mirrors) plus
+  an F2 branch mirroring the ELF one (score 70; `.dylib`/`.bundle`/`.o`
+  whitelisted as legitimate Mach-O containers). The fat/universal magic
+  `0xCAFEBABE` is deliberately omitted — it is indistinguishable from a Java
+  `.class` file by header alone, so flagging it would risk false positives.
+  Additive detection in a module outside the URL/text F1 corpus; 2 new file
+  tests (masquerade flagged, legitimate `.dylib` spared); File/Audit suite
+  17 → 19. F1=1.000 unaffected. Fixed in 0.9.36.
 
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code
