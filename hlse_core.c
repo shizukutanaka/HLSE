@@ -1116,6 +1116,17 @@ check_url(const char *raw_url) {
         return v;
     }
 
+    /* @ credential trick: "https://google.com@evil.com" — the part before
+     * @ is userinfo (ignored by browsers); the real host is after @.
+     * RFC 3986 §3.2.1 allows userinfo@host but browsers use host only. */
+    {
+        size_t scheme_len = u.is_https ? 8 : 7;  /* https:// or http:// */
+        if (strchr(raw_url + scheme_len, '@')) {
+            add_reason(&v, 45, "URL credential trick: @ in authority — "
+                       "displayed host is fake, real host follows @");
+        }
+    }
+
     detect_homoglyph(&u, &v);
     detect_mixed_script(&u, &v);
     detect_idn_homograph(&u, &v);
@@ -1385,6 +1396,9 @@ self_test(void) {
         /* Brand-token FP guard — short brand "line" must not match "airline" */
         { "https://airline-update.com/flights",            0, 39,
           "FP guard: 'airline' must not match brand 'line'" },
+        /* @ credential trick */
+        { "https://google.com@evil.com/verify",           45, 100,
+          "@ credential trick detected" },
         /* Legitimate IDNs — must NOT be flagged as homographs (UTS-39) */
         { "https://xn--mnchen-3ya.com",                    0, 14,
           "Legit IDN: xn--mnchen-3ya = münchen (German, single-script)" },

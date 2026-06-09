@@ -2,6 +2,15 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.69] — 2026-06-09
+
+### Security
+- **URL: @ credential trick explicit detection** (GAP-URL-AT): Added dedicated
+  check for `@` in URL authority (`https://google.com@evil.com` pattern). Per
+  RFC 3986 §3.2.1 the real host is after the @; browsers show the fake brand
+  before it. Now scores +45 with a clear message. Self-test case added (25
+  cases). Previously detected only indirectly via subdomain-spoof path.
+
 ## [0.9.68] — 2026-06-09
 
 ### Added
