@@ -125,6 +125,17 @@ static const char *RANSOM_NOTE_NAMES[] = {
     "!readme!.txt", "_readme_.txt",
     "ransom_note.txt", "your_files.txt",
     "recovery.txt", "unlock_files.txt",
+    /* STOP/DJVU family */
+    "how_to_restore_files.txt",
+    /* DHARMA/PHOBOS family */
+    "decrypt_info.html",
+    /* Nemty / generic variants */
+    "readme_decrypt.txt",
+    "files_encrypted.txt",
+    "restore_my_files.txt",
+    /* Generic multi-exclamation variants (Cerber etc.) */
+    "!!!readme!!!.txt",
+    "!decrypt!.txt",
     /* Japanese ransomware notes */
     "身代金.txt", "ファイル復元.txt",
     NULL
@@ -138,6 +149,22 @@ static const char *RANSOM_EXTENSIONS[] = {
     ".r5a", ".WNCRY", ".wcry", ".wncrypt", ".wncryt",
     ".hacked", ".1btc", ".pays", ".paymst", ".STOP",
     ".djvu", ".shade", ".no_more_ransom",
+    /* Major families 2018-2024 */
+    ".ryuk",        /* Ryuk (Wizard Spider, 2018-2021) */
+    ".lockbit",     /* LockBit family */
+    ".clop",        /* Cl0p / Clop ransomware */
+    ".phobos",      /* PHOBOS family */
+    ".eking",       /* PHOBOS/Eking variant */
+    ".dharma",      /* DHARMA family */
+    ".karma",       /* KARMA ransomware */
+    ".conti",       /* Conti family */
+    ".avaddon",     /* Avaddon (closed 2021) */
+    ".deadbolt",    /* DeadBolt (NAS-targeting, 2022) */
+    ".akira",       /* Akira (2023+) */
+    ".rhysida",     /* Rhysida (2023-2024) */
+    ".monti",       /* Monti (Conti fork) */
+    ".cactus",      /* Cactus (2023+) */
+    ".cryptolocker",/* CryptoLocker (classic 2013) */
     NULL
 };
 
@@ -718,6 +745,12 @@ static const char *ESP_INDICATORS[] = {
     "pay bitcoin",
     "send bitcoin",
     "petya",
+    /* UEFI bootkits discovered 2022-2024 */
+    "blacklotus",   /* Windows BlackLotus UEFI bootkit */
+    "bootkitty",    /* Linux Bootkitty UEFI bootkit (2024) */
+    /* Generic ransom-note phrases embedded in tampered EFI binaries */
+    "contact us to decrypt",
+    "to recover your files",
     NULL
 };
 

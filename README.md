@@ -24,7 +24,7 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             320+ (8 suites + corpus + CLI integration)
+  Structured tests:             336 (8 suites + corpus + CLI integration)
   Fuzz iterations:              100,000 (0 crashes)
   ASan + UBSan:                 0 errors
   Compiler warnings:            0 (-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
@@ -182,12 +182,12 @@ Every subcommand supports `--json`:
 | Unit (URL) | 23 | Individual URL detector accuracy (incl. IDN/Punycode homograph) |
 | Unit (text) | 15 | Individual text signal accuracy |
 | Property invariants | 64 | Monotonicity, bounds, determinism, case, evasion (P1–P13) |
-| Protection | 17 | Ransomware, network drive, SMB, MBR/GPT, ESP |
+| Protection | 19 | Ransomware, network drive, SMB, MBR/GPT, ESP |
 | Secrets | 34 | Credentials (36 token patterns), email headers, crypto addresses (incl. Solana) |
 | Supply chain | 21 | Package typosquat, pastejacking (incl. Windows ClickFix), network |
 | File/Audit | 23 | File masquerade (PE/ELF/Mach-O), system hardening (SSH/perms/DNS/cron/PATH/shell-rc) + hardening index |
 | Util | 18 | Entropy, Damerau-Levenshtein, benign-magic + safe system-file open (FIFO/symlink) |
-| OOD corpus | 25 | Out-of-distribution F1 (held-out phishing/scam) |
+| OOD corpus | 29 | Out-of-distribution F1 (held-out phishing/scam) |
 | CLI integration | 90 | All 12 subcommands, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON, SARIF relative URIs, no-arg exit=2 |
 | Fuzz | 4 × 100K | text / secrets / supply-chain / file harnesses (random bytes, truncated UTF-8, keyword stuffing, typosquat mutation, bidi/control) |
 

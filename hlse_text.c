@@ -82,6 +82,7 @@ static const char *URGENCY_WORDS[] = {
     "suspend", "suspended", "locked", "unauthorized access", "verify now",
     "account will be closed", "deadline", "time-sensitive",
     "pay today", "act today", "respond today", "don't delay",
+    "final warning", "last warning",
     /* Japanese (UTF-8) */
     "至急", "緊急", "即座", "本日中", "24時間以内", "48時間以内",
     "停止", "凍結", "ロック", "不正アクセス", "確認してください",
@@ -104,6 +105,10 @@ static const char *BAIT_WORDS[] = {
     "amazon gift", "walmart gift", "target gift", "best buy gift", "steam card",
     "purchase gift", "purchase google", "purchase itunes",
     "refund", "reimbursement", "claim your",
+    /* Crypto wallet theft */
+    "seed phrase", "recovery phrase",
+    /* Money transfer platforms common in elder/tech-support fraud */
+    "zelle", "western union", "moneygram",
     /* Japanese */
     "パスワード", "暗証番号", "暗証番号をご入力", "クレジットカード", "銀行口座", "振込",
     "ビットコイン", "仮想通貨", "ギフトカード", "アマゾンギフト", "還付金", "返金",
@@ -142,6 +147,8 @@ static const char *AUTHORITY_WORDS[] = {
     "from the cfo", "your manager", "from the director",
     "the chairman", "head of finance", "from legal", "legal department",
     "from accounts payable", "executive office",
+    /* International law enforcement impersonation */
+    "interpol", "secret service",
     /* Japanese */
     "警察", "税務署", "国税庁", "総務省", "裁判所", "検察", "警視庁",
     /* Korean */
@@ -192,6 +199,9 @@ static const char *RANSOM_WORDS[] = {
     "files are locked", "files have been locked", "all your files",
     "pay the ransom", "recover your files",
     "decryption key", "decrypt your files",
+    /* Double-extortion phrases (2020+ threat landscape) */
+    "data has been exfiltrated", "your data will be published",
+    "contact us to decrypt",
     /* Japanese */
     "ファイルが暗号化", "復号キー", "身代金",
     NULL

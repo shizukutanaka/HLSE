@@ -254,6 +254,45 @@ test_ransomware_shadow_deletion_api(void) {
 }
 
 static void
+test_ransomware_new_extensions(void) {
+    setup_tmpdir();
+    int i;
+    for (i = 0; i < 3; i++) {
+        char name[64];
+        snprintf(name, sizeof(name), "doc%d.ryuk", i);
+        create_file(name, "encrypted content\n", 18);
+        snprintf(name, sizeof(name), "file%d.lockbit", i);
+        create_file(name, "encrypted content\n", 18);
+        snprintf(name, sizeof(name), "report%d.akira", i);
+        create_file(name, "encrypted content\n", 18);
+    }
+    TEST("Ransomware: .ryuk/.lockbit/.akira extensions → detected");
+    ProtectionVerdict v = hlse_ransomware_check_directory(tmpdir);
+    if (v.score >= 30) { PASS(); }
+    else {
+        char buf[64]; snprintf(buf, sizeof(buf), "score=%d", v.score);
+        FAIL(buf);
+    }
+    cleanup_tmpdir();
+}
+
+static void
+test_ransomware_stop_djvu_note(void) {
+    setup_tmpdir();
+    create_file("normal.txt", "Normal content\n", 15);
+    create_file("how_to_restore_files.txt",
+                "ATTENTION! Don't worry, you can return all your files!\n", 55);
+    TEST("Ransomware: STOP/DJVU note 'how_to_restore_files.txt' → detected");
+    ProtectionVerdict v = hlse_ransomware_check_directory(tmpdir);
+    if (v.score >= 30) { PASS(); }
+    else {
+        char buf[64]; snprintf(buf, sizeof(buf), "score=%d", v.score);
+        FAIL(buf);
+    }
+    cleanup_tmpdir();
+}
+
+static void
 test_ransomware_compound(void) {
     setup_tmpdir();
     /* Ransom note + encrypted extensions + high entropy = BLOCK */
@@ -530,6 +569,8 @@ main(void) {
     test_ransomware_entropy_spike();
     test_ransomware_compressed_not_flagged();
     test_ransomware_shadow_deletion_api();
+    test_ransomware_new_extensions();
+    test_ransomware_stop_djvu_note();
     test_ransomware_compound();
 
     printf("\nNetwork drive protection:\n");

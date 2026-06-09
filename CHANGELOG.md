@@ -2,6 +2,37 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.39] — 2026-06-09
+
+### Added
+- **Ransomware/boot coverage expansion** (GAP-AH):
+  - `RANSOM_NOTE_NAMES` +7 entries: `how_to_restore_files.txt` (STOP/DJVU),
+    `decrypt_info.html` (DHARMA/PHOBOS), `readme_decrypt.txt`, `files_encrypted.txt`,
+    `restore_my_files.txt`, `!!!readme!!!.txt`, `!decrypt!.txt`.
+  - `RANSOM_EXTENSIONS` +15 entries covering major families missing from the original
+    table: `.ryuk`, `.lockbit`, `.clop`, `.phobos`, `.eking`, `.dharma`, `.karma`,
+    `.conti`, `.avaddon`, `.deadbolt`, `.akira`, `.rhysida`, `.monti`, `.cactus`,
+    `.cryptolocker`.
+  - `ESP_INDICATORS` +4 entries: `blacklotus` (Windows UEFI bootkit, 2022-2023),
+    `bootkitty` (Linux UEFI bootkit, 2024), `contact us to decrypt`,
+    `to recover your files`.
+- **Text-scam coverage expansion** (GAP-AH continued):
+  - `URGENCY_WORDS` +2: `"final warning"`, `"last warning"` — high-prevalence
+    phishing phrases not previously covered.
+  - `BAIT_WORDS` +5: `"seed phrase"`, `"recovery phrase"` (crypto wallet theft);
+    `"zelle"`, `"western union"`, `"moneygram"` (money-transfer scam platforms
+    common in elder-fraud and tech-support fraud).
+  - `AUTHORITY_WORDS` +2: `"interpol"`, `"secret service"` — law-enforcement
+    impersonation scams.
+  - `RANSOM_WORDS` +3 double-extortion phrases (2020+ threat landscape):
+    `"data has been exfiltrated"`, `"your data will be published"`,
+    `"contact us to decrypt"`.
+- **New tests**: 2 protection tests (`.ryuk`/`.lockbit`/`.akira` extensions, STOP/DJVU
+  note name); 4 OOD corpus cases (double extortion, seed-phrase phishing, INTERPOL
+  impersonation, benign crypto guide non-FP). Protection suite 17→19, OOD corpus
+  25→29.  In-distribution F1=1.000 maintained; out-of-distribution F1=0.970;
+  zero strict warnings; ASan/UBSan clean.
+
 ## [0.9.38] — 2026-06-09
 
 ### Added
