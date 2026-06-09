@@ -2,6 +2,17 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.62] — 2026-06-09
+
+### Added
+- **Text: callback/TOAD/smishing/vishing detection** (GAP-TX-TOAD): New signal
+  `CALLBACK_PHISH_WORDS` (17 EN + 6 JP phrases) covering telephone-oriented
+  attack delivery (BazarCall, Google Groups callback phishing), SMS delivery-fee
+  scams, and Japanese package delivery smishing. Base=15, per_hit=10, cap=30.
+  Compound amplifier in Pass 2: callback + urgency/authority/bait → +20. Benign
+  appointment reminders with "call us at" score LOG (25); urgent subscription
+  scam with callback → ALERT (51+). P6 FP gate passes.
+
 ## [0.9.61] — 2026-06-09
 
 ### Added

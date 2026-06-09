@@ -260,6 +260,25 @@ static const char *SHELL_PIPE_WORDS[] = {
     NULL
 };
 
+/* Callback / telephone-oriented attack delivery (TOAD) / vishing / smishing.
+ * Attacker gives a phone number and asks victim to call, evading URL filters. */
+static const char *CALLBACK_PHISH_WORDS[] = {
+    /* Callback numbers (TOAD — BazarCall, Google Groups phishing) */
+    "call us at", "call back at", "call our toll-free",
+    "please call", "contact us by phone", "reach us at",
+    "call +1", "call +44", "call +61", "call +81",
+    "do not reply to this email", "call the number",
+    /* SMS / smishing lures */
+    "reply stop to", "reply yes to", "txt stop to",
+    "click to track your parcel", "your parcel is waiting",
+    "delivery rescheduled", "delivery fee", "redelivery charge",
+    "customs fee required", "package on hold",
+    /* Japanese callback/smishing */
+    "折り返しお電話", "お電話ください", "佐川急便",
+    "宅急便", "不在通知", "再配達",
+    NULL
+};
+
 /* QR code phishing ("quishing") — victim asked to scan a QR code rather
  * than click a link, bypassing URL filters on email gateways.          */
 static const char *QR_PHISH_WORDS[] = {
@@ -285,6 +304,7 @@ static const Signal SIGNALS[] = {
     { "Direct financial action",    FIN_ACTION_WORDS,15, 15, 30 },
     { "Shell-pipe-to-interpreter",  SHELL_PIPE_WORDS,40,  0, 40 },
     { "QR code phishing (quishing)",QR_PHISH_WORDS,  20, 10, 30 },
+    { "Callback/TOAD/smishing",     CALLBACK_PHISH_WORDS, 15, 10, 30 },
     { NULL, NULL, 0, 0, 0 }
 };
 
@@ -623,6 +643,7 @@ hlse_check_text(const char *raw_text) {
     int  fired_urgency = 0, fired_bait = 0, fired_prize = 0;
     int  fired_ransom = 0, fired_authority = 0, fired_secrecy = 0;
     int  fired_qr = 0;
+    int  fired_callback = 0;
 
     memset(&v, 0, sizeof(v));
     if (!raw_text) return v;
@@ -696,6 +717,7 @@ hlse_check_text(const char *raw_text) {
         else if (strcmp(sig->name, "Authority impersonation") == 0) fired_authority = 1;
         else if (strcmp(sig->name, "Secrecy/grooming") == 0) fired_secrecy = 1;
         else if (strcmp(sig->name, "QR code phishing (quishing)") == 0) fired_qr = 1;
+        else if (strcmp(sig->name, "Callback/TOAD/smishing") == 0) fired_callback = 1;
     }
 
     #undef MATCH
@@ -780,6 +802,15 @@ hlse_check_text(const char *raw_text) {
                 add_text_reason(&v, 15,
                     "Amplifier: wallet key + financial/credential context");
             }
+        }
+    }
+
+    /* Callback / TOAD / smishing amplifiers */
+    if (fired_callback) {
+        if (fired_urgency || fired_authority || fired_bait) {
+            add_text_reason(&v, 20,
+                "Amplifier: callback request + urgency/authority/bait = "
+                "telephone-oriented attack delivery (TOAD/vishing)");
         }
     }
 
