@@ -2,6 +2,17 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.34] — 2026-06-08
+
+### Added
+- **Discord webhook URL detection (34 → 36 patterns)**. The scanner already
+  caught Slack webhook URLs; Discord webhooks (`discord.com/api/webhooks/<id>`
+  and `discordapp.com/api/webhooks/<id>`) are among the most commonly leaked
+  and were missing. Numeric-ID anchored after the fixed URL path, so false
+  positives are negligible. F1=1.000 unaffected; secrets suite 33 → 34. This
+  completes the credential-coverage work begun in 0.9.32 — 36 patterns now
+  span the major cloud, SaaS, LLM, package-registry, and webhook providers.
+
 ## [0.9.33] — 2026-06-08
 
 ### Added

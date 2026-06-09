@@ -94,7 +94,7 @@ is_alnum_or_dash(char c) {
  *   - Linear / New Relic:   lin_api_[A-Za-z0-9]{40} / NRAK-[A-Za-z0-9]{27}
  *   - Databricks:           dapi[0-9a-f]{32}
  *   - Slack Token:          xoxb-|xoxp-|xoxs-[0-9A-Za-z-]{10,}
- *   - Slack Webhook:        hooks.slack.com/services/T
+ *   - Slack / Discord Webhook URLs (URL-anchored, ~zero false positive)
  *   - Generic high-entropy: 32+ hex chars after "key" / "secret" / "token"
  *   - SSH Private Key:      -----BEGIN (RSA|OPENSSH) PRIVATE KEY-----
  *   - .env PASSWORD=:       PASSWORD= or PASS= followed by non-empty value
@@ -115,6 +115,12 @@ typedef struct {
 
 static int char_upper_digit(char c) {
     return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z');
+}
+
+/* Digits only — used for URL-anchored tokens whose first segment is a numeric
+ * ID (e.g. a Discord webhook ID after `.../webhooks/`). */
+static int is_digit_c(char c) {
+    return (c >= '0' && c <= '9');
 }
 
 /* Letters only — used for tokens whose body is pure alphabetic (e.g. Hugging
@@ -195,9 +201,13 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* Databricks */
     { "dapi",          4,  32, is_hex,             "Databricks Access Token", 80 },
 
-    /* Generic */
+    /* Webhook URLs (URL-anchored — essentially zero false positives) */
     { "hooks.slack.com/services/T", 27, 5, is_alnum_or_dash,
                                             "Slack Webhook URL",     70 },
+    { "discord.com/api/webhooks/",     25, 17, is_digit_c,
+                                            "Discord Webhook URL",   75 },
+    { "discordapp.com/api/webhooks/",  28, 17, is_digit_c,
+                                            "Discord Webhook URL",   75 },
 
     { NULL, 0, 0, NULL, NULL, 0 }
 };

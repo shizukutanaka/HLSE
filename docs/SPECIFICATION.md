@@ -82,7 +82,7 @@ in `print_usage()` and the man page (`hlse.1`).
 | Text scam / BEC | `hlse_text.c` | text | urgency, financial bait, authority, ransom, BEC amplifiers; evasion-normalised | `text` |
 | Ransomware | `hlse_protect.c` | dir | entropy spike (+magic exclusion), ransom notes, ext mutation, shadow delete | `protect` |
 | Boot integrity | `hlse_protect.c` | device / ESP | MBR signature/strings/entropy; ESP ransom/bootkit strings | `protect --mbr`, `esp` |
-| Credential leak | `hlse_secrets.c` | text/dir | 34 token patterns: AWS(+STS)/GitHub/GitLab/Google/npm/OpenAI/Anthropic/Stripe/Shopify/HuggingFace/PyPI/Postman/Square/Doppler/Grafana/Linear/NewRelic/Databricks/Slack/SSH/.env, placeholder exclusion | `scan`, `secret` |
+| Credential leak | `hlse_secrets.c` | text/dir | 36 token patterns: AWS(+STS)/GitHub/GitLab/Google/npm/OpenAI/Anthropic/Stripe/Shopify/HuggingFace/PyPI/Postman/Square/Doppler/Grafana/Linear/NewRelic/Databricks/Slack+Discord webhooks/SSH/.env, placeholder exclusion | `scan`, `secret` |
 | Email forensics | `hlse_secrets.c` | headers | SPF/DKIM fail, Reply-To mismatch, display-name spoof, BEC | `email` |
 | Clipboard swap | `hlse_secrets.c` | copied,pasted | same-type address swap + vanity look-alike | `clipboard` |
 | Supply chain | `hlse_supply.c` | pkg / paste / — | typosquat, pastejacking, ARP/DNS | `package`, `paste`, `network` |
@@ -429,6 +429,15 @@ TruffleHog, detect-secrets) against HLSE's credential scanner — found:
   scanning HLSE's own source tree confirmed zero false positives from the new
   prefixes. A table-driven detection test plus an extended prose FP guard;
   secrets suite 32 → 33. Fixed in 0.9.33.
+
+- **GAP-AC — Discord webhook URLs undetected (34 → 36)**: the scanner already
+  flagged Slack webhook URLs but not Discord, one of the most commonly leaked
+  webhook formats. Added `discord.com/api/webhooks/<id>` and
+  `discordapp.com/api/webhooks/<id>` (numeric-ID anchored, ~zero FP), completing
+  the URL-anchored webhook category. F1=1.000 unaffected; secrets suite
+  33 → 34. This concludes the credential-coverage vein — 36 patterns now span
+  the major cloud/SaaS/LLM/registry/webhook providers that peer scanners ship.
+  Fixed in 0.9.34.
 
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code

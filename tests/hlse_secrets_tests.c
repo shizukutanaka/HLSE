@@ -210,6 +210,18 @@ static void test_extended_provider_tokens(void) {
            cases[fail_idx].pfx); FAIL(b); }
 }
 
+static void test_discord_webhook(void) {
+    TEST("Secret: Discord webhook URL detected");
+    char text[200];
+    /* Split so the contiguous webhook URL never appears literally in source. */
+    snprintf(text, sizeof(text), "WEBHOOK=https://%s%s/%s\n",
+             "discord.com/api/webhooks/", "012345678901234567",
+             "Ab3dEf6hIj9lMn2pQr5tUv8wXyZ0aB1c2D3e4F5g6H7i8J9k");
+    SecretVerdict v = hlse_scan_secrets(text);
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
 static void test_new_patterns_no_fp(void) {
     TEST("Secret: new-pattern prefixes in prose → no false positive");
     /* Words/identifiers that share a prefix but are not credentials. */
@@ -387,6 +399,7 @@ int main(void) {
     test_shopify_token();
     test_aws_temp_key();
     test_extended_provider_tokens();
+    test_discord_webhook();
     test_new_patterns_no_fp();
 
     printf("\nEmail Forensics:\n");
