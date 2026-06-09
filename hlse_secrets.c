@@ -670,6 +670,12 @@ typedef enum {
     CRYPTO_XMR,           /* 4... or 8... (95 chars) */
     CRYPTO_SOL,           /* base58 (32-44 chars) */
     CRYPTO_USDT_TRC20,    /* T... (34 chars) */
+    CRYPTO_LTC_LEGACY,    /* L... or M... (34 chars, base58) */
+    CRYPTO_LTC_SEGWIT,    /* ltc1q... (43 chars, bech32) */
+    CRYPTO_DOGE,          /* D... (34 chars, base58) */
+    CRYPTO_XRP,           /* r... (25-34 chars, base58-like) */
+    CRYPTO_DASH,          /* X... (34 chars, base58) */
+    CRYPTO_XLM,           /* G... (56 chars, Stellar base32) */
 } CryptoType;
 
 static int
@@ -729,6 +735,57 @@ detect_crypto_type(const char *addr) {
         if (ok) return CRYPTO_USDT_TRC20;
     }
 
+    /* Litecoin SegWit: ltc1q + ~38 bech32 chars = 43 total */
+    if (len == 43 && strncmp(addr, "ltc1q", 5) == 0)
+        return CRYPTO_LTC_SEGWIT;
+
+    /* Litecoin Legacy: L or M + 33 base58 chars = 34 total */
+    if (len == 34 && (addr[0] == 'L' || addr[0] == 'M')) {
+        int i, ok = 1;
+        for (i = 1; i < 34; i++) {
+            if (!is_base58(addr[i])) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_LTC_LEGACY;
+    }
+
+    /* Dogecoin: D + 33 base58 chars = 34 total */
+    if (len == 34 && addr[0] == 'D') {
+        int i, ok = 1;
+        for (i = 1; i < 34; i++) {
+            if (!is_base58(addr[i])) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_DOGE;
+    }
+
+    /* DASH: X + 33 base58 chars = 34 total */
+    if (len == 34 && addr[0] == 'X') {
+        int i, ok = 1;
+        for (i = 1; i < 34; i++) {
+            if (!is_base58(addr[i])) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_DASH;
+    }
+
+    /* Stellar (XLM): G + 55 chars in Stellar base32 [A-Z2-7] = 56 total */
+    if (len == 56 && addr[0] == 'G') {
+        int i, ok = 1;
+        for (i = 1; i < 56; i++) {
+            if (!((addr[i] >= 'A' && addr[i] <= 'Z') ||
+                  (addr[i] >= '2' && addr[i] <= '7'))) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_XLM;
+    }
+
+    /* XRP: r + 24-33 base58-like chars = 25-34 total. Checked before SOL
+     * since XRP addresses always start with 'r' at this length range.    */
+    if (len >= 25 && len <= 34 && addr[0] == 'r') {
+        int i, ok = 1;
+        for (i = 1; i < (int)len; i++) {
+            if (!is_base58(addr[i])) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_XRP;
+    }
+
     /* Solana: base58, 32-44 chars, no fixed prefix. Checked LAST so the
      * prefixed / fixed-length formats above (BTC 1/3, USDT T, ETH 0x, …)
      * win; only an otherwise-unclassified base58 string of Solana length
@@ -756,6 +813,12 @@ crypto_type_name(CryptoType t) {
         case CRYPTO_XMR:         return "XMR (Monero)";
         case CRYPTO_SOL:         return "SOL (Solana)";
         case CRYPTO_USDT_TRC20:  return "USDT (TRC20)";
+        case CRYPTO_LTC_LEGACY:  return "LTC (Legacy)";
+        case CRYPTO_LTC_SEGWIT:  return "LTC (SegWit)";
+        case CRYPTO_DOGE:        return "DOGE (Dogecoin)";
+        case CRYPTO_XRP:         return "XRP (Ripple)";
+        case CRYPTO_DASH:        return "DASH";
+        case CRYPTO_XLM:         return "XLM (Stellar)";
         default:                 return "Unknown";
     }
 }

@@ -58,7 +58,8 @@ typedef struct {
 
 /* Compare a copied string with a pasted string. If both are crypto
  * addresses of the same type but different values, this is a clipboard
- * hijack (score 95). Supports BTC, ETH, XMR, SOL, USDT.              */
+ * hijack (score 95). Supports BTC, ETH, XMR, SOL, USDT (TRC20),
+ * LTC, DOGE, XRP, DASH, XLM.                                         */
 CryptoSwapVerdict hlse_check_crypto_swap(const char *copied,
                                           const char *pasted);
 

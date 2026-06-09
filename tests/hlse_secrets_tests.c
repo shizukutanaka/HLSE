@@ -375,6 +375,57 @@ static void test_crypto_validate_garbage(void) {
     else { char b[32]; snprintf(b,32,"type=%d",t); FAIL(b); }
 }
 
+static void test_crypto_ltc_swap(void) {
+    TEST("Clipboard: LTC address swapped → score 95");
+    /* Two structurally valid LTC Legacy addresses (L + 33 base58 chars) */
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "LaBcDeFgHiJkMnPqRsTuVwXyZ12345678",
+        "LzYxWvUtSrQpNmKjHgFeDcBa98765432");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+static void test_crypto_doge_swap(void) {
+    TEST("Clipboard: DOGE address swapped → score 95");
+    /* Two structurally valid DOGE addresses (D + 33 base58 chars) */
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "DaBcDeFgHiJkMnPqRsTuVwXyZ12345678",
+        "DzYxWvUtSrQpNmKjHgFeDcBa98765432");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+static void test_crypto_xrp_swap(void) {
+    TEST("Clipboard: XRP address swapped → score 95");
+    /* Two structurally valid XRP addresses (r + base58-like, 25-34 chars) */
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "raBcDeFgHiJkMnPqRsTuVwXyZ12345",
+        "rzYxWvUtSrQpNmKjHgFeDcBa98765");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+static void test_crypto_validate_ltc(void) {
+    TEST("Validate: LTC Legacy address recognized");
+    int t = hlse_validate_crypto_address("LaBcDeFgHiJkMnPqRsTuVwXyZ12345678");
+    if (t != 0) PASS();
+    else FAIL("LTC not recognized");
+}
+
+static void test_crypto_validate_doge(void) {
+    TEST("Validate: DOGE address recognized");
+    int t = hlse_validate_crypto_address("DaBcDeFgHiJkMnPqRsTuVwXyZ12345678");
+    if (t != 0) PASS();
+    else FAIL("DOGE not recognized");
+}
+
+static void test_crypto_validate_xrp(void) {
+    TEST("Validate: XRP address recognized");
+    int t = hlse_validate_crypto_address("raBcDeFgHiJkMnPqRsTuVwXyZ12345");
+    if (t != 0) PASS();
+    else FAIL("XRP not recognized");
+}
+
 /* ─── Main ────────────────────────────────────────────────────────────── */
 
 int main(void) {
@@ -419,6 +470,12 @@ int main(void) {
     test_crypto_validate_eth();
     test_crypto_validate_sol();
     test_crypto_sol_swap();
+    test_crypto_ltc_swap();
+    test_crypto_doge_swap();
+    test_crypto_xrp_swap();
+    test_crypto_validate_ltc();
+    test_crypto_validate_doge();
+    test_crypto_validate_xrp();
     test_crypto_validate_garbage();
 
     printf("\n══════════════════════════════════════════\n");

@@ -2,6 +2,24 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.40] — 2026-06-09
+
+### Added
+- **Clipboard crypto-swap: 6 new address formats** (GAP-AI):
+  - `CRYPTO_LTC_LEGACY` — Litecoin L.../M... (34 chars, base58)
+  - `CRYPTO_LTC_SEGWIT` — Litecoin ltc1q... (43 chars, bech32)
+  - `CRYPTO_DOGE` — Dogecoin D... (34 chars, base58)
+  - `CRYPTO_XRP` — Ripple r... (25-34 chars, base58-like)
+  - `CRYPTO_DASH` — DASH X... (34 chars, base58)
+  - `CRYPTO_XLM` — Stellar G... (56 chars, base32 [A-Z2-7])
+  All six are actively targeted by clipper malware (MassLogger, RedLine,
+  Titan, Doenerium). New formats are inserted before the SOL catch-all so
+  the fixed-prefix formats win on ambiguous-length inputs. `crypto_type_name`
+  updated; `hlse_secrets.h` docstring updated to list all 10 supported chains.
+- **6 new tests**: LTC/DOGE/XRP swap detection + LTC/DOGE/XRP validation;
+  Secrets suite 34→40. Zero regressions; F1=1.000; zero strict warnings;
+  ASan clean.
+
 ## [0.9.39] — 2026-06-09
 
 ### Added
