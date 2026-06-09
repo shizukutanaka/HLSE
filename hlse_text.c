@@ -743,6 +743,28 @@ hlse_check_text(const char *raw_text) {
                 }
             }
         }
+        /* Crypto wallet phishing: urgency + seed-phrase/key request.
+         * These signals are high-specificity; the combination is
+         * near-certain phishing (Chainalysis 2023 wallet-drainer report). */
+        {
+            int has_wallet_key = str_contains(lower, "seed phrase")
+                              || str_contains(lower, "recovery phrase")
+                              || str_contains(lower, "mnemonic")
+                              || str_contains(lower, "private key")
+                              || str_contains(lower, "connect wallet")
+                              || str_contains(lower, "wallet passphrase");
+            if (fired_urgency && has_wallet_key) {
+                add_text_reason(&v, 20,
+                    "Amplifier: urgency + wallet credential request = "
+                    "crypto wallet phishing");
+            }
+            /* Even without urgency, a direct wallet-drain request targeting
+             * an existing account is ALERT-level on its own. */
+            if (has_wallet_key && fired_bait) {
+                add_text_reason(&v, 15,
+                    "Amplifier: wallet key + financial/credential context");
+            }
+        }
     }
 
     /* Suspicious URL in flagged context */
@@ -751,7 +773,12 @@ hlse_check_text(const char *raw_text) {
                    || str_contains(lower, "bit.ly")
                    || str_contains(lower, ".xyz")
                    || str_contains(lower, ".top")
-                   || str_contains(lower, ".click");
+                   || str_contains(lower, ".click")
+                   || str_contains(lower, ".tk")
+                   || str_contains(lower, ".pw")
+                   || str_contains(lower, ".su")
+                   || str_contains(lower, ".vip")
+                   || str_contains(lower, ".icu");
         if (has_url && v.score > 0) {
             add_text_reason(&v, 10, "URL in suspicious context");
         }

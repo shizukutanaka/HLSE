@@ -2,6 +2,26 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.54] — 2026-06-09
+
+### Added
+- **CI: GitHub Actions workflows now active** (P0-1): Moved `ci.yml` and
+  `codeql.yml` from `examples/workflows/` to `.github/workflows/`, so CI
+  (build, test, cppcheck, privacy tripwire) and CodeQL now actually run on
+  every push/PR. README claim "CI enforces this" is now correct.
+- **Text: compound amplifier for crypto wallet phishing** (P1-3): Pass 2 of
+  `hlse_check_text()` now amplifies when urgency + wallet-key request co-occur
+  (+20) and when wallet-key + bait context co-occur (+15). Fixes the OOD gap:
+  "URGENT…enter your seed phrase…" was scoring 28 (LOG); now scores 48 (ALERT).
+  **OOD F1: 0.970 → 1.000** (29/29 cases). In-distribution F1 unchanged.
+- **Text: suspicious-URL TLD set expanded** in text context check: added .tk,
+  .pw, .su, .vip, .icu to the inline suspicious-domain list that triggers the
+  +10 URL-in-context amplifier.
+- **API: `HLSE_VERSION` moved to `hlse_core.h`** (P2-9): Library consumers can
+  now read the version string at compile time without accessing the .c source.
+  `hlse_core.c` references the header definition (no redefinition, no
+  ODR risk). Version: 0.9.53 → 0.9.54.
+
 ## [0.9.53] — 2026-06-09
 
 ### Added

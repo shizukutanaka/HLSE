@@ -53,8 +53,8 @@
 #include <errno.h>
 
 /* ───────────────────────────── version ──────────────────────────────── */
-
-#define HLSE_VERSION       "0.9.53"
+/* HLSE_VERSION is defined in hlse_core.h so library users can read it
+ * without access to this translation unit.                             */
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 

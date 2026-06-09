@@ -9,7 +9,7 @@ from a single binary.
 ```
 Detection accuracy:
   In-distribution corpus:       F1 = 1.000
-  Out-of-distribution corpus:   F1 = 0.970
+  Out-of-distribution corpus:   F1 = 1.000
   False positive rate:          0.0%
 
 Evasion resistance:
