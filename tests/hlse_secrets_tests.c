@@ -178,12 +178,45 @@ static void test_aws_temp_key(void) {
     else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
 }
 
+static void test_extended_provider_tokens(void) {
+    /* Second peer-parity batch (HuggingFace/PyPI/Postman/Square/Doppler/
+     * Grafana/Linear/NewRelic/Databricks). Tokens assembled at runtime from
+     * split prefix+body so the literal never appears in source. */
+    struct { const char *pfx; const char *body; } cases[] = {
+        { "hf_",                  "abcdefghijklmnopqrstuvwxyzabcdefgh" },
+        { "pypi-AgEIcHlwaS5vcmc", "Ab3dEf6hIj9lMn2pQr5tUv8w" },
+        { "PMAK-",                "0123456789abcdef01234567" },
+        { "sq0atp-",              "0123456789abcdefghijkl" },
+        { "dp.pt.",               "0123456789abcdefghijklmnopqrstuvwxyz0123456" },
+        { "glsa_",                "0123456789abcdefghijklmnopqrstuv" },
+        { "lin_api_",             "0123456789abcdefghijklmnopqrstuvwxyz0123" },
+        { "NRAK-",                "0123456789abcdefghijklmnopq" },
+        { "dapi",                 "0123456789abcdef0123456789abcdef" },
+    };
+    size_t i, n = sizeof(cases) / sizeof(cases[0]);
+    int fail_idx = -1;
+
+    TEST("Secret: 9 extended provider tokens all detected");
+    for (i = 0; i < n; i++) {
+        char text[256];
+        SecretVerdict v;
+        snprintf(text, sizeof(text), "API_TOKEN=%s%s\n",
+                 cases[i].pfx, cases[i].body);
+        v = hlse_scan_secrets(text);
+        if (v.score < 70 || v.n_findings < 1) { fail_idx = (int)i; break; }
+    }
+    if (fail_idx < 0) PASS();
+    else { char b[80]; snprintf(b,80,"undetected: prefix '%s'",
+           cases[fail_idx].pfx); FAIL(b); }
+}
+
 static void test_new_patterns_no_fp(void) {
     TEST("Secret: new-pattern prefixes in prose → no false positive");
     /* Words/identifiers that share a prefix but are not credentials. */
     SecretVerdict v = hlse_scan_secrets(
         "The npm_config setting and the Asian market and a glpat "
-        "report. shppa means nothing here.\n");
+        "report. shppa means nothing here. The dapi endpoint and "
+        "glsa group and hf_ tag are all harmless words.\n");
     if (v.score == 0 && v.n_findings == 0) PASS();
     else { char b[80]; snprintf(b,80,"false positive score=%d n=%d",
            v.score,v.n_findings); FAIL(b); }
@@ -353,6 +386,7 @@ int main(void) {
     test_llm_provider_keys();
     test_shopify_token();
     test_aws_temp_key();
+    test_extended_provider_tokens();
     test_new_patterns_no_fp();
 
     printf("\nEmail Forensics:\n");

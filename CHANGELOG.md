@@ -2,6 +2,23 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.33] — 2026-06-08
+
+### Added
+- **9 more credential patterns (25 → 34)**, a second peer-parity batch
+  continuing the gitleaks/TruffleHog gap analysis. All distinctive, low-FP
+  prefixes:
+  - Hugging Face (`hf_` + 34 letters — letters-only body to avoid colliding
+    with `hf_`-prefixed code identifiers)
+  - PyPI Upload Token (`pypi-AgEIcHlwaS5vcmc…` — 20-char fixed marker, ~zero FP)
+  - Postman (`PMAK-`), Square (`sq0atp-`), Doppler (`dp.pt.`),
+    Grafana (`glsa_`), Linear (`lin_api_`), New Relic (`NRAK-`),
+    Databricks (`dapi`)
+  Still confined to `hlse_secrets.c`; **F1=1.000 re-verified** in- and
+  out-of-distribution. Scanning HLSE's own source tree confirmed the new
+  prefixes contribute zero false positives. Added a table-driven detection
+  test and extended the prose false-positive guard (secrets suite 32 → 33).
+
 ## [0.9.32] — 2026-06-08
 
 ### Added

@@ -87,6 +87,12 @@ is_alnum_or_dash(char c) {
  *   - npm Access Token:     npm_[A-Za-z0-9]{36}
  *   - OpenAI / Anthropic:   sk-proj-... / sk-ant-... (dash-prefixed LLM keys)
  *   - Shopify tokens:       shpat_|shpss_|shppa_[0-9a-f]{32}
+ *   - Hugging Face:         hf_[A-Za-z]{34}
+ *   - PyPI Upload Token:    pypi-AgEIcHlwaS5vcmc[A-Za-z0-9_-]{20,}
+ *   - Postman / Square:     PMAK-[0-9a-f]{24} / sq0atp-[A-Za-z0-9-]{22,}
+ *   - Doppler / Grafana:    dp.pt.[A-Za-z0-9]{43} / glsa_[A-Za-z0-9]{32}
+ *   - Linear / New Relic:   lin_api_[A-Za-z0-9]{40} / NRAK-[A-Za-z0-9]{27}
+ *   - Databricks:           dapi[0-9a-f]{32}
  *   - Slack Token:          xoxb-|xoxp-|xoxs-[0-9A-Za-z-]{10,}
  *   - Slack Webhook:        hooks.slack.com/services/T
  *   - Generic high-entropy: 32+ hex chars after "key" / "secret" / "token"
@@ -109,6 +115,13 @@ typedef struct {
 
 static int char_upper_digit(char c) {
     return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z');
+}
+
+/* Letters only — used for tokens whose body is pure alphabetic (e.g. Hugging
+ * Face `hf_` + 34 letters), so a 34-char run is far less likely to collide
+ * with an underscore/digit-bearing code identifier sharing the prefix. */
+static int is_alpha(char c) {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 }
 
 static const SecretPattern SECRET_PATTERNS[] = {
@@ -154,6 +167,33 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "shpat_",        6,  32, is_hex,             "Shopify Access Token",  85 },
     { "shpss_",        6,  32, is_hex,             "Shopify Shared Secret", 85 },
     { "shppa_",        6,  32, is_hex,             "Shopify Private App Token", 85 },
+
+    /* Hugging Face */
+    { "hf_",           3,  34, is_alpha,           "Hugging Face Token",    80 },
+
+    /* PyPI (fixed 20-char marker prefix — essentially zero false positives) */
+    { "pypi-AgEIcHlwaS5vcmc", 20, 20, is_alnum_or_dash, "PyPI Upload Token", 90 },
+
+    /* Postman */
+    { "PMAK-",         5,  24, is_hex,             "Postman API Key",       85 },
+
+    /* Square */
+    { "sq0atp-",       7,  22, is_alnum_or_dash,   "Square Access Token",   85 },
+
+    /* Doppler */
+    { "dp.pt.",        6,  43, is_alnum_or_dash,   "Doppler Personal Token", 85 },
+
+    /* Grafana */
+    { "glsa_",         5,  32, is_alnum_or_dash,   "Grafana Service Account Token", 85 },
+
+    /* Linear */
+    { "lin_api_",      8,  40, is_alnum_or_dash,   "Linear API Key",        85 },
+
+    /* New Relic */
+    { "NRAK-",         5,  27, is_alnum_or_dash,   "New Relic API Key",     85 },
+
+    /* Databricks */
+    { "dapi",          4,  32, is_hex,             "Databricks Access Token", 80 },
 
     /* Generic */
     { "hooks.slack.com/services/T", 27, 5, is_alnum_or_dash,

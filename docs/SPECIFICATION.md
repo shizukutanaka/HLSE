@@ -82,7 +82,7 @@ in `print_usage()` and the man page (`hlse.1`).
 | Text scam / BEC | `hlse_text.c` | text | urgency, financial bait, authority, ransom, BEC amplifiers; evasion-normalised | `text` |
 | Ransomware | `hlse_protect.c` | dir | entropy spike (+magic exclusion), ransom notes, ext mutation, shadow delete | `protect` |
 | Boot integrity | `hlse_protect.c` | device / ESP | MBR signature/strings/entropy; ESP ransom/bootkit strings | `protect --mbr`, `esp` |
-| Credential leak | `hlse_secrets.c` | text/dir | 25 token patterns: AWS(+STS)/GitHub/GitLab/Google/npm/OpenAI/Anthropic/Stripe/Shopify/Slack/SSH/.env, placeholder exclusion | `scan`, `secret` |
+| Credential leak | `hlse_secrets.c` | text/dir | 34 token patterns: AWS(+STS)/GitHub/GitLab/Google/npm/OpenAI/Anthropic/Stripe/Shopify/HuggingFace/PyPI/Postman/Square/Doppler/Grafana/Linear/NewRelic/Databricks/Slack/SSH/.env, placeholder exclusion | `scan`, `secret` |
 | Email forensics | `hlse_secrets.c` | headers | SPF/DKIM fail, Reply-To mismatch, display-name spoof, BEC | `email` |
 | Clipboard swap | `hlse_secrets.c` | copied,pasted | same-type address swap + vanity look-alike | `clipboard` |
 | Supply chain | `hlse_supply.c` | pkg / paste / — | typosquat, pastejacking, ARP/DNS | `package`, `paste`, `network` |
@@ -419,6 +419,16 @@ TruffleHog, detect-secrets) against HLSE's credential scanner — found:
   URL/text F1 corpus, so F1=1.000 is unaffected (verified in- and
   out-of-distribution). 7 new behavioral tests including a prose
   false-positive guard; secrets suite 25 → 32. Fixed in 0.9.32.
+
+- **GAP-AB — second peer-parity batch (9 more token patterns, 25 → 34)**:
+  continuing the GAP-AA review, added Hugging Face (`hf_`, letters-only body to
+  curb identifier collisions), PyPI (`pypi-AgEIcHlwaS5vcmc` fixed marker),
+  Postman (`PMAK-`), Square (`sq0atp-`), Doppler (`dp.pt.`), Grafana (`glsa_`),
+  Linear (`lin_api_`), New Relic (`NRAK-`), and Databricks (`dapi`). Same
+  orthogonality argument holds — F1=1.000 re-verified in/out-of-distribution;
+  scanning HLSE's own source tree confirmed zero false positives from the new
+  prefixes. A table-driven detection test plus an extended prose FP guard;
+  secrets suite 32 → 33. Fixed in 0.9.33.
 
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code
