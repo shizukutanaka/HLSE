@@ -9,7 +9,7 @@ from a single binary.
 ```
 Detection accuracy:
   In-distribution corpus:       F1 = 1.000
-  Out-of-distribution corpus:   F1 = 1.000
+  Out-of-distribution corpus:   F1 = 0.970
   False positive rate:          0.0%
 
 Evasion resistance:
@@ -183,7 +183,7 @@ Every subcommand supports `--json`:
 | Unit (text) | 15 | Individual text signal accuracy |
 | Property invariants | 64 | Monotonicity, bounds, determinism, case, evasion (P1–P13) |
 | Protection | 19 | Ransomware, network drive, SMB, MBR/GPT, ESP |
-| Secrets | 40 | Credentials (36 token patterns), email headers, crypto addresses (BTC/ETH/SOL/XMR/LTC/DOGE/XRP/DASH/XLM) |
+| Secrets | 40 | Credentials (39 token patterns), email headers, crypto addresses (BTC/ETH/SOL/XMR/LTC/DOGE/XRP/DASH/XLM) |
 | Supply chain | 21 | Package typosquat, pastejacking (incl. Windows ClickFix), network |
 | File/Audit | 23 | File masquerade (PE/ELF/Mach-O), system hardening (SSH/perms/DNS/cron/PATH/shell-rc) + hardening index |
 | Util | 26 | Entropy, Damerau-Levenshtein, benign-magic (17 formats) + safe system-file open (FIFO/symlink) |

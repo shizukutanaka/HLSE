@@ -2,6 +2,16 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.46] — 2026-06-09
+
+### Fixed
+- **README accuracy**: corrected OOD F1 value from 1.000 to 0.970 (actual
+  measured value — the corpus has borderline LOG-level cases that score below
+  the 40-point ALERT threshold but above their individual min_score thresholds,
+  hence all 29/29 cases pass but recall at the ALERT threshold is 0.941).
+  Precision remains 1.000 (zero false positives). Updated Secrets test suite
+  description: 36 → 39 token patterns.
+
 ## [0.9.45] — 2026-06-09
 
 ### Added
