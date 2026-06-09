@@ -136,6 +136,12 @@ static const char *PRIZE_WORDS[] = {
     "you won", "you have won", "congratulations", "winner", "selected",
     "chosen", "claim your prize", "claim your reward", "prize money",
     "lottery", "jackpot", "sweepstakes", "free gift", "unclaimed funds",
+    /* Advance-fee / 419 fraud */
+    "inheritance funds", "inheritance of", "million dollars",
+    "you have been selected as beneficiary", "diplomat carrying",
+    "processing fee to release", "release the funds",
+    "transfer of funds", "next of kin", "legal beneficiary",
+    "unclaimed inheritance", "deceased customer",
     /* Japanese */
     "おめでとう", "当選", "賞品",
     /* Korean */
@@ -264,8 +270,16 @@ static const char *RANSOM_WORDS[] = {
     "backup deleted", "your documents will be published",
     "darknet", "dark web", "data leak site",
     "decryption tool", "restore your files",
+    /* Sextortion / webcam extortion (2023-2025 high-volume campaigns) */
+    "i have footage of you", "recorded you",
+    "i activated your webcam", "your camera was hacked",
+    "watching adult content", "watching explicit",
+    "will send this video to your contacts",
+    "will share this recording", "send bitcoin or i will send",
+    "i have your browsing history", "i installed malware on your",
     /* Japanese */
     "ファイルが暗号化", "復号キー", "身代金",
+    "ウェブカメラを起動", "動画を送る",
     NULL
 };
 
