@@ -168,18 +168,37 @@ hlse_audit_permissions(void) {
         }
     }
 
-    /* Check home directory .env files */
+    /* Check home directory credential and key files */
     {
         const char *home = getenv("HOME");
         if (home) {
-            char path[512];
-            struct stat st;
-            snprintf(path, sizeof(path), "%s/.env", home);
-            if (stat(path, &st) == 0) {
-                if (st.st_mode & 0077) {
-                    av_add(&v, 25, AUDIT_HIGH,
-                        "A2: ~/.env is group/world-accessible (mode %04o)",
-                        st.st_mode & 0777);
+            /* { relative path, max permissive bits, score, description } */
+            static const struct {
+                const char *rel;
+                unsigned    bad_bits;  /* mode bits that trigger alert */
+                int         score;
+                const char *label;
+            } HOME_SECRETS[] = {
+                { ".env",              0077, 25, "A2: ~/.env is group/world-accessible" },
+                { ".aws/credentials",  0077, 35, "A2: ~/.aws/credentials is group/world-accessible" },
+                { ".ssh/id_rsa",       0077, 40, "A2: SSH private key ~/.ssh/id_rsa is group/world-accessible" },
+                { ".ssh/id_ed25519",   0077, 40, "A2: SSH private key ~/.ssh/id_ed25519 is group/world-accessible" },
+                { ".ssh/id_ecdsa",     0077, 40, "A2: SSH private key ~/.ssh/id_ecdsa is group/world-accessible" },
+                { ".netrc",            0077, 35, "A2: ~/.netrc (FTP/curl credentials) is group/world-accessible" },
+                { ".pgpass",           0077, 30, "A2: ~/.pgpass (PostgreSQL passwords) is group/world-accessible" },
+                { ".gnupg/secring.gpg",0077, 35, "A2: GPG secret keyring is group/world-accessible" },
+                { NULL, 0, 0, NULL }
+            };
+            int i;
+            for (i = 0; HOME_SECRETS[i].rel; i++) {
+                char path[512];
+                struct stat st;
+                snprintf(path, sizeof(path), "%s/%s", home, HOME_SECRETS[i].rel);
+                if (stat(path, &st) == 0 &&
+                    (st.st_mode & HOME_SECRETS[i].bad_bits)) {
+                    av_add(&v, HOME_SECRETS[i].score, AUDIT_HIGH,
+                        "%s (mode %04o)",
+                        HOME_SECRETS[i].label, st.st_mode & 0777);
                 }
             }
         }
@@ -193,16 +212,21 @@ hlse_audit_permissions(void) {
  * ═══════════════════════════════════════════════════════════════════════ */
 
 static const char *SENSITIVE_DOMAINS[] = {
-    /* Banks */
+    /* US Banks */
     "chase.com", "bankofamerica.com", "wellsfargo.com", "citibank.com",
     "hsbc.com", "barclays.co.uk",
+    /* EU Banks */
+    "ing.com", "bnpparibas.com", "deutschebank.com", "unicredit.eu",
+    "santander.com", "bbva.com",
     /* JP banks */
     "mizuhobank.co.jp", "smbc.co.jp", "bk.mufg.jp",
     "rakuten-bank.co.jp", "japannetbank.co.jp",
     /* Crypto exchanges */
     "coinbase.com", "binance.com", "kraken.com", "bitflyer.jp",
+    "bybit.com", "okx.com", "huobi.com", "kucoin.com",
+    "gate.io", "bitfinex.com", "gemini.com", "upbit.com",
     /* Payment */
-    "paypal.com", "stripe.com", "wise.com",
+    "paypal.com", "stripe.com", "wise.com", "cashapp.com", "cash.app",
     /* Auth providers */
     "accounts.google.com", "login.microsoftonline.com",
     "appleid.apple.com",

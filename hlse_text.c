@@ -83,6 +83,8 @@ static const char *URGENCY_WORDS[] = {
     "account will be closed", "deadline", "time-sensitive",
     "pay today", "act today", "respond today", "don't delay",
     "final warning", "last warning",
+    "action required", "your account has been flagged", "must respond",
+    "confirm within", "failure to respond",
     /* Japanese (UTF-8) */
     "至急", "緊急", "即座", "本日中", "24時間以内", "48時間以内",
     "停止", "凍結", "ロック", "不正アクセス", "確認してください",
@@ -106,7 +108,8 @@ static const char *BAIT_WORDS[] = {
     "purchase gift", "purchase google", "purchase itunes",
     "refund", "reimbursement", "claim your",
     /* Crypto wallet theft */
-    "seed phrase", "recovery phrase",
+    "seed phrase", "recovery phrase", "mnemonic", "private key",
+    "connect wallet", "wallet passphrase",
     /* Money transfer platforms common in elder/tech-support fraud */
     "zelle", "western union", "moneygram",
     /* Japanese */
@@ -148,7 +151,9 @@ static const char *AUTHORITY_WORDS[] = {
     "the chairman", "head of finance", "from legal", "legal department",
     "from accounts payable", "executive office",
     /* International law enforcement impersonation */
-    "interpol", "secret service",
+    "interpol", "secret service", "homeland security", "federal reserve",
+    "customs and border", "immigration enforcement",
+    "attorney general",
     /* Japanese */
     "警察", "税務署", "国税庁", "総務省", "裁判所", "検察", "警視庁",
     /* Korean */
@@ -213,6 +218,7 @@ static const char *FIN_ACTION_WORDS[] = {
     "wire money", "pay now", "pay immediately",
     "buy gift cards", "purchase gift cards", "get gift cards",
     "send bitcoin", "send crypto", "send eth",
+    "cash app", "cashapp", "venmo", "apple pay",
     /* Japanese */
     "送金", "振り込んで", "ギフトカードを買って",
     NULL

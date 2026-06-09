@@ -158,6 +158,12 @@ static const char *EXECUTABLE_EXTS[] = {
     ".jar", ".class",
     /* Python */
     ".py", ".pyw",
+    /* Web server-side — can execute on upload */
+    ".php", ".php3", ".php5", ".phtml", ".asp", ".aspx", ".jsp",
+    /* Scripting languages used as malware droppers */
+    ".rb", ".pl", ".tcl", ".lua",
+    /* Windows HTML Application — runs JScript/VBScript with no sandbox */
+    ".mshta",
     NULL
 };
 
@@ -216,7 +222,9 @@ static const char *LURE_WORDS[] = {
     "password", "credentials", "login",
     "scan", "fax", "document",
     "shipping", "delivery", "tracking", "order",
-    "tax", "refund", "irs",
+    "tax", "refund", "irs", "w2", "1099", "kyc",
+    "payslip", "salary", "payroll", "wire_transfer", "bank_transfer",
+    "immigration", "visa_doc", "passport_scan",
     "update", "patch", "security_update",
     /* Japanese */
     "請求書", "見積書", "納品書", "契約書", "確認",

@@ -2,6 +2,41 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.42] — 2026-06-09
+
+### Added
+- **Audit module: A2 permission checks expanded** (GAP-AL):
+  `hlse_audit_permissions()` now checks 8 home-directory credential files for
+  group/world-accessible permissions: `~/.aws/credentials`, `~/.ssh/id_rsa`,
+  `~/.ssh/id_ed25519`, `~/.ssh/id_ecdsa`, `~/.netrc`, `~/.pgpass`,
+  `~/.gnupg/secring.gpg`, `~/.env`. Previously only `/etc/shadow` and
+  `~/.env` were checked. Scores range 25-40 (HIGH severity) per exposure.
+- **Audit module: A3 sensitive domain list expanded** (GAP-AL):
+  11 new domains added to hosts-file poisoning detection:
+  EU banks (`ing.com`, `bnpparibas.com`, `deutschebank.com`, `unicredit.eu`,
+  `santander.com`, `bbva.com`),
+  crypto exchanges (`bybit.com`, `okx.com`, `huobi.com`, `kucoin.com`,
+  `gate.io`, `bitfinex.com`, `gemini.com`, `upbit.com`), payment (`cash.app`).
+  Total domain coverage: 20 → 35.
+- **Text scam: high-confidence phishing keywords** (GAP-AM):
+  - `URGENCY_WORDS` +5: `"action required"`, `"your account has been flagged"`,
+    `"must respond"`, `"confirm within"`, `"failure to respond"`.
+  - `BAIT_WORDS` +4: `"mnemonic"`, `"private key"`, `"connect wallet"`,
+    `"wallet passphrase"` — crypto wallet drainer vocabulary.
+  - `AUTHORITY_WORDS` +4: `"homeland security"`, `"federal reserve"`,
+    `"customs and border"`, `"immigration enforcement"`, `"attorney general"`.
+  - `FIN_ACTION_WORDS` +4: `"cash app"`, `"cashapp"`, `"venmo"`, `"apple pay"`.
+- **File module: EXECUTABLE_EXTS expanded** (GAP-AN):
+  +13 extensions: server-side scripts (`.php`/`.php3`/`.php5`/`.phtml`,
+  `.asp`/`.aspx`, `.jsp`), scripting language droppers (`.rb`, `.pl`, `.tcl`,
+  `.lua`), and `.mshta` (Windows HTML Application — JScript/VBScript without
+  sandbox). These are commonly used as malware delivery containers.
+- **File module: LURE_WORDS expanded** (GAP-AN):
+  +8 social-engineering lure words: `"w2"`, `"1099"`, `"kyc"`, `"payslip"`,
+  `"salary"`, `"payroll"`, `"wire_transfer"`, `"bank_transfer"`,
+  `"immigration"`.
+  Zero regressions; F1=1.000; zero strict warnings; ASan clean.
+
 ## [0.9.41] — 2026-06-09
 
 ### Added
