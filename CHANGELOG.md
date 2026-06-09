@@ -2,6 +2,26 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.55] — 2026-06-09
+
+### Security
+- **URL: word-boundary fix for brand hyphenation detector** (P1-4): Replaced
+  the loose `contains(sld, "brand-") || contains(sld, "-brand")` checks in
+  `detect_security_hyphenation()` with a new `brand_is_token_in_sld()` helper
+  that requires the brand to be a complete hyphen-delimited token. Prevents
+  short brands (e.g. "line") from triggering on legitimate domains like
+  "airline-update.com". Regression test added to `--self-test` (24 → 24,
+  new FP guard case). Phishing cases "paypal-verify.com", "apple-support.net"
+  still detected correctly.
+
+### Added
+- **URL fuzz harness** (P3-12): New `tests/hlse_url_fuzz.c` — 8 generators
+  covering random URLs, homoglyph/Unicode mutations, deep subdomains,
+  percent-encoding variations, brand typosquat mutations, bidi injection, very
+  long hostnames (>MAX_HOST boundary), and dangerous-scheme prefix variants.
+  100K iterations: 0 crashes, 0 out-of-range scores. Integrated into
+  `make fuzz` and `make fuzz-asan`. Fuzz harnesses: 4 × 100K → 5 × 100K.
+
 ## [0.9.54] — 2026-06-09
 
 ### Added

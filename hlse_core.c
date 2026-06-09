@@ -690,6 +690,24 @@ detect_dga_entropy(const ParsedUrl *u, Verdict *v) {
     }
 }
 
+/* Returns 1 if `brand` appears as a complete hyphen-delimited token in `sld`.
+ * Prevents short brands like "line" from matching "airline-update". */
+static int
+brand_is_token_in_sld(const char *sld, const char *brand)
+{
+    size_t blen = strlen(brand);
+    const char *p = sld;
+    while (*p) {
+        if (strncmp(p, brand, blen) == 0) {
+            int pre_ok  = (p == sld)     || (*(p - 1) == '-');
+            int post_ok = (p[blen] == '\0') || (p[blen] == '-');
+            if (pre_ok && post_ok) return 1;
+        }
+        p++;
+    }
+    return 0;
+}
+
 /* 6. Hyphenated security-word domain ("secure-net-fix-update.top"). */
 static void
 detect_security_hyphenation(const ParsedUrl *u, Verdict *v) {
@@ -721,19 +739,14 @@ detect_security_hyphenation(const ParsedUrl *u, Verdict *v) {
      * in the registrable domain (paypal.com, not paypal-verify.com). */
     if (hyphens >= 1 && sec_count >= 1) {
         for (i = 0; BRANDS[i] != NULL; i++) {
-            if (contains(sld, BRANDS[i])) {
-                /* Make sure the brand isn't the registered domain itself
-                 * (e.g. don't flag "google.com"). It must be hyphenated. */
-                char with_hyphen[MAX_HOST];
-                snprintf(with_hyphen, sizeof(with_hyphen), "%s-", BRANDS[i]);
-                char hyphen_before[MAX_HOST];
-                snprintf(hyphen_before, sizeof(hyphen_before), "-%s", BRANDS[i]);
-                if (contains(sld, with_hyphen) || contains(sld, hyphen_before)) {
-                    add_reason(v, 35,
-                        "Brand impersonation: '%s' hyphenated with security "
-                        "term — real brand uses its own domain", BRANDS[i]);
-                    break;
-                }
+            /* brand_is_token_in_sld() requires a complete hyphen-delimited
+             * token match so short brands (e.g. "line") don't fire on
+             * "airline-update". */
+            if (brand_is_token_in_sld(sld, BRANDS[i])) {
+                add_reason(v, 35,
+                    "Brand impersonation: '%s' hyphenated with security "
+                    "term — real brand uses its own domain", BRANDS[i]);
+                break;
             }
         }
     }
@@ -1353,6 +1366,9 @@ self_test(void) {
           "IDN homograph: xn--pypl-53dc = pаypаl (Cyrillic a)" },
         { "https://xn--mirosoft-gch.com",                 60, 100,
           "IDN homograph: xn--mirosoft-gch = miсrosoft (Cyrillic c)" },
+        /* Brand-token FP guard — short brand "line" must not match "airline" */
+        { "https://airline-update.com/flights",            0, 39,
+          "FP guard: 'airline' must not match brand 'line'" },
         /* Legitimate IDNs — must NOT be flagged as homographs (UTS-39) */
         { "https://xn--mnchen-3ya.com",                    0, 14,
           "Legit IDN: xn--mnchen-3ya = münchen (German, single-script)" },

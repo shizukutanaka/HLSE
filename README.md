@@ -24,8 +24,8 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             363 (8 suites + corpus + CLI integration)
-  Fuzz iterations:              100,000 (0 crashes)
+  Structured tests:             364 (8 suites + corpus + CLI integration)
+  Fuzz iterations:              500,000 (5 harnesses × 100K, 0 crashes)
   ASan + UBSan:                 0 errors
   Compiler warnings:            0 (-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
 
@@ -189,7 +189,7 @@ Every subcommand supports `--json`:
 | Util | 29 | Entropy, Damerau-Levenshtein, benign-magic (21 formats) + safe system-file open (FIFO/symlink) |
 | OOD corpus | 29 | Out-of-distribution F1 (held-out phishing/scam) |
 | CLI integration | 90 | All 12 subcommands, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON, SARIF relative URIs, no-arg exit=2 |
-| Fuzz | 4 × 100K | text / secrets / supply-chain / file harnesses (random bytes, truncated UTF-8, keyword stuffing, typosquat mutation, bidi/control) |
+| Fuzz | 5 × 100K | text / secrets / supply-chain / file / URL harnesses (random bytes, truncated UTF-8, keyword stuffing, typosquat mutation, bidi/control, Unicode mutation, percent-encoding, dangerous-scheme) |
 
 ## Privacy
 

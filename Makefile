@@ -68,6 +68,8 @@ FUZZ_SUPPLY       := tests/fuzz_supply
 FUZZ_SUPPLY_ASAN  := tests/fuzz_supply_asan
 FUZZ_FILE         := tests/fuzz_file
 FUZZ_FILE_ASAN    := tests/fuzz_file_asan
+FUZZ_URL          := tests/fuzz_url
+FUZZ_URL_ASAN     := tests/fuzz_url_asan
 
 # ─── primary targets ─────────────────────────────────────────────────────
 
@@ -166,6 +168,19 @@ $(FUZZ_FILE_ASAN): tests/hlse_file_fuzz.c hlse_file.c hlse_file.h
 	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE \
 		-fsanitize=address,undefined \
 		-o $@ tests/hlse_file_fuzz.c hlse_file.c -I.
+	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
+
+$(FUZZ_URL): tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c hlse_core.h
+	@mkdir -p tests
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L -DHLSE_CORE_AS_LIB \
+		-o $@ tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c -I. -lm
+	@printf '  %-20s %s\n' "CC" "$@"
+
+$(FUZZ_URL_ASAN): tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c hlse_core.h
+	@mkdir -p tests
+	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L -DHLSE_CORE_AS_LIB \
+		-fsanitize=address,undefined \
+		-o $@ tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
 # Extended (out-of-distribution) corpus
@@ -281,7 +296,7 @@ coverage:
 
 # ─── fuzz ────────────────────────────────────────────────────────────────
 
-fuzz: $(FUZZ_BIN) $(FUZZ_SECRETS) $(FUZZ_SUPPLY) $(FUZZ_FILE)
+fuzz: $(FUZZ_BIN) $(FUZZ_SECRETS) $(FUZZ_SUPPLY) $(FUZZ_FILE) $(FUZZ_URL)
 	@echo "--- text fuzz ---"
 	./$(FUZZ_BIN) 100000 1
 	@echo "--- secrets fuzz ---"
@@ -290,8 +305,10 @@ fuzz: $(FUZZ_BIN) $(FUZZ_SECRETS) $(FUZZ_SUPPLY) $(FUZZ_FILE)
 	./$(FUZZ_SUPPLY) 100000 1
 	@echo "--- file-masquerade fuzz ---"
 	./$(FUZZ_FILE) 100000 1
+	@echo "--- URL fuzz ---"
+	./$(FUZZ_URL) 100000 1
 
-fuzz-asan: $(FUZZ_ASAN) $(FUZZ_SECRETS_ASAN) $(FUZZ_SUPPLY_ASAN) $(FUZZ_FILE_ASAN)
+fuzz-asan: $(FUZZ_ASAN) $(FUZZ_SECRETS_ASAN) $(FUZZ_SUPPLY_ASAN) $(FUZZ_FILE_ASAN) $(FUZZ_URL_ASAN)
 	@echo "--- text fuzz (ASan) ---"
 	./$(FUZZ_ASAN) 10000 1
 	@echo "--- secrets fuzz (ASan) ---"
@@ -300,6 +317,8 @@ fuzz-asan: $(FUZZ_ASAN) $(FUZZ_SECRETS_ASAN) $(FUZZ_SUPPLY_ASAN) $(FUZZ_FILE_ASA
 	./$(FUZZ_SUPPLY_ASAN) 10000 1
 	@echo "--- file-masquerade fuzz (ASan) ---"
 	./$(FUZZ_FILE_ASAN) 10000 1
+	@echo "--- URL fuzz (ASan) ---"
+	./$(FUZZ_URL_ASAN) 10000 1
 
 # ─── quality gates (used by CI) ──────────────────────────────────────────
 
