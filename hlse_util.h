@@ -14,6 +14,7 @@
 #define HLSE_UTIL_H
 
 #include <stddef.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,6 +48,24 @@ int hlse_edit_distance(const char *a, const char *b);
  * heuristics and avoid false positives. Ransomware output does not
  * carry these signatures (the original header is encrypted away).    */
 int hlse_is_high_entropy_benign_magic(const unsigned char *buf, size_t n);
+
+/* Safely open a FIXED, trusted system file (e.g. /etc/hosts,
+ * /etc/resolv.conf, /proc/net/arp, /etc/ssh/sshd_config) for reading.
+ *
+ * Uses O_NONBLOCK + fstat + S_ISREG so a FIFO planted at the path cannot
+ * block the reader indefinitely (a local denial-of-service), and so that
+ * non-regular targets (devices, sockets, directories) are rejected.
+ *
+ * Symlinks ARE followed deliberately: these are root-owned, fixed paths
+ * that are legitimately symlinks on some systems (notably /etc/resolv.conf
+ * on systemd hosts), so O_NOFOLLOW would break a correct read. O_NOFOLLOW
+ * remains reserved for UNTRUSTED directory-scan entries, where an attacker
+ * controls the filename.
+ *
+ * Returns a read-mode FILE* on success, or NULL (callers treat NULL as
+ * "file absent / not readable"). The caller owns the FILE* and must
+ * fclose() it.                                                          */
+FILE *hlse_open_system_file(const char *path);
 
 #ifdef __cplusplus
 }

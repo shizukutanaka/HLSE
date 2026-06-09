@@ -107,9 +107,9 @@ $(SUPP_BIN): tests/hlse_supply_tests.c hlse_supply.c hlse_supply.h
 	$(CC) $(CFLAGS) -o $@ tests/hlse_supply_tests.c hlse_supply.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
-$(FAUD_BIN): tests/hlse_file_audit_tests.c hlse_file.c hlse_file.h hlse_audit.c hlse_audit.h
+$(FAUD_BIN): tests/hlse_file_audit_tests.c hlse_file.c hlse_file.h hlse_audit.c hlse_audit.h hlse_util.c hlse_util.h
 	@mkdir -p tests
-	$(CC) $(CFLAGS) -D_GNU_SOURCE -o $@ tests/hlse_file_audit_tests.c hlse_file.c hlse_audit.c -I.
+	$(CC) $(CFLAGS) -D_GNU_SOURCE -o $@ tests/hlse_file_audit_tests.c hlse_file.c hlse_audit.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(UTIL_BIN): tests/hlse_util_tests.c hlse_util.c hlse_util.h

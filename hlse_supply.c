@@ -379,7 +379,7 @@ hlse_check_network(void) {
 
     /* N1: ARP table — detect duplicate MACs (ARP spoofing indicator) */
     {
-        FILE *fp = fopen("/proc/net/arp", "r");
+        FILE *fp = hlse_open_system_file("/proc/net/arp");
         if (fp) {
             char line[256];
             char ips[64][16];     /* up to 64 ARP entries */
@@ -424,7 +424,7 @@ hlse_check_network(void) {
 
     /* N3: DNS resolver check */
     {
-        FILE *fp = fopen("/etc/resolv.conf", "r");
+        FILE *fp = hlse_open_system_file("/etc/resolv.conf");
         if (fp) {
             char line[256];
             int ns_count = 0;
@@ -470,7 +470,7 @@ hlse_check_network(void) {
 
     /* N4: /etc/hosts banking/exchange redirect check */
     {
-        FILE *fp = fopen("/etc/hosts", "r");
+        FILE *fp = hlse_open_system_file("/etc/hosts");
         if (fp) {
             char line[512];
             const char *sensitive_domains[] = {

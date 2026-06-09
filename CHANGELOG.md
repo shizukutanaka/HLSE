@@ -2,6 +2,45 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.35] — 2026-06-08
+
+### Security
+- **FIFO-block hardening for fixed system-config reads** (GAP-AD). A
+  category-by-category robustness audit found that `hlse_audit.c` (sshd_config,
+  /etc/hosts, /etc/resolv.conf, cron files) and `hlse_supply.c` (/proc/net/arp,
+  /etc/resolv.conf, /etc/hosts) opened config files with a bare `fopen()` and
+  no `S_ISREG` check — a FIFO planted at one of those paths would block
+  `fgets()` indefinitely (local DoS). Added a shared `hlse_open_system_file()`
+  helper (`O_RDONLY|O_NONBLOCK` + `fstat` + `S_ISREG` + `fdopen`) and routed all
+  seven reads through it. It intentionally does NOT use `O_NOFOLLOW`: these are
+  fixed root-owned paths that may legitimately be symlinks (e.g.
+  `/etc/resolv.conf` on systemd), so following them is correct; `O_NOFOLLOW`
+  stays reserved for untrusted directory-scan entries.
+- **Ransomware-scan read path** (`read_file_head` in `hlse_protect.c`) now adds
+  `O_NONBLOCK` + `fstat`/`S_ISREG` (keeping its `O_NOFOLLOW`), so a FIFO in a
+  scanned tree can no longer block the reader.
+
+### Changed
+- `read_file_head`/MBR bootkit scan now use `unsigned char` buffers, avoiding an
+  implementation-defined signed-char conversion of binary (>127) bytes.
+- Damerau-Levenshtein transposition uses the canonical `+1` cost (behaviour-
+  identical to the previous `+cost`, which only differed when all four
+  characters matched — a case the substitution path already optimised).
+- `--quiet` `freopen("/dev/null")` failure is now surfaced (exit 2) instead of
+  silently continuing, honouring the quiet-mode contract.
+
+### Tests
+- `util_tests` 14 → 18: the new `hlse_open_system_file()` helper is covered for
+  a regular file (opens), a FIFO (rejected without blocking), a directory
+  (rejected), and a missing/NULL path (rejected, no crash).
+
+### Notes
+- Several agent-reported "buffer overflows" were verified FALSE and left
+  unchanged: `hlse_file.c:399` (signed `ssize_t` under a `head_len > 100`
+  guard), the email `reasons[]` array (max 7 reasons ≤ bound 8), and
+  `extract_domain` output (zero-initialised at declaration). No detection
+  logic changed; F1=1.000 (in/out-of-distribution) and ASan/UBSan stay clean.
+
 ## [0.9.34] — 2026-06-08
 
 ### Added

@@ -54,7 +54,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.34"
+#define HLSE_VERSION       "0.9.35"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -1908,10 +1908,14 @@ main(int argc, char **argv) {
         }
     }
 
-    /* Quiet mode: redirect stdout to /dev/null */
+    /* Quiet mode: redirect stdout to /dev/null. If the redirect fails we must
+     * not silently keep printing — that would violate the quiet-mode contract
+     * (callers rely on the exit code alone). Report and exit with usage error. */
     if (quiet && !json_out) {
-        FILE *devnull = freopen("/dev/null", "w", stdout);
-        (void)devnull;  /* suppress warn_unused_result */
+        if (freopen("/dev/null", "w", stdout) == NULL) {
+            fprintf(stderr, "Error: --quiet could not redirect stdout\n");
+            return 2;
+        }
     }
 
     if (strcmp(argv[idx], "-V") == 0 || strcmp(argv[idx], "--version") == 0) {

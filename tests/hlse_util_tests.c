@@ -10,8 +10,12 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "../hlse_util.h"
 
 static int total = 0, passed = 0, failed = 0;
@@ -110,6 +114,57 @@ static void test_edit_symmetry(void) {
     CHECK(ab == ba && ab == 3, "kitten<->sitting = 3 both ways");
 }
 
+/* ─── Safe system-file open ───────────────────────────────────────────── */
+
+static void test_sysopen_regular(void) {
+    TEST("sysopen: regular file → opens");
+    char tmpl[] = "/tmp/hlse_util_reg_XXXXXX";
+    int fd = mkstemp(tmpl);
+    FILE *fp;
+    ssize_t wn;
+    if (fd < 0) { FAIL("mkstemp failed"); return; }
+    wn = write(fd, "hello\n", 6);
+    close(fd);
+    if (wn != 6) { unlink(tmpl); FAIL("write failed"); return; }
+    fp = hlse_open_system_file(tmpl);
+    if (fp) { fclose(fp); unlink(tmpl); PASS(); }
+    else { unlink(tmpl); FAIL("regular file should open"); }
+}
+
+static void test_sysopen_fifo(void) {
+    TEST("sysopen: FIFO → NULL (no block)");
+    char path[] = "/tmp/hlse_util_fifo_XXXXXX";
+    /* mkstemp then unlink+mkfifo to get a unique FIFO path. */
+    int fd = mkstemp(path);
+    if (fd < 0) { FAIL("mkstemp failed"); return; }
+    close(fd); unlink(path);
+    if (mkfifo(path, 0600) != 0) { FAIL("mkfifo failed"); return; }
+    /* If the helper blocked, this test would hang; reaching the assert
+     * proves O_NONBLOCK + S_ISREG rejected the FIFO without blocking. */
+    {
+        FILE *fp = hlse_open_system_file(path);
+        unlink(path);
+        if (!fp) PASS();
+        else { fclose(fp); FAIL("FIFO must be rejected"); }
+    }
+}
+
+static void test_sysopen_directory(void) {
+    TEST("sysopen: directory → NULL");
+    FILE *fp = hlse_open_system_file("/tmp");
+    if (!fp) PASS();
+    else { fclose(fp); FAIL("directory must be rejected"); }
+}
+
+static void test_sysopen_missing(void) {
+    TEST("sysopen: missing path / NULL → NULL (no crash)");
+    FILE *fp = hlse_open_system_file("/no/such/hlse/path/xyz");
+    int ok = (fp == NULL);
+    if (fp) fclose(fp);
+    ok = ok && (hlse_open_system_file(NULL) == NULL);
+    CHECK(ok, "missing and NULL must return NULL");
+}
+
 int main(void) {
     printf("HLSE Util — Shared Utility Tests\n");
     printf("══════════════════════════════════════\n\n");
@@ -131,6 +186,12 @@ int main(void) {
     test_edit_empty();
     test_edit_overlong();
     test_edit_symmetry();
+
+    printf("\nSafe system-file open:\n");
+    test_sysopen_regular();
+    test_sysopen_fifo();
+    test_sysopen_directory();
+    test_sysopen_missing();
 
     printf("\n══════════════════════════════════════\n");
     printf("Util tests: %d/%d passed", passed, total);

@@ -30,6 +30,7 @@
 #include <pwd.h>
 
 #include "hlse_audit.h"
+#include "hlse_util.h"
 
 /* ─── helpers ─────────────────────────────────────────────────────────── */
 
@@ -50,7 +51,7 @@ av_add(AuditVerdict *v, int delta, AuditSeverity sev,
 
 static int
 file_contains(const char *path, const char *needle) {
-    FILE *fp = fopen(path, "r");
+    FILE *fp = hlse_open_system_file(path);
     char line[2048];
     if (!fp) return -1; /* cannot read */
     while (fgets(line, sizeof(line), fp)) {
@@ -73,7 +74,7 @@ hlse_audit_ssh(void) {
 
     /* Check sshd_config */
     {
-        FILE *fp = fopen(sshd_conf, "r");
+        FILE *fp = hlse_open_system_file(sshd_conf);
         if (!fp) {
             av_add(&v, 0, AUDIT_INFO, "A1: Cannot read %s (no SSH server?)",
                    sshd_conf);
@@ -216,7 +217,7 @@ hlse_audit_dns(void) {
 
     memset(&v, 0, sizeof(v));
 
-    fp = fopen("/etc/hosts", "r");
+    fp = hlse_open_system_file("/etc/hosts");
     if (!fp) {
         av_add(&v, 0, AUDIT_INFO, "A3: Cannot read /etc/hosts");
         return v;
@@ -254,7 +255,7 @@ hlse_audit_dns(void) {
     fclose(fp);
 
     /* Check resolv.conf for suspicious DNS */
-    fp = fopen("/etc/resolv.conf", "r");
+    fp = hlse_open_system_file("/etc/resolv.conf");
     if (fp) {
         int nameserver_count = 0;
         while (fgets(line, sizeof(line), fp)) {

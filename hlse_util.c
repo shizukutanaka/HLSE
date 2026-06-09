@@ -9,6 +9,9 @@
 
 #include <string.h>
 #include <math.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 /* ── Shannon entropy ──────────────────────────────────────────────────── */
 
@@ -64,10 +67,14 @@ hlse_edit_distance(const char *a, const char *b) {
             if (ins < best) best = ins;
             if (sub < best) best = sub;
 
-            /* Adjacent transposition (Damerau extension) */
+            /* Adjacent transposition (Damerau extension): a single swap
+             * costs 1, independent of `cost` (canonical OSA form). The two
+             * differ only when all four characters are equal, in which case
+             * the substitution path already yields the optimum, so the
+             * result is unchanged — this is purely for clarity/correctness. */
             if (i > 1 && j > 1 &&
                 a[i-1] == b[j-2] && a[i-2] == b[j-1]) {
-                int tra = d[i-2][j-2] + cost;
+                int tra = d[i-2][j-2] + 1;
                 if (tra < best) best = tra;
             }
             d[i][j] = best;
@@ -107,4 +114,33 @@ hlse_is_high_entropy_benign_magic(const unsigned char *buf, size_t n) {
     if (buf[0]==0x28 && buf[1]==0xB5 && buf[2]==0x2F && buf[3]==0xFD) return 1;
 
     return 0;
+}
+
+/* ── Safe open of a fixed/trusted system file ─────────────────────────── */
+
+FILE *
+hlse_open_system_file(const char *path) {
+    int fd;
+    struct stat st;
+    FILE *fp;
+
+    if (!path) return NULL;
+
+    /* O_NONBLOCK so a FIFO planted at the path returns immediately instead of
+     * blocking; S_ISREG (via fstat on the opened fd) then rejects anything
+     * that is not a regular file. We intentionally do NOT pass O_NOFOLLOW:
+     * these are fixed, root-owned paths that may legitimately be symlinks
+     * (e.g. /etc/resolv.conf on systemd). For a regular file O_NONBLOCK has
+     * no effect on subsequent reads, so buffered stdio behaves normally.   */
+    fd = open(path, O_RDONLY | O_NONBLOCK);
+    if (fd < 0) return NULL;
+
+    if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode)) {
+        close(fd);
+        return NULL;
+    }
+
+    fp = fdopen(fd, "r");
+    if (!fp) { close(fd); return NULL; }
+    return fp;
 }

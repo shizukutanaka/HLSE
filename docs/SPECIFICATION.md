@@ -19,7 +19,7 @@ Target version: 0.9.x.
 | Allocation | Allocation-light; bounded stack/static buffers; no unbounded input. |
 | Determinism | Same input → same verdict. No time/random dependence in scoring. |
 | Memory safety | Clean under ASan + UBSan; strict `-Wall -Wextra -Wpedantic -Wshadow -Wconversion`; cppcheck error-gate clean. |
-| File I/O | Read-only. Never follow symlinks (`O_NOFOLLOW`); only regular files (`S_ISREG`). |
+| File I/O | Read-only. **Untrusted paths** (directory-scan entries, ransomware-scan files): `O_NOFOLLOW` + `O_NONBLOCK` + `fstat`/`S_ISREG` — never follow attacker-controlled symlinks, never block on a planted FIFO, only read regular files. **Fixed trusted system paths** (`/etc/hosts`, `/etc/resolv.conf`, `/proc/net/arp`, `sshd_config`): `O_NONBLOCK` + `S_ISREG` via `hlse_open_system_file()`; symlinks ARE followed because these are root-owned and legitimately symlinked (e.g. `/etc/resolv.conf` on systemd). |
 | Thread-safety | Pure analysis functions (URL/text/secret/file/package) read only static const tables and are reentrant. Filesystem/host functions (protect/audit/network) are process-level. |
 
 ## 2. Scoring model
@@ -438,6 +438,36 @@ TruffleHog, detect-secrets) against HLSE's credential scanner — found:
   33 → 34. This concludes the credential-coverage vein — 36 patterns now span
   the major cloud/SaaS/LLM/registry/webhook providers that peer scanners ship.
   Fixed in 0.9.34.
+
+A twenty-first review — a category-by-category robustness audit of every
+module against spec §1 (driven by four parallel sub-audits) — found one
+systematic gap plus several minor hardening items (most agent-reported
+"overflows" were verified FALSE: `hlse_file.c:399` uses signed `ssize_t`
+throughout under a `head_len > 100` guard; the email `reasons[]` array
+(`HLSE_EMAIL_MAX_REASONS`=8) can hold at most 7 reasons; `extract_domain`'s
+output is zero-initialised at declaration):
+
+- **GAP-AD — fixed system-config reads lacked FIFO-block protection**:
+  `hlse_audit.c` (sshd_config, /etc/hosts, /etc/resolv.conf, cron
+  `file_contains`) and `hlse_supply.c` (/proc/net/arp, /etc/resolv.conf,
+  /etc/hosts) opened config files with a bare `fopen()` — no `S_ISREG` guard,
+  so a FIFO planted at one of these paths would block `fgets()` indefinitely
+  (a local DoS), and non-regular targets were read blindly. Added a shared
+  `hlse_open_system_file()` (`hlse_util.c`): `O_RDONLY|O_NONBLOCK` + `fstat` +
+  `S_ISREG` + `fdopen`. It deliberately does **not** use `O_NOFOLLOW` — these
+  are fixed, root-owned paths that may legitimately be symlinks (notably
+  `/etc/resolv.conf` on systemd), where `O_NOFOLLOW` would break a correct
+  read; `O_NOFOLLOW` stays reserved for untrusted directory-scan entries.
+  Also hardened `read_file_head()` in `hlse_protect.c` (the ransomware-scan
+  read path, an untrusted tree) with `O_NONBLOCK` + `S_ISREG` while keeping
+  `O_NOFOLLOW`. 4 new `util_tests` cover the helper (regular file opens; FIFO,
+  directory, and missing path all rejected without blocking). Spec §1 invariant
+  refined to distinguish untrusted vs. fixed-trusted read paths. Minor
+  companions: `read_file_head`/MBR scan use `unsigned char` to avoid an
+  implementation-defined signed conversion of binary bytes; the
+  Damerau-Levenshtein transposition uses the canonical `+1` (behaviour-
+  identical). No detection logic changed; F1=1.000 and ASan/UBSan clean.
+  Fixed in 0.9.35.
 
 Each resolution is a thin CLI wrapper over the existing library function (per
 §6) or an invariant/coverage/consistency/accuracy fix, with tests where code

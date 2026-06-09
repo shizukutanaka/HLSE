@@ -186,7 +186,7 @@ Every subcommand supports `--json`:
 | Secrets | 34 | Credentials (36 token patterns), email headers, crypto addresses (incl. Solana) |
 | Supply chain | 17 | Package typosquat, pastejacking, network |
 | File/Audit | 17 | File masquerade, system hardening + hardening index |
-| Util | 14 | Entropy, Damerau-Levenshtein, benign-magic helpers |
+| Util | 18 | Entropy, Damerau-Levenshtein, benign-magic + safe system-file open (FIFO/symlink) |
 | OOD corpus | 25 | Out-of-distribution F1 (held-out phishing/scam) |
 | CLI integration | 90 | All 12 subcommands, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON, SARIF relative URIs, no-arg exit=2 |
 | Fuzz | 4 × 100K | text / secrets / supply-chain / file harnesses (random bytes, truncated UTF-8, keyword stuffing, typosquat mutation, bidi/control) |

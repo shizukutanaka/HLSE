@@ -81,9 +81,19 @@ static size_t
 read_file_head(const char *path, unsigned char *buf, size_t max_bytes) {
     int fd;
     ssize_t n;
+    struct stat st;
 
-    fd = open(path, O_RDONLY | O_NOFOLLOW);
+    /* O_NOFOLLOW: these paths come from an untrusted scanned directory, so a
+     * symlink must not redirect the read. O_NONBLOCK + S_ISREG: a FIFO in the
+     * tree must not block read() indefinitely, and only regular files are
+     * scanned (matches the scan-walker and the spec §1 invariant).         */
+    fd = open(path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
     if (fd < 0) return 0;
+
+    if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode)) {
+        close(fd);
+        return 0;
+    }
 
     n = read(fd, buf, max_bytes);
     close(fd);
@@ -594,13 +604,17 @@ hlse_mbr_verify(const char *device_path) {
         for (i = 0; bootkit_strings[i]; i++) {
             /* Case-insensitive search in 512 bytes — portable,
              * no memmem (GNU extension unavailable on macOS/musl) */
-            char lower_mbr[512];
+            /* unsigned char: MBR bytes are binary (often >127); converting
+             * those to signed char would be implementation-defined. memcmp
+             * compares as unsigned char regardless, so this is also correct
+             * against the (char*) bootkit_strings.                         */
+            unsigned char lower_mbr[512];
             size_t needle_len = strlen(bootkit_strings[i]);
             int j;
             int found = 0;
             for (j = 0; j < 512; j++)
-                lower_mbr[j] = (char)((mbr[j] >= 'A' && mbr[j] <= 'Z')
-                               ? (mbr[j] + 32) : mbr[j]);
+                lower_mbr[j] = (mbr[j] >= 'A' && mbr[j] <= 'Z')
+                               ? (unsigned char)(mbr[j] + 32) : mbr[j];
             for (j = 0; j <= 512 - (int)needle_len; j++) {
                 if (memcmp(lower_mbr + j, bootkit_strings[i],
                            needle_len) == 0)
