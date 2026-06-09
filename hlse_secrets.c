@@ -207,6 +207,9 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* HashiCorp Vault service token v2 (hvs. prefix, long body) */
     { "hvs.",           4, 50, is_alnum_or_dash, "HashiCorp Vault Token",     80 },
 
+    /* Netlify Personal Access Token */
+    { "nfp_",           4, 32, is_alnum_or_dash, "Netlify Personal Access Token", 85 },
+
     /* Webhook URLs (URL-anchored — essentially zero false positives) */
     { "hooks.slack.com/services/T", 27, 5, is_alnum_or_dash,
                                             "Slack Webhook URL",     70 },
@@ -253,6 +256,15 @@ check_env_passwords(const char *text, SecretVerdict *v) {
         "OPENAI_API_KEY=", "STRIPE_SECRET_KEY=",
         "TWILIO_AUTH_TOKEN=", "SENDGRID_API_KEY=",
         "FIREBASE_PRIVATE_KEY=", "CLOUDFLARE_API_TOKEN=",
+        /* SCM / CI / hosting */
+        "GITHUB_TOKEN=", "GITLAB_TOKEN=", "GITLAB_CI_TOKEN=",
+        "DIGITALOCEAN_TOKEN=", "HEROKU_API_KEY=",
+        "NETLIFY_AUTH_TOKEN=", "VERCEL_TOKEN=",
+        "CIRCLE_TOKEN=", "SNYK_TOKEN=",
+        /* Connection strings that embed credentials */
+        "DATABASE_URL=", "MONGODB_URI=", "REDIS_URL=",
+        /* Generic secrets commonly leaked in .env */
+        "JWT_SECRET=", "JWT_SECRET_KEY=", "APP_SECRET=",
         NULL
     };
     int found = 0;

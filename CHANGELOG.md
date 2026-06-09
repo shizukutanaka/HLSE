@@ -2,6 +2,24 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.51] — 2026-06-09
+
+### Added
+- **Audit: SENSITIVE_DOMAINS expanded** (GAP-BB): Added cloud management consoles
+  (console.aws.amazon.com, console.cloud.google.com, portal.azure.com), SSO/identity
+  providers (github.com, okta.com, auth0.com), social auth targets (twitter.com,
+  facebook.com), hardware wallet sites (metamask.io, ledger.com, trezor.io).
+- **Secrets: env_passwords +13 patterns** (GAP-BB): Added SCM/CI/hosting env vars
+  (GITHUB_TOKEN, GITLAB_TOKEN, DIGITALOCEAN_TOKEN, HEROKU_API_KEY, NETLIFY_AUTH_TOKEN,
+  VERCEL_TOKEN, CIRCLE_TOKEN, SNYK_TOKEN) and common .env credential patterns
+  (DATABASE_URL, MONGODB_URI, REDIS_URL, JWT_SECRET, JWT_SECRET_KEY, APP_SECRET).
+- **Secrets: Netlify token pattern** (GAP-BB): `nfp_` prefix + 32 alnum/dash chars.
+  Total SECRET_PATTERNS: 39 → 40.
+- **Text: FAKE_ALERT_WORDS expanded** (GAP-BC): Added tech support scam indicators —
+  "do not turn off your computer", remote access requests, Microsoft/Apple/Windows
+  false-detection phrases, expired subscription/license bait; JP equivalents.
+- **Version bump**: 0.9.50 → 0.9.51.
+
 ## [0.9.50] — 2026-06-09
 
 ### Added

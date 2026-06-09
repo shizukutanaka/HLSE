@@ -201,8 +201,17 @@ static const char *FAKE_ALERT_WORDS[] = {
     "account compromised", "your account has been compromised",
     "call us immediately", "call this number immediately",
     "call now to", "call +1-888", "call +1-800",
+    /* Tech support scam specific */
+    "do not turn off your computer", "do not restart",
+    "your computer is sending error reports",
+    "allow us to remote access", "give us remote access",
+    "microsoft has detected", "windows has detected",
+    "apple has detected", "your icloud has been",
+    "your license has expired", "your subscription has expired",
+    "tech support", "technical support number",
     /* Japanese */
     "セキュリティ警告", "ウイルス検出", "不審なアクティビティ",
+    "サポートに電話", "マイクロソフトからの警告",
     NULL
 };
 

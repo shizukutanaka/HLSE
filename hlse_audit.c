@@ -236,6 +236,14 @@ static const char *SENSITIVE_DOMAINS[] = {
     /* Auth providers */
     "accounts.google.com", "login.microsoftonline.com",
     "appleid.apple.com",
+    /* Cloud management consoles — high-value redirect targets */
+    "console.aws.amazon.com", "console.cloud.google.com", "portal.azure.com",
+    /* SSO/identity */
+    "github.com", "okta.com", "auth0.com",
+    /* Major social auth targets */
+    "twitter.com", "facebook.com",
+    /* Hardware wallets / non-custodial */
+    "metamask.io", "ledger.com", "trezor.io",
     NULL
 };
 
