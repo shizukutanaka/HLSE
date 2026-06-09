@@ -187,8 +187,17 @@ static const char *GROOMING_WORDS[] = {
     "guaranteed returns", "guaranteed profit", "risk-free investment",
     "crypto opportunity", "investment opportunity",
     "hi sweetie", "hi dear", "hi honey",
+    /* Pig-butchering / investment scam specific */
+    "trading platform", "crypto trading", "small test transaction",
+    "withdrawal fee", "withdrawal blocked", "account frozen",
+    "profits are waiting", "compound interest daily",
+    "wrong number", "i sent this by mistake",
+    /* Romance scam openers */
+    "i'm a widower", "my wife passed away", "working on an oil rig",
+    "military overseas", "doctor without borders",
     /* Japanese */
     "投資してあげる", "必ず儲かる", "絶対に儲かる",
+    "取引プラットフォーム", "出金手数料",
     NULL
 };
 

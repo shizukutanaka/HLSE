@@ -234,6 +234,12 @@ static const char *LURE_WORDS[] = {
     "payslip", "salary", "payroll", "wire_transfer", "bank_transfer",
     "immigration", "visa_doc", "passport_scan",
     "update", "patch", "security_update",
+    /* Software distribution lures (malware dropper filenames) */
+    "setup", "installer", "crack", "keygen", "activation",
+    /* Financial / HR fraud lures */
+    "bonus", "raise", "termination_notice",
+    /* Crypto fraud lures */
+    "airdrop", "nft", "whitelist",
     /* Japanese */
     "請求書", "見積書", "納品書", "契約書", "確認",
     "給与明細", "年末調整",

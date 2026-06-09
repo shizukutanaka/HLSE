@@ -127,6 +127,16 @@ hlse_is_high_entropy_benign_magic(const unsigned char *buf, size_t n) {
     /* SQLite database: SQLite format 3 */
     if (n >= 6 && buf[0]==0x53 && buf[1]==0x51 && buf[2]==0x4C &&
         buf[3]==0x69 && buf[4]==0x74 && buf[5]==0x65) return 1;
+    /* MP3 with ID3 tag: "ID3" */
+    if (buf[0]==0x49 && buf[1]==0x44 && buf[2]==0x33) return 1;
+    /* TIFF little-endian: II + 0x2A 0x00 */
+    if (buf[0]==0x49 && buf[1]==0x49 && buf[2]==0x2A && buf[3]==0x00) return 1;
+    /* TIFF big-endian: MM + 0x00 0x2A */
+    if (buf[0]==0x4D && buf[1]==0x4D && buf[2]==0x00 && buf[3]==0x2A) return 1;
+    /* AVI: RIFF....AVI  (bytes 0-3 = "RIFF", 8-11 = "AVI ") */
+    if (n >= 12 &&
+        buf[0]==0x52 && buf[1]==0x49 && buf[2]==0x46 && buf[3]==0x46 &&
+        buf[8]==0x41 && buf[9]==0x56 && buf[10]==0x49 && buf[11]==0x20) return 1;
 
     return 0;
 }

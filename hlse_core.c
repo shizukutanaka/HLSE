@@ -54,7 +54,7 @@
 
 /* ───────────────────────────── version ──────────────────────────────── */
 
-#define HLSE_VERSION       "0.9.52"
+#define HLSE_VERSION       "0.9.53"
 #define HLSE_BUILD_DATE    __DATE__
 #define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
@@ -126,6 +126,8 @@ static const char *SUSPICIOUS_TLDS[] = {
     ".zip", ".mov", ".country", ".kim", ".date",
     ".review", ".faith", ".science", ".party", ".gdn",
     ".cc", ".icu", ".biz", ".space", ".buzz",
+    /* Additional heavily abused TLDs */
+    ".pw", ".su", ".vip", ".win", ".download", ".stream",
     NULL
 };
 

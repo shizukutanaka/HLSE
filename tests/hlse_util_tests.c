@@ -204,6 +204,25 @@ static void test_benign_sqlite(void) {
     CHECK(hlse_is_high_entropy_benign_magic(b, 6) == 1, "SQLite must be benign");
 }
 
+static void test_benign_mp3_id3(void) {
+    TEST("benign-magic: MP3 ID3 tag header → 1");
+    unsigned char b[] = {0x49, 0x44, 0x33, 0x03, 0x00, 0x00};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 6) == 1, "MP3/ID3 must be benign");
+}
+
+static void test_benign_tiff_le(void) {
+    TEST("benign-magic: TIFF little-endian → 1");
+    unsigned char b[] = {0x49, 0x49, 0x2A, 0x00, 0x08, 0x00};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 6) == 1, "TIFF-LE must be benign");
+}
+
+static void test_benign_avi(void) {
+    TEST("benign-magic: AVI (RIFF....AVI ) → 1");
+    unsigned char b[] = {0x52,0x49,0x46,0x46, 0x00,0x00,0x00,0x00,
+                         0x41,0x56,0x49,0x20};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 12) == 1, "AVI must be benign");
+}
+
 static void test_benign_random(void) {
     TEST("benign-magic: random-looking bytes → 0");
     unsigned char b[] = {0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x01};
@@ -250,6 +269,9 @@ int main(void) {
     test_benign_gif();
     test_benign_ogg();
     test_benign_sqlite();
+    test_benign_mp3_id3();
+    test_benign_tiff_le();
+    test_benign_avi();
     test_benign_random();
 
     printf("\nSafe system-file open:\n");

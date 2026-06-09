@@ -2,6 +2,25 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.53] — 2026-06-09
+
+### Added
+- **Util: benign magic bytes +4** (GAP-BF): Added MP3 (ID3 header), TIFF
+  little-endian, AVI (RIFF+AVI), reducing ransomware entropy false-positives
+  for audio/image/video files. Total formats: 17 → 21.
+- **Util: 3 new tests** (GAP-BF): test_benign_mp3_id3, test_benign_tiff_le,
+  test_benign_avi. Util suite: 26 → 29. Total tests: 360 → 363.
+- **URL: SUSPICIOUS_TLDS +6** (GAP-BF): Added .pw, .su, .vip, .win, .download,
+  .stream — actively abused by phishing kits in 2024.
+- **File: LURE_WORDS +9** (GAP-BF): Added installer categories (setup,
+  installer, crack, keygen, activation), HR fraud (bonus, raise,
+  termination_notice), crypto fraud (airdrop, nft, whitelist).
+- **Text: GROOMING_WORDS expanded** (GAP-BG): Added 11 pig-butchering and
+  romance scam indicators — trading platform, crypto trading, small test
+  transaction, withdrawal fee/blocked, account frozen, wrong number,
+  working on an oil rig, military overseas, doctor without borders + JP.
+- **Version bump**: 0.9.52 → 0.9.53.
+
 ## [0.9.52] — 2026-06-09
 
 ### Added
