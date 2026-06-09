@@ -335,6 +335,10 @@ static const char *SUSPICIOUS_CRON_PATTERNS[] = {
     "eval(", "exec(",
     ".onion",
     "chmod 777", "chmod +s",
+    /* Additional reverse-shell and persistence patterns */
+    "bash -i", "socat ", "mkfifo ",
+    "ruby -e", "php -r", "node -e",
+    "openssl s_client", "telnet ",
     NULL
 };
 
@@ -547,6 +551,24 @@ hlse_audit_shellrc(void) {
                 av_add(&v, 20, AUDIT_MEDIUM,
                     "A6: LD_PRELOAD set in ~/%s:%d — verify the library is "
                     "trusted", files[fi], lineno);
+            }
+            if (strstr(p, "socat ") &&
+                (strstr(p, "exec:") || strstr(p, "/bin/sh") ||
+                 strstr(p, "/bin/bash"))) {
+                av_add(&v, 45, AUDIT_CRITICAL,
+                    "A6: socat reverse shell in ~/%s:%d", files[fi], lineno);
+            }
+            if (strstr(p, "bash -i") || strstr(p, "bash -c")) {
+                av_add(&v, 30, AUDIT_HIGH,
+                    "A6: interactive shell invocation in ~/%s:%d",
+                    files[fi], lineno);
+            }
+            if (strstr(p, "mkfifo ") &&
+                (strstr(p, "nc ") || strstr(p, "ncat ") ||
+                 strstr(p, "bash") || strstr(p, "sh"))) {
+                av_add(&v, 45, AUDIT_CRITICAL,
+                    "A6: named-pipe reverse shell (mkfifo+nc) in ~/%s:%d",
+                    files[fi], lineno);
             }
         }
         fclose(fp);

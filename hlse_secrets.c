@@ -520,6 +520,11 @@ static const char *FREE_EMAIL_DOMAINS[] = {
     "qq.com", "163.com", "126.com",         /* China */
     "naver.com", "daum.net",                 /* Korea */
     "yahoo.co.jp",                           /* Japan */
+    /* European free email providers */
+    "web.de", "gmx.de", "freenet.de",       /* Germany */
+    "orange.fr", "laposte.net",             /* France */
+    "mail.ru", "yandex.ru",                 /* Russia */
+    "libero.it", "virgilio.it",             /* Italy */
     NULL
 };
 
@@ -561,6 +566,11 @@ hlse_check_email_headers(const char *raw_headers) {
             "facebook", "netflix", "linkedin", "twitter", "instagram",
             "irs", "fbi", "government", "treasury", "customs",
             "accounts", "notifications", "it department",
+            /* Additional high-value impersonation targets */
+            "stripe", "shopify", "github", "docusign", "zoom",
+            "office 365", "microsoft 365", "apple id",
+            "fedex", "dhl", "ups", "usps",
+            "human resources", "hr department", "it support",
             NULL
         };
         int i;
@@ -604,6 +614,8 @@ hlse_check_email_headers(const char *raw_headers) {
                 "department", "hr ", "legal", "invoice",
                 "accounts payable", "accounting", "finance", "payroll",
                 "treasurer", "vp ", "vice president",
+                "cto", "chro", "chief", "executive", "board member",
+                "chairman", "controller", "auditor", "compliance",
                 NULL
             };
             char lower_dn[256];
@@ -651,6 +663,9 @@ hlse_check_email_headers(const char *raw_headers) {
             "asap", "time sensitive", "action required",
             "payment", "invoice", "overdue", "confirmation",
             "verify", "suspended", "locked",
+            "final notice", "deadline", "expires today",
+            "account closed", "your account", "security alert",
+            "important update", "required action",
             NULL
         };
         char lower_subj[512];

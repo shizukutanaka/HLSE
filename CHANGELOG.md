@@ -2,6 +2,26 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.52] — 2026-06-09
+
+### Added
+- **Audit: A4 cron patterns +6** (GAP-BD): Added "bash -i", "socat ", "mkfifo ",
+  "ruby -e", "php -r", "node -e", "openssl s_client", "telnet" to
+  SUSPICIOUS_CRON_PATTERNS — covers reverse-shell and LOTL one-liners.
+- **Audit: A6 shellrc backdoor signals +3** (GAP-BD): Detect socat reverse shells
+  (`exec:/bin/sh`), `bash -i` interactive shell invocations, and mkfifo+nc named-pipe
+  reverse shells.
+- **Email: E1 display-name brand list +8** (GAP-BE): Added stripe, shopify, github,
+  docusign, zoom, office 365, fedex/dhl/ups/usps, hr department.
+- **Email: E3 corp_words +5** (GAP-BE): Added cto, chro, chief, executive, board
+  member, chairman, controller, auditor, compliance.
+- **Email: E6 urgency subjects +6** (GAP-BE): Added final notice, deadline, expires
+  today, account closed, security alert, important update, required action.
+- **Email: FREE_EMAIL_DOMAINS +8** (GAP-BE): Added European providers — web.de,
+  gmx.de, freenet.de (DE); orange.fr, laposte.net (FR); mail.ru, yandex.ru (RU);
+  libero.it, virgilio.it (IT). Total domains: 26 → 34.
+- **Version bump**: 0.9.51 → 0.9.52.
+
 ## [0.9.51] — 2026-06-09
 
 ### Added
