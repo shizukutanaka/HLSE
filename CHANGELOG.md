@@ -2,6 +2,18 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.57] — 2026-06-09
+
+### Added
+- **Text: QR phishing ("quishing") detection** (GAP-TX-QR): New signal array
+  `QR_PHISH_WORDS` (14 phrases in EN + JP) and a dedicated signal entry
+  `"QR code phishing (quishing)"` (base=20, per_hit=10, cap=30). Two compound
+  amplifiers in Pass 2: urgency/authority + QR → +20; QR + bait → +15.
+  Benign QR mentions (meeting rooms, product codes) score ≤20 (LOG) and pass
+  the P6 FP gate. Attack payloads score 80–100 (ISOLATE). Covers the dominant
+  2024-2025 email-gateway bypass technique.
+- **Text: new `fired_qr` flag** tracks QR signal for amplifier cross-reference.
+
 ## [0.9.56] — 2026-06-09
 
 ### Added

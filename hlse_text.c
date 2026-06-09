@@ -260,6 +260,19 @@ static const char *SHELL_PIPE_WORDS[] = {
     NULL
 };
 
+/* QR code phishing ("quishing") — victim asked to scan a QR code rather
+ * than click a link, bypassing URL filters on email gateways.          */
+static const char *QR_PHISH_WORDS[] = {
+    "scan the qr code", "scan qr code", "scan this qr",
+    "scan the code below", "scan with your phone",
+    "scan with your camera", "use your camera to scan",
+    "open your camera", "point your camera",
+    "scan the barcode", "qr code below",
+    /* Japanese */
+    "qrコードをスキャン", "カメラでスキャン",
+    NULL
+};
+
 static const Signal SIGNALS[] = {
     { "Urgency pressure",           URGENCY_WORDS,    8,  8, 25 },
     { "Financial/credential req",   BAIT_WORDS,      12, 12, 36 },
@@ -271,6 +284,7 @@ static const Signal SIGNALS[] = {
     { "Ransom/extortion language",  RANSOM_WORDS,    35, 20, 55 },
     { "Direct financial action",    FIN_ACTION_WORDS,15, 15, 30 },
     { "Shell-pipe-to-interpreter",  SHELL_PIPE_WORDS,40,  0, 40 },
+    { "QR code phishing (quishing)",QR_PHISH_WORDS,  20, 10, 30 },
     { NULL, NULL, 0, 0, 0 }
 };
 
@@ -608,6 +622,7 @@ hlse_check_text(const char *raw_text) {
     int  i, j;
     int  fired_urgency = 0, fired_bait = 0, fired_prize = 0;
     int  fired_ransom = 0, fired_authority = 0, fired_secrecy = 0;
+    int  fired_qr = 0;
 
     memset(&v, 0, sizeof(v));
     if (!raw_text) return v;
@@ -680,6 +695,7 @@ hlse_check_text(const char *raw_text) {
         else if (strcmp(sig->name, "Ransom/extortion language") == 0) fired_ransom = 1;
         else if (strcmp(sig->name, "Authority impersonation") == 0) fired_authority = 1;
         else if (strcmp(sig->name, "Secrecy/grooming") == 0) fired_secrecy = 1;
+        else if (strcmp(sig->name, "QR code phishing (quishing)") == 0) fired_qr = 1;
     }
 
     #undef MATCH
@@ -764,6 +780,20 @@ hlse_check_text(const char *raw_text) {
                 add_text_reason(&v, 15,
                     "Amplifier: wallet key + financial/credential context");
             }
+        }
+    }
+
+    /* QR phishing amplifiers */
+    if (fired_qr) {
+        if (fired_urgency || fired_authority) {
+            add_text_reason(&v, 20,
+                "Amplifier: QR code request + urgency/authority = "
+                "quishing (QR phishing) pattern");
+        }
+        if (fired_bait) {
+            add_text_reason(&v, 15,
+                "Amplifier: QR code + credential/financial request = "
+                "quishing credential harvest");
         }
     }
 
