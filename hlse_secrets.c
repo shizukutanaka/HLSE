@@ -559,6 +559,28 @@ extract_domain(const char *addr, char *out, size_t out_sz) {
     }
 }
 
+/* Whole-word substring match: returns 1 if `needle` appears in `hay`
+ * bounded by non-alphanumeric characters (or string ends). This avoids
+ * substring collisions where a short token like "irs" matches inside
+ * "first" or "ups" matches inside "groups"/"backups". Both arguments
+ * must already be lowercase. Multi-word needles (e.g. "office 365")
+ * still match because only the outer boundaries are checked. */
+static int
+contains_word(const char *hay, const char *needle) {
+    size_t nlen = strlen(needle);
+    const char *p = hay;
+    if (nlen == 0) return 0;
+    while ((p = strstr(p, needle)) != NULL) {
+        int pre_ok  = (p == hay) ||
+                      !isalnum((unsigned char)p[-1]);
+        int post_ok = (p[nlen] == '\0') ||
+                      !isalnum((unsigned char)p[nlen]);
+        if (pre_ok && post_ok) return 1;
+        p++;
+    }
+    return 0;
+}
+
 /* Extract display name from "Display Name <email@domain>" format */
 static int
 extract_display_name(const char *from, char *out, size_t out_sz) {
@@ -649,7 +671,12 @@ hlse_check_email_headers(const char *raw_headers) {
         lower_dn[k] = '\0';
 
         for (i = 0; known[i]; i++) {
-            if (strstr(lower_dn, known[i]) &&
+            /* Word-boundary match on the display name avoids substring
+             * collisions ("irs" in "First", "ups" in "Backups Team");
+             * the domain side keeps substring matching so lookalike
+             * domains that embed the brand (paypal-secure.ru) still
+             * suppress the alert when the From is the genuine brand.    */
+            if (contains_word(lower_dn, known[i]) &&
                 !strstr(from_domain, known[i]))
             {
                 v.score += 45;
