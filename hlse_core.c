@@ -213,6 +213,8 @@ static const char *SECURITY_WORDS[] = {
     "transfer",
     /* Product-name spoofing: "ledger-live.org", "adobe-live.net" */
     "live",
+    /* Action/confirmation words commonly used in phishing domains */
+    "confirm", "manage", "protect",
     NULL
 };
 
