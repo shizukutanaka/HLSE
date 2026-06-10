@@ -210,6 +210,9 @@ static const char *AUTHORITY_WORDS[] = {
     "microsoft support", "apple support", "google security",
     "amazon security", "paypal security",
     "under investigation", "criminal charges", "warrant for your arrest",
+    "federal agent", "federal officer", "law enforcement officer",
+    "social security has been compromised", "ssn has been compromised",
+    "social security number compromised",
     "warrant will be issued", "back taxes", "owe back taxes",
     "ceo here", "from the ceo", "this is the ceo",
     "this is your ceo", "this is the cfo", "this is your cfo",
@@ -280,7 +283,8 @@ static const char *GROOMING_WORDS[] = {
     /* Additional pig-butchering patterns 2024-2025 */
     "my mentor taught me", "my uncle works in finance",
     "i only share this with special people", "exclusive trading group",
-    "vip trading room", "vip signal group",
+    "vip trading room", "vip signal group", "vip group",
+    "share my profits", "share my trading", "my trading profits",
     "arbitrage opportunity", "yield farming opportunity",
     "my portfolio grew", "monthly passive income",
     "usdt income", "usdt profit", "tether income",
@@ -320,6 +324,8 @@ static const char *FAKE_ALERT_WORDS[] = {
     "account compromised", "your account has been compromised",
     "call us immediately", "call this number immediately",
     "call now to", "call +1-888", "call +1-800",
+    /* US toll-free without plus sign (IVR-style: "call 1-800") */
+    "call 1-800", "call 1-888", "call 1-877", "call 1-866", "call 1-844",
     /* Tech support scam specific */
     "do not turn off your computer", "do not restart",
     "your computer is sending error reports",

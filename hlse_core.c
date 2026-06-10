@@ -547,6 +547,14 @@ static const char *TRUSTED_HOSTS[] = {
     "microsoft.com", "office.com", "live.com",
     "amazon.com", "amazon.co.jp",
     "apple.com",
+    /* Password managers — URLs contain "password", "vault", "master" in paths */
+    "1password.com", "lastpass.com", "bitwarden.com",
+    /* Identity/access — contain "login", "sso", "auth" in paths */
+    "okta.com", "auth0.com", "onelogin.com",
+    /* Document signing — contain "sign", "sign-in" in paths */
+    "docusign.com", "hellosign.com",
+    /* Developer platforms — contain "verify", "auth" in paths */
+    "vercel.com", "netlify.com",
     NULL
 };
 
