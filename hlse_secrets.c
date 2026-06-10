@@ -284,9 +284,15 @@ check_env_passwords(const char *text, SecretVerdict *v) {
         "NETLIFY_AUTH_TOKEN=", "VERCEL_TOKEN=",
         "CIRCLE_TOKEN=", "SNYK_TOKEN=",
         /* Connection strings that embed credentials */
-        "DATABASE_URL=", "MONGODB_URI=", "REDIS_URL=",
+        "DATABASE_URL=", "MONGODB_URI=", "MONGO_URI=", "MONGO_URL=",
+        "REDIS_URL=", "REDIS_URI=",
+        "MYSQL_URL=", "MYSQL_URI=", "POSTGRES_URL=", "POSTGRES_URI=",
+        "POSTGRESQL_URL=", "MARIADB_URL=", "COCKROACHDB_URL=",
+        "ELASTICSEARCH_URL=", "CASSANDRA_URL=",
         /* Generic secrets commonly leaked in .env */
         "JWT_SECRET=", "JWT_SECRET_KEY=", "APP_SECRET=",
+        "SECRET_KEY_BASE=", "APP_KEY=",
+        "ENCRYPTION_KEY=", "MASTER_KEY=", "SIGNING_SECRET=",
         /* IaC / cloud provisioning */
         "TF_VAR_", "PULUMI_ACCESS_TOKEN=", "PULUMI_CONFIG_PASSPHRASE=",
         "ARM_CLIENT_SECRET=", "ARM_SUBSCRIPTION_ID=",
