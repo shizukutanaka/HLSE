@@ -2,6 +2,49 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.85] — 2026-06-10
+
+### Security
+- **Text: Fix authority impersonation FP — remove substring-prone acronyms** (BUG-TEXT-IRS-FP):
+  `irs` matched "first" (f-**irs**-t), `cia` matched "judicial", etc.
+  Replaced standalone 3-letter acronyms with context-bearing phrases:
+  "from the irs", "irs agent", "irs notice", "irs investigation", etc.
+  IRS impersonation still detected; pig-butchering with "first" no longer
+  triggers false Authority hit.
+
+- **Text: Improve BEC authority patterns and wire transfer detection**:
+  AUTHORITY_WORDS: added "as the ceo/cfo", "i am the ceo/cfo",
+  "on behalf of the ceo", "acting ceo/cfo".
+  BAIT_WORDS: added "wire the payment", "wire this payment",
+  "process the wire", "send the payment".
+  Result: "As the CEO…wire the initial payment" → ALERT[50] (was 0).
+
+- **Text: 2025 smishing and urgency patterns** (GAP-TEXT-CLICKBAIT):
+  URGENCY_WORDS: +7 click-bait patterns (click here to verify/confirm).
+  CALLBACK_PHISH_WORDS: +12 delivery/USPS smishing variants.
+
+- **Util: Expand benign-magic whitelist to 31 formats** (GAP-UTIL-MAGIC):
+  Added OTF/WOFF/WOFF2 fonts, Apache Arrow IPC, DER X.509 certificate,
+  Snappy framing format. Prevents false-positive entropy alerts on
+  legitimate web fonts and cloud-native data files.
+
+- **File: Add .dll to EXECUTABLE_EXTS; expand LURE_WORDS** (GAP-FILE-DLL):
+  .dll now detected in double-extension attacks (document.pdf.dll).
+  +9 LURE_WORDS: driver, codec, plugin, proof, memo, hacked, breach, etc.
+
+- **Audit: Expand DNS hosts-poisoning watchlist** (GAP-AUDIT-DNS):
+  SENSITIVE_DOMAINS: +16 entries (brokerages, P2P payment, Apple iCloud,
+  social/communication platforms, streaming services).
+
+- **Protect: Add 2025 UEFI bootkit indicator strings** (GAP-PROTECT-ESP):
+  ESP_INDICATORS: LoJax, MoonBounce, CosmicStrand, ESPectre.
+
+### Tests
+- URL unit: 28 → 31 (norton brand, turbotax, pages.dev/wp-admin)
+- Text unit: 15 → 18 (BEC, IRS FP regression, smishing)
+- Util: 33 → 36 (OTF, WOFF, DER cert)
+- Total: 391 → 400 (**milestone: 400 structured tests**)
+
 ## [0.9.80] — 2026-06-10
 
 ### Security

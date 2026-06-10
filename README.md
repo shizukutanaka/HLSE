@@ -24,7 +24,7 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             391 (8 suites + corpus + CLI integration)
+  Structured tests:             400 (8 suites + corpus + CLI integration)
   Fuzz iterations:              500,000 (5 harnesses × 100K, 0 crashes)
   ASan + UBSan:                 0 errors
   Compiler warnings:            0 (-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
@@ -179,14 +179,14 @@ Every subcommand supports `--json`:
 
 | Suite | Count | What it verifies |
 |-------|-------|------------------|
-| Unit (URL) | 23 | Individual URL detector accuracy (incl. IDN/Punycode homograph) |
-| Unit (text) | 15 | Individual text signal accuracy |
+| Unit (URL) | 31 | Individual URL detector accuracy (incl. IDN/Punycode homograph, free-hosting, shorteners, new brands) |
+| Unit (text) | 18 | Individual text signal accuracy (incl. BEC patterns, IRS FP regression, smishing) |
 | Property invariants | 64 | Monotonicity, bounds, determinism, case, evasion (P1–P13) |
 | Protection | 19 | Ransomware, network drive, SMB, MBR/GPT, ESP |
 | Secrets | 50 | Credentials (47 token patterns + GCP SA JSON + Azure SAS), email headers (E1-E6 incl. E5 Received-chain anomaly), crypto addresses (BTC/ETH/SOL/XMR/LTC/DOGE/XRP/DASH/XLM/ADA) |
 | Supply chain | 30 | Package typosquat (pip/npm/cargo/go/gem), pastejacking (Unix + Windows ClickFix + macOS osascript + Python download-exec), network |
-| File/Audit | 33 | File masquerade (PE/ELF/Mach-O/7ZIP/CAB/WASM), system hardening (SSH/perms/DNS/cron/PATH/shell-rc incl. PROMPT_COMMAND/function-override, sudoers NOPASSWD) + hardening index |
-| Util | 29 | Entropy, Damerau-Levenshtein, benign-magic (21 formats) + safe system-file open (FIFO/symlink) |
+| File/Audit | 33 | File masquerade (PE/ELF/Mach-O/7ZIP/CAB/WASM), system hardening (SSH/perms/DNS/cron/PATH/shell-rc incl. PROMPT_COMMAND/function-override, sudoers NOPASSWD A7) + hardening index |
+| Util | 36 | Entropy, Damerau-Levenshtein, benign-magic (31 formats: archives/images/media/fonts/certs/scientific) + safe system-file open (FIFO/symlink) |
 | OOD corpus | 29 | Out-of-distribution F1 (held-out phishing/scam) |
 | CLI integration | 90 | All 12 subcommands, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON, SARIF relative URIs, no-arg exit=2 |
 | Fuzz | 5 × 100K | text / secrets / supply-chain / file / URL harnesses (random bytes, truncated UTF-8, keyword stuffing, typosquat mutation, bidi/control, Unicode mutation, percent-encoding, dangerous-scheme) |
