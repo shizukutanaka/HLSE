@@ -161,6 +161,12 @@ static const char *PATH_PATTERNS[] = {
     "/kyc",
     /* Financial transfer phishing */
     "/transfer", "/wire",
+    /* Subscription / invoice fraud */
+    "/renew", "/invoice", "/subscription",
+    /* Fake checkout / payment pages */
+    "/checkout", "/complete",
+    /* Webmail credential harvest */
+    "/webmail", "/owa",
     NULL
 };
 
