@@ -110,6 +110,9 @@ static const char *BAIT_WORDS[] = {
     "card number", "cvv", "social security", "ssn", "date of birth",
     "bank account", "routing number", "wire transfer", "bank wire",
     "please wire", "wire the funds", "transfer funds to", "transfer money to",
+    "wire the payment", "wire this payment", "process the wire",
+    "make the wire transfer", "process this transfer",
+    "send the payment", "send payment to",
     "bitcoin", "btc", "crypto", "cryptocurrency", "ethereum", "eth", "usdt",
     "gift card", "itunes", "google play card", "google play cards",
     "amazon gift", "walmart gift", "target gift", "best buy gift", "steam card",
@@ -180,6 +183,10 @@ static const char *AUTHORITY_WORDS[] = {
     "from the cfo", "your manager", "from the director",
     "the chairman", "head of finance", "from legal", "legal department",
     "from accounts payable", "executive office",
+    /* BEC variants where attacker signs as authority */
+    "as the ceo", "as your ceo", "i am the ceo", "i am the cfo",
+    "as the cfo", "as your cfo", "as the director", "on behalf of the ceo",
+    "sent by the ceo", "acting ceo", "acting cfo",
     /* International law enforcement impersonation */
     "interpol", "secret service", "homeland security", "federal reserve",
     "customs and border", "immigration enforcement",
