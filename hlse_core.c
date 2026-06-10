@@ -183,16 +183,20 @@ static const char *PATH_PATTERNS[] = {
     "/oauth", "/sso", "/saml",
     /* Account recovery abuse */
     "/forgot", "/password-reset",
+    /* Crypto seed phrase / wallet draining */
+    "/seed", "/mnemonic", "/recovery-phrase",
     NULL
 };
 
 /* Words used in phishing-typical hyphenated domains */
 static const char *SECURITY_WORDS[] = {
-    "secure", "verify", "update", "account", "login",
-    "signin", "reset", "recover", "support", "help",
+    "secure", "security", "verify", "verification", "update", "account",
+    "login", "signin", "reset", "recover", "recovery", "support", "help",
     "webmail", "mail", "payment", "portal", "relief",
     "refund", "claim", "billing", "suspend", "locked",
     "identity", "validate", "activate", "alert", "urgent",
+    /* Giveaway / promo scam domains */
+    "free", "giveaway", "promo", "gift", "reward", "bonus", "nitro",
     NULL
 };
 
@@ -1214,6 +1218,12 @@ check_url(const char *raw_url) {
             "web.app", "firebaseapp.com",
             "onrender.com", "railway.app",
             "surge.sh", "tiiny.site", "carrd.co",
+            /* Cloud dev/app hosting used for phishing lures */
+            "azurewebsites.net", "cloudapp.net", "azurecontainer.io",
+            "blob.core.windows.net",
+            "s3.amazonaws.com", "s3-website.amazonaws.com",
+            "storage.googleapis.com",
+            "cf-pages.com", "workers.dev",
             NULL
         };
         int fhi;
