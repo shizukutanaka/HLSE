@@ -248,6 +248,27 @@ static void test_benign_parquet(void) {
     CHECK(hlse_is_high_entropy_benign_magic(b, 5) == 1, "Parquet must be benign");
 }
 
+static void test_benign_otf_font(void) {
+    TEST("benign-magic: OpenType font (OTTO) → 1");
+    unsigned char b[] = {0x4F, 0x54, 0x54, 0x4F, 0x00, 0x10};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 6) == 1,
+          "OTF font must be benign");
+}
+
+static void test_benign_woff(void) {
+    TEST("benign-magic: WOFF web font (wOFF) → 1");
+    unsigned char b[] = {0x77, 0x4F, 0x46, 0x46, 0x00, 0x01};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 6) == 1,
+          "WOFF must be benign");
+}
+
+static void test_benign_der_cert(void) {
+    TEST("benign-magic: DER X.509 certificate (30 82) → 1");
+    unsigned char b[] = {0x30, 0x82, 0x04, 0xC0, 0x30, 0x82};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 6) == 1,
+          "DER certificate must be benign");
+}
+
 static void test_benign_random(void) {
     TEST("benign-magic: random-looking bytes → 0");
     unsigned char b[] = {0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x01};
@@ -301,6 +322,9 @@ int main(void) {
     test_benign_ebml();
     test_benign_hdf5();
     test_benign_parquet();
+    test_benign_otf_font();
+    test_benign_woff();
+    test_benign_der_cert();
     test_benign_random();
 
     printf("\nSafe system-file open:\n");

@@ -150,6 +150,21 @@ hlse_is_high_entropy_benign_magic(const unsigned char *buf, size_t n) {
     /* Apache Parquet: PAR1 at start (big data columnar format) */
     if (buf[0]==0x50 && buf[1]==0x41 && buf[2]==0x52 && buf[3]==0x31) return 1;
 
+    /* OpenType font: OTTO (high entropy, found in web projects) */
+    if (buf[0]==0x4F && buf[1]==0x54 && buf[2]==0x54 && buf[3]==0x4F) return 1;
+    /* WOFF web font: wOFF */
+    if (buf[0]==0x77 && buf[1]==0x4F && buf[2]==0x46 && buf[3]==0x46) return 1;
+    /* WOFF2 web font: wOF2 */
+    if (buf[0]==0x77 && buf[1]==0x4F && buf[2]==0x46 && buf[3]==0x32) return 1;
+    /* Apache Arrow IPC stream/file format */
+    if (n >= 6 &&
+        buf[0]==0x41 && buf[1]==0x52 && buf[2]==0x52 && buf[3]==0x4F &&
+        buf[4]==0x57 && buf[5]==0x31) return 1;
+    /* DER-encoded X.509 certificate: SEQUENCE tag 0x30 + length 0x82 */
+    if (buf[0]==0x30 && buf[1]==0x82) return 1;
+    /* Snappy framing format: \xFF\x06\x00\x00 */
+    if (buf[0]==0xFF && buf[1]==0x06 && buf[2]==0x00 && buf[3]==0x00) return 1;
+
     return 0;
 }
 
