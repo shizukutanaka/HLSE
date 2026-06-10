@@ -272,6 +272,10 @@ static const char *GROOMING_WORDS[] = {
     /* English */
     "investing for you", "i'll 3x", "i'll triple", "double your money",
     "guaranteed returns", "guaranteed profit", "risk-free investment",
+    "returns guaranteed", "profits guaranteed",
+    "100% safe", "100% guaranteed", "zero risk",
+    "earn per week", "earn per day", "earn daily",
+    "passive income guaranteed", "passive earning",
     "crypto opportunity", "investment opportunity",
     "hi sweetie", "hi dear", "hi honey",
     /* Pig-butchering / investment scam specific */
@@ -322,8 +326,10 @@ static const char *FAKE_ALERT_WORDS[] = {
     "your device has been infected", "your device is infected",
     "unusual activity detected", "suspicious activity detected",
     "unusual sign-in activity", "suspicious sign-in activity",
+    "unusual sign-in detected", "suspicious sign-in detected",
     "unusual login activity", "suspicious login activity",
     "sign-in activity detected", "new sign-in detected",
+    "sign-in attempt detected", "login attempt detected",
     "your microsoft account", "your google account has been",
     "account compromised", "your account has been compromised",
     "call us immediately", "call this number immediately",
@@ -437,6 +443,7 @@ static const char *CALLBACK_PHISH_WORDS[] = {
     /* 2024-2025 delivery/USPS smishing variants */
     "package has been held", "your package could not be delivered",
     "customs clearance fee", "customs clearance charge",
+    "customs duty", "import duty",
     "pay a small fee", "your delivery failed",
     "your shipment has been held", "your shipment requires",
     "click to pay the fee", "click to reschedule delivery",
