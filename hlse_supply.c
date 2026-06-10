@@ -61,6 +61,9 @@ static const char *PIP_TOP[] = {
     /* High-growth data / infrastructure — active typosquat targets */
     "polars", "dask", "numba", "sympy", "statsmodels",
     "gunicorn", "psycopg2", "redis", "python-dotenv", "pycryptodome",
+    /* AI/LLM ecosystem 2024 — active typosquat campaigns */
+    "llama-index", "llama_index", "autogen", "crewai", "litellm",
+    "qdrant-client", "weaviate-client", "instructor", "haystack-ai",
     NULL
 };
 
@@ -80,6 +83,10 @@ static const char *NPM_TOP[] = {
     /* Modern tooling — high-value typosquat targets */
     "vitest", "playwright", "dayjs", "turbo", "esbuild",
     "framer-motion", "storybook", "remix", "astro", "typeorm",
+    /* AI/LLM and cloud tooling 2024 */
+    "chromadb", "anthropic", "wrangler", "drizzle-orm", "hono",
+    "react-query", "better-sqlite3", "sharp", "ioredis", "bullmq",
+    "trpc", "next-auth", "nuxt-auth", "lucia", "pocketbase",
     NULL
 };
 

@@ -130,6 +130,18 @@ static const char *BRANDS[] = {
     "microsoftteams",
     /* Financial / banking */
     "truist",
+    /* Document signing — DocuSign phishing is one of the most common BEC vectors */
+    "docusign",
+    /* Crypto wallets — MetaMask/Ledger are #1 wallet-draining phishing targets */
+    "metamask", "ledger",
+    /* Identity / access management — Okta impersonation in enterprise spear-phishing */
+    "okta",
+    /* Productivity / design SaaS — targeted in spear-phishing against tech workers */
+    "figma", "notion",
+    /* Neobanks / cross-border payments — high-growth phishing targets */
+    "wise", "revolut",
+    /* Password managers — compromised master passwords give access to everything */
+    "1password", "lastpass", "bitwarden",
     NULL
     /* NOTE: government agencies (irs, medicare) intentionally omitted —
      * their .gov TLD cannot be registered by attackers, so the only real
@@ -197,6 +209,10 @@ static const char *SECURITY_WORDS[] = {
     "identity", "validate", "activate", "alert", "urgent",
     /* Giveaway / promo scam domains */
     "free", "giveaway", "promo", "gift", "reward", "bonus", "nitro",
+    /* Financial transfer fraud — phishing via domain like "paypal-transfer.com" */
+    "transfer",
+    /* Product-name spoofing: "ledger-live.org", "adobe-live.net" */
+    "live",
     NULL
 };
 
@@ -775,7 +791,7 @@ detect_security_hyphenation(const ParsedUrl *u, Verdict *v) {
     p = sld;
     while (*p) { if (*p == '-') hyphens++; p++; }
 
-    if (sec_count >= 2 || (sec_count >= 1 && hyphens >= 2)) {
+    if (sec_count >= 1 && hyphens >= 1) {
         add_reason(v, 20,
                    "Phishing-typical domain structure (%d security words, "
                    "%d hyphens)", sec_count, hyphens);
@@ -818,6 +834,8 @@ detect_typosquat(const ParsedUrl *u, Verdict *v) {
             return;
         }
     }
+
+    if (is_trusted_host(u->host)) return;
 
     sld = sld_label(u->host, sld_buf, sizeof(sld_buf));
     if (!sld) return;
@@ -1337,18 +1355,33 @@ hlse_scan(const char *input) {
         /* Also check text content in the URL for compound signals —
          * a phishing link that says "urgent" in the path is worse.
          *
-         * Skip the text scan for government/military TLDs (.gov, .mil,
-         * .edu) — these are registry-restricted and cannot be registered
-         * by attackers, so authority-impersonation hits (e.g. "irs" in
-         * irs.gov) would be false positives.                           */
+         * Skip the text scan for:
+         *   1. government/military TLDs (.gov, .mil, .edu) — registry-
+         *      restricted, so authority-impersonation hits are FPs.
+         *   2. trusted hosts (TRUSTED_HOSTS list) — legitimate sites
+         *      often have security keywords in their paths (e.g.
+         *      account.live.com/password/reset) that would false-positive
+         *      the text scanner.                                         */
         {
             int suppress_text = 0;
             {
-                const char *host_end = strstr(input + 8, "/");
-                size_t hlen = host_end ? (size_t)(host_end - input) : strlen(input);
-                if ((hlen > 4 && strncmp(input + hlen - 4, ".gov", 4) == 0) ||
-                    (hlen > 4 && strncmp(input + hlen - 4, ".mil", 4) == 0) ||
-                    (hlen > 4 && strncmp(input + hlen - 4, ".edu", 4) == 0))
+                const char *after_scheme = input + (strncmp(input, "https://", 8) == 0 ? 8 : 7);
+                const char *host_end = strstr(after_scheme, "/");
+                size_t hlen_from_start = host_end
+                    ? (size_t)(host_end - input) : strlen(input);
+                char host_buf[256];
+                size_t host_len = host_end
+                    ? (size_t)(host_end - after_scheme) : strlen(after_scheme);
+                if (host_len >= sizeof(host_buf)) host_len = sizeof(host_buf) - 1;
+                memcpy(host_buf, after_scheme, host_len);
+                host_buf[host_len] = '\0';
+
+                if ((hlen_from_start > 4 && strncmp(input + hlen_from_start - 4, ".gov", 4) == 0) ||
+                    (hlen_from_start > 4 && strncmp(input + hlen_from_start - 4, ".mil", 4) == 0) ||
+                    (hlen_from_start > 4 && strncmp(input + hlen_from_start - 4, ".edu", 4) == 0))
+                    suppress_text = 1;
+                /* Suppress text scan on trusted hosts when URL check is clean */
+                if (!suppress_text && r.score == 0 && is_trusted_host(host_buf))
                     suppress_text = 1;
             }
             TextVerdict tv = suppress_text ? (TextVerdict){0,0,{{0}}} : hlse_check_text(input);
@@ -1575,6 +1608,12 @@ self_test(void) {
         /* Greek chi/omega (U+03C7/03C9) — newly mapped */
         { "https://\xcf\x89hatsapp.com",                  60, 100,
           "Raw UTF-8 Greek-omega homoglyph: \xcf\x89hatsapp → whatsapp" },
+        /* Subdomain spoofing + phishing-typical SLD (security word + hyphen) */
+        { "https://apple.com.id-login.net/appleid",        60, 100,
+          "Subdomain spoof + phishing SLD (login) = BLOCK" },
+        /* brand-hyphen alone on .net (no suspicious TLD, no path) — still ALERT */
+        { "https://paypal-verify.net",                     20, 59,
+          "FP calibration: brand-hyphen alone without sus TLD/path stays below BLOCK" },
     };
     int n = sizeof(cases) / sizeof(cases[0]);
     int i;

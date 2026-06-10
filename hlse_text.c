@@ -160,6 +160,7 @@ static const char *BAIT_WORDS[] = {
     "send your bank account", "direct deposit details",
     "provide your ssn", "tax form required before starting",
     "advance fee for equipment", "purchase gift cards for onboarding",
+    "bank details", "bank account details",
     /* Japanese */
     "パスワード", "暗証番号", "暗証番号をご入力", "クレジットカード", "銀行口座", "振込",
     "ビットコイン", "仮想通貨", "ギフトカード", "アマゾンギフト", "還付金", "返金",
@@ -429,6 +430,10 @@ static const char *CALLBACK_PHISH_WORDS[] = {
     "click to pay the fee", "click to reschedule delivery",
     "delivery charge unpaid", "unpaid shipping fee",
     "update delivery address", "confirm your delivery",
+    /* Fake invoice / subscription cancellation callback (BazarCall/TOAD) */
+    "call to cancel", "call us to cancel", "call before", "call to dispute",
+    "to unsubscribe call", "to opt out call", "call to stop",
+    "call to avoid", "call to prevent charges",
     /* Japanese callback/smishing */
     "折り返しお電話", "お電話ください", "佐川急便",
     "宅急便", "不在通知", "再配達",

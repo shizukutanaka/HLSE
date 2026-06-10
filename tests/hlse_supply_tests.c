@@ -269,6 +269,43 @@ static void test_paste_python_download_exec(void) {
           "python download-exec must trigger P8");
 }
 
+/* ─── New package typosquat coverage (npm AI/LLM, pip LLM ecosystem) ──── */
+
+static void test_pkg_chromadb_npm(void) {
+    TEST("Package: 'chromadb_' (npm) → typosquat of chromadb");
+    PackageVerdict v = hlse_check_package("chromadb_", "npm");
+    CHECK(v.score >= 40 && v.n_matches > 0,
+          "chromadb_ must detect npm typosquat");
+}
+
+static void test_pkg_anthropic_npm(void) {
+    TEST("Package: 'anthropicc' (npm) → typosquat of anthropic");
+    PackageVerdict v = hlse_check_package("anthropicc", "npm");
+    CHECK(v.score >= 40 && v.n_matches > 0,
+          "anthropicc must detect npm typosquat");
+}
+
+static void test_pkg_wrangler_typo(void) {
+    TEST("Package: 'wranglr' (npm) → typosquat of wrangler");
+    PackageVerdict v = hlse_check_package("wranglr", "npm");
+    CHECK(v.score >= 40 && v.n_matches > 0,
+          "wranglr must detect npm typosquat of wrangler");
+}
+
+static void test_pkg_llamaindex_pip(void) {
+    TEST("Package: 'llama-indx' (pip) → typosquat of llama-index");
+    PackageVerdict v = hlse_check_package("llama-indx", "pip");
+    CHECK(v.score >= 40 && v.n_matches > 0,
+          "llama-indx must detect pip typosquat");
+}
+
+static void test_pkg_crewai_pip(void) {
+    TEST("Package: 'creawi' (pip) → typosquat of crewai");
+    PackageVerdict v = hlse_check_package("creawi", "pip");
+    CHECK(v.score >= 40 && v.n_matches > 0,
+          "creawi must detect pip typosquat of crewai");
+}
+
 /* ─── Network Safety ──────────────────────────────────────────────────── */
 
 static void test_network_runs(void) {
@@ -319,6 +356,13 @@ int main(void) {
     test_paste_revshell_nc_e();
     test_paste_revshell_python_socket();
     test_paste_revshell_socat();
+
+    printf("\nNew AI/LLM ecosystem package typosquats:\n");
+    test_pkg_chromadb_npm();
+    test_pkg_anthropic_npm();
+    test_pkg_wrangler_typo();
+    test_pkg_llamaindex_pip();
+    test_pkg_crewai_pip();
 
     printf("\nNetwork safety:\n");
     test_network_runs();
