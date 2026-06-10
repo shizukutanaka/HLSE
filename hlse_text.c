@@ -293,6 +293,10 @@ static const char *RANSOM_WORDS[] = {
     "will send this video to your contacts",
     "will share this recording", "send bitcoin or i will send",
     "i have your browsing history", "i installed malware on your",
+    /* AI deepfake / voice clone extortion (2024-2025 emerging threat) */
+    "cloned your voice", "deepfake video", "ai-generated video",
+    "voice clone of you", "ai clone", "synthetic media",
+    "unless you pay", "or i will release",
     /* Japanese */
     "ファイルが暗号化", "復号キー", "身代金",
     "ウェブカメラを起動", "動画を送る",
