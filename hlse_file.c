@@ -553,6 +553,11 @@ hlse_check_filename(const char *filename) {
                     "F1: DOUBLE EXTENSION — '%s%s' disguised as image",
                     inner, outer);
             }
+            else if (is_executable_ext(inner) && is_executable_ext(outer)) {
+                fv_add(&v, 50,
+                    "F1: Double executable extension '%s%s'",
+                    inner, outer);
+            }
         }
     }
 

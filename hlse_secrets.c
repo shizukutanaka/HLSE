@@ -336,9 +336,17 @@ check_env_passwords(const char *text, SecretVerdict *v) {
         "MAPBOX_ACCESS_TOKEN=", "MAPBOX_TOKEN=",
         "HERE_API_KEY=", "TOMTOM_API_KEY=",
         /* Communication */
-        "DISCORD_BOT_TOKEN=", "TELEGRAM_BOT_TOKEN=",
+        "DISCORD_BOT_TOKEN=", "DISCORD_TOKEN=", "TELEGRAM_BOT_TOKEN=",
         "MAILGUN_API_KEY=", "POSTMARK_API_TOKEN=",
         "TWILIO_API_KEY=", "VONAGE_API_SECRET=",
+        /* Testing / CI / build tools */
+        "CYPRESS_RECORD_KEY=", "TURBO_TOKEN=", "NX_CLOUD_AUTH_TOKEN=",
+        "SONAR_TOKEN=", "SONARQUBE_TOKEN=", "EXPO_TOKEN=", "EAS_BUILD_PROFILE=",
+        /* LLMOps / AI observability */
+        "LANGCHAIN_API_KEY=", "LANGFUSE_SECRET_KEY=", "LANGFUSE_PUBLIC_KEY=",
+        "LANGSMITH_API_KEY=", "TRACELOOP_API_KEY=",
+        /* Fly.io and other PaaS via env var */
+        "FLY_API_TOKEN=", "RAILWAY_TOKEN=",
         NULL
     };
     int found = 0;
