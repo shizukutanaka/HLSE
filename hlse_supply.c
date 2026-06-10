@@ -111,6 +111,13 @@ static const char *CARGO_TOP[] = {
     "tauri", "leptos", "dioxus", "bevy", "embassy",
     "tokio-tungstenite", "axum-core", "tower-http",
     "sea-orm", "sea-query", "dotenvy",
+    /* ML / AI inference — HuggingFace candle, burn, ONNX runtime */
+    "candle-core", "candle-nn", "candle-transformers",
+    "burn", "burn-core", "burn-tensor",
+    "ort", "ndarray", "linfa",
+    /* Cryptography / PKI */
+    "rcgen", "webpki", "x509-parser", "p256", "ed25519-dalek",
+    "chacha20poly1305", "argon2", "pbkdf2",
     NULL
 };
 

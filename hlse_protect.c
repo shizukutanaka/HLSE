@@ -156,6 +156,9 @@ static const char *RANSOM_NOTE_NAMES[] = {
     "cloak_readme.txt",           /* Cloak ransomware */
     "3am_readme.txt",             /* ThreeAM/3AM */
     "vanhelsing_readme.txt",      /* VanHelsing */
+    "hellcat_readme.txt",         /* HellCat */
+    "blacklock_readme.txt",       /* BlackLock */
+    "eldorado_readme.txt",        /* Eldorado */
     NULL
 };
 
@@ -210,6 +213,10 @@ static const char *RANSOM_EXTENSIONS[] = {
     ".nitrogen",    /* Nitrogen ransomware (2025) */
     ".arkana",      /* Arkana (2025, ex-ALPHV successor) */
     ".beast",       /* BEAST ransomware (2025) */
+    ".hellcat",     /* HellCat (2024-2025, education/govt targeting) */
+    ".blacklock",   /* BlackLock / El Dorado fork (2025) */
+    ".eldorado",    /* Eldorado (2024-2025, VMware/Windows) */
+    ".apt73",       /* APT73 / Bashe (2024, LockBit fork) */
     NULL
 };
 

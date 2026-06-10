@@ -308,6 +308,9 @@ check_env_passwords(const char *text, SecretVerdict *v) {
         "TOGETHER_API_KEY=", "COHERE_API_KEY=", "MISTRAL_API_KEY=",
         "REPLICATE_API_TOKEN=", "HUGGINGFACE_API_KEY=",
         "STABILITY_API_KEY=", "ELEVENLABS_API_KEY=",
+        "GROQ_API_KEY=", "PERPLEXITY_API_KEY=",
+        "DEEPSEEK_API_KEY=", "XAI_API_KEY=",
+        "FIREWORKS_API_KEY=", "ANYSCALE_API_KEY=",
         /* Observability / APM */
         "DATADOG_API_KEY=", "DATADOG_APP_KEY=",
         "SENTRY_DSN=", "SENTRY_AUTH_TOKEN=",
