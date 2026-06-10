@@ -279,6 +279,14 @@ static const char *GROOMING_WORDS[] = {
     "package forwarding", "money transfer agent",
     "mystery shopper", "brand ambassador position",
     "crypto trader apprentice", "per day from home",
+    "per week working from home", "per week from home",
+    "earn per week", "weekly income from home",
+    /* Loan / credit fraud openers */
+    "pre-approved for a loan", "pre-approved personal loan",
+    "no credit check required", "no credit check needed",
+    "guaranteed loan approval", "instant loan approval",
+    "bad credit ok", "bad credit accepted",
+    "guaranteed approval", "approval guaranteed",
     /* Japanese */
     "投資してあげる", "必ず儲かる", "絶対に儲かる",
     "取引プラットフォーム", "出金手数料",
@@ -319,6 +327,21 @@ static const char *FAKE_ALERT_WORDS[] = {
     "ip address banned", "error code 0x",
     "windows defender has detected", "your firewall has detected",
     "tech support", "technical support number",
+    /* ISP/internet impersonation */
+    "your internet will be disconnected", "internet service will be suspended",
+    "internet will be cut off", "detected sending spam from your",
+    "your ip is sending spam", "your connection will be terminated",
+    /* Crypto wallet draining (high-volume 2024-2025) */
+    "your wallet has been compromised", "wallet has been compromised",
+    "wallet has been hacked", "wallet was compromised",
+    "transfer your funds to a secure wallet", "move your crypto to safety",
+    "your crypto assets are at risk", "coinbase security alert",
+    "your crypto is at risk", "wallet draining",
+    /* Unauthorized order / account fraud impersonation */
+    "order you did not authorize", "purchase you did not make",
+    "unauthorized purchase on your account", "did not make this purchase",
+    "call our fraud department", "fraud department",
+    "transaction you did not authorize", "charge you do not recognize",
     /* Japanese */
     "セキュリティ警告", "ウイルス検出", "不審なアクティビティ",
     "サポートに電話", "マイクロソフトからの警告",
