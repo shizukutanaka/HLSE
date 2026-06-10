@@ -86,6 +86,10 @@ static const char *URGENCY_WORDS[] = {
     "action required", "your account has been flagged", "must respond",
     "confirm within", "failure to respond",
     "account closed", "access suspended", "verify immediately",
+    /* Common phishing account-status phrases */
+    "account has been limited", "account limited", "account has been restricted",
+    "temporarily restricted", "access restricted", "account has been blocked",
+    "account placed on hold", "account put on hold",
     /* Click-bait urgency (smishing / phishing emails) */
     "click here to verify", "click here to confirm", "click here to update",
     "tap here to verify", "tap to confirm",
@@ -124,6 +128,10 @@ static const char *BAIT_WORDS[] = {
     /* Account takeover / 2FA bypass bait */
     "two-factor code", "verification code", "one-time code", "otp code",
     "phone number", "confirm identity", "verify your identity",
+    "verify your information", "verify your account",
+    "confirm your identity", "confirm your account",
+    "confirm your details", "verify your details",
+    "restore access", "regain access",
     "update billing", "update your billing", "billing information",
     "payment method expired", "update payment",
     "update your payment method", "payment information required",
