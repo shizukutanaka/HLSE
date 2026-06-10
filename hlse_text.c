@@ -286,6 +286,9 @@ static const char *GROOMING_WORDS[] = {
     /* Romance scam openers */
     "i'm a widower", "my wife passed away", "working on an oil rig",
     "military overseas", "doctor without borders",
+    "successful trader", "successful investor",
+    "crypto trader with", "years of experience in trading",
+    "found your contact by accident", "sent this by accident",
     /* Additional pig-butchering patterns 2024-2025 */
     "my mentor taught me", "my uncle works in finance",
     "i only share this with special people", "exclusive trading group",
