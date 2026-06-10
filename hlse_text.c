@@ -108,7 +108,8 @@ static const char *URGENCY_WORDS[] = {
     "membership will expire", "subscription will expire",
     /* Package delivery scam urgency */
     "claim package", "redelivery required", "delivery attempt failed",
-    "package on hold", "customs clearance required",
+    "package on hold", "package is on hold", "parcel is on hold",
+    "customs clearance required",
     /* Japanese (UTF-8) */
     "至急", "緊急", "即座", "本日中", "24時間以内", "48時間以内",
     "停止", "凍結", "ロック", "不正アクセス", "確認してください",
@@ -449,7 +450,8 @@ static const char *CALLBACK_PHISH_WORDS[] = {
     "reply stop to", "reply yes to", "txt stop to",
     "click to track your parcel", "your parcel is waiting",
     "delivery rescheduled", "delivery fee", "redelivery charge",
-    "customs fee required", "package on hold",
+    "customs fee required", "package on hold", "package is on hold",
+    "parcel is on hold", "parcel on hold",
     /* 2024-2025 delivery/USPS smishing variants */
     "package has been held", "your package could not be delivered",
     "customs clearance fee", "customs clearance charge",
