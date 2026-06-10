@@ -256,6 +256,9 @@ static const char *LURE_WORDS[] = {
     "airdrop", "nft", "whitelist",
     /* Tech-lure dropper names */
     "driver", "codec", "plugin", "extension",
+    /* Software brand impersonation (OS/browser update lures) */
+    "windows", "chrome", "firefox", "adobe", "flash", "java",
+    "system", "microsoft", "google",
     /* Document lures */
     "proof", "memo", "form", "benefit",
     "leaked", "private", "confidential_",
