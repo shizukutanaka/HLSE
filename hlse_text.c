@@ -90,6 +90,11 @@ static const char *URGENCY_WORDS[] = {
     "account has been limited", "account limited", "account has been restricted",
     "temporarily restricted", "access restricted", "account has been blocked",
     "account placed on hold", "account put on hold",
+    "account is on hold", "account on hold", "account has been put on hold",
+    /* Subscription/membership billing suspension (common service phishing) */
+    "subscription will be cancelled", "subscription will be suspended",
+    "subscription has been cancelled", "membership will be cancelled",
+    "membership has been suspended", "service will be suspended",
     /* Click-bait urgency (smishing / phishing emails) */
     "click here to verify", "click here to confirm", "click here to update",
     "tap here to verify", "tap to confirm",
@@ -134,7 +139,8 @@ static const char *BAIT_WORDS[] = {
     "restore access", "regain access",
     "update billing", "update your billing", "billing information",
     "payment method expired", "update payment",
-    "update your payment method", "payment information required",
+    "update your payment method", "update your payment details",
+    "update payment details", "payment information required",
     "verify your billing", "confirm your payment",
     /* Money transfer platforms common in elder/tech-support fraud */
     "zelle", "western union", "moneygram",
@@ -184,6 +190,9 @@ static const char *AUTHORITY_WORDS[] = {
     "from the irs", "from the fbi", "from the cia", "from the dhs",
     "irs agent", "fbi agent", "irs notice", "irs investigation",
     "treasury department", "social security administration",
+    "social security number has been suspended", "ssn has been suspended",
+    "social security benefits suspended", "your benefits have been suspended",
+    "department of social services",
     "medicare", "medicaid", "department of justice",
     "microsoft support", "apple support", "google security",
     "amazon security", "paypal security",
@@ -231,7 +240,7 @@ static const char *SECRECY_WORDS[] = {
     /* English */
     "don't tell", "do not tell", "keep this secret", "between us",
     "don't mention", "no one else", "just between you and me",
-    "keep this confidential", "do not discuss", "don't discuss",
+    "keep it secret", "keep this confidential", "do not discuss", "don't discuss",
     "keep it confidential", "do not share", "handle this discreetly",
     "do not loop in", "without involving", "off the record",
     "strictly confidential", "highly confidential", "this is confidential",
