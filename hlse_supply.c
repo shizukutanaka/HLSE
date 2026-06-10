@@ -141,6 +141,12 @@ static const char *GO_TOP[] = {
     "golang-jwt", "paseto", "casbin",
     "sarama", "confluent-kafka-go", "nats",
     "docker", "kubernetes", "helm",
+    /* Security / crypto — targeted due to credential access */
+    "go-jose", "golang-jwt", "oauth2",
+    /* Secrets management — SOPS, Vault client */
+    "sops", "vault",
+    /* AI/LLM tooling 2024 */
+    "langchaingo", "go-openai",
     NULL
 };
 
@@ -155,6 +161,10 @@ static const char *GEM_TOP[] = {
     "rswag", "factory_bot_rails", "shoulda-matchers",
     /* High-value targets — active typosquat campaigns */
     "dry-validation", "dry-monads", "sorbet", "rubocop",
+    /* Audit / security gems */
+    "paper_trail", "brakeman",
+    /* Background job / caching */
+    "delayed_job", "whenever",
     NULL
 };
 
