@@ -230,6 +230,16 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* Contentful personal access token */
     { "CFPAT-",          6, 43, is_alnum_or_dash,   "Contentful PAT",        85 },
 
+    /* SendGrid API Key — SG. + 22+ base64url chars (format: SG.<22>.<43>) */
+    { "SG.",             3, 22, is_alnum_or_dash,   "SendGrid API Key",      85 },
+
+    /* HashiCorp Vault batch and recovery tokens */
+    { "hvb.",            4, 50, is_alnum_or_dash,   "HashiCorp Vault Batch Token",    80 },
+    { "hvr.",            4, 50, is_alnum_or_dash,   "HashiCorp Vault Recovery Token", 80 },
+
+    /* Vercel deploy hook / automation token */
+    { "vercel_token_",  13, 20, is_alnum_or_dash,   "Vercel Token",          80 },
+
     { NULL, 0, 0, NULL, NULL, 0 }
 };
 

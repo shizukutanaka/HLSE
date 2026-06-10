@@ -120,6 +120,16 @@ static const char *BRANDS[] = {
     "ups",
     /* Crypto exchange — active phishing campaigns */
     "crypto",
+    /* Security software — impersonated in fake-AV/tech-support scams */
+    "norton", "mcafee", "kaspersky", "bitdefender", "avast", "malwarebytes",
+    /* Tax / accounting software — seasonal phishing spikes */
+    "intuit", "turbotax", "quickbooks",
+    /* Microsoft 365 brand — separate from "microsoft" for phishing URLs */
+    "office365", "microsoft365",
+    /* Enterprise collaboration — BEC/vishing targets */
+    "microsoftteams",
+    /* Financial / banking */
+    "truist",
     NULL
     /* NOTE: government agencies (irs, medicare) intentionally omitted —
      * their .gov TLD cannot be registered by attackers, so the only real
@@ -167,6 +177,12 @@ static const char *PATH_PATTERNS[] = {
     "/checkout", "/complete",
     /* Webmail credential harvest */
     "/webmail", "/owa",
+    /* CMS admin panels — credential harvest via fake login */
+    "/wp-admin", "/wp-login", "/administrator",
+    /* OAuth / SSO abuse */
+    "/oauth", "/sso", "/saml",
+    /* Account recovery abuse */
+    "/forgot", "/password-reset",
     NULL
 };
 

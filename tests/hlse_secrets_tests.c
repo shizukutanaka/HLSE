@@ -504,6 +504,22 @@ static void test_fly_token(void) {
     else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
 }
 
+static void test_sendgrid_key(void) {
+    TEST("Secret: SendGrid API key detected");
+    SecretVerdict v = hlse_scan_secrets(
+        "SENDGRID_API_KEY=SG.xKbGz8qT3mNpR7vW2yJ4sA.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmno");
+    if (v.score >= 75 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_vault_batch_token(void) {
+    TEST("Secret: HashiCorp Vault batch token detected");
+    SecretVerdict v = hlse_scan_secrets(
+        "VAULT_TOKEN=hvb.AAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMxFake");
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
 /* ─── Main ────────────────────────────────────────────────────────────── */
 
 int main(void) {
@@ -565,6 +581,8 @@ int main(void) {
     test_azure_sas_token();
     test_render_api_key();
     test_fly_token();
+    test_sendgrid_key();
+    test_vault_batch_token();
 
     printf("\n══════════════════════════════════════════\n");
     printf("Secrets tests: %d/%d passed", passed, total);

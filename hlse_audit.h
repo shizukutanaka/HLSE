@@ -8,6 +8,7 @@
  *   A4. Cron persistence (suspicious scheduled tasks)
  *   A5. Insecure $PATH ('.'/empty or world-writable dir)
  *   A6. Shell startup-file backdoors (reverse shells, curl|sh)
+ *   A7. Sudoers NOPASSWD (passwordless privilege escalation)
  */
 
 #ifndef HLSE_AUDIT_H
@@ -17,7 +18,7 @@
 extern "C" {
 #endif
 
-#define HLSE_AUDIT_MAX_FINDINGS 24
+#define HLSE_AUDIT_MAX_FINDINGS 32
 
 typedef enum {
     AUDIT_PASS     = 0,
@@ -46,6 +47,7 @@ AuditVerdict hlse_audit_dns(void);
 AuditVerdict hlse_audit_cron(void);
 AuditVerdict hlse_audit_path(void);
 AuditVerdict hlse_audit_shellrc(void);
+AuditVerdict hlse_audit_sudoers(void);
 
 /* Run all audits and combine results */
 AuditVerdict hlse_audit_all(void);

@@ -458,6 +458,14 @@ static void test_audit_all(void) {
     else FAIL("invalid");
 }
 
+static void test_audit_sudoers_nopasswd(void) {
+    TEST("Audit A7: sudoers NOPASSWD check runs without crash");
+    AuditVerdict v = hlse_audit_sudoers();
+    /* Result depends on host; just verify structure is valid */
+    if (v.score >= 0 && v.score <= 100 && v.n_findings >= 0) PASS();
+    else FAIL("invalid verdict");
+}
+
 static void test_audit_hardening_index(void) {
     TEST("Audit: hardening index = 100 - clamped risk");
     AuditVerdict a;
@@ -563,6 +571,7 @@ int main(void) {
     test_audit_shellrc_clean();
     test_audit_shellrc_prompt_command();
     test_audit_shellrc_function_override();
+    test_audit_sudoers_nopasswd();
     test_audit_perm_aws_creds();
     test_audit_perm_ssh_key();
     test_audit_all();

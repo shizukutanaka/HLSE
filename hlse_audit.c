@@ -660,13 +660,100 @@ hlse_audit_shellrc(void) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+ * A7: Sudoers NOPASSWD check
+ *
+ * A NOPASSWD entry in sudoers lets any process running as that user run
+ * arbitrary commands as root without a password prompt — effectively
+ * root-without-password on the affected user account. Flag both the main
+ * sudoers file and any drop-in under /etc/sudoers.d/.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+AuditVerdict
+hlse_audit_sudoers(void) {
+    AuditVerdict v;
+    memset(&v, 0, sizeof(v));
+
+    /* Main sudoers file */
+    {
+        FILE *fp = hlse_open_system_file("/etc/sudoers");
+        if (fp) {
+            char line[2048];
+            int lineno = 0;
+            while (fgets(line, sizeof(line), fp)) {
+                lineno++;
+                /* Skip comments and whitespace lines */
+                {
+                    char *p = line;
+                    while (*p == ' ' || *p == '\t') p++;
+                    if (*p == '#' || *p == '\n' || *p == '\0') continue;
+                }
+                if (strstr(line, "NOPASSWD") && !strstr(line, "#")) {
+                    /* Strip trailing newline for cleaner output */
+                    char *nl = strchr(line, '\n');
+                    if (nl) *nl = '\0';
+                    av_add(&v, 40, AUDIT_HIGH,
+                        "A7: NOPASSWD in /etc/sudoers:%d — "
+                        "passwordless sudo: %.120s", lineno, line);
+                }
+            }
+            fclose(fp);
+        }
+    }
+
+    /* Drop-in files under /etc/sudoers.d/ */
+    {
+        DIR *d = opendir("/etc/sudoers.d");
+        if (d) {
+            struct dirent *ent;
+            while ((ent = readdir(d)) != NULL) {
+                char path[512];
+                FILE *fp;
+                struct stat st;
+                if (ent->d_name[0] == '.') continue;
+                snprintf(path, sizeof(path), "/etc/sudoers.d/%s", ent->d_name);
+                if (stat(path, &st) != 0 || !S_ISREG(st.st_mode)) continue;
+                fp = hlse_open_system_file(path);
+                if (!fp) continue;
+                {
+                    char line[2048];
+                    int lineno = 0;
+                    while (fgets(line, sizeof(line), fp)) {
+                        lineno++;
+                        {
+                            char *p = line;
+                            while (*p == ' ' || *p == '\t') p++;
+                            if (*p == '#' || *p == '\n' || *p == '\0') continue;
+                        }
+                        if (strstr(line, "NOPASSWD") && !strstr(line, "#")) {
+                            char *nl = strchr(line, '\n');
+                            if (nl) *nl = '\0';
+                            av_add(&v, 40, AUDIT_HIGH,
+                                "A7: NOPASSWD in /etc/sudoers.d/%s:%d — "
+                                "passwordless sudo: %.100s",
+                                ent->d_name, lineno, line);
+                        }
+                    }
+                }
+                fclose(fp);
+            }
+            closedir(d);
+        }
+    }
+
+    if (v.n_findings == 0)
+        av_add(&v, 0, AUDIT_PASS,
+               "A7: No NOPASSWD entries found in sudoers");
+    return v;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
  * Unified audit
  * ═══════════════════════════════════════════════════════════════════════ */
 
 AuditVerdict
 hlse_audit_all(void) {
     AuditVerdict combined;
-    AuditVerdict parts[6];
+    AuditVerdict parts[7];
     int n = 0, i, j;
 
     memset(&combined, 0, sizeof(combined));
@@ -677,6 +764,7 @@ hlse_audit_all(void) {
     parts[n++] = hlse_audit_cron();
     parts[n++] = hlse_audit_path();
     parts[n++] = hlse_audit_shellrc();
+    parts[n++] = hlse_audit_sudoers();
 
     for (i = 0; i < n; i++) {
         for (j = 0; j < parts[i].n_findings
