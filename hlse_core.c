@@ -932,7 +932,7 @@ detect_mixed_script(const ParsedUrl *u, Verdict *v) {
             for (i = 0; BRANDS[i] != NULL; i++) {
                 if (contains(ascii, BRANDS[i])) {
                     add_reason(v, 60,
-                               "Mixed-script homoglyph (Cyrillic/Greek): "
+                               "Mixed-script homoglyph: "
                                "'%s' resembles '%s'", u->host, BRANDS[i]);
                     return;
                 }
@@ -1054,13 +1054,17 @@ cp_fold(uint32_t cp) {
         case 0x043A: return 'k';  case 0x0432: return 'v';
         case 0x043C: return 'm';  case 0x043D: return 'n';
         case 0x0442: return 't';  case 0x0431: return 'b';
-        case 0x0433: return 'r';
+        case 0x0433: return 'r';  case 0x0501: return 'd';
         /* Greek */
         case 0x03BF: return 'o';  case 0x03B1: return 'a';
         case 0x03C1: return 'p';  case 0x03B5: return 'e';
         case 0x03B9: return 'i';  case 0x03BD: return 'v';
         case 0x03BA: return 'k';  case 0x03C5: return 'u';
         case 0x0392: return 'b';  case 0x039F: return 'o';
+        case 0x03C7: return 'x';  case 0x03C9: return 'w';
+        /* Armenian */
+        case 0x0561: return 'a';  case 0x0565: return 'e';
+        case 0x0578: return 'o';  case 0x0570: return 'h';
         default: return 0;
     }
 }
@@ -1560,6 +1564,17 @@ self_test(void) {
           "Raw UTF-8 Greek-omicron homoglyph: gοοgle → google" },
         { "https://paypa\xd3\x8f.com/login",              40, 100,
           "Raw UTF-8 Cyrillic-palochka homoglyph: paypaӏ → paypal" },
+        /* Armenian homoglyphs — cp_fold now covers U+0561/0565/0578/0570 */
+        { "https://\xd5\xa1pple.com",                     60, 100,
+          "Raw UTF-8 Armenian-Ayb homoglyph: \xd5\xa1pple → apple" },
+        { "https://g\xd5\xb8\xd5\xb8gle.com",            60, 100,
+          "Raw UTF-8 Armenian-Vo homoglyph: g\xd5\xb8\xd5\xb8gle → google" },
+        /* Cyrillic Komi De (U+0501) → 'd' */
+        { "https://\xd4\x81iscord.com",                   60, 100,
+          "Raw UTF-8 Cyrillic-Komi-De homoglyph: \xd4\x81iscord → discord" },
+        /* Greek chi/omega (U+03C7/03C9) — newly mapped */
+        { "https://\xcf\x89hatsapp.com",                  60, 100,
+          "Raw UTF-8 Greek-omega homoglyph: \xcf\x89hatsapp → whatsapp" },
     };
     int n = sizeof(cases) / sizeof(cases[0]);
     int i;

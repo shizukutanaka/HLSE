@@ -2,6 +2,27 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.87] — 2026-06-10
+
+### Security
+- **Core: Extend cp_fold() with Armenian and additional Greek/Cyrillic confusables** (GAP-URL-ARMENIAN):
+  `cp_fold()` had no entries for Armenian script (even though `cp_script()` already
+  classified it as CONFUSABLE). Attacks using Armenian lookalikes — ա (`apple.com`),
+  ո (`google.com`), ե, հ — scored only LOG/ALERT(25-40). Added U+0561→'a', U+0565→'e',
+  U+0578→'o', U+0570→'h'. Also added Cyrillic Komi De U+0501→'d' (`ԁiscord.com`) and
+  Greek chi/omega U+03C7→'x', U+03C9→'w' (`ωhatsapp.com`). All four classes now reach
+  BLOCK(60) via brand matching. Added 4 regression tests.
+
+### Changed
+- **Supply: Add P9 reverse-shell tests** (TEST-SUPPLY-P9):
+  The P9 pastejacking signal (reverse shells: `/dev/tcp`, `nc -e`, Python socket, socat)
+  added in v0.9.85 had no dedicated test coverage. Added 4 test cases covering all P9
+  detection paths. Supply tests: 30 → 34.
+
+- **Audit: Extend SUSPICIOUS_CRON_PATTERNS** (GAP-AUDIT-CRON):
+  Added `xterm -display` (X11 reverse shell) and `msfvenom`/`meterpreter`
+  (Metasploit payload indicators) to the cron persistence pattern list.
+
 ## [0.9.86] — 2026-06-10
 
 ### Security

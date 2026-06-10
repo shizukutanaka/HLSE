@@ -399,6 +399,8 @@ static const char *SUSPICIOUS_CRON_PATTERNS[] = {
     "bash -i", "socat ", "mkfifo ",
     "ruby -e", "php -r", "node -e",
     "openssl s_client", "telnet ",
+    "xterm -display",
+    "msfvenom", "meterpreter",
     NULL
 };
 

