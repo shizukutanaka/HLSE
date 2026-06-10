@@ -119,6 +119,20 @@ static const char *GO_TOP[] = {
     NULL
 };
 
+static const char *GEM_TOP[] = {
+    "rails", "rake", "bundler", "rspec", "devise", "sidekiq",
+    "puma", "unicorn", "sinatra", "activerecord", "activesupport",
+    "capistrano", "pundit", "cancancan", "kaminari", "paperclip",
+    "carrierwave", "omniauth", "warden", "bcrypt", "dotenv-rails",
+    "faraday", "httparty", "rest-client", "aws-sdk-ruby",
+    "stripe", "twilio-ruby", "sendgrid-ruby",
+    "nokogiri", "pg", "mysql2", "sqlite3", "redis",
+    "rswag", "factory_bot_rails", "shoulda-matchers",
+    /* High-value targets — active typosquat campaigns */
+    "dry-validation", "dry-monads", "sorbet", "rubocop",
+    NULL
+};
+
 typedef struct {
     const char        *name;
     const char *const *packages;
@@ -129,6 +143,7 @@ static const Registry REGISTRIES[] = {
     { "npm",   NPM_TOP },
     { "cargo", CARGO_TOP },
     { "go",    GO_TOP },
+    { "gem",   GEM_TOP },
     { NULL, NULL }
 };
 

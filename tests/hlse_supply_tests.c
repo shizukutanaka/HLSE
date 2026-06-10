@@ -58,6 +58,13 @@ static void test_pkg_typosquat_cargo(void) {
           "should detect typosquat of serde");
 }
 
+static void test_pkg_typosquat_gem(void) {
+    TEST("Package: 'rai1s' (gem, digit substitution) → typosquat");
+    PackageVerdict v = hlse_check_package("rai1s", "gem");
+    CHECK(v.score >= 40 && v.n_matches > 0,
+          "should detect typosquat of rails");
+}
+
 static void test_pkg_safe_unrelated(void) {
     TEST("Package: 'mycompanylib' → no match (safe)");
     PackageVerdict v = hlse_check_package("mycompanylib", NULL);
@@ -253,6 +260,7 @@ int main(void) {
     test_pkg_typosquat_missing();
     test_pkg_typosquat_npm();
     test_pkg_typosquat_cargo();
+    test_pkg_typosquat_gem();
     test_pkg_safe_unrelated();
     test_pkg_underscore_hyphen();
     test_pkg_all_ecosystems();
