@@ -2,6 +2,24 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.89] — 2026-06-10
+
+### Security
+- **Email E1: Fix brand-department display-name false positives** (BUG-EMAIL-E1-BRANDDEPT):
+  The E1 display-name check used a flat keyword list that included generic role words
+  ("support", "security", "admin", "helpdesk") alongside brand names. This caused
+  "Apple Support" from apple.com, "Twitter Security" from twitter.com, and
+  "Apple" from icloud.com to all score BLOCK(65) — false positives. Two fixes:
+  (1) Added `brand_owns_domain(brand, domain)` with suffix-based matching (not substring)
+  and a trusted-alternate-domain table (Apple→icloud.com/me.com, Amazon→amazonses.com,
+  Facebook→facebookmail.com, Twitter→twitteremail.com/x.com, etc.). Uses "ends with"
+  semantics so `accountprotection.microsoft.com` is trusted but `microsoft-verify.ru`
+  is NOT.
+  (2) Added `is_generic_display_role()` to suppress generic functional words when
+  the primary brand already owns the From domain. Malicious senders (apple-verify.ru,
+  microsoft-support.info) still trigger BLOCK(65). Added 3 regression tests.
+  Secrets tests: 52 → 55.
+
 ## [0.9.88] — 2026-06-10
 
 ### Security

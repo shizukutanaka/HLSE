@@ -627,6 +627,74 @@ is_free_email(const char *domain) {
     return 0;
 }
 
+/* Return 1 if `brand` legitimately owns `domain`.
+ *
+ * Uses suffix matching ("ends with base_domain") so subdomains like
+ * accountprotection.microsoft.com are accepted but look-alike domains
+ * like microsoft-verify.ru and apple-secure.net are NOT.                */
+static int
+brand_owns_domain(const char *brand, const char *domain) {
+    static const struct { const char *brand; const char *base; } BD[] = {
+        { "microsoft", "microsoft.com"    }, { "microsoft", "office.com"     },
+        { "microsoft", "live.com"         }, { "microsoft", "hotmail.com"    },
+        { "microsoft", "msn.com"          }, { "microsoft", "microsoft365.com"},
+        { "apple",     "apple.com"        }, { "apple",     "icloud.com"     },
+        { "apple",     "me.com"           }, { "apple",     "mac.com"        },
+        { "google",    "google.com"       }, { "google",    "gmail.com"      },
+        { "google",    "googlemail.com"   },
+        { "amazon",    "amazon.com"       }, { "amazon",    "amazonses.com"  },
+        { "amazon",    "amazon.co.uk"     }, { "amazon",    "amazon.de"      },
+        { "amazon",    "amazon.co.jp"     },
+        { "paypal",    "paypal.com"       }, { "paypal",    "paypal.co.uk"   },
+        { "facebook",  "facebook.com"     }, { "facebook",  "facebookmail.com"},
+        { "facebook",  "fb.com"           },
+        { "instagram", "instagram.com"    }, { "instagram", "facebookmail.com"},
+        { "netflix",   "netflix.com"      }, { "netflix",   "netflixmail.com"},
+        { "linkedin",  "linkedin.com"     }, { "linkedin",  "linkedin.email" },
+        { "twitter",   "twitter.com"      }, { "twitter",   "x.com"          },
+        { "twitter",   "twitteremail.com" },
+        { "stripe",    "stripe.com"       }, { "github",    "github.com"     },
+        { "docusign",  "docusign.com"     }, { "docusign",  "docusign.net"   },
+        { "zoom",      "zoom.us"          }, { "zoom",      "zoom.com"       },
+        { "fedex",     "fedex.com"        }, { "dhl",       "dhl.com"        },
+        { "ups",       "ups.com"          }, { "usps",      "usps.com"       },
+        { "irs",       "irs.gov"          }, { "shopify",   "shopify.com"    },
+        { NULL, NULL }
+    };
+    int i;
+    size_t dl = strlen(domain);
+    for (i = 0; BD[i].brand; i++) {
+        size_t bl;
+        if (strcmp(brand, BD[i].brand) != 0) continue;
+        bl = strlen(BD[i].base);
+        if (dl >= bl) {
+            size_t off = dl - bl;
+            /* Domain must end with base and have '.' or be identical */
+            if (strcmp(domain + off, BD[i].base) == 0 &&
+                (off == 0 || domain[off - 1] == '.'))
+                return 1;
+        }
+    }
+    return 0;
+}
+
+/* Generic display-name function words that should not trigger E1 when
+ * the email's primary brand already owns the From domain. For example,
+ * "Apple Support" from apple.com — "support" here is a department label,
+ * not an impersonation. We only suppress if brand_owns = 1.             */
+static int
+is_generic_display_role(const char *word) {
+    static const char *ROLES[] = {
+        "support", "security", "admin", "helpdesk", "accounts",
+        "notifications", "it department", "human resources",
+        "hr department", "it support", NULL
+    };
+    int i;
+    for (i = 0; ROLES[i]; i++)
+        if (strcmp(word, ROLES[i]) == 0) return 1;
+    return 0;
+}
+
 EmailVerdict
 hlse_check_email_headers(const char *raw_headers) {
     EmailVerdict v;
@@ -670,14 +738,29 @@ hlse_check_email_headers(const char *raw_headers) {
             lower_dn[k] = (char)tolower((unsigned char)display_name[k]);
         lower_dn[k] = '\0';
 
+        /* First pass: check if any brand in display name legitimately owns
+         * the From domain (primary match OR trusted alternate domain).
+         * This suppresses false positives like "Apple Support" from apple.com
+         * — "support" is a department label, not an impersonation.          */
+        int brand_owns = 0;
+        for (i = 0; known[i]; i++) {
+            if (contains_word(lower_dn, known[i]) &&
+                brand_owns_domain(known[i], from_domain)) {
+                brand_owns = 1; break;
+            }
+        }
+
+        /* Second pass: fire E1 only when brand truly mismatches. Skip
+         * generic role words ("support", "security", ...) if the primary
+         * brand already matches the domain.                                  */
         for (i = 0; known[i]; i++) {
             /* Word-boundary match on the display name avoids substring
              * collisions ("irs" in "First", "ups" in "Backups Team");
-             * the domain side keeps substring matching so lookalike
-             * domains that embed the brand (paypal-secure.ru) still
-             * suppress the alert when the From is the genuine brand.    */
+             * brand_owns_domain() covers alternate sending domains so
+             * "Apple" from icloud.com is not flagged as a mismatch.         */
             if (contains_word(lower_dn, known[i]) &&
-                !strstr(from_domain, known[i]))
+                !brand_owns_domain(known[i], from_domain) &&
+                !(brand_owns && is_generic_display_role(known[i])))
             {
                 v.score += 45;
                 snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),

@@ -338,6 +338,52 @@ static void test_email_e1_ups_real(void) {
     else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
 }
 
+static void test_email_e1_brand_dept_no_fp(void) {
+    TEST("Email: 'Apple Support' from apple.com → no E1 FP (brand owns domain)");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: \"Apple Support\" <no-reply@apple.com>\n"
+        "To: user@example.com\n"
+        "Subject: Your receipt\n"
+        "Received: from mail.apple.com (mail [17.0.0.1])\n"
+        "Received: from smtp.apple.com (smtp [17.0.0.2])\n");
+    {
+        int e1_fired = 0, i;
+        for (i = 0; i < v.n_reasons; i++)
+            if (strstr(v.reasons[i], "E1:")) e1_fired = 1;
+        if (!e1_fired) PASS();
+        else FAIL("E1 false-positive: 'Apple Support' from apple.com");
+    }
+}
+
+static void test_email_e1_brand_dept_phish(void) {
+    TEST("Email: 'Apple Support' from apple-verify.ru → E1 fires");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: \"Apple Support\" <no-reply@apple-verify.ru>\n"
+        "To: victim@example.com\n"
+        "Subject: Verify Account\n"
+        "Received: from mail.apple-verify.ru (mail [185.0.0.1])\n"
+        "Received: from mta.apple-verify.ru (mta [185.0.0.2])\n");
+    if (v.score >= 40) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
+static void test_email_e1_alternate_domain_no_fp(void) {
+    TEST("Email: 'Apple' from icloud.com → no E1 FP (alternate trusted domain)");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: \"Apple\" <no-reply@icloud.com>\n"
+        "To: user@example.com\n"
+        "Subject: Your iCloud receipt\n"
+        "Received: from mail.icloud.com (mail [17.58.0.1])\n"
+        "Received: from smtp.icloud.com (smtp [17.58.0.2])\n");
+    {
+        int e1_fired = 0, i;
+        for (i = 0; i < v.n_reasons; i++)
+            if (strstr(v.reasons[i], "E1:")) e1_fired = 1;
+        if (!e1_fired) PASS();
+        else FAIL("E1 false-positive: 'Apple' from icloud.com");
+    }
+}
+
 /* ─── Clipboard Crypto-Swap ───────────────────────────────────────────── */
 
 static void test_crypto_no_swap(void) {
@@ -587,6 +633,9 @@ int main(void) {
     test_email_single_hop_free();
     test_email_e1_substring_fp();
     test_email_e1_ups_real();
+    test_email_e1_brand_dept_no_fp();
+    test_email_e1_brand_dept_phish();
+    test_email_e1_alternate_domain_no_fp();
 
     printf("\nClipboard Crypto-Swap:\n");
     test_crypto_no_swap();

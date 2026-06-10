@@ -24,7 +24,7 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             412 (8 suites + corpus + CLI integration)
+  Structured tests:             415 (8 suites + corpus + CLI integration)
   Fuzz iterations:              500,000 (5 harnesses × 100K, 0 crashes)
   ASan + UBSan:                 0 errors
   Compiler warnings:            0 (-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
@@ -183,7 +183,7 @@ Every subcommand supports `--json`:
 | Unit (text) | 18 | Individual text signal accuracy (incl. BEC patterns, IRS FP regression, smishing) |
 | Property invariants | 64 | Monotonicity, bounds, determinism, case, evasion (P1–P13) |
 | Protection | 19 | Ransomware, network drive, SMB, MBR/GPT, ESP |
-| Secrets | 52 | Credentials (47 token patterns + GCP SA JSON + Azure SAS), email headers (E1-E6 incl. E1 word-boundary FP guard + E5 Received-chain anomaly), crypto addresses (BTC/ETH/SOL/XMR/LTC/DOGE/XRP/DASH/XLM/ADA) |
+| Secrets | 55 | Credentials (47 token patterns + GCP SA JSON + Azure SAS), email headers (E1-E6 incl. E1 brand-domain ownership guard + E5 Received-chain anomaly), crypto addresses (BTC/ETH/SOL/XMR/LTC/DOGE/XRP/DASH/XLM/ADA) |
 | Supply chain | 34 | Package typosquat (pip/npm/cargo/go/gem), pastejacking (Unix + Windows ClickFix + macOS osascript + Python download-exec + P9 reverse shell), network |
 | File/Audit | 33 | File masquerade (PE/ELF/Mach-O/7ZIP/CAB/WASM), system hardening (SSH/perms/DNS/cron/PATH/shell-rc incl. PROMPT_COMMAND/function-override/alias-hijack, sudoers NOPASSWD A7) + hardening index |
 | Util | 36 | Entropy, Damerau-Levenshtein, benign-magic (31 formats: archives/images/media/fonts/certs/scientific) + safe system-file open (FIFO/symlink) |
