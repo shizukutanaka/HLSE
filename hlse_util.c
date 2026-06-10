@@ -137,6 +137,18 @@ hlse_is_high_entropy_benign_magic(const unsigned char *buf, size_t n) {
     if (n >= 12 &&
         buf[0]==0x52 && buf[1]==0x49 && buf[2]==0x46 && buf[3]==0x46 &&
         buf[8]==0x41 && buf[9]==0x56 && buf[10]==0x49 && buf[11]==0x20) return 1;
+    /* WAV: RIFF....WAVE */
+    if (n >= 12 &&
+        buf[0]==0x52 && buf[1]==0x49 && buf[2]==0x46 && buf[3]==0x46 &&
+        buf[8]==0x57 && buf[9]==0x41 && buf[10]==0x56 && buf[11]==0x45) return 1;
+    /* EBML/WebM/Matroska: 1A 45 DF A3 */
+    if (buf[0]==0x1A && buf[1]==0x45 && buf[2]==0xDF && buf[3]==0xA3) return 1;
+    /* HDF5: 89 48 44 46 0D 0A 1A 0A (common in ML/scientific workflows) */
+    if (n >= 8 &&
+        buf[0]==0x89 && buf[1]==0x48 && buf[2]==0x44 && buf[3]==0x46 &&
+        buf[4]==0x0D && buf[5]==0x0A && buf[6]==0x1A && buf[7]==0x0A) return 1;
+    /* Apache Parquet: PAR1 at start (big data columnar format) */
+    if (buf[0]==0x50 && buf[1]==0x41 && buf[2]==0x52 && buf[3]==0x31) return 1;
 
     return 0;
 }

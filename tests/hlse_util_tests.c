@@ -223,6 +223,31 @@ static void test_benign_avi(void) {
     CHECK(hlse_is_high_entropy_benign_magic(b, 12) == 1, "AVI must be benign");
 }
 
+static void test_benign_wav(void) {
+    TEST("benign-magic: WAV (RIFF....WAVE) → 1");
+    unsigned char b[] = {0x52,0x49,0x46,0x46, 0x00,0x00,0x00,0x00,
+                         0x57,0x41,0x56,0x45};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 12) == 1, "WAV must be benign");
+}
+
+static void test_benign_ebml(void) {
+    TEST("benign-magic: EBML/WebM (1A 45 DF A3) → 1");
+    unsigned char b[] = {0x1A, 0x45, 0xDF, 0xA3, 0x00, 0x00};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 6) == 1, "EBML must be benign");
+}
+
+static void test_benign_hdf5(void) {
+    TEST("benign-magic: HDF5 (89 48 44 46...) → 1");
+    unsigned char b[] = {0x89,0x48,0x44,0x46, 0x0D,0x0A,0x1A,0x0A};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 8) == 1, "HDF5 must be benign");
+}
+
+static void test_benign_parquet(void) {
+    TEST("benign-magic: Parquet (PAR1) → 1");
+    unsigned char b[] = {0x50, 0x41, 0x52, 0x31, 0x00};
+    CHECK(hlse_is_high_entropy_benign_magic(b, 5) == 1, "Parquet must be benign");
+}
+
 static void test_benign_random(void) {
     TEST("benign-magic: random-looking bytes → 0");
     unsigned char b[] = {0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x01};
@@ -272,6 +297,10 @@ int main(void) {
     test_benign_mp3_id3();
     test_benign_tiff_le();
     test_benign_avi();
+    test_benign_wav();
+    test_benign_ebml();
+    test_benign_hdf5();
+    test_benign_parquet();
     test_benign_random();
 
     printf("\nSafe system-file open:\n");
