@@ -282,17 +282,26 @@ static const char *SENSITIVE_DOMAINS[] = {
     "coinbase.com", "binance.com", "kraken.com", "bitflyer.jp",
     "bybit.com", "okx.com", "huobi.com", "kucoin.com",
     "gate.io", "bitfinex.com", "gemini.com", "upbit.com",
+    /* US Banks (additional) */
+    "usbank.com", "capitalone.com", "truist.com",
     /* Payment */
     "paypal.com", "stripe.com", "wise.com", "cashapp.com", "cash.app",
+    "venmo.com", "zellepay.com",
+    /* Brokerages */
+    "robinhood.com", "etrade.com", "fidelity.com", "schwab.com",
+    "tdameritrade.com", "vanguard.com",
     /* Auth providers */
     "accounts.google.com", "login.microsoftonline.com",
-    "appleid.apple.com",
+    "appleid.apple.com", "icloud.com",
     /* Cloud management consoles — high-value redirect targets */
     "console.aws.amazon.com", "console.cloud.google.com", "portal.azure.com",
     /* SSO/identity */
     "github.com", "okta.com", "auth0.com",
-    /* Major social auth targets */
-    "twitter.com", "facebook.com",
+    /* Major social / communication auth targets */
+    "twitter.com", "x.com", "facebook.com", "instagram.com",
+    "discord.com", "telegram.org",
+    /* Subscription services — account credential theft */
+    "netflix.com", "spotify.com",
     /* Hardware wallets / non-custodial */
     "metamask.io", "ledger.com", "trezor.io",
     NULL
