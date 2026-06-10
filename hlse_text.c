@@ -164,6 +164,10 @@ static const char *BAIT_WORDS[] = {
     "provide your ssn", "tax form required before starting",
     "advance fee for equipment", "purchase gift cards for onboarding",
     "bank details", "bank account details",
+    "bank details have changed", "banking details have changed",
+    "new bank account", "new payment account",
+    "change of bank details", "change bank details",
+    "updated bank details", "updated payment details",
     /* Japanese */
     "パスワード", "暗証番号", "暗証番号をご入力", "クレジットカード", "銀行口座", "振込",
     "ビットコイン", "仮想通貨", "ギフトカード", "アマゾンギフト", "還付金", "返金",
