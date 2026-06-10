@@ -1537,6 +1537,14 @@ self_test(void) {
           "Legit IDN: xn--wgv71a = 日本 (Japanese, single-script)" },
         { "https://xn--e1afmkfd.com",                      0, 14,
           "Legit IDN: xn--e1afmkfd = пример (pure Cyrillic, not a brand)" },
+        /* New brands: security software, tax software */
+        { "https://norton-verify.click/account",           60, 100,
+          "New brand 'norton' + suspicious TLD + phishing path" },
+        { "https://turbotax-update.xyz/signin",            60, 100,
+          "New brand 'turbotax' + suspicious TLD + phishing path" },
+        /* New path patterns: CMS admin */
+        { "https://paypal.pages.dev/wp-admin",             80, 100,
+          "Free-hosting + brand + /wp-admin path" },
     };
     int n = sizeof(cases) / sizeof(cases[0]);
     int i;
