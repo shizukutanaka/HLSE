@@ -2,6 +2,33 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.91] — 2026-06-10
+
+### Security
+- **URL: Add malware delivery path patterns** (GAP-URL-MALWARE-PATHS):
+  Added `/setup`, `/installer`, `/update.exe`, `/setup.exe` to PATH_PATTERNS.
+  Combined with a suspicious TLD these push suspicious domains to ALERT tier.
+  Example: `evil.xyz/download/update.exe` → ALERT(43).
+  Trusted hosts (github.com, etc.) are unaffected by the O_NOFOLLOW guard.
+
+- **Supply: Add Azure SDK packages to PIP_TOP watchlist** (GAP-SUPPLY-AZURE):
+  Added `azure-core`, `azure-storage-blob`, `azure-identity`,
+  `azure-keyvault-secrets`, `azure-mgmt-core` — high-value enterprise targets
+  with documented typosquat campaigns (e.g. `azure-corr`, `azure-identty`).
+  Also added `sentry-sdk`, `opentelemetry-api` (active typosquat campaigns).
+
+- **Text: Add domain-expiry extortion scam patterns** (GAP-TEXT-DOMAINEXPIRY):
+  Added URGENCY_WORDS: `final notice`, `last notice`,
+  `domain will expire`, `domain expires`, `domain expiration`,
+  `website will be taken down`, `hosting will be suspended`.
+  These cover fake domain-expiry extortion scams that demand payment or
+  account-recovery action under artificial time pressure.
+  Test: "Final notice: your domain will expire in 24 hours." → LOG(24).
+
+### Changed
+- Version bumped from 0.9.90 to 0.9.91.
+- All 421 unit + CLI tests pass; zero warnings under strict flags.
+
 ## [0.9.90] — 2026-06-10
 
 ### Security
