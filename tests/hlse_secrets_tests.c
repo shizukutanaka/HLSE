@@ -308,6 +308,36 @@ static void test_email_single_hop_free(void) {
     else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
 }
 
+static void test_email_e1_substring_fp(void) {
+    TEST("Email: 'First Choice' display name does NOT trigger E1 (irs FP)");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: \"First Choice\" <hello@fcrealty.com>\n"
+        "To: client@example.com\n"
+        "Subject: Welcome\n"
+        "Received: from mail.fcrealty.com (mail [203.0.113.5])\n"
+        "Received: from internal.fcrealty.com (internal [10.0.0.1])\n");
+    /* Must not fire E1 IRS impersonation on the 'irs' inside 'First'. */
+    {
+        int e1_fired = 0, i;
+        for (i = 0; i < v.n_reasons; i++)
+            if (strstr(v.reasons[i], "E1:")) e1_fired = 1;
+        if (!e1_fired) PASS();
+        else FAIL("E1 false-positive on 'First Choice'");
+    }
+}
+
+static void test_email_e1_ups_real(void) {
+    TEST("Email: 'UPS Delivery' from non-UPS domain → E1 fires");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: \"UPS Delivery\" <tracking@random-domain.xyz>\n"
+        "To: victim@example.com\n"
+        "Subject: Package\n"
+        "Received: from mail.random-domain.xyz (mail [203.0.113.5])\n"
+        "Received: from x.random-domain.xyz (x [10.0.0.1])\n");
+    if (v.score >= 40) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
 /* ─── Clipboard Crypto-Swap ───────────────────────────────────────────── */
 
 static void test_crypto_no_swap(void) {
@@ -555,6 +585,8 @@ int main(void) {
     test_email_ceo_gmail_urgent();
     test_email_no_received_headers();
     test_email_single_hop_free();
+    test_email_e1_substring_fp();
+    test_email_e1_ups_real();
 
     printf("\nClipboard Crypto-Swap:\n");
     test_crypto_no_swap();

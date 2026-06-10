@@ -2,6 +2,80 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.86] — 2026-06-10
+
+### Security
+- **Secrets: Fix E1 display-name substring false positives** (BUG-EMAIL-E1-FP):
+  the email-forensics E1 check matched known-brand tokens as raw
+  substrings of the display name — `"First Choice"` matched `irs`
+  (f-**irs**-t) and `"Backups Team"` matched `ups`, raising bogus
+  IRS/UPS impersonation alerts. Added `contains_word()` (whole-word match
+  bounded by non-alphanumerics) on the display-name side; the domain side
+  keeps substring matching so lookalike domains embedding the brand
+  (paypa1-verify.com) still suppress the alert for the genuine brand.
+  Real PayPal/UPS impersonation with a mismatched From still fires E1.
+
+- **Text: Detect Microsoft/Google sign-in-activity phishing** (GAP-TEXT-SIGNIN):
+  FAKE_ALERT_WORDS += "unusual/suspicious sign-in activity",
+  "new sign-in detected", "your microsoft account", "your google account
+  has been". Prevalent template ("We detected unusual sign-in activity…")
+  was scoring 0.
+
+- **Text: BEC gift-card, SSA impersonation, billing & subscription gaps**:
+  URGENCY_WORDS += "account is on hold", subscription-cancellation
+  variants; SECRECY_WORDS += "keep it secret"; AUTHORITY_WORDS +=
+  "social security number has been suspended" and SSA variants;
+  BAIT_WORDS += "update your payment details". Netflix billing-hold,
+  CEO gift-card BEC, and SSA robocall templates now score in band.
+
+- **Text: Wallet-draining, ISP, unauthorized-order, loan & job-scam patterns**:
+  FAKE_ALERT_WORDS += crypto wallet-draining ("wallet has been
+  compromised", "move your crypto to safety", "coinbase security alert"),
+  ISP impersonation ("internet will be disconnected"), unauthorized-order
+  fraud ("order you did not authorize", "call our fraud department").
+  GROOMING_WORDS += work-from-home and no-credit-check loan fraud openers.
+
+- **Supply: Add P9 reverse-shell detection to pastejacking checker**:
+  bash `/dev/tcp` redirect, `mkfifo`+`nc` named-pipe, Python socket
+  (`os.dup2`+`connect`), and `socat EXEC:`/`TCP:` reverse shells —
+  previously unmatched by the Unix P1–P8 checks.
+
+- **Secrets: MongoDB/connection-string and generic key patterns**:
+  ENV_SECRET += `MONGO_URI=`/`MONGO_URL=`, `REDIS_URI=`, MySQL/Postgres/
+  MariaDB/CockroachDB/Elasticsearch URLs, `SECRET_KEY_BASE=`, `APP_KEY=`,
+  `ENCRYPTION_KEY=`, `MASTER_KEY=`, `SIGNING_SECRET=`. Removed a duplicate
+  `SECRET_KEY=` entry.
+
+- **Core: Fix security-word matching and add giveaway/cloud-hosting phishing**:
+  SECURITY_WORDS += "security" (was missing — "secure" is not a substring
+  of "security"), "verification", "recovery", and giveaway words
+  ("free", "giveaway", "nitro", …); PATH_PATTERNS += "/seed", "/mnemonic",
+  "/recovery-phrase"; FREE_HOSTS += azurewebsites.net, blob.core.windows.net,
+  s3.amazonaws.com, storage.googleapis.com, workers.dev, … Brand-in-subdomain
+  phishing on cloud dev hosts now flagged.
+
+- **File: Detect OS/browser update dropper lure names**:
+  LURE_WORDS += "windows", "chrome", "firefox", "adobe", "flash", "java",
+  "system", "microsoft", "google". `windows_update.exe`,
+  `adobe_flash_player.exe`, `chrome_installer.exe` now reach ALERT;
+  document files stay clean (lure scoring escalates only with an
+  executable extension).
+
+- **Audit: Detect alias hijacking + expand shell-rc coverage**:
+  A6 now flags `alias ls/ps/sudo/ssh/...=` whose target invokes
+  curl/wget/dev-tcp/nc/eval/base64/grep-v/python/tmp (rootkit file-hiding,
+  sudo credential theft). Scanned files += `.bash_logout`, `.zlogin`,
+  `.zlogout`, `.config/fish/config.fish`.
+
+- **Protect: Expand anti-recovery commands and UEFI bootkit indicators**:
+  R5 += vssadmin/wbadmin/bcdedit/zfs/fsutil/wevtutil backup-destruction
+  variants; ESP_INDICATORS += MosaicRegressor, FinSpy, TrickBoot, Glupteba.
+
+### Tests
+- 402 structured tests (was 400). Secrets suite 52 (was 50): added E1
+  substring-FP regression ("First Choice") and E1 UPS-impersonation tests.
+- F1 = 1.000 on both corpora; ASan/UBSan clean; fuzz 100K, 0 crashes.
+
 ## [0.9.85] — 2026-06-10
 
 ### Security
