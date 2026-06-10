@@ -294,6 +294,24 @@ check_env_passwords(const char *text, SecretVerdict *v) {
         "TF_TOKEN_app_terraform_io=",
         /* GitHub Actions secrets in plaintext */
         "ACTIONS_RUNTIME_TOKEN=", "ACTIONS_ID_TOKEN_REQUEST_TOKEN=",
+        /* Supabase / PlanetScale / Neon */
+        "SUPABASE_SERVICE_ROLE_KEY=", "SUPABASE_ANON_KEY=",
+        "SUPABASE_JWT_SECRET=",
+        "DATABASE_PASSWORD=", "NEON_DATABASE_URL=",
+        /* AI / ML providers */
+        "TOGETHER_API_KEY=", "COHERE_API_KEY=", "MISTRAL_API_KEY=",
+        "REPLICATE_API_TOKEN=", "HUGGINGFACE_API_KEY=",
+        "STABILITY_API_KEY=", "ELEVENLABS_API_KEY=",
+        /* Observability / APM */
+        "DATADOG_API_KEY=", "DATADOG_APP_KEY=",
+        "SENTRY_DSN=", "SENTRY_AUTH_TOKEN=",
+        "HONEYCOMB_API_KEY=", "NEWRELIC_LICENSE_KEY=",
+        /* Payment processors */
+        "PAYPAL_CLIENT_SECRET=", "SQUARE_ACCESS_TOKEN=",
+        "RAZORPAY_KEY_SECRET=",
+        /* Communication */
+        "DISCORD_BOT_TOKEN=", "TELEGRAM_BOT_TOKEN=",
+        "MAILGUN_API_KEY=", "POSTMARK_API_TOKEN=",
         NULL
     };
     int found = 0;
