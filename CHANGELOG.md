@@ -2,6 +2,70 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.92] — 2026-06-10
+
+### Security
+- **URL: Trusted hosts expansion** (GAP-URL-TRUSTEDHOSTS):
+  Added `microsoftonline.com`, `microsoft365.com`, `icloud.com` to TRUSTED_HOSTS.
+  These legitimate Microsoft/Apple auth endpoints were scoring LOG(15) due to
+  `/oauth` and `/signin` path patterns; now suppressed as expected.
+
+- **URL: microsoftonline typosquat detection** (GAP-URL-MSONLINE):
+  Added `microsoftonline` to BRANDS. `microsoft0nline.com` / `microsofton1ine.com`
+  are now caught by the homoglyph and typosquat detectors at BLOCK(60+).
+
+- **URL: Hyphenated subdomain spoof detection** (GAP-URL-SUBSPOOF):
+  Extended `detect_subdomain_spoof()` to match brand names as hyphen-delimited
+  tokens within subdomain labels. Previously `paypal-verify.login.net` and
+  `microsoft365-sso.login.net` escaped detection; now both score ALERT(50).
+
+- **Supply: Cargo ML/crypto crate watchlist expansion** (GAP-SUPPLY-CARGO):
+  Added ML inference crates: `candle-core`, `candle-nn`, `candle-transformers`,
+  `burn`, `burn-core`, `burn-tensor`, `ort`, `ndarray`, `linfa`.
+  Added PKI/crypto crates: `rcgen`, `webpki`, `x509-parser`, `p256`,
+  `ed25519-dalek`, `chacha20poly1305`, `argon2`, `pbkdf2`.
+
+- **Supply: npm utility package watchlist expansion** (GAP-SUPPLY-NPM):
+  Added `semver`, `minimist`, `node-fetch`, `cross-fetch`, `node-cache`,
+  `winston`, `morgan`, `multer`, `socket.io-client`, `ws`, `got`, `supertest`,
+  `aws-cdk`, `serverless`, `netlify-cli`, `vercel` — high-download packages
+  absent from watchlist but targeted in active typosquat campaigns.
+
+- **Protection: 2025 ransomware families** (GAP-PROTECT-RW2025B):
+  Added extensions: `.hellcat`, `.blacklock`, `.eldorado`, `.apt73`.
+  Added note filenames: `hellcat_readme.txt`, `blacklock_readme.txt`, `eldorado_readme.txt`.
+
+- **Secrets: AI provider token patterns** (GAP-SECRET-AIPROVIDERS):
+  Added explicit ENV_SECRET patterns for `GROQ_API_KEY`, `PERPLEXITY_API_KEY`,
+  `DEEPSEEK_API_KEY`, `XAI_API_KEY`, `FIREWORKS_API_KEY`, `ANYSCALE_API_KEY`.
+
+- **Text: Tech-support scam detection improvement** (GAP-TEXT-TECHSUPPORT):
+  Added FAKE_ALERT_WORDS: "your computer has been infected", "your device has been
+  infected", "at 1-800-", "at 1-888-", "at 1-877-" etc. — catches tech-support
+  pop-up scam templates where toll-free number follows "contact us at" rather
+  than "call".
+
+- **Text: Investment/pig-butchering word-order variants** (GAP-TEXT-INVEST):
+  Added GROOMING_WORDS: "returns guaranteed", "profits guaranteed", "100% safe",
+  "100% guaranteed", "zero risk", "earn per week", "earn per day", "earn daily",
+  "passive income guaranteed", "passive earning" — scam templates reverse
+  "guaranteed returns" to evade naive pattern matching.
+
+- **Text: Sign-in variant and customs duty detection** (GAP-TEXT-SIGNIN):
+  Added FAKE_ALERT_WORDS: "unusual sign-in detected", "suspicious sign-in detected",
+  "sign-in attempt detected", "login attempt detected".
+  Added CALLBACK_PHISH_WORDS: "customs duty", "import duty" (USPS/FedEx smishing).
+
+- **Text: Fake-order callback phrase gaps** (GAP-TEXT-FAKEORDER):
+  Added FAKE_ALERT_WORDS: "if you did not place this order", "if you didn't place
+  this order", "charge you did not authorize", "charge you did not make" —
+  covers callback phishing TOAD templates that phrase fake-charge alerts
+  differently from existing patterns.
+
+### Changed
+- Version bumped from 0.9.91 to 0.9.92.
+- All 421 unit + CLI tests pass; zero warnings under strict flags.
+
 ## [0.9.91] — 2026-06-10
 
 ### Security
