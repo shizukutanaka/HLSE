@@ -126,6 +126,8 @@ static const char *BRANDS[] = {
     "intuit", "turbotax", "quickbooks",
     /* Microsoft 365 brand — separate from "microsoft" for phishing URLs */
     "office365", "microsoft365",
+    /* Microsoft authentication service — "microsoft0nline.com" typosquat target */
+    "microsoftonline",
     /* Enterprise collaboration — BEC/vishing targets */
     "microsoftteams",
     /* Financial / banking */
@@ -549,8 +551,10 @@ static const char *TRUSTED_HOSTS[] = {
     "docs.rs", "crates.io",
     "google.com", "youtube.com",
     "microsoft.com", "office.com", "live.com",
+    "microsoftonline.com", "microsoft365.com",
     "amazon.com", "amazon.co.jp",
     "apple.com",
+    "icloud.com",  /* Apple iCloud — contains "password" in paths */
     /* Password managers — URLs contain "password", "vault", "master" in paths */
     "1password.com", "lastpass.com", "bitwarden.com",
     /* Identity/access — contain "login", "sso", "auth" in paths */
@@ -601,6 +605,9 @@ detect_phishing_path(const ParsedUrl *u, Verdict *v) {
                    matches, matches == 1 ? "" : "es", first);
     }
 }
+
+/* Forward declaration (defined after detect_security_hyphenation). */
+static int brand_is_token_in_sld(const char *sld, const char *brand);
 
 /* 4. Subdomain brand spoofing — "paypal.com.attacker.xyz" pattern.
  *    We must handle ccTLD+SLD combos like .co.jp, .co.uk, .or.jp
@@ -656,7 +663,14 @@ detect_subdomain_spoof(const ParsedUrl *u, Verdict *v) {
             for (i = 0; i < registrable_start; i++) {
                 int j;
                 for (j = 0; BRANDS[j] != NULL; j++) {
-                    if (strcmp(labels[i], BRANDS[j]) == 0) {
+                    size_t blen = strlen(BRANDS[j]);
+                    int exact_match = (strcmp(labels[i], BRANDS[j]) == 0);
+                    /* Also catch "paypal-verify" or "microsoft365-sso" as
+                     * subdomain labels where brand is a hyphen-delimited token */
+                    int token_match = (brand_is_token_in_sld(labels[i], BRANDS[j])
+                                       && !exact_match);
+
+                    if (exact_match || token_match) {
                         /* Check if registrable domain IS the brand */
                         char registrable[MAX_HOST];
                         if (tld_labels == 2) {
@@ -669,8 +683,9 @@ detect_subdomain_spoof(const ParsedUrl *u, Verdict *v) {
                         }
                         /* Is the registrable domain the brand itself? */
                         if (strstr(registrable, BRANDS[j]) != NULL) return;
+                        (void)blen;  /* used via brand_is_token_in_sld */
 
-                        add_reason(v, 45,
+                        add_reason(v, token_match ? 35 : 45,
                                    "Subdomain spoofing: '%s' appears before "
                                    "registrable domain", BRANDS[j]);
                         return;
