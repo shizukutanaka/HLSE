@@ -164,8 +164,12 @@ static const char *PRIZE_WORDS[] = {
 };
 
 static const char *AUTHORITY_WORDS[] = {
-    /* English */
-    "irs", "fbi", "cia", "dhs", "treasury", "social security administration",
+    /* English — government agencies: use phrases, not 3-letter acronyms
+     * that substring-match common words (e.g. "irs" in "first", "cia" in
+     * "judicial"). Multi-word phrases are already in the list below.    */
+    "from the irs", "from the fbi", "from the cia", "from the dhs",
+    "irs agent", "fbi agent", "irs notice", "irs investigation",
+    "treasury department", "social security administration",
     "medicare", "medicaid", "department of justice",
     "microsoft support", "apple support", "google security",
     "amazon security", "paypal security",
