@@ -142,6 +142,10 @@ static const char *PRIZE_WORDS[] = {
     "processing fee to release", "release the funds",
     "transfer of funds", "next of kin", "legal beneficiary",
     "unclaimed inheritance", "deceased customer",
+    "receive your share", "your percentage", "your commission",
+    "percentage of the funds", "you will receive",
+    "sum of money", "million usd", "million euros",
+    "foreign transfer", "over-invoiced contract", "overpayment scheme",
     /* Japanese */
     "おめでとう", "当選", "賞品",
     /* Korean */
@@ -200,6 +204,8 @@ static const char *SECRECY_WORDS[] = {
     "keep this confidential", "do not discuss", "don't discuss",
     "keep it confidential", "do not share", "handle this discreetly",
     "do not loop in", "without involving", "off the record",
+    "strictly confidential", "highly confidential", "this is confidential",
+    "private and confidential",
     /* Japanese */
     "内緒", "秘密にして", "誰にも言わないで", "他言無用", "内密に",
     NULL
