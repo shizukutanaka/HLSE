@@ -86,6 +86,10 @@ static const char *URGENCY_WORDS[] = {
     "action required", "your account has been flagged", "must respond",
     "confirm within", "failure to respond",
     "account closed", "access suspended", "verify immediately",
+    /* Click-bait urgency (smishing / phishing emails) */
+    "click here to verify", "click here to confirm", "click here to update",
+    "tap here to verify", "tap to confirm",
+    "your account will be terminated", "your access will be revoked",
     /* Package delivery scam urgency */
     "claim package", "redelivery required", "delivery attempt failed",
     "package on hold", "customs clearance required",
@@ -343,6 +347,14 @@ static const char *CALLBACK_PHISH_WORDS[] = {
     "click to track your parcel", "your parcel is waiting",
     "delivery rescheduled", "delivery fee", "redelivery charge",
     "customs fee required", "package on hold",
+    /* 2024-2025 delivery/USPS smishing variants */
+    "package has been held", "your package could not be delivered",
+    "customs clearance fee", "customs clearance charge",
+    "pay a small fee", "your delivery failed",
+    "your shipment has been held", "your shipment requires",
+    "click to pay the fee", "click to reschedule delivery",
+    "delivery charge unpaid", "unpaid shipping fee",
+    "update delivery address", "confirm your delivery",
     /* Japanese callback/smishing */
     "折り返しお電話", "お電話ください", "佐川急便",
     "宅急便", "不在通知", "再配達",

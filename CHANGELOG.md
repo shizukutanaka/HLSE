@@ -2,6 +2,41 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.80] — 2026-06-10
+
+### Security
+- **Secrets: SendGrid, HashiCorp Vault batch/recovery, Vercel patterns** (GAP-SECRET-2025):
+  Added `SG.` (SendGrid, +85), `hvb.` (Vault batch, +80), `hvr.` (Vault recovery, +80),
+  `vercel_token_` (+80). Total patterns: 43 → 47.
+
+- **Audit: A7 sudoers NOPASSWD check** (GAP-AUDIT-SUDOERS): New function
+  `hlse_audit_sudoers()` scans `/etc/sudoers` and drop-ins in `/etc/sudoers.d/`
+  for `NOPASSWD` entries (+40 HIGH per match). Integrated into `hlse_audit_all()`.
+  `HLSE_AUDIT_MAX_FINDINGS` bumped 24 → 32 for 7 modules.
+
+- **Audit: Cloud SDK credential file permissions** (GAP-AUDIT-HOMESECRETS):
+  HOME_SECRETS expanded with GCP ADC (`~/.config/gcloud/application_default_credentials.json`),
+  GitHub CLI (`~/.config/gh/hosts.yml`), Terraform Cloud (`~/.terraform.d/credentials.tfrc.json`),
+  Azure CLI (`~/.azure/credentials`), Heroku (`~/.heroku/credentials.json`).
+
+- **URL: Security software, tax, collaboration brands** (GAP-URL-BRANDS-2):
+  BRANDS gains: norton, mcafee, kaspersky, bitdefender, avast, malwarebytes (fake-AV);
+  intuit, turbotax, quickbooks (tax phishing); office365, microsoft365,
+  microsoftteams (BEC); truist (banking).
+  PATH_PATTERNS gains: /wp-admin, /wp-login, /administrator, /oauth, /sso,
+  /saml, /forgot, /password-reset.
+
+- **Text: 2024-2025 delivery smishing patterns** (GAP-TEXT-SMISHING):
+  CALLBACK_PHISH_WORDS gains 12 USPS/courier smishing variants: "package has been held",
+  "customs clearance fee", "pay a small fee", "delivery charge unpaid", etc.
+  URGENCY_WORDS gains 7 click-bait variants: "click here to verify/confirm/update",
+  "your account will be terminated", etc. Result: USPS smishing → LOG[35] (was 0).
+
+- **Supply: 2025 LOLBin and ransomware** (GAP-SUPPLY-LOLBIN-2025):
+  P8 gains: msiexec silent install, expand.exe download, curl/wget→executable.
+  RANSOM_EXTENSIONS: +6 families (Cloak, VanHelsing, 3AM, Nitrogen, Arkana, BEAST).
+  RANSOM_NOTE_NAMES: +3 (cloak, 3AM, VanHelsing readmes).
+
 ## [0.9.75] — 2026-06-09
 
 ### Security
