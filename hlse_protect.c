@@ -824,9 +824,13 @@ static const char *ESP_INDICATORS[] = {
     "pay bitcoin",
     "send bitcoin",
     "petya",
-    /* UEFI bootkits discovered 2022-2024 */
-    "blacklotus",   /* Windows BlackLotus UEFI bootkit */
+    /* UEFI bootkits — confirmed embedded strings */
+    "blacklotus",   /* Windows BlackLotus UEFI bootkit (2022-2023) */
     "bootkitty",    /* Linux Bootkitty UEFI bootkit (2024) */
+    "lojax",        /* LoJax (Fancy Bear/APT28, 2018, first in-the-wild) */
+    "moonbounce",   /* MoonBounce (APT41, 2022) */
+    "cosmicstrand", /* CosmicStrand (Chinese APT, 2022) */
+    "espector",     /* ESPectre/ESPector UEFI implant framework */
     /* Generic ransom-note phrases embedded in tampered EFI binaries */
     "contact us to decrypt",
     "to recover your files",
