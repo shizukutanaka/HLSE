@@ -472,6 +472,23 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "installutil") &&
                    ci_contains(text, "http")) {
             what = "installutil.exe .NET AppDomain execution (LOLBin)";
+        } else if (ci_contains(text, "msiexec") &&
+                   (ci_contains(text, "/q") || ci_contains(text, "/quiet")) &&
+                   ci_contains(text, "http")) {
+            what = "msiexec silent remote MSI install (ClickFix)";
+        } else if (ci_contains(text, "expand") &&
+                   (ci_contains(text, "http") || ci_contains(text, "\\\\")) &&
+                   ci_contains(text, "-f:")) {
+            what = "expand.exe remote file download (LOLBin)";
+        } else if (ci_contains(text, "curl") &&
+                   (ci_contains(text, "-o ") || ci_contains(text, "--output ")) &&
+                   (ci_contains(text, ".exe") || ci_contains(text, ".ps1") ||
+                    ci_contains(text, ".dll") || ci_contains(text, ".bat"))) {
+            what = "curl download of executable";
+        } else if ((ci_contains(text, "wget") || ci_contains(text, "invoke-webrequest")) &&
+                   (ci_contains(text, ".exe") || ci_contains(text, ".ps1") ||
+                    ci_contains(text, ".dll") || ci_contains(text, ".bat"))) {
+            what = "download of executable via wget/iwr";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

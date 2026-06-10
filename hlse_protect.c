@@ -153,6 +153,9 @@ static const char *RANSOM_NOTE_NAMES[] = {
     "ransomhub_readme.txt",       /* RansomHub */
     "!_readme_!.txt",             /* RansomHub variant */
     "dragonforce_readme.txt",     /* DragonForce */
+    "cloak_readme.txt",           /* Cloak ransomware */
+    "3am_readme.txt",             /* ThreeAM/3AM */
+    "vanhelsing_readme.txt",      /* VanHelsing */
     NULL
 };
 
@@ -200,6 +203,13 @@ static const char *RANSOM_EXTENSIONS[] = {
     ".ransomhub",   /* RansomHub (2024-2025, high-volume successor to ALPHV) */
     ".dragonforce", /* DragonForce (2024-2025) */
     ".safepay",     /* SafePay (2024, LockBit-based) */
+    /* Active families 2025 */
+    ".cloak",       /* Cloak ransomware (2024-2025, healthcare) */
+    ".vanhelsing",  /* VanHelsing RaaS (launched March 2025) */
+    ".3am",         /* ThreeAM/3AM (2023+, Conti successor) */
+    ".nitrogen",    /* Nitrogen ransomware (2025) */
+    ".arkana",      /* Arkana (2025, ex-ALPHV successor) */
+    ".beast",       /* BEAST ransomware (2025) */
     NULL
 };
 
