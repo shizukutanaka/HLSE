@@ -280,9 +280,14 @@ check_env_passwords(const char *text, SecretVerdict *v) {
         "FIREBASE_PRIVATE_KEY=", "CLOUDFLARE_API_TOKEN=",
         /* SCM / CI / hosting */
         "GITHUB_TOKEN=", "GITLAB_TOKEN=", "GITLAB_CI_TOKEN=",
-        "DIGITALOCEAN_TOKEN=", "HEROKU_API_KEY=",
+        "DIGITALOCEAN_TOKEN=", "DO_API_TOKEN=",
+        "HEROKU_API_KEY=", "LINODE_TOKEN=",
+        "VULTR_API_KEY=", "HETZNER_API_KEY=",
         "NETLIFY_AUTH_TOKEN=", "VERCEL_TOKEN=",
         "CIRCLE_TOKEN=", "SNYK_TOKEN=",
+        /* CDN and edge computing */
+        "FASTLY_API_KEY=", "CLOUDFRONT_KEY=",
+        "BUNNYCDN_API_KEY=",
         /* Connection strings that embed credentials */
         "DATABASE_URL=", "MONGODB_URI=", "MONGO_URI=", "MONGO_URL=",
         "REDIS_URL=", "REDIS_URI=",
@@ -316,8 +321,12 @@ check_env_passwords(const char *text, SecretVerdict *v) {
         "SENTRY_DSN=", "SENTRY_AUTH_TOKEN=",
         "HONEYCOMB_API_KEY=", "NEWRELIC_LICENSE_KEY=",
         /* Payment processors */
-        "PAYPAL_CLIENT_SECRET=", "SQUARE_ACCESS_TOKEN=",
-        "RAZORPAY_KEY_SECRET=",
+        "PAYPAL_CLIENT_SECRET=", "PAYPAL_CLIENT_ID=",
+        "SQUARE_ACCESS_TOKEN=", "SQUARE_APPLICATION_ID=",
+        "BRAINTREE_PUBLIC_KEY=", "BRAINTREE_PRIVATE_KEY=",
+        "ADYEN_API_KEY=", "ADYEN_CLIENT_KEY=",
+        "RAZORPAY_KEY_SECRET=", "RAZORPAY_KEY_ID=",
+        "KLARNA_API_KEY=", "MOLLIE_API_KEY=",
         /* Azure storage and cognitive services */
         "AZURE_STORAGE_CONNECTION_STRING=", "AZURE_STORAGE_ACCOUNT_KEY=",
         "AZURE_COGNITIVE_KEY=", "AZURE_OPENAI_API_KEY=",
