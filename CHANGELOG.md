@@ -2,6 +2,21 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.88] — 2026-06-10
+
+### Security
+- **Text: Detect subscription-expiry and tech-support refund scam patterns** (GAP-TEXT-SUBSCRIP):
+  Added URGENCY_WORDS: `click here to renew`, `account will be cancelled`,
+  `will be automatically cancelled`, `membership expires in`, `membership will expire`,
+  `subscription will expire`. Added BAIT_WORDS: `update your payment information`,
+  `verify your payment information`, `confirm your payment information`,
+  fake-charge indicators (`we have charged $`, `we have charged your`,
+  `you have been charged for`, `charged to your account`, `we have debited your`,
+  `auto-renewal charge`, `automatic renewal charge`).
+  Amazon Prime/Netflix/domain-expiry phishing now scores LOG (was OK(0));
+  tech-support refund scam ("We have charged $399, call to cancel") rises to BLOCK(67)
+  (was ALERT(55)).  Zero FPs on legitimate charge confirmations and registrar emails.
+
 ## [0.9.87] — 2026-06-10
 
 ### Security

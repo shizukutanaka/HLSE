@@ -97,8 +97,13 @@ static const char *URGENCY_WORDS[] = {
     "membership has been suspended", "service will be suspended",
     /* Click-bait urgency (smishing / phishing emails) */
     "click here to verify", "click here to confirm", "click here to update",
+    "click here to renew", "click to renew", "tap to renew",
     "tap here to verify", "tap to confirm",
     "your account will be terminated", "your access will be revoked",
+    /* Subscription/membership cancellation urgency */
+    "account will be cancelled", "account will be automatically cancelled",
+    "will be automatically cancelled", "membership expires in",
+    "membership will expire", "subscription will expire",
     /* Package delivery scam urgency */
     "claim package", "redelivery required", "delivery attempt failed",
     "package on hold", "customs clearance required",
@@ -141,7 +146,14 @@ static const char *BAIT_WORDS[] = {
     "payment method expired", "update payment",
     "update your payment method", "update your payment details",
     "update payment details", "payment information required",
+    "update your payment information", "verify your payment information",
+    "confirm your payment information", "payment information on file",
     "verify your billing", "confirm your payment",
+    /* Fake charge notification (tech-support refund scam) */
+    "we have charged your", "we have charged $",
+    "you have been charged for", "has been charged to your",
+    "charged to your account", "we have debited your",
+    "auto-renewal charge", "automatic renewal charge",
     /* Money transfer platforms common in elder/tech-support fraud */
     "zelle", "western union", "moneygram",
     /* Job scam / employment fraud baits (request for bank/personal details) */
