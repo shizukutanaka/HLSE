@@ -1156,6 +1156,49 @@ check_url(const char *raw_url) {
     detect_dga_entropy(&u, &v);
     detect_security_hyphenation(&u, &v);
 
+    /* Free hosting / page-builder platforms heavily abused for phishing.
+     * A brand name in the SUBDOMAIN of these platforms is high-confidence
+     * phishing (paypal-verify.netlify.app, google.pages.dev, etc.). The
+     * legitimate brand owns their own TLD; they never use free builders.  */
+    {
+        /* SLD+TLD combinations that identify free-hosting platforms */
+        static const char *FREE_HOSTS[] = {
+            "netlify.app", "pages.dev", "github.io",
+            "vercel.app", "glitch.me", "replit.dev", "repl.co",
+            "web.app", "firebaseapp.com",
+            "onrender.com", "railway.app",
+            "surge.sh", "tiiny.site", "carrd.co",
+            NULL
+        };
+        int fhi;
+        for (fhi = 0; FREE_HOSTS[fhi]; fhi++) {
+            if (ends_with(u.host, FREE_HOSTS[fhi])) {
+                /* Check if any brand name appears before the platform suffix */
+                size_t hlen = strlen(u.host);
+                size_t plen = strlen(FREE_HOSTS[fhi]);
+                /* There must be a subdomain before the platform suffix */
+                if (hlen > plen + 1) {
+                    char subdomain[MAX_HOST];
+                    int bi;
+                    size_t prefix_len = hlen - plen - 1; /* strip ".platform" */
+                    if (prefix_len >= sizeof(subdomain)) prefix_len = sizeof(subdomain) - 1;
+                    memcpy(subdomain, u.host, prefix_len);
+                    subdomain[prefix_len] = '\0';
+                    for (bi = 0; BRANDS[bi]; bi++) {
+                        if (strstr(subdomain, BRANDS[bi])) {
+                            add_reason(&v, 55,
+                                "Free-hosting phishing: brand '%s' in subdomain "
+                                "of '%s' — real brand never uses free page builders",
+                                BRANDS[bi], FREE_HOSTS[fhi]);
+                            break;
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    }
+
     /* IP-based URL with brand names in path → phishing.
      * Example: https://198.51.100.1/paypal/signin
      * Legitimate sites never use IP addresses as hosts.               */
@@ -1433,6 +1476,11 @@ self_test(void) {
         /* @ credential trick */
         { "https://google.com@evil.com/verify",           45, 100,
           "@ credential trick detected" },
+        /* Free-hosting phishing */
+        { "https://paypal-verify.netlify.app/login",       50, 100,
+          "Free-hosting phishing: brand in netlify.app subdomain" },
+        { "https://myapp.netlify.app/home",                 0, 25,
+          "FP guard: legitimate app on netlify.app without brand" },
         /* Legitimate IDNs — must NOT be flagged as homographs (UTS-39) */
         { "https://xn--mnchen-3ya.com",                    0, 14,
           "Legit IDN: xn--mnchen-3ya = münchen (German, single-script)" },
