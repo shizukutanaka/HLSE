@@ -197,6 +197,8 @@ static const char *PATH_PATTERNS[] = {
     "/forgot", "/password-reset",
     /* Crypto seed phrase / wallet draining */
     "/seed", "/mnemonic", "/recovery-phrase",
+    /* Malware delivery paths (combined with suspicious TLD = strong signal) */
+    "/setup", "/installer", "/update.exe", "/setup.exe",
     NULL
 };
 

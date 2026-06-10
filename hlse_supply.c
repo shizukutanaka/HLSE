@@ -64,6 +64,11 @@ static const char *PIP_TOP[] = {
     /* AI/LLM ecosystem 2024 — active typosquat campaigns */
     "llama-index", "llama_index", "autogen", "crewai", "litellm",
     "qdrant-client", "weaviate-client", "instructor", "haystack-ai",
+    /* Azure SDK — targeted due to enterprise credential access */
+    "azure-core", "azure-storage-blob", "azure-identity",
+    "azure-keyvault-secrets", "azure-mgmt-core",
+    /* Monitoring / observability */
+    "sentry-sdk", "opentelemetry-api",
     NULL
 };
 

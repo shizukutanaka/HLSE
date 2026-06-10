@@ -82,8 +82,10 @@ static const char *URGENCY_WORDS[] = {
     "suspend", "suspended", "locked", "unauthorized access", "verify now",
     "account will be closed", "deadline", "time-sensitive",
     "pay today", "act today", "respond today", "don't delay",
-    "final warning", "last warning",
+    "final warning", "last warning", "final notice", "last notice",
     "action required", "your account has been flagged", "must respond",
+    "domain will expire", "domain expires", "domain expiration",
+    "website will be taken down", "hosting will be suspended",
     "confirm within", "failure to respond",
     "account closed", "access suspended", "verify immediately",
     /* Common phishing account-status phrases */
