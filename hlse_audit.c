@@ -235,6 +235,15 @@ hlse_audit_permissions(void) {
                 { ".npmrc",              0077, 30, "A2: ~/.npmrc (npm auth token) is group/world-accessible" },
                 { ".pypirc",             0077, 25, "A2: ~/.pypirc (PyPI credentials) is group/world-accessible" },
                 { ".git-credentials",    0077, 35, "A2: ~/.git-credentials (Git HTTP credentials) is group/world-accessible" },
+                /* Cloud SDK credential files */
+                { ".config/gcloud/application_default_credentials.json",
+                                         0077, 40, "A2: GCP application_default_credentials is group/world-accessible" },
+                { ".config/gh/hosts.yml",0077, 35, "A2: GitHub CLI credentials (~/.config/gh/hosts.yml) is group/world-accessible" },
+                { ".terraform.d/credentials.tfrc.json",
+                                         0077, 35, "A2: Terraform Cloud token is group/world-accessible" },
+                { ".azure/credentials",  0077, 35, "A2: Azure CLI credentials (~/.azure/credentials) is group/world-accessible" },
+                { ".heroku/credentials.json",
+                                         0077, 30, "A2: Heroku credentials are group/world-accessible" },
                 { NULL, 0, 0, NULL }
             };
             int i;
