@@ -124,7 +124,10 @@ static const char *BAIT_WORDS[] = {
     /* Account takeover / 2FA bypass bait */
     "two-factor code", "verification code", "one-time code", "otp code",
     "phone number", "confirm identity", "verify your identity",
-    "update billing", "payment method expired", "update payment",
+    "update billing", "update your billing", "billing information",
+    "payment method expired", "update payment",
+    "update your payment method", "payment information required",
+    "verify your billing", "confirm your payment",
     /* Money transfer platforms common in elder/tech-support fraud */
     "zelle", "western union", "moneygram",
     /* Job scam / employment fraud baits (request for bank/personal details) */
@@ -281,6 +284,10 @@ static const char *FAKE_ALERT_WORDS[] = {
     "allow us to remote access", "give us remote access",
     "microsoft has detected", "windows has detected",
     "apple has detected", "your icloud has been",
+    /* Apple ID / account impersonation (high-volume phishing 2024-2025) */
+    "your apple id has been", "apple id has been locked",
+    "apple id locked", "apple id was used to sign in",
+    "your apple account", "apple id verification",
     "your license has expired", "your subscription has expired",
     "subscription expired", "license expired",
     "subscription has expired", "license has expired",
