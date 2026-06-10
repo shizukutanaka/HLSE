@@ -371,8 +371,11 @@ static const char *FAKE_ALERT_WORDS[] = {
     /* Unauthorized order / account fraud impersonation */
     "order you did not authorize", "purchase you did not make",
     "unauthorized purchase on your account", "did not make this purchase",
+    "if you did not place this order", "if you didn't place this order",
+    "if you did not make this purchase", "if you didn't make this purchase",
     "call our fraud department", "fraud department",
     "transaction you did not authorize", "charge you do not recognize",
+    "charge you did not authorize", "charge you did not make",
     /* Japanese */
     "セキュリティ警告", "ウイルス検出", "不審なアクティビティ",
     "サポートに電話", "マイクロソフトからの警告",

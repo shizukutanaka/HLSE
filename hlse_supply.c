@@ -92,6 +92,12 @@ static const char *NPM_TOP[] = {
     "chromadb", "anthropic", "wrangler", "drizzle-orm", "hono",
     "react-query", "better-sqlite3", "sharp", "ioredis", "bullmq",
     "trpc", "next-auth", "nuxt-auth", "lucia", "pocketbase",
+    /* High-download utility packages — frequent typosquat campaign targets */
+    "semver", "minimist", "node-fetch", "cross-fetch",
+    "node-cache", "winston", "morgan", "multer",
+    "socket.io-client", "ws", "got", "supertest",
+    /* Cloud providers and infra */
+    "aws-cdk", "serverless", "netlify-cli", "vercel",
     NULL
 };
 
