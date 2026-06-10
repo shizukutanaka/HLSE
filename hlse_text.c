@@ -317,7 +317,9 @@ static const char *FAKE_ALERT_WORDS[] = {
     /* English */
     "security alert", "security warning", "virus detected",
     "your computer is infected", "your pc is infected",
+    "your computer has been infected", "your pc has been infected",
     "your pc has a virus", "your computer has a virus",
+    "your device has been infected", "your device is infected",
     "unusual activity detected", "suspicious activity detected",
     "unusual sign-in activity", "suspicious sign-in activity",
     "unusual login activity", "suspicious login activity",
@@ -328,6 +330,8 @@ static const char *FAKE_ALERT_WORDS[] = {
     "call now to", "call +1-888", "call +1-800",
     /* US toll-free without plus sign (IVR-style: "call 1-800") */
     "call 1-800", "call 1-888", "call 1-877", "call 1-866", "call 1-844",
+    /* Toll-free following "at" — "contact us at 1-800-..." */
+    "at 1-800-", "at 1-888-", "at 1-877-", "at 1-866-", "at 1-844-",
     /* Tech support scam specific */
     "do not turn off your computer", "do not restart",
     "your computer is sending error reports",
