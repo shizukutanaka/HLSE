@@ -168,6 +168,8 @@ static const char *EXECUTABLE_EXTS[] = {
     ".php", ".php3", ".php5", ".phtml", ".asp", ".aspx", ".jsp",
     /* Scripting languages used as malware droppers */
     ".rb", ".pl", ".tcl", ".lua",
+    /* Windows shared libraries — commonly used as sideload/injection payloads */
+    ".dll",
     /* Windows HTML Application — runs JScript/VBScript with no sandbox */
     ".mshta",
     /* PHP archive — executes like a PHP binary */
@@ -252,6 +254,13 @@ static const char *LURE_WORDS[] = {
     "bonus", "raise", "termination_notice",
     /* Crypto fraud lures */
     "airdrop", "nft", "whitelist",
+    /* Tech-lure dropper names */
+    "driver", "codec", "plugin", "extension",
+    /* Document lures */
+    "proof", "memo", "form", "benefit",
+    "leaked", "private", "confidential_",
+    /* Malware attention names */
+    "hacked", "breach", "exposed",
     /* Japanese */
     "請求書", "見積書", "納品書", "契約書", "確認",
     "給与明細", "年末調整",
