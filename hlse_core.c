@@ -1156,6 +1156,30 @@ check_url(const char *raw_url) {
     detect_dga_entropy(&u, &v);
     detect_security_hyphenation(&u, &v);
 
+    /* URL shorteners — hide the real destination, heavily abused in
+     * phishing campaigns, smishing, and social-media scam links.
+     * Score is low (+15, LOG) because shorteners also have legitimate uses;
+     * the risk is compounded when combined with other signals.            */
+    {
+        static const char *URL_SHORTENERS[] = {
+            "bit.ly", "tinyurl.com", "t.co", "goo.gl",
+            "ow.ly", "buff.ly", "dlvr.it", "ift.tt",
+            "shorte.st", "adf.ly", "bc.vc", "mcaf.ee",
+            "rebrand.ly", "rb.gy", "cutt.ly", "shorturl.at",
+            "tiny.cc", "is.gd", "v.gd", "clck.ru",
+            NULL
+        };
+        int si;
+        for (si = 0; URL_SHORTENERS[si]; si++) {
+            if (strcmp(u.host, URL_SHORTENERS[si]) == 0 ||
+                ends_with(u.host, URL_SHORTENERS[si])) {
+                add_reason(&v, 15, "URL shortener '%s' — real destination hidden",
+                           URL_SHORTENERS[si]);
+                break;
+            }
+        }
+    }
+
     /* Free hosting / page-builder platforms heavily abused for phishing.
      * A brand name in the SUBDOMAIN of these platforms is high-confidence
      * phishing (paypal-verify.netlify.app, google.pages.dev, etc.). The
@@ -1476,6 +1500,9 @@ self_test(void) {
         /* @ credential trick */
         { "https://google.com@evil.com/verify",           45, 100,
           "@ credential trick detected" },
+        /* URL shorteners */
+        { "https://bit.ly/3xYzAbc",                        15, 39,
+          "URL shortener: bit.ly scores LOG (destination hidden)" },
         /* Free-hosting phishing */
         { "https://paypal-verify.netlify.app/login",       50, 100,
           "Free-hosting phishing: brand in netlify.app subdomain" },
