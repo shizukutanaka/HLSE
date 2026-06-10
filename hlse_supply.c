@@ -439,6 +439,24 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "appinstaller") &&
                     ci_contains(text, "http"))) {
             what = "ms-appinstaller URI bypass (ClickFix 2025)";
+        } else if (ci_contains(text, "osascript") &&
+                   (ci_contains(text, "do shell script") ||
+                    ci_contains(text, "http") ||
+                    ci_contains(text, "curl ") || ci_contains(text, "bash"))) {
+            what = "osascript AppleScript shell execution (macOS ClickFix)";
+        } else if ((ci_contains(text, "python") || ci_contains(text, "python3")) &&
+                   (ci_contains(text, "urllib") || ci_contains(text, "urllib2") ||
+                    ci_contains(text, "urlopen") || ci_contains(text, "requests.get")) &&
+                   (ci_contains(text, "exec(") || ci_contains(text, "eval(") ||
+                    ci_contains(text, ".read()") || ci_contains(text, "subprocess"))) {
+            what = "Python download-execute one-liner";
+        } else if (ci_contains(text, "regasm") &&
+                   (ci_contains(text, "http") || ci_contains(text, ".dll") ||
+                    ci_contains(text, ".exe"))) {
+            what = "regasm.exe .NET assembly execution (LOLBin)";
+        } else if (ci_contains(text, "installutil") &&
+                   ci_contains(text, "http")) {
+            what = "installutil.exe .NET AppDomain execution (LOLBin)";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

