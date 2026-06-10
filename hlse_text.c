@@ -120,6 +120,10 @@ static const char *BAIT_WORDS[] = {
     "update billing", "payment method expired", "update payment",
     /* Money transfer platforms common in elder/tech-support fraud */
     "zelle", "western union", "moneygram",
+    /* Job scam / employment fraud baits (request for bank/personal details) */
+    "send your bank account", "direct deposit details",
+    "provide your ssn", "tax form required before starting",
+    "advance fee for equipment", "purchase gift cards for onboarding",
     /* Japanese */
     "パスワード", "暗証番号", "暗証番号をご入力", "クレジットカード", "銀行口座", "振込",
     "ビットコイン", "仮想通貨", "ギフトカード", "アマゾンギフト", "還付金", "返金",
@@ -234,6 +238,12 @@ static const char *GROOMING_WORDS[] = {
     "usdt income", "usdt profit", "tether income",
     "transfer to the platform", "deposit to start",
     "minimum deposit", "proof of earnings",
+    /* Fake job / work-from-home scam openers */
+    "no experience required", "work from home opportunity",
+    "be your own boss", "earn from home",
+    "package forwarding", "money transfer agent",
+    "mystery shopper", "brand ambassador position",
+    "crypto trader apprentice", "per day from home",
     /* Japanese */
     "投資してあげる", "必ず儲かる", "絶対に儲かる",
     "取引プラットフォーム", "出金手数料",
