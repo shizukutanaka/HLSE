@@ -1706,6 +1706,17 @@ text_self_test(void) {
         { "This is the CEO. Wire $25000 to this account immediately and "
           "keep it confidential.",
           60, 100, "CEO-fraud BEC (authority+wire+secrecy)" },
+        /* BEC — 'as the ceo' + wire variant */
+        { "As the CEO, please wire the initial payment today. "
+          "Don't loop in anyone else.",
+          40, 100, "BEC: 'as the ceo' + wire payment + secrecy" },
+        /* IRS FP regression: 'first' must NOT trigger authority impersonation */
+        { "Hello new friend! I am a doctor working overseas. "
+          "A small test transaction first.",
+          0, 60, "Pig-butchering: 'first' must not fire authority via 'irs' substring" },
+        /* Smishing delivery */
+        { "Your package has been held. Click to pay the customs clearance fee.",
+          20, 60, "Delivery smishing: customs clearance pattern" },
         /* MUST NOT FIRE */
         { "Meeting at 3pm tomorrow", 0, 14, "Plain calendar" },
         { "Can you review the PR by end of day?", 0, 14, "Plain dev message" },
