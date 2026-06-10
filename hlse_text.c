@@ -690,6 +690,7 @@ hlse_check_text(const char *raw_text) {
     int  i, j;
     int  fired_urgency = 0, fired_bait = 0, fired_prize = 0;
     int  fired_ransom = 0, fired_authority = 0, fired_secrecy = 0;
+    int  fired_grooming = 0;
     int  fired_qr = 0;
     int  fired_callback = 0;
     int  fired_emergency = 0;
@@ -765,6 +766,7 @@ hlse_check_text(const char *raw_text) {
         else if (strcmp(sig->name, "Ransom/extortion language") == 0) fired_ransom = 1;
         else if (strcmp(sig->name, "Authority impersonation") == 0) fired_authority = 1;
         else if (strcmp(sig->name, "Secrecy/grooming") == 0) fired_secrecy = 1;
+        else if (strcmp(sig->name, "Investment scam pattern") == 0)  fired_grooming = 1;
         else if (strcmp(sig->name, "QR code phishing (quishing)") == 0) fired_qr = 1;
         else if (strcmp(sig->name, "Callback/TOAD/smishing") == 0) fired_callback = 1;
         else if (strcmp(sig->name, "Emergency/grandparent scam") == 0) fired_emergency = 1;
@@ -853,6 +855,31 @@ hlse_check_text(const char *raw_text) {
                     "Amplifier: wallet key + financial/credential context");
             }
         }
+    }
+
+    /* Investment / pig-butchering compound amplifiers */
+    if (fired_grooming) {
+        if (fired_secrecy) {
+            add_text_reason(&v, 20,
+                "Amplifier: investment pitch + secrecy = pig-butchering "
+                "isolation tactic");
+        }
+        if (fired_bait) {
+            add_text_reason(&v, 15,
+                "Amplifier: investment scam + financial request = "
+                "deposit/platform funding fraud");
+        }
+        if (fired_urgency) {
+            add_text_reason(&v, 15,
+                "Amplifier: investment scam + urgency = FOMO pressure tactic");
+        }
+    }
+
+    /* Prize + authority = advance-fee / 419 fraud */
+    if (fired_prize && fired_authority) {
+        add_text_reason(&v, 20,
+            "Amplifier: prize/reward + authority figure = advance-fee / "
+            "419 fraud pattern");
     }
 
     /* Emergency / grandparent scam amplifiers */
