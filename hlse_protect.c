@@ -356,6 +356,16 @@ hlse_ransomware_check_shadow_deletion(void) {
             "vssadmin", "shadowcopy delete", "wmic shadow",
             "btrfs subvolume delete", "lvremove",
             "bcdedit /set", "wbadmin delete",
+            /* Additional anti-recovery / backup-destruction commands */
+            "delete shadows",          /* vssadmin delete shadows /all */
+            "delete catalog",          /* wbadmin delete catalog */
+            "delete systemstatebackup",/* wbadmin delete systemstatebackup */
+            "recoveryenabled no",      /* bcdedit /set recoveryenabled no */
+            "ignoreallfailures",       /* bcdedit bootstatuspolicy */
+            "zfs destroy",             /* ZFS snapshot destruction */
+            "rm -rf /var/backups",     /* Linux backup wipe */
+            "wevtutil cl",             /* Windows event-log clearing */
+            "fsutil usn deletejournal",/* NTFS change-journal wipe */
             NULL
         };
         DIR *proc = opendir("/proc");
@@ -831,6 +841,10 @@ static const char *ESP_INDICATORS[] = {
     "moonbounce",   /* MoonBounce (APT41, 2022) */
     "cosmicstrand", /* CosmicStrand (Chinese APT, 2022) */
     "espector",     /* ESPectre/ESPector UEFI implant framework */
+    "mosaicregressor", /* MosaicRegressor (first public UEFI implant, 2020) */
+    "finspy",       /* FinSpy/FinFisher UEFI bootkit component */
+    "trickboot",    /* TrickBot UEFI module (2020) */
+    "glupteba",     /* Glupteba bootloader tampering */
     /* Generic ransom-note phrases embedded in tampered EFI binaries */
     "contact us to decrypt",
     "to recover your files",
