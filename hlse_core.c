@@ -867,6 +867,10 @@ detect_typosquat(const ParsedUrl *u, Verdict *v) {
     }
 }
 
+/* Fold a single Unicode confusable code point to its Latin look-alike
+ * (defined below; shared with the Punycode/IDN homograph detector). */
+static char cp_fold(uint32_t cp);
+
 /* 8. Non-ASCII (Cyrillic, Greek, mixed-script) homoglyph detection.
  * Real Latin domains contain only ASCII letters/digits/hyphens. Any
  * non-ASCII code point in a domain that resembles a major brand is a
@@ -889,48 +893,36 @@ detect_mixed_script(const ParsedUrl *u, Verdict *v) {
         size_t k = 0;
         const unsigned char *q = (const unsigned char *)u->host;
         while (*q && k < MAX_HOST - 1) {
+            uint32_t cp;
+            int nbytes, b, valid = 1;
             if (*q < 0x80) {
                 ascii[k++] = (char)*q;
                 q++;
-            } else if (*q == 0xD0 || *q == 0xD1) {
-                /* 2-byte Cyrillic — map a few common confusables */
-                unsigned char b2 = q[1];
-                char rep = '?';
-                if (*q == 0xD0) {
-                    switch (b2) {
-                        case 0xB0: rep = 'a'; break;  /* а */
-                        case 0xB2: rep = 'v'; break;  /* в */
-                        case 0xB5: rep = 'e'; break;  /* е */
-                        case 0xBA: rep = 'k'; break;  /* к */
-                        case 0xBC: rep = 'm'; break;  /* м */
-                        case 0xBD: rep = 'n'; break;  /* н */
-                        case 0xBE: rep = 'o'; break;  /* о */
-                        default:   rep = '?';
-                    }
-                } else { /* 0xD1 */
-                    switch (b2) {
-                        case 0x80: rep = 'p'; break;  /* р */
-                        case 0x81: rep = 'c'; break;  /* с */
-                        case 0x82: rep = 't'; break;  /* т */
-                        case 0x83: rep = 'y'; break;  /* у */
-                        case 0x85: rep = 'x'; break;  /* х */
-                        case 0x95: rep = 'j'; break;  /* ј */
-                        case 0x96: rep = 'i'; break;  /* і */
-                        default:   rep = '?';
-                    }
-                }
-                ascii[k++] = rep;
-                q += 2;
-            } else if (*q < 0xE0) {
-                q += 2;  /* skip other 2-byte */
+                continue;
+            } else if (*q < 0xC0) {        /* stray continuation byte */
                 ascii[k++] = '?';
-            } else if (*q < 0xF0) {
-                q += 3;  /* skip 3-byte */
-                ascii[k++] = '?';
-            } else {
-                q += 4;  /* skip 4-byte */
-                ascii[k++] = '?';
+                q++;
+                continue;
+            } else if (*q < 0xE0) {        /* 2-byte sequence */
+                cp = (uint32_t)(*q & 0x1F); nbytes = 2;
+            } else if (*q < 0xF0) {        /* 3-byte sequence */
+                cp = (uint32_t)(*q & 0x0F); nbytes = 3;
+            } else {                        /* 4-byte sequence */
+                cp = (uint32_t)(*q & 0x07); nbytes = 4;
             }
+            /* Decode continuation bytes into the full code point. Reusing
+             * cp_fold() keeps the Cyrillic/Greek confusable table in one
+             * place (shared with the Punycode/IDN detector below).        */
+            for (b = 1; b < nbytes; b++) {
+                if ((q[b] & 0xC0) != 0x80) { valid = 0; break; }
+                cp = (cp << 6) | (uint32_t)(q[b] & 0x3F);
+            }
+            if (!valid) { ascii[k++] = '?'; q++; continue; }
+            {
+                char f = cp_fold(cp);
+                ascii[k++] = f ? f : '?';
+            }
+            q += nbytes;
         }
         ascii[k] = '\0';
 
@@ -1059,10 +1051,16 @@ cp_fold(uint32_t cp) {
         case 0x0445: return 'x';  case 0x0456: return 'i';
         case 0x0458: return 'j';  case 0x0455: return 's';
         case 0x04BB: return 'h';  case 0x04CF: return 'l';
-        case 0x043A: return 'k';
+        case 0x043A: return 'k';  case 0x0432: return 'v';
+        case 0x043C: return 'm';  case 0x043D: return 'n';
+        case 0x0442: return 't';  case 0x0431: return 'b';
+        case 0x0433: return 'r';
         /* Greek */
         case 0x03BF: return 'o';  case 0x03B1: return 'a';
         case 0x03C1: return 'p';  case 0x03B5: return 'e';
+        case 0x03B9: return 'i';  case 0x03BD: return 'v';
+        case 0x03BA: return 'k';  case 0x03C5: return 'u';
+        case 0x0392: return 'b';  case 0x039F: return 'o';
         default: return 0;
     }
 }
@@ -1555,6 +1553,13 @@ self_test(void) {
         /* New path patterns: CMS admin */
         { "https://paypal.pages.dev/wp-admin",             80, 100,
           "Free-hosting + brand + /wp-admin path" },
+        /* Raw (non-Punycode) UTF-8 homoglyphs — folded via cp_fold().
+         * Greek omicron (U+03BF) was previously collapsed to '?' and
+         * missed; now folds to 'o' and matches the brand.              */
+        { "https://g\xce\xbf\xce\xbfgle.com",             40, 100,
+          "Raw UTF-8 Greek-omicron homoglyph: gοοgle → google" },
+        { "https://paypa\xd3\x8f.com/login",              40, 100,
+          "Raw UTF-8 Cyrillic-palochka homoglyph: paypaӏ → paypal" },
     };
     int n = sizeof(cases) / sizeof(cases[0]);
     int i;

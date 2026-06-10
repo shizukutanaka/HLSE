@@ -5,6 +5,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [0.9.86] — 2026-06-10
 
 ### Security
+- **Core: Fix raw-UTF-8 homoglyph blind spot + DRY the confusable table** (BUG-URL-MIXEDSCRIPT):
+  `detect_mixed_script` had its own limited inline byte-switch that only
+  folded 2-byte Cyrillic (0xD0/0xD1 lead bytes). Greek omicron
+  (`gοοgle.com`, 0xCE 0xBF) and other Cyrillic ranges (palochka `ӏ`,
+  0xD3 0x8F) collapsed to `?`, so the brand never matched —
+  `gοοgle.com` scored only LOG(25) and `paypaӏ.com` ALERT(40). Replaced
+  the inline switch with a proper UTF-8 code-point decoder that reuses
+  the shared `cp_fold()` table (also extended with в/м/н/т/б/г Cyrillic
+  and ι/ν/κ/υ/Β/Ο Greek). `gοοgle.com` → BLOCK(60), `paypaӏ.com` →
+  BLOCK(75); legit IDNs (münchen.de, café.fr) stay advisory-only.
+
 - **Secrets: Fix E1 display-name substring false positives** (BUG-EMAIL-E1-FP):
   the email-forensics E1 check matched known-brand tokens as raw
   substrings of the display name — `"First Choice"` matched `irs`
@@ -72,8 +83,10 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   variants; ESP_INDICATORS += MosaicRegressor, FinSpy, TrickBoot, Glupteba.
 
 ### Tests
-- 402 structured tests (was 400). Secrets suite 52 (was 50): added E1
+- 404 structured tests (was 400). Secrets suite 52 (was 50): added E1
   substring-FP regression ("First Choice") and E1 UPS-impersonation tests.
+  URL unit suite 33 (was 31): added raw-UTF-8 Greek-omicron and
+  Cyrillic-palochka homoglyph regressions.
 - F1 = 1.000 on both corpora; ASan/UBSan clean; fuzz 100K, 0 crashes.
 
 ## [0.9.85] — 2026-06-10

@@ -24,7 +24,7 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             402 (8 suites + corpus + CLI integration)
+  Structured tests:             404 (8 suites + corpus + CLI integration)
   Fuzz iterations:              500,000 (5 harnesses × 100K, 0 crashes)
   ASan + UBSan:                 0 errors
   Compiler warnings:            0 (-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
@@ -179,7 +179,7 @@ Every subcommand supports `--json`:
 
 | Suite | Count | What it verifies |
 |-------|-------|------------------|
-| Unit (URL) | 31 | Individual URL detector accuracy (incl. IDN/Punycode homograph, free-hosting, shorteners, new brands) |
+| Unit (URL) | 33 | Individual URL detector accuracy (incl. IDN/Punycode + raw-UTF-8 Cyrillic/Greek homograph, free-hosting, shorteners, new brands) |
 | Unit (text) | 18 | Individual text signal accuracy (incl. BEC patterns, IRS FP regression, smishing) |
 | Property invariants | 64 | Monotonicity, bounds, determinism, case, evasion (P1–P13) |
 | Protection | 19 | Ransomware, network drive, SMB, MBR/GPT, ESP |
