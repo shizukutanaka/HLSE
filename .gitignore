@@ -22,6 +22,8 @@ tests/fuzz_supply
 tests/fuzz_supply_asan
 tests/fuzz_file
 tests/fuzz_file_asan
+tests/fuzz_url
+tests/fuzz_url_asan
 
 # Coverage
 *.gcov
