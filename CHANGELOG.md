@@ -2,6 +2,25 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.90] — 2026-06-10
+
+### Security
+- **File: Add macro-enabled Office and macOS pkg to executable extension list** (GAP-FILE-MACRODOC):
+  `.docm`, `.xlsm`, `.pptm`, `.xlam`, `.ppam`, `.xlsb` (macro-enabled Office) and
+  `.pkg`, `.mpkg` (macOS installer) were not in EXECUTABLE_EXTS. They now score
+  SAFE(5) for extension alone and participate in lure-word detection. Examples:
+  `hr_policy_2024.docm` → ALERT(45), `chrome_update.pkg` → ALERT(45).
+  Added lure words: `readme`, `report`, `notification`, `policy`, `hr`, `compliance`,
+  `legal`, `notice` — catching `README_important.exe` → ALERT(45).
+
+- **Secrets: Add 22 missing ENV_SECRET patterns** (GAP-SECRET-ENVVARS):
+  Added: Azure Storage connection string / account key / Cognitive / OpenAI key;
+  Google API key, GCP API key, Firebase API key, Google Maps API key;
+  S3 access/secret key variants; Notion token, Airtable PAT, Jira cloud token,
+  Zendesk API token, Intercom access token, HubSpot API key,
+  Salesforce access token; Mapbox access token, HERE API key;
+  Twilio API key, Vonage API secret.
+
 ## [0.9.89] — 2026-06-10
 
 ### Security

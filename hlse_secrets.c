@@ -315,9 +315,30 @@ check_env_passwords(const char *text, SecretVerdict *v) {
         /* Payment processors */
         "PAYPAL_CLIENT_SECRET=", "SQUARE_ACCESS_TOKEN=",
         "RAZORPAY_KEY_SECRET=",
+        /* Azure storage and cognitive services */
+        "AZURE_STORAGE_CONNECTION_STRING=", "AZURE_STORAGE_ACCOUNT_KEY=",
+        "AZURE_COGNITIVE_KEY=", "AZURE_OPENAI_API_KEY=",
+        "AZURE_OPENAI_KEY=",
+        /* Google / GCP keys not yet covered */
+        "GOOGLE_API_KEY=", "GCP_API_KEY=", "FIREBASE_API_KEY=",
+        "GOOGLE_MAPS_API_KEY=", "GOOGLE_CLOUD_API_KEY=",
+        /* Cloud storage */
+        "S3_ACCESS_KEY=", "S3_SECRET_KEY=", "S3_SECRET_ACCESS_KEY=",
+        "STORAGE_ACCESS_KEY=", "STORAGE_SECRET_KEY=",
+        /* Collaboration / productivity APIs */
+        "NOTION_TOKEN=", "NOTION_SECRET=",
+        "AIRTABLE_API_KEY=", "AIRTABLE_PAT=",
+        "JIRA_API_TOKEN=", "JIRA_CLOUD_TOKEN=",
+        "ZENDESK_API_TOKEN=",
+        "INTERCOM_ACCESS_TOKEN=",
+        "HUBSPOT_API_KEY=", "SALESFORCE_ACCESS_TOKEN=",
+        /* Geo / mapping */
+        "MAPBOX_ACCESS_TOKEN=", "MAPBOX_TOKEN=",
+        "HERE_API_KEY=", "TOMTOM_API_KEY=",
         /* Communication */
         "DISCORD_BOT_TOKEN=", "TELEGRAM_BOT_TOKEN=",
         "MAILGUN_API_KEY=", "POSTMARK_API_TOKEN=",
+        "TWILIO_API_KEY=", "VONAGE_API_SECRET=",
         NULL
     };
     int found = 0;

@@ -160,6 +160,10 @@ static const char *EXECUTABLE_EXTS[] = {
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
+    /* macOS installer packages */
+    ".pkg", ".mpkg",
+    /* Macro-enabled Office documents (bypass Mark-of-the-Web in many configs) */
+    ".docm", ".xlsm", ".pptm", ".xlam", ".ppam", ".xlsb",
     /* Java */
     ".jar", ".class",
     /* Python */
@@ -262,6 +266,9 @@ static const char *LURE_WORDS[] = {
     /* Document lures */
     "proof", "memo", "form", "benefit",
     "leaked", "private", "confidential_",
+    /* Additional corporate social-engineering lures */
+    "readme", "report", "notification", "policy",
+    "hr", "compliance", "legal", "notice",
     /* Malware attention names */
     "hacked", "breach", "exposed",
     /* Japanese */
