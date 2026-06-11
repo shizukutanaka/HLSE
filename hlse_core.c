@@ -135,7 +135,9 @@ static const char *BRANDS[] = {
     /* Document signing — DocuSign phishing is one of the most common BEC vectors */
     "docusign",
     /* Crypto wallets — MetaMask/Ledger are #1 wallet-draining phishing targets */
-    "metamask", "ledger",
+    "metamask", "ledger", "trezor", "trustwallet",
+    /* Crypto / NFT marketplaces — seed-phrase phishing and fake-mint lures */
+    "opensea", "uniswap", "pancakeswap", "blockchain",
     /* Identity / access management — Okta impersonation in enterprise spear-phishing */
     "okta",
     /* Productivity / design SaaS — targeted in spear-phishing against tech workers */
@@ -213,6 +215,12 @@ static const char *SECURITY_WORDS[] = {
     "identity", "validate", "activate", "alert", "urgent",
     /* Giveaway / promo scam domains */
     "free", "giveaway", "promo", "gift", "reward", "bonus", "nitro",
+    /* Crypto/NFT scam lures — "airdrop" is overwhelmingly scam-correlated
+     * and almost never a hyphenated token in a benign registrable domain
+     * (real projects announce airdrops on their primary domain). Generic
+     * terms like "wallet" are intentionally omitted — they appear in
+     * legitimate hyphenated domains (crypto-wallet-news.com).            */
+    "airdrop",
     /* Financial transfer fraud — phishing via domain like "paypal-transfer.com" */
     "transfer",
     /* Product-name spoofing: "ledger-live.org", "adobe-live.net" */
