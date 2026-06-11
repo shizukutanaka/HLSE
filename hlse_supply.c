@@ -69,6 +69,8 @@ static const char *PIP_TOP[] = {
     "azure-keyvault-secrets", "azure-mgmt-core",
     /* Monitoring / observability */
     "sentry-sdk", "opentelemetry-api",
+    /* Web3 / crypto — typosquat targets for seed-phrase-stealing payloads */
+    "web3", "eth-account", "eth-utils", "web3py", "solana", "bitcoinlib",
     NULL
 };
 
@@ -98,6 +100,9 @@ static const char *NPM_TOP[] = {
     "socket.io-client", "ws", "got", "supertest",
     /* Cloud providers and infra */
     "aws-cdk", "serverless", "netlify-cli", "vercel",
+    /* Web3 / crypto — wallet-drainer malware ships as fake ethers/web3 pkgs */
+    "ethers", "web3", "wagmi", "viem", "hardhat",
+    "@solana/web3.js", "@walletconnect/client", "web3modal",
     NULL
 };
 
