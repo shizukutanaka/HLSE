@@ -2,6 +2,45 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.93] — 2026-06-11
+
+### Security
+- **Text: ClickFix / fake-CAPTCHA "paste-and-run" detection** (GAP-TEXT-CLICKFIX):
+  Added a dedicated `ClickFix paste-and-run` signal targeting the top
+  2024-2025 initial-access vector, where a fake "verify you are human" page
+  tells the victim to press Win+R, paste an attacker-supplied PowerShell/mshta
+  command, and press Enter. Signal matches high-specificity paste-execute
+  instructions and living-off-the-land payload markers (`powershell -enc`,
+  `mshta`, `invoke-expression`, `iex(`, `certutil -urlcache`). Amplifiers
+  escalate to BLOCK/ISOLATE when combined with fake-CAPTCHA framing or a
+  run-dialog invocation. Run-dialog phrases (Win+R) are intentionally kept
+  out of the base signal — they are dual-use, so a legitimate IT instruction
+  ("press Win+R, type cmd") stays OK while the paste-execute variant is
+  flagged. Two CLI integration tests lock in both the detection and the
+  FP guard.
+- **Secrets: HashiCorp + AI + observability tokens** (GAP-SECRETS-EXPAND2):
+  Added `VAULT_TOKEN`, `CONSUL_HTTP_TOKEN`, `NOMAD_TOKEN`, `BOUNDARY_TOKEN`
+  (HashiCorp secrets management/orchestration), `GEMINI_API_KEY`,
+  `GOOGLE_GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `VERTEX_AI_KEY` (AI
+  providers), and `PAGERDUTY_API_KEY`, `PAGERDUTY_TOKEN`, `OPSGENIE_API_KEY`,
+  `GRAFANA_API_KEY` (incident/observability) to the ENV_SECRET watchlist.
+- **URL: crypto-wallet brands + airdrop scam term** (GAP-URL-WEB3):
+  Added `trezor`, `trustwallet`, `opensea`, `uniswap`, `pancakeswap`,
+  `blockchain` to BRANDS (wallet-draining/seed-phrase phishing targets) and
+  `airdrop` to SECURITY_WORDS. `airdrop` is overwhelmingly scam-correlated
+  and near-absent from benign hyphenated registrable domains; generic terms
+  like `wallet` were intentionally omitted to avoid FPs on legitimate
+  `crypto-wallet-news.com`-style domains.
+- **Supply: web3/crypto package watchlists** (GAP-SUPPLY-WEB3):
+  Added `ethers`, `web3`, `wagmi`, `viem`, `hardhat`, `@solana/web3.js`,
+  `@walletconnect/client`, `web3modal` (npm) and `web3`, `eth-account`,
+  `eth-utils`, `web3py`, `solana`, `bitcoinlib` (pip). Wallet-drainer malware
+  routinely ships as typosquats of these packages.
+
+### Changed
+- Version bumped from 0.9.92 to 0.9.93.
+- CLI integration tests: 90 → 92 (added ClickFix detection + FP guard).
+
 ## [0.9.92] — 2026-06-10
 
 ### Security

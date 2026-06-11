@@ -442,6 +442,28 @@ static const char *SHELL_PIPE_WORDS[] = {
     NULL
 };
 
+/* ClickFix / fake-CAPTCHA "paste-and-run" social engineering (top 2024-2025
+ * initial-access vector). A fake "verify you are human" page instructs the
+ * victim to press Win+R (or open Terminal), paste an attacker-supplied
+ * command, and press Enter — running PowerShell/mshta. Unlike URL/credential
+ * phishing the payload is a copy-paste instruction, so URL filters miss it. */
+static const char *CLICKFIX_WORDS[] = {
+    /* Paste-then-execute instruction — the defining ClickFix action.
+     * Legitimate IT docs say "type" or "run"; they don't ask the user to
+     * paste an opaque command and press Enter. Run-dialog phrases alone
+     * (Win+R) are dual-use and handled by the amplifier, not here.       */
+    "paste this command", "paste the following command",
+    "paste it and press enter", "paste and press enter",
+    "press ctrl + v then enter", "ctrl+v and press enter",
+    "paste the verification code and press enter",
+    /* Living-off-the-land execution payload markers (high specificity) */
+    "powershell -enc", "powershell -e ", "powershell -nop",
+    "powershell -w hidden", "powershell -windowstyle hidden",
+    "mshta ", "mshta.exe", "invoke-expression", "iex(", "iex (",
+    "certutil -urlcache",
+    NULL
+};
+
 /* Callback / telephone-oriented attack delivery (TOAD) / vishing / smishing.
  * Attacker gives a phone number and asks victim to call, evading URL filters. */
 static const char *CALLBACK_PHISH_WORDS[] = {
@@ -499,6 +521,7 @@ static const Signal SIGNALS[] = {
     { "Ransom/extortion language",  RANSOM_WORDS,    35, 20, 55 },
     { "Direct financial action",    FIN_ACTION_WORDS,15, 15, 30 },
     { "Shell-pipe-to-interpreter",  SHELL_PIPE_WORDS,40,  0, 40 },
+    { "ClickFix paste-and-run",     CLICKFIX_WORDS,  25, 18, 50 },
     { "QR code phishing (quishing)",QR_PHISH_WORDS,  20, 10, 30 },
     { "Callback/TOAD/smishing",     CALLBACK_PHISH_WORDS, 15, 10, 30 },
     { "Emergency/grandparent scam", EMERGENCY_SCAM_WORDS, 20, 15, 45 },
@@ -848,6 +871,7 @@ hlse_check_text(const char *raw_text) {
     int  fired_qr = 0;
     int  fired_callback = 0;
     int  fired_emergency = 0;
+    int  fired_clickfix = 0;
 
     memset(&v, 0, sizeof(v));
     if (!raw_text) return v;
@@ -924,6 +948,7 @@ hlse_check_text(const char *raw_text) {
         else if (strcmp(sig->name, "QR code phishing (quishing)") == 0) fired_qr = 1;
         else if (strcmp(sig->name, "Callback/TOAD/smishing") == 0) fired_callback = 1;
         else if (strcmp(sig->name, "Emergency/grandparent scam") == 0) fired_emergency = 1;
+        else if (strcmp(sig->name, "ClickFix paste-and-run") == 0) fired_clickfix = 1;
     }
 
     #undef MATCH
@@ -1068,6 +1093,39 @@ hlse_check_text(const char *raw_text) {
             add_text_reason(&v, 15,
                 "Amplifier: QR code + credential/financial request = "
                 "quishing credential harvest");
+        }
+    }
+
+    /* ClickFix amplifiers. The fake-CAPTCHA framing ("verify you are human"
+     * / "not a robot") next to a run-dialog+paste instruction is the
+     * defining ClickFix tell — near-certain malicious initial access. */
+    if (fired_clickfix) {
+        int has_rundialog = str_contains(lower, "windows + r")
+                         || str_contains(lower, "windows+r")
+                         || str_contains(lower, "win + r")
+                         || str_contains(lower, "win+r")
+                         || str_contains(lower, "windows key + r")
+                         || str_contains(lower, "run dialog")
+                         || str_contains(lower, "the run window");
+        int has_human_check = str_contains(lower, "verify you are human")
+                           || str_contains(lower, "verify you're human")
+                           || str_contains(lower, "not a robot")
+                           || str_contains(lower, "complete the captcha")
+                           || str_contains(lower, "verification step")
+                           || str_contains(lower, "to verify your identity");
+        if (has_human_check) {
+            add_text_reason(&v, 30,
+                "Amplifier: fake CAPTCHA + paste-execute instruction = "
+                "ClickFix initial-access attack");
+        }
+        if (has_rundialog) {
+            add_text_reason(&v, 25,
+                "Amplifier: run-dialog invocation + paste-execute = "
+                "ClickFix paste-and-run attack");
+        }
+        if (fired_urgency) {
+            add_text_reason(&v, 15,
+                "Amplifier: ClickFix paste-and-run + urgency pressure");
         }
     }
 

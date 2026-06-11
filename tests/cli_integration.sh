@@ -300,6 +300,16 @@ assert data["hardening_band"] in ("hardened", "good", "fair", "weak")
     && check "embedded phishing URL + urgency → compound BLOCK+" "0" "0" \
     || check "embedded phishing URL + urgency → compound BLOCK+" "0" "1"
 
+# ClickFix fake-CAPTCHA paste-and-run → BLOCK/ISOLATE
+./hlse_core "To verify you are human, press Windows + R, then paste this command and hit Enter" 2>&1 | grep -qE "BLOCK|ISOLATE" \
+    && check "ClickFix fake-CAPTCHA paste-and-run → BLOCK+" "0" "0" \
+    || check "ClickFix fake-CAPTCHA paste-and-run → BLOCK+" "0" "1"
+
+# ClickFix legit IT instruction (Win+R + type cmd, no paste-execute) → not flagged
+./hlse_core "Press Windows + R to open the Run dialog, then type cmd to launch the command prompt." 2>&1 | grep -qE "^OK|^LOG" \
+    && check "ClickFix FP guard: legit Win+R IT instruction stays low" "0" "0" \
+    || check "ClickFix FP guard: legit Win+R IT instruction stays low" "0" "1"
+
 # ─── scan subcommand ────────────────────────────────────────────
 
 # Scan clean directory
