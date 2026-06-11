@@ -303,6 +303,9 @@ check_env_passwords(const char *text, SecretVerdict *v) {
         "ARM_CLIENT_SECRET=", "ARM_SUBSCRIPTION_ID=",
         "GOOGLE_CREDENTIALS=", "GOOGLE_APPLICATION_CREDENTIALS=",
         "TF_TOKEN_app_terraform_io=",
+        /* HashiCorp secrets management / orchestration */
+        "VAULT_TOKEN=", "CONSUL_HTTP_TOKEN=", "NOMAD_TOKEN=",
+        "BOUNDARY_TOKEN=",
         /* GitHub Actions secrets in plaintext */
         "ACTIONS_RUNTIME_TOKEN=", "ACTIONS_ID_TOKEN_REQUEST_TOKEN=",
         /* Supabase / PlanetScale / Neon */
@@ -316,10 +319,14 @@ check_env_passwords(const char *text, SecretVerdict *v) {
         "GROQ_API_KEY=", "PERPLEXITY_API_KEY=",
         "DEEPSEEK_API_KEY=", "XAI_API_KEY=",
         "FIREWORKS_API_KEY=", "ANYSCALE_API_KEY=",
+        "GEMINI_API_KEY=", "GOOGLE_GEMINI_API_KEY=",
+        "OPENROUTER_API_KEY=", "VERTEX_AI_KEY=",
         /* Observability / APM */
         "DATADOG_API_KEY=", "DATADOG_APP_KEY=",
         "SENTRY_DSN=", "SENTRY_AUTH_TOKEN=",
         "HONEYCOMB_API_KEY=", "NEWRELIC_LICENSE_KEY=",
+        "PAGERDUTY_API_KEY=", "PAGERDUTY_TOKEN=",
+        "OPSGENIE_API_KEY=", "GRAFANA_API_KEY=",
         /* Payment processors */
         "PAYPAL_CLIENT_SECRET=", "PAYPAL_CLIENT_ID=",
         "SQUARE_ACCESS_TOKEN=", "SQUARE_APPLICATION_ID=",
