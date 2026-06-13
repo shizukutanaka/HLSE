@@ -123,7 +123,8 @@ static const char *URGENCY_WORDS[] = {
 
 static const char *BAIT_WORDS[] = {
     /* English */
-    "password", "passcode", "pin number", "credit card", "debit card",
+    "password", "passcode", "pin number", "your account pin", "account pin",
+    "credit card", "debit card",
     "card number", "cvv", "social security", "ssn", "date of birth",
     "bank account", "routing number", "wire transfer", "bank wire",
     "please wire", "wire the funds", "transfer funds to", "transfer money to",
@@ -168,6 +169,12 @@ static const char *BAIT_WORDS[] = {
     "new bank account", "new payment account",
     "change of bank details", "change bank details",
     "updated bank details", "updated payment details",
+    /* Highly specific BEC banking-change phrases — kept in BAIT so the
+     * BEC compound amplifier (authority+bait) fires when combined with
+     * sender impersonation. For standalone detection these need a second
+     * signal; see FAKE_ALERT_WORDS for the standalone-detectable variants. */
+    "future payments should be made to", "all future payments",
+    "please update your banking", "update your payment records",
     /* Real-estate closing wire fraud (BEC variant — title company impersonation).
      * "Wire instructions have changed" is the defining phrase; attackers
      * intercept closing emails and redirect funds to their accounts.       */
@@ -461,8 +468,21 @@ static const char *FAKE_ALERT_WORDS[] = {
     "tell me the code sent to you", "tell me the code on your phone",
     "what is the code sent to your", "what code did you receive",
     "the code sent to your phone", "the verification code we sent",
+    "the code we just sent", "the code that was sent to you",
     "enter the code displayed on your screen",
     "enter that code into", "type the code into",
+    /* SIM swap vishing — carrier impersonation to port victim's number */
+    "migrating your sim card", "sim card migration",
+    "upgrading your sim", "sim card upgrade",
+    "transferring your number", "porting your number",
+    "number transfer request", "sim swap",
+    /* BEC / vendor payment redirect — standalone high-confidence phrases.
+     * Base weight of FAKE_ALERT (30) ensures these score above the <15
+     * zeroing threshold even without a second signal.                    */
+    "our bank account has changed", "our banking details have changed",
+    "our payment details have changed", "our account details have changed",
+    "new banking details", "updated banking details",
+    "please update our bank", "please update our payment",
     /* Japanese */
     "セキュリティ警告", "ウイルス検出", "不審なアクティビティ",
     "サポートに電話", "マイクロソフトからの警告",
