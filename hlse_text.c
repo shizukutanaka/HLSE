@@ -426,6 +426,41 @@ static const char *GROOMING_WORDS[] = {
     "whale accumulation", "whale buying",
     "buy before the pump", "buy before it moons",
     "100x potential", "1000x potential",
+    /* Pig-butchering late-stage exit scam — fake regulatory/tax requirements
+     * that the victim must pay before they can "withdraw" non-existent profits.
+     * Attackers invent plausible-sounding fees (AML compliance, tax clearance,
+     * deposit insurance) to extract more money from victims who are reluctant
+     * to abandon funds they believe they have earned.                      */
+    "withdrawal tax", "withdrawal fee required", "withdrawal fee of",
+    "tax fee to withdraw", "tax fee before withdrawal", "tax fee before you",
+    "compliance fee to", "anti-money laundering fee",
+    "aml fee", "aml clearance fee", "aml compliance fee",
+    "deposit insurance fee", "insurance clearance fee",
+    "tax clearance fee", "release tax", "clearance fee to release",
+    "clearance fee to withdraw", "fee to unlock your profits",
+    "fee to unlock your funds", "unlock your withdrawal",
+    "before you can withdraw", "before withdrawal is possible",
+    "pay before withdrawal", "pay before you can withdraw",
+    "regulatory requirement to withdraw", "required before you can withdraw",
+    /* Pig-butchering rapport-building openers — distinctive signals of the
+     * relationship-investment scam's early grooming phase.                 */
+    "crypto mentor", "investment mentor",
+    "my mentor showed me", "let me show you how i made",
+    "i can teach you to trade", "i can show you how to invest",
+    /* Social media "task" / likes scam — victim paid small amounts to
+     * like/follow/rate content, then gradually asked to deposit their
+     * own money on a fake platform to "unlock" higher-tier tasks.      */
+    "get paid to like", "paid to like", "paid to follow",
+    "earn per like", "like and earn", "earn by liking",
+    "social media tasks", "complete social media tasks",
+    "earn clicking", "earn by clicking",
+    "liking posts for pay", "rate products for pay",
+    "liking social media posts", "liking social media",
+    "like social media posts", "like and comment on posts",
+    "like videos for", "view and like",
+    /* Unrealistic income claims combined with "no experience" */
+    "earn extra cash from home", "make extra money from home",
+    "earn money from home today", "extra income from home",
     /* Crypto recovery scam — fraudsters target victims of previous crypto
      * theft by posing as "blockchain experts" who can recover lost funds for
      * an upfront fee. Classic advance-fee variant on a new audience.      */

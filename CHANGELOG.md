@@ -2,6 +2,22 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.97] — 2026-06-13
+
+### Security
+- **Text: pig-butchering exit scam / withdrawal fee fraud** (GAP-TEXT-PIGOUT): Added
+  `withdrawal tax`, `withdrawal fee of`, `withdrawal fee required`, `aml compliance fee`,
+  `aml fee`, `anti-money laundering fee`, `tax clearance fee`, `clearance fee to release`,
+  `fee to unlock your profits`, `before you can withdraw`, `before withdrawal is possible`
+  to GROOMING_WORDS. Pig-butchering fake-withdrawal messages improved from OK(0) to ALERT(40).
+- **Text: pig-butchering rapport-building opener** (GAP-TEXT-PIGOPEN): Added `crypto mentor`,
+  `investment mentor`, `my mentor showed me`, `let me show you how i made` to GROOMING_WORDS.
+  Pig-butchering "my crypto mentor taught me" message improved from OK(0) to ALERT(47).
+- **Text: social media "task" / likes scam** (GAP-TEXT-TASKSCAM): Added `liking social
+  media posts`, `social media tasks`, `get paid to like`, `like and earn`, `earn by
+  liking`, `liking posts for pay`, `earn extra cash from home` to GROOMING_WORDS.
+  "Earn $800 a day liking social media posts" improved from LOG(20) to ALERT(40).
+
 ## [0.9.96] — 2026-06-13
 
 ### Security
