@@ -666,6 +666,12 @@ static const char *FAKE_ALERT_WORDS[] = {
     /* Fake check deposit — "I'll send a check, cash it, wire the rest" */
     "cash the check and wire", "cash the check and send back",
     "deposit the check and send", "deposit the check and wire",
+    /* Sweepstakes / lottery advance-fee — "send $X to cover taxes and processing" */
+    "to cover taxes and", "cover taxes and processing",
+    "processing fee to claim", "processing fee to receive",
+    "to release your prize", "to claim your winnings",
+    "admin fee to", "administration fee to", "administrative fee to",
+    "fee to receive your", "fee to claim your",
     /* Japanese */
     "セキュリティ警告", "ウイルス検出", "不審なアクティビティ",
     "サポートに電話", "マイクロソフトからの警告",
@@ -718,6 +724,14 @@ static const char *FIN_ACTION_WORDS[] = {
     "can you paypal", "send via paypal", "pay via paypal",
     /* Investment action triggers */
     "invest now", "invest today", "invest with us",
+    /* Money mule recruitment — asking to use victim's account for transfers */
+    "use your account", "use your bank account",
+    "transfer to your account", "transfer into your account",
+    "transfer it to your account", "transfer them to your account",
+    "can i use your account", "can i use your bank",
+    "receive money in your account", "receive funds in your account",
+    "your account to receive", "your bank account to receive",
+    "put the money in your", "deposit the funds in your",
     /* Japanese */
     "送金", "振り込んで", "ギフトカードを買って",
     NULL
@@ -801,6 +815,10 @@ static const char *CALLBACK_PHISH_WORDS[] = {
     "registration will be suspended", "vehicle registration suspended",
     "final notice from the dmv", "dmv final notice",
     "outstanding traffic violation", "unpaid traffic ticket",
+    /* Fake meeting invite / calendar phishing (Teams, Zoom, Webex spoofing) */
+    "meeting invitation", "join the meeting", "join this meeting",
+    "join our secure meeting", "your meeting link",
+    "verify to join", "authenticate to join",
     /* Japanese callback/smishing */
     "折り返しお電話", "お電話ください", "佐川急便",
     "宅急便", "不在通知", "再配達",

@@ -206,6 +206,8 @@ static const char *PATH_PATTERNS[] = {
     /* Wallet-connect / wallet-drain phishing paths */
     "/connect-wallet", "/import-wallet", "/restore-wallet",
     "/sync-wallet", "/link-wallet", "/migrate-wallet",
+    /* Meeting / collaboration platform phishing (fake Teams, Zoom invite) */
+    "/join-meeting", "/secure-meeting", "/verify-meeting",
     /* Malware delivery paths (combined with suspicious TLD = strong signal) */
     "/setup", "/installer", "/update.exe", "/setup.exe",
     NULL
@@ -880,7 +882,7 @@ detect_security_hyphenation(const ParsedUrl *u, Verdict *v) {
      * security words.  Lower confidence (25) than the sec-word variant. */
     if (hyphens >= 1 && sec_count == 0) {
         for (i = 0; BRANDS[i] != NULL; i++) {
-            if (strlen(BRANDS[i]) >= 5 &&     /* avoid very short brands */
+            if (strlen(BRANDS[i]) >= 6 &&     /* avoid common short words */
                 brand_is_token_in_sld(sld, BRANDS[i])) {
                 add_reason(v, 25,
                     "Brand present in hyphenated domain — "
