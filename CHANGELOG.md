@@ -36,10 +36,22 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `@walletconnect/client`, `web3modal` (npm) and `web3`, `eth-account`,
   `eth-utils`, `web3py`, `solana`, `bitcoinlib` (pip). Wallet-drainer malware
   routinely ships as typosquats of these packages.
+- **Text: toll-road / DMV smishing detection** (GAP-TEXT-TOLL):
+  Added the FBI IC3 top-volume 2024-2025 smishing cluster (E-ZPass / FasTrak
+  / SunPass / The Toll Roads impersonation: `unpaid toll`, `outstanding
+  toll`, `toll balance`, `e-zpass`, `fastrak`, `sunpass`, `the toll roads`,
+  …) and the 2025 DMV/registration successor wave (`registration will be
+  suspended`, `dmv final notice`, `unpaid traffic ticket`) to the
+  Callback/TOAD/smishing signal. Previously an E-ZPass lure scored OK(0);
+  it now reaches ALERT(58), and a full toll lure with a payment URL reaches
+  BLOCK(71). A single benign toll-brand mention stays at LOG(15) — it only
+  escalates when combined with the urgency/payment/URL scam signature, so
+  legitimate account messages are not flagged.
 
 ### Changed
 - Version bumped from 0.9.92 to 0.9.93.
-- CLI integration tests: 90 → 92 (added ClickFix detection + FP guard).
+- CLI integration tests: 90 → 94 (ClickFix detection + FP guard, toll
+  smishing detection + FP guard).
 
 ## [0.9.92] — 2026-06-10
 

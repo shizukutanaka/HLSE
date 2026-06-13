@@ -491,6 +491,16 @@ static const char *CALLBACK_PHISH_WORDS[] = {
     "call to cancel", "call us to cancel", "call before", "call to dispute",
     "to unsubscribe call", "to opt out call", "call to stop",
     "call to avoid", "call to prevent charges",
+    /* Toll-road smishing — top-volume FBI IC3 campaign 2024-2025
+     * (E-ZPass / FasTrak / SunPass / The Toll Roads impersonation).      */
+    "unpaid toll", "outstanding toll", "toll balance", "toll payment",
+    "toll violation", "toll invoice", "settle your toll", "pay your toll",
+    "toll charge", "toll fee", "e-zpass", "ezpass", "fastrak", "sunpass",
+    "the toll roads", "tollroads", "unpaid toll charge",
+    /* DMV / vehicle registration smishing (2025 successor to toll wave) */
+    "registration will be suspended", "vehicle registration suspended",
+    "final notice from the dmv", "dmv final notice",
+    "outstanding traffic violation", "unpaid traffic ticket",
     /* Japanese callback/smishing */
     "折り返しお電話", "お電話ください", "佐川急便",
     "宅急便", "不在通知", "再配達",

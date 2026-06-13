@@ -310,6 +310,16 @@ assert data["hardening_band"] in ("hardened", "good", "fair", "weak")
     && check "ClickFix FP guard: legit Win+R IT instruction stays low" "0" "0" \
     || check "ClickFix FP guard: legit Win+R IT instruction stays low" "0" "1"
 
+# Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
+./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
+    && check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "0" \
+    || check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "1"
+
+# Toll FP guard: legit E-ZPass account mention without scam signature → low
+./hlse_core "Thank you for using E-ZPass. Your account balance is updated after your last trip." 2>&1 | grep -qE "^OK|^LOG" \
+    && check "toll FP guard: legit E-ZPass mention stays low" "0" "0" \
+    || check "toll FP guard: legit E-ZPass mention stays low" "0" "1"
+
 # ─── scan subcommand ────────────────────────────────────────────
 
 # Scan clean directory
