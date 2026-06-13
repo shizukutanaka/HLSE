@@ -203,6 +203,9 @@ static const char *PATH_PATTERNS[] = {
     "/forgot", "/password-reset",
     /* Crypto seed phrase / wallet draining */
     "/seed", "/mnemonic", "/recovery-phrase",
+    /* Wallet-connect / wallet-drain phishing paths */
+    "/connect-wallet", "/import-wallet", "/restore-wallet",
+    "/sync-wallet", "/link-wallet", "/migrate-wallet",
     /* Malware delivery paths (combined with suspicious TLD = strong signal) */
     "/setup", "/installer", "/update.exe", "/setup.exe",
     NULL
@@ -241,6 +244,9 @@ static const char *SECURITY_WORDS[] = {
     "duty", "fee",
     /* Tracking / delivery phishing lures: track-package.com, delivery-track.net */
     "track", "tracking", "delivery",
+    /* Crypto wallet-connect phishing lures: metamask-connect.com,
+     * ledger-connect.io, trustwallet-connect-wallet.com               */
+    "connect",
     NULL
 };
 
@@ -585,6 +591,10 @@ static const char *TRUSTED_HOSTS[] = {
     "docusign.com", "hellosign.com",
     /* Developer platforms — contain "verify", "auth" in paths */
     "vercel.com", "netlify.com",
+    /* Crypto wallets — legitimate wallet sites use /connect-wallet,
+     * /seed, /mnemonic in their real UIs; don't flag those.            */
+    "metamask.io", "ledger.com", "trezor.io",
+    "trustwallet.com", "phantom.app",
     NULL
 };
 
@@ -859,6 +869,22 @@ detect_security_hyphenation(const ParsedUrl *u, Verdict *v) {
                 add_reason(v, 35,
                     "Brand impersonation: '%s' hyphenated with security "
                     "term — real brand uses its own domain", BRANDS[i]);
+                break;
+            }
+        }
+    }
+
+    /* Brand present as a complete token in a hyphenated SLD even without a
+     * security word — covers mobile-app / wallet-connect phishing patterns
+     * like "metamask-io-app.com" that use app-store framing instead of
+     * security words.  Lower confidence (25) than the sec-word variant. */
+    if (hyphens >= 1 && sec_count == 0) {
+        for (i = 0; BRANDS[i] != NULL; i++) {
+            if (strlen(BRANDS[i]) >= 5 &&     /* avoid very short brands */
+                brand_is_token_in_sld(sld, BRANDS[i])) {
+                add_reason(v, 25,
+                    "Brand present in hyphenated domain — "
+                    "real '%s' does not use a hyphenated SLD", BRANDS[i]);
                 break;
             }
         }
@@ -1452,6 +1478,66 @@ hlse_scan(const char *input) {
                 if (tv.score > r.score) r.score = tv.score;
             }
             (void)suppress_text;
+        }
+
+        /* Open-redirect scan: if the URL contains a query parameter that
+         * itself holds an http/https URL (e.g. ?continue=, ?redirect=,
+         * ?url=, ?next=), scan that embedded URL too.  Attackers abuse
+         * legitimate redirect endpoints on trusted domains to bypass URL
+         * filters.  We do NOT suppress on trusted outer host — the outer
+         * host being legitimate is exactly what makes open-redirect abuse
+         * dangerous.                                                      */
+        {
+            const char *qs = strchr(input, '?');
+            if (qs) {
+                const char *ep = qs;
+                while ((ep = strstr(ep, "http")) != NULL) {
+                    if (ep == input) { ep += 4; continue; }
+                    if (strncmp(ep, "http://",  7) == 0 ||
+                        strncmp(ep, "https://", 8) == 0)
+                    {
+                        char redir[2048];
+                        int k = 0;
+                        while (ep[k] && ep[k] != ' ' && ep[k] != '\t' &&
+                               ep[k] != '&' && ep[k] != '#' &&
+                               ep[k] != '"' && ep[k] != '\'' &&
+                               k < (int)sizeof(redir) - 1) {
+                            redir[k] = ep[k]; k++;
+                        }
+                        redir[k] = '\0';
+                        if (k > 10 && strcmp(redir, input) != 0) {
+                            Verdict uv_r = check_url(redir);
+                            if (uv_r.score > 0) {
+                                int j2;
+                                for (j2 = 0; j2 < uv_r.n_reasons &&
+                                             r.n_reasons < 16; j2++) {
+                                    size_t csz =
+                                        sizeof(uv_r.reasons[0]) <
+                                        sizeof(r.reasons[0])
+                                        ? sizeof(uv_r.reasons[0])
+                                        : sizeof(r.reasons[0]);
+                                    memcpy(r.reasons[r.n_reasons],
+                                           uv_r.reasons[j2], csz);
+                                    r.n_reasons++;
+                                }
+                                if (r.n_reasons < 16) {
+                                    snprintf(r.reasons[r.n_reasons],
+                                             sizeof(r.reasons[0]),
+                                             "Open redirect to suspicious URL"
+                                             " — trusted domain abused as"
+                                             " redirect proxy");
+                                    r.n_reasons++;
+                                }
+                                r.score += uv_r.score;
+                                if (r.score > 100) r.score = 100;
+                            }
+                        }
+                        ep += k;
+                    } else {
+                        ep += 4;
+                    }
+                }
+            }
         }
     } else {
         TextVerdict tv = hlse_check_text(input);
