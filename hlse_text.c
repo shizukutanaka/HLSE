@@ -234,6 +234,15 @@ static const char *AUTHORITY_WORDS[] = {
     "interpol", "secret service", "homeland security", "federal reserve",
     "customs and border", "immigration enforcement",
     "attorney general",
+    /* IT helpdesk / corporate IT impersonation — BEC initial-access vector
+     * (attacker poses as internal IT to harvest AD credentials or MFA codes).
+     * Phrases are multi-word to avoid matching legitimate IT communication
+     * that doesn't pair with a credential/action request.                 */
+    "this is your it department", "this is it support", "this is it security",
+    "from your it department", "from it security", "from it support",
+    "your it helpdesk", "it helpdesk here", "it helpdesk team",
+    "corporate it team", "from the helpdesk", "from the it team",
+    "it service desk", "service desk here",
     /* Japanese */
     "警察", "税務署", "国税庁", "総務省", "裁判所", "検察", "警視庁",
     /* Korean */
@@ -384,6 +393,28 @@ static const char *FAKE_ALERT_WORDS[] = {
     "call our fraud department", "fraud department",
     "transaction you did not authorize", "charge you do not recognize",
     "charge you did not authorize", "charge you did not make",
+    /* MFA push-bombing / MFA fatigue (2023-2025, Lapsus$/Scattered Spider
+     * TTPs adopted by many threat actors). Attacker triggers repeated MFA
+     * push requests and/or contacts victim asking them to "just approve" one.
+     * The defining tell is an unsolicited request to approve an auth push
+     * — no legitimate IT team asks you to approve notifications by phone.  */
+    "approve the notification", "approve the push notification",
+    "approve the sign-in request", "approve the login request",
+    "approve the authentication request", "approve the mfa request",
+    "approve the two-factor request", "approve on your phone",
+    "just approve it", "just approve the", "click approve on your",
+    "press approve on your authenticator", "click approve in your",
+    "approve in microsoft authenticator", "approve in the authenticator app",
+    "will keep receiving requests until you approve",
+    "requests will stop when you approve",
+    /* OTP relay / reverse-OTP scam: attacker asks victim to read them the
+     * code that was actually triggered by the attacker's login attempt.   */
+    "read me the code", "read the code to me",
+    "tell me the code sent to you", "tell me the code on your phone",
+    "what is the code sent to your", "what code did you receive",
+    "the code sent to your phone", "the verification code we sent",
+    "enter the code displayed on your screen",
+    "enter that code into", "type the code into",
     /* Japanese */
     "セキュリティ警告", "ウイルス検出", "不審なアクティビティ",
     "サポートに電話", "マイクロソフトからの警告",
@@ -998,6 +1029,11 @@ hlse_check_text(const char *raw_text) {
                 add_text_reason(&v, 25,
                     "Amplifier: authority figure + wire transfer = "
                     "CEO-fraud pattern");
+            }
+            if (fired_authority && fired_bait) {
+                add_text_reason(&v, 20,
+                    "Amplifier: authority impersonation + credential/payment "
+                    "request = IT helpdesk or executive spear-phishing");
             }
             if (fired_secrecy && has_wire) {
                 add_text_reason(&v, 20,

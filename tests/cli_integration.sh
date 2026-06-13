@@ -320,6 +320,16 @@ assert data["hardening_band"] in ("hardened", "good", "fair", "weak")
     && check "toll FP guard: legit E-ZPass mention stays low" "0" "0" \
     || check "toll FP guard: legit E-ZPass mention stays low" "0" "1"
 
+# MFA push-bombing: "just approve the notification" → ALERT+
+./hlse_core "I keep getting login requests, just approve the notification on your phone to stop them" 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
+    && check "MFA fatigue: approve-notification push-bombing → ALERT+" "0" "0" \
+    || check "MFA fatigue: approve-notification push-bombing → ALERT+" "0" "1"
+
+# IT-helpdesk impersonation + password request → ALERT+
+./hlse_core "This is your IT helpdesk. We need your username and current password to reset your AD account." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
+    && check "IT helpdesk impersonation + credential harvest → ALERT+" "0" "0" \
+    || check "IT helpdesk impersonation + credential harvest → ALERT+" "0" "1"
+
 # ─── scan subcommand ────────────────────────────────────────────
 
 # Scan clean directory
