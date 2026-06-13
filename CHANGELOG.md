@@ -5,6 +5,23 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [1.0.2] — 2026-06-13
 
 ### Security
+- **Text: CJK account-credential phishing** (GAP-TEXT-CJK): the Japanese /
+  Korean / Chinese wordlists covered the emotional/authority scams (ore-ore
+  fraud, tax-authority impersonation) but had **no account-credential phishing
+  vocabulary** — so the highest-volume global attack class (bank / e-commerce
+  "your account was accessed, verify now") scored OK(0) in those languages while
+  the identical English lure scored ALERT/BLOCK. Added account-alert phrasings to
+  FAKE_ALERT_WORDS (JP `口座が不正利用`/`アカウントが停止されました`, CN
+  `账户异常`/`账户将被冻结`, KR `계정이 정지`/`비정상적인 로그인`) and
+  payment/credential-update asks to BAIT_WORDS (JP `支払い情報を更新`/`本人確認を完了`,
+  CN `验证身份`/`更新支付信息`, KR `본인 인증`/`결제 정보`).
+  - 三井住友銀行「口座が不正利用…至急ご確認」: OK(0) → ALERT(50)
+  - アマゾンプライム「自動更新に失敗…支払い情報を更新」: OK(0) → LOG(32)
+  - Korean「계정이 일시 정지…본인 인증」: OK(0) → ALERT(42)
+  - Chinese「账户存在异常活动…验证身份…账户将被冻结」: OK(0) → BLOCK(77)
+  - FP-clean: benign CJK (meeting reminders, order confirmations, in-branch ID
+    checks) stay SAFE; legitimate payment-update *confirmations* score the same
+    mild LOG(24) as their English equivalents (cross-language parity).
 - **Text: prospective consequence-threat phishing** (GAP-TEXT-THREAT): account
   phishing manufactures urgency by threatening a FUTURE loss ("your account will
   be suspended … or lose access to your funds"). The engine detected the urgency

@@ -223,6 +223,16 @@ static const char *BAIT_WORDS[] = {
     "パスワード", "暗証番号", "暗証番号をご入力", "クレジットカード", "銀行口座", "振込",
     "ビットコイン", "仮想通貨", "ギフトカード", "アマゾンギフト", "還付金", "返金",
     "本日中に", "本人確認",
+    /* Japanese payment/credential update asks — subscription & bank phishing */
+    "支払い情報を更新", "支払い情報の更新", "お支払い情報を更新",
+    "カード情報を更新", "アカウント情報を更新", "自動更新に失敗",
+    "本人確認を完了", "情報を再度ご入力", "ログイン情報",
+    /* Chinese payment/credential update asks */
+    "验证身份", "支付信息", "更新支付信息", "点击链接验证",
+    "银行卡信息", "验证您的身份", "确认您的身份",
+    /* Korean payment/credential update asks */
+    "본인 인증", "본인인증", "결제 정보", "결제 정보를 업데이트",
+    "카드 정보", "신분 확인",
     /* Chinese */
     "密码", "银行卡", "礼品卡", "比特币",
     /* Korean */
@@ -705,6 +715,20 @@ static const char *FAKE_ALERT_WORDS[] = {
     /* Japanese */
     "セキュリティ警告", "ウイルス検出", "不審なアクティビティ",
     "サポートに電話", "マイクロソフトからの警告",
+    /* Japanese account-phishing alerts — bank/e-commerce credential lures.
+     * Highest-volume attack class in JP; previously only English was covered. */
+    "口座が不正利用", "不正利用された可能性", "不正に利用された",
+    "不正アクセスがありました", "第三者によるアクセス",
+    "アカウントが停止されました", "アカウントが一時停止",
+    "アカウントがロックされました", "異常なログイン", "異常なアクセス",
+    "セキュリティ上の理由により", "アカウントを保護するため",
+    /* Chinese account-phishing alerts */
+    "账户异常", "异常活动", "账户将被冻结", "账户被冻结",
+    "账户已被锁定", "检测到异常登录", "检测到异常活动",
+    "您的账户存在", "账户存在风险",
+    /* Korean account-phishing alerts */
+    "계정이 정지", "계정이 일시 정지", "계정이 잠겼습니다",
+    "비정상적인 로그인", "의심스러운 활동", "비정상적인 활동",
     NULL
 };
 
