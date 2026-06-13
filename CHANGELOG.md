@@ -28,6 +28,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `outlook.microsoft.com` no longer mis-flagged as subdomain spoofing (only exempt
   when the registrable parent is itself trusted and there is no extra nesting —
   `paypal.com.google.com` still fires).
+- **URL: a brand's own `<brand>.com` is canonical** (GAP-URL-OWNDOMAIN): added
+  `is_own_brand_dotcom()` — when the registrable SLD exactly equals a known brand
+  and the host ends in `.com`, single phishing-path matches no longer raise the
+  score (the trademark holder owns its own `.com`). Scales to every brand without
+  a per-brand map; `sld_label()` returns the true registrable SLD so the nested
+  decoy `paypal.com.evil.com` (SLD `evil`) is correctly excluded.
+  - `www.slack.com/signin`, `www.dropbox.com/login`, `paypal.com/signin`:
+    LOG(15) → OK(0)
+  - Impostors unaffected: `paypal.xyz/login` LOG(35), `paypal-verify.com/signin`
+    BLOCK(70), `g00gle.com/login` BLOCK(65), `paypal.com.evil.com/signin` BLOCK(60).
 - **URL: hyphenated login-path variants**: added `/sign-in` and `/log-in` to
   `PATH_PATTERNS` (the existing `/signin`, `/login` did not match the hyphenated
   spellings used by phishing kits).

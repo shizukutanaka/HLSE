@@ -193,9 +193,9 @@ static const char *BAIT_WORDS[] = {
     "pay deposit to secure", "pay a deposit to reserve",
     "security deposit via", "send security deposit",
     "security deposit by wire", "security deposit by bank",
-    /* Advance-fee "unlock funds" language: romance and 419 variant.
-     * Keep only the shorter phrase — the longer "to unlock the funds"
-     * is a superset so both would double-count on the same occurrence. */
+    /* Advance-fee "unlock/release funds" language — dual-use with legitimate
+     * escrow finance, so kept in BAIT where a lone occurrence is zeroed; it
+     * only contributes when a second scam signal co-occurs.               */
     "unlock the funds", "release the money", "before the funds can be",
     /* Tax authority phishing — HMRC / IRS / CRA / ATO impersonation */
     "tax refund", "tax rebate", "unclaimed tax refund", "tax return is ready",

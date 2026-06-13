@@ -625,13 +625,34 @@ is_trusted_host(const char *host) {
     return 0;
 }
 
+/* Returns 1 if the registrable domain is exactly "<brand>.com" — i.e. the
+ * brand's own canonical domain, which the trademark holder owns. A brand is
+ * never impersonated on its *own* "<brand>.com"; the danger is always a
+ * different registrable domain (paypal.xyz, paypal-verify.com) or a
+ * confusable (g00gle.com). sld_label() returns the true registrable SLD, so
+ * a nested decoy like "paypal.com.evil.com" yields SLD "evil" (not a brand)
+ * and is correctly excluded. Scales to every brand without a per-brand map. */
+static int
+is_own_brand_dotcom(const char *host) {
+    char sld_buf[MAX_HOST];
+    const char *sld;
+    int i;
+    if (!ends_with(host, ".com")) return 0;
+    sld = sld_label(host, sld_buf, sizeof(sld_buf));
+    if (!sld) return 0;
+    for (i = 0; BRANDS[i] != NULL; i++) {
+        if (strcmp(sld, BRANDS[i]) == 0) return 1;
+    }
+    return 0;
+}
+
 /* 3. Phishing path patterns. */
 static void
 detect_phishing_path(const ParsedUrl *u, Verdict *v) {
     int i;
     int matches = 0;
     char first[64];
-    int trusted = is_trusted_host(u->host);
+    int trusted = is_trusted_host(u->host) || is_own_brand_dotcom(u->host);
     first[0] = '\0';
 
     for (i = 0; PATH_PATTERNS[i] != NULL; i++) {
