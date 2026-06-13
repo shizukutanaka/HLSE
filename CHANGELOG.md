@@ -28,6 +28,9 @@ the in- or out-of-distribution corpus.
   list from 13 to ~50: added Citi/US Bank/Capital One/PNC, Cash App/Zelle/
   Stripe/Square, Bybit/OKX/KuCoin/Crypto.com/Gate.io, Ledger/Trezor/Exodus/
   Trust Wallet/Phantom, Revolut/Wise/N26/ING, KR banks, and Alipay/WeChat Pay.
+- **Secrets: Google OAuth client secret** (GAP-SECRET-GOCSPX). Added the
+  `GOCSPX-` prefixed Google OAuth2 client secret to the pattern table (unique
+  prefix → ~zero FP) — ISOLATE(90).
 - **Secrets: bare Telegram bot tokens** (GAP-SECRET-TELEGRAM). A Telegram bot
   token (`<8-10 digit id>:<35 base64url chars>`) is a recognized
   secret-scanning target (TruffleHog/GitGuardian) but HLSE caught it only when

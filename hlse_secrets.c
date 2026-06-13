@@ -171,6 +171,10 @@ static const SecretPattern SECRET_PATTERNS[] = {
 
     /* Google */
     { "AIza",          4,  35, is_alnum_or_dash,   "Google API Key",        80 },
+    /* Google OAuth2 client secret — fixed "GOCSPX-" prefix, ~28-char body.
+     * The prefix is unique to Google, so false positives are essentially
+     * zero.                                                                */
+    { "GOCSPX-",       7,  28, is_alnum_or_dash,   "Google OAuth Client Secret", 90 },
 
     /* GitLab */
     { "glpat-",        6,  20, is_alnum_or_dash,   "GitLab Personal Access Token", 90 },

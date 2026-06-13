@@ -598,6 +598,11 @@ assert d["kind"] == "secret" and "findings" in d
     && check "secret: placeholder AWS secret NOT flagged" "0" "1" \
     || check "secret: placeholder AWS secret NOT flagged" "0" "0"
 
+# secret: Google OAuth client secret (GOCSPX- prefix)
+./hlse_core secret "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" 2>&1 | grep -qi "OAuth Client Secret" \
+    && check "secret: Google OAuth client secret → detected" "0" "0" \
+    || check "secret: Google OAuth client secret → detected" "0" "1"
+
 # secret: bare Telegram bot token (<8-10 digits>:<35 base64url>)
 ./hlse_core secret "7123456789:AAH1234567890abcdefghijklmnopqrstuvw" 2>&1 | grep -qi "Telegram" \
     && check "secret: bare Telegram bot token → detected" "0" "0" \
