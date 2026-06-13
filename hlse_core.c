@@ -236,6 +236,11 @@ static const char *SECURITY_WORDS[] = {
     "service",
     /* Fake notification/alert portals: apple-notification-center.com */
     "notification",
+    /* Delivery fee / customs-scam domain lures: fedex-duty.com, ups-fee.com,
+     * dhl-customs.com. Real carriers never put "fee" or "duty" in their SLD. */
+    "duty", "fee",
+    /* Tracking / delivery phishing lures: track-package.com, delivery-track.net */
+    "track", "tracking", "delivery",
     NULL
 };
 

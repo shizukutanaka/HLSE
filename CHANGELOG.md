@@ -2,6 +2,27 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.0] — 2026-06-13
+
+### Security
+- **URL: delivery/fee/duty/tracking added to SECURITY_WORDS** (GAP-URL-DELIVERY):
+  Added `duty`, `fee`, `track`, `tracking`, `delivery` to SECURITY_WORDS in
+  hlse_core.c. `fedex-duty.com`, `ups-fee.com`, `dhl-tracking.net`, and similar
+  delivery-fee phishing domains now correctly trigger brand+security_word compound
+  detection. `fedex-delivery.com` improved to ALERT(55).
+- **Text: customs/duty delivery smishing** (GAP-TEXT-CUSTOMS): Added `duty fee`,
+  `pay duty fee`, `customs charge`, `package held at customs`, `parcel held at
+  customs`, `shipment held at customs`, `held by customs` to CALLBACK_PHISH_WORDS.
+  Full FedEx duty-fee smishing with URL improved from OK(0) to ISOLATE(95).
+
+### Milestone
+- **Version 1.0.0**: Detection coverage now spans all major scam categories:
+  advance-fee (419, loan, crypto recovery), BEC (wire fraud, CEO fraud, real-estate),
+  callback/TOAD/vishing, delivery smishing, hitman hoax, FBI scareware, pump-and-dump,
+  pig-butchering (entry through exit), reshipping mule recruitment, utility cutoff,
+  romance stranded-abroad, social-media task scam, SIM swap, OTP relay, QR quishing,
+  subscription renewal BazarCall, overpayment fraud, and more.
+
 ## [0.9.99] — 2026-06-13
 
 ### Security
