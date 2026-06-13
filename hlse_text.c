@@ -88,6 +88,8 @@ static const char *URGENCY_WORDS[] = {
     "website will be taken down", "hosting will be suspended",
     "confirm within", "failure to respond",
     "account closed", "access suspended", "verify immediately",
+    "before it's gone", "before they're gone", "before it expires",
+    "spots are limited", "limited spots", "limited seats",
     /* Common phishing account-status phrases */
     "account has been limited", "account limited", "account has been restricted",
     "temporarily restricted", "access restricted", "account has been blocked",
@@ -201,7 +203,17 @@ static const char *BAIT_WORDS[] = {
     "estate of the late", "estate of my late", "estate of a late",
     "estate of the deceased", "funds of the late", "assets of the late",
     "the late mr", "the late mrs", "the late dr",
+    "my late client", "on behalf of my late", "on behalf of my client",
     "as the beneficiary of the estate",
+    /* 419 qualifier phrases — "you share the same surname" is the defining
+     * marker of the "next-of-kin" variant; near-zero legitimate use.     */
+    "you share the same surname", "you share the same last name",
+    "you share the same family name", "same surname as my late",
+    "may be entitled to", "you may be entitled to",
+    "passed away leaving", "passed away without a will",
+    "died without a will", "died intestate",
+    "unclaimed estate", "unclaimed assets", "unclaimed inheritance",
+    "the unclaimed sum", "the unclaimed funds",
     /* Japanese */
     "パスワード", "暗証番号", "暗証番号をご入力", "クレジットカード", "銀行口座", "振込",
     "ビットコイン", "仮想通貨", "ギフトカード", "アマゾンギフト", "還付金", "返金",
@@ -432,6 +444,12 @@ static const char *GROOMING_WORDS[] = {
     "usdt income", "usdt profit", "tether income",
     "transfer to the platform", "deposit to start",
     "minimum deposit", "proof of earnings",
+    /* AI trading bot / algorithm scam (2024-2025 high-volume) */
+    "trading bot", "ai trading", "trading algorithm",
+    "trading signal",
+    "i will share access", "share access to my",
+    "copy trading", "mirror trading",
+    "automated trading", "algo trading",
     /* Fake job / work-from-home scam openers */
     "no experience required", "work from home opportunity",
     "be your own boss", "earn from home",
