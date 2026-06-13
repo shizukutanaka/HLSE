@@ -186,6 +186,10 @@ static const char *BAIT_WORDS[] = {
      * overpayment back". Common in marketplace/job-offer scams.           */
     "send the remainder", "wire the overpayment", "wire the difference back",
     "deposit the check and send", "send back the excess",
+    /* Rental / housing scam deposit demand */
+    "send deposit via", "wire the deposit", "deposit to hold",
+    "pay deposit to secure", "pay a deposit to reserve",
+    "security deposit via", "send security deposit",
     /* Tax authority phishing — HMRC / IRS / CRA / ATO impersonation */
     "tax refund", "tax rebate", "unclaimed tax refund", "tax return is ready",
     "tax refund is pending", "your refund is ready", "claim your tax",
@@ -322,10 +326,26 @@ static const char *EMERGENCY_SCAM_WORDS[] = {
     "i am stuck in", "i'm stuck in", "stranded in",
     "stuck abroad", "stranded abroad",
     "my wallet was stolen", "my wallet got stolen", "my passport was stolen",
+    "i lost my wallet", "i lost my purse", "i lost my phone",
     "need money to return", "need money to come home", "need money to get home",
     "money for airfare", "money for a flight home", "pay for my flight home",
     "send me the money", "send me some money", "please send me money",
     "i will pay you back", "i will repay you", "i'll pay you back when i return",
+    "i'll pay you back tomorrow", "i'll pay you back as soon as",
+    "pay you back tomorrow", "pay you back as soon as", "i'll return it",
+    /* WhatsApp/SMS contact-substitution scam ("new number" impersonation) */
+    "i got a new number", "i have a new number", "i changed my number",
+    "got a new phone", "new phone save", "save my new number",
+    "please save this number", "please update my number",
+    /* Rental / real-estate fraud — attacker poses as a property owner who
+     * is "abroad" or "overseas" and demands a deposit via wire transfer or
+     * Western Union before the victim can view the property. The "overseas"
+     * story is the defining marker — legitimate landlords are local.       */
+    "owner is overseas", "owner is abroad", "owner is out of the country",
+    "owner is currently abroad", "owner is in another country",
+    "owner is on a mission", "i am currently abroad",
+    "i am overseas", "i am out of the country",
+    "i am on a mission trip", "working abroad",
     /* Hitman / murder-for-hire hoax — attacker claims to have been paid to
      * kill the victim; offers to "call off the deal" for a fee. Pure fraud;
      * any genuine threat would not be sent by email/SMS.                  */
@@ -401,10 +421,14 @@ static const char *GROOMING_WORDS[] = {
     /* Additional pig-butchering patterns 2024-2025 */
     "my mentor taught me", "my uncle works in finance",
     "i only share this with special people", "exclusive trading group",
-    "vip trading room", "vip signal group", "vip group",
+    "vip trading room", "vip signal group", "vip group", "vip tier",
     "share my profits", "share my trading", "my trading profits",
     "arbitrage opportunity", "yield farming opportunity",
-    "my portfolio grew", "monthly passive income",
+    "my portfolio grew", "monthly passive income", "monthly returns",
+    /* Investment-guarantee language — legally prohibited for real advisors */
+    "with no risk", "risk free", "zero risk",
+    "capital is fully protected", "capital is protected",
+    "principal is guaranteed", "investment is guaranteed",
     "usdt income", "usdt profit", "tether income",
     "transfer to the platform", "deposit to start",
     "minimum deposit", "proof of earnings",
@@ -469,9 +493,14 @@ static const char *GROOMING_WORDS[] = {
     "regulatory requirement to withdraw", "required before you can withdraw",
     /* Pig-butchering rapport-building openers — distinctive signals of the
      * relationship-investment scam's early grooming phase.                 */
-    "crypto mentor", "investment mentor",
+    "crypto mentor", "investment mentor", "trading mentor",
     "my mentor showed me", "let me show you how i made",
     "i can teach you to trade", "i can show you how to invest",
+    /* Investment group recruitment — pig-butchering Phase 0 (recruitment) */
+    "join our private group", "join our trading group", "join our crypto group",
+    "join our investment group", "private trading group", "private crypto group",
+    "private investment group", "vip trading group", "vip crypto group",
+    "vip investment group", "our trading community", "our investment community",
     /* Social media "task" / likes scam — victim paid small amounts to
      * like/follow/rate content, then gradually asked to deposit their
      * own money on a fake platform to "unlock" higher-tier tasks.      */
@@ -492,9 +521,15 @@ static const char *GROOMING_WORDS[] = {
     "recover your lost crypto", "recover your stolen crypto",
     "recover your lost bitcoin", "recover your stolen bitcoin",
     "crypto recovery specialist", "cryptocurrency recovery service",
-    "blockchain recovery expert", "crypto asset recovery",
+    "blockchain recovery expert", "blockchain recovery service",
+    "crypto asset recovery", "crypto recovery service",
     "trace and retrieve your", "retrieve your stolen funds",
     "recover funds from a scam", "recover scam funds",
+    /* Gerund forms — "recovering your" used to pose as a past success story */
+    "recovering your crypto", "recovering your bitcoin", "recovering your funds",
+    "recovering stolen crypto", "recovering lost crypto",
+    "i recovered my crypto", "i recovered my bitcoin", "i recovered my funds",
+    "help you recover your crypto", "help you recover your",
     /* Japanese */
     "投資してあげる", "必ず儲かる", "絶対に儲かる",
     "取引プラットフォーム", "出金手数料",
@@ -605,8 +640,14 @@ static const char *FAKE_ALERT_WORDS[] = {
      * and asks victim to wire back the difference. Near-zero legitimate use. */
     "more than the asking price", "more than your asking price",
     "wire the overpayment back", "wire the excess back",
-    "wire back the difference", "return the overpayment",
-    "send back the difference", "wire the extra back",
+    "wire back the difference", "wire the difference", "return the overpayment",
+    "send back the difference", "send back the extra", "wire the extra back",
+    "accidentally sent you", "accidentally transferred", "accidentally paid you",
+    "mistakenly sent you", "sent you by mistake", "paid you by mistake",
+    "overpaid you", "paid too much",
+    /* Fake check deposit — "I'll send a check, cash it, wire the rest" */
+    "cash the check and wire", "cash the check and send back",
+    "deposit the check and send", "deposit the check and wire",
     /* Japanese */
     "セキュリティ警告", "ウイルス検出", "不審なアクティビティ",
     "サポートに電話", "マイクロソフトからの警告",
@@ -626,10 +667,13 @@ static const char *RANSOM_WORDS[] = {
     "darknet", "dark web", "data leak site",
     "decryption tool", "restore your files",
     /* Sextortion / webcam extortion (2023-2025 high-volume campaigns) */
-    "i have footage of you", "recorded you",
+    "i have footage of you", "i have a video of you", "i have photos of you",
+    "recorded you", "i recorded you",
     "i activated your webcam", "your camera was hacked",
     "watching adult content", "watching explicit",
-    "will send this video to your contacts",
+    "what you've been watching", "what you have been watching",
+    "will send this video to your contacts", "will send this to your contacts",
+    "send this to all your contacts", "send it to all your contacts",
     "will share this recording", "send bitcoin or i will send",
     "i have your browsing history", "i installed malware on your",
     "watching you through your webcam", "through your webcam",
@@ -652,7 +696,10 @@ static const char *FIN_ACTION_WORDS[] = {
     "wire money", "pay now", "pay immediately",
     "buy gift cards", "purchase gift cards", "get gift cards",
     "send bitcoin", "send crypto", "send eth",
-    "cash app", "cashapp", "venmo", "apple pay",
+    "cash app", "cashapp", "venmo", "apple pay", "paypal me",
+    "can you paypal", "send via paypal", "pay via paypal",
+    /* Investment action triggers */
+    "invest now", "invest today", "invest with us",
     /* Japanese */
     "送金", "振り込んで", "ギフトカードを買って",
     NULL
