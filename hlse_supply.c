@@ -38,6 +38,42 @@ dl_distance(const char *a, const char *b) {
     return hlse_edit_distance(a, b);
 }
 
+/* Map common ecosystem aliases to the canonical registry label used in
+ * REGISTRIES ("pip", "npm", "cargo", "go", "gem"). Users say "pypi" or
+ * "python" for pip, "crates" for cargo, "rubygems" for gem, etc. — and the
+ * CLI help itself advertises "pypi".
+ *
+ * Returns the canonical label, or NULL when the alias is unknown. A NULL
+ * result makes the caller scan ALL registries: a security check must never
+ * silently pass just because the caller spelled the ecosystem differently
+ * than the internal label (that would be a false-negative — the user thinks
+ * they checked the package and got a clean result). */
+static const char *
+canonical_ecosystem(const char *eco) {
+    char low[32];
+    size_t i;
+    if (!eco || !eco[0]) return NULL;       /* unspecified → scan all       */
+    for (i = 0; eco[i] && i < sizeof(low) - 1; i++) {
+        char c = eco[i];
+        low[i] = (c >= 'A' && c <= 'Z') ? (char)(c + 32) : c;
+    }
+    low[i] = '\0';
+
+    if (!strcmp(low, "pip")    || !strcmp(low, "pypi")   ||
+        !strcmp(low, "python") || !strcmp(low, "pip3")   ||
+        !strcmp(low, "pypi.org"))                          return "pip";
+    if (!strcmp(low, "npm")    || !strcmp(low, "node")   ||
+        !strcmp(low, "nodejs") || !strcmp(low, "yarn")   ||
+        !strcmp(low, "pnpm")   || !strcmp(low, "npmjs"))   return "npm";
+    if (!strcmp(low, "cargo")  || !strcmp(low, "crates") ||
+        !strcmp(low, "crates.io") || !strcmp(low, "rust"))  return "cargo";
+    if (!strcmp(low, "go")     || !strcmp(low, "golang") ||
+        !strcmp(low, "gomod")  || !strcmp(low, "go.mod"))   return "go";
+    if (!strcmp(low, "gem")    || !strcmp(low, "rubygems") ||
+        !strcmp(low, "ruby")   || !strcmp(low, "bundler"))  return "gem";
+    return NULL;                            /* unknown → fail safe, scan all */
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
  * S1: Package Typosquatting Detection
  *
@@ -212,19 +248,22 @@ hlse_check_package(const char *pkg_name, const char *ecosystem) {
     PackageVerdict v;
     char norm[128];
     int ri;
+    const char *eco_canon;
 
     memset(&v, 0, sizeof(v));
 
     if (!pkg_name || !pkg_name[0]) return v;
     normalize_pkg_name(pkg_name, norm, sizeof(norm));
+    eco_canon = canonical_ecosystem(ecosystem);
 
     for (ri = 0; REGISTRIES[ri].name; ri++) {
         const char *const *pkgs;
         int pi;
 
-        /* Filter by ecosystem if specified */
-        if (ecosystem && ecosystem[0] &&
-            strcmp(ecosystem, REGISTRIES[ri].name) != 0)
+        /* Filter by ecosystem when the caller named a recognized one. An
+         * unrecognized alias yields eco_canon == NULL → scan every registry
+         * (fail safe) rather than silently matching nothing.              */
+        if (eco_canon && strcmp(eco_canon, REGISTRIES[ri].name) != 0)
             continue;
 
         pkgs = REGISTRIES[ri].packages;

@@ -5,6 +5,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [1.0.2] — 2026-06-13
 
 ### Security
+- **Supply-chain: ecosystem-alias false-negative** (BUG-PKG-ECOSYSTEM): the
+  package typosquat check filtered registries by an exact string match against
+  internal labels (`pip`, `npm`, `cargo`, `go`, `gem`), but the CLI help and
+  every user's mental model use registry names like **`pypi`**. Running
+  `package reqeusts pypi` matched *zero* registries and returned **OK** — a
+  silent false-negative on a security check: the user believes they vetted the
+  package and got a clean result, then installs the malware. Added
+  `canonical_ecosystem()` aliasing (`pypi`/`python`/`pip3` → pip,
+  `node`/`nodejs`/`yarn`/`pnpm` → npm, `crates`/`crates.io`/`rust` → cargo,
+  `golang` → go, `rubygems`/`ruby`/`bundler` → gem). An **unrecognized**
+  ecosystem now scans *all* registries (fail safe) instead of matching nothing.
+  - `package reqeusts pypi`: OK(0) → BLOCK(70) ("1 edit from 'requests'")
+  - `package numpyy python`, `package djngo pip`, `package raisl rubygems`: now
+    correctly BLOCK; `package reqeusts <unknown>` fails safe to BLOCK.
 - **Text: CJK account-credential phishing** (GAP-TEXT-CJK): the Japanese /
   Korean / Chinese wordlists covered the emotional/authority scams (ore-ore
   fraud, tax-authority impersonation) but had **no account-credential phishing
