@@ -1503,6 +1503,126 @@ hlse_scan(const char *input) {
                 }
             }
         }
+
+        /* Bare-domain scan: find "domain.tld[/path]" without a scheme
+         * prefix, synthesise "https://...", run URL detection.
+         * Group A (inherently suspicious TLDs): scan always (≥3-char prefix).
+         * Group B (common TLDs): only when domain contains a hyphen —
+         * hallmark of lookalike / typosquat phishing.                   */
+        {
+#define BD_ALWAYS_N 8
+            static const char *const BD_TLDS[] = {
+                /* Group A — always scan (suspicious TLD) */
+                ".xyz", ".top", ".click", ".tk", ".pw", ".su", ".vip", ".icu",
+                /* Group B — require hyphen in domain */
+                ".com", ".net", ".org", ".io", ".cc", ".info", ".biz",
+                ".online", ".site", ".ru",
+                NULL
+            };
+            int wt;
+            for (wt = 0; BD_TLDS[wt]; wt++) {
+                const char *tld2    = BD_TLDS[wt];
+                size_t      tlen2   = strlen(tld2);
+                int         need_hy = (wt >= BD_ALWAYS_N);
+                const char *bp2     = input;
+                while ((bp2 = strstr(bp2, tld2)) != NULL) {
+                    unsigned char aft2 = (unsigned char)bp2[tlen2];
+                    /* TLD must end at path-sep, whitespace, or string end */
+                    if (aft2 && aft2 != '/' && aft2 != ' ' && aft2 != '\t' &&
+                        aft2 != '\n' && aft2 != '\r' && aft2 != ',' &&
+                        aft2 != '.' && aft2 != ')' && aft2 != '"' &&
+                        aft2 != '\'' && aft2 != '>' && aft2 != ']') {
+                        bp2 += tlen2;
+                        continue;
+                    }
+                    /* Walk backwards to domain start (domain chars only) */
+                    {
+                        const char *dom_s = bp2;
+                        while (dom_s > input) {
+                            unsigned char c2 = (unsigned char)*(dom_s - 1);
+                            if ((c2 >= 'a' && c2 <= 'z') ||
+                                (c2 >= 'A' && c2 <= 'Z') ||
+                                (c2 >= '0' && c2 <= '9') ||
+                                c2 == '-' || c2 == '.') {
+                                dom_s--;
+                            } else {
+                                break;
+                            }
+                        }
+                        /* Must start at a word boundary */
+                        if (dom_s > input) {
+                            unsigned char bef2 = (unsigned char)*(dom_s - 1);
+                            if ((bef2 >= 'a' && bef2 <= 'z') ||
+                                (bef2 >= 'A' && bef2 <= 'Z') ||
+                                (bef2 >= '0' && bef2 <= '9')) {
+                                bp2 += tlen2;
+                                continue;
+                            }
+                        }
+                        /* Skip already-schemed URLs handled above */
+                        if (dom_s >= input + 3 &&
+                            dom_s[-3] == ':' && dom_s[-2] == '/' && dom_s[-1] == '/') {
+                            bp2 += tlen2;
+                            continue;
+                        }
+                        /* Qualify: prefix length and hyphen requirement */
+                        {
+                            size_t prefix_len = (size_t)(bp2 - dom_s);
+                            int    has_hyph   = 0;
+                            size_t ki2;
+                            for (ki2 = 0; ki2 < prefix_len; ki2++) {
+                                if (dom_s[ki2] == '-') { has_hyph = 1; break; }
+                            }
+                            if (need_hy && !has_hyph) { bp2 += tlen2; continue; }
+                            if (!need_hy && prefix_len < 3U) { bp2 += tlen2; continue; }
+                        }
+                        /* Extend to include path */
+                        {
+                            const char *dom_e = bp2 + tlen2;
+                            while (*dom_e &&
+                                   *dom_e != ' '  && *dom_e != '\t' &&
+                                   *dom_e != '\n' && *dom_e != '\r' &&
+                                   *dom_e != ','  && *dom_e != ')'  &&
+                                   *dom_e != '"'  && *dom_e != '\'' &&
+                                   *dom_e != '>'  && *dom_e != ']'  &&
+                                   (size_t)(dom_e - dom_s) < 500U) {
+                                dom_e++;
+                            }
+                            /* Synthesise https:// URL and run check_url */
+                            {
+                                size_t dlen2 = (size_t)(dom_e - dom_s);
+                                if (dlen2 >= 4U && dlen2 + 9U < 2048U) {
+                                    char syn2[2048];
+                                    Verdict uv3;
+                                    memcpy(syn2, "https://", 8);
+                                    memcpy(syn2 + 8, dom_s, dlen2);
+                                    syn2[8 + dlen2] = '\0';
+                                    uv3 = check_url(syn2);
+                                    if (uv3.score > 0) {
+                                        int j3;
+                                        for (j3 = 0; j3 < uv3.n_reasons &&
+                                                      r.n_reasons < 16; j3++) {
+                                            size_t csz =
+                                                sizeof(uv3.reasons[0]) <
+                                                sizeof(r.reasons[0])
+                                                ? sizeof(uv3.reasons[0])
+                                                : sizeof(r.reasons[0]);
+                                            memcpy(r.reasons[r.n_reasons],
+                                                   uv3.reasons[j3], csz);
+                                            r.n_reasons++;
+                                        }
+                                        r.score += uv3.score;
+                                        if (r.score > 100) r.score = 100;
+                                    }
+                                }
+                            }
+                            bp2 = dom_e;
+                        }
+                    }
+                }
+            }
+#undef BD_ALWAYS_N
+        }
     }
 
     if (r.score > 100) r.score = 100;

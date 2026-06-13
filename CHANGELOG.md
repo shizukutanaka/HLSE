@@ -2,6 +2,23 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.1] — 2026-06-13
+
+### Security
+- **Text: bare-domain URL detection in messages** (GAP-TEXT-BAREDOMAIN): Extended
+  `hlse_scan()` to extract bare domains (no `http://`/`https://` scheme) from text
+  messages and run full URL analysis on them. Group A (inherently suspicious TLDs:
+  `.xyz`, `.top`, `.click`, `.tk`, `.pw`, `.su`, `.vip`, `.icu`) are always scanned.
+  Group B (common TLDs: `.com`, `.net`, `.org`, `.io`, etc.) are scanned when the
+  domain contains a hyphen (the hallmark of lookalike/typosquat domains).
+  - `"netflix.com-billing-update.net/pay"` in text: OK(0) → ISOLATE(93)
+  - `"accounts.google-security-check.com"` in text: OK(0) → ALERT(55)
+  - `"trustwallet-verify.io/confirm"` in text: LOG(27) → ISOLATE(97)
+  - `"paypal-update-verify.com/login"` in text: BLOCK(70) ✓
+  - `"microsoft-security-alerts.com"` in text: ISOLATE(85) ✓
+  - Legitimate domains (`amazon.com`, `google.com`, `zoom.us`, `wikipedia.org`)
+    correctly remain SAFE (no hyphen in common TLDs → not scanned).
+
 ## [1.0.0] — 2026-06-13
 
 ### Security
