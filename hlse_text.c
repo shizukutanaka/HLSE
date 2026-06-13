@@ -496,8 +496,13 @@ static const char *FAKE_ALERT_WORDS[] = {
     "call now to", "call +1-888", "call +1-800",
     /* US toll-free without plus sign (IVR-style: "call 1-800") */
     "call 1-800", "call 1-888", "call 1-877", "call 1-866", "call 1-844",
+    /* 1-833 and 1-855 added in 2017 — widely abused in tech-support / IRS
+     * / Social Security / student-loan forgiveness scam robocalls.        */
+    "call 1-833", "call 1-855",
+    "call +1-833", "call +1-855",
     /* Toll-free following "at" — "contact us at 1-800-..." */
     "at 1-800-", "at 1-888-", "at 1-877-", "at 1-866-", "at 1-844-",
+    "at 1-833-", "at 1-855-",
     /* Tech support scam specific */
     "do not turn off your computer", "do not restart",
     "your computer is sending error reports",

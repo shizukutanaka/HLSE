@@ -2,6 +2,16 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.98] — 2026-06-13
+
+### Security
+- **Text: 1-833 and 1-855 toll-free robocall prefixes** (GAP-TEXT-TOLLFREE): Added
+  `call 1-833`, `call 1-855`, `call +1-833`, `call +1-855`, `at 1-833-`, `at 1-855-`
+  to FAKE_ALERT_WORDS. These 2017-era toll-free prefixes are widely abused in
+  tech-support, SSA/Medicare, IRS, and student-loan-forgiveness scam robocalls.
+  Student loan forgiveness scam improved from LOG(20) to ALERT(50); SSA suspension
+  scam BLOCK(66); Medicare insurance fraud scam ALERT(55).
+
 ## [0.9.97] — 2026-06-13
 
 ### Security
