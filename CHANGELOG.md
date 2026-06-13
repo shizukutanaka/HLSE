@@ -28,6 +28,12 @@ the in- or out-of-distribution corpus.
   list from 13 to ~50: added Citi/US Bank/Capital One/PNC, Cash App/Zelle/
   Stripe/Square, Bybit/OKX/KuCoin/Crypto.com/Gate.io, Ledger/Trezor/Exodus/
   Trust Wallet/Phantom, Revolut/Wise/N26/ING, KR banks, and Alipay/WeChat Pay.
+- **Secrets: bare Telegram bot tokens** (GAP-SECRET-TELEGRAM). A Telegram bot
+  token (`<8-10 digit id>:<35 base64url chars>`) is a recognized
+  secret-scanning target (TruffleHog/GitGuardian) but HLSE caught it only when
+  it carried a `TELEGRAM_BOT_TOKEN=` env prefix. Added a structural check: a
+  colon with an 8–10 digit id before and ≥35 base64url chars after — ISOLATE.
+  FP-guarded so timestamps (`12:34:56`), ports (`:8080`), and ratios stay clean.
 - **Secrets: AWS credentials-file format missed entirely** (GAP-SECRET-AWSINI).
   The canonical `~/.aws/credentials` form uses lowercase keys with spaces
   around `=` (`aws_secret_access_key = wJal…`), but the env-pattern scan is

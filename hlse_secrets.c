@@ -610,6 +610,37 @@ hlse_scan_secrets(const char *text) {
                "Azure SAS token (sv/sig/se fields)");
     }
 
+    /* Telegram bot token — "<8-10 digits>:<35 base64url chars>". The numeric
+     * bot-id, the colon, and the 35-char secret are jointly distinctive
+     * (near-zero false positives: a bare port/time has far fewer trailing
+     * chars). Scan for a colon with a digit run before and a base64url run
+     * after.                                                              */
+    {
+        const char *c = text;
+        while ((c = strchr(c, ':')) != NULL) {
+            /* Count the digit run immediately before the colon. */
+            const char *d = c;
+            int digits = 0;
+            while (d > text && d[-1] >= '0' && d[-1] <= '9') { d--; digits++; }
+            /* Count the base64url run immediately after the colon. */
+            const char *a = c + 1;
+            int after = 0;
+            while ((*a >= 'A' && *a <= 'Z') || (*a >= 'a' && *a <= 'z') ||
+                   (*a >= '0' && *a <= '9') || *a == '-' || *a == '_') {
+                after++; a++;
+            }
+            /* The digit run must be the whole id (bounded by a non-digit or
+             * start) to avoid matching the tail of a longer number.        */
+            int bounded = (d == text || !(d[-1] >= '0' && d[-1] <= '9'));
+            if (bounded && digits >= 8 && digits <= 10 && after >= 35) {
+                sv_add(&v, 85, "TELEGRAM_BOT_TOKEN",
+                       "Telegram bot token (<id>:<35-char secret>)");
+                break;
+            }
+            c++;
+        }
+    }
+
     /* JWT bearer token — header.payload.signature, all base64url. The "eyJ"
      * prefix is base64 of '{"', which every JWT header begins with. The
      * three-segment dotted structure with base64url segments is JWT-specific

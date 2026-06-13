@@ -598,6 +598,16 @@ assert d["kind"] == "secret" and "findings" in d
     && check "secret: placeholder AWS secret NOT flagged" "0" "1" \
     || check "secret: placeholder AWS secret NOT flagged" "0" "0"
 
+# secret: bare Telegram bot token (<8-10 digits>:<35 base64url>)
+./hlse_core secret "7123456789:AAH1234567890abcdefghijklmnopqrstuvw" 2>&1 | grep -qi "Telegram" \
+    && check "secret: bare Telegram bot token → detected" "0" "0" \
+    || check "secret: bare Telegram bot token → detected" "0" "1"
+
+# secret FP guard: timestamps/ports must NOT be flagged as a Telegram token
+./hlse_core secret "Server on 192.168.1.1:8080 since 12:34:56 today" 2>&1 | grep -qi "Telegram" \
+    && check "secret: time/port NOT flagged as Telegram token" "0" "1" \
+    || check "secret: time/port NOT flagged as Telegram token" "0" "0"
+
 # email: display-name spoof detected from stdin
 printf 'From: Microsoft Support <hacker@gmail.com>\nSubject: Verify\n' \
     | ./hlse_core email --stdin 2>&1 | grep -qE "E1|microsoft|spoof|Display" \
