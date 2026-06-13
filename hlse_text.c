@@ -179,6 +179,10 @@ static const char *BAIT_WORDS[] = {
      * overpayment back". Common in marketplace/job-offer scams.           */
     "send the remainder", "wire the overpayment", "wire the difference back",
     "deposit the check and send", "send back the excess",
+    /* Tax authority phishing — HMRC / IRS / CRA / ATO impersonation */
+    "tax refund", "tax rebate", "unclaimed tax refund", "tax return is ready",
+    "tax refund is pending", "your refund is ready", "claim your tax",
+    "tax overpayment", "overdue tax", "outstanding tax",
     /* Japanese */
     "パスワード", "暗証番号", "暗証番号をご入力", "クレジットカード", "銀行口座", "振込",
     "ビットコイン", "仮想通貨", "ギフトカード", "アマゾンギフト", "還付金", "返金",
@@ -262,6 +266,14 @@ static const char *AUTHORITY_WORDS[] = {
     "your it helpdesk", "it helpdesk here", "it helpdesk team",
     "corporate it team", "from the helpdesk", "from the it team",
     "it service desk", "service desk here",
+    /* International tax authorities — HMRC/CRA/ATO impersonation campaigns
+     * are among the highest-volume smishing categories globally.
+     * Short acronyms ("cra", "ato") are omitted — too common as substrings;
+     * multi-word phrases and "hmrc" (unique, no common English substring) used. */
+    "hmrc", "inland revenue",
+    "canada revenue agency", "from the canada revenue",
+    "australian taxation office", "australian tax office",
+    "from the tax office", "from revenue",
     /* Japanese */
     "警察", "税務署", "国税庁", "総務省", "裁判所", "検察", "警視庁",
     /* Korean */
@@ -535,7 +547,7 @@ static const char *CALLBACK_PHISH_WORDS[] = {
     "reply stop to", "reply yes to", "txt stop to",
     "click to track your parcel", "your parcel is waiting",
     "delivery rescheduled", "delivery fee", "redelivery charge",
-    "customs fee required", "package on hold", "package is on hold",
+    "customs fee", "customs fee required", "package on hold", "package is on hold",
     "parcel is on hold", "parcel on hold",
     /* 2024-2025 delivery/USPS smishing variants */
     "package has been held", "your package could not be delivered",

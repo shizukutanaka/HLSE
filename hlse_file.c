@@ -184,8 +184,8 @@ static const char *EXECUTABLE_EXTS[] = {
     ".groovy",
     /* Windows ClickOnce / WPF browser application */
     ".application", ".xbap",
-    /* Windows Management / Script Component */
-    ".msc", ".wsc",
+    /* Windows Management / Script Component (msc duplicate-free) */
+    ".msc",
     /* PowerShell XML formats */
     ".ps1xml", ".cdxml",
     /* Internet Shortcut (can embed URLs that auto-execute) */
@@ -200,6 +200,16 @@ static const char *EXECUTABLE_EXTS[] = {
     ".rdp",
     /* Windows Task Scheduler job (XML form: .job used in older style) */
     ".job",
+    /* OneNote embedded-attachment execution (top phishing vector 2022-2023) */
+    ".one", ".onetoc2",
+    /* Disk-container MOTW bypass: ISO/IMG/VHD drop files without MOTW flag */
+    ".iso", ".img", ".vhd", ".vhdx",
+    /* Macro-enabled PowerPoint variants */
+    ".ppsm", ".potm",
+    /* Excel Internet Query — fetches and executes remote content when opened */
+    ".iqy",
+    /* Windows Theme/ThemeBleed (CVE-2023-38146): NTLM hash theft via UNC path */
+    ".theme", ".themepack",
     NULL
 };
 
@@ -480,13 +490,15 @@ hlse_check_file(const char *filepath) {
         }
     }
 
-    /* ZIP-based Office (docm, xlsm, pptm) — check for vbaProject.bin */
+    /* ZIP-based Office (docm/xlsm/pptm/ppsm/potm) — check for vbaProject.bin */
     if (magic_type && strcmp(magic_type, "ZIP") == 0) {
         char lower_ext[32];
         str_lower(ext, lower_ext, sizeof(lower_ext));
         if (strcmp(lower_ext, ".docm") == 0 ||
             strcmp(lower_ext, ".xlsm") == 0 ||
-            strcmp(lower_ext, ".pptm") == 0)
+            strcmp(lower_ext, ".pptm") == 0 ||
+            strcmp(lower_ext, ".ppsm") == 0 ||
+            strcmp(lower_ext, ".potm") == 0)
         {
             fv_add(&v, 30,
                 "F4: Macro-enabled Office document (%s)", ext);

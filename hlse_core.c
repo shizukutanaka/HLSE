@@ -229,6 +229,13 @@ static const char *SECURITY_WORDS[] = {
     "live",
     /* Action/confirmation words commonly used in phishing domains */
     "confirm", "manage", "protect",
+    /* Callback-phishing / order-cancellation fraud: amazon-order-cancel.com,
+     * paypal-cancel-order.com — the brand never hyphenates these in its SLD. */
+    "cancel", "order",
+    /* Brand-service impersonation: microsoft-service.com, apple-service-desk.com */
+    "service",
+    /* Fake notification/alert portals: apple-notification-center.com */
+    "notification",
     NULL
 };
 

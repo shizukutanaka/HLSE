@@ -240,6 +240,15 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* Vercel deploy hook / automation token */
     { "vercel_token_",  13, 20, is_alnum_or_dash,   "Vercel Token",          80 },
 
+    /* DigitalOcean Personal Access Token */
+    { "dop_v1_",         7, 64, is_alnum_or_dash, "DigitalOcean PAT",        85 },
+
+    /* Atlassian / Jira / Confluence API token (fixed prefix added in 2024) */
+    { "ATATT",            5, 32, is_alnum_or_dash, "Atlassian API Token",     85 },
+
+    /* 1Password service account token */
+    { "ops_v",            5, 20, is_alnum_or_dash, "1Password Service Account Token", 85 },
+
     { NULL, 0, 0, NULL, NULL, 0 }
 };
 
