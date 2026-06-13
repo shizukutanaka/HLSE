@@ -264,6 +264,18 @@ static const char *AUTHORITY_WORDS[] = {
     "interpol", "secret service", "homeland security", "federal reserve",
     "customs and border", "immigration enforcement",
     "attorney general",
+    /* Scareware / police ransomware / FBI-locker messages — standalone
+     * agency name combined with legal threat. "FBI" alone is too short;
+     * "fbi warning" (as a chunk) is specific enough to not substring-match
+     * common words. Same for "dea enforcement".                          */
+    "fbi warning", "fbi notice", "fbi alert",
+    "police warning", "police department notice", "police department alert",
+    "failure to comply", "failure to pay will result",
+    "flagged for illegal activity", "illegal activity on your",
+    "law enforcement has been notified", "you have been reported to",
+    /* DEA/Interpol drug-seizure impersonation scam */
+    "dea enforcement", "drug enforcement administration",
+    "narcotics department", "anti-narcotics",
     /* Real-estate / closing impersonation — wire-fraud BEC variant.
      * Attackers intercept closing email threads and spoof the title company
      * or escrow officer to redirect wire transfers.                       */
@@ -314,6 +326,13 @@ static const char *EMERGENCY_SCAM_WORDS[] = {
     "money for airfare", "money for a flight home", "pay for my flight home",
     "send me the money", "send me some money", "please send me money",
     "i will pay you back", "i will repay you", "i'll pay you back when i return",
+    /* Hitman / murder-for-hire hoax — attacker claims to have been paid to
+     * kill the victim; offers to "call off the deal" for a fee. Pure fraud;
+     * any genuine threat would not be sent by email/SMS.                  */
+    "hired to kill you", "been hired to kill", "contract on your life",
+    "hit has been placed on you", "i have been contracted to",
+    "i have been hired to harm", "murder for hire",
+    "paid to eliminate you", "assassin has been hired",
     /* Lottery/prize emergency variant */
     "claim your prize today or lose it", "prize expires today",
     "processing fee to claim", "shipping fee to claim",
@@ -347,6 +366,12 @@ static const char *SECRECY_WORDS[] = {
     "do not loop in", "without involving", "off the record",
     "strictly confidential", "highly confidential", "this is confidential",
     "private and confidential",
+    /* Hitman hoax / threat scam secrecy pressure — "do not contact police"
+     * also appears in grandparent scams, sextortion, and hitman hoaxes.   */
+    "do not contact the police", "do not call the police",
+    "do not involve the police", "do not contact law enforcement",
+    "do not report this", "do not go to the police",
+    "police should not be involved", "keep this away from police",
     /* Japanese */
     "内緒", "秘密にして", "誰にも言わないで", "他言無用", "内密に",
     NULL

@@ -2,6 +2,23 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.99] — 2026-06-13
+
+### Security
+- **Text: FBI/police scareware & hitman hoax detection** (GAP-TEXT-SCAREWARE):
+  Added `fbi warning`, `fbi notice`, `fbi alert`, `failure to comply`,
+  `flagged for illegal activity`, `law enforcement has been notified`,
+  `dea enforcement`, `narcotics department`, `police warning` to AUTHORITY_WORDS.
+  FBI ransomware/scareware improved from OK(0) to BLOCK(67).
+- **Text: hitman murder-for-hire hoax detection** (GAP-TEXT-HITMAN): Added
+  `hired to kill you`, `been hired to kill`, `contract on your life`,
+  `hit has been placed on you`, `assassin has been hired` to EMERGENCY_SCAM_WORDS.
+  Hitman hoax with Bitcoin demand improved from LOG(20) to ISOLATE(100).
+- **Text: "do not contact police" secrecy pressure** (GAP-TEXT-NOPOLICE): Added
+  `do not contact the police`, `do not call the police`, `do not report this`,
+  `do not go to the police`, `do not involve the police` to SECRECY_WORDS.
+  These phrases appear in hitman hoaxes, grandparent scams, and sextortion.
+
 ## [0.9.98] — 2026-06-13
 
 ### Security
