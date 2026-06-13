@@ -359,6 +359,12 @@ static const char *GROOMING_WORDS[] = {
     "crypto trader apprentice", "per day from home",
     "per week working from home", "per week from home",
     "earn per week", "weekly income from home",
+    /* Package reshipping mule recruitment — victim receives stolen goods and
+     * reships to attacker; often described as "international shipping agent" */
+    "receive packages and reship", "receive and reship",
+    "receive shipments and forward", "repack and ship",
+    "shipping agent position", "reshipping agent",
+    "process shipments from home", "forward packages to",
     /* Upfront-fee job fraud: victim pays for a "starter kit" or "equipment"
      * required to start the job; the job is fake and the payment is stolen.  */
     "starter kit", "starter kit required", "purchase your starter kit",
@@ -483,6 +489,12 @@ static const char *FAKE_ALERT_WORDS[] = {
     "our payment details have changed", "our account details have changed",
     "new banking details", "updated banking details",
     "please update our bank", "please update our payment",
+    /* Marketplace/check overpayment scam — attacker "accidentally" overpays
+     * and asks victim to wire back the difference. Near-zero legitimate use. */
+    "more than the asking price", "more than your asking price",
+    "wire the overpayment back", "wire the excess back",
+    "wire back the difference", "return the overpayment",
+    "send back the difference", "wire the extra back",
     /* Japanese */
     "セキュリティ警告", "ウイルス検出", "不審なアクティビティ",
     "サポートに電話", "マイクロソフトからの警告",
