@@ -168,6 +168,17 @@ static const char *BAIT_WORDS[] = {
     "new bank account", "new payment account",
     "change of bank details", "change bank details",
     "updated bank details", "updated payment details",
+    /* Real-estate closing wire fraud (BEC variant — title company impersonation).
+     * "Wire instructions have changed" is the defining phrase; attackers
+     * intercept closing emails and redirect funds to their accounts.       */
+    "wire instructions have changed", "wire instructions have been updated",
+    "new wire instructions", "updated wire instructions",
+    "change in wire instructions", "wiring instructions have changed",
+    "wire transfer instructions have changed",
+    /* Overpayment / check fraud — "send us a check, deposit it, wire the
+     * overpayment back". Common in marketplace/job-offer scams.           */
+    "send the remainder", "wire the overpayment", "wire the difference back",
+    "deposit the check and send", "send back the excess",
     /* Japanese */
     "パスワード", "暗証番号", "暗証番号をご入力", "クレジットカード", "銀行口座", "振込",
     "ビットコイン", "仮想通貨", "ギフトカード", "アマゾンギフト", "還付金", "返金",
@@ -234,6 +245,14 @@ static const char *AUTHORITY_WORDS[] = {
     "interpol", "secret service", "homeland security", "federal reserve",
     "customs and border", "immigration enforcement",
     "attorney general",
+    /* Real-estate / closing impersonation — wire-fraud BEC variant.
+     * Attackers intercept closing email threads and spoof the title company
+     * or escrow officer to redirect wire transfers.                       */
+    "from your title company", "your title company",
+    "from the title company", "the title company",
+    "escrow officer", "from your escrow officer",
+    "closing attorney", "settlement agent",
+    "from the escrow company", "your escrow company",
     /* IT helpdesk / corporate IT impersonation — BEC initial-access vector
      * (attacker poses as internal IT to harvest AD credentials or MFA codes).
      * Phrases are multi-word to avoid matching legitimate IT communication
@@ -327,6 +346,15 @@ static const char *GROOMING_WORDS[] = {
     "guaranteed loan approval", "instant loan approval",
     "bad credit ok", "bad credit accepted",
     "guaranteed approval", "approval guaranteed",
+    /* Crypto recovery scam — fraudsters target victims of previous crypto
+     * theft by posing as "blockchain experts" who can recover lost funds for
+     * an upfront fee. Classic advance-fee variant on a new audience.      */
+    "recover your lost crypto", "recover your stolen crypto",
+    "recover your lost bitcoin", "recover your stolen bitcoin",
+    "crypto recovery specialist", "cryptocurrency recovery service",
+    "blockchain recovery expert", "crypto asset recovery",
+    "trace and retrieve your", "retrieve your stolen funds",
+    "recover funds from a scam", "recover scam funds",
     /* Japanese */
     "投資してあげる", "必ず儲かる", "絶対に儲かる",
     "取引プラットフォーム", "出金手数料",
