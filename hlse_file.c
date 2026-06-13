@@ -190,6 +190,16 @@ static const char *EXECUTABLE_EXTS[] = {
     ".ps1xml", ".cdxml",
     /* Internet Shortcut (can embed URLs that auto-execute) */
     ".url",
+    /* Excel/Word add-ins — shellcode delivery vector via COM (2021-2023 spike) */
+    ".xll", ".wll",
+    /* Compiled HTML Help — executes embedded JScript via hhctrl.ocx */
+    ".chm",
+    /* Windows Script Component / Script Encoder */
+    ".sct", ".wsc",
+    /* Remote Desktop connection file — can auto-connect to attacker RDP */
+    ".rdp",
+    /* Windows Task Scheduler job (XML form: .job used in older style) */
+    ".job",
     NULL
 };
 

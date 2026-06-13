@@ -92,6 +92,8 @@ static const char *BRANDS[] = {
     "rakuten", "docomo", "softbank", "line", "paypay",
     "mufg", "smbc", "mizuho",
     "anthropic", "openai", "cloudflare", "stripe", "twilio",
+    /* AI assistants — rising phishing target (fake ChatGPT/Gemini login pages) */
+    "chatgpt", "gemini",
     /* Crypto exchanges — active phishing targets */
     "coinbase", "binance", "kraken", "coincheck",
     /* Logistics — package delivery phishing */
