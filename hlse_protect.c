@@ -159,6 +159,17 @@ static const char *RANSOM_NOTE_NAMES[] = {
     "hellcat_readme.txt",         /* HellCat */
     "blacklock_readme.txt",       /* BlackLock */
     "eldorado_readme.txt",        /* Eldorado */
+    /* ALPHV/BlackCat variants (2022-2024) */
+    "alphv_note.txt", "blackcat_note.txt",
+    "restore_my_files!.txt",
+    /* LockBit 3.0 variants */
+    "lockbit-readme.txt", "restore-my-files.txt",
+    /* 2024-2025 additional active families */
+    "nitrogen_readme.txt",        /* Nitrogen (2025) */
+    "arkana_readme.txt",          /* Arkana (2025, ex-ALPHV) */
+    "beast_readme.txt",           /* BEAST (2025) */
+    "safepay_readme.txt",         /* SafePay (2024) */
+    "play_readme.txt",            /* Play (2022+) */
     NULL
 };
 
