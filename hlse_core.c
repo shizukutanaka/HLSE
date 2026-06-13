@@ -1282,6 +1282,13 @@ check_url(const char *raw_url) {
             "web.app", "firebaseapp.com",
             "onrender.com", "railway.app",
             "surge.sh", "tiiny.site", "carrd.co",
+            /* Popular free website builders heavily abused for phishing lures */
+            "000webhostapp.com",  /* 000webhost — top free host for phishing */
+            "wixsite.com",        /* Wix website builder */
+            "weebly.com",         /* Weebly */
+            "godaddysites.com",   /* GoDaddy website builder */
+            "mystrikingly.com",   /* Strikingly */
+            "sites.google.com",   /* Google Sites (for subdomain checks) */
             /* Cloud dev/app hosting used for phishing lures */
             "azurewebsites.net", "cloudapp.net", "azurecontainer.io",
             "blob.core.windows.net",

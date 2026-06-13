@@ -352,6 +352,14 @@ static const char *GROOMING_WORDS[] = {
     "crypto trader apprentice", "per day from home",
     "per week working from home", "per week from home",
     "earn per week", "weekly income from home",
+    /* Upfront-fee job fraud: victim pays for a "starter kit" or "equipment"
+     * required to start the job; the job is fake and the payment is stolen.  */
+    "starter kit", "starter kit required", "purchase your starter kit",
+    "buy your equipment", "purchase the equipment",
+    "equipment will be reimbursed", "refunded after first paycheck",
+    "reimbursed on first paycheck", "reimbursed with first payment",
+    "pay for the materials", "training materials fee",
+    "equipment deposit required", "upfront equipment fee",
     /* Loan / credit fraud openers */
     "pre-approved for a loan", "pre-approved personal loan",
     "no credit check required", "no credit check needed",
@@ -551,6 +559,9 @@ static const char *CALLBACK_PHISH_WORDS[] = {
     "parcel is on hold", "parcel on hold",
     /* 2024-2025 delivery/USPS smishing variants */
     "package has been held", "your package could not be delivered",
+    "we attempted delivery", "attempted delivery of your",
+    "delivery attempt failed", "failed delivery attempt",
+    "we tried to deliver", "unable to deliver your",
     "customs clearance fee", "customs clearance charge",
     "customs duty", "import duty",
     "pay a small fee", "your delivery failed",
@@ -558,7 +569,13 @@ static const char *CALLBACK_PHISH_WORDS[] = {
     "click to pay the fee", "click to reschedule delivery",
     "delivery charge unpaid", "unpaid shipping fee",
     "update delivery address", "confirm your delivery",
-    /* Fake invoice / subscription cancellation callback (BazarCall/TOAD) */
+    /* Fake invoice / subscription renewal callback (BazarCall/TOAD).
+     * Amazon Prime / Norton / McAfee / GeekSquad subscription renewal scam is
+     * the #1 BazarCall variant — victim told to call to cancel renewal.     */
+    "subscription is up for renewal", "subscription renewal notice",
+    "up for renewal", "renewal has been processed",
+    "subscription has been renewed", "annual subscription renewal",
+    "auto-renewed", "membership renewal",
     "call to cancel", "call us to cancel", "call before", "call to dispute",
     "to unsubscribe call", "to opt out call", "call to stop",
     "call to avoid", "call to prevent charges",

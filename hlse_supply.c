@@ -587,6 +587,37 @@ hlse_check_paste(const char *text) {
                 "Compound: sudo + remote code = root-level pastejacking");
     }
 
+    /* P10: Persistence injection — SSH key, crontab, shell startup modification.
+     * Appending to ~/.ssh/authorized_keys or (cron|at)tab in a paste is a
+     * classic post-exploitation persistence vector; almost never legitimate
+     * in a clipboard context. Shell startup modification also covered.     */
+    {
+        int is_persist = 0;
+        const char *why = NULL;
+        if ((strstr(text, ".ssh/authorized_keys") &&
+             (strstr(text, ">>") || strstr(text, "echo "))) ||
+            strstr(text, "> ~/.ssh/authorized_keys")) {
+            is_persist = 1; why = "SSH authorized_keys injection";
+        } else if (strstr(text, "crontab") &&
+                   (strstr(text, "crontab -l") ||
+                    strstr(text, "(crontab") ||
+                    strstr(text, "| crontab") ||
+                    strstr(text, "|crontab"))) {
+            is_persist = 1; why = "crontab persistence injection";
+        } else if ((strstr(text, ".bashrc") || strstr(text, ".bash_profile") ||
+                    strstr(text, ".zshrc")  || strstr(text, ".profile")) &&
+                   (strstr(text, "curl ") || strstr(text, "wget ") ||
+                    strstr(text, "/dev/tcp") || strstr(text, "bash -i"))) {
+            is_persist = 1; why = "shell startup file backdoor injection";
+        }
+        if (is_persist) {
+            v.score += 50;
+            if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+                snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                    "P10: Persistence injection — %s", why);
+        }
+    }
+
     if (v.score > 100) v.score = 100;
     return v;
 }
