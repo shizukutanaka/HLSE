@@ -28,6 +28,17 @@ the in- or out-of-distribution corpus.
   list from 13 to ~50: added Citi/US Bank/Capital One/PNC, Cash App/Zelle/
   Stripe/Square, Bybit/OKX/KuCoin/Crypto.com/Gate.io, Ledger/Trezor/Exodus/
   Trust Wallet/Phantom, Revolut/Wise/N26/ING, KR banks, and Alipay/WeChat Pay.
+- **Secrets: AWS credentials-file format missed entirely** (GAP-SECRET-AWSINI).
+  The canonical `~/.aws/credentials` form uses lowercase keys with spaces
+  around `=` (`aws_secret_access_key = wJal…`), but the env-pattern scan is
+  case-sensitive (UPPERCASE only) and rejects any space after `=`, so the most
+  common real-world AWS secret-key leak format scored OK(0). The bare 40-char
+  base64 secret is too generic to flag alone, but anchored to a
+  case-insensitive `aws_secret_access_key` key it is high-confidence: match the
+  key with a new `ci_strstr`, skip `=`/quotes/whitespace, require ≥40 base64
+  chars, suppress placeholders — ISOLATE on a real key.
+  - `aws_secret_access_key = <40-char base64>`: OK(0) → flagged (AWS_SECRET_KEY)
+  - FP-guarded: `YOUR_SECRET_KEY_HERE_PLACEHOLDER…` and short values stay clean.
 - **Clipboard: Bitcoin Cash & Cosmos coverage** (GAP-CLIP-BCH-ATOM). The
   clipper-swap detector recognized 14 address formats but not two major coins:
   Bitcoin Cash (`bitcoincash:q…` CashAddr) and Cosmos Hub (`cosmos1…`). A

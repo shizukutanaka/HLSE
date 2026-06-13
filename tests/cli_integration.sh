@@ -588,6 +588,16 @@ assert d["kind"] == "secret" and "findings" in d
     && check "secret: unsigned 2-segment token NOT flagged" "0" "1" \
     || check "secret: unsigned 2-segment token NOT flagged" "0" "0"
 
+# secret: AWS credentials file format (lowercase keys + spaces around '=')
+./hlse_core secret "aws_secret_access_key = wJalrXUtnFEMItesting7bPxRfiCYzABCD1234567" 2>&1 | grep -qi "AWS secret" \
+    && check "secret: AWS creds-file (lowercase+spaces) → detected" "0" "0" \
+    || check "secret: AWS creds-file (lowercase+spaces) → detected" "0" "1"
+
+# secret FP guard: a placeholder AWS secret value must NOT be flagged
+./hlse_core secret "aws_secret_access_key = YOUR_SECRET_KEY_HERE_PLACEHOLDER_XXXXXXX" 2>&1 | grep -qi "AWS secret" \
+    && check "secret: placeholder AWS secret NOT flagged" "0" "1" \
+    || check "secret: placeholder AWS secret NOT flagged" "0" "0"
+
 # email: display-name spoof detected from stdin
 printf 'From: Microsoft Support <hacker@gmail.com>\nSubject: Verify\n' \
     | ./hlse_core email --stdin 2>&1 | grep -qE "E1|microsoft|spoof|Display" \

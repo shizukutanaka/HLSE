@@ -72,6 +72,19 @@ is_alnum_or_dash(char c) {
            (c >= '0' && c <= '9') || c == '-' || c == '_';
 }
 
+/* Case-insensitive substring search (returns pointer to first match in
+ * `hay`, or NULL). Needed because real-world credential files use mixed
+ * case for the same key (AWS_SECRET_ACCESS_KEY vs aws_secret_access_key). */
+static const char *
+ci_strstr(const char *hay, const char *needle) {
+    size_t nlen = strlen(needle);
+    if (nlen == 0) return hay;
+    for (; *hay; hay++) {
+        if (strncasecmp(hay, needle, nlen) == 0) return hay;
+    }
+    return NULL;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
  * Module 1: Secret / Credential Exposure Scanner
  *
@@ -544,6 +557,33 @@ hlse_scan_secrets(const char *text) {
         strstr(text, "\"private_key\"")) {
         sv_add(&v, 90, "GCP_SERVICE_ACCOUNT",
                "GCP service account JSON (type+private_key fields)");
+    }
+
+    /* AWS secret access key — the canonical `~/.aws/credentials` INI form
+     * uses lowercase keys with spaces around '=' (`aws_secret_access_key =
+     * wJal…`), which the case-sensitive, no-space env-pattern scan misses
+     * entirely. The bare 40-char base64 secret is too generic to flag alone,
+     * but anchored to its specific key name it is high-confidence. Match the
+     * key case-insensitively, skip '='/quotes/space, then require ≥40 base64
+     * chars (AWS secrets are exactly 40).                                  */
+    {
+        const char *k = ci_strstr(text, "aws_secret_access_key");
+        if (k) {
+            const char *val = k + strlen("aws_secret_access_key");
+            while (*val == ' ' || *val == '=' || *val == ':' ||
+                   *val == '"' || *val == '\'' || *val == '\t') val++;
+            {
+                const char *start = val;
+                int b64_run = 0;
+                while (is_base64(*val) && *val != '=') { b64_run++; val++; }
+                if (b64_run >= 40 &&
+                    !is_placeholder_secret(text, k, start, (size_t)b64_run)) {
+                    sv_add(&v, 90, "AWS_SECRET_KEY",
+                           "AWS secret access key (40-char base64 after "
+                           "'aws_secret_access_key')");
+                }
+            }
+        }
     }
 
     /* Azure storage connection string — AccountKey= followed by ≥40 base64
