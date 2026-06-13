@@ -578,6 +578,16 @@ assert d["kind"] == "secret" and "findings" in d
 ' && check "--json secret parseable" "0" "0" \
    || check "--json secret parseable" "0" "1"
 
+# secret: signed JWT bearer token detected
+./hlse_core secret "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" 2>&1 | grep -qi "JWT" \
+    && check "secret: signed JWT bearer token → detected" "0" "0" \
+    || check "secret: signed JWT bearer token → detected" "0" "1"
+
+# secret FP guard: unsigned 2-segment token must NOT be flagged as a JWT
+./hlse_core secret "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0" 2>&1 | grep -qi "JWT" \
+    && check "secret: unsigned 2-segment token NOT flagged" "0" "1" \
+    || check "secret: unsigned 2-segment token NOT flagged" "0" "0"
+
 # email: display-name spoof detected from stdin
 printf 'From: Microsoft Support <hacker@gmail.com>\nSubject: Verify\n' \
     | ./hlse_core email --stdin 2>&1 | grep -qE "E1|microsoft|spoof|Display" \

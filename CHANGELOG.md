@@ -28,6 +28,13 @@ the in- or out-of-distribution corpus.
   list from 13 to ~50: added Citi/US Bank/Capital One/PNC, Cash App/Zelle/
   Stripe/Square, Bybit/OKX/KuCoin/Crypto.com/Gate.io, Ledger/Trezor/Exodus/
   Trust Wallet/Phantom, Revolut/Wise/N26/ING, KR banks, and Alipay/WeChat Pay.
+- **Secrets: JWT bearer tokens** (GAP-SECRET-JWT). A leaked signed JWT
+  (`eyJ….eyJ….<sig>`) is a live bearer credential that GitHub/GitGuardian both
+  flag, but HLSE returned OK(0). Added detection keyed on the JWT-specific
+  shape: the `eyJ` prefix (base64 of `{"`, which every JWT header begins with)
+  plus three base64url segments separated by single dots, with minimum segment
+  lengths (header≥10, payload≥10, signature≥20) so unsigned 2-segment tokens
+  and stray `eyJ…` base64 fragments do not false-positive — BLOCK(60).
 - **Secrets: Azure storage AccountKey** (GAP-SECRET-AZURE). A raw Azure
   connection string (`...;AccountKey=<88-char base64>;...`) returned OK unless
   it happened to carry the `AZURE_STORAGE_CONNECTION_STRING=` env prefix. Added

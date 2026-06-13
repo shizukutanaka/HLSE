@@ -570,6 +570,46 @@ hlse_scan_secrets(const char *text) {
                "Azure SAS token (sv/sig/se fields)");
     }
 
+    /* JWT bearer token — header.payload.signature, all base64url. The "eyJ"
+     * prefix is base64 of '{"', which every JWT header begins with. The
+     * three-segment dotted structure with base64url segments is JWT-specific
+     * (near-zero false positives), and a signed JWT is a live bearer
+     * credential worth flagging.                                          */
+    {
+        const char *jp = text;
+        while ((jp = strstr(jp, "eyJ")) != NULL) {
+            const char *q = jp;
+            int seg = 0, seglen = 0, ok;
+            int seglens[3] = {0, 0, 0};
+            /* Walk up to 3 base64url segments separated by single dots. */
+            while (*q && seg < 3) {
+                char c = *q;
+                if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+                    (c >= '0' && c <= '9') || c == '-' || c == '_') {
+                    seglen++;
+                    q++;
+                } else if (c == '.') {
+                    seglens[seg++] = seglen;
+                    seglen = 0;
+                    q++;
+                } else {
+                    break;
+                }
+            }
+            if (seg == 2) { seglens[2] = seglen; seg = 3; } /* trailing sig */
+            /* Require all three segments present and non-trivial: a real
+             * signed JWT has header>=10, payload>=10, signature>=20.       */
+            ok = (seg == 3 && seglens[0] >= 10 && seglens[1] >= 10 &&
+                  seglens[2] >= 20);
+            if (ok) {
+                sv_add(&v, 60, "JWT",
+                       "JWT bearer token (header.payload.signature)");
+                break;
+            }
+            jp += 3;
+        }
+    }
+
     return v;
 }
 
