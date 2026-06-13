@@ -613,6 +613,19 @@ static const char *FAKE_ALERT_WORDS[] = {
     "subscription has expired", "license has expired",
     "license has been disabled", "license key disabled",
     "account has been suspended", "account suspended",
+    /* Prospective consequence-threat FUSED to an action demand — the bare
+     * future verb ("will be suspended/terminated/closed") is dual-use
+     * (services, HR, and banks all use it legitimately), so only the
+     * threat+action and consequence phrasings that are rare in benign comms
+     * are listed: "lose access to your funds", "verify now to avoid …".    */
+    "will be permanently disabled", "will be permanently deleted",
+    "will be locked permanently", "permanently lose access",
+    "lose access to your account", "lose access to your funds",
+    "to avoid suspension", "to avoid deactivation", "to prevent suspension",
+    "to avoid account suspension", "to avoid permanent suspension",
+    "verify within 24 hours", "verify within 48 hours",
+    "verify now to avoid", "confirm now to avoid",
+    "verify now or", "confirm now or", "verify immediately to avoid",
     "your ip has been flagged", "ip address flagged",
     "ip address has been flagged", "ip address has been banned",
     "ip address banned", "error code 0x",

@@ -5,6 +5,23 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [1.0.2] — 2026-06-13
 
 ### Security
+- **Text: prospective consequence-threat phishing** (GAP-TEXT-THREAT): account
+  phishing manufactures urgency by threatening a FUTURE loss ("your account will
+  be suspended … or lose access to your funds"). The engine detected the urgency
+  but never booked the threat as a signal, so textbook lures scored only LOG.
+  Added the phishing-specific threat+action phrasings to FAKE_ALERT_WORDS:
+  `lose access to your account/funds`, `to avoid suspension`, `verify within 24
+  hours`, `verify now to avoid`, `confirm now or`, `will be permanently
+  disabled`, etc. The **bare** future verbs (`will be suspended/terminated/
+  closed/deactivated`) are intentionally excluded — they are dual-use (SaaS
+  trials, HR offboarding, bank-inactivity notices all use them legitimately).
+  - `"…Coinbase account will be suspended … or lose access to your funds"`:
+    LOG(25) → ALERT(55)
+  - `"…PayPal account will be locked permanently unless you verify now to avoid
+    suspension"`: → BLOCK(61)
+  - FP-clean: legitimate trial/subscription/HR/bank "will be terminated/closed/
+    deactivated" notices all stay SAFE.
+
 - **URL: brand-impersonation cascade refactor + product-term fusion**
   (GAP-URL-BRANDFUSION): Reworked the brand-impersonation checks in
   `detect_security_hyphenation()` into a single mutually-exclusive cascade so a
