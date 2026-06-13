@@ -722,6 +722,80 @@ hlse_check_network(void) {
         }
     }
 
+    /* N2: Default-route integrity — multiple default routes with identical
+     * metric indicate routing injection (malware or rogue DHCP).
+     * Reads /proc/net/route; all values are hex little-endian.           */
+    {
+        FILE *fp = hlse_open_system_file("/proc/net/route");
+        if (fp) {
+            char line[256];
+            unsigned long gw_hex[8];
+            int gw_metric[8];
+            int gw_count = 0;
+            int i, j;
+
+            if (fgets(line, sizeof(line), fp)) { /* skip header */
+                while (fgets(line, sizeof(line), fp) && gw_count < 8) {
+                    char iface[16];
+                    unsigned long dest, gw, flags;
+                    int metric;
+                    unsigned long mask;
+                    /* Iface Dest Gateway Flags RefCnt Use Metric Mask ... */
+                    if (sscanf(line, "%15s %lx %lx %lx %*d %*d %d %lx",
+                               iface, &dest, &gw, &flags, &metric, &mask) == 6) {
+                        /* Default route: Destination==0, Flags has GATEWAY(0x2) */
+                        if (dest == 0UL && (flags & 0x2UL)) {
+                            gw_hex[gw_count]    = gw;
+                            gw_metric[gw_count] = metric;
+                            gw_count++;
+                        }
+                    }
+                }
+            }
+            fclose(fp);
+
+            /* Flag if multiple default routes share the lowest metric */
+            if (gw_count >= 2) {
+                int min_metric = gw_metric[0];
+                int dup = 0;
+                for (i = 1; i < gw_count; i++)
+                    if (gw_metric[i] < min_metric) min_metric = gw_metric[i];
+                for (i = 0; i < gw_count; i++)
+                    if (gw_metric[i] == min_metric) dup++;
+                if (dup >= 2) {
+                    /* Find the two conflicting gateway IPs */
+                    unsigned long ga = 0, gb = 0;
+                    for (i = 0; i < gw_count && ga == 0; i++)
+                        if (gw_metric[i] == min_metric) ga = gw_hex[i];
+                    for (j = i; j < gw_count && gb == 0; j++)
+                        if (gw_metric[j] == min_metric && gw_hex[j] != ga)
+                            gb = gw_hex[j];
+                    v.score += 55;
+                    if (v.n_reasons < HLSE_NET_MAX_REASONS) {
+                        if (gb) {
+                            /* Decode hex little-endian to dotted-decimal */
+                            snprintf(v.reasons[v.n_reasons++],
+                                sizeof(v.reasons[0]),
+                                "N2: ROUTING INJECTION — %d default routes share "
+                                "metric %d (possible MITM: gateways "
+                                "%lu.%lu.%lu.%lu vs %lu.%lu.%lu.%lu)",
+                                dup, min_metric,
+                                ga & 0xFF, (ga>>8) & 0xFF,
+                                (ga>>16) & 0xFF, (ga>>24) & 0xFF,
+                                gb & 0xFF, (gb>>8) & 0xFF,
+                                (gb>>16) & 0xFF, (gb>>24) & 0xFF);
+                        } else {
+                            snprintf(v.reasons[v.n_reasons++],
+                                sizeof(v.reasons[0]),
+                                "N2: ROUTING INJECTION — %d default routes share "
+                                "metric %d (possible MITM)", dup, min_metric);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /* N3: DNS resolver check */
     {
         FILE *fp = hlse_open_system_file("/etc/resolv.conf");
@@ -735,26 +809,39 @@ hlse_check_network(void) {
                     ns_count++;
                     /* Known safe DNS: major public resolvers + RFC-1918 +
                      * 127.0.0.53 (systemd-resolved), 149.112 (Quad9),
-                     * 208.67 (OpenDNS), 64.6 (Verisign), 185.228 (CleanBrowsing) */
+                     * 208.67 (OpenDNS), 64.6 (Verisign), 185.228 (CleanBrowsing),
+                     * 94.140 (AdGuard), 156.154 (Neustar/UltraDNS)             */
                     int is_known = (
                         strcmp(ip, "1.1.1.1") == 0 ||
                         strcmp(ip, "1.0.0.1") == 0 ||
                         strcmp(ip, "8.8.8.8") == 0 ||
                         strcmp(ip, "8.8.4.4") == 0 ||
                         strcmp(ip, "9.9.9.9") == 0 ||
-                        strcmp(ip, "149.112.112.112") == 0 || /* Quad9 secondary */
-                        strcmp(ip, "208.67.222.222") == 0 ||  /* OpenDNS */
+                        strcmp(ip, "149.112.112.112") == 0 ||
+                        strcmp(ip, "208.67.222.222") == 0 ||
                         strcmp(ip, "208.67.220.220") == 0 ||
-                        strcmp(ip, "64.6.64.6") == 0 ||       /* Verisign */
+                        strcmp(ip, "64.6.64.6") == 0 ||
                         strcmp(ip, "64.6.65.6") == 0 ||
-                        strcmp(ip, "185.228.168.9") == 0 ||   /* CleanBrowsing */
+                        strcmp(ip, "185.228.168.9") == 0 ||
                         strcmp(ip, "185.228.169.9") == 0 ||
+                        strcmp(ip, "94.140.14.14") == 0 ||  /* AdGuard */
+                        strcmp(ip, "94.140.15.15") == 0 ||
+                        strcmp(ip, "94.140.14.15") == 0 ||
+                        strcmp(ip, "156.154.70.1") == 0 ||  /* Neustar/UltraDNS */
+                        strcmp(ip, "156.154.71.1") == 0 ||
                         strcmp(ip, "127.0.0.1") == 0 ||
                         strcmp(ip, "127.0.0.53") == 0 ||
                         strcmp(ip, "::1") == 0 ||
+                        strcmp(ip, "2606:4700:4700::1111") == 0 || /* CF IPv6 */
+                        strcmp(ip, "2606:4700:4700::1001") == 0 ||
+                        strcmp(ip, "2001:4860:4860::8888") == 0 || /* Google IPv6 */
+                        strcmp(ip, "2001:4860:4860::8844") == 0 ||
+                        strcmp(ip, "2620:fe::fe") == 0 ||          /* Quad9 IPv6 */
+                        strcmp(ip, "2620:fe::9") == 0 ||
                         strncmp(ip, "10.", 3) == 0 ||
                         strncmp(ip, "192.168.", 8) == 0 ||
-                        strncmp(ip, "172.", 4) == 0);
+                        (strncmp(ip, "172.", 4) == 0 &&
+                         atoi(ip + 4) >= 16 && atoi(ip + 4) <= 31)); /* RFC-1918 only */
                     if (!is_known) {
                         v.score += 20;
                         if (v.n_reasons < HLSE_NET_MAX_REASONS)
@@ -782,12 +869,29 @@ hlse_check_network(void) {
         if (fp) {
             char line[512];
             const char *sensitive_domains[] = {
+                /* US banks */
                 "chase.com", "bankofamerica.com", "wellsfargo.com",
-                "paypal.com", "venmo.com", "coinbase.com", "binance.com",
-                "kraken.com", "blockchain.com", "metamask.io",
+                "citi.com", "usbank.com", "capitalone.com", "pnc.com",
+                /* Payment */
+                "paypal.com", "venmo.com", "cashapp.com", "zelle.com",
+                "stripe.com", "square.com",
+                /* Crypto exchanges */
+                "coinbase.com", "binance.com", "kraken.com",
+                "blockchain.com", "bitfinex.com", "bybit.com",
+                "okx.com", "kucoin.com", "crypto.com", "gate.io",
+                /* Crypto wallets / DeFi */
+                "metamask.io", "ledger.com", "trezor.io",
+                "exodus.com", "trustwallet.com", "phantom.app",
+                /* EU neobanks */
+                "revolut.com", "wise.com", "n26.com", "ing.com",
+                "transferwise.com",
                 /* JP banks */
                 "smbc.co.jp", "mufg.jp", "mizuhobank.co.jp",
                 "rakuten-bank.co.jp", "japanpost.jp",
+                /* KR banks */
+                "kbstar.com", "ibk.co.kr", "nonghyup.com", "shinhan.com",
+                /* CN payment */
+                "alipay.com", "pay.weixin.qq.com",
                 NULL
             };
 

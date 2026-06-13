@@ -237,6 +237,20 @@ static const char *BAIT_WORDS[] = {
     "密码", "银行卡", "礼品卡", "比特币",
     /* Korean */
     "비밀번호", "계좌번호", "기프트카드",
+    /* Spanish credential/payment update asks */
+    "verificar su identidad", "confirmar sus datos", "actualizar su información de pago",
+    "datos de su tarjeta", "información de su tarjeta", "datos bancarios",
+    "acceda a su cuenta", "restablecer su contraseña",
+    "cuenta ha sido suspendida", "cuenta será bloqueada",
+    "información de pago actualizada",
+    /* Portuguese credential/payment update asks */
+    "verificar sua identidade", "confirmar seus dados", "atualizar suas informações de pagamento",
+    "dados do cartão", "informações bancárias", "acesse sua conta",
+    "redefinir sua senha",
+    "informações de pagamento atualizadas",
+    /* Arabic credential/account security (suspension phrases live in FAKE_ALERT_WORDS) */
+    "تحقق من هويتك", "تأكيد هويتك", "تحديث معلومات الدفع",
+    "بيانات بطاقتك",
     NULL
 };
 
@@ -267,6 +281,16 @@ static const char *PRIZE_WORDS[] = {
     "당첨", "축하", "경품",
     /* Chinese */
     "中奖", "奖品", "恭喜",
+    /* Spanish lottery/prize scams */
+    "ha sido seleccionado", "ganador del sorteo", "millones de dólares en premios",
+    "premio en efectivo", "lotería internacional", "reclamar su premio",
+    "número ganador", "regalo especial para usted",
+    /* Portuguese lottery/prize scams */
+    "foi selecionado", "ganhou um prêmio", "sorteio internacional",
+    "parabéns você ganhou", "milhões de reais em prêmios",
+    "resgatar seu prêmio", "número vencedor",
+    /* Arabic prize/lottery */
+    "ربحت جائزة", "مليون دولار", "اليانصيب الدولي", "المطالبة بجائزتك",
     NULL
 };
 
@@ -413,6 +437,15 @@ static const char *EMERGENCY_SCAM_WORDS[] = {
     /* Japanese emergency scam (ore ore fraud / 振り込め詐欺) */
     "俺だよ俺", "息子だよ", "事故を起こした", "警察に捕まった",
     "今すぐ送金して", "誰にも言わないで", "弁護士から電話",
+    /* Spanish rental scam key-mailing + emergency fund transfer */
+    "le enviaremos las llaves por correo", "enviaremos las llaves por correo electrónico",
+    "pago del depósito por transferencia bancaria",
+    "depósito de seguridad por transferencia", "seguridad por transferencia bancaria",
+    "estoy en el extranjero", "estoy fuera del país",
+    /* Portuguese rental scam key-mailing */
+    "enviaremos as chaves pelo correio", "depósito de segurança por transferência",
+    "pagamento do depósito por transferência bancária",
+    "estou no exterior", "estou fora do país",
     NULL
 };
 
@@ -765,6 +798,21 @@ static const char *RANSOM_WORDS[] = {
     /* Japanese */
     "ファイルが暗号化", "復号キー", "身代金",
     "ウェブカメラを起動", "動画を送る",
+    /* Spanish account-alert / consequence-threat */
+    "cuenta ha sido suspendida", "cuenta será bloqueada permanentemente",
+    "acceso a su cuenta ha sido bloqueado", "actividad sospechosa en su cuenta",
+    "verificar urgentemente", "su cuenta está en riesgo",
+    "perderá acceso a su cuenta", "para evitar la suspensión",
+    "verificar en las próximas 24 horas", "confirmar ahora o su cuenta",
+    /* Portuguese account-alert / consequence-threat */
+    "conta foi bloqueada", "conta será encerrada permanentemente",
+    "atividade suspeita na sua conta", "verificar imediatamente",
+    "sua conta está em risco", "perderá acesso à sua conta",
+    "para evitar a suspensão", "verificar nas próximas 24 horas",
+    "confirmar agora ou sua conta",
+    /* Arabic account-alert */
+    "تم تعليق حسابك", "سيتم إغلاق حسابك", "نشاط مشبوه في حسابك",
+    "التحقق الفوري", "حسابك في خطر", "ستفقد الوصول إلى حسابك",
     NULL
 };
 
@@ -798,6 +846,18 @@ static const char *FIN_ACTION_WORDS[] = {
     "wire money to my account", "transfer money to my account",
     /* Japanese */
     "送金", "振り込んで", "ギフトカードを買って",
+    /* Spanish financial action phrases */
+    "enviar dinero", "transferir dinero", "hacer una transferencia",
+    "comprar tarjetas de regalo", "compre tarjetas de regalo",
+    "pago por western union", "pago por moneygram",
+    "envíe dinero ahora", "pague ahora",
+    "transferencia bancaria ahora", "transfiera fondos",
+    /* Portuguese financial action phrases */
+    "enviar dinheiro", "transferir dinheiro", "fazer uma transferência",
+    "comprar cartões presente", "compre cartões presente",
+    "pagamento via western union", "pagamento via moneygram",
+    "envie dinheiro agora", "pague agora",
+    "transferência bancária agora", "transfira fundos",
     NULL
 };
 

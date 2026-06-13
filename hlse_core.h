@@ -25,7 +25,7 @@
 #define HLSE_CORE_H
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.2"
+#define HLSE_VERSION "1.0.3"
 
 #ifdef __cplusplus
 extern "C" {

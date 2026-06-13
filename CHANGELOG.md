@@ -2,6 +2,73 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.3] — 2026-06-13
+
+Socratic probe of the five modules that had no dedicated coverage check this
+cycle (network, secrets-Azure, audit-persistence, email-auth, multilingual
+text). Each finding below started from a question — "why would this ever be
+legitimate?" — and closed a concrete gap without moving F1 off 1.000 on either
+the in- or out-of-distribution corpus.
+
+### Security
+- **Network: default-route integrity (N2) was documented but never
+  implemented** (GAP-NET-N2). The header advertised an N2 "gateway change"
+  check, yet `hlse_check_network()` only did ARP/DNS/hosts. Routing injection —
+  malware adding a second default route at the same metric as the real gateway
+  to silently MITM all traffic — went undetected. Implemented N2 by parsing
+  `/proc/net/route`: when ≥2 default routes share the lowest metric, score +55
+  and decode both conflicting gateway IPs into the reason. There is no benign
+  reason for a client to carry two same-metric default routes (load balancing
+  happens at the router, not the host).
+- **Network: DNS allow-list hardening** (N3). Added AdGuard, Neustar/UltraDNS,
+  and the canonical IPv6 resolvers (Cloudflare/Google/Quad9) to the known-safe
+  list, and tightened the RFC-1918 `172.` test to the real `172.16–172.31`
+  range (previously any `172.*` was trusted, including routable space).
+- **Network: hosts-file pharming coverage** (N4). Expanded the sensitive-domain
+  list from 13 to ~50: added Citi/US Bank/Capital One/PNC, Cash App/Zelle/
+  Stripe/Square, Bybit/OKX/KuCoin/Crypto.com/Gate.io, Ledger/Trezor/Exodus/
+  Trust Wallet/Phantom, Revolut/Wise/N26/ING, KR banks, and Alipay/WeChat Pay.
+- **Secrets: Azure storage AccountKey** (GAP-SECRET-AZURE). A raw Azure
+  connection string (`...;AccountKey=<88-char base64>;...`) returned OK unless
+  it happened to carry the `AZURE_STORAGE_CONNECTION_STRING=` env prefix. Added
+  a structural check that flags an `AccountKey=` followed by ≥40 base64 chars
+  (real keys are 88), with placeholder suppression — ISOLATE(85).
+- **Audit: system-cron persistence blind spot** (GAP-AUDIT-CRON). A4 scanned
+  user crontabs and `/etc/cron.d/` but ignored `/etc/cron.{hourly,daily,weekly,
+  monthly}/` and `/etc/crontab` itself — all classic persistence locations.
+  Now scans every system cron directory plus the system crontab for the same
+  reverse-shell / download-pipe / base64 patterns.
+- **Audit: system-wide shell-init backdoor** (GAP-AUDIT-PROFILED). A6 inspected
+  the calling user's `~/.bashrc`-family files but not `/etc/profile.d/`, which
+  executes for *every* interactive login. Added a scan of `/etc/profile.d/` for
+  reverse-shell device paths, download-piped-to-shell, and nc/socat — scored at
+  CRITICAL (+50/+55) because the blast radius is all users, not one.
+
+### Changed
+- **Email: false positive on legitimate banks** (FP-EMAIL-BANK). The E1
+  display-name check listed `"bank"` as an impersonation keyword but
+  `brand_owns_domain()` had no bank entries, so `From: Chase Bank
+  <noreply@chase.com>` was flagged BLOCK(65) as impersonation. Added canonical
+  domains for major US/JP/EU/KR banks (chase.com, bankofamerica.com, smbc.co.jp,
+  ing.com, kbstar.com, …) so a bank's own domain is recognized; look-alike
+  domains (`chase-secure.ru`) still fire.
+- **Email: missing-authentication signal** (E4). Added detection for
+  `spf=none ∧ dkim=none ∧ dmarc=none` in Authentication-Results — a sender
+  publishing *no* email-auth records is itself a weak spoofing signal
+  (+20), distinct from the existing explicit `=fail` checks.
+- **Text: Spanish / Portuguese / Arabic scam coverage** (GAP-TEXT-ROMANCE-AR).
+  The wordlists covered EN + CJK but returned OK(0) for the entire Spanish,
+  Portuguese, and Arabic threat surface. Added fused, scam-defining phrasings
+  (not bare keywords, per dual-use discipline) across five categories:
+  account-credential asks (`verificar su identidad`, `verificar sua
+  identidade`, `تحقق من هويتك`), consequence-threat alerts (`cuenta ha sido
+  suspendida`, `para evitar a suspensão`, `سيتم إغلاق حسابك`), prize lures
+  (`ha sido seleccionado`, `ganhou um prêmio`, `ربحت جائزة`), rental-scam
+  key-mailing (`le enviaremos las llaves por correo` + `depósito … por
+  transferencia bancaria`), and money-movement (`enviar dinero`, `transferir
+  dinheiro`). Verified no double-scoring (suspension phrases live only in
+  FAKE_ALERT_WORDS) and no FP on benign ES/PT prose.
+
 ## [1.0.2] — 2026-06-13
 
 ### Security

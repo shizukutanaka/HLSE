@@ -471,27 +471,65 @@ hlse_audit_cron(void) {
         }
     }
 
-    /* Also check /etc/cron.d/ */
+    /* Also check /etc/cron.d/ and related system cron locations */
     {
-        DIR *d = opendir("/etc/cron.d");
-        if (d) {
-            struct dirent *ent;
-            while ((ent = readdir(d)) != NULL) {
-                char path[512];
-                int i;
-                if (ent->d_name[0] == '.') continue;
-                snprintf(path, sizeof(path), "/etc/cron.d/%s", ent->d_name);
-                for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
-                    int r = file_contains(path, SUSPICIOUS_CRON_PATTERNS[i]);
-                    if (r == 1) {
-                        av_add(&v, 35, AUDIT_HIGH,
-                            "A4: Suspicious pattern in /etc/cron.d/%s: '%s'",
-                            ent->d_name, SUSPICIOUS_CRON_PATTERNS[i]);
-                        break;
+        /* Directories containing cron-triggered scripts */
+        const char *cron_dirs[] = {
+            "/etc/cron.d",
+            "/etc/cron.hourly",
+            "/etc/cron.daily",
+            "/etc/cron.weekly",
+            "/etc/cron.monthly",
+            NULL
+        };
+        int ci;
+        for (ci = 0; cron_dirs[ci]; ci++) {
+            DIR *d = opendir(cron_dirs[ci]);
+            if (!d) continue;
+            {
+                struct dirent *ent;
+                while ((ent = readdir(d)) != NULL) {
+                    char path[512];
+                    int i;
+                    if (ent->d_name[0] == '.') continue;
+                    snprintf(path, sizeof(path), "%s/%s",
+                             cron_dirs[ci], ent->d_name);
+                    for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
+                        int r = file_contains(path, SUSPICIOUS_CRON_PATTERNS[i]);
+                        if (r == 1) {
+                            av_add(&v, 35, AUDIT_HIGH,
+                                "A4: Suspicious pattern in %s/%s: '%s'",
+                                cron_dirs[ci], ent->d_name,
+                                SUSPICIOUS_CRON_PATTERNS[i]);
+                            break;
+                        }
                     }
                 }
             }
             closedir(d);
+        }
+    }
+
+    /* Check /etc/crontab (system-wide crontab, includes username field) */
+    {
+        FILE *fp = hlse_open_system_file("/etc/crontab");
+        if (fp) {
+            char line[2048];
+            while (fgets(line, sizeof(line), fp)) {
+                int i;
+                char *p = line;
+                while (*p == ' ' || *p == '\t') p++;
+                if (*p == '#' || *p == '\n') continue;
+                for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
+                    if (strstr(p, SUSPICIOUS_CRON_PATTERNS[i])) {
+                        av_add(&v, 40, AUDIT_HIGH,
+                            "A4: Suspicious pattern in /etc/crontab: '%s'",
+                            SUSPICIOUS_CRON_PATTERNS[i]);
+                        break;
+                    }
+                }
+            }
+            fclose(fp);
         }
     }
 
@@ -692,6 +730,56 @@ hlse_audit_shellrc(void) {
             }
         }
         fclose(fp);
+    }
+
+    /* /etc/profile.d/ — system-wide shell init scripts, all-user scope.
+     * Malware dropped here runs for every interactive shell login.       */
+    {
+        DIR *d = opendir("/etc/profile.d");
+        if (d) {
+            struct dirent *ent;
+            while ((ent = readdir(d)) != NULL) {
+                char path[512];
+                FILE *fp;
+                char line[2048];
+                int lineno = 0;
+
+                if (ent->d_name[0] == '.') continue;
+                snprintf(path, sizeof(path), "/etc/profile.d/%s", ent->d_name);
+                fp = hlse_open_system_file(path);
+                if (!fp) continue;
+
+                while (fgets(line, sizeof(line), fp)) {
+                    char *p = line;
+                    lineno++;
+                    while (*p == ' ' || *p == '\t') p++;
+                    if (*p == '#' || *p == '\n' || *p == '\0') continue;
+
+                    if (strstr(p, "/dev/tcp/") || strstr(p, "/dev/udp/")) {
+                        av_add(&v, 55, AUDIT_CRITICAL,
+                            "A6: reverse-shell device path in system-wide "
+                            "/etc/profile.d/%s:%d (affects ALL users)",
+                            ent->d_name, lineno);
+                    }
+                    if ((strstr(p, "curl ") || strstr(p, "wget ")) &&
+                        (strstr(p, "| sh")   || strstr(p, "|sh") ||
+                         strstr(p, "| bash") || strstr(p, "|bash"))) {
+                        av_add(&v, 50, AUDIT_CRITICAL,
+                            "A6: download-piped-to-shell in system-wide "
+                            "/etc/profile.d/%s:%d (affects ALL users)",
+                            ent->d_name, lineno);
+                    }
+                    if (strstr(p, "nc -e") || strstr(p, "socat ")) {
+                        av_add(&v, 50, AUDIT_CRITICAL,
+                            "A6: reverse-shell tool in system-wide "
+                            "/etc/profile.d/%s:%d (affects ALL users)",
+                            ent->d_name, lineno);
+                    }
+                }
+                fclose(fp);
+            }
+            closedir(d);
+        }
     }
 
     if (v.n_findings == 0)

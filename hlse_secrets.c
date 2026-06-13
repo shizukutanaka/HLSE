@@ -546,6 +546,23 @@ hlse_scan_secrets(const char *text) {
                "GCP service account JSON (type+private_key fields)");
     }
 
+    /* Azure storage connection string — AccountKey= followed by ≥40 base64
+     * chars (actual keys are 88-char base64). The key is the credential
+     * itself, not merely an env-variable reference.                      */
+    {
+        const char *ak = strstr(text, "AccountKey=");
+        if (ak) {
+            const char *val = ak + 11; /* strlen("AccountKey=") */
+            int b64_run = 0;
+            while (is_base64(*val) || *val == '=') { b64_run++; val++; }
+            if (b64_run >= 40 && !is_placeholder_secret(text, ak, ak + 11,
+                                                         (size_t)b64_run)) {
+                sv_add(&v, 85, "AZURE_ACCOUNT_KEY",
+                       "Azure storage AccountKey credential (%d chars)", b64_run);
+            }
+        }
+    }
+
     /* Azure SAS token — highly distinctive shared-access-signature pattern */
     if ((strstr(text, "sv=") || strstr(text, "SharedAccessSignature")) &&
         strstr(text, "sig=") && strstr(text, "se=")) {
@@ -716,6 +733,26 @@ brand_owns_domain(const char *brand, const char *domain) {
         { "fedex",     "fedex.com"        }, { "dhl",       "dhl.com"        },
         { "ups",       "ups.com"          }, { "usps",      "usps.com"       },
         { "irs",       "irs.gov"          }, { "shopify",   "shopify.com"    },
+        /* Financial institutions: "bank" keyword must not FP on their
+         * own sending domains. Add canonical domains for major banks.  */
+        { "bank", "chase.com"              }, { "bank", "bankofamerica.com"   },
+        { "bank", "wellsfargo.com"         }, { "bank", "citibank.com"        },
+        { "bank", "citi.com"               }, { "bank", "usbank.com"          },
+        { "bank", "capitalone.com"         }, { "bank", "pnc.com"             },
+        { "bank", "tdbank.com"             }, { "bank", "regions.com"         },
+        { "bank", "suntrust.com"           }, { "bank", "truist.com"          },
+        { "bank", "ally.com"               }, { "bank", "discoverbank.com"    },
+        { "bank", "discover.com"           },
+        /* JP banks */
+        { "bank", "smbc.co.jp"             }, { "bank", "mufg.jp"             },
+        { "bank", "mizuhobank.co.jp"       }, { "bank", "japanpost.jp"        },
+        { "bank", "rakuten-bank.co.jp"     }, { "bank", "aeon.co.jp"          },
+        /* EU banks */
+        { "bank", "ing.com"                }, { "bank", "n26.com"             },
+        { "bank", "bunq.com"               }, { "bank", "revolut.com"         },
+        /* KR banks */
+        { "bank", "kbstar.com"             }, { "bank", "ibk.co.kr"           },
+        { "bank", "nonghyup.com"           }, { "bank", "shinhan.com"         },
         { NULL, NULL }
     };
     int i;
@@ -888,6 +925,17 @@ hlse_check_email_headers(const char *raw_headers) {
             v.score += 30;
             snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
                 "E4: DMARC failed — high confidence of spoofing");
+        }
+        /* All three returning "none" means no authentication was performed
+         * at all — a legitimate corporate mailer always publishes at least
+         * SPF or DKIM records.                                             */
+        if (strstr(auth_val, "spf=none") && strstr(auth_val, "dkim=none") &&
+            strstr(auth_val, "dmarc=none")) {
+            v.score += 20;
+            if (v.n_reasons < HLSE_EMAIL_MAX_REASONS)
+                snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                    "E4: No SPF/DKIM/DMARC records — sender domain has no "
+                    "email authentication (uncommon for legitimate senders)");
         }
     }
 
