@@ -8,6 +8,9 @@
  *   A3. DNS/hosts poisoning   — /etc/hosts entries for banking/exchange domains
  *   A4. Cron persistence      — suspicious cron entries (wget, curl|sh, base64)
  *   A5. Firewall status       — iptables/nftables rule count
+ *   A6. Shell startup-file backdoors — ~/.bashrc, ~/.profile, etc.
+ *   A7. Sudoers NOPASSWD      — privilege escalation via passwordless sudo
+ *   A8. Systemd user-unit persistence — $HOME/.config/systemd/user/ units
  *
  * All checks are read-only and non-destructive.
  * No network access. No root required (though some checks are richer
@@ -785,13 +788,111 @@ hlse_audit_sudoers(void) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+ * A8: Systemd User-Unit Persistence Detection
+ *
+ * Attackers plant backdoors as $HOME/.config/systemd/user/ .service files to
+ * survive reboots without root. This check scans that directory for unit files
+ * the same dangerous ExecStart patterns that A4 watches in cron.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+AuditVerdict
+hlse_audit_systemd_user(void) {
+    AuditVerdict v;
+    const char *home;
+    char unit_dir[512];
+    DIR *d;
+
+    memset(&v, 0, sizeof(v));
+
+    home = getenv("HOME");
+    if (!home || !home[0]) {
+        struct passwd *pw = getpwuid(getuid());
+        if (pw) home = pw->pw_dir;
+    }
+    if (!home || !home[0]) {
+        av_add(&v, 0, AUDIT_INFO, "A8: HOME unset — cannot check systemd user units");
+        return v;
+    }
+
+    snprintf(unit_dir, sizeof(unit_dir), "%s/.config/systemd/user", home);
+    d = opendir(unit_dir);
+    if (!d) {
+        av_add(&v, 0, AUDIT_PASS, "A8: No user systemd unit directory found");
+        return v;
+    }
+
+    {
+        struct dirent *ent;
+        int found_suspicious = 0;
+
+        while ((ent = readdir(d)) != NULL) {
+            char path[640];
+            int fd;
+            FILE *fp;
+            struct stat st;
+            char line[2048];
+            size_t nlen;
+
+            if (ent->d_name[0] == '.') continue;
+
+            /* Only examine .service, .timer, .socket unit files */
+            nlen = strlen(ent->d_name);
+            if (nlen < 8) continue;
+            {
+                const char *e = ent->d_name + nlen;
+                int is_unit = (strcmp(e - 8, ".service") == 0)
+                           || (strcmp(e - 6, ".timer") == 0)
+                           || (strcmp(e - 7, ".socket") == 0);
+                if (!is_unit) continue;
+            }
+
+            snprintf(path, sizeof(path), "%s/%s", unit_dir, ent->d_name);
+            fd = open(path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+            if (fd < 0) continue;
+            if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode)) {
+                close(fd); continue;
+            }
+            fp = fdopen(fd, "r");
+            if (!fp) { close(fd); continue; }
+
+            while (fgets(line, sizeof(line), fp)) {
+                int i;
+                char *p = line;
+                /* Only scan ExecStart/ExecStartPre lines */
+                if (strncmp(p, "ExecStart", 9) != 0 &&
+                    strncmp(p, "ExecStartPre", 12) != 0 &&
+                    strncmp(p, "ExecStop", 8) != 0) continue;
+
+                for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
+                    if (strstr(p, SUSPICIOUS_CRON_PATTERNS[i])) {
+                        av_add(&v, 40, AUDIT_HIGH,
+                            "A8: Suspicious ExecStart in user unit %s: %.60s",
+                            ent->d_name, p);
+                        found_suspicious = 1;
+                        break;
+                    }
+                }
+            }
+            fclose(fp);
+        }
+
+        if (!found_suspicious) {
+            av_add(&v, 0, AUDIT_PASS,
+                   "A8: No suspicious ExecStart patterns in user systemd units");
+        }
+    }
+    closedir(d);
+    return v;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
  * Unified audit
  * ═══════════════════════════════════════════════════════════════════════ */
 
 AuditVerdict
 hlse_audit_all(void) {
     AuditVerdict combined;
-    AuditVerdict parts[7];
+    AuditVerdict parts[8];
     int n = 0, i, j;
 
     memset(&combined, 0, sizeof(combined));
@@ -803,6 +904,7 @@ hlse_audit_all(void) {
     parts[n++] = hlse_audit_path();
     parts[n++] = hlse_audit_shellrc();
     parts[n++] = hlse_audit_sudoers();
+    parts[n++] = hlse_audit_systemd_user();
 
     for (i = 0; i < n; i++) {
         for (j = 0; j < parts[i].n_findings

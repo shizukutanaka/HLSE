@@ -2,6 +2,41 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.94] — 2026-06-13
+
+### Security
+- **Audit: A8 systemd user-unit persistence check** (GAP-AUDIT-A8):
+  Scans `$HOME/.config/systemd/user/` for `.service`, `.timer`, and `.socket`
+  unit files whose `ExecStart`/`ExecStartPre`/`ExecStop` lines contain the
+  same dangerous patterns already guarded in A4 cron (`curl|bash`, `wget`,
+  `base64 -d`, `/dev/tcp/`, `nc -e`, etc.). Attackers plant user-level
+  systemd units to achieve login-persistent backdoors without root. Uses
+  `O_NOFOLLOW|O_NONBLOCK` + `S_ISREG` guard (same pattern as A4) to prevent
+  FIFO-block or symlink-redirect during the scan. Wired into `hlse_audit_all`.
+  Header and file-level comment updated to document A6-A8.
+- **URL: add chatgpt and gemini to BRANDS** (GAP-URL-AI-BRANDS):
+  `chatgpt-login-verify.com` scored LOG(35); it now scores BLOCK(70).
+  `chatgpt.com.free-upgrade.net` now scores BLOCK(65) via subdomain spoof.
+  Legit `chatgpt.com` and `chat.openai.com` stay OK(0).
+- **File: add .xll, .wll, .chm, .rdp, .sct, .job to EXECUTABLE_EXTS**
+  (GAP-FILE-EXT): Excel/Word add-ins (shellcode delivery), Compiled HTML
+  Help (hhctrl.ocx JScript), Remote Desktop files (auto-connect exploit),
+  Windows Script Component, and Task Scheduler jobs. Double-extension
+  masquerades (e.g. `invoice.pdf.rdp`) now score ISOLATE(85).
+- **Text: MFA push-bombing, IT helpdesk impersonation, OTP relay**
+  (GAP-TEXT-MFA): Added MFA fatigue phrases (`approve the notification`,
+  `approve the sign-in request`, `just approve it`) to FAKE_ALERT_WORDS,
+  IT helpdesk/department impersonation phrases (`this is your IT helpdesk`,
+  `from IT security`, `corporate IT team`) to AUTHORITY_WORDS, and OTP
+  relay phrases (`read me the code`, `tell me the code sent to you`) to
+  FAKE_ALERT_WORDS. New `authority + bait` amplifier escalates IT-helpdesk +
+  credential-harvest combinations from LOG(37) to ALERT(57). 2 CLI tests
+  added (94 → 96).
+
+### Changed
+- Version bumped from 0.9.93 to 0.9.94.
+- CLI integration tests: 94 → 96.
+
 ## [0.9.93] — 2026-06-11
 
 ### Security

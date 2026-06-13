@@ -48,6 +48,7 @@ AuditVerdict hlse_audit_cron(void);
 AuditVerdict hlse_audit_path(void);
 AuditVerdict hlse_audit_shellrc(void);
 AuditVerdict hlse_audit_sudoers(void);
+AuditVerdict hlse_audit_systemd_user(void);
 
 /* Run all audits and combine results */
 AuditVerdict hlse_audit_all(void);
