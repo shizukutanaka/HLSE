@@ -5,6 +5,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [1.0.2] — 2026-06-13
 
 ### Security
+- **File: shebang script masquerading as a document** (GAP-FILE-SHEBANG): the
+  magic-byte mismatch check detected binary executables disguised as images
+  (PE-as-`.jpg`), but a text script with a `#!` shebang returned NULL magic, so
+  `invoice.pdf` / `photo.jpg` / `report.mp4` that were really runnable shell /
+  python / perl scripts passed as OK. Added a `Script` magic (`#!`) and an F2
+  rule that flags a shebang file wearing a passive document/image/media
+  extension. Enriched `DOCUMENT_EXTS` with media containers (`.mp3`, `.mp4`,
+  `.mov`, `.mkv`, `.epub`, …).
+  - script-as-`invoice.pdf` / `photo.jpg` / `report.mp4`: OK(0) → BLOCK(60)
+  - legitimate `.sh` / `.py` scripts and real `%PDF` files unaffected.
 - **Supply-chain: ecosystem-alias false-negative** (BUG-PKG-ECOSYSTEM): the
   package typosquat check filtered registries by an exact string match against
   internal labels (`pip`, `npm`, `cargo`, `go`, `gem`), but the CLI help and

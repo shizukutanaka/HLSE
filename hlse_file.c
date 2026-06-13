@@ -109,6 +109,7 @@ static const unsigned char MAGIC_OLE[]  = { 0xD0, 0xCF, 0x11, 0xE0 };   /* OLE c
 static const unsigned char MAGIC_7ZIP[] = { 0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C }; /* 7-Zip */
 static const unsigned char MAGIC_CAB[]  = { 0x4D, 0x53, 0x43, 0x46 };   /* MSCF — Windows Cabinet */
 static const unsigned char MAGIC_WASM[] = { 0x00, 0x61, 0x73, 0x6D };   /* \0asm — WebAssembly */
+static const unsigned char MAGIC_SHEBANG[] = { 0x23, 0x21 };           /* #! — script shebang */
 /* Mach-O (macOS executables). Four unambiguous thin-binary magics, both
  * endiannesses / word sizes. The fat/universal magic 0xCAFEBABE is omitted
  * deliberately: it is indistinguishable from a Java .class file by header
@@ -135,6 +136,7 @@ static const MagicSig MAGIC_TABLE[] = {
     { MAGIC_JPG,   3, "JPEG" },
     { MAGIC_GIF,   4, "GIF" },
     { MAGIC_OLE,   4, "OLE" },
+    { MAGIC_SHEBANG, 2, "Script" },
     { NULL, 0, NULL }
 };
 
@@ -227,6 +229,9 @@ is_executable_ext(const char *ext) {
 static const char *DOCUMENT_EXTS[] = {
     ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
     ".odt", ".ods", ".odp", ".rtf", ".txt", ".csv",
+    /* Media containers — also passive data a user never expects to execute */
+    ".mp3", ".mp4", ".avi", ".mov", ".wav", ".mkv", ".flac",
+    ".epub", ".mobi",
     NULL
 };
 
@@ -432,6 +437,16 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, 40,
                 "F2: Windows Cabinet (MSCF) magic with extension '%s' — "
                 "possible dropper disguise", ext);
+        }
+        /* Shebang (#!) script wearing a passive document/image extension —
+         * e.g. "invoice.pdf" or "photo.jpg" that is really a runnable shell /
+         * python / perl script. The victim double-clicks expecting inert data
+         * and runs attacker code instead.                                  */
+        if (strcmp(magic_type, "Script") == 0 &&
+            (is_document_ext(ext) || is_image_ext(ext))) {
+            fv_add(&v, 60,
+                "F2: MAGIC MISMATCH — file has script shebang (#!) but "
+                "extension '%s' implies passive data", ext);
         }
     }
 
