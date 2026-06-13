@@ -541,6 +541,24 @@ static void test_crypto_validate_ada(void) {
     else FAIL("ADA not recognized");
 }
 
+static void test_crypto_bch_swap(void) {
+    TEST("Clipboard: BCH (bitcoincash:) address swapped → score 95");
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a",
+        "bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+static void test_crypto_cosmos_swap(void) {
+    TEST("Clipboard: Cosmos (cosmos1) address swapped → score 95");
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "cosmos1xy4kvxx3v8tu2yappro73r5n0xkmct0qfvqvxdz",
+        "cosmos1pjmngrwcsatsuyk8m3qrh2x97ng2k89r4d2sds");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
 /* ─── Cloud Credential Checks ─────────────────────────────────────────── */
 
 static void test_gcp_service_account(void) {
@@ -655,6 +673,8 @@ int main(void) {
     test_crypto_validate_xrp();
     test_crypto_ada_swap();
     test_crypto_validate_ada();
+    test_crypto_bch_swap();
+    test_crypto_cosmos_swap();
     test_crypto_validate_garbage();
 
     printf("\nCloud credential checks:\n");

@@ -1080,6 +1080,8 @@ typedef enum {
     CRYPTO_DASH,          /* X... (34 chars, base58) */
     CRYPTO_XLM,           /* G... (56 chars, Stellar base32) */
     CRYPTO_ADA,           /* addr1... or stake1... (58-110 chars, bech32) */
+    CRYPTO_BCH,           /* bitcoincash:q/p... (CashAddr) */
+    CRYPTO_COSMOS,        /* cosmos1... (bech32, 45 chars) */
 } CryptoType;
 
 static int
@@ -1206,6 +1208,39 @@ detect_crypto_type(const char *addr) {
         if (ok) return CRYPTO_ADA;
     }
 
+    /* Bitcoin Cash CashAddr: "bitcoincash:" prefix + q/p + 41 base32 chars.
+     * The explicit prefix makes this zero-FP. (Prefix-less CashAddr also
+     * starts q/p but we require the prefix to avoid colliding with other
+     * base32 formats.)                                                     */
+    if (strncmp(addr, "bitcoincash:", 12) == 0) {
+        const char *body = addr + 12;
+        size_t blen = strlen(body);
+        if (blen >= 42 && (body[0] == 'q' || body[0] == 'p')) {
+            int i, ok = 1;
+            /* CashAddr uses Bech32 charset (lowercase, no 1/b/i/o) */
+            for (i = 1; i < (int)blen; i++) {
+                char c = body[i];
+                if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))) {
+                    ok = 0; break;
+                }
+            }
+            if (ok) return CRYPTO_BCH;
+        }
+    }
+
+    /* Cosmos Hub (ATOM): "cosmos1" + 38 bech32 chars = 45 total. The
+     * "cosmos1" prefix is uniquely the Cosmos Hub — near-zero FP.          */
+    if (len >= 44 && len <= 46 && strncmp(addr, "cosmos1", 7) == 0) {
+        int i, ok = 1;
+        for (i = 7; i < (int)len; i++) {
+            char c = addr[i];
+            if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))) {
+                ok = 0; break;
+            }
+        }
+        if (ok) return CRYPTO_COSMOS;
+    }
+
     /* Solana: base58, 32-44 chars, no fixed prefix. Checked LAST so the
      * prefixed / fixed-length formats above (BTC 1/3, USDT T, ETH 0x, …)
      * win; only an otherwise-unclassified base58 string of Solana length
@@ -1240,6 +1275,8 @@ crypto_type_name(CryptoType t) {
         case CRYPTO_DASH:        return "DASH";
         case CRYPTO_XLM:         return "XLM (Stellar)";
         case CRYPTO_ADA:         return "ADA (Cardano)";
+        case CRYPTO_BCH:         return "BCH (Bitcoin Cash)";
+        case CRYPTO_COSMOS:      return "ATOM (Cosmos)";
         default:                 return "Unknown";
     }
 }

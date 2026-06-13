@@ -28,6 +28,12 @@ the in- or out-of-distribution corpus.
   list from 13 to ~50: added Citi/US Bank/Capital One/PNC, Cash App/Zelle/
   Stripe/Square, Bybit/OKX/KuCoin/Crypto.com/Gate.io, Ledger/Trezor/Exodus/
   Trust Wallet/Phantom, Revolut/Wise/N26/ING, KR banks, and Alipay/WeChat Pay.
+- **Clipboard: Bitcoin Cash & Cosmos coverage** (GAP-CLIP-BCH-ATOM). The
+  clipper-swap detector recognized 14 address formats but not two major coins:
+  Bitcoin Cash (`bitcoincash:q…` CashAddr) and Cosmos Hub (`cosmos1…`). A
+  swap on either returned OK — the exact silent failure the module exists to
+  prevent. Added both with prefix-anchored, zero-FP matchers; cross-type
+  copy/paste mismatches are flagged distinctly. ISOLATE(95) on same-type swap.
 - **Secrets: JWT bearer tokens** (GAP-SECRET-JWT). A leaked signed JWT
   (`eyJ….eyJ….<sig>`) is a live bearer credential that GitHub/GitGuardian both
   flag, but HLSE returned OK(0). Added detection keyed on the JWT-specific
