@@ -2,6 +2,45 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.2] — 2026-06-13
+
+### Security
+- **URL: brand-impersonation cascade refactor + product-term fusion**
+  (GAP-URL-BRANDFUSION): Reworked the brand-impersonation checks in
+  `detect_security_hyphenation()` into a single mutually-exclusive cascade so a
+  registrable domain contributes at most one brand reason (no more double-scoring
+  of `paypal-verify.net`). Added a dedicated `BRAND_SUFFIX_WORDS` list (`enterprise`,
+  `excel`, `outlook`, `drive`, `onedrive`, `sharepoint`, `office`, `workspace`,
+  `meet`, `calendar`) that flags impersonation only when a product/edition term is
+  **fused to a known brand** — these terms are intentionally kept out of the generic
+  hyphenation counter because they are common in legitimate domains.
+  - `app.slack-enterprise.com/sign-in`: OK(0) → ALERT(45)
+  - `microsoftexcel.com/login`: LOG(15) → ALERT(45)
+  - `googledrive.net/login`: LOG(15) → ALERT(45)
+  - `teams-enterprise-signin.com`: LOG(20) → ALERT(55)
+  - `microsoftoutlook.com/webmail`: → ALERT(45)
+  - **FP fixed**: `my-enterprise-blog.com` LOG(20) → OK(0) (enterprise no longer a
+    generic security word); `hard-drive-recovery.com` and `paypal-verify.net`
+    unchanged from prior behaviour.
+- **URL: brand+security-word concatenation** (no hyphen): `googleverify.net`,
+  `paypalupdate.com` now flagged via the same cascade.
+- **URL: trusted brand as direct subdomain of trusted parent**: `outlook.live.com`,
+  `outlook.microsoft.com` no longer mis-flagged as subdomain spoofing (only exempt
+  when the registrable parent is itself trusted and there is no extra nesting —
+  `paypal.com.google.com` still fires).
+- **URL: hyphenated login-path variants**: added `/sign-in` and `/log-in` to
+  `PATH_PATTERNS` (the existing `/signin`, `/login` did not match the hyphenated
+  spellings used by phishing kits).
+- **URL: BRANDS additions**: `teams` (Microsoft Teams impersonation).
+- **Text: rental-scam "mail you the keys"** (GAP-TEXT-RENTAL): added scam-defining
+  phrases (`mail you the keys`, `keys will be mailed`, …) to the rental-fraud group.
+  Legitimate landlords never mail keys to an unvetted applicant. Replaces the
+  dual-use "currently out of the country" travel-status phrasing that caused FPs.
+- **Text: romance fund-transfer** (GAP-TEXT-ROMANCE): verb-anchored
+  "…to my account" money-movement phrases added to FIN_ACTION_WORDS (e.g.
+  `transfer money to my account`), avoiding FPs on benign "send the report to my
+  account team". Celebrity crypto-doubling giveaway phrases added to PRIZE_WORDS.
+
 ## [1.0.1] — 2026-06-13
 
 ### Security

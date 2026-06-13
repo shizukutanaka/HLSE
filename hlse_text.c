@@ -192,6 +192,11 @@ static const char *BAIT_WORDS[] = {
     "send deposit via", "wire the deposit", "deposit to hold",
     "pay deposit to secure", "pay a deposit to reserve",
     "security deposit via", "send security deposit",
+    "security deposit by wire", "security deposit by bank",
+    /* Advance-fee "unlock funds" language: romance and 419 variant.
+     * Keep only the shorter phrase — the longer "to unlock the funds"
+     * is a superset so both would double-count on the same occurrence. */
+    "unlock the funds", "release the money", "before the funds can be",
     /* Tax authority phishing — HMRC / IRS / CRA / ATO impersonation */
     "tax refund", "tax rebate", "unclaimed tax refund", "tax return is ready",
     "tax refund is pending", "your refund is ready", "claim your tax",
@@ -231,7 +236,7 @@ static const char *PRIZE_WORDS[] = {
     "chosen", "claim your prize", "claim your reward", "prize money",
     "lottery", "jackpot", "sweepstakes", "free gift", "unclaimed funds",
     /* Advance-fee / 419 fraud */
-    "inheritance funds", "inheritance of", "million dollars",
+    "inheritance funds", "inheritance of", "million dollars", "million dollar",
     "you have been selected as beneficiary", "diplomat carrying",
     "processing fee to release", "release the funds",
     "transfer of funds", "next of kin", "legal beneficiary",
@@ -240,6 +245,12 @@ static const char *PRIZE_WORDS[] = {
     "percentage of the funds", "you will receive",
     "sum of money", "million usd", "million euros",
     "foreign transfer", "over-invoiced contract", "overpayment scheme",
+    /* Celebrity crypto giveaway / doubling scam */
+    "double your bitcoin", "double your btc", "double your crypto",
+    "double your ethereum", "double your eth",
+    "send bitcoin and receive", "send btc and receive",
+    "bitcoin giveaway", "crypto giveaway", "ethereum giveaway",
+    "giving away bitcoin", "giving away crypto", "giving away ethereum",
     /* Japanese */
     "おめでとう", "当選", "賞品",
     /* Korean */
@@ -358,6 +369,12 @@ static const char *EMERGENCY_SCAM_WORDS[] = {
     "owner is on a mission", "i am currently abroad",
     "i am overseas", "i am out of the country",
     "i am on a mission trip", "working abroad",
+    /* Rental scam closing move — landlord "abroad" offers to mail keys
+     * before any viewing/payment clears. Legitimate landlords never mail
+     * keys to an unvetted applicant; this phrase is scam-defining.        */
+    "mail you the keys", "mail the keys to you", "ship you the keys",
+    "send you the keys once", "send you the keys after",
+    "keys will be mailed", "keys will be shipped",
     /* Hitman / murder-for-hire hoax — attacker claims to have been paid to
      * kill the victim; offers to "call off the deal" for a fee. Pure fraud;
      * any genuine threat would not be sent by email/SMS.                  */
@@ -732,6 +749,16 @@ static const char *FIN_ACTION_WORDS[] = {
     "receive money in your account", "receive funds in your account",
     "your account to receive", "your bank account to receive",
     "put the money in your", "deposit the funds in your",
+    /* Romance / pig-butchering fund request — scammer asks victim to send
+     * money TO THE SCAMMER'S account.  Phrases are verb-anchored so they do
+     * not fire on benign "transfer the report to my account team" — only on
+     * an explicit money-movement instruction.                              */
+    "transfer to my account", "send to my account", "wire to my account",
+    "transfer it to my account", "send it to my account",
+    "send them to my account", "send money to my account",
+    "send the money to my account", "deposit to my account",
+    "wire the money to my account", "transfer the money to my account",
+    "wire money to my account", "transfer money to my account",
     /* Japanese */
     "送金", "振り込んで", "ギフトカードを買って",
     NULL

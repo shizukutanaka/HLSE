@@ -116,6 +116,8 @@ static const char *BRANDS[] = {
     "robinhood", "etrade", "fidelity", "schwab",
     /* Enterprise SaaS — BEC targets */
     "zoom", "salesforce", "adobe", "slack", "oracle",
+    /* Microsoft collaboration — teams-enterprise.com / teams-signin.com phishing */
+    "teams",
     /* P2P payments — high-fraud targets */
     "venmo", "zelle", "cashapp", "payoneer",
     /* Logistics — package delivery phishing */
@@ -177,7 +179,8 @@ static const char *SUSPICIOUS_TLDS[] = {
 
 /* Phishing-typical URL path patterns. */
 static const char *PATH_PATTERNS[] = {
-    "/verify", "/signin", "/login", "/account", "/update",
+    "/verify", "/signin", "/sign-in", "/login", "/log-in",
+    "/account", "/update",
     "/secure", "/reset", "/recover", "/confirm", "/auth",
     "/wallet", "/billing", "/suspended", "/locked", "/unlock",
     "/claim", "/refund", "/relief", "/file", "/payment",
@@ -249,6 +252,19 @@ static const char *SECURITY_WORDS[] = {
     /* Crypto wallet-connect phishing lures: metamask-connect.com,
      * ledger-connect.io, trustwallet-connect-wallet.com               */
     "connect",
+    NULL
+};
+
+/* Brand-impersonation suffix words — product names / editions / generic
+ * business terms that are TOO COMMON in legitimate registrable domains to
+ * be treated as generic "security words" (enterprise-blog.com, drive-thru.com
+ * and hard-drive-recovery.com are all benign).  They are suspicious ONLY when
+ * fused to a known brand: slack-enterprise.com, microsoftexcel.com,
+ * googledrive.net.  Used exclusively by the brand-impersonation checks below;
+ * they never contribute to the generic hyphenation counter.            */
+static const char *BRAND_SUFFIX_WORDS[] = {
+    "enterprise", "excel", "outlook", "drive", "onedrive",
+    "sharepoint", "office", "workspace", "meet", "calendar",
     NULL
 };
 
@@ -717,6 +733,12 @@ detect_subdomain_spoof(const ParsedUrl *u, Verdict *v) {
                         }
                         /* Is the registrable domain the brand itself? */
                         if (strstr(registrable, BRANDS[j]) != NULL) return;
+                        /* Brand as direct subdomain of a trusted parent
+                         * (e.g. outlook.live.com, outlook.microsoft.com).
+                         * Only exempt when no additional nesting exists —
+                         * paypal.com.google.com has registrable_start > 1. */
+                        if (registrable_start == 1 &&
+                            is_trusted_host(registrable)) return;
                         (void)blen;  /* used via brand_is_token_in_sld */
 
                         add_reason(v, token_match ? 35 : 45,
@@ -858,36 +880,86 @@ detect_security_hyphenation(const ParsedUrl *u, Verdict *v) {
                    "%d hyphens)", sec_count, hyphens);
     }
 
-    /* Brand + hyphen + security word is a classic phishing pattern:
-     * paypal-verify, apple-support, amazon-login, microsoft-account.
-     * The real brand never hyphenates its name with a security word
-     * in the registrable domain (paypal.com, not paypal-verify.com). */
-    if (hyphens >= 1 && sec_count >= 1) {
-        for (i = 0; BRANDS[i] != NULL; i++) {
-            /* brand_is_token_in_sld() requires a complete hyphen-delimited
-             * token match so short brands (e.g. "line") don't fire on
-             * "airline-update". */
-            if (brand_is_token_in_sld(sld, BRANDS[i])) {
-                add_reason(v, 35,
-                    "Brand impersonation: '%s' hyphenated with security "
-                    "term — real brand uses its own domain", BRANDS[i]);
-                break;
+    /* ── Brand-impersonation cascade (mutually exclusive) ──────────────
+     * Evaluated most-specific first; `brand_matched` ensures a single
+     * registrable domain contributes at most one brand-impersonation
+     * reason, so paypal-verify.net is not scored twice.                 */
+    {
+        int brand_matched = 0;
+
+        /* (1) Brand + hyphen + security word — classic phishing pattern:
+         * paypal-verify, apple-support, microsoft-account. brand_is_token_in_sld
+         * requires a complete hyphen-delimited token, so short brands (e.g.
+         * "line") don't fire on "airline-update". Brand and security word may
+         * appear in any order ("secure-paypal" as well as "paypal-verify"). */
+        if (hyphens >= 1 && sec_count >= 1) {
+            for (i = 0; BRANDS[i] != NULL; i++) {
+                if (brand_is_token_in_sld(sld, BRANDS[i])) {
+                    add_reason(v, 35,
+                        "Brand impersonation: '%s' hyphenated with security "
+                        "term — real brand uses its own domain", BRANDS[i]);
+                    brand_matched = 1;
+                    break;
+                }
             }
         }
-    }
 
-    /* Brand present as a complete token in a hyphenated SLD even without a
-     * security word — covers mobile-app / wallet-connect phishing patterns
-     * like "metamask-io-app.com" that use app-store framing instead of
-     * security words.  Lower confidence (25) than the sec-word variant. */
-    if (hyphens >= 1 && sec_count == 0) {
-        for (i = 0; BRANDS[i] != NULL; i++) {
-            if (strlen(BRANDS[i]) >= 6 &&     /* avoid common short words */
-                brand_is_token_in_sld(sld, BRANDS[i])) {
-                add_reason(v, 25,
-                    "Brand present in hyphenated domain — "
-                    "real '%s' does not use a hyphenated SLD", BRANDS[i]);
-                break;
+        /* (2) Brand fused (concat or hyphen) to a security word or a
+         * brand-suffix word and LEADING the SLD: "googleverify.net",
+         * "microsoftexcel.com", "slack-enterprise.com". The BRAND_SUFFIX_WORDS
+         * arm catches product/edition terms (enterprise, excel, drive) that
+         * are too common to be generic security words but are damning when
+         * fused to a brand. Only the leading-brand form is checked here; the
+         * in-order hyphen form is already handled by (1).                   */
+        if (!brand_matched) {
+            for (i = 0; BRANDS[i] != NULL; i++) {
+                size_t blen = strlen(BRANDS[i]);
+                const char *after;
+                int j;
+                if (blen < 4) continue;
+                if (strncmp(sld, BRANDS[i], blen) != 0) continue;
+                after = sld + blen;
+                if (*after == '-') after++;        /* hyphenated: skip sep    */
+                else if (*after == '\0') continue; /* bare brand: see (4)     */
+                for (j = 0; SECURITY_WORDS[j] != NULL && !brand_matched; j++) {
+                    size_t wl = strlen(SECURITY_WORDS[j]);
+                    if (strncmp(after, SECURITY_WORDS[j], wl) == 0 &&
+                        (after[wl] == '\0' || after[wl] == '-')) {
+                        add_reason(v, 30,
+                            "Brand+security-word fusion: '%s' prefixes SLD "
+                            "with its own name — real brand uses its own "
+                            "domain", BRANDS[i]);
+                        brand_matched = 1;
+                    }
+                }
+                for (j = 0; BRAND_SUFFIX_WORDS[j] != NULL && !brand_matched; j++) {
+                    size_t wl = strlen(BRAND_SUFFIX_WORDS[j]);
+                    if (strncmp(after, BRAND_SUFFIX_WORDS[j], wl) == 0 &&
+                        (after[wl] == '\0' || after[wl] == '-')) {
+                        add_reason(v, 30,
+                            "Brand+product-term fusion: '%s' fused to '%s' — "
+                            "real brand serves this from its own domain",
+                            BRANDS[i], BRAND_SUFFIX_WORDS[j]);
+                        brand_matched = 1;
+                    }
+                }
+                if (brand_matched) break;
+            }
+        }
+
+        /* (3) Brand as a complete token in a hyphenated SLD without any
+         * security word — covers mobile-app / wallet-connect framing like
+         * "metamask-io-app.com". Minimum length 6 avoids common short words. */
+        if (!brand_matched && hyphens >= 1 && sec_count == 0) {
+            for (i = 0; BRANDS[i] != NULL; i++) {
+                if (strlen(BRANDS[i]) >= 6 &&
+                    brand_is_token_in_sld(sld, BRANDS[i])) {
+                    add_reason(v, 25,
+                        "Brand present in hyphenated domain — "
+                        "real '%s' does not use a hyphenated SLD", BRANDS[i]);
+                    brand_matched = 1;
+                    break;
+                }
             }
         }
     }
