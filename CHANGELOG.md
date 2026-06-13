@@ -2,6 +2,62 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.95] — 2026-06-13
+
+### Security
+- **URL: SECURITY_WORDS expanded — cancel, order, service, notification**
+  (GAP-URL-SECWORDS): `amazon-order-cancel.com`, `paypal-order-cancel.com`,
+  `microsoft-service-desk.com`, `apple-notification-center.com` all now
+  correctly ALERT(55) via brand+security-word compound detection. Previously
+  these scored OK(0) because none of the new words were in SECURITY_WORDS.
+- **URL: FREE_HOSTS expanded — 000webhostapp, wixsite, weebly, godaddysites,
+  mystrikingly, sites.google.com** (GAP-URL-FREEHOST): Brand phishing on these
+  heavily-abused platforms now correctly ISOLATE(90). `microsoft-login.000webhostapp.com`
+  improved from LOG(35) to ISOLATE(90).
+- **Text: HMRC/CRA/ATO tax-authority impersonation detection** (GAP-TEXT-TAXAUTH):
+  Added `hmrc`, `inland revenue`, `canada revenue agency`, `australian taxation
+  office` to AUTHORITY_WORDS; added `tax refund`, `tax rebate`, `unclaimed tax
+  refund`, `tax overpayment` to BAIT_WORDS. HMRC smishing now BLOCK(79), CRA
+  smishing BLOCK(69), IRS smishing with URL ISOLATE(81).
+- **Text: Amazon Prime / subscription renewal BazarCall detection**
+  (GAP-TEXT-SUBSCRIB): Added `subscription is up for renewal`, `up for renewal`,
+  `renewal has been processed`, `auto-renewed`, `membership renewal` to
+  CALLBACK_PHISH_WORDS. Amazon Prime renewal vishing improved from LOG(38)
+  to ISOLATE(83).
+- **Text: delivery smishing — "attempted delivery" patterns** (GAP-TEXT-DELIVERY):
+  Added `we attempted delivery`, `attempted delivery of your`, `delivery attempt
+  failed`, `failed delivery attempt`, `we tried to deliver`, `unable to deliver
+  your` to CALLBACK_PHISH_WORDS. USPS attempted-delivery smishing now LOG(15)
+  instead of OK(0).
+- **Text: upfront-fee job fraud / starter kit scam** (GAP-TEXT-JOBSCAM):
+  Added `starter kit`, `reimbursed on first paycheck`, `purchase the equipment`,
+  `equipment deposit required` and related phrases to GROOMING_WORDS. Fake job
+  starter-kit scam with multiple signals now ALERT(40).
+- **File: EXECUTABLE_EXTS expanded** (GAP-FILE-EXT2): Added `.one`/`.onetoc2`
+  (OneNote embedded-attachment execution, top 2022-2023 vector), `.iso`/`.img`/
+  `.vhd`/`.vhdx` (MOTW bypass disk containers), `.ppsm`/`.potm` (macro-enabled
+  PowerPoint), `.iqy` (Excel Internet Query remote-execute), `.theme`/`.themepack`
+  (ThemeBleed NTLM theft, CVE-2023-38146). Removed duplicate `.wsc` entry.
+  F4 macro check extended to `.ppsm` and `.potm`.
+- **File: BAIT_WORDS (LURE_WORDS)** — `customs fee` standalone added to
+  CALLBACK_PHISH_WORDS for USPS smishing detection without "required" qualifier.
+- **Secrets: DigitalOcean PAT, Atlassian API token, 1Password token**
+  (GAP-SECRETS-EXPAND3): Added `dop_v1_` (DigitalOcean PAT), `ATATT` prefix
+  (Atlassian/Jira/Confluence API token), `ops_v` (1Password service account
+  token) to SECRET_PATTERNS. All three now ISOLATE(85) on bare token exposure.
+- **Paste: P10 persistence injection** (GAP-PASTE-PERSIST): New P10 check
+  detects SSH authorized_keys append, crontab persistence injection, and shell
+  startup-file backdoor injection in clipboard payloads. Scores +50 (ALERT to
+  ISOLATE when combined with other signals). FP guard: legitimate `ssh-copy-id`
+  stays OK(0).
+- **Protect: 2024-2025 ransomware note filenames** (GAP-PROTECT-RANSOM):
+  Added ALPHV/BlackCat (`alphv_note.txt`, `blackcat_note.txt`), LockBit 3.0
+  (`lockbit-readme.txt`), Nitrogen, Arkana, BEAST, SafePay, Play note filenames
+  to RANSOM_NOTE_NAMES.
+
+### Changed
+- Version bumped from 0.9.94 to 0.9.95.
+
 ## [0.9.94] — 2026-06-13
 
 ### Security
