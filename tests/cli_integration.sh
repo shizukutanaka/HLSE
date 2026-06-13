@@ -471,6 +471,21 @@ RLO_NAME=$(printf 'invoice\342\200\256cod.exe')
     && check "URL: IP host + brand in path → detected" "0" "0" \
     || check "URL: IP host + brand in path → detected" "0" "1"
 
+# Obfuscated dotless IP host: hex-encoded (0x7f000001 = 127.0.0.1)
+./hlse_core "http://0x7f000001/admin" 2>&1 | grep -qi "Obfuscated IP" \
+    && check "URL: hex-encoded IP host → flagged as obfuscation" "0" "0" \
+    || check "URL: hex-encoded IP host → flagged as obfuscation" "0" "1"
+
+# Obfuscated dotless IP host: dword-decimal (2130706433 = 127.0.0.1)
+./hlse_core "http://2130706433/login" 2>&1 | grep -qi "Obfuscated IP" \
+    && check "URL: dword-decimal IP host → flagged as obfuscation" "0" "0" \
+    || check "URL: dword-decimal IP host → flagged as obfuscation" "0" "1"
+
+# FP guard: a hostname with a hyphen and digits is NOT an obfuscated IP
+./hlse_core "https://www.7-eleven.com" 2>&1 | grep -qi "Obfuscated IP" \
+    && check "URL: 7-eleven.com NOT flagged as obfuscated IP" "0" "1" \
+    || check "URL: 7-eleven.com NOT flagged as obfuscated IP" "0" "0"
+
 # ─── SARIF 2.1.0 output ─────────────────────────────────────────────
 
 # SARIF output is valid JSON with version 2.1.0

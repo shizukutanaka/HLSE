@@ -44,6 +44,17 @@ the in- or out-of-distribution corpus.
   reverse-shell device paths, download-piped-to-shell, and nc/socat — scored at
   CRITICAL (+50/+55) because the blast radius is all users, not one.
 
+- **URL: obfuscated dotless-IP hosts** (GAP-URL-IPOBF). The IP-host check
+  required a `.` in the host, so the classic blocklist-evasion forms — hex
+  (`http://0x7f000001/`) and dword-decimal (`http://2130706433/`), both
+  decoding to a real IP — fell through to the generic "digit-heavy" heuristic
+  at LOG(30). A host with no dot that is all-digits (≥7) or `0x`-hex is never a
+  registrable domain (no all-numeric TLD exists), so it is flagged at +40 as a
+  named obfuscation signal with effectively zero false positives.
+  - `http://0x7f000001/admin`: LOG(30) → BLOCK(70)
+  - `http://2130706433/login`: → ISOLATE(85)
+  - FP-guarded: `7-eleven.com`, dotted IPs, and `host:port` are unaffected.
+
 ### Changed
 - **Email: false positive on legitimate banks** (FP-EMAIL-BANK). The E1
   display-name check listed `"bank"` as an impersonation keyword but

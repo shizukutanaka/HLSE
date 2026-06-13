@@ -1490,6 +1490,41 @@ check_url(const char *raw_url) {
         }
     }
 
+    /* Obfuscated / dotless IP host — hex (0x7f000001), dword-decimal
+     * (2130706433), or octal forms decode to a real IP but evade naive
+     * blocklists and hide the destination from the user. A host with no dot
+     * that is all-digits or 0x-hex is never a registrable domain (no
+     * all-numeric TLD exists), so this is a high-confidence evasion signal
+     * with effectively zero false positives.                              */
+    {
+        const char *h = u.host;
+        size_t hlen = strlen(h);
+        if (hlen > 0 && h[0] != '[' && !strchr(h, '.') && !strchr(h, ':')) {
+            int all_digits = 1, is_hex = 0;
+            size_t k;
+            if (hlen > 2 && h[0] == '0' && (h[1] == 'x' || h[1] == 'X')) {
+                is_hex = 1;
+                for (k = 2; k < hlen; k++) {
+                    char c = h[k];
+                    if (!((c >= '0' && c <= '9') ||
+                          (c >= 'a' && c <= 'f') ||
+                          (c >= 'A' && c <= 'F'))) { is_hex = 0; break; }
+                }
+            }
+            for (k = 0; k < hlen; k++) {
+                if (h[k] < '0' || h[k] > '9') { all_digits = 0; break; }
+            }
+            /* Dword-decimal IPs are large; require >=7 digits to avoid
+             * flagging a stray numeric token, while 0x-hex is unambiguous. */
+            if (is_hex || (all_digits && hlen >= 7)) {
+                add_reason(&v, 40,
+                    "Obfuscated IP host '%s' — %s-encoded address hides the "
+                    "real destination (evasion technique)", h,
+                    is_hex ? "hex" : "decimal");
+            }
+        }
+    }
+
     if (!u.is_https && v.score > 0) {
         add_reason(&v, 5, "Non-HTTPS connection");
     }
