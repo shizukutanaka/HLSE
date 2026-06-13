@@ -2,6 +2,35 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.96] — 2026-06-13
+
+### Security
+- **Text: advance-fee loan fraud detection** (GAP-TEXT-LOAN): Added `regardless of
+  credit history`, `regardless of credit score`, and related phrases to GROOMING_WORDS.
+  "Congratulations, you are pre-approved... pay a processing fee via CashApp" improved
+  from LOG(30) to BLOCK(65). Also added PRIZE+GROOMING amplifier (+15) for the
+  advance-fee loan fraud pattern.
+- **Text: crypto pump-and-dump detection** (GAP-TEXT-PUMP): Added `about to moon`,
+  `huge pump`, `whale accumulation`, `100x potential`, `buy before the pump` and related
+  phrases to GROOMING_WORDS. Pump-and-dump messages improved from OK(0) to ALERT(40).
+- **Text: utility cutoff scam detection** (GAP-TEXT-UTILITY): Added `electricity will
+  be disconnected`, `electricity service will be disconnected`, `power will be cut off`,
+  `gas will be shut off`, `service will be disconnected today`, `avoid disconnection` and
+  related phrases to EMERGENCY_SCAM_WORDS. Full utility scam message improved from
+  LOG(28) to BLOCK(68); minimal form (URGENT + 1-800 + disconnect threat) BLOCK(78).
+- **Text: 419/deceased-estate fraud detection** (GAP-TEXT-419): Added `estate of the
+  late`, `funds of the late`, `the late mr`, `as the beneficiary of the estate` to
+  BAIT_WORDS (previously these were absent, leaving classic 419 messages at LOG(30)).
+  Full 419 estate-fraud message now BLOCK(74).
+- **Text: romance/travel scam "stranded abroad" variant** (GAP-TEXT-ROMANCE): Added
+  `i am stuck in`, `stranded in`, `my wallet was stolen`, `need money to return`,
+  `i will repay you`, `please send me money` to EMERGENCY_SCAM_WORDS. Romance scam
+  message with Western Union request improved from OK(0) to BLOCK(77).
+- **Text: reshipping mule recruitment** (GAP-TEXT-RESHIP): Added `reship to our`,
+  `reship to a`, `receive packages at your` to GROOMING_WORDS to catch reshipping scam
+  messages where "at your address" separates "receive packages" from "reship". Package
+  reshipping job scam improved from OK(0) to ALERT(40).
+
 ## [0.9.95] — 2026-06-13
 
 ### Security

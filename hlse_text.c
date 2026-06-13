@@ -190,6 +190,14 @@ static const char *BAIT_WORDS[] = {
     "tax refund", "tax rebate", "unclaimed tax refund", "tax return is ready",
     "tax refund is pending", "your refund is ready", "claim your tax",
     "tax overpayment", "overdue tax", "outstanding tax",
+    /* 419 / deceased-estate fraud — "estate of the late" is almost
+     * exclusively used in advance-fee fraud solicitations; legitimate estate
+     * lawyers do not solicit strangers by email/SMS. Placed in BAIT so it
+     * fires independently of PRIZE and triggers the prize+bait amplifier. */
+    "estate of the late", "estate of my late", "estate of a late",
+    "estate of the deceased", "funds of the late", "assets of the late",
+    "the late mr", "the late mrs", "the late dr",
+    "as the beneficiary of the estate",
     /* Japanese */
     "パスワード", "暗証番号", "暗証番号をご入力", "クレジットカード", "銀行口座", "振込",
     "ビットコイン", "仮想通貨", "ギフトカード", "アマゾンギフト", "還付金", "返金",
@@ -296,10 +304,34 @@ static const char *EMERGENCY_SCAM_WORDS[] = {
     "my lawyer will call you", "send money for bail",
     "need cash immediately", "send it right away",
     "i'm in trouble", "please help me", "i was in a car accident",
+    /* Romance / military / travel scam "stranded abroad" variant — attacker
+     * claims to be stuck overseas and needs money for airfare, medical bills,
+     * or visa/customs fees. Usually follows a romance-grooming phase.      */
+    "i am stuck in", "i'm stuck in", "stranded in",
+    "stuck abroad", "stranded abroad",
+    "my wallet was stolen", "my wallet got stolen", "my passport was stolen",
+    "need money to return", "need money to come home", "need money to get home",
+    "money for airfare", "money for a flight home", "pay for my flight home",
+    "send me the money", "send me some money", "please send me money",
+    "i will pay you back", "i will repay you", "i'll pay you back when i return",
     /* Lottery/prize emergency variant */
     "claim your prize today or lose it", "prize expires today",
     "processing fee to claim", "shipping fee to claim",
     "customs fee to release", "release fee",
+    /* Utility cutoff scam — impersonates power/gas/water company threatening
+     * immediate service termination to extort payment via gift card or wire.
+     * Real utilities disconnect via written notice, never via SMS with a
+     * generic 1-800 number to "pay now to avoid disconnection".          */
+    "electricity will be disconnected", "power will be disconnected",
+    "electricity service will be disconnected", "power service will be disconnected",
+    "electricity will be cut off", "power will be cut off",
+    "electricity will be shut off", "power will be shut off",
+    "gas will be shut off", "gas will be disconnected",
+    "water will be shut off", "water will be disconnected",
+    "service will be disconnected today", "service will be terminated today",
+    "service will be disconnected in", "service will be cut off",
+    "avoid service disconnection", "avoid disconnection",
+    "pay to avoid disconnection", "pay to restore service",
     /* Japanese emergency scam (ore ore fraud / 振り込め詐欺) */
     "俺だよ俺", "息子だよ", "事故を起こした", "警察に捕まった",
     "今すぐ送金して", "誰にも言わないで", "弁護士から電話",
@@ -365,6 +397,8 @@ static const char *GROOMING_WORDS[] = {
     "receive shipments and forward", "repack and ship",
     "shipping agent position", "reshipping agent",
     "process shipments from home", "forward packages to",
+    "reship to our", "reship to a", "reship to the",
+    "receive packages at your", "packages to your address",
     /* Upfront-fee job fraud: victim pays for a "starter kit" or "equipment"
      * required to start the job; the job is fake and the payment is stolen.  */
     "starter kit", "starter kit required", "purchase your starter kit",
@@ -379,6 +413,19 @@ static const char *GROOMING_WORDS[] = {
     "guaranteed loan approval", "instant loan approval",
     "bad credit ok", "bad credit accepted",
     "guaranteed approval", "approval guaranteed",
+    /* Advance-fee loan qualifier — appears in messages where any amount is
+     * offered "regardless of" the victim's credit history/score (loan scams
+     * use this to appeal to people who've been rejected by real lenders). */
+    "regardless of credit history", "regardless of credit score",
+    "regardless of your credit", "whatever your credit history",
+    "even if you have bad credit", "even with no credit history",
+    /* Crypto pump-and-dump micro-signals — phrases specific to coordinated
+     * "buy now before the pump" campaigns on Telegram/Discord.           */
+    "about to moon", "going to moon", "will 10x",
+    "huge pump", "big pump coming", "pump signal",
+    "whale accumulation", "whale buying",
+    "buy before the pump", "buy before it moons",
+    "100x potential", "1000x potential",
     /* Crypto recovery scam — fraudsters target victims of previous crypto
      * theft by posing as "blockchain experts" who can recover lost funds for
      * an upfront fee. Classic advance-fee variant on a new audience.      */
@@ -1194,6 +1241,16 @@ hlse_check_text(const char *raw_text) {
         add_text_reason(&v, 20,
             "Amplifier: prize/reward + authority figure = advance-fee / "
             "419 fraud pattern");
+    }
+
+    /* Prize/lottery + investment/loan scam pattern = advance-fee loan fraud.
+     * "Congratulations, you are pre-approved for a loan — pay a processing fee
+     * to receive it." Classic advance-fee variant targeting people with poor
+     * credit who are excited by an unsolicited approval notification.      */
+    if (fired_prize && fired_grooming) {
+        add_text_reason(&v, 15,
+            "Amplifier: prize/reward + loan scam qualifier = "
+            "advance-fee loan fraud pattern");
     }
 
     /* Emergency / grandparent scam amplifiers */
