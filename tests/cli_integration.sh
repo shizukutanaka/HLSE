@@ -603,6 +603,18 @@ assert d["kind"] == "secret" and "findings" in d
     && check "secret: Google OAuth client secret → detected" "0" "0" \
     || check "secret: Google OAuth client secret → detected" "0" "1"
 
+# secret: newer LLM-provider keys (Groq / Perplexity / xAI distinctive prefixes)
+./hlse_core secret "gsk_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJ" 2>&1 | grep -qi "Groq" \
+    && check "secret: Groq API key → detected" "0" "0" \
+    || check "secret: Groq API key → detected" "0" "1"
+./hlse_core secret "pplx-abcdef0123456789abcdef0123456789abcdef0123" 2>&1 | grep -qi "Perplexity" \
+    && check "secret: Perplexity API key → detected" "0" "0" \
+    || check "secret: Perplexity API key → detected" "0" "1"
+# FP guard: a short 'xai-' word must NOT be flagged (min 20-char body)
+./hlse_core secret "the file is in xai-dir folder" 2>&1 | grep -qi "xAI" \
+    && check "secret: short xai- word NOT flagged" "0" "1" \
+    || check "secret: short xai- word NOT flagged" "0" "0"
+
 # secret: bare Telegram bot token (<8-10 digits>:<35 base64url>)
 ./hlse_core secret "7123456789:AAH1234567890abcdefghijklmnopqrstuvw" 2>&1 | grep -qi "Telegram" \
     && check "secret: bare Telegram bot token → detected" "0" "0" \

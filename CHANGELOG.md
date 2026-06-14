@@ -31,6 +31,11 @@ the in- or out-of-distribution corpus.
 - **Secrets: Google OAuth client secret** (GAP-SECRET-GOCSPX). Added the
   `GOCSPX-` prefixed Google OAuth2 client secret to the pattern table (unique
   prefix → ~zero FP) — ISOLATE(90).
+- **Secrets: newer LLM-provider keys** (GAP-SECRET-LLM). Added Groq (`gsk_`),
+  Perplexity (`pplx-`), and xAI/Grok (`xai-`) API-key prefixes (each requires a
+  ≥20-char body, so short prefix-words like `xai-dir` are not flagged). DeepSeek
+  (`sk-`) and Cohere were deliberately omitted — their prefixes are too generic
+  and would raise the false-positive rate.
 - **Secrets: bare Telegram bot tokens** (GAP-SECRET-TELEGRAM). A Telegram bot
   token (`<8-10 digit id>:<35 base64url chars>`) is a recognized
   secret-scanning target (TruffleHog/GitGuardian) but HLSE caught it only when

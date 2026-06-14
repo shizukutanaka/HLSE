@@ -185,6 +185,11 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* OpenAI / Anthropic (distinctive dash-prefixed LLM provider keys) */
     { "sk-proj-",      8,  20, is_alnum_or_dash,   "OpenAI Project Key",    90 },
     { "sk-ant-",       7,  20, is_alnum_or_dash,   "Anthropic API Key",     90 },
+    /* Newer LLM providers with distinctive prefixes (~zero FP):
+     * Groq gsk_<52>, Perplexity pplx-<48>, xAI/Grok xai-<80>.            */
+    { "gsk_",          4,  20, is_alnum_or_dash,   "Groq API Key",          85 },
+    { "pplx-",         5,  20, is_alnum_or_dash,   "Perplexity API Key",    85 },
+    { "xai-",          4,  20, is_alnum_or_dash,   "xAI (Grok) API Key",    85 },
 
     /* Shopify (32-hex body — very low false-positive prefix) */
     { "shpat_",        6,  32, is_hex,             "Shopify Access Token",  85 },
