@@ -11,6 +11,18 @@ legitimate?" — and closed a concrete gap without moving F1 off 1.000 on either
 the in- or out-of-distribution corpus.
 
 ### Added
+- **Blast radius — the pivot/correlation lens** (NEW-PERSPECTIVE-BLAST-RADIUS).
+  Socratic reframing: a `scan` reported N findings one at a time, but an
+  attacker *chains* them — a leaked AWS key **+** a database URL **+** a GitHub
+  token is a full pivot (code → cloud → data), materially worse than ten copies
+  of one test key. Danger lives in the *diversity of asset classes*, not the
+  count. The scan now buckets each secret finding into a coarse asset class
+  (cloud-infrastructure, source-control, database, payment, communications,
+  AI-provider, private-key) and, when findings span ≥2 classes, emits a
+  `⚠ BLAST RADIUS: … span N asset classes (…) — an attacker can pivot …` summary
+  (human) plus `asset_classes` / `blast_radius` JSON fields. A single class
+  (even many tokens) does not trigger it — the warning marks genuine
+  cross-system exposure, not volume.
 - **Confidence as a dimension distinct from severity** (NEW-PERSPECTIVE-CONFIDENCE).
   Socratic reframing: two secret findings can share a score (severity) while
   having opposite epistemic status — a fixed-prefix `AKIA…`/`ghp_…` or a

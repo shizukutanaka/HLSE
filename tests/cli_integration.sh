@@ -369,6 +369,30 @@ BIG_DIR=$(mktemp -d)
     || check "scan: secret in >1MB file → detected (not size-skipped)" "0" "1"
 rm -rf "$BIG_DIR"
 
+# blast radius: credentials across multiple asset classes → pivot warning
+BR_DIR=$(mktemp -d)
+printf 'DATABASE_URL=postgres://admin:Sup3rSecretPass1@db.prod.com/main\n' > "$BR_DIR/.env"
+printf 'token=ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij\n' > "$BR_DIR/ci.txt"
+./hlse_core scan "$BR_DIR" 2>&1 | grep -qi "BLAST RADIUS" \
+    && check "scan: multi-asset-class repo → blast radius warning" "0" "0" \
+    || check "scan: multi-asset-class repo → blast radius warning" "0" "1"
+# JSON exposes asset_classes count
+./hlse_core --json scan "$BR_DIR" 2>&1 | grep scan_summary | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["asset_classes"] >= 2
+' && check "scan: JSON summary has asset_classes >= 2" "0" "0" \
+   || check "scan: JSON summary has asset_classes >= 2" "0" "1"
+rm -rf "$BR_DIR"
+
+# blast radius: a single asset class must NOT trigger the pivot warning
+SR_DIR=$(mktemp -d)
+printf 'aws_secret_access_key = wJalrXUtnFEMItesting7bPxRfiCYzABCD1234567\n' > "$SR_DIR/.env"
+./hlse_core scan "$SR_DIR" 2>&1 | grep -qi "BLAST RADIUS" \
+    && check "scan: single asset class → no blast radius" "0" "1" \
+    || check "scan: single asset class → no blast radius" "0" "0"
+rm -rf "$SR_DIR"
+
 # Scan MUST inspect dotfiles — .env is the #1 secret-leak file
 DOT_DIR=$(mktemp -d)
 printf 'DATABASE_URL=postgres://admin:Sup3rS3cr3tPass@db.prod.com/main\n' > "$DOT_DIR/.env"

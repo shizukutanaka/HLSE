@@ -1909,6 +1909,78 @@ hlse_version(void) {
     return HLSE_VERSION;
 }
 
+/* ───────────────── blast-radius / asset-class correlation ─────────────────
+ * A leaked credential's danger is not its count but what the *set* of leaked
+ * credentials collectively unlocks. We bucket each secret-finding type into a
+ * coarse asset class; when a scan turns up credentials spanning two or more
+ * classes, an attacker can pivot across systems (code → cloud → data), which
+ * is materially worse than many tokens of a single class. */
+enum {
+    ASSET_CLOUD    = 1 << 0,   /* AWS/GCP/Azure/DO infrastructure          */
+    ASSET_SCM      = 1 << 1,   /* GitHub/GitLab source control             */
+    ASSET_DATABASE = 1 << 2,   /* DB / service connection-string creds     */
+    ASSET_PAYMENT  = 1 << 3,   /* Stripe/PayPal/Square                     */
+    ASSET_COMMS    = 1 << 4,   /* Slack/Discord/Telegram/SendGrid/Twilio   */
+    ASSET_AI       = 1 << 5,   /* OpenAI/Anthropic/Groq/… provider keys    */
+    ASSET_CRYPTO   = 1 << 6    /* SSH/PGP private keys                      */
+};
+
+static unsigned
+asset_class_of(const char *type) {
+    if (!type) return 0;
+    if (strstr(type, "AWS") || strstr(type, "GCP") || strstr(type, "Google") ||
+        strstr(type, "AZURE") || strstr(type, "Azure") ||
+        strstr(type, "DigitalOcean") || strstr(type, "Databricks") ||
+        strstr(type, "Render") || strstr(type, "Fly.io") ||
+        strstr(type, "Vercel") || strstr(type, "Netlify"))
+        return ASSET_CLOUD;
+    if (strstr(type, "GitHub") || strstr(type, "GitLab"))
+        return ASSET_SCM;
+    if (strstr(type, "URI_CREDENTIALS") || strstr(type, "Database") ||
+        strstr(type, "PlanetScale"))
+        return ASSET_DATABASE;
+    if (strstr(type, "Stripe") || strstr(type, "PayPal") ||
+        strstr(type, "Square"))
+        return ASSET_PAYMENT;
+    if (strstr(type, "Slack") || strstr(type, "Discord") ||
+        strstr(type, "Telegram") || strstr(type, "SendGrid") ||
+        strstr(type, "Twilio") || strstr(type, "Postman"))
+        return ASSET_COMMS;
+    if (strstr(type, "OpenAI") || strstr(type, "Anthropic") ||
+        strstr(type, "Groq") || strstr(type, "Perplexity") ||
+        strstr(type, "xAI") || strstr(type, "Hugging"))
+        return ASSET_AI;
+    if (strstr(type, "PRIVATE_KEY") || strstr(type, "Private key"))
+        return ASSET_CRYPTO;
+    return 0;  /* generic env/JWT/entropy — not pivot-defining */
+}
+
+static int
+asset_mask_describe(unsigned mask, char *out, size_t outsz) {
+    static const struct { unsigned bit; const char *name; } A[] = {
+        { ASSET_CLOUD,    "cloud-infrastructure" },
+        { ASSET_SCM,      "source-control" },
+        { ASSET_DATABASE, "database" },
+        { ASSET_PAYMENT,  "payment" },
+        { ASSET_COMMS,    "communications" },
+        { ASSET_AI,       "AI-provider" },
+        { ASSET_CRYPTO,   "private-key" },
+        { 0, NULL }
+    };
+    int i, n = 0;
+    size_t w = 0;
+    out[0] = '\0';
+    for (i = 0; A[i].name; i++) {
+        if (mask & A[i].bit) {
+            int k = snprintf(out + w, outsz - w, "%s%s",
+                             n ? ", " : "", A[i].name);
+            if (k > 0 && (size_t)k < outsz - w) w += (size_t)k;
+            n++;
+        }
+    }
+    return n;  /* number of distinct asset classes */
+}
+
 /* ──────────────────────── output formatting ──────────────────────────── */
 
 /* Used by print_verdict (CLI mode) and exposed for library users.
@@ -2679,6 +2751,7 @@ main(int argc, char **argv) {
         {
             const char *root = argv[idx + 1];
             int threats = 0, files_scanned = 0, max_depth = 20;
+            unsigned asset_mask = 0;  /* blast-radius: classes seen across scan */
             struct stat root_st;
 
             /* Verify directory exists and is accessible */
@@ -2854,7 +2927,11 @@ main(int argc, char **argv) {
                                 scanned_bytes += strlen(line);
                                 SecretVerdict sv = hlse_scan_secrets(line);
                                 if (sv.score >= 40) {
+                                    int ai;
                                     threats++;
+                                    for (ai = 0; ai < sv.n_findings; ai++)
+                                        asset_mask |=
+                                            asset_class_of(sv.findings[ai].type);
                                     if (sarif_out) {
                                         char msg[512] = {0};
                                         int i;
@@ -2978,16 +3055,31 @@ main(int argc, char **argv) {
                     printf("OK    %s (%d files scanned, 0 threats)\n",
                            root, files_scanned);
                 } else {
+                    char classes[256];
+                    int nclasses = asset_mask_describe(asset_mask, classes,
+                                                       sizeof(classes));
                     printf("\n%d threat(s) in %d files under %s\n",
                            threats, files_scanned, root);
+                    /* Blast radius: credentials spanning 2+ asset classes let
+                     * an attacker pivot across systems — worse than the count
+                     * alone suggests. */
+                    if (nclasses >= 2)
+                        printf("\xe2\x9a\xa0  BLAST RADIUS: leaked credentials "
+                               "span %d asset classes (%s) — an attacker can "
+                               "pivot across these systems. Rotate ALL of them "
+                               "and assume lateral movement.\n",
+                               nclasses, classes);
                 }
             } else {
                 /* NDJSON: final summary line for CI tooling */
-                char esc_root[4096];
+                char esc_root[4096], classes[256];
+                int nclasses = asset_mask_describe(asset_mask, classes,
+                                                   sizeof(classes));
                 json_escape(root, esc_root, sizeof(esc_root));
                 printf("{\"kind\":\"scan_summary\",\"target\":\"%s\","
-                       "\"files_scanned\":%d,\"threats\":%d}\n",
-                       esc_root, files_scanned, threats);
+                       "\"files_scanned\":%d,\"threats\":%d,"
+                       "\"asset_classes\":%d,\"blast_radius\":\"%s\"}\n",
+                       esc_root, files_scanned, threats, nclasses, classes);
             }
             return threats > 0 ? 1 : 0;
         }
