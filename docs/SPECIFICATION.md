@@ -78,15 +78,15 @@ in `print_usage()` and the man page (`hlse.1`).
 
 | Module | File | Inputs | Key signals | CLI |
 |--------|------|--------|-------------|-----|
-| URL phishing | `hlse_core.c` | URL | homoglyph, Punycode/IDN homograph, typosquat, TLD/path, DGA, subdomain spoof | *(none)* |
+| URL phishing | `hlse_core.c` | URL | homoglyph, Punycode/IDN homograph, typosquat, TLD/path, DGA, subdomain spoof, obfuscated dotless-IP host (hex/dword), `@`-authority credential trick, open-redirect | *(none)* |
 | Text scam / BEC | `hlse_text.c` | text | urgency, financial bait, authority, ransom, BEC amplifiers; evasion-normalised | `text` |
 | Ransomware | `hlse_protect.c` | dir | entropy spike (+magic exclusion), ransom notes, ext mutation, shadow delete | `protect` |
 | Boot integrity | `hlse_protect.c` | device / ESP | MBR signature/strings/entropy; ESP ransom/bootkit strings | `protect --mbr`, `esp` |
-| Credential leak | `hlse_secrets.c` | text/dir | 36 token patterns: AWS(+STS)/GitHub/GitLab/Google/npm/OpenAI/Anthropic/Stripe/Shopify/HuggingFace/PyPI/Postman/Square/Doppler/Grafana/Linear/NewRelic/Databricks/Slack+Discord webhooks/SSH/.env, placeholder exclusion | `scan`, `secret` |
-| Email forensics | `hlse_secrets.c` | headers | SPF/DKIM fail, Reply-To mismatch, display-name spoof, BEC | `email` |
-| Clipboard swap | `hlse_secrets.c` | copied,pasted | same-type address swap + vanity look-alike | `clipboard` |
-| Supply chain | `hlse_supply.c` | pkg / paste / — | typosquat, pastejacking, ARP/DNS | `package`, `paste`, `network` |
-| File masquerade | `hlse_file.c` | path/name | double-extension, magic mismatch (PE/ELF/Mach-O), bidi, polyglot | `file` |
+| Credential leak | `hlse_secrets.c` | text/dir | 55 token patterns: AWS(+STS)/GitHub/GitLab/Google(+OAuth GOCSPX-)/npm/OpenAI/Anthropic/Groq/Perplexity/xAI/Stripe/Shopify/HuggingFace/PyPI/Postman/Square/Doppler/Grafana/Linear/NewRelic/Databricks/Slack+Discord webhooks/SSH/.env + 7 structural checks (GCP SA JSON, Azure SAS, Azure AccountKey, AWS creds-file secret, JWT, Telegram bot token, URI-embedded credentials), placeholder exclusion | `scan`, `secret` |
+| Email forensics | `hlse_secrets.c` | headers | SPF/DKIM fail (+all-none missing-auth), Reply-To mismatch, display-name spoof (+brand-domain ownership guard), BEC | `email` |
+| Clipboard swap | `hlse_secrets.c` | copied,pasted | same-type address swap + vanity look-alike, 16 chains (BTC/ETH/XMR/SOL/USDT-TRC20/LTC/DOGE/XRP/DASH/XLM/ADA/BCH/ATOM/XTZ/DOT/ALGO) | `clipboard` |
+| Supply chain | `hlse_supply.c` | pkg / paste / — | typosquat, pastejacking, network safety (N1 ARP / N2 routing injection / N3 DNS / N4 hosts pharming) | `package`, `paste`, `network` |
+| File masquerade | `hlse_file.c` | path/name | double-extension, magic mismatch (PE/ELF/Mach-O/PDF/ZIP/WASM/shebang-script/HTML-smuggling), bidi/RLO, polyglot | `file` |
 | System audit | `hlse_audit.c` | host | SSH/perm/DNS/cron/PATH/shell-rc + hardening index | `audit` |
 
 ### 4.1 Text-detection property invariants (P1–P13)
