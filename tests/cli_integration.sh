@@ -603,6 +603,16 @@ assert d["kind"] == "secret" and "findings" in d
     && check "secret: Google OAuth client secret → detected" "0" "0" \
     || check "secret: Google OAuth client secret → detected" "0" "1"
 
+# secret: DB connection string with embedded password
+./hlse_core secret "postgres://admin:Sup3rS3cr3tP4ss@db.internal.com:5432/maindb" 2>&1 | grep -qi "Embedded credentials" \
+    && check "secret: DB URI with embedded password → detected" "0" "0" \
+    || check "secret: DB URI with embedded password → detected" "0" "1"
+
+# secret FP guard: a connection string with a ${VAR} password must NOT be flagged
+./hlse_core secret 'postgres://admin:${DB_PASS}@db.com/main' 2>&1 | grep -qi "Embedded credentials" \
+    && check "secret: URI with \${VAR} password NOT flagged" "0" "1" \
+    || check "secret: URI with \${VAR} password NOT flagged" "0" "0"
+
 # secret: newer LLM-provider keys (Groq / Perplexity / xAI distinctive prefixes)
 ./hlse_core secret "gsk_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJ" 2>&1 | grep -qi "Groq" \
     && check "secret: Groq API key → detected" "0" "0" \

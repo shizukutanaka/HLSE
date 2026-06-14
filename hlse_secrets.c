@@ -612,6 +612,49 @@ hlse_scan_secrets(const char *text) {
         }
     }
 
+    /* Database / message-queue connection string with embedded credentials:
+     * "<scheme>://<user>:<password>@<host>". A hardcoded password inside a
+     * service URI is a high-volume real-world leak (.env, source, logs). We
+     * match a fixed set of credential-bearing schemes so a plain "https://"
+     * link (handled by the URL module) does not collide, and we suppress
+     * variable references ($VAR) and placeholders.                         */
+    {
+        static const char *URI_SCHEMES[] = {
+            "postgres://", "postgresql://", "mysql://", "mariadb://",
+            "mongodb://", "mongodb+srv://", "redis://", "rediss://",
+            "amqp://", "amqps://", "mssql://", "clickhouse://",
+            "cockroachdb://", "sftp://", "ftp://", NULL
+        };
+        int si;
+        for (si = 0; URI_SCHEMES[si]; si++) {
+            const char *u = strstr(text, URI_SCHEMES[si]);
+            if (!u) continue;
+            {
+                const char *userinfo = u + strlen(URI_SCHEMES[si]);
+                const char *at = userinfo;
+                const char *colon = NULL;
+                /* Scan the authority up to '@' (userinfo end) or a path/end. */
+                while (*at && *at != '@' && *at != '/' && *at != ' ' &&
+                       *at != '\n' && *at != '\r') {
+                    if (*at == ':' && !colon) colon = at;
+                    at++;
+                }
+                if (*at == '@' && colon) {
+                    const char *pw = colon + 1;
+                    size_t pwlen = (size_t)(at - pw);
+                    /* Non-trivial password, not a variable ref/placeholder. */
+                    if (pwlen >= 4 && *pw != '$' && *pw != '{' &&
+                        !is_placeholder_secret(text, pw, pw, pwlen)) {
+                        sv_add(&v, 80, "URI_CREDENTIALS",
+                               "Embedded credentials in %s connection string "
+                               "(user:password@host)", URI_SCHEMES[si]);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     /* Azure SAS token — highly distinctive shared-access-signature pattern */
     if ((strstr(text, "sv=") || strstr(text, "SharedAccessSignature")) &&
         strstr(text, "sig=") && strstr(text, "se=")) {

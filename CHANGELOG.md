@@ -53,6 +53,14 @@ the in- or out-of-distribution corpus.
   chars, suppress placeholders — ISOLATE on a real key.
   - `aws_secret_access_key = <40-char base64>`: OK(0) → flagged (AWS_SECRET_KEY)
   - FP-guarded: `YOUR_SECRET_KEY_HERE_PLACEHOLDER…` and short values stay clean.
+- **Secrets: connection-string embedded credentials** (GAP-SECRET-URICREDS). A
+  password inside a service URI (`postgres://user:pass@host`,
+  `mongodb+srv://user:pass@host`, redis/amqp/mysql/…) is a high-volume
+  real-world leak, but was caught only with a `DATABASE_URL=` env prefix. Added
+  a structural check over a fixed set of credential-bearing schemes (so a plain
+  `https://` link handled by the URL module does not collide) that extracts the
+  `user:password@` userinfo and flags a non-trivial password — ISOLATE(80).
+  FP-guarded: host-only URIs, `${VAR}` references, and placeholders stay clean.
 - **Clipboard: Tezos mislabel + Polkadot/Algorand coverage** (GAP-CLIP-XTZ-DOT-ALGO).
   A Tezos address (`tz1…`, 36-char base58) was *detected* but mislabeled "SOL
   (Solana)" because it fell into the base58 catch-all; Polkadot (47–48-char
