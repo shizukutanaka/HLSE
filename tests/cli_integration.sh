@@ -500,6 +500,16 @@ RLO_NAME=$(printf 'invoice\342\200\256cod.exe')
     && check "URL: 7-eleven.com NOT flagged as obfuscated IP" "0" "1" \
     || check "URL: 7-eleven.com NOT flagged as obfuscated IP" "0" "0"
 
+# @ credential trick must fire only for '@' in the AUTHORITY
+./hlse_core "https://www.paypal.com@evil.ru/login" 2>&1 | grep -qi "credential trick" \
+    && check "URL: @ in authority → credential trick flagged" "0" "0" \
+    || check "URL: @ in authority → credential trick flagged" "0" "1"
+
+# FP guard: an '@' in the query string (email param) is NOT a credential trick
+./hlse_core "https://example.com/contact?email=user@gmail.com" 2>&1 | grep -qi "credential trick" \
+    && check "URL: @ in query (email) NOT flagged as credential trick" "0" "1" \
+    || check "URL: @ in query (email) NOT flagged as credential trick" "0" "0"
+
 # ─── SARIF 2.1.0 output ─────────────────────────────────────────────
 
 # SARIF output is valid JSON with version 2.1.0

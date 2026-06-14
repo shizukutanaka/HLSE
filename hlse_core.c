@@ -1352,12 +1352,22 @@ check_url(const char *raw_url) {
 
     /* @ credential trick: "https://google.com@evil.com" — the part before
      * @ is userinfo (ignored by browsers); the real host is after @.
-     * RFC 3986 §3.2.1 allows userinfo@host but browsers use host only. */
+     * RFC 3986 §3.2.1 allows userinfo@host but browsers use host only.
+     * The '@' must be inside the AUTHORITY (between "://" and the first
+     * '/', '?', or '#') — an '@' in the path/query (e.g. an email address
+     * in "?email=user@gmail.com") is not a credential trick.              */
     {
         size_t scheme_len = u.is_https ? 8 : 7;  /* https:// or http:// */
-        if (strchr(raw_url + scheme_len, '@')) {
-            add_reason(&v, 45, "URL credential trick: @ in authority — "
-                       "displayed host is fake, real host follows @");
+        const char *auth = raw_url + scheme_len;
+        const char *at = strchr(auth, '@');
+        if (at) {
+            /* Find the authority terminator. */
+            const char *end = auth;
+            while (*end && *end != '/' && *end != '?' && *end != '#') end++;
+            if (at < end) {
+                add_reason(&v, 45, "URL credential trick: @ in authority — "
+                           "displayed host is fake, real host follows @");
+            }
         }
     }
 

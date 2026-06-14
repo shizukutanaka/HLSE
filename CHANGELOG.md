@@ -117,6 +117,15 @@ the in- or out-of-distribution corpus.
   - `http://2130706433/login`: → ISOLATE(85)
   - FP-guarded: `7-eleven.com`, dotted IPs, and `host:port` are unaffected.
 
+### Fixed
+- **URL: `@`-credential-trick false positive on `@` in query string**
+  (FP-URL-ATSIGN). The check searched the *entire* URL after the scheme for an
+  `@`, so a benign link with an email in a query parameter
+  (`https://example.com/contact?email=user@gmail.com`) was flagged ALERT(45) as
+  a credential trick — and the reason fired twice on open-redirect URLs. Bounded
+  the search to the authority component (between `://` and the first `/`,`?`,`#`).
+  Real `host@evil.ru` tricks still ISOLATE; email-in-query URLs are now clean.
+
 ### Changed
 - **Email: false positive on legitimate banks** (FP-EMAIL-BANK). The E1
   display-name check listed `"bank"` as an impersonation keyword but
