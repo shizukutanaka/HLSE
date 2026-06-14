@@ -118,6 +118,12 @@ the in- or out-of-distribution corpus.
   - FP-guarded: `7-eleven.com`, dotted IPs, and `host:port` are unaffected.
 
 ### Fixed
+- **Scan: files ≥1 MB were skipped entirely for secrets** (BUG-SCAN-SIZECAP). A
+  log, `.sql` dump, or bundled config just over 1 MB — exactly the files where
+  credentials hide — was counted as "scanned" but its contents were never read,
+  a misleading silent false-negative. Replaced the hard 1 MB skip with an 8 MB
+  per-file byte budget: large files are now scanned (bounded so a pathological
+  huge file can't stall the run; a 10 MB file completes in ~0.3 s).
 - **Secrets: real keys silently suppressed by far-off "example"/"sample" prose**
   (BUG-SECRET-PLACEHOLDER-WINDOW). The placeholder/example detector scanned 64
   chars of context before a matched secret for marker words — so a live key was

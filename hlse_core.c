@@ -2794,8 +2794,11 @@ main(int argc, char **argv) {
                         }
                     }
 
-                    /* Check 2: secrets in text files (< 1MB) */
-                    if (st.st_size > 0 && st.st_size < 1048576) {
+                    /* Check 2: secrets in text files. Large files are NOT
+                     * skipped outright (a 2 MB log or DB dump routinely
+                     * contains leaked credentials) — instead we scan up to a
+                     * byte budget so work stays bounded on huge files.       */
+                    if (st.st_size > 0) {
                         /* Re-open with O_NOFOLLOW + S_ISREG (defends the
                          * lstat→open TOCTOU window); never follow a symlink
                          * swapped in after classification. */
@@ -2810,8 +2813,15 @@ main(int argc, char **argv) {
                         if (fp) {
                             char line[4096];
                             int lineno = 0;
-                            while (fgets(line, sizeof(line), fp)) {
+                            /* Bound the bytes inspected per file (8 MB) so a
+                             * giant file cannot stall the scan, while still
+                             * covering far more than the old 1 MB hard skip. */
+                            size_t scanned_bytes = 0;
+                            const size_t SCAN_BUDGET = 8u * 1024u * 1024u;
+                            while (scanned_bytes < SCAN_BUDGET &&
+                                   fgets(line, sizeof(line), fp)) {
                                 lineno++;
+                                scanned_bytes += strlen(line);
                                 SecretVerdict sv = hlse_scan_secrets(line);
                                 if (sv.score >= 40) {
                                     threats++;

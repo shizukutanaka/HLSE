@@ -359,6 +359,16 @@ echo "AKIAIOSFODNN7EXAMPLE" > "$SCAN_DIR/config.env"
     && check "scan: detects leaked AWS key" "0" "0" \
     || check "scan: detects leaked AWS key" "0" "1"
 
+# Scan a >1MB file (log/dump) — secret in the first part must be found,
+# not skipped by an over-tight size cap.
+BIG_DIR=$(mktemp -d)
+{ printf 'aws_secret_access_key = wJalrXUtnFEMItesting7bPxRfiCYzABCD1234567\n'
+  for i in $(seq 1 40000); do printf 'log line %d padding padding padding padding\n' "$i"; done; } > "$BIG_DIR/app.log"
+./hlse_core scan "$BIG_DIR" 2>&1 | grep -qiE "AWS secret|threat" \
+    && check "scan: secret in >1MB file → detected (not size-skipped)" "0" "0" \
+    || check "scan: secret in >1MB file → detected (not size-skipped)" "0" "1"
+rm -rf "$BIG_DIR"
+
 # Scan MUST inspect dotfiles — .env is the #1 secret-leak file
 DOT_DIR=$(mktemp -d)
 printf 'DATABASE_URL=postgres://admin:Sup3rS3cr3tPass@db.prod.com/main\n' > "$DOT_DIR/.env"
