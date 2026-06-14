@@ -24,7 +24,7 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             425 (8 suites + corpus + CLI integration)
+  Structured tests:             460 (8 suites + corpus + CLI integration)
   Fuzz iterations:              500,000 (5 harnesses × 100K, 0 crashes)
   ASan + UBSan:                 0 errors
   Compiler warnings:            0 (-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
@@ -42,11 +42,11 @@ Platform:      Linux, macOS (partial)
 | **Text scam** | hlse_text.c | Urgency, financial bait, authority impersonation, ransom, BEC |
 | **Ransomware** | hlse_protect.c | Entropy spike, ransom notes, extension mutation, shadow deletion |
 | **MBR/GPT** | hlse_protect.c | Boot signature, bootkit strings, obfuscation detection |
-| **Credential leak** | hlse_secrets.c | 47 token patterns — AWS (incl. STS), GitHub, GitLab, Google, npm, OpenAI/Anthropic, Stripe, Shopify, HuggingFace, PyPI, Postman, Square, Doppler, Grafana, Linear, New Relic, Databricks, PlanetScale, HashiCorp Vault (service/batch/recovery), Netlify, Render, Fly.io, CircleCI, Contentful, SendGrid, Vercel, Slack/Discord webhooks, SSH keys, .env passwords (excludes doc/example/placeholder keys to cut false positives); clipboard crypto-swap for 11 chains (BTC/ETH/XMR/SOL/USDT-TRC20/LTC/DOGE/XRP/DASH/XLM/ADA) |
+| **Credential leak** | hlse_secrets.c | 55 token patterns — AWS (incl. STS), GitHub, GitLab, Google + Google OAuth (GOCSPX-), npm, OpenAI/Anthropic, Groq/Perplexity/xAI, Stripe, Shopify, HuggingFace, PyPI, Postman, Square, Doppler, Grafana, Linear, New Relic, Databricks, PlanetScale, HashiCorp Vault (service/batch/recovery), Netlify, Render, Fly.io, CircleCI, Contentful, SendGrid, Vercel, Slack/Discord webhooks, SSH keys, .env passwords; plus 7 structural checks — GCP service-account JSON, Azure SAS, Azure storage AccountKey, AWS credentials-file secret, JWT bearer tokens, Telegram bot tokens, and DB/service connection-string embedded credentials (postgres/mysql/mongodb+srv/redis/amqp/…). Excludes doc/example/placeholder keys to cut false positives. Clipboard crypto-swap for 16 chains (BTC/ETH/XMR/SOL/USDT-TRC20/LTC/DOGE/XRP/DASH/XLM/ADA/BCH/ATOM/XTZ/DOT/ALGO) |
 | **Email forensics** | hlse_secrets.c | SPF/DKIM fail, Reply-To mismatch, display-name spoofing |
-| **Supply chain** | hlse_supply.c | Package typosquat (pip/npm/cargo/go/gem — 280 packages), pastejacking (Unix curl\|sh + reverse shells + Windows ClickFix LOLBins + macOS osascript), ARP/DNS safety |
-| **File masquerade** | hlse_file.c | Double extensions, magic byte mismatch, suspicious filenames, update-dropper lures |
-| **System audit** | hlse_audit.c | SSH hardening, file permissions, DNS, cron jobs, insecure $PATH, shell-rc backdoors (function/alias hijack), sudoers NOPASSWD |
+| **Supply chain** | hlse_supply.c | Package typosquat (pip/npm/cargo/go/gem — 280 packages), pastejacking (Unix curl\|sh + reverse shells + Windows ClickFix LOLBins + macOS osascript), network safety (N1 ARP poisoning, N2 default-route/routing injection, N3 DNS resolver, N4 hosts-file pharming — ~50 banking/exchange/wallet domains) |
+| **File masquerade** | hlse_file.c | Double extensions, magic byte mismatch (PE/ELF/Mach-O/PDF/ZIP/CAB/WASM/shebang-script/HTML-smuggling), suspicious filenames, BIDI/RLO override, update-dropper lures |
+| **System audit** | hlse_audit.c | SSH hardening, file permissions, DNS, cron persistence (user crontabs + /etc/cron.{d,hourly,daily,weekly,monthly} + /etc/crontab), insecure $PATH, shell-rc backdoors (function/alias hijack) + system-wide /etc/profile.d, sudoers NOPASSWD |
 
 ## Quick start
 
@@ -183,12 +183,12 @@ Every subcommand supports `--json`:
 | Unit (text) | 18 | Individual text signal accuracy (incl. BEC patterns, IRS FP regression, smishing) |
 | Property invariants | 64 | Monotonicity, bounds, determinism, case, evasion (P1–P13) |
 | Protection | 19 | Ransomware, network drive, SMB, MBR/GPT, ESP |
-| Secrets | 55 | Credentials (47 token patterns + GCP SA JSON + Azure SAS), email headers (E1-E6 incl. E1 brand-domain ownership guard + E5 Received-chain anomaly), crypto addresses (BTC/ETH/SOL/XMR/LTC/DOGE/XRP/DASH/XLM/ADA) |
-| Supply chain | 34 | Package typosquat (pip/npm/cargo/go/gem), pastejacking (Unix + Windows ClickFix + macOS osascript + Python download-exec + P9 reverse shell), network |
-| File/Audit | 33 | File masquerade (PE/ELF/Mach-O/7ZIP/CAB/WASM), system hardening (SSH/perms/DNS/cron/PATH/shell-rc incl. PROMPT_COMMAND/function-override/alias-hijack, sudoers NOPASSWD A7) + hardening index |
+| Secrets | 60 | Credentials (55 token patterns + GCP SA JSON + Azure SAS + Azure AccountKey + AWS creds-file + JWT + Telegram + URI creds), email headers (E1-E6 incl. E1 brand-domain ownership guard + E5 Received-chain anomaly), crypto addresses (BTC/ETH/SOL/XMR/LTC/DOGE/XRP/DASH/XLM/ADA/BCH/ATOM/XTZ/DOT/ALGO) |
+| Supply chain | 39 | Package typosquat (pip/npm/cargo/go/gem), pastejacking (Unix + Windows ClickFix + macOS osascript + Python download-exec + P9 reverse shell), network |
+| File/Audit | 33 | File masquerade (PE/ELF/Mach-O/7ZIP/CAB/WASM/shebang-script/HTML-smuggling), system hardening (SSH/perms/DNS/cron incl. /etc/cron.*+/etc/crontab/PATH/shell-rc incl. PROMPT_COMMAND/function-override/alias-hijack+/etc/profile.d, sudoers NOPASSWD A7) + hardening index |
 | Util | 36 | Entropy, Damerau-Levenshtein, benign-magic (31 formats: archives/images/media/fonts/certs/scientific) + safe system-file open (FIFO/symlink) |
 | OOD corpus | 29 | Out-of-distribution F1 (held-out phishing/scam) |
-| CLI integration | 90 | All 12 subcommands, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON, SARIF relative URIs, no-arg exit=2 |
+| CLI integration | 115 | All 12 subcommands, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON, SARIF relative URIs, obfuscated-IP/@-authority URL guards, HTML-smuggling, secret-format coverage (JWT/AWS-creds/Telegram/URI-creds), no-arg exit=2 |
 | Fuzz | 5 × 100K | text / secrets / supply-chain / file / URL harnesses (random bytes, truncated UTF-8, keyword stuffing, typosquat mutation, bidi/control, Unicode mutation, percent-encoding, dangerous-scheme) |
 
 ## Privacy
