@@ -600,6 +600,27 @@ fi
     && check "secret: detects AWS key (arg)" "0" "0" \
     || check "secret: detects AWS key (arg)" "0" "1"
 
+# remediation: an actionable verdict (>=60) carries a next-action directive
+./hlse_core clipboard "1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf" "1BoatSLRHtKNngkdXEeobR76b53LETtpyT" 2>&1 \
+    | grep -q "Action:" \
+    && check "remediation: clipboard hijack shows next-action" "0" "0" \
+    || check "remediation: clipboard hijack shows next-action" "0" "1"
+
+# remediation: JSON exposes a 'remediation' field on an actionable secret
+./hlse_core --json secret "AKIA2E3MWORQXYZ4567PQ" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] >= 60 and d.get("remediation")
+' && check "remediation: JSON secret has remediation field" "0" "0" \
+   || check "remediation: JSON secret has remediation field" "0" "1"
+
+# remediation: a sub-threshold (LOG) verdict must NOT carry an action line
+./hlse_core email "From: a@b.com
+Reply-To: c@d.com
+Subject: hello" 2>&1 | grep -q "Action:" \
+    && check "remediation: LOG verdict has no action line" "0" "1" \
+    || check "remediation: LOG verdict has no action line" "0" "0"
+
 # secret: reads from stdin
 printf 'token: ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij\n' \
     | ./hlse_core secret --stdin 2>&1 | grep -q "GitHub" \

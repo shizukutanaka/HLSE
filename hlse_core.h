@@ -67,6 +67,10 @@ Verdict hlse_check_url(const char *raw_url);
  * lifetime; do not free.                                               */
 const char *hlse_action_for_score(int score);
 
+/* Recommended next action for an actionable verdict (score >= 60); NULL if
+ * there is no specific guidance for `kind`. */
+const char *hlse_remediation_for(const char *kind, int score);
+
 /* Library version string (compiled-in). */
 const char *hlse_version(void);
 

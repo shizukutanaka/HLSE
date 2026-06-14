@@ -1874,6 +1874,36 @@ hlse_action_for_score(int score) {
     return "SAFE";
 }
 
+/* Recommended next action for an actionable verdict (score >= 60).
+ *
+ * A detector answers "is this dangerous?"; the user's real question is "what
+ * do I do now?". For the highest-stakes, time-critical checks we return a
+ * concrete remediation directive, turning a verdict into a response. `kind`
+ * is the subcommand label ("clipboard", "secret", "email", "url", "file").
+ * Returns NULL when there is no specific guidance (caller prints nothing).  */
+const char *
+hlse_remediation_for(const char *kind, int score) {
+    if (score < 60 || !kind) return NULL;
+    if (strcmp(kind, "clipboard") == 0)
+        return "Do NOT send funds. Clipboard-hijacker malware may be active: "
+               "re-copy the address, verify every character against the source, "
+               "and run a malware scan before transacting.";
+    if (strcmp(kind, "secret") == 0)
+        return "Treat this credential as compromised: revoke/rotate it now and "
+               "purge it from git history (git filter-repo / BFG) — commits are "
+               "already cloned.";
+    if (strcmp(kind, "email") == 0)
+        return "Do not click links, open attachments, or reply. Verify the "
+               "sender through a separately-known channel before acting.";
+    if (strcmp(kind, "url") == 0)
+        return "Do not enter credentials or payment details. Navigate to the "
+               "brand's site by typing its known address, not via this link.";
+    if (strcmp(kind, "file") == 0)
+        return "Do not open or execute this file. Inspect it in a sandbox or "
+               "delete it; the real type does not match its name.";
+    return NULL;
+}
+
 const char *
 hlse_version(void) {
     return HLSE_VERSION;
@@ -3184,16 +3214,27 @@ main(int argc, char **argv) {
                     printf("%s{\"type\":\"%s\",\"description\":\"%s\"}",
                            i > 0 ? "," : "", et, ed);
                 }
-                printf("]}\n");
+                printf("]");
+                {
+                    const char *rem = hlse_remediation_for("secret", sv.score);
+                    if (rem) {
+                        char erm[512];
+                        json_escape(rem, erm, sizeof(erm));
+                        printf(",\"remediation\":\"%s\"", erm);
+                    }
+                }
+                printf("}\n");
             } else if (sv.score == 0) {
                 printf("OK    (secret — no credentials found)\n");
             } else {
                 int i;
+                const char *rem = hlse_remediation_for("secret", sv.score);
                 printf("%-7s [%d]  (secret scan)\n",
                        hlse_action_for_score(sv.score), sv.score);
                 for (i = 0; i < sv.n_findings; i++)
                     printf("  \xc2\xb7 [%s] %s\n",
                            sv.findings[i].type, sv.findings[i].description);
+                if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
             }
             return sv.score >= 60 ? 1 : 0;
         }
@@ -3214,6 +3255,7 @@ main(int argc, char **argv) {
         }
         {
             EmailVerdict ev = hlse_check_email_headers(headers);
+            const char *rem = hlse_remediation_for("email", ev.score);
             if (json_out) {
                 int i;
                 printf("{\"kind\":\"email\",\"score\":%d,\"action\":\"%s\","
@@ -3223,7 +3265,13 @@ main(int argc, char **argv) {
                     json_escape(ev.reasons[i], esc, sizeof(esc));
                     printf("%s\"%s\"", i > 0 ? "," : "", esc);
                 }
-                printf("]}\n");
+                printf("]");
+                if (rem) {
+                    char erm[512];
+                    json_escape(rem, erm, sizeof(erm));
+                    printf(",\"remediation\":\"%s\"", erm);
+                }
+                printf("}\n");
             } else if (ev.score == 0) {
                 printf("OK    (email — no spoofing signals)\n");
             } else {
@@ -3232,6 +3280,7 @@ main(int argc, char **argv) {
                        hlse_action_for_score(ev.score), ev.score);
                 for (i = 0; i < ev.n_reasons; i++)
                     printf("  \xc2\xb7 %s\n", ev.reasons[i]);
+                if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
             }
             return ev.score >= 60 ? 1 : 0;
         }
@@ -3247,22 +3296,26 @@ main(int argc, char **argv) {
         {
             CryptoSwapVerdict cv =
                 hlse_check_crypto_swap(argv[idx + 1], argv[idx + 2]);
+            const char *rem = hlse_remediation_for("clipboard", cv.score);
             if (json_out) {
-                char eo[256], es[256], er[512];
+                char eo[256], es[256], er[512], erm[512];
                 json_escape(cv.original, eo, sizeof(eo));
                 json_escape(cv.swapped, es, sizeof(es));
                 json_escape(cv.reason, er, sizeof(er));
+                json_escape(rem ? rem : "", erm, sizeof(erm));
                 printf("{\"kind\":\"clipboard\",\"score\":%d,\"action\":\"%s\","
                        "\"is_swap\":%d,"
-                       "\"original\":\"%s\",\"swapped\":\"%s\",\"reason\":\"%s\"}\n",
+                       "\"original\":\"%s\",\"swapped\":\"%s\",\"reason\":\"%s\","
+                       "\"remediation\":\"%s\"}\n",
                        cv.score, hlse_action_for_score(cv.score),
-                       cv.is_swap, eo, es, er);
+                       cv.is_swap, eo, es, er, erm);
             } else if (cv.score == 0) {
                 printf("OK    (clipboard — no address swap detected)\n");
             } else {
                 printf("%-7s [%d]  (clipboard)\n",
                        hlse_action_for_score(cv.score), cv.score);
                 if (cv.reason[0]) printf("  \xc2\xb7 %s\n", cv.reason);
+                if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
             }
             return cv.score >= 60 ? 1 : 0;
         }

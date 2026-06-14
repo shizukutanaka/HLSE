@@ -10,6 +10,19 @@ text). Each finding below started from a question — "why would this ever be
 legitimate?" — and closed a concrete gap without moving F1 off 1.000 on either
 the in- or out-of-distribution corpus.
 
+### Added
+- **Remediation guidance — from detection to response** (NEW-PERSPECTIVE-REMEDIATION).
+  Socratic reframing: a detector answers "is this dangerous?", but the user's
+  real question at that moment is "what do I do *now*?". Every verdict explained
+  **why** (reasons) yet none said **what next**. For actionable verdicts
+  (score ≥ 60) the `clipboard`, `secret`, and `email` subcommands now emit a
+  concrete next-action — `→ Action: …` in human output and a `"remediation"`
+  field in JSON. Highest-stakes first: a clipboard hijack says "Do NOT send
+  funds — re-copy and verify every character"; a leaked credential says
+  "revoke/rotate now and purge git history"; a spoofed email says "verify the
+  sender on a known channel before acting." Sub-threshold (LOG/ALERT < 60)
+  verdicts stay quiet — advice is reserved for when action is genuinely needed.
+
 ### Security
 - **Network: default-route integrity (N2) was documented but never
   implemented** (GAP-NET-N2). The header advertised an N2 "gateway change"
