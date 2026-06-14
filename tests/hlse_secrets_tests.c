@@ -279,6 +279,22 @@ static void test_email_display_name_spoof(void) {
     else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
 }
 
+static void test_email_folded_header_spoof(void) {
+    /* RFC 5322 folded header: the address is on a continuation line. The
+     * parser must unfold it so the From domain is found and E1 fires fully,
+     * and no reason may carry a raw embedded newline. */
+    TEST("Email: folded From header spoof unfolded + detected");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: PayPal Support\n"
+        " <service@evil.ru>\n"
+        "Subject: verify your account\n");
+    int clean = 1, i;
+    for (i = 0; i < v.n_reasons; i++)
+        if (strchr(v.reasons[i], '\n')) clean = 0;
+    if (v.score >= 60 && clean) PASS();
+    else { char b[80]; snprintf(b,80,"score=%d clean=%d",v.score,clean); FAIL(b); }
+}
+
 static void test_email_reply_to_mismatch(void) {
     TEST("Email: Reply-To domain ≠ From domain");
     EmailVerdict v = hlse_check_email_headers(
@@ -695,6 +711,7 @@ int main(void) {
     printf("\nEmail Forensics:\n");
     test_email_clean();
     test_email_display_name_spoof();
+    test_email_folded_header_spoof();
     test_email_reply_to_mismatch();
     test_email_spf_fail();
     test_email_ceo_gmail_urgent();

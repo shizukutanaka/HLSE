@@ -118,6 +118,14 @@ the in- or out-of-distribution corpus.
   - FP-guarded: `7-eleven.com`, dotted IPs, and `host:port` are unaffected.
 
 ### Fixed
+- **Email: folded (RFC 5322 continuation) headers broke From parsing**
+  (BUG-EMAIL-FOLD). A spoofed header split across lines —
+  `From: PayPal Support\n <service@evil.ru>` — left the address on the folded
+  line, so `extract_domain` stopped at the newline (missing `evil.ru`) and the
+  display name kept an embedded newline. The spoof scored a weak ALERT(45) with
+  a malformed reason instead of BLOCK(65). Added an RFC 5322 §2.2.3 unfolding
+  pass (CRLF+WSP → single space) before parsing; legitimate folded headers and
+  brand-owns-domain suppression are unaffected.
 - **Scan: files ≥1 MB were skipped entirely for secrets** (BUG-SCAN-SIZECAP). A
   log, `.sql` dump, or bundled config just over 1 MB — exactly the files where
   credentials hide — was counted as "scanned" but its contents were never read,

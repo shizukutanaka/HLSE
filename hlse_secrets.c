@@ -970,9 +970,34 @@ hlse_check_email_headers(const char *raw_headers) {
     char from_domain[256] = {0};
     char reply_domain[256] = {0};
     char display_name[256] = {0};
+    char unfolded[8192];
 
     memset(&v, 0, sizeof(v));
     if (!raw_headers) return v;
+
+    /* RFC 5322 §2.2.3 unfolding: a CRLF immediately followed by whitespace is
+     * a single logical header split across lines. Join continuations back
+     * onto one line before parsing, otherwise a spoofed
+     *   From: PayPal Support
+     *    <service@evil.ru>
+     * leaves the domain on the folded line — extract_domain stops at the
+     * newline (missing it) and the display name keeps an embedded newline.   */
+    {
+        size_t w = 0;
+        const char *r = raw_headers;
+        while (*r && w < sizeof(unfolded) - 1) {
+            if (*r == '\r') { r++; continue; }      /* normalize CRLF → LF */
+            if (*r == '\n' && (r[1] == ' ' || r[1] == '\t')) {
+                r++;                                /* skip the fold LF */
+                while (*r == ' ' || *r == '\t') r++;/* and leading WSP run */
+                if (w > 0 && unfolded[w - 1] != ' ') unfolded[w++] = ' ';
+                continue;
+            }
+            unfolded[w++] = *r++;
+        }
+        unfolded[w] = '\0';
+        raw_headers = unfolded;
+    }
 
     from_val = find_header(raw_headers, "From");
     reply_to_val = find_header(raw_headers, "Reply-To");
