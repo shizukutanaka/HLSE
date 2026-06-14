@@ -1505,12 +1505,40 @@ common_suffix_len(const char *a, const char *b) {
     return (int)n;
 }
 
+/* Copy `s` into `buf` with leading/trailing whitespace removed. A clipboard
+ * selection routinely carries surrounding spaces/newlines (selecting an
+ * address on a web page, a trailing line break); without trimming, a swapped
+ * address with surrounding whitespace fails format detection and the hijack
+ * is silently missed. */
+static const char *
+trim_ws_copy(const char *s, char *buf, size_t bufsz) {
+    size_t len;
+    while (*s == ' ' || *s == '\t' || *s == '\n' || *s == '\r' || *s == '\f'
+           || *s == '\v')
+        s++;
+    len = strlen(s);
+    while (len > 0 && (s[len-1] == ' ' || s[len-1] == '\t' ||
+                       s[len-1] == '\n' || s[len-1] == '\r' ||
+                       s[len-1] == '\f' || s[len-1] == '\v'))
+        len--;
+    if (len >= bufsz) len = bufsz - 1;
+    memcpy(buf, s, len);
+    buf[len] = '\0';
+    return buf;
+}
+
 CryptoSwapVerdict
 hlse_check_crypto_swap(const char *copied, const char *pasted) {
     CryptoSwapVerdict v;
+    char cbuf[256], pbuf[256];
     memset(&v, 0, sizeof(v));
 
     if (!copied || !pasted) return v;
+
+    /* Trim surrounding whitespace — a real copy/paste often includes it, and
+     * an untrimmed address fails fixed-length/prefix format detection. */
+    copied = trim_ws_copy(copied, cbuf, sizeof(cbuf));
+    pasted = trim_ws_copy(pasted, pbuf, sizeof(pbuf));
 
     CryptoType type_copied = detect_crypto_type(copied);
     CryptoType type_pasted = detect_crypto_type(pasted);

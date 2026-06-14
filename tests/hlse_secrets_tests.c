@@ -561,6 +561,22 @@ static void test_crypto_validate_xrp(void) {
     else FAIL("XRP not recognized");
 }
 
+static void test_crypto_swap_whitespace(void) {
+    /* A real copy/paste carries surrounding whitespace; the swap must still
+     * be detected after trimming, and identical addresses that differ only in
+     * surrounding whitespace must NOT be reported as a swap. */
+    TEST("Clipboard: swap detected despite surrounding whitespace");
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "  1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf  ",
+        "1BoatSLRHtKNngkdXEeobR76b53LETtpyT");
+    CryptoSwapVerdict same = hlse_check_crypto_swap(
+        "  1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf  ",
+        "1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf");
+    if (v.score >= 90 && v.is_swap == 1 && same.score == 0) PASS();
+    else { char b[80]; snprintf(b,80,"swap=%d/%d same=%d",
+                                v.score,v.is_swap,same.score); FAIL(b); }
+}
+
 static void test_crypto_ada_swap(void) {
     TEST("Clipboard: ADA (addr1) address swapped → score 95");
     /* Two structurally valid Cardano payment addresses (addr1 + 54 bech32 chars) */
@@ -739,6 +755,7 @@ int main(void) {
     test_crypto_validate_ltc();
     test_crypto_validate_doge();
     test_crypto_validate_xrp();
+    test_crypto_swap_whitespace();
     test_crypto_ada_swap();
     test_crypto_validate_ada();
     test_crypto_bch_swap();

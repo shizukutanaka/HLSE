@@ -118,6 +118,13 @@ the in- or out-of-distribution corpus.
   - FP-guarded: `7-eleven.com`, dotted IPs, and `host:port` are unaffected.
 
 ### Fixed
+- **Clipboard: address-swap missed when an address carried surrounding
+  whitespace** (BUG-CLIP-WS). A real clipboard selection routinely includes
+  leading/trailing spaces or a trailing newline; an untrimmed address failed
+  fixed-length/prefix format detection, so the clipper swap was silently missed
+  (`"  1A1z…Divf  "` vs a different BTC address → OK). `hlse_check_crypto_swap`
+  now trims both inputs before detection; identical addresses differing only in
+  surrounding whitespace are correctly NOT flagged as a swap.
 - **Email: folded (RFC 5322 continuation) headers broke From parsing**
   (BUG-EMAIL-FOLD). A spoofed header split across lines —
   `From: PayPal Support\n <service@evil.ru>` — left the address on the folded
