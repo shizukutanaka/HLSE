@@ -483,17 +483,28 @@ is_placeholder_secret(const char *line_start, const char *match,
         }
     }
 
-    /* 2. Examine up to 64 chars of context before the match (variable
-     *    names like "example_key =", "test_token:", "# sample").       */
+    /* 2. Examine a SHORT window of context immediately before the match —
+     *    only the assignment prefix / variable name (e.g. "example_key =",
+     *    "test_token:", "# sample:"). The window is deliberately small (32
+     *    chars): a marker word must abut the secret to suppress it. A larger
+     *    window caused real keys to be silently dropped whenever unrelated
+     *    prose nearby contained "example"/"sample" (e.g. "Example config for
+     *    production: AKIA<real key>"). The repetitive-char markers
+     *    (xxxxxxxx/XXXXXXXX) are intentionally excluded here — a run of x's in
+     *    context is not an "example" signal; an x-filled *token* is already
+     *    caught by checks 1 and 3.                                          */
     {
         size_t before = (size_t)(match - line_start);
-        size_t take = before < 64 ? before : 64;
+        size_t take = before < 32 ? before : 32;
         const char *ctx = match - take;
         wlen = take;
         if (wlen >= sizeof(window)) wlen = sizeof(window) - 1;
         memcpy(window, ctx, wlen);
         window[wlen] = '\0';
         for (i = 0; MARKERS[i]; i++) {
+            if (strcmp(MARKERS[i], "xxxxxxxx") == 0 ||
+                strcmp(MARKERS[i], "XXXXXXXX") == 0)
+                continue;  /* not a context indicator */
             if (strstr(window, MARKERS[i]) != NULL) return 1;
         }
     }

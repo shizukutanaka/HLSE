@@ -118,6 +118,17 @@ the in- or out-of-distribution corpus.
   - FP-guarded: `7-eleven.com`, dotted IPs, and `host:port` are unaffected.
 
 ### Fixed
+- **Secrets: real keys silently suppressed by far-off "example"/"sample" prose**
+  (BUG-SECRET-PLACEHOLDER-WINDOW). The placeholder/example detector scanned 64
+  chars of context before a matched secret for marker words — so a live key was
+  dropped whenever unrelated prose nearby contained "example", "sample", or a
+  run of `xxxxxxxx` (e.g. `Example config for production: AKIA<real key>`,
+  common in READMEs, logs, and config comments). Tightened the context window to
+  32 chars (a marker must abut the secret as an assignment prefix like
+  `example_key =`) and excluded the repetitive-char markers from the context
+  scan (an x-filled *token* is still caught by the token-self and distinct-char
+  checks). Genuine placeholders (`example_api_key = …`, the AWS doc key,
+  `your_api_key_here`) remain suppressed; real keys in prose are now detected.
 - **Scan: `.env` and other dotfiles were silently skipped** (BUG-SCAN-DOTFILES).
   The recursive directory scanner skipped every entry whose name began with
   `.`, intending to skip `.`/`..`/`.git` — but this also skipped `.env`,

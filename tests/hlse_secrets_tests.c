@@ -46,6 +46,28 @@ static void test_placeholder_excluded(void) {
     else { char b[64]; snprintf(b,64,"false positive score=%d",v.score); FAIL(b); }
 }
 
+static void test_real_key_in_example_prose(void) {
+    /* Regression: a real key must NOT be suppressed just because the word
+     * "example"/"sample" appears in unrelated prose nearby. The placeholder
+     * context window is now tight (assignment prefix only). */
+    TEST("Secret: real key after 'Example' prose still detected");
+    SecretVerdict v = hlse_scan_secrets(
+        "Example configuration for production here: "
+        "AKIA2E3MWORQXYZ4567PQ\n");
+    if (v.score >= 80 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"missed: score=%d",v.score); FAIL(b); }
+}
+
+static void test_assignment_placeholder_still_excluded(void) {
+    /* Precision guard: a marker word in the assignment prefix DOES still
+     * suppress (example_api_key = …). */
+    TEST("Secret: 'example_api_key =' assignment still excluded");
+    SecretVerdict v = hlse_scan_secrets(
+        "example_api_key = AKIAIOSFODNN7EXAMPLE\n");
+    if (v.score == 0) PASS();
+    else { char b[64]; snprintf(b,64,"false positive score=%d",v.score); FAIL(b); }
+}
+
 static void test_github_pat(void) {
     TEST("Secret: GitHub PAT detected");
     SecretVerdict v = hlse_scan_secrets(
@@ -651,6 +673,8 @@ int main(void) {
     test_aws_key();
     test_aws_example_key_excluded();
     test_placeholder_excluded();
+    test_real_key_in_example_prose();
+    test_assignment_placeholder_still_excluded();
     test_github_pat();
     test_stripe_live();
     test_ssh_private_key();
