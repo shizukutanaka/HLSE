@@ -30,6 +30,14 @@ typedef struct {
  * Fully local — no network access.                                    */
 SecretVerdict hlse_scan_secrets(const char *text);
 
+/* Confidence is a separate axis from the score (severity). A fixed-prefix or
+ * structural match (AKIA…, ghp_…, JWT, GCP service-account JSON) is
+ * near-certain (~zero false positives); a generic env-var or high-entropy
+ * match is a heuristic judgment call. Returns "certain" if any finding is a
+ * high-specificity type, else "heuristic" (or "none" when there are no
+ * findings). */
+const char *hlse_secret_confidence(const SecretVerdict *v);
+
 /* ── Module 2: Email Header Forensics ─────────────────────────────────── */
 
 #define HLSE_EMAIL_MAX_REASONS 8

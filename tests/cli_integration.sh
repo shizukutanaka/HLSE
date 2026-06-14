@@ -600,6 +600,24 @@ fi
     && check "secret: detects AWS key (arg)" "0" "0" \
     || check "secret: detects AWS key (arg)" "0" "1"
 
+# confidence: a fixed-prefix key is reported as 'certain'
+./hlse_core secret "AKIA2E3MWORQXYZ4567PQ" 2>&1 | grep -q "confidence: certain" \
+    && check "confidence: fixed-prefix key → certain" "0" "0" \
+    || check "confidence: fixed-prefix key → certain" "0" "1"
+
+# confidence: a generic VAR=value is reported as 'heuristic' (a pattern guess)
+./hlse_core secret "PASSWORD=please-knock-first" 2>&1 | grep -q "confidence: heuristic" \
+    && check "confidence: generic env var → heuristic" "0" "0" \
+    || check "confidence: generic env var → heuristic" "0" "1"
+
+# confidence: JSON exposes the 'confidence' field
+./hlse_core --json secret "PASSWORD=hunter2value" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["confidence"] in ("certain","heuristic")
+' && check "confidence: JSON secret has confidence field" "0" "0" \
+   || check "confidence: JSON secret has confidence field" "0" "1"
+
 # remediation: an actionable verdict (>=60) carries a next-action directive
 ./hlse_core clipboard "1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf" "1BoatSLRHtKNngkdXEeobR76b53LETtpyT" 2>&1 \
     | grep -q "Action:" \

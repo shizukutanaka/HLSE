@@ -747,6 +747,23 @@ hlse_scan_secrets(const char *text) {
     return v;
 }
 
+const char *
+hlse_secret_confidence(const SecretVerdict *v) {
+    int i;
+    if (!v || v->n_findings == 0) return "none";
+    /* Heuristic finding types: a match without a fixed, unforgeable anchor —
+     * a generic VAR=value env line or a high-entropy string after a keyword.
+     * Everything else (fixed-prefix tokens, private-key markers, structural
+     * cloud-credential shapes) is high-specificity → certain. */
+    for (i = 0; i < v->n_findings; i++) {
+        const char *t = v->findings[i].type;
+        if (strcmp(t, "ENV_SECRET") != 0 &&
+            strcmp(t, "GENERIC_SECRET") != 0)
+            return "certain";
+    }
+    return "heuristic";
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
  * Module 2: Email Header Forensics
  *

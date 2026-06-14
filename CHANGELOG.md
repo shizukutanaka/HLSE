@@ -11,6 +11,18 @@ legitimate?" — and closed a concrete gap without moving F1 off 1.000 on either
 the in- or out-of-distribution corpus.
 
 ### Added
+- **Confidence as a dimension distinct from severity** (NEW-PERSPECTIVE-CONFIDENCE).
+  Socratic reframing: two secret findings can share a score (severity) while
+  having opposite epistemic status — a fixed-prefix `AKIA…`/`ghp_…` or a
+  structural match (JWT, GCP service-account JSON, private-key marker) is
+  *near-certain* (~zero false positives), whereas a generic `VAR=value` env line
+  or a high-entropy guess is a *heuristic*. The single score conflated "how bad"
+  with "how sure". The `secret` subcommand now reports a separate
+  **confidence** — `certain` vs `heuristic` — in the human header
+  (`… — confidence: heuristic`) and a `"confidence"` JSON field; a heuristic
+  finding additionally prints a "confirm it is a live credential" note. A
+  generic `PASSWORD=…` (BLOCK 70, heuristic) and an `AKIA…` (ISOLATE 80,
+  certain) now read as different on the confidence axis even though both block.
 - **Remediation guidance — from detection to response** (NEW-PERSPECTIVE-REMEDIATION).
   Socratic reframing: a detector answers "is this dangerous?", but the user's
   real question at that moment is "what do I do *now*?". Every verdict explained

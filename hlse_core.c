@@ -3215,6 +3215,7 @@ main(int argc, char **argv) {
                            i > 0 ? "," : "", et, ed);
                 }
                 printf("]");
+                printf(",\"confidence\":\"%s\"", hlse_secret_confidence(&sv));
                 {
                     const char *rem = hlse_remediation_for("secret", sv.score);
                     if (rem) {
@@ -3229,11 +3230,16 @@ main(int argc, char **argv) {
             } else {
                 int i;
                 const char *rem = hlse_remediation_for("secret", sv.score);
-                printf("%-7s [%d]  (secret scan)\n",
-                       hlse_action_for_score(sv.score), sv.score);
+                const char *conf = hlse_secret_confidence(&sv);
+                printf("%-7s [%d]  (secret scan — confidence: %s)\n",
+                       hlse_action_for_score(sv.score), sv.score, conf);
                 for (i = 0; i < sv.n_findings; i++)
                     printf("  \xc2\xb7 [%s] %s\n",
                            sv.findings[i].type, sv.findings[i].description);
+                if (strcmp(conf, "heuristic") == 0)
+                    printf("  \xe2\x86\x92 Confidence: heuristic — this is a "
+                           "pattern guess (generic VAR=value / high-entropy "
+                           "string); confirm it is a live credential.\n");
                 if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
             }
             return sv.score >= 60 ? 1 : 0;
