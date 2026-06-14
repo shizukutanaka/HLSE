@@ -53,6 +53,14 @@ the in- or out-of-distribution corpus.
   chars, suppress placeholders — ISOLATE on a real key.
   - `aws_secret_access_key = <40-char base64>`: OK(0) → flagged (AWS_SECRET_KEY)
   - FP-guarded: `YOUR_SECRET_KEY_HERE_PLACEHOLDER…` and short values stay clean.
+- **File: HTML-smuggling masquerade** (GAP-FILE-HTML). An HTML file wearing a
+  document/image extension (`invoice.pdf`, `statement.doc` that is really
+  `<!DOCTYPE html>…`) opens in the browser and runs embedded JS / reconstructs
+  an in-page payload — a top phishing-delivery vector. HTML has no fixed magic
+  byte, so it slipped past the byte-signature table. Added a `looks_like_html()`
+  detector (case-insensitive, BOM/whitespace-tolerant, matches
+  `<!doctype html`/`<html`/`<head`/`<script`/`<svg`/comment lead-in) and an F2
+  rule — ALERT(55). Genuine `.html`/`.htm`/`.svg` files are exempt.
 - **Secrets: connection-string embedded credentials** (GAP-SECRET-URICREDS). A
   password inside a service URI (`postgres://user:pass@host`,
   `mongodb+srv://user:pass@host`, redis/amqp/mysql/…) is a high-volume

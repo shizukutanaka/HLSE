@@ -154,6 +154,37 @@ detect_magic(const unsigned char *head, size_t len) {
     return NULL;
 }
 
+/* HTML has no single fixed magic byte — it may begin with "<!DOCTYPE html>",
+ * "<html", "<head", "<script", or "<?xml" (for XHTML/SVG), possibly after a
+ * UTF-8 BOM and/or leading whitespace, in any case. Detect it separately so
+ * HTML-smuggling files wearing a document extension (invoice.pdf that is
+ * really HTML) can be flagged. Returns 1 if the head looks like HTML/XML
+ * markup with an HTML-ish tag.                                            */
+static int
+looks_like_html(const unsigned char *head, size_t len) {
+    size_t i = 0;
+    char low[64];
+    size_t n = 0;
+    /* Skip UTF-8 BOM */
+    if (len >= 3 && head[0] == 0xEF && head[1] == 0xBB && head[2] == 0xBF)
+        i = 3;
+    /* Skip leading whitespace */
+    while (i < len && (head[i] == ' ' || head[i] == '\t' ||
+                       head[i] == '\r' || head[i] == '\n'))
+        i++;
+    if (i >= len || head[i] != '<') return 0;
+    /* Lowercase a small window starting at the '<' for case-insensitive cmp */
+    for (; i < len && n < sizeof(low) - 1; i++)
+        low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    return (strncmp(low, "<!doctype html", 14) == 0 ||
+            strncmp(low, "<html", 5) == 0 ||
+            strncmp(low, "<head", 5) == 0 ||
+            strncmp(low, "<script", 7) == 0 ||
+            strncmp(low, "<!-- ", 5) == 0 ||  /* HTML comment lead-in */
+            strncmp(low, "<svg", 4) == 0);
+}
+
 /* ─── dangerous extensions ────────────────────────────────────────────── */
 
 static const char *EXECUTABLE_EXTS[] = {
@@ -349,6 +380,9 @@ hlse_check_file(const char *filepath) {
     /* Detect magic type */
     if (head_len >= 4) {
         magic_type = detect_magic(head, (size_t)head_len);
+        /* HTML has no fixed magic byte; detect it only if nothing else hit. */
+        if (!magic_type && looks_like_html(head, (size_t)head_len))
+            magic_type = "HTML";
     }
 
     /* ── F1: Double extension ──────────────────────────────────────── */
@@ -447,6 +481,20 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, 60,
                 "F2: MAGIC MISMATCH — file has script shebang (#!) but "
                 "extension '%s' implies passive data", ext);
+        }
+        /* HTML content wearing a document/image extension — HTML smuggling.
+         * A "invoice.pdf" or "statement.doc" that is actually HTML opens in
+         * the browser and can run embedded JS / reconstruct a payload from
+         * an in-page blob (top phishing delivery vector 2023-2025).
+         * (.svg is excluded here — an HTML/SVG file with an .svg extension is
+         * not a masquerade; the script-in-SVG concern is separate.)         */
+        if (strcmp(magic_type, "HTML") == 0 &&
+            (is_document_ext(ext) || is_image_ext(ext)) &&
+            strcmp(ext, ".svg") != 0 && strcmp(ext, ".html") != 0 &&
+            strcmp(ext, ".htm") != 0) {
+            fv_add(&v, 55,
+                "F2: MAGIC MISMATCH — file is HTML but extension '%s' implies "
+                "a document/image (possible HTML-smuggling phish)", ext);
         }
     }
 

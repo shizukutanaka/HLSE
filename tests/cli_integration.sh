@@ -270,6 +270,20 @@ touch /tmp/hlse_invoice.pdf.exe
     || check "file: double extension .pdf.exe → detected" "0" "1"
 rm -f /tmp/hlse_invoice.pdf.exe
 
+# HTML smuggling: HTML content wearing a .pdf extension
+printf '<!DOCTYPE html><html><body><script>x</script></body></html>' > /tmp/hlse_smug.pdf
+./hlse_core file /tmp/hlse_smug.pdf 2>&1 | grep -qi "HTML" \
+    && check "file: HTML-as-.pdf masquerade → detected" "0" "0" \
+    || check "file: HTML-as-.pdf masquerade → detected" "0" "1"
+rm -f /tmp/hlse_smug.pdf
+
+# FP guard: a genuine .html file must NOT be flagged as a masquerade
+printf '<!DOCTYPE html><html></html>' > /tmp/hlse_real.html
+./hlse_core file /tmp/hlse_real.html 2>&1 | grep -qi "MAGIC MISMATCH" \
+    && check "file: genuine .html NOT flagged as masquerade" "0" "1" \
+    || check "file: genuine .html NOT flagged as masquerade" "0" "0"
+rm -f /tmp/hlse_real.html
+
 # ─── audit subcommand ──────────────────────────────────────────────
 
 ./hlse_core audit 2>&1 | grep -qE "OK|ALERT|LOG|BLOCK|HIGH|MED|LOW" \
