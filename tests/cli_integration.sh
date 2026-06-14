@@ -603,6 +603,20 @@ assert all(not u.startswith('/') for u in uris), 'absolute URI found: ' + str(ur
 fi
 rm -rf "$SARIF_DIR"
 
+# ─── blind-spot disclosure on clean verdicts ────────────────────────
+# A clean URL discloses what HLSE cannot see (structural check only).
+./hlse_core "https://www.google.com" 2>&1 | grep -qi "Blind spot" \
+    && check "blindspot: clean URL discloses limits" "0" "0" \
+    || check "blindspot: clean URL discloses limits" "0" "1"
+# A threat verdict must NOT carry the clean-result blind-spot note.
+./hlse_core "https://paypal-verify.ru/login" 2>&1 | grep -qi "Blind spot" \
+    && check "blindspot: threat verdict has no blind-spot note" "0" "1" \
+    || check "blindspot: threat verdict has no blind-spot note" "0" "0"
+# Clean text discloses its keyword/structure limitation.
+./hlse_core text "are we still on for lunch tomorrow" 2>&1 | grep -qi "Blind spot" \
+    && check "blindspot: clean text discloses limits" "0" "0" \
+    || check "blindspot: clean text discloses limits" "0" "1"
+
 # ─── JSON control-char escaping ─────────────────────────────────────
 # A secret file containing a control byte must still produce valid JSON
 # (the \uXXXX escape path).

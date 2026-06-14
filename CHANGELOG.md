@@ -11,6 +11,17 @@ legitimate?" — and closed a concrete gap without moving F1 off 1.000 on either
 the in- or out-of-distribution corpus.
 
 ### Added
+- **Epistemic humility — blind-spot disclosure on clean verdicts**
+  (NEW-PERSPECTIVE-BLINDSPOT). Socratic reframing ("the only true wisdom is
+  knowing you know nothing"): every other signal enriches a *threat* finding,
+  but the most dangerous output is a **false `OK`** — the user proceeds
+  *because* the tool blessed it. A clean verdict means "no syntactic deception
+  markers found", not "safe". The `url`, `text`, and `email` checks now append a
+  one-line `ℹ Blind spot:` note on a clean (score 0) result, stating what HLSE
+  cannot see — a pixel-perfect clone on a clean domain, a novel scam with no
+  known phrasing, a breached-but-legitimate sender — so an OK is not mistaken
+  for proof of safety. Shown only on interactive single checks (not batch/CI/
+  scan output) and only on clean results; threat verdicts are unaffected.
 - **Blast radius — the pivot/correlation lens** (NEW-PERSPECTIVE-BLAST-RADIUS).
   Socratic reframing: a `scan` reported N findings one at a time, but an
   attacker *chains* them — a leaked AWS key **+** a database URL **+** a GitHub

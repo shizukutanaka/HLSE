@@ -1904,6 +1904,29 @@ hlse_remediation_for(const char *kind, int score) {
     return NULL;
 }
 
+/* Blind-spot disclosure for a CLEAN verdict (score 0). A clean result means
+ * "no syntactic deception markers found" — NOT "safe". Stating what HLSE
+ * cannot see prevents the most dangerous outcome: a false OK the user trusts
+ * and acts on. Returned for the phishing-judgment checks where structural
+ * cleanliness is weakest evidence of safety; NULL otherwise.              */
+const char *
+hlse_blindspot_for(const char *kind) {
+    if (!kind) return NULL;
+    if (strcmp(kind, "url") == 0)
+        return "structural check only — a pixel-perfect clone on a clean or "
+               "newly-compromised domain still phishes; confirm the brand "
+               "independently before entering credentials or payment.";
+    if (strcmp(kind, "text") == 0)
+        return "keyword/structure based — a novel or carefully-worded scam "
+               "with no known phrasing can read clean; trust your judgment on "
+               "unexpected requests for money or credentials.";
+    if (strcmp(kind, "email") == 0)
+        return "header forensics only — a breached but legitimate account, or "
+               "a clean-domain look-alike, can still be malicious; verify "
+               "unexpected requests out-of-band.";
+    return NULL;
+}
+
 const char *
 hlse_version(void) {
     return HLSE_VERSION;
@@ -3371,7 +3394,9 @@ main(int argc, char **argv) {
                 }
                 printf("}\n");
             } else if (ev.score == 0) {
+                const char *bs = hlse_blindspot_for("email");
                 printf("OK    (email — no spoofing signals)\n");
+                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
                 printf("%-7s [%d]  (email forensics)\n",
@@ -3526,7 +3551,9 @@ main(int argc, char **argv) {
                              "%s", sr.reasons[ti]);
                 print_json_text(argv[idx + 1], &tv);
             } else if (sr.score == 0) {
+                const char *bs = hlse_blindspot_for(sr.is_url ? "url" : "text");
                 printf("OK    (text)\n");
+                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
                 printf("%-7s [%d]  (text) %.60s%s\n",
@@ -3572,7 +3599,9 @@ main(int argc, char **argv) {
                 print_json_text(input, &tv);
             }
         } else if (sr.score == 0) {
+            const char *bs = hlse_blindspot_for(sr.is_url ? "url" : "text");
             printf("OK    %s\n", input);
+            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
         } else {
             int i;
             printf("%-7s [%d]  %s\n",

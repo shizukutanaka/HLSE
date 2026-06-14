@@ -71,6 +71,10 @@ const char *hlse_action_for_score(int score);
  * there is no specific guidance for `kind`. */
 const char *hlse_remediation_for(const char *kind, int score);
 
+/* Blind-spot disclosure for a CLEAN verdict — what HLSE cannot see, so an OK
+ * is not mistaken for proof of safety. NULL when there is no caveat. */
+const char *hlse_blindspot_for(const char *kind);
+
 /* Library version string (compiled-in). */
 const char *hlse_version(void);
 
