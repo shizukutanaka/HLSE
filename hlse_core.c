@@ -2687,7 +2687,15 @@ main(int argc, char **argv) {
                 while ((ent = readdir(d)) != NULL) {
                     char fullpath[8192];
                     struct stat st;
-                    if (ent->d_name[0] == '.') continue;
+                    /* Skip only the '.' and '..' entries — NOT all dotfiles.
+                     * A blanket dot-skip would silently ignore .env, .npmrc,
+                     * .pypirc, .git-credentials, .aws/credentials … which are
+                     * the single highest-value secret-bearing files. Dot-named
+                     * directories (.git, .svn) are filtered by SKIP_DIRS below. */
+                    if (ent->d_name[0] == '.' &&
+                        (ent->d_name[1] == '\0' ||
+                         (ent->d_name[1] == '.' && ent->d_name[2] == '\0')))
+                        continue;
 
                     if (strlen(cur_path) + strlen(ent->d_name) + 2 >= sizeof(fullpath))
                         continue;  /* path too long — skip */
@@ -2722,6 +2730,10 @@ main(int argc, char **argv) {
                             "venv", "env", "vendor", "build", "dist",
                             "target", ".tox", ".mypy_cache", ".pytest_cache",
                             ".cargo", ".npm", "coverage", ".next",
+                            /* VCS metadata dirs — large, binary, no secrets to
+                             * surface; previously skipped by the blanket dot
+                             * filter, now skipped explicitly.                  */
+                            ".git", ".svn", ".hg",
                             NULL
                         };
                         int skip = 0;

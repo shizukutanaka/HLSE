@@ -118,6 +118,15 @@ the in- or out-of-distribution corpus.
   - FP-guarded: `7-eleven.com`, dotted IPs, and `host:port` are unaffected.
 
 ### Fixed
+- **Scan: `.env` and other dotfiles were silently skipped** (BUG-SCAN-DOTFILES).
+  The recursive directory scanner skipped every entry whose name began with
+  `.`, intending to skip `.`/`..`/`.git` — but this also skipped `.env`,
+  `.npmrc`, `.pypirc`, `.git-credentials`, `.aws/credentials`, the *highest*-value
+  secret-bearing files. A `scan <repo>` in CI would report clean while a leaked
+  `.env` sat right there. Now only `.`/`..` are skipped at the entry level, and
+  dot-named **directories** (`.git`, `.svn`, `.hg`) are filtered via the
+  existing `SKIP_DIRS` list, so dotfiles are scanned but VCS metadata trees are
+  not. (`.env` with embedded DB credentials: silently OK → ISOLATE.)
 - **URL: `@`-credential-trick false positive on `@` in query string**
   (FP-URL-ATSIGN). The check searched the *entire* URL after the scheme for an
   `@`, so a benign link with an email in a query parameter

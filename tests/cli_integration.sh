@@ -359,6 +359,20 @@ echo "AKIAIOSFODNN7EXAMPLE" > "$SCAN_DIR/config.env"
     && check "scan: detects leaked AWS key" "0" "0" \
     || check "scan: detects leaked AWS key" "0" "1"
 
+# Scan MUST inspect dotfiles — .env is the #1 secret-leak file
+DOT_DIR=$(mktemp -d)
+printf 'DATABASE_URL=postgres://admin:Sup3rS3cr3tPass@db.prod.com/main\n' > "$DOT_DIR/.env"
+./hlse_core scan "$DOT_DIR" 2>&1 | grep -qiE "threat|credential|secret" \
+    && check "scan: inspects .env dotfile (not skipped)" "0" "0" \
+    || check "scan: inspects .env dotfile (not skipped)" "0" "1"
+# …but a .git/ directory must still be skipped (large, binary, no secrets)
+mkdir -p "$DOT_DIR/.git"
+printf 'aws_access_key_id = AKIA2E3MWORQXYZ4567PQ\n' > "$DOT_DIR/.git/objects.txt"
+./hlse_core scan "$DOT_DIR" 2>&1 | grep -q "\.git/objects" \
+    && check "scan: .git directory still skipped" "0" "1" \
+    || check "scan: .git directory still skipped" "0" "0"
+rm -rf "$DOT_DIR"
+
 # Symlink-escape: a symlink in the tree pointing OUTSIDE must NOT be
 # followed/read (SPECIFICATION.md §1 — never follow symlinks).
 SYM_ROOT=$(mktemp -d); SYM_OUT=$(mktemp -d)
