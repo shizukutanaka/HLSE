@@ -53,6 +53,14 @@ the in- or out-of-distribution corpus.
   chars, suppress placeholders — ISOLATE on a real key.
   - `aws_secret_access_key = <40-char base64>`: OK(0) → flagged (AWS_SECRET_KEY)
   - FP-guarded: `YOUR_SECRET_KEY_HERE_PLACEHOLDER…` and short values stay clean.
+- **Clipboard: Tezos mislabel + Polkadot/Algorand coverage** (GAP-CLIP-XTZ-DOT-ALGO).
+  A Tezos address (`tz1…`, 36-char base58) was *detected* but mislabeled "SOL
+  (Solana)" because it fell into the base58 catch-all; Polkadot (47–48-char
+  SS58) and Algorand (58-char base32) were missed entirely. Added explicit
+  matchers ahead of the Solana catch-all: Tezos now labels correctly, Polkadot
+  and Algorand swaps go OK(0)→ISOLATE(95). Solana detection unregressed.
+  (`detect_crypto_type` feeds only the clipboard comparison, never the
+  scoring path, so this cannot affect phishing/scam F1.)
 - **Clipboard: Bitcoin Cash & Cosmos coverage** (GAP-CLIP-BCH-ATOM). The
   clipper-swap detector recognized 14 address formats but not two major coins:
   Bitcoin Cash (`bitcoincash:q…` CashAddr) and Cosmos Hub (`cosmos1…`). A

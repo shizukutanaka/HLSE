@@ -1162,6 +1162,9 @@ typedef enum {
     CRYPTO_ADA,           /* addr1... or stake1... (58-110 chars, bech32) */
     CRYPTO_BCH,           /* bitcoincash:q/p... (CashAddr) */
     CRYPTO_COSMOS,        /* cosmos1... (bech32, 45 chars) */
+    CRYPTO_XTZ,           /* tz1/tz2/tz3/KT1... (36 chars, base58) */
+    CRYPTO_DOT,           /* 1... (47-48 chars, SS58 base58) */
+    CRYPTO_ALGO,          /* 58 chars, base32 [A-Z2-7] */
 } CryptoType;
 
 static int
@@ -1321,6 +1324,44 @@ detect_crypto_type(const char *addr) {
         if (ok) return CRYPTO_COSMOS;
     }
 
+    /* Tezos: tz1/tz2/tz3 (implicit) or KT1 (contract), 36 chars, base58.
+     * Checked before the Solana catch-all so it is labeled correctly.     */
+    if (len == 36 &&
+        ((addr[0] == 't' && addr[1] == 'z' &&
+          (addr[2] == '1' || addr[2] == '2' || addr[2] == '3')) ||
+         (addr[0] == 'K' && addr[1] == 'T' && addr[2] == '1'))) {
+        int i, ok = 1;
+        for (i = 3; i < (int)len; i++) {
+            if (!is_base58(addr[i])) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_XTZ;
+    }
+
+    /* Algorand: 58 chars, Algorand/RFC-4648 base32 [A-Z2-7], no prefix.
+     * Length 58 distinguishes it from Stellar (56, 'G'-prefixed).         */
+    if (len == 58) {
+        int i, ok = 1;
+        for (i = 0; i < 58; i++) {
+            char c = addr[i];
+            if (!((c >= 'A' && c <= 'Z') || (c >= '2' && c <= '7'))) {
+                ok = 0; break;
+            }
+        }
+        if (ok) return CRYPTO_ALGO;
+    }
+
+    /* Polkadot (SS58): starts with '1', 47-48 base58 chars. Above the
+     * Solana catch-all's 44-char ceiling, so it is otherwise unclassified.
+     * (BTC legacy also starts with '1' but is 26-35 chars — length
+     * disambiguates.)                                                      */
+    if (len >= 46 && len <= 48 && addr[0] == '1') {
+        int i, ok = 1;
+        for (i = 1; i < (int)len; i++) {
+            if (!is_base58(addr[i])) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_DOT;
+    }
+
     /* Solana: base58, 32-44 chars, no fixed prefix. Checked LAST so the
      * prefixed / fixed-length formats above (BTC 1/3, USDT T, ETH 0x, …)
      * win; only an otherwise-unclassified base58 string of Solana length
@@ -1357,6 +1398,9 @@ crypto_type_name(CryptoType t) {
         case CRYPTO_ADA:         return "ADA (Cardano)";
         case CRYPTO_BCH:         return "BCH (Bitcoin Cash)";
         case CRYPTO_COSMOS:      return "ATOM (Cosmos)";
+        case CRYPTO_XTZ:         return "XTZ (Tezos)";
+        case CRYPTO_DOT:         return "DOT (Polkadot)";
+        case CRYPTO_ALGO:        return "ALGO (Algorand)";
         default:                 return "Unknown";
     }
 }

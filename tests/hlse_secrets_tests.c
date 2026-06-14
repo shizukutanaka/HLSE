@@ -559,6 +559,33 @@ static void test_crypto_cosmos_swap(void) {
     else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
 }
 
+static void test_crypto_xtz_swap(void) {
+    TEST("Clipboard: Tezos (tz1) address swapped → score 95");
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb",
+        "tz1Xek2VykgGYUxXhwN5jpe8jjUWQDdQrYzz");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+static void test_crypto_dot_swap(void) {
+    TEST("Clipboard: Polkadot (SS58) address swapped → score 95");
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5",
+        "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNgVxR3");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+static void test_crypto_algo_swap(void) {
+    TEST("Clipboard: Algorand (base32) address swapped → score 95");
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "ZW3ISEHZUHPO7OZGMKLKIIMKVICOUDRCERI454I3DB2BH52HGLSO67W754",
+        "MO2H6ZU47Q7NF2I7QLKMGFM6CKLSV3OOXLG37QHIFWQ6PT5LFLM3RYRDLU");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
 /* ─── Cloud Credential Checks ─────────────────────────────────────────── */
 
 static void test_gcp_service_account(void) {
@@ -675,6 +702,9 @@ int main(void) {
     test_crypto_validate_ada();
     test_crypto_bch_swap();
     test_crypto_cosmos_swap();
+    test_crypto_xtz_swap();
+    test_crypto_dot_swap();
+    test_crypto_algo_swap();
     test_crypto_validate_garbage();
 
     printf("\nCloud credential checks:\n");
