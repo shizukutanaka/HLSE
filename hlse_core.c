@@ -2816,6 +2816,10 @@ print_json_text(const char *text, const TextVerdict *v) {
     printf("]}\n");
 }
 
+/* Score at/above which the process exits 1 (threat). Configurable via
+ * --fail-on so a pipeline picks its own risk gate. Default = BLOCK(60). */
+static int g_fail_threshold = 60;
+
 /* ─────────────────────────── stdin pipe mode ────────────────────────── */
 
 static int
@@ -2857,8 +2861,13 @@ stdin_mode(int json_out) {
                    hlse_action_for_score(sr.score), sr.score, line);
             for (i = 0; i < sr.n_reasons; i++)
                 printf("  \xc2\xb7 %s\n", sr.reasons[i]);  /* · */
+            if (sr.is_url) {
+                Verdict uv = check_url(line);
+                const char *pat = hlse_classify_url_attack(&uv);
+                if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
+            }
         }
-        if (sr.score >= 60) any_threat = 1;
+        if (sr.score >= g_fail_threshold) any_threat = 1;
     }
     return any_threat ? 1 : 0;
 }
@@ -2918,10 +2927,6 @@ read_stdin_all(char *buf, size_t cap) {
     buf[total] = '\0';
     return total;
 }
-
-/* Score at/above which the process exits 1 (threat). Configurable via
- * --fail-on so a pipeline picks its own risk gate. Default = BLOCK(60). */
-static int g_fail_threshold = 60;
 
 int
 main(int argc, char **argv) {

@@ -2,6 +2,25 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.7] — 2026-06-15
+
+### Fixed
+- **`--stdin` pipe mode ignored `--fail-on` (exit gate hardcoded at BLOCK/60).**
+  Self-audit of the `--fail-on` feature (1.0.x) found that its claim of "all
+  exit sites honour the configurable gate" missed `stdin_mode`, which is the
+  *primary* CI batch path. It set `any_threat` on a hardcoded `score >= 60`,
+  so `--stdin --fail-on log` (or `alert`) silently passed LOG/ALERT-tier
+  findings that the equivalent single-argument invocation would fail on. Now
+  uses `g_fail_threshold` like every other exit site. Default behaviour
+  (gate at 60) is unchanged. (Required moving the `g_fail_threshold`
+  definition above `stdin_mode`.)
+
+### Changed
+- **`--stdin` text output now carries the `▸ Pattern:` attack-class label**,
+  matching the `--json` pipe output (which already emitted `pattern`) and the
+  single-artifact human output. Previously the human-readable batch path was
+  the only one missing the synthesized threat class.
+
 ## [1.0.6] — 2026-06-15
 
 ### Fixed

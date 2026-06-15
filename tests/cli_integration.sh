@@ -95,6 +95,19 @@ echo "$STDIN_OUT" | grep -q "OK.*github" \
     && check "stdin: passes legit URL" "0" "0" \
     || check "stdin: passes legit URL" "0" "1"
 
+# stdin text output carries the attack-pattern label (parity with --json).
+printf '%s\n' "https://discordd.com/login" | ./hlse_core --stdin 2>&1 \
+    | grep -qi "Pattern:.*typosquat" \
+    && check "stdin: text output includes Pattern label" "0" "0" \
+    || check "stdin: text output includes Pattern label" "0" "1"
+
+# stdin pipe mode honours --fail-on (was hardcoded at BLOCK/60).
+rc=0; printf '%s\n' "https://bit.ly/abc123" | ./hlse_core --stdin --fail-on log >/dev/null 2>&1 || rc=$?
+check "stdin: --fail-on log fails a LOG finding → exit 1" "1" "$rc"
+# Default gate (60) spares the same LOG finding in stdin mode → exit 0.
+rc=0; printf '%s\n' "https://bit.ly/abc123" | ./hlse_core --stdin >/dev/null 2>&1 || rc=$?
+check "stdin: default gate spares a LOG finding → exit 0" "0" "$rc"
+
 # ─── self-test integration ──────────────────────────────────────────────
 
 ./hlse_core --self-test 2>&1 | grep -qE "[0-9]+ passed, 0 failed" \
