@@ -2,6 +2,30 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.12] — 2026-06-15
+
+### Added
+- **Independent verification — the "how to check me without trusting me" lens**
+  (NEW-PERSPECTIVE-VERIFY). Socratic question: "You're a heuristic engine with
+  no network, no certificate inspection, no ground truth. A user about to type
+  their password is betting on your word alone. What ONE check can they run
+  right now — one that doesn't require trusting you — to confirm the verdict
+  before they act or report it?"  This is the high-confidence mirror of the
+  exoneration lens: `hlse_exoneration_for` serves the LOG/ALERT band (15..59)
+  with the benign explanation and a test that *clears* the doubt; the new
+  `hlse_verification_for(const Verdict *)` (public API) serves the BLOCK/ISOLATE
+  band (>=60) with a test that lets the user *confirm* the threat themselves.
+  The two bands are disjoint, so at most one of the two lines ever appears.
+  The check is chosen from the signals that fired so it targets the actual
+  deception — expand-the-shortener for hidden destinations, read-after-the-'@'
+  for authority tricks, bare-IP-is-fake for IP hosts, reach-via-bookmark for
+  homoglyph/IDN, read-right-to-left for subdomain/free-host spoofing, and a
+  trusted-channel fallback. Human output gains a `✓ Verify independently:
+  <check>` line; JSON gains a `"verify"` field. Pure output, zero scoring
+  change: F1 = 1.000 preserved. 8 new CLI integration tests assert the BLOCK/
+  ALERT band split (verify vs exoneration are mutually exclusive), the clean
+  negative, and JSON field presence/absence.
+
 ## [1.0.11] — 2026-06-15
 
 ### Added

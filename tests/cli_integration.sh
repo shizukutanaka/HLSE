@@ -921,6 +921,63 @@ assert d["kind"] == "clipboard" and d["is_swap"] == 1 and d["score"] == 100
 ' && check "--json clipboard vanity → score 100" "0" "0" \
    || check "--json clipboard vanity → score 100" "0" "1"
 
+# ─── Perspective 14: Independent verification ("how to check me") ──────────
+# Socratic Q: "What ONE check can the user run right now — without trusting
+# HLSE — to confirm the verdict before they act?" High-confidence (>=60)
+# mirror of exoneration (15..59); the two bands never overlap.
+
+# BLOCK-band brand verdict → emits a Verify-independently check
+VRF_BLOCK=$(./hlse_core "https://paypa1.com/login" 2>/dev/null) || true
+echo "$VRF_BLOCK" | grep -q "Verify independently:" \
+    && check "verify: BLOCK brand → verify line shown" "0" "0" \
+    || check "verify: BLOCK brand → verify line shown" "0" "1"
+
+# BLOCK band must NOT also show the low-band exoneration ("Could be benign")
+echo "$VRF_BLOCK" | grep -q "Could be benign" \
+    && check "verify: BLOCK band suppresses exoneration" "0" "1" \
+    || check "verify: BLOCK band suppresses exoneration" "0" "0"
+
+# ALERT-band verdict (<60) → NO verify line (exoneration band instead)
+VRF_ALERT=$(./hlse_core "https://g00gle.com" 2>/dev/null) || true
+echo "$VRF_ALERT" | grep -q "Verify independently" \
+    && check "verify: absent below score 60" "0" "1" \
+    || check "verify: absent below score 60" "0" "0"
+
+# ALERT band still shows exoneration (the complementary band)
+echo "$VRF_ALERT" | grep -q "Could be benign" \
+    && check "verify: ALERT band keeps exoneration" "0" "0" \
+    || check "verify: ALERT band keeps exoneration" "0" "1"
+
+# Clean URL → no verify line
+VRF_CLEAN=$(./hlse_core "https://example.com" 2>/dev/null) || true
+echo "$VRF_CLEAN" | grep -q "Verify independently" \
+    && check "verify: absent for clean URL" "0" "1" \
+    || check "verify: absent for clean URL" "0" "0"
+
+# JSON exposes the verify field for a BLOCK-band URL
+VRF_JSON=""; VRF_JSON=$(./hlse_core --json "https://paypa1.com/login" 2>/dev/null) || true
+echo "$VRF_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d.get("verify"), d
+' && check "verify json: verify field present (BLOCK)" "0" "0" \
+   || check "verify json: verify field present (BLOCK)" "0" "1"
+
+# JSON omits verify for an ALERT-band URL
+VRF_ALERT_JSON=""; VRF_ALERT_JSON=$(./hlse_core --json "https://g00gle.com" 2>/dev/null) || true
+echo "$VRF_ALERT_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "verify" not in d, d
+' && check "verify json: absent below score 60" "0" "0" \
+   || check "verify json: absent below score 60" "0" "1"
+
+# stdin pipe mode emits the verify line for a BLOCK-band URL
+VRF_STDIN=$(echo "https://paypa1.com/login" | ./hlse_core --stdin 2>/dev/null) || true
+echo "$VRF_STDIN" | grep -q "Verify independently:" \
+    && check "verify stdin: verify line shown" "0" "0" \
+    || check "verify stdin: verify line shown" "0" "1"
+
 # ─── Perspective 13: Confusable forensics ("show the disguise") ────────────
 # Socratic Q: "You said 'mixed-script homoglyph' and then showed the user the
 # very string their eyes glossed over. Which exact character is the impostor?"

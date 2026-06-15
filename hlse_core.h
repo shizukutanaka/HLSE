@@ -27,7 +27,7 @@
 #include <stddef.h>   /* size_t, for hlse_safe_destination() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.11"
+#define HLSE_VERSION "1.0.12"
 
 #ifdef __cplusplus
 extern "C" {
@@ -111,6 +111,13 @@ const char *hlse_attacker_objective(const Verdict *v);
  * Returns 1 when a disguised character is found, 0 otherwise. Only raw IDN /
  * mixed-script hosts report; pure-ASCII homoglyphs and xn-- punycode do not. */
 int hlse_confusable_report(const char *url, char *out, size_t outsz);
+
+/* The single best independent check to confirm an actionable URL verdict
+ * without trusting HLSE — the high-confidence (score >= 60) mirror of
+ * hlse_exoneration_for. The check targets the signals that fired (e.g. "expand
+ * the short link before opening it"). Returns a static string, or NULL when
+ * score < 60. */
+const char *hlse_verification_for(const Verdict *v);
 
 /* Library version string (compiled-in). */
 const char *hlse_version(void);

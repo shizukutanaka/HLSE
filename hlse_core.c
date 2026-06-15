@@ -2416,6 +2416,69 @@ hlse_confusable_report(const char *url, char *out, size_t outsz) {
     return 0;
 }
 
+/* The single best independent check a user can run to confirm an actionable
+ * URL verdict — without trusting HLSE.
+ *
+ * Socratic question: "You're a heuristic engine with no network, no
+ * certificate inspection, no ground truth. A user about to type their password
+ * is betting on your word alone. What ONE check can they run right now — one
+ * that doesn't require trusting you — to confirm the verdict before they act?"
+ *
+ * This is the high-confidence mirror of hlse_exoneration_for: exoneration
+ * serves the LOG/ALERT band (15..59) with the benign explanation and a test
+ * that *clears* the doubt; this serves the BLOCK/ISOLATE band (>=60) with a
+ * test that lets the user *confirm* the threat independently. The two bands do
+ * not overlap, so at most one fires. The check is chosen from the signals that
+ * fired so it targets the actual deception. Returns a static string, or NULL
+ * when score < 60. */
+const char *
+hlse_verification_for(const Verdict *v) {
+    int i;
+    int shortener = 0, at_trick = 0, ip = 0, homoglyph = 0, idn = 0;
+    int subdomain = 0, free_host = 0, typo = 0, brand = 0;
+
+    if (!v || v->score < 60) return NULL;
+
+    for (i = 0; i < v->n_reasons; i++) {
+        const char *r = v->reasons[i];
+        if (strstr(r, "shortener") || strstr(r, "Shortened"))       shortener = 1;
+        if (strstr(r, "credential trick") || strstr(r, "@ in authority")) at_trick = 1;
+        if (strstr(r, "IP-based URL") || strstr(r, "IP-address host")) ip = 1;
+        if (strstr(r, "homoglyph") || strstr(r, "Homoglyph") ||
+            strstr(r, "Mixed-script"))                              homoglyph = 1;
+        if (strstr(r, "IDN") || strstr(r, "Punycode"))              idn = 1;
+        if (strstr(r, "Subdomain spoofing") || strstr(r, "subdomain")) subdomain = 1;
+        if (strstr(r, "Free-hosting") || strstr(r, "free page builder")) free_host = 1;
+        if (strstr(r, "Typosquat") || strstr(r, "typosquat"))       typo = 1;
+        if (strstr(r, "Brand") || strstr(r, "brand") ||
+            strstr(r, "Legitimate '"))                              brand = 1;
+    }
+
+    if (shortener)
+        return "expand the short link before opening it (many shorteners show a "
+               "preview if you append '+' to the URL) \xe2\x80\x94 never click one blind";
+    if (at_trick)
+        return "read the authority right before the first '/': everything after "
+               "an '@' is where you actually land, not the brand shown before it";
+    if (ip)
+        return "legitimate brands do not serve login pages from a bare IP "
+               "address \xe2\x80\x94 that alone marks it fake";
+    if (idn || homoglyph)
+        return "don't read the link \xe2\x80\x94 reach the brand from your own "
+               "bookmark or a search engine and compare the address bar "
+               "character by character";
+    if (subdomain || free_host)
+        return "read the domain right-to-left: the registrable name just before "
+               "the first single '/' is the real owner, not the brand spelled "
+               "earlier in the host";
+    if (typo || brand)
+        return "ignore the link text; open the brand via a saved bookmark or by "
+               "typing its name into a search engine, then compare the domain";
+    return "confirm through a channel you already trust (the official app, or a "
+           "number printed on your card/statement) \xe2\x80\x94 never one supplied "
+           "by this message";
+}
+
 /* ───────────────── blast-radius / asset-class correlation ─────────────────
  * A leaked credential's danger is not its count but what the *set* of leaked
  * credentials collectively unlocks. We bucket each secret-finding type into a
@@ -3019,8 +3082,10 @@ print_json_url(const char *url, const Verdict *v) {
     char escaped_url[MAX_URL * 2];
     const char *pat = hlse_classify_url_attack(v);
     const char *obj = hlse_attacker_objective(v);
+    const char *vrf = hlse_verification_for(v);
     char esc_pat[256] = "";
     char esc_obj[256] = "";
+    char esc_vrf[512] = "";
     char safe[MAX_URL];
     char esc_safe[MAX_URL * 2] = "";
     char conf[160];
@@ -3030,6 +3095,7 @@ print_json_url(const char *url, const Verdict *v) {
     json_escape(url, escaped_url, sizeof(escaped_url));
     if (pat) json_escape(pat, esc_pat, sizeof(esc_pat));
     if (obj) json_escape(obj, esc_obj, sizeof(esc_obj));
+    if (vrf) json_escape(vrf, esc_vrf, sizeof(esc_vrf));
     if (has_safe) json_escape(safe, esc_safe, sizeof(esc_safe));
     if (has_conf) json_escape(conf, esc_conf, sizeof(esc_conf));
     printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
@@ -3038,6 +3104,7 @@ print_json_url(const char *url, const Verdict *v) {
     if (obj) printf(",\"objective\":\"%s\"", esc_obj);
     if (has_conf) printf(",\"confusable\":\"%s\"", esc_conf);
     if (has_safe) printf(",\"safe_url\":\"%s\"", esc_safe);
+    if (vrf) printf(",\"verify\":\"%s\"", esc_vrf);
     if (g_from_channel) {
         int d   = channel_delta(g_from_channel);
         int eff = v->score + d; if (eff > 100) eff = 100;
@@ -3138,6 +3205,7 @@ stdin_mode(int json_out) {
                 Verdict uv = check_url(line);
                 const char *pat = hlse_classify_url_attack(&uv);
                 const char *obj = hlse_attacker_objective(&uv);
+                const char *vrf = hlse_verification_for(&uv);
                 char safe[MAX_URL];
                 char conf[160];
                 if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
@@ -3146,6 +3214,7 @@ stdin_mode(int json_out) {
                 if (obj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj);
                 if (hlse_safe_destination(&uv, safe, sizeof(safe)))
                     printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
+                if (vrf) printf("  \xe2\x9c\x93 Verify independently: %s\n", vrf);
             }
             if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
         }
@@ -4209,6 +4278,7 @@ main(int argc, char **argv) {
                     Verdict uv = check_url(argv[idx + 1]);
                     const char *pat = hlse_classify_url_attack(&uv);
                     const char *obj = hlse_attacker_objective(&uv);
+                    const char *vrf = hlse_verification_for(&uv);
                     char safe[MAX_URL];
                     char conf[160];
                     if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
@@ -4217,6 +4287,7 @@ main(int argc, char **argv) {
                     if (obj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj);
                     if (hlse_safe_destination(&uv, safe, sizeof(safe)))
                         printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
+                    if (vrf) printf("  \xe2\x9c\x93 Verify independently: %s\n", vrf);
                 }
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }
@@ -4279,6 +4350,7 @@ main(int argc, char **argv) {
                 Verdict uv = check_url(input);
                 const char *pat = hlse_classify_url_attack(&uv);
                 const char *obj = hlse_attacker_objective(&uv);
+                const char *vrf = hlse_verification_for(&uv);
                 char safe[MAX_URL];
                 char conf[160];
                 if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
@@ -4287,6 +4359,7 @@ main(int argc, char **argv) {
                 if (obj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj);
                 if (hlse_safe_destination(&uv, safe, sizeof(safe)))
                     printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
+                if (vrf) printf("  \xe2\x9c\x93 Verify independently: %s\n", vrf);
             }
             if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
             if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
