@@ -617,6 +617,28 @@ rm -rf "$SARIF_DIR"
     && check "blindspot: clean text discloses limits" "0" "0" \
     || check "blindspot: clean text discloses limits" "0" "1"
 
+# ─── --fail-on configurable exit gate ───────────────────────────────
+# A BLOCK(70) URL: default gate (block/60) → exit 1.
+rc=0; ./hlse_core -q "https://paypal-verify.ru/login" >/dev/null 2>&1 || rc=$?
+check "fail-on: BLOCK url default gate → exit 1" "1" "$rc"
+# Raise the gate to isolate(80): the BLOCK(70) URL no longer fails → exit 0.
+rc=0; ./hlse_core -q --fail-on isolate "https://paypal-verify.ru/login" >/dev/null 2>&1 || rc=$?
+check "fail-on: --fail-on isolate spares a BLOCK url → exit 0" "0" "$rc"
+# Lower the gate to log(15): the BLOCK url still fails → exit 1.
+rc=0; ./hlse_core -q --fail-on log "https://paypal-verify.ru/login" >/dev/null 2>&1 || rc=$?
+check "fail-on: --fail-on log fails a BLOCK url → exit 1" "1" "$rc"
+# An invalid tier is a usage error → exit 2.
+rc=0; ./hlse_core --fail-on bogus "x" >/dev/null 2>&1 || rc=$?
+check "fail-on: invalid tier → exit 2" "2" "$rc"
+# scan honours the gate: an ALERT-tier finding fails only at --fail-on alert.
+FO_DIR=$(mktemp -d)
+printf '<!DOCTYPE html><html><script>x</script></html>' > "$FO_DIR/invoice.pdf"
+rc=0; ./hlse_core -q scan "$FO_DIR" >/dev/null 2>&1 || rc=$?
+check "fail-on: scan default gate spares an ALERT finding → exit 0" "0" "$rc"
+rc=0; ./hlse_core -q --fail-on alert scan "$FO_DIR" >/dev/null 2>&1 || rc=$?
+check "fail-on: scan --fail-on alert catches it → exit 1" "1" "$rc"
+rm -rf "$FO_DIR"
+
 # ─── JSON control-char escaping ─────────────────────────────────────
 # A secret file containing a control byte must still produce valid JSON
 # (the \uXXXX escape path).

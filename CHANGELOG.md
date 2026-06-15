@@ -11,6 +11,17 @@ legitimate?" — and closed a concrete gap without moving F1 off 1.000 on either
 the in- or out-of-distribution corpus.
 
 ### Added
+- **`--fail-on <tier>` — the machine consumer's risk gate**
+  (NEW-PERSPECTIVE-FAILON). Socratic reframing: five perspectives enriched
+  *text for a human*, but HLSE is most deployed as a CI gate / pre-commit hook /
+  pipeline filter — read by a *script*, via the *exit code*. The exit code
+  collapsed five severity tiers into pass/fail at a hardcoded BLOCK(60),
+  imposing the author's risk posture on every consumer. A payments repo may want
+  to fail the build at ALERT(40); a noisy docs repo only at ISOLATE(80). New
+  `--fail-on log|alert|block|isolate|0-100` sets the score at/above which the
+  process exits 1 (default block/60, fully backward-compatible). Applies to all
+  single-artifact checks and to `scan` (which now gates its exit on the chosen
+  threshold while still *reporting* every finding ≥ ALERT).
 - **Epistemic humility — blind-spot disclosure on clean verdicts**
   (NEW-PERSPECTIVE-BLINDSPOT). Socratic reframing ("the only true wisdom is
   knowing you know nothing"): every other signal enriches a *threat* finding,

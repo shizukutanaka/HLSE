@@ -2612,17 +2612,18 @@ print_usage(const char *prog) {
         "  %s --json <subcommand>      JSON output\n"
         "  %s --sarif scan <dir>       SARIF 2.1.0 output (GitHub code scanning)\n"
         "  %s -q | --quiet             Exit code only (CI/CD mode)\n"
+        "  %s --fail-on <tier>         Exit-1 gate: log|alert|block|isolate|0-100 (default block)\n"
         "  %s --stdin [--json]         Pipe mode (one input per line)\n"
         "  %s --self-test              Built-in tests\n"
         "  %s --benchmark              Corpus benchmark\n"
         "  %s --version | -V           Version\n"
         "  %s -h | --help              Show this help\n"
         "\n"
-        "Exit code: 0 = safe, 1 = threat (score >= 60), 2 = usage error\n",
+        "Exit code: 0 = safe, 1 = threat (>= --fail-on, default block/60), 2 = usage error\n",
         HLSE_VERSION,
         prog, prog, prog,                                /* scanning: 3 */
         prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 12 */
-        prog, prog, prog, prog, prog, prog, prog, prog); /* options: 8 */
+        prog, prog, prog, prog, prog, prog, prog, prog, prog); /* options: 9 */
 }
 
 /* Read all of stdin into buf (NUL-terminated, truncated to cap-1 bytes). */
@@ -2636,6 +2637,10 @@ read_stdin_all(char *buf, size_t cap) {
     buf[total] = '\0';
     return total;
 }
+
+/* Score at/above which the process exits 1 (threat). Configurable via
+ * --fail-on so a pipeline picks its own risk gate. Default = BLOCK(60). */
+static int g_fail_threshold = 60;
 
 int
 main(int argc, char **argv) {
@@ -2728,6 +2733,40 @@ main(int argc, char **argv) {
         }
     }
 
+    /* Parse --fail-on <tier> (anywhere) — the machine consumer's risk gate.
+     * The exit code (1 = threat) collapses five severity tiers into pass/fail;
+     * hardcoding the boundary at BLOCK(60) imposes one risk posture on every
+     * pipeline. A payments repo may want to fail at ALERT(40); a noisy docs
+     * repo only at ISOLATE(80). This sets the score at/above which the process
+     * exits 1. Default stays 60 (block) for backward compatibility.        */
+    {
+        int i;
+        for (i = 1; i < argc - 1; i++) {
+            if (strcmp(argv[i], "--fail-on") == 0) {
+                const char *t = argv[i + 1];
+                if      (strcmp(t, "log")     == 0) g_fail_threshold = 15;
+                else if (strcmp(t, "alert")   == 0) g_fail_threshold = 40;
+                else if (strcmp(t, "block")   == 0) g_fail_threshold = 60;
+                else if (strcmp(t, "isolate") == 0) g_fail_threshold = 80;
+                else {
+                    /* Accept a bare numeric threshold (0..100) too. */
+                    char *end;
+                    long n = strtol(t, &end, 10);
+                    if (*end == '\0' && n >= 0 && n <= 100)
+                        g_fail_threshold = (int)n;
+                    else {
+                        fprintf(stderr, "Error: --fail-on expects "
+                                "log|alert|block|isolate or 0..100\n");
+                        return 2;
+                    }
+                }
+                { int j; for (j = i; j < argc - 2; j++) argv[j] = argv[j+2];
+                  argc -= 2; }
+                break;
+            }
+        }
+    }
+
     /* Quiet mode: redirect stdout to /dev/null. If the redirect fails we must
      * not silently keep printing — that would violate the quiet-mode contract
      * (callers rely on the exit code alone). Report and exit with usage error. */
@@ -2774,6 +2813,7 @@ main(int argc, char **argv) {
         {
             const char *root = argv[idx + 1];
             int threats = 0, files_scanned = 0, max_depth = 20;
+            int gate_hits = 0;  /* findings at/above g_fail_threshold (exit gate) */
             unsigned asset_mask = 0;  /* blast-radius: classes seen across scan */
             struct stat root_st;
 
@@ -2888,6 +2928,7 @@ main(int argc, char **argv) {
                     FileVerdict fv = hlse_check_file(fullpath);
                     if (fv.score >= 40) {
                         threats++;
+                        if (fv.score >= g_fail_threshold) gate_hits++;
                         if (sarif_out) {
                             char msg[512] = {0};
                             int i;
@@ -2952,6 +2993,7 @@ main(int argc, char **argv) {
                                 if (sv.score >= 40) {
                                     int ai;
                                     threats++;
+                                    if (sv.score >= g_fail_threshold) gate_hits++;
                                     for (ai = 0; ai < sv.n_findings; ai++)
                                         asset_mask |=
                                             asset_class_of(sv.findings[ai].type);
@@ -3017,6 +3059,8 @@ main(int argc, char **argv) {
                                             Verdict uv = check_url(url_buf);
                                             if (uv.score >= 40) {
                                                 threats++;
+                                                if (uv.score >= g_fail_threshold)
+                                                    gate_hits++;
                                                 if (sarif_out) {
                                                     char msg[512] = {0};
                                                     int k;
@@ -3104,7 +3148,7 @@ main(int argc, char **argv) {
                        "\"asset_classes\":%d,\"blast_radius\":\"%s\"}\n",
                        esc_root, files_scanned, threats, nclasses, classes);
             }
-            return threats > 0 ? 1 : 0;
+            return gate_hits > 0 ? 1 : 0;
         }
 #pragma GCC diagnostic pop
     }
@@ -3174,7 +3218,7 @@ main(int argc, char **argv) {
                     printf("  \xc2\xb7 %s\n", pv.reasons[i]);
                 }
             }
-            return pv.score >= 60 ? 1 : 0;
+            return pv.score >= g_fail_threshold ? 1 : 0;
         }
     }
 
@@ -3203,7 +3247,7 @@ main(int argc, char **argv) {
             for (i = 0; i < pv.n_reasons; i++)
                 printf("  \xc2\xb7 %s\n", pv.reasons[i]);
         }
-        return pv.score >= 60 ? 1 : 0;
+        return pv.score >= g_fail_threshold ? 1 : 0;
     }
 
     /* ── Supply Chain Defense subcommands ───────────────────────────── */
@@ -3244,7 +3288,7 @@ main(int argc, char **argv) {
                 if (pv.reason[0])
                     printf("  \xc2\xb7 %s\n", pv.reason);
             }
-            return pv.score >= 60 ? 1 : 0;
+            return pv.score >= g_fail_threshold ? 1 : 0;
         }
     }
 
@@ -3275,7 +3319,7 @@ main(int argc, char **argv) {
                 for (i = 0; i < pv.n_reasons; i++)
                     printf("  \xc2\xb7 %s\n", pv.reasons[i]);
             }
-            return pv.score >= 60 ? 1 : 0;
+            return pv.score >= g_fail_threshold ? 1 : 0;
         }
     }
 
@@ -3300,7 +3344,7 @@ main(int argc, char **argv) {
             for (i = 0; i < nv.n_reasons; i++)
                 printf("  \xc2\xb7 %s\n", nv.reasons[i]);
         }
-        return nv.score >= 60 ? 1 : 0;
+        return nv.score >= g_fail_threshold ? 1 : 0;
     }
 
     if (strcmp(argv[idx], "secret") == 0) {
@@ -3357,7 +3401,7 @@ main(int argc, char **argv) {
                            "string); confirm it is a live credential.\n");
                 if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
             }
-            return sv.score >= 60 ? 1 : 0;
+            return sv.score >= g_fail_threshold ? 1 : 0;
         }
     }
 
@@ -3405,7 +3449,7 @@ main(int argc, char **argv) {
                     printf("  \xc2\xb7 %s\n", ev.reasons[i]);
                 if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
             }
-            return ev.score >= 60 ? 1 : 0;
+            return ev.score >= g_fail_threshold ? 1 : 0;
         }
     }
 
@@ -3440,7 +3484,7 @@ main(int argc, char **argv) {
                 if (cv.reason[0]) printf("  \xc2\xb7 %s\n", cv.reason);
                 if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
             }
-            return cv.score >= 60 ? 1 : 0;
+            return cv.score >= g_fail_threshold ? 1 : 0;
         }
     }
 
@@ -3484,7 +3528,7 @@ main(int argc, char **argv) {
                 for (i = 0; i < fv.n_reasons; i++)
                     printf("  \xc2\xb7 %s\n", fv.reasons[i]);
             }
-            return fv.score >= 60 ? 1 : 0;
+            return fv.score >= g_fail_threshold ? 1 : 0;
         }
     }
 
@@ -3525,7 +3569,7 @@ main(int argc, char **argv) {
                        av.findings[i].description);
             }
         }
-        return av.score >= 60 ? 1 : 0;
+        return av.score >= g_fail_threshold ? 1 : 0;
     }
 
     if (strcmp(argv[idx], "text") == 0) {
@@ -3564,7 +3608,7 @@ main(int argc, char **argv) {
                     printf("  \xc2\xb7 %s\n", sr.reasons[i]);
                 }
             }
-            return sr.score >= 60 ? 1 : 0;
+            return sr.score >= g_fail_threshold ? 1 : 0;
         }
     }
     /* Default: use unified scan (auto-detects URL vs text) */
@@ -3610,7 +3654,7 @@ main(int argc, char **argv) {
                 printf("  · %s\n", sr.reasons[i]);
             }
         }
-        return sr.score >= 60 ? 1 : 0;
+        return sr.score >= g_fail_threshold ? 1 : 0;
     }
 }
 #endif /* HLSE_CORE_AS_LIB */
