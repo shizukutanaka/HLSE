@@ -921,6 +921,52 @@ assert d["kind"] == "clipboard" and d["is_swap"] == 1 and d["score"] == 100
 ' && check "--json clipboard vanity → score 100" "0" "0" \
    || check "--json clipboard vanity → score 100" "0" "1"
 
+# ─── Perspective 13: Confusable forensics ("show the disguise") ────────────
+# Socratic Q: "You said 'mixed-script homoglyph' and then showed the user the
+# very string their eyes glossed over. Which exact character is the impostor?"
+
+# Cyrillic homograph → pinpoints the disguised codepoint
+CONF_CYR=$(./hlse_core "https://раypal.com" 2>/dev/null) || true
+echo "$CONF_CYR" | grep -q "Disguised char: position 1 is Cyrillic U+0440" \
+    && check "confusable: Cyrillic → U+0440 pinpointed" "0" "0" \
+    || check "confusable: Cyrillic → U+0440 pinpointed" "0" "1"
+
+# Pure-ASCII homoglyph (g00gle) → NO disguised-char line (all bytes are ASCII)
+CONF_ASCII=$(./hlse_core "https://g00gle.com" 2>/dev/null) || true
+echo "$CONF_ASCII" | grep -q "Disguised char" \
+    && check "confusable: absent for pure-ASCII homoglyph" "0" "1" \
+    || check "confusable: absent for pure-ASCII homoglyph" "0" "0"
+
+# Clean ASCII URL → NO disguised-char line
+CONF_CLEAN=$(./hlse_core "https://example.com" 2>/dev/null) || true
+echo "$CONF_CLEAN" | grep -q "Disguised char" \
+    && check "confusable: absent for clean URL" "0" "1" \
+    || check "confusable: absent for clean URL" "0" "0"
+
+# JSON exposes the confusable field for a mixed-script host
+CONF_JSON=""; CONF_JSON=$(./hlse_core --json "https://раypal.com" 2>/dev/null) || true
+echo "$CONF_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "Cyrillic" in d.get("confusable","") and "U+0440" in d.get("confusable",""), d
+' && check "confusable json: field present" "0" "0" \
+   || check "confusable json: field present" "0" "1"
+
+# JSON omits confusable for a pure-ASCII host
+CONF_ASCII_JSON=""; CONF_ASCII_JSON=$(./hlse_core --json "https://g00gle.com" 2>/dev/null) || true
+echo "$CONF_ASCII_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "confusable" not in d, d
+' && check "confusable json: absent for ASCII host" "0" "0" \
+   || check "confusable json: absent for ASCII host" "0" "1"
+
+# stdin pipe mode emits the disguised-char line too
+CONF_STDIN=$(echo "https://раypal.com" | ./hlse_core --stdin 2>/dev/null) || true
+echo "$CONF_STDIN" | grep -q "Disguised char: position 1 is Cyrillic" \
+    && check "confusable stdin: disguised char shown" "0" "0" \
+    || check "confusable stdin: disguised char shown" "0" "1"
+
 # ─── Perspective 12: Attacker Objective ("what are they after?") ───────────
 # Socratic Q: "You named HOW the attack works and WHERE to go instead — but
 # never WHAT the attacker is after. Doesn't the stake decide how hard the user

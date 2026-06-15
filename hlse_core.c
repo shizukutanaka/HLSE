@@ -2349,6 +2349,73 @@ hlse_attacker_objective(const Verdict *v) {
     return NULL;
 }
 
+/* Name the Unicode script block a confusable codepoint belongs to, for the
+ * human-readable forensic report. */
+static const char *
+confusable_script(unsigned long cp) {
+    if (cp >= 0x0400 && cp <= 0x04FF) return "Cyrillic";
+    if (cp >= 0x0500 && cp <= 0x052F) return "Cyrillic-supplement";
+    if (cp >= 0x0370 && cp <= 0x03FF) return "Greek";
+    if (cp >= 0x0530 && cp <= 0x058F) return "Armenian";
+    if (cp >= 0x2000 && cp <= 0x206F) return "Unicode-punctuation";
+    if (cp >= 0xFF00 && cp <= 0xFFEF) return "fullwidth/halfwidth";
+    return "non-Latin";
+}
+
+/* Pinpoint the first disguised (non-ASCII) character in a URL's host, with its
+ * 1-based position, Unicode codepoint, and script — the forensic proof behind
+ * a "homoglyph" label.
+ *
+ * Socratic question: "You said 'mixed-script homoglyph' and then showed the
+ * user the very string their eyes already glossed over — 'раypal.com' looks
+ * identical to 'paypal.com'. Which exact character is the impostor? Naming it
+ * ('position 1 is Cyrillic U+0440, not an ASCII letter') turns an abstract
+ * label into undeniable, teachable proof a browser's address bar hides."
+ *
+ * Only non-ASCII (raw IDN / mixed-script) hosts produce a report — pure-ASCII
+ * homoglyphs (0/1/l) are already spelled out in the brand-homoglyph reason, and
+ * xn-- punycode hosts are ASCII and covered by the IDN reason. Operates on the
+ * host (between "://" and the first "/?#"). Writes a one-line summary into out;
+ * returns 1 when a disguised character is found, 0 otherwise. Thread-safe; no
+ * allocation. */
+int
+hlse_confusable_report(const char *url, char *out, size_t outsz) {
+    const char *h, *p, *host_end;
+    int cp_pos = 0;
+    if (!url || !out || outsz == 0) return 0;
+    h = strstr(url, "://");
+    h = h ? h + 3 : url;
+    host_end = h;
+    while (*host_end && *host_end != '/' && *host_end != '?' && *host_end != '#')
+        host_end++;
+    for (p = h; p < host_end; ) {
+        unsigned char c = (unsigned char)*p;
+        unsigned long cp;
+        int n, k, ok = 1;
+        if      (c < 0x80)          { n = 1; cp = c; }
+        else if ((c & 0xE0) == 0xC0){ n = 2; cp = (unsigned long)(c & 0x1F); }
+        else if ((c & 0xF0) == 0xE0){ n = 3; cp = (unsigned long)(c & 0x0F); }
+        else if ((c & 0xF8) == 0xF0){ n = 4; cp = (unsigned long)(c & 0x07); }
+        else                        { n = 1; cp = c; }
+        for (k = 1; k < n; k++) {
+            if (p + k >= host_end || ((unsigned char)p[k] & 0xC0) != 0x80) {
+                ok = 0;
+                break;
+            }
+            cp = (cp << 6) | (unsigned long)((unsigned char)p[k] & 0x3F);
+        }
+        cp_pos++;
+        if (ok && cp >= 0x80) {
+            snprintf(out, outsz,
+                     "position %d is %s U+%04lX, not an ASCII letter",
+                     cp_pos, confusable_script(cp), cp);
+            return 1;
+        }
+        p += ok ? n : 1;
+    }
+    return 0;
+}
+
 /* ───────────────── blast-radius / asset-class correlation ─────────────────
  * A leaked credential's danger is not its count but what the *set* of leaked
  * credentials collectively unlocks. We bucket each secret-finding type into a
@@ -2956,15 +3023,20 @@ print_json_url(const char *url, const Verdict *v) {
     char esc_obj[256] = "";
     char safe[MAX_URL];
     char esc_safe[MAX_URL * 2] = "";
+    char conf[160];
+    char esc_conf[320] = "";
     int  has_safe = hlse_safe_destination(v, safe, sizeof(safe));
+    int  has_conf = hlse_confusable_report(url, conf, sizeof(conf));
     json_escape(url, escaped_url, sizeof(escaped_url));
     if (pat) json_escape(pat, esc_pat, sizeof(esc_pat));
     if (obj) json_escape(obj, esc_obj, sizeof(esc_obj));
     if (has_safe) json_escape(safe, esc_safe, sizeof(esc_safe));
+    if (has_conf) json_escape(conf, esc_conf, sizeof(esc_conf));
     printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
            escaped_url, v->score, action_for_score(v->score));
     if (pat) printf(",\"pattern\":\"%s\"", esc_pat);
     if (obj) printf(",\"objective\":\"%s\"", esc_obj);
+    if (has_conf) printf(",\"confusable\":\"%s\"", esc_conf);
     if (has_safe) printf(",\"safe_url\":\"%s\"", esc_safe);
     if (g_from_channel) {
         int d   = channel_delta(g_from_channel);
@@ -3067,7 +3139,10 @@ stdin_mode(int json_out) {
                 const char *pat = hlse_classify_url_attack(&uv);
                 const char *obj = hlse_attacker_objective(&uv);
                 char safe[MAX_URL];
+                char conf[160];
                 if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
+                if (hlse_confusable_report(line, conf, sizeof(conf)))
+                    printf("  \xe2\x8c\x96 Disguised char: %s\n", conf);
                 if (obj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj);
                 if (hlse_safe_destination(&uv, safe, sizeof(safe)))
                     printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
@@ -4135,7 +4210,10 @@ main(int argc, char **argv) {
                     const char *pat = hlse_classify_url_attack(&uv);
                     const char *obj = hlse_attacker_objective(&uv);
                     char safe[MAX_URL];
+                    char conf[160];
                     if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
+                    if (hlse_confusable_report(argv[idx + 1], conf, sizeof(conf)))
+                        printf("  \xe2\x8c\x96 Disguised char: %s\n", conf);
                     if (obj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj);
                     if (hlse_safe_destination(&uv, safe, sizeof(safe)))
                         printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
@@ -4202,7 +4280,10 @@ main(int argc, char **argv) {
                 const char *pat = hlse_classify_url_attack(&uv);
                 const char *obj = hlse_attacker_objective(&uv);
                 char safe[MAX_URL];
+                char conf[160];
                 if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
+                if (hlse_confusable_report(input, conf, sizeof(conf)))
+                    printf("  \xe2\x8c\x96 Disguised char: %s\n", conf);
                 if (obj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj);
                 if (hlse_safe_destination(&uv, safe, sizeof(safe)))
                     printf("  \xe2\x86\x92 Safe destination: %s\n", safe);

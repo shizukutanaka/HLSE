@@ -2,6 +2,31 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.11] — 2026-06-15
+
+### Added
+- **Confusable forensics — the "show the disguise" lens**
+  (NEW-PERSPECTIVE-CONFUSABLE). Socratic question: "You said 'mixed-script
+  homoglyph' and then showed the user the very string their eyes already
+  glossed over — `раypal.com` looks identical to `paypal.com`. Which exact
+  character is the impostor? Naming it ('position 1 is Cyrillic U+0440, not an
+  ASCII letter') turns an abstract label into undeniable, teachable proof a
+  browser's address bar actively hides."  The deception in an IDN/mixed-script
+  attack lives at the codepoint level, yet every prior reason re-displayed the
+  same indistinguishable glyphs.  New `hlse_confusable_report(const char *url,
+  char *out, size_t)` (public API) walks the host, decodes the first non-ASCII
+  UTF-8 codepoint, and reports its 1-based position, `U+XXXX` value, and
+  Unicode script block (Cyrillic, Greek, Armenian, fullwidth, …).  Human output
+  gains a `⌖ Disguised char: <detail>` line after the attack-pattern label;
+  JSON gains a `"confusable"` field.  Deliberately scoped to raw non-ASCII
+  hosts only: pure-ASCII homoglyphs (`g00gle`, `paypa1`) are already spelled
+  out in the brand-homoglyph reason, and `xn--` punycode hosts are ASCII and
+  covered by the IDN reason — so the lens fires exactly where existing output
+  was least informative, with no duplication.  Shown across all three URL paths
+  (single-arg, default, `--stdin`).  Pure output, zero scoring change: F1 =
+  1.000 preserved.  6 new CLI integration tests cover the Cyrillic case, the
+  pure-ASCII and clean negatives, JSON field presence/absence, and stdin pipe.
+
 ## [1.0.10] — 2026-06-15
 
 ### Added

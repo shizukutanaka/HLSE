@@ -27,7 +27,7 @@
 #include <stddef.h>   /* size_t, for hlse_safe_destination() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.10"
+#define HLSE_VERSION "1.0.11"
 
 #ifdef __cplusplus
 extern "C" {
@@ -104,6 +104,13 @@ int hlse_safe_destination(const Verdict *v, char *out, size_t outsz);
  * the impersonated brand. Returns a static string, or NULL when no brand was
  * identified in the verdict. */
 const char *hlse_attacker_objective(const Verdict *v);
+
+/* Pinpoint the first disguised (non-ASCII) character in a URL's host — the
+ * forensic proof behind a "homoglyph"/"mixed-script" label. Writes a one-line
+ * summary ("position 1 is Cyrillic U+0440, not an ASCII letter") into `out`.
+ * Returns 1 when a disguised character is found, 0 otherwise. Only raw IDN /
+ * mixed-script hosts report; pure-ASCII homoglyphs and xn-- punycode do not. */
+int hlse_confusable_report(const char *url, char *out, size_t outsz);
 
 /* Library version string (compiled-in). */
 const char *hlse_version(void);
