@@ -2240,6 +2240,115 @@ hlse_safe_destination(const Verdict *v, char *out, size_t outsz) {
     return 0;
 }
 
+/* True if `brand` is one of the NULL-terminated names in `set`. */
+static int
+brand_in_set(const char *brand, const char *const *set) {
+    int i;
+    for (i = 0; set[i]; i++)
+        if (strcmp(brand, set[i]) == 0) return 1;
+    return 0;
+}
+
+/* Map an impersonated brand to the attacker's likely objective and the asset
+ * the victim must now treat as compromised. A known brand that matches no
+ * category still returns the generic credential-harvest objective, so any
+ * identified brand yields guidance. */
+static const char *
+brand_objective(const char *brand) {
+    static const char *const crypto[] = {
+        "coinbase","binance","kraken","coincheck","crypto","metamask","ledger",
+        "trezor","trustwallet","opensea","uniswap","pancakeswap","blockchain", NULL };
+    static const char *const payment[] = {
+        "paypal","paypay","venmo","zelle","cashapp","payoneer","stripe","wise",
+        "revolut","chase","wellsfargo","bankofamerica","citibank","barclays",
+        "hsbc","usbank","capitalone","mufg","smbc","mizuho","truist","robinhood",
+        "etrade","fidelity","schwab","intuit","turbotax","quickbooks", NULL };
+    static const char *const identity[] = {
+        "google","microsoft","apple","outlook","yahoo","office365",
+        "microsoft365","microsoftonline", NULL };
+    static const char *const work[] = {
+        "okta","microsoftteams","teams","salesforce","docusign","slack","zoom", NULL };
+    static const char *const vault[] = {
+        "1password","lastpass","bitwarden", NULL };
+    static const char *const social[] = {
+        "facebook","meta","instagram","twitter","tiktok","snapchat","telegram",
+        "whatsapp","reddit","discord","line","linkedin","youtube", NULL };
+    static const char *const shopping[] = {
+        "netflix","hulu","spotify","disney","hbo","twitch","peacock","amazon",
+        "ebay","walmart","bestbuy","homedepot","shopify","rakuten", NULL };
+    static const char *const gaming[] = {
+        "steam","epicgames","roblox", NULL };
+    static const char *const logistics[] = {
+        "fedex","dhl","dhlexpress","ups","usps", NULL };
+    static const char *const avsoft[] = {
+        "norton","mcafee","kaspersky","bitdefender","avast","malwarebytes", NULL };
+    static const char *const ai[] = {
+        "openai","anthropic","chatgpt","gemini", NULL };
+    static const char *const telecom[] = {
+        "verizon","tmobile","docomo","softbank", NULL };
+
+    if (brand_in_set(brand, crypto))
+        return "crypto theft \xe2\x80\x94 seed phrase or wallet drain; transfers are irreversible";
+    if (brand_in_set(brand, payment))
+        return "financial-account takeover \xe2\x80\x94 your funds and linked bank accounts";
+    if (brand_in_set(brand, vault))
+        return "password-vault compromise \xe2\x80\x94 the master key to every stored credential";
+    if (brand_in_set(brand, identity))
+        return "email/identity takeover \xe2\x80\x94 the keystone that can reset every other account";
+    if (brand_in_set(brand, work))
+        return "corporate credential theft \xe2\x80\x94 lateral movement into your employer's systems";
+    if (brand_in_set(brand, social))
+        return "social-account hijack \xe2\x80\x94 impersonation and contact-list scams";
+    if (brand_in_set(brand, shopping))
+        return "subscription/payment-card theft \xe2\x80\x94 stored payment methods on file";
+    if (brand_in_set(brand, gaming))
+        return "gaming-account theft \xe2\x80\x94 resale of the account and in-game items";
+    if (brand_in_set(brand, logistics))
+        return "delivery-fee scam \xe2\x80\x94 a small fraudulent payment and card capture";
+    if (brand_in_set(brand, avsoft))
+        return "fake-AV / tech-support scam \xe2\x80\x94 remote access and bogus 'support' fees";
+    if (brand_in_set(brand, ai))
+        return "AI-account / API-key theft \xe2\x80\x94 billed usage and access to your data";
+    if (brand_in_set(brand, telecom))
+        return "telecom-account takeover \xe2\x80\x94 SIM-swap to intercept your 2FA codes";
+    return "credential harvesting \xe2\x80\x94 account takeover";
+}
+
+/* Name the attacker's likely objective for a URL verdict.
+ *
+ * Socratic question: "You named HOW the attack works and WHERE the user should
+ * go instead — but never WHAT the attacker is after. 'A phishing page' is
+ * abstract and easy to shrug off; 'they want your crypto seed phrase, and that
+ * theft is irreversible' names the exact asset to treat as compromised right
+ * now. Doesn't the stake decide how hard the user should care?"
+ *
+ * The attack-pattern lens (hlse_classify_url_attack) describes the mechanism;
+ * this describes the *motive and the asset at risk*, derived from which brand
+ * was impersonated. Returns a static string, or NULL when no brand was
+ * identified in the verdict (no brand → no specific objective to name). */
+const char *
+hlse_attacker_objective(const Verdict *v) {
+    int i;
+    if (!v) return NULL;
+    for (i = 0; i < v->n_reasons; i++) {
+        const char *r     = v->reasons[i];
+        const char *start = strstr(r, "Legitimate '");
+        const char *end;
+        char brand[64];
+        size_t len;
+        if (!start) continue;
+        start += 12;                 /* skip past "Legitimate '" */
+        end = strchr(start, '\'');
+        if (!end) continue;
+        len = (size_t)(end - start);
+        if (len == 0 || len >= sizeof(brand)) continue;
+        memcpy(brand, start, len);
+        brand[len] = '\0';
+        return brand_objective(brand);
+    }
+    return NULL;
+}
+
 /* ───────────────── blast-radius / asset-class correlation ─────────────────
  * A leaked credential's danger is not its count but what the *set* of leaked
  * credentials collectively unlocks. We bucket each secret-finding type into a
@@ -2842,16 +2951,20 @@ static void
 print_json_url(const char *url, const Verdict *v) {
     char escaped_url[MAX_URL * 2];
     const char *pat = hlse_classify_url_attack(v);
+    const char *obj = hlse_attacker_objective(v);
     char esc_pat[256] = "";
+    char esc_obj[256] = "";
     char safe[MAX_URL];
     char esc_safe[MAX_URL * 2] = "";
     int  has_safe = hlse_safe_destination(v, safe, sizeof(safe));
     json_escape(url, escaped_url, sizeof(escaped_url));
     if (pat) json_escape(pat, esc_pat, sizeof(esc_pat));
+    if (obj) json_escape(obj, esc_obj, sizeof(esc_obj));
     if (has_safe) json_escape(safe, esc_safe, sizeof(esc_safe));
     printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
            escaped_url, v->score, action_for_score(v->score));
     if (pat) printf(",\"pattern\":\"%s\"", esc_pat);
+    if (obj) printf(",\"objective\":\"%s\"", esc_obj);
     if (has_safe) printf(",\"safe_url\":\"%s\"", esc_safe);
     if (g_from_channel) {
         int d   = channel_delta(g_from_channel);
@@ -2952,8 +3065,10 @@ stdin_mode(int json_out) {
             if (sr.is_url) {
                 Verdict uv = check_url(line);
                 const char *pat = hlse_classify_url_attack(&uv);
+                const char *obj = hlse_attacker_objective(&uv);
                 char safe[MAX_URL];
                 if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
+                if (obj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj);
                 if (hlse_safe_destination(&uv, safe, sizeof(safe)))
                     printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
             }
@@ -4018,8 +4133,10 @@ main(int argc, char **argv) {
                 if (sr.is_url) {
                     Verdict uv = check_url(argv[idx + 1]);
                     const char *pat = hlse_classify_url_attack(&uv);
+                    const char *obj = hlse_attacker_objective(&uv);
                     char safe[MAX_URL];
                     if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
+                    if (obj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj);
                     if (hlse_safe_destination(&uv, safe, sizeof(safe)))
                         printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
                 }
@@ -4083,8 +4200,10 @@ main(int argc, char **argv) {
                  * hlse_scan already ran this internally; the cost is low.  */
                 Verdict uv = check_url(input);
                 const char *pat = hlse_classify_url_attack(&uv);
+                const char *obj = hlse_attacker_objective(&uv);
                 char safe[MAX_URL];
                 if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
+                if (obj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj);
                 if (hlse_safe_destination(&uv, safe, sizeof(safe)))
                     printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
             }

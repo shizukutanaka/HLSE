@@ -27,7 +27,7 @@
 #include <stddef.h>   /* size_t, for hlse_safe_destination() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.9"
+#define HLSE_VERSION "1.0.10"
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,6 +96,14 @@ const char *hlse_classify_url_attack(const Verdict *v);
  * the same phishing net. Writes "https://<domain>" into `out` (caller-owned)
  * and returns 1 when a canonical brand domain is present, 0 otherwise. */
 int hlse_safe_destination(const Verdict *v, char *out, size_t outsz);
+
+/* Name the attacker's likely objective for a URL Verdict — the asset the
+ * victim must now treat as compromised (e.g. "crypto theft — seed phrase or
+ * wallet drain; transfers are irreversible"). Where hlse_classify_url_attack
+ * describes the mechanism, this describes the motive and stake, derived from
+ * the impersonated brand. Returns a static string, or NULL when no brand was
+ * identified in the verdict. */
+const char *hlse_attacker_objective(const Verdict *v);
 
 /* Library version string (compiled-in). */
 const char *hlse_version(void);

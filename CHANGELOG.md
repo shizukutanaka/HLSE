@@ -2,6 +2,33 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.10] — 2026-06-15
+
+### Added
+- **Attacker objective — the "what are they after?" lens**
+  (NEW-PERSPECTIVE-OBJECTIVE). Socratic question: "You named HOW the attack
+  works (the pattern) and WHERE the user should go instead (safe destination) —
+  but never WHAT the attacker is actually after. 'A phishing page' is abstract
+  and easy to shrug off; 'they want your crypto seed phrase, and that theft is
+  irreversible' names the exact asset the victim must treat as compromised
+  right now. Doesn't the stake decide how hard the user should care?"  The same
+  `BLOCK [60]` verdict carries wildly different real-world stakes by brand: a
+  fake Netflix page risks a stored card, a fake MetaMask page risks an
+  irreversible wallet drain, a fake Okta page risks the user's whole employer.
+  Where `hlse_classify_url_attack` describes the *mechanism*, the new
+  `hlse_attacker_objective(const Verdict *)` (public API) describes the *motive
+  and the asset at stake*, derived from which brand was impersonated. Brands
+  are bucketed into 12 objective classes (crypto/irreversible, financial,
+  password-vault, email-identity keystone, corporate-SSO, social, subscription,
+  gaming, delivery-fee, fake-AV, AI/API-key, telecom/SIM-swap) with a generic
+  credential-harvest fallback for any other identified brand. Human output gains
+  a `◉ Attacker's goal: <objective>` line; JSON gains an `"objective"` field.
+  Shown across all three URL paths (single-arg, default, `--stdin`) and only
+  when a brand was impersonated — clean URLs and text inputs emit nothing. Pure
+  output, zero scoring change: F1 = 1.000 preserved. 8 new CLI integration
+  tests cover the crypto/payment/identity classes, JSON field presence/absence,
+  stdin pipe, and the clean/text negative paths.
+
 ## [1.0.9] — 2026-06-15
 
 ### Added

@@ -921,6 +921,65 @@ assert d["kind"] == "clipboard" and d["is_swap"] == 1 and d["score"] == 100
 ' && check "--json clipboard vanity → score 100" "0" "0" \
    || check "--json clipboard vanity → score 100" "0" "1"
 
+# ─── Perspective 12: Attacker Objective ("what are they after?") ───────────
+# Socratic Q: "You named HOW the attack works and WHERE to go instead — but
+# never WHAT the attacker is after. Doesn't the stake decide how hard the user
+# should care?"
+
+# Crypto brand → irreversible-theft objective
+OBJ_CRYPTO=$(./hlse_core "https://metamask-wallet.com/connect-wallet" 2>/dev/null) || true
+echo "$OBJ_CRYPTO" | grep -q "Attacker's goal: crypto theft" \
+    && check "objective: crypto brand → crypto theft" "0" "0" \
+    || check "objective: crypto brand → crypto theft" "0" "1"
+
+# Payment brand → financial-account-takeover objective
+OBJ_PAY=$(./hlse_core "https://paypa1.com/login" 2>/dev/null) || true
+echo "$OBJ_PAY" | grep -q "Attacker's goal: financial-account takeover" \
+    && check "objective: payment brand → financial takeover" "0" "0" \
+    || check "objective: payment brand → financial takeover" "0" "1"
+
+# Identity brand → email/identity-keystone objective
+OBJ_ID=$(./hlse_core "https://g00gle.com" 2>/dev/null) || true
+echo "$OBJ_ID" | grep -q "Attacker's goal: email/identity takeover" \
+    && check "objective: identity brand → identity takeover" "0" "0" \
+    || check "objective: identity brand → identity takeover" "0" "1"
+
+# Clean URL with no brand → no objective line
+OBJ_CLEAN=$(./hlse_core "https://example.com" 2>/dev/null) || true
+echo "$OBJ_CLEAN" | grep -q "Attacker's goal" \
+    && check "objective: absent for clean URL" "0" "1" \
+    || check "objective: absent for clean URL" "0" "0"
+
+# Text input → no objective line
+OBJ_TXT=$(./hlse_core text "URGENT wire transfer now" 2>/dev/null) || true
+echo "$OBJ_TXT" | grep -q "Attacker's goal" \
+    && check "objective: absent for text input" "0" "1" \
+    || check "objective: absent for text input" "0" "0"
+
+# JSON exposes the objective field for a brand-impersonation URL
+OBJ_JSON=""; OBJ_JSON=$(./hlse_core --json "https://paypa1.com/login" 2>/dev/null) || true
+echo "$OBJ_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "financial-account takeover" in d.get("objective",""), d
+' && check "objective json: objective field present" "0" "0" \
+   || check "objective json: objective field present" "0" "1"
+
+# JSON omits objective when no brand is matched
+OBJ_CLEAN_JSON=""; OBJ_CLEAN_JSON=$(./hlse_core --json "https://example.com" 2>/dev/null) || true
+echo "$OBJ_CLEAN_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "objective" not in d, d
+' && check "objective json: absent when clean" "0" "0" \
+   || check "objective json: absent when clean" "0" "1"
+
+# stdin pipe mode emits the objective too
+OBJ_STDIN=$(echo "https://paypa1.com/login" | ./hlse_core --stdin 2>/dev/null) || true
+echo "$OBJ_STDIN" | grep -q "Attacker's goal: financial-account takeover" \
+    && check "objective stdin: objective shown" "0" "0" \
+    || check "objective stdin: objective shown" "0" "1"
+
 # ─── Perspective 11: Safe Destination ("did you mean") ─────────────────────
 # Socratic Q: "You blocked the counterfeit — but the user still has the
 # legitimate need. You already know the real domain. Shouldn't you hand it over
