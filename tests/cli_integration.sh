@@ -617,6 +617,20 @@ rm -rf "$SARIF_DIR"
     && check "blindspot: clean text discloses limits" "0" "0" \
     || check "blindspot: clean text discloses limits" "0" "1"
 
+# ─── exoneration on heuristic (LOG/ALERT) threats ───────────────────
+# A heuristic-band URL offers the benign explanation + falsifying test.
+./hlse_core "https://secure-account-login-verify-update-now.com" 2>&1 | grep -qi "Could be benign" \
+    && check "exoneration: heuristic URL offers benign read" "0" "0" \
+    || check "exoneration: heuristic URL offers benign read" "0" "1"
+# A high-confidence BLOCK/ISOLATE threat must NOT be hedged.
+./hlse_core "https://paypal-verify.ru/login" 2>&1 | grep -qi "Could be benign" \
+    && check "exoneration: high-confidence threat is not hedged" "0" "1" \
+    || check "exoneration: high-confidence threat is not hedged" "0" "0"
+# A clean result must NOT carry the threat-exoneration note.
+./hlse_core "https://www.google.com" 2>&1 | grep -qi "Could be benign" \
+    && check "exoneration: clean result has no benign-threat note" "0" "1" \
+    || check "exoneration: clean result has no benign-threat note" "0" "0"
+
 # ─── --fail-on configurable exit gate ───────────────────────────────
 # A BLOCK(70) URL: default gate (block/60) → exit 1.
 rc=0; ./hlse_core -q "https://paypal-verify.ru/login" >/dev/null 2>&1 || rc=$?

@@ -11,6 +11,18 @@ legitimate?" — and closed a concrete gap without moving F1 off 1.000 on either
 the in- or out-of-distribution corpus.
 
 ### Added
+- **Exoneration — the benign explanation for a heuristic threat**
+  (NEW-PERSPECTIVE-EXONERATION). Socratic mirror of the blind-spot lens: that
+  one hedges a clean `OK` ("might be wrong, here's what I can't see"); HLSE
+  stated *threats* as if certain. But a hyphenated small-business domain or a
+  security vendor's "secure-login" site trips heuristics legitimately. On a
+  LOG/ALERT-band threat (score 15–59 — where false positives live), the
+  `url`/`text`/`email` checks now print `↺ Could be benign:` with the innocent
+  explanation **and the falsifying test** ("were you expecting this link; does
+  the registrable domain belong to the real brand?"). High-confidence
+  BLOCK/ISOLATE threats (homoglyph, `@`-trick, clipboard swap) are *not* hedged.
+  Together with blind-spot, HLSE is now honest about uncertainty in both
+  directions — clean and threat.
 - **`--fail-on <tier>` — the machine consumer's risk gate**
   (NEW-PERSPECTIVE-FAILON). Socratic reframing: five perspectives enriched
   *text for a human*, but HLSE is most deployed as a CI gate / pre-commit hook /

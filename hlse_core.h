@@ -75,6 +75,11 @@ const char *hlse_remediation_for(const char *kind, int score);
  * is not mistaken for proof of safety. NULL when there is no caveat. */
 const char *hlse_blindspot_for(const char *kind);
 
+/* Exoneration for a HEURISTIC threat (score 15..59) — the benign explanation
+ * and falsifying test, so a low-confidence ALERT is neither panic nor noise.
+ * NULL outside the LOG/ALERT band or when there is no caveat. */
+const char *hlse_exoneration_for(const char *kind, int score);
+
 /* Library version string (compiled-in). */
 const char *hlse_version(void);
 

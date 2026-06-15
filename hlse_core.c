@@ -1927,6 +1927,32 @@ hlse_blindspot_for(const char *kind) {
     return NULL;
 }
 
+/* Exoneration: the benign explanation that would clear a HEURISTIC threat.
+ * Mirror of hlse_blindspot_for — that hedges a clean OK, this hedges a
+ * low-confidence threat. Scoped to the LOG/ALERT band (15..59) where false
+ * positives live; at BLOCK/ISOLATE (>=60) the signals (homoglyph, @-trick,
+ * clipboard swap) are high-confidence and a benign read would mislead. Gives
+ * the user the *falsifying test* so they neither panic nor blindly comply. */
+const char *
+hlse_exoneration_for(const char *kind, int score) {
+    if (!kind || score < 15 || score >= 60) return NULL;
+    if (strcmp(kind, "url") == 0)
+        return "heuristic — legitimate small businesses and security vendors "
+               "also use hyphens and words like 'secure'/'login'. Decisive "
+               "test: were you expecting this link, and does the registrable "
+               "domain (just before the first single '/') belong to the real "
+               "brand?";
+    if (strcmp(kind, "text") == 0)
+        return "heuristic — urgent or financial wording appears in genuine "
+               "messages too. Decisive test: were you expecting this, and does "
+               "it push you to act through an unusual channel or in a hurry?";
+    if (strcmp(kind, "email") == 0)
+        return "heuristic — forwarders, mailing lists, and some legitimate "
+               "senders trip these checks. Decisive test: confirm the request "
+               "with the sender through a separately-known channel.";
+    return NULL;
+}
+
 const char *
 hlse_version(void) {
     return HLSE_VERSION;
@@ -3443,10 +3469,12 @@ main(int argc, char **argv) {
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
+                const char *ex = hlse_exoneration_for("email", ev.score);
                 printf("%-7s [%d]  (email forensics)\n",
                        hlse_action_for_score(ev.score), ev.score);
                 for (i = 0; i < ev.n_reasons; i++)
                     printf("  \xc2\xb7 %s\n", ev.reasons[i]);
+                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                 if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
             }
             return ev.score >= g_fail_threshold ? 1 : 0;
@@ -3600,6 +3628,8 @@ main(int argc, char **argv) {
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
+                const char *ex = hlse_exoneration_for(sr.is_url ? "url" : "text",
+                                                      sr.score);
                 printf("%-7s [%d]  (text) %.60s%s\n",
                        hlse_action_for_score(sr.score),
                        sr.score, argv[idx + 1],
@@ -3607,6 +3637,7 @@ main(int argc, char **argv) {
                 for (i = 0; i < sr.n_reasons; i++) {
                     printf("  \xc2\xb7 %s\n", sr.reasons[i]);
                 }
+                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }
             return sr.score >= g_fail_threshold ? 1 : 0;
         }
@@ -3648,11 +3679,14 @@ main(int argc, char **argv) {
             if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
         } else {
             int i;
+            const char *ex = hlse_exoneration_for(sr.is_url ? "url" : "text",
+                                                  sr.score);
             printf("%-7s [%d]  %s\n",
                    hlse_action_for_score(sr.score), sr.score, input);
             for (i = 0; i < sr.n_reasons; i++) {
                 printf("  · %s\n", sr.reasons[i]);
             }
+            if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
         }
         return sr.score >= g_fail_threshold ? 1 : 0;
     }
