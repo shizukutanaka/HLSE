@@ -2208,6 +2208,38 @@ hlse_classify_url_attack(const Verdict *v) {
     return NULL;
 }
 
+/* Extract the safe destination a user actually wanted, from a URL verdict.
+ *
+ * Socratic question: "You blocked the counterfeit — but the user still has
+ * the legitimate need that made them click. Saying only 'no' leaves them to
+ * re-search straight back into the same phishing net. You already know the
+ * real domain (you used it to detect the fake). Shouldn't you hand it over?"
+ *
+ * Perspective 8 derives the canonical brand domain and records it as the
+ * evidence reason "Legitimate '<brand>': <domain>". This lifts that buried
+ * fact into an actionable, navigable destination so detection completes the
+ * loop into guidance. Writes "https://<domain>" into `out`; returns 1 when a
+ * canonical brand domain is present in the verdict, 0 otherwise. Thread-safe
+ * (caller owns the buffer); no allocation. */
+int
+hlse_safe_destination(const Verdict *v, char *out, size_t outsz) {
+    int i;
+    if (!v || !out || outsz == 0) return 0;
+    for (i = 0; i < v->n_reasons; i++) {
+        const char *r     = v->reasons[i];
+        const char *brand = strstr(r, "Legitimate '");
+        const char *colon;
+        if (!brand) continue;
+        colon = strstr(brand, "': ");
+        if (!colon) continue;
+        /* colon+3 points at the canonical domain, which runs to end-of-reason
+         * (the reason is built as "Legitimate '<brand>': <domain>"). */
+        snprintf(out, outsz, "https://%s", colon + 3);
+        return 1;
+    }
+    return 0;
+}
+
 /* ───────────────── blast-radius / asset-class correlation ─────────────────
  * A leaked credential's danger is not its count but what the *set* of leaked
  * credentials collectively unlocks. We bucket each secret-finding type into a
@@ -2811,11 +2843,16 @@ print_json_url(const char *url, const Verdict *v) {
     char escaped_url[MAX_URL * 2];
     const char *pat = hlse_classify_url_attack(v);
     char esc_pat[256] = "";
+    char safe[MAX_URL];
+    char esc_safe[MAX_URL * 2] = "";
+    int  has_safe = hlse_safe_destination(v, safe, sizeof(safe));
     json_escape(url, escaped_url, sizeof(escaped_url));
     if (pat) json_escape(pat, esc_pat, sizeof(esc_pat));
+    if (has_safe) json_escape(safe, esc_safe, sizeof(esc_safe));
     printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
            escaped_url, v->score, action_for_score(v->score));
     if (pat) printf(",\"pattern\":\"%s\"", esc_pat);
+    if (has_safe) printf(",\"safe_url\":\"%s\"", esc_safe);
     if (g_from_channel) {
         int d   = channel_delta(g_from_channel);
         int eff = v->score + d; if (eff > 100) eff = 100;
@@ -2915,7 +2952,10 @@ stdin_mode(int json_out) {
             if (sr.is_url) {
                 Verdict uv = check_url(line);
                 const char *pat = hlse_classify_url_attack(&uv);
+                char safe[MAX_URL];
                 if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
+                if (hlse_safe_destination(&uv, safe, sizeof(safe)))
+                    printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
             }
             if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
         }
@@ -3978,7 +4018,10 @@ main(int argc, char **argv) {
                 if (sr.is_url) {
                     Verdict uv = check_url(argv[idx + 1]);
                     const char *pat = hlse_classify_url_attack(&uv);
+                    char safe[MAX_URL];
                     if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
+                    if (hlse_safe_destination(&uv, safe, sizeof(safe)))
+                        printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
                 }
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }
@@ -4040,7 +4083,10 @@ main(int argc, char **argv) {
                  * hlse_scan already ran this internally; the cost is low.  */
                 Verdict uv = check_url(input);
                 const char *pat = hlse_classify_url_attack(&uv);
+                char safe[MAX_URL];
                 if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
+                if (hlse_safe_destination(&uv, safe, sizeof(safe)))
+                    printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
             }
             if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
             if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);

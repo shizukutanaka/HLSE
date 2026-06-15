@@ -2,6 +2,29 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.9] — 2026-06-15
+
+### Added
+- **Safe destination — the "did-you-mean" lens** (NEW-PERSPECTIVE-SAFE-DEST).
+  Socratic question: "You blocked the counterfeit — but the user still has the
+  legitimate need that made them click. Saying only 'no' leaves them to
+  re-search straight back into the same phishing net. You already know the real
+  domain — you used it to detect the fake. Shouldn't you hand it over as a
+  navigable destination?"  Detection so far stopped at *naming* the threat;
+  it never closed the loop into *guidance toward safety*.  Perspective 8
+  already derives the authentic brand domain and records it as the evidence
+  reason `Legitimate '<brand>': <domain>` — but that fact sat buried among the
+  signals.  New `hlse_safe_destination(const Verdict *, char *out, size_t)`
+  (public API) lifts it into an actionable, navigable `https://<domain>` URL.
+  Human output gains a prominent `→ Safe destination: https://<domain>` line
+  after the attack-pattern label; JSON output gains a `"safe_url"` field.
+  Shown across all three URL paths (single-arg, default auto-detect, `--stdin`)
+  and only when a brand was actually impersonated — clean URLs and text inputs
+  emit nothing, keeping output noise-free.  Pure output, zero scoring change:
+  F1 = 1.000 preserved.  8 new CLI integration tests cover the typosquat and
+  homoglyph cases, the navigable-URL format, JSON `safe_url` presence/absence,
+  stdin pipe, and the clean/text negative paths.
+
 ## [1.0.8] — 2026-06-15
 
 ### Added

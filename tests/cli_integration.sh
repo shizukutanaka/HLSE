@@ -921,6 +921,64 @@ assert d["kind"] == "clipboard" and d["is_swap"] == 1 and d["score"] == 100
 ' && check "--json clipboard vanity → score 100" "0" "0" \
    || check "--json clipboard vanity → score 100" "0" "1"
 
+# ─── Perspective 11: Safe Destination ("did you mean") ─────────────────────
+# Socratic Q: "You blocked the counterfeit — but the user still has the
+# legitimate need. You already know the real domain. Shouldn't you hand it over
+# so they don't re-search straight back into the same phishing net?"
+
+# A brand-impersonation URL gets a navigable safe destination
+SAFE_OUT=$(./hlse_core "https://paypa1.com/login" 2>/dev/null) || true
+echo "$SAFE_OUT" | grep -q "Safe destination: https://paypal.com" \
+    && check "safe-dest: typosquat → real domain" "0" "0" \
+    || check "safe-dest: typosquat → real domain" "0" "1"
+
+# Safe destination is a full navigable HTTPS URL (not a bare domain)
+echo "$SAFE_OUT" | grep -qE "Safe destination: https://" \
+    && check "safe-dest: emits https:// URL" "0" "0" \
+    || check "safe-dest: emits https:// URL" "0" "1"
+
+# A clean URL with no brand match gets NO safe destination line
+CLEAN_OUT=$(./hlse_core "https://example.com" 2>/dev/null) || true
+echo "$CLEAN_OUT" | grep -q "Safe destination" \
+    && check "safe-dest: absent for clean URL" "0" "1" \
+    || check "safe-dest: absent for clean URL" "0" "0"
+
+# Text input (not a URL) never gets a safe destination
+TXT_OUT=$(./hlse_core text "URGENT wire transfer now" 2>/dev/null) || true
+echo "$TXT_OUT" | grep -q "Safe destination" \
+    && check "safe-dest: absent for text input" "0" "1" \
+    || check "safe-dest: absent for text input" "0" "0"
+
+# JSON exposes safe_url for a brand-impersonation URL
+SAFE_JSON=""; SAFE_JSON=$(./hlse_core --json "https://paypa1.com/login" 2>/dev/null) || true
+echo "$SAFE_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d.get("safe_url") == "https://paypal.com", d
+' && check "safe-dest json: safe_url field present" "0" "0" \
+   || check "safe-dest json: safe_url field present" "0" "1"
+
+# JSON omits safe_url when no brand is matched
+CLEAN_JSON=""; CLEAN_JSON=$(./hlse_core --json "https://example.com" 2>/dev/null) || true
+echo "$CLEAN_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "safe_url" not in d, d
+' && check "safe-dest json: safe_url absent when clean" "0" "0" \
+   || check "safe-dest json: safe_url absent when clean" "0" "1"
+
+# stdin pipe mode emits the safe destination too
+SAFE_STDIN=$(echo "https://paypa1.com/login" | ./hlse_core --stdin 2>/dev/null) || true
+echo "$SAFE_STDIN" | grep -q "Safe destination: https://paypal.com" \
+    && check "safe-dest stdin: real domain shown" "0" "0" \
+    || check "safe-dest stdin: real domain shown" "0" "1"
+
+# A homoglyph brand on a different brand resolves to that brand's real domain
+SAFE_GOOG=$(./hlse_core "https://g00gle.com" 2>/dev/null) || true
+echo "$SAFE_GOOG" | grep -q "Safe destination: https://google.com" \
+    && check "safe-dest: g00gle → google.com" "0" "0" \
+    || check "safe-dest: g00gle → google.com" "0" "1"
+
 # ─── Perspective 10: Delivery Channel Context (--from) ─────────────────────
 # Socratic Q: "The same URL in an unsolicited SMS is riskier than one the user
 # typed manually.  Should the delivery channel change the verdict?"

@@ -24,8 +24,10 @@
 #ifndef HLSE_CORE_H
 #define HLSE_CORE_H
 
+#include <stddef.h>   /* size_t, for hlse_safe_destination() */
+
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.8"
+#define HLSE_VERSION "1.0.9"
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,6 +88,14 @@ const char *hlse_exoneration_for(const char *kind, int score);
  * is found. The label is always a short phrase — display it as a summary
  * line after the per-signal reasons. */
 const char *hlse_classify_url_attack(const Verdict *v);
+
+/* Recover the safe destination a user actually wanted from a URL Verdict.
+ * When a brand was impersonated, HLSE already knows the authentic domain (it
+ * used it to detect the fake); this lifts that into a navigable URL so a BLOCK
+ * also tells the user where to go instead of leaving them to re-search into
+ * the same phishing net. Writes "https://<domain>" into `out` (caller-owned)
+ * and returns 1 when a canonical brand domain is present, 0 otherwise. */
+int hlse_safe_destination(const Verdict *v, char *out, size_t outsz);
 
 /* Library version string (compiled-in). */
 const char *hlse_version(void);
