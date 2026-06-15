@@ -2,6 +2,28 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.4] — 2026-06-15
+
+### Added
+- **Canonical domain — the contrastive truth lens**
+  (NEW-PERSPECTIVE-CANONICAL). Socratic question: "You've named the deception
+  — where should I actually go?" Every brand-detection path (typosquat, digraph
+  homoglyph, confusable-character, II→ll, mixed-script, IDN homograph, subdomain
+  spoofing, brand+security-word hyphenation, brand+suffix-word fusion, brand in
+  hyphenated SLD, free-hosting phishing, IP-host with brand in path) already
+  knows *which brand* is being impersonated because it matched against the
+  BRANDS[] table — yet the output named only the deception. It never said where
+  to actually go. A new `brand_canonical()` lookup (108 brands → authoritative
+  domain, covering non-obvious cases: `zoom → zoom.us`, `notion → notion.so`,
+  `twitter → x.com`, `cashapp → cash.app`, `line → line.me`,
+  `telegram → telegram.org`) surfaces the truth alongside every impersonation
+  warning as a zero-score-delta `"Legitimate '<brand>': <domain>"` reason. The
+  canonical appears in both text and `--json` output. Score is unaffected (delta
+  0, informational only); F1 = 1.000 preserved. Tests: 5 new integration checks
+  verify typosquat, homoglyph, brand-impersonation, and non-obvious canonical
+  cases; the `zoom.us` assertion guards against the common mistake of using the
+  wrong regional domain.
+
 ## [1.0.3] — 2026-06-13
 
 Socratic probe of the five modules that had no dedicated coverage check this

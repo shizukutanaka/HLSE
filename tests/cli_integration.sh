@@ -653,6 +653,36 @@ rc=0; ./hlse_core -q --fail-on alert scan "$FO_DIR" >/dev/null 2>&1 || rc=$?
 check "fail-on: scan --fail-on alert catches it → exit 1" "1" "$rc"
 rm -rf "$FO_DIR"
 
+# ─── Canonical domain (contrastive truth) ───────────────────────────
+# Typosquat: the canonical domain of the impersonated brand is shown.
+./hlse_core "https://discordd.com/login" 2>&1 | grep -qi "Legitimate 'discord': discord.com" \
+    && check "canonical: typosquat shows real discord domain" "0" "0" \
+    || check "canonical: typosquat shows real discord domain" "0" "1"
+# Homoglyph: canonical appears alongside the substitution warning.
+./hlse_core "https://paypa1.com/signin" 2>&1 | grep -qi "Legitimate 'paypal': paypal.com" \
+    && check "canonical: homoglyph shows real paypal domain" "0" "0" \
+    || check "canonical: homoglyph shows real paypal domain" "0" "1"
+# Brand impersonation: hyphen+security-word gets canonical.
+./hlse_core "https://paypal-verify.xyz/login" 2>&1 | grep -qi "Legitimate 'paypal': paypal.com" \
+    && check "canonical: brand impersonation shows canonical" "0" "0" \
+    || check "canonical: brand impersonation shows canonical" "0" "1"
+# Non-obvious canonical: zoom.us not zoom.com.
+./hlse_core "https://paypa1.zoom.us.attacker.com/meeting" 2>&1 | grep -qi "Legitimate 'zoom': zoom.us" \
+    && check "canonical: subdomain spoofing shows zoom.us (not zoom.com)" "0" "0" \
+    || check "canonical: subdomain spoofing shows zoom.us (not zoom.com)" "0" "1"
+# JSON: canonical reason appears in reasons array.
+if command -v python3 >/dev/null 2>&1; then
+    CANON_JSON=""; CANON_JSON=$(./hlse_core --json "https://discordd.com/login" 2>/dev/null) || true
+    echo "$CANON_JSON" | python3 -c "
+import json,sys
+d=json.loads(sys.stdin.read())
+found=any('discord.com' in r for r in d.get('reasons',[]))
+raise SystemExit(0 if found else 1)
+" 2>/dev/null \
+        && check "canonical: JSON reasons contain canonical domain" "0" "0" \
+        || check "canonical: JSON reasons contain canonical domain" "0" "1"
+fi
+
 # ─── JSON control-char escaping ─────────────────────────────────────
 # A secret file containing a control byte must still produce valid JSON
 # (the \uXXXX escape path).

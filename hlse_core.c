@@ -157,6 +157,132 @@ static const char *BRANDS[] = {
      * compound signal already covers without URL false-positives.      */
 };
 
+/* Return the canonical domain for a known brand, so detectors can surface
+ * "where to actually go" alongside each impersonation warning.
+ * Returns NULL for any brand not in the table (safe callers must handle).  */
+static const char *brand_canonical(const char *brand) {
+    if (!brand) return NULL;
+    if (strcmp(brand, "1password")       == 0) return "1password.com";
+    if (strcmp(brand, "adobe")           == 0) return "adobe.com";
+    if (strcmp(brand, "amazon")          == 0) return "amazon.com";
+    if (strcmp(brand, "anthropic")       == 0) return "anthropic.com";
+    if (strcmp(brand, "apple")           == 0) return "apple.com";
+    if (strcmp(brand, "avast")           == 0) return "avast.com";
+    if (strcmp(brand, "bankofamerica")   == 0) return "bankofamerica.com";
+    if (strcmp(brand, "barclays")        == 0) return "barclays.com";
+    if (strcmp(brand, "bestbuy")         == 0) return "bestbuy.com";
+    if (strcmp(brand, "binance")         == 0) return "binance.com";
+    if (strcmp(brand, "bitdefender")     == 0) return "bitdefender.com";
+    if (strcmp(brand, "bitwarden")       == 0) return "bitwarden.com";
+    if (strcmp(brand, "blockchain")      == 0) return "blockchain.com";
+    if (strcmp(brand, "capitalone")      == 0) return "capitalone.com";
+    if (strcmp(brand, "cashapp")         == 0) return "cash.app";
+    if (strcmp(brand, "chatgpt")         == 0) return "chatgpt.com";
+    if (strcmp(brand, "chase")           == 0) return "chase.com";
+    if (strcmp(brand, "citibank")        == 0) return "citi.com";
+    if (strcmp(brand, "cloudflare")      == 0) return "cloudflare.com";
+    if (strcmp(brand, "coinbase")        == 0) return "coinbase.com";
+    if (strcmp(brand, "coincheck")       == 0) return "coincheck.com";
+    if (strcmp(brand, "crypto")          == 0) return "crypto.com";
+    if (strcmp(brand, "dhl")             == 0) return "dhl.com";
+    if (strcmp(brand, "dhlexpress")      == 0) return "dhlexpress.com";
+    if (strcmp(brand, "discord")         == 0) return "discord.com";
+    if (strcmp(brand, "disney")          == 0) return "disneyplus.com";
+    if (strcmp(brand, "docomo")          == 0) return "docomo.ne.jp";
+    if (strcmp(brand, "docusign")        == 0) return "docusign.com";
+    if (strcmp(brand, "dropbox")         == 0) return "dropbox.com";
+    if (strcmp(brand, "ebay")            == 0) return "ebay.com";
+    if (strcmp(brand, "epicgames")       == 0) return "epicgames.com";
+    if (strcmp(brand, "etrade")          == 0) return "etrade.com";
+    if (strcmp(brand, "facebook")        == 0) return "facebook.com";
+    if (strcmp(brand, "fedex")           == 0) return "fedex.com";
+    if (strcmp(brand, "fidelity")        == 0) return "fidelity.com";
+    if (strcmp(brand, "figma")           == 0) return "figma.com";
+    if (strcmp(brand, "gemini")          == 0) return "gemini.google.com";
+    if (strcmp(brand, "github")          == 0) return "github.com";
+    if (strcmp(brand, "gitlab")          == 0) return "gitlab.com";
+    if (strcmp(brand, "google")          == 0) return "google.com";
+    if (strcmp(brand, "hbo")             == 0) return "max.com";
+    if (strcmp(brand, "homedepot")       == 0) return "homedepot.com";
+    if (strcmp(brand, "hsbc")            == 0) return "hsbc.com";
+    if (strcmp(brand, "hulu")            == 0) return "hulu.com";
+    if (strcmp(brand, "instagram")       == 0) return "instagram.com";
+    if (strcmp(brand, "intuit")          == 0) return "intuit.com";
+    if (strcmp(brand, "kaspersky")       == 0) return "kaspersky.com";
+    if (strcmp(brand, "kraken")          == 0) return "kraken.com";
+    if (strcmp(brand, "lastpass")        == 0) return "lastpass.com";
+    if (strcmp(brand, "ledger")          == 0) return "ledger.com";
+    if (strcmp(brand, "line")            == 0) return "line.me";
+    if (strcmp(brand, "linkedin")        == 0) return "linkedin.com";
+    if (strcmp(brand, "malwarebytes")    == 0) return "malwarebytes.com";
+    if (strcmp(brand, "mcafee")          == 0) return "mcafee.com";
+    if (strcmp(brand, "meta")            == 0) return "meta.com";
+    if (strcmp(brand, "metamask")        == 0) return "metamask.io";
+    if (strcmp(brand, "microsoft")       == 0) return "microsoft.com";
+    if (strcmp(brand, "microsoft365")    == 0) return "microsoft365.com";
+    if (strcmp(brand, "microsoftonline") == 0) return "login.microsoftonline.com";
+    if (strcmp(brand, "microsoftteams")  == 0) return "teams.microsoft.com";
+    if (strcmp(brand, "mizuho")          == 0) return "mizuho-fg.co.jp";
+    if (strcmp(brand, "mufg")            == 0) return "mufg.jp";
+    if (strcmp(brand, "netflix")         == 0) return "netflix.com";
+    if (strcmp(brand, "norton")          == 0) return "norton.com";
+    if (strcmp(brand, "notion")          == 0) return "notion.so";
+    if (strcmp(brand, "office365")       == 0) return "microsoft365.com";
+    if (strcmp(brand, "okta")            == 0) return "okta.com";
+    if (strcmp(brand, "openai")          == 0) return "openai.com";
+    if (strcmp(brand, "opensea")         == 0) return "opensea.io";
+    if (strcmp(brand, "oracle")          == 0) return "oracle.com";
+    if (strcmp(brand, "outlook")         == 0) return "outlook.com";
+    if (strcmp(brand, "pancakeswap")     == 0) return "pancakeswap.finance";
+    if (strcmp(brand, "payoneer")        == 0) return "payoneer.com";
+    if (strcmp(brand, "paypal")          == 0) return "paypal.com";
+    if (strcmp(brand, "paypay")          == 0) return "paypay.ne.jp";
+    if (strcmp(brand, "peacock")         == 0) return "peacocktv.com";
+    if (strcmp(brand, "quickbooks")      == 0) return "quickbooks.intuit.com";
+    if (strcmp(brand, "rakuten")         == 0) return "rakuten.co.jp";
+    if (strcmp(brand, "reddit")          == 0) return "reddit.com";
+    if (strcmp(brand, "revolut")         == 0) return "revolut.com";
+    if (strcmp(brand, "robinhood")       == 0) return "robinhood.com";
+    if (strcmp(brand, "roblox")          == 0) return "roblox.com";
+    if (strcmp(brand, "salesforce")      == 0) return "salesforce.com";
+    if (strcmp(brand, "schwab")          == 0) return "schwab.com";
+    if (strcmp(brand, "shopify")         == 0) return "shopify.com";
+    if (strcmp(brand, "slack")           == 0) return "slack.com";
+    if (strcmp(brand, "smbc")            == 0) return "smbc.co.jp";
+    if (strcmp(brand, "snapchat")        == 0) return "snapchat.com";
+    if (strcmp(brand, "softbank")        == 0) return "softbank.jp";
+    if (strcmp(brand, "spotify")         == 0) return "spotify.com";
+    if (strcmp(brand, "steam")           == 0) return "steampowered.com";
+    if (strcmp(brand, "stripe")          == 0) return "stripe.com";
+    if (strcmp(brand, "teams")           == 0) return "teams.microsoft.com";
+    if (strcmp(brand, "telegram")        == 0) return "telegram.org";
+    if (strcmp(brand, "tiktok")          == 0) return "tiktok.com";
+    if (strcmp(brand, "tmobile")         == 0) return "t-mobile.com";
+    if (strcmp(brand, "trezor")          == 0) return "trezor.io";
+    if (strcmp(brand, "truist")          == 0) return "truist.com";
+    if (strcmp(brand, "trustwallet")     == 0) return "trustwallet.com";
+    if (strcmp(brand, "turbotax")        == 0) return "turbotax.intuit.com";
+    if (strcmp(brand, "twilio")          == 0) return "twilio.com";
+    if (strcmp(brand, "twitch")          == 0) return "twitch.tv";
+    if (strcmp(brand, "twitter")         == 0) return "x.com";
+    if (strcmp(brand, "uniswap")         == 0) return "uniswap.org";
+    if (strcmp(brand, "ups")             == 0) return "ups.com";
+    if (strcmp(brand, "usbank")          == 0) return "usbank.com";
+    if (strcmp(brand, "usps")            == 0) return "usps.com";
+    if (strcmp(brand, "venmo")           == 0) return "venmo.com";
+    if (strcmp(brand, "verizon")         == 0) return "verizon.com";
+    if (strcmp(brand, "walmart")         == 0) return "walmart.com";
+    if (strcmp(brand, "wellsfargo")      == 0) return "wellsfargo.com";
+    if (strcmp(brand, "whatsapp")        == 0) return "whatsapp.com";
+    if (strcmp(brand, "wise")            == 0) return "wise.com";
+    if (strcmp(brand, "wordpress")       == 0) return "wordpress.com";
+    if (strcmp(brand, "yahoo")           == 0) return "yahoo.com";
+    if (strcmp(brand, "youtube")         == 0) return "youtube.com";
+    if (strcmp(brand, "zelle")           == 0) return "zellepay.com";
+    if (strcmp(brand, "zoom")            == 0) return "zoom.us";
+    return NULL;
+}
+
 /* High-risk top-level domains: legitimate sites rarely use these,
  * phishing kits use them constantly because they're cheap and unmonitored. */
 static const char *SUSPICIOUS_TLDS[] = {
@@ -547,9 +673,11 @@ detect_homoglyph(const ParsedUrl *u, Verdict *v) {
             /* Try matching with this alternative form */
             for (i = 0; BRANDS[i] != NULL; i++) {
                 if (contains(alt, BRANDS[i]) && !contains(u->host, BRANDS[i])) {
+                    const char *_c = brand_canonical(BRANDS[i]);
                     add_reason(v, 45,
                                "Brand homoglyph (II→ll variant): '%s' resembles '%s'",
                                u->host, BRANDS[i]);
+                    if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
                     return;
                 }
             }
@@ -564,8 +692,10 @@ detect_homoglyph(const ParsedUrl *u, Verdict *v) {
         for (i = 0; BRANDS[i] != NULL; i++) {
             const char *b = BRANDS[i];
             if (contains(normalized, b) && !contains(host_lower, b)) {
+                const char *_c = brand_canonical(b);
                 add_reason(v, 45, "Brand homoglyph: '%s' -> '%s' (%s)",
                            u->host, normalized, b);
+                if (_c) add_reason(v, 0, "Legitimate '%s': %s", b, _c);
                 if (count >= 2) {
                     add_reason(v, 5, "Multiple confusable chars (%d)", count);
                 }
@@ -762,9 +892,13 @@ detect_subdomain_spoof(const ParsedUrl *u, Verdict *v) {
                             is_trusted_host(registrable)) return;
                         (void)blen;  /* used via brand_is_token_in_sld */
 
-                        add_reason(v, token_match ? 35 : 45,
-                                   "Subdomain spoofing: '%s' appears before "
-                                   "registrable domain", BRANDS[j]);
+                        {
+                            const char *_c = brand_canonical(BRANDS[j]);
+                            add_reason(v, token_match ? 35 : 45,
+                                       "Subdomain spoofing: '%s' appears before "
+                                       "registrable domain", BRANDS[j]);
+                            if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[j], _c);
+                        }
                         return;
                     }
                 }
@@ -916,9 +1050,11 @@ detect_security_hyphenation(const ParsedUrl *u, Verdict *v) {
         if (hyphens >= 1 && sec_count >= 1) {
             for (i = 0; BRANDS[i] != NULL; i++) {
                 if (brand_is_token_in_sld(sld, BRANDS[i])) {
+                    const char *_c = brand_canonical(BRANDS[i]);
                     add_reason(v, 35,
                         "Brand impersonation: '%s' hyphenated with security "
                         "term — real brand uses its own domain", BRANDS[i]);
+                    if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
                     brand_matched = 1;
                     break;
                 }
@@ -946,10 +1082,14 @@ detect_security_hyphenation(const ParsedUrl *u, Verdict *v) {
                     size_t wl = strlen(SECURITY_WORDS[j]);
                     if (strncmp(after, SECURITY_WORDS[j], wl) == 0 &&
                         (after[wl] == '\0' || after[wl] == '-')) {
-                        add_reason(v, 30,
-                            "Brand+security-word fusion: '%s' prefixes SLD "
-                            "with its own name — real brand uses its own "
-                            "domain", BRANDS[i]);
+                        {
+                            const char *_c = brand_canonical(BRANDS[i]);
+                            add_reason(v, 30,
+                                "Brand+security-word fusion: '%s' prefixes SLD "
+                                "with its own name — real brand uses its own "
+                                "domain", BRANDS[i]);
+                            if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
+                        }
                         brand_matched = 1;
                     }
                 }
@@ -957,10 +1097,14 @@ detect_security_hyphenation(const ParsedUrl *u, Verdict *v) {
                     size_t wl = strlen(BRAND_SUFFIX_WORDS[j]);
                     if (strncmp(after, BRAND_SUFFIX_WORDS[j], wl) == 0 &&
                         (after[wl] == '\0' || after[wl] == '-')) {
-                        add_reason(v, 30,
-                            "Brand+product-term fusion: '%s' fused to '%s' — "
-                            "real brand serves this from its own domain",
-                            BRANDS[i], BRAND_SUFFIX_WORDS[j]);
+                        {
+                            const char *_c = brand_canonical(BRANDS[i]);
+                            add_reason(v, 30,
+                                "Brand+product-term fusion: '%s' fused to '%s' — "
+                                "real brand serves this from its own domain",
+                                BRANDS[i], BRAND_SUFFIX_WORDS[j]);
+                            if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
+                        }
                         brand_matched = 1;
                     }
                 }
@@ -975,9 +1119,11 @@ detect_security_hyphenation(const ParsedUrl *u, Verdict *v) {
             for (i = 0; BRANDS[i] != NULL; i++) {
                 if (strlen(BRANDS[i]) >= 6 &&
                     brand_is_token_in_sld(sld, BRANDS[i])) {
+                    const char *_c = brand_canonical(BRANDS[i]);
                     add_reason(v, 25,
                         "Brand present in hyphenated domain — "
                         "real '%s' does not use a hyphenated SLD", BRANDS[i]);
+                    if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
                     brand_matched = 1;
                     break;
                 }
@@ -1024,15 +1170,19 @@ detect_typosquat(const ParsedUrl *u, Verdict *v) {
 
         d = damerau_levenshtein(sld, BRANDS[i], 3);
         if (d == 1) {
+            const char *_c = brand_canonical(BRANDS[i]);
             add_reason(v, 50,
                        "Typosquat: '%s' is edit distance 1 from '%s'",
                        sld, BRANDS[i]);
+            if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
             return;
         }
         if (d == 2 && bl >= 7) {
+            const char *_c = brand_canonical(BRANDS[i]);
             add_reason(v, 30,
                        "Possible typosquat: '%s' is edit distance 2 from '%s'",
                        sld, BRANDS[i]);
+            if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
             return;
         }
     }
@@ -1045,9 +1195,11 @@ detect_typosquat(const ParsedUrl *u, Verdict *v) {
         if (subs > 0) {
             for (i = 0; BRANDS[i] != NULL; i++) {
                 if (strcmp(digraph_norm, BRANDS[i]) == 0) {
+                    const char *_c = brand_canonical(BRANDS[i]);
                     add_reason(v, 50,
                         "Digraph homoglyph: '%s' mimics '%s' (rn/vv trick)",
                         sld, BRANDS[i]);
+                    if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
                     return;
                 }
             }
@@ -1119,9 +1271,11 @@ detect_mixed_script(const ParsedUrl *u, Verdict *v) {
             int i;
             for (i = 0; BRANDS[i] != NULL; i++) {
                 if (contains(ascii, BRANDS[i])) {
+                    const char *_c = brand_canonical(BRANDS[i]);
                     add_reason(v, 60,
                                "Mixed-script homoglyph: "
                                "'%s' resembles '%s'", u->host, BRANDS[i]);
+                    if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
                     return;
                 }
             }
@@ -1310,9 +1464,11 @@ detect_idn_homograph(const ParsedUrl *u, Verdict *v) {
         int i;
         for (i = 0; BRANDS[i] != NULL; i++) {
             if (contains(folded, BRANDS[i])) {
+                const char *_c = brand_canonical(BRANDS[i]);
                 add_reason(v, 65,
                     "IDN homograph: Punycode '%s' decodes to resemble '%s'",
                     u->host, BRANDS[i]);
+                if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
                 return;
             }
         }
@@ -1449,10 +1605,12 @@ check_url(const char *raw_url) {
                     subdomain[prefix_len] = '\0';
                     for (bi = 0; BRANDS[bi]; bi++) {
                         if (strstr(subdomain, BRANDS[bi])) {
+                            const char *_c = brand_canonical(BRANDS[bi]);
                             add_reason(&v, 55,
                                 "Free-hosting phishing: brand '%s' in subdomain "
                                 "of '%s' — real brand never uses free page builders",
                                 BRANDS[bi], FREE_HOSTS[fhi]);
+                            if (_c) add_reason(&v, 0, "Legitimate '%s': %s", BRANDS[bi], _c);
                             break;
                         }
                     }
@@ -1482,10 +1640,12 @@ check_url(const char *raw_url) {
             int i;
             for (i = 0; BRANDS[i]; i++) {
                 if (strstr(u.path, BRANDS[i])) {
+                    const char *_c = brand_canonical(BRANDS[i]);
                     add_reason(&v, 35,
                         "IP-based URL with brand '%s' in path — "
                         "legitimate sites don't use IP addresses",
                         BRANDS[i]);
+                    if (_c) add_reason(&v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
                     break;
                 }
             }
