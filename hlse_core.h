@@ -25,7 +25,7 @@
 #define HLSE_CORE_H
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.4"
+#define HLSE_VERSION "1.0.5"
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,6 +79,13 @@ const char *hlse_blindspot_for(const char *kind);
  * and falsifying test, so a low-confidence ALERT is neither panic nor noise.
  * NULL outside the LOG/ALERT band or when there is no caveat. */
 const char *hlse_exoneration_for(const char *kind, int score);
+
+/* Synthesise a named attack-pattern label from the signals in a URL Verdict
+ * (e.g. "typosquat credential-harvest page", "free-hosting phishing
+ * infrastructure"). Returns NULL when score is 0 or no recognisable pattern
+ * is found. The label is always a short phrase — display it as a summary
+ * line after the per-signal reasons. */
+const char *hlse_classify_url_attack(const Verdict *v);
 
 /* Library version string (compiled-in). */
 const char *hlse_version(void);

@@ -2,6 +2,25 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.5] — 2026-06-15
+
+### Added
+- **Attack pattern synthesis — the named-threat classification lens**
+  (NEW-PERSPECTIVE-PATTERN). Socratic question: "You listed five signals —
+  what do they add up to?" HLSE outputs individual detection reasons but
+  silently assumed users could synthesize them into a named threat class.
+  A new `hlse_classify_url_attack(Verdict *)` function (exposed in the
+  public API) scans the fired signals and maps them to a terse attack-class
+  label using priority-ordered rules: IDN/Unicode impersonation, visual
+  homoglyph, @-authority-trick, IP-hosted brand, free-hosting phishing
+  infrastructure, subdomain-spoof, typosquat (with and without a path),
+  brand-hyphen, classic credential-harvest, brand+TLD, shortener, DGA.
+  The label appears in text output as `▸ Pattern: <class>` after the
+  per-signal reasons, and in `--json` output as `"pattern":<string>`.
+  Score and F1 are unaffected (classifier is read-only, zero delta).
+  7 new integration tests: each major attack class is verified, including
+  "clean URL has no Pattern line." 151 total CLI tests, 0 failures.
+
 ## [1.0.4] — 2026-06-15
 
 ### Added

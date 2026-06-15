@@ -2118,6 +2118,99 @@ hlse_version(void) {
     return HLSE_VERSION;
 }
 
+/* Synthesize a named attack pattern from the set of signals that fired.
+ *
+ * Returns a short human-readable attack-class label (e.g. "typosquat
+ * credential-harvest page"), or NULL when the signals don't map to a
+ * recognisable pattern. The label is intentionally terse — it belongs on
+ * a single summary line, not a paragraph.
+ *
+ * Precondition: called only when score > 0 (no signals → no pattern).   */
+const char *
+hlse_classify_url_attack(const Verdict *v) {
+    /* Scan reason strings for the signal classes we care about. */
+    int has_homoglyph     = 0;  /* confusable-char, II→ll, rn/vv, Cyrillic */
+    int has_idn           = 0;  /* Punycode / IDN homograph                */
+    int has_typosquat     = 0;  /* edit-distance 1 or 2 from a brand       */
+    int has_brand         = 0;  /* any brand-impersonation reason           */
+    int has_path          = 0;  /* phishing-typical path pattern            */
+    int has_tld           = 0;  /* high-risk TLD                            */
+    int has_subdomain     = 0;  /* subdomain spoofing                       */
+    int has_free_host     = 0;  /* brand in netlify/github.io/etc.          */
+    int has_shortener     = 0;  /* URL shortener                            */
+    int has_at_trick      = 0;  /* @ in authority                           */
+    int has_ip            = 0;  /* IP-address host with brand in path       */
+    int has_hyphen_brand  = 0;  /* brand-hyphen-securityword pattern        */
+    int has_dga           = 0;  /* DGA / high-entropy random domain         */
+    int i;
+
+    if (!v || v->n_reasons == 0) return NULL;
+
+    for (i = 0; i < v->n_reasons; i++) {
+        const char *r = v->reasons[i];
+        if (strstr(r, "homoglyph") || strstr(r, "Homoglyph") ||
+            strstr(r, "Mixed-script"))               has_homoglyph = 1;
+        if (strstr(r, "IDN") || strstr(r, "Punycode")) has_idn     = 1;
+        if (strstr(r, "Typosquat") || strstr(r, "typosquat") ||
+            strstr(r, "Digraph homoglyph"))           has_typosquat = 1;
+        if (strstr(r, "Brand") || strstr(r, "brand") ||
+            strstr(r, "Legitimate '"))                 has_brand   = 1;
+        if (strstr(r, "path pattern") || strstr(r, "Phishing path"))
+                                                       has_path     = 1;
+        if (strstr(r, "TLD"))                          has_tld      = 1;
+        if (strstr(r, "Subdomain spoofing") ||
+            strstr(r, "subdomain"))                  { has_subdomain= 1; has_brand = 1; }
+        if (strstr(r, "Free-hosting") ||
+            strstr(r, "free page builder"))          { has_free_host= 1; has_brand = 1; }
+        if (strstr(r, "shortener") || strstr(r, "Shortened"))
+                                                       has_shortener= 1;
+        if (strstr(r, "credential trick") ||
+            strstr(r, "@ in authority"))               has_at_trick = 1;
+        if (strstr(r, "IP-based URL") || strstr(r, "IP-address host"))
+                                                       has_ip       = 1;
+        if (strstr(r, "hyphenated with security") ||
+            strstr(r, "Brand impersonation"))          has_hyphen_brand = 1;
+        if (strstr(r, "DGA") || strstr(r, "high-entropy") ||
+            strstr(r, "random-looking"))               has_dga      = 1;
+    }
+
+    /* Priority-ordered classification: most specific / highest-confidence
+     * patterns first so the label describes the dominant attack vector.  */
+    if (has_idn)
+        return "Unicode/IDN homograph impersonation";
+    if (has_homoglyph && has_brand)
+        return "visual impersonation via lookalike characters";
+    if (has_at_trick)
+        return "authority-trick credential phishing";
+    if (has_ip && has_brand)
+        return "IP-hosted brand impersonation";
+    if (has_free_host)
+        return "free-hosting phishing infrastructure";
+    if (has_subdomain && has_brand && has_path)
+        return "subdomain-spoof credential-harvest page";
+    if (has_subdomain && has_brand)
+        return "subdomain spoofing";
+    if (has_typosquat && has_path)
+        return "typosquat credential-harvest page";
+    if (has_typosquat)
+        return "typosquat domain";
+    if (has_hyphen_brand && has_path)
+        return "brand-hyphen credential-harvest page";
+    if (has_hyphen_brand)
+        return "brand hyphenation phishing";
+    if (has_brand && has_path && has_tld)
+        return "classic credential-harvest phishing";
+    if (has_brand && has_tld)
+        return "brand phishing on high-risk TLD";
+    if (has_brand)
+        return "brand impersonation";
+    if (has_shortener)
+        return "obfuscated link (shortener conceals destination)";
+    if (has_dga)
+        return "DGA / random-domain phishing";
+    return NULL;
+}
+
 /* ───────────────── blast-radius / asset-class correlation ─────────────────
  * A leaked credential's danger is not its count but what the *set* of leaked
  * credentials collectively unlocks. We bucket each secret-finding type into a
@@ -2682,9 +2775,14 @@ sarif_emit(const char *tool_version) {
 static void
 print_json_url(const char *url, const Verdict *v) {
     char escaped_url[MAX_URL * 2];
+    const char *pat = hlse_classify_url_attack(v);
+    char esc_pat[256] = "";
     json_escape(url, escaped_url, sizeof(escaped_url));
-    printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\",\"reasons\":[",
+    if (pat) json_escape(pat, esc_pat, sizeof(esc_pat));
+    printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
            escaped_url, v->score, action_for_score(v->score));
+    if (pat) printf(",\"pattern\":\"%s\"", esc_pat);
+    printf(",\"reasons\":[");
     {
         int i;
         for (i = 0; i < v->n_reasons; i++) {
@@ -3797,6 +3895,11 @@ main(int argc, char **argv) {
                 for (i = 0; i < sr.n_reasons; i++) {
                     printf("  \xc2\xb7 %s\n", sr.reasons[i]);
                 }
+                if (sr.is_url) {
+                    Verdict uv = check_url(argv[idx + 1]);
+                    const char *pat = hlse_classify_url_attack(&uv);
+                    if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
+                }
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }
             return sr.score >= g_fail_threshold ? 1 : 0;
@@ -3844,7 +3947,14 @@ main(int argc, char **argv) {
             printf("%-7s [%d]  %s\n",
                    hlse_action_for_score(sr.score), sr.score, input);
             for (i = 0; i < sr.n_reasons; i++) {
-                printf("  · %s\n", sr.reasons[i]);
+                printf("  \xc2\xb7 %s\n", sr.reasons[i]);
+            }
+            if (sr.is_url) {
+                /* Re-run URL check to get a Verdict for pattern synthesis.
+                 * hlse_scan already ran this internally; the cost is low.  */
+                Verdict uv = check_url(input);
+                const char *pat = hlse_classify_url_attack(&uv);
+                if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
             }
             if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
         }

@@ -683,6 +683,43 @@ raise SystemExit(0 if found else 1)
         || check "canonical: JSON reasons contain canonical domain" "0" "1"
 fi
 
+# ─── Attack pattern synthesis ────────────────────────────────────────
+# Typosquat + phishing path → "typosquat credential-harvest page"
+./hlse_core "https://discordd.com/login" 2>&1 | grep -qi "Pattern:.*typosquat" \
+    && check "pattern: typosquat+path → typosquat credential-harvest page" "0" "0" \
+    || check "pattern: typosquat+path → typosquat credential-harvest page" "0" "1"
+# IDN homograph → "Unicode/IDN homograph impersonation"
+./hlse_core "https://xn--pple-43d.com" 2>&1 | grep -qi "Pattern:.*IDN\|Pattern:.*Unicode" \
+    && check "pattern: IDN homograph → Unicode/IDN classification" "0" "0" \
+    || check "pattern: IDN homograph → Unicode/IDN classification" "0" "1"
+# Brand-hyphen + suspicious TLD + path → "brand-hyphen credential-harvest page"
+./hlse_core "https://paypal-verify.xyz/login" 2>&1 | grep -qi "Pattern:.*brand.*hyphen\|Pattern:.*hyphen.*brand" \
+    && check "pattern: brand-hyphen+TLD+path → brand-hyphen credential-harvest" "0" "0" \
+    || check "pattern: brand-hyphen+TLD+path → brand-hyphen credential-harvest" "0" "1"
+# @ authority trick → "authority-trick credential phishing"
+./hlse_core "https://www.paypal.com@evil.ru/login" 2>&1 | grep -qi "Pattern:.*authority" \
+    && check "pattern: @ authority trick → authority-trick phishing" "0" "0" \
+    || check "pattern: @ authority trick → authority-trick phishing" "0" "1"
+# URL shortener → "obfuscated link" pattern
+./hlse_core "https://bit.ly/3AbCdEf" 2>&1 | grep -qi "Pattern:.*obfuscat\|Pattern:.*shortener" \
+    && check "pattern: shortener → obfuscated link classification" "0" "0" \
+    || check "pattern: shortener → obfuscated link classification" "0" "1"
+# Clean URL must NOT have a Pattern line
+./hlse_core "https://www.google.com" 2>&1 | grep -qi "Pattern:" \
+    && check "pattern: clean URL has no Pattern line" "0" "1" \
+    || check "pattern: clean URL has no Pattern line" "0" "0"
+# JSON output includes 'pattern' field for threat URLs
+if command -v python3 >/dev/null 2>&1; then
+    PAT_JSON=""; PAT_JSON=$(./hlse_core --json "https://discordd.com/login" 2>/dev/null) || true
+    echo "$PAT_JSON" | python3 -c "
+import json,sys
+d=json.loads(sys.stdin.read())
+raise SystemExit(0 if 'pattern' in d else 1)
+" 2>/dev/null \
+        && check "pattern: JSON includes 'pattern' field for threat URL" "0" "0" \
+        || check "pattern: JSON includes 'pattern' field for threat URL" "0" "1"
+fi
+
 # ─── JSON control-char escaping ─────────────────────────────────────
 # A secret file containing a control byte must still produce valid JSON
 # (the \uXXXX escape path).
