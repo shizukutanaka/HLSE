@@ -2769,6 +2769,43 @@ sarif_emit(const char *tool_version) {
     printf("    }\n  ]\n}\n");
 }
 
+/* Delivery channel supplied via --from.  NULL when the flag is absent.
+ * Socratic Q: "You analysed the URL — but HLSE has no idea how it reached
+ * you.  A QR code in a parking meter and a link you typed yourself share
+ * the same bytes, yet carry very different priors.  Should the channel
+ * change the verdict?"  Answer: yes — the channel is a threat-prior.      */
+static const char *g_from_channel = NULL;
+
+/* Score boost applied to URLs when a high-risk delivery channel is set.
+ * Only meaningful for URLs (not text); capped at 100 at output sites.    */
+static int
+channel_delta(const char *ch)
+{
+    if (!ch) return 0;
+    if (strcmp(ch, "qr")     == 0) return 20; /* quishing — QR masks destination */
+    if (strcmp(ch, "sms")    == 0) return 15; /* smishing — primary mobile vector  */
+    if (strcmp(ch, "email")  == 0) return 10; /* phishing — classic email vector   */
+    if (strcmp(ch, "dm")     == 0) return 10; /* social-engineering via DM         */
+    if (strcmp(ch, "manual") == 0) return  0; /* user typed it — lowest prior      */
+    return 0;
+}
+
+/* Human-readable reason string for the channel boost (NULL when delta==0). */
+static const char *
+channel_reason(const char *ch)
+{
+    if (!ch) return NULL;
+    if (strcmp(ch, "qr")    == 0)
+        return "Channel (qr): +20 \xe2\x80\x94 QR codes mask destinations (quishing)";
+    if (strcmp(ch, "sms")   == 0)
+        return "Channel (sms): +15 \xe2\x80\x94 SMS is the primary smishing vector";
+    if (strcmp(ch, "email") == 0)
+        return "Channel (email): +10 \xe2\x80\x94 email is the primary phishing vector";
+    if (strcmp(ch, "dm")    == 0)
+        return "Channel (dm): +10 \xe2\x80\x94 direct messages are used for social-engineering";
+    return NULL; /* manual → no delta, no noise */
+}
+
 static void
 print_json_url(const char *url, const Verdict *v) {
     char escaped_url[MAX_URL * 2];
@@ -2779,6 +2816,13 @@ print_json_url(const char *url, const Verdict *v) {
     printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
            escaped_url, v->score, action_for_score(v->score));
     if (pat) printf(",\"pattern\":\"%s\"", esc_pat);
+    if (g_from_channel) {
+        int d   = channel_delta(g_from_channel);
+        int eff = v->score + d; if (eff > 100) eff = 100;
+        printf(",\"channel\":\"%s\",\"channel_delta\":%d,\"effective_score\":%d,"
+               "\"effective_action\":\"%s\"",
+               g_from_channel, d, eff, action_for_score(eff));
+    }
     printf(",\"reasons\":[");
     {
         int i;
@@ -2857,8 +2901,15 @@ stdin_mode(int json_out) {
             printf("OK    %s\n", line);
         } else {
             int i;
+            int eff = sr.score;
+            const char *ch_rsn = NULL;
+            if (sr.is_url && g_from_channel) {
+                int d = channel_delta(g_from_channel);
+                eff += d; if (eff > 100) eff = 100;
+                ch_rsn = channel_reason(g_from_channel);
+            }
             printf("%-7s [%d]  %s\n",
-                   hlse_action_for_score(sr.score), sr.score, line);
+                   hlse_action_for_score(eff), eff, line);
             for (i = 0; i < sr.n_reasons; i++)
                 printf("  \xc2\xb7 %s\n", sr.reasons[i]);  /* · */
             if (sr.is_url) {
@@ -2866,6 +2917,7 @@ stdin_mode(int json_out) {
                 const char *pat = hlse_classify_url_attack(&uv);
                 if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
             }
+            if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
         }
         if (sr.score >= g_fail_threshold) any_threat = 1;
     }
@@ -2903,6 +2955,7 @@ print_usage(const char *prog) {
         "  %s --sarif scan <dir>       SARIF 2.1.0 output (GitHub code scanning)\n"
         "  %s -q | --quiet             Exit code only (CI/CD mode)\n"
         "  %s --fail-on <tier>         Exit-1 gate: log|alert|block|isolate|0-100 (default block)\n"
+        "  %s --from <channel>         Delivery channel: email|sms|dm|qr|manual (boosts URL score)\n"
         "  %s --stdin [--json]         Pipe mode (one input per line)\n"
         "  %s --self-test              Built-in tests\n"
         "  %s --benchmark              Corpus benchmark\n"
@@ -2913,7 +2966,7 @@ print_usage(const char *prog) {
         HLSE_VERSION,
         prog, prog, prog,                                /* scanning: 3 */
         prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 12 */
-        prog, prog, prog, prog, prog, prog, prog, prog, prog); /* options: 9 */
+        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog); /* options: 10 */
 }
 
 /* Read all of stdin into buf (NUL-terminated, truncated to cap-1 bytes). */
@@ -3045,6 +3098,31 @@ main(int argc, char **argv) {
                                 "log|alert|block|isolate or 0..100\n");
                         return 2;
                     }
+                }
+                { int j; for (j = i; j < argc - 2; j++) argv[j] = argv[j+2];
+                  argc -= 2; }
+                break;
+            }
+        }
+    }
+
+    /* Parse --from <channel> — delivery-channel prior for URL risk boost.
+     * Socratic: the same URL in an unsolicited SMS is riskier than one typed
+     * by hand.  The flag lets callers supply that context so the verdict
+     * reflects real-world threat priors, not just URL structure alone.     */
+    {
+        int i;
+        for (i = 1; i < argc - 1; i++) {
+            if (strcmp(argv[i], "--from") == 0) {
+                const char *ch = argv[i + 1];
+                if (strcmp(ch, "email")  == 0 || strcmp(ch, "sms") == 0 ||
+                    strcmp(ch, "dm")     == 0 || strcmp(ch, "qr")  == 0 ||
+                    strcmp(ch, "manual") == 0) {
+                    g_from_channel = ch;
+                } else {
+                    fprintf(stderr,
+                            "Error: --from expects email|sms|dm|qr|manual\n");
+                    return 2;
                 }
                 { int j; for (j = i; j < argc - 2; j++) argv[j] = argv[j+2];
                   argc -= 2; }
@@ -3944,10 +4022,16 @@ main(int argc, char **argv) {
             if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
         } else {
             int i;
-            const char *ex = hlse_exoneration_for(sr.is_url ? "url" : "text",
-                                                  sr.score);
+            int eff = sr.score;
+            const char *ch_rsn = NULL;
+            if (sr.is_url && g_from_channel) {
+                int d = channel_delta(g_from_channel);
+                eff += d; if (eff > 100) eff = 100;
+                ch_rsn = channel_reason(g_from_channel);
+            }
+            const char *ex = hlse_exoneration_for(sr.is_url ? "url" : "text", eff);
             printf("%-7s [%d]  %s\n",
-                   hlse_action_for_score(sr.score), sr.score, input);
+                   hlse_action_for_score(eff), eff, input);
             for (i = 0; i < sr.n_reasons; i++) {
                 printf("  \xc2\xb7 %s\n", sr.reasons[i]);
             }
@@ -3958,6 +4042,7 @@ main(int argc, char **argv) {
                 const char *pat = hlse_classify_url_attack(&uv);
                 if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
             }
+            if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
             if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
         }
         return sr.score >= g_fail_threshold ? 1 : 0;

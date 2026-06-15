@@ -921,6 +921,82 @@ assert d["kind"] == "clipboard" and d["is_swap"] == 1 and d["score"] == 100
 ' && check "--json clipboard vanity → score 100" "0" "0" \
    || check "--json clipboard vanity → score 100" "0" "1"
 
+# ─── Perspective 10: Delivery Channel Context (--from) ─────────────────────
+# Socratic Q: "The same URL in an unsolicited SMS is riskier than one the user
+# typed manually.  Should the delivery channel change the verdict?"
+
+# --from qr boosts a BLOCK URL to ISOLATE (score 60 + 20 = 80)
+FROM_QR_OUT=$(./hlse_core --from qr "https://paypa1.com/login" 2>/dev/null) || true
+echo "$FROM_QR_OUT" | grep -q "ISOLATE" && check "--from qr: boosts to ISOLATE" "0" "0" \
+    || check "--from qr: boosts to ISOLATE" "0" "1"
+
+# --from sms shows channel reason in output
+FROM_SMS_OUT=$(./hlse_core --from sms "https://paypa1.com/login" 2>/dev/null) || true
+echo "$FROM_SMS_OUT" | grep -q "Channel (sms)" && check "--from sms: channel reason shown" "0" "0" \
+    || check "--from sms: channel reason shown" "0" "1"
+
+# --from email shows correct delta in output
+FROM_EMAIL_OUT=$(./hlse_core --from email "https://paypa1.com/login" 2>/dev/null) || true
+echo "$FROM_EMAIL_OUT" | grep -q "Channel (email): +10" && check "--from email: +10 reason shown" "0" "0" \
+    || check "--from email: +10 reason shown" "0" "1"
+
+# --from dm shows correct delta in output
+FROM_DM_OUT=$(./hlse_core --from dm "https://paypa1.com/login" 2>/dev/null) || true
+echo "$FROM_DM_OUT" | grep -q "Channel (dm): +10" && check "--from dm: +10 reason shown" "0" "0" \
+    || check "--from dm: +10 reason shown" "0" "1"
+
+# --from manual produces NO channel reason (delta=0, no noise)
+FROM_MAN_OUT=$(./hlse_core --from manual "https://paypa1.com/login" 2>/dev/null) || true
+echo "$FROM_MAN_OUT" | grep -q "Channel" && check "--from manual: no channel reason" "0" "1" \
+    || check "--from manual: no channel reason" "0" "0"
+
+# --from does NOT affect text (only URLs get the channel prior)
+FROM_TEXT_OUT=$(./hlse_core --from sms text "URGENT wire transfer now" 2>/dev/null) || true
+echo "$FROM_TEXT_OUT" | grep -q "Channel" && check "--from ignored for text input" "0" "1" \
+    || check "--from ignored for text input" "0" "0"
+
+# --from with invalid channel exits 2
+FC=0; ./hlse_core --from fax "https://paypa1.com" >/dev/null 2>&1 || FC=$?
+check "--from invalid channel: exit 2" "2" "$FC"
+
+# JSON includes channel / channel_delta / effective_score / effective_action
+FROM_JSON=""; FROM_JSON=$(./hlse_core --json --from sms "https://paypa1.com/login" 2>/dev/null) || true
+echo "$FROM_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d.get("channel") == "sms", d
+assert d.get("channel_delta") == 15, d
+assert d.get("effective_score") == 75, d
+assert d.get("effective_action") in ("SAFE","LOG","ALERT","BLOCK","ISOLATE"), d
+' && check "--from json: channel fields present" "0" "0" \
+   || check "--from json: channel fields present" "0" "1"
+
+# JSON --from qr: effective_score capped correctly (60 + 20 = 80)
+FROM_QR_JSON=""; FROM_QR_JSON=$(./hlse_core --json --from qr "https://paypa1.com/login" 2>/dev/null) || true
+echo "$FROM_QR_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d.get("channel") == "qr", d
+assert d.get("channel_delta") == 20, d
+assert d.get("effective_score") == 80, d
+assert d.get("effective_action") == "ISOLATE", d
+' && check "--from qr json: effective_score=80, effective_action=ISOLATE" "0" "0" \
+   || check "--from qr json: effective_score=80, effective_action=ISOLATE" "0" "1"
+
+# stdin + --from sms: channel reason emitted in text output
+FROM_STDIN_OUT=$(echo "https://paypa1.com/login" | ./hlse_core --from sms --stdin 2>/dev/null) || true
+echo "$FROM_STDIN_OUT" | grep -q "Channel (sms)" && check "--from sms stdin: channel reason shown" "0" "0" \
+    || check "--from sms stdin: channel reason shown" "0" "1"
+
+# stdin + --from qr: effective score used for header line
+FROM_STDIN_QR=$(echo "https://paypa1.com/login" | ./hlse_core --from qr --stdin 2>/dev/null) || true
+echo "$FROM_STDIN_QR" | grep -q "ISOLATE" && check "--from qr stdin: header shows ISOLATE" "0" "0" \
+    || check "--from qr stdin: header shows ISOLATE" "0" "1"
+
+# Help lists --from
+./hlse_core --help 2>&1 | grep -q "\-\-from" && check "help: lists --from" "0" "0" \
+    || check "help: lists --from" "0" "1"
+
 # Help lists all subcommands documented in the spec
 ./hlse_core --help 2>&1 | grep -q "esp"       && check "help: lists esp" "0" "0"       || check "help: lists esp" "0" "1"
 ./hlse_core --help 2>&1 | grep -q "secret"    && check "help: lists secret" "0" "0"    || check "help: lists secret" "0" "1"

@@ -2,6 +2,28 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.8] — 2026-06-15
+
+### Added
+- **Delivery-channel context — the threat-prior lens** (NEW-PERSPECTIVE-CHANNEL).
+  Socratic question: "You analysed the URL — but HLSE has no idea how it
+  reached you. A QR code in a parking meter and a link you typed yourself
+  carry the same bytes yet very different priors. Should the channel change
+  the verdict?"  The delivery channel is an independent threat signal that URL
+  structure cannot encode.  New `--from email|sms|dm|qr|manual` flag lets
+  callers supply this context.  The channel is applied as a score boost on URL
+  verdicts (non-URL inputs are unaffected): QR +20 (quishing, destination is
+  masked), SMS +15 (primary smishing vector), email +10 (classic phishing),
+  DM +10 (social-engineering via messaging), manual ±0 (user typed it).  The
+  effective score drives the displayed action tier; the raw score is still
+  emitted so consumers can see both.  JSON output gains `"channel"`,
+  `"channel_delta"`, `"effective_score"`, and `"effective_action"` fields.
+  Human text output emits a `· Channel (<ch>): +N — <rationale>` reason
+  bullet after the structural signals.  `--from manual` is the explicit
+  opt-in to "no prior" and emits no bullet to keep clean-URL output noise-free.
+  12 new CLI integration tests cover each channel, JSON field, stdin pipe,
+  text-input passthrough, and the `--from <unknown>` error path.
+
 ## [1.0.7] — 2026-06-15
 
 ### Fixed
