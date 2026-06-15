@@ -2,6 +2,23 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.6] — 2026-06-15
+
+### Fixed
+- **Duplicate canonical-domain reason when multiple brand detectors fire.**
+  Self-audit of the 1.0.4 canonical-domain feature: a URL like
+  `paypal.evilsite.netlify.app` trips *both* the subdomain-spoof and the
+  free-hosting detectors, each of which emitted its own
+  `Legitimate 'paypal': paypal.com` line — so the canonical appeared twice,
+  reading as a duplicate and consuming two of the verdict's 12 reason slots
+  (which can push a real detection signal out of the buffer). Introduced a
+  single `add_brand_canonical()` helper that looks up the canonical, skips it
+  if an identical reason is already present, and adds it with zero score
+  delta. This also removes the copy-pasted `brand_canonical()`/`add_reason()`
+  boilerplate from all 14 brand-detection sites (DRY). Behaviour is identical
+  for single-detector cases; F1 = 1.000 preserved. New regression test asserts
+  exactly one canonical line for a repeated-brand URL.
+
 ## [1.0.5] — 2026-06-15
 
 ### Added

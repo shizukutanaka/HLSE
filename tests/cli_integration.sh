@@ -670,6 +670,11 @@ rm -rf "$FO_DIR"
 ./hlse_core "https://paypa1.zoom.us.attacker.com/meeting" 2>&1 | grep -qi "Legitimate 'zoom': zoom.us" \
     && check "canonical: subdomain spoofing shows zoom.us (not zoom.com)" "0" "0" \
     || check "canonical: subdomain spoofing shows zoom.us (not zoom.com)" "0" "1"
+# Dedup: when two brand detectors fire on the same brand, the canonical line
+# appears exactly once (not duplicated).
+CANON_DUPS=$(./hlse_core "https://paypal.evilsite.netlify.app/signin" 2>&1 \
+    | grep -c "Legitimate 'paypal': paypal.com")
+check "canonical: dedup → single canonical line for repeated brand" "1" "$CANON_DUPS"
 # JSON: canonical reason appears in reasons array.
 if command -v python3 >/dev/null 2>&1; then
     CANON_JSON=""; CANON_JSON=$(./hlse_core --json "https://discordd.com/login" 2>/dev/null) || true

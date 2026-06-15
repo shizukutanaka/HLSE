@@ -622,6 +622,23 @@ add_reason(Verdict *v, int delta, const char *fmt, ...) {
     v->n_reasons++;
 }
 
+/* Append the canonical-domain "Legitimate '<brand>': <domain>" reason for a
+ * detected brand impersonation — but only once per verdict. Multiple brand
+ * detectors can fire on the same URL (subdomain-spoof AND free-hosting, say);
+ * without this dedup the same canonical line is emitted twice, wasting one of
+ * the 12 reason slots and reading as a duplicate. Zero score delta. */
+static void
+add_brand_canonical(Verdict *v, const char *brand) {
+    const char *canon = brand_canonical(brand);
+    char want[128];
+    int i;
+    if (!canon) return;
+    snprintf(want, sizeof(want), "Legitimate '%s': %s", brand, canon);
+    for (i = 0; i < v->n_reasons; i++)
+        if (strcmp(v->reasons[i], want) == 0) return;  /* already present */
+    add_reason(v, 0, "%s", want);
+}
+
 /* 1. Brand homoglyph detection.
  *    "g00gle.com" → normalize → "google.com" → contains "google".
  *    Original ("g00gle") does NOT contain "google" → real attack.
@@ -673,11 +690,10 @@ detect_homoglyph(const ParsedUrl *u, Verdict *v) {
             /* Try matching with this alternative form */
             for (i = 0; BRANDS[i] != NULL; i++) {
                 if (contains(alt, BRANDS[i]) && !contains(u->host, BRANDS[i])) {
-                    const char *_c = brand_canonical(BRANDS[i]);
                     add_reason(v, 45,
                                "Brand homoglyph (II→ll variant): '%s' resembles '%s'",
                                u->host, BRANDS[i]);
-                    if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
+                    add_brand_canonical(v, BRANDS[i]);
                     return;
                 }
             }
@@ -692,10 +708,9 @@ detect_homoglyph(const ParsedUrl *u, Verdict *v) {
         for (i = 0; BRANDS[i] != NULL; i++) {
             const char *b = BRANDS[i];
             if (contains(normalized, b) && !contains(host_lower, b)) {
-                const char *_c = brand_canonical(b);
                 add_reason(v, 45, "Brand homoglyph: '%s' -> '%s' (%s)",
                            u->host, normalized, b);
-                if (_c) add_reason(v, 0, "Legitimate '%s': %s", b, _c);
+                add_brand_canonical(v, b);
                 if (count >= 2) {
                     add_reason(v, 5, "Multiple confusable chars (%d)", count);
                 }
@@ -892,13 +907,10 @@ detect_subdomain_spoof(const ParsedUrl *u, Verdict *v) {
                             is_trusted_host(registrable)) return;
                         (void)blen;  /* used via brand_is_token_in_sld */
 
-                        {
-                            const char *_c = brand_canonical(BRANDS[j]);
-                            add_reason(v, token_match ? 35 : 45,
-                                       "Subdomain spoofing: '%s' appears before "
-                                       "registrable domain", BRANDS[j]);
-                            if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[j], _c);
-                        }
+                        add_reason(v, token_match ? 35 : 45,
+                                   "Subdomain spoofing: '%s' appears before "
+                                   "registrable domain", BRANDS[j]);
+                        add_brand_canonical(v, BRANDS[j]);
                         return;
                     }
                 }
@@ -1050,11 +1062,10 @@ detect_security_hyphenation(const ParsedUrl *u, Verdict *v) {
         if (hyphens >= 1 && sec_count >= 1) {
             for (i = 0; BRANDS[i] != NULL; i++) {
                 if (brand_is_token_in_sld(sld, BRANDS[i])) {
-                    const char *_c = brand_canonical(BRANDS[i]);
                     add_reason(v, 35,
                         "Brand impersonation: '%s' hyphenated with security "
                         "term — real brand uses its own domain", BRANDS[i]);
-                    if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
+                    add_brand_canonical(v, BRANDS[i]);
                     brand_matched = 1;
                     break;
                 }
@@ -1082,14 +1093,11 @@ detect_security_hyphenation(const ParsedUrl *u, Verdict *v) {
                     size_t wl = strlen(SECURITY_WORDS[j]);
                     if (strncmp(after, SECURITY_WORDS[j], wl) == 0 &&
                         (after[wl] == '\0' || after[wl] == '-')) {
-                        {
-                            const char *_c = brand_canonical(BRANDS[i]);
-                            add_reason(v, 30,
-                                "Brand+security-word fusion: '%s' prefixes SLD "
-                                "with its own name — real brand uses its own "
-                                "domain", BRANDS[i]);
-                            if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
-                        }
+                        add_reason(v, 30,
+                            "Brand+security-word fusion: '%s' prefixes SLD "
+                            "with its own name — real brand uses its own "
+                            "domain", BRANDS[i]);
+                        add_brand_canonical(v, BRANDS[i]);
                         brand_matched = 1;
                     }
                 }
@@ -1097,14 +1105,11 @@ detect_security_hyphenation(const ParsedUrl *u, Verdict *v) {
                     size_t wl = strlen(BRAND_SUFFIX_WORDS[j]);
                     if (strncmp(after, BRAND_SUFFIX_WORDS[j], wl) == 0 &&
                         (after[wl] == '\0' || after[wl] == '-')) {
-                        {
-                            const char *_c = brand_canonical(BRANDS[i]);
-                            add_reason(v, 30,
-                                "Brand+product-term fusion: '%s' fused to '%s' — "
-                                "real brand serves this from its own domain",
-                                BRANDS[i], BRAND_SUFFIX_WORDS[j]);
-                            if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
-                        }
+                        add_reason(v, 30,
+                            "Brand+product-term fusion: '%s' fused to '%s' — "
+                            "real brand serves this from its own domain",
+                            BRANDS[i], BRAND_SUFFIX_WORDS[j]);
+                        add_brand_canonical(v, BRANDS[i]);
                         brand_matched = 1;
                     }
                 }
@@ -1119,11 +1124,10 @@ detect_security_hyphenation(const ParsedUrl *u, Verdict *v) {
             for (i = 0; BRANDS[i] != NULL; i++) {
                 if (strlen(BRANDS[i]) >= 6 &&
                     brand_is_token_in_sld(sld, BRANDS[i])) {
-                    const char *_c = brand_canonical(BRANDS[i]);
                     add_reason(v, 25,
                         "Brand present in hyphenated domain — "
                         "real '%s' does not use a hyphenated SLD", BRANDS[i]);
-                    if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
+                    add_brand_canonical(v, BRANDS[i]);
                     brand_matched = 1;
                     break;
                 }
@@ -1170,19 +1174,17 @@ detect_typosquat(const ParsedUrl *u, Verdict *v) {
 
         d = damerau_levenshtein(sld, BRANDS[i], 3);
         if (d == 1) {
-            const char *_c = brand_canonical(BRANDS[i]);
             add_reason(v, 50,
                        "Typosquat: '%s' is edit distance 1 from '%s'",
                        sld, BRANDS[i]);
-            if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
+            add_brand_canonical(v, BRANDS[i]);
             return;
         }
         if (d == 2 && bl >= 7) {
-            const char *_c = brand_canonical(BRANDS[i]);
             add_reason(v, 30,
                        "Possible typosquat: '%s' is edit distance 2 from '%s'",
                        sld, BRANDS[i]);
-            if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
+            add_brand_canonical(v, BRANDS[i]);
             return;
         }
     }
@@ -1195,11 +1197,10 @@ detect_typosquat(const ParsedUrl *u, Verdict *v) {
         if (subs > 0) {
             for (i = 0; BRANDS[i] != NULL; i++) {
                 if (strcmp(digraph_norm, BRANDS[i]) == 0) {
-                    const char *_c = brand_canonical(BRANDS[i]);
                     add_reason(v, 50,
                         "Digraph homoglyph: '%s' mimics '%s' (rn/vv trick)",
                         sld, BRANDS[i]);
-                    if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
+                    add_brand_canonical(v, BRANDS[i]);
                     return;
                 }
             }
@@ -1271,11 +1272,10 @@ detect_mixed_script(const ParsedUrl *u, Verdict *v) {
             int i;
             for (i = 0; BRANDS[i] != NULL; i++) {
                 if (contains(ascii, BRANDS[i])) {
-                    const char *_c = brand_canonical(BRANDS[i]);
                     add_reason(v, 60,
                                "Mixed-script homoglyph: "
                                "'%s' resembles '%s'", u->host, BRANDS[i]);
-                    if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
+                    add_brand_canonical(v, BRANDS[i]);
                     return;
                 }
             }
@@ -1464,11 +1464,10 @@ detect_idn_homograph(const ParsedUrl *u, Verdict *v) {
         int i;
         for (i = 0; BRANDS[i] != NULL; i++) {
             if (contains(folded, BRANDS[i])) {
-                const char *_c = brand_canonical(BRANDS[i]);
                 add_reason(v, 65,
                     "IDN homograph: Punycode '%s' decodes to resemble '%s'",
                     u->host, BRANDS[i]);
-                if (_c) add_reason(v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
+                add_brand_canonical(v, BRANDS[i]);
                 return;
             }
         }
@@ -1605,12 +1604,11 @@ check_url(const char *raw_url) {
                     subdomain[prefix_len] = '\0';
                     for (bi = 0; BRANDS[bi]; bi++) {
                         if (strstr(subdomain, BRANDS[bi])) {
-                            const char *_c = brand_canonical(BRANDS[bi]);
                             add_reason(&v, 55,
                                 "Free-hosting phishing: brand '%s' in subdomain "
                                 "of '%s' — real brand never uses free page builders",
                                 BRANDS[bi], FREE_HOSTS[fhi]);
-                            if (_c) add_reason(&v, 0, "Legitimate '%s': %s", BRANDS[bi], _c);
+                            add_brand_canonical(&v, BRANDS[bi]);
                             break;
                         }
                     }
@@ -1640,12 +1638,11 @@ check_url(const char *raw_url) {
             int i;
             for (i = 0; BRANDS[i]; i++) {
                 if (strstr(u.path, BRANDS[i])) {
-                    const char *_c = brand_canonical(BRANDS[i]);
                     add_reason(&v, 35,
                         "IP-based URL with brand '%s' in path — "
                         "legitimate sites don't use IP addresses",
                         BRANDS[i]);
-                    if (_c) add_reason(&v, 0, "Legitimate '%s': %s", BRANDS[i], _c);
+                    add_brand_canonical(&v, BRANDS[i]);
                     break;
                 }
             }
