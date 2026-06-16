@@ -27,7 +27,7 @@
 #include <stddef.h>   /* size_t, for hlse_safe_destination() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.17"
+#define HLSE_VERSION "1.0.18"
 
 #ifdef __cplusplus
 extern "C" {
@@ -104,6 +104,15 @@ int hlse_safe_destination(const Verdict *v, char *out, size_t outsz);
  * the impersonated brand. Returns a static string, or NULL when no brand was
  * identified in the verdict. */
 const char *hlse_attacker_objective(const Verdict *v);
+
+/* Compound objective for multi-brand co-spoof URLs. For n_brands == 1
+ * writes the same result as hlse_attacker_objective(). For n_brands >= 2
+ * writes "compound theft — brand1 (class1) AND brand2 (class2) both targeted
+ * simultaneously in a single click". Caller supplies `out` buffer; returns 1
+ * when any brand was found, 0 otherwise. Prefer this over
+ * hlse_attacker_objective() in display paths so compound attacks are not
+ * silently reported as single-target. */
+int hlse_compound_objective(const Verdict *v, char *out, size_t outsz);
 
 /* Pinpoint the first disguised (non-ASCII) character in a URL's host — the
  * forensic proof behind a "homoglyph"/"mixed-script" label. Writes a one-line

@@ -1500,6 +1500,62 @@ assert "cascade_risk" not in d, d
 ' && check "p18 json: no cascade_risk for safe URL" "0" "0" \
    || check "p18 json: no cascade_risk for safe URL" "0" "1"
 
+# ─── Perspective 19: Compound Objective for Multi-Brand Co-Spoof ────────────
+
+# Socratic question: "For multi-brand URLs the objective line showed only the
+# first brand's target. The second brand's credential class was unnamed.
+# Shouldn't the ◉ line name BOTH assets at risk?"
+
+# Multi-brand: objective line must say "compound theft"
+P19_COBRAND=$(./hlse_core "https://paypal.apple-secure.com/login" 2>/dev/null) || true
+echo "$P19_COBRAND" | grep -q "compound theft" \
+    && check "p19: multi-brand objective=compound theft" "0" "0" \
+    || check "p19: multi-brand objective=compound theft" "0" "1"
+
+# Multi-brand: both brands must appear in objective line
+echo "$P19_COBRAND" | grep "goal:" | grep -q "paypal" \
+    && check "p19: compound objective names paypal" "0" "0" \
+    || check "p19: compound objective names paypal" "0" "1"
+
+echo "$P19_COBRAND" | grep "goal:" | grep -q "apple" \
+    && check "p19: compound objective names apple" "0" "0" \
+    || check "p19: compound objective names apple" "0" "1"
+
+# Single-brand: objective must be the full descriptive string (not "compound")
+P19_SINGLE=$(./hlse_core "https://paypa1.com/login" 2>/dev/null) || true
+echo "$P19_SINGLE" | grep "goal:" | grep -q "compound" \
+    && check "p19: single-brand NOT compound objective" "0" "1" \
+    || check "p19: single-brand NOT compound objective" "0" "0"
+
+echo "$P19_SINGLE" | grep "goal:" | grep -q "financial-account takeover" \
+    && check "p19: single-brand keeps full objective text" "0" "0" \
+    || check "p19: single-brand keeps full objective text" "0" "1"
+
+# JSON: objective field reflects compound for co-spoof
+P19_JSON=$(./hlse_core --json "https://paypal.apple-secure.com/login" 2>/dev/null) || true
+echo "$P19_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+obj = d.get("objective", "")
+assert "compound theft" in obj, obj
+assert "paypal" in obj, obj
+assert "apple" in obj, obj
+assert "financial" in obj, obj
+assert "identity" in obj, obj
+' && check "p19 json: compound objective has both brands+classes" "0" "0" \
+   || check "p19 json: compound objective has both brands+classes" "0" "1"
+
+# JSON: single-brand objective unchanged from pre-p19
+P19_SINGLE_JSON=$(./hlse_core --json "https://paypa1.com/login" 2>/dev/null) || true
+echo "$P19_SINGLE_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+obj = d.get("objective", "")
+assert "compound" not in obj, obj
+assert "financial" in obj, obj
+' && check "p19 json: single-brand objective unchanged" "0" "0" \
+   || check "p19 json: single-brand objective unchanged" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

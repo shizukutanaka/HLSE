@@ -2,6 +2,30 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.18] — 2026-06-16
+
+### Added
+- **Perspective 19: Compound objective for multi-brand co-spoof (`hlse_compound_objective`).**
+  Socratic question: "`hlse_attacker_objective()` names the primary target precisely
+  — but for multi-brand co-spoof URLs (Perspective 17) it returns only the FIRST
+  brand's objective. A user phished for PayPal AND Apple ID simultaneously faces
+  two compromised credential classes, not one. The `◉ Attacker's goal` line showed
+  'financial-account takeover', leaving Apple ID's identity-credential risk
+  completely unnamed. The second objective isn't redundant noise — it determines
+  what the user must protect next." New `hlse_compound_objective(const Verdict *v,
+  char *out, size_t outsz)` (public API, caller-owned buffer): for single-brand URLs
+  writes the same full descriptive objective as `hlse_attacker_objective()`; for
+  multi-brand co-spoof writes "compound theft — paypal (financial) AND apple
+  (identity) both targeted simultaneously in a single click". The three advisory
+  lines for co-spoof URLs now form a coherent compound narrative: `▸ Pattern:
+  multi-brand co-spoof`, `◉ Attacker's goal: compound theft — paypal (financial)
+  AND apple (identity)`, `⊕ Also change: two credential classes...`. `print_url_
+  advisories()` and `print_json_url()` both updated to use the new function.
+  Also added `brand_objective_class()` static helper (one-word category label:
+  "financial", "crypto", "identity", "corporate", etc.) used to build the terse
+  compound summary. 7 new CLI integration tests (240 total). F1 = 1.000 preserved;
+  zero warnings.
+
 ## [1.0.17] — 2026-06-16
 
 ### Added

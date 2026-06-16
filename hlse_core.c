@@ -2329,6 +2329,40 @@ brand_objective(const char *brand) {
     return "credential harvesting \xe2\x80\x94 account takeover";
 }
 
+/* One-word credential class label, used to build compound-objective summaries.
+ * Derived from the same category sets as brand_objective(). */
+static const char *
+brand_objective_class(const char *brand) {
+    const char *obj = brand_objective(brand);
+    if (!obj) return "account";
+    if (strstr(obj, "financial") || strstr(obj, "banking") || strstr(obj, "funds"))
+        return "financial";
+    if (strstr(obj, "crypto") || strstr(obj, "seed phrase") || strstr(obj, "wallet"))
+        return "crypto";
+    if (strstr(obj, "password-vault"))
+        return "vault";
+    if (strstr(obj, "identity") || strstr(obj, "keystone"))
+        return "identity";
+    if (strstr(obj, "corporate") || strstr(obj, "employer") || strstr(obj, "enterprise"))
+        return "corporate";
+    if (strstr(obj, "social") || strstr(obj, "contact-list"))
+        return "social";
+    if (strstr(obj, "gaming"))
+        return "gaming";
+    if (strstr(obj, "subscription") || strstr(obj, "streaming") ||
+        strstr(obj, "stored payment"))
+        return "subscription";
+    if (strstr(obj, "SIM-swap") || strstr(obj, "telecom"))
+        return "telecom";
+    if (strstr(obj, "AI") || strstr(obj, "API-key"))
+        return "AI/API";
+    if (strstr(obj, "delivery-fee"))
+        return "payment";
+    if (strstr(obj, "shopping") || strstr(obj, "logistics"))
+        return "shopping";
+    return "account";
+}
+
 /* Name the attacker's likely objective for a URL verdict.
  *
  * Socratic question: "You named HOW the attack works and WHERE the user should
@@ -2362,6 +2396,78 @@ hlse_attacker_objective(const Verdict *v) {
         return brand_objective(brand);
     }
     return NULL;
+}
+
+/* Compound objective for multi-brand co-spoof URLs.
+ *
+ * Socratic question (Perspective 19): "hlse_attacker_objective() names the
+ * primary target precisely — but for multi-brand co-spoof URLs (Perspective 17)
+ * it returns only the FIRST brand's objective. A user phished for PayPal AND
+ * Apple ID simultaneously faces two compromised credential classes, not one.
+ * The ◉ Attacker's goal line says 'financial-account takeover', leaving Apple
+ * ID's identity-credential risk completely unnamed. The second objective isn't
+ * redundant noise — it determines what the user must protect next. Shouldn't
+ * the output name BOTH?"
+ *
+ * For n_brands == 1 writes the same result as hlse_attacker_objective().
+ * For n_brands >= 2 writes a compound summary: "compound theft — paypal
+ * (financial) AND apple (identity) both targeted simultaneously". Caller
+ * supplies the buffer; no allocation. Returns 1 when any brand was found,
+ * 0 when no "Legitimate '...'" reason exists in the verdict. Thread-safe. */
+int
+hlse_compound_objective(const Verdict *v, char *out, size_t outsz) {
+    int i;
+    char brand1[64] = "";
+    char brand2[64] = "";
+    const char *obj1   = NULL;
+    const char *class1 = NULL, *class2 = NULL;
+    int n_found = 0;
+
+    /* 256 bytes minimum: worst-case compound format is ~228 bytes
+     * (19-byte prefix + 63-byte brand1 + 12-byte class + separators
+     * + 63-byte brand2 + 12-byte class + 48-byte suffix + NUL). */
+    if (!v || !out || outsz < 256) return 0;
+    out[0] = '\0';
+
+    for (i = 0; i < v->n_reasons && n_found < 2; i++) {
+        const char *r     = v->reasons[i];
+        const char *start = strstr(r, "Legitimate '");
+        const char *end;
+        char brand[64];
+        size_t len;
+        if (!start) continue;
+        start += 12;
+        end = strchr(start, '\'');
+        if (!end) continue;
+        len = (size_t)(end - start);
+        if (len == 0 || len >= sizeof(brand)) continue;
+        memcpy(brand, start, len);
+        brand[len] = '\0';
+        if (n_found == 0) {
+            memcpy(brand1, brand, len + 1);
+            obj1   = brand_objective(brand1);
+            class1 = brand_objective_class(brand1);
+        } else {
+            memcpy(brand2, brand, len + 1);
+            class2 = brand_objective_class(brand2);
+        }
+        n_found++;
+    }
+
+    if (n_found == 0) return 0;
+    if (n_found == 1) {
+        /* Single brand: write the full descriptive objective */
+        snprintf(out, outsz, "%s",
+                 (obj1 && obj1[0]) ? obj1 : "credential harvesting");
+        return 1;
+    }
+    /* Multi-brand: name both credential classes explicitly */
+    snprintf(out, outsz,
+             "compound theft \xe2\x80\x94 %s (%s) AND %s (%s) both targeted "
+             "simultaneously in a single click",
+             brand1, class1 ? class1 : "account",
+             brand2, class2 ? class2 : "account");
+    return 1;
 }
 
 /* Name the Unicode script block a confusable codepoint belongs to, for the
@@ -3297,12 +3403,12 @@ static void
 print_json_url(const char *url, const Verdict *v) {
     char escaped_url[MAX_URL * 2];
     const char *pat = hlse_classify_url_attack(v);
-    const char *obj = hlse_attacker_objective(v);
     const char *vrf = hlse_verification_for(v);
     const char *tri = hlse_triage_for(v);
     const char *cas = hlse_cascade_risk(v);
+    char obj_buf[320] = "";
     char esc_pat[256] = "";
-    char esc_obj[256] = "";
+    char esc_obj[320] = "";
     char esc_vrf[512] = "";
     char esc_tri[512] = "";
     char esc_cas[512] = "";
@@ -3311,28 +3417,29 @@ print_json_url(const char *url, const Verdict *v) {
     char conf[160];
     char esc_conf[320] = "";
     char canon_brand[64];
+    int  has_obj    = hlse_compound_objective(v, obj_buf, sizeof(obj_buf));
     int  has_safe   = hlse_safe_destination(v, safe, sizeof(safe));
     int  has_conf   = hlse_confusable_report(url, conf, sizeof(conf));
     int  has_canon  = (v->score == 0) &&
                       hlse_canonical_confirm(url, canon_brand, sizeof(canon_brand));
     json_escape(url, escaped_url, sizeof(escaped_url));
-    if (pat) json_escape(pat, esc_pat, sizeof(esc_pat));
-    if (obj) json_escape(obj, esc_obj, sizeof(esc_obj));
-    if (vrf) json_escape(vrf, esc_vrf, sizeof(esc_vrf));
-    if (tri) json_escape(tri, esc_tri, sizeof(esc_tri));
-    if (cas) json_escape(cas, esc_cas, sizeof(esc_cas));
+    if (pat)     json_escape(pat,     esc_pat,  sizeof(esc_pat));
+    if (has_obj) json_escape(obj_buf, esc_obj,  sizeof(esc_obj));
+    if (vrf)     json_escape(vrf,     esc_vrf,  sizeof(esc_vrf));
+    if (tri)     json_escape(tri,     esc_tri,  sizeof(esc_tri));
+    if (cas)     json_escape(cas,     esc_cas,  sizeof(esc_cas));
     if (has_safe) json_escape(safe, esc_safe, sizeof(esc_safe));
     if (has_conf) json_escape(conf, esc_conf, sizeof(esc_conf));
     printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
            escaped_url, v->score, action_for_score(v->score));
-    if (has_canon) printf(",\"canonical_brand\":\"%s\"", canon_brand);
-    if (pat) printf(",\"pattern\":\"%s\"", esc_pat);
-    if (obj) printf(",\"objective\":\"%s\"", esc_obj);
-    if (has_conf) printf(",\"confusable\":\"%s\"", esc_conf);
-    if (has_safe) printf(",\"safe_url\":\"%s\"", esc_safe);
-    if (vrf) printf(",\"verify\":\"%s\"", esc_vrf);
-    if (tri) printf(",\"triage\":\"%s\"", esc_tri);
-    if (cas) printf(",\"cascade_risk\":\"%s\"", esc_cas);
+    if (has_canon)  printf(",\"canonical_brand\":\"%s\"", canon_brand);
+    if (pat)        printf(",\"pattern\":\"%s\"", esc_pat);
+    if (has_obj)    printf(",\"objective\":\"%s\"", esc_obj);
+    if (has_conf)   printf(",\"confusable\":\"%s\"", esc_conf);
+    if (has_safe)   printf(",\"safe_url\":\"%s\"", esc_safe);
+    if (vrf)        printf(",\"verify\":\"%s\"", esc_vrf);
+    if (tri)        printf(",\"triage\":\"%s\"", esc_tri);
+    if (cas)        printf(",\"cascade_risk\":\"%s\"", esc_cas);
     if (g_from_channel) {
         int d   = channel_delta(g_from_channel);
         int eff = v->score + d; if (eff > 100) eff = 100;
@@ -3395,16 +3502,17 @@ print_json_text(const char *text, const TextVerdict *v) {
 static void
 print_url_advisories(const char *url, const Verdict *uv) {
     const char *pat = hlse_classify_url_attack(uv);
-    const char *obj = hlse_attacker_objective(uv);
     const char *vrf = hlse_verification_for(uv);
     const char *tri = hlse_triage_for(uv);
     const char *cas = hlse_cascade_risk(uv);
+    char obj_buf[320];
     char safe[MAX_URL];
     char conf[160];
     if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
     if (hlse_confusable_report(url, conf, sizeof(conf)))
         printf("  \xe2\x8c\x96 Disguised char: %s\n", conf);
-    if (obj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj);
+    if (hlse_compound_objective(uv, obj_buf, sizeof(obj_buf)))
+        printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj_buf);
     if (hlse_safe_destination(uv, safe, sizeof(safe)))
         printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
     if (vrf) printf("  \xe2\x9c\x93 Verify independently: %s\n", vrf);
