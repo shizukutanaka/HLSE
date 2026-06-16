@@ -921,6 +921,66 @@ assert d["kind"] == "clipboard" and d["is_swap"] == 1 and d["score"] == 100
 ' && check "--json clipboard vanity → score 100" "0" "0" \
    || check "--json clipboard vanity → score 100" "0" "1"
 
+# ─── Perspective 16: Canonical confirmation ("positively confirmed safe") ───
+# Socratic Q: "'OK' means 'nothing wrong found' — absence of evidence. But for
+# a URL that exactly matches a canonical brand domain, HLSE has POSITIVE
+# evidence of legitimacy. Why not say so explicitly?"
+
+# Known canonical brand domain → emits Canonical confirmation
+CAN_PAY=$(./hlse_core "https://paypal.com" 2>/dev/null)
+echo "$CAN_PAY" | grep -q "Canonical: confirmed authentic paypal" \
+    && check "canonical: paypal.com → confirmed" "0" "0" \
+    || check "canonical: paypal.com → confirmed" "0" "1"
+
+# www. prefix is stripped for matching
+CAN_ZOOM=$(./hlse_core "https://www.zoom.us" 2>/dev/null)
+echo "$CAN_ZOOM" | grep -q "Canonical: confirmed authentic zoom" \
+    && check "canonical: www.zoom.us → confirmed (www stripped)" "0" "0" \
+    || check "canonical: www.zoom.us → confirmed (www stripped)" "0" "1"
+
+# Non-canonical clean URL → NO canonical line
+CAN_NONE=$(./hlse_core "https://example.com" 2>/dev/null)
+echo "$CAN_NONE" | grep -q "Canonical:" \
+    && check "canonical: absent for non-brand URL" "0" "1" \
+    || check "canonical: absent for non-brand URL" "0" "0"
+
+# Threat URL (fake domain) → NO canonical confirmation (score > 0)
+CAN_FAKE=$(./hlse_core "https://paypa1.com/login" 2>/dev/null) || true
+echo "$CAN_FAKE" | grep -q "Canonical:" \
+    && check "canonical: absent for threat URL" "0" "1" \
+    || check "canonical: absent for threat URL" "0" "0"
+
+# JSON emits canonical_brand for confirmed domains
+CAN_JSON=$(./hlse_core --json "https://paypal.com" 2>/dev/null)
+echo "$CAN_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d.get("canonical_brand") == "paypal", d
+assert d.get("score") == 0, d
+' && check "canonical json: canonical_brand=paypal" "0" "0" \
+   || check "canonical json: canonical_brand=paypal" "0" "1"
+
+# JSON omits canonical_brand for non-brand clean URL
+CAN_JSON_NONE=$(./hlse_core --json "https://example.com" 2>/dev/null)
+echo "$CAN_JSON_NONE" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "canonical_brand" not in d, d
+' && check "canonical json: absent for non-brand URL" "0" "0" \
+   || check "canonical json: absent for non-brand URL" "0" "1"
+
+# stdin pipe mode emits canonical for a clean brand domain
+CAN_STDIN=$(echo "https://paypal.com" | ./hlse_core --stdin 2>/dev/null)
+echo "$CAN_STDIN" | grep -q "Canonical: confirmed authentic paypal" \
+    && check "canonical stdin: confirmed shown" "0" "0" \
+    || check "canonical stdin: confirmed shown" "0" "1"
+
+# Non-obvious canonical (zoom.us, not zoom.com) is confirmed correctly
+CAN_ZOOM_IO=$(./hlse_core "https://zoom.us" 2>/dev/null)
+echo "$CAN_ZOOM_IO" | grep -q "Canonical: confirmed authentic zoom" \
+    && check "canonical: zoom.us (non-obvious TLD) confirmed" "0" "0" \
+    || check "canonical: zoom.us (non-obvious TLD) confirmed" "0" "1"
+
 # ─── Perspective 15: Incident triage ("if you already clicked") ─────────────
 # Socratic Q: "People typically notice something's wrong AFTER submitting
 # credentials. At that moment 'BLOCK' is useless — they need triage: what to

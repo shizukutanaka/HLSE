@@ -2,6 +2,34 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.14] — 2026-06-16
+
+### Added
+- **Canonical confirmation — the "positively confirmed safe" lens**
+  (NEW-PERSPECTIVE-CANONICAL-CONFIRM). Socratic question: "When you output 'OK'
+  for https://paypal.com you're saying 'I found nothing wrong' — absence of
+  evidence. But you KNOW paypal.com is the exact canonical PayPal domain — you
+  used that fact to detect paypa1.com. For this URL you have POSITIVE evidence
+  of legitimacy, not just absence of threat signals. 'This is the authenticated
+  PayPal domain confirmed by the HLSE brand registry' is a stronger statement
+  than 'I found nothing suspicious.' Why not say that?"  All prior perspectives
+  serve the threat path. This closes the other half: every `OK` verdict for a
+  URL whose host exactly matches a registered canonical brand domain (from
+  `brand_canonical()`) is upgraded from a bare "nothing found" to a positive
+  authentication statement.  New `hlse_canonical_confirm(const char *url, char
+  *brand_out, size_t)` (public API) extracts the host, strips an optional
+  leading `www.`, and checks it against all entries in the BRANDS[] table.
+  Fires only at score == 0 (a fake domain never equals the canonical, so a
+  genuine threat verdict can never produce a false confirmation). Human output
+  gains a `✔ Canonical: confirmed authentic <brand> domain (HLSE brand
+  registry)` line between the OK header and the blind-spot note, replacing the
+  weaker epistemic "absence of threat" with the stronger "positive match"; JSON
+  gains a `"canonical_brand"` field. Non-brand clean URLs and all threat URLs
+  emit nothing. Pure output, zero scoring change: F1 = 1.000 preserved. 8 new
+  CLI integration tests cover paypal.com, www-prefix stripping (www.zoom.us →
+  zoom.us), a non-obvious canonical TLD (zoom.us), the non-brand clean negative,
+  the threat-URL negative, JSON field presence/absence, and stdin pipe.
+
 ## [1.0.13] — 2026-06-16
 
 ### Added

@@ -2544,6 +2544,62 @@ hlse_triage_for(const Verdict *v) {
            "active, and check recent login activity for unauthorised sessions";
 }
 
+/* Positive authentication check for a clean URL verdict.
+ *
+ * Socratic question: "When you output 'OK' for https://paypal.com you're
+ * saying 'I found nothing wrong' — absence of evidence. But you KNOW
+ * paypal.com is the exact canonical PayPal domain — you used that fact to
+ * detect paypa1.com. For this URL you have POSITIVE evidence of legitimacy,
+ * not just absence of threat signals. 'This is the authenticated PayPal
+ * domain confirmed by the HLSE brand registry' is a stronger statement than
+ * 'I found nothing suspicious.' Why not say that?"
+ *
+ * Iterates BRANDS[] and brand_canonical() to test whether the URL's
+ * effective host is an exact match for a registered canonical domain.
+ * Strips a leading "www." before comparing (www.paypal.com → paypal.com).
+ * The match is necessarily absent whenever a threat was found (a fake domain
+ * never equals the canonical) so this only fires at score == 0.
+ *
+ * Writes the matched brand name into `brand_out` (caller-owned). Returns 1
+ * when the URL is the confirmed canonical domain of a known brand, 0 otherwise.
+ * Thread-safe; no allocation.                                                */
+int
+hlse_canonical_confirm(const char *url, char *brand_out, size_t brand_outsz) {
+    const char *h, *host_end;
+    char host[256];
+    size_t hlen;
+    int i;
+    const char *check;
+
+    if (!url || !brand_out || brand_outsz == 0) return 0;
+
+    /* Extract host between "://" and first "/?#" */
+    h = strstr(url, "://");
+    h = h ? h + 3 : url;
+    host_end = h;
+    while (*host_end && *host_end != '/' && *host_end != '?' && *host_end != '#')
+        host_end++;
+    hlen = (size_t)(host_end - h);
+    if (hlen == 0 || hlen >= sizeof(host)) return 0;
+    memcpy(host, h, hlen);
+    host[hlen] = '\0';
+
+    /* Strip optional "www." prefix */
+    check = (strncmp(host, "www.", 4) == 0) ? host + 4 : host;
+
+    for (i = 0; BRANDS[i]; i++) {
+        const char *canon = brand_canonical(BRANDS[i]);
+        if (canon && strcmp(check, canon) == 0) {
+            if (brand_outsz > 1) {
+                strncpy(brand_out, BRANDS[i], brand_outsz - 1);
+                brand_out[brand_outsz - 1] = '\0';
+            }
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /* ───────────────── blast-radius / asset-class correlation ─────────────────
  * A leaked credential's danger is not its count but what the *set* of leaked
  * credentials collectively unlocks. We bucket each secret-finding type into a
@@ -3157,8 +3213,11 @@ print_json_url(const char *url, const Verdict *v) {
     char esc_safe[MAX_URL * 2] = "";
     char conf[160];
     char esc_conf[320] = "";
-    int  has_safe = hlse_safe_destination(v, safe, sizeof(safe));
-    int  has_conf = hlse_confusable_report(url, conf, sizeof(conf));
+    char canon_brand[64];
+    int  has_safe   = hlse_safe_destination(v, safe, sizeof(safe));
+    int  has_conf   = hlse_confusable_report(url, conf, sizeof(conf));
+    int  has_canon  = (v->score == 0) &&
+                      hlse_canonical_confirm(url, canon_brand, sizeof(canon_brand));
     json_escape(url, escaped_url, sizeof(escaped_url));
     if (pat) json_escape(pat, esc_pat, sizeof(esc_pat));
     if (obj) json_escape(obj, esc_obj, sizeof(esc_obj));
@@ -3168,6 +3227,7 @@ print_json_url(const char *url, const Verdict *v) {
     if (has_conf) json_escape(conf, esc_conf, sizeof(esc_conf));
     printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
            escaped_url, v->score, action_for_score(v->score));
+    if (has_canon) printf(",\"canonical_brand\":\"%s\"", canon_brand);
     if (pat) printf(",\"pattern\":\"%s\"", esc_pat);
     if (obj) printf(",\"objective\":\"%s\"", esc_obj);
     if (has_conf) printf(",\"confusable\":\"%s\"", esc_conf);
@@ -3256,7 +3316,11 @@ stdin_mode(int json_out) {
                 print_json_text(line, &tv);
             }
         } else if (sr.score == 0) {
+            char canon_brand[64];
             printf("OK    %s\n", line);
+            if (sr.is_url && hlse_canonical_confirm(line, canon_brand, sizeof(canon_brand)))
+                printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
+                       "(HLSE brand registry)\n", canon_brand);
         } else {
             int i;
             int eff = sr.score;
@@ -4400,7 +4464,11 @@ main(int argc, char **argv) {
             }
         } else if (sr.score == 0) {
             const char *bs = hlse_blindspot_for(sr.is_url ? "url" : "text");
+            char canon_brand[64];
             printf("OK    %s\n", input);
+            if (sr.is_url && hlse_canonical_confirm(input, canon_brand, sizeof(canon_brand)))
+                printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
+                       "(HLSE brand registry)\n", canon_brand);
             if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
         } else {
             int i;

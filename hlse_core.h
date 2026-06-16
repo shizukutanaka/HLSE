@@ -27,7 +27,7 @@
 #include <stddef.h>   /* size_t, for hlse_safe_destination() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.13"
+#define HLSE_VERSION "1.0.14"
 
 #ifdef __cplusplus
 extern "C" {
@@ -124,6 +124,14 @@ const char *hlse_verification_for(const Verdict *v);
  * brand-objective class as hlse_attacker_objective so the guidance matches
  * the specific asset at risk. Returns a static string, or NULL when score < 60. */
 const char *hlse_triage_for(const Verdict *v);
+
+/* Positive authentication: tests whether the URL's host exactly matches a
+ * canonical brand domain in the HLSE brand registry (e.g. paypal.com,
+ * zoom.us). Writes the matched brand name into `brand_out` and returns 1 when
+ * confirmed; returns 0 otherwise. "Nothing wrong found" (score 0) and
+ * "positively confirmed canonical" are logically distinct; this surfaces the
+ * stronger claim for known-good domains. */
+int hlse_canonical_confirm(const char *url, char *brand_out, size_t brand_outsz);
 
 /* Library version string (compiled-in). */
 const char *hlse_version(void);
