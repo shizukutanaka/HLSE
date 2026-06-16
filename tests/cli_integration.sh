@@ -1386,6 +1386,60 @@ action_ok clipboard "$(./hlse_core --json clipboard '0xabcdef0000000000000000000
 action_ok audit     "$(./hlse_core --json audit)"
 action_ok file      "$(./hlse_core --json file /etc/hosts)"
 
+# ─── Perspective 17: Multi-Brand Co-Spoof Pattern Label ─────────────────────
+
+# Socratic question: "What if the URL wears two masks at once — PayPal in the
+# subdomain, Apple in the SLD? Should the pattern label reveal compound intent?"
+
+# paypal (subdomain) + apple (SLD) co-spoof: pattern label must say multi-brand
+P17_OUT=$(./hlse_core "https://paypal.apple-secure.com/login" 2>/dev/null) || true
+echo "$P17_OUT" | grep -q "multi-brand co-spoof" \
+    && check "p17: paypal+apple co-spoof: pattern=multi-brand" "0" "0" \
+    || check "p17: paypal+apple co-spoof: pattern=multi-brand" "0" "1"
+
+# microsoft (subdomain) + apple (SLD) co-spoof: pattern label correct
+P17_MS=$(./hlse_core "https://microsoft.apple-support.net/verify" 2>/dev/null) || true
+echo "$P17_MS" | grep -q "multi-brand co-spoof" \
+    && check "p17: microsoft+apple co-spoof: pattern=multi-brand" "0" "0" \
+    || check "p17: microsoft+apple co-spoof: pattern=multi-brand" "0" "1"
+
+# single-brand URL must NOT get multi-brand label (regression guard)
+P17_SINGLE=$(./hlse_core "https://paypa1.com/login" 2>/dev/null) || true
+echo "$P17_SINGLE" | grep -q "multi-brand co-spoof" \
+    && check "p17: single-brand NOT labelled multi-brand" "0" "1" \
+    || check "p17: single-brand NOT labelled multi-brand" "0" "0"
+
+# JSON: pattern field for co-spoof URL contains multi-brand label
+P17_JSON=$(./hlse_core --json "https://paypal.apple-secure.com/login" 2>/dev/null) || true
+echo "$P17_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "multi-brand" in d.get("pattern",""), d
+' && check "p17 json: pattern=multi-brand co-spoof" "0" "0" \
+   || check "p17 json: pattern=multi-brand co-spoof" "0" "1"
+
+# ─── Exit gate: --from channel boost must raise exit code ───────────────────
+
+# https://support-helpdesk.info/reset scores 55 (ALERT) — below BLOCK threshold.
+# Without --from: exits 0.  With --from qr (+20 → 75): must exit 1.
+GATE_RAW=0; ./hlse_core "https://support-helpdesk.info/reset" >/dev/null 2>&1 \
+    || GATE_RAW=$?
+check "exit-gate: raw ALERT score exits 0" "0" "$GATE_RAW"
+
+GATE_QR=0; ./hlse_core --from qr "https://support-helpdesk.info/reset" >/dev/null 2>&1 \
+    || GATE_QR=$?
+check "exit-gate: QR-boosted score exits 1" "1" "$GATE_QR"
+
+# stdin path: --from qr must also raise exit code
+GATE_STDIN=0; echo "https://support-helpdesk.info/reset" \
+    | ./hlse_core --from qr --stdin >/dev/null 2>&1 || GATE_STDIN=$?
+check "exit-gate stdin: QR-boosted exits 1" "1" "$GATE_STDIN"
+
+# --from manual (delta=0) must not change exit code
+GATE_MAN=0; ./hlse_core --from manual "https://support-helpdesk.info/reset" >/dev/null 2>&1 \
+    || GATE_MAN=$?
+check "exit-gate: --from manual unchanged (exits 0)" "0" "$GATE_MAN"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

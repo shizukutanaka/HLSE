@@ -27,7 +27,7 @@
 #include <stddef.h>   /* size_t, for hlse_safe_destination() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.15"
+#define HLSE_VERSION "1.0.16"
 
 #ifdef __cplusplus
 extern "C" {

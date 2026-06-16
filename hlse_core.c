@@ -2117,6 +2117,13 @@ hlse_version(void) {
 
 /* Synthesize a named attack pattern from the set of signals that fired.
  *
+ * Socratic question (Perspective 17): "Single-brand detection assumes one
+ * attacker wearing one mask. But what if the URL simultaneously contains two
+ * known brand names — 'paypal.apple-secure.com', 'netflix-amazon-billing.net'?
+ * Presenting as two brands at once exploits both user bases and is harder to
+ * dismiss, because each fragment looks 'almost right' in isolation. Shouldn't
+ * a fundamentally different attack label surface this compound deception?"
+ *
  * Returns a short human-readable attack-class label (e.g. "typosquat
  * credential-harvest page"), or NULL when the signals don't map to a
  * recognisable pattern. The label is intentionally terse — it belongs on
@@ -2139,6 +2146,7 @@ hlse_classify_url_attack(const Verdict *v) {
     int has_ip            = 0;  /* IP-address host with brand in path       */
     int has_hyphen_brand  = 0;  /* brand-hyphen-securityword pattern        */
     int has_dga           = 0;  /* DGA / high-entropy random domain         */
+    int n_brands          = 0;  /* count of distinct impersonated brands    */
     int i;
 
     if (!v || v->n_reasons == 0) return NULL;
@@ -2169,12 +2177,18 @@ hlse_classify_url_attack(const Verdict *v) {
             strstr(r, "Brand impersonation"))          has_hyphen_brand = 1;
         if (strstr(r, "DGA") || strstr(r, "high-entropy") ||
             strstr(r, "random-looking"))               has_dga      = 1;
+        if (strstr(r, "Legitimate '"))                 n_brands++;
     }
 
     /* Priority-ordered classification: most specific / highest-confidence
      * patterns first so the label describes the dominant attack vector.  */
     if (has_idn)
         return "Unicode/IDN homograph impersonation";
+    /* Perspective 17: two or more distinct brand canonical reasons means the
+     * attacker is simultaneously impersonating multiple brands — a compound
+     * co-spoof that is more sophisticated than any single-brand pattern. */
+    if (n_brands >= 2)
+        return "multi-brand co-spoof (compound impersonation)";
     if (has_homoglyph && has_brand)
         return "visual impersonation via lookalike characters";
     if (has_at_trick)
@@ -3373,7 +3387,16 @@ stdin_mode(int json_out) {
             }
             if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
         }
-        if (sr.score >= g_fail_threshold) any_threat = 1;
+        /* Gate uses effective score (raw + channel boost) so that e.g.
+         * --from qr raises exit 0 → exit 1 when boost crosses the threshold. */
+        {
+            int eff_gate = sr.score;
+            if (sr.is_url && g_from_channel) {
+                int d = channel_delta(g_from_channel);
+                eff_gate += d; if (eff_gate > 100) eff_gate = 100;
+            }
+            if (eff_gate >= g_fail_threshold) any_threat = 1;
+        }
     }
     return any_threat ? 1 : 0;
 }
@@ -4506,7 +4529,15 @@ main(int argc, char **argv) {
             if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
             if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
         }
-        return sr.score >= g_fail_threshold ? 1 : 0;
+        /* Gate uses effective score so --from boost is honoured in exit code. */
+        {
+            int eff_gate = sr.score;
+            if (sr.is_url && g_from_channel) {
+                int d = channel_delta(g_from_channel);
+                eff_gate += d; if (eff_gate > 100) eff_gate = 100;
+            }
+            return eff_gate >= g_fail_threshold ? 1 : 0;
+        }
     }
 }
 #endif /* HLSE_CORE_AS_LIB */

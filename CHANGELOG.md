@@ -2,6 +2,33 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.16] — 2026-06-16
+
+### Added
+- **Perspective 17: multi-brand co-spoof pattern label.**
+  Socratic question: "Single-brand detection assumes one attacker wearing one
+  mask. But what if the URL simultaneously impersonates two known brands —
+  'paypal.apple-secure.com', 'microsoft.apple-support.net'? Presenting as two
+  brands at once exploits both user bases; each fragment looks 'almost right' in
+  isolation, making the compound deception harder to dismiss. Shouldn't a
+  fundamentally different attack label surface this?" `hlse_classify_url_attack()`
+  now counts distinct `"Legitimate '…'"` canonical-brand reasons in the verdict.
+  When two or more are present, it returns `"multi-brand co-spoof (compound
+  impersonation)"` ahead of all single-brand pattern labels (after IDN, which
+  describes the disguise mechanism rather than the brand count). Pure output
+  addition — no scoring change, F1 = 1.000 preserved. 8 new CLI integration tests.
+
+### Fixed
+- **`--from` channel boost now raises the process exit code.** The delivery-
+  channel feature (`--from qr/sms/email/dm`) boosted the displayed score and
+  action label but left the process exit gate comparing the raw score against
+  `g_fail_threshold`. A URL scoring 55 (ALERT, exits 0) with `--from qr`
+  (+20 → 75, shown as BLOCK) still exited 0 — inconsistent with what was
+  displayed. Both the default single-URL path and the stdin `--stdin` loop now
+  compute `eff_gate = raw_score + channel_delta` before the threshold test.
+  Verified: `support-helpdesk.info/reset` (score 55) exits 0 without `--from`
+  and exits 1 with `--from qr`. 4 new exit-gate tests.
+
 ## [1.0.15] — 2026-06-16
 
 ### Changed
