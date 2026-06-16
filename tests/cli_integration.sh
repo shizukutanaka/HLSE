@@ -1440,6 +1440,66 @@ GATE_MAN=0; ./hlse_core --from manual "https://support-helpdesk.info/reset" >/de
     || GATE_MAN=$?
 check "exit-gate: --from manual unchanged (exits 0)" "0" "$GATE_MAN"
 
+# ─── Perspective 18: Password-Reuse Cascade Risk ────────────────────────────
+
+# Socratic question: "You named the primary target. But 65% of people reuse
+# passwords. Credential-stuffing bots test stolen logins across hundreds of
+# services within minutes. Shouldn't post-click guidance name the cascade?"
+
+# BLOCK URL (PayPal typosquat): cascade risk must appear
+P18_BLOCK=$(./hlse_core "https://paypa1.com/login" 2>/dev/null) || true
+echo "$P18_BLOCK" | grep -q "Also change" \
+    && check "p18: BLOCK URL shows cascade risk" "0" "0" \
+    || check "p18: BLOCK URL shows cascade risk" "0" "1"
+
+# Financial brand cascade: mentions email (recovery gateway)
+echo "$P18_BLOCK" | grep -q "recovery gateway" \
+    && check "p18: financial cascade mentions email recovery gateway" "0" "0" \
+    || check "p18: financial cascade mentions email recovery gateway" "0" "1"
+
+# ALERT URL (score 55): cascade risk must NOT appear (pre-click, < 60)
+P18_ALERT=$(./hlse_core "https://support-helpdesk.info/reset" 2>/dev/null) || true
+echo "$P18_ALERT" | grep -q "Also change" \
+    && check "p18: ALERT URL does NOT show cascade risk" "0" "1" \
+    || check "p18: ALERT URL does NOT show cascade risk" "0" "0"
+
+# Multi-brand co-spoof: compound cascade guidance
+P18_COBRAND=$(./hlse_core "https://paypal.apple-secure.com/login" 2>/dev/null) || true
+echo "$P18_COBRAND" | grep -q "two credential classes" \
+    && check "p18: co-spoof cascade mentions two credential classes" "0" "0" \
+    || check "p18: co-spoof cascade mentions two credential classes" "0" "1"
+
+# Crypto brand: cascade mentions irreversibility
+P18_CRYPTO=$(./hlse_core "https://metamask-wallet-connect.com/verify" 2>/dev/null) || true
+echo "$P18_CRYPTO" | grep -q "Also change" \
+    && check "p18: crypto cascade risk shown" "0" "0" \
+    || check "p18: crypto cascade risk shown" "0" "1"
+
+# Safe URL: no cascade risk (score == 0)
+P18_SAFE=$(./hlse_core "https://paypal.com" 2>/dev/null) || true
+echo "$P18_SAFE" | grep -q "Also change" \
+    && check "p18: safe URL no cascade risk" "0" "1" \
+    || check "p18: safe URL no cascade risk" "0" "0"
+
+# JSON: BLOCK URL includes cascade_risk field
+P18_JSON=$(./hlse_core --json "https://paypa1.com/login" 2>/dev/null) || true
+echo "$P18_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "cascade_risk" in d, d
+assert len(d["cascade_risk"]) > 0, d
+' && check "p18 json: cascade_risk field present for BLOCK" "0" "0" \
+   || check "p18 json: cascade_risk field present for BLOCK" "0" "1"
+
+# JSON: safe URL must NOT include cascade_risk field
+P18_SAFE_JSON=$(./hlse_core --json "https://paypal.com" 2>/dev/null) || true
+echo "$P18_SAFE_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "cascade_risk" not in d, d
+' && check "p18 json: no cascade_risk for safe URL" "0" "0" \
+   || check "p18 json: no cascade_risk for safe URL" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

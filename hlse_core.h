@@ -27,7 +27,7 @@
 #include <stddef.h>   /* size_t, for hlse_safe_destination() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.16"
+#define HLSE_VERSION "1.0.17"
 
 #ifdef __cplusplus
 extern "C" {
@@ -132,6 +132,13 @@ const char *hlse_triage_for(const Verdict *v);
  * "positively confirmed canonical" are logically distinct; this surfaces the
  * stronger claim for known-good domains. */
 int hlse_canonical_confirm(const char *url, char *brand_out, size_t brand_outsz);
+
+/* Password-reuse cascade risk after a credential-harvest click — which OTHER
+ * accounts the victim should audit immediately, derived from the impersonated
+ * brand's credential class. For multi-brand co-spoof URLs the guidance covers
+ * both harvested credential classes. Returns a static string, or NULL when
+ * score < 60 (pre-click context has no cascade to describe). */
+const char *hlse_cascade_risk(const Verdict *v);
 
 /* Library version string (compiled-in). */
 const char *hlse_version(void);

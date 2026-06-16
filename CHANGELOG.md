@@ -2,6 +2,30 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.17] — 2026-06-16
+
+### Added
+- **Perspective 18: Password-reuse cascade risk (`hlse_cascade_risk`).**
+  Socratic question: "You've named the primary target and given triage guidance
+  for that account. But credential-stuffing bots test stolen logins against
+  hundreds of services within minutes — and 65 % of users reuse passwords. If
+  the victim's PayPal password also protects their Gmail, the attacker now
+  controls the recovery address for every other account. Shouldn't post-click
+  guidance name the accounts most likely to fall in a cascade, not just the one
+  they were phished for?" New `hlse_cascade_risk(const Verdict *v)` function
+  (public API) returns a static string describing which related accounts to audit
+  after a credential-harvest click, keyed to the impersonated brand's objective
+  class (financial → email+banking+payment apps; identity/email → all accounts
+  that use this email for reset; crypto → other exchanges + irreversibility note;
+  corporate → IT team + SSO/VPN; etc.). For multi-brand co-spoof URLs
+  (Perspective 17) the guidance explicitly names BOTH credential classes as
+  simultaneously harvested. Fires only at score ≥ 60 (BLOCK/ISOLATE) — the
+  "already clicked" context where cascade damage is possible. Wired into:
+  `print_url_advisories()` (all three text output paths via the centralised
+  helper), `print_json_url()` as `"cascade_risk"` field, and the `⊕ Also
+  change:` advisory line. 8 new CLI integration tests (233 total). F1 = 1.000
+  preserved; zero warnings.
+
 ## [1.0.16] — 2026-06-16
 
 ### Added

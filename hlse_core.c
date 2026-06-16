@@ -2559,6 +2559,86 @@ hlse_triage_for(const Verdict *v) {
            "active, and check recent login activity for unauthorised sessions";
 }
 
+/* Cascade risk: the blast radius if the victim reused this password elsewhere.
+ *
+ * Socratic question (Perspective 18): "You've named the primary target and
+ * given triage guidance for that account. But credential-stuffing bots test
+ * stolen logins against hundreds of services within minutes — and 65 % of
+ * people reuse passwords. If the victim's PayPal password is also their Gmail
+ * password, the attacker now controls the recovery address for every other
+ * account. Shouldn't post-click guidance name the accounts most likely to fall
+ * in a cascade, not just the one they were phished for?
+ *
+ * For multi-brand co-spoof URLs (Perspective 17) the cascade is compound —
+ * two credential classes harvested at once compounds the blast radius further."
+ *
+ * Returns a static string, or NULL when score < 60 (pre-click context has no
+ * cascade to describe). Thread-safe: no allocation, reads static tables only. */
+const char *
+hlse_cascade_risk(const Verdict *v) {
+    const char *obj;
+    const char *pat;
+    if (!v || v->score < 60) return NULL;
+
+    /* Multi-brand co-spoof: compound harvest across two credential classes. */
+    pat = hlse_classify_url_attack(v);
+    if (pat && strstr(pat, "multi-brand co-spoof"))
+        return "two credential classes were targeted at once — audit BOTH: "
+               "the financial/payment account AND the identity/email account, "
+               "then change any other account sharing either password; "
+               "stuffing bots test stolen pairs across hundreds of services "
+               "within minutes";
+
+    obj = hlse_attacker_objective(v);
+    if (!obj)
+        return "change any other account sharing this password \xe2\x80\x94 "
+               "credential-stuffing bots test stolen logins across "
+               "hundreds of services within minutes";
+    if (strstr(obj, "financial") || strstr(obj, "banking") || strstr(obj, "funds"))
+        return "email (the recovery gateway for all other accounts), other "
+               "banking and payment apps, and every account sharing this "
+               "password \xe2\x80\x94 stuffing attacks start within minutes "
+               "of a credential harvest";
+    if (strstr(obj, "crypto") || strstr(obj, "seed phrase") || strstr(obj, "wallet"))
+        return "other exchanges and any account using the same email or "
+               "password \xe2\x80\x94 on-chain transfers are irreversible so "
+               "act before funds move; a compromised seed drains ALL wallets "
+               "derived from it, not just one";
+    if (strstr(obj, "identity") || strstr(obj, "keystone"))
+        return "every account that lists this email as its password-reset "
+               "address \xe2\x80\x94 whoever controls your inbox controls "
+               "account recovery for everything else; start with banking, "
+               "then work through any account you care about";
+    if (strstr(obj, "corporate") || strstr(obj, "employer") || strstr(obj, "enterprise"))
+        return "other work apps (email, Slack, Jira, VPN, SSO), and alert your "
+               "IT security team immediately \xe2\x80\x94 a single corporate "
+               "credential often pivots to the entire network within hours";
+    if (strstr(obj, "SIM-swap") || strstr(obj, "telecom"))
+        return "every account protected only by SMS-based 2FA \xe2\x80\x94 a "
+               "SIM-swap defeats those codes across all services at once; "
+               "switch to an authenticator app on accounts you cannot afford "
+               "to lose";
+    if (strstr(obj, "password-vault"))
+        return "all credentials stored in the vault, and the email address "
+               "used to recover the vault itself \xe2\x80\x94 a compromised "
+               "vault exposes every account you manage in one breach";
+    if (strstr(obj, "gaming"))
+        return "linked payment methods, the associated email, and any account "
+               "sharing this password \xe2\x80\x94 compromised game accounts "
+               "are listed for sale within hours, often before the owner "
+               "notices";
+    if (strstr(obj, "social") || strstr(obj, "contact-list"))
+        return "accounts accessed via 'Sign in with [brand]', linked payment "
+               "methods, and the associated email \xe2\x80\x94 attackers use "
+               "a hijacked social account to target your contact list next";
+    if (strstr(obj, "subscription") || strstr(obj, "stored payment"))
+        return "saved payment cards on other shopping sites and any account "
+               "sharing this password \xe2\x80\x94 attackers drain gift cards "
+               "and place orders on saved methods immediately after compromise";
+    return "any other account sharing this password \xe2\x80\x94 change them "
+           "starting with email (the master reset key for everything else)";
+}
+
 /* Positive authentication check for a clean URL verdict.
  *
  * Socratic question: "When you output 'OK' for https://paypal.com you're
@@ -3220,10 +3300,12 @@ print_json_url(const char *url, const Verdict *v) {
     const char *obj = hlse_attacker_objective(v);
     const char *vrf = hlse_verification_for(v);
     const char *tri = hlse_triage_for(v);
+    const char *cas = hlse_cascade_risk(v);
     char esc_pat[256] = "";
     char esc_obj[256] = "";
     char esc_vrf[512] = "";
     char esc_tri[512] = "";
+    char esc_cas[512] = "";
     char safe[MAX_URL];
     char esc_safe[MAX_URL * 2] = "";
     char conf[160];
@@ -3238,6 +3320,7 @@ print_json_url(const char *url, const Verdict *v) {
     if (obj) json_escape(obj, esc_obj, sizeof(esc_obj));
     if (vrf) json_escape(vrf, esc_vrf, sizeof(esc_vrf));
     if (tri) json_escape(tri, esc_tri, sizeof(esc_tri));
+    if (cas) json_escape(cas, esc_cas, sizeof(esc_cas));
     if (has_safe) json_escape(safe, esc_safe, sizeof(esc_safe));
     if (has_conf) json_escape(conf, esc_conf, sizeof(esc_conf));
     printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
@@ -3249,6 +3332,7 @@ print_json_url(const char *url, const Verdict *v) {
     if (has_safe) printf(",\"safe_url\":\"%s\"", esc_safe);
     if (vrf) printf(",\"verify\":\"%s\"", esc_vrf);
     if (tri) printf(",\"triage\":\"%s\"", esc_tri);
+    if (cas) printf(",\"cascade_risk\":\"%s\"", esc_cas);
     if (g_from_channel) {
         int d   = channel_delta(g_from_channel);
         int eff = v->score + d; if (eff > 100) eff = 100;
@@ -3301,6 +3385,7 @@ print_json_text(const char *text, const TextVerdict *v) {
  *   → Safe destination    canonical brand domain to use instead
  *   ✓ Verify independently  high-confidence (>=60) confirmation test
  *   ⚑ If already clicked  post-click incident triage
+ *   ⊕ Also change         password-reuse cascade risk (other accounts)
  *
  * Centralised so the three text output sites (stdin / `text` subcommand /
  * default auto-detect) cannot drift out of sync — every lens fires from one
@@ -3313,6 +3398,7 @@ print_url_advisories(const char *url, const Verdict *uv) {
     const char *obj = hlse_attacker_objective(uv);
     const char *vrf = hlse_verification_for(uv);
     const char *tri = hlse_triage_for(uv);
+    const char *cas = hlse_cascade_risk(uv);
     char safe[MAX_URL];
     char conf[160];
     if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
@@ -3323,6 +3409,7 @@ print_url_advisories(const char *url, const Verdict *uv) {
         printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
     if (vrf) printf("  \xe2\x9c\x93 Verify independently: %s\n", vrf);
     if (tri) printf("  \xe2\x9a\x91 If already clicked: %s\n", tri);
+    if (cas) printf("  \xe2\x8a\x95 Also change: %s\n", cas);  /* ⊕ */
 }
 
 /* Score at/above which the process exits 1 (threat). Configurable via
