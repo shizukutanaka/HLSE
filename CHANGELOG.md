@@ -2,6 +2,35 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.15] — 2026-06-16
+
+### Changed
+- **DRY refactor: centralised the per-URL advisory output into one helper.**
+  Audit of Perspectives 9–16 found the six synthesis lenses (Pattern,
+  Disguised char, Attacker's goal, Safe destination, Verify, Triage) were
+  copy-pasted across all three text output sites (stdin / `text` subcommand /
+  default auto-detect) — ~13 identical lines each. Every new perspective forced
+  an edit to all three in lockstep, a standing drift risk (the three could
+  silently diverge). Extracted `print_url_advisories(const char *url, const
+  Verdict *)` as the single source of truth; the three sites now call it. No
+  behavioural change — output is byte-for-byte identical (verified by two new
+  advisory-parity tests asserting the three paths produce the same advisory
+  lines). F1 = 1.000 preserved.
+
+### Fixed
+- **Hardened `hlse_safe_destination()` buffer guard.** Once the function was no
+  longer inlined at every call site (post-refactor), GCC's `-Wformat-truncation`
+  correctly observed the `outsz == 0` guard left buffers of size 1..8 unable to
+  hold the `"https://"` prefix. Tightened the guard to `outsz < 10` (a usable
+  destination needs at least "https://" + one host char + NUL), restoring the
+  zero-warning build and making the contract explicit. No caller is affected
+  (all pass MAX_URL-sized buffers).
+- **Consistency: `text` subcommand OK-path now surfaces canonical
+  confirmation.** Perspective 16's `✔ Canonical:` line was wired into the stdin
+  and default OK-paths but not the `text` subcommand's, so `hlse_core text
+  "https://paypal.com"` lacked the positive-authentication line the other two
+  paths emit. Added it for parity.
+
 ## [1.0.14] — 2026-06-16
 
 ### Added

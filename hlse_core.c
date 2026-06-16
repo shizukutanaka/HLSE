@@ -2224,7 +2224,8 @@ hlse_classify_url_attack(const Verdict *v) {
 int
 hlse_safe_destination(const Verdict *v, char *out, size_t outsz) {
     int i;
-    if (!v || !out || outsz == 0) return 0;
+    /* Need room for at least "https://" + one host char + NUL. */
+    if (!v || !out || outsz < 10) return 0;
     for (i = 0; i < v->n_reasons; i++) {
         const char *r     = v->reasons[i];
         const char *brand = strstr(r, "Legitimate '");
@@ -3278,6 +3279,38 @@ print_json_text(const char *text, const TextVerdict *v) {
     printf("]}\n");
 }
 
+/* Print the per-URL human-readable advisory lines for an actionable verdict —
+ * the synthesis lenses layered on top of the raw per-signal reasons:
+ *   ▸ Pattern             attack-class label
+ *   ⌖ Disguised char      first non-ASCII confusable codepoint
+ *   ◉ Attacker's goal     objective / asset at risk
+ *   → Safe destination    canonical brand domain to use instead
+ *   ✓ Verify independently  high-confidence (>=60) confirmation test
+ *   ⚑ If already clicked  post-click incident triage
+ *
+ * Centralised so the three text output sites (stdin / `text` subcommand /
+ * default auto-detect) cannot drift out of sync — every lens fires from one
+ * place. `url` is the raw input (needed for confusable/host inspection); `uv`
+ * is its URL verdict. Each line is conditional, so a low-score verdict prints
+ * only the lenses that apply.                                                */
+static void
+print_url_advisories(const char *url, const Verdict *uv) {
+    const char *pat = hlse_classify_url_attack(uv);
+    const char *obj = hlse_attacker_objective(uv);
+    const char *vrf = hlse_verification_for(uv);
+    const char *tri = hlse_triage_for(uv);
+    char safe[MAX_URL];
+    char conf[160];
+    if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
+    if (hlse_confusable_report(url, conf, sizeof(conf)))
+        printf("  \xe2\x8c\x96 Disguised char: %s\n", conf);
+    if (obj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj);
+    if (hlse_safe_destination(uv, safe, sizeof(safe)))
+        printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
+    if (vrf) printf("  \xe2\x9c\x93 Verify independently: %s\n", vrf);
+    if (tri) printf("  \xe2\x9a\x91 If already clicked: %s\n", tri);
+}
+
 /* Score at/above which the process exits 1 (threat). Configurable via
  * --fail-on so a pipeline picks its own risk gate. Default = BLOCK(60). */
 static int g_fail_threshold = 60;
@@ -3336,20 +3369,7 @@ stdin_mode(int json_out) {
                 printf("  \xc2\xb7 %s\n", sr.reasons[i]);  /* · */
             if (sr.is_url) {
                 Verdict uv = check_url(line);
-                const char *pat = hlse_classify_url_attack(&uv);
-                const char *obj = hlse_attacker_objective(&uv);
-                const char *vrf = hlse_verification_for(&uv);
-                const char *tri = hlse_triage_for(&uv);
-                char safe[MAX_URL];
-                char conf[160];
-                if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
-                if (hlse_confusable_report(line, conf, sizeof(conf)))
-                    printf("  \xe2\x8c\x96 Disguised char: %s\n", conf);
-                if (obj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj);
-                if (hlse_safe_destination(&uv, safe, sizeof(safe)))
-                    printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
-                if (vrf) printf("  \xe2\x9c\x93 Verify independently: %s\n", vrf);
-                if (tri) printf("  \xe2\x9a\x91 If already clicked: %s\n", tri);
+                print_url_advisories(line, &uv);
             }
             if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
         }
@@ -4396,7 +4416,12 @@ main(int argc, char **argv) {
                 print_json_text(argv[idx + 1], &tv);
             } else if (sr.score == 0) {
                 const char *bs = hlse_blindspot_for(sr.is_url ? "url" : "text");
+                char canon_brand[64];
                 printf("OK    (text)\n");
+                if (sr.is_url &&
+                    hlse_canonical_confirm(argv[idx + 1], canon_brand, sizeof(canon_brand)))
+                    printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
+                           "(HLSE brand registry)\n", canon_brand);
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
@@ -4411,20 +4436,7 @@ main(int argc, char **argv) {
                 }
                 if (sr.is_url) {
                     Verdict uv = check_url(argv[idx + 1]);
-                    const char *pat = hlse_classify_url_attack(&uv);
-                    const char *obj = hlse_attacker_objective(&uv);
-                    const char *vrf = hlse_verification_for(&uv);
-                    const char *tri = hlse_triage_for(&uv);
-                    char safe[MAX_URL];
-                    char conf[160];
-                    if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
-                    if (hlse_confusable_report(argv[idx + 1], conf, sizeof(conf)))
-                        printf("  \xe2\x8c\x96 Disguised char: %s\n", conf);
-                    if (obj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj);
-                    if (hlse_safe_destination(&uv, safe, sizeof(safe)))
-                        printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
-                    if (vrf) printf("  \xe2\x9c\x93 Verify independently: %s\n", vrf);
-                    if (tri) printf("  \xe2\x9a\x91 If already clicked: %s\n", tri);
+                    print_url_advisories(argv[idx + 1], &uv);
                 }
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }
@@ -4489,20 +4501,7 @@ main(int argc, char **argv) {
                 /* Re-run URL check to get a Verdict for pattern synthesis.
                  * hlse_scan already ran this internally; the cost is low.  */
                 Verdict uv = check_url(input);
-                const char *pat = hlse_classify_url_attack(&uv);
-                const char *obj = hlse_attacker_objective(&uv);
-                const char *vrf = hlse_verification_for(&uv);
-                const char *tri = hlse_triage_for(&uv);
-                char safe[MAX_URL];
-                char conf[160];
-                if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
-                if (hlse_confusable_report(input, conf, sizeof(conf)))
-                    printf("  \xe2\x8c\x96 Disguised char: %s\n", conf);
-                if (obj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj);
-                if (hlse_safe_destination(&uv, safe, sizeof(safe)))
-                    printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
-                if (vrf) printf("  \xe2\x9c\x93 Verify independently: %s\n", vrf);
-                if (tri) printf("  \xe2\x9a\x91 If already clicked: %s\n", tri);
+                print_url_advisories(input, &uv);
             }
             if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
             if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);

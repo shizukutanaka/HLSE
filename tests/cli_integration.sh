@@ -921,6 +921,20 @@ assert d["kind"] == "clipboard" and d["is_swap"] == 1 and d["score"] == 100
 ' && check "--json clipboard vanity → score 100" "0" "0" \
    || check "--json clipboard vanity → score 100" "0" "1"
 
+# ─── Advisory parity: the three URL output paths must not drift ─────────────
+# print_url_advisories() centralises Pattern/Disguised/Objective/Safe/Verify/
+# Triage so the stdin, `text` subcommand, and default paths cannot diverge.
+# Compare the advisory lines (markers ▸ ⌖ ◉ → ✓ ⚑) across all three.
+ADV_DEFAULT=$(./hlse_core "https://paypa1.com/login" 2>/dev/null | grep -E '▸|⌖|◉|→|✓|⚑')
+ADV_TEXT=$(./hlse_core text "https://paypa1.com/login" 2>/dev/null | grep -E '▸|⌖|◉|→|✓|⚑')
+ADV_STDIN=$(echo "https://paypa1.com/login" | ./hlse_core --stdin 2>/dev/null | grep -E '▸|⌖|◉|→|✓|⚑')
+[ "$ADV_DEFAULT" = "$ADV_TEXT" ] \
+    && check "advisory parity: default == text subcommand" "0" "0" \
+    || check "advisory parity: default == text subcommand" "0" "1"
+[ "$ADV_DEFAULT" = "$ADV_STDIN" ] \
+    && check "advisory parity: default == stdin" "0" "0" \
+    || check "advisory parity: default == stdin" "0" "1"
+
 # ─── Perspective 16: Canonical confirmation ("positively confirmed safe") ───
 # Socratic Q: "'OK' means 'nothing wrong found' — absence of evidence. But for
 # a URL that exactly matches a canonical brand domain, HLSE has POSITIVE
@@ -974,6 +988,12 @@ CAN_STDIN=$(echo "https://paypal.com" | ./hlse_core --stdin 2>/dev/null)
 echo "$CAN_STDIN" | grep -q "Canonical: confirmed authentic paypal" \
     && check "canonical stdin: confirmed shown" "0" "0" \
     || check "canonical stdin: confirmed shown" "0" "1"
+
+# text subcommand OK-path also surfaces canonical confirmation (parity)
+CAN_TEXT=$(./hlse_core text "https://paypal.com" 2>/dev/null)
+echo "$CAN_TEXT" | grep -q "Canonical: confirmed authentic paypal" \
+    && check "canonical: text subcommand → confirmed (parity)" "0" "0" \
+    || check "canonical: text subcommand → confirmed (parity)" "0" "1"
 
 # Non-obvious canonical (zoom.us, not zoom.com) is confirmed correctly
 CAN_ZOOM_IO=$(./hlse_core "https://zoom.us" 2>/dev/null)
