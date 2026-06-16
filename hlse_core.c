@@ -2470,6 +2470,164 @@ hlse_compound_objective(const Verdict *v, char *out, size_t outsz) {
     return 1;
 }
 
+/* Characterise an ASCII character for the diff label. */
+static const char *
+ascii_char_type(char c) {
+    if (c >= '0' && c <= '9') return "digit";
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) return "letter";
+    if (c == '-') return "hyphen";
+    if (c == '_') return "underscore";
+    return "char";
+}
+
+/* Pinpoint the ASCII lookalike substitution(s) in a typosquat or ASCII
+ * homoglyph verdict — the character-level proof that complements
+ * hlse_confusable_report() (which only fires for non-ASCII codepoints).
+ *
+ * Socratic question (Perspective 20): "You report 'paypa1' vs 'paypal' as a
+ * homoglyph. But in a proportional-font browser address bar, digit '1' and
+ * lowercase 'l' are visually indistinguishable — the user has to mentally
+ * align two strings to spot the difference. Your own verify guidance says
+ * 'compare the address bar character by character' without saying WHICH
+ * character. What if you pointed to position 6: 'digit 1 masking letter l'?
+ * That transforms 'edit distance 1' from an abstract metric into proof the
+ * user can physically verify in their address bar right now."
+ *
+ * Parses "Brand homoglyph: 'X' -> 'Y' (brand)" and
+ * "Typosquat: 'X' is edit distance N from 'Y'" reason strings to extract the
+ * fake string X and genuine string Y, then reports every differing position
+ * with its character type (digit/letter/hyphen). Deliberately skips reasons
+ * where X contains non-ASCII bytes — those are already covered by
+ * hlse_confusable_report() with richer Unicode context.
+ *
+ * Writes a one-line summary into `out` (caller-owned); returns 1 when an
+ * ASCII-level difference was found, 0 otherwise. Thread-safe; no allocation. */
+int
+hlse_ascii_diff(const Verdict *v, char *out, size_t outsz) {
+    int ri;
+    /* 192-byte minimum: worst-case format is "'<63-char-host>': chars N,N are
+     * <type> '<c>' masking '<c>'" ≈ 2+63+30+30+30 = ~155 bytes + NUL */
+    if (!v || !out || outsz < 192) return 0;
+    out[0] = '\0';
+
+    for (ri = 0; ri < v->n_reasons; ri++) {
+        const char *r = v->reasons[ri];
+        const char *fake_s = NULL, *fake_e = NULL;
+        const char *real_s = NULL, *real_e = NULL;
+        char fake[64], real_str[64];
+        size_t fl, rl;
+        int k;
+
+        /* "Brand homoglyph: 'X' -> 'Y' (brand)" */
+        if (strncmp(r, "Brand homoglyph:", 16) == 0 &&
+            strstr(r, " -> '")) {
+            fake_s = strchr(r, '\'');
+            if (!fake_s) continue;
+            fake_s++;
+            fake_e = strchr(fake_s, '\'');
+            if (!fake_e) continue;
+            real_s = strstr(fake_e, "-> '");
+            if (!real_s) continue;
+            real_s += 4;
+            real_e = strchr(real_s, '\'');
+            if (!real_e) continue;
+        }
+        /* "Typosquat: 'X' is edit distance N from 'Y'"
+         * "Possible typosquat: 'X' is edit distance N from 'Y'" */
+        else if ((strncmp(r, "Typosquat:", 10) == 0 ||
+                  strncmp(r, "Possible typosquat:", 19) == 0) &&
+                 strstr(r, "from '")) {
+            fake_s = strchr(r, '\'');
+            if (!fake_s) continue;
+            fake_s++;
+            fake_e = strchr(fake_s, '\'');
+            if (!fake_e) continue;
+            real_s = strstr(fake_e, "from '");
+            if (!real_s) continue;
+            real_s += 6;
+            real_e = strchr(real_s, '\'');
+            if (!real_e) continue;
+        } else {
+            continue;
+        }
+
+        fl = (size_t)(fake_e - fake_s);
+        rl = (size_t)(real_e - real_s);
+        if (fl == 0 || fl >= sizeof(fake)) continue;
+        if (rl == 0 || rl >= sizeof(real_str)) continue;
+        memcpy(fake,     fake_s, fl); fake[fl]    = '\0';
+        memcpy(real_str, real_s, rl); real_str[rl] = '\0';
+
+        /* Skip if fake contains non-ASCII — hlse_confusable_report() covers it */
+        {
+            int has_non_ascii = 0;
+            for (k = 0; k < (int)fl; k++)
+                if ((unsigned char)fake[k] > 127) { has_non_ascii = 1; break; }
+            if (has_non_ascii) continue;
+        }
+
+        /* Find all differing positions (substitution case: fl == rl) */
+        if (fl == rl) {
+            int diff_positions[8];
+            int n_diffs = 0;
+            for (k = 0; k < (int)fl && n_diffs < 8; k++) {
+                if (fake[k] != real_str[k]) diff_positions[n_diffs++] = k;
+            }
+            if (n_diffs == 0) continue;
+            if (n_diffs == 1) {
+                int p = diff_positions[0];
+                snprintf(out, outsz,
+                         "'%s': char %d is %s '%c', masking %s '%c'",
+                         fake, p + 1,
+                         ascii_char_type(fake[p]), fake[p],
+                         ascii_char_type(real_str[p]), real_str[p]);
+            } else {
+                /* Multiple substitutions: report first two, note count */
+                int p0 = diff_positions[0];
+                int p1 = diff_positions[1];
+                snprintf(out, outsz,
+                         "'%s': char %d %s '%c'→'%c', char %d %s '%c'→'%c'%s",
+                         fake,
+                         p0 + 1, ascii_char_type(fake[p0]), fake[p0], real_str[p0],
+                         p1 + 1, ascii_char_type(fake[p1]), fake[p1], real_str[p1],
+                         n_diffs > 2 ? " (more)" : "");
+            }
+            return 1;
+        }
+
+        /* Insertion: fake has one extra character */
+        if (fl == rl + 1) {
+            int j = 0;
+            for (k = 0; k < (int)fl; k++) {
+                if (j >= (int)rl || fake[k] != real_str[j]) {
+                    snprintf(out, outsz,
+                             "'%s': extra %s '%c' at char %d",
+                             fake, ascii_char_type(fake[k]), fake[k], k + 1);
+                    return 1;
+                }
+                j++;
+            }
+            continue;
+        }
+
+        /* Deletion: real has one extra character */
+        if (rl == fl + 1) {
+            int j = 0;
+            for (k = 0; k < (int)rl; k++) {
+                if (j >= (int)fl || real_str[k] != fake[j]) {
+                    snprintf(out, outsz,
+                             "'%s': missing %s '%c' at char %d",
+                             fake, ascii_char_type(real_str[k]), real_str[k], k + 1);
+                    return 1;
+                }
+                j++;
+            }
+            continue;
+        }
+    }
+    return 0;
+}
+
 /* Name the Unicode script block a confusable codepoint belongs to, for the
  * human-readable forensic report. */
 static const char *
@@ -3407,11 +3565,13 @@ print_json_url(const char *url, const Verdict *v) {
     const char *tri = hlse_triage_for(v);
     const char *cas = hlse_cascade_risk(v);
     char obj_buf[320] = "";
+    char asc_diff_buf[256] = "";
     char esc_pat[256] = "";
     char esc_obj[320] = "";
     char esc_vrf[512] = "";
     char esc_tri[512] = "";
     char esc_cas[512] = "";
+    char esc_asc[384] = "";
     char safe[MAX_URL];
     char esc_safe[MAX_URL * 2] = "";
     char conf[160];
@@ -3420,14 +3580,16 @@ print_json_url(const char *url, const Verdict *v) {
     int  has_obj    = hlse_compound_objective(v, obj_buf, sizeof(obj_buf));
     int  has_safe   = hlse_safe_destination(v, safe, sizeof(safe));
     int  has_conf   = hlse_confusable_report(url, conf, sizeof(conf));
+    int  has_asc    = hlse_ascii_diff(v, asc_diff_buf, sizeof(asc_diff_buf));
     int  has_canon  = (v->score == 0) &&
                       hlse_canonical_confirm(url, canon_brand, sizeof(canon_brand));
     json_escape(url, escaped_url, sizeof(escaped_url));
-    if (pat)     json_escape(pat,     esc_pat,  sizeof(esc_pat));
-    if (has_obj) json_escape(obj_buf, esc_obj,  sizeof(esc_obj));
-    if (vrf)     json_escape(vrf,     esc_vrf,  sizeof(esc_vrf));
-    if (tri)     json_escape(tri,     esc_tri,  sizeof(esc_tri));
-    if (cas)     json_escape(cas,     esc_cas,  sizeof(esc_cas));
+    if (pat)     json_escape(pat,          esc_pat,  sizeof(esc_pat));
+    if (has_obj) json_escape(obj_buf,      esc_obj,  sizeof(esc_obj));
+    if (vrf)     json_escape(vrf,          esc_vrf,  sizeof(esc_vrf));
+    if (tri)     json_escape(tri,          esc_tri,  sizeof(esc_tri));
+    if (cas)     json_escape(cas,          esc_cas,  sizeof(esc_cas));
+    if (has_asc) json_escape(asc_diff_buf, esc_asc,  sizeof(esc_asc));
     if (has_safe) json_escape(safe, esc_safe, sizeof(esc_safe));
     if (has_conf) json_escape(conf, esc_conf, sizeof(esc_conf));
     printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
@@ -3436,6 +3598,7 @@ print_json_url(const char *url, const Verdict *v) {
     if (pat)        printf(",\"pattern\":\"%s\"", esc_pat);
     if (has_obj)    printf(",\"objective\":\"%s\"", esc_obj);
     if (has_conf)   printf(",\"confusable\":\"%s\"", esc_conf);
+    if (has_asc)    printf(",\"ascii_diff\":\"%s\"", esc_asc);
     if (has_safe)   printf(",\"safe_url\":\"%s\"", esc_safe);
     if (vrf)        printf(",\"verify\":\"%s\"", esc_vrf);
     if (tri)        printf(",\"triage\":\"%s\"", esc_tri);
@@ -3508,9 +3671,12 @@ print_url_advisories(const char *url, const Verdict *uv) {
     char obj_buf[320];
     char safe[MAX_URL];
     char conf[160];
+    char asc_diff[256];
     if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
     if (hlse_confusable_report(url, conf, sizeof(conf)))
         printf("  \xe2\x8c\x96 Disguised char: %s\n", conf);
+    if (hlse_ascii_diff(uv, asc_diff, sizeof(asc_diff)))
+        printf("  \xe2\x8c\x96 ASCII lookalike: %s\n", asc_diff);
     if (hlse_compound_objective(uv, obj_buf, sizeof(obj_buf)))
         printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj_buf);
     if (hlse_safe_destination(uv, safe, sizeof(safe)))

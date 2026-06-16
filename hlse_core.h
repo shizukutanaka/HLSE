@@ -27,7 +27,7 @@
 #include <stddef.h>   /* size_t, for hlse_safe_destination() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.18"
+#define HLSE_VERSION "1.0.19"
 
 #ifdef __cplusplus
 extern "C" {
@@ -120,6 +120,15 @@ int hlse_compound_objective(const Verdict *v, char *out, size_t outsz);
  * Returns 1 when a disguised character is found, 0 otherwise. Only raw IDN /
  * mixed-script hosts report; pure-ASCII homoglyphs and xn-- punycode do not. */
 int hlse_confusable_report(const char *url, char *out, size_t outsz);
+
+/* Pinpoint ASCII lookalike substitutions in a typosquat or ASCII homoglyph
+ * verdict — the character-level proof that complements hlse_confusable_report
+ * (which only fires for non-ASCII). Parses "Brand homoglyph: 'X' -> 'Y'" and
+ * "Typosquat: 'X' is edit distance N from 'Y'" reasons; reports every
+ * differing position with its character type (digit/letter/hyphen). Skips
+ * reasons where the fake string contains non-ASCII bytes. Writes a one-line
+ * summary into `out` (caller-owned); returns 1 when found, 0 otherwise. */
+int hlse_ascii_diff(const Verdict *v, char *out, size_t outsz);
 
 /* The single best independent check to confirm an actionable URL verdict
  * without trusting HLSE — the high-confidence (score >= 60) mirror of

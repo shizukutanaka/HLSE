@@ -2,6 +2,29 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.19] — 2026-06-16
+
+### Added
+- **Perspective 20: ASCII lookalike character diff (`hlse_ascii_diff`).**
+  Socratic question: "You report 'paypa1' vs 'paypal' as a homoglyph and your
+  own verify guidance says 'compare the address bar character by character' —
+  without saying WHICH character. In a proportional-font browser, digit '1' and
+  letter 'l' are visually indistinguishable. What if you pointed to EXACTLY
+  which position is the impostor: 'char 6 is digit 1, masking letter l'? That
+  turns 'edit distance 1' from an abstract metric into proof the user can
+  physically verify in their address bar right now." New `hlse_ascii_diff(const
+  Verdict *v, char *out, size_t outsz)` (public API, caller-owned buffer) parses
+  `"Brand homoglyph: 'X' -> 'Y'"` and `"Typosquat: 'X' is edit distance N from
+  'Y'"` reasons, aligns the two strings character by character, and reports every
+  differing position with its character type (digit/letter/hyphen). For single
+  substitutions: `"'paypa1.com': char 6 is digit '1', masking letter 'l'"`. For
+  multiple (e.g., `g00gle`): `"'g00gle.com': char 2 digit '0'→'o', char 3 digit
+  '0'→'o'"`. Deliberately skips reasons where the fake string contains non-ASCII
+  bytes — those are covered by `hlse_confusable_report()` with richer Unicode
+  context. Displayed as `⌖ ASCII lookalike:` after `⌖ Disguised char:` in text
+  output; added as `"ascii_diff"` field in JSON. 8 new CLI integration tests
+  (248 total). F1 = 1.000 preserved; zero warnings.
+
 ## [1.0.18] — 2026-06-16
 
 ### Added

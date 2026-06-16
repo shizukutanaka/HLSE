@@ -1556,6 +1556,58 @@ assert "financial" in obj, obj
 ' && check "p19 json: single-brand objective unchanged" "0" "0" \
    || check "p19 json: single-brand objective unchanged" "0" "1"
 
+# ─── Perspective 20: ASCII Lookalike Character Diff ─────────────────────────
+
+# Socratic question: "You say 'compare the address bar character by character'
+# without saying WHICH character. What if you pointed to EXACTLY which
+# position is the impostor? That turns abstract 'edit distance 1' into proof."
+
+# paypa1.com: char 6 is digit '1' masking letter 'l'
+P20_PAYPA1=$(./hlse_core "https://paypa1.com/login" 2>/dev/null) || true
+echo "$P20_PAYPA1" | grep -q "ASCII lookalike" \
+    && check "p20: paypa1 shows ASCII lookalike line" "0" "0" \
+    || check "p20: paypa1 shows ASCII lookalike line" "0" "1"
+
+echo "$P20_PAYPA1" | grep "ASCII lookalike" | grep -q "char 6" \
+    && check "p20: paypa1 pinpoints char 6" "0" "0" \
+    || check "p20: paypa1 pinpoints char 6" "0" "1"
+
+echo "$P20_PAYPA1" | grep "ASCII lookalike" | grep -q "digit.*1.*masking.*letter.*l" \
+    && check "p20: paypa1 labels digit masking letter" "0" "0" \
+    || check "p20: paypa1 labels digit masking letter" "0" "1"
+
+# g00gle.com: chars 2 and 3 are digit '0' masking 'o'
+P20_G00GLE=$(./hlse_core "https://g00gle.com" 2>/dev/null) || true
+echo "$P20_G00GLE" | grep -q "ASCII lookalike" \
+    && check "p20: g00gle shows ASCII lookalike line" "0" "0" \
+    || check "p20: g00gle shows ASCII lookalike line" "0" "1"
+
+echo "$P20_G00GLE" | grep "ASCII lookalike" | grep -q "char 2" \
+    && check "p20: g00gle pinpoints char 2" "0" "0" \
+    || check "p20: g00gle pinpoints char 2" "0" "1"
+
+# Non-ASCII host: must NOT fire (hlse_confusable_report handles it)
+P20_IDN=""; P20_IDN=$(./hlse_core "https://www.xn--pypal-4ve.com" 2>/dev/null) || true
+echo "$P20_IDN" | grep -q "ASCII lookalike" \
+    && check "p20: non-ASCII host skips ascii_diff" "0" "1" \
+    || check "p20: non-ASCII host skips ascii_diff" "0" "0"
+
+# Clean URL: no ASCII lookalike line
+P20_CLEAN=$(./hlse_core "https://paypal.com" 2>/dev/null) || true
+echo "$P20_CLEAN" | grep -q "ASCII lookalike" \
+    && check "p20: safe URL no ascii diff" "0" "1" \
+    || check "p20: safe URL no ascii diff" "0" "0"
+
+# JSON: ascii_diff field present for homoglyph URL
+P20_JSON=$(./hlse_core --json "https://paypa1.com/login" 2>/dev/null) || true
+echo "$P20_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "ascii_diff" in d, d
+assert "char 6" in d["ascii_diff"], d["ascii_diff"]
+' && check "p20 json: ascii_diff field has char 6" "0" "0" \
+   || check "p20 json: ascii_diff field has char 6" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
