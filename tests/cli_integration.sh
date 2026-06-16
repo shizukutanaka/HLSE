@@ -921,6 +921,68 @@ assert d["kind"] == "clipboard" and d["is_swap"] == 1 and d["score"] == 100
 ' && check "--json clipboard vanity → score 100" "0" "0" \
    || check "--json clipboard vanity → score 100" "0" "1"
 
+# ─── Perspective 15: Incident triage ("if you already clicked") ─────────────
+# Socratic Q: "People typically notice something's wrong AFTER submitting
+# credentials. At that moment 'BLOCK' is useless — they need triage: what to
+# do in the next 60 seconds to minimise damage."
+
+# BLOCK-band payment brand → financial card-block triage
+TRI_PAY=$(./hlse_core "https://paypa1.com/login" 2>/dev/null) || true
+echo "$TRI_PAY" | grep -q "If already clicked:" \
+    && check "triage: BLOCK brand → triage line shown" "0" "0" \
+    || check "triage: BLOCK brand → triage line shown" "0" "1"
+echo "$TRI_PAY" | grep -q "card" \
+    && check "triage: payment brand → card-block guidance" "0" "0" \
+    || check "triage: payment brand → card-block guidance" "0" "1"
+
+# BLOCK-band corporate SSO → IT-team notification triage
+TRI_SSO=$(./hlse_core "https://okta-enterprise-login.com/signin" 2>/dev/null) || true
+echo "$TRI_SSO" | grep -q "IT/security team" \
+    && check "triage: corporate SSO → IT-team notification" "0" "0" \
+    || check "triage: corporate SSO → IT-team notification" "0" "1"
+
+# ALERT-band URL (<60) → NO triage line (band boundary must be respected)
+TRI_ALERT=$(./hlse_core "https://g00gle.com" 2>/dev/null) || true
+echo "$TRI_ALERT" | grep -q "If already clicked" \
+    && check "triage: absent below score 60" "0" "1" \
+    || check "triage: absent below score 60" "0" "0"
+
+# Clean URL → no triage line
+TRI_CLEAN=$(./hlse_core "https://example.com" 2>/dev/null) || true
+echo "$TRI_CLEAN" | grep -q "If already clicked" \
+    && check "triage: absent for clean URL" "0" "1" \
+    || check "triage: absent for clean URL" "0" "0"
+
+# Text input → no triage line
+TRI_TXT=$(./hlse_core text "URGENT wire transfer now" 2>/dev/null) || true
+echo "$TRI_TXT" | grep -q "If already clicked" \
+    && check "triage: absent for text input" "0" "1" \
+    || check "triage: absent for text input" "0" "0"
+
+# JSON exposes the triage field for a BLOCK-band URL
+TRI_JSON=""; TRI_JSON=$(./hlse_core --json "https://paypa1.com/login" 2>/dev/null) || true
+echo "$TRI_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d.get("triage"), d
+' && check "triage json: triage field present (BLOCK)" "0" "0" \
+   || check "triage json: triage field present (BLOCK)" "0" "1"
+
+# JSON omits triage for an ALERT-band URL
+TRI_ALERT_JSON=""; TRI_ALERT_JSON=$(./hlse_core --json "https://g00gle.com" 2>/dev/null) || true
+echo "$TRI_ALERT_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "triage" not in d, d
+' && check "triage json: absent below score 60" "0" "0" \
+   || check "triage json: absent below score 60" "0" "1"
+
+# stdin pipe mode emits triage for a BLOCK-band URL
+TRI_STDIN=$(echo "https://paypa1.com/login" | ./hlse_core --stdin 2>/dev/null) || true
+echo "$TRI_STDIN" | grep -q "If already clicked:" \
+    && check "triage stdin: triage line shown" "0" "0" \
+    || check "triage stdin: triage line shown" "0" "1"
+
 # ─── Perspective 14: Independent verification ("how to check me") ──────────
 # Socratic Q: "What ONE check can the user run right now — without trusting
 # HLSE — to confirm the verdict before they act?" High-confidence (>=60)

@@ -27,7 +27,7 @@
 #include <stddef.h>   /* size_t, for hlse_safe_destination() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.12"
+#define HLSE_VERSION "1.0.13"
 
 #ifdef __cplusplus
 extern "C" {
@@ -118,6 +118,12 @@ int hlse_confusable_report(const char *url, char *out, size_t outsz);
  * the short link before opening it"). Returns a static string, or NULL when
  * score < 60. */
 const char *hlse_verification_for(const Verdict *v);
+
+/* First-response triage for the post-click user — what to do in the next
+ * 60 seconds to minimise damage (score >= 60 only). Keyed to the same
+ * brand-objective class as hlse_attacker_objective so the guidance matches
+ * the specific asset at risk. Returns a static string, or NULL when score < 60. */
+const char *hlse_triage_for(const Verdict *v);
 
 /* Library version string (compiled-in). */
 const char *hlse_version(void);

@@ -2,6 +2,34 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.13] — 2026-06-16
+
+### Added
+- **Incident triage — the "if you already clicked" lens**
+  (NEW-PERSPECTIVE-TRIAGE). Socratic question: "The verdict assumes the user
+  saw HLSE's output BEFORE clicking. But people typically notice something's
+  wrong AFTER submitting credentials. At that moment 'BLOCK' and a list of
+  structural reasons is useless — they need triage: what to do in the next 60
+  seconds to minimise damage. Does HLSE serve the post-click user at all?"
+  All prior perspectives serve the decision-point (before or during): blind
+  spot, exoneration, and verify are pre-click; pattern, objective, and safe
+  destination are also pre-action. The post-click user needs an entirely
+  different answer. New `hlse_triage_for(const Verdict *)` (public API) emits
+  first-response triage keyed to the same brand-objective class as
+  `hlse_attacker_objective`, so the guidance matches the specific asset at
+  risk: crypto seed phrase → move funds to a new wallet immediately (irrevers-
+  ible); financial/banking → call the card-back number to block; identity/email
+  → change password and revoke sessions (resets everything); corporate SSO →
+  notify IT within minutes (lateral movement window); social → change password
+  and warn contacts (next target); telecom → add SIM-lock PIN; AI/API key →
+  revoke in provider console; gaming → enable 2FA now. Fires only at score >=
+  60 (BLOCK/ISOLATE), so it never fires in the same verdict as exoneration
+  (15..59). Human output gains a `⚑ If already clicked: <triage>` line; JSON
+  gains a `"triage"` field. Pure output, zero scoring change: F1 = 1.000
+  preserved. 9 new CLI integration tests cover payment/corporate/crypto
+  categories, the band boundary (absent at ALERT), JSON field presence/absence,
+  the clean/text negatives, and stdin pipe.
+
 ## [1.0.12] — 2026-06-15
 
 ### Added

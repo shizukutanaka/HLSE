@@ -2479,6 +2479,71 @@ hlse_verification_for(const Verdict *v) {
            "by this message";
 }
 
+/* First-response triage for the post-click user — what to do in the next
+ * 60 seconds to minimise damage.
+ *
+ * Socratic question: "The verdict assumes the user saw HLSE's output BEFORE
+ * clicking. But people typically notice something's wrong AFTER submitting
+ * credentials. At that moment 'BLOCK' and a list of structural reasons is
+ * useless — they need triage: what to do right now. Does HLSE serve the
+ * post-click user at all?"
+ *
+ * This is the temporal complement: verify (before) → triage (after). Derived
+ * from the same brand-objective class as hlse_attacker_objective so the
+ * action directly matches the asset at risk. Only fires at score >= 60 where
+ * the verdict is confident enough to warrant incident-response guidance.
+ * Returns a static string, or NULL when score < 60.                         */
+const char *
+hlse_triage_for(const Verdict *v) {
+    const char *obj;
+    if (!v || v->score < 60) return NULL;
+    obj = hlse_attacker_objective(v);
+    if (!obj)
+        return "change the password for this account, enable 2FA if not already "
+               "active, and check recent login activity for unauthorised sessions";
+    if (strstr(obj, "crypto") || strstr(obj, "seed phrase") || strstr(obj, "wallet"))
+        return "if you entered a seed phrase or private key, move remaining assets "
+               "to a new wallet immediately \xe2\x80\x94 crypto transfers cannot be "
+               "reversed or frozen; the compromised wallet is permanently lost";
+    if (strstr(obj, "password-vault"))
+        return "change your master password now and rotate every credential stored "
+               "in the vault \xe2\x80\x94 a compromised vault is a skeleton key to "
+               "every account you manage";
+    if (strstr(obj, "financial") || strstr(obj, "funds"))
+        return "call the number on the back of your card or the banking app "
+               "immediately to block it and dispute any pending transactions";
+    if (strstr(obj, "identity") || strstr(obj, "keystone"))
+        return "change your email password, revoke all active sessions (usually "
+               "in Security settings), and audit account-recovery options now "
+               "\xe2\x80\x94 this account can reset every other";
+    if (strstr(obj, "corporate") || strstr(obj, "employer"))
+        return "notify your IT/security team immediately \xe2\x80\x94 enterprise "
+               "SSO compromise enables lateral movement into your organisation's "
+               "systems and must be contained within minutes";
+    if (strstr(obj, "social") || strstr(obj, "contact-list"))
+        return "revoke active sessions, change your password, and warn your "
+               "contacts right now \xe2\x80\x94 attackers use hijacked accounts to "
+               "target your network next";
+    if (strstr(obj, "SIM-swap") || strstr(obj, "telecom"))
+        return "call your carrier immediately to add a SIM-lock PIN \xe2\x80\x94 "
+               "a SIM-swap defeats every SMS-based 2FA code across all accounts";
+    if (strstr(obj, "API-key") || strstr(obj, "AI"))
+        return "revoke the affected API key in the provider console now "
+               "\xe2\x80\x94 a live key incurs billed usage every second until "
+               "revoked and may expose your data";
+    if (strstr(obj, "gaming"))
+        return "change your account password and enable 2FA now \xe2\x80\x94 "
+               "gaming accounts are listed for sale within minutes of compromise";
+    if (strstr(obj, "subscription") || strstr(obj, "stored payment"))
+        return "remove saved payment methods from the account and change your "
+               "password; check for unauthorised subscription charges";
+    if (strstr(obj, "delivery-fee"))
+        return "if you entered card details on the fake delivery page, call the "
+               "number on the back of the card immediately to block it";
+    return "change the password for this account, enable 2FA if not already "
+           "active, and check recent login activity for unauthorised sessions";
+}
+
 /* ───────────────── blast-radius / asset-class correlation ─────────────────
  * A leaked credential's danger is not its count but what the *set* of leaked
  * credentials collectively unlocks. We bucket each secret-finding type into a
@@ -3083,9 +3148,11 @@ print_json_url(const char *url, const Verdict *v) {
     const char *pat = hlse_classify_url_attack(v);
     const char *obj = hlse_attacker_objective(v);
     const char *vrf = hlse_verification_for(v);
+    const char *tri = hlse_triage_for(v);
     char esc_pat[256] = "";
     char esc_obj[256] = "";
     char esc_vrf[512] = "";
+    char esc_tri[512] = "";
     char safe[MAX_URL];
     char esc_safe[MAX_URL * 2] = "";
     char conf[160];
@@ -3096,6 +3163,7 @@ print_json_url(const char *url, const Verdict *v) {
     if (pat) json_escape(pat, esc_pat, sizeof(esc_pat));
     if (obj) json_escape(obj, esc_obj, sizeof(esc_obj));
     if (vrf) json_escape(vrf, esc_vrf, sizeof(esc_vrf));
+    if (tri) json_escape(tri, esc_tri, sizeof(esc_tri));
     if (has_safe) json_escape(safe, esc_safe, sizeof(esc_safe));
     if (has_conf) json_escape(conf, esc_conf, sizeof(esc_conf));
     printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
@@ -3105,6 +3173,7 @@ print_json_url(const char *url, const Verdict *v) {
     if (has_conf) printf(",\"confusable\":\"%s\"", esc_conf);
     if (has_safe) printf(",\"safe_url\":\"%s\"", esc_safe);
     if (vrf) printf(",\"verify\":\"%s\"", esc_vrf);
+    if (tri) printf(",\"triage\":\"%s\"", esc_tri);
     if (g_from_channel) {
         int d   = channel_delta(g_from_channel);
         int eff = v->score + d; if (eff > 100) eff = 100;
@@ -3206,6 +3275,7 @@ stdin_mode(int json_out) {
                 const char *pat = hlse_classify_url_attack(&uv);
                 const char *obj = hlse_attacker_objective(&uv);
                 const char *vrf = hlse_verification_for(&uv);
+                const char *tri = hlse_triage_for(&uv);
                 char safe[MAX_URL];
                 char conf[160];
                 if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
@@ -3215,6 +3285,7 @@ stdin_mode(int json_out) {
                 if (hlse_safe_destination(&uv, safe, sizeof(safe)))
                     printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
                 if (vrf) printf("  \xe2\x9c\x93 Verify independently: %s\n", vrf);
+                if (tri) printf("  \xe2\x9a\x91 If already clicked: %s\n", tri);
             }
             if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
         }
@@ -4279,6 +4350,7 @@ main(int argc, char **argv) {
                     const char *pat = hlse_classify_url_attack(&uv);
                     const char *obj = hlse_attacker_objective(&uv);
                     const char *vrf = hlse_verification_for(&uv);
+                    const char *tri = hlse_triage_for(&uv);
                     char safe[MAX_URL];
                     char conf[160];
                     if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
@@ -4288,6 +4360,7 @@ main(int argc, char **argv) {
                     if (hlse_safe_destination(&uv, safe, sizeof(safe)))
                         printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
                     if (vrf) printf("  \xe2\x9c\x93 Verify independently: %s\n", vrf);
+                    if (tri) printf("  \xe2\x9a\x91 If already clicked: %s\n", tri);
                 }
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }
@@ -4351,6 +4424,7 @@ main(int argc, char **argv) {
                 const char *pat = hlse_classify_url_attack(&uv);
                 const char *obj = hlse_attacker_objective(&uv);
                 const char *vrf = hlse_verification_for(&uv);
+                const char *tri = hlse_triage_for(&uv);
                 char safe[MAX_URL];
                 char conf[160];
                 if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
@@ -4360,6 +4434,7 @@ main(int argc, char **argv) {
                 if (hlse_safe_destination(&uv, safe, sizeof(safe)))
                     printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
                 if (vrf) printf("  \xe2\x9c\x93 Verify independently: %s\n", vrf);
+                if (tri) printf("  \xe2\x9a\x91 If already clicked: %s\n", tri);
             }
             if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
             if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
