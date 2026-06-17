@@ -4172,9 +4172,29 @@ stdin_mode(int json_out) {
                 printf("  \xc2\xb7 %s\n", sr.reasons[i]);  /* · */
             if (sr.is_url) {
                 Verdict uv = check_url(line);
+                const char *url_ex = hlse_url_exoneration(&uv);
                 print_url_advisories(line, &uv);
+                if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
+                if (url_ex) printf("  \xe2\x86\xba Could be benign: %s\n", url_ex);
+            } else {
+                TextVerdict tv;
+                const char *tpat;
+                const char *tex;
+                int ti;
+                memset(&tv, 0, sizeof(tv));
+                tv.score = sr.score;
+                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
+                               ? sr.n_reasons
+                               : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
+                for (ti = 0; ti < tv.n_reasons; ti++)
+                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
+                             "%s", sr.reasons[ti]);
+                tpat = hlse_classify_text_attack(&tv);
+                tex  = hlse_exoneration_for("text", eff);
+                if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
+                if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
+                if (tex) printf("  \xe2\x86\xba Could be benign: %s\n", tex);
             }
-            if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
         }
         /* Gate uses effective score (raw + channel boost) so that e.g.
          * --from qr raises exit 0 → exit 1 when boost crosses the threshold. */

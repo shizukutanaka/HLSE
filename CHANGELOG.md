@@ -2,6 +2,21 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.26] — 2026-06-17
+
+### Fixed
+- **Stdin pipe mode text advisory consistency.** The `--stdin` pipe mode showed
+  `▸ Pattern:` and `↺ Could be benign:` for URL inputs (via `print_url_advisories`)
+  but silently omitted both for text inputs. A `LOG [25] "your account is
+  suspended"` line in stdin mode showed only the raw reason string with no
+  pattern label and no exoneration — while the `text` subcommand and default
+  auto-detect paths both showed them. The stdin text branch now builds a
+  `TextVerdict` from the `ScanResult`, calls `hlse_classify_text_attack()` for
+  the pattern, and calls `hlse_exoneration_for("text", score)` for the benign
+  explanation, matching the output of all other text display paths. URL inputs
+  in stdin mode now also show the pattern-aware `hlse_url_exoneration()` result.
+  Zero warnings. F1 = 1.000 preserved.
+
 ## [1.0.25] — 2026-06-17
 
 ### Added
