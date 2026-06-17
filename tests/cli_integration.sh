@@ -1829,6 +1829,45 @@ assert "(2)" in val, val
     && check "p24: safe URL has no exoneration" "0" "0" \
     || check "p24: safe URL has no exoneration" "0" "1"
 
+# ─── Perspective 25: text attack pattern classification ───────────────────────
+# Text urgency phishing: shows ▸ Pattern: line
+./hlse_core text "Your account has been suspended! Verify immediately - urgent action required" 2>/dev/null \
+    | grep -q "Pattern:" \
+    && check "p25: text urgency shows pattern line" "0" "0" \
+    || check "p25: text urgency shows pattern line" "0" "1"
+
+# Text BEC: shows BEC pattern label
+./hlse_core text "Hi this is the CEO, please wire 50000 to this account immediately, keep it confidential" 2>/dev/null \
+    | grep "Pattern:" \
+    | grep -qi "BEC\|CEO" \
+    && check "p25: BEC message labelled BEC/CEO" "0" "0" \
+    || check "p25: BEC message labelled BEC/CEO" "0" "1"
+
+# Text urgency: pattern label contains relevant word
+./hlse_core text "Your account has been suspended! Verify immediately - urgent action required" 2>/dev/null \
+    | grep "Pattern:" \
+    | grep -qi "urgency\|credential\|phishing" \
+    && check "p25: urgency text has matching pattern label" "0" "0" \
+    || check "p25: urgency text has matching pattern label" "0" "1"
+
+# Safe text: no ▸ Pattern line
+./hlse_core text "Meeting at 3pm tomorrow" 2>/dev/null \
+    | grep -qv "Pattern:" \
+    && check "p25: safe text has no pattern line" "0" "0" \
+    || check "p25: safe text has no pattern line" "0" "1"
+
+# JSON text: pattern field present for threat
+./hlse_core --json text "Hi this is the CEO, please wire 50000 to this account immediately, keep it confidential" 2>/dev/null \
+    | python3 -c 'import sys,json; d=json.loads(sys.stdin.read()); assert "pattern" in d and d["pattern"], d' \
+    && check "p25 json: text threat has pattern field" "0" "0" \
+    || check "p25 json: text threat has pattern field" "0" "1"
+
+# JSON text: pattern field absent for safe text
+./hlse_core --json text "Meeting at 3pm tomorrow" 2>/dev/null \
+    | python3 -c 'import sys,json; d=json.loads(sys.stdin.read()); assert "pattern" not in d, d' \
+    && check "p25 json: safe text has no pattern field" "0" "0" \
+    || check "p25 json: safe text has no pattern field" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

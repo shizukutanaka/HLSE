@@ -25,9 +25,10 @@
 #define HLSE_CORE_H
 
 #include <stddef.h>   /* size_t, for hlse_safe_destination() */
+#include "hlse_text.h" /* TextVerdict, for hlse_classify_text_attack() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.23"
+#define HLSE_VERSION "1.0.24"
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,6 +96,13 @@ const char *hlse_url_exoneration(const Verdict *v);
  * is found. The label is always a short phrase — display it as a summary
  * line after the per-signal reasons. */
 const char *hlse_classify_url_attack(const Verdict *v);
+
+/* Synthesise a named social-engineering attack-pattern label from the signals
+ * in a text verdict (e.g. "BEC / CEO-fraud wire-transfer", "urgency
+ * credential-harvest phishing", "ClickFix script-injection lure"). This is the
+ * text counterpart of hlse_classify_url_attack. Returns NULL when score is 0
+ * or no recognisable pattern was found. Thread-safe; no allocation. */
+const char *hlse_classify_text_attack(const TextVerdict *v);
 
 /* Recover the safe destination a user actually wanted from a URL Verdict.
  * When a brand was impersonated, HLSE already knows the authentic domain (it

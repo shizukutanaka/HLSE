@@ -2284,6 +2284,86 @@ hlse_classify_url_attack(const Verdict *v) {
     return NULL;
 }
 
+/* Synthesise a named social-engineering attack pattern from the signals in a
+ * text verdict — the text counterpart of hlse_classify_url_attack.
+ *
+ * Socratic question (Perspective 25): "hlse_classify_url_attack gives URL
+ * verdicts a ▸ Pattern: label ('typosquat credential-harvest', 'authority-trick
+ * credential phishing', etc.). Text verdicts above score 0 show only raw reason
+ * strings and a generic exoneration. A BEC wire-transfer fraud and a grandparent
+ * emergency scam both say 'Urgency pressure (N hits)' — but they need entirely
+ * different responses: one requires immediate CFO verification, the other
+ * requires calling the family member directly. Shouldn't text verdicts also name
+ * the attack pattern so the response is directed to the right playbook?"
+ *
+ * Scans the reasons[] for amplifier labels and individual signal names to
+ * identify the dominant tactic. Priority order mirrors threat severity.
+ * Returns a short label or NULL when no signals fired. Thread-safe; no alloc. */
+const char *
+hlse_classify_text_attack(const TextVerdict *v) {
+    int i;
+    int urgency = 0, bait = 0, prize = 0, ransom = 0, authority = 0;
+    int secrecy = 0, investment = 0, qr = 0, callback = 0;
+    int emergency = 0, clickfix = 0;
+    int amp_bec = 0, amp_tss = 0, amp_ceo = 0, amp_laf = 0;
+
+    if (!v || v->n_reasons == 0) return NULL;
+
+    for (i = 0; i < v->n_reasons; i++) {
+        const char *r = v->reasons[i];
+        if (strstr(r, "Urgency pressure"))           urgency    = 1;
+        if (strstr(r, "Financial/credential"))        bait       = 1;
+        if (strstr(r, "Prize/reward"))                prize      = 1;
+        if (strstr(r, "Ransom") || strstr(r, "ransom")) ransom   = 1;
+        if (strstr(r, "Authority impersonation"))     authority  = 1;
+        if (strstr(r, "Secrecy/grooming"))            secrecy    = 1;
+        if (strstr(r, "Investment scam"))             investment = 1;
+        if (strstr(r, "QR code phishing"))            qr         = 1;
+        if (strstr(r, "Callback") || strstr(r, "TOAD") ||
+            strstr(r, "smishing"))                    callback   = 1;
+        if (strstr(r, "Emergency") || strstr(r, "grandparent")) emergency = 1;
+        if (strstr(r, "ClickFix"))                    clickfix   = 1;
+        /* Amplifier pattern labels */
+        if (strstr(r, "BEC") || strstr(r, "wire transfer"))  amp_bec = 1;
+        if (strstr(r, "tech-support") || strstr(r, "gift card")) amp_tss = 1;
+        if (strstr(r, "CEO-fraud"))                           amp_ceo = 1;
+        if (strstr(r, "lottery") || strstr(r, "advance-fee")) amp_laf = 1;
+    }
+
+    /* Specific amplifier patterns take priority over individual signals */
+    if (clickfix)
+        return "ClickFix script-injection lure (paste-and-run attack)";
+    if (amp_ceo || (authority && secrecy && bait))
+        return "BEC / CEO-fraud wire-transfer";
+    if (amp_bec || (urgency && bait && authority))
+        return "business email compromise (BEC) wire-transfer fraud";
+    if (amp_tss || (urgency && bait && strstr(v->reasons[0], "gift")))
+        return "tech-support gift-card scam";
+    if (amp_laf || (prize && bait))
+        return "lottery / advance-fee fraud";
+    if (ransom)
+        return "ransom / extortion message";
+    if (investment)
+        return "investment scam / pig-butchering";
+    if (emergency)
+        return "emergency impersonation scam (grandparent / fake-kidnapping)";
+    if (qr)
+        return "QR-code phishing (quishing)";
+    if (callback)
+        return "callback phone scam (TOAD / vishing)";
+    if (authority && urgency)
+        return "authority impersonation phishing";
+    if (urgency && bait)
+        return "urgency credential-harvest phishing";
+    if (urgency)
+        return "urgency social engineering";
+    if (bait)
+        return "credential / payment lure";
+    if (prize)
+        return "prize lure / fraud bait";
+    return NULL;
+}
+
 /* Count how many INDEPENDENT detector families corroborate a URL verdict, and
  * map that to a qualitative confidence label.
  *
@@ -3957,6 +4037,8 @@ static void
 print_json_text(const char *text, const TextVerdict *v) {
     char esc[1024];
     char preview[256];
+    const char *pat = hlse_classify_text_attack(v);
+    char esc_pat[256] = "";
     /* Truncate long text for the JSON preview */
     {
         size_t n = strlen(text);
@@ -3965,8 +4047,11 @@ print_json_text(const char *text, const TextVerdict *v) {
         preview[n] = '\0';
     }
     json_escape(preview, esc, sizeof(esc));
-    printf("{\"kind\":\"text\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\",\"reasons\":[",
+    if (pat) json_escape(pat, esc_pat, sizeof(esc_pat));
+    printf("{\"kind\":\"text\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
            esc, v->score, hlse_text_action_for_score(v->score));
+    if (pat) printf(",\"pattern\":\"%s\"", esc_pat);
+    printf(",\"reasons\":[");
     {
         int i;
         for (i = 0; i < v->n_reasons; i++) {
@@ -5157,6 +5242,19 @@ main(int argc, char **argv) {
                     print_url_advisories(argv[idx + 1], &uv);
                     ex = hlse_url_exoneration(&uv);
                 } else {
+                    TextVerdict tv;
+                    const char *tpat;
+                    int ti;
+                    memset(&tv, 0, sizeof(tv));
+                    tv.score = sr.score;
+                    tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
+                                   ? sr.n_reasons
+                                   : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
+                    for (ti = 0; ti < tv.n_reasons; ti++)
+                        snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
+                                 "%s", sr.reasons[ti]);
+                    tpat = hlse_classify_text_attack(&tv);
+                    if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
                     ex = hlse_exoneration_for("text", sr.score);
                 }
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
@@ -5226,7 +5324,21 @@ main(int argc, char **argv) {
                 if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             } else {
-                const char *ex = hlse_exoneration_for("text", eff);
+                TextVerdict tv;
+                const char *tpat;
+                const char *ex;
+                int ti;
+                memset(&tv, 0, sizeof(tv));
+                tv.score = sr.score;
+                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
+                               ? sr.n_reasons
+                               : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
+                for (ti = 0; ti < tv.n_reasons; ti++)
+                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
+                             "%s", sr.reasons[ti]);
+                tpat = hlse_classify_text_attack(&tv);
+                ex   = hlse_exoneration_for("text", eff);
+                if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
                 if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }

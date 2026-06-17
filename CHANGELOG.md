@@ -2,6 +2,39 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.24] — 2026-06-17
+
+### Added
+- **Perspective 25: Text attack pattern classification (`hlse_classify_text_attack`).**
+  Socratic question: "`hlse_classify_url_attack` gives URL verdicts a `▸ Pattern:`
+  label ('typosquat credential-harvest', 'authority-trick credential phishing').
+  Text verdicts above score 0 show only raw reason strings and a generic
+  exoneration. A BEC wire-transfer fraud and a grandparent emergency scam both
+  say 'Urgency pressure (N hits)' — but they need entirely different responses:
+  BEC requires immediate CFO chain verification; grandparent scam requires
+  calling the family member directly. Shouldn't text verdicts also name the
+  attack pattern so the response is directed to the right playbook?"
+  New `hlse_classify_text_attack(const TextVerdict *v)` (public API) scans
+  reason strings for signal names and amplifier labels, then maps them to a
+  named tactic in priority order:
+  - `ClickFix script-injection lure (paste-and-run attack)`
+  - `BEC / CEO-fraud wire-transfer`
+  - `business email compromise (BEC) wire-transfer fraud`
+  - `tech-support gift-card scam`
+  - `lottery / advance-fee fraud`
+  - `ransom / extortion message`
+  - `investment scam / pig-butchering`
+  - `emergency impersonation scam (grandparent / fake-kidnapping)`
+  - `QR-code phishing (quishing)`
+  - `callback phone scam (TOAD / vishing)`
+  - `authority impersonation phishing`
+  - `urgency credential-harvest phishing`
+  - `urgency social engineering`
+  - `credential / payment lure` and others
+  Displayed as `▸ Pattern:` in text output. Added as `"pattern"` in JSON text
+  verdict. `hlse_core.h` now includes `hlse_text.h` so `TextVerdict` is visible.
+  6 new CLI integration tests (282 total). Zero warnings. F1 = 1.000 preserved.
+
 ## [1.0.23] — 2026-06-17
 
 ### Added
