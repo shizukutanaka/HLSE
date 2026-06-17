@@ -3227,6 +3227,79 @@ hlse_compound_triage(const Verdict *v, char *out, size_t outsz) {
     return 1;
 }
 
+/* First-response triage for a text verdict — the 60-second action the post-
+ * response user must take immediately.
+ *
+ * Socratic question (Perspective 27): "URL verdicts have ⚑ If already clicked:
+ * triage. But BEC, tech-support scam, and grandparent-emergency victims don't
+ * click a URL — they REPLY to an email, call a phone number, or act on a voice
+ * instruction. By the time they reach HLSE, the harmful action is already done.
+ * A BEC victim who just sent a wire needs to know: call the sending bank's
+ * fraud line within 72 hours and request SWIFT recall — not read 'BLOCK [100]'.
+ * A tech-support victim who gave remote access needs: disconnect from the
+ * internet immediately, not a structural verdict. Shouldn't text threats >= 60
+ * have the same temporal triage as URL threats?"
+ *
+ * Keyed to the same attack pattern as hlse_classify_text_attack() so the
+ * response matches the specific harm that fired. Returns a static string, or
+ * NULL when score < 60 or no recognisable pattern was found. Thread-safe;
+ * no allocation.                                                              */
+const char *
+hlse_text_triage(const TextVerdict *v) {
+    const char *pat;
+    if (!v || v->score < 60) return NULL;
+    pat = hlse_classify_text_attack(v);
+    if (!pat) return NULL;
+
+    if (strstr(pat, "ClickFix"))
+        return "if you already pasted and ran the command: disconnect from the "
+               "network immediately, scan with antivirus, and consider a full "
+               "reinstall \xe2\x80\x94 a pasted command runs with your privileges";
+    if (strstr(pat, "BEC") || strstr(pat, "CEO") ||
+        strstr(pat, "wire-transfer") || strstr(pat, "wire transfer"))
+        return "DO NOT send or authorise the transfer \xe2\x80\x94 if already "
+               "sent, call your bank's fraud line within 72 hours to attempt a "
+               "SWIFT recall; verify the request by calling the supposed sender "
+               "on a separately-known number, not the one in this message";
+    if (strstr(pat, "tech-support"))
+        return "if you called the number: hang up now; if you gave remote "
+               "access: disconnect from the internet immediately, change your "
+               "banking credentials, and call your IT team or bank directly";
+    if (strstr(pat, "grandparent") || strstr(pat, "emergency impersonation"))
+        return "call the family member directly on a number you already know "
+               "\xe2\x80\x94 if they are genuinely in trouble, they can confirm "
+               "it themselves; do not send money or gift cards until you reach them";
+    if (strstr(pat, "ransom") || strstr(pat, "extortion"))
+        return "do not pay \xe2\x80\x94 screenshot the message and report to "
+               "your local cybercrime unit (FBI IC3, Action Fraud, etc.), then "
+               "block the sender; most extortion threats are empty";
+    if (strstr(pat, "investment") || strstr(pat, "pig-butchering"))
+        return "stop all transfers immediately \xe2\x80\x94 if funds were sent, "
+               "contact your bank to attempt a recall; report to your financial "
+               "regulator; 'withdrawal fees' to recover losses are always a "
+               "second theft";
+    if (strstr(pat, "quishing") || strstr(pat, "QR"))
+        return "if you already scanned the QR code: check your browser's address "
+               "bar for an untrusted domain before entering any credentials; if "
+               "you entered credentials, change that account's password now";
+    if (strstr(pat, "callback") || strstr(pat, "vishing") || strstr(pat, "TOAD"))
+        return "do not call the number in this message \xe2\x80\x94 if you "
+               "already called and gave personal information, contact your bank "
+               "and change the relevant account credentials immediately";
+    if (strstr(pat, "lottery") || strstr(pat, "advance-fee"))
+        return "stop sending money \xe2\x80\x94 every 'fee' request is another "
+               "theft; report to Action Fraud / FTC and block the contact";
+    if (strstr(pat, "urgency credential") || strstr(pat, "urgency social") ||
+        strstr(pat, "authority impersonation"))
+        return "if you entered credentials: change that account's password "
+               "immediately and enable 2FA; if you shared personal information: "
+               "monitor credit and banking for unusual activity";
+    /* Generic fallback for any other high-confidence text threat */
+    return "stop the action if ongoing; change credentials for any account "
+           "involved and enable 2FA; report the contact to your IT team or "
+           "the relevant platform's abuse reporting";
+}
+
 /* Cascade risk: the blast radius if the victim reused this password elsewhere.
  *
  * Socratic question (Perspective 18): "You've named the primary target and
@@ -4042,8 +4115,10 @@ print_json_text(const char *text, const TextVerdict *v) {
     char esc[1024];
     char preview[256];
     const char *pat  = hlse_classify_text_attack(v);
+    const char *ttri = hlse_text_triage(v);       /* NULL outside score >= 60 */
     const char *exon = hlse_exoneration_for("text", v->score); /* NULL outside [15,59] */
     char esc_pat[256] = "";
+    char esc_ttri[512] = "";
     char esc_exon[512] = "";
     /* Truncate long text for the JSON preview */
     {
@@ -4054,10 +4129,12 @@ print_json_text(const char *text, const TextVerdict *v) {
     }
     json_escape(preview, esc, sizeof(esc));
     if (pat)  json_escape(pat,  esc_pat,  sizeof(esc_pat));
+    if (ttri) json_escape(ttri, esc_ttri, sizeof(esc_ttri));
     if (exon) json_escape(exon, esc_exon, sizeof(esc_exon));
     printf("{\"kind\":\"text\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
            esc, v->score, hlse_text_action_for_score(v->score));
     if (pat)  printf(",\"pattern\":\"%s\"",     esc_pat);
+    if (ttri) printf(",\"triage\":\"%s\"",      esc_ttri);
     if (exon) printf(",\"exoneration\":\"%s\"", esc_exon);
     printf(",\"reasons\":[");
     {
@@ -4192,6 +4269,10 @@ stdin_mode(int json_out) {
                 tpat = hlse_classify_text_attack(&tv);
                 tex  = hlse_exoneration_for("text", eff);
                 if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
+                {
+                    const char *ttri = hlse_text_triage(&tv);
+                    if (ttri) printf("  \xe2\x9a\x91 If you acted: %s\n", ttri);
+                }
                 if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                 if (tex) printf("  \xe2\x86\xba Could be benign: %s\n", tex);
             }
@@ -5272,6 +5353,7 @@ main(int argc, char **argv) {
                 } else {
                     TextVerdict tv;
                     const char *tpat;
+                    const char *ttri;
                     int ti;
                     memset(&tv, 0, sizeof(tv));
                     tv.score = sr.score;
@@ -5282,7 +5364,9 @@ main(int argc, char **argv) {
                         snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
                                  "%s", sr.reasons[ti]);
                     tpat = hlse_classify_text_attack(&tv);
+                    ttri = hlse_text_triage(&tv);
                     if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
+                    if (ttri) printf("  \xe2\x9a\x91 If you acted: %s\n", ttri);
                     ex = hlse_exoneration_for("text", sr.score);
                 }
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
@@ -5354,6 +5438,7 @@ main(int argc, char **argv) {
             } else {
                 TextVerdict tv;
                 const char *tpat;
+                const char *ttri;
                 const char *ex;
                 int ti;
                 memset(&tv, 0, sizeof(tv));
@@ -5365,8 +5450,10 @@ main(int argc, char **argv) {
                     snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
                              "%s", sr.reasons[ti]);
                 tpat = hlse_classify_text_attack(&tv);
+                ttri = hlse_text_triage(&tv);
                 ex   = hlse_exoneration_for("text", eff);
                 if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
+                if (ttri) printf("  \xe2\x9a\x91 If you acted: %s\n", ttri);
                 if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }

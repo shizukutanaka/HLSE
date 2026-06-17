@@ -1916,6 +1916,51 @@ assert "exoneration" not in d, d
 ' && check "p26 json: text ISOLATE no exoneration" "0" "0" \
    || check "p26 json: text ISOLATE no exoneration" "0" "1"
 
+# ─── Perspective 27: text triage for post-response users ─────────────────────
+# BEC ISOLATE: shows ⚑ If you acted: line
+./hlse_core text "Hi this is the CEO, please wire 50000 immediately, keep it confidential" 2>/dev/null \
+    | grep -q "If you acted:" \
+    && check "p27: BEC shows triage line" "0" "0" \
+    || check "p27: BEC shows triage line" "0" "1"
+
+# BEC: triage mentions bank/recall
+./hlse_core text "Hi this is the CEO, please wire 50000 immediately, keep it confidential" 2>/dev/null \
+    | grep "If you acted:" \
+    | grep -qi "bank\|recall\|transfer" \
+    && check "p27: BEC triage mentions bank/recall" "0" "0" \
+    || check "p27: BEC triage mentions bank/recall" "0" "1"
+
+# LOG text: no triage line (score < 60)
+./hlse_core text "Your account is suspended, verify immediately" 2>/dev/null \
+    | grep -qv "If you acted:" \
+    && check "p27: LOG text no triage line" "0" "0" \
+    || check "p27: LOG text no triage line" "0" "1"
+
+# Safe text: no triage line
+./hlse_core text "Meeting at 3pm tomorrow" 2>/dev/null \
+    | grep -qv "If you acted:" \
+    && check "p27: safe text no triage line" "0" "0" \
+    || check "p27: safe text no triage line" "0" "1"
+
+# JSON text ISOLATE: triage field present
+./hlse_core --json text "Hi this is the CEO, please wire 50000 immediately, keep it confidential" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "triage" in d, d
+assert len(d["triage"]) > 10, d["triage"]
+' && check "p27 json: BEC has triage field" "0" "0" \
+   || check "p27 json: BEC has triage field" "0" "1"
+
+# JSON text LOG: no triage field
+./hlse_core --json text "Your account is suspended, verify immediately" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "triage" not in d, d
+' && check "p27 json: LOG text no triage field" "0" "0" \
+   || check "p27 json: LOG text no triage field" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

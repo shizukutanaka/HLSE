@@ -28,7 +28,7 @@
 #include "hlse_text.h" /* TextVerdict, for hlse_classify_text_attack() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.26"
+#define HLSE_VERSION "1.0.27"
 
 #ifdef __cplusplus
 extern "C" {
@@ -103,6 +103,14 @@ const char *hlse_classify_url_attack(const Verdict *v);
  * text counterpart of hlse_classify_url_attack. Returns NULL when score is 0
  * or no recognisable pattern was found. Thread-safe; no allocation. */
 const char *hlse_classify_text_attack(const TextVerdict *v);
+
+/* First-response triage for a text verdict — the 60-second action the post-
+ * response user must take (score >= 60 only). Keyed to the same attack pattern
+ * as hlse_classify_text_attack so the response matches the specific harm:
+ * BEC → "call your bank to request SWIFT recall", ClickFix → "disconnect and
+ * reinstall", grandparent scam → "call the family member directly", etc.
+ * Returns a static string, or NULL when score < 60 or no recognisable pattern. */
+const char *hlse_text_triage(const TextVerdict *v);
 
 /* Recover the safe destination a user actually wanted from a URL Verdict.
  * When a brand was impersonated, HLSE already knows the authentic domain (it

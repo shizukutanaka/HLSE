@@ -2,6 +2,29 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.27] — 2026-06-17
+
+### Added
+- **Perspective 27: Text triage for post-response users (`hlse_text_triage`).**
+  Socratic question: "URL verdicts have `⚑ If already clicked:` triage. But BEC,
+  tech-support, and grandparent-emergency victims don't click a URL — they REPLY
+  to an email, call a phone number, or act on a voice instruction. By the time
+  they reach HLSE, the harmful action may already be done. A BEC victim who just
+  sent a wire needs to know: 'call your bank's fraud line within 72 hours and
+  request SWIFT recall' — not read 'BLOCK [100]'. A tech-support victim who gave
+  remote access needs: 'disconnect from the internet immediately'. Shouldn't
+  text threats ≥ 60 have the same temporal triage as URL threats?"
+  New `hlse_text_triage(const TextVerdict *v)` (public API) calls
+  `hlse_classify_text_attack()` and maps the pattern to a specific 60-second
+  action: BEC/CEO-fraud → SWIFT recall guidance; ClickFix → disconnect and
+  reinstall; tech-support → hang up, revoke remote access; grandparent scam →
+  call the family member directly on a known number; ransom → do not pay, report;
+  investment scam → stop transfers, contact bank; quishing → check address bar;
+  callback/vishing → do not call the number in the message. Displayed as
+  `⚑ If you acted:` (distinct from the URL triage label `⚑ If already clicked:`).
+  Added as `"triage"` in JSON text verdicts at score ≥ 60. 6 new CLI integration
+  tests (293 total). Zero warnings. F1 = 1.000 preserved.
+
 ## [1.0.26] — 2026-06-17
 
 ### Fixed
