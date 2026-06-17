@@ -28,7 +28,7 @@
 #include "hlse_text.h" /* TextVerdict, for hlse_classify_text_attack() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.28"
+#define HLSE_VERSION "1.0.29"
 
 #ifdef __cplusplus
 extern "C" {
@@ -111,6 +111,22 @@ const char *hlse_classify_text_attack(const TextVerdict *v);
  * reinstall", grandparent scam → "call the family member directly", etc.
  * Returns a static string, or NULL when score < 60 or no recognisable pattern. */
 const char *hlse_text_triage(const TextVerdict *v);
+
+/* Name the attacker's likely objective for a text verdict — the specific asset
+ * the recipient must treat as at-risk (score >= 60 only). The text counterpart
+ * of hlse_attacker_objective(), but keyed to the social-engineering attack
+ * pattern rather than an impersonated brand:
+ *   BEC/CEO-fraud    → wire-transfer funds (72-hour SWIFT recall window)
+ *   ClickFix         → system access (runs with user privileges)
+ *   tech-support     → credit card or remote device access
+ *   ransomware       → cryptocurrency payment / file access
+ *   investment       → long-term savings (unrecoverable)
+ *   grandparent/emg. → cash withdrawal (unrecoverable)
+ *   QR phishing      → credentials after camera-bypass redirect
+ *   callback/vishing → financial account or device via voice
+ *   urgency/cred.    → account credentials (cascade risk)
+ * Returns NULL when score < 60 or no recognisable pattern. Thread-safe; no alloc. */
+const char *hlse_text_objective(const TextVerdict *v);
 
 /* Count the number of INDEPENDENT signal categories that fired in a text
  * verdict — the text counterpart of hlse_confidence_for. Counts distinct base

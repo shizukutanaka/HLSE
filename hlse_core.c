@@ -3370,6 +3370,68 @@ hlse_text_triage(const TextVerdict *v) {
            "the relevant platform's abuse reporting";
 }
 
+/* Name the attacker's likely objective for a text verdict — the specific asset
+ * the recipient must treat as at-risk.
+ *
+ * Socratic question (Perspective 29): "URL verdicts show ◉ Attacker's goal:
+ * keyed to the impersonated brand — 'crypto theft — seed phrase or wallet
+ * drain; transfers are irreversible'. Text verdicts name the attack pattern
+ * (▸ Pattern:) but not what the attacker is specifically trying to take. A BEC
+ * victim reads 'BEC / CEO-fraud wire-transfer' and knows the mechanism, but
+ * not that the asset at risk is wire-transfer funds with a 72-hour recall
+ * window. A grandparent-scam victim reads 'emergency impersonation scam' but
+ * not that the asset is cash — unrecoverable once handed to a courier. Without
+ * naming the specific asset, the advisory gives no triage priority signal.
+ * Shouldn't text threats >= 60 name the specific asset at risk, parallel to
+ * the URL ◉ Attacker's goal: line?"
+ *
+ * Keyed to the same pattern as hlse_classify_text_attack(). Returns a static
+ * string, or NULL when score < 60 or no recognisable pattern. Thread-safe;
+ * no allocation.                                                               */
+const char *
+hlse_text_objective(const TextVerdict *v) {
+    const char *pat;
+    if (!v || v->score < 60) return NULL;
+    pat = hlse_classify_text_attack(v);
+    if (!pat) return NULL;
+    if (strstr(pat, "ClickFix"))
+        return "system access \xe2\x80\x94 pasted command runs with your user "
+               "privileges; treat the machine as compromised until proven clean";
+    if (strstr(pat, "BEC") || strstr(pat, "CEO") ||
+        strstr(pat, "wire-transfer") || strstr(pat, "wire transfer"))
+        return "wire-transfer funds \xe2\x80\x94 irreversible once processed; "
+               "72-hour SWIFT recall window";
+    if (strstr(pat, "tech-support"))
+        return "credit card or remote device access \xe2\x80\x94 reversible "
+               "within hours if caught immediately";
+    if (strstr(pat, "ransom") || strstr(pat, "extortion"))
+        return "cryptocurrency payment \xe2\x80\x94 paying does not guarantee "
+               "recovery and invites further extortion demands";
+    if (strstr(pat, "investment") || strstr(pat, "pig-butchering"))
+        return "long-term savings \xe2\x80\x94 typically unrecoverable once "
+               "withdrawn to attacker-controlled wallet";
+    if (strstr(pat, "grandparent") || strstr(pat, "emergency impersonation"))
+        return "cash withdrawal \xe2\x80\x94 typically unrecoverable once handed "
+               "to courier";
+    if (strstr(pat, "QR") || strstr(pat, "quishing"))
+        return "credentials entered after redirect \xe2\x80\x94 QR codes bypass "
+               "link-preview safety checks";
+    if (strstr(pat, "callback") || strstr(pat, "TOAD") || strstr(pat, "vishing"))
+        return "financial account or device access obtained via voice social "
+               "engineering";
+    if (strstr(pat, "lottery") || strstr(pat, "advance-fee"))
+        return "upfront payment or personal information for a non-existent prize";
+    if (strstr(pat, "urgency credential") || strstr(pat, "credential / payment") ||
+        strstr(pat, "authority impersonation"))
+        return "account credentials \xe2\x80\x94 all sites sharing this password "
+               "are at cascade risk";
+    if (strstr(pat, "urgency"))
+        return "account credentials or an action taken under false time pressure";
+    if (strstr(pat, "prize"))
+        return "personal information or upfront payment for a fraudulent prize";
+    return NULL;
+}
+
 /* Cascade risk: the blast radius if the victim reused this password elsewhere.
  *
  * Socratic question (Perspective 18): "You've named the primary target and
@@ -4185,10 +4247,12 @@ print_json_text(const char *text, const TextVerdict *v) {
     char esc[1024];
     char preview[256];
     const char *pat  = hlse_classify_text_attack(v);
+    const char *tobj = hlse_text_objective(v);    /* NULL outside score >= 60 */
     const char *ttri = hlse_text_triage(v);       /* NULL outside score >= 60 */
     const char *exon = hlse_exoneration_for("text", v->score); /* NULL outside [15,59] */
     char cf_buf[160] = "";
     char esc_pat[256] = "";
+    char esc_tobj[512] = "";
     char esc_ttri[512] = "";
     char esc_exon[512] = "";
     char esc_cf[320] = "";
@@ -4202,6 +4266,7 @@ print_json_text(const char *text, const TextVerdict *v) {
     }
     json_escape(preview, esc, sizeof(esc));
     if (pat)        json_escape(pat,    esc_pat,  sizeof(esc_pat));
+    if (tobj)       json_escape(tobj,   esc_tobj, sizeof(esc_tobj));
     if (ttri)       json_escape(ttri,   esc_ttri, sizeof(esc_ttri));
     if (exon)       json_escape(exon,   esc_exon, sizeof(esc_exon));
     if (sig_cnt > 0) json_escape(cf_buf, esc_cf,  sizeof(esc_cf));
@@ -4210,6 +4275,7 @@ print_json_text(const char *text, const TextVerdict *v) {
     if (sig_cnt > 0) printf(",\"signal_count\":%d,\"confidence\":\"%s\"",
                             sig_cnt, esc_cf);
     if (pat)  printf(",\"pattern\":\"%s\"",     esc_pat);
+    if (tobj) printf(",\"objective\":\"%s\"",   esc_tobj);
     if (ttri) printf(",\"triage\":\"%s\"",      esc_ttri);
     if (exon) printf(",\"exoneration\":\"%s\"", esc_exon);
     printf(",\"reasons\":[");
@@ -4345,6 +4411,10 @@ stdin_mode(int json_out) {
                 tpat = hlse_classify_text_attack(&tv);
                 tex  = hlse_exoneration_for("text", eff);
                 if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
+                {
+                    const char *tobj = hlse_text_objective(&tv);
+                    if (tobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", tobj);
+                }
                 {
                     char tcf[160];
                     if (hlse_text_confidence(&tv, tcf, sizeof(tcf)))
@@ -5448,6 +5518,10 @@ main(int argc, char **argv) {
                     ttri = hlse_text_triage(&tv);
                     if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
                     {
+                        const char *tobj = hlse_text_objective(&tv);
+                        if (tobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", tobj);
+                    }
+                    {
                         char tcf[160];
                         if (hlse_text_confidence(&tv, tcf, sizeof(tcf)))
                             printf("  \xe2\x9a\x96 Confidence: %s\n", tcf);
@@ -5539,6 +5613,10 @@ main(int argc, char **argv) {
                 ttri = hlse_text_triage(&tv);
                 ex   = hlse_exoneration_for("text", eff);
                 if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
+                {
+                    const char *tobj = hlse_text_objective(&tv);
+                    if (tobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", tobj);
+                }
                 {
                     char tcf[160];
                     if (hlse_text_confidence(&tv, tcf, sizeof(tcf)))

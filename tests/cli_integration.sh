@@ -2002,6 +2002,52 @@ assert "signal_count" not in d, d
 ' && check "p28 json: safe text no signal_count" "0" "0" \
    || check "p28 json: safe text no signal_count" "0" "1"
 
+# ─── Perspective 29: text attacker objective ──────────────────────────────────
+# BEC text: shows ◉ Attacker's goal with wire-transfer framing
+./hlse_core text "CEO urgent: wire transfer 50000 immediately, do not discuss with anyone" 2>/dev/null \
+    | grep "Attacker's goal:" \
+    | grep -qi "wire-transfer" \
+    && check "p29: BEC text shows wire-transfer objective" "0" "0" \
+    || check "p29: BEC text shows wire-transfer objective" "0" "1"
+
+# Lottery text: shows upfront payment / non-existent prize framing
+./hlse_core text "Congratulations you won 10000! Send bank details to claim immediately" 2>/dev/null \
+    | grep "Attacker's goal:" \
+    | grep -qi "non-existent prize" \
+    && check "p29: lottery text shows prize objective" "0" "0" \
+    || check "p29: lottery text shows prize objective" "0" "1"
+
+# LOG text (score < 60): no ◉ Attacker's goal line (objective is score-gated)
+./hlse_core text "Your account needs verification. Please verify now." 2>/dev/null \
+    | grep -qv "Attacker's goal:" \
+    && check "p29: LOG text has no attacker's goal" "0" "0" \
+    || check "p29: LOG text has no attacker's goal" "0" "1"
+
+# Safe text: no ◉ Attacker's goal line
+./hlse_core text "Meeting at 3pm tomorrow" 2>/dev/null \
+    | grep -qv "Attacker's goal:" \
+    && check "p29: safe text has no attacker's goal" "0" "0" \
+    || check "p29: safe text has no attacker's goal" "0" "1"
+
+# JSON BEC text: has "objective" field
+./hlse_core --json text "CEO urgent: wire transfer 50000 immediately, do not discuss with anyone" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "objective" in d, d
+assert "wire" in d["objective"].lower(), d["objective"]
+' && check "p29 json: BEC has objective field" "0" "0" \
+   || check "p29 json: BEC has objective field" "0" "1"
+
+# JSON safe text: no "objective" field
+./hlse_core --json text "Meeting at 3pm tomorrow" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "objective" not in d, d
+' && check "p29 json: safe text has no objective field" "0" "0" \
+   || check "p29 json: safe text has no objective field" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

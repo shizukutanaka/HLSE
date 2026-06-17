@@ -2,6 +2,33 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.29] — 2026-06-17
+
+### Added
+- **Perspective 29: Text attacker objective (`hlse_text_objective`).**
+  Socratic question: "URL verdicts show `◉ Attacker's goal:` keyed to the
+  impersonated brand — 'crypto theft — seed phrase or wallet drain; transfers
+  are irreversible'. Text verdicts name the attack pattern (`▸ Pattern:`) but
+  not the specific asset the attacker is trying to take. A BEC victim reads
+  'BEC / CEO-fraud wire-transfer' and knows the mechanism, but not that the
+  asset at risk is wire-transfer funds with a 72-hour SWIFT recall window. A
+  grandparent-scam victim reads 'emergency impersonation scam' but not that
+  the asset is cash — unrecoverable once handed to a courier. Without naming
+  the specific asset, the advisory gives no triage priority signal. Shouldn't
+  text threats ≥ 60 name the specific asset at risk, parallel to the URL
+  `◉ Attacker's goal:` line?" New `hlse_text_objective(const TextVerdict *v)`
+  (public API) maps each text attack pattern to a concise asset-at-risk
+  description emphasising recoverability (BEC → wire-transfer funds, 72-hour
+  SWIFT window; ClickFix → system access, machine treated as compromised;
+  investment scam → long-term savings, typically unrecoverable; grandparent
+  scam → cash withdrawal, unrecoverable once handed to courier; etc.). Returns
+  NULL when score < 60 or no recognisable pattern. Displayed as
+  `◉ Attacker's goal:` in text output, positioned between `▸ Pattern:` and
+  `⚖ Confidence:` to match the URL advisory layout. Added as `"objective"`
+  field in JSON text verdicts (score ≥ 60 only). All three text display paths
+  updated (stdin, `text` subcommand, default auto-detect). 6 new CLI
+  integration tests (304 total). Zero warnings. F1 = 1.000 preserved.
+
 ## [1.0.28] — 2026-06-17
 
 ### Added
