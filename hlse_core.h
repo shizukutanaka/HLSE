@@ -28,7 +28,7 @@
 #include "hlse_text.h" /* TextVerdict, for hlse_classify_text_attack() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.30"
+#define HLSE_VERSION "1.0.31"
 
 #ifdef __cplusplus
 extern "C" {
@@ -122,6 +122,23 @@ const char *hlse_classify_text_attack(const TextVerdict *v);
  * reinstall", grandparent scam → "call the family member directly", etc.
  * Returns a static string, or NULL when score < 60 or no recognisable pattern. */
 const char *hlse_text_triage(const TextVerdict *v);
+
+/* Pre-action verification for a text verdict — the single check to perform
+ * BEFORE taking any requested action (score >= 60 only). The text counterpart
+ * of hlse_verification_for() for URLs. Keyed to the attack pattern:
+ *   BEC/CEO-fraud    → call the supposed sender on a separately-known number
+ *   ClickFix         → never paste commands from unsolicited messages
+ *   tech-support     → call the company's main switchboard independently
+ *   ransomware       → do not pay; consult law enforcement
+ *   investment       → verify FCA/SEC/ASIC registration first
+ *   grandparent/emg. → call the family member on their known number
+ *   callback/vishing → don't call the provided number
+ *   lottery/advance-fee → don't pay any upfront fee
+ *   QR phishing      → preview QR destination before scanning
+ *   urgency/cred.    → navigate to the site directly via bookmark/search
+ * Returns NULL when score < 60 or no recognisable pattern. Thread-safe;
+ * no allocation. */
+const char *hlse_text_verify(const TextVerdict *v);
 
 /* Name the attacker's likely objective for a text verdict — the specific asset
  * the recipient must treat as at-risk (score >= 60 only). The text counterpart

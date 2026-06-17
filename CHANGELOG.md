@@ -2,6 +2,34 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.31] — 2026-06-17
+
+### Added
+- **Perspective 31: Text pre-action verify step (`hlse_text_verify`).**
+  Socratic question: "URL BLOCK verdicts show BOTH ✓ Verify independently:
+  (what to check before clicking) AND ⚑ If already clicked: (post-click
+  triage). Text BLOCK verdicts show only ⚑ If you acted: whose label implies
+  post-action, even when the most important advice is pre-action — 'DO NOT
+  send the wire transfer'. A BEC victim reading BLOCK [100] needs to know the
+  single decisive check to do BEFORE authorising anything: call the supposed
+  sender on a separately-known number. A ClickFix victim needs: never paste
+  commands from unsolicited messages. Burying pre-action guidance inside a
+  post-action label obscures it. Should text BLOCK verdicts have the same
+  ✓ Verify first: / ⚑ If you acted: split that URL verdicts already have?"
+  New `hlse_text_verify(const TextVerdict *v)` (public API) mirrors
+  `hlse_verification_for()` for text: BEC → call the supposed sender on a
+  separately-known number; ClickFix → never paste commands from unsolicited
+  messages; tech-support → call the main switchboard independently; investment
+  → verify FCA/SEC registration; grandparent/emergency → call the family member
+  directly; callback/vishing → don't call the provided number; lottery/advance-
+  fee → don't pay any upfront fee; QR phishing → preview QR destination first;
+  urgency credential-harvest → navigate directly via bookmark/search engine.
+  Returns NULL when score < 60 or no recognisable pattern. Displayed as
+  ✓ Verify first: positioned between ◉ Attacker's goal: and ⚖ Confidence: to
+  mirror URL advisory layout. Added as "verify" JSON field (score ≥ 60 only).
+  All three text display paths and print_json_text() updated. 6 new tests (316
+  total). Zero warnings. F1 = 1.000 preserved.
+
 ## [1.0.30] — 2026-06-17
 
 ### Added

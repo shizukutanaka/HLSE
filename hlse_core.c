@@ -3444,6 +3444,73 @@ hlse_text_triage(const TextVerdict *v) {
            "the relevant platform's abuse reporting";
 }
 
+/* Pre-action verification for a text verdict — the single check to perform
+ * BEFORE taking any requested action (score >= 60 only).
+ *
+ * Socratic question (Perspective 31): "URL BLOCK verdicts show BOTH
+ * ✓ Verify independently: (what to check before clicking) AND ⚑ If already
+ * clicked: (post-click triage). Text BLOCK verdicts show only ⚑ If you acted:
+ * whose label implies post-action, even when the most important advice is
+ * pre-action — 'DO NOT send the wire transfer'. A BEC victim reading BLOCK [100]
+ * needs to know the single decisive check they should do BEFORE authorising
+ * anything: call the supposed sender on a separately-known number. A ClickFix
+ * victim needs to know: never paste commands from unsolicited messages. Burying
+ * this pre-action guidance inside a post-action triage label obscures it. Should
+ * text BLOCK verdicts have the same ✓ Verify first: / ⚑ If you acted: split
+ * that URL verdicts already have?"
+ *
+ * Keyed to the pattern from hlse_classify_text_attack(). Returns a static
+ * string, or NULL when score < 60 or no recognisable pattern. Thread-safe;
+ * no allocation.                                                               */
+const char *
+hlse_text_verify(const TextVerdict *v) {
+    const char *pat;
+    if (!v || v->score < 60) return NULL;
+    pat = hlse_classify_text_attack(v);
+    if (!pat) return NULL;
+    if (strstr(pat, "ClickFix"))
+        return "never paste or run commands from unsolicited messages \xe2\x80\x94 "
+               "legitimate software installations never require manual command-line "
+               "execution";
+    if (strstr(pat, "BEC") || strstr(pat, "CEO") ||
+        strstr(pat, "wire-transfer") || strstr(pat, "wire transfer"))
+        return "verify by calling the supposed sender on a number you already have "
+               "\xe2\x80\x94 not any number or channel in this message; wire-transfer "
+               "requests without a prior phone call are a red flag";
+    if (strstr(pat, "tech-support"))
+        return "call the company's main switchboard independently to verify any "
+               "claimed account issue before allowing any remote access or payment";
+    if (strstr(pat, "ransom") || strstr(pat, "extortion"))
+        return "do not pay \xe2\x80\x94 consult a law enforcement or cybersecurity "
+               "professional before responding; paying funds further attacks";
+    if (strstr(pat, "investment") || strstr(pat, "pig-butchering"))
+        return "verify the firm's FCA/SEC/ASIC registration before engaging \xe2\x80\x94 "
+               "registration numbers must match the official regulator's public register";
+    if (strstr(pat, "grandparent") || strstr(pat, "emergency impersonation"))
+        return "call the family member directly on their known number before sending "
+               "any money or meeting any courier \xe2\x80\x94 take at least 10 minutes "
+               "to verify independently";
+    if (strstr(pat, "callback") || strstr(pat, "TOAD") || strstr(pat, "vishing"))
+        return "do not call the number in this message \xe2\x80\x94 find the "
+               "organisation's number independently on their official website";
+    if (strstr(pat, "lottery") || strstr(pat, "advance-fee"))
+        return "do not pay any fee \xe2\x80\x94 legitimate prize schemes never charge "
+               "winners upfront; search the organisation's official website to verify";
+    if (strstr(pat, "QR") || strstr(pat, "quishing"))
+        return "preview the QR destination before scanning \xe2\x80\x94 do not enter "
+               "any credentials until you have confirmed the domain belongs to the "
+               "expected organisation";
+    if (strstr(pat, "urgency credential") || strstr(pat, "credential / payment") ||
+        strstr(pat, "authority impersonation"))
+        return "navigate directly to the service's official website (bookmark or "
+               "search engine) \xe2\x80\x94 do not use any link in this message; "
+               "verify the alert appears in your actual account dashboard";
+    if (strstr(pat, "urgency"))
+        return "verify the request through a separately-known channel before acting "
+               "\xe2\x80\x94 do not use any contact details provided in this message";
+    return NULL;
+}
+
 /* Name the attacker's likely objective for a text verdict — the specific asset
  * the recipient must treat as at-risk.
  *
@@ -4322,11 +4389,13 @@ print_json_text(const char *text, const TextVerdict *v) {
     char preview[256];
     const char *pat  = hlse_classify_text_attack(v);
     const char *tobj = hlse_text_objective(v);    /* NULL outside score >= 60 */
+    const char *tvrf = hlse_text_verify(v);       /* NULL outside score >= 60 */
     const char *ttri = hlse_text_triage(v);       /* NULL outside score >= 60 */
     const char *exon = hlse_text_exoneration(v);  /* NULL outside [15,59] */
     char cf_buf[160] = "";
     char esc_pat[256] = "";
     char esc_tobj[512] = "";
+    char esc_tvrf[512] = "";
     char esc_ttri[512] = "";
     char esc_exon[512] = "";
     char esc_cf[320] = "";
@@ -4341,6 +4410,7 @@ print_json_text(const char *text, const TextVerdict *v) {
     json_escape(preview, esc, sizeof(esc));
     if (pat)        json_escape(pat,    esc_pat,  sizeof(esc_pat));
     if (tobj)       json_escape(tobj,   esc_tobj, sizeof(esc_tobj));
+    if (tvrf)       json_escape(tvrf,   esc_tvrf, sizeof(esc_tvrf));
     if (ttri)       json_escape(ttri,   esc_ttri, sizeof(esc_ttri));
     if (exon)       json_escape(exon,   esc_exon, sizeof(esc_exon));
     if (sig_cnt > 0) json_escape(cf_buf, esc_cf,  sizeof(esc_cf));
@@ -4350,6 +4420,7 @@ print_json_text(const char *text, const TextVerdict *v) {
                             sig_cnt, esc_cf);
     if (pat)  printf(",\"pattern\":\"%s\"",     esc_pat);
     if (tobj) printf(",\"objective\":\"%s\"",   esc_tobj);
+    if (tvrf) printf(",\"verify\":\"%s\"",      esc_tvrf);
     if (ttri) printf(",\"triage\":\"%s\"",      esc_ttri);
     if (exon) printf(",\"exoneration\":\"%s\"", esc_exon);
     printf(",\"reasons\":[");
@@ -4488,6 +4559,10 @@ stdin_mode(int json_out) {
                 {
                     const char *tobj = hlse_text_objective(&tv);
                     if (tobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", tobj);
+                }
+                {
+                    const char *tvrf = hlse_text_verify(&tv);
+                    if (tvrf) printf("  \xe2\x9c\x93 Verify first: %s\n", tvrf);
                 }
                 {
                     char tcf[160];
@@ -5596,6 +5671,10 @@ main(int argc, char **argv) {
                         if (tobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", tobj);
                     }
                     {
+                        const char *tvrf = hlse_text_verify(&tv);
+                        if (tvrf) printf("  \xe2\x9c\x93 Verify first: %s\n", tvrf);
+                    }
+                    {
                         char tcf[160];
                         if (hlse_text_confidence(&tv, tcf, sizeof(tcf)))
                             printf("  \xe2\x9a\x96 Confidence: %s\n", tcf);
@@ -5690,6 +5769,10 @@ main(int argc, char **argv) {
                 {
                     const char *tobj = hlse_text_objective(&tv);
                     if (tobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", tobj);
+                }
+                {
+                    const char *tvrf = hlse_text_verify(&tv);
+                    if (tvrf) printf("  \xe2\x9c\x93 Verify first: %s\n", tvrf);
                 }
                 {
                     char tcf[160];
