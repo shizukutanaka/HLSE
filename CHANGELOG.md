@@ -2,6 +2,28 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.28] — 2026-06-17
+
+### Added
+- **Perspective 28: Text signal confidence (`hlse_text_confidence`).**
+  Socratic question: "`hlse_confidence_for` gives URL verdicts an `⚖ Confidence:`
+  label. Text verdicts have the same epistemic spectrum: a BEC with urgency +
+  financial + authority + secrecy all firing concurrently is as corroborated as
+  a URL with four independent detectors agreeing. A single-urgency LOG text is as
+  fragile as a single-heuristic URL LOG. Without a confidence line, text verdicts
+  look uniformly certain. Why should URL get epistemic disclosure and text be
+  silent?" New `hlse_text_confidence(const TextVerdict *v, char *out, size_t outsz)`
+  (public API) counts distinct base signal families (urgency, financial, authority,
+  secrecy, investment, emergency, ClickFix, etc.) — skipping amplifier lines which
+  are derived from base signals, not independent evidence — and maps the count to
+  the same qualitative labels as `hlse_confidence_for`: 1 → "single signal —
+  corroborate before acting", 2 → "corroborated by N independent signals",
+  3+ → "high confidence — N independent signal categories agree; this is a
+  multi-tactic social engineering attempt". Displayed as `⚖ Confidence:` in text
+  output after `▸ Pattern:`. Added as `"signal_count"` (int) and `"confidence"`
+  (string) in JSON text verdicts. 5 new CLI integration tests (298 total).
+  Zero warnings. F1 = 1.000 preserved.
+
 ## [1.0.27] — 2026-06-17
 
 ### Added

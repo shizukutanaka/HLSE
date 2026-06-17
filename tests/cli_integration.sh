@@ -1961,6 +1961,47 @@ assert "triage" not in d, d
 ' && check "p27 json: LOG text no triage field" "0" "0" \
    || check "p27 json: LOG text no triage field" "0" "1"
 
+# ─── Perspective 28: text signal confidence ───────────────────────────────────
+# Multi-signal BEC: shows ⚖ Confidence: high confidence
+./hlse_core text "Hi this is the CEO, please wire 50000 immediately, keep it confidential" 2>/dev/null \
+    | grep "Confidence:" \
+    | grep -qi "high confidence" \
+    && check "p28: multi-signal BEC shows high confidence" "0" "0" \
+    || check "p28: multi-signal BEC shows high confidence" "0" "1"
+
+# Single-signal urgency: shows single signal label
+./hlse_core text "Your account is suspended! Verify immediately" 2>/dev/null \
+    | grep "Confidence:" \
+    | grep -qi "single signal" \
+    && check "p28: single-signal text shows single signal label" "0" "0" \
+    || check "p28: single-signal text shows single signal label" "0" "1"
+
+# Safe text: no Confidence line
+./hlse_core text "Meeting at 3pm tomorrow" 2>/dev/null \
+    | grep -qv "Confidence:" \
+    && check "p28: safe text has no confidence line" "0" "0" \
+    || check "p28: safe text has no confidence line" "0" "1"
+
+# JSON text: signal_count and confidence fields present for multi-signal BEC
+./hlse_core --json text "Hi this is the CEO, please wire 50000 immediately, keep it confidential" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "signal_count" in d, d
+assert "confidence" in d, d
+assert d["signal_count"] >= 2, d["signal_count"]
+' && check "p28 json: BEC has signal_count and confidence" "0" "0" \
+   || check "p28 json: BEC has signal_count and confidence" "0" "1"
+
+# JSON text: no signal_count for safe text
+./hlse_core --json text "Meeting at 3pm tomorrow" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "signal_count" not in d, d
+' && check "p28 json: safe text no signal_count" "0" "0" \
+   || check "p28 json: safe text no signal_count" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

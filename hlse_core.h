@@ -28,7 +28,7 @@
 #include "hlse_text.h" /* TextVerdict, for hlse_classify_text_attack() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.27"
+#define HLSE_VERSION "1.0.28"
 
 #ifdef __cplusplus
 extern "C" {
@@ -111,6 +111,15 @@ const char *hlse_classify_text_attack(const TextVerdict *v);
  * reinstall", grandparent scam → "call the family member directly", etc.
  * Returns a static string, or NULL when score < 60 or no recognisable pattern. */
 const char *hlse_text_triage(const TextVerdict *v);
+
+/* Count the number of INDEPENDENT signal categories that fired in a text
+ * verdict — the text counterpart of hlse_confidence_for. Counts distinct base
+ * signal families (urgency, financial, authority, secrecy, etc.); excludes
+ * amplifier lines which are derived. Maps the count to the same qualitative
+ * labels: 1 → "single signal", 2 → "corroborated", 3+ → "high confidence".
+ * Caller supplies `out` buffer (160+ bytes); returns the signal count (0 when
+ * no base signals fired). Thread-safe; no allocation. */
+int hlse_text_confidence(const TextVerdict *v, char *out, size_t outsz);
 
 /* Recover the safe destination a user actually wanted from a URL Verdict.
  * When a brand was impersonated, HLSE already knows the authentic domain (it

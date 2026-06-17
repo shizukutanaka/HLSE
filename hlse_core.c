@@ -2460,6 +2460,76 @@ hlse_confidence_for(const Verdict *v, char *out, size_t outsz) {
     return n_families;
 }
 
+/* Count how many INDEPENDENT signal categories corroborate a text verdict.
+ *
+ * Socratic question (Perspective 28): "hlse_confidence_for gives URL verdicts
+ * an ⚖ Confidence label. Text verdicts have the same epistemic spectrum: a
+ * BEC with urgency + financial + authority + secrecy all firing concurrently
+ * is as corroborated as a URL with four independent detectors agreeing. A
+ * single-urgency LOG text is as fragile as a single-heuristic URL LOG. Without
+ * a confidence line, text verdicts look uniformly certain. Why should URL get
+ * epistemic disclosure and text be silent?"
+ *
+ * Counts base signal families (urgency, financial, authority, secrecy, etc.)
+ * separately from amplifier reason strings — amplifiers are derived, not
+ * independent. Applies the same qualitative labels as hlse_confidence_for:
+ * 1 → "single signal", 2 → "corroborated by N independent signals",
+ * 3+ → "high confidence — N independent signal categories agree".
+ * Caller supplies `out` buffer (160+ bytes); returns the family count.
+ * Thread-safe; no allocation.                                              */
+int
+hlse_text_confidence(const TextVerdict *v, char *out, size_t outsz) {
+    int i;
+    int sig_urgency = 0, sig_financial = 0, sig_prize = 0, sig_ransom = 0;
+    int sig_authority = 0, sig_secrecy = 0, sig_investment = 0;
+    int sig_qr = 0, sig_callback = 0, sig_emergency = 0, sig_clickfix = 0;
+    int n_sigs;
+
+    if (!v || !out || outsz < 160) return 0;
+    out[0] = '\0';
+    if (v->n_reasons == 0) return 0;
+
+    for (i = 0; i < v->n_reasons; i++) {
+        const char *r = v->reasons[i];
+        /* Skip amplifier lines — they are derived, not independent */
+        if (strncmp(r, "Amplifier:", 10) == 0) continue;
+        if (strstr(r, "Urgency pressure"))           sig_urgency    = 1;
+        if (strstr(r, "Financial/credential"))        sig_financial  = 1;
+        if (strstr(r, "Prize/reward"))                sig_prize      = 1;
+        if (strstr(r, "Ransom") || strstr(r, "ransom")) sig_ransom   = 1;
+        if (strstr(r, "Authority impersonation"))     sig_authority  = 1;
+        if (strstr(r, "Secrecy/grooming"))            sig_secrecy    = 1;
+        if (strstr(r, "Investment scam"))             sig_investment = 1;
+        if (strstr(r, "QR code phishing"))            sig_qr         = 1;
+        if (strstr(r, "Callback") || strstr(r, "TOAD") ||
+            strstr(r, "smishing"))                    sig_callback   = 1;
+        if (strstr(r, "Emergency") || strstr(r, "grandparent")) sig_emergency = 1;
+        if (strstr(r, "ClickFix"))                    sig_clickfix   = 1;
+    }
+
+    n_sigs = sig_urgency + sig_financial + sig_prize + sig_ransom +
+             sig_authority + sig_secrecy + sig_investment + sig_qr +
+             sig_callback + sig_emergency + sig_clickfix;
+
+    if (n_sigs <= 0) return 0;
+    if (n_sigs == 1) {
+        snprintf(out, outsz,
+                 "single signal \xe2\x80\x94 one category fired; corroborate "
+                 "independently before acting on a borderline score");
+        return 1;
+    }
+    if (n_sigs == 2) {
+        snprintf(out, outsz,
+                 "corroborated by %d independent signals \xe2\x80\x94 unlikely "
+                 "to be a single-heuristic false positive", n_sigs);
+        return n_sigs;
+    }
+    snprintf(out, outsz,
+             "high confidence \xe2\x80\x94 %d independent signal categories "
+             "agree; this is a multi-tactic social engineering attempt", n_sigs);
+    return n_sigs;
+}
+
 /* Extract the safe destination a user actually wanted, from a URL verdict.
  *
  * Socratic question: "You blocked the counterfeit — but the user still has
@@ -4117,9 +4187,12 @@ print_json_text(const char *text, const TextVerdict *v) {
     const char *pat  = hlse_classify_text_attack(v);
     const char *ttri = hlse_text_triage(v);       /* NULL outside score >= 60 */
     const char *exon = hlse_exoneration_for("text", v->score); /* NULL outside [15,59] */
+    char cf_buf[160] = "";
     char esc_pat[256] = "";
     char esc_ttri[512] = "";
     char esc_exon[512] = "";
+    char esc_cf[320] = "";
+    int  sig_cnt = hlse_text_confidence(v, cf_buf, sizeof(cf_buf));
     /* Truncate long text for the JSON preview */
     {
         size_t n = strlen(text);
@@ -4128,11 +4201,14 @@ print_json_text(const char *text, const TextVerdict *v) {
         preview[n] = '\0';
     }
     json_escape(preview, esc, sizeof(esc));
-    if (pat)  json_escape(pat,  esc_pat,  sizeof(esc_pat));
-    if (ttri) json_escape(ttri, esc_ttri, sizeof(esc_ttri));
-    if (exon) json_escape(exon, esc_exon, sizeof(esc_exon));
+    if (pat)        json_escape(pat,    esc_pat,  sizeof(esc_pat));
+    if (ttri)       json_escape(ttri,   esc_ttri, sizeof(esc_ttri));
+    if (exon)       json_escape(exon,   esc_exon, sizeof(esc_exon));
+    if (sig_cnt > 0) json_escape(cf_buf, esc_cf,  sizeof(esc_cf));
     printf("{\"kind\":\"text\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
            esc, v->score, hlse_text_action_for_score(v->score));
+    if (sig_cnt > 0) printf(",\"signal_count\":%d,\"confidence\":\"%s\"",
+                            sig_cnt, esc_cf);
     if (pat)  printf(",\"pattern\":\"%s\"",     esc_pat);
     if (ttri) printf(",\"triage\":\"%s\"",      esc_ttri);
     if (exon) printf(",\"exoneration\":\"%s\"", esc_exon);
@@ -4269,6 +4345,11 @@ stdin_mode(int json_out) {
                 tpat = hlse_classify_text_attack(&tv);
                 tex  = hlse_exoneration_for("text", eff);
                 if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
+                {
+                    char tcf[160];
+                    if (hlse_text_confidence(&tv, tcf, sizeof(tcf)))
+                        printf("  \xe2\x9a\x96 Confidence: %s\n", tcf);
+                }
                 {
                     const char *ttri = hlse_text_triage(&tv);
                     if (ttri) printf("  \xe2\x9a\x91 If you acted: %s\n", ttri);
@@ -5366,6 +5447,11 @@ main(int argc, char **argv) {
                     tpat = hlse_classify_text_attack(&tv);
                     ttri = hlse_text_triage(&tv);
                     if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
+                    {
+                        char tcf[160];
+                        if (hlse_text_confidence(&tv, tcf, sizeof(tcf)))
+                            printf("  \xe2\x9a\x96 Confidence: %s\n", tcf);
+                    }
                     if (ttri) printf("  \xe2\x9a\x91 If you acted: %s\n", ttri);
                     ex = hlse_exoneration_for("text", sr.score);
                 }
@@ -5453,6 +5539,11 @@ main(int argc, char **argv) {
                 ttri = hlse_text_triage(&tv);
                 ex   = hlse_exoneration_for("text", eff);
                 if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
+                {
+                    char tcf[160];
+                    if (hlse_text_confidence(&tv, tcf, sizeof(tcf)))
+                        printf("  \xe2\x9a\x96 Confidence: %s\n", tcf);
+                }
                 if (ttri) printf("  \xe2\x9a\x91 If you acted: %s\n", ttri);
                 if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
