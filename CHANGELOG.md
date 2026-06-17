@@ -2,6 +2,29 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.22] — 2026-06-17
+
+### Added
+- **Perspective 23: Compound first-response triage for multi-brand co-spoof URLs
+  (`hlse_compound_triage`).**
+  Socratic question: "`hlse_triage_for()` calls `hlse_attacker_objective()` which
+  returns the FIRST brand's objective. For a PayPal+Apple co-spoof attack the
+  `⚑ If already clicked:` line says 'call the number on the back of your card' —
+  correct for PayPal, but completely silent on Apple ID. Apple ID is the identity
+  keystone that can reset every other account the victim owns. In a compound
+  attack the user has TWO concurrent incident-response obligations. If they
+  prioritise the bank call and miss the Apple ID reset window, the attacker
+  still controls the recovery gateway for their entire account ecosystem. Shouldn't
+  the triage line cover both?" New `hlse_compound_triage(const Verdict *v, char *out,
+  size_t outsz)` (public API) collects both impersonated brands' objective classes,
+  maps each to a concise triage imperative via the new static helper
+  `triage_imperative()`, and for n_brands >= 2 writes a numbered two-step sequence:
+  `"(1) call the number on the back of your card to freeze it…; (2) change that
+  email/identity password, revoke all sessions…"`. For n_brands == 1 writes the
+  same result as `hlse_triage_for()`. `hlse_triage_for()` preserved for backward
+  compat. Both text `⚑ If already clicked:` and JSON `"triage"` field updated.
+  8 new CLI integration tests (271 total). Zero warnings. F1 = 1.000 preserved.
+
 ## [1.0.21] — 2026-06-17
 
 ### Added

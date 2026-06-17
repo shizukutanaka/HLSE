@@ -2972,6 +2972,119 @@ hlse_triage_for(const Verdict *v) {
            "active, and check recent login activity for unauthorised sessions";
 }
 
+/* Map an objective-class label to its concise triage imperative for use
+ * in compound (multi-brand) triage sentences.
+ * Returns a short phrase (<= 140 chars) or the generic fallback. */
+static const char *
+triage_imperative(const char *cls) {
+    if (!cls) return "change the password and check recent login activity";
+    if (strcmp(cls, "financial") == 0)
+        return "call the number on the back of your card to freeze it and dispute "
+               "pending transactions";
+    if (strcmp(cls, "crypto") == 0)
+        return "move remaining assets to a new wallet immediately \xe2\x80\x94 "
+               "crypto transfers are irreversible";
+    if (strcmp(cls, "vault") == 0)
+        return "change your master password and rotate every stored credential "
+               "now \xe2\x80\x94 a compromised vault is a skeleton key to every account";
+    if (strcmp(cls, "identity") == 0)
+        return "change that email/identity password, revoke all sessions, and "
+               "audit recovery options \xe2\x80\x94 it can reset every other account";
+    if (strcmp(cls, "corporate") == 0)
+        return "notify your IT/security team immediately \xe2\x80\x94 enterprise "
+               "SSO compromise enables lateral movement within minutes";
+    if (strcmp(cls, "social") == 0)
+        return "revoke active sessions, change your password, and warn your "
+               "contacts \xe2\x80\x94 attackers target your network next";
+    if (strcmp(cls, "telecom") == 0)
+        return "call your carrier to add a SIM-lock PIN \xe2\x80\x94 a SIM-swap "
+               "defeats every SMS-based 2FA code";
+    if (strcmp(cls, "AI/API") == 0)
+        return "revoke the affected API key in the provider console now";
+    if (strcmp(cls, "gaming") == 0)
+        return "change your account password and enable 2FA \xe2\x80\x94 gaming "
+               "accounts are listed for sale within minutes";
+    if (strcmp(cls, "subscription") == 0 || strcmp(cls, "payment") == 0)
+        return "remove saved payment methods and change your password";
+    return "change the password and check recent login activity";
+}
+
+/* Compound first-response triage for the post-click user — the temporal
+ * complement to hlse_cascade_risk, narrowed to the next 60 seconds.
+ *
+ * Socratic question (Perspective 23): "hlse_triage_for() calls
+ * hlse_attacker_objective() which returns the FIRST brand's objective.
+ * For a PayPal+Apple co-spoof (financial AND identity), the triage line says
+ * 'call the number on the back of your card' — correct for PayPal but silent
+ * on Apple ID. That account can reset every other account the victim owns.
+ * In a compound attack the victim has TWO concurrent incident-response
+ * obligations, not one. If they prioritise the bank call and miss the Apple
+ * ID reset window, the attacker still controls the recovery gateway for their
+ * entire account ecosystem. Shouldn't the ⚑ line cover both?
+ *
+ * For n_brands == 1: writes the same result as hlse_triage_for().
+ * For n_brands >= 2: writes a numbered two-step sequence:
+ *   '(1) <financial triage>; (2) <identity triage>'
+ * so both response obligations are visible in one line without truncation.
+ * Caller supplies `out` buffer (512+ bytes for compound case);
+ * returns 1 when guidance was written, 0 when score < 60 or buffer too small. */
+int
+hlse_compound_triage(const Verdict *v, char *out, size_t outsz) {
+    int i;
+    char brand1[64] = "";
+    char brand2[64] = "";
+    const char *class1 = NULL, *class2 = NULL;
+    int n_found = 0;
+    const char *single;
+
+    /* 512-byte minimum for compound two-step triage sentence */
+    if (!v || !out || outsz < 512 || v->score < 60) return 0;
+    out[0] = '\0';
+
+    for (i = 0; i < v->n_reasons && n_found < 2; i++) {
+        const char *r     = v->reasons[i];
+        const char *start = strstr(r, "Legitimate '");
+        const char *end;
+        char brand[64];
+        size_t len;
+        if (!start) continue;
+        start += 12;
+        end = strchr(start, '\'');
+        if (!end) continue;
+        len = (size_t)(end - start);
+        if (len == 0 || len >= sizeof(brand)) continue;
+        memcpy(brand, start, len);
+        brand[len] = '\0';
+        if (n_found == 0) {
+            memcpy(brand1, brand, len + 1);
+            class1 = brand_objective_class(brand1);
+        } else {
+            memcpy(brand2, brand, len + 1);
+            class2 = brand_objective_class(brand2);
+        }
+        n_found++;
+    }
+
+    if (n_found == 0) {
+        /* No brand found — fall back to hlse_triage_for() */
+        single = hlse_triage_for(v);
+        if (!single) return 0;
+        snprintf(out, outsz, "%s", single);
+        return 1;
+    }
+    if (n_found == 1) {
+        single = hlse_triage_for(v);
+        if (!single) return 0;
+        snprintf(out, outsz, "%s", single);
+        return 1;
+    }
+    /* n_found >= 2: compound two-step triage */
+    snprintf(out, outsz,
+             "(1) %s; (2) %s",
+             triage_imperative(class1), triage_imperative(class2));
+    return 1;
+}
+
 /* Cascade risk: the blast radius if the victim reused this password elsewhere.
  *
  * Socratic question (Perspective 18): "You've named the primary target and
@@ -3711,15 +3824,15 @@ print_json_url(const char *url, const Verdict *v) {
     char escaped_url[MAX_URL * 2];
     const char *pat = hlse_classify_url_attack(v);
     const char *vrf = hlse_verification_for(v);
-    const char *tri = hlse_triage_for(v);
     const char *cas = hlse_cascade_risk(v);
     char obj_buf[320] = "";
+    char tri_buf[512] = "";
     char asc_diff_buf[256] = "";
     char cf_buf[160] = "";
     char esc_pat[256] = "";
     char esc_obj[320] = "";
     char esc_vrf[512] = "";
-    char esc_tri[512] = "";
+    char esc_tri[1024] = "";
     char esc_cas[512] = "";
     char esc_asc[384] = "";
     char esc_cf[320] = "";
@@ -3733,13 +3846,14 @@ print_json_url(const char *url, const Verdict *v) {
     int  has_conf   = hlse_confusable_report(url, conf, sizeof(conf));
     int  has_asc    = hlse_ascii_diff(v, asc_diff_buf, sizeof(asc_diff_buf));
     int  signal_cnt = hlse_confidence_for(v, cf_buf, sizeof(cf_buf));
+    int  has_tri    = hlse_compound_triage(v, tri_buf, sizeof(tri_buf));
     int  has_canon  = (v->score == 0) &&
                       hlse_canonical_confirm(url, canon_brand, sizeof(canon_brand));
     json_escape(url, escaped_url, sizeof(escaped_url));
     if (pat)     json_escape(pat,          esc_pat,  sizeof(esc_pat));
     if (has_obj) json_escape(obj_buf,      esc_obj,  sizeof(esc_obj));
     if (vrf)     json_escape(vrf,          esc_vrf,  sizeof(esc_vrf));
-    if (tri)     json_escape(tri,          esc_tri,  sizeof(esc_tri));
+    if (has_tri) json_escape(tri_buf,      esc_tri,  sizeof(esc_tri));
     if (cas)     json_escape(cas,          esc_cas,  sizeof(esc_cas));
     if (has_asc) json_escape(asc_diff_buf, esc_asc,  sizeof(esc_asc));
     if (signal_cnt > 0) json_escape(cf_buf, esc_cf,  sizeof(esc_cf));
@@ -3756,7 +3870,7 @@ print_json_url(const char *url, const Verdict *v) {
     if (has_asc)    printf(",\"ascii_diff\":\"%s\"", esc_asc);
     if (has_safe)   printf(",\"safe_url\":\"%s\"", esc_safe);
     if (vrf)        printf(",\"verify\":\"%s\"", esc_vrf);
-    if (tri)        printf(",\"triage\":\"%s\"", esc_tri);
+    if (has_tri)    printf(",\"triage\":\"%s\"", esc_tri);
     if (cas)        printf(",\"cascade_risk\":\"%s\"", esc_cas);
     if (g_from_channel) {
         int d   = channel_delta(g_from_channel);
@@ -3821,13 +3935,13 @@ static void
 print_url_advisories(const char *url, const Verdict *uv) {
     const char *pat = hlse_classify_url_attack(uv);
     const char *vrf = hlse_verification_for(uv);
-    const char *tri = hlse_triage_for(uv);
     const char *cas = hlse_cascade_risk(uv);
     char obj_buf[320];
     char safe[384]; /* 384: compound "https://A and https://B" fits in 2*128+8 */
     char conf[160];
     char asc_diff[256];
     char cf_buf[160];
+    char tri_buf[512]; /* 512: compound two-step triage */
     if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
     if (hlse_confidence_for(uv, cf_buf, sizeof(cf_buf)))
         printf("  \xe2\x9a\x96 Confidence: %s\n", cf_buf);  /* ⚖ */
@@ -3840,7 +3954,8 @@ print_url_advisories(const char *url, const Verdict *uv) {
     if (hlse_safe_destinations(uv, safe, sizeof(safe)))
         printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
     if (vrf) printf("  \xe2\x9c\x93 Verify independently: %s\n", vrf);
-    if (tri) printf("  \xe2\x9a\x91 If already clicked: %s\n", tri);
+    if (hlse_compound_triage(uv, tri_buf, sizeof(tri_buf)))
+        printf("  \xe2\x9a\x91 If already clicked: %s\n", tri_buf);
     if (cas) printf("  \xe2\x8a\x95 Also change: %s\n", cas);  /* ⊕ */
 }
 

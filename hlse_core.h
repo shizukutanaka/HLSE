@@ -27,7 +27,7 @@
 #include <stddef.h>   /* size_t, for hlse_safe_destination() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.21"
+#define HLSE_VERSION "1.0.22"
 
 #ifdef __cplusplus
 extern "C" {
@@ -161,6 +161,15 @@ const char *hlse_verification_for(const Verdict *v);
  * brand-objective class as hlse_attacker_objective so the guidance matches
  * the specific asset at risk. Returns a static string, or NULL when score < 60. */
 const char *hlse_triage_for(const Verdict *v);
+
+/* Compound first-response triage for multi-brand co-spoof URLs — covers BOTH
+ * compromised asset classes in a numbered two-step sequence. For n_brands == 1
+ * writes the same result as hlse_triage_for(). For n_brands >= 2 writes
+ * "(1) <triage for brand1>; (2) <triage for brand2>". Caller-owned buffer
+ * (512+ bytes for compound case); returns 1 when guidance was written, 0 when
+ * score < 60 or no brand found. Prefer over hlse_triage_for() in display paths
+ * so compound attacks are not silently reported as single-target. */
+int hlse_compound_triage(const Verdict *v, char *out, size_t outsz);
 
 /* Positive authentication: tests whether the URL's host exactly matches a
  * canonical brand domain in the HLSE brand registry (e.g. paypal.com,

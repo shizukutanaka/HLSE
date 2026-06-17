@@ -1731,6 +1731,70 @@ assert " and " in val, val
 ' && check "p22 json: multi-brand safe_url has both" "0" "0" \
    || check "p22 json: multi-brand safe_url has both" "0" "1"
 
+# ─── Perspective 23: compound triage ─────────────────────────────────────────
+# Single-brand financial: triage covers the bank/card step
+./hlse_core "https://paypa1.com/login" 2>/dev/null \
+    | grep "If already clicked:" \
+    | grep -q "card" \
+    && check "p23: single-brand financial triage has bank step" "0" "0" \
+    || check "p23: single-brand financial triage has bank step" "0" "1"
+
+# Single-brand: triage does NOT contain "(1)" numbering (single step)
+./hlse_core "https://paypa1.com/login" 2>/dev/null \
+    | grep "If already clicked:" \
+    | grep -qv "(1)" \
+    && check "p23: single-brand triage not numbered" "0" "0" \
+    || check "p23: single-brand triage not numbered" "0" "1"
+
+# Multi-brand: triage is a numbered two-step sequence
+./hlse_core "https://paypal.apple-secure.com/login" 2>/dev/null \
+    | grep "If already clicked:" \
+    | grep -q "(1).*; (2)" \
+    && check "p23: multi-brand triage is numbered two-step" "0" "0" \
+    || check "p23: multi-brand triage is numbered two-step" "0" "1"
+
+# Multi-brand: triage covers the financial (bank/card) step
+./hlse_core "https://paypal.apple-secure.com/login" 2>/dev/null \
+    | grep "If already clicked:" \
+    | grep -q "card" \
+    && check "p23: multi-brand triage covers financial step" "0" "0" \
+    || check "p23: multi-brand triage covers financial step" "0" "1"
+
+# Multi-brand: triage covers the identity (email/password/sessions) step
+./hlse_core "https://paypal.apple-secure.com/login" 2>/dev/null \
+    | grep "If already clicked:" \
+    | grep -qi "password\|session" \
+    && check "p23: multi-brand triage covers identity step" "0" "0" \
+    || check "p23: multi-brand triage covers identity step" "0" "1"
+
+# Safe URL: no triage line (score < 60)
+./hlse_core "https://paypal.com" 2>/dev/null \
+    | grep -qv "If already clicked" \
+    && check "p23: safe URL no triage line" "0" "0" \
+    || check "p23: safe URL no triage line" "0" "1"
+
+# JSON: single-brand triage field has no "(1)" numbering
+P23_SINGLE_JSON=$(./hlse_core --json "https://paypa1.com/login" 2>/dev/null) || true
+echo "$P23_SINGLE_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "triage" in d, d
+assert "(1)" not in d["triage"], d["triage"]
+' && check "p23 json: single-brand triage not compound" "0" "0" \
+   || check "p23 json: single-brand triage not compound" "0" "1"
+
+# JSON: multi-brand triage field is a compound two-step
+P23_MULTI_JSON=$(./hlse_core --json "https://paypal.apple-secure.com/login" 2>/dev/null) || true
+echo "$P23_MULTI_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "triage" in d, d
+val = d["triage"]
+assert "(1)" in val, val
+assert "(2)" in val, val
+' && check "p23 json: multi-brand triage is compound" "0" "0" \
+   || check "p23 json: multi-brand triage is compound" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
