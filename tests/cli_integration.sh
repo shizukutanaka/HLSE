@@ -2144,6 +2144,45 @@ assert "verify" not in d, d
 ' && check "p31 json: safe text has no verify field" "0" "0" \
    || check "p31 json: safe text has no verify field" "0" "1"
 
+# ─── Perspective 32: text cascade risk ───────────────────────────────────────
+# BEC ISOLATE: shows ⊕ Also change: corporate email cascade
+./hlse_core text "URGENT: CEO needs immediate wire transfer of 50000. Do not discuss with anyone." 2>/dev/null \
+    | grep "Also change:" \
+    | grep -qi "corporate email\|recovery address" \
+    && check "p32: BEC shows Also change: corporate email cascade" "0" "0" \
+    || check "p32: BEC shows Also change: corporate email cascade" "0" "1"
+
+# LOG text (score < 60): no ⊕ Also change: line (score-gated)
+./hlse_core text "Your account needs verification. Please verify now." 2>/dev/null \
+    | grep -qv "Also change:" \
+    && check "p32: LOG text has no Also change line" "0" "0" \
+    || check "p32: LOG text has no Also change line" "0" "1"
+
+# Safe text: no Also change line
+./hlse_core text "Meeting at 3pm tomorrow" 2>/dev/null \
+    | grep -qv "Also change:" \
+    && check "p32: safe text has no Also change line" "0" "0" \
+    || check "p32: safe text has no Also change line" "0" "1"
+
+# JSON BEC: has "cascade_risk" field
+./hlse_core --json text "URGENT: CEO needs immediate wire transfer of 50000. Do not discuss with anyone." 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "cascade_risk" in d, d
+assert "email" in d["cascade_risk"].lower() or "credentials" in d["cascade_risk"].lower(), d["cascade_risk"]
+' && check "p32 json: BEC has cascade_risk field" "0" "0" \
+   || check "p32 json: BEC has cascade_risk field" "0" "1"
+
+# JSON safe text: no cascade_risk field
+./hlse_core --json text "Meeting at 3pm tomorrow" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "cascade_risk" not in d, d
+' && check "p32 json: safe text has no cascade_risk field" "0" "0" \
+   || check "p32 json: safe text has no cascade_risk field" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

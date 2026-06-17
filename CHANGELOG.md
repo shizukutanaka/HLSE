@@ -2,6 +2,34 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.32] — 2026-06-17
+
+### Added
+- **Perspective 32: Text cascade risk (`hlse_text_cascade`).**
+  Socratic question: "URL verdicts have ⊕ Also change: naming every account
+  class in the password-reuse blast radius (email, banking, every service
+  sharing the harvested password). Text BLOCK verdicts identify the primary
+  attack and give triage — but say nothing about the downstream accounts that
+  fall if the primary is compromised. A ClickFix victim who disconnects their
+  machine has stopped the attack but may still have all saved browser passwords
+  exfiltrated. A BEC victim who recalls the wire has stopped the funds but the
+  corporate email account may be compromised, giving the attacker the recovery
+  address for everything else. Shouldn't text BLOCK verdicts also name what
+  else is at risk, parallel to the URL ⊕ Also change: line?" New
+  `hlse_text_cascade(const TextVerdict *v)` (public API) maps each text attack
+  pattern to a cascade description: ClickFix → all browser/OS stored credentials
+  (assume script exfiltrated them); BEC/CEO-fraud → corporate email (recovery
+  address for every downstream service); tech-support → all credentials visible
+  during remote-access session; urgency credential-harvest → email + every
+  account sharing the password; QR phishing → account entered + email + shared
+  passwords; investment scam → other liquid assets and exchange/bank accounts.
+  Returns NULL when score < 60 or no recognisable pattern. Displayed as
+  ⊕ Also change: after ⚑ If you acted: in all three text display paths. Added
+  as "cascade_risk" JSON field (score ≥ 60 only). 5 new tests (321 total).
+  Zero warnings. F1 = 1.000 preserved. Text BLOCK advisory now has full
+  symmetry with URL BLOCK: Pattern → Objective → Verify first → Confidence →
+  Triage → Cascade risk.
+
 ## [1.0.31] — 2026-06-17
 
 ### Added

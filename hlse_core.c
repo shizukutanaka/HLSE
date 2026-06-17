@@ -3573,6 +3573,61 @@ hlse_text_objective(const TextVerdict *v) {
     return NULL;
 }
 
+/* Cascade risk for a text verdict — the other accounts or assets at risk
+ * beyond the primary target.
+ *
+ * Socratic question (Perspective 32): "URL verdicts have ⊕ Also change:
+ * naming every account class in the password-reuse blast radius (email,
+ * banking, every service sharing the harvested password). Text BLOCK verdicts
+ * identify the primary attack and tell users what to do about it — but say
+ * nothing about the downstream accounts that fall if the primary is compromised.
+ * A ClickFix victim who disconnects their machine has fixed the primary but may
+ * still have all their saved browser passwords exfiltrated. A BEC victim who
+ * recalls the wire has stopped the funds but may have the corporate email
+ * account compromised, giving the attacker the recovery address for everything
+ * else. Shouldn't text BLOCK verdicts also name what else is at risk, parallel
+ * to the URL ⊕ Also change: line?"
+ *
+ * Keyed to the attack pattern from hlse_classify_text_attack(). Returns a
+ * static string, or NULL when score < 60 or no recognisable pattern.
+ * Thread-safe; no allocation.                                                 */
+const char *
+hlse_text_cascade(const TextVerdict *v) {
+    const char *pat;
+    if (!v || v->score < 60) return NULL;
+    pat = hlse_classify_text_attack(v);
+    if (!pat) return NULL;
+    if (strstr(pat, "ClickFix"))
+        return "all credentials stored in browsers, password managers, and the OS "
+               "credential store \xe2\x80\x94 assume the script exfiltrated them; "
+               "change all saved passwords from a clean device";
+    if (strstr(pat, "BEC") || strstr(pat, "CEO") ||
+        strstr(pat, "wire-transfer") || strstr(pat, "wire transfer"))
+        return "corporate email (likely the channel used to authorise the transfer "
+               "and the recovery address for every downstream service) \xe2\x80\x94 "
+               "treat it as compromised and change it from a different device";
+    if (strstr(pat, "tech-support"))
+        return "all credentials visible during the remote-access session "
+               "\xe2\x80\x94 the operator could see your screen, saved logins, and "
+               "password manager; change them all from a different device";
+    if (strstr(pat, "urgency credential") || strstr(pat, "credential / payment") ||
+        strstr(pat, "authority impersonation"))
+        return "email (the recovery gateway for all other accounts), banking and "
+               "payment apps, and every account sharing this password "
+               "\xe2\x80\x94 credential-stuffing bots test stolen logins within "
+               "minutes of harvest";
+    if (strstr(pat, "QR") || strstr(pat, "quishing"))
+        return "the account entered after redirect, email (recovery gateway), and "
+               "every service sharing that password";
+    if (strstr(pat, "investment") || strstr(pat, "pig-butchering"))
+        return "other liquid assets and any exchange accounts or bank accounts used "
+               "to fund the investment \xe2\x80\x94 review all recent transfers";
+    if (strstr(pat, "urgency"))
+        return "email (the recovery gateway) and every account sharing the password "
+               "or personal information disclosed under urgency pressure";
+    return NULL;
+}
+
 /* Cascade risk: the blast radius if the victim reused this password elsewhere.
  *
  * Socratic question (Perspective 18): "You've named the primary target and
@@ -4391,12 +4446,14 @@ print_json_text(const char *text, const TextVerdict *v) {
     const char *tobj = hlse_text_objective(v);    /* NULL outside score >= 60 */
     const char *tvrf = hlse_text_verify(v);       /* NULL outside score >= 60 */
     const char *ttri = hlse_text_triage(v);       /* NULL outside score >= 60 */
+    const char *tcas = hlse_text_cascade(v);      /* NULL outside score >= 60 */
     const char *exon = hlse_text_exoneration(v);  /* NULL outside [15,59] */
     char cf_buf[160] = "";
     char esc_pat[256] = "";
     char esc_tobj[512] = "";
     char esc_tvrf[512] = "";
     char esc_ttri[512] = "";
+    char esc_tcas[512] = "";
     char esc_exon[512] = "";
     char esc_cf[320] = "";
     int  sig_cnt = hlse_text_confidence(v, cf_buf, sizeof(cf_buf));
@@ -4412,6 +4469,7 @@ print_json_text(const char *text, const TextVerdict *v) {
     if (tobj)       json_escape(tobj,   esc_tobj, sizeof(esc_tobj));
     if (tvrf)       json_escape(tvrf,   esc_tvrf, sizeof(esc_tvrf));
     if (ttri)       json_escape(ttri,   esc_ttri, sizeof(esc_ttri));
+    if (tcas)       json_escape(tcas,   esc_tcas, sizeof(esc_tcas));
     if (exon)       json_escape(exon,   esc_exon, sizeof(esc_exon));
     if (sig_cnt > 0) json_escape(cf_buf, esc_cf,  sizeof(esc_cf));
     printf("{\"kind\":\"text\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
@@ -4422,6 +4480,7 @@ print_json_text(const char *text, const TextVerdict *v) {
     if (tobj) printf(",\"objective\":\"%s\"",   esc_tobj);
     if (tvrf) printf(",\"verify\":\"%s\"",      esc_tvrf);
     if (ttri) printf(",\"triage\":\"%s\"",      esc_ttri);
+    if (tcas) printf(",\"cascade_risk\":\"%s\"",esc_tcas);
     if (exon) printf(",\"exoneration\":\"%s\"", esc_exon);
     printf(",\"reasons\":[");
     {
@@ -4572,6 +4631,10 @@ stdin_mode(int json_out) {
                 {
                     const char *ttri = hlse_text_triage(&tv);
                     if (ttri) printf("  \xe2\x9a\x91 If you acted: %s\n", ttri);
+                }
+                {
+                    const char *tcas = hlse_text_cascade(&tv);
+                    if (tcas) printf("  \xe2\x8a\x95 Also change: %s\n", tcas);
                 }
                 if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                 if (tex) printf("  \xe2\x86\xba Could be benign: %s\n", tex);
@@ -5680,6 +5743,10 @@ main(int argc, char **argv) {
                             printf("  \xe2\x9a\x96 Confidence: %s\n", tcf);
                     }
                     if (ttri) printf("  \xe2\x9a\x91 If you acted: %s\n", ttri);
+                    {
+                        const char *tcas = hlse_text_cascade(&tv);
+                        if (tcas) printf("  \xe2\x8a\x95 Also change: %s\n", tcas);
+                    }
                     ex = hlse_text_exoneration(&tv);
                 }
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
@@ -5780,6 +5847,10 @@ main(int argc, char **argv) {
                         printf("  \xe2\x9a\x96 Confidence: %s\n", tcf);
                 }
                 if (ttri) printf("  \xe2\x9a\x91 If you acted: %s\n", ttri);
+                {
+                    const char *tcas = hlse_text_cascade(&tv);
+                    if (tcas) printf("  \xe2\x8a\x95 Also change: %s\n", tcas);
+                }
                 if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }

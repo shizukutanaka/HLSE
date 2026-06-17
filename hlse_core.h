@@ -28,7 +28,7 @@
 #include "hlse_text.h" /* TextVerdict, for hlse_classify_text_attack() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.31"
+#define HLSE_VERSION "1.0.32"
 
 #ifdef __cplusplus
 extern "C" {
@@ -155,6 +155,18 @@ const char *hlse_text_verify(const TextVerdict *v);
  *   urgency/cred.    → account credentials (cascade risk)
  * Returns NULL when score < 60 or no recognisable pattern. Thread-safe; no alloc. */
 const char *hlse_text_objective(const TextVerdict *v);
+
+/* Cascade risk for a text verdict — the other accounts and assets at risk
+ * beyond the primary target, after a text BLOCK threat materialises (score >= 60).
+ * Text counterpart of hlse_cascade_risk() for URL verdicts. Keyed to pattern:
+ *   ClickFix         → all browser/OS stored credentials (exfiltrated by script)
+ *   BEC/CEO-fraud    → corporate email (recovery address for every service)
+ *   tech-support     → all credentials visible during remote-access session
+ *   urgency/cred.    → email + every account sharing the harvested password
+ *   QR phishing      → account entered after redirect + email + shared passwords
+ *   investment       → other liquid assets and exchange/bank accounts funded
+ * Returns NULL when score < 60 or no recognisable pattern. Thread-safe; no alloc. */
+const char *hlse_text_cascade(const TextVerdict *v);
 
 /* Count the number of INDEPENDENT signal categories that fired in a text
  * verdict — the text counterpart of hlse_confidence_for. Counts distinct base
