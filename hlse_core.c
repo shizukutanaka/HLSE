@@ -2177,6 +2177,80 @@ hlse_url_exoneration(const Verdict *v) {
     return hlse_exoneration_for("url", v->score);
 }
 
+/* Pattern-aware exoneration for a text verdict — the benign explanation and
+ * falsifying test keyed to the specific social-engineering pattern, not the
+ * generic "urgent wording appears in genuine messages" catch-all.
+ *
+ * Socratic question (Perspective 30): "hlse_exoneration_for('text', score)
+ * returns 'heuristic — urgent or financial wording appears in genuine messages
+ * too' for every LOG/ALERT text verdict — including QR-code phishing (which
+ * has nothing to do with urgent wording), callback scams (which target phone
+ * numbers, not urgency language), and investment lures (which look like
+ * financial advice). The falsifying test ('were you expecting this, does it
+ * push you to act in a hurry?') is unanswerable for a QR code — QR codes are
+ * legitimately used everywhere. Shouldn't the benign explanation and decisive
+ * test match the actual signal pattern, exactly as hlse_url_exoneration does
+ * for URLs?"
+ *
+ * Returns a static string matched to the pattern in the verdict, or falls
+ * back to hlse_exoneration_for("text", score) when no specific pattern is
+ * recognisable. Returns NULL when score is outside [15, 59]. Thread-safe;
+ * no allocation.                                                              */
+const char *
+hlse_text_exoneration(const TextVerdict *v) {
+    const char *pat;
+    if (!v || v->score < 15 || v->score >= 60) return NULL;
+    pat = hlse_classify_text_attack(v);
+    if (!pat) return hlse_exoneration_for("text", v->score);
+
+    if (strstr(pat, "QR") || strstr(pat, "quishing"))
+        return "QR codes appear legitimately in event tickets, restaurant menus, "
+               "and physical adverts. Decisive test: scan with a QR decoder that "
+               "shows the URL before opening it, then verify the domain belongs "
+               "to the expected organisation";
+    if (strstr(pat, "callback") || strstr(pat, "TOAD") || strstr(pat, "vishing"))
+        return "organisations do send callback numbers for account verification. "
+               "Decisive test: find the number independently on the organisation's "
+               "official website and call that — not the number provided here";
+    if (strstr(pat, "investment") || strstr(pat, "pig-butchering"))
+        return "investment outreach from regulated firms is legitimate. Decisive "
+               "test: verify the firm's authorisation on the FCA/SEC/ASIC register "
+               "before sending any funds or personal information";
+    if (strstr(pat, "lottery") || strstr(pat, "advance-fee"))
+        return "prize notifications appear in genuine marketing campaigns. Decisive "
+               "test: search the organisation's official website — genuine prizes "
+               "do not require winners to pay upfront fees";
+    if (strstr(pat, "prize"))
+        return "prize and reward messages appear in legitimate loyalty programmes. "
+               "Decisive test: log in to your account at the organisation's official "
+               "domain (not via any link here) and check whether the reward appears";
+    if (strstr(pat, "urgency credential") || strstr(pat, "credential / payment"))
+        return "account security alerts are sent legitimately by services you use. "
+               "Decisive test: navigate to the site directly (not via any link in "
+               "this message) and check whether the alert appears in your account "
+               "dashboard";
+    if (strstr(pat, "authority impersonation"))
+        return "authority figures send urgent communications legitimately. Decisive "
+               "test: verify by calling the supposed sender on a number you already "
+               "have — not any contact provided in this message";
+    if (strstr(pat, "urgency"))
+        return "time-sensitive messages are common in legitimate business. Decisive "
+               "test: verify the request through a separately-known channel — "
+               "urgency combined with a request to act through an unusual channel "
+               "is the strongest warning sign";
+    if (strstr(pat, "BEC") || strstr(pat, "CEO") ||
+        strstr(pat, "wire-transfer") || strstr(pat, "wire transfer"))
+        return "internal payment requests do arrive by email. Decisive test: call "
+               "the supposed sender on a number you already have — wire-transfer "
+               "requests without a prior phone call are a strong warning sign";
+    if (strstr(pat, "tech-support"))
+        return "tech-support teams do send proactive alerts about account issues. "
+               "Decisive test: call the company's main switchboard (on their "
+               "official website), not any number provided in this message";
+    /* Fallback for any unrecognised text pattern */
+    return hlse_exoneration_for("text", v->score);
+}
+
 /* Synthesize a named attack pattern from the set of signals that fired.
  *
  * Socratic question (Perspective 17): "Single-brand detection assumes one
@@ -4249,7 +4323,7 @@ print_json_text(const char *text, const TextVerdict *v) {
     const char *pat  = hlse_classify_text_attack(v);
     const char *tobj = hlse_text_objective(v);    /* NULL outside score >= 60 */
     const char *ttri = hlse_text_triage(v);       /* NULL outside score >= 60 */
-    const char *exon = hlse_exoneration_for("text", v->score); /* NULL outside [15,59] */
+    const char *exon = hlse_text_exoneration(v);  /* NULL outside [15,59] */
     char cf_buf[160] = "";
     char esc_pat[256] = "";
     char esc_tobj[512] = "";
@@ -4409,7 +4483,7 @@ stdin_mode(int json_out) {
                     snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
                              "%s", sr.reasons[ti]);
                 tpat = hlse_classify_text_attack(&tv);
-                tex  = hlse_exoneration_for("text", eff);
+                tex  = hlse_text_exoneration(&tv);
                 if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
                 {
                     const char *tobj = hlse_text_objective(&tv);
@@ -5527,7 +5601,7 @@ main(int argc, char **argv) {
                             printf("  \xe2\x9a\x96 Confidence: %s\n", tcf);
                     }
                     if (ttri) printf("  \xe2\x9a\x91 If you acted: %s\n", ttri);
-                    ex = hlse_exoneration_for("text", sr.score);
+                    ex = hlse_text_exoneration(&tv);
                 }
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }
@@ -5611,7 +5685,7 @@ main(int argc, char **argv) {
                              "%s", sr.reasons[ti]);
                 tpat = hlse_classify_text_attack(&tv);
                 ttri = hlse_text_triage(&tv);
-                ex   = hlse_exoneration_for("text", eff);
+                ex   = hlse_text_exoneration(&tv);
                 if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
                 {
                     const char *tobj = hlse_text_objective(&tv);

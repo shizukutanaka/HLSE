@@ -28,7 +28,7 @@
 #include "hlse_text.h" /* TextVerdict, for hlse_classify_text_attack() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.29"
+#define HLSE_VERSION "1.0.30"
 
 #ifdef __cplusplus
 extern "C" {
@@ -89,6 +89,17 @@ const char *hlse_exoneration_for(const char *kind, int score);
  * hlse_exoneration_for("url", v->score) when no specific pattern is
  * recognisable. Returns NULL outside the LOG/ALERT band [15, 59]. */
 const char *hlse_url_exoneration(const Verdict *v);
+
+/* Pattern-aware exoneration for a text verdict — the benign explanation and
+ * falsifying test keyed to the specific social-engineering pattern rather than
+ * the generic "urgent wording appears in genuine messages" catch-all. Text
+ * counterpart of hlse_url_exoneration(). Keyed to the pattern returned by
+ * hlse_classify_text_attack(): QR → "scan with preview app first", callback →
+ * "call the official number instead", investment → "verify FCA/SEC register",
+ * lottery → "genuine prizes don't require upfront fees", etc. Falls back to
+ * hlse_exoneration_for("text", score) when no pattern is recognisable.
+ * Returns NULL outside the LOG/ALERT band [15, 59]. Thread-safe; no alloc. */
+const char *hlse_text_exoneration(const TextVerdict *v);
 
 /* Synthesise a named attack-pattern label from the signals in a URL Verdict
  * (e.g. "typosquat credential-harvest page", "free-hosting phishing

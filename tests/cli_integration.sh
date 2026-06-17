@@ -1897,13 +1897,13 @@ assert "exoneration" in d, d
 ' && check "p26 json: ALERT URL has exoneration" "0" "0" \
    || check "p26 json: ALERT URL has exoneration" "0" "1"
 
-# JSON text ALERT: exoneration present
+# JSON text ALERT: exoneration present (pattern-specific since P30)
 ./hlse_core --json text "Your account has been suspended! Verify immediately - urgent action required" 2>/dev/null \
     | python3 -c '
 import sys, json
 d = json.loads(sys.stdin.read())
 assert "exoneration" in d, d
-assert "urgent" in d["exoneration"].lower() or "genuine" in d["exoneration"].lower(), d["exoneration"]
+assert "decisive test" in d["exoneration"].lower(), d["exoneration"]
 ' && check "p26 json: text ALERT has exoneration" "0" "0" \
    || check "p26 json: text ALERT has exoneration" "0" "1"
 
@@ -2047,6 +2047,56 @@ d = json.loads(sys.stdin.read())
 assert "objective" not in d, d
 ' && check "p29 json: safe text has no objective field" "0" "0" \
    || check "p29 json: safe text has no objective field" "0" "1"
+
+# ─── Perspective 30: pattern-aware text exoneration ───────────────────────────
+# Urgency ALERT: pattern-specific exoneration (not generic "urgent wording")
+./hlse_core text "Your account has been suspended! Verify immediately - urgent action required" 2>/dev/null \
+    | grep "Could be benign:" \
+    | grep -qi "separately-known\|time-sensitive\|channel" \
+    && check "p30: urgency ALERT shows pattern-specific exoneration" "0" "0" \
+    || check "p30: urgency ALERT shows pattern-specific exoneration" "0" "1"
+
+# BEC/authority ALERT: wire-transfer-specific exoneration
+./hlse_core text "This is the CFO, I need you to wire funds to our new vendor. Keep confidential." 2>/dev/null \
+    | grep "Could be benign:" \
+    | grep -qi "call the supposed sender\|separately-known number\|wire-transfer" \
+    && check "p30: BEC ALERT shows wire-transfer-specific exoneration" "0" "0" \
+    || check "p30: BEC ALERT shows wire-transfer-specific exoneration" "0" "1"
+
+# BLOCK text (score >= 60): no exoneration shown
+./hlse_core text "CEO urgent: wire transfer 50000 immediately, do not discuss with anyone" 2>/dev/null \
+    | grep -qv "Could be benign:" \
+    && check "p30: BLOCK text has no exoneration" "0" "0" \
+    || check "p30: BLOCK text has no exoneration" "0" "1"
+
+# Safe text: no exoneration shown
+./hlse_core text "Meeting at 3pm tomorrow" 2>/dev/null \
+    | grep -qv "Could be benign:" \
+    && check "p30: safe text has no exoneration" "0" "0" \
+    || check "p30: safe text has no exoneration" "0" "1"
+
+# JSON text urgency ALERT: exoneration contains decisive test for pattern
+./hlse_core --json text "Your account has been suspended! Verify immediately - urgent action required" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "exoneration" in d, d
+assert "decisive test" in d["exoneration"].lower(), d["exoneration"]
+# Must NOT be the old generic text (pattern-specific since P30)
+assert "urgent or financial wording" not in d["exoneration"].lower(), d["exoneration"]
+' && check "p30 json: urgency ALERT has pattern-specific exoneration" "0" "0" \
+   || check "p30 json: urgency ALERT has pattern-specific exoneration" "0" "1"
+
+# JSON BEC ALERT: exoneration references calling to verify
+./hlse_core --json text "This is the CFO, I need you to wire funds to our new vendor. Keep confidential." 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "exoneration" in d, d
+# Wire-transfer specific: should reference calling the sender
+assert "call" in d["exoneration"].lower() or "phone" in d["exoneration"].lower(), d["exoneration"]
+' && check "p30 json: BEC ALERT exoneration references call to verify" "0" "0" \
+   || check "p30 json: BEC ALERT exoneration references call to verify" "0" "1"
 
 # ─── results ────────────────────────────────────────────────────────────
 

@@ -2,6 +2,32 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.30] — 2026-06-17
+
+### Added
+- **Perspective 30: Pattern-aware text exoneration (`hlse_text_exoneration`).**
+  Socratic question: "`hlse_exoneration_for('text', score)` returns 'heuristic —
+  urgent or financial wording appears in genuine messages too' for every LOG/ALERT
+  text verdict — including QR-code phishing (nothing to do with urgent wording),
+  callback scams (targeting phone numbers, not urgency language), and investment
+  lures (looking like financial advice). The falsifying test ('were you expecting
+  this, does it push you to act in a hurry?') is unanswerable for a QR code. Isn't
+  the benign explanation and decisive test wrong for most patterns — exactly the
+  same problem P24 fixed for URLs?" New `hlse_text_exoneration(const TextVerdict *v)`
+  (public API) mirrors `hlse_url_exoneration()` for text: QR → "scan with a QR
+  decoder that shows the URL before opening it"; callback/vishing → "find the number
+  independently on the official website"; investment/pig-butchering → "verify
+  FCA/SEC register"; lottery/advance-fee → "genuine prizes don't require upfront
+  fees"; urgency credential-harvest → "navigate to the site directly and check your
+  account dashboard"; authority impersonation → "verify by calling a number you
+  already have"; BEC/CEO-fraud → "wire-transfer requests without a prior phone call
+  are a strong warning sign". Falls back to `hlse_exoneration_for("text", score)`
+  for unrecognised patterns. Score-gated to [15, 59] (same as `hlse_url_exoneration`).
+  All three text display paths and `print_json_text()` updated to use
+  `hlse_text_exoneration()` in place of the generic call. P26 test updated to check
+  for "decisive test" (content-invariant) rather than the replaced generic text.
+  6 new P30 CLI integration tests (310 total). Zero warnings. F1 = 1.000 preserved.
+
 ## [1.0.29] — 2026-06-17
 
 ### Added
