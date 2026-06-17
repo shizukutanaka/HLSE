@@ -1667,6 +1667,70 @@ assert "signal_count" not in d, d
 ' && check "p21 json: safe URL no signal_count" "0" "0" \
    || check "p21 json: safe URL no signal_count" "0" "1"
 
+# ─── Perspective 22: compound safe destination ───────────────────────────────
+# Single-brand: Safe destination shows only that brand's URL
+./hlse_core "https://paypa1.com/login" 2>/dev/null \
+    | grep -q "Safe destination: https://paypal.com" \
+    && check "p22: single-brand safe destination" "0" "0" \
+    || check "p22: single-brand safe destination" "0" "1"
+
+# Single-brand: destination is exactly one URL (no " and ")
+./hlse_core "https://paypa1.com/login" 2>/dev/null \
+    | grep "Safe destination:" \
+    | grep -qv " and https://" \
+    && check "p22: single-brand no compound URL" "0" "0" \
+    || check "p22: single-brand no compound URL" "0" "1"
+
+# Multi-brand: safe destination shows BOTH canonical URLs
+./hlse_core "https://paypal.apple-secure.com/login" 2>/dev/null \
+    | grep -q "Safe destination: https://paypal.com and https://apple.com" \
+    && check "p22: multi-brand both destinations shown" "0" "0" \
+    || check "p22: multi-brand both destinations shown" "0" "1"
+
+# Multi-brand: paypal canonical present
+./hlse_core "https://paypal.apple-secure.com/login" 2>/dev/null \
+    | grep "Safe destination:" \
+    | grep -q "https://paypal.com" \
+    && check "p22: multi-brand paypal URL present" "0" "0" \
+    || check "p22: multi-brand paypal URL present" "0" "1"
+
+# Multi-brand: apple canonical present
+./hlse_core "https://paypal.apple-secure.com/login" 2>/dev/null \
+    | grep "Safe destination:" \
+    | grep -q "https://apple.com" \
+    && check "p22: multi-brand apple URL present" "0" "0" \
+    || check "p22: multi-brand apple URL present" "0" "1"
+
+# Safe URL: no Safe destination line (nothing to redirect to)
+./hlse_core "https://paypal.com" 2>/dev/null \
+    | grep -qv "Safe destination" \
+    && check "p22: safe URL no safe destination" "0" "0" \
+    || check "p22: safe URL no safe destination" "0" "1"
+
+# JSON: single-brand safe_url is one URL (no " and ")
+P22_SINGLE_JSON=$(./hlse_core --json "https://paypa1.com/login" 2>/dev/null) || true
+echo "$P22_SINGLE_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "safe_url" in d, d
+assert " and " not in d["safe_url"], d["safe_url"]
+assert d["safe_url"] == "https://paypal.com", d["safe_url"]
+' && check "p22 json: single-brand safe_url" "0" "0" \
+   || check "p22 json: single-brand safe_url" "0" "1"
+
+# JSON: multi-brand safe_url contains both destinations
+P22_MULTI_JSON=$(./hlse_core --json "https://paypal.apple-secure.com/login" 2>/dev/null) || true
+echo "$P22_MULTI_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "safe_url" in d, d
+val = d["safe_url"]
+assert "paypal.com" in val, val
+assert "apple.com" in val, val
+assert " and " in val, val
+' && check "p22 json: multi-brand safe_url has both" "0" "0" \
+   || check "p22 json: multi-brand safe_url has both" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -2351,6 +2351,59 @@ hlse_safe_destination(const Verdict *v, char *out, size_t outsz) {
     return 0;
 }
 
+/* Compound safe destination — the logical counterpart to hlse_compound_objective:
+ * for multi-brand co-spoof URLs, a single canonical URL leaves the second
+ * brand's legitimate site unnamed while the ◉ and ⊕ lines name both.
+ *
+ * Socratic question (Perspective 22): "hlse_compound_objective already says
+ * 'compound theft — paypal (financial) AND apple (identity) both targeted
+ * simultaneously'. hlse_cascade_risk says 'two credential classes targeted at
+ * once — audit BOTH'. But → Safe destination: https://paypal.com names only
+ * PayPal. The user who just escaped a PayPal+Apple co-spoof phishing page reads
+ * 'go to paypal.com' and has no navigable address for their Apple account.
+ * The compound framing is now logically inconsistent — should both legitimate
+ * destinations appear on that line?"
+ *
+ * For n_brands == 1 writes "https://<domain>" exactly as hlse_safe_destination().
+ * For n_brands >= 2 writes "https://<domain1> and https://<domain2>".
+ * Caller supplies `out` buffer (256+ bytes recommended for compound case);
+ * returns 1 when any canonical domain was found, 0 otherwise. Thread-safe. */
+int
+hlse_safe_destinations(const Verdict *v, char *out, size_t outsz) {
+    int i;
+    char url1[128] = "";
+    char url2[128] = "";
+    int n_found = 0;
+
+    /* Minimum for "https://<longest domain>" (8 + 64 + NUL = 73) */
+    if (!v || !out || outsz < 10) return 0;
+    out[0] = '\0';
+
+    for (i = 0; i < v->n_reasons && n_found < 2; i++) {
+        const char *r     = v->reasons[i];
+        const char *brand = strstr(r, "Legitimate '");
+        const char *colon;
+        if (!brand) continue;
+        colon = strstr(brand, "': ");
+        if (!colon) continue;
+        /* colon+3 is the canonical domain (to end of reason string) */
+        if (n_found == 0)
+            snprintf(url1, sizeof(url1), "https://%s", colon + 3);
+        else
+            snprintf(url2, sizeof(url2), "https://%s", colon + 3);
+        n_found++;
+    }
+
+    if (n_found == 0) return 0;
+    if (n_found == 1 || url2[0] == '\0') {
+        snprintf(out, outsz, "%s", url1);
+        return 1;
+    }
+    /* n_found >= 2: name both destinations */
+    snprintf(out, outsz, "%s and %s", url1, url2);
+    return 1;
+}
+
 /* True if `brand` is one of the NULL-terminated names in `set`. */
 static int
 brand_in_set(const char *brand, const char *const *set) {
@@ -3670,13 +3723,13 @@ print_json_url(const char *url, const Verdict *v) {
     char esc_cas[512] = "";
     char esc_asc[384] = "";
     char esc_cf[320] = "";
-    char safe[MAX_URL];
-    char esc_safe[MAX_URL * 2] = "";
+    char safe[384]; /* compound "https://A and https://B" */
+    char esc_safe[768] = "";
     char conf[160];
     char esc_conf[320] = "";
     char canon_brand[64];
     int  has_obj    = hlse_compound_objective(v, obj_buf, sizeof(obj_buf));
-    int  has_safe   = hlse_safe_destination(v, safe, sizeof(safe));
+    int  has_safe   = hlse_safe_destinations(v, safe, sizeof(safe));
     int  has_conf   = hlse_confusable_report(url, conf, sizeof(conf));
     int  has_asc    = hlse_ascii_diff(v, asc_diff_buf, sizeof(asc_diff_buf));
     int  signal_cnt = hlse_confidence_for(v, cf_buf, sizeof(cf_buf));
@@ -3771,7 +3824,7 @@ print_url_advisories(const char *url, const Verdict *uv) {
     const char *tri = hlse_triage_for(uv);
     const char *cas = hlse_cascade_risk(uv);
     char obj_buf[320];
-    char safe[MAX_URL];
+    char safe[384]; /* 384: compound "https://A and https://B" fits in 2*128+8 */
     char conf[160];
     char asc_diff[256];
     char cf_buf[160];
@@ -3784,7 +3837,7 @@ print_url_advisories(const char *url, const Verdict *uv) {
         printf("  \xe2\x8c\x96 ASCII lookalike: %s\n", asc_diff);
     if (hlse_compound_objective(uv, obj_buf, sizeof(obj_buf)))
         printf("  \xe2\x97\x89 Attacker's goal: %s\n", obj_buf);
-    if (hlse_safe_destination(uv, safe, sizeof(safe)))
+    if (hlse_safe_destinations(uv, safe, sizeof(safe)))
         printf("  \xe2\x86\x92 Safe destination: %s\n", safe);
     if (vrf) printf("  \xe2\x9c\x93 Verify independently: %s\n", vrf);
     if (tri) printf("  \xe2\x9a\x91 If already clicked: %s\n", tri);

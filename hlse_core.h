@@ -27,7 +27,7 @@
 #include <stddef.h>   /* size_t, for hlse_safe_destination() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.20"
+#define HLSE_VERSION "1.0.21"
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,6 +96,15 @@ const char *hlse_classify_url_attack(const Verdict *v);
  * the same phishing net. Writes "https://<domain>" into `out` (caller-owned)
  * and returns 1 when a canonical brand domain is present, 0 otherwise. */
 int hlse_safe_destination(const Verdict *v, char *out, size_t outsz);
+
+/* Compound safe destination — extends hlse_safe_destination for multi-brand
+ * co-spoof URLs where two legitimate sites were impersonated simultaneously.
+ * For n_brands == 1: writes "https://<domain>" (same as hlse_safe_destination).
+ * For n_brands >= 2: writes "https://<domain1> and https://<domain2>" so the
+ * → Safe destination line is consistent with the ◉ and ⊕ compound framing.
+ * Caller-owned buffer (256+ bytes recommended); returns 1 when found, 0 if no
+ * canonical brand domain exists in the verdict. */
+int hlse_safe_destinations(const Verdict *v, char *out, size_t outsz);
 
 /* Disclose how many INDEPENDENT detector families corroborate a URL verdict —
  * the epistemic complement to the score. The score says how threatening; this

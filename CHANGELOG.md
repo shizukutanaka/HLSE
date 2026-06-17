@@ -2,6 +2,30 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.21] — 2026-06-17
+
+### Added
+- **Perspective 22: Compound safe destination for multi-brand co-spoof URLs
+  (`hlse_safe_destinations`).**
+  Socratic question: "`hlse_compound_objective` already says 'compound theft —
+  paypal (financial) AND apple (identity) both targeted simultaneously' and
+  `hlse_cascade_risk` says 'audit BOTH credential classes'. But `→ Safe
+  destination:` shows only `https://paypal.com` — leaving the user with no
+  navigable address for their Apple account. The compound framing is now
+  logically inconsistent: three lines name both brands, one names only one.
+  Should both legitimate destinations appear on that line?" New
+  `hlse_safe_destinations(const Verdict *v, char *out, size_t outsz)` (public
+  API) extends `hlse_safe_destination()` to collect ALL impersonated brand
+  domains from the verdict's "Legitimate '<brand>': <domain>" reason strings.
+  For n_brands == 1 it writes `"https://<domain>"` identically to the original.
+  For n_brands >= 2 it writes `"https://<domain1> and https://<domain2>"` so the
+  `→ Safe destination:` line is coherent with `▸ Pattern: multi-brand co-spoof`,
+  `◉ Attacker's goal: compound theft — …`, and `⊕ Also change: two credential
+  classes…`. Both text output and JSON `"safe_url"` field use
+  `hlse_safe_destinations()`; the original `hlse_safe_destination()` is preserved
+  for library backward compat. 8 new CLI integration tests (263 total). Pure
+  output — no scoring change, F1 = 1.000 preserved; zero warnings.
+
 ## [1.0.20] — 2026-06-17
 
 ### Added
