@@ -1795,6 +1795,40 @@ assert "(2)" in val, val
 ' && check "p23 json: multi-brand triage is compound" "0" "0" \
    || check "p23 json: multi-brand triage is compound" "0" "1"
 
+# ─── Perspective 24: pattern-aware exoneration ───────────────────────────────
+# Shortener: exoneration mentions expanding the link (not "hyphens/secure/login")
+./hlse_core "https://bit.ly/3xPhish" 2>/dev/null \
+    | grep "Could be benign:" \
+    | grep -qi "expand\|preview\|shortener" \
+    && check "p24: shortener exoneration mentions expand/preview" "0" "0" \
+    || check "p24: shortener exoneration mentions expand/preview" "0" "1"
+
+# Shortener: exoneration does NOT say "hyphens"
+./hlse_core "https://bit.ly/3xPhish" 2>/dev/null \
+    | grep "Could be benign:" \
+    | grep -qv "hyphens" \
+    && check "p24: shortener exoneration not generic hyphen text" "0" "0" \
+    || check "p24: shortener exoneration not generic hyphen text" "0" "1"
+
+# Subdomain spoofing: exoneration mentions right-to-left domain reading
+./hlse_core "https://secure-paypal-verify.blogspot.com" 2>/dev/null \
+    | grep "Could be benign:" \
+    | grep -qi "right-to-left\|registrable" \
+    && check "p24: subdomain exoneration mentions domain reading" "0" "0" \
+    || check "p24: subdomain exoneration mentions domain reading" "0" "1"
+
+# High-score BLOCK: no exoneration (score >= 60)
+./hlse_core "https://paypa1.com/login" 2>/dev/null \
+    | grep -qv "Could be benign" \
+    && check "p24: BLOCK score has no exoneration" "0" "0" \
+    || check "p24: BLOCK score has no exoneration" "0" "1"
+
+# Safe URL: no exoneration (score == 0)
+./hlse_core "https://paypal.com" 2>/dev/null \
+    | grep -qv "Could be benign" \
+    && check "p24: safe URL has no exoneration" "0" "0" \
+    || check "p24: safe URL has no exoneration" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

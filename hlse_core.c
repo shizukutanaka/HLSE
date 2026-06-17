@@ -2115,6 +2115,68 @@ hlse_version(void) {
     return HLSE_VERSION;
 }
 
+/* Pattern-aware exoneration: the benign explanation and falsifying test keyed
+ * to the specific attack pattern that fired, not a generic URL heuristic.
+ *
+ * Socratic question (Perspective 24): "hlse_exoneration_for('url', score)
+ * returns 'heuristic — legitimate small businesses also use hyphens and words
+ * like secure/login' for EVERY LOG/ALERT URL — including URL shorteners
+ * (bit.ly), DGA-style domains, free-hosting pages, and typosquats. A shortener
+ * LOG user reads 'hyphens and login words' and is completely confused — their
+ * URL has no hyphens. The falsifying test ('does the registrable domain belong
+ * to the brand?') is unanswerable for a shortener because the registrable
+ * domain IS the shortener (bit.ly). The exoneration isn't just generic; for
+ * shorteners it's actively wrong. Shouldn't the benign explanation match the
+ * actual signal?"
+ *
+ * Returns a static string matched to the pattern in the verdict, or falls
+ * back to the generic hlse_exoneration_for("url", score) when no specific
+ * pattern is recognisable. Returns NULL when score is outside [15, 59].
+ * Thread-safe: no allocation.                                               */
+const char *
+hlse_url_exoneration(const Verdict *v) {
+    const char *pat;
+    if (!v || v->score < 15 || v->score >= 60) return NULL;
+    pat = hlse_classify_url_attack(v);
+    if (!pat) return hlse_exoneration_for("url", v->score);
+
+    if (strstr(pat, "obfuscated") || strstr(pat, "shortener"))
+        return "URL shorteners are standard tools for social-media links, print "
+               "materials, and marketing campaigns. Decisive test: expand the link "
+               "first (append '+' for bit.ly/tinyurl previews) to see the real "
+               "destination before you open it";
+    if (strstr(pat, "free-hosting"))
+        return "developers and small teams legitimately host projects on GitHub "
+               "Pages, Netlify, and similar platforms. Decisive test: search the "
+               "exact domain — if it's a real project the owner is easy to find; "
+               "if it's impersonating a brand, ownership will be anonymous";
+    if (strstr(pat, "subdomain spoofing"))
+        return "legitimate small businesses and security vendors also use hyphens "
+               "and words like 'secure'/'verify' in subdomains. Decisive test: "
+               "read the domain right-to-left — the registrable part just before "
+               "the first '/' must belong to the real brand, not appear before it";
+    if (strstr(pat, "typosquat") || strstr(pat, "lookalike"))
+        return "human typing errors that coincidentally resemble brand names are "
+               "common. Decisive test: was this URL typed manually or sent by "
+               "someone? If sent, did the sender independently confirm it through "
+               "a channel you trust?";
+    if (strstr(pat, "DGA") || strstr(pat, "high-entropy"))
+        return "newly-registered or randomly-named domains are also used by "
+               "legitimate services, CDNs, and internal tools. Decisive test: "
+               "search the domain in a search engine — a legitimate service will "
+               "have a traceable history; a phishing domain will not";
+    if (strstr(pat, "high-risk TLD"))
+        return "high-risk TLDs (.xyz, .tk, .top) are also used by legitimate "
+               "start-ups and projects. Decisive test: find the brand via a "
+               "bookmark or search engine and confirm you reach the same domain";
+    if (strstr(pat, "credential trick") || strstr(pat, "@-trick"))
+        return "the '@' in a URL is a standard HTTP Basic Auth separator; some "
+               "internal tools use it legitimately. Decisive test: paste the URL "
+               "into a URL decoder — what comes after '@' is where you actually land";
+    /* Fallback for any unrecognised pattern */
+    return hlse_exoneration_for("url", v->score);
+}
+
 /* Synthesize a named attack pattern from the set of signals that fired.
  *
  * Socratic question (Perspective 17): "Single-brand detection assumes one
@@ -5082,8 +5144,7 @@ main(int argc, char **argv) {
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
-                const char *ex = hlse_exoneration_for(sr.is_url ? "url" : "text",
-                                                      sr.score);
+                const char *ex;
                 printf("%-7s [%d]  (text) %.60s%s\n",
                        hlse_action_for_score(sr.score),
                        sr.score, argv[idx + 1],
@@ -5094,6 +5155,9 @@ main(int argc, char **argv) {
                 if (sr.is_url) {
                     Verdict uv = check_url(argv[idx + 1]);
                     print_url_advisories(argv[idx + 1], &uv);
+                    ex = hlse_url_exoneration(&uv);
+                } else {
+                    ex = hlse_exoneration_for("text", sr.score);
                 }
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }
@@ -5148,7 +5212,6 @@ main(int argc, char **argv) {
                 eff += d; if (eff > 100) eff = 100;
                 ch_rsn = channel_reason(g_from_channel);
             }
-            const char *ex = hlse_exoneration_for(sr.is_url ? "url" : "text", eff);
             printf("%-7s [%d]  %s\n",
                    hlse_action_for_score(eff), eff, input);
             for (i = 0; i < sr.n_reasons; i++) {
@@ -5158,10 +5221,15 @@ main(int argc, char **argv) {
                 /* Re-run URL check to get a Verdict for pattern synthesis.
                  * hlse_scan already ran this internally; the cost is low.  */
                 Verdict uv = check_url(input);
+                const char *ex = hlse_url_exoneration(&uv);
                 print_url_advisories(input, &uv);
+                if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
+                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
+            } else {
+                const char *ex = hlse_exoneration_for("text", eff);
+                if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
+                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }
-            if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
-            if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
         }
         /* Gate uses effective score so --from boost is honoured in exit code. */
         {

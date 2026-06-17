@@ -27,7 +27,7 @@
 #include <stddef.h>   /* size_t, for hlse_safe_destination() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.22"
+#define HLSE_VERSION "1.0.23"
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,6 +81,13 @@ const char *hlse_blindspot_for(const char *kind);
  * and falsifying test, so a low-confidence ALERT is neither panic nor noise.
  * NULL outside the LOG/ALERT band or when there is no caveat. */
 const char *hlse_exoneration_for(const char *kind, int score);
+
+/* Pattern-aware exoneration for a URL verdict — the benign explanation keyed
+ * to the actual attack pattern that fired (shortener, subdomain, typosquat,
+ * DGA, …) rather than a generic heuristic. Falls back to
+ * hlse_exoneration_for("url", v->score) when no specific pattern is
+ * recognisable. Returns NULL outside the LOG/ALERT band [15, 59]. */
+const char *hlse_url_exoneration(const Verdict *v);
 
 /* Synthesise a named attack-pattern label from the signals in a URL Verdict
  * (e.g. "typosquat credential-harvest page", "free-hosting phishing

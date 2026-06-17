@@ -2,6 +2,39 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.23] — 2026-06-17
+
+### Added
+- **Perspective 24: Pattern-aware exoneration (`hlse_url_exoneration`).**
+  Socratic question: "`hlse_exoneration_for('url', score)` returns 'heuristic —
+  legitimate small businesses also use hyphens and words like secure/login' for
+  EVERY LOG/ALERT URL — including URL shorteners (bit.ly), DGA-style domains,
+  free-hosting pages, and typosquats. A shortener LOG user reads 'hyphens and
+  login words' and is completely confused — their URL has no hyphens. The
+  falsifying test ('does the registrable domain belong to the brand?') is
+  unanswerable for a shortener because the registrable domain IS the shortener
+  (bit.ly). The exoneration isn't just generic — for shorteners it's actively
+  wrong. Shouldn't the benign explanation match the actual signal?"
+  New `hlse_url_exoneration(const Verdict *v)` (public API) calls
+  `hlse_classify_url_attack()` to get the pattern and maps it to a specific
+  exoneration:
+  - **shortener/obfuscated**: "URL shorteners are standard tools for
+    social-media links and marketing; expand with '+' (bit.ly+, tinyurl+) to
+    see the destination first"
+  - **free-hosting**: "developers legitimately host on GitHub Pages/Netlify;
+    search the exact domain to find the owner"
+  - **subdomain spoofing**: "read the domain right-to-left — the registrable
+    part just before the first '/' must belong to the brand"
+  - **typosquat/lookalike**: "typing errors are common; confirm this was the
+    intended URL"
+  - **DGA/high-entropy**: "search the domain in a search engine — legitimate
+    services have traceable history"
+  - **high-risk TLD**: "find the brand via bookmark and compare the domain"
+  - **@-trick**: "paste into a URL decoder to see where you land"
+  - Falls back to the original `hlse_exoneration_for("url", score)` for
+    unrecognised patterns. `hlse_exoneration_for()` preserved for compat.
+  5 new CLI integration tests (276 total). Zero warnings. F1 = 1.000 preserved.
+
 ## [1.0.22] — 2026-06-17
 
 ### Added
