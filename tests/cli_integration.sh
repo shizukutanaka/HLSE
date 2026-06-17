@@ -2002,6 +2002,40 @@ assert "signal_count" not in d, d
 ' && check "p28 json: safe text no signal_count" "0" "0" \
    || check "p28 json: safe text no signal_count" "0" "1"
 
+# ─── Perspective 33: subdomain canonical confirmation ────────────────────────
+# Official PayPal subdomain: confirmed as canonical paypal
+./hlse_core "https://login.paypal.com" 2>/dev/null \
+    | grep -qi "confirmed authentic paypal" \
+    && check "p33: login.paypal.com confirmed canonical paypal" "0" "0" \
+    || check "p33: login.paypal.com confirmed canonical paypal" "0" "1"
+
+# Official Google subdomain: confirmed canonical
+./hlse_core "https://accounts.google.com/oauth" 2>/dev/null \
+    | grep -qi "confirmed authentic google" \
+    && check "p33: accounts.google.com confirmed canonical google" "0" "0" \
+    || check "p33: accounts.google.com confirmed canonical google" "0" "1"
+
+# Official Apple subdomain: confirmed canonical
+./hlse_core "https://id.apple.com" 2>/dev/null \
+    | grep -qi "confirmed authentic apple" \
+    && check "p33: id.apple.com confirmed canonical apple" "0" "0" \
+    || check "p33: id.apple.com confirmed canonical apple" "0" "1"
+
+# Root canonical still works: paypal.com confirmed
+./hlse_core "https://paypal.com" 2>/dev/null \
+    | grep -qi "confirmed authentic paypal" \
+    && check "p33: paypal.com root canonical still confirmed" "0" "0" \
+    || check "p33: paypal.com root canonical still confirmed" "0" "1"
+
+# JSON: official subdomain shows canonical_brand field
+./hlse_core --json "https://login.paypal.com" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d.get("canonical_brand") == "paypal", d
+' && check "p33 json: login.paypal.com has canonical_brand=paypal" "0" "0" \
+   || check "p33 json: login.paypal.com has canonical_brand=paypal" "0" "1"
+
 # ─── Perspective 29: text attacker objective ──────────────────────────────────
 # BEC text: shows ◉ Attacker's goal with wire-transfer framing
 ./hlse_core text "CEO urgent: wire transfer 50000 immediately, do not discuss with anyone" 2>/dev/null \

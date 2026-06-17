@@ -28,7 +28,7 @@
 #include "hlse_text.h" /* TextVerdict, for hlse_classify_text_attack() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.32"
+#define HLSE_VERSION "1.0.33"
 
 #ifdef __cplusplus
 extern "C" {
@@ -259,12 +259,14 @@ const char *hlse_triage_for(const Verdict *v);
  * so compound attacks are not silently reported as single-target. */
 int hlse_compound_triage(const Verdict *v, char *out, size_t outsz);
 
-/* Positive authentication: tests whether the URL's host exactly matches a
- * canonical brand domain in the HLSE brand registry (e.g. paypal.com,
- * zoom.us). Writes the matched brand name into `brand_out` and returns 1 when
- * confirmed; returns 0 otherwise. "Nothing wrong found" (score 0) and
- * "positively confirmed canonical" are logically distinct; this surfaces the
- * stronger claim for known-good domains. */
+/* Positive authentication: tests whether the URL's host is a confirmed
+ * canonical brand domain or an official subdomain of one in the HLSE brand
+ * registry (e.g. paypal.com, login.paypal.com, accounts.google.com,
+ * id.apple.com). Strips a leading "www." then checks: (1) exact match, (2)
+ * host ends with ".<canonical>" (official subdomain). This fires only at score
+ * 0 — a spoofed domain that triggered any brand detector has a non-zero score
+ * and never reaches this path. Writes the matched brand name into `brand_out`
+ * and returns 1 when confirmed; returns 0 otherwise. */
 int hlse_canonical_confirm(const char *url, char *brand_out, size_t brand_outsz);
 
 /* Password-reuse cascade risk after a credential-harvest click — which OTHER

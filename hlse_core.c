@@ -3719,13 +3719,18 @@ hlse_cascade_risk(const Verdict *v) {
  * 'I found nothing suspicious.' Why not say that?"
  *
  * Iterates BRANDS[] and brand_canonical() to test whether the URL's
- * effective host is an exact match for a registered canonical domain.
- * Strips a leading "www." before comparing (www.paypal.com → paypal.com).
- * The match is necessarily absent whenever a threat was found (a fake domain
- * never equals the canonical) so this only fires at score == 0.
+ * effective host is a confirmed canonical or official subdomain.
+ * Strips a leading "www." before comparing, then checks:
+ *   1. Exact match: paypal.com → paypal (same as before).
+ *   2. Official subdomain: login.paypal.com ends with ".paypal.com" → paypal.
+ * The subdomain check only fires at score == 0 (a fake domain that triggered
+ * any brand detector will have a non-zero score and never reaches this path).
+ * This closes the gap where official brand authentication subdomains such as
+ * login.paypal.com, accounts.google.com, and id.apple.com were indistinguishable
+ * from unknown domains in HLSE output.
  *
  * Writes the matched brand name into `brand_out` (caller-owned). Returns 1
- * when the URL is the confirmed canonical domain of a known brand, 0 otherwise.
+ * when the URL is confirmed canonical or an official brand subdomain, 0 otherwise.
  * Thread-safe; no allocation.                                                */
 int
 hlse_canonical_confirm(const char *url, char *brand_out, size_t brand_outsz) {
@@ -3753,7 +3758,25 @@ hlse_canonical_confirm(const char *url, char *brand_out, size_t brand_outsz) {
 
     for (i = 0; BRANDS[i]; i++) {
         const char *canon = brand_canonical(BRANDS[i]);
-        if (canon && strcmp(check, canon) == 0) {
+        size_t clen;
+        size_t chklen;
+        if (!canon) continue;
+        clen   = strlen(canon);
+        chklen = strlen(check);
+        /* Exact match (e.g. paypal.com) */
+        if (strcmp(check, canon) == 0) {
+            if (brand_outsz > 1) {
+                strncpy(brand_out, BRANDS[i], brand_outsz - 1);
+                brand_out[brand_outsz - 1] = '\0';
+            }
+            return 1;
+        }
+        /* Official subdomain (e.g. login.paypal.com, accounts.google.com).
+         * Requires chklen > clen + 1 (at least one label before the dot),
+         * a literal dot separator, and the suffix equal to the canonical. */
+        if (chklen > clen + 1 &&
+            check[chklen - clen - 1] == '.' &&
+            strcmp(check + chklen - clen, canon) == 0) {
             if (brand_outsz > 1) {
                 strncpy(brand_out, BRANDS[i], brand_outsz - 1);
                 brand_out[brand_outsz - 1] = '\0';

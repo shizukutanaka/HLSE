@@ -2,6 +2,27 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.33] — 2026-06-17
+
+### Fixed
+- **Perspective 33: Subdomain canonical confirmation (`hlse_canonical_confirm`).**
+  Socratic question: "`hlse_canonical_confirm()` confirms exact canonical domains
+  plus `www.` prefix — so `paypal.com` and `www.paypal.com` are confirmed. But
+  `login.paypal.com`, `accounts.google.com`, and `id.apple.com` are official
+  brand domains used in legitimate authentication flows. Without confirmation,
+  users scanning these URLs see no `✔ Canonical:` line — indistinguishable from
+  an unknown domain. Shouldn't HLSE confirm official subdomains of known brands,
+  so a user scanning `login.paypal.com` knows it's genuinely PayPal's
+  authentication domain?" Extended `hlse_canonical_confirm()` to also confirm
+  official subdomains: after stripping `www.`, checks both exact match AND
+  whether the host ends with `.<canonical_domain>`. The subdomain check is safe
+  because this path is only reached when `score == 0` — any spoofed domain that
+  triggered a brand detector has a non-zero score and never reaches this check.
+  `login.paypal.com`, `accounts.google.com`, `id.apple.com`, and any other
+  official brand subdomain now show `✔ Canonical: confirmed authentic <brand>
+  domain (HLSE brand registry)` and the `canonical_brand` JSON field. 5 new CLI
+  integration tests (326 total). Zero warnings. F1 = 1.000 preserved.
+
 ## [1.0.32] — 2026-06-17
 
 ### Added
