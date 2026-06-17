@@ -2212,6 +2212,12 @@ hlse_text_exoneration(const TextVerdict *v) {
         return "organisations do send callback numbers for account verification. "
                "Decisive test: find the number independently on the organisation's "
                "official website and call that — not the number provided here";
+    if (strstr(pat, "ClickFix") || strstr(pat, "script-injection"))
+        return "developers and sysadmins do share commands in messages. Decisive "
+               "test: legitimate software updates and fixes are delivered through "
+               "official package managers or websites — a message that asks you to "
+               "paste or run a command you were not expecting is the defining sign "
+               "of a script-injection lure";
     if (strstr(pat, "investment") || strstr(pat, "pig-butchering"))
         return "investment outreach from regulated firms is legitimate. Decisive "
                "test: verify the firm's authorisation on the FCA/SEC/ASIC register "
@@ -2247,6 +2253,11 @@ hlse_text_exoneration(const TextVerdict *v) {
         return "tech-support teams do send proactive alerts about account issues. "
                "Decisive test: call the company's main switchboard (on their "
                "official website), not any number provided in this message";
+    if (strstr(pat, "fake security alert") || strstr(pat, "account suspension"))
+        return "account suspension and security notices are sent legitimately by "
+               "service providers. Decisive test: log in to the service directly "
+               "(via bookmark or search engine, not any link here) and check "
+               "whether your account actually shows a problem";
     /* Fallback for any unrecognised text pattern */
     return hlse_exoneration_for("text", v->score);
 }
@@ -2379,6 +2390,7 @@ hlse_classify_text_attack(const TextVerdict *v) {
     int urgency = 0, bait = 0, prize = 0, ransom = 0, authority = 0;
     int secrecy = 0, investment = 0, qr = 0, callback = 0;
     int emergency = 0, clickfix = 0;
+    int fake_alert = 0, direct_fin = 0;
     int amp_bec = 0, amp_tss = 0, amp_ceo = 0, amp_laf = 0;
 
     if (!v || v->n_reasons == 0) return NULL;
@@ -2396,13 +2408,20 @@ hlse_classify_text_attack(const TextVerdict *v) {
         if (strstr(r, "Callback") || strstr(r, "TOAD") ||
             strstr(r, "smishing"))                    callback   = 1;
         if (strstr(r, "Emergency") || strstr(r, "grandparent")) emergency = 1;
-        if (strstr(r, "ClickFix"))                    clickfix   = 1;
+        if (strstr(r, "ClickFix") || strstr(r, "Shell-pipe")) clickfix  = 1;
+        if (strstr(r, "Fake security alert"))         fake_alert = 1;
+        if (strstr(r, "Direct financial action"))     direct_fin = 1;
         /* Amplifier pattern labels */
         if (strstr(r, "BEC") || strstr(r, "wire transfer"))  amp_bec = 1;
         if (strstr(r, "tech-support") || strstr(r, "gift card")) amp_tss = 1;
         if (strstr(r, "CEO-fraud"))                           amp_ceo = 1;
         if (strstr(r, "lottery") || strstr(r, "advance-fee")) amp_laf = 1;
     }
+
+    /* Fake security alerts and direct financial-action signals are credential/
+     * financial bait by nature; fold them into the bait category so they
+     * participate in BEC, urgency-credential, and related pattern rules. */
+    if (fake_alert || direct_fin) bait = 1;
 
     /* Specific amplifier patterns take priority over individual signals */
     if (clickfix)
@@ -2429,6 +2448,9 @@ hlse_classify_text_attack(const TextVerdict *v) {
         return "authority impersonation phishing";
     if (urgency && bait)
         return "urgency credential-harvest phishing";
+    /* Fake security alert without urgency amplifier — account suspension hook */
+    if (fake_alert)
+        return "fake security alert / account suspension phishing";
     if (urgency)
         return "urgency social engineering";
     if (bait)
@@ -2557,6 +2579,7 @@ hlse_text_confidence(const TextVerdict *v, char *out, size_t outsz) {
     int sig_urgency = 0, sig_financial = 0, sig_prize = 0, sig_ransom = 0;
     int sig_authority = 0, sig_secrecy = 0, sig_investment = 0;
     int sig_qr = 0, sig_callback = 0, sig_emergency = 0, sig_clickfix = 0;
+    int sig_fake_alert = 0, sig_direct_fin = 0;
     int n_sigs;
 
     if (!v || !out || outsz < 160) return 0;
@@ -2578,12 +2601,15 @@ hlse_text_confidence(const TextVerdict *v, char *out, size_t outsz) {
         if (strstr(r, "Callback") || strstr(r, "TOAD") ||
             strstr(r, "smishing"))                    sig_callback   = 1;
         if (strstr(r, "Emergency") || strstr(r, "grandparent")) sig_emergency = 1;
-        if (strstr(r, "ClickFix"))                    sig_clickfix   = 1;
+        if (strstr(r, "ClickFix") || strstr(r, "Shell-pipe")) sig_clickfix  = 1;
+        if (strstr(r, "Fake security alert"))         sig_fake_alert = 1;
+        if (strstr(r, "Direct financial action"))     sig_direct_fin = 1;
     }
 
     n_sigs = sig_urgency + sig_financial + sig_prize + sig_ransom +
              sig_authority + sig_secrecy + sig_investment + sig_qr +
-             sig_callback + sig_emergency + sig_clickfix;
+             sig_callback + sig_emergency + sig_clickfix +
+             sig_fake_alert + sig_direct_fin;
 
     if (n_sigs <= 0) return 0;
     if (n_sigs == 1) {

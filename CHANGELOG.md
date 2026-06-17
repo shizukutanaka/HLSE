@@ -2,6 +2,44 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.34] — 2026-06-17
+
+### Fixed
+- **Perspective 34: Unmapped text signal family coverage.**
+  Socratic question: "The text detector table has 14 signal families. Three of
+  them — `Fake security alert`, `Direct financial action`, and
+  `Shell-pipe-to-interpreter` — fire and contribute to the score, but were not
+  mapped in `hlse_classify_text_attack()` or `hlse_text_confidence()`. A message
+  containing only `Shell-pipe-to-interpreter` showed no `▸ Pattern:` and no
+  `⚖ Confidence:` line, and fell back to the generic 'urgent or financial
+  wording' exoneration (wrong — the signal has nothing to do with urgency). A
+  `Fake security alert + Urgency` ALERT showed `single signal` confidence even
+  though two independent families fired. Shouldn't every signal family that
+  contributes to the score also participate in classification and confidence?"
+  Three-part fix:
+  1. `Fake security alert` now sets `bait = 1` in classify (fake account-
+     suspension hooks ARE credential-harvest baits) and increments `n_sigs` in
+     confidence as an independent family. When `fake_alert` fires alone, the
+     pattern is "fake security alert / account suspension phishing" with a
+     service-provider-specific exoneration. When combined with `urgency`, the
+     pattern is promoted to "urgency credential-harvest phishing" (more accurate
+     than "urgency social engineering") and confidence correctly reflects both
+     signals.
+  2. `Direct financial action` similarly sets `bait = 1` and counts as an
+     independent signal in confidence. BEC inputs with explicit "send money"
+     language on top of "wire transfer" now show "high confidence — 3
+     independent signal categories" instead of "2".
+  3. `Shell-pipe-to-interpreter` maps to the `clickfix` classification path
+     (both are command-injection lures). Shell-pipe messages now show
+     `▸ Pattern: ClickFix script-injection lure (paste-and-run attack)`,
+     `⚖ Confidence: single signal`, and a decisive-test exoneration about
+     official package managers — replacing the previous silent drop-through to
+     a generic wrong exoneration.
+  `hlse_text_exoneration()` also gains a `ClickFix / script-injection` branch
+  covering the LOG/ALERT band for shell-pipe and ClickFix inputs, and a `fake
+  security alert / account suspension` branch for standalone fake-alert inputs.
+  7 new CLI integration tests (333 total). Zero warnings. F1 = 1.000 preserved.
+
 ## [1.0.33] — 2026-06-17
 
 ### Fixed
