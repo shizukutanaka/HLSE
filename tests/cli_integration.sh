@@ -1868,6 +1868,54 @@ assert "(2)" in val, val
     && check "p25 json: safe text has no pattern field" "0" "0" \
     || check "p25 json: safe text has no pattern field" "0" "1"
 
+# ─── Perspective 26: exoneration in JSON ──────────────────────────────────────
+# JSON URL LOG: exoneration field present
+./hlse_core --json "https://bit.ly/3xPhish" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "exoneration" in d, d
+assert len(d["exoneration"]) > 10, d["exoneration"]
+' && check "p26 json: LOG URL has exoneration field" "0" "0" \
+   || check "p26 json: LOG URL has exoneration field" "0" "1"
+
+# JSON URL BLOCK: no exoneration (score >= 60)
+./hlse_core --json "https://paypa1.com/login" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "exoneration" not in d, d
+' && check "p26 json: BLOCK URL no exoneration" "0" "0" \
+   || check "p26 json: BLOCK URL no exoneration" "0" "1"
+
+# JSON URL ALERT: exoneration present (subdomain case)
+./hlse_core --json "https://secure-paypal-verify.blogspot.com" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "exoneration" in d, d
+' && check "p26 json: ALERT URL has exoneration" "0" "0" \
+   || check "p26 json: ALERT URL has exoneration" "0" "1"
+
+# JSON text ALERT: exoneration present
+./hlse_core --json text "Your account has been suspended! Verify immediately - urgent action required" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "exoneration" in d, d
+assert "urgent" in d["exoneration"].lower() or "genuine" in d["exoneration"].lower(), d["exoneration"]
+' && check "p26 json: text ALERT has exoneration" "0" "0" \
+   || check "p26 json: text ALERT has exoneration" "0" "1"
+
+# JSON text ISOLATE: no exoneration (score >= 60)
+./hlse_core --json text "Hi this is the CEO, please wire 50000 immediately, keep it confidential" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "exoneration" not in d, d
+' && check "p26 json: text ISOLATE no exoneration" "0" "0" \
+   || check "p26 json: text ISOLATE no exoneration" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -2,6 +2,21 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.25] — 2026-06-17
+
+### Added
+- **Perspective 26: Exoneration field in JSON output.**
+  The `↺ Could be benign:` explanation is visible in human-readable text output
+  for LOG/ALERT verdicts (score 15–59) but was absent from JSON. Library and
+  pipeline consumers parsing JSON had no access to this field, forcing them to
+  re-implement the benign-explanation logic — or silently omit it from their UI.
+  Both `print_json_url()` and `print_json_text()` now emit `"exoneration"`
+  when the score is in the LOG/ALERT band [15, 59]. For URL verdicts this uses
+  the pattern-aware `hlse_url_exoneration()` (added in Perspective 24). For text
+  verdicts this uses `hlse_exoneration_for("text", score)`. The field is absent
+  (not `null`) when score ≥ 60 or score = 0. 5 new CLI integration tests (287
+  total). Zero warnings. F1 = 1.000 preserved.
+
 ## [1.0.24] — 2026-06-17
 
 ### Added

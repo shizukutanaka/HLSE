@@ -3964,9 +3964,10 @@ channel_reason(const char *ch)
 static void
 print_json_url(const char *url, const Verdict *v) {
     char escaped_url[MAX_URL * 2];
-    const char *pat = hlse_classify_url_attack(v);
-    const char *vrf = hlse_verification_for(v);
-    const char *cas = hlse_cascade_risk(v);
+    const char *pat  = hlse_classify_url_attack(v);
+    const char *vrf  = hlse_verification_for(v);
+    const char *cas  = hlse_cascade_risk(v);
+    const char *exon = hlse_url_exoneration(v); /* NULL outside [15,59] */
     char obj_buf[320] = "";
     char tri_buf[512] = "";
     char asc_diff_buf[256] = "";
@@ -3978,6 +3979,7 @@ print_json_url(const char *url, const Verdict *v) {
     char esc_cas[512] = "";
     char esc_asc[384] = "";
     char esc_cf[320] = "";
+    char esc_exon[512] = "";
     char safe[384]; /* compound "https://A and https://B" */
     char esc_safe[768] = "";
     char conf[160];
@@ -4001,6 +4003,7 @@ print_json_url(const char *url, const Verdict *v) {
     if (signal_cnt > 0) json_escape(cf_buf, esc_cf,  sizeof(esc_cf));
     if (has_safe) json_escape(safe, esc_safe, sizeof(esc_safe));
     if (has_conf) json_escape(conf, esc_conf, sizeof(esc_conf));
+    if (exon)    json_escape(exon, esc_exon, sizeof(esc_exon));
     printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
            escaped_url, v->score, action_for_score(v->score));
     if (signal_cnt > 0) printf(",\"signal_count\":%d,\"confidence\":\"%s\"",
@@ -4014,6 +4017,7 @@ print_json_url(const char *url, const Verdict *v) {
     if (vrf)        printf(",\"verify\":\"%s\"", esc_vrf);
     if (has_tri)    printf(",\"triage\":\"%s\"", esc_tri);
     if (cas)        printf(",\"cascade_risk\":\"%s\"", esc_cas);
+    if (exon)       printf(",\"exoneration\":\"%s\"", esc_exon);
     if (g_from_channel) {
         int d   = channel_delta(g_from_channel);
         int eff = v->score + d; if (eff > 100) eff = 100;
@@ -4037,8 +4041,10 @@ static void
 print_json_text(const char *text, const TextVerdict *v) {
     char esc[1024];
     char preview[256];
-    const char *pat = hlse_classify_text_attack(v);
+    const char *pat  = hlse_classify_text_attack(v);
+    const char *exon = hlse_exoneration_for("text", v->score); /* NULL outside [15,59] */
     char esc_pat[256] = "";
+    char esc_exon[512] = "";
     /* Truncate long text for the JSON preview */
     {
         size_t n = strlen(text);
@@ -4047,10 +4053,12 @@ print_json_text(const char *text, const TextVerdict *v) {
         preview[n] = '\0';
     }
     json_escape(preview, esc, sizeof(esc));
-    if (pat) json_escape(pat, esc_pat, sizeof(esc_pat));
+    if (pat)  json_escape(pat,  esc_pat,  sizeof(esc_pat));
+    if (exon) json_escape(exon, esc_exon, sizeof(esc_exon));
     printf("{\"kind\":\"text\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
            esc, v->score, hlse_text_action_for_score(v->score));
-    if (pat) printf(",\"pattern\":\"%s\"", esc_pat);
+    if (pat)  printf(",\"pattern\":\"%s\"",     esc_pat);
+    if (exon) printf(",\"exoneration\":\"%s\"", esc_exon);
     printf(",\"reasons\":[");
     {
         int i;
