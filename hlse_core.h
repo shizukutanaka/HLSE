@@ -27,7 +27,7 @@
 #include <stddef.h>   /* size_t, for hlse_safe_destination() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.19"
+#define HLSE_VERSION "1.0.20"
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,6 +96,16 @@ const char *hlse_classify_url_attack(const Verdict *v);
  * the same phishing net. Writes "https://<domain>" into `out` (caller-owned)
  * and returns 1 when a canonical brand domain is present, 0 otherwise. */
 int hlse_safe_destination(const Verdict *v, char *out, size_t outsz);
+
+/* Disclose how many INDEPENDENT detector families corroborate a URL verdict —
+ * the epistemic complement to the score. The score says how threatening; this
+ * says how much independent evidence agrees, so a borderline score backed by
+ * one fragile heuristic is distinguishable from the same score backed by four
+ * concurring detectors. Counts distinct families (homoglyph, path, TLD, etc.),
+ * collapsing reasons from the same technique and excluding the derived
+ * "Legitimate '<brand>'" evidence lines. Writes a qualitative label into `out`;
+ * returns the family count (0 when no signal fired). Caller owns the buffer. */
+int hlse_confidence_for(const Verdict *v, char *out, size_t outsz);
 
 /* Name the attacker's likely objective for a URL Verdict — the asset the
  * victim must now treat as compromised (e.g. "crypto theft — seed phrase or

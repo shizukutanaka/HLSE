@@ -2222,6 +2222,102 @@ hlse_classify_url_attack(const Verdict *v) {
     return NULL;
 }
 
+/* Count how many INDEPENDENT detector families corroborate a URL verdict, and
+ * map that to a qualitative confidence label.
+ *
+ * Socratic question (Perspective 21): "Your score says HOW threatening, but two
+ * verdicts both scoring 60 can be epistemically worlds apart: one from a single
+ * homoglyph detector barely crossing threshold, another from homoglyph + path +
+ * TLD + structure all agreeing. The first might be a fragile-heuristic false
+ * positive; the second is corroborated by four independent detectors. A SOC
+ * analyst triaging a borderline score has no way to tell which they're looking
+ * at. Shouldn't the output disclose how many independent signals concur, so a
+ * reviewer knows whether to trust a thin score or act on a corroborated one?"
+ *
+ * Counts DISTINCT detector families — not raw reasons — so that two reasons from
+ * the same family (e.g. "Brand homoglyph" + "Multiple confusable chars") count
+ * once. The "Legitimate '<brand>'" canonical lines are evidence the engine
+ * derived, not independent detections, so they are excluded. Writes a label
+ * ("single signal — corroborate before acting", "corroborated by N independent
+ * signals", etc.) into `out`; returns the family count (0 when no signal fired).
+ * Thread-safe; caller owns the buffer. */
+int
+hlse_confidence_for(const Verdict *v, char *out, size_t outsz) {
+    int fam_homoglyph = 0, fam_typosquat = 0, fam_idn = 0, fam_brand = 0;
+    int fam_subdomain = 0, fam_freehost = 0, fam_path = 0, fam_tld = 0;
+    int fam_shortener = 0, fam_attrick = 0, fam_ip = 0, fam_dga = 0;
+    int fam_structure = 0, fam_depth = 0;
+    int n_families;
+    int i;
+
+    /* 160-byte minimum: longest label ("high confidence — N independent
+     * detector families agree; this is a deliberate, multi-faceted spoof")
+     * is ~115 bytes incl. the multi-byte em dash. */
+    if (!v || !out || outsz < 160) return 0;
+    out[0] = '\0';
+    if (v->n_reasons == 0) return 0;
+
+    for (i = 0; i < v->n_reasons; i++) {
+        const char *r = v->reasons[i];
+        if (strstr(r, "homoglyph") || strstr(r, "Homoglyph") ||
+            strstr(r, "Mixed-script") || strstr(r, "confusable") ||
+            strstr(r, "Confusable"))                      fam_homoglyph = 1;
+        if (strstr(r, "Typosquat") || strstr(r, "typosquat")) fam_typosquat = 1;
+        if (strstr(r, "IDN") || strstr(r, "Punycode"))    fam_idn       = 1;
+        if (strstr(r, "Brand impersonation") ||
+            strstr(r, "Brand+") || strstr(r, "Brand present") ||
+            strstr(r, "Brand homoglyph"))                 fam_brand     = 1;
+        if (strstr(r, "Subdomain spoofing"))              fam_subdomain = 1;
+        if (strstr(r, "Free-hosting") ||
+            strstr(r, "free page builder"))               fam_freehost  = 1;
+        if (strstr(r, "path pattern") || strstr(r, "Phishing path"))
+                                                          fam_path      = 1;
+        if (strstr(r, "TLD"))                             fam_tld       = 1;
+        if (strstr(r, "shortener") || strstr(r, "Shortened"))
+                                                          fam_shortener = 1;
+        if (strstr(r, "credential trick") ||
+            strstr(r, "@ in authority"))                  fam_attrick   = 1;
+        if (strstr(r, "IP-based URL") || strstr(r, "IP-address host"))
+                                                          fam_ip        = 1;
+        if (strstr(r, "DGA") || strstr(r, "high-entropy") ||
+            strstr(r, "random-looking"))                  fam_dga       = 1;
+        if (strstr(r, "Phishing-typical domain structure")) fam_structure = 1;
+        if (strstr(r, "Deep subdomain nesting"))          fam_depth     = 1;
+    }
+
+    /* Homoglyph and typosquat are the same underlying family (lookalike SLD);
+     * collapse so we don't double-count a single visual-spoofing technique. */
+    if (fam_homoglyph && fam_typosquat) fam_typosquat = 0;
+    /* Brand-homoglyph sets both fam_homoglyph and fam_brand; the homoglyph is
+     * the detection, the brand match is its consequence — collapse to one when
+     * homoglyph is the only brand signal (no independent hyphenation/subdomain). */
+    if (fam_homoglyph && fam_brand &&
+        !fam_subdomain && !fam_freehost && !fam_structure) fam_brand = 0;
+
+    n_families = fam_homoglyph + fam_typosquat + fam_idn + fam_brand +
+                 fam_subdomain + fam_freehost + fam_path + fam_tld +
+                 fam_shortener + fam_attrick + fam_ip + fam_dga +
+                 fam_structure + fam_depth;
+
+    if (n_families <= 0) return 0;
+    if (n_families == 1) {
+        snprintf(out, outsz,
+                 "single signal \xe2\x80\x94 one detector fired; corroborate "
+                 "independently before acting on a borderline score");
+        return 1;
+    }
+    if (n_families == 2) {
+        snprintf(out, outsz,
+                 "corroborated by %d independent signals \xe2\x80\x94 unlikely "
+                 "to be a single-heuristic false positive", n_families);
+        return n_families;
+    }
+    snprintf(out, outsz,
+             "high confidence \xe2\x80\x94 %d independent detector families "
+             "agree; this is a deliberate, multi-faceted spoof", n_families);
+    return n_families;
+}
+
 /* Extract the safe destination a user actually wanted, from a URL verdict.
  *
  * Socratic question: "You blocked the counterfeit — but the user still has
@@ -3566,12 +3662,14 @@ print_json_url(const char *url, const Verdict *v) {
     const char *cas = hlse_cascade_risk(v);
     char obj_buf[320] = "";
     char asc_diff_buf[256] = "";
+    char cf_buf[160] = "";
     char esc_pat[256] = "";
     char esc_obj[320] = "";
     char esc_vrf[512] = "";
     char esc_tri[512] = "";
     char esc_cas[512] = "";
     char esc_asc[384] = "";
+    char esc_cf[320] = "";
     char safe[MAX_URL];
     char esc_safe[MAX_URL * 2] = "";
     char conf[160];
@@ -3581,6 +3679,7 @@ print_json_url(const char *url, const Verdict *v) {
     int  has_safe   = hlse_safe_destination(v, safe, sizeof(safe));
     int  has_conf   = hlse_confusable_report(url, conf, sizeof(conf));
     int  has_asc    = hlse_ascii_diff(v, asc_diff_buf, sizeof(asc_diff_buf));
+    int  signal_cnt = hlse_confidence_for(v, cf_buf, sizeof(cf_buf));
     int  has_canon  = (v->score == 0) &&
                       hlse_canonical_confirm(url, canon_brand, sizeof(canon_brand));
     json_escape(url, escaped_url, sizeof(escaped_url));
@@ -3590,10 +3689,13 @@ print_json_url(const char *url, const Verdict *v) {
     if (tri)     json_escape(tri,          esc_tri,  sizeof(esc_tri));
     if (cas)     json_escape(cas,          esc_cas,  sizeof(esc_cas));
     if (has_asc) json_escape(asc_diff_buf, esc_asc,  sizeof(esc_asc));
+    if (signal_cnt > 0) json_escape(cf_buf, esc_cf,  sizeof(esc_cf));
     if (has_safe) json_escape(safe, esc_safe, sizeof(esc_safe));
     if (has_conf) json_escape(conf, esc_conf, sizeof(esc_conf));
     printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
            escaped_url, v->score, action_for_score(v->score));
+    if (signal_cnt > 0) printf(",\"signal_count\":%d,\"confidence\":\"%s\"",
+                               signal_cnt, esc_cf);
     if (has_canon)  printf(",\"canonical_brand\":\"%s\"", canon_brand);
     if (pat)        printf(",\"pattern\":\"%s\"", esc_pat);
     if (has_obj)    printf(",\"objective\":\"%s\"", esc_obj);
@@ -3672,7 +3774,10 @@ print_url_advisories(const char *url, const Verdict *uv) {
     char safe[MAX_URL];
     char conf[160];
     char asc_diff[256];
+    char cf_buf[160];
     if (pat) printf("  \xe2\x96\xb8 Pattern: %s\n", pat);
+    if (hlse_confidence_for(uv, cf_buf, sizeof(cf_buf)))
+        printf("  \xe2\x9a\x96 Confidence: %s\n", cf_buf);  /* ⚖ */
     if (hlse_confusable_report(url, conf, sizeof(conf)))
         printf("  \xe2\x8c\x96 Disguised char: %s\n", conf);
     if (hlse_ascii_diff(uv, asc_diff, sizeof(asc_diff)))

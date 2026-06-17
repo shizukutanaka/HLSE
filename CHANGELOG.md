@@ -2,6 +2,32 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.20] — 2026-06-17
+
+### Added
+- **Perspective 21: Detection confidence / corroboration count (`hlse_confidence_for`).**
+  Socratic question: "Your score says HOW threatening, but two verdicts both
+  scoring 60 can be epistemically worlds apart: one from a single homoglyph
+  detector barely crossing threshold, another from homoglyph + path + TLD +
+  structure all agreeing. The first might be a fragile-heuristic false positive;
+  the second is corroborated by four independent detectors. A SOC analyst
+  triaging a borderline score has no way to tell which they're looking at.
+  Shouldn't the output disclose how many independent signals concur?" New
+  `hlse_confidence_for(const Verdict *v, char *out, size_t outsz)` (public API)
+  counts DISTINCT detector families — collapsing reasons from the same technique
+  (e.g. "Brand homoglyph" + "Multiple confusable chars" → one family) and
+  excluding the derived "Legitimate '<brand>'" canonical evidence lines — then
+  maps the count to a qualitative label: 1 → "single signal — corroborate
+  independently before acting on a borderline score"; 2 → "corroborated by N
+  independent signals"; 3+ → "high confidence — N independent detector families
+  agree; this is a deliberate, multi-faceted spoof". Returns the family count.
+  This is the epistemic complement to the score: magnitude vs. evidentiary
+  weight. Displayed as `⚖ Confidence:` directly after `▸ Pattern:` in text;
+  added as `"signal_count"` (integer) and `"confidence"` (label) in JSON — both
+  machine-usable for SOC triage rules ("auto-close single-signal ALERTs",
+  "page on-call for 4+ signal ISOLATEs"). 7 new CLI integration tests (255
+  total). Pure output — no scoring change, F1 = 1.000 preserved; zero warnings.
+
 ## [1.0.19] — 2026-06-16
 
 ### Added

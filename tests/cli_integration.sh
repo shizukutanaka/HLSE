@@ -1608,6 +1608,65 @@ assert "char 6" in d["ascii_diff"], d["ascii_diff"]
 ' && check "p20 json: ascii_diff field has char 6" "0" "0" \
    || check "p20 json: ascii_diff field has char 6" "0" "1"
 
+# ─── Perspective 21: Detection Confidence / Corroboration Count ─────────────
+
+# Socratic question: "Two verdicts both scoring 60 — one from a single fragile
+# heuristic, one from four detectors agreeing — are epistemically different.
+# Should the output disclose how many independent signals concur?"
+
+# g00gle.com: single detector family (homoglyph only) → "single signal"
+P21_SINGLE=$(./hlse_core "https://g00gle.com" 2>/dev/null) || true
+echo "$P21_SINGLE" | grep -q "Confidence" \
+    && check "p21: g00gle shows confidence line" "0" "0" \
+    || check "p21: g00gle shows confidence line" "0" "1"
+
+echo "$P21_SINGLE" | grep "Confidence" | grep -q "single signal" \
+    && check "p21: g00gle labelled single signal" "0" "0" \
+    || check "p21: g00gle labelled single signal" "0" "1"
+
+# paypal-verify.tk: many families (TLD+path+structure+brand) → high confidence
+P21_MANY=$(./hlse_core "https://paypal-verify.tk/account/login" 2>/dev/null) || true
+echo "$P21_MANY" | grep "Confidence" | grep -q "high confidence" \
+    && check "p21: multi-signal URL labelled high confidence" "0" "0" \
+    || check "p21: multi-signal URL labelled high confidence" "0" "1"
+
+# Safe URL: no confidence line (no signal fired)
+P21_SAFE=$(./hlse_core "https://paypal.com" 2>/dev/null) || true
+echo "$P21_SAFE" | grep -q "Confidence" \
+    && check "p21: safe URL no confidence line" "0" "1" \
+    || check "p21: safe URL no confidence line" "0" "0"
+
+# JSON: signal_count is an integer >= 1 and confidence present for a threat
+P21_JSON=$(./hlse_core --json "https://paypal-verify.tk/account/login" 2>/dev/null) || true
+echo "$P21_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert isinstance(d.get("signal_count"), int), d
+assert d["signal_count"] >= 3, d
+assert "confidence" in d, d
+assert "high confidence" in d["confidence"], d
+' && check "p21 json: signal_count int + confidence label" "0" "0" \
+   || check "p21 json: signal_count int + confidence label" "0" "1"
+
+# JSON: single-signal URL reports signal_count == 1
+P21_SINGLE_JSON=$(./hlse_core --json "https://g00gle.com" 2>/dev/null) || true
+echo "$P21_SINGLE_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d.get("signal_count") == 1, d
+assert "single signal" in d.get("confidence",""), d
+' && check "p21 json: single-signal count==1" "0" "0" \
+   || check "p21 json: single-signal count==1" "0" "1"
+
+# JSON: safe URL has no signal_count field
+P21_SAFE_JSON=$(./hlse_core --json "https://paypal.com" 2>/dev/null) || true
+echo "$P21_SAFE_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "signal_count" not in d, d
+' && check "p21 json: safe URL no signal_count" "0" "0" \
+   || check "p21 json: safe URL no signal_count" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
