@@ -2,6 +2,32 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.62] — 2026-06-20
+
+### Added
+- **Perspective 62: `protect`, `esp`, `package`, and `network` JSON carry
+  `signal_count`, `confidence`, and `exoneration` — pipeline consumers can
+  distinguish a single fragile heuristic from four concurring detectors,
+  and avoid paging at 3 am for a legitimate fork or a vendor firmware update.**
+  Socratic question: "The URL and email JSON outputs now include `signal_count`,
+  `confidence`, and `exoneration` in the LOG/ALERT band — giving pipelines the
+  epistemic context to distinguish a genuine threat from a false positive. The
+  `protect`, `esp`, `package`, and `network` subcommands all fire in the
+  LOG/ALERT band for heuristic-only detections (entropy anomaly without ransom
+  notes, near-miss package names, unusual DNS resolver, ESP file-size changes)
+  yet their JSON carries no `signal_count`, `confidence`, or `exoneration`. A
+  SIEM consuming their JSON in the ALERT band has no basis to calibrate: is
+  this one fragile heuristic or four independent signals?" Added
+  `signal_count` (int) and `confidence` ('single signal' / 'corroborated' /
+  'high confidence') when score > 0. Added `exoneration` (LOG/ALERT band only,
+  score 15–59) with four new kind strings in `hlse_exoneration_for()`:
+  'protect' (signature/hash check), 'esp' (vendor changelog cross-check),
+  'package' (registry maintainer + download count verification), 'network'
+  (owning process identification). Human output gains '↺ Could be benign:
+  ...' line for LOG/ALERT scores. Signal count for package uses `n_matches`
+  (each close package is an independent signal); protect/esp/network use
+  `n_reasons`. 5 new integration tests; 471 pass, 0 fail.
+
 ## [1.0.61] — 2026-06-20
 
 ### Added

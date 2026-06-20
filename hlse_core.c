@@ -2165,6 +2165,30 @@ hlse_exoneration_for(const char *kind, int score) {
         return "heuristic — forwarders, mailing lists, and some legitimate "
                "senders trip these checks. Decisive test: confirm the request "
                "with the sender through a separately-known channel.";
+    if (strcmp(kind, "protect") == 0)
+        return "heuristic \xe2\x80\x94 legitimate software (compression tools, "
+               "encrypted containers, software installers) can produce "
+               "high-entropy content and file patterns that resemble ransomware. "
+               "Decisive test: verify the file has a publisher signature whose "
+               "hash matches the vendor's published release notes.";
+    if (strcmp(kind, "esp") == 0)
+        return "heuristic \xe2\x80\x94 hardware-vendor firmware updates and "
+               "OS-managed bootloaders also modify the EFI System Partition. "
+               "Decisive test: cross-check the modified file against your last "
+               "known-good ESP snapshot and the vendor's firmware changelog "
+               "before taking any disruptive action.";
+    if (strcmp(kind, "package") == 0)
+        return "heuristic \xe2\x80\x94 a name this close to a popular library can be "
+               "a legitimate fork, organisation-scoped package, or namespace "
+               "variant. Decisive test: search the official registry for the "
+               "exact name, verify the maintainer's username matches the "
+               "original project, and check the publish date and download count.";
+    if (strcmp(kind, "network") == 0)
+        return "heuristic \xe2\x80\x94 update servers, telemetry daemons, and "
+               "monitoring agents routinely make external connections on unusual "
+               "ports. Decisive test: identify the owning process "
+               "('lsof -i' or 'ss -tp') and verify it against the software's "
+               "documented network requirements.";
     return NULL;
 }
 
@@ -5841,6 +5865,12 @@ main(int argc, char **argv) {
                         printf(",\"blind_spot\":\"%s\"", esc_bs);
                     }
                 }
+                if (pv.score > 0) {
+                    int ns = pv.n_reasons;
+                    const char *conf = ns >= 3 ? "high confidence" :
+                                       ns >= 2 ? "corroborated" : "single signal";
+                    printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
+                }
                 if (pv.score >= 60) {
                     static const char prt_pat[] =
                         "ransomware / destructive malware indicators detected";
@@ -5871,6 +5901,14 @@ main(int argc, char **argv) {
                     json_escape(prt_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
                     json_escape(prt_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
                 }
+                if (pv.score > 0 && pv.score < 60) {
+                    const char *ex = hlse_exoneration_for("protect", pv.score);
+                    if (ex) {
+                        char e[512];
+                        json_escape(ex, e, sizeof(e));
+                        printf(",\"exoneration\":\"%s\"", e);
+                    }
+                }
                 printf("}\n");
             } else if (pv.score == 0) {
                 const char *bs = hlse_blindspot_for("protect");
@@ -5899,6 +5937,9 @@ main(int argc, char **argv) {
                     printf("  \xe2\x8a\x95 Also change: all credentials on this machine "
                            "and any network shares it accessed \xe2\x80\x94 rotate domain "
                            "admin, VPN, and cloud credentials from a clean device\n");
+                } else {
+                    const char *ex = hlse_exoneration_for("protect", pv.score);
+                    if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                 }
             }
             return pv.score >= g_fail_threshold ? 1 : 0;
@@ -5926,6 +5967,12 @@ main(int argc, char **argv) {
                     json_escape(bs, esc_bs, sizeof(esc_bs));
                     printf(",\"blind_spot\":\"%s\"", esc_bs);
                 }
+            }
+            if (pv.score > 0) {
+                int ns = pv.n_reasons;
+                const char *conf = ns >= 3 ? "high confidence" :
+                                   ns >= 2 ? "corroborated" : "single signal";
+                printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
             }
             if (pv.score >= 60) {
                 static const char esp_pat[] =
@@ -5960,6 +6007,14 @@ main(int argc, char **argv) {
                 json_escape(esp_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
                 json_escape(esp_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
             }
+            if (pv.score > 0 && pv.score < 60) {
+                const char *ex = hlse_exoneration_for("esp", pv.score);
+                if (ex) {
+                    char e[512];
+                    json_escape(ex, e, sizeof(e));
+                    printf(",\"exoneration\":\"%s\"", e);
+                }
+            }
             printf("}\n");
         } else if (pv.score == 0) {
             const char *bs = hlse_blindspot_for("esp");
@@ -5989,6 +6044,9 @@ main(int argc, char **argv) {
                 printf("  \xe2\x8a\x95 Also change: all credentials on this machine "
                        "\xe2\x80\x94 a bootkit has pre-OS access to all keys; rotate "
                        "from a clean device and treat the machine as untrusted\n");
+            } else {
+                const char *ex = hlse_exoneration_for("esp", pv.score);
+                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }
         }
         return pv.score >= g_fail_threshold ? 1 : 0;
@@ -6030,6 +6088,12 @@ main(int argc, char **argv) {
                         printf(",\"blind_spot\":\"%s\"", esc_bs);
                     }
                 }
+                if (pv.score > 0) {
+                    int ns = pv.n_matches > 0 ? pv.n_matches : 1;
+                    const char *conf = ns >= 3 ? "high confidence" :
+                                       ns >= 2 ? "corroborated" : "single signal";
+                    printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
+                }
                 if (pv.score >= 60) {
                     static const char pkg_pat[] =
                         "dependency confusion / typosquat supply-chain attack";
@@ -6064,6 +6128,14 @@ main(int argc, char **argv) {
                     json_escape(pkg_cas, e, sizeof(e));
                     printf(",\"cascade_risk\":\"%s\"", e);
                 }
+                if (pv.score > 0 && pv.score < 60) {
+                    const char *ex = hlse_exoneration_for("package", pv.score);
+                    if (ex) {
+                        char e[512];
+                        json_escape(ex, e, sizeof(e));
+                        printf(",\"exoneration\":\"%s\"", e);
+                    }
+                }
                 printf("}\n");
             } else if (pv.score == 0) {
                 const char *bs = hlse_blindspot_for("package");
@@ -6091,6 +6163,9 @@ main(int argc, char **argv) {
                            "credentials readable from your shell at install time "
                            "\xe2\x80\x94 post-install scripts inherit your full "
                            "environment\n");
+                } else {
+                    const char *ex = hlse_exoneration_for("package", pv.score);
+                    if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                 }
             }
             return pv.score >= g_fail_threshold ? 1 : 0;
@@ -6191,6 +6266,12 @@ main(int argc, char **argv) {
                     printf(",\"blind_spot\":\"%s\"", esc_bs);
                 }
             }
+            if (nv.score > 0) {
+                int ns = nv.n_reasons;
+                const char *conf = ns >= 3 ? "high confidence" :
+                                   ns >= 2 ? "corroborated" : "single signal";
+                printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
+            }
             if (nv.score >= 60) {
                 static const char net_pat[] =
                     "suspicious network activity (C2 / exfiltration indicator)";
@@ -6220,6 +6301,14 @@ main(int argc, char **argv) {
                 json_escape(net_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
                 json_escape(net_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
             }
+            if (nv.score > 0 && nv.score < 60) {
+                const char *ex = hlse_exoneration_for("network", nv.score);
+                if (ex) {
+                    char e[512];
+                    json_escape(ex, e, sizeof(e));
+                    printf(",\"exoneration\":\"%s\"", e);
+                }
+            }
             printf("}\n");
         } else if (nv.score == 0) {
             const char *bs = hlse_blindspot_for("network");
@@ -6246,6 +6335,9 @@ main(int argc, char **argv) {
                 printf("  \xe2\x8a\x95 Also change: all credentials on this machine "
                        "(browser, credential manager, SSH keys, cloud tokens) "
                        "\xe2\x80\x94 rotate from a clean device\n");
+            } else {
+                const char *ex = hlse_exoneration_for("network", nv.score);
+                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }
         }
         return nv.score >= g_fail_threshold ? 1 : 0;

@@ -3442,6 +3442,56 @@ assert d["high_count"] >= 1, d
 ' && check "p61 json: audit A7 HIGH increments high_count" "0" "0" \
    || check "p61 json: audit A7 HIGH increments high_count" "0" "1"
 
+# ─── P62: signal_count / confidence / exoneration for protect/esp/package/network ─
+
+# p62 json: package BLOCK carries signal_count + confidence
+./hlse_core --json package reqeusts pip 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "signal_count" in d, d
+assert "confidence" in d, d
+assert d["confidence"] in ("single signal", "corroborated", "high confidence"), d
+' && check "p62 json: package BLOCK has signal_count and confidence" "0" "0" \
+   || check "p62 json: package BLOCK has signal_count and confidence" "0" "1"
+
+# p62 json: package LOG (distance-2) carries exoneration + signal_count + confidence
+./hlse_core --json package rqests pip 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "signal_count" in d, d
+assert "exoneration" in d, d
+assert "Decisive test" in d["exoneration"], d["exoneration"]
+' && check "p62 json: package LOG has signal_count + exoneration with Decisive test" "0" "0" \
+   || check "p62 json: package LOG has signal_count + exoneration with Decisive test" "0" "1"
+
+# p62: package LOG human output shows Could be benign
+./hlse_core package rqests pip 2>&1 \
+    | grep -q "Could be benign" \
+    && check "p62: package LOG human shows Could be benign" "0" "0" \
+    || check "p62: package LOG human shows Could be benign" "0" "1"
+
+# p62 json: package BLOCK does NOT carry exoneration (score 70 >= 60)
+./hlse_core --json package reqeusts pip 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "exoneration" not in d, "exoneration should not appear at BLOCK: " + str(d)
+' && check "p62 json: package BLOCK has no exoneration" "0" "0" \
+   || check "p62 json: package BLOCK has no exoneration" "0" "1"
+
+# p62 json: protect BLOCK carries signal_count + confidence
+./hlse_core --json protect / 2>&1 | python3 -c '
+import sys, json
+# score may be 0 (clean) — just verify JSON is valid and signal_count absent at score 0
+line = sys.stdin.readline()
+d = json.loads(line)
+if d["score"] == 0:
+    assert "signal_count" not in d, "no signal_count when score==0: " + str(d)
+else:
+    assert "signal_count" in d, d
+    assert "confidence" in d, d
+' && check "p62 json: protect JSON has signal_count only when score > 0" "0" "0" \
+   || check "p62 json: protect JSON has signal_count only when score > 0" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
