@@ -5728,6 +5728,9 @@ main(int argc, char **argv) {
                                                        sizeof(classes));
                     printf("\n%d threat(s) in %d files under %s\n",
                            threats, files_scanned, root);
+                    if (gate_hits > 0 && g_fail_threshold != 60)
+                        printf("  %d finding(s) exceeded the --fail-on threshold (%d)\n",
+                               gate_hits, g_fail_threshold);
                     /* Immediate action: one-sentence triage keyed to the
                      * most severe asset class (or file/URL threats). */
                     printf("\xe2\x86\x92 Immediate action: %s\n",
@@ -5750,8 +5753,11 @@ main(int argc, char **argv) {
                 json_escape(root, esc_root, sizeof(esc_root));
                 printf("{\"kind\":\"scan_summary\",\"target\":\"%s\","
                        "\"files_scanned\":%d,\"threats\":%d,"
+                       "\"gate_hits\":%d,\"fail_threshold\":%d,"
                        "\"asset_classes\":%d,\"blast_radius\":\"%s\"",
-                       esc_root, files_scanned, threats, nclasses, classes);
+                       esc_root, files_scanned, threats,
+                       gate_hits, g_fail_threshold,
+                       nclasses, classes);
                 if (threats == 0) {
                     const char *bs = hlse_blindspot_for("scan");
                     if (bs) {

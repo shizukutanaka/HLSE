@@ -2,6 +2,26 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.60] — 2026-06-20
+
+### Added
+- **Perspective 60: `scan_summary` carries `gate_hits` and `fail_threshold`
+  — CI pipelines can now distinguish scanned-count from gate-exceeded-count.**
+  Socratic question: "After P58, scan_summary tells a CI pipeline HOW MANY
+  threats were found and WHAT to do first. But 'threats' counts all findings
+  above score 40 (ALERT), while a pipeline configured with `--fail-on 60`
+  or `--fail-on 80` uses a different threshold to decide whether to fail the
+  build. If a scan finds 5 threats (3 ALERT, 2 BLOCK) and `--fail-on` is 60,
+  the pipeline fails because 2 findings exceeded the threshold — but
+  scan_summary only shows `threats: 5`. A consumer cannot determine whether
+  the pipeline exit-1 was from 5 exceedances or 2 without parsing every
+  individual finding. Why does the summary that drives the exit code not
+  expose the count that caused it?" Added `gate_hits` (count of findings
+  at or above the fail threshold) and `fail_threshold` (the threshold value
+  used, default 60) to scan_summary JSON. Human output gains a "(N findings
+  exceeded the --fail-on threshold)" note when a non-default threshold is
+  active. 2 new integration tests; 463 pass, 0 fail.
+
 ## [1.0.59] — 2026-06-20
 
 ### Added

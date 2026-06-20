@@ -3382,6 +3382,35 @@ assert d.get('confidence') == '$STANDALONE', d
 
 rm -rf "$P59_DIR"
 
+# ─── P60: scan_summary carries gate_hits and fail_threshold ──────────────
+
+P60_DIR=$(mktemp -d)
+echo "aws_access_key_id = AKIA2E3MWORQXYZ4567PQ" > "$P60_DIR/a.txt"
+
+# p60 json: scan_summary carries gate_hits and fail_threshold
+./hlse_core --json --fail-on 40 scan "$P60_DIR" 2>&1 \
+    | grep '"kind":"scan_summary"' | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "gate_hits"      in d, d
+assert "fail_threshold" in d, d
+assert d["gate_hits"]      == 1, d
+assert d["fail_threshold"] == 40, d
+' && check "p60 json: scan_summary carries gate_hits=1 and fail_threshold=40" "0" "0" \
+   || check "p60 json: scan_summary carries gate_hits=1 and fail_threshold=40" "0" "1"
+
+# p60 json: default threshold (60) present even with no explicit --fail-on
+./hlse_core --json scan "$P60_DIR" 2>&1 \
+    | grep '"kind":"scan_summary"' | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d.get("fail_threshold") == 60, d
+assert "gate_hits" in d, d
+' && check "p60 json: scan_summary default fail_threshold is 60" "0" "0" \
+   || check "p60 json: scan_summary default fail_threshold is 60" "0" "1"
+
+rm -rf "$P60_DIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
