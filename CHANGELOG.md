@@ -2,6 +2,30 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.53] — 2026-06-20
+
+### Added
+- **Perspective 53: Per-finding remediation hints for `audit` HIGH/CRIT
+  findings — `⚒ Fix:` line shows the exact command to resolve each
+  failing hardening check.**
+  Socratic question: "The `audit` subcommand identifies specific
+  hardening failures with file path and line number (`A7: NOPASSWD in
+  /etc/sudoers:58 — passwordless sudo: claude ALL=(ALL) NOPASSWD: ALL`).
+  The check KNOWS the file, the line, and the specific misconfiguration.
+  Yet the output stops at identification — a user who sees this must still
+  web-search to know they need `sudo visudo` and to change `NOPASSWD:ALL`
+  to `ALL`. Every other threat check in HLSE now has actionable guidance
+  (verify/triage/cascade for BLOCK verdicts), but the audit — which is
+  explicitly designed as a security posture report — provides no HOW,
+  only the WHAT. Why does HLSE tell you SSH has PermitRootLogin=yes but
+  not how to change it?" Added `audit_remediation_for()` static helper
+  covering all 8 audit check codes (A1–A8) with specific commands:
+  SSH config changes, `chmod 600` for credential files, `crontab -e`,
+  `sudo visudo`, `systemctl --user disable`. Human output: `⚒ Fix:` line
+  after each HIGH (severity ≥ 4) finding. JSON: `"fix"` field in each
+  HIGH/CRIT finding object. PASS/INFO/LOW/MED findings unchanged.
+  5 new integration tests added (443 total, all pass).
+
 ## [1.0.52] — 2026-06-20
 
 ### Added

@@ -2774,6 +2774,48 @@ assert "triage" not in d, d
 ' && check "p46 json: paste OK has no advisory lens fields" "0" "0" \
    || check "p46 json: paste OK has no advisory lens fields" "0" "1"
 
+# ─── P53: audit per-finding remediation hints ────────────────────────────
+
+# p53: audit HIGH finding shows Fix line
+./hlse_core audit 2>&1 \
+    | grep -q "Fix:.*visudo" \
+    && check "p53: audit HIGH finding (A7 NOPASSWD) shows Fix command" "0" "0" \
+    || check "p53: audit HIGH finding (A7 NOPASSWD) shows Fix command" "0" "1"
+
+# p53: audit PASS findings do NOT show Fix line
+# Use [PASS] prefix match to avoid matching 'NOPASSWD' in the Fix line
+./hlse_core audit 2>&1 \
+    | grep "^\s*\[PASS\]" | grep -q "Fix:" \
+    && check "p53: audit PASS findings have no Fix line" "0" "1" \
+    || check "p53: audit PASS findings have no Fix line" "0" "0"
+
+# p53: audit INFO findings do NOT show Fix line
+./hlse_core audit 2>&1 \
+    | grep "INFO" | grep -q "Fix:" \
+    && check "p53: audit INFO findings have no Fix line" "0" "1" \
+    || check "p53: audit INFO findings have no Fix line" "0" "0"
+
+# p53 json: HIGH severity finding carries "fix" field
+./hlse_core --json audit 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+highs = [f for f in d["findings"] if f["severity"] >= 4]
+assert len(highs) > 0, "no HIGH findings"
+for h in highs:
+    assert "fix" in h, f"HIGH finding missing fix field: {h}"
+' && check "p53 json: HIGH severity findings carry fix field" "0" "0" \
+   || check "p53 json: HIGH severity findings carry fix field" "0" "1"
+
+# p53 json: PASS/INFO findings do NOT carry "fix" field
+./hlse_core --json audit 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+passes = [f for f in d["findings"] if f["severity"] <= 1]
+for p in passes:
+    assert "fix" not in p, f"PASS/INFO finding has unexpected fix field: {p}"
+' && check "p53 json: PASS/INFO findings have no fix field" "0" "0" \
+   || check "p53 json: PASS/INFO findings have no fix field" "0" "1"
+
 # ─── P52: protect/network BLOCK advisory lenses ─────────────────────────
 
 # Create a protect BLOCK test: mass .locked extension mutation

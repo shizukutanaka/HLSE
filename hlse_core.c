@@ -4491,6 +4491,88 @@ channel_reason(const char *ch)
     return NULL; /* manual → no delta, no noise */
 }
 
+/* Per-finding remediation hint for HIGH/CRIT audit findings.
+ * Returns a short command or action string, or NULL if no specific fix
+ * is available for this finding. Keyed to the A-code prefix + keywords. */
+static const char *
+audit_remediation_for(const char *desc)
+{
+    if (!desc) return NULL;
+    /* A1: SSH configuration */
+    if (strncmp(desc, "A1:", 3) == 0) {
+        if (strstr(desc, "PermitRootLogin yes"))
+            return "sudo sed -i 's/PermitRootLogin yes/PermitRootLogin no/'"
+                   " /etc/ssh/sshd_config && sudo systemctl reload ssh";
+        if (strstr(desc, "PasswordAuthentication yes"))
+            return "sudo sed -i 's/PasswordAuthentication yes/"
+                   "PasswordAuthentication no/'"
+                   " /etc/ssh/sshd_config && sudo systemctl reload ssh";
+        if (strstr(desc, "Protocol 1"))
+            return "sudo sed -i 's/^Protocol 1/Protocol 2/'"
+                   " /etc/ssh/sshd_config && sudo systemctl reload ssh";
+        if (strstr(desc, "PermitEmptyPasswords"))
+            return "sudo sed -i 's/PermitEmptyPasswords yes/"
+                   "PermitEmptyPasswords no/'"
+                   " /etc/ssh/sshd_config && sudo systemctl reload ssh";
+        if (strstr(desc, "authorized_keys"))
+            return "chmod 600 ~/.ssh/authorized_keys";
+        return "sudo nano /etc/ssh/sshd_config  # correct the flagged setting,"
+               " then: sudo systemctl reload ssh";
+    }
+    /* A2: File permission issues */
+    if (strncmp(desc, "A2:", 3) == 0) {
+        if (strstr(desc, "id_rsa") || strstr(desc, "id_ed25519")
+            || strstr(desc, "id_ecdsa"))
+            return "chmod 600 ~/.ssh/id_rsa  # (or id_ed25519 / id_ecdsa)";
+        if (strstr(desc, ".aws/credentials"))
+            return "chmod 600 ~/.aws/credentials";
+        if (strstr(desc, ".env"))
+            return "chmod 600 ~/.env";
+        if (strstr(desc, ".netrc"))
+            return "chmod 600 ~/.netrc";
+        if (strstr(desc, ".pgpass"))
+            return "chmod 600 ~/.pgpass";
+        if (strstr(desc, ".docker/config.json"))
+            return "chmod 600 ~/.docker/config.json";
+        if (strstr(desc, ".kube/config"))
+            return "chmod 600 ~/.kube/config";
+        if (strstr(desc, "gnupg") || strstr(desc, "GPG"))
+            return "chmod 700 ~/.gnupg && chmod 600 ~/.gnupg/secring.gpg";
+        return "chmod go-rwx <file>  # remove group/other read permission"
+               " from the flagged file";
+    }
+    /* A3: DNS / hosts file poisoning */
+    if (strncmp(desc, "A3:", 3) == 0) {
+        if (strstr(desc, "/etc/hosts"))
+            return "sudo diff /etc/hosts /etc/hosts.bak 2>/dev/null ||"
+                   " sudo cp /etc/hosts /etc/hosts.bak;"
+                   " review /etc/hosts for unexpected entries";
+        return "review the flagged DNS resolver or hosts file entry";
+    }
+    /* A4: Cron persistence */
+    if (strncmp(desc, "A4:", 3) == 0)
+        return "crontab -l  # review; then: crontab -e to remove"
+               " the suspicious entry";
+    /* A5: Insecure PATH */
+    if (strncmp(desc, "A5:", 3) == 0)
+        return "remove '.' and any world-writable directories from PATH"
+               " in ~/.bashrc or ~/.profile; then: source ~/.bashrc";
+    /* A6: Shell startup backdoor */
+    if (strncmp(desc, "A6:", 3) == 0)
+        return "nano ~/.bashrc  # (or ~/.profile / ~/.bash_profile)"
+               " — remove the flagged line, then: source ~/.bashrc";
+    /* A7: Sudoers NOPASSWD */
+    if (strncmp(desc, "A7:", 3) == 0)
+        return "sudo visudo  # change 'NOPASSWD: ALL' to 'ALL'"
+               " to require a password for sudo";
+    /* A8: Systemd user unit persistence */
+    if (strncmp(desc, "A8:", 3) == 0)
+        return "systemctl --user disable <unit> &&"
+               " systemctl --user stop <unit>;"
+               " then: rm ~/.config/systemd/user/<unit>.service";
+    return NULL;
+}
+
 /* Map a credential type label to what access it grants the attacker. */
 static const char *
 secret_objective_for(const char *type)
@@ -6398,10 +6480,19 @@ main(int argc, char **argv) {
                    av.score, hlse_action_for_score(av.score), hi, band);
             for (i = 0; i < av.n_findings; i++) {
                 char esc[512];
+                const char *fix = (av.findings[i].severity >= 4)
+                    ? audit_remediation_for(av.findings[i].description)
+                    : NULL;
                 json_escape(av.findings[i].description, esc, sizeof(esc));
-                printf("%s{\"severity\":%d,\"description\":\"%s\"}",
+                printf("%s{\"severity\":%d,\"description\":\"%s\"",
                        i > 0 ? "," : "",
                        av.findings[i].severity, esc);
+                if (fix) {
+                    char efix[512];
+                    json_escape(fix, efix, sizeof(efix));
+                    printf(",\"fix\":\"%s\"", efix);
+                }
+                printf("}");
             }
             printf("]");
             if (av.score == 0) {
@@ -6415,7 +6506,7 @@ main(int argc, char **argv) {
             printf("}\n");
         } else if (av.score == 0) {
             const char *bs = hlse_blindspot_for("audit");
-            printf("OK    (audit — no issues found)  "
+            printf("OK    (audit \xe2\x80\x94 no issues found)  "
                    "Hardening index: %d/100 (%s)\n", hi, band);
             if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
         } else {
@@ -6430,6 +6521,12 @@ main(int argc, char **argv) {
                 if (s < 0 || s > 5) s = 0;
                 printf("  [%4s] %s\n", sev_str[s],
                        av.findings[i].description);
+                if (s >= 4) {
+                    const char *fix = audit_remediation_for(
+                        av.findings[i].description);
+                    if (fix)
+                        printf("  \xe2\x9a\x92 Fix: %s\n", fix);
+                }
             }
         }
         return av.score >= g_fail_threshold ? 1 : 0;
