@@ -4531,6 +4531,13 @@ print_json_text(const char *text, const TextVerdict *v) {
     if (ttri) printf(",\"triage\":\"%s\"",      esc_ttri);
     if (tcas) printf(",\"cascade_risk\":\"%s\"",esc_tcas);
     if (exon) printf(",\"exoneration\":\"%s\"", esc_exon);
+    if (g_from_channel) {
+        int d   = channel_delta(g_from_channel);
+        int eff = v->score + d; if (eff > 100) eff = 100;
+        printf(",\"channel\":\"%s\",\"channel_delta\":%d,\"effective_score\":%d,"
+               "\"effective_action\":\"%s\"",
+               g_from_channel, d, eff, hlse_text_action_for_score(eff));
+    }
     printf(",\"reasons\":[");
     {
         int i;
@@ -4667,15 +4674,20 @@ stdin_mode(int json_out) {
             int i;
             int eff = sr.score;
             const char *ch_rsn = NULL;
-            if (sr.is_url && g_from_channel) {
+            if (g_from_channel) {
                 int d = channel_delta(g_from_channel);
                 eff += d; if (eff > 100) eff = 100;
                 ch_rsn = channel_reason(g_from_channel);
             }
             printf("%-7s [%d]  %s\n",
                    hlse_action_for_score(eff), eff, line);
-            for (i = 0; i < sr.n_reasons; i++)
+            for (i = 0; i < sr.n_reasons; i++) {
+                /* Amplifier lines are derived meta-labels, not independently
+                 * detected facts; the ▸ Pattern line already expresses them
+                 * in user-facing language. Keep them in JSON; filter here. */
+                if (strncmp(sr.reasons[i], "Amplifier:", 10) == 0) continue;
                 printf("  \xc2\xb7 %s\n", sr.reasons[i]);  /* · */
+            }
             if (sr.is_url) {
                 Verdict uv = check_url(line);
                 const char *url_ex = hlse_url_exoneration(&uv);
@@ -4701,10 +4713,10 @@ stdin_mode(int json_out) {
             }
         }
         /* Gate uses effective score (raw + channel boost) so that e.g.
-         * --from qr raises exit 0 → exit 1 when boost crosses the threshold. */
+         * --from sms raises exit 0 → exit 1 when boost crosses the threshold. */
         {
             int eff_gate = sr.score;
-            if (sr.is_url && g_from_channel) {
+            if (g_from_channel) {
                 int d = channel_delta(g_from_channel);
                 eff_gate += d; if (eff_gate > 100) eff_gate = 100;
             }
@@ -5761,12 +5773,20 @@ main(int argc, char **argv) {
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
+                int eff = sr.score;
+                const char *ch_rsn = NULL;
                 const char *ex;
+                if (g_from_channel) {
+                    int d = channel_delta(g_from_channel);
+                    eff += d; if (eff > 100) eff = 100;
+                    ch_rsn = channel_reason(g_from_channel);
+                }
                 printf("%-7s [%d]  (text) %.60s%s\n",
-                       hlse_action_for_score(sr.score),
-                       sr.score, argv[idx + 1],
+                       hlse_action_for_score(eff),
+                       eff, argv[idx + 1],
                        strlen(argv[idx + 1]) > 60 ? "..." : "");
                 for (i = 0; i < sr.n_reasons; i++) {
+                    if (strncmp(sr.reasons[i], "Amplifier:", 10) == 0) continue;
                     printf("  \xc2\xb7 %s\n", sr.reasons[i]);
                 }
                 if (sr.is_url) {
@@ -5787,9 +5807,17 @@ main(int argc, char **argv) {
                     print_text_advisories(&tv);
                     ex = hlse_text_exoneration(&tv);
                 }
+                if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }
-            return sr.score >= g_fail_threshold ? 1 : 0;
+            {
+                int eff_gate = sr.score;
+                if (g_from_channel) {
+                    int d = channel_delta(g_from_channel);
+                    eff_gate += d; if (eff_gate > 100) eff_gate = 100;
+                }
+                return eff_gate >= g_fail_threshold ? 1 : 0;
+            }
         }
     }
     /* Default: use unified scan (auto-detects URL vs text) */
@@ -5835,7 +5863,7 @@ main(int argc, char **argv) {
             int i;
             int eff = sr.score;
             const char *ch_rsn = NULL;
-            if (sr.is_url && g_from_channel) {
+            if (g_from_channel) {
                 int d = channel_delta(g_from_channel);
                 eff += d; if (eff > 100) eff = 100;
                 ch_rsn = channel_reason(g_from_channel);
@@ -5843,6 +5871,7 @@ main(int argc, char **argv) {
             printf("%-7s [%d]  %s\n",
                    hlse_action_for_score(eff), eff, input);
             for (i = 0; i < sr.n_reasons; i++) {
+                if (strncmp(sr.reasons[i], "Amplifier:", 10) == 0) continue;
                 printf("  \xc2\xb7 %s\n", sr.reasons[i]);
             }
             if (sr.is_url) {
@@ -5874,7 +5903,7 @@ main(int argc, char **argv) {
         /* Gate uses effective score so --from boost is honoured in exit code. */
         {
             int eff_gate = sr.score;
-            if (sr.is_url && g_from_channel) {
+            if (g_from_channel) {
                 int d = channel_delta(g_from_channel);
                 eff_gate += d; if (eff_gate > 100) eff_gate = 100;
             }

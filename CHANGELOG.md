@@ -2,6 +2,42 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.37] — 2026-06-20
+
+### Fixed
+- **Perspective 37: Channel prior applies to text verdicts (`--from` flag).**
+  Socratic question: "The `--from` channel flag boosts a URL's score to account
+  for its delivery channel — a URL in a QR code (+20) is more suspicious than
+  one typed manually (+0). Text messages also arrive via channels: an unsolicited
+  SMS ('Your account has been suspended') has the same smishing amplification as
+  an SMS-delivered URL. But all three display sites gated the channel boost on
+  `if (sr.is_url && g_from_channel)`, silently discarding the channel context
+  for text verdicts. `--from sms text '...'` applied zero delta, as if the SMS
+  delivery channel is irrelevant to text social engineering." Fixed by removing
+  the `sr.is_url &&` condition from all channel delta applications (display score,
+  channel reason line, exit code gate) and adding a channel delta computation to
+  the `text` subcommand's display path (which had none). `print_json_text()` also
+  gains the `channel`, `channel_delta`, `effective_score`, and `effective_action`
+  JSON fields in symmetric parity with `print_json_url()`. A BEC text message
+  that raw-scores LOG/ALERT [58] now reaches BLOCK [68] when delivered via email
+  (--from email) and exits 1 at the default threshold. 4 new CLI integration
+  tests (old "ignored" test replaced); 343 total. Zero warnings. F1=1.000 kept.
+
+### Fixed
+- **Perspective 36: Amplifier lines filtered from human-readable `·` reason list.**
+  Socratic question: "URL verdict reasons shown with `·` are raw detected facts:
+  'Brand homoglyph: paypa1.com → paypal.com'. Text verdict reasons mix two types:
+  base signal hits ('Urgency pressure', 'Financial/credential req') and derived
+  amplifier notes ('Amplifier: wire transfer + urgency = BEC pattern'). Amplifiers
+  are synthesis — exactly what the `▸ Pattern:` line already provides, but in
+  internal system terminology. A user sees both 'Amplifier: secrecy pressure +
+  financial request = victim isolation tactic' AND '▸ Pattern: BEC wire-transfer
+  fraud' — redundant, and the amplifier uses jargon not meaningful to end users."
+  Filtered `Amplifier:` prefix lines from all three `·` reason printing loops
+  (stdin, `text` subcommand, default auto-detect). Amplifiers are retained in the
+  JSON `reasons` array for integrators who need the full signal chain. 4 new CLI
+  integration tests (340 total before P37). Zero warnings. F1=1.000 preserved.
+
 ## [1.0.35] — 2026-06-20
 
 ### Changed

