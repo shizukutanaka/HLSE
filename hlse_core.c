@@ -5540,6 +5540,36 @@ main(int argc, char **argv) {
                         printf(",\"blind_spot\":\"%s\"", esc_bs);
                     }
                 }
+                if (pv.score >= 60) {
+                    static const char prt_pat[] =
+                        "ransomware / destructive malware indicators detected";
+                    static const char prt_obj[] =
+                        "data destruction and extortion \xe2\x80\x94 ransomware encrypts "
+                        "accessible files and demands payment; credentials are "
+                        "often harvested before encryption begins";
+                    static const char prt_vrf[] =
+                        "photograph or copy the ransom note before any other "
+                        "action \xe2\x80\x94 it contains the attacker's ID, contact, "
+                        "and decryption instructions; consult NCSC/CISA or law "
+                        "enforcement BEFORE paying \xe2\x80\x94 free decryptors may exist";
+                    static const char prt_tri[] =
+                        "IMMEDIATELY disconnect from the network (unplug Ethernet, "
+                        "disable WiFi and Bluetooth) \xe2\x80\x94 this stops lateral "
+                        "movement and stops encryption spreading to network shares; "
+                        "do NOT reboot \xe2\x80\x94 volatile memory may contain keys; "
+                        "preserve all logs and report to law enforcement";
+                    static const char prt_cas[] =
+                        "all credentials on this machine and any network shares "
+                        "it accessed \xe2\x80\x94 ransomware groups commonly harvest "
+                        "credentials before encrypting; rotate domain admin, file "
+                        "server, VPN, and cloud credentials from a clean device";
+                    char e[512];
+                    json_escape(prt_pat, e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                    json_escape(prt_obj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
+                    json_escape(prt_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                    json_escape(prt_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
+                    json_escape(prt_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                }
                 printf("}\n");
             } else if (pv.score == 0) {
                 const char *bs = hlse_blindspot_for("protect");
@@ -5551,6 +5581,23 @@ main(int argc, char **argv) {
                        hlse_action_for_score(pv.score), pv.score, path);
                 for (i = 0; i < pv.n_reasons; i++) {
                     printf("  \xc2\xb7 %s\n", pv.reasons[i]);
+                }
+                if (pv.score >= 60) {
+                    printf("  \xe2\x96\xb8 Pattern: ransomware / destructive malware "
+                           "indicators detected\n");
+                    printf("  \xe2\x97\x89 Attacker's goal: data destruction and extortion "
+                           "\xe2\x80\x94 ransomware encrypts accessible files; credentials "
+                           "are typically harvested before encryption begins\n");
+                    printf("  \xe2\x9c\x93 Verify first: photograph the ransom note; "
+                           "consult NCSC/CISA before paying \xe2\x80\x94 free decryptors "
+                           "may exist for this ransomware family\n");
+                    printf("  \xe2\x9a\x91 Immediate action: disconnect from the network "
+                           "NOW (unplug Ethernet, disable WiFi) \xe2\x80\x94 stops spread "
+                           "to network shares; do NOT reboot \xe2\x80\x94 volatile memory "
+                           "may contain encryption keys\n");
+                    printf("  \xe2\x8a\x95 Also change: all credentials on this machine "
+                           "and any network shares it accessed \xe2\x80\x94 rotate domain "
+                           "admin, VPN, and cloud credentials from a clean device\n");
                 }
             }
             return pv.score >= g_fail_threshold ? 1 : 0;
@@ -5793,10 +5840,39 @@ main(int argc, char **argv) {
                     printf(",\"blind_spot\":\"%s\"", esc_bs);
                 }
             }
+            if (nv.score >= 60) {
+                static const char net_pat[] =
+                    "suspicious network activity (C2 / exfiltration indicator)";
+                static const char net_obj[] =
+                    "data exfiltration or persistent access \xe2\x80\x94 an active "
+                    "process may be beaconing to a command-and-control server, "
+                    "exfiltrating credentials, or establishing lateral movement";
+                static const char net_vrf[] =
+                    "identify the process owning the suspicious connection: "
+                    "'lsof -i' or 'ss -tp' on Linux, 'netstat -b' on Windows; "
+                    "verify it against your known installed software before "
+                    "taking any disruptive action";
+                static const char net_tri[] =
+                    "if the process is unrecognised: kill it and isolate the "
+                    "host from the network; preserve network capture (tcpdump) "
+                    "and process memory before rebooting \xe2\x80\x94 evidence is lost "
+                    "on reboot; report to your security team or law enforcement";
+                static const char net_cas[] =
+                    "credentials stored on this machine (browser, credential "
+                    "manager, SSH keys, cloud CLI tokens) \xe2\x80\x94 an active "
+                    "C2 connection may already be exfiltrating them; rotate all "
+                    "from a clean device before the machine is brought back online";
+                char e[512];
+                json_escape(net_pat, e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                json_escape(net_obj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
+                json_escape(net_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                json_escape(net_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
+                json_escape(net_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+            }
             printf("}\n");
         } else if (nv.score == 0) {
             const char *bs = hlse_blindspot_for("network");
-            printf("OK    (network — no anomalies detected)\n");
+            printf("OK    (network \xe2\x80\x94 no anomalies detected)\n");
             if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
         } else {
             int i;
@@ -5804,6 +5880,22 @@ main(int argc, char **argv) {
                    hlse_action_for_score(nv.score), nv.score);
             for (i = 0; i < nv.n_reasons; i++)
                 printf("  \xc2\xb7 %s\n", nv.reasons[i]);
+            if (nv.score >= 60) {
+                printf("  \xe2\x96\xb8 Pattern: suspicious network activity "
+                       "(C2 / exfiltration indicator)\n");
+                printf("  \xe2\x97\x89 Attacker's goal: data exfiltration or persistent "
+                       "access \xe2\x80\x94 may be beaconing to C2, exfiltrating "
+                       "credentials, or enabling lateral movement\n");
+                printf("  \xe2\x9c\x93 Verify first: identify the process owning the "
+                       "connection ('lsof -i' / 'ss -tp') before taking any "
+                       "disruptive action\n");
+                printf("  \xe2\x9a\x91 Immediate action: if unrecognised, kill the "
+                       "process and isolate the host; preserve tcpdump capture "
+                       "and process memory before rebooting\n");
+                printf("  \xe2\x8a\x95 Also change: all credentials on this machine "
+                       "(browser, credential manager, SSH keys, cloud tokens) "
+                       "\xe2\x80\x94 rotate from a clean device\n");
+            }
         }
         return nv.score >= g_fail_threshold ? 1 : 0;
     }

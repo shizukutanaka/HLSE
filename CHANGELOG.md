@@ -2,6 +2,30 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.52] — 2026-06-20
+
+### Added
+- **Perspective 52: Advisory lenses for `protect` and `network` BLOCK
+  verdicts — the two most time-critical subcommands now surface
+  pattern / objective / verify / triage / cascade on threat alerts.**
+  Socratic question: "After P46–P51, every BLOCK verdict in HLSE now
+  has advisory lenses except two: `protect` (ransomware detection) and
+  `network` (suspicious process/connection). These are arguably the
+  most time-critical checks in the tool. A ransomware BLOCK has a
+  15-minute critical window — the spread can be stopped if the machine
+  is isolated immediately, and free decryptors may exist if law
+  enforcement is contacted before the attacker's infrastructure goes
+  offline. A network BLOCK may indicate an active C2 beacon — volatile
+  memory contains the most forensic evidence, but it's lost on reboot.
+  Yet both subcommands showed only the raw signal reasons with no
+  guidance about disconnecting, photographing the ransom note, running
+  'lsof -i', or calling the bank's fraud line.
+  Added five advisory lens fields (pattern, objective, verify, triage,
+  cascade_risk) to both `protect` and `network` BLOCK/ISOLATE paths
+  in both human output and JSON. OK paths unchanged (blind spot only).
+  6 new integration tests added (438 total, all pass). Every BLOCK
+  verdict across all 13 HLSE subcommands now has advisory lenses."
+
 ## [1.0.51] — 2026-06-20
 
 ### Added

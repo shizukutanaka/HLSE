@@ -2774,6 +2774,60 @@ assert "triage" not in d, d
 ' && check "p46 json: paste OK has no advisory lens fields" "0" "0" \
    || check "p46 json: paste OK has no advisory lens fields" "0" "1"
 
+# ─── P52: protect/network BLOCK advisory lenses ─────────────────────────
+
+# Create a protect BLOCK test: mass .locked extension mutation
+P52_DIR=$(mktemp -d)
+for i in $(seq 1 10); do touch "$P52_DIR/doc_${i}.docx.locked"; done
+
+# p52: protect BLOCK shows ransomware pattern
+./hlse_core protect "$P52_DIR" 2>&1 \
+    | grep -q "Pattern: ransomware" \
+    && check "p52: protect BLOCK shows ransomware pattern" "0" "0" \
+    || check "p52: protect BLOCK shows ransomware pattern" "0" "1"
+
+# p52: protect BLOCK shows attacker objective (data destruction)
+./hlse_core protect "$P52_DIR" 2>&1 \
+    | grep -q "Attacker's goal:.*data destruction" \
+    && check "p52: protect BLOCK shows data destruction objective" "0" "0" \
+    || check "p52: protect BLOCK shows data destruction objective" "0" "1"
+
+# p52: protect BLOCK shows triage (disconnect from network)
+./hlse_core protect "$P52_DIR" 2>&1 \
+    | grep -q "Immediate action:.*disconnect" \
+    && check "p52: protect BLOCK shows network disconnect triage" "0" "0" \
+    || check "p52: protect BLOCK shows network disconnect triage" "0" "1"
+
+# p52: protect BLOCK shows cascade risk (credentials)
+./hlse_core protect "$P52_DIR" 2>&1 \
+    | grep -q "Also change:" \
+    && check "p52: protect BLOCK shows cascade risk" "0" "0" \
+    || check "p52: protect BLOCK shows cascade risk" "0" "1"
+
+# p52 json: protect BLOCK carries pattern, objective, verify, triage, cascade_risk
+./hlse_core --json protect "$P52_DIR" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] >= 60, d
+assert "pattern" in d, d
+assert "objective" in d, d
+assert "verify" in d, d
+assert "triage" in d, d
+assert "cascade_risk" in d, d
+' && check "p52 json: protect BLOCK carries all advisory lens fields" "0" "0" \
+   || check "p52 json: protect BLOCK carries all advisory lens fields" "0" "1"
+
+rm -rf "$P52_DIR"
+
+# p52: protect OK still shows blind spot (no advisory lenses)
+P52_CLEAN=$(mktemp -d)
+echo "safe content" > "$P52_CLEAN/report_2026.txt"
+./hlse_core protect "$P52_CLEAN" 2>&1 \
+    | grep -q "Blind spot:" \
+    && check "p52: protect OK still shows blind spot" "0" "0" \
+    || check "p52: protect OK still shows blind spot" "0" "1"
+rm -rf "$P52_CLEAN"
+
 # ─── P51: file BLOCK advisory lenses ────────────────────────────────────
 
 # p51: file BLOCK (double extension) shows masquerade pattern
