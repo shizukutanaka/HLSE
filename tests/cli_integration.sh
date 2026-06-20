@@ -3317,6 +3317,44 @@ assert "confidence"    in d, d
 
 rm -rf "$P57_DIR"
 
+# ─── P58: scan_summary carries immediate_action triage field ─────────────
+
+# AWS key scan — cloud asset class
+P58_DIR=$(mktemp -d)
+echo "aws_access_key_id = AKIA2E3MWORQXYZ4567PQ" > "$P58_DIR/config.txt"
+
+# p58: scan summary human output shows immediate action line
+./hlse_core scan "$P58_DIR" 2>&1 \
+    | grep -q "Immediate action:" \
+    && check "p58: scan summary shows immediate action (human)" "0" "0" \
+    || check "p58: scan summary shows immediate action (human)" "0" "1"
+
+# p58 json: scan_summary carries immediate_action when threats > 0
+./hlse_core --json scan "$P58_DIR" 2>&1 \
+    | grep '"kind":"scan_summary"' | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["threats"] > 0, d
+assert "immediate_action" in d, d
+assert "cloud" in d["immediate_action"].lower(), d
+' && check "p58 json: scan_summary carries immediate_action (cloud class)" "0" "0" \
+   || check "p58 json: scan_summary carries immediate_action (cloud class)" "0" "1"
+
+rm -rf "$P58_DIR"
+
+# p58 json: scan_summary has no immediate_action when threats == 0
+P58_CLEAN=$(mktemp -d)
+echo "hello world" > "$P58_CLEAN/readme.txt"
+./hlse_core --json scan "$P58_CLEAN" 2>&1 \
+    | grep '"kind":"scan_summary"' | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["threats"] == 0, d
+assert "immediate_action" not in d, d
+' && check "p58 json: scan_summary has no immediate_action when clean" "0" "0" \
+   || check "p58 json: scan_summary has no immediate_action when clean" "0" "1"
+rm -rf "$P58_CLEAN"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

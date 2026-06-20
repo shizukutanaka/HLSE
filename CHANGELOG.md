@@ -2,6 +2,30 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.58] — 2026-06-20
+
+### Added
+- **Perspective 58: `scan_summary` carries `immediate_action` — CI
+  pipelines now get a single triage sentence alongside the threat count.**
+  Socratic question: "After P55–P57, every per-finding JSON line from
+  scan carries pattern/objective/verify/triage/cascade_risk. But the final
+  scan_summary line — the one CI pipelines key on — contains only
+  `files_scanned`, `threats`, `asset_classes`, and `blast_radius`.
+  A pipeline seeing `'blast_radius':'cloud-infrastructure'` knows WHAT
+  was found, but not the single most urgent action: rotate the cloud API
+  key before it reaches a live environment. Why does the summary that
+  drives CI gates provide less guidance than any individual finding?"
+  Added `immediate_action` field to the scan_summary JSON when
+  `threats > 0`. The string is keyed to the highest-severity asset class
+  in the detected threat mix: cloud → rotate API keys, payment → contact
+  processor, source-control → revoke token, database → rotate + audit,
+  private-key → replace and revoke, AI-provider → regenerate key,
+  communications → regenerate token, no secrets → quarantine flagged files.
+  Multi-class threats (nclasses ≥ 2) get a MULTI-CLASS prefix noting
+  pivot risk. Human output gains a "→ Immediate action:" summary line
+  after the threat count. Clean scans (threats == 0) are unchanged.
+  3 new integration tests; 459 pass, 0 fail.
+
 ## [1.0.57] — 2026-06-20
 
 ### Added

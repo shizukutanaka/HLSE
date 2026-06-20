@@ -3935,6 +3935,41 @@ asset_class_of(const char *type) {
     return 0;  /* generic env/JWT/entropy — not pivot-defining */
 }
 
+/* Priority action for the threat mix found by a scan pass.
+ * Returns a one-sentence triage hint keyed to the highest-severity
+ * asset class (or file/URL threats when no credentials were found). */
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((unused))
+#endif
+static const char *
+scan_immediate_action(unsigned mask, int nclasses) {
+    if (nclasses >= 2)
+        return "MULTI-CLASS: rotate ALL leaked credentials immediately \xe2\x80\x94 "
+               "an attacker with multiple asset classes can pivot across systems";
+    if (mask & ASSET_CLOUD)
+        return "rotate all cloud API keys immediately \xe2\x80\x94 cloud access "
+               "enables server control, data exfiltration, and billing fraud";
+    if (mask & ASSET_PAYMENT)
+        return "contact your payment processor to invalidate the leaked key \xe2\x80\x94 "
+               "payment keys can be used for fraud within minutes";
+    if (mask & ASSET_SCM)
+        return "revoke the leaked source control token from repository settings "
+               "\xe2\x80\x94 then audit CI/CD pipeline secret access";
+    if (mask & ASSET_DATABASE)
+        return "rotate database credentials and audit the query log for "
+               "unauthorized reads \xe2\x80\x94 database access exposes all records";
+    if (mask & ASSET_CRYPTO)
+        return "replace the private key and remove it from authorized_keys "
+               "on every host that trusts it";
+    if (mask & ASSET_AI)
+        return "regenerate the API key in the provider dashboard \xe2\x80\x94 "
+               "AI provider keys can incur large charges when abused";
+    if (mask & ASSET_COMMS)
+        return "regenerate the webhook or bot token from the service dashboard";
+    return "review per-finding output \xe2\x80\x94 quarantine or delete flagged "
+           "files before deploying or sharing";
+}
+
 /* CLI-only (scan/secret blast-radius reporting); see asset_class_of above. */
 #if defined(__GNUC__) || defined(__clang__)
 __attribute__((unused))
@@ -5679,6 +5714,10 @@ main(int argc, char **argv) {
                                                        sizeof(classes));
                     printf("\n%d threat(s) in %d files under %s\n",
                            threats, files_scanned, root);
+                    /* Immediate action: one-sentence triage keyed to the
+                     * most severe asset class (or file/URL threats). */
+                    printf("\xe2\x86\x92 Immediate action: %s\n",
+                           scan_immediate_action((unsigned)asset_mask, nclasses));
                     /* Blast radius: credentials spanning 2+ asset classes let
                      * an attacker pivot across systems — worse than the count
                      * alone suggests. */
@@ -5706,6 +5745,11 @@ main(int argc, char **argv) {
                         json_escape(bs, esc_bs, sizeof(esc_bs));
                         printf(",\"blind_spot\":\"%s\"", esc_bs);
                     }
+                } else {
+                    const char *ia = scan_immediate_action((unsigned)asset_mask, nclasses);
+                    char esc_ia[512];
+                    json_escape(ia, esc_ia, sizeof(esc_ia));
+                    printf(",\"immediate_action\":\"%s\"", esc_ia);
                 }
                 printf("}\n");
             }
