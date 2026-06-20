@@ -2,6 +2,31 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.45] — 2026-06-20
+
+### Fixed
+- **Perspective 45: Blind-spot disclosure for `protect`, `esp`, and `scan`
+  OK paths — completing full coverage across every HLSE subcommand.**
+  Socratic question: "The three most infrastructure-critical checks in the tool —
+  ransomware/SMB/MBR detection (`protect`), EFI bootkit string scan (`esp`), and
+  recursive secret detection (`scan`) — all return a bare `OK` with nothing about
+  what they didn't check. `protect` only detects ransom note filenames, SMB
+  share-encryption patterns, and known MBR overwrite signatures: memory-only
+  ransomware, staged pre-encryption attacks, and fileless malware that writes no
+  ransom note all pass clean. `esp` only matches known bootkit strings in the EFI
+  System Partition: firmware-level implants and fileless Secure-Boot bypass
+  techniques are invisible. `scan` only pattern-matches credential formats: secrets
+  in binary artefacts, environment variables, and vault-managed keys fetched at
+  runtime are missed. Why do the checks that guard the most irreversible damage
+  offer no caveat about what they cannot see?" Added three new
+  `hlse_blindspot_for()` cases (`protect`, `esp`, `scan`) and wired them into
+  both human display and JSON for each OK path. With this change, every HLSE
+  subcommand — `url`, `text`, `email`, `clipboard`, `paste`, `network`, `secret`,
+  `package`, `file`, `audit`, `protect`, `esp`, `scan` — now discloses its blind
+  spot on a clean verdict, in both the terminal and JSON output. Advisory-only: no
+  score or detection change, F1 = 1.000 holds. 5 new CLI integration tests (385
+  total). Zero warnings (CLI + library).
+
 ## [1.0.44] — 2026-06-20
 
 ### Fixed

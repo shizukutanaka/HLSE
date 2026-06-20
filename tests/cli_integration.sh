@@ -2669,6 +2669,51 @@ assert d["score"] > 0 and "blind_spot" not in d, d
 ' && check "p44 json: package threat omits blind_spot" "0" "0" \
    || check "p44 json: package threat omits blind_spot" "0" "1"
 
+# ─── Perspective 45: blind spots for protect, esp, and scan OK paths ────────
+
+# Socratic question: "The protect OK says nothing beyond 'OK /path'. But it
+# only checked for ransomware note filenames, SMB lateral-movement patterns,
+# and known MBR overwrite signatures — memory-only ransomware and staged
+# pre-encryption attacks write no ransom notes and change no file extensions.
+# 'OK' implies clean; what it means here is 'no indicator I know found'. Same
+# for esp (string-pattern scan of the EFI partition) and scan (pattern-based
+# secret detection in files). Why do the three most infrastructure-critical
+# checks offer no caveat about what they didn't check?"
+
+# p45: protect OK discloses indicator-based blind spot
+./hlse_core protect /home 2>/dev/null \
+    | grep -q "Blind spot:.*indicator-based" \
+    && check "p45: protect OK discloses indicator-based blind spot" "0" "0" \
+    || check "p45: protect OK discloses indicator-based blind spot" "0" "1"
+
+# p45: protect JSON OK carries blind_spot field
+./hlse_core --json protect /home 2>/dev/null | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] == 0 and "blind_spot" in d and "indicator" in d["blind_spot"], d
+' && check "p45 json: protect OK carries blind_spot" "0" "0" \
+   || check "p45 json: protect OK carries blind_spot" "0" "1"
+
+# p45: esp OK discloses string-pattern blind spot
+./hlse_core esp 2>/dev/null \
+    | grep -q "Blind spot:.*string-pattern" \
+    && check "p45: esp OK discloses string-pattern blind spot" "0" "0" \
+    || check "p45: esp OK discloses string-pattern blind spot" "0" "1"
+
+# p45: scan OK discloses pattern-based detection blind spot
+./hlse_core scan /tmp/hlse_scantest 2>/dev/null \
+    | grep -q "Blind spot:.*pattern-based" \
+    && check "p45: scan OK discloses pattern-based blind spot" "0" "0" \
+    || check "p45: scan OK discloses pattern-based blind spot" "0" "1"
+
+# p45: scan JSON OK (scan_summary) carries blind_spot
+./hlse_core --json scan /tmp/hlse_scantest 2>/dev/null | tail -1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["threats"] == 0 and "blind_spot" in d, d
+' && check "p45 json: scan_summary OK carries blind_spot" "0" "0" \
+   || check "p45 json: scan_summary OK carries blind_spot" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

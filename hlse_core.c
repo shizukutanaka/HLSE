@@ -2122,6 +2122,23 @@ hlse_blindspot_for(const char *kind) {
                "container escapes, LD_PRELOAD injection, and custom LSM bypasses "
                "are outside the scope of this check; re-run after any system or "
                "configuration change.";
+    if (strcmp(kind, "protect") == 0)
+        return "indicator-based scan only — memory-only ransomware, staged "
+               "pre-encryption activity, encrypted C2 traffic, and ransomware "
+               "that operates before writing ransom notes will not be detected; "
+               "an OK here does not rule out active compromise.";
+    if (strcmp(kind, "esp") == 0)
+        return "string-pattern scan of the EFI System Partition only — a "
+               "bootkit that uses fileless persistence, firmware-level implants, "
+               "or Secure-Boot bypass techniques not matching known patterns will "
+               "not be detected; an OK here does not guarantee bootloader "
+               "integrity.";
+    if (strcmp(kind, "scan") == 0)
+        return "pattern-based secret detection only — obfuscated credentials, "
+               "secrets in binary or compiled artefacts, environment variables "
+               "passed at runtime, and vault-managed secrets retrieved at startup "
+               "are invisible to this scan; treat as complementary to a secrets "
+               "manager, not a replacement.";
     return NULL;
 }
 
@@ -5379,8 +5396,10 @@ main(int argc, char **argv) {
                 sarif_emit(HLSE_VERSION);
             } else if (!json_out) {
                 if (threats == 0) {
+                    const char *bs = hlse_blindspot_for("scan");
                     printf("OK    %s (%d files scanned, 0 threats)\n",
                            root, files_scanned);
+                    if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
                 } else {
                     char classes[256];
                     int nclasses = asset_mask_describe(asset_mask, classes,
@@ -5405,8 +5424,17 @@ main(int argc, char **argv) {
                 json_escape(root, esc_root, sizeof(esc_root));
                 printf("{\"kind\":\"scan_summary\",\"target\":\"%s\","
                        "\"files_scanned\":%d,\"threats\":%d,"
-                       "\"asset_classes\":%d,\"blast_radius\":\"%s\"}\n",
+                       "\"asset_classes\":%d,\"blast_radius\":\"%s\"",
                        esc_root, files_scanned, threats, nclasses, classes);
+                if (threats == 0) {
+                    const char *bs = hlse_blindspot_for("scan");
+                    if (bs) {
+                        char esc_bs[512];
+                        json_escape(bs, esc_bs, sizeof(esc_bs));
+                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                    }
+                }
+                printf("}\n");
             }
             return gate_hits > 0 ? 1 : 0;
         }
@@ -5467,9 +5495,20 @@ main(int argc, char **argv) {
                         printf("%s\"%s\"", i > 0 ? "," : "", esc);
                     }
                 }
-                printf("]}\n");
+                printf("]");
+                if (pv.score == 0) {
+                    const char *bs = hlse_blindspot_for("protect");
+                    if (bs) {
+                        char esc_bs[512];
+                        json_escape(bs, esc_bs, sizeof(esc_bs));
+                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                    }
+                }
+                printf("}\n");
             } else if (pv.score == 0) {
+                const char *bs = hlse_blindspot_for("protect");
                 printf("OK    %s\n", path);
+                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
                 printf("%-7s [%d]  %s\n",
@@ -5495,11 +5534,22 @@ main(int argc, char **argv) {
                 json_escape(pv.reasons[i], esc, sizeof(esc));
                 printf("%s\"%s\"", i > 0 ? "," : "", esc);
             }
-            printf("]}\n");
+            printf("]");
+            {
+                const char *bs = hlse_blindspot_for("esp");
+                if (pv.score == 0 && bs) {
+                    char esc_bs[512];
+                    json_escape(bs, esc_bs, sizeof(esc_bs));
+                    printf(",\"blind_spot\":\"%s\"", esc_bs);
+                }
+            }
+            printf("}\n");
         } else if (pv.score == 0) {
+            const char *bs = hlse_blindspot_for("esp");
             printf("OK    (esp)%s%s\n",
                    pv.n_reasons ? " — " : "",
                    pv.n_reasons ? pv.reasons[0] : "");
+            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
         } else {
             int i;
             printf("%-7s [%d]  (esp)\n",
