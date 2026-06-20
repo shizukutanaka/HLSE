@@ -6207,6 +6207,47 @@ main(int argc, char **argv) {
                         printf(",\"blind_spot\":\"%s\"", esc_bs);
                     }
                 }
+                if (fv.score >= 60) {
+                    /* Determine pattern label from first reason code */
+                    const char *fpat = "file masquerade / malicious file delivery";
+                    static const char file_obj[] =
+                        "code execution \xe2\x80\x94 opening a disguised executable "
+                        "or document with macros runs the payload with your "
+                        "user privileges; the visual disguise is designed to "
+                        "bypass 'I checked the extension' caution";
+                    static const char file_vrf[] =
+                        "do NOT open the file; scan it with a multi-engine "
+                        "sandbox (e.g. VirusTotal) first \xe2\x80\x94 right-click "
+                        "to upload; confirm the file came from a trusted source "
+                        "through a separately-known channel";
+                    static const char file_tri[] =
+                        "if already opened: disconnect from the network "
+                        "immediately; run a full antivirus scan; change "
+                        "credentials for any service you were logged into at "
+                        "the time; consider a full OS reinstall for high-score "
+                        "detections";
+                    static const char file_cas[] =
+                        "all credentials and session tokens active when the file "
+                        "was opened \xe2\x80\x94 malware runs with your session "
+                        "context; also check for persistence (startup items, "
+                        "scheduled tasks, browser extensions added)";
+                    char e[512];
+                    if (fv.n_reasons > 0) {
+                        if (strstr(fv.reasons[0], "RLO") || strstr(fv.reasons[0], "Unicode"))
+                            fpat = "Unicode RTL override trick (hidden file extension)";
+                        else if (strstr(fv.reasons[0], "DOUBLE EXTENSION") || strstr(fv.reasons[0], "double"))
+                            fpat = "double-extension file masquerade (disguised executable)";
+                        else if (strstr(fv.reasons[0], "macro") || strstr(fv.reasons[0], "Macro"))
+                            fpat = "Office macro delivery (document-based malware lure)";
+                        else if (strstr(fv.reasons[0], "PDF") || strstr(fv.reasons[0], "JavaScript"))
+                            fpat = "PDF with embedded JavaScript (drive-by execution lure)";
+                    }
+                    json_escape(fpat,     e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                    json_escape(file_obj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
+                    json_escape(file_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                    json_escape(file_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
+                    json_escape(file_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                }
                 printf("}\n");
             } else if (fv.score == 0) {
                 const char *bs = hlse_blindspot_for("file");
@@ -6214,11 +6255,38 @@ main(int argc, char **argv) {
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
+                const char *fpat = "file masquerade / malicious file delivery";
                 printf("%-7s [%d]  %s\n",
                        hlse_action_for_score(fv.score), fv.score,
                        argv[idx + 1]);
                 for (i = 0; i < fv.n_reasons; i++)
                     printf("  \xc2\xb7 %s\n", fv.reasons[i]);
+                if (fv.score >= 60) {
+                    if (fv.n_reasons > 0) {
+                        if (strstr(fv.reasons[0], "RLO") || strstr(fv.reasons[0], "Unicode"))
+                            fpat = "Unicode RTL override trick (hidden file extension)";
+                        else if (strstr(fv.reasons[0], "DOUBLE EXTENSION") || strstr(fv.reasons[0], "double"))
+                            fpat = "double-extension file masquerade (disguised executable)";
+                        else if (strstr(fv.reasons[0], "macro") || strstr(fv.reasons[0], "Macro"))
+                            fpat = "Office macro delivery (document-based malware lure)";
+                        else if (strstr(fv.reasons[0], "PDF") || strstr(fv.reasons[0], "JavaScript"))
+                            fpat = "PDF with embedded JavaScript (drive-by execution lure)";
+                    }
+                    printf("  \xe2\x96\xb8 Pattern: %s\n", fpat);
+                    printf("  \xe2\x97\x89 Attacker's goal: code execution \xe2\x80\x94 "
+                           "opening a disguised executable runs the payload with "
+                           "your user privileges\n");
+                    printf("  \xe2\x9c\x93 Verify first: do NOT open the file; scan "
+                           "with a multi-engine sandbox (e.g. VirusTotal) first; "
+                           "confirm the source through a separately-known channel\n");
+                    printf("  \xe2\x9a\x91 If you acted: if already opened, disconnect "
+                           "from the network; run antivirus; change credentials for "
+                           "any active session\n");
+                    printf("  \xe2\x8a\x95 Also change: all credentials and session "
+                           "tokens active when the file was opened \xe2\x80\x94 check "
+                           "for persistence (startup items, scheduled tasks, new "
+                           "browser extensions)\n");
+                }
             }
             return fv.score >= g_fail_threshold ? 1 : 0;
         }

@@ -2774,6 +2774,70 @@ assert "triage" not in d, d
 ' && check "p46 json: paste OK has no advisory lens fields" "0" "0" \
    || check "p46 json: paste OK has no advisory lens fields" "0" "1"
 
+# ─── P51: file BLOCK advisory lenses ────────────────────────────────────
+
+# p51: file BLOCK (double extension) shows masquerade pattern
+touch /tmp/hlse_p51_test.pdf.exe
+./hlse_core file /tmp/hlse_p51_test.pdf.exe 2>&1 \
+    | grep -q "Pattern: double-extension file masquerade" \
+    && check "p51: file BLOCK shows double-extension masquerade pattern" "0" "0" \
+    || check "p51: file BLOCK shows double-extension masquerade pattern" "0" "1"
+
+# p51: file BLOCK shows code execution objective
+./hlse_core file /tmp/hlse_p51_test.pdf.exe 2>&1 \
+    | grep -q "Attacker's goal:.*code execution" \
+    && check "p51: file BLOCK shows code execution objective" "0" "0" \
+    || check "p51: file BLOCK shows code execution objective" "0" "1"
+
+# p51: file BLOCK shows verify first (VirusTotal / sandbox)
+./hlse_core file /tmp/hlse_p51_test.pdf.exe 2>&1 \
+    | grep -q "Verify first:" \
+    && check "p51: file BLOCK shows verify-first guidance" "0" "0" \
+    || check "p51: file BLOCK shows verify-first guidance" "0" "1"
+
+# p51: file BLOCK shows triage (disconnect / antivirus)
+./hlse_core file /tmp/hlse_p51_test.pdf.exe 2>&1 \
+    | grep -q "If you acted:" \
+    && check "p51: file BLOCK shows triage" "0" "0" \
+    || check "p51: file BLOCK shows triage" "0" "1"
+
+# p51: file BLOCK shows cascade risk (credentials / persistence)
+./hlse_core file /tmp/hlse_p51_test.pdf.exe 2>&1 \
+    | grep -q "Also change:" \
+    && check "p51: file BLOCK shows cascade risk" "0" "0" \
+    || check "p51: file BLOCK shows cascade risk" "0" "1"
+
+# p51: file OK still shows blind spot (no advisory lenses)
+./hlse_core file /tmp/hlse_test.txt 2>&1 \
+    | grep -q "Blind spot:" \
+    && check "p51: file OK still shows blind spot" "0" "0" \
+    || check "p51: file OK still shows blind spot" "0" "1"
+
+# p51 json: file BLOCK carries pattern, objective, verify, triage, cascade_risk
+./hlse_core --json file /tmp/hlse_p51_test.pdf.exe 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] >= 60, d
+assert "pattern" in d, d
+assert "objective" in d, d
+assert "verify" in d, d
+assert "triage" in d, d
+assert "cascade_risk" in d, d
+' && check "p51 json: file BLOCK carries all advisory lens fields" "0" "0" \
+   || check "p51 json: file BLOCK carries all advisory lens fields" "0" "1"
+
+# p51 json: file OK has no advisory lens fields
+./hlse_core --json file /tmp/hlse_test.txt 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] == 0, d
+assert "pattern" not in d, d
+assert "triage" not in d, d
+' && check "p51 json: file OK has no advisory lens fields" "0" "0" \
+   || check "p51 json: file OK has no advisory lens fields" "0" "1"
+
+rm -f /tmp/hlse_p51_test.pdf.exe
+
 # ─── P50: secret BLOCK advisory lenses ──────────────────────────────────
 
 # p50: secret BLOCK shows credential-type pattern

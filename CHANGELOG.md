@@ -2,6 +2,31 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.51] — 2026-06-20
+
+### Added
+- **Perspective 51: Advisory lenses for `file` BLOCK verdicts —
+  pattern / code-execution objective / verify / triage / cascade
+  surfaced on every malicious file alert.**
+  Socratic question: "The `file` subcommand detects disguised executables
+  (double extension, RLO Unicode trick, Office macro lures, PDF/JS) —
+  when BLOCK fires, it shows the F-code reason ('F1: DOUBLE EXTENSION —
+  .pdf.exe disguised as .pdf') and nothing else. The other five BLOCK
+  checks (paste, clipboard, email, package, secret) all received advisory
+  lenses in P46–P50 and now tell the user the attack class, what the
+  attacker wants, what to do before opening, and what to do if they
+  already clicked. The file check, which defends against the same
+  malware-delivery phase, still shows only the detection signal. A user
+  who has already opened invoice.pdf.exe gets no guidance about
+  disconnecting, no cascade-risk framing for the credentials that were
+  active in their session, and no pointer to VirusTotal. Why?" Pattern
+  label derived from the first reason code (double extension, RLO,
+  macro, PDF/JS, or generic masquerade). Both human output (▸ Pattern,
+  ◉ Attacker's goal, ✓ Verify first, ⚑ If you acted, ⊕ Also change)
+  and JSON (pattern, objective, verify, triage, cascade_risk) now
+  populated for every file BLOCK/ISOLATE. OK paths unchanged (blind
+  spot only). 8 new integration tests added (432 total, all pass).
+
 ## [1.0.50] — 2026-06-20
 
 ### Added
