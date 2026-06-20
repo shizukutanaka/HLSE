@@ -5632,6 +5632,28 @@ main(int argc, char **argv) {
                         printf(",\"blind_spot\":\"%s\"", esc_bs);
                     }
                 }
+                if (pv.score >= 60) {
+                    /* Build a minimal TextVerdict so the existing advisory
+                     * machinery fires: "Shell-pipe" triggers ClickFix
+                     * classification in hlse_classify_text_attack(). */
+                    TextVerdict ptv;
+                    const char *ppat, *pobj, *pvrf, *ptri, *pcas;
+                    memset(&ptv, 0, sizeof(ptv));
+                    ptv.score = pv.score;
+                    ptv.n_reasons = 1;
+                    snprintf(ptv.reasons[0], sizeof(ptv.reasons[0]),
+                             "Shell-pipe: paste-and-run pastejacking");
+                    ppat = hlse_classify_text_attack(&ptv);
+                    pobj = hlse_text_objective(&ptv);
+                    pvrf = hlse_text_verify(&ptv);
+                    ptri = hlse_text_triage(&ptv);
+                    pcas = hlse_text_cascade(&ptv);
+                    if (ppat) { char e[512]; json_escape(ppat,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
+                    if (pobj) { char e[512]; json_escape(pobj,e,sizeof(e)); printf(",\"objective\":\"%s\"",e); }
+                    if (pvrf) { char e[512]; json_escape(pvrf,e,sizeof(e)); printf(",\"verify\":\"%s\"",e); }
+                    if (ptri) { char e[512]; json_escape(ptri,e,sizeof(e)); printf(",\"triage\":\"%s\"",e); }
+                    if (pcas) { char e[512]; json_escape(pcas,e,sizeof(e)); printf(",\"cascade_risk\":\"%s\"",e); }
+                }
                 printf(",\"reasons\":[");
                 for (i = 0; i < pv.n_reasons; i++) {
                     char esc[512];
@@ -5649,6 +5671,16 @@ main(int argc, char **argv) {
                        hlse_action_for_score(pv.score), pv.score);
                 for (i = 0; i < pv.n_reasons; i++)
                     printf("  \xc2\xb7 %s\n", pv.reasons[i]);
+                if (pv.score >= 60) {
+                    /* Advisory lenses: every paste BLOCK is ClickFix/pastejacking */
+                    TextVerdict ptv;
+                    memset(&ptv, 0, sizeof(ptv));
+                    ptv.score = pv.score;
+                    ptv.n_reasons = 1;
+                    snprintf(ptv.reasons[0], sizeof(ptv.reasons[0]),
+                             "Shell-pipe: paste-and-run pastejacking");
+                    print_text_advisories(&ptv);
+                }
             }
             return pv.score >= g_fail_threshold ? 1 : 0;
         }

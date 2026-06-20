@@ -2,6 +2,32 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.46] — 2026-06-20
+
+### Added
+- **Perspective 46: Advisory lenses for `paste` BLOCK verdicts — ClickFix
+  pattern / attacker objective / verify / triage / cascade surfaced on
+  every pastejacking alert.**
+  Socratic question: "Every `paste` BLOCK is a ClickFix / pastejacking
+  attack — that's the only threat category the paste detector fires on.
+  Yet a BLOCK verdict today shows only the raw signal reasons (P2, P4,
+  Compound) with no pattern label, no attacker-objective framing, no
+  triage steps, and no cascade-risk guidance. The `url` BLOCK path links
+  every verdict to its attacker objective and first-response triage;
+  the `text` BLOCK path does the same. Why does `paste`, the most
+  immediately dangerous input vector (the command executes in the next
+  keystroke), omit the advisory context that would help the user
+  understand what was at stake and what to do next?" Synthetic
+  `TextVerdict` with a `"Shell-pipe: paste-and-run pastejacking"` reason
+  threads through the existing `hlse_classify_text_attack()` /
+  `hlse_text_objective()` / `hlse_text_verify()` / `hlse_text_triage()` /
+  `hlse_text_cascade()` machinery — no string duplication, no new lookup
+  tables. Both human output (`▸ Pattern:`, `◉ Attacker's goal:`,
+  `✓ Verify first:`, `⚑ If you acted:`, `⊕ Also change:`) and JSON
+  (`"pattern"`, `"objective"`, `"verify"`, `"triage"`, `"cascade_risk"`)
+  are populated for every paste BLOCK/ISOLATE. OK paths are unchanged
+  (blind spot only). 8 new integration tests added (393 total, all pass).
+
 ## [1.0.45] — 2026-06-20
 
 ### Fixed

