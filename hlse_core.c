@@ -5902,16 +5902,68 @@ main(int argc, char **argv) {
                         printf(",\"blind_spot\":\"%s\"", esc_bs);
                     }
                 }
+                if (cv.score >= 60) {
+                    static const char cp_pat[] =
+                        "cryptocurrency clipboard hijack (clipper malware)";
+                    static const char cp_obj[] =
+                        "cryptocurrency theft \xe2\x80\x94 your copied address was "
+                        "silently replaced; funds sent reach the attacker's wallet "
+                        "and cannot be recovered";
+                    static const char cp_vrf[] =
+                        "re-copy the address from the recipient's own verified "
+                        "source and compare every character in your wallet app "
+                        "before confirming the transaction";
+                    static const char cp_tri[] =
+                        "if you already sent funds: contact your exchange or "
+                        "wallet provider immediately \xe2\x80\x94 crypto transfers "
+                        "are irreversible; file a report with law enforcement "
+                        "and the exchange's fraud team";
+                    static const char cp_cas[] =
+                        "every crypto address you have copied since the last "
+                        "clean boot \xe2\x80\x94 clipper malware intercepts all "
+                        "clipboard activity; assume all recent copies were "
+                        "redirected and run a full malware scan before "
+                        "transacting again";
+                    char e[512];
+                    json_escape(cp_pat, e, sizeof(e));
+                    printf(",\"pattern\":\"%s\"", e);
+                    json_escape(cp_obj, e, sizeof(e));
+                    printf(",\"objective\":\"%s\"", e);
+                    json_escape(cp_vrf, e, sizeof(e));
+                    printf(",\"verify\":\"%s\"", e);
+                    json_escape(cp_tri, e, sizeof(e));
+                    printf(",\"triage\":\"%s\"", e);
+                    json_escape(cp_cas, e, sizeof(e));
+                    printf(",\"cascade_risk\":\"%s\"", e);
+                }
                 printf("}\n");
             } else if (cv.score == 0) {
                 const char *bs = hlse_blindspot_for("clipboard");
-                printf("OK    (clipboard — no address swap detected)\n");
+                printf("OK    (clipboard \xe2\x80\x94 no address swap detected)\n");
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 printf("%-7s [%d]  (clipboard)\n",
                        hlse_action_for_score(cv.score), cv.score);
                 if (cv.reason[0]) printf("  \xc2\xb7 %s\n", cv.reason);
                 if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
+                if (cv.score >= 60) {
+                    printf("  \xe2\x96\xb8 Pattern: cryptocurrency clipboard hijack "
+                           "(clipper malware)\n");
+                    printf("  \xe2\x97\x89 Attacker's goal: cryptocurrency theft "
+                           "\xe2\x80\x94 your copied address was silently replaced; "
+                           "funds sent reach the attacker's wallet and cannot "
+                           "be recovered\n");
+                    printf("  \xe2\x9c\x93 Verify first: re-copy the address from "
+                           "the recipient's own verified source and compare every "
+                           "character in your wallet app before confirming\n");
+                    printf("  \xe2\x9a\x91 If you acted: if you already sent funds, "
+                           "contact your exchange immediately \xe2\x80\x94 crypto "
+                           "transfers are irreversible; file a report with law "
+                           "enforcement and the exchange's fraud team\n");
+                    printf("  \xe2\x8a\x95 Also change: audit every crypto address "
+                           "you have copied since the last clean boot \xe2\x80\x94 "
+                           "clipper malware intercepts all clipboard activity\n");
+                }
             }
             return cv.score >= g_fail_threshold ? 1 : 0;
         }

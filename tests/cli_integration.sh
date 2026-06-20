@@ -2774,6 +2774,70 @@ assert "triage" not in d, d
 ' && check "p46 json: paste OK has no advisory lens fields" "0" "0" \
    || check "p46 json: paste OK has no advisory lens fields" "0" "1"
 
+# ─── P47: clipboard ISOLATE advisory lenses ─────────────────────────────
+
+CB_ORIG="bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
+CB_FAKE="bc1qFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKEFA"
+
+# p47: clipboard ISOLATE shows pattern label
+./hlse_core clipboard "$CB_ORIG" "$CB_FAKE" 2>&1 \
+    | grep -q "Pattern: cryptocurrency clipboard hijack" \
+    && check "p47: clipboard ISOLATE shows pattern label" "0" "0" \
+    || check "p47: clipboard ISOLATE shows pattern label" "0" "1"
+
+# p47: clipboard ISOLATE shows attacker objective
+./hlse_core clipboard "$CB_ORIG" "$CB_FAKE" 2>&1 \
+    | grep -q "Attacker's goal:" \
+    && check "p47: clipboard ISOLATE shows attacker objective" "0" "0" \
+    || check "p47: clipboard ISOLATE shows attacker objective" "0" "1"
+
+# p47: clipboard ISOLATE shows triage (If you acted)
+./hlse_core clipboard "$CB_ORIG" "$CB_FAKE" 2>&1 \
+    | grep -q "If you acted:" \
+    && check "p47: clipboard ISOLATE shows triage" "0" "0" \
+    || check "p47: clipboard ISOLATE shows triage" "0" "1"
+
+# p47: clipboard ISOLATE shows cascade risk (Also change)
+./hlse_core clipboard "$CB_ORIG" "$CB_FAKE" 2>&1 \
+    | grep -q "Also change:" \
+    && check "p47: clipboard ISOLATE shows cascade risk" "0" "0" \
+    || check "p47: clipboard ISOLATE shows cascade risk" "0" "1"
+
+# p47: clipboard OK still shows blind spot (no advisory lenses)
+./hlse_core clipboard "$CB_ORIG" "$CB_ORIG" 2>&1 \
+    | grep -q "Blind spot:" \
+    && check "p47: clipboard OK still shows blind spot" "0" "0" \
+    || check "p47: clipboard OK still shows blind spot" "0" "1"
+
+# p47: clipboard OK does NOT show advisory lenses
+./hlse_core clipboard "$CB_ORIG" "$CB_ORIG" 2>&1 \
+    | grep -q "Pattern:" \
+    && check "p47: clipboard OK has no advisory lenses" "0" "1" \
+    || check "p47: clipboard OK has no advisory lenses" "0" "0"
+
+# p47 json: clipboard ISOLATE carries pattern, objective, triage, cascade_risk
+./hlse_core --json clipboard "$CB_ORIG" "$CB_FAKE" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] >= 60, d
+assert "pattern" in d, d
+assert "objective" in d, d
+assert "verify" in d, d
+assert "triage" in d, d
+assert "cascade_risk" in d, d
+' && check "p47 json: clipboard ISOLATE carries pattern/objective/triage/cascade_risk" "0" "0" \
+   || check "p47 json: clipboard ISOLATE carries pattern/objective/triage/cascade_risk" "0" "1"
+
+# p47 json: clipboard OK has no advisory lens fields
+./hlse_core --json clipboard "$CB_ORIG" "$CB_ORIG" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] == 0, d
+assert "pattern" not in d, d
+assert "triage" not in d, d
+' && check "p47 json: clipboard OK has no advisory lens fields" "0" "0" \
+   || check "p47 json: clipboard OK has no advisory lens fields" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

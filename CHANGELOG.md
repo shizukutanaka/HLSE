@@ -2,6 +2,28 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.47] — 2026-06-20
+
+### Added
+- **Perspective 47: Advisory lenses for `clipboard` ISOLATE verdicts —
+  pattern / attacker objective / verify / triage / cascade surfaced on
+  every clipper-malware alert.**
+  Socratic question: "The `clipboard` subcommand exists specifically to
+  catch clipper malware — software that silently replaces a crypto address
+  in the clipboard so the victim sends funds to the attacker instead of
+  the intended recipient. When it fires, it shows the raw swap signal and
+  a hardcoded remediation string. But it doesn't name the attack pattern,
+  doesn't name the attacker's objective (irreversible wallet drain), gives
+  no 'Verify first' step, no 'If you acted' triage for the user who may
+  have already sent, and no cascade-risk framing for all the other
+  addresses they may have copied since the malware was active. The `paste`
+  BLOCK path now has all five advisory lenses; the `clipboard` ISOLATE
+  path — which guards the most catastrophically irreversible loss in the
+  entire tool — still has none. Why?" Added five advisory lens fields
+  (pattern, objective, verify, triage, cascade_risk) to both human output
+  and JSON for every clipboard BLOCK/ISOLATE. OK path unchanged (blind
+  spot only). 8 new integration tests added (401 total, all pass).
+
 ## [1.0.46] — 2026-06-20
 
 ### Added
