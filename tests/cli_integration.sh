@@ -2774,6 +2774,70 @@ assert "triage" not in d, d
 ' && check "p46 json: paste OK has no advisory lens fields" "0" "0" \
    || check "p46 json: paste OK has no advisory lens fields" "0" "1"
 
+# ─── P48: email BLOCK advisory lenses ───────────────────────────────────
+
+BEC_HDR='From: ceo@company.com
+Reply-To: ceo.company@gmail.com
+Received: from hacked.xyz [1.2.3.4]
+Authentication-Results: dkim=fail; spf=fail'
+
+# p48: email BLOCK (header-only) shows BEC pattern
+printf '%s' "$BEC_HDR" | ./hlse_core email --stdin 2>&1 \
+    | grep -q "Pattern: business email compromise" \
+    && check "p48: email BLOCK (header-only) shows BEC pattern" "0" "0" \
+    || check "p48: email BLOCK (header-only) shows BEC pattern" "0" "1"
+
+# p48: email BLOCK (header-only) shows triage
+printf '%s' "$BEC_HDR" | ./hlse_core email --stdin 2>&1 \
+    | grep -q "If you acted:" \
+    && check "p48: email BLOCK (header-only) shows triage" "0" "0" \
+    || check "p48: email BLOCK (header-only) shows triage" "0" "1"
+
+# p48: email BLOCK (body_pat) shows verify first
+BEC_BODY="$BEC_HDR
+wire transfer \$80000 immediately, keep secret, urgent CEO request"
+printf '%s' "$BEC_BODY" | ./hlse_core email --stdin 2>&1 \
+    | grep -q "Verify first:" \
+    && check "p48: email BLOCK (body_pat) shows Verify first" "0" "0" \
+    || check "p48: email BLOCK (body_pat) shows Verify first" "0" "1"
+
+# p48: email BLOCK (body_pat) shows cascade risk
+printf '%s' "$BEC_BODY" | ./hlse_core email --stdin 2>&1 \
+    | grep -q "Also change:" \
+    && check "p48: email BLOCK (body_pat) shows cascade risk" "0" "0" \
+    || check "p48: email BLOCK (body_pat) shows cascade risk" "0" "1"
+
+# p48 json: email BLOCK (header-only) carries pattern, objective, triage
+printf '%s' "$BEC_HDR" | ./hlse_core --json email --stdin 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] >= 60, d
+assert "pattern" in d, d
+assert "objective" in d, d
+assert "triage" in d, d
+assert "cascade_risk" in d, d
+' && check "p48 json: email BLOCK (header-only) carries pattern/objective/triage/cascade_risk" "0" "0" \
+   || check "p48 json: email BLOCK (header-only) carries pattern/objective/triage/cascade_risk" "0" "1"
+
+# p48 json: email BLOCK (body_pat) carries objective, verify, triage, cascade_risk
+printf '%s' "$BEC_BODY" | ./hlse_core --json email --stdin 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] >= 60, d
+assert "objective" in d, d
+assert "verify" in d, d
+assert "triage" in d, d
+assert "cascade_risk" in d, d
+' && check "p48 json: email BLOCK (body_pat) carries objective/verify/triage/cascade_risk" "0" "0" \
+   || check "p48 json: email BLOCK (body_pat) carries objective/verify/triage/cascade_risk" "0" "1"
+
+# p48: email LOG (score < 60) does NOT show triage
+./hlse_core email "From: test@example.com
+Reply-To: test@gmail.com" 2>&1 \
+    | grep -q "If you acted:" \
+    && check "p48: email LOG does not show triage" "0" "1" \
+    || check "p48: email LOG does not show triage" "0" "0"
+
 # ─── P47: clipboard ISOLATE advisory lenses ─────────────────────────────
 
 CB_ORIG="bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"

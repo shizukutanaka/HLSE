@@ -5835,6 +5835,43 @@ main(int argc, char **argv) {
                     json_escape(body_pat, epat, sizeof(epat));
                     printf(",\"body_pattern\":\"%s\",\"body_score\":%d",
                            epat, bodytv.score);
+                    if (ev.score >= 60) {
+                        /* Use email header score for advisory threshold —
+                         * body text score may be low even when headers are BLOCK */
+                        TextVerdict btv_hi = bodytv;
+                        char e[512];
+                        const char *bobj, *bvrf, *btri, *bcas;
+                        btv_hi.score = ev.score;
+                        bobj = hlse_text_objective(&btv_hi);
+                        bvrf = hlse_text_verify(&btv_hi);
+                        btri = hlse_text_triage(&btv_hi);
+                        bcas = hlse_text_cascade(&btv_hi);
+                        if (bobj) { json_escape(bobj,e,sizeof(e)); printf(",\"objective\":\"%s\"",e); }
+                        if (bvrf) { json_escape(bvrf,e,sizeof(e)); printf(",\"verify\":\"%s\"",e); }
+                        if (btri) { json_escape(btri,e,sizeof(e)); printf(",\"triage\":\"%s\"",e); }
+                        if (bcas) { json_escape(bcas,e,sizeof(e)); printf(",\"cascade_risk\":\"%s\"",e); }
+                    }
+                } else if (ev.score >= 60) {
+                    /* Header-only BLOCK: synthesise BEC advisory lenses */
+                    TextVerdict etv;
+                    char e[512];
+                    const char *epat2, *eobj, *evrf, *etri, *ecas;
+                    memset(&etv, 0, sizeof(etv));
+                    etv.score = ev.score;
+                    etv.n_reasons = 1;
+                    snprintf(etv.reasons[0], sizeof(etv.reasons[0]),
+                             "BEC: email header authentication failure "
+                             "(SPF/DKIM/Reply-To spoofing)");
+                    epat2 = hlse_classify_text_attack(&etv);
+                    eobj  = hlse_text_objective(&etv);
+                    evrf  = hlse_text_verify(&etv);
+                    etri  = hlse_text_triage(&etv);
+                    ecas  = hlse_text_cascade(&etv);
+                    if (epat2) { json_escape(epat2,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
+                    if (eobj)  { json_escape(eobj,e,sizeof(e));  printf(",\"objective\":\"%s\"",e); }
+                    if (evrf)  { json_escape(evrf,e,sizeof(e));  printf(",\"verify\":\"%s\"",e); }
+                    if (etri)  { json_escape(etri,e,sizeof(e));  printf(",\"triage\":\"%s\"",e); }
+                    if (ecas)  { json_escape(ecas,e,sizeof(e));  printf(",\"cascade_risk\":\"%s\"",e); }
                 }
                 if (rem) {
                     char erm[512];
@@ -5844,7 +5881,7 @@ main(int argc, char **argv) {
                 printf("}\n");
             } else if (ev.score == 0 && !body_pat) {
                 const char *bs = hlse_blindspot_for("email");
-                printf("OK    (email — no spoofing signals)\n");
+                printf("OK    (email \xe2\x80\x94 no spoofing signals)\n");
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
@@ -5858,11 +5895,42 @@ main(int argc, char **argv) {
                 for (i = 0; i < ev.n_reasons; i++)
                     printf("  \xc2\xb7 %s\n", ev.reasons[i]);
                 if (body_pat) {
-                    const char *bobj;
+                    /* Use email header score for advisory threshold */
+                    TextVerdict btv_hi = bodytv;
+                    const char *bobj, *bvrf, *btri, *bcas;
+                    if (ev.score >= 60) btv_hi.score = ev.score;
+                    bobj = hlse_text_objective(&btv_hi);
+                    bvrf = hlse_text_verify(&btv_hi);
+                    btri = hlse_text_triage(&btv_hi);
+                    bcas = hlse_text_cascade(&btv_hi);
                     printf("  \xe2\x96\xb8 Body pattern: %s (body score %d)\n",
                            body_pat, bodytv.score);
-                    bobj = hlse_text_objective(&bodytv);
                     if (bobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", bobj);
+                    if (ev.score >= 60) {
+                        if (bvrf) printf("  \xe2\x9c\x93 Verify first: %s\n", bvrf);
+                        if (btri) printf("  \xe2\x9a\x91 If you acted: %s\n", btri);
+                        if (bcas) printf("  \xe2\x8a\x95 Also change: %s\n", bcas);
+                    }
+                } else if (ev.score >= 60) {
+                    /* Header-only BLOCK: synthesise BEC advisory lenses */
+                    TextVerdict etv;
+                    const char *epat2, *eobj, *evrf, *etri, *ecas;
+                    memset(&etv, 0, sizeof(etv));
+                    etv.score = ev.score;
+                    etv.n_reasons = 1;
+                    snprintf(etv.reasons[0], sizeof(etv.reasons[0]),
+                             "BEC: email header authentication failure "
+                             "(SPF/DKIM/Reply-To spoofing)");
+                    epat2 = hlse_classify_text_attack(&etv);
+                    eobj  = hlse_text_objective(&etv);
+                    evrf  = hlse_text_verify(&etv);
+                    etri  = hlse_text_triage(&etv);
+                    ecas  = hlse_text_cascade(&etv);
+                    if (epat2) printf("  \xe2\x96\xb8 Pattern: %s\n", epat2);
+                    if (eobj)  printf("  \xe2\x97\x89 Attacker's goal: %s\n", eobj);
+                    if (evrf)  printf("  \xe2\x9c\x93 Verify first: %s\n", evrf);
+                    if (etri)  printf("  \xe2\x9a\x91 If you acted: %s\n", etri);
+                    if (ecas)  printf("  \xe2\x8a\x95 Also change: %s\n", ecas);
                 }
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                 if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);

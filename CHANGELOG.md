@@ -2,6 +2,33 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.48] — 2026-06-20
+
+### Added
+- **Perspective 48: Full advisory lenses for `email` BLOCK verdicts —
+  verify / triage / cascade surfaced for both body-pattern and
+  header-only BLOCK paths.**
+  Socratic question: "When the email handler reaches BLOCK/ISOLATE and
+  the body text identifies BEC/urgency, it already names the body pattern
+  and attacker's goal. But it stops there: `hlse_text_verify`,
+  `hlse_text_triage`, and `hlse_text_cascade` are already wired for these
+  exact patterns, yet the email path never calls them. The BEC objective
+  says '72-hour SWIFT recall window'; `hlse_text_triage` for BEC says
+  'call your bank's fraud line within 72 hours to attempt a SWIFT recall'.
+  This is precisely the 60-second action a victim needs. Why does the
+  email BLOCK that most accurately identifies BEC include the attacker's
+  goal but omit the recovery action?
+  Also: when only header signals fire at BLOCK level (SPF/DKIM/Reply-To
+  mismatch, no body text), there are no advisory lenses at all, even
+  though the attack class is identical — BEC spoofing infrastructure."
+  Two fixes: (1) for body-pattern BLOCK, verify/triage/cascade now
+  emit using the email header score (not the body text score, which may
+  be below the 60-threshold even when headers are ISOLATE-level); (2) for
+  header-only BLOCK, a synthetic TextVerdict with `"BEC: email header
+  authentication failure"` reason threads through the existing advisory
+  machinery. Both human and JSON output updated. 7 new integration tests
+  added (408 total, all pass).
+
 ## [1.0.47] — 2026-06-20
 
 ### Added
