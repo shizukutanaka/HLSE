@@ -2081,6 +2081,16 @@ hlse_blindspot_for(const char *kind) {
         return "header forensics only — a breached but legitimate account, or "
                "a clean-domain look-alike, can still be malicious; verify "
                "unexpected requests out-of-band.";
+    if (strcmp(kind, "clipboard") == 0)
+        return "swap check only — this compares the two addresses you provided; "
+               "it cannot confirm the address belongs to the intended recipient. "
+               "Crypto transfers are irreversible: verify the full address "
+               "against the recipient's own published source before sending.";
+    if (strcmp(kind, "paste") == 0)
+        return "injection-pattern check only — this flags hidden or obfuscated "
+               "command injection, not whether a command is safe to run. Never "
+               "run a command you did not seek out or do not understand, even "
+               "when it looks clean.";
     return NULL;
 }
 
@@ -5511,7 +5521,9 @@ main(int argc, char **argv) {
                 }
                 printf("]}\n");
             } else if (pv.score == 0) {
+                const char *bs = hlse_blindspot_for("paste");
                 printf("OK    (paste)\n");
+                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
                 printf("%-7s [%d]  (paste)\n",
@@ -5703,7 +5715,9 @@ main(int argc, char **argv) {
                        cv.score, hlse_action_for_score(cv.score),
                        cv.is_swap, eo, es, er, erm);
             } else if (cv.score == 0) {
+                const char *bs = hlse_blindspot_for("clipboard");
                 printf("OK    (clipboard — no address swap detected)\n");
+                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 printf("%-7s [%d]  (clipboard)\n",
                        hlse_action_for_score(cv.score), cv.score);

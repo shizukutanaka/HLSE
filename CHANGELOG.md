@@ -2,6 +2,30 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.41] — 2026-06-20
+
+### Fixed
+- **Perspective 41: Blind-spot disclosure on the irreversible-harm checks
+  (`clipboard`, `paste`).**
+  Socratic question: "The `url`, `text`, and `email` clean paths each append an
+  `ℹ Blind spot:` line — what an `OK` cannot see, so the user does not mistake it
+  for proof of safety. But `clipboard` (crypto address-swap → theft) and `paste`
+  (pastejacking → arbitrary code execution) — the two MOST dangerous, *irreversible*
+  checks in the tool — return a bare `OK` with no caveat. A `clipboard` OK only
+  proves the two addresses you provided match each other; it never verified the
+  address belongs to the intended recipient. A user about to wire their life
+  savings reads `OK (clipboard)` and sends to an address HLSE never authenticated.
+  Why do the highest-stakes verdicts alone offer no hedge against false
+  confidence?" Added `clipboard` and `paste` cases to `hlse_blindspot_for()` and
+  wired them into both OK paths. The clipboard caveat names the irreversibility
+  and the real verification (check the full address against the recipient's own
+  published source); the paste caveat states the check flags injection patterns,
+  not whether a command is safe to run. The blind-spot line appears only on a
+  clean verdict — a detected swap or hostile paste suppresses it (the threat
+  guidance speaks instead). Advisory-only: no score or detection change, F1 =
+  1.000 holds. 4 new CLI integration tests (360 total). Zero warnings (CLI +
+  library).
+
 ## [1.0.40] — 2026-06-20
 
 ### Fixed

