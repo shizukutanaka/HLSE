@@ -2,6 +2,28 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.59] — 2026-06-20
+
+### Added
+- **Perspective 59: Scan secret findings now carry `confidence` and
+  `remediation` — reaching schema parity with standalone `secret` output.**
+  Socratic question: "After P55, scan secret findings gained pattern/
+  objective/verify/triage/cascade_risk. But comparing the scan secret JSON
+  with the standalone `secret` JSON reveals two more fields present only
+  in the standalone handler: `confidence` (e.g. 'definitive — AKIA prefix
+  is an unambiguous pattern') and `remediation` (e.g. 'revoke the key in
+  the AWS console under IAM → Access Keys'). Both are directly useful to
+  a CI pipeline consumer: confidence tells the operator whether to escalate
+  immediately or investigate first; remediation gives the exact action
+  without requiring the operator to know the service-specific revocation
+  workflow. Why does `--json scan` give a consumer less information per
+  secret finding than `--json secret` when both detected the same
+  credential?" Added `confidence` (via `hlse_secret_confidence()`) and
+  `remediation` (via `hlse_remediation_for("secret", sv.score)`) to the
+  scan secret JSON output, immediately after the `findings` array and
+  before the advisory lenses, matching the field order in the standalone
+  `secret` handler. 2 new integration tests; 461 pass, 0 fail.
+
 ## [1.0.58] — 2026-06-20
 
 ### Added

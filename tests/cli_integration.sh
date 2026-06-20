@@ -3355,6 +3355,33 @@ assert "immediate_action" not in d, d
    || check "p58 json: scan_summary has no immediate_action when clean" "0" "1"
 rm -rf "$P58_CLEAN"
 
+# ─── P59: scan secret findings carry confidence and remediation fields ────
+
+P59_DIR=$(mktemp -d)
+echo "aws_access_key_id = AKIA2E3MWORQXYZ4567PQ" > "$P59_DIR/config.txt"
+
+# p59 json: scan secret finding carries confidence and remediation
+./hlse_core --json scan "$P59_DIR" 2>&1 \
+    | grep '"kind":"secret"' | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "confidence"   in d, d
+assert "remediation"  in d, d
+' && check "p59 json: scan secret finding carries confidence + remediation" "0" "0" \
+   || check "p59 json: scan secret finding carries confidence + remediation" "0" "1"
+
+# p59 json: scan secret confidence matches standalone secret confidence
+STANDALONE=$(./hlse_core --json secret "aws_access_key_id = AKIA2E3MWORQXYZ4567PQ" 2>&1 | python3 -c 'import sys,json; d=json.loads(sys.stdin.readline()); print(d.get("confidence",""))')
+./hlse_core --json scan "$P59_DIR" 2>&1 \
+    | grep '"kind":"secret"' | python3 -c "
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d.get('confidence') == '$STANDALONE', d
+" && check "p59 json: scan secret confidence matches standalone" "0" "0" \
+   || check "p59 json: scan secret confidence matches standalone" "0" "1"
+
+rm -rf "$P59_DIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -5524,6 +5524,20 @@ main(int argc, char **argv) {
                                                    i ? "," : "", et, ed);
                                         }
                                         printf("]");
+                                        {
+                                            const char *conf = hlse_secret_confidence(&sv);
+                                            if (conf) {
+                                                json_escape(conf, ed, sizeof(ed));
+                                                printf(",\"confidence\":\"%s\"", ed);
+                                            }
+                                        }
+                                        {
+                                            const char *rem = hlse_remediation_for("secret", sv.score);
+                                            if (rem) {
+                                                json_escape(rem, ed, sizeof(ed));
+                                                printf(",\"remediation\":\"%s\"", ed);
+                                            }
+                                        }
                                         if (sv.score >= 60 && sv.n_findings > 0) {
                                             const char *ftype = sv.findings[0].type;
                                             const char *sobj  = secret_objective_for(ftype);
