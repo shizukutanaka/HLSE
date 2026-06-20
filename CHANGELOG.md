@@ -2,6 +2,29 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.49] — 2026-06-20
+
+### Added
+- **Perspective 49: Advisory lenses for `package` BLOCK verdicts —
+  supply-chain pattern / code-execution objective / verify / triage /
+  cascade surfaced on every typosquat alert.**
+  Socratic question: "The `package` subcommand detects dependency
+  confusion and typosquat attacks — an attacker publishes `reqeusts`
+  knowing that `pip install reqeusts` will run their post-install script
+  with the victim's shell privileges. When BLOCK fires, the verdict shows
+  the Damerau-Levenshtein match ('reqeusts is 1 edit from requests') and
+  nothing else. Every package BLOCK is a supply-chain code-execution
+  attack: there is no ambiguity about the attack class, no sub-types, no
+  benign explanations. The paste BLOCK (P46) now tells the user to
+  'disconnect from the network'; the clipboard BLOCK (P47) says 'contact
+  your exchange'; the email BLOCK (P48) says 'call your bank's fraud
+  line'. Why does the package BLOCK — the only input vector in HLSE that
+  directly causes arbitrary code execution under the user's own privileges
+  — output nothing about what to do next?" Added five advisory lens fields
+  (pattern, objective, verify, triage, cascade_risk) to both human output
+  and JSON for every package BLOCK/ISOLATE. OK paths unchanged (blind
+  spot only). 8 new integration tests added (416 total, all pass).
+
 ## [1.0.48] — 2026-06-20
 
 ### Added

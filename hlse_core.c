@@ -5596,6 +5596,40 @@ main(int argc, char **argv) {
                         printf(",\"blind_spot\":\"%s\"", esc_bs);
                     }
                 }
+                if (pv.score >= 60) {
+                    static const char pkg_pat[] =
+                        "dependency confusion / typosquat supply-chain attack";
+                    static const char pkg_obj[] =
+                        "arbitrary code execution \xe2\x80\x94 package install scripts "
+                        "run with your user privileges; any secret readable from "
+                        "your shell (API keys, tokens, SSH keys) is at risk";
+                    static const char pkg_vrf[] =
+                        "verify the exact package name on the official registry "
+                        "page before installing; most ecosystems support "
+                        "--dry-run to preview what would install";
+                    static const char pkg_tri[] =
+                        "if already installed, remove the package immediately "
+                        "(pip uninstall / npm uninstall / cargo remove); review "
+                        "the post-install script in the site-packages directory "
+                        "and rotate any credentials that were in your shell "
+                        "environment during the install";
+                    static const char pkg_cas[] =
+                        "all API keys, tokens, and credentials that could be "
+                        "read from your shell environment at install time "
+                        "\xe2\x80\x94 post-install scripts inherit your full "
+                        "PATH, HOME, and environment variables";
+                    char e[512];
+                    json_escape(pkg_pat, e, sizeof(e));
+                    printf(",\"pattern\":\"%s\"", e);
+                    json_escape(pkg_obj, e, sizeof(e));
+                    printf(",\"objective\":\"%s\"", e);
+                    json_escape(pkg_vrf, e, sizeof(e));
+                    printf(",\"verify\":\"%s\"", e);
+                    json_escape(pkg_tri, e, sizeof(e));
+                    printf(",\"triage\":\"%s\"", e);
+                    json_escape(pkg_cas, e, sizeof(e));
+                    printf(",\"cascade_risk\":\"%s\"", e);
+                }
                 printf("}\n");
             } else if (pv.score == 0) {
                 const char *bs = hlse_blindspot_for("package");
@@ -5607,6 +5641,23 @@ main(int argc, char **argv) {
                        argv[idx + 1]);
                 if (pv.reason[0])
                     printf("  \xc2\xb7 %s\n", pv.reason);
+                if (pv.score >= 60) {
+                    printf("  \xe2\x96\xb8 Pattern: dependency confusion / typosquat "
+                           "supply-chain attack\n");
+                    printf("  \xe2\x97\x89 Attacker's goal: arbitrary code execution "
+                           "\xe2\x80\x94 package install scripts run with your user "
+                           "privileges; any secret in your shell is at risk\n");
+                    printf("  \xe2\x9c\x93 Verify first: check the exact name on the "
+                           "official registry page; use --dry-run to preview before "
+                           "installing\n");
+                    printf("  \xe2\x9a\x91 If you acted: remove immediately "
+                           "(pip/npm/cargo uninstall); review the post-install "
+                           "script and rotate credentials that were in your shell\n");
+                    printf("  \xe2\x8a\x95 Also change: all API keys, tokens, and "
+                           "credentials readable from your shell at install time "
+                           "\xe2\x80\x94 post-install scripts inherit your full "
+                           "environment\n");
+                }
             }
             return pv.score >= g_fail_threshold ? 1 : 0;
         }

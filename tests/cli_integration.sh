@@ -2774,6 +2774,67 @@ assert "triage" not in d, d
 ' && check "p46 json: paste OK has no advisory lens fields" "0" "0" \
    || check "p46 json: paste OK has no advisory lens fields" "0" "1"
 
+# ─── P49: package BLOCK advisory lenses ─────────────────────────────────
+
+# p49: package BLOCK shows supply-chain pattern
+./hlse_core package reqeusts 2>&1 \
+    | grep -q "Pattern: dependency confusion" \
+    && check "p49: package BLOCK shows supply-chain pattern" "0" "0" \
+    || check "p49: package BLOCK shows supply-chain pattern" "0" "1"
+
+# p49: package BLOCK shows attacker objective (code execution)
+./hlse_core package reqeusts 2>&1 \
+    | grep -q "Attacker's goal:.*code execution" \
+    && check "p49: package BLOCK shows code execution objective" "0" "0" \
+    || check "p49: package BLOCK shows code execution objective" "0" "1"
+
+# p49: package BLOCK shows triage (uninstall)
+./hlse_core package reqeusts 2>&1 \
+    | grep -q "If you acted:.*uninstall" \
+    && check "p49: package BLOCK shows uninstall triage" "0" "0" \
+    || check "p49: package BLOCK shows uninstall triage" "0" "1"
+
+# p49: package BLOCK shows cascade risk (env vars)
+./hlse_core package reqeusts 2>&1 \
+    | grep -q "Also change:" \
+    && check "p49: package BLOCK shows cascade risk" "0" "0" \
+    || check "p49: package BLOCK shows cascade risk" "0" "1"
+
+# p49: package OK still shows blind spot (no advisory lenses)
+./hlse_core package colorama 2>&1 \
+    | grep -q "Blind spot:" \
+    && check "p49: package OK still shows blind spot" "0" "0" \
+    || check "p49: package OK still shows blind spot" "0" "1"
+
+# p49: package OK does NOT show advisory lenses
+./hlse_core package colorama 2>&1 \
+    | grep -q "Pattern:" \
+    && check "p49: package OK has no advisory lenses" "0" "1" \
+    || check "p49: package OK has no advisory lenses" "0" "0"
+
+# p49 json: package BLOCK carries pattern, objective, verify, triage, cascade_risk
+./hlse_core --json package reqeusts 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] >= 60, d
+assert "pattern" in d, d
+assert "objective" in d, d
+assert "verify" in d, d
+assert "triage" in d, d
+assert "cascade_risk" in d, d
+' && check "p49 json: package BLOCK carries all advisory lens fields" "0" "0" \
+   || check "p49 json: package BLOCK carries all advisory lens fields" "0" "1"
+
+# p49 json: package OK has no advisory lens fields
+./hlse_core --json package colorama 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] == 0, d
+assert "pattern" not in d, d
+assert "triage" not in d, d
+' && check "p49 json: package OK has no advisory lens fields" "0" "0" \
+   || check "p49 json: package OK has no advisory lens fields" "0" "1"
+
 # ─── P48: email BLOCK advisory lenses ───────────────────────────────────
 
 BEC_HDR='From: ceo@company.com
