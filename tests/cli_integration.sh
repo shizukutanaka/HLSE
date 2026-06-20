@@ -899,6 +899,65 @@ assert d["kind"] == "email" and "reasons" in d
 ' && check "--json email parseable" "0" "0" \
    || check "--json email parseable" "0" "1"
 
+# ─── Perspective 38: email body social-engineering lens ───────────────────────
+# p38: BEC body surfaced as ▸ Body pattern advisory (header forensics is blind to body)
+./hlse_core email "From: ceo@company.com
+Subject: Urgent
+
+Please wire \$50000 to new vendor immediately. Keep confidential, do not call." 2>/dev/null \
+    | grep -q "Body pattern:.*BEC" \
+    && check "p38: email surfaces BEC body pattern" "0" "0" \
+    || check "p38: email surfaces BEC body pattern" "0" "1"
+
+# p38: clean headers (score 0) do NOT mask a BEC body — OK line notes body flagged
+./hlse_core email "From: ceo@company.com
+Received: from mail.company.com by mx.company.com
+DKIM-Signature: v=1; d=company.com
+Subject: Request
+
+Please wire \$50000 to new vendor immediately. Keep confidential, do not call anyone." 2>/dev/null \
+    | grep -q "body flagged below" \
+    && check "p38: clean headers do not mask BEC body" "0" "0" \
+    || check "p38: clean headers do not mask BEC body" "0" "1"
+
+# p38: benign body + clean headers stays OK with no body pattern
+./hlse_core email "From: friend@example.com
+Received: from mail.example.com
+DKIM-Signature: v=1
+Subject: Lunch
+
+Want to grab lunch tomorrow?" 2>/dev/null \
+    | grep -q "no spoofing signals" \
+    && check "p38: benign email stays clean OK" "0" "0" \
+    || check "p38: benign email stays clean OK" "0" "1"
+
+# p38 json: body_pattern and body_score fields present for BEC body
+./hlse_core --json email "From: ceo@company.com
+Subject: Urgent
+
+Please wire \$50000 immediately. Keep confidential, do not call." 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "body_pattern" in d and "BEC" in d["body_pattern"], d
+assert d.get("body_score", 0) >= 40, d
+' && check "p38 json: email exposes body_pattern/body_score" "0" "0" \
+   || check "p38 json: email exposes body_pattern/body_score" "0" "1"
+
+# p38 json: benign email has no body_pattern field
+./hlse_core --json email "From: a@b.com" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert "body_pattern" not in d, d
+' && check "p38 json: benign email has no body_pattern" "0" "0" \
+   || check "p38 json: benign email has no body_pattern" "0" "1"
+
+# p38: --from help text mentions text scoring (not just URL)
+./hlse_core --help 2>&1 | grep -q "boosts URL & text score" \
+    && check "p38: --from help reflects text channel support" "0" "0" \
+    || check "p38: --from help reflects text channel support" "0" "1"
+
 # clipboard: same address → no swap (exit 0)
 ./hlse_core clipboard \
     "bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5" \

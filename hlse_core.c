@@ -4757,7 +4757,7 @@ print_usage(const char *prog) {
         "  %s --sarif scan <dir>       SARIF 2.1.0 output (GitHub code scanning)\n"
         "  %s -q | --quiet             Exit code only (CI/CD mode)\n"
         "  %s --fail-on <tier>         Exit-1 gate: log|alert|block|isolate|0-100 (default block)\n"
-        "  %s --from <channel>         Delivery channel: email|sms|dm|qr|manual (boosts URL score)\n"
+        "  %s --from <channel>         Delivery channel: email|sms|dm|qr|manual (boosts URL & text score)\n"
         "  %s --stdin [--json]         Pipe mode (one input per line)\n"
         "  %s --self-test              Built-in tests\n"
         "  %s --benchmark              Corpus benchmark\n"
@@ -5587,6 +5587,13 @@ main(int argc, char **argv) {
         {
             EmailVerdict ev = hlse_check_email_headers(headers);
             const char *rem = hlse_remediation_for("email", ev.score);
+            /* Header forensics (SPF/DKIM/Reply-To/Received) is blind to the
+             * message BODY's social engineering. Run text analysis on the same
+             * input and surface the attack-pattern lens as ADVISORY only — the
+             * email score is unchanged (preserves F1), but a BEC/urgency body
+             * that header checks alone would miss is now named. */
+            TextVerdict bodytv = hlse_check_text(headers);
+            const char *body_pat = hlse_classify_text_attack(&bodytv);
             if (json_out) {
                 int i;
                 printf("{\"kind\":\"email\",\"score\":%d,\"action\":\"%s\","
@@ -5597,23 +5604,40 @@ main(int argc, char **argv) {
                     printf("%s\"%s\"", i > 0 ? "," : "", esc);
                 }
                 printf("]");
+                if (body_pat) {
+                    char epat[256];
+                    json_escape(body_pat, epat, sizeof(epat));
+                    printf(",\"body_pattern\":\"%s\",\"body_score\":%d",
+                           epat, bodytv.score);
+                }
                 if (rem) {
                     char erm[512];
                     json_escape(rem, erm, sizeof(erm));
                     printf(",\"remediation\":\"%s\"", erm);
                 }
                 printf("}\n");
-            } else if (ev.score == 0) {
+            } else if (ev.score == 0 && !body_pat) {
                 const char *bs = hlse_blindspot_for("email");
                 printf("OK    (email — no spoofing signals)\n");
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
                 const char *ex = hlse_exoneration_for("email", ev.score);
-                printf("%-7s [%d]  (email forensics)\n",
-                       hlse_action_for_score(ev.score), ev.score);
+                if (ev.score == 0)
+                    printf("OK    [0]  (email forensics) "
+                           "\xe2\x80\x94 headers clean, but body flagged below\n");
+                else
+                    printf("%-7s [%d]  (email forensics)\n",
+                           hlse_action_for_score(ev.score), ev.score);
                 for (i = 0; i < ev.n_reasons; i++)
                     printf("  \xc2\xb7 %s\n", ev.reasons[i]);
+                if (body_pat) {
+                    const char *bobj;
+                    printf("  \xe2\x96\xb8 Body pattern: %s (body score %d)\n",
+                           body_pat, bodytv.score);
+                    bobj = hlse_text_objective(&bodytv);
+                    if (bobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", bobj);
+                }
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                 if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
             }

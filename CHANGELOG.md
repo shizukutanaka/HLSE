@@ -2,6 +2,30 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.38] — 2026-06-20
+
+### Fixed
+- **Perspective 38: Email body social-engineering lens (`email` subcommand).**
+  Socratic question: "The `email` subcommand runs header forensics — SPF/DKIM
+  alignment, Reply-To vs From mismatch, missing Received chains. But a BEC attack's
+  decisive evidence is in the message BODY: 'wire $50000 immediately, keep
+  confidential, do not call.' The `text` subcommand detects exactly this and names
+  it 'BEC wire-transfer fraud' with the attacker's objective. Yet `email` mode is
+  completely blind to the body — an attacker who sends a clean-header email (their
+  own legitimately-configured domain) from a compromised-but-authentic account
+  passes every header check and HLSE reports nothing actionable, even though the
+  body is textbook BEC. Why does the email path forgo the social-engineering
+  analysis that the text path already performs?" The email path now runs
+  `hlse_check_text()` on the same input and surfaces the attack pattern as an
+  ADVISORY lens: `▸ Body pattern: <pattern> (body score N)` plus `◉ Attacker's
+  goal`. Crucially, the email forensics SCORE is unchanged — this is pure advisory
+  augmentation, so F1 = 1.000 is preserved. When headers are clean (score 0) but
+  the body is flagged, the output reads `OK [0] (email forensics) — headers clean,
+  but body flagged below`, closing the gap where clean headers masked a malicious
+  body. JSON gains `body_pattern` and `body_score` fields. 6 new CLI integration
+  tests (349 total). Also corrected the `--from` help text ("boosts URL & text
+  score" — it applies to both since P37). Zero warnings.
+
 ## [1.0.37] — 2026-06-20
 
 ### Fixed
