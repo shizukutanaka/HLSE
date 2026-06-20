@@ -2,6 +2,33 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.54] — 2026-06-20
+
+### Added
+- **Perspective 54: Advisory lenses for `esp` BLOCK verdicts — the
+  final BLOCK subcommand now has complete pattern/objective/verify/
+  triage/cascade coverage.**
+  Socratic question: "After P46–P52, every BLOCK verdict in every HLSE
+  subcommand has advisory lenses — except `esp` (EFI System Partition
+  integrity check). An `esp` BLOCK is arguably the most severe alert
+  in the entire tool: a UEFI bootkit executes before the OS, can
+  intercept disk encryption before it runs, survives a full OS reinstall,
+  and can disable security software. Yet the output was just the raw
+  reason and the score, with no guidance about: not reinstalling the OS
+  first (it won't remove the bootkit), running CHIPSEC or vendor UEFI
+  integrity tools to corroborate before taking disruptive action, or
+  flashing the UEFI from a vendor-signed image. Why does the check that
+  defends against the most persistent and invisible threat class offer
+  the least actionable guidance?" Added five advisory lens fields
+  (pattern, objective, verify, triage, cascade_risk) to both human
+  output and JSON for every `esp` BLOCK/ISOLATE. The triage uniquely
+  notes 'do NOT reinstall the OS — it won't remove a bootkit' — the
+  most common harmful mistake after a bootkit detection. OK paths
+  unchanged (blind spot only). All 14 HLSE subcommand BLOCK paths
+  (url, text, email, clipboard, paste, network, secret, package, file,
+  audit, protect, esp, scan [per-file]) now have advisory lenses.
+  443 tests, all pass.
+
 ## [1.0.53] — 2026-06-20
 
 ### Added

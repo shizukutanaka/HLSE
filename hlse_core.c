@@ -5708,11 +5708,44 @@ main(int argc, char **argv) {
                     printf(",\"blind_spot\":\"%s\"", esc_bs);
                 }
             }
+            if (pv.score >= 60) {
+                static const char esp_pat[] =
+                    "UEFI bootkit indicator in EFI System Partition";
+                static const char esp_obj[] =
+                    "persistent firmware-level access \xe2\x80\x94 a bootkit "
+                    "survives OS reinstall; it executes before the OS boots "
+                    "and can disable security software, log keystrokes, and "
+                    "intercept disk encryption before the OS sees it";
+                static const char esp_vrf[] =
+                    "run a second scan with a different tool (CHIPSEC, "
+                    "vendor UEFI integrity check) before taking disruptive "
+                    "action \xe2\x80\x94 bootkit false positives exist and the "
+                    "remediation is destructive; check Secure Boot status "
+                    "first (mokutil --sb-state)";
+                static const char esp_tri[] =
+                    "do NOT reinstall the OS first \xe2\x80\x94 it will not "
+                    "remove a bootkit; consult an incident-response specialist; "
+                    "if confirmed, flash the UEFI firmware from a vendor-signed "
+                    "image and replace Secure Boot enrollment keys "
+                    "(mokutil --reset)";
+                static const char esp_cas[] =
+                    "all credentials and disk encryption keys on this machine "
+                    "\xe2\x80\x94 a bootkit has pre-OS access to encrypted volumes "
+                    "and can log all keystrokes before encryption; rotate from "
+                    "a clean device and consider the machine untrusted until "
+                    "the firmware is re-flashed";
+                char e[512];
+                json_escape(esp_pat, e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                json_escape(esp_obj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
+                json_escape(esp_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                json_escape(esp_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
+                json_escape(esp_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+            }
             printf("}\n");
         } else if (pv.score == 0) {
             const char *bs = hlse_blindspot_for("esp");
             printf("OK    (esp)%s%s\n",
-                   pv.n_reasons ? " — " : "",
+                   pv.n_reasons ? " \xe2\x80\x94 " : "",
                    pv.n_reasons ? pv.reasons[0] : "");
             if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
         } else {
@@ -5721,6 +5754,23 @@ main(int argc, char **argv) {
                    hlse_action_for_score(pv.score), pv.score);
             for (i = 0; i < pv.n_reasons; i++)
                 printf("  \xc2\xb7 %s\n", pv.reasons[i]);
+            if (pv.score >= 60) {
+                printf("  \xe2\x96\xb8 Pattern: UEFI bootkit indicator in EFI "
+                       "System Partition\n");
+                printf("  \xe2\x97\x89 Attacker's goal: persistent firmware-level "
+                       "access \xe2\x80\x94 survives OS reinstall; executes before "
+                       "the OS and can intercept disk encryption\n");
+                printf("  \xe2\x9c\x93 Verify first: run CHIPSEC or vendor UEFI "
+                       "integrity tool before taking disruptive action "
+                       "\xe2\x80\x94 bootkit false positives exist\n");
+                printf("  \xe2\x9a\x91 Immediate action: do NOT reinstall OS "
+                       "(won't remove bootkit); consult IR specialist; flash "
+                       "UEFI from vendor-signed image and replace Secure Boot "
+                       "keys\n");
+                printf("  \xe2\x8a\x95 Also change: all credentials on this machine "
+                       "\xe2\x80\x94 a bootkit has pre-OS access to all keys; rotate "
+                       "from a clean device and treat the machine as untrusted\n");
+            }
         }
         return pv.score >= g_fail_threshold ? 1 : 0;
     }
