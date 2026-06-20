@@ -2,6 +2,30 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.35] — 2026-06-20
+
+### Changed
+- **Perspective 35: Centralise text advisory output (`print_text_advisories`).**
+  Socratic question: "The URL path routes every advisory line through one
+  `print_url_advisories()` helper, with a comment explaining the point — so the
+  three URL output sites (stdin / `text` subcommand / default auto-detect)
+  *cannot* drift out of sync. The text path does the opposite: the same ~25-line
+  advisory block (▸ Pattern, ◉ Attacker's goal, ✓ Verify first, ⚖ Confidence,
+  ⚑ If you acted, ⊕ Also change) is copy-pasted into all three text sites. Each
+  Perspective from P27 onward had to be applied three times, by hand, in lockstep
+  — one missed edit and the three paths silently diverge. Why does the URL path
+  get a drift-proof single source of truth while the text path, which has had far
+  more advisory lenses added, is left as triplicated copy-paste?" Extracted a new
+  `print_text_advisories(const TextVerdict *)` mirroring `print_url_advisories()`
+  exactly: it emits the six conditional lens lines and, like its URL sibling,
+  leaves the "↺ Could be benign" exoneration and the "· <channel>" line to each
+  caller (those depend on caller-local channel state). All three text sites now
+  call the single helper. Output is byte-identical (verified: all 333 prior tests
+  pass unchanged, plus a new cross-path parity test asserting the subcommand,
+  `--stdin`, and default paths emit the same advisory block for the same input).
+  Net −33 lines in `hlse_core.c`. 3 new CLI integration tests (336 total). Zero
+  warnings. F1 = 1.000 preserved — pure structural refactor, no behaviour change.
+
 ## [1.0.34] — 2026-06-17
 
 ### Fixed

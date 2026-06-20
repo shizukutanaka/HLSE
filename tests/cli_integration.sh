@@ -2086,6 +2086,30 @@ assert d.get("canonical_brand") == "paypal", d
     && check "p34: fake security alert shows account-suspension exoneration" "0" "0" \
     || check "p34: fake security alert shows account-suspension exoneration" "0" "1"
 
+# ─── Perspective 35: text advisory output centralisation (cross-path parity) ──
+# The text-subcommand, --stdin, and default auto-detect paths must emit the
+# identical advisory block for the same input (single print_text_advisories()).
+P35_IN="URGENT: CEO needs immediate wire transfer of 50000. Do not discuss with anyone."
+P35_SUB=$(./hlse_core text "$P35_IN" 2>/dev/null \
+    | grep -E "Pattern:|Attacker's goal:|Verify first:|Confidence:|If you acted:|Also change:")
+P35_DEF=$(./hlse_core "$P35_IN" 2>/dev/null \
+    | grep -E "Pattern:|Attacker's goal:|Verify first:|Confidence:|If you acted:|Also change:")
+P35_STDIN=$(printf '%s\n' "$P35_IN" | ./hlse_core --stdin 2>/dev/null \
+    | grep -E "Pattern:|Attacker's goal:|Verify first:|Confidence:|If you acted:|Also change:")
+[ -n "$P35_SUB" ] && [ "$P35_SUB" = "$P35_DEF" ] \
+    && check "p35: text subcommand and default paths emit identical advisories" "0" "0" \
+    || check "p35: text subcommand and default paths emit identical advisories" "0" "1"
+[ -n "$P35_STDIN" ] && [ "$P35_SUB" = "$P35_STDIN" ] \
+    && check "p35: text subcommand and --stdin paths emit identical advisories" "0" "0" \
+    || check "p35: text subcommand and --stdin paths emit identical advisories" "0" "1"
+
+# All six lens lines present for a BEC BLOCK (full advisory block exercised)
+P35_N=$(./hlse_core text "$P35_IN" 2>/dev/null \
+    | grep -cE "Pattern:|Attacker's goal:|Verify first:|Confidence:|If you acted:|Also change:")
+[ "$P35_N" = "6" ] \
+    && check "p35: BEC BLOCK emits all six advisory lenses" "0" "0" \
+    || check "p35: BEC BLOCK emits all six advisory lenses" "0" "1"
+
 # ─── Perspective 29: text attacker objective ──────────────────────────────────
 # BEC text: shows ◉ Attacker's goal with wire-transfer framing
 ./hlse_core text "CEO urgent: wire transfer 50000 immediately, do not discuss with anyone" 2>/dev/null \

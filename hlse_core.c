@@ -4586,6 +4586,40 @@ print_url_advisories(const char *url, const Verdict *uv) {
     if (cas) printf("  \xe2\x8a\x95 Also change: %s\n", cas);  /* ⊕ */
 }
 
+/* Print the per-text human-readable advisory lines for an actionable text
+ * verdict — the text counterpart of print_url_advisories(). Layers the same
+ * synthesis lenses on top of the raw per-signal reasons:
+ *   ▸ Pattern           social-engineering attack-class label
+ *   ◉ Attacker's goal   asset at risk (score >= 60)
+ *   ✓ Verify first      pre-action verification check (score >= 60)
+ *   ⚖ Confidence        how many independent signal families concur
+ *   ⚑ If you acted      post-response triage (score >= 60)
+ *   ⊕ Also change       cascade risk — other accounts at stake (score >= 60)
+ *
+ * Centralised so the three text output sites (stdin / `text` subcommand /
+ * default auto-detect) cannot drift out of sync — exactly the guarantee
+ * print_url_advisories() gives the URL path. Like its URL sibling, this does
+ * NOT print the "↺ Could be benign" exoneration or the "· <channel>" line:
+ * those depend on caller-local state (channel reason) and are emitted by each
+ * caller after this returns. Each line is conditional, so a low-score verdict
+ * prints only the lenses that apply.                                         */
+static void
+print_text_advisories(const TextVerdict *tv) {
+    const char *tpat = hlse_classify_text_attack(tv);
+    const char *tobj = hlse_text_objective(tv);
+    const char *tvrf = hlse_text_verify(tv);
+    const char *ttri = hlse_text_triage(tv);
+    const char *tcas = hlse_text_cascade(tv);
+    char tcf[160];
+    if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
+    if (tobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", tobj);
+    if (tvrf) printf("  \xe2\x9c\x93 Verify first: %s\n", tvrf);
+    if (hlse_text_confidence(tv, tcf, sizeof(tcf)))
+        printf("  \xe2\x9a\x96 Confidence: %s\n", tcf);
+    if (ttri) printf("  \xe2\x9a\x91 If you acted: %s\n", ttri);
+    if (tcas) printf("  \xe2\x8a\x95 Also change: %s\n", tcas);
+}
+
 /* Score at/above which the process exits 1 (threat). Configurable via
  * --fail-on so a pipeline picks its own risk gate. Default = BLOCK(60). */
 static int g_fail_threshold = 60;
@@ -4650,7 +4684,6 @@ stdin_mode(int json_out) {
                 if (url_ex) printf("  \xe2\x86\xba Could be benign: %s\n", url_ex);
             } else {
                 TextVerdict tv;
-                const char *tpat;
                 const char *tex;
                 int ti;
                 memset(&tv, 0, sizeof(tv));
@@ -4661,30 +4694,8 @@ stdin_mode(int json_out) {
                 for (ti = 0; ti < tv.n_reasons; ti++)
                     snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
                              "%s", sr.reasons[ti]);
-                tpat = hlse_classify_text_attack(&tv);
                 tex  = hlse_text_exoneration(&tv);
-                if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
-                {
-                    const char *tobj = hlse_text_objective(&tv);
-                    if (tobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", tobj);
-                }
-                {
-                    const char *tvrf = hlse_text_verify(&tv);
-                    if (tvrf) printf("  \xe2\x9c\x93 Verify first: %s\n", tvrf);
-                }
-                {
-                    char tcf[160];
-                    if (hlse_text_confidence(&tv, tcf, sizeof(tcf)))
-                        printf("  \xe2\x9a\x96 Confidence: %s\n", tcf);
-                }
-                {
-                    const char *ttri = hlse_text_triage(&tv);
-                    if (ttri) printf("  \xe2\x9a\x91 If you acted: %s\n", ttri);
-                }
-                {
-                    const char *tcas = hlse_text_cascade(&tv);
-                    if (tcas) printf("  \xe2\x8a\x95 Also change: %s\n", tcas);
-                }
+                print_text_advisories(&tv);
                 if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                 if (tex) printf("  \xe2\x86\xba Could be benign: %s\n", tex);
             }
@@ -5764,8 +5775,6 @@ main(int argc, char **argv) {
                     ex = hlse_url_exoneration(&uv);
                 } else {
                     TextVerdict tv;
-                    const char *tpat;
-                    const char *ttri;
                     int ti;
                     memset(&tv, 0, sizeof(tv));
                     tv.score = sr.score;
@@ -5775,27 +5784,7 @@ main(int argc, char **argv) {
                     for (ti = 0; ti < tv.n_reasons; ti++)
                         snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
                                  "%s", sr.reasons[ti]);
-                    tpat = hlse_classify_text_attack(&tv);
-                    ttri = hlse_text_triage(&tv);
-                    if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
-                    {
-                        const char *tobj = hlse_text_objective(&tv);
-                        if (tobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", tobj);
-                    }
-                    {
-                        const char *tvrf = hlse_text_verify(&tv);
-                        if (tvrf) printf("  \xe2\x9c\x93 Verify first: %s\n", tvrf);
-                    }
-                    {
-                        char tcf[160];
-                        if (hlse_text_confidence(&tv, tcf, sizeof(tcf)))
-                            printf("  \xe2\x9a\x96 Confidence: %s\n", tcf);
-                    }
-                    if (ttri) printf("  \xe2\x9a\x91 If you acted: %s\n", ttri);
-                    {
-                        const char *tcas = hlse_text_cascade(&tv);
-                        if (tcas) printf("  \xe2\x8a\x95 Also change: %s\n", tcas);
-                    }
+                    print_text_advisories(&tv);
                     ex = hlse_text_exoneration(&tv);
                 }
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
@@ -5866,8 +5855,6 @@ main(int argc, char **argv) {
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             } else {
                 TextVerdict tv;
-                const char *tpat;
-                const char *ttri;
                 const char *ex;
                 int ti;
                 memset(&tv, 0, sizeof(tv));
@@ -5878,28 +5865,8 @@ main(int argc, char **argv) {
                 for (ti = 0; ti < tv.n_reasons; ti++)
                     snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
                              "%s", sr.reasons[ti]);
-                tpat = hlse_classify_text_attack(&tv);
-                ttri = hlse_text_triage(&tv);
                 ex   = hlse_text_exoneration(&tv);
-                if (tpat) printf("  \xe2\x96\xb8 Pattern: %s\n", tpat);
-                {
-                    const char *tobj = hlse_text_objective(&tv);
-                    if (tobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", tobj);
-                }
-                {
-                    const char *tvrf = hlse_text_verify(&tv);
-                    if (tvrf) printf("  \xe2\x9c\x93 Verify first: %s\n", tvrf);
-                }
-                {
-                    char tcf[160];
-                    if (hlse_text_confidence(&tv, tcf, sizeof(tcf)))
-                        printf("  \xe2\x9a\x96 Confidence: %s\n", tcf);
-                }
-                if (ttri) printf("  \xe2\x9a\x91 If you acted: %s\n", ttri);
-                {
-                    const char *tcas = hlse_text_cascade(&tv);
-                    if (tcas) printf("  \xe2\x8a\x95 Also change: %s\n", tcas);
-                }
+                print_text_advisories(&tv);
                 if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }
