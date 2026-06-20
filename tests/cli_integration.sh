@@ -2488,6 +2488,67 @@ P39_JSON=$(./hlse_core --json --from sms text "Let us grab lunch tomorrow" 2>/de
     && check "p41: hostile paste suppresses blind spot" "1" "0" \
     || check "p41: hostile paste suppresses blind spot" "1" "1"
 
+# ─── Perspective 42: blind-spot caveat reaches JSON consumers too ───────────
+
+# Socratic question: "P41 gave human readers a blind-spot caveat on a clean
+# verdict. But the JSON output — what a SIEM, a CI gate, or an automated mailbox
+# filter actually parses — still emits only {action: SAFE}. The machine consumer
+# faces the same false-confidence trap we just closed for humans. If the hedge
+# matters, why does it stop at the terminal?"
+
+# p42: url JSON OK carries blind_spot
+./hlse_core --json "https://github.com" 2>/dev/null | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] == 0 and "blind_spot" in d, d
+' && check "p42 json: url OK exposes blind_spot" "0" "0" \
+   || check "p42 json: url OK exposes blind_spot" "0" "1"
+
+# p42: text JSON OK carries blind_spot
+./hlse_core --json text "hello there friend" 2>/dev/null | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] == 0 and "blind_spot" in d, d
+' && check "p42 json: text OK exposes blind_spot" "0" "0" \
+   || check "p42 json: text OK exposes blind_spot" "0" "1"
+
+# p42: clipboard JSON OK carries blind_spot (recipient caveat)
+./hlse_core --json clipboard "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" \
+                             "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] == 0 and "recipient" in d.get("blind_spot",""), d
+' && check "p42 json: clipboard OK exposes recipient blind_spot" "0" "0" \
+   || check "p42 json: clipboard OK exposes recipient blind_spot" "0" "1"
+
+# p42: paste JSON OK carries blind_spot
+./hlse_core --json paste "ls -la /home" 2>/dev/null | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] == 0 and "blind_spot" in d, d
+' && check "p42 json: paste OK exposes blind_spot" "0" "0" \
+   || check "p42 json: paste OK exposes blind_spot" "0" "1"
+
+# p42: a THREAT JSON verdict must NOT carry blind_spot (hedge is for OK only)
+./hlse_core --json clipboard "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" \
+                             "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq" 2>/dev/null \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] > 0 and "blind_spot" not in d, d
+' && check "p42 json: clipboard swap omits blind_spot" "0" "0" \
+   || check "p42 json: clipboard swap omits blind_spot" "0" "1"
+
+# p42: email JSON OK (genuinely clean headers + body) carries blind_spot
+printf 'Received: from mail.example.com\nReceived-SPF: pass\nFrom: a@example.com\nReply-To: a@example.com\nTo: b@example.com\nSubject: lunch\n\nlunch?\n' \
+    | ./hlse_core --json email --stdin 2>/dev/null | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] == 0 and "blind_spot" in d, d
+' && check "p42 json: clean email exposes blind_spot" "0" "0" \
+   || check "p42 json: clean email exposes blind_spot" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

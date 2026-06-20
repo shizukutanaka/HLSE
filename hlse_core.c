@@ -4491,6 +4491,14 @@ print_json_url(const char *url, const Verdict *v) {
     if (signal_cnt > 0) printf(",\"signal_count\":%d,\"confidence\":\"%s\"",
                                signal_cnt, esc_cf);
     if (has_canon)  printf(",\"canonical_brand\":\"%s\"", canon_brand);
+    if (v->score == 0) {
+        const char *bs = hlse_blindspot_for("url");
+        if (bs) {
+            char esc_bs[512];
+            json_escape(bs, esc_bs, sizeof(esc_bs));
+            printf(",\"blind_spot\":\"%s\"", esc_bs);
+        }
+    }
     if (pat)        printf(",\"pattern\":\"%s\"", esc_pat);
     if (has_obj)    printf(",\"objective\":\"%s\"", esc_obj);
     if (has_conf)   printf(",\"confusable\":\"%s\"", esc_conf);
@@ -4557,6 +4565,14 @@ print_json_text(const char *text, const TextVerdict *v) {
            esc, v->score, hlse_text_action_for_score(v->score));
     if (sig_cnt > 0) printf(",\"signal_count\":%d,\"confidence\":\"%s\"",
                             sig_cnt, esc_cf);
+    if (v->score == 0) {
+        const char *bs = hlse_blindspot_for("text");
+        if (bs) {
+            char esc_bs[512];
+            json_escape(bs, esc_bs, sizeof(esc_bs));
+            printf(",\"blind_spot\":\"%s\"", esc_bs);
+        }
+    }
     if (pat)  printf(",\"pattern\":\"%s\"",     esc_pat);
     if (tobj) printf(",\"objective\":\"%s\"",   esc_tobj);
     if (tvrf) printf(",\"verify\":\"%s\"",      esc_tvrf);
@@ -5512,8 +5528,17 @@ main(int argc, char **argv) {
             if (json_out) {
                 int i;
                 printf("{\"kind\":\"paste\",\"score\":%d,\"action\":\"%s\","
-                       "\"signals\":%d,\"reasons\":[",
+                       "\"signals\":%d",
                        pv.score, hlse_action_for_score(pv.score), pv.signals);
+                if (pv.score == 0) {
+                    const char *bs = hlse_blindspot_for("paste");
+                    if (bs) {
+                        char esc_bs[512];
+                        json_escape(bs, esc_bs, sizeof(esc_bs));
+                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                    }
+                }
+                printf(",\"reasons\":[");
                 for (i = 0; i < pv.n_reasons; i++) {
                     char esc[512];
                     json_escape(pv.reasons[i], esc, sizeof(esc));
@@ -5650,6 +5675,14 @@ main(int argc, char **argv) {
                     printf("%s\"%s\"", i > 0 ? "," : "", esc);
                 }
                 printf("]");
+                if (ev.score == 0 && !body_pat) {
+                    const char *bs = hlse_blindspot_for("email");
+                    if (bs) {
+                        char esc_bs[512];
+                        json_escape(bs, esc_bs, sizeof(esc_bs));
+                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                    }
+                }
                 if (body_pat) {
                     char epat[256];
                     json_escape(body_pat, epat, sizeof(epat));
@@ -5711,9 +5744,18 @@ main(int argc, char **argv) {
                 printf("{\"kind\":\"clipboard\",\"score\":%d,\"action\":\"%s\","
                        "\"is_swap\":%d,"
                        "\"original\":\"%s\",\"swapped\":\"%s\",\"reason\":\"%s\","
-                       "\"remediation\":\"%s\"}\n",
+                       "\"remediation\":\"%s\"",
                        cv.score, hlse_action_for_score(cv.score),
                        cv.is_swap, eo, es, er, erm);
+                if (cv.score == 0) {
+                    const char *bs = hlse_blindspot_for("clipboard");
+                    if (bs) {
+                        char esc_bs[512];
+                        json_escape(bs, esc_bs, sizeof(esc_bs));
+                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                    }
+                }
+                printf("}\n");
             } else if (cv.score == 0) {
                 const char *bs = hlse_blindspot_for("clipboard");
                 printf("OK    (clipboard — no address swap detected)\n");

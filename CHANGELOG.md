@@ -2,6 +2,29 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.42] — 2026-06-20
+
+### Fixed
+- **Perspective 42: Blind-spot caveat reaches JSON consumers, not just the
+  terminal.**
+  Socratic question: "P41 gave human readers a blind-spot caveat on a clean
+  verdict — but the JSON output, which is what a SIEM, a CI gate, or an automated
+  mailbox filter actually parses, still emitted only `{action: SAFE}` with no
+  hedge. The machine consumer faces exactly the false-confidence trap we just
+  closed for humans: it logs 'SAFE' and moves on, never recording that this was a
+  structural check that cannot see a pixel-perfect clone or an unverified payment
+  address. The JSON already carries every *threat-band* hedge (exoneration,
+  verify, triage, cascade_risk); why does the score-0 hedge stop at the
+  terminal?" Added a `"blind_spot"` field to every clean (score 0) JSON verdict
+  across all five kinds that have a human blind spot: `url` and `text` (via
+  `print_json_url`/`print_json_text`, covering the default, `text` subcommand and
+  `--stdin` paths), plus the dedicated `clipboard`, `paste`, and `email`
+  subcommand JSON. The field appears only on a clean verdict — threat-band JSON
+  omits it, exactly as the human path suppresses the line on a detected threat.
+  Advisory-only: no score or detection change, all OK JSON remains valid and
+  parseable, F1 = 1.000 holds. 6 new CLI integration tests (366 total). Zero
+  warnings (CLI + library).
+
 ## [1.0.41] — 2026-06-20
 
 ### Fixed
