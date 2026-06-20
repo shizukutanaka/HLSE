@@ -2,6 +2,29 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.56] — 2026-06-20
+
+### Added
+- **Perspective 56: Advisory lenses for `scan` mode embedded-URL findings —
+  phishing URLs detected inside text files now carry the same five advisory
+  fields as the standalone `url` subcommand.**
+  Socratic question: "P55 gave scan's file-masquerade and secret findings
+  their advisory lenses. But scan runs three checks per file: (1) file
+  masquerade, (2) secrets, and (3) phishing URLs embedded in text. After
+  P55, the URL check (3) remains the only scan finding that still emits
+  only raw reasons and a score. When scan finds 'paypa1.com/login' inside
+  a phishing email saved to disk, the JSON line says BLOCK [60] with
+  reasons — but no pattern, no objective, no verify, no triage, no
+  cascade_risk. Why does a URL found inside a scanned file get less
+  actionable output than the same URL analysed with the standalone `url`
+  subcommand?" Added five advisory lens fields (pattern, objective, verify,
+  triage, cascade_risk) to both JSON and human output for every embedded
+  URL finding with score ≥ 60. Uses the same compound advisory functions
+  as the standalone URL handler (hlse_compound_objective,
+  hlse_compound_triage) so multi-brand co-spoof URLs are fully covered.
+  All three scan finding kinds (file, secret, url) now have advisory lenses.
+  453 tests, all pass.
+
 ## [1.0.55] — 2026-06-20
 
 ### Added

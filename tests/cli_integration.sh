@@ -3245,6 +3245,46 @@ assert "cascade_risk" in d, d
 
 rm -rf "$P55_DIR"
 
+# ─── P56: scan mode embedded-URL advisory lenses ─────────────────────────
+
+# Fixture: text file containing a PayPal typosquat URL
+P56_DIR=$(mktemp -d)
+echo "Please visit https://paypa1.com/login for account verification" > "$P56_DIR/spam.txt"
+
+# p56: scan embedded URL BLOCK shows attack pattern
+./hlse_core scan "$P56_DIR" 2>&1 \
+    | grep -q "Pattern:" \
+    && check "p56: scan URL BLOCK shows attack pattern" "0" "0" \
+    || check "p56: scan URL BLOCK shows attack pattern" "0" "1"
+
+# p56: scan embedded URL BLOCK shows attacker objective
+./hlse_core scan "$P56_DIR" 2>&1 \
+    | grep -q "Attacker's goal:" \
+    && check "p56: scan URL BLOCK shows attacker objective" "0" "0" \
+    || check "p56: scan URL BLOCK shows attacker objective" "0" "1"
+
+# p56: scan embedded URL BLOCK shows verify-first guidance
+./hlse_core scan "$P56_DIR" 2>&1 \
+    | grep -q "Verify first:" \
+    && check "p56: scan URL BLOCK shows verify-first guidance" "0" "0" \
+    || check "p56: scan URL BLOCK shows verify-first guidance" "0" "1"
+
+# p56 json: scan URL BLOCK carries all five advisory lens fields
+./hlse_core --json scan "$P56_DIR" 2>&1 \
+    | grep '"kind":"url"' | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] >= 60, d
+assert "pattern"      in d, d
+assert "objective"    in d, d
+assert "verify"       in d, d
+assert "triage"       in d, d
+assert "cascade_risk" in d, d
+' && check "p56 json: scan URL BLOCK carries all advisory lens fields" "0" "0" \
+   || check "p56 json: scan URL BLOCK carries all advisory lens fields" "0" "1"
+
+rm -rf "$P56_DIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
