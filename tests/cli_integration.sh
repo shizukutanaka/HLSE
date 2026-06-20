@@ -3411,6 +3411,37 @@ assert "gate_hits" in d, d
 
 rm -rf "$P60_DIR"
 
+# ─── P61: audit JSON carries crit_count, high_count, next_steps ──────────
+
+# p61 json: audit carries crit_count, high_count, and next_steps when findings > 0
+./hlse_core --json audit 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "crit_count"  in d, d
+assert "high_count"  in d, d
+assert isinstance(d["crit_count"],  int), d
+assert isinstance(d["high_count"],  int), d
+# next_steps present only when score > 0
+if d["score"] > 0:
+    assert "next_steps" in d, d
+' && check "p61 json: audit carries crit_count, high_count, next_steps" "0" "0" \
+   || check "p61 json: audit carries crit_count, high_count, next_steps" "0" "1"
+
+# p61: audit human output shows next step line when findings exist
+./hlse_core audit 2>&1 \
+    | grep -q "Next step:" \
+    && check "p61: audit human shows next step guidance" "0" "0" \
+    || check "p61: audit human shows next step guidance" "0" "1"
+
+# p61 json: audit A7 HIGH finding increments high_count
+./hlse_core --json audit 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+# A7 NOPASSWD is HIGH (severity 4) in test environment
+assert d["high_count"] >= 1, d
+' && check "p61 json: audit A7 HIGH increments high_count" "0" "0" \
+   || check "p61 json: audit A7 HIGH increments high_count" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

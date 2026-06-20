@@ -6741,12 +6741,22 @@ main(int argc, char **argv) {
         const char *band = hi >= 90 ? "hardened"
                          : hi >= 70 ? "good"
                          : hi >= 50 ? "fair" : "weak";
+        /* Pre-compute severity counts for next_steps guidance */
+        int crit_count = 0, high_count = 0;
+        { int ci;
+          for (ci = 0; ci < av.n_findings; ci++) {
+              if (av.findings[ci].severity >= 5) crit_count++;
+              else if (av.findings[ci].severity == 4) high_count++;
+          }
+        }
         if (json_out) {
             int i;
             printf("{\"kind\":\"audit\",\"score\":%d,\"action\":\"%s\","
                    "\"hardening_index\":%d,\"hardening_band\":\"%s\","
+                   "\"crit_count\":%d,\"high_count\":%d,"
                    "\"findings\":[",
-                   av.score, hlse_action_for_score(av.score), hi, band);
+                   av.score, hlse_action_for_score(av.score), hi, band,
+                   crit_count, high_count);
             for (i = 0; i < av.n_findings; i++) {
                 char esc[512];
                 const char *fix = (av.findings[i].severity >= 4)
@@ -6770,6 +6780,27 @@ main(int argc, char **argv) {
                     char esc_bs[512];
                     json_escape(bs, esc_bs, sizeof(esc_bs));
                     printf(",\"blind_spot\":\"%s\"", esc_bs);
+                }
+            } else {
+                char ns[256];
+                if (crit_count > 0)
+                    snprintf(ns, sizeof(ns),
+                             "fix the %d critical finding(s) first \xe2\x80\x94 "
+                             "CRITICAL items are actively exploitable",
+                             crit_count);
+                else if (high_count > 0)
+                    snprintf(ns, sizeof(ns),
+                             "fix the %d HIGH finding(s) to reach the next "
+                             "hardening band (currently: %s)",
+                             high_count, band);
+                else
+                    snprintf(ns, sizeof(ns),
+                             "address remaining LOW/MED findings to improve "
+                             "the hardening index (currently: %s)",
+                             band);
+                { char ens[256];
+                  json_escape(ns, ens, sizeof(ens));
+                  printf(",\"next_steps\":\"%s\"", ens);
                 }
             }
             printf("}\n");
@@ -6797,6 +6828,17 @@ main(int argc, char **argv) {
                         printf("  \xe2\x9a\x92 Fix: %s\n", fix);
                 }
             }
+            if (crit_count > 0)
+                printf("\xe2\x86\x92 Next step: fix the %d CRITICAL finding(s) first "
+                       "\xe2\x80\x94 these are actively exploitable\n", crit_count);
+            else if (high_count > 0)
+                printf("\xe2\x86\x92 Next step: fix the %d HIGH finding(s) to improve "
+                       "from '%s' toward the next hardening band\n",
+                       high_count, band);
+            else
+                printf("\xe2\x86\x92 Next step: address remaining findings to improve "
+                       "the hardening index (currently %s: %d/100)\n",
+                       band, hi);
         }
         return av.score >= g_fail_threshold ? 1 : 0;
     }

@@ -2,6 +2,28 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.61] — 2026-06-20
+
+### Added
+- **Perspective 61: `audit` JSON carries `crit_count`, `high_count`, and
+  `next_steps` — CI consumers and admins get actionable prioritization
+  guidance alongside the per-finding list.**
+  Socratic question: "After P53, each HIGH/CRIT audit finding carries its
+  own `fix` command. But the audit JSON object has no field that tells a
+  consumer HOW MANY HIGH or CRITICAL findings were found, or what to do
+  FIRST if there are multiple. An admin looking at an audit with 3 INFO,
+  1 MED, and 2 HIGH findings knows each individual fix, but has no guidance
+  on priority order or on how many findings need to be resolved before the
+  hardening band improves. Why does the tool that measures system security
+  posture provide no meta-guidance on how to improve it?" Added `crit_count`
+  and `high_count` integer fields to the audit JSON top level. Added
+  `next_steps` string when findings exist: CRITICAL findings get 'fix
+  N critical finding(s) first — CRITICAL items are actively exploitable';
+  HIGH-only get 'fix N HIGH finding(s) to reach the next hardening band
+  (currently: fair)'; no HIGH/CRIT get 'address remaining findings to
+  improve the hardening index'. Human output gains a '→ Next step: ...'
+  line after the finding list. 3 new integration tests; 466 pass, 0 fail.
+
 ## [1.0.60] — 2026-06-20
 
 ### Added
