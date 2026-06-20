@@ -2,6 +2,36 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.43] — 2026-06-20
+
+### Fixed
+- **Perspective 43: Correct blind spot for canonical URLs; add blind spots
+  for `secret` and `network`.**
+  Three related issues, all in the same "what an OK cannot see" category:
+  (1) *Canonical URL blind-spot contradiction.* When `hlse_canonical_confirm()`
+  authenticates a domain (e.g. paypal.com) and the user sees `✔ Canonical:
+  confirmed authentic paypal domain`, the immediately-following blind-spot line
+  said "a pixel-perfect clone on a clean or newly-compromised domain still
+  phishes; confirm the brand independently before entering credentials." These two
+  lines directly contradict each other: the canonical confirmation already
+  confirmed the brand, and then the blind spot told the user to confirm the brand.
+  Fixed by adding a `"url_canonical"` case to `hlse_blindspot_for()` and
+  selecting it when `has_canon` is true: "positive authentication covers the
+  domain name — it cannot verify the page's content, a same-site redirect, or
+  that the service actually sent you here; close unexpected pop-ups and confirm
+  the specific page's request is what you expect from this service before
+  entering credentials or authorising payment." The original "pixel-perfect clone"
+  blind spot is retained for unconfirmed clean URLs. Both human and JSON outputs
+  are corrected.
+  (2) *`secret` OK has no blind spot.* Pattern-based detection misses novel
+  credential formats, encoded secrets, and credentials split across lines.
+  (3) *`network` OK has no blind spot.* Local-view-only — DNS-over-HTTPS,
+  process-level routing, encrypted tunnels, and outbound traffic over allowed
+  ports are invisible to this check.
+  All three new blind-spot cases are exposed in both human display and JSON.
+  Advisory-only: no score or detection change, F1 = 1.000 holds. 8 new CLI
+  integration tests (374 total). Zero warnings (CLI + library).
+
 ## [1.0.42] — 2026-06-20
 
 ### Fixed

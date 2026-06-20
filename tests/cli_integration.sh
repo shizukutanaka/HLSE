@@ -2549,6 +2549,74 @@ assert d["score"] == 0 and "blind_spot" in d, d
 ' && check "p42 json: clean email exposes blind_spot" "0" "0" \
    || check "p42 json: clean email exposes blind_spot" "0" "1"
 
+# ─── Perspective 43: correct blind-spot for canonical URLs; secret/network ──
+
+# Socratic question (canonical): "When hlse_canonical_confirm() fires for
+# paypal.com and the user sees '✔ Canonical: confirmed authentic paypal domain',
+# the immediately following blind-spot line says 'a pixel-perfect clone on a
+# clean or newly-compromised domain still phishes; confirm the brand
+# independently before entering credentials.' These two lines contradict each
+# other: we just confirmed the brand, and then told the user to confirm the brand.
+# Why does the positive authentication come with a caveat that it already
+# disproves?" And separately: "The secret and network OK paths still carry no
+# blind spot at all, even though both have significant detection limits."
+
+# p43: canonical URL shows post-authentication caveat (not pixel-perfect-clone)
+./hlse_core "https://paypal.com" 2>/dev/null \
+    | grep -q "Blind spot:.*authentication covers" \
+    && check "p43: canonical URL blind spot is post-authentication caveat" "0" "0" \
+    || check "p43: canonical URL blind spot is post-authentication caveat" "0" "1"
+
+# p43: canonical URL does NOT show the contradictory "pixel-perfect clone" line
+./hlse_core "https://paypal.com" 2>/dev/null \
+    | grep -q "pixel-perfect" \
+    && check "p43: canonical URL suppresses pixel-perfect contradiction" "1" "0" \
+    || check "p43: canonical URL suppresses pixel-perfect contradiction" "1" "1"
+
+# p43: unconfirmed clean URL still shows the original structural blind spot
+./hlse_core "https://mysite.example.com" 2>/dev/null \
+    | grep -q "Blind spot:.*pixel-perfect" \
+    && check "p43: unconfirmed URL retains structural blind spot" "0" "0" \
+    || check "p43: unconfirmed URL retains structural blind spot" "0" "1"
+
+# p43: secret OK discloses pattern-detection blind spot
+./hlse_core secret "hello no secrets here" 2>/dev/null \
+    | grep -q "Blind spot:.*pattern" \
+    && check "p43: secret OK discloses pattern blind spot" "0" "0" \
+    || check "p43: secret OK discloses pattern blind spot" "0" "1"
+
+# p43: network OK discloses local-view blind spot
+./hlse_core network 2>/dev/null \
+    | grep -q "Blind spot:.*local-view" \
+    && check "p43: network OK discloses local-view blind spot" "0" "0" \
+    || check "p43: network OK discloses local-view blind spot" "0" "1"
+
+# p43: canonical URL JSON has url_canonical blind_spot (not pixel-perfect)
+./hlse_core --json "https://paypal.com" 2>/dev/null | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+bs = d.get("blind_spot", "")
+assert "authentication covers" in bs, bs
+assert "pixel-perfect" not in bs, bs
+' && check "p43 json: canonical URL has post-auth blind_spot" "0" "0" \
+   || check "p43 json: canonical URL has post-auth blind_spot" "0" "1"
+
+# p43: secret JSON OK carries blind_spot
+./hlse_core --json secret "hello no secrets" 2>/dev/null | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] == 0 and "blind_spot" in d, d
+' && check "p43 json: secret OK carries blind_spot" "0" "0" \
+   || check "p43 json: secret OK carries blind_spot" "0" "1"
+
+# p43: network JSON OK carries blind_spot
+./hlse_core --json network 2>/dev/null | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] == 0 and "blind_spot" in d, d
+' && check "p43 json: network OK carries blind_spot" "0" "0" \
+   || check "p43 json: network OK carries blind_spot" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

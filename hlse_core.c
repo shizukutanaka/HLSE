@@ -2091,6 +2091,21 @@ hlse_blindspot_for(const char *kind) {
                "command injection, not whether a command is safe to run. Never "
                "run a command you did not seek out or do not understand, even "
                "when it looks clean.";
+    if (strcmp(kind, "url_canonical") == 0)
+        return "positive authentication covers the domain name — it cannot "
+               "verify the page's content, a same-site redirect, or that the "
+               "service actually sent you here; close unexpected pop-ups and "
+               "confirm the specific page's request is what you expect from "
+               "this service before entering credentials or authorising payment.";
+    if (strcmp(kind, "secret") == 0)
+        return "pattern-based detection — novel credential formats, encoded "
+               "secrets, or credentials split across lines that don't match "
+               "known patterns will be missed; manually review high-entropy "
+               "strings and any line containing 'password', 'key', or 'token'.";
+    if (strcmp(kind, "network") == 0)
+        return "local-view only — DNS-over-HTTPS, process-level routing, "
+               "encrypted tunnels, and outbound traffic over allowed ports are "
+               "invisible to this check; a compromised process may appear clean.";
     return NULL;
 }
 
@@ -4492,7 +4507,10 @@ print_json_url(const char *url, const Verdict *v) {
                                signal_cnt, esc_cf);
     if (has_canon)  printf(",\"canonical_brand\":\"%s\"", canon_brand);
     if (v->score == 0) {
-        const char *bs = hlse_blindspot_for("url");
+        /* Use the narrower post-authentication caveat when the domain was
+         * positively confirmed against the brand registry — the generic
+         * "pixel-perfect clone" blind spot contradicts a canonical confirm. */
+        const char *bs = hlse_blindspot_for(has_canon ? "url_canonical" : "url");
         if (bs) {
             char esc_bs[512];
             json_escape(bs, esc_bs, sizeof(esc_bs));
@@ -5571,9 +5589,20 @@ main(int argc, char **argv) {
                 json_escape(nv.reasons[i], esc, sizeof(esc));
                 printf("%s\"%s\"", i > 0 ? "," : "", esc);
             }
-            printf("]}\n");
+            printf("]");
+            if (nv.score == 0) {
+                const char *bs = hlse_blindspot_for("network");
+                if (bs) {
+                    char esc_bs[512];
+                    json_escape(bs, esc_bs, sizeof(esc_bs));
+                    printf(",\"blind_spot\":\"%s\"", esc_bs);
+                }
+            }
+            printf("}\n");
         } else if (nv.score == 0) {
+            const char *bs = hlse_blindspot_for("network");
             printf("OK    (network — no anomalies detected)\n");
+            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
         } else {
             int i;
             printf("%-7s [%d]  (network)\n",
@@ -5620,9 +5649,19 @@ main(int argc, char **argv) {
                         printf(",\"remediation\":\"%s\"", erm);
                     }
                 }
+                if (sv.score == 0) {
+                    const char *bs = hlse_blindspot_for("secret");
+                    if (bs) {
+                        char esc_bs[512];
+                        json_escape(bs, esc_bs, sizeof(esc_bs));
+                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                    }
+                }
                 printf("}\n");
             } else if (sv.score == 0) {
+                const char *bs = hlse_blindspot_for("secret");
                 printf("OK    (secret — no credentials found)\n");
+                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
                 const char *rem = hlse_remediation_for("secret", sv.score);
@@ -5892,11 +5931,14 @@ main(int argc, char **argv) {
                     }
                 }
                 {
-                    const char *bs = hlse_blindspot_for(sr.is_url ? "url" : "text");
                     char canon_brand[64];
+                    int has_c = sr.is_url &&
+                                hlse_canonical_confirm(argv[idx + 1],
+                                                       canon_brand, sizeof(canon_brand));
+                    const char *bs = hlse_blindspot_for(
+                        has_c ? "url_canonical" : (sr.is_url ? "url" : "text"));
                     printf("OK    (text)\n");
-                    if (sr.is_url &&
-                        hlse_canonical_confirm(argv[idx + 1], canon_brand, sizeof(canon_brand)))
+                    if (has_c)
                         printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
                                "(HLSE brand registry)\n", canon_brand);
                     if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
@@ -5998,10 +6040,13 @@ main(int argc, char **argv) {
                 }
             }
             {
-                const char *bs = hlse_blindspot_for(sr.is_url ? "url" : "text");
                 char canon_brand[64];
+                int has_c = sr.is_url &&
+                            hlse_canonical_confirm(input, canon_brand, sizeof(canon_brand));
+                const char *bs = hlse_blindspot_for(
+                    has_c ? "url_canonical" : (sr.is_url ? "url" : "text"));
                 printf("OK    %s\n", input);
-                if (sr.is_url && hlse_canonical_confirm(input, canon_brand, sizeof(canon_brand)))
+                if (has_c)
                     printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
                            "(HLSE brand registry)\n", canon_brand);
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
