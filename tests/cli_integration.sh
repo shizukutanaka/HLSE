@@ -3184,6 +3184,67 @@ assert "triage" not in d, d
 ' && check "p47 json: clipboard OK has no advisory lens fields" "0" "0" \
    || check "p47 json: clipboard OK has no advisory lens fields" "0" "1"
 
+# ─── P55: scan mode per-file advisory lenses ────────────────────────────
+
+# Fixtures: double-extension file + file containing an AWS key
+P55_DIR=$(mktemp -d)
+touch "$P55_DIR/invoice.pdf.exe"
+echo "aws_access_key_id = AKIA2E3MWORQXYZ4567PQ" > "$P55_DIR/config.txt"
+
+# p55: scan file masquerade BLOCK shows double-extension pattern
+./hlse_core scan "$P55_DIR" 2>&1 \
+    | grep -q "Pattern: double-extension file masquerade" \
+    && check "p55: scan file BLOCK shows double-extension masquerade pattern" "0" "0" \
+    || check "p55: scan file BLOCK shows double-extension masquerade pattern" "0" "1"
+
+# p55: scan file masquerade BLOCK shows code execution objective
+./hlse_core scan "$P55_DIR" 2>&1 \
+    | grep -q "Attacker's goal:.*code execution" \
+    && check "p55: scan file BLOCK shows code execution objective" "0" "0" \
+    || check "p55: scan file BLOCK shows code execution objective" "0" "1"
+
+# p55: scan secret BLOCK shows exposed credential pattern
+./hlse_core scan "$P55_DIR" 2>&1 \
+    | grep -q "Pattern:.*exposed credential" \
+    && check "p55: scan secret BLOCK shows exposed credential pattern" "0" "0" \
+    || check "p55: scan secret BLOCK shows exposed credential pattern" "0" "1"
+
+# p55: scan secret BLOCK shows AWS-specific cloud access objective
+./hlse_core scan "$P55_DIR" 2>&1 \
+    | grep -q "Attacker's goal:.*cloud API access" \
+    && check "p55: scan secret BLOCK shows AWS cloud access objective" "0" "0" \
+    || check "p55: scan secret BLOCK shows AWS cloud access objective" "0" "1"
+
+# p55 json: scan file BLOCK carries all five advisory lens fields
+./hlse_core --json scan "$P55_DIR" 2>&1 \
+    | grep '"kind":"file"' | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] >= 60, d
+assert "pattern"      in d, d
+assert "objective"    in d, d
+assert "verify"       in d, d
+assert "triage"       in d, d
+assert "cascade_risk" in d, d
+' && check "p55 json: scan file BLOCK carries all advisory lens fields" "0" "0" \
+   || check "p55 json: scan file BLOCK carries all advisory lens fields" "0" "1"
+
+# p55 json: scan secret BLOCK carries all five advisory lens fields
+./hlse_core --json scan "$P55_DIR" 2>&1 \
+    | grep '"kind":"secret"' | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] >= 60, d
+assert "pattern"      in d, d
+assert "objective"    in d, d
+assert "verify"       in d, d
+assert "triage"       in d, d
+assert "cascade_risk" in d, d
+' && check "p55 json: scan secret BLOCK carries all advisory lens fields" "0" "0" \
+   || check "p55 json: scan secret BLOCK carries all advisory lens fields" "0" "1"
+
+rm -rf "$P55_DIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

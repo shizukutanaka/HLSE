@@ -2,6 +2,28 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.55] — 2026-06-20
+
+### Added
+- **Perspective 55: Advisory lenses for `scan` mode per-file findings —
+  scan findings now carry the same pattern/objective/verify/triage/
+  cascade_risk fields as the standalone `file` and `secret` subcommands.**
+  Socratic question: "After P46–P54, every standalone HLSE subcommand
+  carries advisory lenses in its BLOCK output. But `scan` is the primary
+  entry point for automated pipelines — it finds both file masquerades
+  and exposed credentials in one pass. When scan finds `invoice.pdf.exe`
+  or an AWS key, the per-finding JSON line contains only the score, action,
+  and raw reasons/findings arrays. The `--json scan` consumer can detect
+  a double-extension file or a live AWS key but cannot act on it further
+  without re-routing it through the standalone subcommand. Why does the
+  unified scan output omit the pattern, objective, verify, triage, and
+  cascade_risk fields that the standalone handlers supply?" Added five
+  advisory lens fields to both JSON and human output for every file
+  masquerade (score ≥ 60) and exposed credential (score ≥ 60) found
+  by `scan`. Pattern derivation and advisory strings are identical to
+  those in the standalone `file` and `secret` handlers so behaviour is
+  consistent across both entry points. 449 tests, all pass.
+
 ## [1.0.54] — 2026-06-20
 
 ### Added

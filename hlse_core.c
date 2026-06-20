@@ -5345,7 +5345,47 @@ main(int argc, char **argv) {
                                 json_escape(fv.reasons[i], esc, sizeof(esc));
                                 printf("%s\"%s\"", i ? "," : "", esc);
                             }
-                            printf("]}\n");
+                            printf("]");
+                            if (fv.score >= 60) {
+                                const char *fpat = "file masquerade / malicious file delivery";
+                                static const char sf_obj[] =
+                                    "code execution \xe2\x80\x94 opening a disguised "
+                                    "executable or document with macros runs the payload "
+                                    "with your user privileges; the visual disguise is "
+                                    "designed to bypass 'I checked the extension' caution";
+                                static const char sf_vrf[] =
+                                    "do NOT open the file; scan it with a multi-engine "
+                                    "sandbox (e.g. VirusTotal) first \xe2\x80\x94 right-click "
+                                    "to upload; confirm the file came from a trusted source "
+                                    "through a separately-known channel";
+                                static const char sf_tri[] =
+                                    "if already opened: disconnect from the network "
+                                    "immediately; run a full antivirus scan; change "
+                                    "credentials for any service you were logged into at "
+                                    "the time; consider a full OS reinstall for high-score "
+                                    "detections";
+                                static const char sf_cas[] =
+                                    "all credentials and session tokens active when the file "
+                                    "was opened \xe2\x80\x94 malware runs with your session "
+                                    "context; also check for persistence (startup items, "
+                                    "scheduled tasks, browser extensions added)";
+                                if (fv.n_reasons > 0) {
+                                    if (strstr(fv.reasons[0], "RLO") || strstr(fv.reasons[0], "Unicode"))
+                                        fpat = "Unicode RTL override trick (hidden file extension)";
+                                    else if (strstr(fv.reasons[0], "DOUBLE EXTENSION") || strstr(fv.reasons[0], "double"))
+                                        fpat = "double-extension file masquerade (disguised executable)";
+                                    else if (strstr(fv.reasons[0], "macro") || strstr(fv.reasons[0], "Macro"))
+                                        fpat = "Office macro delivery (document-based malware lure)";
+                                    else if (strstr(fv.reasons[0], "PDF") || strstr(fv.reasons[0], "JavaScript"))
+                                        fpat = "PDF with embedded JavaScript (drive-by execution lure)";
+                                }
+                                json_escape(fpat,   esc, sizeof(esc)); printf(",\"pattern\":\"%s\"",      esc);
+                                json_escape(sf_obj, esc, sizeof(esc)); printf(",\"objective\":\"%s\"",    esc);
+                                json_escape(sf_vrf, esc, sizeof(esc)); printf(",\"verify\":\"%s\"",       esc);
+                                json_escape(sf_tri, esc, sizeof(esc)); printf(",\"triage\":\"%s\"",       esc);
+                                json_escape(sf_cas, esc, sizeof(esc)); printf(",\"cascade_risk\":\"%s\"", esc);
+                            }
+                            printf("}\n");
                         } else {
                             int i;
                             printf("%-7s [%d]  %s\n",
@@ -5353,6 +5393,33 @@ main(int argc, char **argv) {
                                    fv.score, fullpath);
                             for (i = 0; i < fv.n_reasons; i++)
                                 printf("  \xc2\xb7 %s\n", fv.reasons[i]);
+                            if (fv.score >= 60) {
+                                const char *fpat = "file masquerade / malicious file delivery";
+                                if (fv.n_reasons > 0) {
+                                    if (strstr(fv.reasons[0], "RLO") || strstr(fv.reasons[0], "Unicode"))
+                                        fpat = "Unicode RTL override trick (hidden file extension)";
+                                    else if (strstr(fv.reasons[0], "DOUBLE EXTENSION") || strstr(fv.reasons[0], "double"))
+                                        fpat = "double-extension file masquerade (disguised executable)";
+                                    else if (strstr(fv.reasons[0], "macro") || strstr(fv.reasons[0], "Macro"))
+                                        fpat = "Office macro delivery (document-based malware lure)";
+                                    else if (strstr(fv.reasons[0], "PDF") || strstr(fv.reasons[0], "JavaScript"))
+                                        fpat = "PDF with embedded JavaScript (drive-by execution lure)";
+                                }
+                                printf("  \xe2\x96\xb8 Pattern: %s\n", fpat);
+                                printf("  \xe2\x97\x89 Attacker's goal: code execution \xe2\x80\x94 "
+                                       "opening a disguised executable runs the payload with "
+                                       "your user privileges\n");
+                                printf("  \xe2\x9c\x93 Verify first: do NOT open the file; scan "
+                                       "with a multi-engine sandbox (e.g. VirusTotal) first; "
+                                       "confirm the source through a separately-known channel\n");
+                                printf("  \xe2\x9a\x91 If you acted: if already opened, disconnect "
+                                       "from the network; run antivirus; change credentials for "
+                                       "any active session\n");
+                                printf("  \xe2\x8a\x95 Also change: all credentials and session "
+                                       "tokens active when the file was opened \xe2\x80\x94 check "
+                                       "for persistence (startup items, scheduled tasks, new "
+                                       "browser extensions)\n");
+                            }
                         }
                     }
 
@@ -5421,7 +5488,39 @@ main(int argc, char **argv) {
                                             printf("%s{\"type\":\"%s\",\"description\":\"%s\"}",
                                                    i ? "," : "", et, ed);
                                         }
-                                        printf("]}\n");
+                                        printf("]");
+                                        if (sv.score >= 60 && sv.n_findings > 0) {
+                                            const char *ftype = sv.findings[0].type;
+                                            const char *sobj  = secret_objective_for(ftype);
+                                            static const char ss_vrf[] =
+                                                "check access logs for this credential BEFORE "
+                                                "revoking \xe2\x80\x94 audit trails (AWS CloudTrail, "
+                                                "GitHub audit log) reveal whether it was already "
+                                                "used and what was accessed, setting the blast radius";
+                                            static const char ss_tri[] =
+                                                "revoke or rotate the credential immediately (do not "
+                                                "delete \xe2\x80\x94 rotate to cut off access before "
+                                                "the key is gone); purge from git history with "
+                                                "git filter-repo or BFG Repo Cleaner \xe2\x80\x94 "
+                                                "assume every clone already has it";
+                                            static const char ss_cas[] =
+                                                "every other credential in the same file, repository, "
+                                                "or environment \xe2\x80\x94 treat everything co-located "
+                                                "as potentially leaked; also rotate any secret that "
+                                                "shared the same passphrase or was stored alongside this one";
+                                            snprintf(esc_p, sizeof(esc_p),
+                                                     "exposed credential \xe2\x80\x94 %s", ftype);
+                                            json_escape(esc_p, ed, sizeof(ed));
+                                            printf(",\"pattern\":\"%s\"", ed);
+                                            if (sobj) {
+                                                json_escape(sobj, ed, sizeof(ed));
+                                                printf(",\"objective\":\"%s\"", ed);
+                                            }
+                                            json_escape(ss_vrf, ed, sizeof(ed)); printf(",\"verify\":\"%s\"",       ed);
+                                            json_escape(ss_tri, ed, sizeof(ed)); printf(",\"triage\":\"%s\"",       ed);
+                                            json_escape(ss_cas, ed, sizeof(ed)); printf(",\"cascade_risk\":\"%s\"", ed);
+                                        }
+                                        printf("}\n");
                                     } else {
                                         int i;
                                         printf("%-7s [%d]  %s:%d\n",
@@ -5430,6 +5529,25 @@ main(int argc, char **argv) {
                                         for (i = 0; i < sv.n_findings; i++)
                                             printf("  \xc2\xb7 %s\n",
                                                    sv.findings[i].description);
+                                        if (sv.score >= 60 && sv.n_findings > 0) {
+                                            const char *ftype = sv.findings[0].type;
+                                            const char *sobj  = secret_objective_for(ftype);
+                                            char epat[128];
+                                            snprintf(epat, sizeof(epat),
+                                                     "exposed credential \xe2\x80\x94 %s", ftype);
+                                            printf("  \xe2\x96\xb8 Pattern: %s\n", epat);
+                                            if (sobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", sobj);
+                                            printf("  \xe2\x9c\x93 Verify first: check access logs BEFORE "
+                                                   "revoking \xe2\x80\x94 audit trails (CloudTrail, GitHub "
+                                                   "audit log) reveal whether it was already used\n");
+                                            printf("  \xe2\x9a\x91 Immediate action: rotate the credential "
+                                                   "now (rotate, don't just delete); purge from git "
+                                                   "history with git filter-repo or BFG \xe2\x80\x94 assume "
+                                                   "every clone already has a copy\n");
+                                            printf("  \xe2\x8a\x95 Also change: every other credential in "
+                                                   "the same file or repository \xe2\x80\x94 treat everything "
+                                                   "co-located as potentially leaked\n");
+                                        }
                                     }
                                 }
 
