@@ -2,6 +2,28 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.39] — 2026-06-20
+
+### Fixed
+- **Perspective 39: Channel-only risk is displayed, not silently reported OK.**
+  Socratic question: "P37 made `--from sms` boost a benign message's *effective*
+  score to 15 (LOG), and the exit code already gates on that boosted score — a
+  channel-only LOG exits 1 when the fail threshold is crossed. The JSON output
+  honestly reports `effective_score: 15, effective_action: LOG`. But the human
+  display still prints a bare `OK` whenever the *content* score is 0, even though
+  the channel prior lifted it above zero. So three observers of the very same
+  invocation disagree: the JSON says LOG, the exit code says threat, and the
+  terminal says OK. The display is the one a human actually reads — why is it the
+  only one telling them everything is fine?" Fixed in all three human-readable
+  paths (the `text` subcommand, the default auto-detect path, and `--stdin` pipe
+  mode): when the content scores 0 but `--from` contributes a positive delta, the
+  display now shows the channel-elevated score (`LOG [15] …`), the `· Channel
+  (…)` reason line, and the blind-spot caveat — instead of a misleading `OK`. The
+  `manual` channel (delta 0) and the no-`--from` case correctly remain plain `OK`.
+  This is pure advisory/display reconciliation: scores, gates, and JSON are
+  unchanged, so F1 = 1.000 holds. 7 new CLI integration tests (356 total). Zero
+  warnings.
+
 ## [1.0.38] — 2026-06-20
 
 ### Fixed

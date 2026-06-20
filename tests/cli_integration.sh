@@ -2403,6 +2403,56 @@ assert "cascade_risk" not in d, d
 ' && check "p32 json: safe text has no cascade_risk field" "0" "0" \
    || check "p32 json: safe text has no cascade_risk field" "0" "1"
 
+# ─── Perspective 39: channel-only risk is displayed, not silently OK ────────
+
+# Socratic question: "--from sms boosts a benign message's effective score to
+# 15 (LOG) and the exit code already gates on it — but the human display still
+# prints 'OK'. The text said clean; the exit code said threat. Which does the
+# user believe? Shouldn't the display match the gate it already enforces?"
+
+# p39: text subcommand — channel prior on benign text shows score, not OK
+./hlse_core --from sms text "Let us grab lunch tomorrow at noon" 2>/dev/null \
+    | grep -q "LOG.*\[15\]" \
+    && check "p39: --from sms shows channel score on benign text (subcommand)" "0" "0" \
+    || check "p39: --from sms shows channel score on benign text (subcommand)" "0" "1"
+
+# p39: text subcommand — channel reason line is shown
+./hlse_core --from sms text "Let us grab lunch tomorrow at noon" 2>/dev/null \
+    | grep -q "Channel (sms): +15" \
+    && check "p39: channel-only text shows Channel reason line" "0" "0" \
+    || check "p39: channel-only text shows Channel reason line" "0" "1"
+
+# p39: default auto-detect path — channel prior on benign text shows score
+./hlse_core --from qr "Let us grab lunch tomorrow at noon" 2>/dev/null \
+    | grep -q "LOG.*\[20\]" \
+    && check "p39: --from qr shows channel score on benign text (default path)" "0" "0" \
+    || check "p39: --from qr shows channel score on benign text (default path)" "0" "1"
+
+# p39: stdin path — channel prior on benign text shows score, not OK
+echo "Let us grab lunch tomorrow at noon" | ./hlse_core --from sms --stdin 2>/dev/null \
+    | grep -q "LOG.*\[15\]" \
+    && check "p39: --from sms shows channel score on benign text (stdin)" "0" "0" \
+    || check "p39: --from sms shows channel score on benign text (stdin)" "0" "1"
+
+# p39: --from manual (delta 0) leaves benign text as plain OK (no false LOG)
+./hlse_core --from manual text "Let us grab lunch tomorrow at noon" 2>/dev/null \
+    | grep -q "^OK" \
+    && check "p39: --from manual keeps benign text as OK" "0" "0" \
+    || check "p39: --from manual keeps benign text as OK" "0" "1"
+
+# p39: no --from leaves benign text as plain OK
+./hlse_core text "Let us grab lunch tomorrow at noon" 2>/dev/null \
+    | grep -q "^OK" \
+    && check "p39: benign text without channel stays OK" "0" "0" \
+    || check "p39: benign text without channel stays OK" "0" "1"
+
+# p39: human display now agrees with JSON effective_score (both report LOG)
+P39_JSON=$(./hlse_core --json --from sms text "Let us grab lunch tomorrow" 2>/dev/null \
+    | python3 -c 'import sys,json; d=json.loads(sys.stdin.read()); print(d["effective_action"])')
+[ "$P39_JSON" = "LOG" ] \
+    && check "p39: JSON effective_action matches human LOG display" "0" "0" \
+    || check "p39: JSON effective_action matches human LOG display" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

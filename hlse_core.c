@@ -4665,11 +4665,23 @@ stdin_mode(int json_out) {
                 print_json_text(line, &tv);
             }
         } else if (sr.score == 0) {
-            char canon_brand[64];
-            printf("OK    %s\n", line);
-            if (sr.is_url && hlse_canonical_confirm(line, canon_brand, sizeof(canon_brand)))
-                printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
-                       "(HLSE brand registry)\n", canon_brand);
+            /* Channel-only risk: content scored 0 but delivery channel adds prior */
+            if (g_from_channel) {
+                int d = channel_delta(g_from_channel);
+                if (d > 0) {
+                    const char *ch_rsn = channel_reason(g_from_channel);
+                    printf("%-7s [%d]  %s\n", hlse_action_for_score(d), d, line);
+                    if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
+                    continue;
+                }
+            }
+            {
+                char canon_brand[64];
+                printf("OK    %s\n", line);
+                if (sr.is_url && hlse_canonical_confirm(line, canon_brand, sizeof(canon_brand)))
+                    printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
+                           "(HLSE brand registry)\n", canon_brand);
+            }
         } else {
             int i;
             int eff = sr.score;
@@ -5787,14 +5799,30 @@ main(int argc, char **argv) {
                              "%s", sr.reasons[ti]);
                 print_json_text(argv[idx + 1], &tv);
             } else if (sr.score == 0) {
-                const char *bs = hlse_blindspot_for(sr.is_url ? "url" : "text");
-                char canon_brand[64];
-                printf("OK    (text)\n");
-                if (sr.is_url &&
-                    hlse_canonical_confirm(argv[idx + 1], canon_brand, sizeof(canon_brand)))
-                    printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
-                           "(HLSE brand registry)\n", canon_brand);
-                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+                /* Channel-only risk: content scored 0 but delivery channel adds prior */
+                if (g_from_channel) {
+                    int d = channel_delta(g_from_channel);
+                    if (d > 0) {
+                        const char *ch_rsn = channel_reason(g_from_channel);
+                        const char *bs2 = hlse_blindspot_for("text");
+                        printf("%-7s [%d]  (text) %.60s%s\n",
+                               hlse_action_for_score(d), d, argv[idx + 1],
+                               strlen(argv[idx + 1]) > 60 ? "..." : "");
+                        if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
+                        if (bs2) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs2);
+                        return d >= g_fail_threshold ? 1 : 0;
+                    }
+                }
+                {
+                    const char *bs = hlse_blindspot_for(sr.is_url ? "url" : "text");
+                    char canon_brand[64];
+                    printf("OK    (text)\n");
+                    if (sr.is_url &&
+                        hlse_canonical_confirm(argv[idx + 1], canon_brand, sizeof(canon_brand)))
+                        printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
+                               "(HLSE brand registry)\n", canon_brand);
+                    if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+                }
             } else {
                 int i;
                 int eff = sr.score;
@@ -5876,13 +5904,30 @@ main(int argc, char **argv) {
                 print_json_text(input, &tv);
             }
         } else if (sr.score == 0) {
-            const char *bs = hlse_blindspot_for(sr.is_url ? "url" : "text");
-            char canon_brand[64];
-            printf("OK    %s\n", input);
-            if (sr.is_url && hlse_canonical_confirm(input, canon_brand, sizeof(canon_brand)))
-                printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
-                       "(HLSE brand registry)\n", canon_brand);
-            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+            /* Channel-only risk: content scored 0 but delivery channel adds prior */
+            if (g_from_channel) {
+                int d = channel_delta(g_from_channel);
+                if (d > 0) {
+                    const char *ch_rsn = channel_reason(g_from_channel);
+                    const char *bs2 = hlse_blindspot_for(sr.is_url ? "url" : "text");
+                    printf("%-7s [%d]  %s\n", hlse_action_for_score(d), d, input);
+                    if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
+                    if (bs2) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs2);
+                    {
+                        int eff_gate = d;
+                        return eff_gate >= g_fail_threshold ? 1 : 0;
+                    }
+                }
+            }
+            {
+                const char *bs = hlse_blindspot_for(sr.is_url ? "url" : "text");
+                char canon_brand[64];
+                printf("OK    %s\n", input);
+                if (sr.is_url && hlse_canonical_confirm(input, canon_brand, sizeof(canon_brand)))
+                    printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
+                           "(HLSE brand registry)\n", canon_brand);
+                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+            }
         } else {
             int i;
             int eff = sr.score;
