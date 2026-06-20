@@ -2,6 +2,33 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.50] — 2026-06-20
+
+### Added
+- **Perspective 50: Advisory lenses for `secret` BLOCK verdicts —
+  credential-type pattern / access-class objective / verify-first /
+  triage / cascade surfaced on every credential exposure alert.**
+  Socratic question: "The `secret` subcommand detects exposed credentials
+  (AWS keys, GitHub tokens, Stripe keys, etc.) and when BLOCK fires,
+  shows the credential type in brackets ([AWS Access Key ID]) and a
+  generic remediation. But it doesn't name the attack pattern ('exposed
+  credential — AWS Access Key ID'), doesn't say what the key grants
+  ('S3 read/write, EC2 control, IAM privilege escalation'), doesn't
+  suggest checking CloudTrail BEFORE revoking (so you know the blast
+  radius), and doesn't say to treat every other credential in the same
+  file as equally compromised. The credential type is already known from
+  the finding — every piece of advisory context could be derived from it.
+  Why is a leaked AWS root key and a leaked test API token presented
+  identically, with the same generic 'revoke and rotate' message?" Added
+  `secret_objective_for()` static helper mapping 7 credential families
+  to specific access-class descriptions (AWS, GitHub/GitLab, Stripe,
+  Google/GCP, Slack, SSH/Private Key, Database). Both human output
+  (▸ Pattern, ◉ Attacker's goal, ✓ Verify first, ⚑ Immediate action,
+  ⊕ Also change) and JSON (pattern, objective, verify, triage,
+  cascade_risk) are now populated for every secret BLOCK/ISOLATE.
+  OK paths unchanged (blind spot only). 8 new integration tests added
+  (424 total, all pass).
+
 ## [1.0.49] — 2026-06-20
 
 ### Added

@@ -4491,6 +4491,42 @@ channel_reason(const char *ch)
     return NULL; /* manual → no delta, no noise */
 }
 
+/* Map a credential type label to what access it grants the attacker. */
+static const char *
+secret_objective_for(const char *type)
+{
+    if (!type || !type[0]) return NULL;
+    if (strstr(type, "AWS"))
+        return "cloud API access \xe2\x80\x94 S3 read/write, EC2 control, and IAM "
+               "privilege escalation; all resources visible to this key are at risk";
+    if (strstr(type, "GitHub") || strstr(type, "GitLab"))
+        return "source code and CI/CD pipeline access \xe2\x80\x94 read/write "
+               "repositories, access CI secrets, trigger workflows";
+    if (strstr(type, "Stripe"))
+        return "payment processing \xe2\x80\x94 ability to issue charges, view "
+               "customer payment data, and issue refunds";
+    if (strstr(type, "Google") || strstr(type, "GCP"))
+        return "Google Cloud API access \xe2\x80\x94 Maps, Analytics, or Cloud "
+               "resources depending on key scope";
+    if (strstr(type, "Slack"))
+        return "workspace access \xe2\x80\x94 read messages and files across "
+               "channels, post as the bot user or the token owner";
+    if (strstr(type, "SSH") || strstr(type, "Private Key")
+        || strstr(type, "RSA") || strstr(type, "OPENSSH"))
+        return "server authentication \xe2\x80\x94 SSH access to every host that "
+               "trusts this key (check authorized_keys)";
+    if (strstr(type, "Database") || strstr(type, "Postgres")
+        || strstr(type, "MySQL") || strstr(type, "Mongo"))
+        return "database read/write access \xe2\x80\x94 plaintext query access "
+               "to all records in the connected database";
+    if (strstr(type, "Twilio") || strstr(type, "SendGrid")
+        || strstr(type, "Mailgun"))
+        return "messaging API access \xe2\x80\x94 send SMS/email as your account, "
+               "read inbound messages, and incur billing charges";
+    return "authenticated access to the associated service and any resource "
+           "this credential controls";
+}
+
 static void
 print_json_url(const char *url, const Verdict *v) {
     char escaped_url[MAX_URL * 2];
@@ -5816,10 +5852,37 @@ main(int argc, char **argv) {
                         printf(",\"blind_spot\":\"%s\"", esc_bs);
                     }
                 }
+                if (sv.score >= 60 && sv.n_findings > 0) {
+                    const char *ftype = sv.findings[0].type;
+                    const char *sobj  = secret_objective_for(ftype);
+                    static const char sec_vrf[] =
+                        "check access logs for this credential BEFORE revoking "
+                        "\xe2\x80\x94 audit trails (AWS CloudTrail, GitHub audit "
+                        "log) reveal whether it was already used and what was "
+                        "accessed, setting the blast radius";
+                    static const char sec_tri[] =
+                        "revoke or rotate the credential immediately (do not "
+                        "delete — rotate to cut off access before the key is "
+                        "gone); purge from git history with git filter-repo or "
+                        "BFG Repo Cleaner — assume every clone already has it";
+                    static const char sec_cas[] =
+                        "every other credential in the same file, repository, "
+                        "or environment — treat everything co-located as "
+                        "potentially leaked; also rotate any secret that shared "
+                        "the same passphrase or was stored alongside this one";
+                    char e[512], epat[128];
+                    snprintf(epat, sizeof(epat), "exposed credential \xe2\x80\x94 %s", ftype);
+                    json_escape(epat, e, sizeof(e));
+                    printf(",\"pattern\":\"%s\"", e);
+                    if (sobj) { json_escape(sobj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e); }
+                    json_escape(sec_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                    json_escape(sec_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
+                    json_escape(sec_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                }
                 printf("}\n");
             } else if (sv.score == 0) {
                 const char *bs = hlse_blindspot_for("secret");
-                printf("OK    (secret — no credentials found)\n");
+                printf("OK    (secret \xe2\x80\x94 no credentials found)\n");
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
@@ -5834,6 +5897,24 @@ main(int argc, char **argv) {
                     printf("  \xe2\x86\x92 Confidence: heuristic — this is a "
                            "pattern guess (generic VAR=value / high-entropy "
                            "string); confirm it is a live credential.\n");
+                if (sv.score >= 60 && sv.n_findings > 0) {
+                    const char *ftype = sv.findings[0].type;
+                    const char *sobj  = secret_objective_for(ftype);
+                    char epat[128];
+                    snprintf(epat, sizeof(epat), "exposed credential \xe2\x80\x94 %s", ftype);
+                    printf("  \xe2\x96\xb8 Pattern: %s\n", epat);
+                    if (sobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", sobj);
+                    printf("  \xe2\x9c\x93 Verify first: check access logs BEFORE "
+                           "revoking \xe2\x80\x94 audit trails (CloudTrail, GitHub "
+                           "audit log) reveal whether it was already used\n");
+                    printf("  \xe2\x9a\x91 Immediate action: rotate the credential "
+                           "now (rotate, don't just delete); purge from git "
+                           "history with git filter-repo or BFG \xe2\x80\x94 assume "
+                           "every clone already has a copy\n");
+                    printf("  \xe2\x8a\x95 Also change: every other credential in "
+                           "the same file or repository \xe2\x80\x94 treat everything "
+                           "co-located as potentially leaked\n");
+                }
                 if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
             }
             return sv.score >= g_fail_threshold ? 1 : 0;

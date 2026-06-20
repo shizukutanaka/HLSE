@@ -2774,6 +2774,67 @@ assert "triage" not in d, d
 ' && check "p46 json: paste OK has no advisory lens fields" "0" "0" \
    || check "p46 json: paste OK has no advisory lens fields" "0" "1"
 
+# ─── P50: secret BLOCK advisory lenses ──────────────────────────────────
+
+# p50: secret BLOCK shows credential-type pattern
+./hlse_core secret "aws_access_key_id = AKIA2E3MWORQXYZ4567PQ" 2>&1 \
+    | grep -q "Pattern: exposed credential" \
+    && check "p50: secret BLOCK shows credential-type pattern" "0" "0" \
+    || check "p50: secret BLOCK shows credential-type pattern" "0" "1"
+
+# p50: secret BLOCK shows AWS-specific objective
+./hlse_core secret "aws_access_key_id = AKIA2E3MWORQXYZ4567PQ" 2>&1 \
+    | grep -q "cloud API access" \
+    && check "p50: secret BLOCK shows AWS cloud access objective" "0" "0" \
+    || check "p50: secret BLOCK shows AWS cloud access objective" "0" "1"
+
+# p50: secret BLOCK shows verify-first (check access logs)
+./hlse_core secret "aws_access_key_id = AKIA2E3MWORQXYZ4567PQ" 2>&1 \
+    | grep -q "Verify first:.*access logs" \
+    && check "p50: secret BLOCK shows verify-first (access logs)" "0" "0" \
+    || check "p50: secret BLOCK shows verify-first (access logs)" "0" "1"
+
+# p50: secret BLOCK shows cascade risk (co-located secrets)
+./hlse_core secret "aws_access_key_id = AKIA2E3MWORQXYZ4567PQ" 2>&1 \
+    | grep -q "Also change:" \
+    && check "p50: secret BLOCK shows cascade risk" "0" "0" \
+    || check "p50: secret BLOCK shows cascade risk" "0" "1"
+
+# p50: GitHub token gets GitHub-specific objective
+./hlse_core secret "github_token: ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij" 2>&1 \
+    | grep -q "source code and CI/CD pipeline access" \
+    && check "p50: GitHub token BLOCK shows CI/CD objective" "0" "0" \
+    || check "p50: GitHub token BLOCK shows CI/CD objective" "0" "1"
+
+# p50: secret OK still shows blind spot (no advisory lenses)
+./hlse_core secret "hello world" 2>&1 \
+    | grep -q "Blind spot:" \
+    && check "p50: secret OK still shows blind spot" "0" "0" \
+    || check "p50: secret OK still shows blind spot" "0" "1"
+
+# p50 json: secret BLOCK carries pattern, objective, verify, triage, cascade_risk
+./hlse_core --json secret "aws_access_key_id = AKIA2E3MWORQXYZ4567PQ" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] >= 60, d
+assert "pattern" in d, d
+assert "objective" in d, d
+assert "verify" in d, d
+assert "triage" in d, d
+assert "cascade_risk" in d, d
+' && check "p50 json: secret BLOCK carries all advisory lens fields" "0" "0" \
+   || check "p50 json: secret BLOCK carries all advisory lens fields" "0" "1"
+
+# p50 json: secret OK has no advisory lens fields
+./hlse_core --json secret "hello world" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] == 0, d
+assert "pattern" not in d, d
+assert "triage" not in d, d
+' && check "p50 json: secret OK has no advisory lens fields" "0" "0" \
+   || check "p50 json: secret OK has no advisory lens fields" "0" "1"
+
 # ─── P49: package BLOCK advisory lenses ─────────────────────────────────
 
 # p49: package BLOCK shows supply-chain pattern
