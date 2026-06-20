@@ -2,6 +2,31 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.57] — 2026-06-20
+
+### Added
+- **Perspective 57: Scan URL findings now carry `safe_url`, `confidence`/
+  `signal_count`, and `exoneration` — reaching parity with the default
+  URL analysis path.**
+  Socratic question: "After P56, a phishing URL found inside a scanned
+  file carries pattern/objective/verify/triage/cascade_risk. But the
+  default URL analysis path (called when you give hlse_core a URL directly)
+  also emits three more fields: `safe_url` (where to go instead of the
+  phishing site), `confidence`/`signal_count` (how many independent
+  detector families agreed), and `exoneration` (the benign explanation for
+  ALERT-band URLs). The scan URL JSON was missing all three. If you
+  scan a paypal.verify-account-now.com link embedded in a file and get
+  ISOLATE [80] with five advisory fields, why doesn't it also tell you
+  'the real URL is https://paypal.com' and 'high confidence — 3 independent
+  families agree'? The safe destination is the most actionable single datum
+  after a BLOCK." Added `signal_count` + `confidence` (always when signals
+  fired), `safe_url` (for score ≥ 60 when a brand was identified), and
+  `exoneration` (for ALERT-band score 40–59) to the scan URL JSON output.
+  Human output path now calls `print_url_advisories()` directly (same
+  function used by default URL analysis) instead of duplicated inline code,
+  gaining confidence, disguised-char, and safe-destination lines for free.
+  456 tests, all pass.
+
 ## [1.0.56] — 2026-06-20
 
 ### Added

@@ -5607,18 +5607,35 @@ main(int argc, char **argv) {
                                                       }
                                                     }
                                                     printf("]");
+                                                    {
+                                                        char ucf_buf[160];
+                                                        int u_sig = hlse_confidence_for(&uv, ucf_buf, sizeof(ucf_buf));
+                                                        if (u_sig > 0) {
+                                                            json_escape(ucf_buf, eu, sizeof(eu));
+                                                            printf(",\"signal_count\":%d,\"confidence\":\"%s\"", u_sig, eu);
+                                                        }
+                                                    }
                                                     if (uv.score >= 60) {
                                                         const char *upat = hlse_classify_url_attack(&uv);
                                                         const char *uvrf = hlse_verification_for(&uv);
                                                         const char *ucas = hlse_cascade_risk(&uv);
-                                                        char uobj_buf[320], utri_buf[512];
-                                                        int has_obj = hlse_compound_objective(&uv, uobj_buf, sizeof(uobj_buf));
-                                                        int has_tri = hlse_compound_triage(&uv, utri_buf, sizeof(utri_buf));
-                                                        if (upat)    { json_escape(upat,     eu, sizeof(eu)); printf(",\"pattern\":\"%s\"",      eu); }
-                                                        if (has_obj) { json_escape(uobj_buf, eu, sizeof(eu)); printf(",\"objective\":\"%s\"",    eu); }
-                                                        if (uvrf)    { json_escape(uvrf,     eu, sizeof(eu)); printf(",\"verify\":\"%s\"",       eu); }
-                                                        if (has_tri) { json_escape(utri_buf, eu, sizeof(eu)); printf(",\"triage\":\"%s\"",       eu); }
-                                                        if (ucas)    { json_escape(ucas,     eu, sizeof(eu)); printf(",\"cascade_risk\":\"%s\"", eu); }
+                                                        char uobj_buf[320], utri_buf[512], usafe[384];
+                                                        int has_obj  = hlse_compound_objective(&uv, uobj_buf, sizeof(uobj_buf));
+                                                        int has_tri  = hlse_compound_triage(&uv, utri_buf, sizeof(utri_buf));
+                                                        int has_safe = hlse_safe_destinations(&uv, usafe, sizeof(usafe));
+                                                        if (upat)     { json_escape(upat,     eu, sizeof(eu)); printf(",\"pattern\":\"%s\"",      eu); }
+                                                        if (has_obj)  { json_escape(uobj_buf, eu, sizeof(eu)); printf(",\"objective\":\"%s\"",    eu); }
+                                                        if (has_safe) { json_escape(usafe,    eu, sizeof(eu)); printf(",\"safe_url\":\"%s\"",     eu); }
+                                                        if (uvrf)     { json_escape(uvrf,     eu, sizeof(eu)); printf(",\"verify\":\"%s\"",       eu); }
+                                                        if (has_tri)  { json_escape(utri_buf, eu, sizeof(eu)); printf(",\"triage\":\"%s\"",       eu); }
+                                                        if (ucas)     { json_escape(ucas,     eu, sizeof(eu)); printf(",\"cascade_risk\":\"%s\"", eu); }
+                                                    }
+                                                    if (uv.score >= 40 && uv.score < 60) {
+                                                        const char *uexon = hlse_url_exoneration(&uv);
+                                                        if (uexon) {
+                                                            json_escape(uexon, eu, sizeof(eu));
+                                                            printf(",\"exoneration\":\"%s\"", eu);
+                                                        }
                                                     }
                                                     printf("}\n");
                                                 } else {
@@ -5628,18 +5645,11 @@ main(int argc, char **argv) {
                                                            uv.score, fullpath, lineno, url_buf);
                                                     for (k = 0; k < uv.n_reasons; k++)
                                                         printf("  \xc2\xb7 %s\n", uv.reasons[k]);
-                                                    if (uv.score >= 60) {
-                                                        const char *upat = hlse_classify_url_attack(&uv);
-                                                        const char *uvrf = hlse_verification_for(&uv);
-                                                        const char *ucas = hlse_cascade_risk(&uv);
-                                                        char uobj_buf[320], utri_buf[512];
-                                                        int has_obj = hlse_compound_objective(&uv, uobj_buf, sizeof(uobj_buf));
-                                                        int has_tri = hlse_compound_triage(&uv, utri_buf, sizeof(utri_buf));
-                                                        if (upat)    printf("  \xe2\x96\xb8 Pattern: %s\n",         upat);
-                                                        if (has_obj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", uobj_buf);
-                                                        if (uvrf)    printf("  \xe2\x9c\x93 Verify first: %s\n",    uvrf);
-                                                        if (has_tri) printf("  \xe2\x9a\x91 If you acted: %s\n",    utri_buf);
-                                                        if (ucas)    printf("  \xe2\x8a\x95 Also change: %s\n",     ucas);
+                                                    print_url_advisories(url_buf, &uv);
+                                                    if (uv.score >= 40 && uv.score < 60) {
+                                                        const char *uexon = hlse_url_exoneration(&uv);
+                                                        if (uexon)
+                                                            printf("  \xe2\x86\xba Could be benign: %s\n", uexon);
                                                     }
                                                 }
                                             }

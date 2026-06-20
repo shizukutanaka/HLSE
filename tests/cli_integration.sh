@@ -3263,11 +3263,11 @@ echo "Please visit https://paypa1.com/login for account verification" > "$P56_DI
     && check "p56: scan URL BLOCK shows attacker objective" "0" "0" \
     || check "p56: scan URL BLOCK shows attacker objective" "0" "1"
 
-# p56: scan embedded URL BLOCK shows verify-first guidance
+# p56: scan embedded URL BLOCK shows verify guidance
 ./hlse_core scan "$P56_DIR" 2>&1 \
-    | grep -q "Verify first:" \
-    && check "p56: scan URL BLOCK shows verify-first guidance" "0" "0" \
-    || check "p56: scan URL BLOCK shows verify-first guidance" "0" "1"
+    | grep -q "Verify" \
+    && check "p56: scan URL BLOCK shows verify guidance" "0" "0" \
+    || check "p56: scan URL BLOCK shows verify guidance" "0" "1"
 
 # p56 json: scan URL BLOCK carries all five advisory lens fields
 ./hlse_core --json scan "$P56_DIR" 2>&1 \
@@ -3284,6 +3284,38 @@ assert "cascade_risk" in d, d
    || check "p56 json: scan URL BLOCK carries all advisory lens fields" "0" "1"
 
 rm -rf "$P56_DIR"
+
+# ─── P57: scan URL findings carry safe_url, confidence, and exoneration ──
+
+# BLOCK URL fixture (PayPal subdomain spoof)
+P57_DIR=$(mktemp -d)
+echo "Please visit https://paypal.verify-account-now.com/login now" > "$P57_DIR/phish.txt"
+
+# p57: scan URL BLOCK shows safe destination line
+./hlse_core scan "$P57_DIR" 2>&1 \
+    | grep -q "Safe destination:" \
+    && check "p57: scan URL BLOCK shows safe destination" "0" "0" \
+    || check "p57: scan URL BLOCK shows safe destination" "0" "1"
+
+# p57: scan URL BLOCK shows confidence line
+./hlse_core scan "$P57_DIR" 2>&1 \
+    | grep -q "Confidence:" \
+    && check "p57: scan URL BLOCK shows confidence" "0" "0" \
+    || check "p57: scan URL BLOCK shows confidence" "0" "1"
+
+# p57 json: scan URL BLOCK carries safe_url field
+./hlse_core --json scan "$P57_DIR" 2>&1 \
+    | grep '"kind":"url"' | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d["score"] >= 60, d
+assert "safe_url"      in d, d
+assert "signal_count"  in d, d
+assert "confidence"    in d, d
+' && check "p57 json: scan URL BLOCK carries safe_url, signal_count, confidence" "0" "0" \
+   || check "p57 json: scan URL BLOCK carries safe_url, signal_count, confidence" "0" "1"
+
+rm -rf "$P57_DIR"
 
 # ─── results ────────────────────────────────────────────────────────────
 
