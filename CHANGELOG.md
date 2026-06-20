@@ -2,6 +2,38 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.40] — 2026-06-20
+
+### Fixed
+- **Perspective 40: Library build is warning-free, like the CLI build.**
+  Socratic question: "The project invariant is 'zero compiler warnings', and
+  `make check-warnings` proves it — but that gate compiles the *CLI*. The README
+  tells library users to build `libhlse.so` with `-DHLSE_CORE_AS_LIB`. That build
+  excludes the CLI `main`, so the two blast-radius helpers `asset_class_of` and
+  `asset_mask_describe` — defined before the `#ifndef HLSE_CORE_AS_LIB` guard but
+  used only inside it — become unused functions and emit `-Wunused-function`
+  warnings. A consumer following our own integration instructions sees warnings
+  we claim don't exist. Does 'zero warnings' mean zero for *us*, or zero for the
+  people we asked to link the library?" Three fixes:
+  (1) The two CLI-only helpers `asset_class_of`/`asset_mask_describe` are now
+  marked `__attribute__((unused))` — the exact idiom the file already uses for
+  `action_for_score`, which faces the same CLI-only-in-a-dual-build situation —
+  silencing `-Wunused-function` in the library build.
+  (2) `make check-warnings` now ALSO compiles every module with
+  `-DHLSE_CORE_AS_LIB` under the full strict flag set, so the library build is
+  gated permanently and this class of regression cannot silently return. The
+  prior gate only checked the CLI translation unit, where these functions appear
+  used.
+  (3) The new gate immediately surfaced a latent `-Wformat-truncation=2` warning
+  in the public API `hlse_confusable_report`: in library mode GCC cannot see
+  callers to bound `outsz`, so the direct `snprintf` of the diagnostic literal
+  tripped the aggressive truncation check. Reworked to stage into a fixed-size
+  local buffer then copy with an explicit `memcpy` clamp to `outsz` — provably
+  bounded and outside the format-truncation analysis. Output is byte-identical
+  ("position N is &lt;script&gt; U+XXXX, not an ASCII letter").
+  Pure build hygiene: no code path, score, or output changes, so F1 = 1.000
+  holds. All 356 CLI integration tests pass, ASan/UBSan clean.
+
 ## [1.0.39] — 2026-06-20
 
 ### Fixed

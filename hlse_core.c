@@ -3146,9 +3146,22 @@ hlse_confusable_report(const char *url, char *out, size_t outsz) {
         }
         cp_pos++;
         if (ok && cp >= 0x80) {
-            snprintf(out, outsz,
+            /* Format into a bounded local buffer first: in the library build
+             * GCC cannot see callers to bound `outsz`, so a direct snprintf of
+             * the literal trips -Wformat-truncation=2. Stage into a fixed-size
+             * buffer (provable bound), then copy with an explicit clamp to
+             * outsz — memcpy is outside the format-truncation analysis. */
+            char tmp[96];
+            size_t L;
+            snprintf(tmp, sizeof(tmp),
                      "position %d is %s U+%04lX, not an ASCII letter",
                      cp_pos, confusable_script(cp), cp);
+            if (outsz > 0) {
+                L = strlen(tmp);
+                if (L >= outsz) L = outsz - 1;
+                memcpy(out, tmp, L);
+                out[L] = '\0';
+            }
             return 1;
         }
         p += ok ? n : 1;
@@ -3829,6 +3842,11 @@ enum {
     ASSET_CRYPTO   = 1 << 6    /* SSH/PGP private keys                      */
 };
 
+/* CLI-only (scan/secret blast-radius reporting); marked unused so the
+ * library build, which excludes the CLI, does not warn. */
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((unused))
+#endif
 static unsigned
 asset_class_of(const char *type) {
     if (!type) return 0;
@@ -3859,6 +3877,10 @@ asset_class_of(const char *type) {
     return 0;  /* generic env/JWT/entropy — not pivot-defining */
 }
 
+/* CLI-only (scan/secret blast-radius reporting); see asset_class_of above. */
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((unused))
+#endif
 static int
 asset_mask_describe(unsigned mask, char *out, size_t outsz) {
     static const struct { unsigned bit; const char *name; } A[] = {

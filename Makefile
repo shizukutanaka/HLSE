@@ -337,7 +337,20 @@ check-warnings:
 		fi; \
 	done; \
 	if [ "$$fail" -ne 0 ]; then echo "STRICT WARNINGS FOUND"; exit 1; fi; \
-	echo "All modules clean under strict flags."
+	echo "All modules clean under strict flags (CLI build)."
+	@echo "Checking strict warnings in library build (-DHLSE_CORE_AS_LIB)..."
+	@fail=0; for f in $(CORE_SRC); do \
+		w=$$($(CC) $(CFLAGS_STRICT) -DHLSE_CORE_AS_LIB -fPIC -c $$f -I. -o /dev/null 2>&1 | grep -c "warning:"); \
+		if [ "$$w" -ne 0 ]; then \
+			echo "  FAIL: $$f has $$w warning(s) in library mode"; \
+			$(CC) $(CFLAGS_STRICT) -DHLSE_CORE_AS_LIB -fPIC -c $$f -I. -o /dev/null 2>&1 | grep "warning:"; \
+			fail=1; \
+		else \
+			echo "  OK:   $$f"; \
+		fi; \
+	done; \
+	if [ "$$fail" -ne 0 ]; then echo "STRICT WARNINGS FOUND (library build)"; exit 1; fi; \
+	echo "All modules clean under strict flags (CLI + library builds)."
 
 # Build the CLI + tests with ASan/UBSan and run the full self-test.
 # Catches memory errors, UB, and leaks that normal builds miss.
