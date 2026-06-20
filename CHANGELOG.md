@@ -2,6 +2,33 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.44] — 2026-06-20
+
+### Fixed
+- **Perspective 44: Blind-spot disclosure for `package`, `file`, and `audit`
+  OK paths.**
+  Socratic question: "The `package` OK just says `OK numpy`. But HLSE only
+  checked whether the name resembles a known typosquat — it never looked at the
+  package code, post-install scripts, or version history. The SolarWinds, XZ
+  Utils, and log4shell incidents all involved correctly-named, widely-used
+  packages. Why does a correctly-named package get a clean bill of health with no
+  caveat about what was not checked?" Added three new `hlse_blindspot_for()`
+  cases and wired them into both human display and JSON for each OK path: (1)
+  `package`: "typosquat detection only — a compromised legitimate package, a
+  dependency confusion attack, or malicious post-install scripts inside a
+  correctly-named package are not detected; review the package's repository,
+  recent commits, and published checksums before installing in a production or
+  privileged environment." (2) `file`: "magic-byte and filename analysis only —
+  obfuscated payloads, encrypted content, or malicious macros inside office
+  formats are not detected; run untrusted files through a multi-engine scanner
+  before opening." (3) `audit`: "point-in-time configuration snapshot — kernel-
+  level exploits, container escapes, LD_PRELOAD injection, and custom LSM
+  bypasses are outside the scope of this check; re-run after any system or
+  configuration change." The `blind_spot` field appears in JSON only on score 0;
+  threat-band JSON omits it. Advisory-only: no score or detection change, F1 =
+  1.000 holds. 6 new CLI integration tests (380 total). Zero warnings (CLI +
+  library).
+
 ## [1.0.43] — 2026-06-20
 
 ### Fixed

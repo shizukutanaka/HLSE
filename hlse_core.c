@@ -2106,6 +2106,22 @@ hlse_blindspot_for(const char *kind) {
         return "local-view only — DNS-over-HTTPS, process-level routing, "
                "encrypted tunnels, and outbound traffic over allowed ports are "
                "invisible to this check; a compromised process may appear clean.";
+    if (strcmp(kind, "package") == 0)
+        return "typosquat detection only — a compromised legitimate package, "
+               "a dependency confusion attack, or malicious post-install scripts "
+               "inside a correctly-named package are not detected; review the "
+               "package's repository, recent commits, and published checksums "
+               "before installing in a production or privileged environment.";
+    if (strcmp(kind, "file") == 0)
+        return "magic-byte and filename analysis only — obfuscated payloads, "
+               "encrypted content, or malicious macros inside office formats "
+               "are not detected; run untrusted files through a multi-engine "
+               "scanner before opening.";
+    if (strcmp(kind, "audit") == 0)
+        return "point-in-time configuration snapshot — kernel-level exploits, "
+               "container escapes, LD_PRELOAD injection, and custom LSM bypasses "
+               "are outside the scope of this check; re-run after any system or "
+               "configuration change.";
     return NULL;
 }
 
@@ -5522,9 +5538,19 @@ main(int argc, char **argv) {
                     }
                     printf("]");
                 }
+                if (pv.score == 0) {
+                    const char *bs = hlse_blindspot_for("package");
+                    if (bs) {
+                        char esc_bs[512];
+                        json_escape(bs, esc_bs, sizeof(esc_bs));
+                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                    }
+                }
                 printf("}\n");
             } else if (pv.score == 0) {
+                const char *bs = hlse_blindspot_for("package");
                 printf("OK    %s\n", argv[idx + 1]);
+                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 printf("%-7s [%d]  %s\n",
                        hlse_action_for_score(pv.score), pv.score,
@@ -5838,9 +5864,20 @@ main(int argc, char **argv) {
                     json_escape(fv.reasons[i], esc, sizeof(esc));
                     printf("%s\"%s\"", i > 0 ? "," : "", esc);
                 }
-                printf("]}\n");
+                printf("]");
+                if (fv.score == 0) {
+                    const char *bs = hlse_blindspot_for("file");
+                    if (bs) {
+                        char esc_bs[512];
+                        json_escape(bs, esc_bs, sizeof(esc_bs));
+                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                    }
+                }
+                printf("}\n");
             } else if (fv.score == 0) {
+                const char *bs = hlse_blindspot_for("file");
                 printf("OK    %s\n", argv[idx + 1]);
+                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
                 printf("%-7s [%d]  %s\n",
@@ -5872,10 +5909,21 @@ main(int argc, char **argv) {
                        i > 0 ? "," : "",
                        av.findings[i].severity, esc);
             }
-            printf("]}\n");
+            printf("]");
+            if (av.score == 0) {
+                const char *bs = hlse_blindspot_for("audit");
+                if (bs) {
+                    char esc_bs[512];
+                    json_escape(bs, esc_bs, sizeof(esc_bs));
+                    printf(",\"blind_spot\":\"%s\"", esc_bs);
+                }
+            }
+            printf("}\n");
         } else if (av.score == 0) {
+            const char *bs = hlse_blindspot_for("audit");
             printf("OK    (audit — no issues found)  "
                    "Hardening index: %d/100 (%s)\n", hi, band);
+            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
         } else {
             int i;
             printf("%-7s [%d]  (system audit)  Hardening index: %d/100 (%s)\n",

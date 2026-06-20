@@ -2617,6 +2617,58 @@ assert d["score"] == 0 and "blind_spot" in d, d
 ' && check "p43 json: network OK carries blind_spot" "0" "0" \
    || check "p43 json: network OK carries blind_spot" "0" "1"
 
+# ─── Perspective 44: blind spots for package, file, and audit OK paths ──────
+
+# Socratic question: "The package OK just says 'OK numpy'. But HLSE only checked
+# whether the name resembles a known typosquat — it never looked at the package's
+# code, post-install scripts, or version history. The SolarWinds, XZ, and
+# log4j incidents were all correctly-named packages. Why does a correctly-named
+# package get a clean bill of health that says nothing about what we couldn't
+# see? Same for file (magic-byte check only) and audit (point-in-time config
+# snapshot, invisible to kernel exploits)."
+
+# p44: package OK discloses typosquat-only blind spot
+./hlse_core package numpy 2>/dev/null \
+    | grep -q "Blind spot:.*typosquat" \
+    && check "p44: package OK discloses typosquat-only blind spot" "0" "0" \
+    || check "p44: package OK discloses typosquat-only blind spot" "0" "1"
+
+# p44: file OK discloses magic-byte-only blind spot
+./hlse_core file /tmp/hlse_test.txt 2>/dev/null \
+    | grep -q "Blind spot:.*magic-byte" \
+    && check "p44: file OK discloses magic-byte blind spot" "0" "0" \
+    || check "p44: file OK discloses magic-byte blind spot" "0" "1"
+
+# p44: package THREAT suppresses blind spot (the threat guidance speaks instead)
+./hlse_core package nummpy 2>/dev/null \
+    | grep -q "Blind spot:" \
+    && check "p44: package threat suppresses blind spot" "1" "0" \
+    || check "p44: package threat suppresses blind spot" "1" "1"
+
+# p44: package JSON OK carries blind_spot
+./hlse_core --json package numpy 2>/dev/null | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] == 0 and "blind_spot" in d and "typosquat" in d["blind_spot"], d
+' && check "p44 json: package OK carries blind_spot" "0" "0" \
+   || check "p44 json: package OK carries blind_spot" "0" "1"
+
+# p44: file JSON OK carries blind_spot
+./hlse_core --json file /tmp/hlse_test.txt 2>/dev/null | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] == 0 and "blind_spot" in d and "magic-byte" in d["blind_spot"], d
+' && check "p44 json: file OK carries blind_spot" "0" "0" \
+   || check "p44 json: file OK carries blind_spot" "0" "1"
+
+# p44: package JSON THREAT suppresses blind_spot
+./hlse_core --json package nummpy 2>/dev/null | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] > 0 and "blind_spot" not in d, d
+' && check "p44 json: package threat omits blind_spot" "0" "0" \
+   || check "p44 json: package threat omits blind_spot" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
