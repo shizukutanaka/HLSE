@@ -6159,15 +6159,21 @@ main(int argc, char **argv) {
                         "--dry-run to preview what would install";
                     static const char pkg_tri[] =
                         "if already installed, remove the package immediately "
-                        "(pip uninstall / npm uninstall / cargo remove); review "
-                        "the post-install script in the site-packages directory "
-                        "and rotate any credentials that were in your shell "
-                        "environment during the install";
+                        "(pip uninstall / npm uninstall / cargo remove) and "
+                        "inspect the lifecycle script (preinstall/postinstall); "
+                        "self-propagating worms (Shai-Hulud) run a disk-wide "
+                        "secret scan (TruffleHog), so rotate EVERY credential on "
+                        "the machine, not just shell-environment ones \xe2\x80\x94 "
+                        "if you publish packages, revoke your npm/PyPI token "
+                        "FIRST, before the worm can republish from your account";
                     static const char pkg_cas[] =
-                        "all API keys, tokens, and credentials that could be "
-                        "read from your shell environment at install time "
-                        "\xe2\x80\x94 post-install scripts inherit your full "
-                        "PATH, HOME, and environment variables";
+                        "if you maintain packages, your registry publish token is "
+                        "the worm's self-propagation vector \xe2\x80\x94 it "
+                        "republishes the payload into YOUR packages, infecting "
+                        "every downstream user; revoke the token and audit your "
+                        "published versions for unexpected releases, plus all "
+                        "disk-resident API keys, SSH keys, and cloud credentials "
+                        "a TruffleHog-style scan would harvest";
                     char e[512];
                     json_escape(pkg_pat, e, sizeof(e));
                     printf(",\"pattern\":\"%s\"", e);
@@ -6209,12 +6215,16 @@ main(int argc, char **argv) {
                            "official registry page; use --dry-run to preview before "
                            "installing\n");
                     printf("  \xe2\x9a\x91 If you acted: remove immediately "
-                           "(pip/npm/cargo uninstall); review the post-install "
-                           "script and rotate credentials that were in your shell\n");
-                    printf("  \xe2\x8a\x95 Also change: all API keys, tokens, and "
-                           "credentials readable from your shell at install time "
-                           "\xe2\x80\x94 post-install scripts inherit your full "
-                           "environment\n");
+                           "(pip/npm/cargo uninstall) and inspect the lifecycle "
+                           "script; self-propagating worms (Shai-Hulud) run a "
+                           "disk-wide secret scan, so rotate EVERY credential on "
+                           "the machine \xe2\x80\x94 if you publish packages, revoke "
+                           "your npm/PyPI token FIRST\n");
+                    printf("  \xe2\x8a\x95 Also change: if you maintain packages, "
+                           "your publish token is the worm's self-propagation "
+                           "vector \xe2\x80\x94 revoke it and audit your published "
+                           "versions for unexpected releases, plus all disk-resident "
+                           "API keys, SSH keys, and cloud credentials\n");
                 } else {
                     const char *ex = hlse_exoneration_for("package", pv.score);
                     if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);

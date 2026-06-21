@@ -3579,6 +3579,35 @@ assert "device-code" in d["pattern"].lower() or "oauth" in d["pattern"].lower(),
 ' && check "p64 json: pattern field carries device-code/OAuth label" "0" "0" \
    || check "p64 json: pattern field carries device-code/OAuth label" "0" "1"
 
+# ─── P65: npm self-propagating worm cascade (Shai-Hulud research) ─────────
+
+# p65: package BLOCK triage warns about disk-wide secret scan (not just shell env)
+./hlse_core package reqeusts pip 2>&1 \
+    | grep -qi "disk-wide secret scan\|rotate EVERY credential" \
+    && check "p65: package BLOCK triage warns disk-wide credential scan" "0" "0" \
+    || check "p65: package BLOCK triage warns disk-wide credential scan" "0" "1"
+
+# p65: package BLOCK triage tells maintainers to revoke publish token first
+./hlse_core package reqeusts pip 2>&1 \
+    | grep -qi "revoke your npm/PyPI token\|publish.*token.*FIRST" \
+    && check "p65: package BLOCK triage tells maintainers revoke publish token" "0" "0" \
+    || check "p65: package BLOCK triage tells maintainers revoke publish token" "0" "1"
+
+# p65: package BLOCK cascade names self-propagation vector
+./hlse_core package reqeusts pip 2>&1 \
+    | grep -qi "self-propagation vector\|republishes.*YOUR packages" \
+    && check "p65: package BLOCK cascade names self-propagation vector" "0" "0" \
+    || check "p65: package BLOCK cascade names self-propagation vector" "0" "1"
+
+# p65 json: package triage cites lifecycle scripts (preinstall/postinstall)
+./hlse_core --json package reqeusts pip 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "preinstall" in d["triage"] or "lifecycle" in d["triage"], d["triage"]
+assert "publish" in d["cascade_risk"].lower(), d["cascade_risk"]
+' && check "p65 json: package triage/cascade cite lifecycle + publish-token vector" "0" "0" \
+   || check "p65 json: package triage/cascade cite lifecycle + publish-token vector" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -2,6 +2,51 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.65] — 2026-06-21
+
+### Changed
+- **Perspective 65: `package` BLOCK triage and cascade advisories rewritten
+  for the self-propagating npm worm era (Shai-Hulud, Sep & Nov 2025; 796
+  packages backdoored, 500+ GitHub users' secrets exfiltrated).**
+
+  Socratic question, derived from Zenn/Qiita npm supply-chain incident
+  reports: "The `package` typosquat advisory tells a victim to 'rotate any
+  credentials that were in your shell environment during the install'. But
+  the 2025 Shai-Hulud worm doesn't read shell env — it runs TruffleHog, a
+  disk-wide secret scanner, harvesting EVERY credential on the machine. And
+  the cascade advisory says 'post-install scripts inherit your full PATH/
+  HOME/environment' — true, but it misses the worm's defining feature:
+  self-propagation. If the victim is a package maintainer, the worm steals
+  their npm/PyPI PUBLISH token and republishes the payload into THEIR
+  packages, infecting every downstream user. The advisory describes a 2015
+  threat model (env-var theft) for a 2025 attack (disk-wide scan +
+  self-replication). Shouldn't the triage reflect the actual worm
+  mechanics?"
+
+  Pure advisory change — no scoring/detection logic touched; the package
+  subcommand still detects typosquatting via Damerau-Levenshtein distance,
+  and the pattern label is unchanged. Only the BLOCK-band triage and
+  cascade_risk strings (both JSON and human paths) were updated:
+
+  - **triage** now says: remove the package and inspect the lifecycle script
+    (preinstall/postinstall); self-propagating worms run a disk-wide secret
+    scan (TruffleHog), so rotate EVERY credential on the machine, not just
+    shell-env ones — if you publish packages, revoke your npm/PyPI token
+    FIRST, before the worm republishes from your account.
+  - **cascade_risk** now leads with the self-propagation vector: if you
+    maintain packages, your registry publish token is the worm's
+    self-propagation vector — it republishes the payload into YOUR packages,
+    infecting every downstream user; revoke the token and audit your
+    published versions for unexpected releases, plus all disk-resident API
+    keys, SSH keys, and cloud credentials a TruffleHog-style scan would
+    harvest.
+
+  Research sources: Sysdig ("Shai-Hulud: The novel self-replicating worm"),
+  Datadog Security Labs ("Shai-Hulud 2.0 npm worm"), Checkmarx ("Inside
+  Shai-Hulud's Maw"), Qiita「たった『5セント』を盗んだ史上最大級のNPMサプライ
+  チェーン攻撃」, Zenn「npmパッケージの自己増殖型サプライチェーン攻撃について」.
+  4 new integration tests; 486 pass, 0 fail; zero warnings CLI + lib.
+
 ## [1.0.64] — 2026-06-21
 
 ### Added
