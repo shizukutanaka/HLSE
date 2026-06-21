@@ -3568,11 +3568,15 @@ hlse_text_triage(const TextVerdict *v) {
     if (!pat) return NULL;
 
     if (strstr(pat, "device-code") || strstr(pat, "OAuth"))
-        return "if you already entered the code: sign out of all Microsoft 365 "
-               "sessions, revoke all active tokens in entra.microsoft.com "
-               "(Security \xe2\x86\x92 Sign-ins \xe2\x86\x92 revoke), and rotate "
-               "the password \xe2\x80\x94 the attacker holds a refresh token that "
-               "outlives password reset alone";
+        return "if you entered the code OR clicked 'Accept' on a consent "
+               "screen: FIRST revoke the app's access at "
+               "myapplications.microsoft.com (or have an admin remove the "
+               "enterprise app), then sign out of all Microsoft 365 sessions "
+               "and revoke active tokens in entra.microsoft.com (Security "
+               "\xe2\x86\x92 Sign-ins \xe2\x86\x92 revoke), then rotate the "
+               "password \xe2\x80\x94 a consented app and a stolen refresh "
+               "token both outlive a password reset, so removing the app's "
+               "consent is the step most victims miss";
     if (strstr(pat, "ClickFix"))
         return "if you already pasted and ran the command: disconnect from the "
                "network immediately, scan with antivirus, and consider a full "
@@ -3652,10 +3656,11 @@ hlse_text_verify(const TextVerdict *v) {
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
     if (strstr(pat, "device-code") || strstr(pat, "OAuth"))
-        return "never enter a verification code you did not initiate yourself "
-               "\xe2\x80\x94 even at a legitimate URL like microsoft.com/"
-               "devicelogin; the URL is real but the code is the attacker's "
-               "session, and entering it grants them your tokens";
+        return "never enter a verification code you did not initiate yourself, "
+               "and never click 'Accept' on an app-permission/consent screen "
+               "you did not start \xe2\x80\x94 even at a legitimate microsoft.com "
+               "or google.com URL; the page is real but the code or consent "
+               "hands the attacker's app your tokens";
     if (strstr(pat, "ClickFix"))
         return "never paste or run commands from unsolicited messages \xe2\x80\x94 "
                "legitimate software installations never require manual command-line "
@@ -4862,7 +4867,7 @@ print_json_text(const char *text, const TextVerdict *v) {
     char esc_pat[256] = "";
     char esc_tobj[512] = "";
     char esc_tvrf[512] = "";
-    char esc_ttri[512] = "";
+    char esc_ttri[640] = "";
     char esc_tcas[512] = "";
     char esc_exon[512] = "";
     char esc_cf[320] = "";

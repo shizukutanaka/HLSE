@@ -3767,6 +3767,38 @@ grep -q 'change the password for this account, enable 2FA' hlse_core.c \
     && check "p70: legacy 'enable 2FA' fallback fully removed from triage" "1" "0" \
     || check "p70: legacy 'enable 2FA' fallback fully removed from triage" "1" "1"
 
+# ─── P71: OAuth app-consent phishing remediation (Microsoft MDDR 2025) ────
+
+OAUTH_BLOCK="URGENT Microsoft Office 365 Security Alert: Your account verification code is 9K4MJX2Q. Confirm immediately at microsoft.com/devicelogin or your account will be locked in 1 hour - IT Admin"
+
+# p71: OAuth triage adds app-consent revocation (the consent-phishing variant)
+./hlse_core text "$OAUTH_BLOCK" 2>&1 \
+    | grep -qi "myapplications.microsoft.com\|revoke the app's access\|remove the enterprise app" \
+    && check "p71: OAuth triage covers app-consent revocation" "0" "0" \
+    || check "p71: OAuth triage covers app-consent revocation" "0" "1"
+
+# p71: OAuth triage explains consent outlives password reset
+./hlse_core text "$OAUTH_BLOCK" 2>&1 \
+    | grep -qi "consented app.*outlive\|removing the app's consent is the step most victims miss" \
+    && check "p71: OAuth triage explains consent outlives password reset" "0" "0" \
+    || check "p71: OAuth triage explains consent outlives password reset" "0" "1"
+
+# p71: OAuth verify covers the consent-click (Accept) variant, not just code entry
+./hlse_core text "$OAUTH_BLOCK" 2>&1 \
+    | grep -qi "click 'Accept' on an app-permission\|consent screen you did not start" \
+    && check "p71: OAuth verify covers consent-click variant" "0" "0" \
+    || check "p71: OAuth verify covers consent-click variant" "0" "1"
+
+# p71 json: triage not truncated and carries the consent step
+./hlse_core --json text "$OAUTH_BLOCK" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+t = d.get("triage","")
+assert "myapplications" in t, t
+assert t.rstrip().endswith("victims miss"), repr(t[-40:])
+' && check "p71 json: OAuth triage carries full consent step (no truncation)" "0" "0" \
+   || check "p71 json: OAuth triage carries full consent step (no truncation)" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -2,6 +2,57 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.71] — 2026-06-21
+
+### Changed
+- **Perspective 71: OAuth advisory extended to cover the app-consent phishing
+  variant — the triage now leads with revoking the malicious app's consent
+  (myapplications.microsoft.com), the step that device-code remediation alone
+  leaves out.**
+
+  Socratic question, derived from the Microsoft Digital Defense Report 2025
+  and Trend Micro 2026 browser-threat research: "P64 gave the OAuth
+  device-code attack its own pattern label and remediation — sign out
+  sessions, revoke tokens, rotate password. But Microsoft's MDDR 2025
+  describes a SIBLING vector that the same advisory does not address: OAuth
+  app-consent phishing, where the victim does not enter a code but clicks
+  'Accept' on a REAL Microsoft/Google consent screen, granting a malicious
+  registered app standing permissions. That consented app keeps its access
+  even after the victim signs out every session, revokes every token, and
+  resets the password — because app consent is a separate grant. The P64
+  triage tells the victim to revoke sessions and tokens but never says
+  'remove the app's consent', so a consent-phishing victim who follows it to
+  the letter is still compromised. The cascade lens already mentions
+  reviewing app consents — but the 60-second triage, the most-read lens,
+  omits the single decisive action. Shouldn't the triage and verify lenses
+  name the consent-click variant explicitly?"
+
+  Pure advisory change — no scoring/detection logic touched; the OAuth/
+  device-code pattern label and detection are unchanged. Two advisory lenses
+  keyed to the device-code/OAuth pattern were extended, and the text-triage
+  JSON escape buffer was enlarged (512 → 640) to carry the longer string
+  without truncation:
+
+  - **triage** (`hlse_text_triage`): now "if you entered the code OR clicked
+    'Accept' on a consent screen: FIRST revoke the app's access at
+    myapplications.microsoft.com (or have an admin remove the enterprise app),
+    then sign out of all Microsoft 365 sessions and revoke active tokens in
+    entra.microsoft.com (Security → Sign-ins → revoke), then rotate the
+    password — a consented app and a stolen refresh token both outlive a
+    password reset, so removing the app's consent is the step most victims
+    miss".
+  - **verify** (`hlse_text_verify`): now "never enter a verification code you
+    did not initiate yourself, and never click 'Accept' on an
+    app-permission/consent screen you did not start — even at a legitimate
+    microsoft.com or google.com URL; the page is real but the code or consent
+    hands the attacker's app your tokens".
+
+  Research sources: Microsoft Digital Defense Report 2025 (device-code +
+  OAuth consent phishing combination), Trend Micro「ブラウザに潜む危険：
+  拡張機能の悪用事例とリスク」, Koi Security RedDirection campaign,
+  Cyberhaven Chrome-extension compromise. 4 new integration tests; 510 pass,
+  0 fail; zero warnings CLI + lib.
+
 ## [1.0.70] — 2026-06-21
 
 ### Added
