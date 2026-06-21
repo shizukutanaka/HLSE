@@ -3382,7 +3382,11 @@ hlse_triage_for(const Verdict *v) {
     if (strstr(obj, "crypto") || strstr(obj, "seed phrase") || strstr(obj, "wallet"))
         return "if you entered a seed phrase or private key, move remaining assets "
                "to a new wallet immediately \xe2\x80\x94 crypto transfers cannot be "
-               "reversed or frozen; the compromised wallet is permanently lost";
+               "reversed or frozen; if instead you APPROVED a transaction or "
+               "connected your wallet to the site, revoke the token approval NOW "
+               "at revoke.cash or your chain's explorer (Token Approvals) \xe2\x80\x94 "
+               "a wallet drainer steals through a live approval, not your seed, "
+               "and keeps draining until the approval is revoked";
     if (strstr(obj, "password-vault"))
         return "change your master password now and rotate every credential stored "
                "in the vault \xe2\x80\x94 a compromised vault is a skeleton key to "
@@ -3866,7 +3870,9 @@ hlse_cascade_risk(const Verdict *v) {
         return "other exchanges and any account using the same email or "
                "password \xe2\x80\x94 on-chain transfers are irreversible so "
                "act before funds move; a compromised seed drains ALL wallets "
-               "derived from it, not just one";
+               "derived from it, not just one; and if you approved any contract, "
+               "audit and revoke EVERY active token approval (revoke.cash) \xe2\x80\x94 "
+               "a drainer often holds approvals across several tokens at once";
     if (strstr(obj, "identity") || strstr(obj, "keystone"))
         return "every account that lists this email as its password-reset "
                "address \xe2\x80\x94 whoever controls your inbox controls "

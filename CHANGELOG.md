@@ -2,6 +2,47 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.69] — 2026-06-21
+
+### Changed
+- **Perspective 69: crypto wallet-drainer triage/cascade now cover the
+  approval-revocation remedy (revoke.cash) — the defining defense against the
+  2026 Web3 "approve"-drainer vector, where the victim never reveals a seed
+  phrase but signs a malicious token approval.**
+
+  Socratic question, derived from Qiita/Zenn/Ledger/Tangem 2026 Web3-security
+  reports: "The crypto triage tells a wallet-phishing victim 'if you entered a
+  seed phrase or private key, move remaining assets to a new wallet'. That is
+  correct for the seed-theft vector — but the dominant 2026 wallet-drainer
+  vector is entirely different: the victim connects their wallet to a fake
+  WalletConnect/dApp page and signs an `approve` / `setApprovalForAll`
+  transaction that grants a malicious contract permission to move their
+  tokens. No seed phrase is ever revealed, so 'move to a new wallet' is the
+  wrong mental model — worse, the live approval keeps draining tokens that
+  arrive in the SAME wallet. The decisive remedy is to REVOKE the token
+  approval (revoke.cash or the chain explorer's Token Approvals page).
+  Shouldn't the triage name the approval-drainer vector and its revoke
+  remedy?"
+
+  Pure advisory change — no scoring/detection logic touched; the crypto brand
+  objective and wallet-drain URL detection are unchanged. The two crypto-
+  objective lenses in the URL advisory path were extended:
+
+  - **triage** (`hlse_triage_for`): adds "if instead you APPROVED a
+    transaction or connected your wallet to the site, revoke the token
+    approval NOW at revoke.cash or your chain's explorer (Token Approvals) —
+    a wallet drainer steals through a live approval, not your seed, and keeps
+    draining until the approval is revoked".
+  - **cascade_risk** (`hlse_cascade_risk`): adds "if you approved any
+    contract, audit and revoke EVERY active token approval (revoke.cash) — a
+    drainer often holds approvals across several tokens at once".
+
+  Research sources: Tangem「暗号資産ドレイナーとは？」, SBI VC「Web3活用｜
+  フィッシング詐欺から資産を守る」, Ledger Academy ("Web3 Scams Explained"),
+  Zenn「2025年の暗号資産・Web3はどこに向かうのか」, Check Point Research
+  (Google Play crypto-drainer apps). 4 new integration tests; 502 pass, 0
+  fail; zero warnings CLI + lib.
+
 ## [1.0.68] — 2026-06-21
 
 ### Changed

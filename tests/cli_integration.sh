@@ -3701,6 +3701,37 @@ assert "sticker" in v and "payee" in v, v
 ' && check "p68 json: QR verify carries physical+payment guidance" "0" "0" \
    || check "p68 json: QR verify carries physical+payment guidance" "0" "1"
 
+# ─── P69: crypto wallet-drainer approval-revocation guidance (Web3 2026) ──
+
+DRAIN_URL="https://metamask-connect-wallet.com/restore-wallet"
+
+# p69: crypto triage covers the approval-drainer revoke path (not just seed theft)
+./hlse_core "$DRAIN_URL" 2>&1 \
+    | grep -qi "revoke the token approval\|revoke.cash" \
+    && check "p69: crypto triage covers approval-revocation (revoke.cash)" "0" "0" \
+    || check "p69: crypto triage covers approval-revocation (revoke.cash)" "0" "1"
+
+# p69: triage explains a drainer steals via live approval, not the seed
+./hlse_core "$DRAIN_URL" 2>&1 \
+    | grep -qi "live approval, not your seed\|drainer steals through a live approval" \
+    && check "p69: crypto triage explains drainer uses live approval not seed" "0" "0" \
+    || check "p69: crypto triage explains drainer uses live approval not seed" "0" "1"
+
+# p69: cascade tells victim to audit/revoke EVERY active token approval
+./hlse_core "$DRAIN_URL" 2>&1 \
+    | grep -qi "revoke EVERY active token approval\|approvals across several tokens" \
+    && check "p69: crypto cascade audits all active token approvals" "0" "0" \
+    || check "p69: crypto cascade audits all active token approvals" "0" "1"
+
+# p69 json: triage + cascade both carry revoke.cash guidance
+./hlse_core --json "$DRAIN_URL" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "revoke.cash" in d.get("triage",""), d.get("triage","")
+assert "revoke.cash" in d.get("cascade_risk",""), d.get("cascade_risk","")
+' && check "p69 json: triage+cascade carry approval-revocation guidance" "0" "0" \
+   || check "p69 json: triage+cascade carry approval-revocation guidance" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
