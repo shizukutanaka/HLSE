@@ -3366,8 +3366,12 @@ hlse_triage_for(const Verdict *v) {
     if (!v || v->score < 60) return NULL;
     obj = hlse_attacker_objective(v);
     if (!obj)
-        return "change the password for this account, enable 2FA if not already "
-               "active, and check recent login activity for unauthorised sessions";
+        return "revoke all active sessions NOW (Security settings \xe2\x86\x92 "
+               "'sign out everywhere'), THEN change the password \xe2\x80\x94 "
+               "modern phishing proxies your real login and steals the session "
+               "cookie, so 2FA does not stop it and a password change alone "
+               "leaves the attacker's stolen session live; check login history "
+               "for sessions you do not recognise";
     if (strstr(obj, "crypto") || strstr(obj, "seed phrase") || strstr(obj, "wallet"))
         return "if you entered a seed phrase or private key, move remaining assets "
                "to a new wallet immediately \xe2\x80\x94 crypto transfers cannot be "

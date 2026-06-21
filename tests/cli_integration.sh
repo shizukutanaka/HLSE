@@ -3608,6 +3608,30 @@ assert "publish" in d["cascade_risk"].lower(), d["cascade_risk"]
 ' && check "p65 json: package triage/cascade cite lifecycle + publish-token vector" "0" "0" \
    || check "p65 json: package triage/cascade cite lifecycle + publish-token vector" "0" "1"
 
+# ─── P66: AiTM reverse-proxy phishing triage — session revocation over 2FA ─
+
+# p66: generic credential-harvest BLOCK triage leads with session revocation
+./hlse_core "https://secure-login-verify.xyz/account/signin" 2>&1 \
+    | grep -qi "revoke all active sessions\|sign out everywhere" \
+    && check "p66: credential-harvest triage leads with session revocation" "0" "0" \
+    || check "p66: credential-harvest triage leads with session revocation" "0" "1"
+
+# p66: triage explains 2FA does not stop AiTM session-cookie theft
+./hlse_core "https://secure-login-verify.xyz/account/signin" 2>&1 \
+    | grep -qi "2FA does not stop\|steals the session cookie" \
+    && check "p66: triage explains 2FA does not stop session-cookie theft" "0" "0" \
+    || check "p66: triage explains 2FA does not stop session-cookie theft" "0" "1"
+
+# p66 json: triage field carries the session-revocation guidance
+./hlse_core --json "https://secure-login-verify.xyz/account/signin" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+t = d.get("triage", "")
+assert "revoke all active sessions" in t or "sign out everywhere" in t, t
+assert "session cookie" in t, t
+' && check "p66 json: triage carries AiTM session-revocation guidance" "0" "0" \
+   || check "p66 json: triage carries AiTM session-revocation guidance" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

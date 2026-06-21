@@ -2,6 +2,48 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.66] — 2026-06-21
+
+### Changed
+- **Perspective 66: URL credential-harvest triage rewritten for the AiTM
+  reverse-proxy era — session revocation now leads, because modern phishing
+  (Evilginx, VoidProxy, AiTM PhaaS kits) defeats 2FA by stealing the
+  post-authentication session cookie.**
+
+  Socratic question, derived from Qiita/Zenn/Okta/Trend Micro 2025–2026 AiTM
+  reports: "The generic URL triage tells a phished victim to 'change the
+  password for this account, enable 2FA if not already active'. But this
+  advice describes a 2018 threat model. In 2026, the dominant credential-
+  harvest mechanism is Adversary-in-the-Middle: the phishing domain runs a
+  reverse proxy (Evilginx/VoidProxy) that relays your real login to the
+  genuine site and captures the SESSION COOKIE that is issued AFTER 2FA
+  succeeds. 'Enable 2FA' is actively misleading — the victim already had 2FA
+  and it did not help; worse, a password change alone does NOT invalidate the
+  stolen session cookie, so the attacker stays logged in. The decisive action
+  is to revoke all active sessions ('sign out everywhere'), which kills the
+  stolen cookie. Shouldn't the triage lead with the action that actually
+  stops an AiTM attacker?"
+
+  Pure advisory change — no scoring/detection logic touched. The generic
+  fallback in `hlse_triage_for()` (which fires for credential-harvest
+  phishing without a specific brand-objective class, in both the `if (!obj)`
+  early path and the final return) was rewritten from "change the password
+  for this account, enable 2FA if not already active, and check recent login
+  activity for unauthorised sessions" to: "revoke all active sessions NOW
+  (Security settings → 'sign out everywhere'), THEN change the password —
+  modern phishing proxies your real login and steals the session cookie, so
+  2FA does not stop it and a password change alone leaves the attacker's
+  stolen session live; check login history for sessions you do not
+  recognise". The brand-specific triage cases that already advise session
+  revocation (identity/keystone, social) were left unchanged.
+
+  Research sources: Okta ("Uncloaking VoidProxy", "phishing-resistant MFA"),
+  Trend Micro JP ("多要素認証を突破するAiTM攻撃とは"), Cisco Talos
+  ("state-of-the-art phishing MFA bypass"), Zenn「フィッシングサイトを
+  テイクダウンせずに無力化する方法 (Evilginx2)」, note「リアルタイム
+  フィッシング（AiTM）徹底解説」. 3 new integration tests; 489 pass, 0 fail;
+  zero warnings CLI + lib.
+
 ## [1.0.65] — 2026-06-21
 
 ### Changed
