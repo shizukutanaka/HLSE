@@ -2301,6 +2301,12 @@ hlse_text_exoneration(const TextVerdict *v) {
                "and physical adverts. Decisive test: scan with a QR decoder that "
                "shows the URL before opening it, then verify the domain belongs "
                "to the expected organisation";
+    if (strstr(pat, "grandparent") || strstr(pat, "emergency impersonation"))
+        return "family members do have genuine emergencies. Decisive test: a "
+               "familiar voice is no longer proof \xe2\x80\x94 AI clones a voice "
+               "from a few seconds of audio; hang up and call them back on their "
+               "own known number, and ask a pre-agreed safe word that an AI "
+               "clone cannot know";
     if (strstr(pat, "callback") || strstr(pat, "TOAD") || strstr(pat, "vishing"))
         return "organisations do send callback numbers for account verification. "
                "Decisive test: find the number independently on the organisation's "
@@ -3575,7 +3581,10 @@ hlse_text_triage(const TextVerdict *v) {
     if (strstr(pat, "grandparent") || strstr(pat, "emergency impersonation"))
         return "call the family member directly on a number you already know "
                "\xe2\x80\x94 if they are genuinely in trouble, they can confirm "
-               "it themselves; do not send money or gift cards until you reach them";
+               "it themselves; a voice that sounds exactly like them is NOT "
+               "proof \xe2\x80\x94 AI clones a voice from 3 seconds of audio, so "
+               "ask a pre-agreed safe word and do not send money or gift cards "
+               "until you reach them on your own number";
     if (strstr(pat, "ransom") || strstr(pat, "extortion"))
         return "do not pay \xe2\x80\x94 screenshot the message and report to "
                "your local cybercrime unit (FBI IC3, Action Fraud, etc.), then "
@@ -3655,9 +3664,11 @@ hlse_text_verify(const TextVerdict *v) {
         return "verify the firm's FCA/SEC/ASIC registration before engaging \xe2\x80\x94 "
                "registration numbers must match the official regulator's public register";
     if (strstr(pat, "grandparent") || strstr(pat, "emergency impersonation"))
-        return "call the family member directly on their known number before sending "
-               "any money or meeting any courier \xe2\x80\x94 take at least 10 minutes "
-               "to verify independently";
+        return "do not trust the voice \xe2\x80\x94 AI voice-cloning reproduces a "
+               "loved one from a few seconds of audio; hang up and call the "
+               "family member back on their own known number, and ask a "
+               "pre-agreed safe word before sending any money or meeting any "
+               "courier \xe2\x80\x94 take at least 10 minutes to verify independently";
     if (strstr(pat, "callback") || strstr(pat, "TOAD") || strstr(pat, "vishing"))
         return "do not call the number in this message \xe2\x80\x94 find the "
                "organisation's number independently on their official website";

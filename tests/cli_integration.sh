@@ -3632,6 +3632,38 @@ assert "session cookie" in t, t
 ' && check "p66 json: triage carries AiTM session-revocation guidance" "0" "0" \
    || check "p66 json: triage carries AiTM session-revocation guidance" "0" "1"
 
+# ─── P67: AI voice-clone defense for emergency/grandparent scams (2026) ───
+
+EMERG_BLOCK="Grandma it is me. I was in a car accident and I am in jail. I need bail money immediately. Please don't call mom. Send it right away"
+
+# p67: emergency BLOCK verify warns voice is not proof (AI clone)
+./hlse_core text "$EMERG_BLOCK" 2>&1 \
+    | grep -qi "do not trust the voice\|voice-cloning\|AI clones a voice" \
+    && check "p67: emergency verify warns AI voice-cloning" "0" "0" \
+    || check "p67: emergency verify warns AI voice-cloning" "0" "1"
+
+# p67: emergency BLOCK triage recommends a pre-agreed safe word
+./hlse_core text "$EMERG_BLOCK" 2>&1 \
+    | grep -qi "safe word" \
+    && check "p67: emergency triage recommends pre-agreed safe word" "0" "0" \
+    || check "p67: emergency triage recommends pre-agreed safe word" "0" "1"
+
+# p67: emergency LOG-band exoneration carries the voice-clone falsifying test
+./hlse_core text "had an accident, please help" 2>&1 \
+    | grep -qi "familiar voice is no longer proof\|safe word" \
+    && check "p67: emergency LOG exoneration cites voice-clone test" "0" "0" \
+    || check "p67: emergency LOG exoneration cites voice-clone test" "0" "1"
+
+# p67 json: emergency BLOCK verify+triage carry safe-word guidance
+./hlse_core --json text "$EMERG_BLOCK" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+v, t = d.get("verify",""), d.get("triage","")
+assert "safe word" in v or "voice-cloning" in v, v
+assert "safe word" in t or "AI clones a voice" in t, t
+' && check "p67 json: emergency verify+triage carry voice-clone/safe-word guidance" "0" "0" \
+   || check "p67 json: emergency verify+triage carry voice-clone/safe-word guidance" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

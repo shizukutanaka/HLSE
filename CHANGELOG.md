@@ -2,6 +2,50 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.67] — 2026-06-21
+
+### Changed
+- **Perspective 67: emergency/grandparent-scam advisories updated for the AI
+  voice-cloning era — "a familiar voice is no longer proof" and "ask a
+  pre-agreed safe word" now appear in the verify, triage, and exoneration
+  lenses.**
+
+  Socratic question, derived from Qiita/McAfee/Kaspersky/ESET 2026 reports on
+  AI voice-clone fraud (Japan's special-fraud losses hit a record ¥141.4B in
+  2025; a voice can be cloned from 3 seconds of audio at 85% fidelity): "The
+  emergency-scam advisory says 'call the family member directly on a number
+  you already know'. That callback step is correct — but it omits the single
+  most important fact of the 2026 threat model: the attacker may have ALREADY
+  called using a cloned voice that sounds exactly like the grandchild, and
+  the victim's instinct is 'but it was definitely their voice'. The advisory
+  never tells the victim that a familiar voice is no longer evidence of
+  identity, nor does it recommend the one defense an AI clone cannot defeat: a
+  pre-agreed safe word. Shouldn't the guidance name the voice-clone vector
+  explicitly and give the safe-word countermeasure?"
+
+  Pure advisory change — no scoring/detection logic touched; the
+  Emergency/grandparent signal and pattern label are unchanged. Three advisory
+  lenses keyed to the emergency/grandparent pattern were updated:
+
+  - **verify** (`hlse_text_verify`): "do not trust the voice — AI
+    voice-cloning reproduces a loved one from a few seconds of audio; hang up
+    and call the family member back on their own known number, and ask a
+    pre-agreed safe word before sending any money or meeting any courier".
+  - **triage** (`hlse_text_triage`): adds "a voice that sounds exactly like
+    them is NOT proof — AI clones a voice from 3 seconds of audio, so ask a
+    pre-agreed safe word".
+  - **exoneration** (`hlse_text_exoneration`, new emergency-pattern entry for
+    the LOG/ALERT band): "a familiar voice is no longer proof — AI clones a
+    voice from a few seconds of audio; hang up and call them back on their own
+    known number, and ask a pre-agreed safe word that an AI clone cannot
+    know".
+
+  Research sources: McAfee「ディープフェイク詐欺とAI音声によるなりすまし」,
+  Kaspersky「AI音声詐欺：偽の電話はどう機能し、どう身を守るか」, ESET
+  「AIで音声を偽造し詐欺に悪用する手口」, Qiita「AI音声詐欺 対策ガイド2026」,
+  PSI CyberSecurity Insight（ディープフェイク音声詐欺・経営層なりすまし）.
+  4 new integration tests; 493 pass, 0 fail; zero warnings CLI + lib.
+
 ## [1.0.66] — 2026-06-21
 
 ### Changed
