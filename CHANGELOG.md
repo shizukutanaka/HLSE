@@ -2,6 +2,64 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.73] — 2026-06-21
+
+### Added
+- **Perspective 73: payment-diversion BEC (bank-account-change / payroll
+  fraud) now has its own pattern label and advisory lenses — previously this
+  fastest-growing BEC variant (per the FBI) was mislabeled "urgency
+  credential-harvest phishing" and told victims to change their password.**
+
+  Socratic question, derived from Proofpoint/SpiderLabs/FBI 2026 BEC reports:
+  "HLSE already detects vendor/payroll banking-change language ('our bank
+  account has changed', 'please update our bank', 'new banking details') — a
+  vendor banking-change message scores 73 (BLOCK). But it classifies as
+  'urgency credential-harvest phishing', so the objective says 'account
+  credentials — all sites sharing this password are at cascade risk' and the
+  triage says 'change that account's password and enable 2FA'. That advice is
+  not just unhelpful, it is WRONG: payroll/vendor-diversion fraud is not a
+  credential attack — the attacker requested a BANK-ACCOUNT CHANGE to reroute
+  the next payroll deposit or invoice payment to their account. No password is
+  at risk; the decisive action is to verify the banking change out-of-band and
+  refuse to update the payee. The FBI calls payroll diversion one of the
+  fastest-growing BEC variants. Shouldn't a bank-account-change request get
+  its own label and a remedy that matches the actual harm?"
+
+  Pure advisory change — no scoring/detection logic touched. The banking-change
+  phrases already fire as signals (and already produce a BLOCK score); this
+  perspective only adds a classification branch and the advisory strings keyed
+  to it. The new branch keys on banking-change phrases surfaced in the matched-
+  phrase text of the reasons (same mechanism as the existing gift-card →
+  tech-support keying), and is placed ABOVE the generic BEC-wire-transfer and
+  credential-harvest branches so a bank-account-change request is labeled
+  precisely. A pure CEO/wire-transfer message (no banking-change language) is
+  unaffected and still classifies as "BEC / CEO-fraud wire-transfer".
+
+  - **pattern** (`hlse_classify_text_attack`): new label "payment-diversion
+    BEC (bank-account-change / payroll fraud)".
+  - **objective**: "redirected payments — your next payroll deposit or vendor
+    invoice is rerouted to the attacker's bank account; the money is gone once
+    the payment run clears".
+  - **verify**: "confirm any bank-account or direct-deposit change by calling
+    the employee or vendor on a number you ALREADY have on file — never the
+    number, email, or reply-to in the request; a banking-detail change is the
+    single highest-risk request".
+  - **triage**: "do NOT update the bank/payee details; if you already changed
+    them, revert immediately and alert your payroll/accounts-payable team and
+    your bank — check whether a payment run already went out so it can be
+    recalled while it is still pending".
+  - **cascade**: "every other payee record an attacker with this mailbox could
+    alter — audit all recent bank-detail changes … check whether the email
+    account that sent this is itself compromised".
+  - **exoneration** (LOG/ALERT band): "employees and vendors do legitimately
+    change banks. Decisive test: call the person or company on a number you
+    ALREADY have on file … before updating any payee".
+
+  Research sources: Proofpoint「Understanding BEC Payroll Scams: Direct Deposit
+  Diversion」, Trustwave SpiderLabs「BEC Trends: Payroll Diversion Dominates」,
+  Unit21 (vendor/payroll ACH fraud), IRONSCALES, FBI IC3 BEC statistics. 6 new
+  integration tests; 520 pass, 0 fail; zero warnings CLI + lib.
+
 ## [1.0.72] — 2026-06-21
 
 ### Changed

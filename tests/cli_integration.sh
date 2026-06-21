@@ -3831,6 +3831,49 @@ assert "ALWAYS fake" in v and v.rstrip().endswith("payment"), repr(v[-30:])
 ' && check "p72 json: tech-support triage+verify intact (no truncation)" "0" "0" \
    || check "p72 json: tech-support triage+verify intact (no truncation)" "0" "1"
 
+# ─── P73: payment-diversion BEC (bank-account-change / payroll fraud) ─────
+
+PDIV_BLOCK="URGENT from our accounts team: our bank account has changed, please update our payment details and remit the outstanding invoice to the new banking details immediately"
+
+# p73: vendor banking-change classifies as payment-diversion (not credential-harvest)
+./hlse_core text "$PDIV_BLOCK" 2>&1 \
+    | grep -qi "Pattern:.*payment-diversion BEC" \
+    && check "p73: vendor banking-change → payment-diversion BEC pattern" "0" "0" \
+    || check "p73: vendor banking-change → payment-diversion BEC pattern" "0" "1"
+
+# p73: objective names redirected payments (not credentials/passwords)
+./hlse_core text "$PDIV_BLOCK" 2>&1 \
+    | grep -qi "redirected payments\|rerouted to the attacker's bank account" \
+    && check "p73: payment-diversion objective names redirected payments" "0" "0" \
+    || check "p73: payment-diversion objective names redirected payments" "0" "1"
+
+# p73: verify says confirm bank change via known callback (not password reset)
+./hlse_core text "$PDIV_BLOCK" 2>&1 \
+    | grep -qi "number you ALREADY have on file\|highest-risk request" \
+    && check "p73: payment-diversion verify says out-of-band callback" "0" "0" \
+    || check "p73: payment-diversion verify says out-of-band callback" "0" "1"
+
+# p73: triage says do NOT update payee + check pending payment run
+./hlse_core text "$PDIV_BLOCK" 2>&1 \
+    | grep -qi "do NOT update the bank/payee\|payment run already went out" \
+    && check "p73: payment-diversion triage says don't update + recall run" "0" "0" \
+    || check "p73: payment-diversion triage says don't update + recall run" "0" "1"
+
+# p73: pure CEO wire-transfer must NOT be reclassified as payment-diversion
+./hlse_core text "This is the CEO. I need you to process an urgent wire transfer of 50000 dollars to a new supplier today. Keep this confidential until the deal closes" 2>&1 \
+    | grep -qi "Pattern:.*payment-diversion" \
+    && check "p73: CEO wire-transfer NOT mislabeled payment-diversion" "1" "0" \
+    || check "p73: CEO wire-transfer NOT mislabeled payment-diversion" "1" "1"
+
+# p73 json: pattern + objective carry the payment-diversion framing
+./hlse_core --json text "$PDIV_BLOCK" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "payment-diversion" in d.get("pattern",""), d.get("pattern","")
+assert "redirected payments" in d.get("objective",""), d.get("objective","")
+' && check "p73 json: payment-diversion pattern+objective present" "0" "0" \
+   || check "p73 json: payment-diversion pattern+objective present" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -2296,6 +2296,11 @@ hlse_text_exoneration(const TextVerdict *v) {
                "you requested yourself. Decisive test: did YOU initiate a sign-in "
                "or device-pairing flow in the last 60 seconds? If not, the code "
                "is the attacker's session and entering it grants them your tokens";
+    if (strstr(pat, "payment-diversion"))
+        return "employees and vendors do legitimately change banks. Decisive "
+               "test: call the person or company on a number you ALREADY have on "
+               "file (never the contact in this message) and confirm the change "
+               "before updating any payee or direct-deposit record";
     if (strstr(pat, "QR") || strstr(pat, "quishing"))
         return "QR codes appear legitimately in event tickets, restaurant menus, "
                "and physical adverts. Decisive test: scan with a QR decoder that "
@@ -2492,7 +2497,7 @@ hlse_classify_text_attack(const TextVerdict *v) {
     int emergency = 0, clickfix = 0;
     int fake_alert = 0, direct_fin = 0;
     int amp_bec = 0, amp_tss = 0, amp_ceo = 0, amp_laf = 0;
-    int devicecode = 0;
+    int devicecode = 0, bankchange = 0;
 
     if (!v || v->n_reasons == 0) return NULL;
 
@@ -2529,6 +2534,21 @@ hlse_classify_text_attack(const TextVerdict *v) {
             strstr(r, "two-factor code") ||
             strstr(r, "one-time code") ||
             strstr(r, "otp code"))                    devicecode = 1;
+        /* Payment/payroll-diversion BEC (P73): the attacker impersonates an
+         * employee (to HR/payroll) or a vendor (to AP/finance) and requests a
+         * BANK-ACCOUNT / direct-deposit CHANGE, diverting future payments to
+         * their account. This is the fastest-growing BEC variant (FBI), but it
+         * is NOT a wire-transfer and NOT credential harvest — so it needs its
+         * own label and advisory. The banking-change phrases surface in the
+         * matched-phrase "e.g. '...'" of the reason text, same as gift-card. */
+        if (strstr(r, "bank account has changed") ||
+            strstr(r, "banking details") ||
+            strstr(r, "payment details have changed") ||
+            strstr(r, "update our bank") ||
+            strstr(r, "update our payment") ||
+            strstr(r, "direct deposit") ||
+            strstr(r, "new bank account") ||
+            strstr(r, "new payment account"))         bankchange = 1;
     }
 
     /* Fake security alerts and direct financial-action signals are credential/
@@ -2547,6 +2567,12 @@ hlse_classify_text_attack(const TextVerdict *v) {
     if (devicecode && (authority || fake_alert))
         return "OAuth device-code phishing "
                "(legitimate URL, attacker-supplied verification code)";
+    /* Payment/payroll-diversion BEC takes priority over the generic
+     * wire-transfer and credential-harvest labels: a bank-account-change
+     * request is a distinct attack with a distinct remedy (verify the change
+     * out-of-band, do not update the payee), not a password reset. */
+    if (bankchange)
+        return "payment-diversion BEC (bank-account-change / payroll fraud)";
     if (amp_ceo || (authority && secrecy && bait))
         return "BEC / CEO-fraud wire-transfer";
     if (amp_bec || (urgency && bait && authority))
@@ -3567,6 +3593,12 @@ hlse_text_triage(const TextVerdict *v) {
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
 
+    if (strstr(pat, "payment-diversion"))
+        return "do NOT update the bank/payee details; if you already changed "
+               "them, revert immediately and alert your payroll/accounts-payable "
+               "team and your bank \xe2\x80\x94 check whether a payment run already "
+               "went out so it can be recalled while it is still pending; verify "
+               "the real employee or vendor on a phone number you already have";
     if (strstr(pat, "device-code") || strstr(pat, "OAuth"))
         return "if you entered the code OR clicked 'Accept' on a consent "
                "screen: FIRST revoke the app's access at "
@@ -3658,6 +3690,12 @@ hlse_text_verify(const TextVerdict *v) {
     if (!v || v->score < 60) return NULL;
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
+    if (strstr(pat, "payment-diversion"))
+        return "confirm any bank-account or direct-deposit change by calling the "
+               "employee or vendor on a number you ALREADY have on file \xe2\x80\x94 "
+               "never the number, email, or reply-to in the request; a banking-"
+               "detail change is the single highest-risk request, so treat it as "
+               "fraud until verified through a separate channel";
     if (strstr(pat, "device-code") || strstr(pat, "OAuth"))
         return "never enter a verification code you did not initiate yourself, "
                "and never click 'Accept' on an app-permission/consent screen "
@@ -3739,6 +3777,10 @@ hlse_text_objective(const TextVerdict *v) {
     if (!v || v->score < 60) return NULL;
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
+    if (strstr(pat, "payment-diversion"))
+        return "redirected payments \xe2\x80\x94 your next payroll deposit or "
+               "vendor invoice is rerouted to the attacker's bank account; the "
+               "money is gone once the payment run clears";
     if (strstr(pat, "device-code") || strstr(pat, "OAuth"))
         return "Microsoft 365 / Azure OAuth tokens \xe2\x80\x94 grants persistent "
                "access that bypasses MFA and survives password reset; attacker "
@@ -3805,6 +3847,11 @@ hlse_text_cascade(const TextVerdict *v) {
     if (!v || v->score < 60) return NULL;
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
+    if (strstr(pat, "payment-diversion"))
+        return "every other payee record an attacker with this mailbox could "
+               "alter \xe2\x80\x94 audit all recent bank-detail changes for staff "
+               "and vendors, and check whether the email account that sent this "
+               "is itself compromised (it is the likely entry point)";
     if (strstr(pat, "device-code") || strstr(pat, "OAuth"))
         return "every SaaS app connected to your Microsoft 365 tenant (SharePoint, "
                "Teams, Exchange, OneDrive) and any third-party app with consent "
