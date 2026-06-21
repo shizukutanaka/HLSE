@@ -2,6 +2,53 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.70] — 2026-06-21
+
+### Added
+- **Perspective 70: RCS sender-name spoofing warning + JSON `channel_reason`
+  field — plus a P66 follow-up that removes the last "enable 2FA" fallback
+  string from the URL triage path.**
+
+  Socratic question, derived from Qiita/Zenn/antiphishing.jp 2026 smishing
+  guidelines: "Japan's major carriers (NTTドコモ, au, ソフトバンク, 楽天)
+  switched on RCS Universal Profile in March 2026. RCS lets the sender choose
+  the displayed name and put a brand logo on the bubble — so a message that
+  shows 'ヤマト運輸' next to the Yamato logo can be from anyone with an RCS
+  hub. The SMS channel modifier already adds +15 to the score (correct), but
+  the human-readable reason just says 'SMS is the primary smishing vector' —
+  it never warns the user that the displayed sender name is no longer proof
+  of identity, which is the single most surprising fact about RCS smishing
+  for users used to caller-ID. AND the JSON output doesn't carry the channel
+  reason string at all — JSON consumers see only `channel`, `channel_delta`,
+  `effective_score`, `effective_action` but not WHY those values were added.
+  Shouldn't the SMS reason name the RCS spoofing risk, and shouldn't the JSON
+  carry the channel reason alongside the other channel fields?"
+
+  Two pure-advisory changes plus one consistency fix:
+
+  - **SMS channel reason extended** (`channel_reason`): now says "SMS is the
+    primary smishing vector; on RCS the displayed sender name is set by the
+    sender, so a familiar brand or carrier label is NOT proof of identity".
+    The +15 score modifier is unchanged.
+  - **`channel_reason` field added to URL and text JSON output**: alongside
+    the existing `channel`/`channel_delta`/`effective_score`/`effective_action`
+    fields, so JSON consumers receive the same human-readable reason the CLI
+    path already emits. Only present when a `--from` channel modifier is in
+    use.
+  - **P66 follow-up — last "enable 2FA" fallback removed**: the final return
+    inside `hlse_triage_for()` (the catch-all when the brand objective is
+    non-NULL but matches no specific class) still carried the pre-AiTM
+    "change the password, enable 2FA, check recent login activity" wording,
+    which P66 had only replaced in the `if (!obj)` early-return path. It now
+    uses the same AiTM-aware "revoke all active sessions NOW … THEN change
+    the password" advice for full consistency.
+
+  Research sources: 警察庁 フィッシング対策, フィッシング対策協議会 利用者
+  向けガイドライン2026年度版, ALSOK「スミッシングとは何か」, kanade207
+  「スマホが変わりました！RCS搭載で便利になる一方、詐欺に遭いやすくなります」,
+  IPA「国税庁をかたる偽SMS」. 4 new integration tests; 506 pass, 0 fail; zero
+  warnings CLI + lib.
+
 ## [1.0.69] — 2026-06-21
 
 ### Changed

@@ -3422,8 +3422,12 @@ hlse_triage_for(const Verdict *v) {
     if (strstr(obj, "delivery-fee"))
         return "if you entered card details on the fake delivery page, call the "
                "number on the back of the card immediately to block it";
-    return "change the password for this account, enable 2FA if not already "
-           "active, and check recent login activity for unauthorised sessions";
+    return "revoke all active sessions NOW (Security settings \xe2\x86\x92 "
+           "'sign out everywhere'), THEN change the password \xe2\x80\x94 "
+           "modern phishing proxies your real login and steals the session "
+           "cookie, so 2FA does not stop it and a password change alone "
+           "leaves the attacker's stolen session live; check login history "
+           "for sessions you do not recognise";
 }
 
 /* Map an objective-class label to its concise triage imperative for use
@@ -4621,7 +4625,9 @@ channel_reason(const char *ch)
     if (strcmp(ch, "qr")    == 0)
         return "Channel (qr): +20 \xe2\x80\x94 QR codes mask destinations (quishing)";
     if (strcmp(ch, "sms")   == 0)
-        return "Channel (sms): +15 \xe2\x80\x94 SMS is the primary smishing vector";
+        return "Channel (sms): +15 \xe2\x80\x94 SMS is the primary smishing "
+               "vector; on RCS the displayed sender name is set by the sender, "
+               "so a familiar brand or carrier label is NOT proof of identity";
     if (strcmp(ch, "email") == 0)
         return "Channel (email): +10 \xe2\x80\x94 email is the primary phishing vector";
     if (strcmp(ch, "dm")    == 0)
@@ -4821,6 +4827,14 @@ print_json_url(const char *url, const Verdict *v) {
         printf(",\"channel\":\"%s\",\"channel_delta\":%d,\"effective_score\":%d,"
                "\"effective_action\":\"%s\"",
                g_from_channel, d, eff, action_for_score(eff));
+        {
+            const char *ch_rsn = channel_reason(g_from_channel);
+            if (ch_rsn) {
+                char esc_ch[512];
+                json_escape(ch_rsn, esc_ch, sizeof(esc_ch));
+                printf(",\"channel_reason\":\"%s\"", esc_ch);
+            }
+        }
     }
     printf(",\"reasons\":[");
     {
@@ -4892,6 +4906,14 @@ print_json_text(const char *text, const TextVerdict *v) {
         printf(",\"channel\":\"%s\",\"channel_delta\":%d,\"effective_score\":%d,"
                "\"effective_action\":\"%s\"",
                g_from_channel, d, eff, hlse_text_action_for_score(eff));
+        {
+            const char *ch_rsn = channel_reason(g_from_channel);
+            if (ch_rsn) {
+                char esc_ch[512];
+                json_escape(ch_rsn, esc_ch, sizeof(esc_ch));
+                printf(",\"channel_reason\":\"%s\"", esc_ch);
+            }
+        }
     }
     printf(",\"reasons\":[");
     {

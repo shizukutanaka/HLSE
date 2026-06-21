@@ -3732,6 +3732,41 @@ assert "revoke.cash" in d.get("cascade_risk",""), d.get("cascade_risk","")
 ' && check "p69 json: triage+cascade carry approval-revocation guidance" "0" "0" \
    || check "p69 json: triage+cascade carry approval-revocation guidance" "0" "1"
 
+# ─── P70: RCS sender-name spoofing + AiTM-aware triage fallback (2026) ────
+
+# p70: SMS channel reason warns RCS displayed sender name is not proof
+./hlse_core --from sms "https://yamato-delivery-update.xyz/track" 2>&1 \
+    | grep -qi "displayed sender name is set by the sender\|NOT proof of identity" \
+    && check "p70: SMS channel reason warns RCS sender name spoofable" "0" "0" \
+    || check "p70: SMS channel reason warns RCS sender name spoofable" "0" "1"
+
+# p70 json: smishing URL via SMS channel carries the RCS sender note in channel_reason
+./hlse_core --json --from sms "https://yamato-delivery-update.xyz/track" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+cr = d.get("channel_reason", "")
+assert "RCS" in cr and "sender name" in cr, cr
+' && check "p70 json: SMS channel_reason field carries RCS sender-spoof note" "0" "0" \
+   || check "p70 json: SMS channel_reason field carries RCS sender-spoof note" "0" "1"
+
+# p70 json: text via SMS channel also emits channel_reason
+./hlse_core --json --from sms text "Your package is held — pay the customs fee at the link" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "channel_reason" in d, d
+assert "RCS" in d["channel_reason"], d["channel_reason"]
+' && check "p70 json: text JSON via SMS carries channel_reason too" "0" "0" \
+   || check "p70 json: text JSON via SMS carries channel_reason too" "0" "1"
+
+# p70: hlse_triage_for final fallback (unknown objective class) carries AiTM advice
+# Find a URL that triggers a non-standard objective so the final fallback fires
+# (most credential-harvest URLs hit specific objective branches; rely on the
+# AiTM phrasing being present at least somewhere if reachable). Verify via the
+# source-level absence of the old "enable 2FA" wording — a regression guard.
+grep -q 'change the password for this account, enable 2FA' hlse_core.c \
+    && check "p70: legacy 'enable 2FA' fallback fully removed from triage" "1" "0" \
+    || check "p70: legacy 'enable 2FA' fallback fully removed from triage" "1" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
