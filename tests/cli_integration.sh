@@ -3923,6 +3923,49 @@ assert "password" in d.get("objective",""), d.get("objective","")
 ' && check "p74 json: MFA-fatigue pattern+objective present" "0" "0" \
    || check "p74 json: MFA-fatigue pattern+objective present" "0" "1"
 
+# ─── P75: fake-job / task scam (pay-to-start employment fraud) ───────────
+
+JOB_BLOCK="You are hired! Before you start, purchase your starter kit and buy your equipment - the equipment will be reimbursed on first paycheck. Send payment to begin"
+
+# p75: equipment advance-fee job scam classifies as fake-job (not investment)
+./hlse_core text "$JOB_BLOCK" 2>&1 \
+    | grep -qi "Pattern:.*fake-job / task scam" \
+    && check "p75: equipment job scam → fake-job/task scam pattern" "0" "0" \
+    || check "p75: equipment job scam → fake-job/task scam pattern" "0" "1"
+
+# p75: verify states a real job only pays money TO you
+./hlse_core text "$JOB_BLOCK" 2>&1 \
+    | grep -qi "a real job only ever pays money TO you" \
+    && check "p75: fake-job verify says money only flows TO you" "0" "0" \
+    || check "p75: fake-job verify says money only flows TO you" "0" "1"
+
+# p75: objective warns the work-from-home app may be a RAT
+./hlse_core text "$JOB_BLOCK" 2>&1 \
+    | grep -qi "remote-access trojan" \
+    && check "p75: fake-job objective warns work-from-home RAT" "0" "0" \
+    || check "p75: fake-job objective warns work-from-home RAT" "0" "1"
+
+# p75: triage points to FTC reportfraud + remove installed app
+./hlse_core text "$JOB_BLOCK" 2>&1 \
+    | grep -qi "reportfraud.ftc.gov\|disconnect from the internet and remove it" \
+    && check "p75: fake-job triage cites FTC report + remove app" "0" "0" \
+    || check "p75: fake-job triage cites FTC report + remove app" "0" "1"
+
+# p75: pure investment text must NOT be reclassified as fake-job
+./hlse_core text "Join our exclusive crypto investment group. Guaranteed 30 percent monthly returns with our automated trading bot. Deposit to start earning today" 2>&1 \
+    | grep -qi "Pattern:.*fake-job" \
+    && check "p75: investment scam NOT mislabeled fake-job" "1" "0" \
+    || check "p75: investment scam NOT mislabeled fake-job" "1" "1"
+
+# p75 json: pattern + objective carry the fake-job framing
+./hlse_core --json text "$JOB_BLOCK" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "fake-job" in d.get("pattern",""), d.get("pattern","")
+assert "never recover" in d.get("objective",""), d.get("objective","")
+' && check "p75 json: fake-job pattern+objective present" "0" "0" \
+   || check "p75 json: fake-job pattern+objective present" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -2296,6 +2296,11 @@ hlse_text_exoneration(const TextVerdict *v) {
                "you requested yourself. Decisive test: did YOU initiate a sign-in "
                "or device-pairing flow in the last 60 seconds? If not, the code "
                "is the attacker's session and entering it grants them your tokens";
+    if (strstr(pat, "fake-job") || strstr(pat, "task scam"))
+        return "legitimate recruiters do reach out with real openings. Decisive "
+               "test: does the 'job' require you to pay anything, deposit your "
+               "own funds, or buy equipment to start? A real job pays you "
+               "\xe2\x80\x94 money only ever flows TO you, never from you";
     if (strstr(pat, "MFA-fatigue") || strstr(pat, "push-bombing"))
         return "legitimate sign-ins do trigger MFA prompts. Decisive test: did "
                "YOU just try to log in? If an 'approve' request or push arrives "
@@ -2502,7 +2507,7 @@ hlse_classify_text_attack(const TextVerdict *v) {
     int emergency = 0, clickfix = 0;
     int fake_alert = 0, direct_fin = 0;
     int amp_bec = 0, amp_tss = 0, amp_ceo = 0, amp_laf = 0;
-    int devicecode = 0, bankchange = 0, mfapush = 0;
+    int devicecode = 0, bankchange = 0, mfapush = 0, jobscam = 0;
 
     if (!v || v->n_reasons == 0) return NULL;
 
@@ -2572,6 +2577,27 @@ hlse_classify_text_attack(const TextVerdict *v) {
             strstr(r, "approve in") ||
             strstr(r, "approve on your authenticator") ||
             strstr(r, "until you approve"))            mfapush = 1;
+        /* Fake-job / task scam (P75): 2026's fastest-growing consumer fraud
+         * (FTC: $521M, +1000% spike). The defining tell is a "job" that
+         * requires the victim to PAY to start — buy equipment, deposit funds
+         * to "unlock" tasks, or install a "work-from-home app" (often a RAT).
+         * Distinct remedy: a real job only ever pays money TO you. Phrases
+         * surface in the matched-phrase text of the reasons. */
+        if (strstr(r, "work from home opportunity") ||
+            strstr(r, "no experience required") ||
+            strstr(r, "starter kit") ||
+            strstr(r, "buy your equipment") ||
+            strstr(r, "purchase the equipment") ||
+            strstr(r, "equipment will be reimbursed") ||
+            strstr(r, "reimbursed on first paycheck") ||
+            strstr(r, "mystery shopper") ||
+            strstr(r, "brand ambassador") ||
+            strstr(r, "money transfer agent") ||
+            strstr(r, "reshipping agent") ||
+            strstr(r, "shipping agent position") ||
+            strstr(r, "per day from home") ||
+            strstr(r, "per week from home") ||
+            strstr(r, "weekly income from home"))      jobscam = 1;
     }
 
     /* Fake security alerts and direct financial-action signals are credential/
@@ -2608,6 +2634,12 @@ hlse_classify_text_attack(const TextVerdict *v) {
         return "business email compromise (BEC) wire-transfer fraud";
     if (amp_tss || (urgency && bait && strstr(v->reasons[0], "gift")))
         return "tech-support gift-card scam";
+    /* Fake-job / task scam takes priority over the generic lottery/advance-fee
+     * and investment/pig-butchering labels: a "job" that asks you to pay,
+     * deposit, or buy equipment to start is a distinct fraud with a distinct
+     * tell — a real job only ever pays money TO you. */
+    if (jobscam)
+        return "fake-job / task scam (pay-to-start employment fraud)";
     if (amp_laf || (prize && bait))
         return "lottery / advance-fee fraud";
     if (ransom)
@@ -3622,6 +3654,13 @@ hlse_text_triage(const TextVerdict *v) {
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
 
+    if (strstr(pat, "fake-job") || strstr(pat, "task scam"))
+        return "stop all payments and deposits now; if you already paid or "
+               "deposited crypto, contact your bank or exchange immediately; if "
+               "you installed any 'work-from-home' or 'security' app they sent, "
+               "disconnect from the internet and remove it \xe2\x80\x94 it may be a "
+               "remote-access trojan; report to the FTC (reportfraud.ftc.gov) "
+               "or your national fraud line";
     if (strstr(pat, "MFA-fatigue") || strstr(pat, "push-bombing"))
         return "deny/dismiss the prompt; do NOT approve it \xe2\x80\x94 then "
                "change your password immediately from a device you trust, "
@@ -3725,6 +3764,12 @@ hlse_text_verify(const TextVerdict *v) {
     if (!v || v->score < 60) return NULL;
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
+    if (strstr(pat, "fake-job") || strstr(pat, "task scam"))
+        return "a real job only ever pays money TO you \xe2\x80\x94 no legitimate "
+               "employer asks you to pay to start, deposit your own funds to "
+               "'unlock' tasks or earnings, or buy equipment upfront; that "
+               "request alone proves the job is fake, so stop before paying "
+               "anything";
     if (strstr(pat, "MFA-fatigue") || strstr(pat, "push-bombing"))
         return "never approve an MFA or authenticator prompt you did not start "
                "yourself \xe2\x80\x94 a prompt or 'approve' request that arrives "
@@ -3817,6 +3862,11 @@ hlse_text_objective(const TextVerdict *v) {
     if (!v || v->score < 60) return NULL;
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
+    if (strstr(pat, "fake-job") || strstr(pat, "task scam"))
+        return "upfront fees and deposits you will never recover \xe2\x80\x94 the "
+               "'job' exists to take your equipment payment or 'task' deposit; "
+               "any 'work-from-home app' they tell you to install may be a "
+               "remote-access trojan that drains your bank and files";
     if (strstr(pat, "MFA-fatigue") || strstr(pat, "push-bombing"))
         return "account takeover via MFA approval \xe2\x80\x94 the attacker "
                "already has your password and is spamming push prompts; "
@@ -3891,6 +3941,12 @@ hlse_text_cascade(const TextVerdict *v) {
     if (!v || v->score < 60) return NULL;
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
+    if (strstr(pat, "fake-job") || strstr(pat, "task scam"))
+        return "any card or account you used to pay, and any credentials you "
+               "entered on the fake 'employer portal' \xe2\x80\x94 plus, if you ran "
+               "their software, treat the whole device as compromised: scan it, "
+               "change passwords from a clean device, and watch for unauthorised "
+               "bank activity";
     if (strstr(pat, "MFA-fatigue") || strstr(pat, "push-bombing"))
         return "every account sharing this now-compromised password, and your "
                "email (the recovery gateway) \xe2\x80\x94 the attacker already "

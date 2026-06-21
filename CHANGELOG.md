@@ -2,6 +2,64 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.75] — 2026-06-21
+
+### Added
+- **Perspective 75: fake-job / task scam (pay-to-start employment fraud) now
+  has its own pattern label and advisory lenses — 2026's fastest-growing
+  consumer fraud (FTC: $521M lost, +1000% spike May–Jul 2026) was previously
+  split between the generic "lottery / advance-fee fraud" and "investment scam
+  / pig-butchering" labels.**
+
+  Socratic question, derived from FTC/McAfee 2026 remote-job-scam reports:
+  "HLSE already detects fake-job language ('work from home opportunity',
+  'starter kit', 'buy your equipment', 'reimbursed on first paycheck',
+  'mystery shopper') — an equipment-advance-fee job scam scores 67 (BLOCK).
+  But it classifies as 'investment scam / pig-butchering', so the verify lens
+  says 'check the firm's FCA/SEC registration' — irrelevant to a job seeker.
+  And a task-scam crypto-deposit lure classifies as 'lottery / advance-fee
+  fraud'. Neither names the one rule that settles every job scam: a real job
+  only ever pays money TO you — no legitimate employer asks you to pay to
+  start, deposit funds to 'unlock' tasks, or buy equipment upfront. Neither
+  warns that the 'work-from-home security suite' the victim is told to install
+  is often a remote-access trojan. Shouldn't the fastest-growing 2026 consumer
+  fraud get its own label and a remedy keyed to the pay-to-start tell and the
+  RAT risk?"
+
+  Pure advisory change — no scoring/detection logic touched. The fake-job
+  phrases already fire as signals (and already produce a BLOCK score); this
+  perspective only adds a classification branch and the advisory strings keyed
+  to it, using the same matched-phrase keying as P73/P74. The branch is placed
+  above the generic lottery/advance-fee and investment/pig-butchering branches
+  so a job scam is labeled precisely; a pure investment lure (no job language)
+  still classifies as "investment scam / pig-butchering".
+
+  - **pattern** (`hlse_classify_text_attack`): "fake-job / task scam
+    (pay-to-start employment fraud)".
+  - **objective**: "upfront fees and deposits you will never recover … any
+    'work-from-home app' they tell you to install may be a remote-access
+    trojan that drains your bank and files".
+  - **verify**: "a real job only ever pays money TO you — no legitimate
+    employer asks you to pay to start, deposit your own funds to 'unlock'
+    tasks or earnings, or buy equipment upfront; that request alone proves the
+    job is fake".
+  - **triage**: "stop all payments and deposits now … if you installed any
+    'work-from-home' or 'security' app they sent, disconnect from the internet
+    and remove it — it may be a remote-access trojan; report to the FTC
+    (reportfraud.ftc.gov)".
+  - **cascade**: "any card or account you used to pay, and any credentials you
+    entered on the fake 'employer portal' … if you ran their software, treat
+    the whole device as compromised".
+  - **exoneration** (LOG/ALERT band): "legitimate recruiters do reach out.
+    Decisive test: does the 'job' require you to pay anything, deposit your own
+    funds, or buy equipment to start? A real job pays you — money only ever
+    flows TO you, never from you".
+
+  Research sources: FTC Consumer Advice「Job Scams」, McAfee 2026 job-scam
+  spike report, The Interview Guys「Remote Job Scams 2026」, Remote Work Europe
+  scams guide, DailyRemote red-flags guide. 6 new integration tests; 533 pass,
+  0 fail; zero warnings CLI + lib.
+
 ## [1.0.74] — 2026-06-21
 
 ### Added
