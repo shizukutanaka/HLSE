@@ -2300,7 +2300,8 @@ hlse_text_exoneration(const TextVerdict *v) {
         return "QR codes appear legitimately in event tickets, restaurant menus, "
                "and physical adverts. Decisive test: scan with a QR decoder that "
                "shows the URL before opening it, then verify the domain belongs "
-               "to the expected organisation";
+               "to the expected organisation; on a physical QR, check it is not a "
+               "sticker placed over the original";
     if (strstr(pat, "grandparent") || strstr(pat, "emergency impersonation"))
         return "family members do have genuine emergencies. Decisive test: a "
                "familiar voice is no longer proof \xe2\x80\x94 AI clones a voice "
@@ -3597,7 +3598,9 @@ hlse_text_triage(const TextVerdict *v) {
     if (strstr(pat, "quishing") || strstr(pat, "QR"))
         return "if you already scanned the QR code: check your browser's address "
                "bar for an untrusted domain before entering any credentials; if "
-               "you entered credentials, change that account's password now";
+               "you entered credentials, change that account's password now; if "
+               "you approved a payment to an unexpected payee, contact your bank "
+               "or payment provider immediately to stop or dispute it";
     if (strstr(pat, "callback") || strstr(pat, "vishing") || strstr(pat, "TOAD"))
         return "do not call the number in this message \xe2\x80\x94 if you "
                "already called and gave personal information, contact your bank "
@@ -3678,7 +3681,10 @@ hlse_text_verify(const TextVerdict *v) {
     if (strstr(pat, "QR") || strstr(pat, "quishing"))
         return "preview the QR destination before scanning \xe2\x80\x94 do not enter "
                "any credentials until you have confirmed the domain belongs to the "
-               "expected organisation";
+               "expected organisation; on a PHYSICAL QR (parking meter, restaurant "
+               "table, payment poster) feel for a sticker placed over the original, "
+               "and on any payment QR confirm the payee name shown matches the real "
+               "merchant before approving";
     if (strstr(pat, "urgency credential") || strstr(pat, "credential / payment") ||
         strstr(pat, "authority impersonation"))
         return "navigate directly to the service's official website (bookmark or "

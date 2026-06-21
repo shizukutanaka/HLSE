@@ -3664,6 +3664,43 @@ assert "safe word" in t or "AI clones a voice" in t, t
 ' && check "p67 json: emergency verify+triage carry voice-clone/safe-word guidance" "0" "0" \
    || check "p67 json: emergency verify+triage carry voice-clone/safe-word guidance" "0" "1"
 
+# ─── P68: physical QR-sticker overlay + payment-QR quishing defense (2026) ─
+
+QR_BLOCK="Scan this QR code to verify your account urgently or it will be suspended, confirm your password and card details now"
+
+# p68: QR BLOCK verify warns about physical sticker overlay
+./hlse_core --from qr text "$QR_BLOCK" 2>&1 \
+    | grep -qi "sticker placed over\|PHYSICAL QR" \
+    && check "p68: QR verify warns physical sticker overlay" "0" "0" \
+    || check "p68: QR verify warns physical sticker overlay" "0" "1"
+
+# p68: QR BLOCK verify tells user to confirm payee name on payment QR
+./hlse_core --from qr text "$QR_BLOCK" 2>&1 \
+    | grep -qi "payee name\|matches the real merchant" \
+    && check "p68: QR verify confirms payee name on payment QR" "0" "0" \
+    || check "p68: QR verify confirms payee name on payment QR" "0" "1"
+
+# p68: QR BLOCK triage covers approved-payment dispute path
+./hlse_core --from qr text "$QR_BLOCK" 2>&1 \
+    | grep -qi "approved a payment\|stop or dispute" \
+    && check "p68: QR triage covers payment-dispute path" "0" "0" \
+    || check "p68: QR triage covers payment-dispute path" "0" "1"
+
+# p68: QR ALERT-band exoneration cites the physical sticker check
+./hlse_core text "Scan this QR code to verify your account and avoid suspension" 2>&1 \
+    | grep -qi "sticker placed over the original\|not a sticker" \
+    && check "p68: QR exoneration cites physical sticker check" "0" "0" \
+    || check "p68: QR exoneration cites physical sticker check" "0" "1"
+
+# p68 json: QR BLOCK verify carries physical + payment guidance
+./hlse_core --json --from qr text "$QR_BLOCK" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+v = d.get("verify","")
+assert "sticker" in v and "payee" in v, v
+' && check "p68 json: QR verify carries physical+payment guidance" "0" "0" \
+   || check "p68 json: QR verify carries physical+payment guidance" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

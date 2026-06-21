@@ -2,6 +2,46 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.68] — 2026-06-21
+
+### Changed
+- **Perspective 68: quishing (QR-code phishing) advisories extended to cover
+  the physical sticker-overlay and payment-QR vectors — the 2026 emphasis in
+  Japanese and global quishing reports.**
+
+  Socratic question, derived from McAfee/Trend Micro/Kaspersky/JSSEC 2025–2026
+  quishing reports: "The QR-phishing advisory tells the user to 'preview the
+  QR destination before scanning' and, post-scan, to 'check your browser's
+  address bar'. That covers the EMAIL/digital QR vector well. But the fastest-
+  growing quishing vector of 2026 is PHYSICAL: attackers stick a fake QR
+  sticker over the real one on parking meters, restaurant tables, and payment
+  posters. For these, 'preview the destination' is necessary but not
+  sufficient — the decisive physical tells are (a) a sticker placed over the
+  original, and (b) on a payment QR, a payee name that does not match the real
+  merchant. And the post-scan triage only addresses credential theft, not the
+  fraudulent-PAYMENT outcome that a swapped payment QR produces. Shouldn't the
+  guidance name the physical-overlay check and the payment-dispute path?"
+
+  Pure advisory change — no scoring/detection logic touched; the QR-code
+  phishing signal and pattern label are unchanged. Three advisory lenses keyed
+  to the QR/quishing pattern were extended:
+
+  - **verify** (`hlse_text_verify`): adds "on a PHYSICAL QR (parking meter,
+    restaurant table, payment poster) feel for a sticker placed over the
+    original, and on any payment QR confirm the payee name shown matches the
+    real merchant before approving".
+  - **triage** (`hlse_text_triage`): adds "if you approved a payment to an
+    unexpected payee, contact your bank or payment provider immediately to
+    stop or dispute it".
+  - **exoneration** (`hlse_text_exoneration`, LOG/ALERT band): adds "on a
+    physical QR, check it is not a sticker placed over the original".
+
+  Research sources: McAfee「クイッシング(QRコード詐欺)とは」, Trend Micro
+  「クイッシングとは？QRコードを使ったフィッシング詐欺の手口と対策」,
+  Kaspersky「クイッシング(QRフィッシング)とは？兆候と予防策」, JSSEC
+  「広がるQRコード詐欺(クイッシング)と対策」, Proofpoint (Quishing reference).
+  5 new integration tests; 498 pass, 0 fail; zero warnings CLI + lib.
+
 ## [1.0.67] — 2026-06-21
 
 ### Changed
