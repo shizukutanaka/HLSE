@@ -3539,6 +3539,46 @@ if d["score"] == 0:
 ' && check "p63 json: paste SAFE has no signal_count" "0" "0" \
    || check "p63 json: paste SAFE has no signal_count" "0" "1"
 
+# ─── P64: OAuth device-code phishing classification (Qiita/Zenn research) ─
+
+# p64: device-code text in ALERT band classifies as OAuth device-code phishing
+./hlse_core text "Microsoft Security Alert: To verify your sign-in, go to microsoft.com/devicelogin and enter the verification code 9K4MJX2Q within 15 minutes" 2>&1 \
+    | grep -qi "Pattern:.*OAuth device-code\|Pattern:.*device-code phishing" \
+    && check "p64: device-code phishing gets specific pattern label (not generic fake-alert)" "0" "0" \
+    || check "p64: device-code phishing gets specific pattern label (not generic fake-alert)" "0" "1"
+
+# p64: ALERT-band exoneration mentions the initiating test (the falsifying check)
+./hlse_core text "Microsoft Security Alert: To verify your sign-in, go to microsoft.com/devicelogin and enter the verification code 9K4MJX2Q within 15 minutes" 2>&1 \
+    | grep -qi "initiate a sign-in\|did YOU initiate" \
+    && check "p64: device-code ALERT exoneration shows initiation falsifying test" "0" "0" \
+    || check "p64: device-code ALERT exoneration shows initiation falsifying test" "0" "1"
+
+# p64: BLOCK-band names OAuth tokens as the objective (not generic credentials)
+./hlse_core text "URGENT Microsoft Office 365 Security Alert: Your account verification code is 9K4MJX2Q. Confirm immediately at microsoft.com/devicelogin or your account will be locked in 1 hour - IT Admin" 2>&1 \
+    | grep -qi "OAuth tokens\|persistent access.*bypasses MFA" \
+    && check "p64: device-code BLOCK objective names OAuth tokens + MFA bypass" "0" "0" \
+    || check "p64: device-code BLOCK objective names OAuth tokens + MFA bypass" "0" "1"
+
+# p64: BLOCK-band triage points to entra.microsoft.com token revocation (Qiita research)
+./hlse_core text "URGENT Microsoft Office 365 Security Alert: Your account verification code is 9K4MJX2Q. Confirm immediately at microsoft.com/devicelogin or your account will be locked in 1 hour - IT Admin" 2>&1 \
+    | grep -qi "entra.microsoft.com\|revoke.*tokens" \
+    && check "p64: device-code BLOCK triage cites entra.microsoft.com token revocation" "0" "0" \
+    || check "p64: device-code BLOCK triage cites entra.microsoft.com token revocation" "0" "1"
+
+# p64: BLOCK-band cascade names connected SaaS apps (SharePoint/Teams/Exchange)
+./hlse_core text "URGENT Microsoft Office 365 Security Alert: Your account verification code is 9K4MJX2Q. Confirm immediately at microsoft.com/devicelogin or your account will be locked in 1 hour - IT Admin" 2>&1 \
+    | grep -qi "SharePoint\|Teams.*Exchange\|connected SaaS" \
+    && check "p64: device-code BLOCK cascade names connected SaaS tenant apps" "0" "0" \
+    || check "p64: device-code BLOCK cascade names connected SaaS tenant apps" "0" "1"
+
+# p64 json: pattern field contains 'device-code' label
+./hlse_core --json text "Microsoft Security Alert: To verify your sign-in, go to microsoft.com/devicelogin and enter the verification code 9K4MJX2Q within 15 minutes" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "device-code" in d["pattern"].lower() or "oauth" in d["pattern"].lower(), d
+' && check "p64 json: pattern field carries device-code/OAuth label" "0" "0" \
+   || check "p64 json: pattern field carries device-code/OAuth label" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

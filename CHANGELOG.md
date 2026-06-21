@@ -2,6 +2,63 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.64] — 2026-06-21
+
+### Added
+- **Perspective 64: OAuth device-code phishing pattern classification — the
+  #1 Microsoft 365 attack vector of 2026 (340+ organisations compromised in
+  Q1, per The Hacker News / Microsoft Defender) now gets its own specific
+  pattern label and Microsoft-incident-response-aligned advisories instead of
+  being lumped under the generic "fake security alert" classification.**
+
+  Socratic question, derived from Qiita/Zenn 2026 incident reports: "The
+  classifier already detects this text class via 'verification code' bait
+  language + fake-security-alert urgency, scoring it correctly. But the
+  pattern label says 'fake security alert / account suspension phishing' —
+  which is true but generic. The unique mechanism of OAuth device-code
+  phishing — a LEGITIMATE Microsoft URL (microsoft.com/devicelogin) paired
+  with an attacker-supplied verification code — is what makes this attack
+  evade URL filters and bypass MFA. The advisory 'log in via bookmark' is
+  USELESS here because the URL is real; the right advisory is 'never enter
+  a code you did not initiate yourself'. Shouldn't the most common 2026
+  Microsoft 365 attack get a label that names the actual mechanism, plus
+  triage that points to the actual Microsoft remediation path (entra.
+  microsoft.com token revocation)?"
+
+  Pure advisory change — no scoring/detection logic modified. The 'verification
+  code' / 'device code' / 'two-factor code' phrases already fire in the
+  auth-bait list; this perspective only refines the downstream pattern label
+  and advisory strings keyed to it:
+
+  - `hlse_classify_text_attack()`: when device-code language fires with
+    authority impersonation OR fake-security-alert, emit the specific label
+    "OAuth device-code phishing (legitimate URL, attacker-supplied
+    verification code)" rather than the generic fake-alert label.
+  - `hlse_text_objective()`: "Microsoft 365 / Azure OAuth tokens — grants
+    persistent access that bypasses MFA and survives password reset".
+  - `hlse_text_verify()`: "never enter a verification code you did not
+    initiate yourself — even at a legitimate URL like microsoft.com/
+    devicelogin; the URL is real but the code is the attacker's session".
+  - `hlse_text_triage()`: "sign out of all Microsoft 365 sessions, revoke
+    all active tokens in entra.microsoft.com (Security → Sign-ins → revoke),
+    and rotate the password — the attacker holds a refresh token that
+    outlives password reset alone" (the actual Microsoft incident-response
+    path).
+  - `hlse_text_cascade()`: "every SaaS app connected to your Microsoft 365
+    tenant (SharePoint, Teams, Exchange, OneDrive) and any third-party app
+    with consent from your account — revoke app consents in entra.microsoft.
+    com and audit recent OAuth grants from a clean device".
+  - `hlse_text_exoneration()`: ALERT-band falsifying test asks "did YOU
+    initiate a sign-in or device-pairing flow in the last 60 seconds?" —
+    the single decisive question for this attack class.
+
+  Research sources: The Hacker News (Mar 2026, "Device Code Phishing Hits
+  340+ Microsoft 365 Orgs"), Microsoft Security Blog (Apr 2026, "Inside an
+  AI-enabled device code phishing campaign"), Sekoia EvilTokens kit
+  analysis, Qiita デバイスコードフローを悪用したフィッシング overview, and
+  Zenn incident-investigation tooling roundup. 6 new integration tests;
+  482 pass, 0 fail; zero warnings CLI + lib.
+
 ## [1.0.63] — 2026-06-21
 
 ### Added

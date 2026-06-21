@@ -2291,6 +2291,11 @@ hlse_text_exoneration(const TextVerdict *v) {
     pat = hlse_classify_text_attack(v);
     if (!pat) return hlse_exoneration_for("text", v->score);
 
+    if (strstr(pat, "device-code") || strstr(pat, "OAuth"))
+        return "Microsoft and other services do send genuine verification codes "
+               "you requested yourself. Decisive test: did YOU initiate a sign-in "
+               "or device-pairing flow in the last 60 seconds? If not, the code "
+               "is the attacker's session and entering it grants them your tokens";
     if (strstr(pat, "QR") || strstr(pat, "quishing"))
         return "QR codes appear legitimately in event tickets, restaurant menus, "
                "and physical adverts. Decisive test: scan with a QR decoder that "
@@ -2480,6 +2485,7 @@ hlse_classify_text_attack(const TextVerdict *v) {
     int emergency = 0, clickfix = 0;
     int fake_alert = 0, direct_fin = 0;
     int amp_bec = 0, amp_tss = 0, amp_ceo = 0, amp_laf = 0;
+    int devicecode = 0;
 
     if (!v || v->n_reasons == 0) return NULL;
 
@@ -2504,6 +2510,18 @@ hlse_classify_text_attack(const TextVerdict *v) {
         if (strstr(r, "tech-support") || strstr(r, "gift card")) amp_tss = 1;
         if (strstr(r, "CEO-fraud"))                           amp_ceo = 1;
         if (strstr(r, "lottery") || strstr(r, "advance-fee")) amp_laf = 1;
+        /* OAuth device-code phishing (P64): the 2026 attack class where the
+         * victim is sent to a LEGITIMATE Microsoft URL (microsoft.com/
+         * devicelogin) and asked to enter an attacker-supplied code. The raw
+         * reason text includes the literal phrase that fired, so we can match
+         * "verification code" / "device code" / "two-factor code" surfacing
+         * from the auth-bait list. Detection is unchanged; this only refines
+         * the pattern label so the user knows the unique mechanism. */
+        if (strstr(r, "verification code") ||
+            strstr(r, "device code") ||
+            strstr(r, "two-factor code") ||
+            strstr(r, "one-time code") ||
+            strstr(r, "otp code"))                    devicecode = 1;
     }
 
     /* Fake security alerts and direct financial-action signals are credential/
@@ -2514,6 +2532,14 @@ hlse_classify_text_attack(const TextVerdict *v) {
     /* Specific amplifier patterns take priority over individual signals */
     if (clickfix)
         return "ClickFix script-injection lure (paste-and-run attack)";
+    /* Device-code phishing: when auth-code language fires with authority
+     * impersonation OR fake security alert, the attack class is OAuth
+     * device-code abuse (M365/Azure 2026 #1 vector) rather than a generic
+     * fake-alert. The unique mechanism — legitimate URL, attacker-supplied
+     * code — needs its own label so the advisory can warn about it. */
+    if (devicecode && (authority || fake_alert))
+        return "OAuth device-code phishing "
+               "(legitimate URL, attacker-supplied verification code)";
     if (amp_ceo || (authority && secrecy && bait))
         return "BEC / CEO-fraud wire-transfer";
     if (amp_bec || (urgency && bait && authority))
@@ -3522,6 +3548,12 @@ hlse_text_triage(const TextVerdict *v) {
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
 
+    if (strstr(pat, "device-code") || strstr(pat, "OAuth"))
+        return "if you already entered the code: sign out of all Microsoft 365 "
+               "sessions, revoke all active tokens in entra.microsoft.com "
+               "(Security \xe2\x86\x92 Sign-ins \xe2\x86\x92 revoke), and rotate "
+               "the password \xe2\x80\x94 the attacker holds a refresh token that "
+               "outlives password reset alone";
     if (strstr(pat, "ClickFix"))
         return "if you already pasted and ran the command: disconnect from the "
                "network immediately, scan with antivirus, and consider a full "
@@ -3595,6 +3627,11 @@ hlse_text_verify(const TextVerdict *v) {
     if (!v || v->score < 60) return NULL;
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
+    if (strstr(pat, "device-code") || strstr(pat, "OAuth"))
+        return "never enter a verification code you did not initiate yourself "
+               "\xe2\x80\x94 even at a legitimate URL like microsoft.com/"
+               "devicelogin; the URL is real but the code is the attacker's "
+               "session, and entering it grants them your tokens";
     if (strstr(pat, "ClickFix"))
         return "never paste or run commands from unsolicited messages \xe2\x80\x94 "
                "legitimate software installations never require manual command-line "
@@ -3662,6 +3699,10 @@ hlse_text_objective(const TextVerdict *v) {
     if (!v || v->score < 60) return NULL;
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
+    if (strstr(pat, "device-code") || strstr(pat, "OAuth"))
+        return "Microsoft 365 / Azure OAuth tokens \xe2\x80\x94 grants persistent "
+               "access that bypasses MFA and survives password reset; attacker "
+               "can read mail, exfiltrate files, and pivot to connected SaaS";
     if (strstr(pat, "ClickFix"))
         return "system access \xe2\x80\x94 pasted command runs with your user "
                "privileges; treat the machine as compromised until proven clean";
@@ -3724,6 +3765,11 @@ hlse_text_cascade(const TextVerdict *v) {
     if (!v || v->score < 60) return NULL;
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
+    if (strstr(pat, "device-code") || strstr(pat, "OAuth"))
+        return "every SaaS app connected to your Microsoft 365 tenant (SharePoint, "
+               "Teams, Exchange, OneDrive) and any third-party app with consent "
+               "from your account \xe2\x80\x94 revoke app consents in entra.microsoft."
+               "com and audit recent OAuth grants from a clean device";
     if (strstr(pat, "ClickFix"))
         return "all credentials stored in browsers, password managers, and the OS "
                "credential store \xe2\x80\x94 assume the script exfiltrated them; "
