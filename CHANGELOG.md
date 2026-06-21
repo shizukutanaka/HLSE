@@ -2,6 +2,62 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.74] — 2026-06-21
+
+### Added
+- **Perspective 74: MFA-fatigue / push-bombing ("approve-the-prompt") now has
+  its own pattern label and advisory lenses — previously this Scattered
+  Spider / Lapsus$ TTP was mislabeled "fake security alert" and the advisory
+  never told the victim the defining fact: an unsolicited MFA prompt means the
+  password is ALREADY stolen.**
+
+  Socratic question, derived from Qiita/Zenn 2026 passkey-migration and MFA
+  reports: "HLSE already detects MFA push-bombing language ('approve the
+  notification', 'just approve it', 'you will keep receiving requests until you
+  approve') — such a message scores 70 (BLOCK). But it classifies as 'fake
+  security alert / account suspension phishing', so the advisory is generic
+  'navigate to the site directly and check your account'. That misses the
+  single most important fact about MFA fatigue: the attacker already has the
+  password (that's why the prompts are firing), and approving one — even just
+  to make the spam stop — hands them an authenticated session. The right
+  advice is the opposite of 'log in and check': it is 'DENY the prompt, and
+  change your password because it is already compromised'. Shouldn't the
+  approve-the-prompt attack get its own label and a remedy that names the
+  already-compromised password and the deny-don't-approve action?"
+
+  Pure advisory change — no scoring/detection logic touched. The push-bombing
+  phrases already fire as signals (and already produce a BLOCK score); this
+  perspective only adds a classification branch and the advisory strings keyed
+  to it, using the same matched-phrase keying as the P73 payment-diversion and
+  the existing gift-card → tech-support branches. The branch is placed below
+  device-code (so a verification-code message stays "OAuth device-code
+  phishing") and above the generic fake-alert/credential branches.
+
+  - **pattern** (`hlse_classify_text_attack`): "MFA-fatigue / push-bombing
+    (approve-the-prompt attack)".
+  - **objective**: "account takeover via MFA approval — the attacker already
+    has your password and is spamming push prompts; approving one hands them
+    an authenticated session".
+  - **verify**: "never approve an MFA or authenticator prompt you did not
+    start yourself — a prompt or 'approve' request that arrives when you were
+    not logging in means someone ALREADY has your password; deny it, and never
+    approve to 'make the prompts stop'".
+  - **triage**: "deny/dismiss the prompt; do NOT approve it — then change your
+    password immediately from a device you trust … if you did approve one,
+    sign out all sessions, rotate the password, and report it to your IT/
+    security team".
+  - **cascade**: "every account sharing this now-compromised password, and
+    your email … switch this account to phishing-resistant MFA (a passkey or
+    hardware key) that cannot be approved by mistake".
+  - **exoneration** (LOG/ALERT band): "legitimate sign-ins do trigger MFA
+    prompts. Decisive test: did YOU just try to log in? If an 'approve'
+    request or push arrives that you did not start, deny it".
+
+  Research sources: Zenn「現在のパスキーは単一障害点である」, Qiita「パスキー
+  認証と2要素認証の仕組み」, Qiita「パスキーが万能ではない3つの理由」, CISA/
+  Microsoft Scattered Spider & Lapsus$ MFA-fatigue advisories. 7 new
+  integration tests; 527 pass, 0 fail; zero warnings CLI + lib.
+
 ## [1.0.73] — 2026-06-21
 
 ### Added

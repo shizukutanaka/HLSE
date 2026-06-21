@@ -2296,6 +2296,11 @@ hlse_text_exoneration(const TextVerdict *v) {
                "you requested yourself. Decisive test: did YOU initiate a sign-in "
                "or device-pairing flow in the last 60 seconds? If not, the code "
                "is the attacker's session and entering it grants them your tokens";
+    if (strstr(pat, "MFA-fatigue") || strstr(pat, "push-bombing"))
+        return "legitimate sign-ins do trigger MFA prompts. Decisive test: did "
+               "YOU just try to log in? If an 'approve' request or push arrives "
+               "that you did not start, deny it \xe2\x80\x94 it means someone else "
+               "already has your password";
     if (strstr(pat, "payment-diversion"))
         return "employees and vendors do legitimately change banks. Decisive "
                "test: call the person or company on a number you ALREADY have on "
@@ -2497,7 +2502,7 @@ hlse_classify_text_attack(const TextVerdict *v) {
     int emergency = 0, clickfix = 0;
     int fake_alert = 0, direct_fin = 0;
     int amp_bec = 0, amp_tss = 0, amp_ceo = 0, amp_laf = 0;
-    int devicecode = 0, bankchange = 0;
+    int devicecode = 0, bankchange = 0, mfapush = 0;
 
     if (!v || v->n_reasons == 0) return NULL;
 
@@ -2549,6 +2554,24 @@ hlse_classify_text_attack(const TextVerdict *v) {
             strstr(r, "direct deposit") ||
             strstr(r, "new bank account") ||
             strstr(r, "new payment account"))         bankchange = 1;
+        /* MFA-fatigue / push-bombing (P74): the attacker already has the
+         * password and spams authenticator push prompts (or phones the victim)
+         * asking them to "just approve" one. The defining tell is an
+         * unsolicited request to approve an auth push. Distinct remedy: deny
+         * the prompt and rotate the already-compromised password. Phrases
+         * surface in the matched-phrase text of the reasons. */
+        if (strstr(r, "approve the notification") ||
+            strstr(r, "approve the push") ||
+            strstr(r, "approve the sign-in") ||
+            strstr(r, "approve the login") ||
+            strstr(r, "approve the authentication") ||
+            strstr(r, "approve the mfa") ||
+            strstr(r, "approve the two-factor") ||
+            strstr(r, "approve on your phone") ||
+            strstr(r, "just approve") ||
+            strstr(r, "approve in") ||
+            strstr(r, "approve on your authenticator") ||
+            strstr(r, "until you approve"))            mfapush = 1;
     }
 
     /* Fake security alerts and direct financial-action signals are credential/
@@ -2567,6 +2590,12 @@ hlse_classify_text_attack(const TextVerdict *v) {
     if (devicecode && (authority || fake_alert))
         return "OAuth device-code phishing "
                "(legitimate URL, attacker-supplied verification code)";
+    /* MFA-fatigue / push-bombing: an unsolicited 'approve the prompt' request
+     * is a distinct attack — the attacker already holds the password — with a
+     * distinct remedy (deny and rotate the password), not a credential
+     * re-harvest. Priority above the generic fake-alert/credential labels. */
+    if (mfapush)
+        return "MFA-fatigue / push-bombing (approve-the-prompt attack)";
     /* Payment/payroll-diversion BEC takes priority over the generic
      * wire-transfer and credential-harvest labels: a bank-account-change
      * request is a distinct attack with a distinct remedy (verify the change
@@ -3593,6 +3622,12 @@ hlse_text_triage(const TextVerdict *v) {
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
 
+    if (strstr(pat, "MFA-fatigue") || strstr(pat, "push-bombing"))
+        return "deny/dismiss the prompt; do NOT approve it \xe2\x80\x94 then "
+               "change your password immediately from a device you trust, "
+               "because an unsolicited MFA prompt means your password is already "
+               "compromised; if you did approve one, sign out all sessions, "
+               "rotate the password, and report it to your IT/security team";
     if (strstr(pat, "payment-diversion"))
         return "do NOT update the bank/payee details; if you already changed "
                "them, revert immediately and alert your payroll/accounts-payable "
@@ -3690,6 +3725,11 @@ hlse_text_verify(const TextVerdict *v) {
     if (!v || v->score < 60) return NULL;
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
+    if (strstr(pat, "MFA-fatigue") || strstr(pat, "push-bombing"))
+        return "never approve an MFA or authenticator prompt you did not start "
+               "yourself \xe2\x80\x94 a prompt or 'approve' request that arrives "
+               "when you were not logging in means someone ALREADY has your "
+               "password; deny it, and never approve to 'make the prompts stop'";
     if (strstr(pat, "payment-diversion"))
         return "confirm any bank-account or direct-deposit change by calling the "
                "employee or vendor on a number you ALREADY have on file \xe2\x80\x94 "
@@ -3777,6 +3817,10 @@ hlse_text_objective(const TextVerdict *v) {
     if (!v || v->score < 60) return NULL;
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
+    if (strstr(pat, "MFA-fatigue") || strstr(pat, "push-bombing"))
+        return "account takeover via MFA approval \xe2\x80\x94 the attacker "
+               "already has your password and is spamming push prompts; "
+               "approving one hands them an authenticated session";
     if (strstr(pat, "payment-diversion"))
         return "redirected payments \xe2\x80\x94 your next payroll deposit or "
                "vendor invoice is rerouted to the attacker's bank account; the "
@@ -3847,6 +3891,12 @@ hlse_text_cascade(const TextVerdict *v) {
     if (!v || v->score < 60) return NULL;
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
+    if (strstr(pat, "MFA-fatigue") || strstr(pat, "push-bombing"))
+        return "every account sharing this now-compromised password, and your "
+               "email (the recovery gateway) \xe2\x80\x94 the attacker already "
+               "knows the password, so rotate it everywhere it is reused and "
+               "switch this account to phishing-resistant MFA (a passkey or "
+               "hardware key) that cannot be approved by mistake";
     if (strstr(pat, "payment-diversion"))
         return "every other payee record an attacker with this mailbox could "
                "alter \xe2\x80\x94 audit all recent bank-detail changes for staff "

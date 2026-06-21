@@ -3874,6 +3874,55 @@ assert "redirected payments" in d.get("objective",""), d.get("objective","")
 ' && check "p73 json: payment-diversion pattern+objective present" "0" "0" \
    || check "p73 json: payment-diversion pattern+objective present" "0" "1"
 
+# ─── P74: MFA-fatigue / push-bombing (approve-the-prompt) classification ──
+
+MFA_BLOCK="This is IT support. We are seeing login issues on your account. You will keep receiving requests until you approve - please just approve the notification on your phone to stop them"
+
+# p74: MFA push-bombing classifies as MFA-fatigue (not generic fake-alert)
+./hlse_core text "$MFA_BLOCK" 2>&1 \
+    | grep -qi "Pattern:.*MFA-fatigue\|Pattern:.*push-bombing" \
+    && check "p74: MFA push-bombing → MFA-fatigue pattern" "0" "0" \
+    || check "p74: MFA push-bombing → MFA-fatigue pattern" "0" "1"
+
+# p74: objective explains the attacker already has the password
+./hlse_core text "$MFA_BLOCK" 2>&1 \
+    | grep -qi "already has your password\|account takeover via MFA approval" \
+    && check "p74: MFA objective says attacker already has password" "0" "0" \
+    || check "p74: MFA objective says attacker already has password" "0" "1"
+
+# p74: verify says never approve a prompt you did not start
+./hlse_core text "$MFA_BLOCK" 2>&1 \
+    | grep -qi "never approve an MFA or authenticator prompt you did not start" \
+    && check "p74: MFA verify says never approve unsolicited prompt" "0" "0" \
+    || check "p74: MFA verify says never approve unsolicited prompt" "0" "1"
+
+# p74: triage says deny + rotate password + switch to phishing-resistant MFA
+./hlse_core text "$MFA_BLOCK" 2>&1 \
+    | grep -qi "deny/dismiss the prompt\|change your password immediately" \
+    && check "p74: MFA triage says deny + rotate password" "0" "0" \
+    || check "p74: MFA triage says deny + rotate password" "0" "1"
+
+# p74: cascade recommends phishing-resistant MFA (passkey/hardware key)
+./hlse_core text "$MFA_BLOCK" 2>&1 \
+    | grep -qi "phishing-resistant MFA\|passkey or hardware key" \
+    && check "p74: MFA cascade recommends passkey/hardware key" "0" "0" \
+    || check "p74: MFA cascade recommends passkey/hardware key" "0" "1"
+
+# p74: device-code priority preserved (verification-code text stays OAuth label)
+./hlse_core text "URGENT Microsoft Office 365 Security Alert: Your account verification code is 9K4MJX2Q. Confirm immediately at microsoft.com/devicelogin or your account will be locked - IT Admin" 2>&1 \
+    | grep -qi "Pattern:.*OAuth device-code" \
+    && check "p74: device-code priority preserved over MFA-fatigue" "0" "0" \
+    || check "p74: device-code priority preserved over MFA-fatigue" "0" "1"
+
+# p74 json: pattern + objective carry MFA-fatigue framing
+./hlse_core --json text "$MFA_BLOCK" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "MFA-fatigue" in d.get("pattern",""), d.get("pattern","")
+assert "password" in d.get("objective",""), d.get("objective","")
+' && check "p74 json: MFA-fatigue pattern+objective present" "0" "0" \
+   || check "p74 json: MFA-fatigue pattern+objective present" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
