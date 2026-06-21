@@ -3799,6 +3799,38 @@ assert t.rstrip().endswith("victims miss"), repr(t[-40:])
 ' && check "p71 json: OAuth triage carries full consent step (no truncation)" "0" "0" \
    || check "p71 json: OAuth triage carries full consent step (no truncation)" "0" "1"
 
+# ─── P72: tech-support scam — uninstall RAT + fake-popup verify (警察庁) ──
+
+TSS_BLOCK="Microsoft tech support URGENT: your PC is infected with a virus, call us now and we will fix it with remote access, pay the support fee with a gift card immediately or your files are lost"
+
+# p72: tech-support triage tells victim to UNINSTALL the remote-access tool
+./hlse_core text "$TSS_BLOCK" 2>&1 \
+    | grep -qi "UNINSTALL the remote-access tool\|AnyDesk, TeamViewer" \
+    && check "p72: tech-support triage says uninstall remote-access tool" "0" "0" \
+    || check "p72: tech-support triage says uninstall remote-access tool" "0" "1"
+
+# p72: tech-support triage explains RAT keeps access until removed
+./hlse_core text "$TSS_BLOCK" 2>&1 \
+    | grep -qi "keeps their access until removed" \
+    && check "p72: tech-support triage explains RAT persists until removed" "0" "0" \
+    || check "p72: tech-support triage explains RAT persists until removed" "0" "1"
+
+# p72: tech-support verify warns the virus-warning popup is always fake
+./hlse_core text "$TSS_BLOCK" 2>&1 \
+    | grep -qi "popup that shows a phone number is ALWAYS fake\|never call the number on the screen" \
+    && check "p72: tech-support verify warns fake popup / don't call number" "0" "0" \
+    || check "p72: tech-support verify warns fake popup / don't call number" "0" "1"
+
+# p72 json: triage+verify carry the new guidance without truncation
+./hlse_core --json text "$TSS_BLOCK" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+t, v = d.get("triage",""), d.get("verify","")
+assert "UNINSTALL" in t and t.rstrip().endswith("directly"), repr(t[-30:])
+assert "ALWAYS fake" in v and v.rstrip().endswith("payment"), repr(v[-30:])
+' && check "p72 json: tech-support triage+verify intact (no truncation)" "0" "0" \
+   || check "p72 json: tech-support triage+verify intact (no truncation)" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -3589,8 +3589,11 @@ hlse_text_triage(const TextVerdict *v) {
                "on a separately-known number, not the one in this message";
     if (strstr(pat, "tech-support"))
         return "if you called the number: hang up now; if you gave remote "
-               "access: disconnect from the internet immediately, change your "
-               "banking credentials, and call your IT team or bank directly";
+               "access: disconnect from the internet immediately and UNINSTALL "
+               "the remote-access tool they had you install (AnyDesk, "
+               "TeamViewer, UltraViewer, etc.) \xe2\x80\x94 it keeps their access "
+               "until removed; then change your banking credentials from a "
+               "different device and call your IT team or bank directly";
     if (strstr(pat, "grandparent") || strstr(pat, "emergency impersonation"))
         return "call the family member directly on a number you already know "
                "\xe2\x80\x94 if they are genuinely in trouble, they can confirm "
@@ -3671,8 +3674,11 @@ hlse_text_verify(const TextVerdict *v) {
                "\xe2\x80\x94 not any number or channel in this message; wire-transfer "
                "requests without a prior phone call are a red flag";
     if (strstr(pat, "tech-support"))
-        return "call the company's main switchboard independently to verify any "
-               "claimed account issue before allowing any remote access or payment";
+        return "a virus-warning popup that shows a phone number is ALWAYS fake "
+               "\xe2\x80\x94 real security software never tells you to call; close "
+               "the browser (or force-quit it) and never call the number on the "
+               "screen; if you need help, call the company's main switchboard "
+               "independently before allowing any remote access or payment";
     if (strstr(pat, "ransom") || strstr(pat, "extortion"))
         return "do not pay \xe2\x80\x94 consult a law enforcement or cybersecurity "
                "professional before responding; paying funds further attacks";

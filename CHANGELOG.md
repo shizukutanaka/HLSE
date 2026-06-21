@@ -2,6 +2,51 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.72] — 2026-06-21
+
+### Changed
+- **Perspective 72: tech-support-scam advisories updated for the fake-warning-
+  popup and remote-access-tool reality — the verify lens now names the popup
+  as always-fake, and the triage now tells the victim to UNINSTALL the
+  remote-access tool, the persistence step most victims miss.**
+
+  Socratic question, derived from 警察庁 サポート詐欺対策 and Trend Micro 2026
+  fake-warning reports: "The tech-support triage tells a victim who gave remote
+  access to 'disconnect from the internet, change banking credentials, call
+  your IT team'. But disconnecting is temporary — the attacker had the victim
+  install a remote-access tool (AnyDesk/TeamViewer/UltraViewer), and that tool
+  resumes the attacker's access the moment the victim reconnects. The 警察庁
+  guidance is explicit: the remote-access software must be uninstalled. The
+  triage never says 'uninstall it', so a victim who reconnects after changing
+  passwords hands the attacker a live session again. Separately, the verify
+  lens says 'call the company's main switchboard independently' — good advice,
+  but it never states the single most useful fact about the fake-warning
+  popup: a virus warning that displays a phone number is ALWAYS fake (real
+  security software never tells you to call), so the first action is to close
+  the browser and never call the on-screen number. Shouldn't the triage name
+  the uninstall step and the verify name the fake-popup tell?"
+
+  Pure advisory change — no scoring/detection logic touched; the tech-support
+  pattern label and detection are unchanged. Two advisory lenses keyed to the
+  tech-support pattern were extended:
+
+  - **triage** (`hlse_text_triage`): now "if you gave remote access:
+    disconnect from the internet immediately and UNINSTALL the remote-access
+    tool they had you install (AnyDesk, TeamViewer, UltraViewer, etc.) — it
+    keeps their access until removed; then change your banking credentials
+    from a different device and call your IT team or bank directly".
+  - **verify** (`hlse_text_verify`): now "a virus-warning popup that shows a
+    phone number is ALWAYS fake — real security software never tells you to
+    call; close the browser (or force-quit it) and never call the number on
+    the screen; if you need help, call the company's main switchboard
+    independently before allowing any remote access or payment".
+
+  Research sources: 警察庁「サポート詐欺対策」, 大阪府警/群馬県警 support-fraud
+  対処, トレンドマイクロ「偽のセキュリティ警告画面や警告音を出すサポート詐欺の
+  手口と対処方法」, ドコモ あんしんセキュリティ, 香川大学CSC「そのウイルス感染
+  警告は偽物？」. 4 new integration tests; 514 pass, 0 fail; zero warnings CLI +
+  lib.
+
 ## [1.0.71] — 2026-06-21
 
 ### Changed
