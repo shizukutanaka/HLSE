@@ -2189,6 +2189,12 @@ hlse_exoneration_for(const char *kind, int score) {
                "ports. Decisive test: identify the owning process "
                "('lsof -i' or 'ss -tp') and verify it against the software's "
                "documented network requirements.";
+    if (strcmp(kind, "paste") == 0)
+        return "heuristic \xe2\x80\x94 legitimate install scripts and CI snippets "
+               "also use curl, sudo, and base64. Decisive test: paste into a "
+               "plain text editor first and read every line \xe2\x80\x94 a hidden "
+               "newline or trailing command that only appears there is the "
+               "decisive sign of a paste-and-run trap.";
     return NULL;
 }
 
@@ -6192,6 +6198,19 @@ main(int argc, char **argv) {
                         printf(",\"blind_spot\":\"%s\"", esc_bs);
                     }
                 }
+                if (pv.score > 0) {
+                    /* Count distinct PASTE_* signal families from the bitmask —
+                     * the epistemic complement to the score: how many independent
+                     * detectors corroborate this paste threat. */
+                    int ns = 0, bits = pv.signals;
+                    while (bits) { ns += bits & 1; bits >>= 1; }
+                    if (ns == 0) ns = pv.n_reasons;  /* fallback if bitmask empty */
+                    {
+                        const char *conf = ns >= 3 ? "high confidence" :
+                                           ns >= 2 ? "corroborated" : "single signal";
+                        printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
+                    }
+                }
                 if (pv.score >= 60) {
                     /* Build a minimal TextVerdict so the existing advisory
                      * machinery fires: "Shell-pipe" triggers ClickFix
@@ -6213,6 +6232,14 @@ main(int argc, char **argv) {
                     if (pvrf) { char e[512]; json_escape(pvrf,e,sizeof(e)); printf(",\"verify\":\"%s\"",e); }
                     if (ptri) { char e[512]; json_escape(ptri,e,sizeof(e)); printf(",\"triage\":\"%s\"",e); }
                     if (pcas) { char e[512]; json_escape(pcas,e,sizeof(e)); printf(",\"cascade_risk\":\"%s\"",e); }
+                }
+                if (pv.score > 0 && pv.score < 60) {
+                    const char *ex = hlse_exoneration_for("paste", pv.score);
+                    if (ex) {
+                        char e[512];
+                        json_escape(ex, e, sizeof(e));
+                        printf(",\"exoneration\":\"%s\"", e);
+                    }
                 }
                 printf(",\"reasons\":[");
                 for (i = 0; i < pv.n_reasons; i++) {
@@ -6240,6 +6267,9 @@ main(int argc, char **argv) {
                     snprintf(ptv.reasons[0], sizeof(ptv.reasons[0]),
                              "Shell-pipe: paste-and-run pastejacking");
                     print_text_advisories(&ptv);
+                } else {
+                    const char *ex = hlse_exoneration_for("paste", pv.score);
+                    if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                 }
             }
             return pv.score >= g_fail_threshold ? 1 : 0;
