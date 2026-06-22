@@ -2,6 +2,46 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.79] — 2026-06-22
+
+### Added
+- **Perspective 79: stable machine-readable `pattern_id` for URL verdicts —
+  the symmetric URL counterpart of P78. After P78 gave text verdicts a stable
+  `HLSE-*` token, URL verdicts were left exposing only the prose `pattern`
+  label, so a SIEM/SOAR consuming URL alerts still had to substring-match prose
+  we keep refining. This closes that asymmetry: every URL verdict now carries
+  an append-only `HLSE-URL-*` token (e.g. `HLSE-URL-IDN-HOMOGRAPH`,
+  `HLSE-URL-SUBDOMAIN-HARVEST`, `HLSE-URL-SHORTENER`).**
+
+  Strengths/weaknesses review (現段階の長所短所): the engine's biggest strength
+  is its uniform, append-only advisory contract; P78 strengthened it for text
+  but introduced an asymmetry — the URL path, which is the original and most
+  heavily used surface, lacked the stable id. The weakness was discoverability:
+  an automation author reading the JSON for a URL alert found `pattern` but no
+  machine key, and would either hard-code prose or fall back to the score. The
+  improvement is to mirror P78 exactly so both surfaces present the same
+  `{pattern, pattern_id}` shape.
+
+  Pure advisory/output change — no scoring or detection logic touched. The new
+  `hlse_url_pattern_id()` is a read-only lookup over the existing
+  `hlse_classify_url_attack()` classification, so F1 is unchanged. Tokens are
+  **append-only**: meaning is fixed once issued, and prose refinements never
+  alter the id.
+
+  - **API**: new `const char *hlse_url_pattern_id(const Verdict *v)` in
+    `hlse_core.h` — stable token, or NULL when score is 0 / no pattern.
+  - **JSON**: `--json <url>` output gains a `"pattern_id"` field, emitted
+    alongside `"pattern"` (present iff the prose `pattern` is present).
+  - **Tokens (initial set)**: `HLSE-URL-IDN-HOMOGRAPH`, `HLSE-URL-MULTI-BRAND`,
+    `HLSE-URL-HOMOGLYPH`, `HLSE-URL-AT-CRED-TRICK`, `HLSE-URL-IP-BRAND`,
+    `HLSE-URL-FREEHOST`, `HLSE-URL-SUBDOMAIN-HARVEST`, `HLSE-URL-SUBDOMAIN`,
+    `HLSE-URL-TYPOSQUAT-HARVEST`, `HLSE-URL-TYPOSQUAT`, `HLSE-URL-HYPHEN-HARVEST`,
+    `HLSE-URL-HYPHEN-BRAND`, `HLSE-URL-CRED-HARVEST`, `HLSE-URL-BRAND-RISKY-TLD`,
+    `HLSE-URL-BRAND`, `HLSE-URL-SHORTENER`, `HLSE-URL-DGA`, `HLSE-URL-GENERIC`.
+  - **Tests**: 6 new CLI integration tests (556 total, 0 failed) verifying the
+    id for homoglyph / IDN / shortener / subdomain-spoof URLs, well-formedness
+    and co-presence, and that clean URLs carry no id.
+
 ## [1.0.78] — 2026-06-22
 
 ### Added

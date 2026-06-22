@@ -4107,6 +4107,66 @@ assert "pattern_id" not in d, d.get("pattern_id")
 ' && check "p78 json: clean verdict has no pattern_id" "0" "0" \
    || check "p78 json: clean verdict has no pattern_id" "0" "1"
 
+# ─── P79: stable pattern_id for URL verdicts (symmetry with text) ──────────
+# The text side gained pattern_id in P78; URL verdicts gain the symmetric
+# HLSE-URL-* stable token so SIEM/SOAR can route URL alerts on a stable id.
+
+# Homoglyph/lookalike → HLSE-URL-HOMOGLYPH
+./hlse_core --json "https://paypa1-secure.tk/login/verify" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d.get("pattern_id") == "HLSE-URL-HOMOGLYPH", d.get("pattern_id")
+' && check "p79 json: lookalike URL → HLSE-URL-HOMOGLYPH id" "0" "0" \
+   || check "p79 json: lookalike URL → HLSE-URL-HOMOGLYPH id" "0" "1"
+
+# IDN/Punycode homograph → HLSE-URL-IDN-HOMOGRAPH
+./hlse_core --json "https://xn--pypal-4ve.com/signin" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d.get("pattern_id") == "HLSE-URL-IDN-HOMOGRAPH", d.get("pattern_id")
+' && check "p79 json: IDN URL → HLSE-URL-IDN-HOMOGRAPH id" "0" "0" \
+   || check "p79 json: IDN URL → HLSE-URL-IDN-HOMOGRAPH id" "0" "1"
+
+# Shortener → HLSE-URL-SHORTENER
+./hlse_core --json "https://bit.ly/3xKp9" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d.get("pattern_id") == "HLSE-URL-SHORTENER", d.get("pattern_id")
+' && check "p79 json: shortener URL → HLSE-URL-SHORTENER id" "0" "0" \
+   || check "p79 json: shortener URL → HLSE-URL-SHORTENER id" "0" "1"
+
+# Subdomain-spoof credential-harvest → HLSE-URL-SUBDOMAIN-HARVEST
+./hlse_core --json "https://secure-paypal.com.account-verify.ru/login" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d.get("pattern_id") == "HLSE-URL-SUBDOMAIN-HARVEST", d.get("pattern_id")
+' && check "p79 json: subdomain-spoof URL → HLSE-URL-SUBDOMAIN-HARVEST id" "0" "0" \
+   || check "p79 json: subdomain-spoof URL → HLSE-URL-SUBDOMAIN-HARVEST id" "0" "1"
+
+# Well-formed and co-present with the prose pattern (never alone)
+./hlse_core --json "https://paypa1-secure.tk/login/verify" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert ("pattern_id" in d) == ("pattern" in d), d
+pid = d.get("pattern_id","")
+assert pid.startswith("HLSE-URL-") and " " not in pid, pid
+' && check "p79 json: URL pattern_id well-formed and co-present" "0" "0" \
+   || check "p79 json: URL pattern_id well-formed and co-present" "0" "1"
+
+# A clean URL (score 0) carries NO pattern_id
+./hlse_core --json "https://www.google.com" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "pattern_id" not in d, d.get("pattern_id")
+' && check "p79 json: clean URL has no pattern_id" "0" "0" \
+   || check "p79 json: clean URL has no pattern_id" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

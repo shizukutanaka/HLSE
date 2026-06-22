@@ -28,7 +28,7 @@
 #include "hlse_text.h" /* TextVerdict, for hlse_classify_text_attack() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.78"
+#define HLSE_VERSION "1.0.79"
 
 #ifdef __cplusplus
 extern "C" {
@@ -107,6 +107,22 @@ const char *hlse_text_exoneration(const TextVerdict *v);
  * is found. The label is always a short phrase — display it as a summary
  * line after the per-signal reasons. */
 const char *hlse_classify_url_attack(const Verdict *v);
+
+/* Return a stable machine-readable pattern identifier for a URL Verdict — the
+ * URL counterpart of hlse_text_pattern_id(). The human label from
+ * hlse_classify_url_attack() may be refined across versions, but these
+ * HLSE-URL-* tokens are APPEND-ONLY: once issued they never change meaning, so
+ * SIEM/SOAR rules can key on them without substring-matching fragile prose.
+ *
+ * Defined tokens (current):
+ *   HLSE-URL-IDN-HOMOGRAPH, HLSE-URL-MULTI-BRAND, HLSE-URL-HOMOGLYPH,
+ *   HLSE-URL-AT-CRED-TRICK, HLSE-URL-IP-BRAND, HLSE-URL-FREEHOST,
+ *   HLSE-URL-SUBDOMAIN-HARVEST, HLSE-URL-SUBDOMAIN, HLSE-URL-TYPOSQUAT-HARVEST,
+ *   HLSE-URL-TYPOSQUAT, HLSE-URL-HYPHEN-HARVEST, HLSE-URL-HYPHEN-BRAND,
+ *   HLSE-URL-CRED-HARVEST, HLSE-URL-BRAND-RISKY-TLD, HLSE-URL-BRAND,
+ *   HLSE-URL-SHORTENER, HLSE-URL-DGA, HLSE-URL-GENERIC.
+ * Returns NULL when score is 0 or no pattern was found. Thread-safe; no alloc. */
+const char *hlse_url_pattern_id(const Verdict *v);
 
 /* Synthesise a named social-engineering attack-pattern label from the signals
  * in a text verdict (e.g. "BEC / CEO-fraud wire-transfer", "urgency

@@ -2495,6 +2495,41 @@ hlse_classify_url_attack(const Verdict *v) {
     return NULL;
 }
 
+/* Stable machine-readable pattern identifier for a URL Verdict — the URL
+ * counterpart of hlse_text_pattern_id (Perspective 78). The prose label from
+ * hlse_classify_url_attack may be reworded across versions; these HLSE-URL-*
+ * tokens are APPEND-ONLY so SIEM/SOAR rules can route on a stable id instead
+ * of substring-matching prose. Returns NULL when score is 0 or no pattern was
+ * recognised. Order mirrors the classifier's priority so the most specific
+ * id wins. Thread-safe; no allocation. */
+const char *
+hlse_url_pattern_id(const Verdict *v) {
+    const char *pat = hlse_classify_url_attack(v);
+    if (!pat) return NULL;
+    if (strstr(pat, "IDN homograph"))            return "HLSE-URL-IDN-HOMOGRAPH";
+    if (strstr(pat, "multi-brand co-spoof"))     return "HLSE-URL-MULTI-BRAND";
+    if (strstr(pat, "lookalike characters"))     return "HLSE-URL-HOMOGLYPH";
+    if (strstr(pat, "authority-trick"))          return "HLSE-URL-AT-CRED-TRICK";
+    if (strstr(pat, "IP-hosted"))                return "HLSE-URL-IP-BRAND";
+    if (strstr(pat, "free-hosting"))             return "HLSE-URL-FREEHOST";
+    if (strstr(pat, "subdomain-spoof credential-harvest"))
+                                                 return "HLSE-URL-SUBDOMAIN-HARVEST";
+    if (strstr(pat, "subdomain spoofing"))       return "HLSE-URL-SUBDOMAIN";
+    if (strstr(pat, "typosquat credential-harvest"))
+                                                 return "HLSE-URL-TYPOSQUAT-HARVEST";
+    if (strstr(pat, "typosquat domain"))         return "HLSE-URL-TYPOSQUAT";
+    if (strstr(pat, "brand-hyphen credential-harvest"))
+                                                 return "HLSE-URL-HYPHEN-HARVEST";
+    if (strstr(pat, "brand hyphenation"))        return "HLSE-URL-HYPHEN-BRAND";
+    if (strstr(pat, "classic credential-harvest"))
+                                                 return "HLSE-URL-CRED-HARVEST";
+    if (strstr(pat, "high-risk TLD"))            return "HLSE-URL-BRAND-RISKY-TLD";
+    if (strstr(pat, "brand impersonation"))      return "HLSE-URL-BRAND";
+    if (strstr(pat, "shortener"))                return "HLSE-URL-SHORTENER";
+    if (strstr(pat, "DGA"))                       return "HLSE-URL-DGA";
+    return "HLSE-URL-GENERIC";
+}
+
 /* Synthesise a named social-engineering attack pattern from the signals in a
  * text verdict — the text counterpart of hlse_classify_url_attack.
  *
@@ -5083,6 +5118,7 @@ static void
 print_json_url(const char *url, const Verdict *v) {
     char escaped_url[MAX_URL * 2];
     const char *pat  = hlse_classify_url_attack(v);
+    const char *pid  = hlse_url_pattern_id(v);  /* stable HLSE-URL-* token */
     const char *vrf  = hlse_verification_for(v);
     const char *cas  = hlse_cascade_risk(v);
     const char *exon = hlse_url_exoneration(v); /* NULL outside [15,59] */
@@ -5139,6 +5175,7 @@ print_json_url(const char *url, const Verdict *v) {
         }
     }
     if (pat)        printf(",\"pattern\":\"%s\"", esc_pat);
+    if (pid)        printf(",\"pattern_id\":\"%s\"", pid); /* stable SIEM token */
     if (has_obj)    printf(",\"objective\":\"%s\"", esc_obj);
     if (has_conf)   printf(",\"confusable\":\"%s\"", esc_conf);
     if (has_asc)    printf(",\"ascii_diff\":\"%s\"", esc_asc);
