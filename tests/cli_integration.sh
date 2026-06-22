@@ -3966,6 +3966,43 @@ assert "never recover" in d.get("objective",""), d.get("objective","")
 ' && check "p75 json: fake-job pattern+objective present" "0" "0" \
    || check "p75 json: fake-job pattern+objective present" "0" "1"
 
+# ─── P76: sextortion / webcam blackmail classification ───────────────────
+
+SEXT_BLOCK="I activated your webcam and recorded you watching adult content. I have footage of you. Send bitcoin or I will send this video to your contacts within 48 hours"
+
+# p76: webcam-extortion classifies as sextortion (not generic ransom)
+./hlse_core text "$SEXT_BLOCK" 2>&1 \
+    | grep -qi "Pattern:.*sextortion / webcam blackmail" \
+    && check "p76: webcam extortion → sextortion pattern" "0" "0" \
+    || check "p76: webcam extortion → sextortion pattern" "0" "1"
+
+# p76: verify states the webcam claim is almost always a bluff
+./hlse_core text "$SEXT_BLOCK" 2>&1 \
+    | grep -qi "almost always a bluff\|none exists, so do not pay" \
+    && check "p76: sextortion verify says claim is a bluff" "0" "0" \
+    || check "p76: sextortion verify says claim is a bluff" "0" "1"
+
+# p76: triage says do not pay AND do not reply + report path
+./hlse_core text "$SEXT_BLOCK" 2>&1 \
+    | grep -qi "do NOT pay and do NOT reply\|CyberTipline" \
+    && check "p76: sextortion triage says don't pay/reply + report" "0" "0" \
+    || check "p76: sextortion triage says don't pay/reply + report" "0" "1"
+
+# p76: ransomware (encrypted files) must NOT be reclassified as sextortion
+./hlse_core text "Your files have been encrypted. Pay 2 bitcoin for the decryption key or your data is gone forever" 2>&1 \
+    | grep -qi "Pattern:.*sextortion" \
+    && check "p76: ransomware NOT mislabeled sextortion" "1" "0" \
+    || check "p76: ransomware NOT mislabeled sextortion" "1" "1"
+
+# p76 json: pattern + objective carry the sextortion framing
+./hlse_core --json text "$SEXT_BLOCK" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "sextortion" in d.get("pattern",""), d.get("pattern","")
+assert "bluff" in d.get("objective",""), d.get("objective","")
+' && check "p76 json: sextortion pattern+objective present" "0" "0" \
+   || check "p76 json: sextortion pattern+objective present" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

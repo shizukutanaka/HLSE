@@ -2,6 +2,61 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.76] — 2026-06-21
+
+### Added
+- **Perspective 76: sextortion / webcam blackmail now has its own pattern
+  label and advisory lenses — previously this high-volume extortion subtype
+  was folded into the generic "ransom / extortion message" label, whose
+  ransomware-framed advisory ("paying does not guarantee recovery") is the
+  wrong mental model for a threat that is usually an empty bluff.**
+
+  Socratic question, derived from 2026 sextortion/romance-scam reports
+  (LifeLock, NCOA, Security Magazine): "HLSE already detects sextortion
+  language ('I activated your webcam', 'I have footage of you', 'send this
+  video to your contacts') — such a message scores high (BLOCK). But it
+  classifies as 'ransom / extortion message', so the objective says
+  'cryptocurrency payment — paying does not guarantee RECOVERY'. That framing
+  is borrowed from ransomware, where files are genuinely encrypted. In
+  sextortion there is nothing to recover and, crucially, the threat is almost
+  always an empty bluff: the email is mass-mailed to millions, the 'leaked
+  password' was bought from a data breach (not proof of webcam access), and no
+  footage exists. The victim most needs to hear two things the generic
+  advisory never says: (1) this is almost certainly a bluff, and (2) do not
+  REPLY — replying confirms a live target. Shouldn't sextortion get its own
+  label and a remedy keyed to the bluff and the do-not-reply rule?"
+
+  Pure advisory change — no scoring/detection logic touched. The sextortion
+  phrases already fire (within the Ransom/extortion signal) and already
+  produce a BLOCK score; this perspective only adds a classification branch
+  and the advisory strings keyed to it, using the same matched-phrase keying
+  as P73–P75. The branch is placed above the generic ransom/extortion branch
+  so webcam-blackmail is labeled precisely; a true ransomware message
+  (encrypted files) still classifies as "ransom / extortion message".
+
+  - **pattern** (`hlse_classify_text_attack`): "sextortion / webcam
+    blackmail".
+  - **objective**: "an extortion payment for a threat that is almost always an
+    empty bluff … even AI-deepfaked images do not make paying work".
+  - **verify**: "the 'I hacked your webcam' claim is almost always a bluff
+    blasted to millions — any password they quote was bought from a data
+    breach, not proof of access … do not pay and do not reply".
+  - **triage**: "do NOT pay and do NOT reply — replying confirms a live
+    target … report to IC3 / your national cybercrime line (and, if a minor is
+    involved, NCMEC at CyberTipline.org); if real intimate images of you do
+    exist, report them to the platform for takedown".
+  - **cascade**: "nothing of yours is technically compromised by the threat
+    itself — but if you reused the breached password they quoted, change it …
+    tighten privacy on your social accounts".
+  - **exoneration** (LOG/ALERT band): "these threats feel personal but are
+    almost always mass-mailed bluffs. Decisive test: can they show actual
+    footage, or only claim it?".
+
+  Research sources: LifeLock「online dating scams / sextortion red flags」,
+  NCOA deepfake-scam guide, Security Magazine「Industrial-Scale Romance Scam
+  Economy 2026」, Bitdefender deepfake red flags, FBI IC3 / NCMEC sextortion
+  guidance. 5 new integration tests; 538 pass, 0 fail; zero warnings CLI + lib.
+
 ## [1.0.75] — 2026-06-21
 
 ### Added

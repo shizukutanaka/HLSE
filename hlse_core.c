@@ -2306,6 +2306,11 @@ hlse_text_exoneration(const TextVerdict *v) {
                "YOU just try to log in? If an 'approve' request or push arrives "
                "that you did not start, deny it \xe2\x80\x94 it means someone else "
                "already has your password";
+    if (strstr(pat, "sextortion") || strstr(pat, "webcam blackmail"))
+        return "these threats feel personal but are almost always mass-mailed "
+               "bluffs. Decisive test: can they show actual footage, or only "
+               "claim it? A breached password quoted from a data leak is not "
+               "proof of webcam access \xe2\x80\x94 do not pay, do not reply";
     if (strstr(pat, "payment-diversion"))
         return "employees and vendors do legitimately change banks. Decisive "
                "test: call the person or company on a number you ALREADY have on "
@@ -2507,7 +2512,7 @@ hlse_classify_text_attack(const TextVerdict *v) {
     int emergency = 0, clickfix = 0;
     int fake_alert = 0, direct_fin = 0;
     int amp_bec = 0, amp_tss = 0, amp_ceo = 0, amp_laf = 0;
-    int devicecode = 0, bankchange = 0, mfapush = 0, jobscam = 0;
+    int devicecode = 0, bankchange = 0, mfapush = 0, jobscam = 0, sextortion = 0;
 
     if (!v || v->n_reasons == 0) return NULL;
 
@@ -2598,6 +2603,26 @@ hlse_classify_text_attack(const TextVerdict *v) {
             strstr(r, "per day from home") ||
             strstr(r, "per week from home") ||
             strstr(r, "weekly income from home"))      jobscam = 1;
+        /* Sextortion / webcam-extortion (P76): the attacker claims to hold
+         * intimate footage (real, bluffed, or AI-deepfaked) and threatens to
+         * send it to the victim's contacts unless paid. Distinct from
+         * ransomware extortion — there is nothing to "recover"; the threat is
+         * usually an empty mass-mailed bluff. Distinct remedy: do not pay, do
+         * not reply, preserve and report. Phrases surface in the matched-phrase
+         * text of the Ransom/extortion reason. */
+        if (strstr(r, "footage of you") ||
+            strstr(r, "video of you") ||
+            strstr(r, "photos of you") ||
+            strstr(r, "recorded you") ||
+            strstr(r, "your webcam") ||
+            strstr(r, "your camera") ||
+            strstr(r, "camera was hacked") ||
+            strstr(r, "adult content") ||
+            strstr(r, "watching explicit") ||
+            strstr(r, "compromising footage") ||
+            strstr(r, "compromising material") ||
+            strstr(r, "send this to your contacts") ||
+            strstr(r, "send this video to your contacts"))  sextortion = 1;
     }
 
     /* Fake security alerts and direct financial-action signals are credential/
@@ -2642,6 +2667,12 @@ hlse_classify_text_attack(const TextVerdict *v) {
         return "fake-job / task scam (pay-to-start employment fraud)";
     if (amp_laf || (prize && bait))
         return "lottery / advance-fee fraud";
+    /* Sextortion takes priority over the generic ransom/extortion label: the
+     * threat is to release intimate footage (often a bluff or AI deepfake),
+     * not to withhold encrypted files — a distinct attack with a distinct
+     * remedy (do not pay, do not reply, preserve and report). */
+    if (sextortion)
+        return "sextortion / webcam blackmail";
     if (ransom)
         return "ransom / extortion message";
     if (investment)
@@ -3707,6 +3738,13 @@ hlse_text_triage(const TextVerdict *v) {
                "proof \xe2\x80\x94 AI clones a voice from 3 seconds of audio, so "
                "ask a pre-agreed safe word and do not send money or gift cards "
                "until you reach them on your own number";
+    if (strstr(pat, "sextortion") || strstr(pat, "webcam blackmail"))
+        return "do NOT pay and do NOT reply \xe2\x80\x94 replying confirms a live "
+               "target and invites more demands; screenshot the message as "
+               "evidence, block the sender, and report to IC3 / your national "
+               "cybercrime line (and, if a minor is involved, NCMEC at "
+               "CyberTipline.org); if real intimate images of you do exist, "
+               "report them to the platform for takedown";
     if (strstr(pat, "ransom") || strstr(pat, "extortion"))
         return "do not pay \xe2\x80\x94 screenshot the message and report to "
                "your local cybercrime unit (FBI IC3, Action Fraud, etc.), then "
@@ -3802,6 +3840,11 @@ hlse_text_verify(const TextVerdict *v) {
                "the browser (or force-quit it) and never call the number on the "
                "screen; if you need help, call the company's main switchboard "
                "independently before allowing any remote access or payment";
+    if (strstr(pat, "sextortion") || strstr(pat, "webcam blackmail"))
+        return "the 'I hacked your webcam' claim is almost always a bluff blasted "
+               "to millions \xe2\x80\x94 any password they quote was bought from a "
+               "data breach, not proof of access; they cannot show you real "
+               "footage because none exists, so do not pay and do not reply";
     if (strstr(pat, "ransom") || strstr(pat, "extortion"))
         return "do not pay \xe2\x80\x94 consult a law enforcement or cybersecurity "
                "professional before responding; paying funds further attacks";
@@ -3889,6 +3932,11 @@ hlse_text_objective(const TextVerdict *v) {
     if (strstr(pat, "tech-support"))
         return "credit card or remote device access \xe2\x80\x94 reversible "
                "within hours if caught immediately";
+    if (strstr(pat, "sextortion") || strstr(pat, "webcam blackmail"))
+        return "an extortion payment for a threat that is almost always an empty "
+               "bluff \xe2\x80\x94 these emails are mass-mailed and the attacker "
+               "usually has no footage at all; even AI-deepfaked images do not "
+               "make paying work, because payment only marks you as a target";
     if (strstr(pat, "ransom") || strstr(pat, "extortion"))
         return "cryptocurrency payment \xe2\x80\x94 paying does not guarantee "
                "recovery and invites further extortion demands";
@@ -3941,6 +3989,11 @@ hlse_text_cascade(const TextVerdict *v) {
     if (!v || v->score < 60) return NULL;
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
+    if (strstr(pat, "sextortion") || strstr(pat, "webcam blackmail"))
+        return "nothing of yours is technically compromised by the threat itself "
+               "\xe2\x80\x94 but if you reused the breached password they quoted, "
+               "change it everywhere it appears, and tighten privacy on your "
+               "social accounts so the attacker cannot reach your contact list";
     if (strstr(pat, "fake-job") || strstr(pat, "task scam"))
         return "any card or account you used to pay, and any credentials you "
                "entered on the fake 'employer portal' \xe2\x80\x94 plus, if you ran "
