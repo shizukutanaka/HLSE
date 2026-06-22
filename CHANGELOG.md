@@ -2,6 +2,63 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.77] — 2026-06-21
+
+### Added
+- **Perspective 77: refund / subscription-renewal scam (fake auto-renewal
+  invoice) now has its own pattern label and advisory lenses — the Geek Squad
+  / Norton / McAfee "your membership auto-renewed, call to cancel" scam was
+  previously folded into the generic "callback phone scam (TOAD / vishing)"
+  label, which misses the refund-specific over-refund and remote-access
+  mechanics.**
+
+  Socratic question, derived from 2026 refund-scam reports (LifeLock, NordVPN,
+  Bitdefender, FTC): "A Geek Squad auto-renewal scam scores 85 (ISOLATE) and
+  classifies as 'callback phone scam (TOAD / vishing)'. The TOAD advice — 'do
+  not call the number; find the official number independently' — is correct as
+  far as it goes, but the refund scam has a distinctive second act the generic
+  advice never names: when you DO call, the agent confirms the charge, offers a
+  'refund', and then either asks for remote access to 'process' it or claims
+  they 'accidentally refunded too much' and pressures you to wire back the
+  difference (which they never actually sent). The single clarifying fact — a
+  genuine refund needs NOTHING from you, and no real company phones you to give
+  money back — is exactly what the victim needs and exactly what 'find the
+  official number' omits. Shouldn't the refund scam get its own label and a
+  remedy keyed to the over-refund and remote-access tricks?"
+
+  Pure advisory change — no scoring/detection logic touched. The auto-renewal
+  / refund phrases already fire (within the existing signals) and already
+  produce a BLOCK/ISOLATE score; this perspective only adds a classification
+  branch and the advisory strings keyed to it, using the same matched-phrase
+  keying as P73–P76. The branch is placed above the generic callback/TOAD
+  branch so a refund scam is labeled precisely; a plain callback/vishing
+  message (no refund/renewal language) is unaffected.
+
+  - **pattern** (`hlse_classify_text_attack`): "refund / subscription-renewal
+    scam (fake auto-renewal invoice)".
+  - **objective**: "money and device access via a fake refund — the invoice is
+    bait to make you call; the 'refund' then requires remote access … or
+    tricks you into wiring back an 'over-refund' the scammer never actually
+    sent".
+  - **verify**: "check the charge in your real bank or card statement, or the
+    provider's official app — never the number or link in this message; no
+    genuine company phones you to give money back, so an unexpected 'refund'
+    offer is itself the scam".
+  - **triage**: "do not call the number; if you already called, never grant
+    remote access or send back an 'over-refund' — a genuine refund needs
+    nothing from you … dispute any real charge through your card issuer".
+  - **cascade**: "if you granted remote access or moved any money, treat the
+    whole device and every account you opened during the call as compromised".
+  - **exoneration** (LOG/ALERT band): "real subscriptions do auto-renew.
+    Decisive test: open your bank/card statement or the provider's official app
+    directly … a 'call to cancel' invoice for a service you don't use is the
+    tell".
+
+  Research sources: LifeLock「3 Geek Squad scams」, NordVPN「Geek Squad email
+  scam 2026」, Bitdefender Geek-Squad guide, FTC subscription-renewal /
+  refund-scam advisories, Aura「Geek Squad Scams 2026」. 6 new integration
+  tests; 544 pass, 0 fail; zero warnings CLI + lib.
+
 ## [1.0.76] — 2026-06-21
 
 ### Added

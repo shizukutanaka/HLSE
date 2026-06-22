@@ -2328,6 +2328,12 @@ hlse_text_exoneration(const TextVerdict *v) {
                "from a few seconds of audio; hang up and call them back on their "
                "own known number, and ask a pre-agreed safe word that an AI "
                "clone cannot know";
+    if (strstr(pat, "refund") || strstr(pat, "subscription-renewal"))
+        return "real subscriptions do auto-renew and send receipts. Decisive "
+               "test: open your bank/card statement or the provider's official "
+               "app directly (never the number or link here) and check whether "
+               "the charge is real \xe2\x80\x94 a 'call to cancel' invoice for a "
+               "service you don't use is the tell";
     if (strstr(pat, "callback") || strstr(pat, "TOAD") || strstr(pat, "vishing"))
         return "organisations do send callback numbers for account verification. "
                "Decisive test: find the number independently on the organisation's "
@@ -2513,6 +2519,7 @@ hlse_classify_text_attack(const TextVerdict *v) {
     int fake_alert = 0, direct_fin = 0;
     int amp_bec = 0, amp_tss = 0, amp_ceo = 0, amp_laf = 0;
     int devicecode = 0, bankchange = 0, mfapush = 0, jobscam = 0, sextortion = 0;
+    int refundscam = 0;
 
     if (!v || v->n_reasons == 0) return NULL;
 
@@ -2623,6 +2630,24 @@ hlse_classify_text_attack(const TextVerdict *v) {
             strstr(r, "compromising material") ||
             strstr(r, "send this to your contacts") ||
             strstr(r, "send this video to your contacts"))  sextortion = 1;
+        /* Refund / subscription-renewal scam (P77): a fake auto-renewal invoice
+         * (Geek Squad, Norton, McAfee, PayPal) that exists to make the victim
+         * CALL to "cancel and get a refund" — then the agent demands remote
+         * access or tricks the victim into "returning an over-refund" via gift
+         * cards/wire. Distinct from a plain callback scam by the refund pretext.
+         * Phrases surface in the matched-phrase text of the reasons. */
+        if (strstr(r, "auto-renew") ||
+            strstr(r, "membership has renewed") ||
+            strstr(r, "subscription has renewed") ||
+            strstr(r, "subscription has been renewed") ||
+            strstr(r, "annual membership") ||
+            strstr(r, "receive a full refund") ||
+            strstr(r, "cancel and refund") ||
+            strstr(r, "cancel and receive a refund") ||
+            strstr(r, "to cancel and receive") ||
+            strstr(r, "did not authorize this") ||
+            strstr(r, "did not authorize this charge") ||
+            strstr(r, "to cancel this charge"))         refundscam = 1;
     }
 
     /* Fake security alerts and direct financial-action signals are credential/
@@ -2681,6 +2706,12 @@ hlse_classify_text_attack(const TextVerdict *v) {
         return "emergency impersonation scam (grandparent / fake-kidnapping)";
     if (qr)
         return "QR-code phishing (quishing)";
+    /* Refund / subscription-renewal scam takes priority over the generic
+     * callback/TOAD label: the fake auto-renewal invoice and the "call to get
+     * a refund" hook have a distinct remedy (a real refund needs nothing from
+     * you; never grant remote access or return an "over-refund"). */
+    if (refundscam)
+        return "refund / subscription-renewal scam (fake auto-renewal invoice)";
     if (callback)
         return "callback phone scam (TOAD / vishing)";
     if (authority && urgency)
@@ -3760,6 +3791,12 @@ hlse_text_triage(const TextVerdict *v) {
                "you entered credentials, change that account's password now; if "
                "you approved a payment to an unexpected payee, contact your bank "
                "or payment provider immediately to stop or dispute it";
+    if (strstr(pat, "refund") || strstr(pat, "subscription-renewal"))
+        return "do not call the number; if you already called, never grant "
+               "remote access or send back an 'over-refund' \xe2\x80\x94 a genuine "
+               "refund needs nothing from you; if you gave remote access, "
+               "disconnect and uninstall the tool (it may be a trojan) and "
+               "dispute any real charge through your card issuer, not the caller";
     if (strstr(pat, "callback") || strstr(pat, "vishing") || strstr(pat, "TOAD"))
         return "do not call the number in this message \xe2\x80\x94 if you "
                "already called and gave personal information, contact your bank "
@@ -3857,6 +3894,11 @@ hlse_text_verify(const TextVerdict *v) {
                "family member back on their own known number, and ask a "
                "pre-agreed safe word before sending any money or meeting any "
                "courier \xe2\x80\x94 take at least 10 minutes to verify independently";
+    if (strstr(pat, "refund") || strstr(pat, "subscription-renewal"))
+        return "check the charge in your real bank or card statement, or the "
+               "provider's official app \xe2\x80\x94 never the number or link in "
+               "this message; no genuine company phones you to give money back, "
+               "so an unexpected 'refund' offer is itself the scam";
     if (strstr(pat, "callback") || strstr(pat, "TOAD") || strstr(pat, "vishing"))
         return "do not call the number in this message \xe2\x80\x94 find the "
                "organisation's number independently on their official website";
@@ -3949,6 +3991,11 @@ hlse_text_objective(const TextVerdict *v) {
     if (strstr(pat, "QR") || strstr(pat, "quishing"))
         return "credentials entered after redirect \xe2\x80\x94 QR codes bypass "
                "link-preview safety checks";
+    if (strstr(pat, "refund") || strstr(pat, "subscription-renewal"))
+        return "money and device access via a fake refund \xe2\x80\x94 the "
+               "invoice is bait to make you call; the 'refund' then requires "
+               "remote access to your device or tricks you into wiring back an "
+               "'over-refund' the scammer never actually sent";
     if (strstr(pat, "callback") || strstr(pat, "TOAD") || strstr(pat, "vishing"))
         return "financial account or device access obtained via voice social "
                "engineering";
@@ -3994,6 +4041,11 @@ hlse_text_cascade(const TextVerdict *v) {
                "\xe2\x80\x94 but if you reused the breached password they quoted, "
                "change it everywhere it appears, and tighten privacy on your "
                "social accounts so the attacker cannot reach your contact list";
+    if (strstr(pat, "refund") || strstr(pat, "subscription-renewal"))
+        return "if you granted remote access or moved any money, treat the whole "
+               "device and every account you opened during the call as "
+               "compromised \xe2\x80\x94 scan from a clean device, change those "
+               "passwords, and watch your card and bank for unauthorised charges";
     if (strstr(pat, "fake-job") || strstr(pat, "task scam"))
         return "any card or account you used to pay, and any credentials you "
                "entered on the fake 'employer portal' \xe2\x80\x94 plus, if you ran "

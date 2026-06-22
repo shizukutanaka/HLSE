@@ -4003,6 +4003,49 @@ assert "bluff" in d.get("objective",""), d.get("objective","")
 ' && check "p76 json: sextortion pattern+objective present" "0" "0" \
    || check "p76 json: sextortion pattern+objective present" "0" "1"
 
+# ─── P77: refund / subscription-renewal scam (fake auto-renewal invoice) ─
+
+REFUND_BLOCK="Geek Squad: Your annual membership has auto-renewed for 399.99. If you did not authorize this, call 1-888-555-0142 immediately to cancel and receive a full refund"
+
+# p77: Geek Squad auto-renewal classifies as refund / subscription-renewal scam
+./hlse_core text "$REFUND_BLOCK" 2>&1 \
+    | grep -qi "Pattern:.*refund / subscription-renewal scam" \
+    && check "p77: auto-renewal invoice → refund/subscription-renewal pattern" "0" "0" \
+    || check "p77: auto-renewal invoice → refund/subscription-renewal pattern" "0" "1"
+
+# p77: objective explains the over-refund / remote-access mechanism
+./hlse_core text "$REFUND_BLOCK" 2>&1 \
+    | grep -qi "over-refund\|requires remote access" \
+    && check "p77: refund objective explains over-refund / remote access" "0" "0" \
+    || check "p77: refund objective explains over-refund / remote access" "0" "1"
+
+# p77: verify says check the real statement, no company phones to give money back
+./hlse_core text "$REFUND_BLOCK" 2>&1 \
+    | grep -qi "no genuine company phones you to give money back\|check the charge in your real bank" \
+    && check "p77: refund verify says check real statement" "0" "0" \
+    || check "p77: refund verify says check real statement" "0" "1"
+
+# p77: triage says never grant remote access or return an over-refund
+./hlse_core text "$REFUND_BLOCK" 2>&1 \
+    | grep -qi "never grant remote access or send back an 'over-refund'\|a genuine refund needs nothing from you" \
+    && check "p77: refund triage says no remote access / no over-refund return" "0" "0" \
+    || check "p77: refund triage says no remote access / no over-refund return" "0" "1"
+
+# p77: a plain TOAD/callback (no refund language) must NOT become refund-scam
+./hlse_core text "We detected a 750 dollar purchase on your Amazon account. If this was not you, call our fraud department at 1-888-555-0190 to dispute the charge now" 2>&1 \
+    | grep -qi "Pattern:.*refund / subscription-renewal" \
+    && check "p77: plain callback NOT mislabeled refund-scam" "1" "0" \
+    || check "p77: plain callback NOT mislabeled refund-scam" "1" "1"
+
+# p77 json: pattern + objective carry the refund-scam framing
+./hlse_core --json text "$REFUND_BLOCK" 2>&1 | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "refund" in d.get("pattern",""), d.get("pattern","")
+assert "fake refund" in d.get("objective",""), d.get("objective","")
+' && check "p77 json: refund-scam pattern+objective present" "0" "0" \
+   || check "p77 json: refund-scam pattern+objective present" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
