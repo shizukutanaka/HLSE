@@ -2730,9 +2730,66 @@ hlse_classify_text_attack(const TextVerdict *v) {
     return NULL;
 }
 
-/* Count how many INDEPENDENT detector families corroborate a URL verdict, and
- * map that to a qualitative confidence label.
+/* Stable machine-readable identifier for a text attack pattern.
  *
+ * Socratic question (Perspective 78): "Every text verdict now carries a human
+ * `pattern` label, but that label is prose we keep refining — when P57 changed
+ * 'Verify first' to 'Verify independently' a downstream test broke. A SIEM or
+ * SOAR rule that wants to route 'OAuth device-code phishing' alerts has no
+ * choice but to substring-match the prose, so every wording polish risks
+ * silently breaking automation. Shouldn't each pattern also expose a STABLE id
+ * (e.g. HLSE-OAUTH-DEVICECODE) that survives wording changes, so machines key
+ * on the id and humans read the label?"
+ *
+ * Maps the label from hlse_classify_text_attack() to a stable token. The ids
+ * are an append-only contract: an id, once shipped, never changes meaning even
+ * if the human label is reworded. Returns NULL when no pattern fired (so JSON
+ * consumers can treat absence as 'no recognised pattern'). Thread-safe; no
+ * allocation. */
+const char *
+hlse_text_pattern_id(const TextVerdict *v) {
+    const char *pat = hlse_classify_text_attack(v);
+    if (!pat) return NULL;
+    /* Order mirrors the classifier's priority so the most specific id wins. */
+    if (strstr(pat, "ClickFix"))              return "HLSE-CLICKFIX";
+    if (strstr(pat, "device-code") || strstr(pat, "OAuth"))
+                                              return "HLSE-OAUTH-DEVICECODE";
+    if (strstr(pat, "MFA-fatigue") || strstr(pat, "push-bombing"))
+                                              return "HLSE-MFA-FATIGUE";
+    if (strstr(pat, "payment-diversion"))     return "HLSE-BEC-PAYMENT-DIVERSION";
+    if (strstr(pat, "CEO-fraud"))             return "HLSE-BEC-CEO";
+    if (strstr(pat, "business email compromise") ||
+        strstr(pat, "BEC"))                   return "HLSE-BEC-WIRE";
+    if (strstr(pat, "tech-support"))          return "HLSE-TECH-SUPPORT";
+    if (strstr(pat, "fake-job") || strstr(pat, "task scam"))
+                                              return "HLSE-JOB-SCAM";
+    if (strstr(pat, "lottery") || strstr(pat, "advance-fee"))
+                                              return "HLSE-ADVANCE-FEE";
+    if (strstr(pat, "sextortion") || strstr(pat, "webcam blackmail"))
+                                              return "HLSE-SEXTORTION";
+    if (strstr(pat, "ransom") || strstr(pat, "extortion"))
+                                              return "HLSE-RANSOM";
+    if (strstr(pat, "investment") || strstr(pat, "pig-butchering"))
+                                              return "HLSE-INVESTMENT";
+    if (strstr(pat, "emergency"))             return "HLSE-EMERGENCY";
+    if (strstr(pat, "quishing") || strstr(pat, "QR"))
+                                              return "HLSE-QUISHING";
+    if (strstr(pat, "refund") || strstr(pat, "subscription-renewal"))
+                                              return "HLSE-REFUND-SCAM";
+    if (strstr(pat, "callback") || strstr(pat, "TOAD") || strstr(pat, "vishing"))
+                                              return "HLSE-CALLBACK-TOAD";
+    if (strstr(pat, "authority impersonation"))
+                                              return "HLSE-AUTHORITY";
+    if (strstr(pat, "urgency credential"))    return "HLSE-URGENCY-CRED";
+    if (strstr(pat, "fake security alert") || strstr(pat, "account suspension"))
+                                              return "HLSE-FAKE-ALERT";
+    if (strstr(pat, "urgency"))               return "HLSE-URGENCY";
+    if (strstr(pat, "credential / payment"))  return "HLSE-CRED-LURE";
+    if (strstr(pat, "prize"))                 return "HLSE-PRIZE";
+    return "HLSE-GENERIC";
+}
+
+/*
  * Socratic question (Perspective 21): "Your score says HOW threatening, but two
  * verdicts both scoring 60 can be epistemically worlds apart: one from a single
  * homoglyph detector barely crossing threshold, another from homoglyph + path +
@@ -5122,6 +5179,7 @@ print_json_text(const char *text, const TextVerdict *v) {
     char esc[1024];
     char preview[256];
     const char *pat  = hlse_classify_text_attack(v);
+    const char *pid  = hlse_text_pattern_id(v);   /* stable HLSE-* token */
     const char *tobj = hlse_text_objective(v);    /* NULL outside score >= 60 */
     const char *tvrf = hlse_text_verify(v);       /* NULL outside score >= 60 */
     const char *ttri = hlse_text_triage(v);       /* NULL outside score >= 60 */
@@ -5164,6 +5222,7 @@ print_json_text(const char *text, const TextVerdict *v) {
         }
     }
     if (pat)  printf(",\"pattern\":\"%s\"",     esc_pat);
+    if (pid)  printf(",\"pattern_id\":\"%s\"", pid);   /* stable SIEM token */
     if (tobj) printf(",\"objective\":\"%s\"",   esc_tobj);
     if (tvrf) printf(",\"verify\":\"%s\"",      esc_tvrf);
     if (ttri) printf(",\"triage\":\"%s\"",      esc_ttri);

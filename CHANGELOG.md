@@ -2,6 +2,47 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.78] — 2026-06-22
+
+### Added
+- **Perspective 78: stable machine-readable `pattern_id` for text verdicts —
+  every text verdict's prose `pattern` label is now accompanied by an
+  append-only `HLSE-*` token (e.g. `HLSE-BEC-WIRE`, `HLSE-SEXTORTION`,
+  `HLSE-OAUTH-DEVICECODE`) so SIEM/SOAR automation can route on a stable
+  identifier instead of substring-matching prose that we keep refining.**
+
+  Socratic question: "Every text verdict now carries a human `pattern` label,
+  but that label is prose we keep polishing — when P57 changed 'Verify first'
+  to 'Verify independently' a downstream test broke. A SIEM or SOAR rule that
+  wants to route 'OAuth device-code phishing' alerts has no choice but to
+  substring-match the prose, so every wording polish silently risks breaking
+  automation. Shouldn't each pattern also expose a STABLE id
+  (e.g. `HLSE-OAUTH-DEVICECODE`) that survives wording changes, so machines key
+  on the id and humans read the label?"
+
+  Pure advisory/output change — no scoring or detection logic touched. The new
+  `hlse_text_pattern_id()` maps the prose label returned by
+  `hlse_classify_text_attack()` to a stable token; it is a read-only lookup
+  over the existing classification, so F1 is unchanged. The contract is that
+  these tokens are **append-only**: a token's meaning never changes once
+  issued, and prose refinements never alter the id.
+
+  - **API**: new `const char *hlse_text_pattern_id(const TextVerdict *v)` in
+    `hlse_core.h` — returns the stable token, or NULL when score is 0 / no
+    pattern was recognised.
+  - **JSON**: `--json text` output gains a `"pattern_id"` field, emitted
+    alongside `"pattern"` (present iff the prose `pattern` is present).
+  - **Tokens (initial set)**: `HLSE-CLICKFIX`, `HLSE-OAUTH-DEVICECODE`,
+    `HLSE-MFA-FATIGUE`, `HLSE-BEC-PAYMENT-DIVERSION`, `HLSE-BEC-CEO`,
+    `HLSE-BEC-WIRE`, `HLSE-TECH-SUPPORT`, `HLSE-JOB-SCAM`, `HLSE-ADVANCE-FEE`,
+    `HLSE-SEXTORTION`, `HLSE-RANSOM`, `HLSE-INVESTMENT`, `HLSE-EMERGENCY`,
+    `HLSE-QUISHING`, `HLSE-REFUND-SCAM`, `HLSE-CALLBACK-TOAD`, `HLSE-AUTHORITY`,
+    `HLSE-URGENCY-CRED`, `HLSE-FAKE-ALERT`, `HLSE-URGENCY`, `HLSE-CRED-LURE`,
+    `HLSE-PRIZE`, `HLSE-GENERIC`.
+  - **Tests**: 6 new CLI integration tests (550 total, 0 failed) verifying the
+    id for urgency-cred / BEC / sextortion / MFA-fatigue, the well-formedness
+    and co-presence invariant, and that clean verdicts carry no id.
+
 ## [1.0.77] — 2026-06-21
 
 ### Added

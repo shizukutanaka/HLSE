@@ -28,7 +28,7 @@
 #include "hlse_text.h" /* TextVerdict, for hlse_classify_text_attack() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.77"
+#define HLSE_VERSION "1.0.78"
 
 #ifdef __cplusplus
 extern "C" {
@@ -114,6 +114,23 @@ const char *hlse_classify_url_attack(const Verdict *v);
  * text counterpart of hlse_classify_url_attack. Returns NULL when score is 0
  * or no recognisable pattern was found. Thread-safe; no allocation. */
 const char *hlse_classify_text_attack(const TextVerdict *v);
+
+/* Return a stable machine-readable pattern identifier for a text verdict —
+ * the SIEM/automation counterpart of hlse_classify_text_attack(). While the
+ * human label may be refined across versions, these HLSE-* tokens are
+ * APPEND-ONLY: once issued they never change meaning, so downstream rules can
+ * key on them without substring-matching fragile prose.
+ *
+ * Defined tokens (current):
+ *   HLSE-CLICKFIX, HLSE-OAUTH-DEVICECODE, HLSE-MFA-FATIGUE,
+ *   HLSE-BEC-PAYMENT-DIVERSION, HLSE-BEC-CEO, HLSE-BEC-WIRE,
+ *   HLSE-TECH-SUPPORT, HLSE-JOB-SCAM, HLSE-ADVANCE-FEE,
+ *   HLSE-SEXTORTION, HLSE-RANSOM, HLSE-INVESTMENT, HLSE-EMERGENCY,
+ *   HLSE-QUISHING, HLSE-REFUND-SCAM, HLSE-CALLBACK-TOAD,
+ *   HLSE-AUTHORITY, HLSE-URGENCY-CRED, HLSE-FAKE-ALERT,
+ *   HLSE-URGENCY, HLSE-CRED-LURE, HLSE-PRIZE, HLSE-GENERIC.
+ * Returns NULL when score is 0 or no pattern was found. Thread-safe; no alloc. */
+const char *hlse_text_pattern_id(const TextVerdict *v);
 
 /* First-response triage for a text verdict — the 60-second action the post-
  * response user must take (score >= 60 only). Keyed to the same attack pattern

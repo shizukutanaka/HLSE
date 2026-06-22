@@ -4046,6 +4046,67 @@ assert "fake refund" in d.get("objective",""), d.get("objective","")
 ' && check "p77 json: refund-scam pattern+objective present" "0" "0" \
    || check "p77 json: refund-scam pattern+objective present" "0" "1"
 
+# ─── P78: stable machine-readable pattern_id (SIEM/SOAR token) ─────────────
+# Every text verdict's prose `pattern` may be reworded across versions; the
+# `pattern_id` is an append-only HLSE-* token so automation keys on a stable
+# identifier instead of substring-matching fragile prose.
+
+# Urgency credential-harvest → HLSE-URGENCY-CRED
+./hlse_core --json text "URGENT: Your Apple ID has been suspended. Verify your account immediately to avoid permanent closure: http://apple-verify.ru/login" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d.get("pattern_id") == "HLSE-URGENCY-CRED", d.get("pattern_id")
+' && check "p78 json: urgency-cred → HLSE-URGENCY-CRED id" "0" "0" \
+   || check "p78 json: urgency-cred → HLSE-URGENCY-CRED id" "0" "1"
+
+# BEC wire-transfer → HLSE-BEC-WIRE
+./hlse_core --json text "Your boss John needs you to wire \$48,000 to this supplier account urgently: IBAN DE89370400440532013000" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d.get("pattern_id") == "HLSE-BEC-WIRE", d.get("pattern_id")
+' && check "p78 json: BEC wire → HLSE-BEC-WIRE id" "0" "0" \
+   || check "p78 json: BEC wire → HLSE-BEC-WIRE id" "0" "1"
+
+# Sextortion → HLSE-SEXTORTION
+./hlse_core --json text "I have a video of you watching adult content. Pay \$1200 in Bitcoin to bc1qtest or I will send it to your contacts." 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d.get("pattern_id") == "HLSE-SEXTORTION", d.get("pattern_id")
+' && check "p78 json: sextortion → HLSE-SEXTORTION id" "0" "0" \
+   || check "p78 json: sextortion → HLSE-SEXTORTION id" "0" "1"
+
+# MFA-fatigue / push-bombing → HLSE-MFA-FATIGUE
+./hlse_core --json text "URGENT: Hackers are trying to access your account. We are sending you MFA requests that will keep receiving requests until you approve. Approve in microsoft authenticator immediately to secure your account." 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d.get("pattern_id") == "HLSE-MFA-FATIGUE", d.get("pattern_id")
+' && check "p78 json: MFA-fatigue → HLSE-MFA-FATIGUE id" "0" "0" \
+   || check "p78 json: MFA-fatigue → HLSE-MFA-FATIGUE id" "0" "1"
+
+# pattern_id is well-formed and travels WITH the prose pattern (never alone)
+./hlse_core --json text "URGENT: Your Apple ID has been suspended. Verify your account immediately to avoid permanent closure: http://apple-verify.ru/login" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert ("pattern_id" in d) == ("pattern" in d), d
+pid = d.get("pattern_id","")
+assert pid.startswith("HLSE-") and " " not in pid, pid
+' && check "p78 json: pattern_id well-formed and co-present with pattern" "0" "0" \
+   || check "p78 json: pattern_id well-formed and co-present with pattern" "0" "1"
+
+# A clean (score 0) verdict carries NO pattern_id
+./hlse_core --json text "Hello, just confirming our lunch meeting tomorrow at noon." 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "pattern_id" not in d, d.get("pattern_id")
+' && check "p78 json: clean verdict has no pattern_id" "0" "0" \
+   || check "p78 json: clean verdict has no pattern_id" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
