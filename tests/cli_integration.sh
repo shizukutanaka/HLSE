@@ -4604,6 +4604,70 @@ assert "pattern_id" not in d, "safe verdict must not carry pattern_id"
 ' && check "p87 json: safe verdict carries no pattern_id" "0" "0" \
    || check "p87 json: safe verdict carries no pattern_id" "0" "1"
 
+# ─── P88: --list-patterns registry (discoverable pattern_id token set) ───────
+# The stable HLSE-* tokens are only useful to automation if the FULL set is
+# discoverable without grepping C source. `--list-patterns` is the registry.
+
+# JSON registry is well-formed, self-stamped, and internally consistent
+./hlse_core --json --list-patterns 2>&1 | python3 -c '
+import json, sys, re
+d = json.load(sys.stdin)
+assert d["kind"] == "pattern_registry", d["kind"]
+assert re.match(r"^[0-9]+\.[0-9]+\.[0-9]+$", d["hlse_version"]), d["hlse_version"]
+pats = d["patterns"]
+assert d["count"] == len(pats), (d["count"], len(pats))
+ids = [p["id"] for p in pats]
+assert len(ids) == len(set(ids)), "duplicate token in registry"
+for p in pats:
+    assert re.match(r"^HLSE-[A-Z0-9-]+$", p["id"]), p["id"]
+    assert p["kind"] and p["description"], p
+' && check "p88 json: --list-patterns registry well-formed & unique" "0" "0" \
+   || check "p88 json: --list-patterns registry well-formed & unique" "0" "1"
+
+# Registry has no DRIFT: every HLSE-* token a verdict can actually emit is
+# present in the registry. This is the guard that keeps the registry honest
+# as future perspectives add tokens.
+python3 -c '
+import json, subprocess, re
+reg = set(p["id"] for p in json.loads(
+    subprocess.check_output(["./hlse_core","--json","--list-patterns"]))["patterns"])
+# Probe one representative input per kind and collect emitted pattern_id tokens.
+probes = [
+    ["--json","text","This is urgent and confidential. The CEO has authorized a wire transfer of $85,000 to a new vendor. Keep this between us and process it today."],
+    ["--json","reqeusts","pip"],            # package typosquat — note: positional after subcommand
+    ["--json","package","reqeusts","pip"],
+    ["--json","clipboard","bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq","bc1qattackerwalletxyz9876543210abcdefghij12"],
+    ["--json","esp","/etc/hosts"],
+    ["--json","network"],
+]
+emitted = set()
+for p in probes:
+    try:
+        out = subprocess.check_output(["./hlse_core"]+p, stderr=subprocess.DEVNULL).decode()
+    except subprocess.CalledProcessError as e:
+        out = e.output.decode() if e.output else ""
+    for line in out.splitlines():
+        line = line.strip()
+        if not line.startswith("{"): continue
+        try: d = json.loads(line)
+        except Exception: continue
+        if "pattern_id" in d: emitted.add(d["pattern_id"])
+missing = emitted - reg
+assert not missing, "tokens emitted but absent from registry: " + repr(sorted(missing))
+' && check "p88: emitted pattern_id tokens are all in the registry" "0" "0" \
+   || check "p88: emitted pattern_id tokens are all in the registry" "0" "1"
+
+# text mode lists tokens with their kind and is a clean exit (meta-command)
+./hlse_core --list-patterns 2>&1 | grep -q "HLSE-CLIP-HIJACK" \
+    && ./hlse_core --list-patterns >/dev/null 2>&1 \
+    && check "p88 text: --list-patterns lists tokens, exit 0" "0" "0" \
+    || check "p88 text: --list-patterns lists tokens, exit 0" "0" "1"
+
+# help advertises the new meta-command
+./hlse_core --help 2>&1 | grep -q -- "--list-patterns" \
+    && check "p88: help advertises --list-patterns" "0" "0" \
+    || check "p88: help advertises --list-patterns" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

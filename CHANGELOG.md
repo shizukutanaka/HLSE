@@ -2,6 +2,38 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.88] — 2026-06-23
+
+### Added
+- **Perspective 88: `--list-patterns` — the discoverable registry of stable
+  `pattern_id` tokens.**
+
+  Socratic question: "P78–P87 made every pattern-bearing verdict emit a stable
+  HLSE-* `pattern_id` so SIEM/SOAR pipelines can route on an append-only token
+  instead of prose. But a stable token is only useful to automation if the FULL
+  set is discoverable — and right now the only way to learn which tokens exist
+  is to grep the C source. How does a detection engineer build a complete
+  routing table without reading our implementation?"
+
+  Pure output change — no detection logic touched. A new meta-command
+  (`--list-patterns`, sibling to `--version` / `--self-test`) emits the
+  authoritative registry of all 61 tokens:
+  - **`--json --list-patterns`** → `{"kind":"pattern_registry","hlse_version":…,
+    "count":61,"patterns":[{"id","kind","description"},…]}`.
+  - **`--list-patterns`** (text) → an aligned `token [kind] description` table.
+
+  A single in-source `g_pattern_registry` table is the append-only source of
+  truth, grouped by kind (text, url, file, secret, esp, package, network,
+  clipboard). A new regression test probes one input per kind and asserts every
+  emitted `pattern_id` is present in the registry, so the registry cannot drift
+  out of sync as future perspectives add tokens.
+
+  - **Tests**: 4 new CLI integration tests (587 total, 0 failed).
+
+### Fixed
+- Corrected a stale doc comment on `file_pattern_id()` that named the catch-all
+  return as `HLSE-FILE-GENERIC`; the function returns `HLSE-FILE-MASQUERADE`.
+
 ## [1.0.87] — 2026-06-23
 
 ### Added
