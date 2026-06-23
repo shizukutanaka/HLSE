@@ -2,6 +2,30 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.83] — 2026-06-23
+
+### Added
+- **Perspective 83 (Socratic): JSON Schema for `file`, `secret`, and
+  `scan_summary` kinds — completes the scan-output stream schema coverage.**
+
+  Socratic question: "P81 added schemas for `url` and `text` verdicts. But
+  `hlse_core --json scan <dir>` emits a mixed stream of `file`, `secret`,
+  and `scan_summary` lines that an integrator can't validate against the P81
+  schemas. A CI/CD pipeline that pipes scan output through schema validation
+  would still pass INVALID `file` and `secret` lines silently. Shouldn't the
+  `schema/` directory include schemas for the most common CI/CD scan kinds?"
+
+  Pure documentation/schema addition — no code changed.
+
+  - **`schema/hlse_file_verdict.schema.json`**: covers `--json file` output
+    and the file entries in scan output streams.
+  - **`schema/hlse_secret_verdict.schema.json`**: covers `--json secret` and
+    the scan-path variant (with `path` and `line` fields).
+  - **`schema/hlse_scan_summary.schema.json`**: covers the final
+    `scan_summary` rollup line from `--json scan`.
+  - **Tests**: 1 new schema-validation test (567 total, 0 failed) validating
+    real `file`, `secret`, and `scan_summary` JSON against the new schemas.
+
 ## [1.0.82] — 2026-06-23
 
 ### Added

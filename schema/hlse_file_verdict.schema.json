@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "$id": "hlse_file_verdict",
+  "title": "HLSE File Verdict",
+  "description": "JSON output of `hlse_core --json file <path>` or the file entries emitted by `hlse_core --json scan <dir>`.",
+  "type": "object",
+  "required": ["kind", "path", "score", "action", "severity", "reasons"],
+  "properties": {
+    "kind": {
+      "const": "file",
+      "description": "Discriminator — always 'file' for this schema."
+    },
+    "path": {
+      "type": "string",
+      "description": "Absolute path to the analysed file (JSON-escaped)."
+    },
+    "score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "action": {
+      "type": "string",
+      "enum": ["SAFE", "LOG", "ALERT", "BLOCK", "ISOLATE"]
+    },
+    "severity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "0=SAFE 1=LOG 2=ALERT 3=BLOCK 4=ISOLATE. Use severity >= 3 for actionable gates."
+    },
+    "pattern": {
+      "type": "string",
+      "description": "Attack-pattern label (e.g. 'double-extension file masquerade'). Present when score > 0."
+    },
+    "objective": {
+      "type": "string",
+      "description": "The attacker's likely objective (score >= 60 only)."
+    },
+    "verify": {
+      "type": "string",
+      "description": "The single independent check before opening the file (score >= 60 only)."
+    },
+    "triage": {
+      "type": "string",
+      "description": "60-second post-open response (score >= 60 only)."
+    },
+    "cascade_risk": {
+      "type": "string",
+      "description": "Other assets at risk if the file was opened (score >= 60 only)."
+    },
+    "blind_spot": {
+      "type": "string",
+      "description": "What HLSE cannot detect for file analysis (score 0 only)."
+    },
+    "reasons": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Per-signal detector reasons. Empty array for SAFE verdicts."
+    }
+  },
+  "additionalProperties": false
+}

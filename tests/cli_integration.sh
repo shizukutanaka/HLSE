@@ -4315,6 +4315,78 @@ assert d["severity"] == band[d["action"]], str(d["severity"]) + " vs " + d["acti
    || check "p82 json file: severity monotonic co-maps action band" "0" "1"
 rm -f "$P82_TMPF2"
 
+# ─── P83: JSON Schema for file, secret, and scan_summary kinds ───────────────
+# P81 added schemas for url/text; P83 completes the scan-output stream by
+# adding normative schemas for the three most common CI/CD scan kinds.
+if command -v python3 >/dev/null 2>&1 && python3 -c "import jsonschema" 2>/dev/null; then
+    python3 - <<'PYEOF'
+import json, sys, os, tempfile, subprocess
+try:
+    from jsonschema import validate, ValidationError
+except ImportError:
+    sys.exit(0)
+
+schemas = {}
+for name, path in [
+    ("file",         "schema/hlse_file_verdict.schema.json"),
+    ("secret",       "schema/hlse_secret_verdict.schema.json"),
+    ("scan_summary", "schema/hlse_scan_summary.schema.json"),
+]:
+    with open(path) as f:
+        schemas[name] = json.load(f)
+
+def run(args):
+    r = subprocess.run(["./hlse_core"] + args, capture_output=True, text=True)
+    return (r.stdout + r.stderr).strip().split("\n")
+
+fails = []
+
+# file verdict
+with tempfile.NamedTemporaryFile(suffix=".pdf.exe", delete=False) as tf:
+    tf_path = tf.name
+try:
+    for line in run(["--json", "file", tf_path]):
+        d = json.loads(line)
+        if d.get("kind") == "file":
+            try:
+                validate(instance=d, schema=schemas["file"])
+            except ValidationError as e:
+                fails.append(f"file: {e.message}")
+            break
+finally:
+    os.unlink(tf_path)
+
+# secret verdict
+d = json.loads(run(["--json", "secret", "AKIA2E3MWORQXYZ4567PQ"])[0])
+try:
+    validate(instance=d, schema=schemas["secret"])
+except ValidationError as e:
+    fails.append(f"secret: {e.message}")
+
+# scan_summary
+with tempfile.TemporaryDirectory() as tmpd:
+    with open(os.path.join(tmpd, "s.env"), "w") as f:
+        f.write("api_key = AKIA2E3MWORQXYZ4567PQ\n")
+    for line in run(["--json", "scan", tmpd]):
+        d = json.loads(line)
+        if d.get("kind") == "scan_summary":
+            try:
+                validate(instance=d, schema=schemas["scan_summary"])
+            except ValidationError as e:
+                fails.append(f"scan_summary: {e.message}")
+            break
+
+if fails:
+    print("SCHEMA FAIL: " + "; ".join(fails))
+    sys.exit(1)
+PYEOF
+    [ $? -eq 0 ] \
+        && check "p83 schema: file/secret/scan_summary validate against JSON Schema" "0" "0" \
+        || check "p83 schema: file/secret/scan_summary validate against JSON Schema" "0" "1"
+else
+    check "p83 schema: file/secret/scan_summary validation (skipped)" "0" "0"
+fi
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
