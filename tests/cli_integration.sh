@@ -4501,6 +4501,51 @@ else
     check "p85 scan_summary: max_severity schema validation (skipped)" "0" "0"
 fi
 
+# ─── P86: stable pattern_id for file and secret kinds (symmetry) ─────────────
+# P78/P79 gave url/text stable pattern_id tokens; P86 extends the same
+# append-only token contract to the file and secret kinds, which also emit a
+# prose `pattern` but previously had no machine-routable id.
+
+# file masquerade → HLSE-FILE-* token
+P86_TF=$(mktemp /tmp/XXXXXX.pdf.exe)
+./hlse_core --json file "$P86_TF" 2>&1 \
+    | python3 -c '
+import sys, json, re
+d = json.loads(sys.stdin.readline())
+pid = d.get("pattern_id","")
+assert re.match(r"^HLSE-FILE-[A-Z0-9-]+$", pid), pid
+assert ("pattern_id" in d) == ("pattern" in d), d
+' && check "p86 json file: double-ext → HLSE-FILE-* pattern_id" "0" "0" \
+   || check "p86 json file: double-ext → HLSE-FILE-* pattern_id" "0" "1"
+rm -f "$P86_TF"
+
+# secret AWS key → HLSE-SECRET-AWS
+./hlse_core --json secret "AKIA2E3MWORQXYZ4567PQ" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d.get("pattern_id") == "HLSE-SECRET-AWS", d.get("pattern_id")
+' && check "p86 json secret: AWS key → HLSE-SECRET-AWS pattern_id" "0" "0" \
+   || check "p86 json secret: AWS key → HLSE-SECRET-AWS pattern_id" "0" "1"
+
+# secret GitHub PAT → HLSE-SECRET-GITHUB
+./hlse_core --json secret "ghp_1234567890abcdefghijklmnopqrstuvwxyz" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d.get("pattern_id") == "HLSE-SECRET-GITHUB", d.get("pattern_id")
+' && check "p86 json secret: GitHub PAT → HLSE-SECRET-GITHUB pattern_id" "0" "0" \
+   || check "p86 json secret: GitHub PAT → HLSE-SECRET-GITHUB pattern_id" "0" "1"
+
+# clean secret carries no pattern_id
+./hlse_core --json secret "just some plain words here" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "pattern_id" not in d, d.get("pattern_id")
+' && check "p86 json secret: clean verdict has no pattern_id" "0" "0" \
+   || check "p86 json secret: clean verdict has no pattern_id" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

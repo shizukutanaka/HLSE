@@ -2,6 +2,37 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.86] — 2026-06-23
+
+### Added
+- **Perspective 86: stable `pattern_id` for `file` and `secret` kinds —
+  completes the stable-token contract across all pattern-bearing verdict
+  kinds.**
+
+  現段階の長所短所 review: the JSON API's strength is its uniform contract
+  (kind, hlse_version, score, action, severity everywhere). The remaining
+  weakness was a `pattern_id` asymmetry — P78/P79 gave `url` and `text` stable
+  routing tokens, but `file` and `secret` (the other two kinds that emit a
+  prose `pattern`) still forced a SIEM to substring-match the prose
+  ("double-extension file masquerade…", "exposed credential — AWS Access
+  Key ID"). A wording polish to those labels would silently break automation,
+  exactly the failure P78 was created to prevent.
+
+  Pure output change — no detection logic touched. Two static helpers map the
+  existing prose pattern to an append-only token:
+  - `file_pattern_id()`: `HLSE-FILE-RTL-OVERRIDE`, `HLSE-FILE-DOUBLE-EXT`,
+    `HLSE-FILE-MACRO`, `HLSE-FILE-PDF-JS`, `HLSE-FILE-MASQUERADE`.
+  - `secret_pattern_id()`: `HLSE-SECRET-AWS`, `HLSE-SECRET-GITHUB`,
+    `HLSE-SECRET-STRIPE`, `HLSE-SECRET-SLACK`, `HLSE-SECRET-GOOGLE`,
+    `HLSE-SECRET-OPENAI`, `HLSE-SECRET-ANTHROPIC`, `HLSE-SECRET-AZURE`,
+    `HLSE-SECRET-PRIVATE-KEY`, `HLSE-SECRET-JWT`, `HLSE-SECRET-GENERIC`.
+
+  - **JSON**: `pattern_id` now emitted alongside `pattern` at all four
+    file/secret JSON sites (standalone + scan-path for each).
+  - **Schemas**: `hlse_file_verdict` and `hlse_secret_verdict` gain `pattern_id`
+    with provider-specific pattern constraints.
+  - **Tests**: 4 new CLI integration tests (578 total, 0 failed).
+
 ## [1.0.85] — 2026-06-23
 
 ### Added

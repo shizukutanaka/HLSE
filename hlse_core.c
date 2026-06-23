@@ -4508,7 +4508,45 @@ action_for_score(int score) {
  * Library users (HLSE_CORE_AS_LIB defined) get only check_url + types. */
 #ifndef HLSE_CORE_AS_LIB
 
-/* ─────────────────────────── self-tests ─────────────────────────────── */
+/* Stable machine-readable pattern id for a file-masquerade verdict — the file
+ * counterpart of hlse_text_pattern_id (P86). Keyed to the prose label computed
+ * inline at the file display sites so the same append-only HLSE-FILE-* tokens
+ * are emitted everywhere a file `pattern` is shown. Returns "HLSE-FILE-GENERIC"
+ * for the catch-all masquerade label; never NULL when called with a non-NULL
+ * fpat. */
+static const char *
+file_pattern_id(const char *fpat) {
+    if (!fpat) return NULL;
+    if (strstr(fpat, "RTL override"))    return "HLSE-FILE-RTL-OVERRIDE";
+    if (strstr(fpat, "double-extension")) return "HLSE-FILE-DOUBLE-EXT";
+    if (strstr(fpat, "macro"))            return "HLSE-FILE-MACRO";
+    if (strstr(fpat, "embedded JavaScript")) return "HLSE-FILE-PDF-JS";
+    return "HLSE-FILE-MASQUERADE";
+}
+
+/* Stable machine-readable pattern id for an exposed-credential verdict — the
+ * secret counterpart of hlse_text_pattern_id (P86). Keyed to the credential
+ * type label (sv.findings[0].type) so SIEM rules route on a stable HLSE-SECRET-*
+ * token instead of the freeform provider string. Returns "HLSE-SECRET-GENERIC"
+ * for unrecognised types; never NULL when called with a non-NULL ftype. */
+static const char *
+secret_pattern_id(const char *ftype) {
+    if (!ftype) return NULL;
+    if (strstr(ftype, "AWS"))     return "HLSE-SECRET-AWS";
+    if (strstr(ftype, "GitHub"))  return "HLSE-SECRET-GITHUB";
+    if (strstr(ftype, "Stripe"))  return "HLSE-SECRET-STRIPE";
+    if (strstr(ftype, "Slack"))   return "HLSE-SECRET-SLACK";
+    if (strstr(ftype, "Google"))  return "HLSE-SECRET-GOOGLE";
+    if (strstr(ftype, "OpenAI"))  return "HLSE-SECRET-OPENAI";
+    if (strstr(ftype, "Anthropic")) return "HLSE-SECRET-ANTHROPIC";
+    if (strstr(ftype, "Azure"))   return "HLSE-SECRET-AZURE";
+    if (strstr(ftype, "Private key") || strstr(ftype, "private key"))
+                                  return "HLSE-SECRET-PRIVATE-KEY";
+    if (strstr(ftype, "JWT"))     return "HLSE-SECRET-JWT";
+    return "HLSE-SECRET-GENERIC";
+}
+
+
 
 static int
 self_test(void) {
@@ -5936,6 +5974,7 @@ main(int argc, char **argv) {
                                         fpat = "PDF with embedded JavaScript (drive-by execution lure)";
                                 }
                                 json_escape(fpat,   esc, sizeof(esc)); printf(",\"pattern\":\"%s\"",      esc);
+                                printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
                                 json_escape(sf_obj, esc, sizeof(esc)); printf(",\"objective\":\"%s\"",    esc);
                                 json_escape(sf_vrf, esc, sizeof(esc)); printf(",\"verify\":\"%s\"",       esc);
                                 json_escape(sf_tri, esc, sizeof(esc)); printf(",\"triage\":\"%s\"",       esc);
@@ -6086,6 +6125,7 @@ main(int argc, char **argv) {
                                                      "exposed credential \xe2\x80\x94 %s", ftype);
                                             json_escape(esc_p, ed, sizeof(ed));
                                             printf(",\"pattern\":\"%s\"", ed);
+                                            printf(",\"pattern_id\":\"%s\"", secret_pattern_id(ftype));
                                             if (sobj) {
                                                 json_escape(sobj, ed, sizeof(ed));
                                                 printf(",\"objective\":\"%s\"", ed);
@@ -6961,6 +7001,7 @@ main(int argc, char **argv) {
                     snprintf(epat, sizeof(epat), "exposed credential \xe2\x80\x94 %s", ftype);
                     json_escape(epat, e, sizeof(e));
                     printf(",\"pattern\":\"%s\"", e);
+                    printf(",\"pattern_id\":\"%s\"", secret_pattern_id(ftype));
                     if (sobj) { json_escape(sobj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e); }
                     json_escape(sec_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
                     json_escape(sec_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
@@ -7338,6 +7379,7 @@ main(int argc, char **argv) {
                             fpat = "PDF with embedded JavaScript (drive-by execution lure)";
                     }
                     json_escape(fpat,     e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                    printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
                     json_escape(file_obj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
                     json_escape(file_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
                     json_escape(file_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);

@@ -52,6 +52,18 @@
       "type": "string",
       "description": "Attack-pattern label (e.g. 'double-extension file masquerade'). Present when score > 0."
     },
+    "pattern_id": {
+      "type": "string",
+      "pattern": "^HLSE-FILE-[A-Z0-9-]+$",
+      "description": "Stable append-only SIEM/SOAR routing token for the file-masquerade pattern. Present iff `pattern` is present.",
+      "examples": [
+        "HLSE-FILE-RTL-OVERRIDE",
+        "HLSE-FILE-DOUBLE-EXT",
+        "HLSE-FILE-MACRO",
+        "HLSE-FILE-PDF-JS",
+        "HLSE-FILE-MASQUERADE"
+      ]
+    },
     "objective": {
       "type": "string",
       "description": "The attacker's likely objective (score >= 60 only)."
