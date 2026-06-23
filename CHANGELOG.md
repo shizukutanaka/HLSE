@@ -2,6 +2,32 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.82] — 2026-06-23
+
+### Added
+- **Perspective 82 (Socratic): numeric `severity` field extended to ALL JSON
+  output paths — closes the cross-kind routing gap P80 opened.**
+
+  Socratic question: "P80 added `severity` to `print_json_url` and
+  `print_json_text`. But `hlse_core` has 14+ subcommands — `file`, `secret`,
+  `email`, `audit`, `paste`, `network`, `esp`, `package`, `clipboard` — and
+  each emits its own `{"kind":"..."}` JSON from a separate code path. A SIEM
+  with a single `severity >= 3` routing rule covers URL and text alerts but
+  **silently misses** a high-severity file-masquerade (`.pdf.exe`) or AWS key
+  detection, because those JSON paths never emitted `severity`. Shouldn't every
+  `--json` path emit `severity` so one numeric gate works uniformly across all
+  subcommands?"
+
+  Pure output change — no detection logic touched. Added
+  `hlse_severity_for_score()` call to all remaining JSON emitters:
+  `file` (in scan + standalone), `secret` (in scan + standalone), `esp`,
+  `package`, `paste`, `network`, `email`, `clipboard`, `audit`.
+
+  - **Before**: 2 of 12 JSON kinds emitted `severity` (url, text only)
+  - **After**: all 12 JSON kinds emit `severity` uniformly
+  - **Tests**: 4 new CLI integration tests (566 total, 0 failed) verifying
+    severity on file/secret/esp kinds and the monotonic invariant across kinds.
+
 ## [1.0.81] — 2026-06-23
 
 ### Added

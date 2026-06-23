@@ -4266,6 +4266,55 @@ else
     check "p81 schema: JSON Schema validation (skipped — jsonschema not available)" "0" "0"
 fi
 
+# ─── P82: severity field on all remaining JSON kind paths ────────────────────
+# P80 added severity to url/text paths; P82 extends it to file, secret, esp,
+# package, paste, network, email, clipboard, audit so one `severity >= 3` rule
+# works uniformly across all HLSE subcommands.
+
+# file kind → severity present (ISOLATE = 4 for .exe masquerade)
+P82_TMPF=$(mktemp /tmp/XXXXXX.pdf.exe)
+./hlse_core --json file "$P82_TMPF" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "severity" in d and isinstance(d["severity"], int), d
+' && check "p82 json file: severity field present" "0" "0" \
+   || check "p82 json file: severity field present" "0" "1"
+rm -f "$P82_TMPF"
+
+# secret kind → severity present
+P82_TMPD=$(mktemp -d)
+echo "api_key = AKIA2E3MWORQXYZ4567PQ" > "$P82_TMPD/s.env"
+./hlse_core --json secret scan "$P82_TMPD" 2>&1 | head -1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "severity" in d and isinstance(d["severity"], int), d
+' && check "p82 json secret: severity field present" "0" "0" \
+   || check "p82 json secret: severity field present" "0" "1"
+rm -rf "$P82_TMPD"
+
+# esp kind → severity present
+./hlse_core --json esp /etc/hosts 2>&1 | head -1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert "severity" in d and isinstance(d["severity"], int), d
+' && check "p82 json esp: severity field present" "0" "0" \
+   || check "p82 json esp: severity field present" "0" "1"
+
+# Monotonic invariant holds across ALL kind paths (file example)
+P82_TMPF2=$(mktemp /tmp/XXXXXX.pdf.exe)
+./hlse_core --json file "$P82_TMPF2" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+band = {"SAFE":0,"LOG":1,"ALERT":2,"BLOCK":3,"ISOLATE":4}
+assert d["severity"] == band[d["action"]], str(d["severity"]) + " vs " + d["action"]
+' && check "p82 json file: severity monotonic co-maps action band" "0" "0" \
+   || check "p82 json file: severity monotonic co-maps action band" "0" "1"
+rm -f "$P82_TMPF2"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -5888,8 +5888,10 @@ main(int argc, char **argv) {
                             char esc[512];
                             json_escape(fullpath, esc, sizeof(esc));
                             printf("{\"kind\":\"file\",\"path\":\"%s\","
-                                   "\"score\":%d,\"action\":\"%s\",\"reasons\":[",
-                                   esc, fv.score, hlse_action_for_score(fv.score));
+                                   "\"score\":%d,\"action\":\"%s\","
+                                   "\"severity\":%d,\"reasons\":[",
+                                   esc, fv.score, hlse_action_for_score(fv.score),
+                                   hlse_severity_for_score(fv.score));
                             for (i = 0; i < fv.n_reasons; i++) {
                                 json_escape(fv.reasons[i], esc, sizeof(esc));
                                 printf("%s\"%s\"", i ? "," : "", esc);
@@ -6028,9 +6030,11 @@ main(int argc, char **argv) {
                                         printf("{\"kind\":\"secret\","
                                                "\"path\":\"%s\","
                                                "\"line\":%d,\"score\":%d,"
-                                               "\"action\":\"%s\",\"findings\":[",
+                                               "\"action\":\"%s\",\"severity\":%d,"
+                                               "\"findings\":[",
                                                esc_p, lineno, sv.score,
-                                               hlse_action_for_score(sv.score));
+                                               hlse_action_for_score(sv.score),
+                                               hlse_severity_for_score(sv.score));
                                         for (i = 0; i < sv.n_findings; i++) {
                                             json_escape(sv.findings[i].type, et, sizeof(et));
                                             json_escape(sv.findings[i].description, ed, sizeof(ed));
@@ -6443,7 +6447,9 @@ main(int argc, char **argv) {
         if (json_out) {
             int i;
             printf("{\"kind\":\"esp\",\"score\":%d,\"action\":\"%s\","
-                   "\"reasons\":[", pv.score, hlse_action_for_score(pv.score));
+                   "\"severity\":%d,\"reasons\":[",
+                   pv.score, hlse_action_for_score(pv.score),
+                   hlse_severity_for_score(pv.score));
             for (i = 0; i < pv.n_reasons; i++) {
                 char esc[512];
                 json_escape(pv.reasons[i], esc, sizeof(esc));
@@ -6555,8 +6561,9 @@ main(int argc, char **argv) {
             PackageVerdict pv = hlse_check_package(argv[idx + 1], eco);
             if (json_out) {
                 printf("{\"kind\":\"package\",\"name\":\"%s\",\"score\":%d,"
-                       "\"action\":\"%s\"",
-                       argv[idx + 1], pv.score, hlse_action_for_score(pv.score));
+                       "\"action\":\"%s\",\"severity\":%d",
+                       argv[idx + 1], pv.score, hlse_action_for_score(pv.score),
+                       hlse_severity_for_score(pv.score));
                 if (pv.n_matches > 0) {
                     int i;
                     printf(",\"matches\":[");
@@ -6682,8 +6689,9 @@ main(int argc, char **argv) {
             if (json_out) {
                 int i;
                 printf("{\"kind\":\"paste\",\"score\":%d,\"action\":\"%s\","
-                       "\"signals\":%d",
-                       pv.score, hlse_action_for_score(pv.score), pv.signals);
+                       "\"severity\":%d,\"signals\":%d",
+                       pv.score, hlse_action_for_score(pv.score),
+                       hlse_severity_for_score(pv.score), pv.signals);
                 if (pv.score == 0) {
                     const char *bs = hlse_blindspot_for("paste");
                     if (bs) {
@@ -6775,7 +6783,9 @@ main(int argc, char **argv) {
         if (json_out) {
             int i;
             printf("{\"kind\":\"network\",\"score\":%d,\"action\":\"%s\","
-                   "\"reasons\":[", nv.score, hlse_action_for_score(nv.score));
+                   "\"severity\":%d,\"reasons\":[",
+                   nv.score, hlse_action_for_score(nv.score),
+                   hlse_severity_for_score(nv.score));
             for (i = 0; i < nv.n_reasons; i++) {
                 char esc[512];
                 json_escape(nv.reasons[i], esc, sizeof(esc));
@@ -6885,7 +6895,9 @@ main(int argc, char **argv) {
             if (json_out) {
                 int i;
                 printf("{\"kind\":\"secret\",\"score\":%d,\"action\":\"%s\","
-                       "\"findings\":[", sv.score, hlse_action_for_score(sv.score));
+                       "\"severity\":%d,\"findings\":[",
+                       sv.score, hlse_action_for_score(sv.score),
+                       hlse_severity_for_score(sv.score));
                 for (i = 0; i < sv.n_findings; i++) {
                     char et[64], ed[512];
                     json_escape(sv.findings[i].type, et, sizeof(et));
@@ -7006,7 +7018,9 @@ main(int argc, char **argv) {
             if (json_out) {
                 int i;
                 printf("{\"kind\":\"email\",\"score\":%d,\"action\":\"%s\","
-                       "\"reasons\":[", ev.score, hlse_action_for_score(ev.score));
+                       "\"severity\":%d,\"reasons\":[",
+                       ev.score, hlse_action_for_score(ev.score),
+                       hlse_severity_for_score(ev.score));
                 for (i = 0; i < ev.n_reasons; i++) {
                     char esc[512];
                     json_escape(ev.reasons[i], esc, sizeof(esc));
@@ -7148,10 +7162,12 @@ main(int argc, char **argv) {
                 json_escape(cv.reason, er, sizeof(er));
                 json_escape(rem ? rem : "", erm, sizeof(erm));
                 printf("{\"kind\":\"clipboard\",\"score\":%d,\"action\":\"%s\","
+                       "\"severity\":%d,"
                        "\"is_swap\":%d,"
                        "\"original\":\"%s\",\"swapped\":\"%s\",\"reason\":\"%s\","
                        "\"remediation\":\"%s\"",
                        cv.score, hlse_action_for_score(cv.score),
+                       hlse_severity_for_score(cv.score),
                        cv.is_swap, eo, es, er, erm);
                 if (cv.score == 0) {
                     const char *bs = hlse_blindspot_for("clipboard");
@@ -7251,8 +7267,9 @@ main(int argc, char **argv) {
                 char esc[512];
                 json_escape(argv[idx + 1], esc, sizeof(esc));
                 printf("{\"kind\":\"file\",\"path\":\"%s\",\"score\":%d,"
-                       "\"action\":\"%s\",\"reasons\":[",
-                       esc, fv.score, hlse_action_for_score(fv.score));
+                       "\"action\":\"%s\",\"severity\":%d,\"reasons\":[",
+                       esc, fv.score, hlse_action_for_score(fv.score),
+                       hlse_severity_for_score(fv.score));
                 for (i = 0; i < fv.n_reasons; i++) {
                     json_escape(fv.reasons[i], esc, sizeof(esc));
                     printf("%s\"%s\"", i > 0 ? "," : "", esc);
@@ -7368,10 +7385,12 @@ main(int argc, char **argv) {
         if (json_out) {
             int i;
             printf("{\"kind\":\"audit\",\"score\":%d,\"action\":\"%s\","
+                   "\"severity\":%d,"
                    "\"hardening_index\":%d,\"hardening_band\":\"%s\","
                    "\"crit_count\":%d,\"high_count\":%d,"
                    "\"findings\":[",
-                   av.score, hlse_action_for_score(av.score), hi, band,
+                   av.score, hlse_action_for_score(av.score),
+                   hlse_severity_for_score(av.score), hi, band,
                    crit_count, high_count);
             for (i = 0; i < av.n_findings; i++) {
                 char esc[512];
