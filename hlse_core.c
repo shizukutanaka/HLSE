@@ -6550,6 +6550,7 @@ main(int argc, char **argv) {
                     "the firmware is re-flashed";
                 char e[512];
                 json_escape(esp_pat, e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                printf(",\"pattern_id\":\"HLSE-ESP-BOOTKIT\"");
                 json_escape(esp_obj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
                 json_escape(esp_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
                 json_escape(esp_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
@@ -6675,6 +6676,7 @@ main(int argc, char **argv) {
                     char e[512];
                     json_escape(pkg_pat, e, sizeof(e));
                     printf(",\"pattern\":\"%s\"", e);
+                    printf(",\"pattern_id\":\"HLSE-PKG-TYPOSQUAT\"");
                     json_escape(pkg_obj, e, sizeof(e));
                     printf(",\"objective\":\"%s\"", e);
                     json_escape(pkg_vrf, e, sizeof(e));
@@ -6784,6 +6786,7 @@ main(int argc, char **argv) {
                     ptri = hlse_text_triage(&ptv);
                     pcas = hlse_text_cascade(&ptv);
                     if (ppat) { char e[512]; json_escape(ppat,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
+                    if (ppat) { const char *pid = hlse_text_pattern_id(&ptv); if (pid) printf(",\"pattern_id\":\"%s\"",pid); }
                     if (pobj) { char e[512]; json_escape(pobj,e,sizeof(e)); printf(",\"objective\":\"%s\"",e); }
                     if (pvrf) { char e[512]; json_escape(pvrf,e,sizeof(e)); printf(",\"verify\":\"%s\"",e); }
                     if (ptri) { char e[512]; json_escape(ptri,e,sizeof(e)); printf(",\"triage\":\"%s\"",e); }
@@ -6885,6 +6888,7 @@ main(int argc, char **argv) {
                     "from a clean device before the machine is brought back online";
                 char e[512];
                 json_escape(net_pat, e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                printf(",\"pattern_id\":\"HLSE-NET-C2\"");
                 json_escape(net_obj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
                 json_escape(net_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
                 json_escape(net_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
@@ -7131,6 +7135,7 @@ main(int argc, char **argv) {
                     etri  = hlse_text_triage(&etv);
                     ecas  = hlse_text_cascade(&etv);
                     if (epat2) { json_escape(epat2,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
+                    if (epat2) { const char *pid = hlse_text_pattern_id(&etv); if (pid) printf(",\"pattern_id\":\"%s\"",pid); }
                     if (eobj)  { json_escape(eobj,e,sizeof(e));  printf(",\"objective\":\"%s\"",e); }
                     if (evrf)  { json_escape(evrf,e,sizeof(e));  printf(",\"verify\":\"%s\"",e); }
                     if (etri)  { json_escape(etri,e,sizeof(e));  printf(",\"triage\":\"%s\"",e); }
@@ -7261,6 +7266,7 @@ main(int argc, char **argv) {
                     char e[512];
                     json_escape(cp_pat, e, sizeof(e));
                     printf(",\"pattern\":\"%s\"", e);
+                    printf(",\"pattern_id\":\"HLSE-CLIP-HIJACK\"");
                     json_escape(cp_obj, e, sizeof(e));
                     printf(",\"objective\":\"%s\"", e);
                     json_escape(cp_vrf, e, sizeof(e));

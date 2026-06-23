@@ -2,6 +2,36 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.87] — 2026-06-23
+
+### Added
+- **Perspective 87: stable `pattern_id` for all remaining pattern-bearing kinds —
+  closes the last `pattern` / `pattern_id` asymmetry across the full 12-kind
+  JSON API.**
+
+  Socratic question: "P86 closed the `file`/`secret` gap so that all four kinds
+  emitting a prose `pattern` now carry a stable HLSE-* token. But six other kinds
+  (`esp`, `package`, `network`, `clipboard`, `paste`, `email`) also emit `pattern`
+  when score ≥ 60 — and none of them carry `pattern_id`. A SIEM rule written as
+  `pattern_id == 'HLSE-PKG-TYPOSQUAT'` is more robust than one that
+  substring-matches prose like 'dependency confusion / typosquat supply-chain
+  attack'. Why does the stable-token guarantee still have six exceptions?"
+
+  Pure output change — no detection logic touched. Each kind receives its token:
+  - `esp` → `HLSE-ESP-BOOTKIT`
+  - `package` → `HLSE-PKG-TYPOSQUAT`
+  - `network` → `HLSE-NET-C2`
+  - `clipboard` → `HLSE-CLIP-HIJACK`
+  - `paste` → delegates to `hlse_text_pattern_id()` on the ClickFix TextVerdict
+    proxy (e.g. `HLSE-CLICKFIX`)
+  - `email` (header-only BLOCK path) → delegates to `hlse_text_pattern_id()` on
+    the synthesised BEC TextVerdict (e.g. `HLSE-BEC-WIRE`)
+
+  Co-presence invariant preserved: `pattern_id` is present if and only if
+  `pattern` is present; safe verdicts carry neither.
+
+  - **Tests**: 5 new CLI integration tests (583 total, 0 failed).
+
 ## [1.0.86] — 2026-06-23
 
 ### Added
