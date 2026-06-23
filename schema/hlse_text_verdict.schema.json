@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "$id": "hlse_text_verdict",
+  "title": "HLSE Text Verdict",
+  "description": "JSON output of `hlse_core --json text <input>`. Fields marked required are always present; all others are conditional on score band or available signals.",
+  "type": "object",
+  "required": ["kind", "target", "score", "action", "severity", "reasons"],
+  "properties": {
+    "kind": {
+      "const": "text",
+      "description": "Discriminator — always 'text' for this schema."
+    },
+    "target": {
+      "type": "string",
+      "description": "First 120 characters of the analysed text (JSON-escaped)."
+    },
+    "score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Raw threat score 0–100."
+    },
+    "action": {
+      "type": "string",
+      "enum": ["SAFE", "LOG", "ALERT", "BLOCK", "ISOLATE"],
+      "description": "Human-readable band for the score. Prefer `severity` for numeric routing."
+    },
+    "severity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "Monotonic CVSS-aligned band integer: 0=SAFE 1=LOG 2=ALERT 3=BLOCK 4=ISOLATE. Use `severity >= 3` for 'actionable' gates — stable against future tier insertions."
+    },
+    "signal_count": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of independent signal categories that fired. Present when score > 0."
+    },
+    "confidence": {
+      "type": "string",
+      "description": "Qualitative label for signal corroboration. Present when score > 0."
+    },
+    "blind_spot": {
+      "type": "string",
+      "description": "What HLSE cannot detect for text analysis — present when score 0."
+    },
+    "pattern": {
+      "type": "string",
+      "description": "Human-readable social-engineering attack-pattern label. Present when score > 0 and a recognisable pattern was found. May be refined across versions; use pattern_id for stable routing."
+    },
+    "pattern_id": {
+      "type": "string",
+      "pattern": "^HLSE-[A-Z0-9-]+$",
+      "description": "Stable append-only SIEM/SOAR routing token. Present iff `pattern` is present. Never changes meaning once issued.",
+      "examples": [
+        "HLSE-CLICKFIX",
+        "HLSE-OAUTH-DEVICECODE",
+        "HLSE-MFA-FATIGUE",
+        "HLSE-BEC-PAYMENT-DIVERSION",
+        "HLSE-BEC-CEO",
+        "HLSE-BEC-WIRE",
+        "HLSE-TECH-SUPPORT",
+        "HLSE-JOB-SCAM",
+        "HLSE-ADVANCE-FEE",
+        "HLSE-SEXTORTION",
+        "HLSE-RANSOM",
+        "HLSE-INVESTMENT",
+        "HLSE-EMERGENCY",
+        "HLSE-QUISHING",
+        "HLSE-REFUND-SCAM",
+        "HLSE-CALLBACK-TOAD",
+        "HLSE-AUTHORITY",
+        "HLSE-URGENCY-CRED",
+        "HLSE-FAKE-ALERT",
+        "HLSE-URGENCY",
+        "HLSE-CRED-LURE",
+        "HLSE-PRIZE",
+        "HLSE-GENERIC"
+      ]
+    },
+    "objective": {
+      "type": "string",
+      "description": "The attacker's specific asset target (score >= 60 only)."
+    },
+    "verify": {
+      "type": "string",
+      "description": "The single pre-action check to perform before complying (score >= 60 only)."
+    },
+    "triage": {
+      "type": "string",
+      "description": "60-second post-response action to minimise damage (score >= 60 only)."
+    },
+    "cascade_risk": {
+      "type": "string",
+      "description": "Other accounts and assets at risk beyond the primary target (score >= 60 only)."
+    },
+    "exoneration": {
+      "type": "string",
+      "description": "Benign explanation and falsifying test for borderline scores (score 15–59 only)."
+    },
+    "channel": {
+      "type": "string",
+      "description": "Delivery-channel label when --from-channel was specified."
+    },
+    "channel_delta": {
+      "type": "integer",
+      "description": "Score adjustment applied by the channel prior."
+    },
+    "effective_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "score + channel_delta (capped at 100)."
+    },
+    "effective_action": {
+      "type": "string",
+      "enum": ["SAFE", "LOG", "ALERT", "BLOCK", "ISOLATE"],
+      "description": "action band for effective_score."
+    },
+    "effective_severity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "severity for effective_score."
+    },
+    "channel_reason": {
+      "type": "string",
+      "description": "Human-readable explanation of the channel prior adjustment."
+    },
+    "reasons": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Per-signal detector reasons. Empty array for SAFE verdicts."
+    }
+  },
+  "additionalProperties": false
+}

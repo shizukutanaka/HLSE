@@ -4222,6 +4222,50 @@ assert isinstance(d["severity"], int), type(d["severity"])
 ' && check "p80 json: severity integer co-maps action band (monotonic)" "0" "0" \
    || check "p80 json: severity integer co-maps action band (monotonic)" "0" "1"
 
+# ─── P81: normative JSON Schema for URL and text verdicts ────────────────────
+# schema/hlse_url_verdict.schema.json and hlse_text_verdict.schema.json define
+# the full contract so integrators can validate outputs and generate typed
+# clients without reading C source.
+if command -v python3 >/dev/null 2>&1 && python3 -c "import jsonschema" 2>/dev/null; then
+    python3 - <<'PYEOF'
+import json, sys, subprocess
+try:
+    from jsonschema import validate, ValidationError
+except ImportError:
+    sys.exit(0)
+
+with open("schema/hlse_url_verdict.schema.json") as f:
+    url_schema = json.load(f)
+with open("schema/hlse_text_verdict.schema.json") as f:
+    text_schema = json.load(f)
+
+def run(args):
+    r = subprocess.run(["./hlse_core"] + args, capture_output=True, text=True)
+    return json.loads((r.stdout + r.stderr).split("\n")[0])
+
+fails = []
+for args, schema, label in [
+    (["--json", "https://paypa1-secure.tk/login/verify"], url_schema, "URL ISOLATE"),
+    (["--json", "https://www.google.com"], url_schema, "URL SAFE"),
+    (["--json", "text", "URGENT: Your Apple ID has been suspended."], text_schema, "text ALERT"),
+    (["--json", "text", "Hello world"], text_schema, "text SAFE"),
+]:
+    try:
+        validate(instance=run(args), schema=schema)
+    except ValidationError as e:
+        fails.append(f"{label}: {e.message}")
+
+if fails:
+    print("SCHEMA FAIL: " + "; ".join(fails))
+    sys.exit(1)
+PYEOF
+    [ $? -eq 0 ] \
+        && check "p81 schema: URL+text verdict JSON validates against JSON Schema" "0" "0" \
+        || check "p81 schema: URL+text verdict JSON validates against JSON Schema" "0" "1"
+else
+    check "p81 schema: JSON Schema validation (skipped — jsonschema not available)" "0" "0"
+fi
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

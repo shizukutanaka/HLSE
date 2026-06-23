@@ -2,6 +2,35 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.81] — 2026-06-23
+
+### Added
+- **Perspective 81: normative JSON Schema for URL and text verdict outputs —
+  the first machine-readable contract document for HLSE's JSON API.**
+
+  Socratic question: "After P78–P80, a SIEM engineer has stable `pattern_id`
+  tokens and a numeric `severity` field. But to integrate HLSE output into a
+  typed client or validator, they still need to read C source or infer the
+  shape from examples. An undocumented schema means integrators hard-code
+  field names with no way to catch when a field becomes conditional or when
+  a new required field is added. Shouldn't HLSE ship a normative JSON Schema
+  so integrators can validate outputs, generate typed client code (Python
+  dataclasses, TypeScript interfaces, Go structs), and understand optional
+  vs. required fields without reading C?"
+
+  Pure documentation/schema addition — no code or detection logic changed.
+
+  - **`schema/hlse_url_verdict.schema.json`**: Full JSON Schema (2020-12) for
+    `--json <url>` output. Documents all 23 fields with types, constraints,
+    conditionality, and `pattern_id` enum examples. `additionalProperties: false`
+    so any future field addition is explicitly tracked.
+  - **`schema/hlse_text_verdict.schema.json`**: Full JSON Schema for
+    `--json text` output. Same structure with text-specific fields
+    (`exoneration` instead of `confusable`/`ascii_diff`/`safe_url`).
+  - **Tests**: 1 new schema-validation test (562 total, 0 failed) running 4
+    real verdict JSON objects through `jsonschema.validate()`. Skips gracefully
+    when `jsonschema` is not installed.
+
 ## [1.0.80] — 2026-06-23
 
 ### Added
