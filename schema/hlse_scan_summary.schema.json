@@ -10,6 +10,7 @@
     "target",
     "files_scanned",
     "threats",
+    "max_severity",
     "gate_hits",
     "fail_threshold"
   ],
@@ -35,7 +36,13 @@
     "threats": {
       "type": "integer",
       "minimum": 0,
-      "description": "Number of findings with score >= fail_threshold."
+      "description": "Number of findings with score >= 40 (ALERT or above)."
+    },
+    "max_severity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "Highest severity (0–4) across all findings in this scan. 0 when threats=0. Use max_severity >= 3 as a numeric BLOCK/ISOLATE gate on a single summary-line consumer."
     },
     "gate_hits": {
       "type": "integer",

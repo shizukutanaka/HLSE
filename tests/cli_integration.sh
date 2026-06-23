@@ -4442,6 +4442,65 @@ assert url_ver == text_ver, f"version mismatch: {url_ver!r} vs {text_ver!r}"
    || check "p84 json: hlse_version consistent across url and text kinds" "0" "1"
 rm -f "$P84_TF2"
 
+# ─── P85: max_severity in scan_summary ──────────────────────────────────────
+# scan_summary now carries max_severity (0-4) so a single-line consumer gets
+# the same numeric routing capability as a per-verdict consumer.
+
+# scan with threats → max_severity = highest threat severity
+P85_DIR=$(mktemp -d)
+echo "api_key = AKIA2E3MWORQXYZ4567PQ" > "$P85_DIR/creds.env"
+./hlse_core --json scan "$P85_DIR" 2>&1 \
+    | python3 -c '
+import sys, json
+for line in sys.stdin:
+    d = json.loads(line)
+    if d.get("kind") == "scan_summary":
+        assert d.get("max_severity") == 4, d.get("max_severity")
+        assert d["threats"] > 0
+        break
+' && check "p85 scan_summary: max_severity=4 for ISOLATE secret threat" "0" "0" \
+   || check "p85 scan_summary: max_severity=4 for ISOLATE secret threat" "0" "1"
+rm -rf "$P85_DIR"
+
+# clean scan → max_severity = 0
+P85_DIR2=$(mktemp -d)
+touch "$P85_DIR2/readme.txt"
+./hlse_core --json scan "$P85_DIR2" 2>&1 \
+    | python3 -c '
+import sys, json
+for line in sys.stdin:
+    d = json.loads(line)
+    if d.get("kind") == "scan_summary":
+        assert d.get("max_severity") == 0, d.get("max_severity")
+        assert d["threats"] == 0
+        break
+' && check "p85 scan_summary: max_severity=0 for clean scan" "0" "0" \
+   || check "p85 scan_summary: max_severity=0 for clean scan" "0" "1"
+rm -rf "$P85_DIR2"
+
+# max_severity schema validates
+if command -v python3 >/dev/null 2>&1 && python3 -c "import jsonschema" 2>/dev/null; then
+    P85_DIR3=$(mktemp -d)
+    echo "api_key = AKIA2E3MWORQXYZ4567PQ" > "$P85_DIR3/creds.env"
+    ./hlse_core --json scan "$P85_DIR3" 2>&1 | python3 - <<'PYEOF'
+import sys, json
+from jsonschema import validate
+with open("schema/hlse_scan_summary.schema.json") as f:
+    schema = json.load(f)
+for line in sys.stdin:
+    d = json.loads(line)
+    if d.get("kind") == "scan_summary":
+        validate(instance=d, schema=schema)
+        break
+PYEOF
+    [ $? -eq 0 ] \
+        && check "p85 scan_summary: max_severity validates against JSON Schema" "0" "0" \
+        || check "p85 scan_summary: max_severity validates against JSON Schema" "0" "1"
+    rm -rf "$P85_DIR3"
+else
+    check "p85 scan_summary: max_severity schema validation (skipped)" "0" "0"
+fi
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -2,6 +2,31 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.85] — 2026-06-23
+
+### Added
+- **Perspective 85 (Socratic): `max_severity` in `scan_summary` — single-line
+  consumers now get the same numeric routing capability as per-verdict consumers.**
+
+  Socratic question: "The `scan_summary` carries `threats` (count) and `gate_hits`
+  (threshold crossings), but no severity rating of the overall scan. A CI/CD
+  pipeline consuming only the final summary line cannot write `max_severity >= 3`
+  to gate on BLOCK+; it can only check `threats > 0`, which doesn't distinguish
+  a scan with 1 LOG finding from one with 3 ISOLATE findings. Shouldn't
+  `scan_summary` include `max_severity` so a single-line consumer has the same
+  numeric gate capability as a per-verdict consumer?"
+
+  Pure output change — no detection logic touched. `max_score` is tracked
+  alongside the existing `threats` counter at all three scan-path verdict sites
+  (file, secret-in-scan, URL-in-scan), then mapped to 0–4 via
+  `hlse_severity_for_score()` for the summary.
+
+  - **`scan_summary` JSON**: new `"max_severity": N` field (0 when clean).
+  - **`schema/hlse_scan_summary.schema.json`**: `max_severity` added as
+    required field with `minimum: 0, maximum: 4`.
+  - **Tests**: 3 new CLI integration tests (574 total, 0 failed) verifying
+    ISOLATE threat → max_severity 4, clean scan → 0, and schema validation.
+
 ## [1.0.84] — 2026-06-23
 
 ### Added

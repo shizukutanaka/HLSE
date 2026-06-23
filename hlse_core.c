@@ -5760,6 +5760,7 @@ main(int argc, char **argv) {
             const char *root = argv[idx + 1];
             int threats = 0, files_scanned = 0, max_depth = 20;
             int gate_hits = 0;  /* findings at/above g_fail_threshold (exit gate) */
+            int max_score = 0;  /* highest score seen — for max_severity in summary */
             unsigned asset_mask = 0;  /* blast-radius: classes seen across scan */
             struct stat root_st;
 
@@ -5874,6 +5875,7 @@ main(int argc, char **argv) {
                     FileVerdict fv = hlse_check_file(fullpath);
                     if (fv.score >= 40) {
                         threats++;
+                        if (fv.score > max_score) max_score = fv.score;
                         if (fv.score >= g_fail_threshold) gate_hits++;
                         if (sarif_out) {
                             char msg[512] = {0};
@@ -6009,6 +6011,7 @@ main(int argc, char **argv) {
                                 if (sv.score >= 40) {
                                     int ai;
                                     threats++;
+                                    if (sv.score > max_score) max_score = sv.score;
                                     if (sv.score >= g_fail_threshold) gate_hits++;
                                     for (ai = 0; ai < sv.n_findings; ai++)
                                         asset_mask |=
@@ -6143,6 +6146,7 @@ main(int argc, char **argv) {
                                             Verdict uv = check_url(url_buf);
                                             if (uv.score >= 40) {
                                                 threats++;
+                                                if (uv.score > max_score) max_score = uv.score;
                                                 if (uv.score >= g_fail_threshold)
                                                     gate_hits++;
                                                 if (sarif_out) {
@@ -6276,9 +6280,11 @@ main(int argc, char **argv) {
                 printf("{\"kind\":\"scan_summary\",\"hlse_version\":\"" HLSE_VERSION "\","
                        "\"target\":\"%s\","
                        "\"files_scanned\":%d,\"threats\":%d,"
+                       "\"max_severity\":%d,"
                        "\"gate_hits\":%d,\"fail_threshold\":%d,"
                        "\"asset_classes\":%d,\"blast_radius\":\"%s\"",
                        esc_root, files_scanned, threats,
+                       hlse_severity_for_score(max_score),
                        gate_hits, g_fail_threshold,
                        nclasses, classes);
                 if (threats == 0) {
