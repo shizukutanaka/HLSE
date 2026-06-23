@@ -2031,6 +2031,24 @@ hlse_action_for_score(int score) {
     return "SAFE";
 }
 
+/* Map a score to a monotonic severity integer (0–4) aligned with CVSS-style
+ * numeric severity levels.  Consumers can write `severity >= 3` instead of
+ * `action == "BLOCK" || action == "ISOLATE"`, making rules stable against any
+ * future insertion of a new named tier:
+ *   0 = SAFE    (0..14)
+ *   1 = LOG    (15..39)
+ *   2 = ALERT  (40..59)
+ *   3 = BLOCK  (60..79)
+ *   4 = ISOLATE(80+)    */
+int
+hlse_severity_for_score(int score) {
+    if (score >= 80) return 4;
+    if (score >= 60) return 3;
+    if (score >= 40) return 2;
+    if (score >= 15) return 1;
+    return 0;
+}
+
 /* Recommended next action for an actionable verdict (score >= 60).
  *
  * A detector answers "is this dangerous?"; the user's real question is "what
@@ -5158,8 +5176,10 @@ print_json_url(const char *url, const Verdict *v) {
     if (has_safe) json_escape(safe, esc_safe, sizeof(esc_safe));
     if (has_conf) json_escape(conf, esc_conf, sizeof(esc_conf));
     if (exon)    json_escape(exon, esc_exon, sizeof(esc_exon));
-    printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
-           escaped_url, v->score, action_for_score(v->score));
+    printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\","
+           "\"severity\":%d",
+           escaped_url, v->score, action_for_score(v->score),
+           hlse_severity_for_score(v->score));
     if (signal_cnt > 0) printf(",\"signal_count\":%d,\"confidence\":\"%s\"",
                                signal_cnt, esc_cf);
     if (has_canon)  printf(",\"canonical_brand\":\"%s\"", canon_brand);
@@ -5188,8 +5208,9 @@ print_json_url(const char *url, const Verdict *v) {
         int d   = channel_delta(g_from_channel);
         int eff = v->score + d; if (eff > 100) eff = 100;
         printf(",\"channel\":\"%s\",\"channel_delta\":%d,\"effective_score\":%d,"
-               "\"effective_action\":\"%s\"",
-               g_from_channel, d, eff, action_for_score(eff));
+               "\"effective_action\":\"%s\",\"effective_severity\":%d",
+               g_from_channel, d, eff, action_for_score(eff),
+               hlse_severity_for_score(eff));
         {
             const char *ch_rsn = channel_reason(g_from_channel);
             if (ch_rsn) {
@@ -5246,8 +5267,10 @@ print_json_text(const char *text, const TextVerdict *v) {
     if (tcas)       json_escape(tcas,   esc_tcas, sizeof(esc_tcas));
     if (exon)       json_escape(exon,   esc_exon, sizeof(esc_exon));
     if (sig_cnt > 0) json_escape(cf_buf, esc_cf,  sizeof(esc_cf));
-    printf("{\"kind\":\"text\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\"",
-           esc, v->score, hlse_text_action_for_score(v->score));
+    printf("{\"kind\":\"text\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\","
+           "\"severity\":%d",
+           esc, v->score, hlse_text_action_for_score(v->score),
+           hlse_severity_for_score(v->score));
     if (sig_cnt > 0) printf(",\"signal_count\":%d,\"confidence\":\"%s\"",
                             sig_cnt, esc_cf);
     if (v->score == 0) {
@@ -5269,8 +5292,9 @@ print_json_text(const char *text, const TextVerdict *v) {
         int d   = channel_delta(g_from_channel);
         int eff = v->score + d; if (eff > 100) eff = 100;
         printf(",\"channel\":\"%s\",\"channel_delta\":%d,\"effective_score\":%d,"
-               "\"effective_action\":\"%s\"",
-               g_from_channel, d, eff, hlse_text_action_for_score(eff));
+               "\"effective_action\":\"%s\",\"effective_severity\":%d",
+               g_from_channel, d, eff, hlse_text_action_for_score(eff),
+               hlse_severity_for_score(eff));
         {
             const char *ch_rsn = channel_reason(g_from_channel);
             if (ch_rsn) {

@@ -28,7 +28,7 @@
 #include "hlse_text.h" /* TextVerdict, for hlse_classify_text_attack() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.79"
+#define HLSE_VERSION "1.0.80"
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,6 +69,15 @@ Verdict hlse_check_url(const char *raw_url);
  * "LOG", "ALERT", "BLOCK", "ISOLATE"). Returned string has static
  * lifetime; do not free.                                               */
 const char *hlse_action_for_score(int score);
+
+/* Map a score to a monotonic severity integer (0–4) for SIEM/SOAR rules.
+ * Prefer this over string-matching `action`: `severity >= 3` correctly covers
+ * BLOCK and ISOLATE (and any future tier inserted above BLOCK), whereas
+ * hard-coded string comparisons break silently when tiers are added.
+ *   0 = SAFE (0..14)   1 = LOG (15..39)   2 = ALERT (40..59)
+ *   3 = BLOCK (60..79)  4 = ISOLATE (80+)
+ * Thread-safe; no allocation.                                               */
+int hlse_severity_for_score(int score);
 
 /* Recommended next action for an actionable verdict (score >= 60); NULL if
  * there is no specific guidance for `kind`. */

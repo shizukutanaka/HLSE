@@ -4167,6 +4167,61 @@ assert "pattern_id" not in d, d.get("pattern_id")
 ' && check "p79 json: clean URL has no pattern_id" "0" "0" \
    || check "p79 json: clean URL has no pattern_id" "0" "1"
 
+# ─── P80: numeric severity field (0-4 CVSS-aligned) for SIEM routing ────────
+# `action` is a human-readable string; a numeric severity lets SIEM rules
+# write `severity >= 3` instead of `action == "BLOCK" || action == "ISOLATE"`,
+# surviving any future tier insertion without rule breakage.
+
+# URL: ISOLATE → severity 4
+./hlse_core --json "https://paypa1-secure.tk/login/verify" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d.get("severity") == 4, d.get("severity")
+assert d["action"] == "ISOLATE"
+' && check "p80 json URL: ISOLATE → severity 4" "0" "0" \
+   || check "p80 json URL: ISOLATE → severity 4" "0" "1"
+
+# URL: SAFE → severity 0
+./hlse_core --json "https://www.google.com" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d.get("severity") == 0, d.get("severity")
+assert d["action"] == "SAFE"
+' && check "p80 json URL: SAFE → severity 0" "0" "0" \
+   || check "p80 json URL: SAFE → severity 0" "0" "1"
+
+# Text: ISOLATE → severity 4
+./hlse_core --json text "This is urgent and confidential. The CEO has authorized a wire transfer of \$85,000 to our new supplier account. Account: IBAN DE89370400440532013000, BIC: COBADEFFXXX. Do not discuss this with anyone." 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+s = d.get("severity")
+assert s == 3 or s == 4, "expected 3 or 4, got " + str(s)
+' && check "p80 json text: BEC ISOLATE → severity >= 3" "0" "0" \
+   || check "p80 json text: BEC ISOLATE → severity >= 3" "0" "1"
+
+# Text: SAFE → severity 0
+./hlse_core --json text "Hello, just confirming our lunch meeting tomorrow at noon." 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+assert d.get("severity") == 0, d.get("severity")
+' && check "p80 json text: clean → severity 0" "0" "0" \
+   || check "p80 json text: clean → severity 0" "0" "1"
+
+# Monotonic invariant: severity tracks action band exactly
+./hlse_core --json "https://paypa1-secure.tk/login/verify" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+band = {"SAFE":0,"LOG":1,"ALERT":2,"BLOCK":3,"ISOLATE":4}
+assert d.get("severity") == band[d["action"]], str(d.get("severity")) + " vs " + d["action"]
+assert isinstance(d["severity"], int), type(d["severity"])
+' && check "p80 json: severity integer co-maps action band (monotonic)" "0" "0" \
+   || check "p80 json: severity integer co-maps action band (monotonic)" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

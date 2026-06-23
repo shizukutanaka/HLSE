@@ -2,6 +2,38 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.80] — 2026-06-23
+
+### Added
+- **Perspective 80: numeric `severity` field (0–4) in URL and text JSON output
+  for SIEM/SOAR numeric routing — closes the last fragile string-comparison
+  coupling in the JSON API.**
+
+  Socratic question: "After P78–P79, a SIEM consumer can key on `pattern_id`
+  instead of prose for pattern routing. But to gate on 'actionable threat', the
+  rule still writes `action == 'BLOCK' || action == 'ISOLATE'` — two string
+  comparisons coupled to our exact tier names. If we ever inserted a new tier
+  (say 'QUARANTINE' between ALERT and BLOCK), every SIEM rule would silently
+  miss it. Shouldn't the JSON also carry a monotonic `severity` integer (0=SAFE,
+  1=LOG, 2=ALERT, 3=BLOCK, 4=ISOLATE) so rules can write `severity >= 3` as a
+  stable numeric gate that covers any future tier inserted above that threshold?"
+
+  Pure advisory/output change — no scoring or detection logic touched. The new
+  `hlse_severity_for_score()` maps the 0–100 score to a 0–4 integer following
+  the same band boundaries as `hlse_action_for_score()`.
+
+  - **API**: new `int hlse_severity_for_score(int score)` in `hlse_core.h`.
+  - **JSON (URL)**: `--json <url>` gains `"severity": N` immediately after
+    `"action"`; channel path gains `"effective_severity": N` alongside
+    `"effective_action"`.
+  - **JSON (text)**: `--json text` gains `"severity": N` and
+    `"effective_severity": N` on the same positions.
+  - **Mapping**: 0=SAFE (0–14), 1=LOG (15–39), 2=ALERT (40–59),
+    3=BLOCK (60–79), 4=ISOLATE (80+) — aligned with CVSS None/Low/Medium/High/Critical.
+  - **Tests**: 5 new CLI integration tests (561 total, 0 failed) verifying
+    ISOLATE→4, SAFE→0, BEC ISOLATE→4, clean text→0, and the monotonic
+    integer co-mapping invariant.
+
 ## [1.0.79] — 2026-06-22
 
 ### Added
