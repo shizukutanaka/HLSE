@@ -4,11 +4,24 @@
   "title": "HLSE File Verdict",
   "description": "JSON output of `hlse_core --json file <path>` or the file entries emitted by `hlse_core --json scan <dir>`.",
   "type": "object",
-  "required": ["kind", "path", "score", "action", "severity", "reasons"],
+  "required": [
+    "kind",
+    "hlse_version",
+    "path",
+    "score",
+    "action",
+    "severity",
+    "reasons"
+  ],
   "properties": {
     "kind": {
       "const": "file",
       "description": "Discriminator — always 'file' for this schema."
+    },
+    "hlse_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "HLSE engine version that produced this verdict. Use this field to identify verdicts that predate a new detector capability and should be re-scanned."
     },
     "path": {
       "type": "string",
@@ -21,7 +34,13 @@
     },
     "action": {
       "type": "string",
-      "enum": ["SAFE", "LOG", "ALERT", "BLOCK", "ISOLATE"]
+      "enum": [
+        "SAFE",
+        "LOG",
+        "ALERT",
+        "BLOCK",
+        "ISOLATE"
+      ]
     },
     "severity": {
       "type": "integer",
@@ -55,7 +74,9 @@
     },
     "reasons": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "description": "Per-signal detector reasons. Empty array for SAFE verdicts."
     }
   },

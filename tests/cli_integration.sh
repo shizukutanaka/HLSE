@@ -4387,6 +4387,61 @@ else
     check "p83 schema: file/secret/scan_summary validation (skipped)" "0" "0"
 fi
 
+# ─── P84: hlse_version field in all JSON output paths ───────────────────────
+# Every verdict now carries "hlse_version" so stored verdicts are self-
+# documenting and re-scan campaigns can identify those predating a new detector.
+
+# URL verdict carries hlse_version
+./hlse_core --json "https://paypa1-secure.tk/login/verify" 2>&1 \
+    | python3 -c '
+import sys, json, re
+d = json.loads(sys.stdin.readline())
+v = d.get("hlse_version","")
+assert re.match(r"^\d+\.\d+\.\d+$", v), "bad version: " + repr(v)
+assert d["kind"] == "url"
+' && check "p84 json url: hlse_version present and semver-shaped" "0" "0" \
+   || check "p84 json url: hlse_version present and semver-shaped" "0" "1"
+
+# Text verdict carries hlse_version
+./hlse_core --json text "URGENT: Your Apple ID was suspended." 2>&1 \
+    | python3 -c '
+import sys, json, re
+d = json.loads(sys.stdin.readline())
+v = d.get("hlse_version","")
+assert re.match(r"^\d+\.\d+\.\d+$", v), "bad version: " + repr(v)
+assert d["kind"] == "text"
+' && check "p84 json text: hlse_version present and semver-shaped" "0" "0" \
+   || check "p84 json text: hlse_version present and semver-shaped" "0" "1"
+
+# File verdict carries hlse_version
+P84_TF=$(mktemp /tmp/XXXXXX.pdf.exe)
+./hlse_core --json file "$P84_TF" 2>&1 \
+    | python3 -c '
+import sys, json, re
+d = json.loads(sys.stdin.readline())
+v = d.get("hlse_version","")
+assert re.match(r"^\d+\.\d+\.\d+$", v), "bad version: " + repr(v)
+' && check "p84 json file: hlse_version present and semver-shaped" "0" "0" \
+   || check "p84 json file: hlse_version present and semver-shaped" "0" "1"
+rm -f "$P84_TF"
+
+# hlse_version is consistent across all three (URL=text=file same version)
+P84_TF2=$(mktemp /tmp/XXXXXX.pdf.exe)
+./hlse_core --json "https://paypa1-secure.tk/login/verify" 2>&1 \
+    | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+url_ver = d["hlse_version"]
+
+import subprocess
+r = subprocess.run(["./hlse_core","--json","text","URGENT: test"], capture_output=True, text=True)
+t = json.loads((r.stdout+r.stderr).split("\n")[0])
+text_ver = t["hlse_version"]
+assert url_ver == text_ver, f"version mismatch: {url_ver!r} vs {text_ver!r}"
+' && check "p84 json: hlse_version consistent across url and text kinds" "0" "0" \
+   || check "p84 json: hlse_version consistent across url and text kinds" "0" "1"
+rm -f "$P84_TF2"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

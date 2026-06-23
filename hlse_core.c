@@ -5176,7 +5176,8 @@ print_json_url(const char *url, const Verdict *v) {
     if (has_safe) json_escape(safe, esc_safe, sizeof(esc_safe));
     if (has_conf) json_escape(conf, esc_conf, sizeof(esc_conf));
     if (exon)    json_escape(exon, esc_exon, sizeof(esc_exon));
-    printf("{\"kind\":\"url\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\","
+    printf("{\"kind\":\"url\",\"hlse_version\":\"" HLSE_VERSION "\","
+           "\"target\":\"%s\",\"score\":%d,\"action\":\"%s\","
            "\"severity\":%d",
            escaped_url, v->score, action_for_score(v->score),
            hlse_severity_for_score(v->score));
@@ -5267,7 +5268,8 @@ print_json_text(const char *text, const TextVerdict *v) {
     if (tcas)       json_escape(tcas,   esc_tcas, sizeof(esc_tcas));
     if (exon)       json_escape(exon,   esc_exon, sizeof(esc_exon));
     if (sig_cnt > 0) json_escape(cf_buf, esc_cf,  sizeof(esc_cf));
-    printf("{\"kind\":\"text\",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\","
+    printf("{\"kind\":\"text\",\"hlse_version\":\"" HLSE_VERSION "\","
+           "\"target\":\"%s\",\"score\":%d,\"action\":\"%s\","
            "\"severity\":%d",
            esc, v->score, hlse_text_action_for_score(v->score),
            hlse_severity_for_score(v->score));
@@ -5887,7 +5889,8 @@ main(int argc, char **argv) {
                             int i;
                             char esc[512];
                             json_escape(fullpath, esc, sizeof(esc));
-                            printf("{\"kind\":\"file\",\"path\":\"%s\","
+                            printf("{\"kind\":\"file\",\"hlse_version\":\"" HLSE_VERSION "\","
+                                   "\"path\":\"%s\","
                                    "\"score\":%d,\"action\":\"%s\","
                                    "\"severity\":%d,\"reasons\":[",
                                    esc, fv.score, hlse_action_for_score(fv.score),
@@ -6028,6 +6031,7 @@ main(int argc, char **argv) {
                                         /* Emit findings:[{type,description}] per spec §5.2
                                          * (same schema as the standalone secret subcommand). */
                                         printf("{\"kind\":\"secret\","
+                                               "\"hlse_version\":\"" HLSE_VERSION "\","
                                                "\"path\":\"%s\","
                                                "\"line\":%d,\"score\":%d,"
                                                "\"action\":\"%s\",\"severity\":%d,"
@@ -6269,7 +6273,8 @@ main(int argc, char **argv) {
                 int nclasses = asset_mask_describe(asset_mask, classes,
                                                    sizeof(classes));
                 json_escape(root, esc_root, sizeof(esc_root));
-                printf("{\"kind\":\"scan_summary\",\"target\":\"%s\","
+                printf("{\"kind\":\"scan_summary\",\"hlse_version\":\"" HLSE_VERSION "\","
+                       "\"target\":\"%s\","
                        "\"files_scanned\":%d,\"threats\":%d,"
                        "\"gate_hits\":%d,\"fail_threshold\":%d,"
                        "\"asset_classes\":%d,\"blast_radius\":\"%s\"",
@@ -6446,7 +6451,8 @@ main(int argc, char **argv) {
         ProtectionVerdict pv = hlse_esp_verify(path);
         if (json_out) {
             int i;
-            printf("{\"kind\":\"esp\",\"score\":%d,\"action\":\"%s\","
+            printf("{\"kind\":\"esp\",\"hlse_version\":\"" HLSE_VERSION "\","
+                   "\"score\":%d,\"action\":\"%s\","
                    "\"severity\":%d,\"reasons\":[",
                    pv.score, hlse_action_for_score(pv.score),
                    hlse_severity_for_score(pv.score));
@@ -6560,7 +6566,8 @@ main(int argc, char **argv) {
             const char *eco = (argc > idx + 2) ? argv[idx + 2] : NULL;
             PackageVerdict pv = hlse_check_package(argv[idx + 1], eco);
             if (json_out) {
-                printf("{\"kind\":\"package\",\"name\":\"%s\",\"score\":%d,"
+                printf("{\"kind\":\"package\",\"hlse_version\":\"" HLSE_VERSION "\","
+                       "\"name\":\"%s\",\"score\":%d,"
                        "\"action\":\"%s\",\"severity\":%d",
                        argv[idx + 1], pv.score, hlse_action_for_score(pv.score),
                        hlse_severity_for_score(pv.score));
@@ -6688,7 +6695,8 @@ main(int argc, char **argv) {
             PasteVerdict pv = hlse_check_paste(argv[idx + 1]);
             if (json_out) {
                 int i;
-                printf("{\"kind\":\"paste\",\"score\":%d,\"action\":\"%s\","
+                printf("{\"kind\":\"paste\",\"hlse_version\":\"" HLSE_VERSION "\","
+                       "\"score\":%d,\"action\":\"%s\","
                        "\"severity\":%d,\"signals\":%d",
                        pv.score, hlse_action_for_score(pv.score),
                        hlse_severity_for_score(pv.score), pv.signals);
@@ -6782,7 +6790,8 @@ main(int argc, char **argv) {
         NetworkVerdict nv = hlse_check_network();
         if (json_out) {
             int i;
-            printf("{\"kind\":\"network\",\"score\":%d,\"action\":\"%s\","
+            printf("{\"kind\":\"network\",\"hlse_version\":\"" HLSE_VERSION "\","
+                   "\"score\":%d,\"action\":\"%s\","
                    "\"severity\":%d,\"reasons\":[",
                    nv.score, hlse_action_for_score(nv.score),
                    hlse_severity_for_score(nv.score));
@@ -6894,7 +6903,8 @@ main(int argc, char **argv) {
             SecretVerdict sv = hlse_scan_secrets(text);
             if (json_out) {
                 int i;
-                printf("{\"kind\":\"secret\",\"score\":%d,\"action\":\"%s\","
+                printf("{\"kind\":\"secret\",\"hlse_version\":\"" HLSE_VERSION "\","
+                       "\"score\":%d,\"action\":\"%s\","
                        "\"severity\":%d,\"findings\":[",
                        sv.score, hlse_action_for_score(sv.score),
                        hlse_severity_for_score(sv.score));
@@ -7017,7 +7027,8 @@ main(int argc, char **argv) {
             const char *body_pat = hlse_classify_text_attack(&bodytv);
             if (json_out) {
                 int i;
-                printf("{\"kind\":\"email\",\"score\":%d,\"action\":\"%s\","
+                printf("{\"kind\":\"email\",\"hlse_version\":\"" HLSE_VERSION "\","
+                       "\"score\":%d,\"action\":\"%s\","
                        "\"severity\":%d,\"reasons\":[",
                        ev.score, hlse_action_for_score(ev.score),
                        hlse_severity_for_score(ev.score));
@@ -7161,7 +7172,8 @@ main(int argc, char **argv) {
                 json_escape(cv.swapped, es, sizeof(es));
                 json_escape(cv.reason, er, sizeof(er));
                 json_escape(rem ? rem : "", erm, sizeof(erm));
-                printf("{\"kind\":\"clipboard\",\"score\":%d,\"action\":\"%s\","
+                printf("{\"kind\":\"clipboard\",\"hlse_version\":\"" HLSE_VERSION "\","
+                       "\"score\":%d,\"action\":\"%s\","
                        "\"severity\":%d,"
                        "\"is_swap\":%d,"
                        "\"original\":\"%s\",\"swapped\":\"%s\",\"reason\":\"%s\","
@@ -7266,7 +7278,8 @@ main(int argc, char **argv) {
                 int i;
                 char esc[512];
                 json_escape(argv[idx + 1], esc, sizeof(esc));
-                printf("{\"kind\":\"file\",\"path\":\"%s\",\"score\":%d,"
+                printf("{\"kind\":\"file\",\"hlse_version\":\"" HLSE_VERSION "\","
+                       "\"path\":\"%s\",\"score\":%d,"
                        "\"action\":\"%s\",\"severity\":%d,\"reasons\":[",
                        esc, fv.score, hlse_action_for_score(fv.score),
                        hlse_severity_for_score(fv.score));
@@ -7384,7 +7397,8 @@ main(int argc, char **argv) {
         }
         if (json_out) {
             int i;
-            printf("{\"kind\":\"audit\",\"score\":%d,\"action\":\"%s\","
+            printf("{\"kind\":\"audit\",\"hlse_version\":\"" HLSE_VERSION "\","
+                   "\"score\":%d,\"action\":\"%s\","
                    "\"severity\":%d,"
                    "\"hardening_index\":%d,\"hardening_band\":\"%s\","
                    "\"crit_count\":%d,\"high_count\":%d,"

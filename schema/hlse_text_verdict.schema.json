@@ -4,11 +4,24 @@
   "title": "HLSE Text Verdict",
   "description": "JSON output of `hlse_core --json text <input>`. Fields marked required are always present; all others are conditional on score band or available signals.",
   "type": "object",
-  "required": ["kind", "target", "score", "action", "severity", "reasons"],
+  "required": [
+    "kind",
+    "hlse_version",
+    "target",
+    "score",
+    "action",
+    "severity",
+    "reasons"
+  ],
   "properties": {
     "kind": {
       "const": "text",
       "description": "Discriminator — always 'text' for this schema."
+    },
+    "hlse_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "HLSE engine version that produced this verdict. Use this field to identify verdicts that predate a new detector capability and should be re-scanned."
     },
     "target": {
       "type": "string",
@@ -22,7 +35,13 @@
     },
     "action": {
       "type": "string",
-      "enum": ["SAFE", "LOG", "ALERT", "BLOCK", "ISOLATE"],
+      "enum": [
+        "SAFE",
+        "LOG",
+        "ALERT",
+        "BLOCK",
+        "ISOLATE"
+      ],
       "description": "Human-readable band for the score. Prefer `severity` for numeric routing."
     },
     "severity": {
@@ -114,7 +133,13 @@
     },
     "effective_action": {
       "type": "string",
-      "enum": ["SAFE", "LOG", "ALERT", "BLOCK", "ISOLATE"],
+      "enum": [
+        "SAFE",
+        "LOG",
+        "ALERT",
+        "BLOCK",
+        "ISOLATE"
+      ],
       "description": "action band for effective_score."
     },
     "effective_severity": {
@@ -129,7 +154,9 @@
     },
     "reasons": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "description": "Per-signal detector reasons. Empty array for SAFE verdicts."
     }
   },

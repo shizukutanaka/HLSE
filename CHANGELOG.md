@@ -2,6 +2,34 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.84] — 2026-06-23
+
+### Added
+- **Perspective 84 (Socratic): `hlse_version` field in every JSON output path —
+  verdicts are now self-documenting for audit trails and retrospective triage.**
+
+  Socratic question: "Every verdict is stored with a score and action, but no
+  record of which version of HLSE produced it. Six months from now, an analyst
+  reviewing a stored SAFE verdict cannot distinguish 'definitively clean under
+  v1.0.84 with ClickFix + MFA-fatigue + refund-scam detection' from 'probably
+  clean under v0.9.0 with no text detection at all'. A verdict that predates a
+  new detector (e.g. OAuth device-code added in P57) silently misleads
+  retrospective triage. Shouldn't every JSON verdict carry `hlse_version` so
+  stored verdicts are self-documenting and re-scan campaigns can identify those
+  older than a given detection capability?"
+
+  Pure output change — no detection logic touched. Uses compile-time string
+  concatenation (`"..." HLSE_VERSION "..."`) for zero runtime overhead; the
+  version is compiled into the binary so the field always matches the actual
+  detector set.
+
+  - **Coverage**: all 12 JSON kind paths (url, text, file ×2, secret ×2, esp,
+    package, paste, network, email, clipboard, audit, scan_summary).
+  - **Schemas**: all 5 JSON Schema files updated to include `"hlse_version"`
+    as a required field with a semver pattern constraint (`^\d+\.\d+\.\d+$`).
+  - **Tests**: 4 new CLI integration tests (571 total, 0 failed) verifying
+    semver shape on url/text/file kinds and cross-kind consistency.
+
 ## [1.0.83] — 2026-06-23
 
 ### Added

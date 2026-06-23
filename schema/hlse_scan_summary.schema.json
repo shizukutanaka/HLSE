@@ -4,11 +4,24 @@
   "title": "HLSE Scan Summary",
   "description": "The final line emitted by `hlse_core --json scan <dir>` — a rollup of all findings in the scanned directory tree.",
   "type": "object",
-  "required": ["kind", "target", "files_scanned", "threats", "gate_hits", "fail_threshold"],
+  "required": [
+    "kind",
+    "hlse_version",
+    "target",
+    "files_scanned",
+    "threats",
+    "gate_hits",
+    "fail_threshold"
+  ],
   "properties": {
     "kind": {
       "const": "scan_summary",
       "description": "Discriminator — always 'scan_summary' for this schema."
+    },
+    "hlse_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "HLSE engine version that produced this verdict. Use this field to identify verdicts that predate a new detector capability and should be re-scanned."
     },
     "target": {
       "type": "string",
