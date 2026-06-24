@@ -2,6 +2,39 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.93] — 2026-06-24
+
+### Changed
+- **Perspective 93: email `blind_spot` warns that authentication PASS
+  (SPF/DKIM/DMARC) is not a safety guarantee — aligns the clean-email hedge with
+  2025 DMARC-bypass threat intel.**
+
+  Research-driven (Qiita / Zenn + threat-intel survey on DMARC/SPF/DKIM): DMARC
+  only stops *exact-domain* spoofing. Once a domain enforces DMARC, attackers
+  pivot to two vectors that **pass SPF/DKIM/DMARC by design**: (1) **display-name
+  spoofing** — a brand name in the display field with a different (authenticated)
+  From domain, and (2) **attacker-owned look-alike / cousin domains**. Reporting
+  notes 63% of campaigns pivot to look-alike domains within ~10 days of DMARC
+  enforcement. A user who reads "headers clean / SPF pass" can be falsely
+  reassured.
+
+  Socratic question: "HLSE's clean-email verdict hedges with a blind_spot, but it
+  only mentions a 'clean-domain look-alike'. The bigger trap is that a green
+  authentication result is itself not a safety signal — display-name spoofing and
+  attacker-owned cousin domains pass DMARC. Does our hedge make that explicit, or
+  could a user still infer 'auth pass = safe'?"
+
+  Pure advisory/output change — no detection logic, score, or threshold touched
+  (clean email stays score 0 / SAFE). The email `blind_spot` now states that
+  authentication PASS is not a safety guarantee, names the two DMARC-bypass
+  vectors (display-name spoofing, look-alike/cousin domains) plus breached
+  legitimate accounts, and tells the user to read the actual From-address domain
+  character-by-character and verify out-of-band.
+
+  - **Tests**: 2 new CLI integration tests assert the DMARC-pass caveat and its
+    named vectors are present, and that the clean-email score is unchanged
+    (603 total, 0 failed).
+
 ## [1.0.92] — 2026-06-24
 
 ### Changed

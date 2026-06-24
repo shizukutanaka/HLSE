@@ -4891,6 +4891,35 @@ assert d["pattern_id"] == "HLSE-PKG-TYPOSQUAT", d
 ' && check "p92: package score/action unchanged (F1 invariant)" "0" "0" \
    || check "p92: package score/action unchanged (F1 invariant)" "0" "1"
 
+# ─── P93: email blind_spot warns DMARC PASS is not a safety guarantee ───────
+# 2025 email threat intel: DMARC only stops exact-domain spoofing. Attackers
+# pivot to display-name spoofing and attacker-owned look-alike/cousin domains,
+# which PASS SPF/DKIM/DMARC by design (63% of campaigns pivot within 10 days of
+# enforcement). A clean email verdict must not let a user infer "auth pass = safe".
+
+printf 'Received: from mail.example.com\nReceived-SPF: pass\nFrom: a@example.com\nReply-To: a@example.com\nTo: b@example.com\nSubject: lunch\n\nlunch?\n' \
+    | ./hlse_core --json email --stdin 2>/dev/null | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+assert d["score"] == 0, d
+bs = d.get("blind_spot", "")
+# must explicitly caveat that authentication PASS is not a safety guarantee
+assert "PASS" in bs and ("not a safety guarantee" in bs or "not a guarantee" in bs), bs
+# must name the DMARC-bypass vectors: display name and look-alike/cousin domain
+assert "display" in bs.lower(), bs
+assert "look-alike" in bs or "lookalike" in bs or "cousin" in bs, bs
+' && check "p93 json: clean email blind_spot caveats DMARC-pass paradox" "0" "0" \
+   || check "p93 json: clean email blind_spot caveats DMARC-pass paradox" "0" "1"
+
+# F1 invariant: the wording change must not move the clean-email score
+printf 'Received: from mail.example.com\nReceived-SPF: pass\nFrom: a@example.com\nReply-To: a@example.com\nTo: b@example.com\nSubject: lunch\n\nlunch?\n' \
+    | ./hlse_core --json email --stdin 2>/dev/null | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+assert d["score"] == 0 and d["action"] == "SAFE", d
+' && check "p93: clean email score unchanged (F1 invariant)" "0" "0" \
+   || check "p93: clean email score unchanged (F1 invariant)" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

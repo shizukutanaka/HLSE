@@ -2096,8 +2096,11 @@ hlse_blindspot_for(const char *kind) {
                "with no known phrasing can read clean; trust your judgment on "
                "unexpected requests for money or credentials.";
     if (strcmp(kind, "email") == 0)
-        return "header forensics only — a breached but legitimate account, or "
-               "a clean-domain look-alike, can still be malicious; verify "
+        return "header forensics only — authentication PASS (SPF/DKIM/DMARC) is "
+               "not a safety guarantee: a brand name in the display field, an "
+               "attacker-owned look-alike/cousin domain, or a breached but "
+               "legitimate account all pass authentication by design. Read the "
+               "actual From-address domain character-by-character and verify "
                "unexpected requests out-of-band.";
     if (strcmp(kind, "clipboard") == 0)
         return "swap check only — this compares the two addresses you provided; "
