@@ -4795,6 +4795,68 @@ assert block["severity"] >= 3 and sevmap[block["severity"]] >= 4, block
 ' && check "p90: severity→OCSF severity_id table holds (SAFE & BLOCK)" "0" "0" \
    || check "p90: severity→OCSF severity_id table holds (SAFE & BLOCK)" "0" "1"
 
+# ─── P91: SARIF carries stable pattern_id + enriched rule metadata ──────────
+# GitHub Code Scanning groups alerts by ruleId and renders rule metadata. The
+# SARIF path emitted only 3 coarse ruleIds and no stable token. P91 carries the
+# HLSE-* pattern_id into result.properties and adds helpUri + tags to rules,
+# so a security team can triage by attack class at the Code Scanning surface.
+
+P91_DIR=$(mktemp -d)
+printf 'aws_key = "AKIA1234567890ABCDEF"\n' > "$P91_DIR/config.py"
+printf 'MZ\x90\x00' > "$P91_DIR/invoice.pdf.exe"
+printf 'see https://paypa1.com/login\n' > "$P91_DIR/note.txt"
+
+# Each SARIF result carries a stable HLSE-* pattern_id in properties
+./hlse_core --sarif scan "$P91_DIR" 2>/dev/null | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+results = d["runs"][0]["results"]
+assert results, "no SARIF results produced"
+for r in results:
+    pid = r["properties"].get("pattern_id", "")
+    assert pid.startswith("HLSE-"), "result missing stable pattern_id: " + repr(r["ruleId"])
+# spot-check the expected tokens are present across the tree
+pids = {r["properties"]["pattern_id"] for r in results}
+assert "HLSE-SECRET-AWS" in pids, pids
+assert "HLSE-FILE-DOUBLE-EXT" in pids, pids
+' && check "p91 sarif: results carry stable HLSE-* pattern_id" "0" "0" \
+   || check "p91 sarif: results carry stable HLSE-* pattern_id" "0" "1"
+
+# Every rule has helpUri and security tags for GitHub Code Scanning
+./hlse_core --sarif scan "$P91_DIR" 2>/dev/null | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+rules = d["runs"][0]["tool"]["driver"]["rules"]
+for r in rules:
+    assert "helpUri" in r, "rule missing helpUri: " + r["id"]
+    tags = r.get("properties", {}).get("tags", [])
+    assert "security" in tags, "rule missing security tag: " + r["id"]
+' && check "p91 sarif: rules have helpUri + security tags" "0" "0" \
+   || check "p91 sarif: rules have helpUri + security tags" "0" "1"
+
+# The SARIF pattern_id matches what the JSON path emits for the same input
+# (no drift between the two scan output formats)
+./hlse_core --json scan "$P91_DIR" 2>/dev/null | python3 -c '
+import json, sys, subprocess
+json_pids = set()
+for line in sys.stdin:
+    line = line.strip()
+    if not line.startswith("{"): continue
+    try: d = json.loads(line)
+    except Exception: continue
+    if "pattern_id" in d: json_pids.add(d["pattern_id"])
+sarif = json.loads(subprocess.run(
+    ["./hlse_core","--sarif","scan",sys.argv[1]],
+    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode())
+sarif_pids = {r["properties"]["pattern_id"] for r in sarif["runs"][0]["results"]}
+# every SARIF token must also appear in the JSON scan output
+missing = sarif_pids - json_pids
+assert not missing, "SARIF tokens absent from JSON scan: " + repr(missing)
+' "$P91_DIR" && check "p91: SARIF and JSON scan pattern_id agree" "0" "0" \
+   || check "p91: SARIF and JSON scan pattern_id agree" "0" "1"
+
+rm -rf "$P91_DIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

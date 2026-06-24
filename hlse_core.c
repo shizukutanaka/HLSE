@@ -4524,6 +4524,25 @@ file_pattern_id(const char *fpat) {
     return "HLSE-FILE-MASQUERADE";
 }
 
+/* Stable file pattern_id derived directly from a FileVerdict's first reason —
+ * mirrors the prose-label ladder at the file display sites so the SARIF scan
+ * path (P91) emits the same HLSE-FILE-* token as the standalone `file` JSON. */
+static const char *
+file_verdict_pattern_id(const FileVerdict *fv) {
+    if (fv->n_reasons > 0) {
+        const char *r = fv->reasons[0];
+        if (strstr(r, "RLO") || strstr(r, "Unicode"))
+            return "HLSE-FILE-RTL-OVERRIDE";
+        if (strstr(r, "DOUBLE EXTENSION") || strstr(r, "double"))
+            return "HLSE-FILE-DOUBLE-EXT";
+        if (strstr(r, "macro") || strstr(r, "Macro"))
+            return "HLSE-FILE-MACRO";
+        if (strstr(r, "PDF") || strstr(r, "JavaScript"))
+            return "HLSE-FILE-PDF-JS";
+    }
+    return "HLSE-FILE-MASQUERADE";
+}
+
 /* Stable machine-readable pattern id for an exposed-credential verdict — the
  * secret counterpart of hlse_text_pattern_id (P86). Keyed to the credential
  * type label (sv.findings[0].type) so SIEM rules route on a stable HLSE-SECRET-*
@@ -5034,6 +5053,7 @@ typedef struct {
     char  path[1024];
     int   line;
     char  rule[32];      /* e.g. "secret", "phishing-url", "file-masquerade" */
+    char  pattern_id[40];/* stable HLSE-* token for SOAR routing (P91)        */
     char  message[512];
     int   score;
 } SarifFinding;
@@ -5044,13 +5064,15 @@ static int          g_sarif_overflow = 0;
 
 static void
 sarif_add(const char *path, int line, const char *rule,
-          const char *message, int score) {
+          const char *pattern_id, const char *message, int score) {
     SarifFinding *f;
     if (g_sarif_n >= SARIF_MAX_FINDINGS) { g_sarif_overflow = 1; return; }
     f = &g_sarif[g_sarif_n++];
     snprintf(f->path, sizeof(f->path), "%s", path);
     f->line = line < 1 ? 1 : line;
     snprintf(f->rule, sizeof(f->rule), "%s", rule);
+    snprintf(f->pattern_id, sizeof(f->pattern_id), "%s",
+             pattern_id ? pattern_id : "");
     snprintf(f->message, sizeof(f->message), "%s", message);
     f->score = score;
 }
@@ -5073,17 +5095,21 @@ sarif_emit(const char *tool_version) {
         const char *name;
         const char *description;
         const char *severity; /* string to avoid float formatting issues */
+        const char *tags;     /* JSON array body for properties.tags        */
     } RULES[] = {
         { "secret",         "Credential Leak",
           "Exposed API key, token, or private key found in source file.",
-          "9.0" },
+          "9.0",
+          "\"security\", \"external/cwe/cwe-798\"" },
         { "phishing-url",   "Phishing URL",
           "URL exhibits homoglyph, typosquat, or subdomain-spoof phishing indicators.",
-          "7.5" },
+          "7.5",
+          "\"security\", \"external/cwe/cwe-1021\"" },
         { "file-masquerade","File Masquerade",
           "File extension or magic bytes indicate the file is disguised malware.",
-          "8.0" },
-        { NULL, NULL, NULL, NULL }
+          "8.0",
+          "\"security\", \"external/cwe/cwe-646\"" },
+        { NULL, NULL, NULL, NULL, NULL }
     };
     char esc[1280];
 
@@ -5100,10 +5126,11 @@ sarif_emit(const char *tool_version) {
         printf("            {\n"
                "              \"id\": \"%s\", \"name\": \"%s\",\n"
                "              \"shortDescription\": { \"text\": \"%s\" },\n"
-               "              \"properties\": { \"security-severity\": \"%s\" }\n"
+               "              \"helpUri\": \"https://github.com/shizukutanaka/hlse/blob/main/docs/SIEM_INTEGRATION.md\",\n"
+               "              \"properties\": { \"security-severity\": \"%s\", \"tags\": [%s] }\n"
                "            }%s\n",
                RULES[i].id, RULES[i].name, RULES[i].description,
-               RULES[i].severity, RULES[i+1].id ? "," : "");
+               RULES[i].severity, RULES[i].tags, RULES[i+1].id ? "," : "");
     }
     printf("          ]\n        }\n      },\n");
     printf("      \"results\": [\n");
@@ -5115,8 +5142,16 @@ sarif_emit(const char *tool_version) {
         printf("          \"level\": \"%s\",\n", sarif_level(f->score));
         json_escape(f->message, esc, sizeof(esc));
         printf("          \"message\": { \"text\": \"%s\" },\n", esc);
-        printf("          \"properties\": { \"security-severity\": \"%.1f\","
-               " \"hlse-score\": %d },\n", sev, f->score);
+        if (f->pattern_id[0]) {
+            char epid[64];
+            json_escape(f->pattern_id, epid, sizeof(epid));
+            printf("          \"properties\": { \"security-severity\": \"%.1f\","
+                   " \"hlse-score\": %d, \"pattern_id\": \"%s\" },\n",
+                   sev, f->score, epid);
+        } else {
+            printf("          \"properties\": { \"security-severity\": \"%.1f\","
+                   " \"hlse-score\": %d },\n", sev, f->score);
+        }
         printf("          \"locations\": [\n            {\n");
         printf("              \"physicalLocation\": {\n");
         json_escape(f->path, esc, sizeof(esc));
@@ -6047,6 +6082,7 @@ main(int argc, char **argv) {
                                          i ? "; " : "", fv.reasons[i]);
                             }
                             sarif_add(sarif_path, 1, "file-masquerade",
+                                      file_verdict_pattern_id(&fv),
                                       msg[0] ? msg : "file masquerade", fv.score);
                         } else if (json_out) {
                             int i;
@@ -6188,6 +6224,9 @@ main(int argc, char **argv) {
                                                      sv.findings[i].description);
                                         }
                                         sarif_add(sarif_path, lineno, "secret",
+                                                  sv.n_findings > 0
+                                                    ? secret_pattern_id(sv.findings[0].type)
+                                                    : "HLSE-SECRET-GENERIC",
                                                   msg[0] ? msg : "secret", sv.score);
                                     } else if (json_out) {
                                         int i;
@@ -6327,7 +6366,9 @@ main(int argc, char **argv) {
                                                                  uv.reasons[k]);
                                                     }
                                                     sarif_add(sarif_path, lineno,
-                                                              "phishing-url", msg, uv.score);
+                                                              "phishing-url",
+                                                              hlse_url_pattern_id(&uv),
+                                                              msg, uv.score);
                                                 } else if (json_out) {
                                                     char eu[2048];
                                                     json_escape(url_buf, eu, sizeof(eu));
@@ -6362,6 +6403,7 @@ main(int argc, char **argv) {
                                                         int has_tri  = hlse_compound_triage(&uv, utri_buf, sizeof(utri_buf));
                                                         int has_safe = hlse_safe_destinations(&uv, usafe, sizeof(usafe));
                                                         if (upat)     { json_escape(upat,     eu, sizeof(eu)); printf(",\"pattern\":\"%s\"",      eu); }
+                                                        if (upat)     { const char *upid = hlse_url_pattern_id(&uv); if (upid) printf(",\"pattern_id\":\"%s\"", upid); }
                                                         if (has_obj)  { json_escape(uobj_buf, eu, sizeof(eu)); printf(",\"objective\":\"%s\"",    eu); }
                                                         if (has_safe) { json_escape(usafe,    eu, sizeof(eu)); printf(",\"safe_url\":\"%s\"",     eu); }
                                                         if (uvrf)     { json_escape(uvrf,     eu, sizeof(eu)); printf(",\"verify\":\"%s\"",       eu); }

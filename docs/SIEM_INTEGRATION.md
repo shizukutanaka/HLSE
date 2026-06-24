@@ -171,6 +171,31 @@ hlse_core --json scan ./src \
 
 ---
 
+## 5a. GitHub Code Scanning (SARIF 2.1.0)
+
+`hlse_core --sarif scan <dir>` emits SARIF 2.1.0 for direct upload to GitHub
+Code Scanning. Findings appear in the repo's **Security ▸ Code scanning** tab.
+
+```yaml
+# .github/workflows/hlse.yml
+- run: ./hlse_core --sarif scan . > hlse.sarif
+- uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: hlse.sarif
+```
+
+Each SARIF result carries the stable `pattern_id` in `properties.pattern_id`
+(e.g. `HLSE-SECRET-AWS`, `HLSE-URL-HOMOGLYPH`, `HLSE-FILE-DOUBLE-EXT`), so SOAR
+automation can route off the Code Scanning export and security teams can triage
+by attack class — not just by the three coarse rule buckets (`secret`,
+`phishing-url`, `file-masquerade`). Rules ship `security-severity` (0–10), a
+`helpUri`, and CWE `tags` for GitHub's native rendering.
+
+```bash
+# Pull every finding's stable token out of a SARIF report
+jq -r '.runs[0].results[] | "\(.ruleId)\t\(.properties.pattern_id)\t\(.properties["hlse-score"])"' hlse.sarif
+```
+
 ## 6. Streaming / ndjson ingestion
 
 Pipe mode emits one JSON object per input line — ready for ndjson-based

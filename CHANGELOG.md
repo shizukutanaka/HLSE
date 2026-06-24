@@ -2,6 +2,44 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.91] — 2026-06-24
+
+### Added
+- **Perspective 91: SARIF results carry stable `pattern_id` tokens + enriched
+  rule metadata — closes the stable-token gap at the GitHub Code Scanning
+  surface.**
+
+  Research-driven (Qiita / Zenn survey): SARIF → GitHub Code Scanning is the
+  standard way to surface scanner findings, and `ruleId` is how the GitHub
+  Security tab groups, tracks, and deduplicates alerts across commits. HLSE's
+  SARIF emitted only 3 coarse rule IDs (`secret`, `phishing-url`,
+  `file-masquerade`) while the rest of the API exposes 61 stable `pattern_id`
+  tokens (P88). In the Security tab an AWS-key leak and a private-key leak
+  collapsed into one rule; a homoglyph URL and a typosquat into another — the
+  stable-token routing established by P78–P90 was lost exactly where triage
+  happens.
+
+  Socratic question: "We built stable tokens for SIEM routing — but at the
+  GitHub Code Scanning surface every finding still collapses into one of three
+  buckets. How does a security team triage by attack class there?"
+
+  Pure output change — no detection logic touched:
+  - Each SARIF `result.properties` now carries the stable `pattern_id`
+    (`HLSE-SECRET-AWS`, `HLSE-URL-HOMOGLYPH`, `HLSE-FILE-DOUBLE-EXT`, …) so SOAR
+    automation and per-class triage work directly off the Code Scanning export.
+  - Each SARIF rule gains a `helpUri` (→ `docs/SIEM_INTEGRATION.md`) and
+    `properties.tags` (`security` + a CWE tag: CWE-798 secret, CWE-1021 URL,
+    CWE-646 file) for richer GitHub rendering.
+
+### Fixed
+- The embedded-URL JSON scan path emitted `pattern` without the matching
+  `pattern_id` (the standalone `url` path has emitted both since P79). The scan
+  path now emits `pattern_id` too, so SARIF and JSON scan outputs agree and the
+  stable-token contract holds across every URL emission site.
+
+  - **Tests**: 3 new CLI integration tests pin SARIF pattern_id coverage, rule
+    metadata, and SARIF↔JSON agreement (598 total, 0 failed).
+
 ## [1.0.90] — 2026-06-24
 
 ### Added
