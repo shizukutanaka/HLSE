@@ -2,6 +2,41 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.92] — 2026-06-24
+
+### Changed
+- **Perspective 92: package `verify` advisory names the preventive control
+  (`--ignore-scripts`) — aligns guidance with 2025-2026 supply-chain threat
+  intel.**
+
+  Research-driven (Qiita / Zenn survey on npm/PyPI supply-chain defense): the
+  dominant 2025-2026 attack vector is the **Shai-Hulud self-replicating npm
+  worm**, which abuses install **lifecycle scripts** (`preinstall`,
+  `postinstall`, and — in V2 — `prepare`) that auto-execute on `npm install`
+  with the user's privileges, *before the install even completes*. The single
+  most effective preventive control the research names is installing with
+  **`--ignore-scripts`** (npm/pnpm) / `--no-build` (uv/pip).
+
+  Socratic question: "HLSE's package verdict already names Shai-Hulud and tells
+  the user to inspect lifecycle scripts *after* install. But the highest-leverage
+  action is preventive — install with `--ignore-scripts` so the malicious hook
+  never runs. Why does our 'verify first' advisory (the step *before* the user
+  installs) omit the one flag that actually neutralizes the vector?"
+
+  Pure advisory/output change — no detection logic, score, or threshold
+  touched (typosquat verdict stays score 70 / BLOCK / severity 3 /
+  `HLSE-PKG-TYPOSQUAT`):
+  - The package `verify` advisory (JSON + text) now recommends installing with
+    `--ignore-scripts` / `--no-build` as the preventive control, explaining that
+    lifecycle hooks run before install completes.
+  - The `triage` advisory now enumerates all three exploited hooks
+    (`preinstall`/`postinstall`/`prepare`) rather than just the first two,
+    reflecting the Shai-Hulud V2 shift to `preinstall`/`prepare`.
+
+  - **Tests**: 3 new CLI integration tests assert the preventive control is
+    named, JSON/text advisories stay in sync, and the score is unchanged
+    (601 total, 0 failed).
+
 ## [1.0.91] — 2026-06-24
 
 ### Added

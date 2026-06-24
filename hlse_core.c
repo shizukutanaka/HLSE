@@ -6819,17 +6819,22 @@ main(int argc, char **argv) {
                         "your shell (API keys, tokens, SSH keys) is at risk";
                     static const char pkg_vrf[] =
                         "verify the exact package name on the official registry "
-                        "page before installing; most ecosystems support "
-                        "--dry-run to preview what would install";
+                        "page before installing; if you must proceed, install "
+                        "with --ignore-scripts (npm/pnpm) or --no-build (uv/pip) "
+                        "so a malicious preinstall/postinstall/prepare hook "
+                        "cannot run \xe2\x80\x94 lifecycle scripts execute with your "
+                        "privileges before install even completes; most "
+                        "ecosystems also support --dry-run to preview first";
                     static const char pkg_tri[] =
                         "if already installed, remove the package immediately "
                         "(pip uninstall / npm uninstall / cargo remove) and "
-                        "inspect the lifecycle script (preinstall/postinstall); "
-                        "self-propagating worms (Shai-Hulud) run a disk-wide "
-                        "secret scan (TruffleHog), so rotate EVERY credential on "
-                        "the machine, not just shell-environment ones \xe2\x80\x94 "
-                        "if you publish packages, revoke your npm/PyPI token "
-                        "FIRST, before the worm can republish from your account";
+                        "inspect the lifecycle scripts (preinstall/postinstall/"
+                        "prepare); self-propagating worms (Shai-Hulud) run a "
+                        "disk-wide secret scan (TruffleHog), so rotate EVERY "
+                        "credential on the machine, not just shell-environment "
+                        "ones \xe2\x80\x94 if you publish packages, revoke your "
+                        "npm/PyPI token FIRST, before the worm can republish "
+                        "from your account";
                     static const char pkg_cas[] =
                         "if you maintain packages, your registry publish token is "
                         "the worm's self-propagation vector \xe2\x80\x94 it "
@@ -6877,11 +6882,15 @@ main(int argc, char **argv) {
                            "\xe2\x80\x94 package install scripts run with your user "
                            "privileges; any secret in your shell is at risk\n");
                     printf("  \xe2\x9c\x93 Verify first: check the exact name on the "
-                           "official registry page; use --dry-run to preview before "
-                           "installing\n");
+                           "official registry page; if you must install, use "
+                           "--ignore-scripts (npm/pnpm) or --no-build (uv/pip) so "
+                           "a malicious preinstall/postinstall/prepare hook cannot "
+                           "run \xe2\x80\x94 lifecycle scripts execute before install "
+                           "even completes; --dry-run previews first\n");
                     printf("  \xe2\x9a\x91 If you acted: remove immediately "
                            "(pip/npm/cargo uninstall) and inspect the lifecycle "
-                           "script; self-propagating worms (Shai-Hulud) run a "
+                           "scripts (preinstall/postinstall/prepare); "
+                           "self-propagating worms (Shai-Hulud) run a "
                            "disk-wide secret scan, so rotate EVERY credential on "
                            "the machine \xe2\x80\x94 if you publish packages, revoke "
                            "your npm/PyPI token FIRST\n");

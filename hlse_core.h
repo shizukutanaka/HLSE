@@ -28,7 +28,7 @@
 #include "hlse_text.h" /* TextVerdict, for hlse_classify_text_attack() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.91"
+#define HLSE_VERSION "1.0.92"
 
 #ifdef __cplusplus
 extern "C" {

@@ -4857,6 +4857,40 @@ assert not missing, "SARIF tokens absent from JSON scan: " + repr(missing)
 
 rm -rf "$P91_DIR"
 
+# ─── P92: package verify advisory names the preventive control ──────────────
+# 2025-2026 supply-chain threat intel (Shai-Hulud npm worm): lifecycle scripts
+# (preinstall/postinstall/prepare) are the primary RCE vector, and the single
+# most effective preventive control is installing with --ignore-scripts. The
+# package "verify first" advisory must name it, not just --dry-run.
+
+# JSON verify advisory recommends --ignore-scripts as the preventive control
+./hlse_core --json package reqeusts pip 2>/dev/null | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+v = d["verify"]
+assert "--ignore-scripts" in v, "verify must recommend --ignore-scripts: " + v
+assert "prepare" in v, "verify must mention the prepare lifecycle hook (Shai-Hulud V2): " + v
+# triage must enumerate all three exploited lifecycle hooks
+t = d["triage"]
+assert "preinstall" in t and "postinstall" in t and "prepare" in t, t
+' && check "p92 json: package verify names --ignore-scripts + prepare hook" "0" "0" \
+   || check "p92 json: package verify names --ignore-scripts + prepare hook" "0" "1"
+
+# text-mode advisory stays in sync with the JSON advisory
+./hlse_core package reqeusts pip 2>/dev/null | grep -q -- "--ignore-scripts" \
+    && ./hlse_core package reqeusts pip 2>/dev/null | grep -q "prepare" \
+    && check "p92 text: package advisory names --ignore-scripts + prepare" "0" "0" \
+    || check "p92 text: package advisory names --ignore-scripts + prepare" "0" "1"
+
+# F1 invariant: advisory change must not move the score/action/severity
+./hlse_core --json package reqeusts pip 2>/dev/null | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+assert d["score"] == 70 and d["action"] == "BLOCK" and d["severity"] == 3, d
+assert d["pattern_id"] == "HLSE-PKG-TYPOSQUAT", d
+' && check "p92: package score/action unchanged (F1 invariant)" "0" "0" \
+   || check "p92: package score/action unchanged (F1 invariant)" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
