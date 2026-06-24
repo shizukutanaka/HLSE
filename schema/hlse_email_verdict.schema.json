@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "$id": "hlse_email_verdict",
+  "title": "HLSE Email Verdict",
+  "description": "JSON output of `hlse_core --json email [<header>]` — detects spoofing and BEC attacks in email headers and body text.",
+  "type": "object",
+  "required": [
+    "kind",
+    "hlse_version",
+    "score",
+    "action",
+    "severity",
+    "reasons"
+  ],
+  "properties": {
+    "kind": {
+      "const": "email",
+      "description": "Discriminator — always 'email' for this schema."
+    },
+    "hlse_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "HLSE engine version that produced this verdict."
+    },
+    "score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Header authentication score (SPF/DKIM/Reply-To spoofing)."
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "SAFE",
+        "LOG",
+        "ALERT",
+        "BLOCK",
+        "ISOLATE"
+      ]
+    },
+    "severity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "0=SAFE 1=LOG 2=ALERT 3=BLOCK 4=ISOLATE. Use severity >= 3 for actionable gates."
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Header-level spoofing or authentication indicators."
+    },
+    "body_pattern": {
+      "type": "string",
+      "description": "Social-engineering attack pattern found in message body (if any)."
+    },
+    "body_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Body text attack score (separate from header score)."
+    },
+    "blind_spot": {
+      "type": "string",
+      "description": "What HLSE cannot detect (score 0 and no body_pattern only)."
+    },
+    "remediation": {
+      "type": "string",
+      "description": "Immediate action guidance (score >= 60 only)."
+    },
+    "pattern": {
+      "type": "string",
+      "description": "Attack pattern label — either header-based (score >= 60) or body-based (body_score >= 60)."
+    },
+    "pattern_id": {
+      "type": "string",
+      "description": "Stable SIEM/SOAR routing token (e.g. 'HLSE-BEC-WIRE') (present iff pattern is present)."
+    },
+    "objective": {
+      "type": "string",
+      "description": "The attacker's likely objective."
+    },
+    "verify": {
+      "type": "string",
+      "description": "Independent check before acting."
+    },
+    "triage": {
+      "type": "string",
+      "description": "Immediate response steps."
+    },
+    "cascade_risk": {
+      "type": "string",
+      "description": "Other credentials and systems at risk."
+    },
+    "exoneration": {
+      "type": "string",
+      "description": "Potential benign explanation (15 <= score < 60 only)."
+    }
+  },
+  "additionalProperties": false
+}

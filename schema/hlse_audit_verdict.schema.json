@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "$id": "hlse_audit_verdict",
+  "title": "HLSE Audit Verdict",
+  "description": "JSON output of `hlse_core --json audit` — comprehensive OS hardening assessment with CVSS-aligned findings.",
+  "type": "object",
+  "required": [
+    "kind",
+    "hlse_version",
+    "score",
+    "action",
+    "severity",
+    "hardening_index",
+    "hardening_band",
+    "crit_count",
+    "high_count",
+    "findings"
+  ],
+  "properties": {
+    "kind": {
+      "const": "audit",
+      "description": "Discriminator — always 'audit' for this schema."
+    },
+    "hlse_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "HLSE engine version that produced this verdict."
+    },
+    "score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "SAFE",
+        "LOG",
+        "ALERT",
+        "BLOCK",
+        "ISOLATE"
+      ]
+    },
+    "severity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "0=SAFE 1=LOG 2=ALERT 3=BLOCK 4=ISOLATE. Use severity >= 3 for actionable gates."
+    },
+    "hardening_index": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Hardening score: 0–49 weak, 50–69 fair, 70–89 good, 90+ hardened."
+    },
+    "hardening_band": {
+      "type": "string",
+      "enum": [
+        "weak",
+        "fair",
+        "good",
+        "hardened"
+      ],
+      "description": "Qualitative hardening level."
+    },
+    "crit_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of CRITICAL (severity 5) findings — actively exploitable."
+    },
+    "high_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of HIGH (severity 4) findings."
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "severity",
+          "description"
+        ],
+        "properties": {
+          "severity": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5,
+            "description": "0=LOW 1=INFO 2=MED 3=HIGH 4=CRITICAL 5=CRITICAL (actively exploitable)."
+          },
+          "description": {
+            "type": "string",
+            "description": "Finding description."
+          },
+          "fix": {
+            "type": "string",
+            "description": "Remediation guidance (severity >= 4 only)."
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Hardening findings ranked by severity."
+    },
+    "blind_spot": {
+      "type": "string",
+      "description": "What HLSE cannot audit (score 0 only)."
+    },
+    "next_steps": {
+      "type": "string",
+      "description": "Prioritised remediation guidance (score > 0 only)."
+    }
+  },
+  "additionalProperties": false
+}

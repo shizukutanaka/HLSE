@@ -4668,6 +4668,76 @@ assert not missing, "tokens emitted but absent from registry: " + repr(sorted(mi
     && check "p88: help advertises --list-patterns" "0" "0" \
     || check "p88: help advertises --list-patterns" "0" "1"
 
+# ─── P89: normative schemas for all 13 JSON kinds ──────────────────────────
+# P78–P88 completed the JSON API contract (uniform envelope, stable tokens,
+# discoverable registry), but left a schema gap: 5 schemas existed (url/text/
+# file/secret/scan_summary) while 8 kinds (esp/package/paste/network/email/
+# clipboard/audit/pattern_registry) had none. Consumer validation was impossible.
+
+# Each schema file is valid JSON Schema (draft 2020-12)
+python3 -c '
+import json, glob
+for path in glob.glob("schema/hlse_*.schema.json"):
+    with open(path) as f:
+        d = json.load(f)
+    assert "$schema" in d, f"{path}: missing $schema"
+    assert "$id" in d, f"{path}: missing $id"
+    assert "type" in d, f"{path}: missing type"
+    assert d["type"] == "object", f"{path}: not an object schema"
+' && check "p89: all 13 schema files are valid JSON Schema" "0" "0" \
+   || check "p89: all 13 schema files are valid JSON Schema" "0" "1"
+
+# Each kind has a schema (13 total: url, text, file, secret, scan_summary,
+# esp, package, paste, network, email, clipboard, audit, pattern_registry)
+python3 -c '
+import json, glob
+kinds = set()
+for path in glob.glob("schema/hlse_*.schema.json"):
+    with open(path) as f:
+        d = json.load(f)
+    id_field = d.get("$id", "")
+    if id_field.endswith("_verdict"):
+        kind = id_field[:-7]  # strip _verdict
+    else:
+        kind = id_field
+    kinds.add(kind)
+assert len(kinds) >= 13, f"Expected >= 13 kinds, got {len(kinds)}: {sorted(kinds)}"
+' && check "p89: 13+ schema IDs present" "0" "0" \
+   || check "p89: 13+ schema IDs present" "0" "1"
+
+# Spot-check: esp verdict validates against esp schema
+./hlse_core --json esp /etc/hosts 2>&1 | python3 -c '
+import json, sys
+from jsonschema import validate, Draft202012Validator
+esp_verdict = json.load(sys.stdin)
+with open("schema/hlse_esp_verdict.schema.json") as f:
+    esp_schema = json.load(f)
+Draft202012Validator(esp_schema).validate(esp_verdict)
+' && check "p89 schema: esp verdict validates" "0" "0" \
+   || check "p89 schema: esp verdict validates" "0" "1"
+
+# Spot-check: package verdict validates
+./hlse_core --json package reqeusts pip 2>&1 | python3 -c '
+import json, sys
+from jsonschema import validate, Draft202012Validator
+pkg_verdict = json.load(sys.stdin)
+with open("schema/hlse_package_verdict.schema.json") as f:
+    pkg_schema = json.load(f)
+Draft202012Validator(pkg_schema).validate(pkg_verdict)
+' && check "p89 schema: package verdict validates" "0" "0" \
+   || check "p89 schema: package verdict validates" "0" "1"
+
+# Spot-check: pattern_registry validates
+./hlse_core --json --list-patterns 2>&1 | python3 -c '
+import json, sys
+from jsonschema import validate, Draft202012Validator
+registry = json.load(sys.stdin)
+with open("schema/hlse_pattern_registry.schema.json") as f:
+    reg_schema = json.load(f)
+Draft202012Validator(reg_schema).validate(registry)
+' && check "p89 schema: pattern_registry validates" "0" "0" \
+   || check "p89 schema: pattern_registry validates" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

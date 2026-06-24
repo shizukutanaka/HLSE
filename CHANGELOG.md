@@ -2,6 +2,40 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.89] — 2026-06-23
+
+### Added
+- **Perspective 89: normative JSON Schemas for all 13 verdict kinds — closes
+  the schema-parity gap across the complete JSON API.**
+
+  Socratic question: "We've built a complete JSON contract across P78–P88:
+  uniform envelope (kind/hlse_version/score/action/severity), stable
+  pattern_id tokens for SIEM routing, and a discoverable registry. But only
+  5 kinds (url, text, file, secret, scan_summary) have normative schemas — the
+  other 8 (esp, package, paste, network, email, clipboard, audit,
+  pattern_registry) are unvalidated. A consumer can't validate these kinds
+  against a schema. How do they know the JSON they received is the shape
+  HLSE promised?"
+
+  Pure documentation change — no code modifications. Added 8 new normative
+  JSON Schemas (draft 2020-12):
+  - `hlse_esp_verdict.schema.json` — UEFI bootkit indicators
+  - `hlse_package_verdict.schema.json` — supply-chain typosquat checks
+  - `hlse_paste_verdict.schema.json` — pastejacking detection
+  - `hlse_network_verdict.schema.json` — C2/exfiltration indicators
+  - `hlse_email_verdict.schema.json` — BEC and spoofing attacks
+  - `hlse_clipboard_verdict.schema.json` — cryptocurrency hijacking
+  - `hlse_audit_verdict.schema.json` — OS hardening assessment
+  - `hlse_pattern_registry.schema.json` — the token registry (P88)
+
+  All schemas follow the same structure as the existing 5: required fields,
+  optional advisory fields (pattern/objective/verify/triage/cascade_risk at
+  score ≥ 60), exoneration fields (40 ≤ score < 60), and blind_spot (score 0).
+  New pattern_id tokens map consistently to their schemas' `const` definitions.
+
+  - **Tests**: 5 new CLI integration tests validating schema coverage and
+    spot-checking verdicts against their schemas (592 total, 0 failed).
+
 ## [1.0.88] — 2026-06-23
 
 ### Added

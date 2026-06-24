@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "$id": "hlse_package_verdict",
+  "title": "HLSE Package Verdict",
+  "description": "JSON output of `hlse_core --json package <name> [<ecosystem>]` — supply-chain security check for typosquat and dependency-confusion attacks.",
+  "type": "object",
+  "required": [
+    "kind",
+    "hlse_version",
+    "name",
+    "score",
+    "action",
+    "severity"
+  ],
+  "properties": {
+    "kind": {
+      "const": "package",
+      "description": "Discriminator — always 'package' for this schema."
+    },
+    "hlse_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "HLSE engine version that produced this verdict."
+    },
+    "name": {
+      "type": "string",
+      "description": "The package name queried."
+    },
+    "score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "SAFE",
+        "LOG",
+        "ALERT",
+        "BLOCK",
+        "ISOLATE"
+      ]
+    },
+    "severity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "0=SAFE 1=LOG 2=ALERT 3=BLOCK 4=ISOLATE. Use severity >= 3 for actionable gates."
+    },
+    "matches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "registry",
+          "distance"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Legitimate package name that the input resembles."
+          },
+          "registry": {
+            "type": "string",
+            "description": "Package registry (e.g. 'pip', 'npm', 'cargo')."
+          },
+          "distance": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Edit distance (Damerau-Levenshtein) from input to legitimate name."
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Legitimate packages the input may be masquerading as (score > 0 only)."
+    },
+    "blind_spot": {
+      "type": "string",
+      "description": "What HLSE cannot detect (score 0 only)."
+    },
+    "signal_count": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of similar packages found (score > 0 only)."
+    },
+    "confidence": {
+      "type": "string",
+      "description": "Corroboration level: 'single signal', 'corroborated', 'high confidence' (score > 0 only)."
+    },
+    "pattern": {
+      "type": "string",
+      "description": "Attack pattern label (score >= 60 only)."
+    },
+    "pattern_id": {
+      "type": "string",
+      "const": "HLSE-PKG-TYPOSQUAT",
+      "description": "Stable SIEM/SOAR routing token (present iff pattern is present)."
+    },
+    "objective": {
+      "type": "string",
+      "description": "The attacker's likely objective (score >= 60 only)."
+    },
+    "verify": {
+      "type": "string",
+      "description": "Independent check before installing (score >= 60 only)."
+    },
+    "triage": {
+      "type": "string",
+      "description": "Immediate response if already installed (score >= 60 only)."
+    },
+    "cascade_risk": {
+      "type": "string",
+      "description": "Other credentials and packages at risk (score >= 60 only)."
+    },
+    "exoneration": {
+      "type": "string",
+      "description": "Potential benign explanation (15 <= score < 60 only)."
+    }
+  },
+  "additionalProperties": false
+}

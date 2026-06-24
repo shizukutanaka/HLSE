@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "$id": "hlse_pattern_registry",
+  "title": "HLSE Pattern Registry",
+  "description": "JSON output of `hlse_core --json --list-patterns` — the authoritative, machine-readable registry of all stable HLSE-* pattern_id tokens for SIEM/SOAR routing.",
+  "type": "object",
+  "required": [
+    "kind",
+    "hlse_version",
+    "count",
+    "patterns"
+  ],
+  "properties": {
+    "kind": {
+      "const": "pattern_registry",
+      "description": "Discriminator — always 'pattern_registry' for this schema."
+    },
+    "hlse_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "HLSE engine version that produced this registry."
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of tokens in the patterns array."
+    },
+    "patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "description"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^HLSE-[A-Z0-9-]+$",
+            "description": "Stable append-only SIEM/SOAR routing token. Once assigned, never changes or is reworded."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "text",
+              "url",
+              "file",
+              "secret",
+              "esp",
+              "package",
+              "paste",
+              "network",
+              "email",
+              "clipboard",
+              "audit"
+            ],
+            "description": "JSON verdict kind that can emit this pattern_id."
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of the attack pattern or threat (for documentation; subject to rewording without notice)."
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Array of all stable pattern tokens, ordered by kind and pattern name."
+    }
+  },
+  "additionalProperties": false
+}
