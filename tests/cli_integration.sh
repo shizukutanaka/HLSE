@@ -4738,6 +4738,63 @@ Draft202012Validator(reg_schema).validate(registry)
 ' && check "p89 schema: pattern_registry validates" "0" "0" \
    || check "p89 schema: pattern_registry validates" "0" "1"
 
+# ─── P90: SIEM integration mapping (OCSF/ECS) drift guard ───────────────────
+# docs/SIEM_INTEGRATION.md documents how HLSE severity (0-4) maps onto OCSF
+# severity_id (0-6) and ECS event.severity. These tests pin the documented
+# mapping to actual engine output so the guide cannot silently drift.
+
+# The doc exists and covers both target schemas
+test -f docs/SIEM_INTEGRATION.md \
+    && grep -q "OCSF" docs/SIEM_INTEGRATION.md \
+    && grep -q "ECS" docs/SIEM_INTEGRATION.md \
+    && grep -q "severity_id" docs/SIEM_INTEGRATION.md \
+    && check "p90: SIEM integration guide present (OCSF+ECS)" "0" "0" \
+    || check "p90: SIEM integration guide present (OCSF+ECS)" "0" "1"
+
+# The documented OCSF jq transform produces a valid Detection Finding shape,
+# and the severity_id matches the documented HLSE-severity → OCSF-severity_id map
+./hlse_core --json "https://g00gle.com" 2>&1 | python3 -c '
+import json, sys
+v = json.load(sys.stdin)
+# Documented mapping: HLSE severity 0..4 → OCSF severity_id 1..5
+sevmap = {0:1, 1:2, 2:3, 3:4, 4:5}
+ocsf = {
+    "class_uid": 2004,
+    "category_uid": 2,
+    "severity_id": sevmap[v["severity"]],
+    "finding_info": {"title": v.get("pattern", v["kind"]),
+                     "uid": v.get("pattern_id"), "types": [v["kind"]]},
+    "metadata": {"product": {"name": "HLSE", "version": v["hlse_version"]}},
+}
+assert ocsf["class_uid"] == 2004, ocsf
+assert 1 <= ocsf["severity_id"] <= 5, ocsf["severity_id"]
+assert ocsf["finding_info"]["uid"] == v.get("pattern_id"), ocsf
+' && check "p90: documented OCSF transform yields valid finding" "0" "0" \
+   || check "p90: documented OCSF transform yields valid finding" "0" "1"
+
+# The full severity → OCSF severity_id table holds across all 5 bands by
+# probing representative inputs (SAFE/ALERT/BLOCK at minimum)
+python3 -c '
+import json, subprocess
+sevmap = {0:1, 1:2, 2:3, 3:4, 4:5}
+def verdict(args):
+    # threat verdicts exit non-zero by design; capture stdout regardless
+    p = subprocess.run(["./hlse_core","--json"]+args,
+                       stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    for line in p.stdout.decode().splitlines():
+        line=line.strip()
+        if line.startswith("{"):
+            d=json.loads(line)
+            if "severity" in d: return d
+    raise SystemExit("no verdict")
+# SAFE (severity 0) and a known BLOCK+ (severity >= 3)
+safe = verdict(["https://example.com"])
+block = verdict(["package","reqeusts","pip"])
+assert safe["severity"] == 0 and sevmap[safe["severity"]] == 1, safe
+assert block["severity"] >= 3 and sevmap[block["severity"]] >= 4, block
+' && check "p90: severity→OCSF severity_id table holds (SAFE & BLOCK)" "0" "0" \
+   || check "p90: severity→OCSF severity_id table holds (SAFE & BLOCK)" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

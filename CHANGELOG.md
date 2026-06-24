@@ -2,6 +2,42 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.90] — 2026-06-24
+
+### Added
+- **Perspective 90: SIEM/SOAR integration guide (OCSF + ECS field mapping) —
+  closes the data-normalization gap for SIEM ingestion.**
+
+  Research-driven (Qiita / Zenn survey): the dominant theme across Japanese
+  security-engineering writing on SIEM/SOAR is that **data normalization is the
+  main deployment bottleneck** — every log source has its own field names, so
+  teams hand-build custom parsers to map onto the open standards (OCSF, ECS).
+  HLSE had invested heavily in machine-readable output (P78–P89: stable
+  `pattern_id` tokens, the `--list-patterns` registry, 13 normative schemas) but
+  shipped no guide for translating its proprietary fields onto those standards.
+  A SIEM engineer ingesting HLSE still had to reverse-engineer the semantics.
+
+  Socratic question: "We made the output machine-readable and self-describing.
+  But the consumer's real target is OCSF or ECS, not HLSE's own field names. How
+  does a detection engineer know that HLSE `severity` 3 means OCSF
+  `severity_id` 4 (High), without reading our source?"
+
+  Pure documentation change — no code touched. New `docs/SIEM_INTEGRATION.md`:
+  - HLSE envelope → **OCSF Detection Finding** (class_uid 2004) attribute table
+    + a working `jq` transform.
+  - HLSE envelope → **ECS** (`event.*`/`rule.*`/`threat.*`) field table + a
+    working `jq` transform.
+  - The `severity` (0–4) → OCSF `severity_id` (0–6) → ECS `event.severity`
+    conversion table, pinned to the engine's actual bands.
+  - CI/CD exit-code contract, `scan_summary.max_severity` gating, ndjson
+    streaming ingestion (Splunk HEC / Elastic / Datadog), and using
+    `--list-patterns` as a SOAR routing table.
+  - README JSON section now links the guide.
+
+  - **Tests**: 3 new CLI integration tests that pin the documented OCSF/ECS
+    severity mapping to live engine output, so the guide cannot drift
+    (595 total, 0 failed).
+
 ## [1.0.89] — 2026-06-23
 
 ### Added

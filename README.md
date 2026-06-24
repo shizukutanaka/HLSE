@@ -175,6 +175,12 @@ Every subcommand supports `--json`:
 ./hlse_core --json audit
 ```
 
+All 13 verdict kinds have normative JSON Schemas in `schema/` (draft 2020-12).
+The full set of stable `pattern_id` routing tokens is discoverable with
+`./hlse_core --json --list-patterns`. For mapping HLSE verdicts onto **OCSF** or
+**ECS** and wiring exit codes into CI/CD, see
+[`docs/SIEM_INTEGRATION.md`](docs/SIEM_INTEGRATION.md).
+
 ## Test architecture
 
 | Suite | Count | What it verifies |
