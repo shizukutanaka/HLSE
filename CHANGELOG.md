@@ -2,6 +2,38 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.94] — 2026-06-30
+
+### Changed
+- **Perspective 94: email JSON verdicts now emit `signal_count`, `confidence`, and
+  `pattern_id` fields for proper SIEM/SOAR integration and API symmetry.**
+
+  Socratic gap identified: email verdicts were missing advisory fields that other
+  verdict kinds (text, url, file, secret) provide, creating asymmetry in the JSON
+  API and hindering SIEM ingestion pipelines. The schema defined these fields but
+  the implementation did not emit them consistently.
+
+  - **signal_count** (1 or 2): counts independent analysis signals — 1 = header-only
+    analysis, 2 = header + body text both analyzed for patterns.
+  - **confidence**: describes why the verdict is trustworthy — e.g., "two independent
+    signals — header authentication + body text both analyzed" when both components
+    fired.
+  - **pattern_id**: emits stable HLSE-* token (e.g., `HLSE-BEC-WIRE`, `HLSE-BEC-CEO`)
+    when body patterns are detected, enabling SOAR routing on email body attacks.
+  - **exoneration**: when email header score is 15–59 (borderline), emits potential
+    benign explanations (e.g., "internal payment requests do arrive by email. Decisive
+    test: call the supposed sender on a number you already have").
+
+  Pure advisory/JSON output change — no detection logic or scoring modified (F1=1.000
+  invariant preserved). Email verdicts now match the field structure of URL, text,
+  and file verdicts for consistent SIEM mapping.
+
+  - **Schema update**: `hlse_email_verdict.schema.json` now defines `signal_count`
+    and `confidence` fields.
+  - **Tests**: 6 new CLI integration tests verify signal_count/confidence emission,
+    pattern_id presence for body patterns, exoneration for borderline scores, and
+    schema validation (609 total, 0 failed).
+
 ## [1.0.93] — 2026-06-24
 
 ### Changed

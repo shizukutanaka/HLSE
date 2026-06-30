@@ -96,6 +96,16 @@
     "exoneration": {
       "type": "string",
       "description": "Potential benign explanation (15 <= score < 60 only)."
+    },
+    "signal_count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2,
+      "description": "Number of independent analysis signals: 1=header-only, 2=header+body."
+    },
+    "confidence": {
+      "type": "string",
+      "description": "Confidence justification — how many signals fired and their reliability."
     }
   },
   "additionalProperties": false

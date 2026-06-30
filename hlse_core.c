@@ -7279,17 +7279,27 @@ main(int argc, char **argv) {
                     json_escape(body_pat, epat, sizeof(epat));
                     printf(",\"body_pattern\":\"%s\",\"body_score\":%d",
                            epat, bodytv.score);
+                    /* Emit pattern and pattern_id from body analysis, plus signal count/confidence */
+                    printf(",\"signal_count\":2,\"confidence\":\"two independent signals — header authentication + body text both analyzed\"");
+                    TextVerdict btv_hi = bodytv;
+                    char e[512];
+                    const char *bpat, *bobj, *bvrf, *btri, *bcas, *bex;
+                    btv_hi.score = ev.score > bodytv.score ? ev.score : bodytv.score;
+                    bpat = hlse_classify_text_attack(&btv_hi);
+                    bobj = hlse_text_objective(&btv_hi);
+                    bex  = hlse_text_exoneration(&btv_hi);
+                    bvrf = hlse_text_verify(&btv_hi);
+                    btri = hlse_text_triage(&btv_hi);
+                    bcas = hlse_text_cascade(&btv_hi);
+                    if (bpat) { json_escape(bpat,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
+                    if (bpat) {
+                        const char *bid = hlse_text_pattern_id(&btv_hi);
+                        if (bid) printf(",\"pattern_id\":\"%s\"", bid);
+                    }
+                    if (bex && btv_hi.score >= 15 && btv_hi.score < 60) {
+                        json_escape(bex,e,sizeof(e)); printf(",\"exoneration\":\"%s\"",e);
+                    }
                     if (ev.score >= 60) {
-                        /* Use email header score for advisory threshold —
-                         * body text score may be low even when headers are BLOCK */
-                        TextVerdict btv_hi = bodytv;
-                        char e[512];
-                        const char *bobj, *bvrf, *btri, *bcas;
-                        btv_hi.score = ev.score;
-                        bobj = hlse_text_objective(&btv_hi);
-                        bvrf = hlse_text_verify(&btv_hi);
-                        btri = hlse_text_triage(&btv_hi);
-                        bcas = hlse_text_cascade(&btv_hi);
                         if (bobj) { json_escape(bobj,e,sizeof(e)); printf(",\"objective\":\"%s\"",e); }
                         if (bvrf) { json_escape(bvrf,e,sizeof(e)); printf(",\"verify\":\"%s\"",e); }
                         if (btri) { json_escape(btri,e,sizeof(e)); printf(",\"triage\":\"%s\"",e); }
@@ -7311,12 +7321,26 @@ main(int argc, char **argv) {
                     evrf  = hlse_text_verify(&etv);
                     etri  = hlse_text_triage(&etv);
                     ecas  = hlse_text_cascade(&etv);
+                    printf(",\"signal_count\":1,\"confidence\":\"single signal — email header authentication anomalies detected\"");
                     if (epat2) { json_escape(epat2,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
                     if (epat2) { const char *pid = hlse_text_pattern_id(&etv); if (pid) printf(",\"pattern_id\":\"%s\"",pid); }
                     if (eobj)  { json_escape(eobj,e,sizeof(e));  printf(",\"objective\":\"%s\"",e); }
                     if (evrf)  { json_escape(evrf,e,sizeof(e));  printf(",\"verify\":\"%s\"",e); }
                     if (etri)  { json_escape(etri,e,sizeof(e));  printf(",\"triage\":\"%s\"",e); }
                     if (ecas)  { json_escape(ecas,e,sizeof(e));  printf(",\"cascade_risk\":\"%s\"",e); }
+                } else if (ev.score > 0) {
+                    /* Borderline header score (1-59): emit signal_count, confidence, and exoneration */
+                    printf(",\"signal_count\":1");
+                    TextVerdict etv;
+                    const char *econn = hlse_exoneration_for("email", ev.score);
+                    if (econn) {
+                        char e[512];
+                        json_escape(econn, e, sizeof(e));
+                        printf(",\"exoneration\":\"%s\"", e);
+                    }
+                    memset(&etv, 0, sizeof(etv));
+                    etv.score = ev.score;
+                    printf(",\"confidence\":\"partial signal — some email header concerns but not conclusive spoofing\"");
                 }
                 if (rem) {
                     char erm[512];
