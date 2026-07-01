@@ -1138,16 +1138,23 @@ echo "$VRF_BLOCK" | grep -q "Could be benign" \
     && check "verify: BLOCK band suppresses exoneration" "0" "1" \
     || check "verify: BLOCK band suppresses exoneration" "0" "0"
 
-# ALERT-band verdict (<60) → NO verify line (exoneration band instead)
+# Perspective 95: ALERT-band verdict (40..59) → verify line NOW shown too —
+# ALERT is exactly where the verdict is least certain and an independent
+# check is most valuable, not less. Co-occurs with exoneration in 40..59.
 VRF_ALERT=$(./hlse_core "https://g00gle.com" 2>/dev/null) || true
 echo "$VRF_ALERT" | grep -q "Verify independently" \
-    && check "verify: absent below score 60" "0" "1" \
-    || check "verify: absent below score 60" "0" "0"
+    && check "p95 verify: present in ALERT band (40-59)" "0" "0" \
+    || check "p95 verify: present in ALERT band (40-59)" "0" "1"
 
-# ALERT band still shows exoneration (the complementary band)
+# ALERT band still shows exoneration (the complementary band; both co-occur)
 echo "$VRF_ALERT" | grep -q "Could be benign" \
     && check "verify: ALERT band keeps exoneration" "0" "0" \
     || check "verify: ALERT band keeps exoneration" "0" "1"
+
+# ALERT band must NOT show triage/cascade_risk (post-incident, BLOCK+ only)
+echo "$VRF_ALERT" | grep -q "If already clicked:" \
+    && check "p95 verify: ALERT band has no triage (BLOCK+ only)" "0" "1" \
+    || check "p95 verify: ALERT band has no triage (BLOCK+ only)" "0" "0"
 
 # Clean URL → no verify line
 VRF_CLEAN=$(./hlse_core "https://example.com" 2>/dev/null) || true
@@ -1164,14 +1171,17 @@ assert d.get("verify"), d
 ' && check "verify json: verify field present (BLOCK)" "0" "0" \
    || check "verify json: verify field present (BLOCK)" "0" "1"
 
-# JSON omits verify for an ALERT-band URL
+# Perspective 95: JSON now includes verify for an ALERT-band URL (score >= 40),
+# but still excludes triage/cascade_risk (post-incident, BLOCK+-only guidance).
 VRF_ALERT_JSON=""; VRF_ALERT_JSON=$(./hlse_core --json "https://g00gle.com" 2>/dev/null) || true
 echo "$VRF_ALERT_JSON" | python3 -c '
 import sys, json
 d = json.loads(sys.stdin.read())
-assert "verify" not in d, d
-' && check "verify json: absent below score 60" "0" "0" \
-   || check "verify json: absent below score 60" "0" "1"
+assert d.get("verify"), d
+assert "triage" not in d, d
+assert "cascade_risk" not in d, d
+' && check "p95 verify json: present in ALERT band, triage/cascade absent" "0" "0" \
+   || check "p95 verify json: present in ALERT band, triage/cascade absent" "0" "1"
 
 # stdin pipe mode emits the verify line for a BLOCK-band URL
 VRF_STDIN=$(echo "https://paypa1.com/login" | ./hlse_core --stdin 2>/dev/null) || true
@@ -4971,6 +4981,65 @@ To: finance@company.com
 Subject: urgent wire transfer" 2>/dev/null | \
 grep -q '"pattern":"' && check "p94 json: email verdict includes pattern field when appropriate" "0" "0" \
    || check "p94 json: email verdict includes pattern field when appropriate" "0" "1"
+
+# ─── P95: verify/pattern advisory reaches the ALERT band (40-59), not just BLOCK+ ─
+# Socratic gap: verify/pattern/objective were gated at score >= 60, leaving
+# ALERT-band verdicts (the LEAST certain, so MOST in need of an independent
+# check) with a bare score and no actionable guidance. triage/cascade_risk
+# stay BLOCK+-only (post-incident guidance that presumes the user acted).
+
+# Text ALERT-band verdict gets a verify line (CLI plaintext)
+P95_TEXT_ALERT=$(./hlse_core text "Your Microsoft account will be locked, click here immediately to verify your identity" 2>/dev/null) || true
+echo "$P95_TEXT_ALERT" | grep -q "ALERT" \
+    && check "p95: text example scores ALERT band" "0" "0" \
+    || check "p95: text example scores ALERT band" "0" "1"
+echo "$P95_TEXT_ALERT" | grep -q "Verify first:" \
+    && check "p95 text: verify line shown in ALERT band" "0" "0" \
+    || check "p95 text: verify line shown in ALERT band" "0" "1"
+echo "$P95_TEXT_ALERT" | grep -q "If you acted:" \
+    && check "p95 text: no triage line in ALERT band" "0" "1" \
+    || check "p95 text: no triage line in ALERT band" "0" "0"
+
+# Text ALERT-band verdict JSON carries verify but not triage/cascade_risk
+./hlse_core --json text "Your Microsoft account will be locked, click here immediately to verify your identity" 2>/dev/null | \
+python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert 40 <= d["score"] < 60, d
+assert d.get("verify"), d
+assert "triage" not in d, d
+assert "cascade_risk" not in d, d
+' && check "p95 json text: verify present, triage/cascade absent in ALERT" "0" "0" \
+   || check "p95 json text: verify present, triage/cascade absent in ALERT" "0" "1"
+
+# Embedded URL inside a scanned file gets pattern+verify at ALERT band
+mkdir -p /tmp/hlse_p95_scan
+echo "Click here: https://paypaI.com" > /tmp/hlse_p95_scan/note.txt
+./hlse_core --json scan /tmp/hlse_p95_scan 2>/dev/null | grep '"kind":"url"' | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert 40 <= d["score"] < 60, d
+assert d.get("pattern"), d
+assert d.get("verify"), d
+assert "triage" not in d, d
+' && check "p95 json scan: embedded ALERT-band URL gets pattern+verify" "0" "0" \
+   || check "p95 json scan: embedded ALERT-band URL gets pattern+verify" "0" "1"
+rm -rf /tmp/hlse_p95_scan
+
+# paste ALERT-band verdict gets verify but not triage
+./hlse_core --json paste "curl https://example.com/install.sh | bash" 2>/dev/null | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert 40 <= d["score"] < 60, d
+assert d.get("verify"), d
+assert "triage" not in d, d
+' && check "p95 json paste: verify present, triage absent in ALERT" "0" "0" \
+   || check "p95 json paste: verify present, triage absent in ALERT" "0" "1"
+
+# F1 invariant: score/action for existing BLOCK+ verdicts unchanged
+./hlse_core --json "https://paypa1.com/login" 2>/dev/null | \
+grep -q '"score":60,"action":"BLOCK"' && check "p95: BLOCK+ URL score unchanged (F1 invariant)" "0" "0" \
+   || check "p95: BLOCK+ URL score unchanged (F1 invariant)" "0" "1"
 
 # ─── results ────────────────────────────────────────────────────────────
 

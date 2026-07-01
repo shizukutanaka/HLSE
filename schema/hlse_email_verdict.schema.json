@@ -83,7 +83,7 @@
     },
     "verify": {
       "type": "string",
-      "description": "Independent check before acting."
+      "description": "Independent check before acting (combined header+body score >= 40 — ALERT band and above)."
     },
     "triage": {
       "type": "string",

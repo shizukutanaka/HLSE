@@ -114,7 +114,7 @@
     },
     "verify": {
       "type": "string",
-      "description": "The single best independent check to confirm this verdict without trusting HLSE (score >= 60 only)."
+      "description": "The single best independent check to confirm this verdict without trusting HLSE (score >= 40 — ALERT band and above; co-occurs with exoneration in the 40-59 overlap)."
     },
     "triage": {
       "type": "string",

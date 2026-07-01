@@ -103,7 +103,7 @@
     },
     "verify": {
       "type": "string",
-      "description": "The single pre-action check to perform before complying (score >= 60 only)."
+      "description": "The single pre-action check to perform before complying (score >= 40 — ALERT band and above; co-occurs with exoneration in the 40-59 overlap)."
     },
     "triage": {
       "type": "string",

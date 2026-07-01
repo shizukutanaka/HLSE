@@ -3555,25 +3555,32 @@ hlse_confusable_report(const char *url, char *out, size_t outsz) {
 /* The single best independent check a user can run to confirm an actionable
  * URL verdict — without trusting HLSE.
  *
- * Socratic question: "You're a heuristic engine with no network, no
- * certificate inspection, no ground truth. A user about to type their password
- * is betting on your word alone. What ONE check can they run right now — one
- * that doesn't require trusting you — to confirm the verdict before they act?"
+ * Socratic question (Perspective 95): "You're a heuristic engine with no
+ * network, no certificate inspection, no ground truth. A user about to type
+ * their password is betting on your word alone. What ONE check can they run
+ * right now — one that doesn't require trusting you — to confirm the verdict
+ * before they act? And why does ALERT [40-59] leave verify/triage/cascade_risk
+ * NULL while BLOCK [60+] fills them in — is the user at 40-59 not ALSO about
+ * to make a decision that benefits from an independent check?"
  *
- * This is the high-confidence mirror of hlse_exoneration_for: exoneration
- * serves the LOG/ALERT band (15..59) with the benign explanation and a test
- * that *clears* the doubt; this serves the BLOCK/ISOLATE band (>=60) with a
- * test that lets the user *confirm* the threat independently. The two bands do
- * not overlap, so at most one fires. The check is chosen from the signals that
- * fired so it targets the actual deception. Returns a static string, or NULL
- * when score < 60. */
+ * This used to gate at score >= 60 only, leaving the ALERT band a
+ * pattern+objective with no actionable next step. But ALERT is precisely the
+ * band where the verdict is least certain and an independent check is most
+ * valuable — a BLOCK verdict is confident enough that "verify" is a courtesy,
+ * while an ALERT verdict genuinely needs it to resolve the ambiguity. Gates
+ * at score >= 40 (ALERT+) so it now co-occurs with hlse_exoneration_for's
+ * 15..59 band in the 40..59 overlap: exoneration gives the benign read,
+ * verify gives the independent test — together they let the user decide
+ * rather than just watching a score. The check is chosen from the signals
+ * that fired so it targets the actual deception. Returns a static string, or
+ * NULL when score < 40. */
 const char *
 hlse_verification_for(const Verdict *v) {
     int i;
     int shortener = 0, at_trick = 0, ip = 0, homoglyph = 0, idn = 0;
     int subdomain = 0, free_host = 0, typo = 0, brand = 0;
 
-    if (!v || v->score < 60) return NULL;
+    if (!v || v->score < 40) return NULL;
 
     for (i = 0; i < v->n_reasons; i++) {
         const char *r = v->reasons[i];
@@ -3929,7 +3936,7 @@ hlse_text_triage(const TextVerdict *v) {
 }
 
 /* Pre-action verification for a text verdict — the single check to perform
- * BEFORE taking any requested action (score >= 60 only).
+ * BEFORE taking any requested action (score >= 40, the ALERT floor).
  *
  * Socratic question (Perspective 31): "URL BLOCK verdicts show BOTH
  * ✓ Verify independently: (what to check before clicking) AND ⚑ If already
@@ -3943,13 +3950,19 @@ hlse_text_triage(const TextVerdict *v) {
  * text BLOCK verdicts have the same ✓ Verify first: / ⚑ If you acted: split
  * that URL verdicts already have?"
  *
+ * Socratic question (Perspective 95): "An ALERT [40-59] text verdict — e.g.
+ * a single urgency/callback signal — shows a pattern label but no verify
+ * guidance, same gap as the URL side. Widened the floor from 60 to 40 in
+ * lockstep with hlse_verification_for so a user reading ALERT text gets the
+ * same pre-action check a BLOCK reader gets, before the situation escalates."
+ *
  * Keyed to the pattern from hlse_classify_text_attack(). Returns a static
- * string, or NULL when score < 60 or no recognisable pattern. Thread-safe;
+ * string, or NULL when score < 40 or no recognisable pattern. Thread-safe;
  * no allocation.                                                               */
 const char *
 hlse_text_verify(const TextVerdict *v) {
     const char *pat;
-    if (!v || v->score < 60) return NULL;
+    if (!v || v->score < 40) return NULL;
     pat = hlse_classify_text_attack(v);
     if (!pat) return NULL;
     if (strstr(pat, "fake-job") || strstr(pat, "task scam"))
@@ -5435,7 +5448,7 @@ print_json_text(const char *text, const TextVerdict *v) {
     const char *pat  = hlse_classify_text_attack(v);
     const char *pid  = hlse_text_pattern_id(v);   /* stable HLSE-* token */
     const char *tobj = hlse_text_objective(v);    /* NULL outside score >= 60 */
-    const char *tvrf = hlse_text_verify(v);       /* NULL outside score >= 60 */
+    const char *tvrf = hlse_text_verify(v);       /* NULL outside score >= 40 (P95) */
     const char *ttri = hlse_text_triage(v);       /* NULL outside score >= 60 */
     const char *tcas = hlse_text_cascade(v);      /* NULL outside score >= 60 */
     const char *exon = hlse_text_exoneration(v);  /* NULL outside [15,59] */
@@ -6397,19 +6410,29 @@ main(int argc, char **argv) {
                                                             printf(",\"signal_count\":%d,\"confidence\":\"%s\"", u_sig, eu);
                                                         }
                                                     }
-                                                    if (uv.score >= 60) {
+                                                    if (uv.score >= 40) {
+                                                        /* Perspective 95: pattern/pattern_id/objective/safe_url/verify
+                                                         * now fire from the ALERT floor (40), matching the standalone
+                                                         * URL JSON path — an embedded URL scored ALERT used to emit
+                                                         * only raw reasons + exoneration while the same URL scanned
+                                                         * standalone got the full advisory. triage/cascade_risk stay
+                                                         * BLOCK+-only (60): post-incident guidance presumes the user
+                                                         * already acted, which only high confidence warrants. */
                                                         const char *upat = hlse_classify_url_attack(&uv);
                                                         const char *uvrf = hlse_verification_for(&uv);
-                                                        const char *ucas = hlse_cascade_risk(&uv);
-                                                        char uobj_buf[320], utri_buf[512], usafe[384];
+                                                        char uobj_buf[320], usafe[384];
                                                         int has_obj  = hlse_compound_objective(&uv, uobj_buf, sizeof(uobj_buf));
-                                                        int has_tri  = hlse_compound_triage(&uv, utri_buf, sizeof(utri_buf));
                                                         int has_safe = hlse_safe_destinations(&uv, usafe, sizeof(usafe));
                                                         if (upat)     { json_escape(upat,     eu, sizeof(eu)); printf(",\"pattern\":\"%s\"",      eu); }
                                                         if (upat)     { const char *upid = hlse_url_pattern_id(&uv); if (upid) printf(",\"pattern_id\":\"%s\"", upid); }
                                                         if (has_obj)  { json_escape(uobj_buf, eu, sizeof(eu)); printf(",\"objective\":\"%s\"",    eu); }
                                                         if (has_safe) { json_escape(usafe,    eu, sizeof(eu)); printf(",\"safe_url\":\"%s\"",     eu); }
                                                         if (uvrf)     { json_escape(uvrf,     eu, sizeof(eu)); printf(",\"verify\":\"%s\"",       eu); }
+                                                    }
+                                                    if (uv.score >= 60) {
+                                                        const char *ucas = hlse_cascade_risk(&uv);
+                                                        char utri_buf[512];
+                                                        int has_tri  = hlse_compound_triage(&uv, utri_buf, sizeof(utri_buf));
                                                         if (has_tri)  { json_escape(utri_buf, eu, sizeof(eu)); printf(",\"triage\":\"%s\"",       eu); }
                                                         if (ucas)     { json_escape(ucas,     eu, sizeof(eu)); printf(",\"cascade_risk\":\"%s\"", eu); }
                                                     }
@@ -6946,12 +6969,16 @@ main(int argc, char **argv) {
                         printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
                     }
                 }
-                if (pv.score >= 60) {
+                if (pv.score >= 40) {
                     /* Build a minimal TextVerdict so the existing advisory
                      * machinery fires: "Shell-pipe" triggers ClickFix
-                     * classification in hlse_classify_text_attack(). */
+                     * classification in hlse_classify_text_attack().
+                     * Perspective 95: pattern/objective/verify now fire from
+                     * the ALERT floor (40); triage/cascade_risk stay
+                     * BLOCK+-only (60) since post-incident guidance presumes
+                     * the user already acted. */
                     TextVerdict ptv;
-                    const char *ppat, *pobj, *pvrf, *ptri, *pcas;
+                    const char *ppat, *pobj, *pvrf;
                     memset(&ptv, 0, sizeof(ptv));
                     ptv.score = pv.score;
                     ptv.n_reasons = 1;
@@ -6960,14 +6987,17 @@ main(int argc, char **argv) {
                     ppat = hlse_classify_text_attack(&ptv);
                     pobj = hlse_text_objective(&ptv);
                     pvrf = hlse_text_verify(&ptv);
-                    ptri = hlse_text_triage(&ptv);
-                    pcas = hlse_text_cascade(&ptv);
                     if (ppat) { char e[512]; json_escape(ppat,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
                     if (ppat) { const char *pid = hlse_text_pattern_id(&ptv); if (pid) printf(",\"pattern_id\":\"%s\"",pid); }
                     if (pobj) { char e[512]; json_escape(pobj,e,sizeof(e)); printf(",\"objective\":\"%s\"",e); }
                     if (pvrf) { char e[512]; json_escape(pvrf,e,sizeof(e)); printf(",\"verify\":\"%s\"",e); }
-                    if (ptri) { char e[512]; json_escape(ptri,e,sizeof(e)); printf(",\"triage\":\"%s\"",e); }
-                    if (pcas) { char e[512]; json_escape(pcas,e,sizeof(e)); printf(",\"cascade_risk\":\"%s\"",e); }
+                    if (pv.score >= 60) {
+                        const char *ptri, *pcas;
+                        ptri = hlse_text_triage(&ptv);
+                        pcas = hlse_text_cascade(&ptv);
+                        if (ptri) { char e[512]; json_escape(ptri,e,sizeof(e)); printf(",\"triage\":\"%s\"",e); }
+                        if (pcas) { char e[512]; json_escape(pcas,e,sizeof(e)); printf(",\"cascade_risk\":\"%s\"",e); }
+                    }
                 }
                 if (pv.score > 0 && pv.score < 60) {
                     const char *ex = hlse_exoneration_for("paste", pv.score);
@@ -6994,8 +7024,10 @@ main(int argc, char **argv) {
                        hlse_action_for_score(pv.score), pv.score);
                 for (i = 0; i < pv.n_reasons; i++)
                     printf("  \xc2\xb7 %s\n", pv.reasons[i]);
-                if (pv.score >= 60) {
-                    /* Advisory lenses: every paste BLOCK is ClickFix/pastejacking */
+                if (pv.score >= 40) {
+                    /* Advisory lenses: every paste ALERT+ is ClickFix/pastejacking.
+                     * print_text_advisories internally gates verify at >=40 and
+                     * triage/cascade_risk at >=60 (Perspective 95). */
                     TextVerdict ptv;
                     memset(&ptv, 0, sizeof(ptv));
                     ptv.score = pv.score;
@@ -7003,7 +7035,8 @@ main(int argc, char **argv) {
                     snprintf(ptv.reasons[0], sizeof(ptv.reasons[0]),
                              "Shell-pipe: paste-and-run pastejacking");
                     print_text_advisories(&ptv);
-                } else {
+                }
+                if (pv.score > 0 && pv.score < 60) {
                     const char *ex = hlse_exoneration_for("paste", pv.score);
                     if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                 }
@@ -7299,9 +7332,15 @@ main(int argc, char **argv) {
                     if (bex && btv_hi.score >= 15 && btv_hi.score < 60) {
                         json_escape(bex,e,sizeof(e)); printf(",\"exoneration\":\"%s\"",e);
                     }
+                    /* Perspective 95: verify now fires from the ALERT floor
+                     * (btv_hi.score >= 40, the combined header/body score) —
+                     * objective/triage/cascade_risk stay gated on ev.score
+                     * >= 60 (header-confidence threshold, unchanged). */
+                    if (bvrf && btv_hi.score >= 40) {
+                        json_escape(bvrf,e,sizeof(e)); printf(",\"verify\":\"%s\"",e);
+                    }
                     if (ev.score >= 60) {
                         if (bobj) { json_escape(bobj,e,sizeof(e)); printf(",\"objective\":\"%s\"",e); }
-                        if (bvrf) { json_escape(bvrf,e,sizeof(e)); printf(",\"verify\":\"%s\"",e); }
                         if (btri) { json_escape(btri,e,sizeof(e)); printf(",\"triage\":\"%s\"",e); }
                         if (bcas) { json_escape(bcas,e,sizeof(e)); printf(",\"cascade_risk\":\"%s\"",e); }
                     }
@@ -7375,8 +7414,11 @@ main(int argc, char **argv) {
                     printf("  \xe2\x96\xb8 Body pattern: %s (body score %d)\n",
                            body_pat, bodytv.score);
                     if (bobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", bobj);
+                    /* Perspective 95: verify fires from the ALERT floor
+                     * (btv_hi.score >= 40); triage/cascade stay BLOCK+-only. */
+                    if (bvrf && btv_hi.score >= 40)
+                        printf("  \xe2\x9c\x93 Verify first: %s\n", bvrf);
                     if (ev.score >= 60) {
-                        if (bvrf) printf("  \xe2\x9c\x93 Verify first: %s\n", bvrf);
                         if (btri) printf("  \xe2\x9a\x91 If you acted: %s\n", btri);
                         if (bcas) printf("  \xe2\x8a\x95 Also change: %s\n", bcas);
                     }

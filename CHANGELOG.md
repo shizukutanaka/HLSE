@@ -2,6 +2,50 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.95] — 2026-07-01
+
+### Changed
+- **Perspective 95: `verify` (pre-action independent-check guidance) now fires
+  from the ALERT floor (score >= 40), not just BLOCK+ (score >= 60).**
+
+  Socratic gap identified while auditing overall product strengths/weaknesses:
+  an ALERT-band verdict (40-59) — the score band where HLSE is LEAST certain —
+  showed a pattern label and an "attacker's goal" line but left `verify`,
+  `triage`, and `cascade_risk` all NULL. A user reading `https://paypaI.com`
+  scored ALERT [50] had no actionable next step; only a BLOCK [60+] verdict
+  told them what to do. But ALERT is exactly the band where an independent
+  check is most valuable — a BLOCK verdict is confident enough that verify is
+  a courtesy, while an ALERT verdict genuinely needs it to resolve the
+  ambiguity the score itself admits to.
+
+  `hlse_verification_for` (URL) and `hlse_text_verify` (text) now gate at
+  score >= 40 instead of >= 60. `triage` and `cascade_risk` — post-incident
+  guidance that presumes the user already acted — correctly stay BLOCK+-only
+  (>= 60); only the pre-action `verify` lens widened. In the 40-59 overlap,
+  `verify` now co-occurs with `exoneration` — together they let the user
+  decide (an independent test to confirm OR a benign read to dismiss) instead
+  of just watching a bare score.
+
+  This also fixed a deeper asymmetry: the same URL scanned standalone versus
+  found embedded inside a scanned file previously produced different JSON
+  shapes at ALERT — the embedded-URL path in `scan` emitted only `reasons` +
+  `exoneration`, dropping `pattern`, `pattern_id`, `objective`, and `safe_url`
+  entirely below score 60, while the standalone URL path already showed them
+  unconditionally. Both paths, plus the `paste` and `email` (body-pattern)
+  commands, now agree.
+
+  Pure advisory/JSON output change — no detection logic, score, or threshold
+  touched (F1=1.000 invariant preserved; BLOCK+ verdicts are byte-identical).
+
+  - **Schema updates**: `hlse_url_verdict`, `hlse_text_verdict`,
+    `hlse_paste_verdict`, and `hlse_email_verdict` schemas' `verify` field
+    descriptions updated from "score >= 60 only" to the new ALERT floor.
+  - **Tests**: 7 new CLI integration tests cover text/URL/scan/paste ALERT-band
+    verify emission, confirm triage/cascade_risk stay BLOCK+-only, and assert
+    BLOCK+ verdicts are unchanged (617 total, 0 failed). 2 pre-existing tests
+    that asserted the old ">= 60 only" contract were updated to assert the new
+    ">= 40" contract.
+
 ## [1.0.94] — 2026-06-30
 
 ### Changed
