@@ -5085,6 +5085,42 @@ else
     echo "SKIP  p96: /etc/hosts not writable, skipping network ALERT-band tests"
 fi
 
+# ─── P97: package verdict ALERT-band advisory (same gap as P95/P96, package kind) ─
+# Socratic gap: a name matching packages in 2+ ecosystems at once (e.g.
+# "reqests" with no ecosystem given ~ pip "requests" dist-1 AND cargo
+# "reqwest" dist-2) lands at score 50 alone — the n_matches==1 amplifier to
+# 70 never fires because there are 2 matches — but pattern/objective/verify
+# only fired at score >= 60, the same gap P95/P96 closed elsewhere.
+
+P97_JSON=$(./hlse_core --json package "reqests" 2>/dev/null) || true
+echo "$P97_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert 40 <= d["score"] < 60, d
+assert d.get("pattern"), d
+assert d.get("pattern_id") == "HLSE-PKG-TYPOSQUAT", d
+assert d.get("verify"), d
+assert "triage" not in d, d
+assert "cascade_risk" not in d, d
+' && check "p97 json package: pattern+verify present in ALERT, triage/cascade absent" "0" "0" \
+   || check "p97 json package: pattern+verify present in ALERT, triage/cascade absent" "0" "1"
+
+P97_TXT=$(./hlse_core package "reqests" 2>/dev/null) || true
+echo "$P97_TXT" | grep -q "ALERT" \
+    && check "p97: multi-registry package match scores ALERT band" "0" "0" \
+    || check "p97: multi-registry package match scores ALERT band" "0" "1"
+echo "$P97_TXT" | grep -q "Verify first:" \
+    && check "p97 text: verify line shown in ALERT band" "0" "0" \
+    || check "p97 text: verify line shown in ALERT band" "0" "1"
+echo "$P97_TXT" | grep -q "If you acted:" \
+    && check "p97 text: no triage line in ALERT band" "0" "1" \
+    || check "p97 text: no triage line in ALERT band" "0" "0"
+
+# F1 invariant: single-registry exact typosquat (BLOCK+) unchanged
+./hlse_core --json package "reqeusts" pip 2>/dev/null | \
+grep -q '"score":70,"action":"BLOCK"' && check "p97: BLOCK+ package score unchanged (F1 invariant)" "0" "0" \
+   || check "p97: BLOCK+ package score unchanged (F1 invariant)" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

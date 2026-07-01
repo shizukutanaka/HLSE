@@ -6836,7 +6836,13 @@ main(int argc, char **argv) {
                                        ns >= 2 ? "corroborated" : "single signal";
                     printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
                 }
-                if (pv.score >= 60) {
+                if (pv.score >= 40) {
+                    /* Perspective 97: a name matching 2+ registries at once
+                     * (e.g. "reqests" ~ pip "requests" dist-1 AND cargo
+                     * "reqwest" dist-2, when no ecosystem is given) lands at
+                     * score 50 alone — the n_matches==1 amplifier to 70 never
+                     * fires — but pattern/objective/verify used to require
+                     * >= 60, the same gap P95/P96 closed elsewhere. */
                     static const char pkg_pat[] =
                         "dependency confusion / typosquat supply-chain attack";
                     static const char pkg_obj[] =
@@ -6851,6 +6857,16 @@ main(int argc, char **argv) {
                         "cannot run \xe2\x80\x94 lifecycle scripts execute with your "
                         "privileges before install even completes; most "
                         "ecosystems also support --dry-run to preview first";
+                    char e[512];
+                    json_escape(pkg_pat, e, sizeof(e));
+                    printf(",\"pattern\":\"%s\"", e);
+                    printf(",\"pattern_id\":\"HLSE-PKG-TYPOSQUAT\"");
+                    json_escape(pkg_obj, e, sizeof(e));
+                    printf(",\"objective\":\"%s\"", e);
+                    json_escape(pkg_vrf, e, sizeof(e));
+                    printf(",\"verify\":\"%s\"", e);
+                }
+                if (pv.score >= 60) {
                     static const char pkg_tri[] =
                         "if already installed, remove the package immediately "
                         "(pip uninstall / npm uninstall / cargo remove) and "
@@ -6870,13 +6886,6 @@ main(int argc, char **argv) {
                         "disk-resident API keys, SSH keys, and cloud credentials "
                         "a TruffleHog-style scan would harvest";
                     char e[512];
-                    json_escape(pkg_pat, e, sizeof(e));
-                    printf(",\"pattern\":\"%s\"", e);
-                    printf(",\"pattern_id\":\"HLSE-PKG-TYPOSQUAT\"");
-                    json_escape(pkg_obj, e, sizeof(e));
-                    printf(",\"objective\":\"%s\"", e);
-                    json_escape(pkg_vrf, e, sizeof(e));
-                    printf(",\"verify\":\"%s\"", e);
                     json_escape(pkg_tri, e, sizeof(e));
                     printf(",\"triage\":\"%s\"", e);
                     json_escape(pkg_cas, e, sizeof(e));
@@ -6901,7 +6910,7 @@ main(int argc, char **argv) {
                        argv[idx + 1]);
                 if (pv.reason[0])
                     printf("  \xc2\xb7 %s\n", pv.reason);
-                if (pv.score >= 60) {
+                if (pv.score >= 40) {
                     printf("  \xe2\x96\xb8 Pattern: dependency confusion / typosquat "
                            "supply-chain attack\n");
                     printf("  \xe2\x97\x89 Attacker's goal: arbitrary code execution "
@@ -6913,6 +6922,8 @@ main(int argc, char **argv) {
                            "a malicious preinstall/postinstall/prepare hook cannot "
                            "run \xe2\x80\x94 lifecycle scripts execute before install "
                            "even completes; --dry-run previews first\n");
+                }
+                if (pv.score >= 60) {
                     printf("  \xe2\x9a\x91 If you acted: remove immediately "
                            "(pip/npm/cargo uninstall) and inspect the lifecycle "
                            "scripts (preinstall/postinstall/prepare); "
@@ -6925,7 +6936,8 @@ main(int argc, char **argv) {
                            "vector \xe2\x80\x94 revoke it and audit your published "
                            "versions for unexpected releases, plus all disk-resident "
                            "API keys, SSH keys, and cloud credentials\n");
-                } else {
+                }
+                if (pv.score < 60) {
                     const char *ex = hlse_exoneration_for("package", pv.score);
                     if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                 }

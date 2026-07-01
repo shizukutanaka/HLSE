@@ -2,6 +2,38 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.97] — 2026-07-01
+
+### Changed
+- **Perspective 97: `package` verdict gets the same ALERT-band advisory fix
+  as URL/text/paste/scan (P95) and network (P96) — `pattern`/`objective`/
+  `verify` now fire from score >= 40, not just >= 60.**
+
+  Continuing the systematic audit across every verdict kind: a package name
+  that fuzzy-matches known packages in 2+ ecosystems at once — e.g. `reqests`
+  with no ecosystem given, which is edit-distance 1 from pip's `requests` AND
+  edit-distance 2 from cargo's `reqwest` — lands the verdict at score 50
+  (ALERT) alone. The `n_matches == 1 && distance == 1` amplifier that bumps a
+  single match to 70 (BLOCK) never fires once a second registry also matches,
+  so the ambiguous case scored LOWER than the unambiguous one while getting
+  LESS advisory content: no `pattern`, `objective`, or `verify` — only raw
+  match data and an exoneration hint.
+
+  `triage`/`cascade_risk` (uninstall-and-rotate guidance, which presumes the
+  package was already installed) stay BLOCK+-only (>= 60), matching the
+  P95/P96 precedent exactly.
+
+  Pure advisory/JSON output change — no detection logic, score, or threshold
+  touched. F1=1.000 preserved; the single-registry BLOCK+ case (score 70) is
+  byte-identical.
+
+  - **Schema update**: `hlse_package_verdict.schema.json`'s `objective` and
+    `verify` descriptions updated from "score >= 60 only" to the ALERT floor.
+  - **Tests**: 4 new CLI integration tests use a real reproducible multi-
+    ecosystem match (`reqests`, no ecosystem arg) to assert pattern/verify
+    appear in ALERT while triage/cascade_risk stay absent, in both JSON and
+    CLI plaintext, plus a BLOCK+ F1-invariant check (621 → 625 total).
+
 ## [1.0.96] — 2026-07-01
 
 ### Changed
