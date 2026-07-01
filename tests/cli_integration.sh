@@ -5041,6 +5041,50 @@ assert "triage" not in d, d
 grep -q '"score":60,"action":"BLOCK"' && check "p95: BLOCK+ URL score unchanged (F1 invariant)" "0" "0" \
    || check "p95: BLOCK+ URL score unchanged (F1 invariant)" "0" "1"
 
+# ─── P96: network verdict ALERT-band advisory (same gap as P95, network kind) ─
+# Socratic gap: a single N4 (hosts-file pharming redirect, +50) or N2 (routing
+# injection, +55) finding lands in ALERT (40-59) alone, but the network
+# command only emitted pattern/objective/verify at score >= 60 — the same gap
+# P95 closed for URL/text/paste/scan. Requires a real /etc/hosts entry to
+# trigger N4, so back it up, append a redirect, restore unconditionally via
+# trap (this is an isolated ephemeral container; the edit never survives the
+# session either way).
+if [ -w /etc/hosts ]; then
+    cp /etc/hosts /tmp/hlse_p96_hosts.bak
+    p96_restore() { cp /tmp/hlse_p96_hosts.bak /etc/hosts 2>/dev/null; rm -f /tmp/hlse_p96_hosts.bak; }
+    trap p96_restore EXIT
+    echo "1.2.3.4 paypal.com" >> /etc/hosts
+
+    P96_JSON=$(./hlse_core --json network 2>/dev/null) || true
+    echo "$P96_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert 40 <= d["score"] < 60, d
+assert d.get("pattern"), d
+assert d.get("pattern_id") == "HLSE-NET-C2", d
+assert d.get("verify"), d
+assert "triage" not in d, d
+assert "cascade_risk" not in d, d
+' && check "p96 json network: pattern+verify present in ALERT, triage/cascade absent" "0" "0" \
+   || check "p96 json network: pattern+verify present in ALERT, triage/cascade absent" "0" "1"
+
+    P96_TXT=$(./hlse_core network 2>/dev/null) || true
+    echo "$P96_TXT" | grep -q "ALERT" \
+        && check "p96: network hosts-redirect scores ALERT band" "0" "0" \
+        || check "p96: network hosts-redirect scores ALERT band" "0" "1"
+    echo "$P96_TXT" | grep -q "Verify first:" \
+        && check "p96 text: verify line shown in ALERT band" "0" "0" \
+        || check "p96 text: verify line shown in ALERT band" "0" "1"
+    echo "$P96_TXT" | grep -q "Immediate action:" \
+        && check "p96 text: no triage line in ALERT band" "0" "1" \
+        || check "p96 text: no triage line in ALERT band" "0" "0"
+
+    p96_restore
+    trap - EXIT
+else
+    echo "SKIP  p96: /etc/hosts not writable, skipping network ALERT-band tests"
+fi
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

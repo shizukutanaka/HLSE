@@ -74,11 +74,11 @@
     },
     "objective": {
       "type": "string",
-      "description": "The attacker's likely objective (score >= 60 only)."
+      "description": "The attacker's likely objective (score >= 40 — ALERT band and above)."
     },
     "verify": {
       "type": "string",
-      "description": "Independent check before isolating (score >= 60 only)."
+      "description": "Independent check before isolating (score >= 40 — ALERT band and above)."
     },
     "triage": {
       "type": "string",

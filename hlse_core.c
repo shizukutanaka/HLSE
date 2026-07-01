@@ -7074,7 +7074,14 @@ main(int argc, char **argv) {
                                    ns >= 2 ? "corroborated" : "single signal";
                 printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
             }
-            if (nv.score >= 60) {
+            if (nv.score >= 40) {
+                /* Perspective 96: a single N2 (routing injection, +55) or N4
+                 * (hosts-file pharming, +50) finding lands in ALERT (40-59)
+                 * alone, but used to get no pattern/objective/verify — only
+                 * BLOCK+ (60) did, the same gap P95 closed for URL/text/
+                 * paste/scan. verify now fires from the ALERT floor;
+                 * triage/cascade_risk (post-incident, presumes the user
+                 * already acted) stay BLOCK+-only. */
                 static const char net_pat[] =
                     "suspicious network activity (C2 / exfiltration indicator)";
                 static const char net_obj[] =
@@ -7086,6 +7093,13 @@ main(int argc, char **argv) {
                     "'lsof -i' or 'ss -tp' on Linux, 'netstat -b' on Windows; "
                     "verify it against your known installed software before "
                     "taking any disruptive action";
+                char e[512];
+                json_escape(net_pat, e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                printf(",\"pattern_id\":\"HLSE-NET-C2\"");
+                json_escape(net_obj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
+                json_escape(net_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+            }
+            if (nv.score >= 60) {
                 static const char net_tri[] =
                     "if the process is unrecognised: kill it and isolate the "
                     "host from the network; preserve network capture (tcpdump) "
@@ -7097,10 +7111,6 @@ main(int argc, char **argv) {
                     "C2 connection may already be exfiltrating them; rotate all "
                     "from a clean device before the machine is brought back online";
                 char e[512];
-                json_escape(net_pat, e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
-                printf(",\"pattern_id\":\"HLSE-NET-C2\"");
-                json_escape(net_obj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                json_escape(net_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
                 json_escape(net_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
                 json_escape(net_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
             }
@@ -7123,7 +7133,7 @@ main(int argc, char **argv) {
                    hlse_action_for_score(nv.score), nv.score);
             for (i = 0; i < nv.n_reasons; i++)
                 printf("  \xc2\xb7 %s\n", nv.reasons[i]);
-            if (nv.score >= 60) {
+            if (nv.score >= 40) {
                 printf("  \xe2\x96\xb8 Pattern: suspicious network activity "
                        "(C2 / exfiltration indicator)\n");
                 printf("  \xe2\x97\x89 Attacker's goal: data exfiltration or persistent "
@@ -7132,13 +7142,16 @@ main(int argc, char **argv) {
                 printf("  \xe2\x9c\x93 Verify first: identify the process owning the "
                        "connection ('lsof -i' / 'ss -tp') before taking any "
                        "disruptive action\n");
+            }
+            if (nv.score >= 60) {
                 printf("  \xe2\x9a\x91 Immediate action: if unrecognised, kill the "
                        "process and isolate the host; preserve tcpdump capture "
                        "and process memory before rebooting\n");
                 printf("  \xe2\x8a\x95 Also change: all credentials on this machine "
                        "(browser, credential manager, SSH keys, cloud tokens) "
                        "\xe2\x80\x94 rotate from a clean device\n");
-            } else {
+            }
+            if (nv.score < 60) {
                 const char *ex = hlse_exoneration_for("network", nv.score);
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }

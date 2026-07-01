@@ -2,6 +2,36 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.96] — 2026-07-01
+
+### Changed
+- **Perspective 96: `network` verdict gets the same ALERT-band advisory fix
+  P95 gave URL/text/paste/scan — `pattern`/`objective`/`verify` now fire from
+  score >= 40, not just >= 60.**
+
+  Continuing the audit from P95: a single N4 finding (`/etc/hosts` banking-
+  domain redirect — pharming, +50) or N2 finding (duplicate-metric default
+  routes — routing injection, +55) lands the network verdict in ALERT (40-59)
+  on its own, but the `network` command only emitted `pattern`, `pattern_id`,
+  `objective`, and `verify` at score >= 60 — identical to the gap P95 closed
+  elsewhere. A user whose hosts file was silently redirecting `paypal.com`
+  saw a bare ALERT [50] with raw reasons and an exoneration hint, but no
+  identification of the attack class or an independent check to run.
+
+  `triage` and `cascade_risk` (kill-the-process / rotate-credentials — post-
+  incident guidance that presumes disruptive action) correctly stay
+  BLOCK+-only (>= 60), matching the P95 precedent exactly.
+
+  Pure advisory/JSON output change — no detection logic, score, or threshold
+  touched. F1=1.000 preserved.
+
+  - **Schema update**: `hlse_network_verdict.schema.json`'s `objective` and
+    `verify` descriptions updated from "score >= 60 only" to the ALERT floor.
+  - **Tests**: 3 new CLI integration tests trigger a real N4 hosts-file
+    redirect (backed up and restored via `trap`, safe in this isolated
+    ephemeral container) and assert pattern/verify appear in ALERT while
+    triage/cascade_risk stay absent, in both JSON and CLI plaintext.
+
 ## [1.0.95] — 2026-07-01
 
 ### Changed
