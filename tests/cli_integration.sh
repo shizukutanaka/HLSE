@@ -5179,6 +5179,60 @@ grep -q '"score":70,"action":"BLOCK"' && check "p98: BLOCK+ file score unchanged
    || check "p98: BLOCK+ file score unchanged (F1 invariant)" "0" "1"
 rm -f /tmp/hlse_p98_invoice.exe
 
+# ─── P99: Stripe publishable-key advisory correctness (not just ALERT-band gap) ─
+# Socratic gap: "Stripe Live Publishable" (pk_live_) matches the generic
+# strstr(type,"Stripe") objective branch and used to be told it grants
+# "ability to issue charges, view customer payment data, and issue refunds"
+# — false for a publishable key, which is DESIGNED to be public and cannot
+# do any of that (only a paired SECRET key sk_live_/rk_live_ can). This is a
+# factual-correctness bug, not just a missing ALERT-band field like P95-98.
+
+# Standalone pk_live_ alone (score 50, ALERT) gets an unconditional caveat
+# and the secret-kind exoneration, even below the objective/verify/triage
+# score >= 60 gate (the caveat is a fact, not a score-band hedge).
+P99_JSON=$(./hlse_core --json secret "pk_live_51H8xyzABCDEFGHIJKLMNOPQRSTUVWXYZ12345678" 2>/dev/null) || true
+echo "$P99_JSON" | python3 -c '
+import sys, json, jsonschema
+d = json.loads(sys.stdin.read())
+assert 40 <= d["score"] < 60, d
+assert "publishable keys" in d.get("caveat", "").lower(), d
+assert "cannot create charges" in d.get("caveat", ""), d
+assert d.get("exoneration"), d
+schema = json.load(open("schema/hlse_secret_verdict.schema.json"))
+jsonschema.validate(d, schema)
+' && check "p99 json secret: Stripe publishable key gets accurate caveat + exoneration" "0" "0" \
+   || check "p99 json secret: Stripe publishable key gets accurate caveat + exoneration" "0" "1"
+
+# A real secret (AWS key, BLOCK+) must NOT carry the caveat — it's type-specific
+./hlse_core --json secret "aws_access_key_id=AKIA1234567890ABCDEF" 2>/dev/null | \
+grep -q '"caveat"' && check "p99: AWS key does not carry the Stripe-publishable caveat" "0" "1" \
+   || check "p99: AWS key does not carry the Stripe-publishable caveat" "0" "0"
+
+# When pk_live_ combines with another finding to cross score >= 60, the
+# `objective` field must state the ACCURATE (harmless) claim, not the
+# generic Stripe secret-key narrative ("issue charges"/"issue refunds").
+JWT_TEST="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"
+P99_COMBINED=$(./hlse_core --json secret "pk_live_51H8xyzABCDEFGHIJKLMNOPQRSTUVWXYZ12345678 $JWT_TEST" 2>/dev/null) || true
+echo "$P99_COMBINED" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] >= 60, d
+obj = d.get("objective", "")
+assert "none directly" in obj, d
+assert "cannot create charges" in obj, d
+' && check "p99 json secret: combined-score objective is accurate for publishable key" "0" "0" \
+   || check "p99 json secret: combined-score objective is accurate for publishable key" "0" "1"
+
+# CLI plaintext also shows the caveat line
+./hlse_core secret "pk_live_51H8xyzABCDEFGHIJKLMNOPQRSTUVWXYZ12345678" 2>/dev/null | \
+grep -q "Caveat:" && check "p99 text: Stripe publishable key caveat line shown" "0" "0" \
+   || check "p99 text: Stripe publishable key caveat line shown" "0" "1"
+
+# F1 invariant: real secret credential (AWS, BLOCK+) objective unchanged
+./hlse_core --json secret "aws_access_key_id=AKIA1234567890ABCDEF" 2>/dev/null | \
+grep -q '"objective":"cloud API access' && check "p99: AWS key objective unchanged (F1 invariant)" "0" "0" \
+   || check "p99: AWS key objective unchanged (F1 invariant)" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

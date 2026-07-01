@@ -2,6 +2,52 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.99] — 2026-07-01
+
+### Fixed
+- **Perspective 99: `secret` verdict no longer claims a Stripe *publishable*
+  key (`pk_live_`) can "issue charges, view customer payment data, and issue
+  refunds" — that capability belongs only to Stripe *secret* keys.**
+
+  Socratic question: does the `objective` text describe what THIS SPECIFIC
+  credential type can actually do, or does it lump every "Stripe" finding
+  under one payment-processing narrative regardless of key kind? Answer:
+  the latter, and it was wrong. `secret_objective_for()` matched
+  `strstr(type, "Stripe")` for both secret keys (`sk_live_`/`rk_live_`, which
+  really do grant charge/refund access) and the publishable key
+  (`pk_live_`), which by Stripe's own documentation is designed to be
+  embedded in public client-side code and cannot perform any of those
+  actions. Reachable whenever a publishable-key finding combines with
+  another to cross the score >= 60 objective/remediation/triage threshold
+  (e.g. alongside a JWT) — the user would read that their public,
+  by-design-safe key just handed an attacker refund access.
+
+  Also: `secret` was the last verdict kind with zero advisory content below
+  score 60 (the systematic gap P95-98 closed for url/text/network/package/
+  file) — `hlse_exoneration_for()` gained a `"secret"` case.
+
+  Fixes, all pure advisory/output — no detection logic, score, or threshold
+  touched (F1=1.000 preserved; AWS/GitHub/other real-secret objectives are
+  byte-identical):
+  - `secret_objective_for("Stripe Live Publishable")` now returns the
+    accurate claim ("none directly ... cannot create charges, issue
+    refunds, or read customer payment data").
+  - New `secret_finding_caveat()`: an unconditional (any score, not just a
+    score-band hedge) factual note for this credential type, emitted as a
+    new `"caveat"` JSON field / `⚠ Caveat:` CLI line, explaining rotation is
+    not required and naming the actual at-risk key type
+    (`sk_live_`/`rk_live_`).
+  - `hlse_exoneration_for("secret", score)`: new 15-59 band hedge (test-mode
+    keys, doc placeholders, low-entropy samples).
+
+  - **Schema update**: `hlse_secret_verdict.schema.json` gained `exoneration`
+    and `caveat` properties.
+  - **Tests**: 5 new CLI integration tests cover the standalone ALERT-band
+    caveat, absence of the caveat on a real AWS secret, the corrected
+    objective text in a combined BLOCK+ scenario, the CLI plaintext caveat
+    line, and an F1-invariant check on the unmodified AWS objective
+    (633 → 638 total).
+
 ## [1.0.98] — 2026-07-01
 
 ### Changed

@@ -2223,6 +2223,13 @@ hlse_exoneration_for(const char *kind, int score) {
                "test: check the file's actual origin (was it downloaded from an "
                "official site, or did it arrive unsolicited?) and scan it with a "
                "multi-engine tool (e.g. VirusTotal) before opening.";
+    if (strcmp(kind, "secret") == 0)
+        return "heuristic \xe2\x80\x94 test-mode keys (sk_test_/pk_test_), "
+               "placeholder examples in documentation, and low-entropy sample "
+               "values can match a credential pattern without being a real, "
+               "live secret. Decisive test: does the value work against the "
+               "provider's live API right now, and does it appear in version "
+               "control history rather than a docs/example file?";
     return NULL;
 }
 
@@ -5311,11 +5318,30 @@ audit_remediation_for(const char *desc)
     return NULL;
 }
 
-/* Map a credential type label to what access it grants the attacker. */
+/* Map a credential type label to what access it grants the attacker.
+ *
+ * Socratic question (Perspective 99): "'Stripe Live Publishable' matches the
+ * strstr(type, \"Stripe\") branch below and is told it grants 'ability to
+ * issue charges, view customer payment data, and issue refunds' — but a
+ * publishable key (pk_live_) cannot do any of that by Stripe's own design;
+ * only a SECRET key (sk_live_/rk_live_) can. Reachable whenever this finding
+ * combines with another to cross the >=60 objective/remediation/triage
+ * threshold (e.g. alongside a JWT), telling the user their exposed
+ * publishable key just handed an attacker refund access — false, and exactly
+ * the kind of over-claim that erodes trust in every other correct verdict."
+ *
+ * Exact-match this label BEFORE the generic Stripe substring check so a
+ * publishable key gets the accurate (and much calmer) objective instead of
+ * inheriting the secret-key narrative.                                     */
 static const char *
 secret_objective_for(const char *type)
 {
     if (!type || !type[0]) return NULL;
+    if (strcmp(type, "Stripe Live Publishable") == 0)
+        return "none directly \xe2\x80\x94 publishable keys are designed to be "
+               "embedded in public client-side code and cannot create charges, "
+               "issue refunds, or read customer payment data; only a paired "
+               "SECRET key (sk_live_/rk_live_) grants that access";
     if (strstr(type, "AWS"))
         return "cloud API access \xe2\x80\x94 S3 read/write, EC2 control, and IAM "
                "privilege escalation; all resources visible to this key are at risk";
@@ -5345,6 +5371,27 @@ secret_objective_for(const char *type)
                "read inbound messages, and incur billing charges";
     return "authenticated access to the associated service and any resource "
            "this credential controls";
+}
+
+/* Perspective 99: a factual correction for credential TYPES that are
+ * public-by-design and therefore not "compromised" in the sense the rest of
+ * the secret advisory assumes. Unlike hlse_exoneration_for() (a probabilistic
+ * "might be a false positive" hedge for a score band), this is an
+ * unconditional, type-specific fact: Stripe publishable keys are ALWAYS
+ * meant to be public, at any score. Returns NULL for every other type. */
+static const char *
+secret_finding_caveat(const char *type) {
+    if (!type) return NULL;
+    if (strcmp(type, "Stripe Live Publishable") == 0)
+        return "Stripe publishable keys (pk_live_/pk_test_) are designed to "
+               "be public \xe2\x80\x94 embedded in checkout pages, mobile "
+               "apps, and browser JavaScript by every Stripe integration. "
+               "Stripe's own documentation confirms they cannot create "
+               "charges, issue refunds, or read customer payment data. "
+               "Rotation is not required for this key; if a paired SECRET "
+               "key (sk_live_/rk_live_) was also exposed, that one needs "
+               "immediate rotation instead.";
+    return NULL;
 }
 
 static void
@@ -6306,6 +6353,13 @@ main(int argc, char **argv) {
                                                 printf(",\"remediation\":\"%s\"", ed);
                                             }
                                         }
+                                        if (sv.n_findings > 0) {
+                                            const char *cav = secret_finding_caveat(sv.findings[0].type);
+                                            if (cav) {
+                                                json_escape(cav, ed, sizeof(ed));
+                                                printf(",\"caveat\":\"%s\"", ed);
+                                            }
+                                        }
                                         if (sv.score >= 60 && sv.n_findings > 0) {
                                             const char *ftype = sv.findings[0].type;
                                             const char *sobj  = secret_objective_for(ftype);
@@ -6338,6 +6392,13 @@ main(int argc, char **argv) {
                                             json_escape(ss_tri, ed, sizeof(ed)); printf(",\"triage\":\"%s\"",       ed);
                                             json_escape(ss_cas, ed, sizeof(ed)); printf(",\"cascade_risk\":\"%s\"", ed);
                                         }
+                                        if (sv.score > 0 && sv.score < 60) {
+                                            const char *ex = hlse_exoneration_for("secret", sv.score);
+                                            if (ex) {
+                                                json_escape(ex, ed, sizeof(ed));
+                                                printf(",\"exoneration\":\"%s\"", ed);
+                                            }
+                                        }
                                         printf("}\n");
                                     } else {
                                         int i;
@@ -6347,6 +6408,10 @@ main(int argc, char **argv) {
                                         for (i = 0; i < sv.n_findings; i++)
                                             printf("  \xc2\xb7 %s\n",
                                                    sv.findings[i].description);
+                                        if (sv.n_findings > 0) {
+                                            const char *cav = secret_finding_caveat(sv.findings[0].type);
+                                            if (cav) printf("  \xe2\x9a\xa0 Caveat: %s\n", cav);
+                                        }
                                         if (sv.score >= 60 && sv.n_findings > 0) {
                                             const char *ftype = sv.findings[0].type;
                                             const char *sobj  = secret_objective_for(ftype);
@@ -6365,6 +6430,10 @@ main(int argc, char **argv) {
                                             printf("  \xe2\x8a\x95 Also change: every other credential in "
                                                    "the same file or repository \xe2\x80\x94 treat everything "
                                                    "co-located as potentially leaked\n");
+                                        }
+                                        if (sv.score > 0 && sv.score < 60) {
+                                            const char *ex = hlse_exoneration_for("secret", sv.score);
+                                            if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                                         }
                                     }
                                 }
@@ -7244,6 +7313,17 @@ main(int argc, char **argv) {
                         printf(",\"blind_spot\":\"%s\"", esc_bs);
                     }
                 }
+                if (sv.n_findings > 0) {
+                    /* Perspective 99: unconditional on score — a Stripe
+                     * publishable key is public-by-design at any score,
+                     * not just a probabilistic false-positive hedge. */
+                    const char *cav = secret_finding_caveat(sv.findings[0].type);
+                    if (cav) {
+                        char e[768];
+                        json_escape(cav, e, sizeof(e));
+                        printf(",\"caveat\":\"%s\"", e);
+                    }
+                }
                 if (sv.score >= 60 && sv.n_findings > 0) {
                     const char *ftype = sv.findings[0].type;
                     const char *sobj  = secret_objective_for(ftype);
@@ -7272,6 +7352,14 @@ main(int argc, char **argv) {
                     json_escape(sec_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
                     json_escape(sec_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
                 }
+                if (sv.score > 0 && sv.score < 60) {
+                    const char *ex = hlse_exoneration_for("secret", sv.score);
+                    if (ex) {
+                        char e[512];
+                        json_escape(ex, e, sizeof(e));
+                        printf(",\"exoneration\":\"%s\"", e);
+                    }
+                }
                 printf("}\n");
             } else if (sv.score == 0) {
                 const char *bs = hlse_blindspot_for("secret");
@@ -7290,6 +7378,10 @@ main(int argc, char **argv) {
                     printf("  \xe2\x86\x92 Confidence: heuristic — this is a "
                            "pattern guess (generic VAR=value / high-entropy "
                            "string); confirm it is a live credential.\n");
+                if (sv.n_findings > 0) {
+                    const char *cav = secret_finding_caveat(sv.findings[0].type);
+                    if (cav) printf("  \xe2\x9a\xa0 Caveat: %s\n", cav);
+                }
                 if (sv.score >= 60 && sv.n_findings > 0) {
                     const char *ftype = sv.findings[0].type;
                     const char *sobj  = secret_objective_for(ftype);
@@ -7307,6 +7399,10 @@ main(int argc, char **argv) {
                     printf("  \xe2\x8a\x95 Also change: every other credential in "
                            "the same file or repository \xe2\x80\x94 treat everything "
                            "co-located as potentially leaked\n");
+                }
+                if (sv.score > 0 && sv.score < 60) {
+                    const char *ex = hlse_exoneration_for("secret", sv.score);
+                    if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                 }
                 if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
             }
