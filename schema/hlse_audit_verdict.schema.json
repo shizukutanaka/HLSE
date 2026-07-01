@@ -86,7 +86,7 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 5,
-            "description": "0=LOW 1=INFO 2=MED 3=HIGH 4=CRITICAL 5=CRITICAL (actively exploitable)."
+            "description": "0=PASS 1=INFO 2=LOW 3=MED 4=HIGH 5=CRITICAL (actively exploitable). Do not confuse with the top-level `severity` field (0-4 SAFE..ISOLATE action band) — this is a distinct 0-5 per-finding scale."
           },
           "description": {
             "type": "string",

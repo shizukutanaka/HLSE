@@ -5291,6 +5291,61 @@ rm -rf /tmp/hlse_p100_clean
 grep -q '"id":"HLSE-PROTECT-RANSOM"' && check "p100: HLSE-PROTECT-RANSOM registered in --list-patterns" "0" "0" \
    || check "p100: HLSE-PROTECT-RANSOM registered in --list-patterns" "0" "1"
 
+# ─── P101: audit schema severity-mapping bug fix + file-kind advisory DRY refactor ─
+# Socratic question (deficiency side): does hlse_audit_verdict.schema.json's
+# per-finding `severity` description actually match the code? The schema said
+# "0=LOW 1=INFO 2=MED 3=HIGH 4=CRITICAL 5=CRITICAL" but the code's sev_str[]
+# array is {PASS,INFO,LOW,MED,HIGH,CRIT} — severity 4 is HIGH, not CRITICAL.
+# A SIEM rule built from the schema would misroute HIGH findings as CRITICAL
+# incidents. Fixed to match code exactly: 0=PASS 1=INFO 2=LOW 3=MED 4=HIGH
+# 5=CRITICAL.
+
+# The schema's per-finding severity description must match the code exactly
+./hlse_core --json audit 2>/dev/null | python3 -c '
+import sys, json, jsonschema
+d = json.loads(sys.stdin.read())
+schema = json.load(open("schema/hlse_audit_verdict.schema.json"))
+jsonschema.validate(d, schema)
+sev_desc = schema["properties"]["findings"]["items"]["properties"]["severity"]["description"]
+assert "4=HIGH" in sev_desc, sev_desc
+assert "4=CRITICAL" not in sev_desc, sev_desc
+' && check "p101 schema: audit per-finding severity mapping matches code (4=HIGH not CRITICAL)" "0" "0" \
+   || check "p101 schema: audit per-finding severity mapping matches code (4=HIGH not CRITICAL)" "0" "1"
+
+# Socratic question (excess side): the file-masquerade pattern classification
+# (RLO/double-extension/macro/PDF) and its two advisory lines used to be
+# copy-pasted independently at 4 separate call sites (standalone file JSON,
+# standalone file plaintext, scan-embedded JSON, scan-embedded plaintext) —
+# the same duplication class that caused the P95 standalone-vs-scan drift.
+# Consolidated into shared file_classify_pattern()/file_masquerade_objective()/
+# file_masquerade_verify() accessors. Verify all 4 sites now agree exactly,
+# AND that JSON and plaintext (which used to carry independently-shortened,
+# slightly different wording) now say the identical thing.
+printf 'MSCF\x00\x00\x00\x00padding data to make this look like a real file with enough bytes' > /tmp/hlse_p101_report.dat
+mkdir -p /tmp/hlse_p101_scan
+cp /tmp/hlse_p101_report.dat /tmp/hlse_p101_scan/report.dat
+
+P101_STANDALONE_OBJ=$(./hlse_core --json file /tmp/hlse_p101_report.dat 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin)["objective"])')
+P101_SCAN_OBJ=$(./hlse_core --json scan /tmp/hlse_p101_scan 2>/dev/null | grep '"kind":"file"' | python3 -c 'import sys,json; print(json.load(sys.stdin)["objective"])')
+[ "$P101_STANDALONE_OBJ" = "$P101_SCAN_OBJ" ] \
+    && check "p101: standalone file and scan-embedded file agree on objective text" "0" "0" \
+    || check "p101: standalone file and scan-embedded file agree on objective text" "0" "1"
+
+P101_JSON_VRF=$(./hlse_core --json file /tmp/hlse_p101_report.dat 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin)["verify"])')
+P101_TXT_VRF=$(./hlse_core file /tmp/hlse_p101_report.dat 2>/dev/null | grep "Verify first:" | sed 's/.*Verify first: //')
+[ "$P101_JSON_VRF" = "$P101_TXT_VRF" ] \
+    && check "p101: JSON and CLI plaintext now agree word-for-word on verify text" "0" "0" \
+    || check "p101: JSON and CLI plaintext now agree word-for-word on verify text" "0" "1"
+
+rm -rf /tmp/hlse_p101_scan /tmp/hlse_p101_report.dat
+
+# F1 invariant: BLOCK+ file verdict (polyglot + executable extension) unchanged after refactor
+printf '%%PDF-1.4\nsome pdf-like content padding to be realistic' > /tmp/hlse_p101_invoice.exe
+./hlse_core --json file /tmp/hlse_p101_invoice.exe 2>/dev/null | \
+grep -q '"score":70,"action":"BLOCK"' && check "p101: BLOCK+ file score unchanged after DRY refactor (F1 invariant)" "0" "0" \
+   || check "p101: BLOCK+ file score unchanged after DRY refactor (F1 invariant)" "0" "1"
+rm -f /tmp/hlse_p101_invoice.exe
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

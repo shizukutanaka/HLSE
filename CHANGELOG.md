@@ -2,6 +2,49 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.101] — 2026-07-01
+
+### Fixed
+- **Perspective 101: audit schema's per-finding severity mapping was wrong
+  (deficiency), and the file-masquerade advisory text was duplicated four
+  independent times across standalone/scan × JSON/plaintext (excess).**
+
+  Socratic audit of both directions — missing correctness vs. redundant
+  maintenance burden:
+
+  **Deficiency**: `hlse_audit_verdict.schema.json`'s per-finding `severity`
+  description read "0=LOW 1=INFO 2=MED 3=HIGH 4=CRITICAL 5=CRITICAL", but the
+  actual code (`sev_str[] = {"PASS","INFO","LOW","MED","HIGH","CRIT"}`) maps
+  severity 4 to **HIGH**, not CRITICAL, and severity 0 to PASS, not LOW. A
+  SIEM rule built from the schema (e.g. "route severity >= 4 as CRITICAL")
+  would misclassify every HIGH finding as CRITICAL. Fixed to the actual
+  0=PASS/1=INFO/2=LOW/3=MED/4=HIGH/5=CRITICAL mapping, with a note
+  distinguishing it from the unrelated top-level 0-4 action-band `severity`.
+
+  **Excess**: the file-masquerade pattern classification (RLO / double-
+  extension / macro / PDF) and its "attacker's goal" / "verify first"
+  advisory lines were copy-pasted as four independent inline copies — the
+  standalone `file` command's JSON and plaintext paths, and `scan <dir>`'s
+  embedded-file JSON and plaintext paths — right next to the single shared
+  `file_verdict_pattern_id()` that already did the identical reason-string
+  match for the SIEM token. Four independently maintained copies is exactly
+  how the standalone-vs-scan field asymmetry P95 had to fix originally
+  happened, and a side effect surfaced during this audit: the plaintext
+  "Attacker's goal"/"Verify first" wording had quietly drifted shorter and
+  different from the JSON `objective`/`verify` text for the same verdict.
+
+  New shared accessors `file_classify_pattern()`, `file_masquerade_
+  objective()`, `file_masquerade_verify()` replace all four copies. Pure
+  refactor plus a consistency fix — no detection logic, score, or threshold
+  touched (F1=1.000 preserved); all four sites, and JSON vs. plaintext, now
+  emit byte-identical wording for the same verdict.
+
+  - **Tests**: 4 new CLI integration tests assert the schema's severity
+    description matches the code, that standalone-`file` and scan-embedded-
+    file agree on `objective` text, that JSON and plaintext `verify` text are
+    now word-for-word identical, and an F1-invariant BLOCK+ check
+    (644 → 648 total).
+
 ## [1.0.100] — 2026-07-01
 
 ### Fixed

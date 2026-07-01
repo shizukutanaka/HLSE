@@ -4573,6 +4573,56 @@ file_verdict_pattern_id(const FileVerdict *fv) {
     return "HLSE-FILE-MASQUERADE";
 }
 
+/* Socratic question (Perspective 101): "The same RLO/DOUBLE-EXTENSION/macro/
+ * PDF if-else classification ladder is copy-pasted at all four file display
+ * sites (standalone `file` JSON, standalone plaintext, `scan`'s embedded-file
+ * JSON, `scan`'s embedded-file plaintext) as an inline local `fpat` variable —
+ * four independent copies of the same four conditions, right next to the
+ * single shared file_verdict_pattern_id() a few lines above that already
+ * performs the identical match for the pattern_id token. Four independently
+ * maintained copies is exactly how the standalone-vs-scan field asymmetry
+ * that Perspective 95 had to fix originally happened. Shouldn't the
+ * human-readable label share one function the way the token already does?"
+ *
+ * Consolidates the four inline copies into one function so pattern label and
+ * pattern_id can never again drift apart between the standalone and scan
+ * code paths. Pure refactor — every branch and return value is unchanged. */
+static const char *
+file_classify_pattern(const FileVerdict *fv) {
+    if (fv->n_reasons > 0) {
+        const char *r = fv->reasons[0];
+        if (strstr(r, "RLO") || strstr(r, "Unicode"))
+            return "Unicode RTL override trick (hidden file extension)";
+        if (strstr(r, "DOUBLE EXTENSION") || strstr(r, "double"))
+            return "double-extension file masquerade (disguised executable)";
+        if (strstr(r, "macro") || strstr(r, "Macro"))
+            return "Office macro delivery (document-based malware lure)";
+        if (strstr(r, "PDF") || strstr(r, "JavaScript"))
+            return "PDF with embedded JavaScript (drive-by execution lure)";
+    }
+    return "file masquerade / malicious file delivery";
+}
+
+/* The two ALERT-floor (score >= 40) advisory lines for any file-masquerade
+ * verdict — identical regardless of which specific pattern fired, so a
+ * single pair of accessors (mirroring file_classify_pattern above) replaces
+ * the four independently duplicated string literals this used to be. */
+static const char *
+file_masquerade_objective(void) {
+    return "code execution \xe2\x80\x94 opening a disguised executable "
+           "or document with macros runs the payload with your "
+           "user privileges; the visual disguise is designed to "
+           "bypass 'I checked the extension' caution";
+}
+
+static const char *
+file_masquerade_verify(void) {
+    return "do NOT open the file; scan it with a multi-engine "
+           "sandbox (e.g. VirusTotal) first \xe2\x80\x94 right-click "
+           "to upload; confirm the file came from a trusted source "
+           "through a separately-known channel";
+}
+
 /* Stable machine-readable pattern id for an exposed-credential verdict — the
  * secret counterpart of hlse_text_pattern_id (P86). Keyed to the credential
  * type label (sv.findings[0].type) so SIEM rules route on a stable HLSE-SECRET-*
@@ -6174,32 +6224,16 @@ main(int argc, char **argv) {
                                 /* Perspective 98: matches the standalone
                                  * `file` JSON path — pattern/objective/verify
                                  * fire from the ALERT floor (40); triage/
-                                 * cascade_risk stay BLOCK+-only (60). */
-                                const char *fpat = "file masquerade / malicious file delivery";
-                                static const char sf_obj[] =
-                                    "code execution \xe2\x80\x94 opening a disguised "
-                                    "executable or document with macros runs the payload "
-                                    "with your user privileges; the visual disguise is "
-                                    "designed to bypass 'I checked the extension' caution";
-                                static const char sf_vrf[] =
-                                    "do NOT open the file; scan it with a multi-engine "
-                                    "sandbox (e.g. VirusTotal) first \xe2\x80\x94 right-click "
-                                    "to upload; confirm the file came from a trusted source "
-                                    "through a separately-known channel";
-                                if (fv.n_reasons > 0) {
-                                    if (strstr(fv.reasons[0], "RLO") || strstr(fv.reasons[0], "Unicode"))
-                                        fpat = "Unicode RTL override trick (hidden file extension)";
-                                    else if (strstr(fv.reasons[0], "DOUBLE EXTENSION") || strstr(fv.reasons[0], "double"))
-                                        fpat = "double-extension file masquerade (disguised executable)";
-                                    else if (strstr(fv.reasons[0], "macro") || strstr(fv.reasons[0], "Macro"))
-                                        fpat = "Office macro delivery (document-based malware lure)";
-                                    else if (strstr(fv.reasons[0], "PDF") || strstr(fv.reasons[0], "JavaScript"))
-                                        fpat = "PDF with embedded JavaScript (drive-by execution lure)";
-                                }
-                                json_escape(fpat,   esc, sizeof(esc)); printf(",\"pattern\":\"%s\"",      esc);
+                                 * cascade_risk stay BLOCK+-only (60).
+                                 * Perspective 101: classification and the two
+                                 * advisory lines now come from the shared
+                                 * file_classify_pattern()/file_masquerade_*()
+                                 * accessors instead of an inline copy. */
+                                const char *fpat = file_classify_pattern(&fv);
+                                json_escape(fpat, esc, sizeof(esc)); printf(",\"pattern\":\"%s\"",      esc);
                                 printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
-                                json_escape(sf_obj, esc, sizeof(esc)); printf(",\"objective\":\"%s\"",    esc);
-                                json_escape(sf_vrf, esc, sizeof(esc)); printf(",\"verify\":\"%s\"",       esc);
+                                json_escape(file_masquerade_objective(), esc, sizeof(esc)); printf(",\"objective\":\"%s\"", esc);
+                                json_escape(file_masquerade_verify(),    esc, sizeof(esc)); printf(",\"verify\":\"%s\"",    esc);
                             }
                             if (fv.score >= 60) {
                                 static const char sf_tri[] =
@@ -6232,24 +6266,13 @@ main(int argc, char **argv) {
                             for (i = 0; i < fv.n_reasons; i++)
                                 printf("  \xc2\xb7 %s\n", fv.reasons[i]);
                             if (fv.score >= 40) {
-                                const char *fpat = "file masquerade / malicious file delivery";
-                                if (fv.n_reasons > 0) {
-                                    if (strstr(fv.reasons[0], "RLO") || strstr(fv.reasons[0], "Unicode"))
-                                        fpat = "Unicode RTL override trick (hidden file extension)";
-                                    else if (strstr(fv.reasons[0], "DOUBLE EXTENSION") || strstr(fv.reasons[0], "double"))
-                                        fpat = "double-extension file masquerade (disguised executable)";
-                                    else if (strstr(fv.reasons[0], "macro") || strstr(fv.reasons[0], "Macro"))
-                                        fpat = "Office macro delivery (document-based malware lure)";
-                                    else if (strstr(fv.reasons[0], "PDF") || strstr(fv.reasons[0], "JavaScript"))
-                                        fpat = "PDF with embedded JavaScript (drive-by execution lure)";
-                                }
-                                printf("  \xe2\x96\xb8 Pattern: %s\n", fpat);
-                                printf("  \xe2\x97\x89 Attacker's goal: code execution \xe2\x80\x94 "
-                                       "opening a disguised executable runs the payload with "
-                                       "your user privileges\n");
-                                printf("  \xe2\x9c\x93 Verify first: do NOT open the file; scan "
-                                       "with a multi-engine sandbox (e.g. VirusTotal) first; "
-                                       "confirm the source through a separately-known channel\n");
+                                /* Perspective 101: shared with the JSON path
+                                 * above (and both standalone `file` sites)
+                                 * so plaintext and JSON never again describe
+                                 * the same verdict with different wording. */
+                                printf("  \xe2\x96\xb8 Pattern: %s\n", file_classify_pattern(&fv));
+                                printf("  \xe2\x97\x89 Attacker's goal: %s\n", file_masquerade_objective());
+                                printf("  \xe2\x9c\x93 Verify first: %s\n", file_masquerade_verify());
                             }
                             if (fv.score >= 60) {
                                 printf("  \xe2\x9a\x91 If you acted: if already opened, disconnect "
@@ -7769,33 +7792,17 @@ main(int argc, char **argv) {
                      * not even exoneration existed for "file" until this
                      * perspective. pattern/objective/verify now fire from
                      * the ALERT floor; triage/cascade_risk (post-open
-                     * incident response) stay BLOCK+-only. */
-                    const char *fpat = "file masquerade / malicious file delivery";
-                    static const char file_obj[] =
-                        "code execution \xe2\x80\x94 opening a disguised executable "
-                        "or document with macros runs the payload with your "
-                        "user privileges; the visual disguise is designed to "
-                        "bypass 'I checked the extension' caution";
-                    static const char file_vrf[] =
-                        "do NOT open the file; scan it with a multi-engine "
-                        "sandbox (e.g. VirusTotal) first \xe2\x80\x94 right-click "
-                        "to upload; confirm the file came from a trusted source "
-                        "through a separately-known channel";
+                     * incident response) stay BLOCK+-only.
+                     * Perspective 101: classification and advisory text now
+                     * come from the shared accessors (see file_classify_
+                     * pattern/file_masquerade_objective/file_masquerade_verify
+                     * above) instead of a fourth independent copy. */
+                    const char *fpat = file_classify_pattern(&fv);
                     char e[512];
-                    if (fv.n_reasons > 0) {
-                        if (strstr(fv.reasons[0], "RLO") || strstr(fv.reasons[0], "Unicode"))
-                            fpat = "Unicode RTL override trick (hidden file extension)";
-                        else if (strstr(fv.reasons[0], "DOUBLE EXTENSION") || strstr(fv.reasons[0], "double"))
-                            fpat = "double-extension file masquerade (disguised executable)";
-                        else if (strstr(fv.reasons[0], "macro") || strstr(fv.reasons[0], "Macro"))
-                            fpat = "Office macro delivery (document-based malware lure)";
-                        else if (strstr(fv.reasons[0], "PDF") || strstr(fv.reasons[0], "JavaScript"))
-                            fpat = "PDF with embedded JavaScript (drive-by execution lure)";
-                    }
-                    json_escape(fpat,     e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                    json_escape(fpat, e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
                     printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
-                    json_escape(file_obj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                    json_escape(file_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                    json_escape(file_masquerade_objective(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
+                    json_escape(file_masquerade_verify(),    e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
                 }
                 if (fv.score >= 60) {
                     static const char file_tri[] =
@@ -7828,30 +7835,15 @@ main(int argc, char **argv) {
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
-                const char *fpat = "file masquerade / malicious file delivery";
                 printf("%-7s [%d]  %s\n",
                        hlse_action_for_score(fv.score), fv.score,
                        argv[idx + 1]);
                 for (i = 0; i < fv.n_reasons; i++)
                     printf("  \xc2\xb7 %s\n", fv.reasons[i]);
                 if (fv.score >= 40) {
-                    if (fv.n_reasons > 0) {
-                        if (strstr(fv.reasons[0], "RLO") || strstr(fv.reasons[0], "Unicode"))
-                            fpat = "Unicode RTL override trick (hidden file extension)";
-                        else if (strstr(fv.reasons[0], "DOUBLE EXTENSION") || strstr(fv.reasons[0], "double"))
-                            fpat = "double-extension file masquerade (disguised executable)";
-                        else if (strstr(fv.reasons[0], "macro") || strstr(fv.reasons[0], "Macro"))
-                            fpat = "Office macro delivery (document-based malware lure)";
-                        else if (strstr(fv.reasons[0], "PDF") || strstr(fv.reasons[0], "JavaScript"))
-                            fpat = "PDF with embedded JavaScript (drive-by execution lure)";
-                    }
-                    printf("  \xe2\x96\xb8 Pattern: %s\n", fpat);
-                    printf("  \xe2\x97\x89 Attacker's goal: code execution \xe2\x80\x94 "
-                           "opening a disguised executable runs the payload with "
-                           "your user privileges\n");
-                    printf("  \xe2\x9c\x93 Verify first: do NOT open the file; scan "
-                           "with a multi-engine sandbox (e.g. VirusTotal) first; "
-                           "confirm the source through a separately-known channel\n");
+                    printf("  \xe2\x96\xb8 Pattern: %s\n", file_classify_pattern(&fv));
+                    printf("  \xe2\x97\x89 Attacker's goal: %s\n", file_masquerade_objective());
+                    printf("  \xe2\x9c\x93 Verify first: %s\n", file_masquerade_verify());
                 }
                 if (fv.score >= 60) {
                     printf("  \xe2\x9a\x91 If you acted: if already opened, disconnect "
