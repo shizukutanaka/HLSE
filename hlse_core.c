@@ -2216,6 +2216,13 @@ hlse_exoneration_for(const char *kind, int score) {
                "plain text editor first and read every line \xe2\x80\x94 a hidden "
                "newline or trailing command that only appears there is the "
                "decisive sign of a paste-and-run trap.";
+    if (strcmp(kind, "file") == 0)
+        return "heuristic \xe2\x80\x94 some legitimate tools intentionally bundle "
+               "content in unconventional containers (self-extracting installers, "
+               "polyglot test fixtures, archive-based package formats). Decisive "
+               "test: check the file's actual origin (was it downloaded from an "
+               "official site, or did it arrive unsolicited?) and scan it with a "
+               "multi-engine tool (e.g. VirusTotal) before opening.";
     return NULL;
 }
 
@@ -6115,7 +6122,11 @@ main(int argc, char **argv) {
                                 printf("%s\"%s\"", i ? "," : "", esc);
                             }
                             printf("]");
-                            if (fv.score >= 60) {
+                            if (fv.score >= 40) {
+                                /* Perspective 98: matches the standalone
+                                 * `file` JSON path — pattern/objective/verify
+                                 * fire from the ALERT floor (40); triage/
+                                 * cascade_risk stay BLOCK+-only (60). */
                                 const char *fpat = "file masquerade / malicious file delivery";
                                 static const char sf_obj[] =
                                     "code execution \xe2\x80\x94 opening a disguised "
@@ -6127,17 +6138,6 @@ main(int argc, char **argv) {
                                     "sandbox (e.g. VirusTotal) first \xe2\x80\x94 right-click "
                                     "to upload; confirm the file came from a trusted source "
                                     "through a separately-known channel";
-                                static const char sf_tri[] =
-                                    "if already opened: disconnect from the network "
-                                    "immediately; run a full antivirus scan; change "
-                                    "credentials for any service you were logged into at "
-                                    "the time; consider a full OS reinstall for high-score "
-                                    "detections";
-                                static const char sf_cas[] =
-                                    "all credentials and session tokens active when the file "
-                                    "was opened \xe2\x80\x94 malware runs with your session "
-                                    "context; also check for persistence (startup items, "
-                                    "scheduled tasks, browser extensions added)";
                                 if (fv.n_reasons > 0) {
                                     if (strstr(fv.reasons[0], "RLO") || strstr(fv.reasons[0], "Unicode"))
                                         fpat = "Unicode RTL override trick (hidden file extension)";
@@ -6152,8 +6152,28 @@ main(int argc, char **argv) {
                                 printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
                                 json_escape(sf_obj, esc, sizeof(esc)); printf(",\"objective\":\"%s\"",    esc);
                                 json_escape(sf_vrf, esc, sizeof(esc)); printf(",\"verify\":\"%s\"",       esc);
+                            }
+                            if (fv.score >= 60) {
+                                static const char sf_tri[] =
+                                    "if already opened: disconnect from the network "
+                                    "immediately; run a full antivirus scan; change "
+                                    "credentials for any service you were logged into at "
+                                    "the time; consider a full OS reinstall for high-score "
+                                    "detections";
+                                static const char sf_cas[] =
+                                    "all credentials and session tokens active when the file "
+                                    "was opened \xe2\x80\x94 malware runs with your session "
+                                    "context; also check for persistence (startup items, "
+                                    "scheduled tasks, browser extensions added)";
                                 json_escape(sf_tri, esc, sizeof(esc)); printf(",\"triage\":\"%s\"",       esc);
                                 json_escape(sf_cas, esc, sizeof(esc)); printf(",\"cascade_risk\":\"%s\"", esc);
+                            }
+                            if (fv.score > 0 && fv.score < 60) {
+                                const char *ex = hlse_exoneration_for("file", fv.score);
+                                if (ex) {
+                                    json_escape(ex, esc, sizeof(esc));
+                                    printf(",\"exoneration\":\"%s\"", esc);
+                                }
                             }
                             printf("}\n");
                         } else {
@@ -6163,7 +6183,7 @@ main(int argc, char **argv) {
                                    fv.score, fullpath);
                             for (i = 0; i < fv.n_reasons; i++)
                                 printf("  \xc2\xb7 %s\n", fv.reasons[i]);
-                            if (fv.score >= 60) {
+                            if (fv.score >= 40) {
                                 const char *fpat = "file masquerade / malicious file delivery";
                                 if (fv.n_reasons > 0) {
                                     if (strstr(fv.reasons[0], "RLO") || strstr(fv.reasons[0], "Unicode"))
@@ -6182,6 +6202,8 @@ main(int argc, char **argv) {
                                 printf("  \xe2\x9c\x93 Verify first: do NOT open the file; scan "
                                        "with a multi-engine sandbox (e.g. VirusTotal) first; "
                                        "confirm the source through a separately-known channel\n");
+                            }
+                            if (fv.score >= 60) {
                                 printf("  \xe2\x9a\x91 If you acted: if already opened, disconnect "
                                        "from the network; run antivirus; change credentials for "
                                        "any active session\n");
@@ -6189,6 +6211,10 @@ main(int argc, char **argv) {
                                        "tokens active when the file was opened \xe2\x80\x94 check "
                                        "for persistence (startup items, scheduled tasks, new "
                                        "browser extensions)\n");
+                            }
+                            if (fv.score > 0 && fv.score < 60) {
+                                const char *ex = hlse_exoneration_for("file", fv.score);
+                                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                             }
                         }
                     }
@@ -7617,8 +7643,15 @@ main(int argc, char **argv) {
                         printf(",\"blind_spot\":\"%s\"", esc_bs);
                     }
                 }
-                if (fv.score >= 60) {
-                    /* Determine pattern label from first reason code */
+                if (fv.score >= 40) {
+                    /* Perspective 98: a single medium-confidence heuristic
+                     * (e.g. Cabinet-magic/wrong-extension, +40) lands the
+                     * file verdict in ALERT (40-59) alone, but this used to
+                     * require score >= 60 for ANY advisory content at all —
+                     * not even exoneration existed for "file" until this
+                     * perspective. pattern/objective/verify now fire from
+                     * the ALERT floor; triage/cascade_risk (post-open
+                     * incident response) stay BLOCK+-only. */
                     const char *fpat = "file masquerade / malicious file delivery";
                     static const char file_obj[] =
                         "code execution \xe2\x80\x94 opening a disguised executable "
@@ -7630,17 +7663,6 @@ main(int argc, char **argv) {
                         "sandbox (e.g. VirusTotal) first \xe2\x80\x94 right-click "
                         "to upload; confirm the file came from a trusted source "
                         "through a separately-known channel";
-                    static const char file_tri[] =
-                        "if already opened: disconnect from the network "
-                        "immediately; run a full antivirus scan; change "
-                        "credentials for any service you were logged into at "
-                        "the time; consider a full OS reinstall for high-score "
-                        "detections";
-                    static const char file_cas[] =
-                        "all credentials and session tokens active when the file "
-                        "was opened \xe2\x80\x94 malware runs with your session "
-                        "context; also check for persistence (startup items, "
-                        "scheduled tasks, browser extensions added)";
                     char e[512];
                     if (fv.n_reasons > 0) {
                         if (strstr(fv.reasons[0], "RLO") || strstr(fv.reasons[0], "Unicode"))
@@ -7656,8 +7678,30 @@ main(int argc, char **argv) {
                     printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
                     json_escape(file_obj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
                     json_escape(file_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                }
+                if (fv.score >= 60) {
+                    static const char file_tri[] =
+                        "if already opened: disconnect from the network "
+                        "immediately; run a full antivirus scan; change "
+                        "credentials for any service you were logged into at "
+                        "the time; consider a full OS reinstall for high-score "
+                        "detections";
+                    static const char file_cas[] =
+                        "all credentials and session tokens active when the file "
+                        "was opened \xe2\x80\x94 malware runs with your session "
+                        "context; also check for persistence (startup items, "
+                        "scheduled tasks, browser extensions added)";
+                    char e[512];
                     json_escape(file_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
                     json_escape(file_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                }
+                if (fv.score > 0 && fv.score < 60) {
+                    const char *ex = hlse_exoneration_for("file", fv.score);
+                    if (ex) {
+                        char e[512];
+                        json_escape(ex, e, sizeof(e));
+                        printf(",\"exoneration\":\"%s\"", e);
+                    }
                 }
                 printf("}\n");
             } else if (fv.score == 0) {
@@ -7672,7 +7716,7 @@ main(int argc, char **argv) {
                        argv[idx + 1]);
                 for (i = 0; i < fv.n_reasons; i++)
                     printf("  \xc2\xb7 %s\n", fv.reasons[i]);
-                if (fv.score >= 60) {
+                if (fv.score >= 40) {
                     if (fv.n_reasons > 0) {
                         if (strstr(fv.reasons[0], "RLO") || strstr(fv.reasons[0], "Unicode"))
                             fpat = "Unicode RTL override trick (hidden file extension)";
@@ -7690,6 +7734,8 @@ main(int argc, char **argv) {
                     printf("  \xe2\x9c\x93 Verify first: do NOT open the file; scan "
                            "with a multi-engine sandbox (e.g. VirusTotal) first; "
                            "confirm the source through a separately-known channel\n");
+                }
+                if (fv.score >= 60) {
                     printf("  \xe2\x9a\x91 If you acted: if already opened, disconnect "
                            "from the network; run antivirus; change credentials for "
                            "any active session\n");
@@ -7697,6 +7743,10 @@ main(int argc, char **argv) {
                            "tokens active when the file was opened \xe2\x80\x94 check "
                            "for persistence (startup items, scheduled tasks, new "
                            "browser extensions)\n");
+                }
+                if (fv.score < 60) {
+                    const char *ex = hlse_exoneration_for("file", fv.score);
+                    if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                 }
             }
             return fv.score >= g_fail_threshold ? 1 : 0;

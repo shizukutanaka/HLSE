@@ -50,7 +50,7 @@
     },
     "pattern": {
       "type": "string",
-      "description": "Attack-pattern label (e.g. 'double-extension file masquerade'). Present when score > 0."
+      "description": "Attack-pattern label (e.g. 'double-extension file masquerade'). Present when score >= 40 — ALERT band and above."
     },
     "pattern_id": {
       "type": "string",
@@ -66,11 +66,11 @@
     },
     "objective": {
       "type": "string",
-      "description": "The attacker's likely objective (score >= 60 only)."
+      "description": "The attacker's likely objective (score >= 40 — ALERT band and above)."
     },
     "verify": {
       "type": "string",
-      "description": "The single independent check before opening the file (score >= 60 only)."
+      "description": "The single independent check before opening the file (score >= 40 — ALERT band and above)."
     },
     "triage": {
       "type": "string",
@@ -83,6 +83,10 @@
     "blind_spot": {
       "type": "string",
       "description": "What HLSE cannot detect for file analysis (score 0 only)."
+    },
+    "exoneration": {
+      "type": "string",
+      "description": "Benign explanation and falsifying test for borderline scores (score 15-59 only)."
     },
     "reasons": {
       "type": "array",

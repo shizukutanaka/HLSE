@@ -5121,6 +5121,64 @@ echo "$P97_TXT" | grep -q "If you acted:" \
 grep -q '"score":70,"action":"BLOCK"' && check "p97: BLOCK+ package score unchanged (F1 invariant)" "0" "0" \
    || check "p97: BLOCK+ package score unchanged (F1 invariant)" "0" "1"
 
+# ─── P98: file verdict ALERT-band advisory — worse than P95/96/97, file had NO
+# advisory content at all below score 60 (not even exoneration existed for
+# "file" in hlse_exoneration_for). A single medium-confidence heuristic (e.g.
+# Cabinet-magic content wearing a non-.cab/.msi extension, +40) lands the file
+# verdict in ALERT (40-59) alone.
+printf 'MSCF\x00\x00\x00\x00padding data to make this look like a real file with enough bytes' > /tmp/hlse_p98_report.dat
+
+P98_JSON=$(./hlse_core --json file /tmp/hlse_p98_report.dat 2>/dev/null) || true
+echo "$P98_JSON" | python3 -c '
+import sys, json, jsonschema
+d = json.loads(sys.stdin.read())
+assert 40 <= d["score"] < 60, d
+assert d.get("pattern"), d
+assert d.get("pattern_id"), d
+assert d.get("verify"), d
+assert d.get("exoneration"), d
+assert "triage" not in d, d
+assert "cascade_risk" not in d, d
+schema = json.load(open("schema/hlse_file_verdict.schema.json"))
+jsonschema.validate(d, schema)
+' && check "p98 json file: pattern+verify+exoneration present in ALERT, triage/cascade absent" "0" "0" \
+   || check "p98 json file: pattern+verify+exoneration present in ALERT, triage/cascade absent" "0" "1"
+
+P98_TXT=$(./hlse_core file /tmp/hlse_p98_report.dat 2>/dev/null) || true
+echo "$P98_TXT" | grep -q "ALERT" \
+    && check "p98: cabinet-magic mismatch scores ALERT band" "0" "0" \
+    || check "p98: cabinet-magic mismatch scores ALERT band" "0" "1"
+echo "$P98_TXT" | grep -q "Verify first:" \
+    && check "p98 text: verify line shown in ALERT band" "0" "0" \
+    || check "p98 text: verify line shown in ALERT band" "0" "1"
+echo "$P98_TXT" | grep -q "Could be benign:" \
+    && check "p98 text: exoneration line shown in ALERT band" "0" "0" \
+    || check "p98 text: exoneration line shown in ALERT band" "0" "1"
+echo "$P98_TXT" | grep -q "If you acted:" \
+    && check "p98 text: no triage line in ALERT band" "0" "1" \
+    || check "p98 text: no triage line in ALERT band" "0" "0"
+
+# Same ALERT-band fields via `scan` (the embedded per-file path, not just standalone `file`)
+mkdir -p /tmp/hlse_p98_scan
+cp /tmp/hlse_p98_report.dat /tmp/hlse_p98_scan/report.dat
+./hlse_core --json scan /tmp/hlse_p98_scan 2>/dev/null | grep '"kind":"file"' | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert 40 <= d["score"] < 60, d
+assert d.get("pattern"), d
+assert d.get("verify"), d
+assert "triage" not in d, d
+' && check "p98 json scan: file ALERT-band gets pattern+verify" "0" "0" \
+   || check "p98 json scan: file ALERT-band gets pattern+verify" "0" "1"
+rm -rf /tmp/hlse_p98_scan /tmp/hlse_p98_report.dat
+
+# F1 invariant: BLOCK+ file verdict (polyglot + executable extension) unchanged
+printf '%%PDF-1.4\nsome pdf-like content padding to be realistic' > /tmp/hlse_p98_invoice.exe
+./hlse_core --json file /tmp/hlse_p98_invoice.exe 2>/dev/null | \
+grep -q '"score":70,"action":"BLOCK"' && check "p98: BLOCK+ file score unchanged (F1 invariant)" "0" "0" \
+   || check "p98: BLOCK+ file score unchanged (F1 invariant)" "0" "1"
+rm -f /tmp/hlse_p98_invoice.exe
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

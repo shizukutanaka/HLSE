@@ -2,6 +2,43 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.98] — 2026-07-01
+
+### Changed
+- **Perspective 98: `file` verdict gets the ALERT-band advisory fix — worse
+  than P95/96/97, `file` had NO advisory content at all below score 60, not
+  even the benign-explanation `exoneration` other kinds already had.**
+
+  Continuing the systematic per-kind audit: a single medium-confidence
+  heuristic — e.g. Cabinet-magic (MSCF) file content wearing a non-`.cab`/
+  `.msi` extension (+40), or an image/archive magic byte wearing an
+  executable extension (+40 to +55) — lands the file verdict in ALERT (40-59)
+  alone. Unlike url/text/network/package, `hlse_exoneration_for()` had no
+  `"file"` case at all, so an ALERT [40] file verdict rendered nothing but
+  the raw reason string — no pattern, no attacker objective, no independent
+  check, and no benign explanation either. This was the deepest version of
+  the gap P95-P97 closed elsewhere.
+
+  `pattern`/`pattern_id`/`objective`/`verify` now fire from score >= 40 in
+  both the standalone `file` command and the per-file path inside
+  `scan <dir>`. `hlse_exoneration_for()` gained a `"file"` case (15-59 band).
+  `triage`/`cascade_risk` (post-open incident response — disconnect network,
+  rotate credentials) stay BLOCK+-only (>= 60), matching the P95-97
+  precedent exactly.
+
+  Pure advisory/JSON output change — no detection logic, score, or threshold
+  touched. F1=1.000 preserved; the polyglot-plus-executable-extension BLOCK+
+  case (score 70) is byte-identical.
+
+  - **Schema update**: `hlse_file_verdict.schema.json` gained an
+    `exoneration` property (previously entirely absent from the schema) and
+    `pattern`/`objective`/`verify` descriptions updated to the ALERT floor.
+  - **Tests**: 6 new CLI integration tests exercise a real reproducible
+    Cabinet-magic mismatch (`report.dat` with `MSCF` header) via both the
+    standalone `file` command and `scan <dir>`, asserting pattern/verify/
+    exoneration appear in ALERT while triage/cascade_risk stay absent, plus
+    a BLOCK+ F1-invariant check (626 → 632 total).
+
 ## [1.0.97] — 2026-07-01
 
 ### Changed
