@@ -5443,6 +5443,40 @@ P103_PKG_TXT_VRF=$(./hlse_core package "reqests" 2>/dev/null | grep "Verify firs
 grep -q '"score":70,"action":"BLOCK"' && check "p103: BLOCK+ package score unchanged after DRY refactor (F1 invariant)" "0" "0" \
    || check "p103: BLOCK+ package score unchanged after DRY refactor (F1 invariant)" "0" "1"
 
+# ─── P104: same DRY consolidation (P101-103) applied to esp/clipboard ──────
+# Socratic question: esp and clipboard are the two remaining BLOCK+-only
+# kinds (score always 0 or >=60/70, no ALERT-band split) — do they have the
+# same JSON/plaintext duplication-and-drift as file/secret/protect/network/
+# package? Yes: both built JSON advisory text from static const char[]
+# literals while plaintext independently re-typed shorter, differently-
+# worded text for the same verdict (e.g. clipboard's JSON verify ended
+# "...before confirming the transaction"; plaintext dropped "the
+# transaction"). Consolidated into esp_*_text()/clipboard_*_text().
+
+# esp: JSON and plaintext verify text now agree word-for-word (real
+# reproducible BLOCK trigger: a fake .efi binary containing a known
+# UEFI-bootkit indicator string)
+mkdir -p /tmp/hlse_p104_esp/EFI
+printf 'MZ\x00\x00 blacklotus indicator padding to reach a size the scanner reads reliably 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000' > /tmp/hlse_p104_esp/EFI/boot.efi
+P104_ESP_JSON_VRF=$(./hlse_core --json esp /tmp/hlse_p104_esp 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin).get("verify",""))')
+P104_ESP_TXT_VRF=$(./hlse_core esp /tmp/hlse_p104_esp 2>/dev/null | grep "Verify first:" | sed 's/.*Verify first: //')
+[ -n "$P104_ESP_JSON_VRF" ] && [ "$P104_ESP_JSON_VRF" = "$P104_ESP_TXT_VRF" ] \
+    && check "p104: esp JSON and plaintext agree word-for-word on verify text" "0" "0" \
+    || check "p104: esp JSON and plaintext agree word-for-word on verify text" "0" "1"
+rm -rf /tmp/hlse_p104_esp
+
+# clipboard: JSON and plaintext verify text now agree word-for-word
+P104_CLIP_JSON_VRF=$(./hlse_core --json clipboard "bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5" "bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr6" 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin)["verify"])')
+P104_CLIP_TXT_VRF=$(./hlse_core clipboard "bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5" "bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr6" 2>/dev/null | grep "Verify first:" | sed 's/.*Verify first: //')
+[ "$P104_CLIP_JSON_VRF" = "$P104_CLIP_TXT_VRF" ] \
+    && check "p104: clipboard JSON and plaintext agree word-for-word on verify text" "0" "0" \
+    || check "p104: clipboard JSON and plaintext agree word-for-word on verify text" "0" "1"
+
+# F1 invariant: clipboard ISOLATE score unchanged after DRY refactor
+./hlse_core --json clipboard "bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5" "bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr6" 2>/dev/null | \
+grep -q '"score":95,"action":"ISOLATE"' && check "p104: clipboard hijack score unchanged after DRY refactor (F1 invariant)" "0" "0" \
+   || check "p104: clipboard hijack score unchanged after DRY refactor (F1 invariant)" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

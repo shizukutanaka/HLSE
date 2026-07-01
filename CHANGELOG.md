@@ -2,6 +2,39 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.104] — 2026-07-01
+
+### Fixed
+- **Perspective 104: completed the P101-103 DRY consolidation — `esp` and
+  `clipboard` (the two remaining BLOCK+-only kinds) had the same JSON/
+  plaintext advisory-text duplication and drift.**
+
+  Socratic question: esp and clipboard never needed the ALERT-band split
+  (their scores are always 0 or 60+/70+/95+ — bimodal, never landing in
+  40-59 alone) — but does that mean they escaped the duplication problem
+  P101-103 fixed for the other five kinds? No: both built JSON advisory text
+  from `static const char[]` literals while the matching plaintext path
+  independently re-typed shorter, differently-worded text for the same
+  verdict (e.g. clipboard's JSON `verify` ended "...before confirming **the
+  transaction**"; plaintext silently dropped "the transaction").
+
+  New shared accessors `esp_pattern_text()`/`_objective_text()`/
+  `_verify_text()`/`_triage_text()`/`_cascade_text()` and the matching
+  `clipboard_*` group replace every independent copy — completing the same
+  consolidation applied to file (P101), secret (P102), and protect/network/
+  package (P103). All 7 kinds with a pattern/objective/verify/triage/
+  cascade_risk advisory structure now share one definition per field,
+  guaranteeing JSON and CLI plaintext output describe every verdict
+  identically.
+
+  Pure refactor — no detection logic, score, or threshold touched
+  (F1=1.000 preserved); every JSON value is unchanged.
+
+  - **Tests**: 3 new CLI integration tests use a real reproducible ESP
+    bootkit-indicator trigger and a real clipboard-hijack trigger to assert
+    JSON/plaintext word-for-word agreement, plus an F1-invariant ISOLATE-
+    score check (656 → 659 total).
+
 ## [1.0.103] — 2026-07-01
 
 ### Fixed

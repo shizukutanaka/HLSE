@@ -5620,6 +5620,86 @@ package_cascade_text(void) {
            "a TruffleHog-style scan would harvest";
 }
 
+/* Perspective 104: esp and clipboard are BLOCK+-only (score is always 0 or
+ * >=60/70 — no ALERT-band split needed, unlike file/secret/protect/network/
+ * package), but they had the same JSON/plaintext duplication-and-drift the
+ * P101-103 accessors fixed elsewhere. Consolidated here. */
+static const char *
+esp_pattern_text(void) {
+    return "UEFI bootkit indicator in EFI System Partition";
+}
+
+static const char *
+esp_objective_text(void) {
+    return "persistent firmware-level access \xe2\x80\x94 a bootkit "
+           "survives OS reinstall; it executes before the OS boots "
+           "and can disable security software, log keystrokes, and "
+           "intercept disk encryption before the OS sees it";
+}
+
+static const char *
+esp_verify_text(void) {
+    return "run a second scan with a different tool (CHIPSEC, "
+           "vendor UEFI integrity check) before taking disruptive "
+           "action \xe2\x80\x94 bootkit false positives exist and the "
+           "remediation is destructive; check Secure Boot status "
+           "first (mokutil --sb-state)";
+}
+
+static const char *
+esp_triage_text(void) {
+    return "do NOT reinstall the OS first \xe2\x80\x94 it will not "
+           "remove a bootkit; consult an incident-response specialist; "
+           "if confirmed, flash the UEFI firmware from a vendor-signed "
+           "image and replace Secure Boot enrollment keys "
+           "(mokutil --reset)";
+}
+
+static const char *
+esp_cascade_text(void) {
+    return "all credentials and disk encryption keys on this machine "
+           "\xe2\x80\x94 a bootkit has pre-OS access to encrypted volumes "
+           "and can log all keystrokes before encryption; rotate from "
+           "a clean device and consider the machine untrusted until "
+           "the firmware is re-flashed";
+}
+
+static const char *
+clipboard_pattern_text(void) {
+    return "cryptocurrency clipboard hijack (clipper malware)";
+}
+
+static const char *
+clipboard_objective_text(void) {
+    return "cryptocurrency theft \xe2\x80\x94 your copied address was "
+           "silently replaced; funds sent reach the attacker's wallet "
+           "and cannot be recovered";
+}
+
+static const char *
+clipboard_verify_text(void) {
+    return "re-copy the address from the recipient's own verified "
+           "source and compare every character in your wallet app "
+           "before confirming the transaction";
+}
+
+static const char *
+clipboard_triage_text(void) {
+    return "if you already sent funds: contact your exchange or "
+           "wallet provider immediately \xe2\x80\x94 crypto transfers "
+           "are irreversible; file a report with law enforcement "
+           "and the exchange's fraud team";
+}
+
+static const char *
+clipboard_cascade_text(void) {
+    return "every crypto address you have copied since the last "
+           "clean boot \xe2\x80\x94 clipper malware intercepts all "
+           "clipboard activity; assume all recent copies were "
+           "redirected and run a full malware scan before "
+           "transacting again";
+}
+
 static void
 print_json_url(const char *url, const Verdict *v) {
     char escaped_url[MAX_URL * 2];
@@ -6974,38 +7054,13 @@ main(int argc, char **argv) {
                 printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
             }
             if (pv.score >= 60) {
-                static const char esp_pat[] =
-                    "UEFI bootkit indicator in EFI System Partition";
-                static const char esp_obj[] =
-                    "persistent firmware-level access \xe2\x80\x94 a bootkit "
-                    "survives OS reinstall; it executes before the OS boots "
-                    "and can disable security software, log keystrokes, and "
-                    "intercept disk encryption before the OS sees it";
-                static const char esp_vrf[] =
-                    "run a second scan with a different tool (CHIPSEC, "
-                    "vendor UEFI integrity check) before taking disruptive "
-                    "action \xe2\x80\x94 bootkit false positives exist and the "
-                    "remediation is destructive; check Secure Boot status "
-                    "first (mokutil --sb-state)";
-                static const char esp_tri[] =
-                    "do NOT reinstall the OS first \xe2\x80\x94 it will not "
-                    "remove a bootkit; consult an incident-response specialist; "
-                    "if confirmed, flash the UEFI firmware from a vendor-signed "
-                    "image and replace Secure Boot enrollment keys "
-                    "(mokutil --reset)";
-                static const char esp_cas[] =
-                    "all credentials and disk encryption keys on this machine "
-                    "\xe2\x80\x94 a bootkit has pre-OS access to encrypted volumes "
-                    "and can log all keystrokes before encryption; rotate from "
-                    "a clean device and consider the machine untrusted until "
-                    "the firmware is re-flashed";
                 char e[512];
-                json_escape(esp_pat, e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                json_escape(esp_pattern_text(),   e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
                 printf(",\"pattern_id\":\"HLSE-ESP-BOOTKIT\"");
-                json_escape(esp_obj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                json_escape(esp_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
-                json_escape(esp_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                json_escape(esp_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                json_escape(esp_objective_text(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
+                json_escape(esp_verify_text(),     e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                json_escape(esp_triage_text(),     e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
+                json_escape(esp_cascade_text(),    e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
             }
             if (pv.score > 0 && pv.score < 60) {
                 const char *ex = hlse_exoneration_for("esp", pv.score);
@@ -7029,21 +7084,11 @@ main(int argc, char **argv) {
             for (i = 0; i < pv.n_reasons; i++)
                 printf("  \xc2\xb7 %s\n", pv.reasons[i]);
             if (pv.score >= 60) {
-                printf("  \xe2\x96\xb8 Pattern: UEFI bootkit indicator in EFI "
-                       "System Partition\n");
-                printf("  \xe2\x97\x89 Attacker's goal: persistent firmware-level "
-                       "access \xe2\x80\x94 survives OS reinstall; executes before "
-                       "the OS and can intercept disk encryption\n");
-                printf("  \xe2\x9c\x93 Verify first: run CHIPSEC or vendor UEFI "
-                       "integrity tool before taking disruptive action "
-                       "\xe2\x80\x94 bootkit false positives exist\n");
-                printf("  \xe2\x9a\x91 Immediate action: do NOT reinstall OS "
-                       "(won't remove bootkit); consult IR specialist; flash "
-                       "UEFI from vendor-signed image and replace Secure Boot "
-                       "keys\n");
-                printf("  \xe2\x8a\x95 Also change: all credentials on this machine "
-                       "\xe2\x80\x94 a bootkit has pre-OS access to all keys; rotate "
-                       "from a clean device and treat the machine as untrusted\n");
+                printf("  \xe2\x96\xb8 Pattern: %s\n", esp_pattern_text());
+                printf("  \xe2\x97\x89 Attacker's goal: %s\n", esp_objective_text());
+                printf("  \xe2\x9c\x93 Verify first: %s\n", esp_verify_text());
+                printf("  \xe2\x9a\x91 Immediate action: %s\n", esp_triage_text());
+                printf("  \xe2\x8a\x95 Also change: %s\n", esp_cascade_text());
             } else {
                 const char *ex = hlse_exoneration_for("esp", pv.score);
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
@@ -7699,38 +7744,17 @@ main(int argc, char **argv) {
                     }
                 }
                 if (cv.score >= 60) {
-                    static const char cp_pat[] =
-                        "cryptocurrency clipboard hijack (clipper malware)";
-                    static const char cp_obj[] =
-                        "cryptocurrency theft \xe2\x80\x94 your copied address was "
-                        "silently replaced; funds sent reach the attacker's wallet "
-                        "and cannot be recovered";
-                    static const char cp_vrf[] =
-                        "re-copy the address from the recipient's own verified "
-                        "source and compare every character in your wallet app "
-                        "before confirming the transaction";
-                    static const char cp_tri[] =
-                        "if you already sent funds: contact your exchange or "
-                        "wallet provider immediately \xe2\x80\x94 crypto transfers "
-                        "are irreversible; file a report with law enforcement "
-                        "and the exchange's fraud team";
-                    static const char cp_cas[] =
-                        "every crypto address you have copied since the last "
-                        "clean boot \xe2\x80\x94 clipper malware intercepts all "
-                        "clipboard activity; assume all recent copies were "
-                        "redirected and run a full malware scan before "
-                        "transacting again";
                     char e[512];
-                    json_escape(cp_pat, e, sizeof(e));
+                    json_escape(clipboard_pattern_text(), e, sizeof(e));
                     printf(",\"pattern\":\"%s\"", e);
                     printf(",\"pattern_id\":\"HLSE-CLIP-HIJACK\"");
-                    json_escape(cp_obj, e, sizeof(e));
+                    json_escape(clipboard_objective_text(), e, sizeof(e));
                     printf(",\"objective\":\"%s\"", e);
-                    json_escape(cp_vrf, e, sizeof(e));
+                    json_escape(clipboard_verify_text(), e, sizeof(e));
                     printf(",\"verify\":\"%s\"", e);
-                    json_escape(cp_tri, e, sizeof(e));
+                    json_escape(clipboard_triage_text(), e, sizeof(e));
                     printf(",\"triage\":\"%s\"", e);
-                    json_escape(cp_cas, e, sizeof(e));
+                    json_escape(clipboard_cascade_text(), e, sizeof(e));
                     printf(",\"cascade_risk\":\"%s\"", e);
                 }
                 printf("}\n");
@@ -7744,22 +7768,11 @@ main(int argc, char **argv) {
                 if (cv.reason[0]) printf("  \xc2\xb7 %s\n", cv.reason);
                 if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
                 if (cv.score >= 60) {
-                    printf("  \xe2\x96\xb8 Pattern: cryptocurrency clipboard hijack "
-                           "(clipper malware)\n");
-                    printf("  \xe2\x97\x89 Attacker's goal: cryptocurrency theft "
-                           "\xe2\x80\x94 your copied address was silently replaced; "
-                           "funds sent reach the attacker's wallet and cannot "
-                           "be recovered\n");
-                    printf("  \xe2\x9c\x93 Verify first: re-copy the address from "
-                           "the recipient's own verified source and compare every "
-                           "character in your wallet app before confirming\n");
-                    printf("  \xe2\x9a\x91 If you acted: if you already sent funds, "
-                           "contact your exchange immediately \xe2\x80\x94 crypto "
-                           "transfers are irreversible; file a report with law "
-                           "enforcement and the exchange's fraud team\n");
-                    printf("  \xe2\x8a\x95 Also change: audit every crypto address "
-                           "you have copied since the last clean boot \xe2\x80\x94 "
-                           "clipper malware intercepts all clipboard activity\n");
+                    printf("  \xe2\x96\xb8 Pattern: %s\n", clipboard_pattern_text());
+                    printf("  \xe2\x97\x89 Attacker's goal: %s\n", clipboard_objective_text());
+                    printf("  \xe2\x9c\x93 Verify first: %s\n", clipboard_verify_text());
+                    printf("  \xe2\x9a\x91 If you acted: %s\n", clipboard_triage_text());
+                    printf("  \xe2\x8a\x95 Also change: %s\n", clipboard_cascade_text());
                 }
             }
             return cv.score >= g_fail_threshold ? 1 : 0;
