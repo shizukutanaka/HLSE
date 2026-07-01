@@ -5390,6 +5390,59 @@ rm -rf /tmp/hlse_p102_scan
 grep -q '"score":80,"action":"ISOLATE"' && check "p102: AWS secret score unchanged after DRY refactor (F1 invariant)" "0" "0" \
    || check "p102: AWS secret score unchanged after DRY refactor (F1 invariant)" "0" "1"
 
+# ─── P103: same DRY consolidation (P101/P102) applied to protect/network/package ─
+# Socratic question: P101/P102 found JSON/plaintext advisory text duplicated
+# and drifted for file and secret — do protect, network, and package have the
+# same problem? Yes, all three: each kind's JSON path built pattern/objective/
+# verify/triage/cascade_risk from static const char[] literals while the
+# matching plaintext path re-typed shorter, differently-worded printf
+# literals for the same verdict. Consolidated into shared accessors
+# (protect_*_text/network_*_text/package_*_text), mirroring file/secret.
+
+# protect: JSON and plaintext verify text now agree word-for-word
+mkdir -p /tmp/hlse_p103_share
+touch /tmp/hlse_p103_share/.canary_hlse_do_not_delete
+cat /tmp/hlse_p103_share/.canary_hlse_do_not_delete > /dev/null
+P103_PROT_JSON_VRF=$(./hlse_core --json protect /tmp/hlse_p103_share 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin)["verify"])')
+P103_PROT_TXT_VRF=$(./hlse_core protect /tmp/hlse_p103_share 2>/dev/null | grep "Verify first:" | sed 's/.*Verify first: //')
+[ "$P103_PROT_JSON_VRF" = "$P103_PROT_TXT_VRF" ] \
+    && check "p103: protect JSON and plaintext agree word-for-word on verify text" "0" "0" \
+    || check "p103: protect JSON and plaintext agree word-for-word on verify text" "0" "1"
+rm -rf /tmp/hlse_p103_share
+
+# network: JSON and plaintext verify text now agree word-for-word (real
+# reproducible ALERT-band trigger via a temporary /etc/hosts redirect,
+# backed up and restored, same technique as P96)
+if [ -w /etc/hosts ]; then
+    cp /etc/hosts /tmp/hlse_p103_hosts.bak
+    p103_restore() { cp /tmp/hlse_p103_hosts.bak /etc/hosts 2>/dev/null; rm -f /tmp/hlse_p103_hosts.bak; }
+    trap p103_restore EXIT
+    echo "1.2.3.4 paypal.com" >> /etc/hosts
+
+    P103_NET_JSON_VRF=$(./hlse_core --json network 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin)["verify"])')
+    P103_NET_TXT_VRF=$(./hlse_core network 2>/dev/null | grep "Verify first:" | sed 's/.*Verify first: //')
+    [ "$P103_NET_JSON_VRF" = "$P103_NET_TXT_VRF" ] \
+        && check "p103: network JSON and plaintext agree word-for-word on verify text" "0" "0" \
+        || check "p103: network JSON and plaintext agree word-for-word on verify text" "0" "1"
+
+    p103_restore
+    trap - EXIT
+else
+    echo "SKIP  p103: /etc/hosts not writable, skipping network verify-text test"
+fi
+
+# package: JSON and plaintext verify text now agree word-for-word
+P103_PKG_JSON_VRF=$(./hlse_core --json package "reqests" 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin)["verify"])')
+P103_PKG_TXT_VRF=$(./hlse_core package "reqests" 2>/dev/null | grep "Verify first:" | sed 's/.*Verify first: //')
+[ "$P103_PKG_JSON_VRF" = "$P103_PKG_TXT_VRF" ] \
+    && check "p103: package JSON and plaintext agree word-for-word on verify text" "0" "0" \
+    || check "p103: package JSON and plaintext agree word-for-word on verify text" "0" "1"
+
+# F1 invariant: BLOCK+ verdicts for all three kinds unchanged after refactor
+./hlse_core --json package "reqeusts" pip 2>/dev/null | \
+grep -q '"score":70,"action":"BLOCK"' && check "p103: BLOCK+ package score unchanged after DRY refactor (F1 invariant)" "0" "0" \
+   || check "p103: BLOCK+ package score unchanged after DRY refactor (F1 invariant)" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

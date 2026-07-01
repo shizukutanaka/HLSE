@@ -2,6 +2,38 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.103] — 2026-07-01
+
+### Fixed
+- **Perspective 103: extended the P101/P102 DRY consolidation to `protect`,
+  `network`, and `package` — all three had the same JSON/plaintext advisory-
+  text duplication and drift.**
+
+  Socratic question: P101 and P102 found and fixed pattern/objective/verify/
+  triage/cascade_risk text duplicated between JSON and plaintext for `file`
+  and `secret` — do the other kinds with the same ALERT-band advisory
+  structure (`protect` from P100, `network` and `package` from P95/96/97)
+  have it too? Yes, all three: each kind's JSON path built its advisory
+  lines from `static const char[]` literals, while the matching plaintext
+  path independently re-typed shorter, differently-worded `printf` literals
+  describing the same verdict (e.g. `protect`'s JSON objective said
+  "ransomware encrypts accessible files **and demands payment**"; plaintext
+  silently dropped the "and demands payment" clause).
+
+  New shared accessors — `protect_pattern_text()`/`_objective_text()`/
+  `_verify_text()`/`_triage_text()`/`_cascade_text()`, and matching
+  `network_*`/`net_pattern_text()` and `package_*`/`package_pattern_text()`
+  groups — replace every independent copy. Pure refactor — no detection
+  logic, score, or threshold touched (F1=1.000 preserved); every JSON value
+  is unchanged, and plaintext now emits the same (previously fuller, JSON-
+  side) wording word-for-word.
+
+  - **Tests**: 4 new CLI integration tests assert JSON/plaintext word-for-
+    word agreement for `protect` (real SMB canary-file trigger), `network`
+    (real `/etc/hosts` redirect trigger, backed up/restored via `trap`), and
+    `package` (real multi-registry match), plus an F1-invariant BLOCK+ check
+    (652 → 656 total).
+
 ## [1.0.102] — 2026-07-01
 
 ### Fixed

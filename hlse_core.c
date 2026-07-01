@@ -5491,6 +5491,135 @@ secret_cascade_text(void) {
            "the same passphrase or was stored alongside this one";
 }
 
+/* Socratic question (Perspective 103): "P101/P102 found and fixed the same
+ * JSON/plaintext duplication-and-drift for file and secret — do protect,
+ * network, and package have it too?" Yes: each kind's JSON path built its
+ * advisory lines from `static const char[]` literals, while the matching
+ * plaintext path re-typed shorter, differently-worded printf literals for
+ * the exact same verdict. Consolidated into shared accessors, one group per
+ * kind, following the same naming convention as the file/secret ones above.
+ * Pure refactor — every JSON value is unchanged; only the plaintext wording
+ * is upgraded to match (previously-shortened) JSON text word-for-word. */
+static const char *
+protect_pattern_text(void) {
+    return "ransomware / destructive malware indicators detected";
+}
+
+static const char *
+protect_objective_text(void) {
+    return "data destruction and extortion \xe2\x80\x94 ransomware encrypts "
+           "accessible files and demands payment; credentials are "
+           "often harvested before encryption begins";
+}
+
+static const char *
+protect_verify_text(void) {
+    return "photograph or copy the ransom note before any other "
+           "action \xe2\x80\x94 it contains the attacker's ID, contact, "
+           "and decryption instructions; consult NCSC/CISA or law "
+           "enforcement BEFORE paying \xe2\x80\x94 free decryptors may exist";
+}
+
+static const char *
+protect_triage_text(void) {
+    return "IMMEDIATELY disconnect from the network (unplug Ethernet, "
+           "disable WiFi and Bluetooth) \xe2\x80\x94 this stops lateral "
+           "movement and stops encryption spreading to network shares; "
+           "do NOT reboot \xe2\x80\x94 volatile memory may contain keys; "
+           "preserve all logs and report to law enforcement";
+}
+
+static const char *
+protect_cascade_text(void) {
+    return "all credentials on this machine and any network shares "
+           "it accessed \xe2\x80\x94 ransomware groups commonly harvest "
+           "credentials before encrypting; rotate domain admin, file "
+           "server, VPN, and cloud credentials from a clean device";
+}
+
+static const char *
+net_pattern_text(void) {
+    return "suspicious network activity (C2 / exfiltration indicator)";
+}
+
+static const char *
+network_objective_text(void) {
+    return "data exfiltration or persistent access \xe2\x80\x94 an active "
+           "process may be beaconing to a command-and-control server, "
+           "exfiltrating credentials, or establishing lateral movement";
+}
+
+static const char *
+network_verify_text(void) {
+    return "identify the process owning the suspicious connection: "
+           "'lsof -i' or 'ss -tp' on Linux, 'netstat -b' on Windows; "
+           "verify it against your known installed software before "
+           "taking any disruptive action";
+}
+
+static const char *
+network_triage_text(void) {
+    return "if the process is unrecognised: kill it and isolate the "
+           "host from the network; preserve network capture (tcpdump) "
+           "and process memory before rebooting \xe2\x80\x94 evidence is lost "
+           "on reboot; report to your security team or law enforcement";
+}
+
+static const char *
+network_cascade_text(void) {
+    return "credentials stored on this machine (browser, credential "
+           "manager, SSH keys, cloud CLI tokens) \xe2\x80\x94 an active "
+           "C2 connection may already be exfiltrating them; rotate all "
+           "from a clean device before the machine is brought back online";
+}
+
+static const char *
+package_pattern_text(void) {
+    return "dependency confusion / typosquat supply-chain attack";
+}
+
+static const char *
+package_objective_text(void) {
+    return "arbitrary code execution \xe2\x80\x94 package install scripts "
+           "run with your user privileges; any secret readable from "
+           "your shell (API keys, tokens, SSH keys) is at risk";
+}
+
+static const char *
+package_verify_text(void) {
+    return "verify the exact package name on the official registry "
+           "page before installing; if you must proceed, install "
+           "with --ignore-scripts (npm/pnpm) or --no-build (uv/pip) "
+           "so a malicious preinstall/postinstall/prepare hook "
+           "cannot run \xe2\x80\x94 lifecycle scripts execute with your "
+           "privileges before install even completes; most "
+           "ecosystems also support --dry-run to preview first";
+}
+
+static const char *
+package_triage_text(void) {
+    return "if already installed, remove the package immediately "
+           "(pip uninstall / npm uninstall / cargo remove) and "
+           "inspect the lifecycle scripts (preinstall/postinstall/"
+           "prepare); self-propagating worms (Shai-Hulud) run a "
+           "disk-wide secret scan (TruffleHog), so rotate EVERY "
+           "credential on the machine, not just shell-environment "
+           "ones \xe2\x80\x94 if you publish packages, revoke your "
+           "npm/PyPI token FIRST, before the worm can republish "
+           "from your account";
+}
+
+static const char *
+package_cascade_text(void) {
+    return "if you maintain packages, your registry publish token is "
+           "the worm's self-propagation vector \xe2\x80\x94 it "
+           "republishes the payload into YOUR packages, infecting "
+           "every downstream user; revoke the token and audit your "
+           "published versions for unexpected releases, plus all "
+           "disk-resident API keys, SSH keys, and cloud credentials "
+           "a TruffleHog-style scan would harvest";
+}
+
 static void
 print_json_url(const char *url, const Verdict *v) {
     char escaped_url[MAX_URL * 2];
@@ -6761,39 +6890,19 @@ main(int argc, char **argv) {
                      * closed for other kinds. pattern/objective/verify now
                      * fire from the ALERT floor; triage/cascade_risk
                      * (disconnect-network incident response) stay
-                     * BLOCK+-only (>= 60). */
-                    static const char prt_pat[] =
-                        "ransomware / destructive malware indicators detected";
-                    static const char prt_obj[] =
-                        "data destruction and extortion \xe2\x80\x94 ransomware encrypts "
-                        "accessible files and demands payment; credentials are "
-                        "often harvested before encryption begins";
-                    static const char prt_vrf[] =
-                        "photograph or copy the ransom note before any other "
-                        "action \xe2\x80\x94 it contains the attacker's ID, contact, "
-                        "and decryption instructions; consult NCSC/CISA or law "
-                        "enforcement BEFORE paying \xe2\x80\x94 free decryptors may exist";
+                     * BLOCK+-only (>= 60).
+                     * Perspective 103: text now shared with the plaintext
+                     * path below via protect_*_text() accessors. */
                     char e[512];
-                    json_escape(prt_pat, e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                    json_escape(protect_pattern_text(), e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
                     printf(",\"pattern_id\":\"HLSE-PROTECT-RANSOM\"");
-                    json_escape(prt_obj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                    json_escape(prt_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                    json_escape(protect_objective_text(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
+                    json_escape(protect_verify_text(),    e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
                 }
                 if (pv.score >= 60) {
-                    static const char prt_tri[] =
-                        "IMMEDIATELY disconnect from the network (unplug Ethernet, "
-                        "disable WiFi and Bluetooth) \xe2\x80\x94 this stops lateral "
-                        "movement and stops encryption spreading to network shares; "
-                        "do NOT reboot \xe2\x80\x94 volatile memory may contain keys; "
-                        "preserve all logs and report to law enforcement";
-                    static const char prt_cas[] =
-                        "all credentials on this machine and any network shares "
-                        "it accessed \xe2\x80\x94 ransomware groups commonly harvest "
-                        "credentials before encrypting; rotate domain admin, file "
-                        "server, VPN, and cloud credentials from a clean device";
                     char e[512];
-                    json_escape(prt_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                    json_escape(prt_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                    json_escape(protect_triage_text(),  e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
+                    json_escape(protect_cascade_text(), e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
                 }
                 if (pv.score > 0 && pv.score < 60) {
                     const char *ex = hlse_exoneration_for("protect", pv.score);
@@ -6816,23 +6925,13 @@ main(int argc, char **argv) {
                     printf("  \xc2\xb7 %s\n", pv.reasons[i]);
                 }
                 if (pv.score >= 40) {
-                    printf("  \xe2\x96\xb8 Pattern: ransomware / destructive malware "
-                           "indicators detected\n");
-                    printf("  \xe2\x97\x89 Attacker's goal: data destruction and extortion "
-                           "\xe2\x80\x94 ransomware encrypts accessible files; credentials "
-                           "are typically harvested before encryption begins\n");
-                    printf("  \xe2\x9c\x93 Verify first: photograph the ransom note; "
-                           "consult NCSC/CISA before paying \xe2\x80\x94 free decryptors "
-                           "may exist for this ransomware family\n");
+                    printf("  \xe2\x96\xb8 Pattern: %s\n", protect_pattern_text());
+                    printf("  \xe2\x97\x89 Attacker's goal: %s\n", protect_objective_text());
+                    printf("  \xe2\x9c\x93 Verify first: %s\n", protect_verify_text());
                 }
                 if (pv.score >= 60) {
-                    printf("  \xe2\x9a\x91 Immediate action: disconnect from the network "
-                           "NOW (unplug Ethernet, disable WiFi) \xe2\x80\x94 stops spread "
-                           "to network shares; do NOT reboot \xe2\x80\x94 volatile memory "
-                           "may contain encryption keys\n");
-                    printf("  \xe2\x8a\x95 Also change: all credentials on this machine "
-                           "and any network shares it accessed \xe2\x80\x94 rotate domain "
-                           "admin, VPN, and cloud credentials from a clean device\n");
+                    printf("  \xe2\x9a\x91 Immediate action: %s\n", protect_triage_text());
+                    printf("  \xe2\x8a\x95 Also change: %s\n", protect_cascade_text());
                 }
                 if (pv.score < 60) {
                     const char *ex = hlse_exoneration_for("protect", pv.score);
@@ -7003,53 +7102,23 @@ main(int argc, char **argv) {
                      * "reqwest" dist-2, when no ecosystem is given) lands at
                      * score 50 alone — the n_matches==1 amplifier to 70 never
                      * fires — but pattern/objective/verify used to require
-                     * >= 60, the same gap P95/P96 closed elsewhere. */
-                    static const char pkg_pat[] =
-                        "dependency confusion / typosquat supply-chain attack";
-                    static const char pkg_obj[] =
-                        "arbitrary code execution \xe2\x80\x94 package install scripts "
-                        "run with your user privileges; any secret readable from "
-                        "your shell (API keys, tokens, SSH keys) is at risk";
-                    static const char pkg_vrf[] =
-                        "verify the exact package name on the official registry "
-                        "page before installing; if you must proceed, install "
-                        "with --ignore-scripts (npm/pnpm) or --no-build (uv/pip) "
-                        "so a malicious preinstall/postinstall/prepare hook "
-                        "cannot run \xe2\x80\x94 lifecycle scripts execute with your "
-                        "privileges before install even completes; most "
-                        "ecosystems also support --dry-run to preview first";
+                     * >= 60, the same gap P95/P96 closed elsewhere.
+                     * Perspective 103: text now shared with the plaintext
+                     * path below via package_*_text() accessors. */
                     char e[512];
-                    json_escape(pkg_pat, e, sizeof(e));
+                    json_escape(package_pattern_text(), e, sizeof(e));
                     printf(",\"pattern\":\"%s\"", e);
                     printf(",\"pattern_id\":\"HLSE-PKG-TYPOSQUAT\"");
-                    json_escape(pkg_obj, e, sizeof(e));
+                    json_escape(package_objective_text(), e, sizeof(e));
                     printf(",\"objective\":\"%s\"", e);
-                    json_escape(pkg_vrf, e, sizeof(e));
+                    json_escape(package_verify_text(), e, sizeof(e));
                     printf(",\"verify\":\"%s\"", e);
                 }
                 if (pv.score >= 60) {
-                    static const char pkg_tri[] =
-                        "if already installed, remove the package immediately "
-                        "(pip uninstall / npm uninstall / cargo remove) and "
-                        "inspect the lifecycle scripts (preinstall/postinstall/"
-                        "prepare); self-propagating worms (Shai-Hulud) run a "
-                        "disk-wide secret scan (TruffleHog), so rotate EVERY "
-                        "credential on the machine, not just shell-environment "
-                        "ones \xe2\x80\x94 if you publish packages, revoke your "
-                        "npm/PyPI token FIRST, before the worm can republish "
-                        "from your account";
-                    static const char pkg_cas[] =
-                        "if you maintain packages, your registry publish token is "
-                        "the worm's self-propagation vector \xe2\x80\x94 it "
-                        "republishes the payload into YOUR packages, infecting "
-                        "every downstream user; revoke the token and audit your "
-                        "published versions for unexpected releases, plus all "
-                        "disk-resident API keys, SSH keys, and cloud credentials "
-                        "a TruffleHog-style scan would harvest";
                     char e[512];
-                    json_escape(pkg_tri, e, sizeof(e));
+                    json_escape(package_triage_text(), e, sizeof(e));
                     printf(",\"triage\":\"%s\"", e);
-                    json_escape(pkg_cas, e, sizeof(e));
+                    json_escape(package_cascade_text(), e, sizeof(e));
                     printf(",\"cascade_risk\":\"%s\"", e);
                 }
                 if (pv.score > 0 && pv.score < 60) {
@@ -7072,31 +7141,13 @@ main(int argc, char **argv) {
                 if (pv.reason[0])
                     printf("  \xc2\xb7 %s\n", pv.reason);
                 if (pv.score >= 40) {
-                    printf("  \xe2\x96\xb8 Pattern: dependency confusion / typosquat "
-                           "supply-chain attack\n");
-                    printf("  \xe2\x97\x89 Attacker's goal: arbitrary code execution "
-                           "\xe2\x80\x94 package install scripts run with your user "
-                           "privileges; any secret in your shell is at risk\n");
-                    printf("  \xe2\x9c\x93 Verify first: check the exact name on the "
-                           "official registry page; if you must install, use "
-                           "--ignore-scripts (npm/pnpm) or --no-build (uv/pip) so "
-                           "a malicious preinstall/postinstall/prepare hook cannot "
-                           "run \xe2\x80\x94 lifecycle scripts execute before install "
-                           "even completes; --dry-run previews first\n");
+                    printf("  \xe2\x96\xb8 Pattern: %s\n", package_pattern_text());
+                    printf("  \xe2\x97\x89 Attacker's goal: %s\n", package_objective_text());
+                    printf("  \xe2\x9c\x93 Verify first: %s\n", package_verify_text());
                 }
                 if (pv.score >= 60) {
-                    printf("  \xe2\x9a\x91 If you acted: remove immediately "
-                           "(pip/npm/cargo uninstall) and inspect the lifecycle "
-                           "scripts (preinstall/postinstall/prepare); "
-                           "self-propagating worms (Shai-Hulud) run a "
-                           "disk-wide secret scan, so rotate EVERY credential on "
-                           "the machine \xe2\x80\x94 if you publish packages, revoke "
-                           "your npm/PyPI token FIRST\n");
-                    printf("  \xe2\x8a\x95 Also change: if you maintain packages, "
-                           "your publish token is the worm's self-propagation "
-                           "vector \xe2\x80\x94 revoke it and audit your published "
-                           "versions for unexpected releases, plus all disk-resident "
-                           "API keys, SSH keys, and cloud credentials\n");
+                    printf("  \xe2\x9a\x91 If you acted: %s\n", package_triage_text());
+                    printf("  \xe2\x8a\x95 Also change: %s\n", package_cascade_text());
                 }
                 if (pv.score < 60) {
                     const char *ex = hlse_exoneration_for("package", pv.score);
@@ -7254,38 +7305,19 @@ main(int argc, char **argv) {
                  * BLOCK+ (60) did, the same gap P95 closed for URL/text/
                  * paste/scan. verify now fires from the ALERT floor;
                  * triage/cascade_risk (post-incident, presumes the user
-                 * already acted) stay BLOCK+-only. */
-                static const char net_pat[] =
-                    "suspicious network activity (C2 / exfiltration indicator)";
-                static const char net_obj[] =
-                    "data exfiltration or persistent access \xe2\x80\x94 an active "
-                    "process may be beaconing to a command-and-control server, "
-                    "exfiltrating credentials, or establishing lateral movement";
-                static const char net_vrf[] =
-                    "identify the process owning the suspicious connection: "
-                    "'lsof -i' or 'ss -tp' on Linux, 'netstat -b' on Windows; "
-                    "verify it against your known installed software before "
-                    "taking any disruptive action";
+                 * already acted) stay BLOCK+-only.
+                 * Perspective 103: text now shared with the plaintext path
+                 * below via network_*_text() accessors. */
                 char e[512];
-                json_escape(net_pat, e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                json_escape(net_pattern_text(), e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
                 printf(",\"pattern_id\":\"HLSE-NET-C2\"");
-                json_escape(net_obj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                json_escape(net_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                json_escape(network_objective_text(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
+                json_escape(network_verify_text(),    e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
             }
             if (nv.score >= 60) {
-                static const char net_tri[] =
-                    "if the process is unrecognised: kill it and isolate the "
-                    "host from the network; preserve network capture (tcpdump) "
-                    "and process memory before rebooting \xe2\x80\x94 evidence is lost "
-                    "on reboot; report to your security team or law enforcement";
-                static const char net_cas[] =
-                    "credentials stored on this machine (browser, credential "
-                    "manager, SSH keys, cloud CLI tokens) \xe2\x80\x94 an active "
-                    "C2 connection may already be exfiltrating them; rotate all "
-                    "from a clean device before the machine is brought back online";
                 char e[512];
-                json_escape(net_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                json_escape(net_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                json_escape(network_triage_text(),  e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
+                json_escape(network_cascade_text(), e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
             }
             if (nv.score > 0 && nv.score < 60) {
                 const char *ex = hlse_exoneration_for("network", nv.score);
@@ -7307,22 +7339,13 @@ main(int argc, char **argv) {
             for (i = 0; i < nv.n_reasons; i++)
                 printf("  \xc2\xb7 %s\n", nv.reasons[i]);
             if (nv.score >= 40) {
-                printf("  \xe2\x96\xb8 Pattern: suspicious network activity "
-                       "(C2 / exfiltration indicator)\n");
-                printf("  \xe2\x97\x89 Attacker's goal: data exfiltration or persistent "
-                       "access \xe2\x80\x94 may be beaconing to C2, exfiltrating "
-                       "credentials, or enabling lateral movement\n");
-                printf("  \xe2\x9c\x93 Verify first: identify the process owning the "
-                       "connection ('lsof -i' / 'ss -tp') before taking any "
-                       "disruptive action\n");
+                printf("  \xe2\x96\xb8 Pattern: %s\n", net_pattern_text());
+                printf("  \xe2\x97\x89 Attacker's goal: %s\n", network_objective_text());
+                printf("  \xe2\x9c\x93 Verify first: %s\n", network_verify_text());
             }
             if (nv.score >= 60) {
-                printf("  \xe2\x9a\x91 Immediate action: if unrecognised, kill the "
-                       "process and isolate the host; preserve tcpdump capture "
-                       "and process memory before rebooting\n");
-                printf("  \xe2\x8a\x95 Also change: all credentials on this machine "
-                       "(browser, credential manager, SSH keys, cloud tokens) "
-                       "\xe2\x80\x94 rotate from a clean device\n");
+                printf("  \xe2\x9a\x91 Immediate action: %s\n", network_triage_text());
+                printf("  \xe2\x8a\x95 Also change: %s\n", network_cascade_text());
             }
             if (nv.score < 60) {
                 const char *ex = hlse_exoneration_for("network", nv.score);
