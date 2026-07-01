@@ -5233,6 +5233,64 @@ grep -q "Caveat:" && check "p99 text: Stripe publishable key caveat line shown" 
 grep -q '"objective":"cloud API access' && check "p99: AWS key objective unchanged (F1 invariant)" "0" "0" \
    || check "p99: AWS key objective unchanged (F1 invariant)" "0" "1"
 
+# ─── P100: protect verdict — hlse_version/severity/pattern_id + ALERT-band advisory ─
+# Socratic gap: `protect` (ransomware detection) was the ONLY verdict kind
+# still missing `hlse_version` and `severity` — every other kind has carried
+# both since P84/P85 — and had no JSON Schema file, no pattern_id, and the
+# same ALERT-band advisory gap P95-98 closed elsewhere. A single SMB canary-
+# file access (+40, real and reproducible: touch + read a canary filename)
+# lands the verdict in ALERT alone.
+mkdir -p /tmp/hlse_p100_share
+touch /tmp/hlse_p100_share/.canary_hlse_do_not_delete
+cat /tmp/hlse_p100_share/.canary_hlse_do_not_delete > /dev/null
+
+P100_JSON=$(./hlse_core --json protect /tmp/hlse_p100_share 2>/dev/null) || true
+echo "$P100_JSON" | python3 -c '
+import sys, json, jsonschema
+d = json.loads(sys.stdin.read())
+assert "hlse_version" in d, d
+assert "severity" in d, d
+assert 40 <= d["score"] < 60, d
+assert d.get("pattern"), d
+assert d.get("pattern_id") == "HLSE-PROTECT-RANSOM", d
+assert d.get("verify"), d
+assert "triage" not in d, d
+assert "cascade_risk" not in d, d
+schema = json.load(open("schema/hlse_protect_verdict.schema.json"))
+jsonschema.validate(d, schema)
+' && check "p100 json protect: hlse_version+severity+pattern+verify present in ALERT, triage/cascade absent" "0" "0" \
+   || check "p100 json protect: hlse_version+severity+pattern+verify present in ALERT, triage/cascade absent" "0" "1"
+
+P100_TXT=$(./hlse_core protect /tmp/hlse_p100_share 2>/dev/null) || true
+echo "$P100_TXT" | grep -q "ALERT" \
+    && check "p100: SMB canary access scores ALERT band" "0" "0" \
+    || check "p100: SMB canary access scores ALERT band" "0" "1"
+echo "$P100_TXT" | grep -q "Verify first:" \
+    && check "p100 text: verify line shown in ALERT band" "0" "0" \
+    || check "p100 text: verify line shown in ALERT band" "0" "1"
+echo "$P100_TXT" | grep -q "Immediate action:" \
+    && check "p100 text: no triage line in ALERT band" "0" "1" \
+    || check "p100 text: no triage line in ALERT band" "0" "0"
+
+rm -rf /tmp/hlse_p100_share
+
+# Clean protect verdict still validates against the new schema
+mkdir -p /tmp/hlse_p100_clean
+./hlse_core --json protect /tmp/hlse_p100_clean 2>/dev/null | python3 -c '
+import sys, json, jsonschema
+d = json.loads(sys.stdin.read())
+schema = json.load(open("schema/hlse_protect_verdict.schema.json"))
+jsonschema.validate(d, schema)
+assert d["score"] == 0 and d["action"] == "SAFE", d
+' && check "p100 schema: clean protect verdict validates" "0" "0" \
+   || check "p100 schema: clean protect verdict validates" "0" "1"
+rm -rf /tmp/hlse_p100_clean
+
+# pattern_id registry includes the new protect token
+./hlse_core --json --list-patterns 2>/dev/null | \
+grep -q '"id":"HLSE-PROTECT-RANSOM"' && check "p100: HLSE-PROTECT-RANSOM registered in --list-patterns" "0" "0" \
+   || check "p100: HLSE-PROTECT-RANSOM registered in --list-patterns" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

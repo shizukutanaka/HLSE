@@ -2,6 +2,45 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.100] — 2026-07-01
+
+### Fixed
+- **Perspective 100: `protect` (ransomware/SMB/MBR detection) was the only
+  verdict kind still missing `hlse_version` and `severity`, had no JSON
+  Schema file, no `pattern_id`, and the same ALERT-band advisory gap P95-98
+  closed elsewhere.**
+
+  Continuing the systematic per-kind audit that started with the ALERT-band
+  fixes (P95-98) and the Stripe-key correctness fix (P99): `protect` — one of
+  the most safety-critical commands (ransomware detection) — was never
+  brought in line with the `hlse_version`/`severity` contract every other
+  kind (url/text/file/secret/email/network/esp/package/paste/clipboard) has
+  carried since P84/P85. It also had no entry in the `--list-patterns`
+  registry and no normative JSON Schema, unlike all 12 other kinds.
+
+  A single SMB canary-file access (+40, real and reproducible: place a
+  well-known canary filename in a directory and read it) or a mass-rename
+  detection (+40) lands the `protect` verdict in ALERT (40-59) alone — same
+  as the P95-98 pattern, `pattern`/`objective`/`verify` only fired at score
+  >= 60.
+
+  Fixes, all pure advisory/output — no detection logic, score, or threshold
+  touched (F1=1.000 preserved; BLOCK+ verdicts are byte-identical):
+  - `protect` JSON now includes `hlse_version` and `severity`, matching
+    every other kind.
+  - New `pattern_id`: `HLSE-PROTECT-RANSOM`, registered in `--list-patterns`.
+  - `pattern`/`objective`/`verify` now fire from score >= 40 (ALERT floor);
+    `triage`/`cascade_risk` (disconnect-network incident response, which
+    presumes active compromise) stay BLOCK+-only (>= 60).
+  - New `schema/hlse_protect_verdict.schema.json` — the last of the 13
+    verdict kinds to get a normative schema.
+  - `hlse_pattern_registry.schema.json`'s `kind` enum gained `"protect"`.
+
+  - **Tests**: 5 new CLI integration tests use a real reproducible SMB
+    canary-file access to assert `hlse_version`/`severity`/`pattern`/
+    `pattern_id`/`verify` in ALERT with `triage`/`cascade_risk` absent, a
+    clean-verdict schema check, and registry presence (638 → 643 total).
+
 ## [1.0.99] — 2026-07-01
 
 ### Fixed

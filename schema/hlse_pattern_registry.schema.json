@@ -53,7 +53,8 @@
               "network",
               "email",
               "clipboard",
-              "audit"
+              "audit",
+              "protect"
             ],
             "description": "JSON verdict kind that can emit this pattern_id."
           },
