@@ -5346,6 +5346,50 @@ grep -q '"score":70,"action":"BLOCK"' && check "p101: BLOCK+ file score unchange
    || check "p101: BLOCK+ file score unchanged after DRY refactor (F1 invariant)" "0" "1"
 rm -f /tmp/hlse_p101_invoice.exe
 
+# ─── P102: same DRY consolidation (P101) applied to the secret kind ────────
+# Socratic question: does "secret" have the same four-way duplication P101
+# found and fixed for "file"? Yes — the pattern label, verify, triage, and
+# cascade_risk text were each independently copy-pasted at the standalone
+# secret JSON site and the scan-embedded JSON site (same text, two names:
+# sec_vrf/ss_vrf etc.), AND reduced to shorter, differently-worded printf
+# literals at both plaintext sites. Consolidated into shared accessors
+# (secret_pattern_label/secret_verify_text/secret_triage_text/
+# secret_cascade_text); all four sites and both output formats now agree.
+#
+# Fixing this surfaced a real naming collision: secret_verify_text() said
+# "setting the blast radius" (meaning "scope of what was accessed"), and once
+# plaintext started using the same full text as JSON, a single-secret `scan`
+# started printing the substring "blast radius" — colliding with `scan`'s
+# unrelated, distinct "⚠ BLAST RADIUS:" warning for credentials spanning
+# multiple asset classes. Rewored to avoid the collision.
+
+mkdir -p /tmp/hlse_p102_scan
+echo "aws_access_key_id=AKIA1234567890ABCDEF" > /tmp/hlse_p102_scan/secrets.txt
+
+P102_STANDALONE_VRF=$(./hlse_core --json secret "aws_access_key_id=AKIA1234567890ABCDEF" 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin)["verify"])')
+P102_SCAN_VRF=$(./hlse_core --json scan /tmp/hlse_p102_scan 2>/dev/null | grep '"kind":"secret"' | python3 -c 'import sys,json; print(json.load(sys.stdin)["verify"])')
+[ "$P102_STANDALONE_VRF" = "$P102_SCAN_VRF" ] \
+    && check "p102: standalone secret and scan-embedded secret agree on verify text" "0" "0" \
+    || check "p102: standalone secret and scan-embedded secret agree on verify text" "0" "1"
+
+P102_JSON_TRI=$(./hlse_core --json secret "aws_access_key_id=AKIA1234567890ABCDEF" 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin)["triage"])')
+P102_TXT_TRI=$(./hlse_core secret "aws_access_key_id=AKIA1234567890ABCDEF" 2>/dev/null | grep "Immediate action:" | sed 's/.*Immediate action: //')
+[ "$P102_JSON_TRI" = "$P102_TXT_TRI" ] \
+    && check "p102: JSON and CLI plaintext now agree word-for-word on triage text" "0" "0" \
+    || check "p102: JSON and CLI plaintext now agree word-for-word on triage text" "0" "1"
+
+# A single-asset-class secret scan must NOT trigger the unrelated BLAST RADIUS warning
+./hlse_core scan /tmp/hlse_p102_scan 2>&1 | grep -qi "blast radius" \
+    && check "p102: secret verify text no longer collides with scan's BLAST RADIUS warning" "0" "1" \
+    || check "p102: secret verify text no longer collides with scan's BLAST RADIUS warning" "0" "0"
+
+rm -rf /tmp/hlse_p102_scan
+
+# F1 invariant: BLOCK+/ISOLATE secret verdict (AWS key) unchanged after refactor
+./hlse_core --json secret "aws_access_key_id=AKIA1234567890ABCDEF" 2>/dev/null | \
+grep -q '"score":80,"action":"ISOLATE"' && check "p102: AWS secret score unchanged after DRY refactor (F1 invariant)" "0" "0" \
+   || check "p102: AWS secret score unchanged after DRY refactor (F1 invariant)" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -2,6 +2,43 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.102] — 2026-07-01
+
+### Fixed
+- **Perspective 102: applied the P101 DRY consolidation to the `secret` kind
+  too — and the refactor surfaced a real "blast radius" naming collision in
+  `scan` output.**
+
+  Socratic question: does `secret` have the same four-way advisory-text
+  duplication P101 found and fixed for `file`? Yes — the pattern label,
+  verify, triage, and cascade_risk text were each independently copy-pasted
+  at the standalone `secret` JSON site and the `scan`-embedded JSON site
+  (identical text under two different names: `sec_vrf`/`ss_vrf`,
+  `sec_tri`/`ss_tri`, `sec_cas`/`ss_cas`), and separately reduced to shorter,
+  differently-worded `printf` literals at both plaintext sites.
+
+  New shared accessors `secret_pattern_label()`, `secret_verify_text()`,
+  `secret_triage_text()`, `secret_cascade_text()` replace all four copies —
+  mirroring `file_masquerade_objective()`/`file_masquerade_verify()` from
+  P101.
+
+  Unifying JSON and plaintext wording surfaced a genuine bug: the verify
+  text said "...setting the blast radius" (meaning "the scope of what was
+  accessed"), and once plaintext started using the same full text as JSON, a
+  single-credential `scan` began printing the substring "blast radius" —
+  colliding with `scan`'s unrelated, distinct `⚠ BLAST RADIUS:` warning for
+  credentials spanning multiple asset classes (a pre-existing feature). A
+  test asserting single-asset-class scans never print "blast radius" caught
+  this immediately. Reworded to eliminate the collision.
+
+  Pure refactor plus a wording fix — no detection logic, score, or threshold
+  touched (F1=1.000 preserved); all four sites and JSON-vs-plaintext now
+  emit byte-identical wording for the same verdict.
+
+  - **Tests**: 4 new CLI integration tests assert standalone/scan agreement,
+    JSON/plaintext word-for-word agreement, that the BLAST RADIUS collision
+    is gone, and an F1-invariant ISOLATE-score check (648 → 652 total).
+
 ## [1.0.101] — 2026-07-01
 
 ### Fixed

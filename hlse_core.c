@@ -5445,6 +5445,52 @@ secret_finding_caveat(const char *type) {
     return NULL;
 }
 
+/* Socratic question (Perspective 102): "The P101 audit found the file kind's
+ * pattern/objective/verify text duplicated four ways and consolidated it —
+ * does 'secret' have the exact same problem?" Answer: yes. The pattern label
+ * ("exposed credential — %s"), verify, triage, and cascade_risk text were
+ * each independently copy-pasted at the standalone `secret` JSON site and
+ * the scan-embedded JSON site (identical strings, two names: sec_vrf/ss_vrf,
+ * sec_tri/ss_tri, sec_cas/ss_cas), and ALSO reduced to shorter, differently-
+ * worded printf literals at the two plaintext sites — so a `secret` verdict
+ * read as JSON and the same verdict read as plaintext described the
+ * independent verification step differently. Consolidated into shared
+ * accessors, mirroring file_masquerade_objective()/file_masquerade_verify();
+ * every one of the four sites and both output formats now say the same
+ * thing. Pure refactor — no detection logic, score, or field value changed. */
+static void
+secret_pattern_label(const char *ftype, char *buf, size_t buflen) {
+    snprintf(buf, buflen, "exposed credential \xe2\x80\x94 %s", ftype);
+}
+
+static const char *
+secret_verify_text(void) {
+    /* Deliberately avoids the phrase "blast radius" — `scan` has a distinct,
+     * unrelated BLAST RADIUS warning for credentials found across multiple
+     * asset classes (P102 caught the two colliding in scan's plaintext
+     * output once JSON/plaintext text was unified). */
+    return "check access logs for this credential BEFORE revoking "
+           "\xe2\x80\x94 audit trails (AWS CloudTrail, GitHub audit "
+           "log) reveal whether it was already used and exactly what "
+           "was accessed";
+}
+
+static const char *
+secret_triage_text(void) {
+    return "revoke or rotate the credential immediately (do not "
+           "delete \xe2\x80\x94 rotate to cut off access before the key is "
+           "gone); purge from git history with git filter-repo or "
+           "BFG Repo Cleaner \xe2\x80\x94 assume every clone already has it";
+}
+
+static const char *
+secret_cascade_text(void) {
+    return "every other credential in the same file, repository, "
+           "or environment \xe2\x80\x94 treat everything co-located as "
+           "potentially leaked; also rotate any secret that shared "
+           "the same passphrase or was stored alongside this one";
+}
+
 static void
 print_json_url(const char *url, const Verdict *v) {
     char escaped_url[MAX_URL * 2];
@@ -6387,24 +6433,7 @@ main(int argc, char **argv) {
                                         if (sv.score >= 60 && sv.n_findings > 0) {
                                             const char *ftype = sv.findings[0].type;
                                             const char *sobj  = secret_objective_for(ftype);
-                                            static const char ss_vrf[] =
-                                                "check access logs for this credential BEFORE "
-                                                "revoking \xe2\x80\x94 audit trails (AWS CloudTrail, "
-                                                "GitHub audit log) reveal whether it was already "
-                                                "used and what was accessed, setting the blast radius";
-                                            static const char ss_tri[] =
-                                                "revoke or rotate the credential immediately (do not "
-                                                "delete \xe2\x80\x94 rotate to cut off access before "
-                                                "the key is gone); purge from git history with "
-                                                "git filter-repo or BFG Repo Cleaner \xe2\x80\x94 "
-                                                "assume every clone already has it";
-                                            static const char ss_cas[] =
-                                                "every other credential in the same file, repository, "
-                                                "or environment \xe2\x80\x94 treat everything co-located "
-                                                "as potentially leaked; also rotate any secret that "
-                                                "shared the same passphrase or was stored alongside this one";
-                                            snprintf(esc_p, sizeof(esc_p),
-                                                     "exposed credential \xe2\x80\x94 %s", ftype);
+                                            secret_pattern_label(ftype, esc_p, sizeof(esc_p));
                                             json_escape(esc_p, ed, sizeof(ed));
                                             printf(",\"pattern\":\"%s\"", ed);
                                             printf(",\"pattern_id\":\"%s\"", secret_pattern_id(ftype));
@@ -6412,9 +6441,9 @@ main(int argc, char **argv) {
                                                 json_escape(sobj, ed, sizeof(ed));
                                                 printf(",\"objective\":\"%s\"", ed);
                                             }
-                                            json_escape(ss_vrf, ed, sizeof(ed)); printf(",\"verify\":\"%s\"",       ed);
-                                            json_escape(ss_tri, ed, sizeof(ed)); printf(",\"triage\":\"%s\"",       ed);
-                                            json_escape(ss_cas, ed, sizeof(ed)); printf(",\"cascade_risk\":\"%s\"", ed);
+                                            json_escape(secret_verify_text(),  ed, sizeof(ed)); printf(",\"verify\":\"%s\"",       ed);
+                                            json_escape(secret_triage_text(),  ed, sizeof(ed)); printf(",\"triage\":\"%s\"",       ed);
+                                            json_escape(secret_cascade_text(), ed, sizeof(ed)); printf(",\"cascade_risk\":\"%s\"", ed);
                                         }
                                         if (sv.score > 0 && sv.score < 60) {
                                             const char *ex = hlse_exoneration_for("secret", sv.score);
@@ -6440,20 +6469,12 @@ main(int argc, char **argv) {
                                             const char *ftype = sv.findings[0].type;
                                             const char *sobj  = secret_objective_for(ftype);
                                             char epat[128];
-                                            snprintf(epat, sizeof(epat),
-                                                     "exposed credential \xe2\x80\x94 %s", ftype);
+                                            secret_pattern_label(ftype, epat, sizeof(epat));
                                             printf("  \xe2\x96\xb8 Pattern: %s\n", epat);
                                             if (sobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", sobj);
-                                            printf("  \xe2\x9c\x93 Verify first: check access logs BEFORE "
-                                                   "revoking \xe2\x80\x94 audit trails (CloudTrail, GitHub "
-                                                   "audit log) reveal whether it was already used\n");
-                                            printf("  \xe2\x9a\x91 Immediate action: rotate the credential "
-                                                   "now (rotate, don't just delete); purge from git "
-                                                   "history with git filter-repo or BFG \xe2\x80\x94 assume "
-                                                   "every clone already has a copy\n");
-                                            printf("  \xe2\x8a\x95 Also change: every other credential in "
-                                                   "the same file or repository \xe2\x80\x94 treat everything "
-                                                   "co-located as potentially leaked\n");
+                                            printf("  \xe2\x9c\x93 Verify first: %s\n", secret_verify_text());
+                                            printf("  \xe2\x9a\x91 Immediate action: %s\n", secret_triage_text());
+                                            printf("  \xe2\x8a\x95 Also change: %s\n", secret_cascade_text());
                                         }
                                         if (sv.score > 0 && sv.score < 60) {
                                             const char *ex = hlse_exoneration_for("secret", sv.score);
@@ -7372,30 +7393,15 @@ main(int argc, char **argv) {
                 if (sv.score >= 60 && sv.n_findings > 0) {
                     const char *ftype = sv.findings[0].type;
                     const char *sobj  = secret_objective_for(ftype);
-                    static const char sec_vrf[] =
-                        "check access logs for this credential BEFORE revoking "
-                        "\xe2\x80\x94 audit trails (AWS CloudTrail, GitHub audit "
-                        "log) reveal whether it was already used and what was "
-                        "accessed, setting the blast radius";
-                    static const char sec_tri[] =
-                        "revoke or rotate the credential immediately (do not "
-                        "delete — rotate to cut off access before the key is "
-                        "gone); purge from git history with git filter-repo or "
-                        "BFG Repo Cleaner — assume every clone already has it";
-                    static const char sec_cas[] =
-                        "every other credential in the same file, repository, "
-                        "or environment — treat everything co-located as "
-                        "potentially leaked; also rotate any secret that shared "
-                        "the same passphrase or was stored alongside this one";
                     char e[512], epat[128];
-                    snprintf(epat, sizeof(epat), "exposed credential \xe2\x80\x94 %s", ftype);
+                    secret_pattern_label(ftype, epat, sizeof(epat));
                     json_escape(epat, e, sizeof(e));
                     printf(",\"pattern\":\"%s\"", e);
                     printf(",\"pattern_id\":\"%s\"", secret_pattern_id(ftype));
                     if (sobj) { json_escape(sobj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e); }
-                    json_escape(sec_vrf, e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
-                    json_escape(sec_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                    json_escape(sec_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                    json_escape(secret_verify_text(),  e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                    json_escape(secret_triage_text(),  e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
+                    json_escape(secret_cascade_text(), e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
                 }
                 if (sv.score > 0 && sv.score < 60) {
                     const char *ex = hlse_exoneration_for("secret", sv.score);
@@ -7431,19 +7437,12 @@ main(int argc, char **argv) {
                     const char *ftype = sv.findings[0].type;
                     const char *sobj  = secret_objective_for(ftype);
                     char epat[128];
-                    snprintf(epat, sizeof(epat), "exposed credential \xe2\x80\x94 %s", ftype);
+                    secret_pattern_label(ftype, epat, sizeof(epat));
                     printf("  \xe2\x96\xb8 Pattern: %s\n", epat);
                     if (sobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", sobj);
-                    printf("  \xe2\x9c\x93 Verify first: check access logs BEFORE "
-                           "revoking \xe2\x80\x94 audit trails (CloudTrail, GitHub "
-                           "audit log) reveal whether it was already used\n");
-                    printf("  \xe2\x9a\x91 Immediate action: rotate the credential "
-                           "now (rotate, don't just delete); purge from git "
-                           "history with git filter-repo or BFG \xe2\x80\x94 assume "
-                           "every clone already has a copy\n");
-                    printf("  \xe2\x8a\x95 Also change: every other credential in "
-                           "the same file or repository \xe2\x80\x94 treat everything "
-                           "co-located as potentially leaked\n");
+                    printf("  \xe2\x9c\x93 Verify first: %s\n", secret_verify_text());
+                    printf("  \xe2\x9a\x91 Immediate action: %s\n", secret_triage_text());
+                    printf("  \xe2\x8a\x95 Also change: %s\n", secret_cascade_text());
                 }
                 if (sv.score > 0 && sv.score < 60) {
                     const char *ex = hlse_exoneration_for("secret", sv.score);
