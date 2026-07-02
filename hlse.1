@@ -126,6 +126,30 @@ Suppress output; communicate only through the exit code (CI/CD mode).
 .B --stdin
 Pipe mode: read one input per line from standard input.
 .TP
+.BI --baseline " file"
+For the
+.B scan
+command: suppress every finding whose fingerprint is listed in
+.IR file ,
+so a brownfield repository's already-accepted findings do not fail the CI
+gate. Only findings absent from the baseline count toward the exit code. An
+unreadable
+.I file
+is a usage error (exit 2). Generate a baseline with
+.BR --fingerprints .
+.TP
+.B --fingerprints
+For the
+.B scan
+command: emit one stable fingerprint per finding (16 hex chars, plus its
+pattern id and relative path) instead of the normal verdict, and exit 0.
+Redirect to a file to create a baseline:
+.B hlse_core --fingerprints scan . > .hlse-baseline\fR.
+The fingerprint omits the line number, so a finding that moves lines stays
+suppressed. An inline
+.B hlse:allow
+token on a scanned line also suppresses findings on that line.
+.TP
 .B --self-test
 Run the built-in test suite.
 .TP

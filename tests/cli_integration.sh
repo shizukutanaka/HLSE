@@ -5477,6 +5477,126 @@ P104_CLIP_TXT_VRF=$(./hlse_core clipboard "bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0
 grep -q '"score":95,"action":"ISOLATE"' && check "p104: clipboard hijack score unchanged after DRY refactor (F1 invariant)" "0" "0" \
    || check "p104: clipboard hijack score unchanged after DRY refactor (F1 invariant)" "0" "1"
 
+# ─── P105 (P1-2): secret --stdin no longer silently truncates ──────────────
+# A secret past the old 64KB buffer used to read as clean (exit 0) — a false
+# negative demonstrated through the shipped pre-commit hook (which pipes files
+# up to 1 MB). Buffer is now 1 MiB (>= the hook's guard) and any overflow
+# emits a stderr warning instead of a silent clean result.
+
+# Secret at ~70KB offset (undetectable under the old 64KB cap) is now caught
+python3 -c "import sys; sys.stdout.write('x'*70000 + '\nAWS_KEY=AKIA2E3MWORQXYZ4567PQ\n')" \
+  | ./hlse_core --quiet secret --stdin >/dev/null 2>&1 && rc=0 || rc=$?
+check "p105: secret at 70KB offset detected (was silent FN under 64KB cap)" "1" "$rc"
+
+# Input exceeding the 1 MiB buffer emits a truncation warning to stderr
+python3 -c "import sys; sys.stdout.write('y'*1100000 + '\n')" \
+  | ./hlse_core secret --stdin 2>/tmp/hlse_p105_stderr.txt >/dev/null
+grep -qi "stdin exceeded" /tmp/hlse_p105_stderr.txt \
+    && check "p105: >1MiB stdin emits truncation warning (no silent drop)" "0" "0" \
+    || check "p105: >1MiB stdin emits truncation warning (no silent drop)" "0" "1"
+rm -f /tmp/hlse_p105_stderr.txt
+
+# Normal small-input secret scan still works (no spurious warning)
+printf 'AWS_KEY=AKIA2E3MWORQXYZ4567PQ\n' | ./hlse_core secret --stdin 2>/tmp/hlse_p105_clean.txt >/dev/null || true
+[ -s /tmp/hlse_p105_clean.txt ] \
+    && check "p105: small-input scan emits no spurious truncation warning" "0" "1" \
+    || check "p105: small-input scan emits no spurious truncation warning" "0" "0"
+rm -f /tmp/hlse_p105_clean.txt
+
+# ─── P106 (P2-3): email subcommand explains it ignores --from ──────────────
+# --from sets a delivery-channel prior for url/text, but email headers are
+# intrinsically the email channel, so a --from override is meaningless there.
+# It used to be silently ignored (reads like a bug); now a stderr note explains.
+
+# --from with email → stderr note, stdout JSON unchanged (no channel field)
+./hlse_core --from sms --json email "From: ceo@x.com
+Subject: urgent wire" 2>/tmp/hlse_p106_err.txt | \
+python3 -c 'import sys,json; d=json.load(sys.stdin); assert "channel" not in d, d' \
+    && grep -qi "from is ignored for the email" /tmp/hlse_p106_err.txt \
+    && check "p106: email --from emits explanatory stderr note, JSON unchanged" "0" "0" \
+    || check "p106: email --from emits explanatory stderr note, JSON unchanged" "0" "1"
+rm -f /tmp/hlse_p106_err.txt
+
+# email WITHOUT --from → no note (no spurious noise)
+./hlse_core --json email "From: ceo@x.com" 2>/tmp/hlse_p106_none.txt >/dev/null
+[ -s /tmp/hlse_p106_none.txt ] \
+    && check "p106: email without --from emits no note" "0" "1" \
+    || check "p106: email without --from emits no note" "0" "0"
+rm -f /tmp/hlse_p106_none.txt
+
+# ─── P107 (P0-1): baseline / allowlist / inline suppression ────────────────
+# Commercial secret scanners need a way to accept known findings so a
+# brownfield repo's first scan does not fail the CI gate forever. HLSE now
+# has --fingerprints (generate a baseline), --baseline <file> (suppress
+# listed findings), and inline `hlse:allow`. Pure output filter — F1 unchanged.
+
+P107_DIR=$(mktemp -d)
+printf 'aws_access_key_id=AKIA1234567890ABCDEF\n' > "$P107_DIR/config.env"
+printf 'github_token=ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij\n' > "$P107_DIR/ci.txt"
+
+# Baseline scan without a baseline finds threats → exit 1
+./hlse_core scan "$P107_DIR" >/dev/null 2>&1 && rc=0 || rc=$?
+check "p107: scan with no baseline fails the gate (exit 1)" "1" "$rc"
+
+# --fingerprints emits one stable 16-hex fingerprint per finding, exit 0
+P107_FP=$(./hlse_core --fingerprints scan "$P107_DIR" 2>/dev/null || true)
+echo "$P107_FP" | grep -qE '^[0-9a-f]{16}  HLSE-SECRET-AWS' \
+    && check "p107: --fingerprints emits stable per-finding fingerprints" "0" "0" \
+    || check "p107: --fingerprints emits stable per-finding fingerprints" "0" "1"
+./hlse_core --fingerprints scan "$P107_DIR" >/dev/null 2>&1 && rc=0 || rc=$?
+check "p107: --fingerprints exits 0 (baseline generation never fails gate)" "0" "$rc"
+
+# Scan WITH the generated baseline suppresses all known findings → exit 0
+echo "$P107_FP" > "$P107_DIR/../p107.baseline"
+./hlse_core --baseline "$P107_DIR/../p107.baseline" scan "$P107_DIR" >/dev/null 2>&1 && rc=0 || rc=$?
+check "p107: --baseline suppresses all listed findings (exit 0)" "0" "$rc"
+
+# Adding a NEW secret: only the new one fails, baselined ones stay suppressed.
+# A distinct AWS key in a new file → different path+value → different
+# fingerprint, so it is NOT covered by the baseline (which lists only
+# config.env + ci.txt).
+printf 'newkey=AKIA2E3MWORQXYZ4567PQ\n' > "$P107_DIR/new.txt"
+P107_NEW=$(./hlse_core --baseline "$P107_DIR/../p107.baseline" scan "$P107_DIR" 2>/dev/null || true)
+echo "$P107_NEW" | grep -q "new.txt" \
+    && ! echo "$P107_NEW" | grep -q "config.env" \
+    && check "p107: --baseline surfaces only NEW findings, keeps known suppressed" "0" "0" \
+    || check "p107: --baseline surfaces only NEW findings, keeps known suppressed" "0" "1"
+
+# JSON scan_summary reflects suppression (threats drop to just the new one)
+./hlse_core --baseline "$P107_DIR/../p107.baseline" --json scan "$P107_DIR" 2>/dev/null | \
+grep scan_summary | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d["threats"]==1, d' \
+    && check "p107: JSON scan_summary threats count reflects baseline suppression" "0" "0" \
+    || check "p107: JSON scan_summary threats count reflects baseline suppression" "0" "1"
+
+# A bad --baseline path is a usage error (exit 2), not a silent pass
+./hlse_core --baseline /nonexistent/path.baseline scan "$P107_DIR" >/dev/null 2>&1 && rc=0 || rc=$?
+check "p107: unreadable --baseline file is a usage error (exit 2)" "2" "$rc"
+rm -f "$P107_DIR/../p107.baseline"
+
+# Inline hlse:allow suppresses a finding on that line; a real key still fails
+P107_AL=$(mktemp -d)
+printf 'aws=AKIA1234567890ABCDEF  # hlse:allow test fixture\n' > "$P107_AL/fixture.txt"
+printf 'real=AKIA2E3MWORQXYZ4567PQ\n' > "$P107_AL/real.txt"
+P107_ALOUT=$(./hlse_core scan "$P107_AL" 2>/dev/null || true)
+echo "$P107_ALOUT" | grep -q "real.txt" \
+    && ! echo "$P107_ALOUT" | grep -q "fixture.txt" \
+    && check "p107: inline hlse:allow suppresses its line, real key still fails" "0" "0" \
+    || check "p107: inline hlse:allow suppresses its line, real key still fails" "0" "1"
+rm -rf "$P107_AL"
+
+# F1 invariant: the same detections still occur without a baseline (nothing
+# about detection changed — only post-detection filtering was added)
+P107_NOBASE=$(./hlse_core scan "$P107_DIR" 2>/dev/null || true)
+echo "$P107_NOBASE" | grep -q "config.env" \
+    && check "p107: detection unchanged when no baseline supplied (F1 invariant)" "0" "0" \
+    || check "p107: detection unchanged when no baseline supplied (F1 invariant)" "0" "1"
+rm -rf "$P107_DIR"
+
+# --help documents the baseline workflow
+./hlse_core --help 2>&1 | grep -q -- "--fingerprints" \
+    && check "p107: --help documents the baseline workflow" "0" "0" \
+    || check "p107: --help documents the baseline workflow" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

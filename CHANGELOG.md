@@ -2,6 +2,91 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.107] — 2026-07-02
+
+### Added
+- **Perspective 107 (roadmap P0-1): baseline / allowlist / inline suppression
+  for `scan` — the single biggest blocker to commercial CI adoption.**
+
+  A commercial-gap audit (vs gitleaks/detect-secrets/GitGuardian) found HLSE
+  had no way to accept known findings, so a brownfield repo's very first
+  `scan` fails the `--fail-on` gate forever and can never be added to CI. This
+  release adds the detect-secrets-style baseline workflow, entirely offline
+  and dependency-free:
+
+  - `--fingerprints scan <dir>` emits one stable fingerprint per finding
+    (16 hex chars + pattern_id + relative path) and exits 0. Redirect to a
+    file to create a baseline: `hlse_core --fingerprints scan . > .hlse-baseline`.
+  - `--baseline <file>` suppresses every finding whose fingerprint is listed;
+    only NEW findings count toward the gate. An unreadable baseline path is a
+    usage error (exit 2), never a silent pass.
+  - Inline `hlse:allow` on a scanned line suppresses findings on that line
+    (gitleaks:allow-style).
+
+  The fingerprint is a 64-bit FNV-1a hash of `relpath\0pattern_id\0match`,
+  rendered as 16 hex chars. It deliberately omits the line number, so a
+  finding that moves lines stays suppressed. Applies to all three `scan`
+  checks (secret, file-masquerade, embedded-URL) in text, JSON, and SARIF
+  modes; the JSON `scan_summary` threat count reflects suppression.
+
+  Implemented purely as a post-detection output filter — no detection logic,
+  score, or threshold touched (F1=1.000 preserved). `--help` and the man page
+  document the workflow.
+
+  - **Tests**: 10 new CLI integration tests — fingerprint generation, full
+    baseline suppress/only-new-fails cycle, JSON summary reflection, bad-path
+    usage error, inline `hlse:allow`, and an F1-invariant check (674 total).
+
+## [1.0.106] — 2026-07-02
+
+### Fixed
+- **Perspective 106 (roadmap P2-3): the `email` subcommand no longer silently
+  ignores `--from`; it explains why the flag does not apply.**
+
+  `--from <channel>` sets a delivery-channel prior that boosts URL/text
+  scores, but email headers are BY DEFINITION received over email — the
+  channel is intrinsic and fixed, and a `--from` override (especially a
+  non-email one like `sms`) is meaningless for header forensics. The flag was
+  accepted and silently dropped, which reads like a bug to a user who passed
+  it deliberately. The `email` command now prints a one-line stderr note when
+  `--from` is present, clarifying that the channel prior is intrinsic and not
+  applied. stdout (the JSON/text verdict) is unchanged; F1=1.000 preserved.
+
+  - **Tests**: 2 new CLI integration tests — `--from` with `email` emits the
+    stderr note with the JSON verdict unchanged on stdout, and `email`
+    without `--from` emits no note (664 total).
+
+
+
+### Fixed
+- **Perspective 105 (roadmap P1-2): `secret --stdin` / `email --stdin` no
+  longer silently truncate at 64 KB — a demonstrated false negative.**
+
+  A commercial-gap audit (vs gitleaks/trufflehog/detect-secrets) found that
+  `read_stdin_all()` filled a 64 KB stack buffer and discarded the rest with
+  no warning, so a credential past that offset read as clean (exit 0). This
+  was reachable through the *shipped* `examples/pre-commit-hook.sh`, which
+  pipes files up to 1 MB into `secret --stdin` — any secret in the tail of a
+  64 KB–1 MB file was a silent miss. Measured: an AWS key at a 70 KB offset
+  returned exit 0 (the same key alone is ISOLATE[80]).
+
+  Two-part fix:
+  - Both `--stdin` buffers enlarged from 64 KB to 1 MiB, BSS-allocated
+    (`static`, not stack), matching the shipped hook's own 1 MB file-size
+    guard — so no in-scope input is truncated at all.
+  - `read_stdin_all()` now detects overflow past the buffer, drains the rest
+    of stdin (so a pipe writer never blocks), and prints a precise stderr
+    warning naming how many bytes were dropped and that a clean result is
+    NOT authoritative for the full input — a backstop for inputs larger than
+    1 MiB.
+
+  Pure I/O-layer fix — no detection logic, score, or threshold touched
+  (F1=1.000 preserved).
+
+  - **Tests**: 3 new CLI integration tests — a 70 KB-offset secret is now
+    detected, a >1 MiB input emits the truncation warning, and a normal
+    small input emits no spurious warning (662 total).
+
 ## [1.0.104] — 2026-07-01
 
 ### Fixed

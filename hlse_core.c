@@ -5287,6 +5287,118 @@ channel_reason(const char *ch)
     return NULL; /* manual → no delta, no noise */
 }
 
+/* ── Baseline / allowlist (Perspective 107, roadmap P0-1) ──────────────────
+ * Commercial secret scanners (detect-secrets, gitleaks) need a way to accept
+ * known findings so a brownfield repo's first scan does not fail the CI gate
+ * forever. HLSE implements this as a pure post-detection output filter — no
+ * detection logic touched, F1 unchanged:
+ *   1. `hlse_core --fingerprints scan .` emits one stable fingerprint per
+ *      finding; redirect to a file to create a baseline.
+ *   2. `hlse_core --baseline <file> scan .` suppresses every finding whose
+ *      fingerprint is listed; only NEW findings count toward the gate.
+ *   3. an inline `hlse:allow` token on a scanned line suppresses findings on
+ *      that line (gitleaks:allow-style).
+ * The fingerprint is a 64-bit FNV-1a hash of relpath\0pattern_id\0match,
+ * rendered as 16 hex chars. It deliberately OMITS the line number so a
+ * finding that moves lines stays suppressed. */
+static const char *g_baseline_file = NULL;   /* --baseline <file> */
+static int         g_emit_fingerprints = 0;  /* --fingerprints */
+static char      **g_baseline_fps = NULL;    /* loaded fingerprint set */
+static size_t      g_baseline_n = 0;
+
+/* Write a stable 16-hex-char fingerprint of (relpath, pattern_id, match) into
+ * out[17]. NUL-separated so distinct field boundaries can't alias. */
+static void
+hlse_fingerprint(const char *relpath, const char *pattern_id,
+                 const char *match, char out[17]) {
+    unsigned long long h = 1469598103934665603ULL; /* FNV-1a 64 offset basis */
+    const char *parts[3];
+    int p;
+    parts[0] = relpath ? relpath : "";
+    parts[1] = pattern_id ? pattern_id : "";
+    parts[2] = match ? match : "";
+    for (p = 0; p < 3; p++) {
+        const unsigned char *s = (const unsigned char *)parts[p];
+        while (*s) { h ^= (unsigned long long)*s++; h *= 1099511628211ULL; }
+        h *= 1099511628211ULL; /* absorb the NUL field separator */
+    }
+    snprintf(out, 17, "%016llx", h);
+}
+
+/* Return 1 if fp is in the loaded baseline set (linear scan; baselines are
+ * modest and this runs once per finding). */
+static int
+hlse_baseline_has(const char *fp) {
+    size_t i;
+    for (i = 0; i < g_baseline_n; i++)
+        if (strcmp(g_baseline_fps[i], fp) == 0) return 1;
+    return 0;
+}
+
+/* Load fingerprints from the baseline file (one per line; '#' comments and
+ * blank lines ignored; surrounding whitespace trimmed). Returns 0 on success,
+ * -1 if the file cannot be opened. */
+static int
+hlse_baseline_load(const char *path) {
+    FILE *fp = fopen(path, "r");
+    char line[128];
+    if (!fp) return -1;
+    while (fgets(line, sizeof(line), fp)) {
+        char *s = line, *t;
+        size_t n;
+        while (*s == ' ' || *s == '\t') s++;
+        if (*s == '#' || *s == '\n' || *s == '\r' || *s == '\0') continue;
+        /* Keep only the first whitespace-delimited token: the --fingerprints
+         * output is "<fp>  <pattern_id>  <relpath>" for human readability, but
+         * the lookup key is just the 16-hex fingerprint. Truncate at the first
+         * space/tab so the readable columns are ignored on load. */
+        for (t = s; *t && *t != ' ' && *t != '\t' && *t != '\n' && *t != '\r'; t++)
+            ;
+        *t = '\0';
+        n = strlen(s);
+        if (n == 0) continue;
+        {
+            char **grown = realloc(g_baseline_fps,
+                                   (g_baseline_n + 1) * sizeof(char *));
+            char *dup;
+            if (!grown) break;
+            g_baseline_fps = grown;
+            dup = malloc(n + 1);
+            if (!dup) break;
+            memcpy(dup, s, n + 1);
+            g_baseline_fps[g_baseline_n++] = dup;
+        }
+    }
+    fclose(fp);
+    return 0;
+}
+
+/* Return 1 if a scanned line carries an inline `hlse:allow` suppression. */
+static int
+hlse_line_allowed(const char *line) {
+    return line && strstr(line, "hlse:allow") != NULL;
+}
+
+/* Central suppression check for a scan finding, shared by all three checks
+ * (file/secret/url). Computes the fingerprint; if --fingerprints is set,
+ * prints it and returns 2 (caller skips all counting AND emission). Returns 1
+ * to suppress (baseline hit or inline allow), 0 to emit normally. `line` may
+ * be NULL for whole-file findings that have no inline-allow context. */
+static int
+hlse_scan_suppress(const char *relpath, const char *pattern_id,
+                   const char *match, const char *line) {
+    char fp[17];
+    hlse_fingerprint(relpath, pattern_id, match, fp);
+    if (g_emit_fingerprints) {
+        printf("%s  %s  %s\n", fp, pattern_id ? pattern_id : "-",
+               relpath ? relpath : "-");
+        return 2;
+    }
+    if (hlse_baseline_has(fp)) return 1;
+    if (hlse_line_allowed(line)) return 1;
+    return 0;
+}
+
 /* Per-finding remediation hint for HIGH/CRIT audit findings.
  * Returns a short command or action string, or NULL if no specific fix
  * is available for this finding. Keyed to the A-code prefix + keywords. */
@@ -6106,6 +6218,8 @@ print_usage(const char *prog) {
         "  %s -q | --quiet             Exit code only (CI/CD mode)\n"
         "  %s --fail-on <tier>         Exit-1 gate: log|alert|block|isolate|0-100 (default block)\n"
         "  %s --from <channel>         Delivery channel: email|sms|dm|qr|manual (boosts URL & text score)\n"
+        "  %s --baseline <file>        scan: suppress findings whose fingerprint is listed (CI adoption)\n"
+        "  %s --fingerprints scan <d>  scan: emit one fingerprint per finding (generate a baseline)\n"
         "  %s --stdin [--json]         Pipe mode (one input per line)\n"
         "  %s --self-test              Built-in tests\n"
         "  %s --benchmark              Corpus benchmark\n"
@@ -6113,14 +6227,30 @@ print_usage(const char *prog) {
         "  %s --version | -V           Version\n"
         "  %s -h | --help              Show this help\n"
         "\n"
+        "Baseline workflow (brownfield CI adoption):\n"
+        "  %s --fingerprints scan . > .hlse-baseline   # accept today's findings\n"
+        "  %s --baseline .hlse-baseline scan .          # only NEW findings fail\n"
+        "  Inline suppression: put `hlse:allow` on a line to skip its findings.\n"
+        "\n"
         "Exit code: 0 = safe, 1 = threat (>= --fail-on, default block/60), 2 = usage error\n",
         HLSE_VERSION,
         prog, prog, prog,                                /* scanning: 3 */
         prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 12 */
-        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog); /* options: 11 */
+        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* options: 13 */
+        prog, prog); /* baseline workflow: 2 */
 }
 
-/* Read all of stdin into buf (NUL-terminated, truncated to cap-1 bytes). */
+/* Read all of stdin into buf (NUL-terminated, truncated to cap-1 bytes).
+ *
+ * Perspective 105 (P1-2): the previous version truncated silently at cap-1,
+ * so a secret past the buffer end read as "clean" (exit 0) — a false
+ * negative demonstrated through the shipped pre-commit hook. Now: if input
+ * exceeds the buffer, drain the rest of stdin so a pipe writer does not
+ * block on a full pipe, and print a clear warning to stderr naming how many
+ * bytes were dropped so the caller knows the result is not authoritative.
+ * The buffers were also enlarged to 1 MiB (see the --stdin call sites),
+ * matching the shipped hook's own 1 MB file-size guard, so the demonstrated
+ * gap is closed outright and the warning is a backstop for larger inputs. */
 static size_t
 read_stdin_all(char *buf, size_t cap) {
     size_t total = 0, r;
@@ -6129,6 +6259,21 @@ read_stdin_all(char *buf, size_t cap) {
            (r = fread(buf + total, 1, cap - 1 - total, stdin)) > 0)
         total += r;
     buf[total] = '\0';
+    if (total == cap - 1) {
+        /* Buffer filled exactly — there may be more input we cannot hold.
+         * Drain and count the overflow so the warning is precise, and so a
+         * writer piping into us does not block on a full pipe. */
+        size_t dropped = 0;
+        char sink[8192];
+        while ((r = fread(sink, 1, sizeof(sink), stdin)) > 0) dropped += r;
+        if (dropped > 0) {
+            fprintf(stderr,
+                    "hlse: warning: stdin exceeded %zu-byte buffer; %zu byte(s) "
+                    "dropped \xe2\x80\x94 scan of the truncated tail was skipped, "
+                    "so a clean result is NOT authoritative for the full input\n",
+                    cap - 1, dropped);
+        }
+    }
     return total;
 }
 
@@ -6280,6 +6425,45 @@ main(int argc, char **argv) {
                 break;
             }
         }
+    }
+
+    /* Parse --baseline <file> (Perspective 107 / P0-1) — suppress findings
+     * whose fingerprint is listed, so a brownfield repo's accepted findings
+     * do not fail the CI gate forever. */
+    {
+        int i;
+        for (i = 1; i < argc - 1; i++) {
+            if (strcmp(argv[i], "--baseline") == 0) {
+                g_baseline_file = argv[i + 1];
+                { int j; for (j = i; j < argc - 2; j++) argv[j] = argv[j+2];
+                  argc -= 2; }
+                break;
+            }
+        }
+    }
+
+    /* Parse --fingerprints (Perspective 107 / P0-1) — emit one stable
+     * fingerprint per finding instead of the verdict; redirect to a file to
+     * generate a baseline. */
+    {
+        int i;
+        for (i = 1; i < argc; i++) {
+            if (strcmp(argv[i], "--fingerprints") == 0) {
+                g_emit_fingerprints = 1;
+                { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1];
+                  argc--; }
+                break;
+            }
+        }
+    }
+
+    /* Load the baseline file now that flags are parsed. A missing/unreadable
+     * baseline is a usage error — silently ignoring it would let the gate
+     * pass on a typo'd path, defeating the purpose. */
+    if (g_baseline_file && hlse_baseline_load(g_baseline_file) != 0) {
+        fprintf(stderr, "Error: cannot read --baseline file '%s': %s\n",
+                g_baseline_file, strerror(errno));
+        return 2;
     }
 
     /* Quiet mode: redirect stdout to /dev/null. If the redirect fails we must
@@ -6446,6 +6630,11 @@ main(int argc, char **argv) {
                     /* Check 1: file masquerade */
                     FileVerdict fv = hlse_check_file(fullpath);
                     if (fv.score >= 40) {
+                        /* P0-1: baseline/allowlist suppression. Whole-file
+                         * finding — no inline-allow line context. */
+                        int sup = hlse_scan_suppress(sarif_path,
+                                      file_verdict_pattern_id(&fv), NULL, NULL);
+                        if (sup) goto after_file_check;
                         threats++;
                         if (fv.score > max_score) max_score = fv.score;
                         if (fv.score >= g_fail_threshold) gate_hits++;
@@ -6544,6 +6733,7 @@ main(int argc, char **argv) {
                             }
                         }
                     }
+                    after_file_check: ;  /* P0-1 suppression jump target */
 
                     /* Check 2: secrets in text files. Large files are NOT
                      * skipped outright (a 2 MB log or DB dump routinely
@@ -6576,6 +6766,17 @@ main(int argc, char **argv) {
                                 SecretVerdict sv = hlse_scan_secrets(line);
                                 if (sv.score >= 40) {
                                     int ai;
+                                    /* P0-1: baseline/allowlist + inline
+                                     * hlse:allow suppression. Distinguisher =
+                                     * the redacted finding description (stable
+                                     * per distinct secret, line-independent). */
+                                    const char *spid = sv.n_findings > 0
+                                        ? secret_pattern_id(sv.findings[0].type)
+                                        : "HLSE-SECRET-GENERIC";
+                                    const char *sdesc = sv.n_findings > 0
+                                        ? sv.findings[0].description : "";
+                                    if (hlse_scan_suppress(sarif_path, spid, sdesc, line))
+                                        continue;
                                     threats++;
                                     if (sv.score > max_score) max_score = sv.score;
                                     if (sv.score >= g_fail_threshold) gate_hits++;
@@ -6712,6 +6913,15 @@ main(int argc, char **argv) {
                                         {
                                             Verdict uv = check_url(url_buf);
                                             if (uv.score >= 40) {
+                                                /* P0-1: baseline/allowlist +
+                                                 * inline hlse:allow. Use the
+                                                 * relative path + url as the
+                                                 * distinguisher; on suppression
+                                                 * fall through to p += ui. */
+                                                if (hlse_scan_suppress(sarif_path,
+                                                        hlse_url_pattern_id(&uv),
+                                                        url_buf, line))
+                                                    goto url_advance;
                                                 threats++;
                                                 if (uv.score > max_score) max_score = uv.score;
                                                 if (uv.score >= g_fail_threshold)
@@ -6809,6 +7019,7 @@ main(int argc, char **argv) {
                                                 }
                                             }
                                         }
+                                        url_advance:            /* P0-1 target */
                                         p += ui;
                                     }
                                 }
@@ -6820,6 +7031,12 @@ main(int argc, char **argv) {
                 closedir(d);
             }
 
+            /* --fingerprints mode emits only the per-finding fingerprint lines
+             * (for baseline generation); skip the summary and never fail the
+             * gate — generating a baseline must exit 0. */
+            if (g_emit_fingerprints) {
+                return 0;
+            }
             if (sarif_out) {
                 sarif_emit(HLSE_VERSION);
             } else if (!json_out) {
@@ -7401,7 +7618,10 @@ main(int argc, char **argv) {
     }
 
     if (strcmp(argv[idx], "secret") == 0) {
-        char stdin_buf[65536];
+        /* 1 MiB, BSS-allocated (static) not stack — matches the shipped
+         * pre-commit hook's 1 MB file-size guard so no in-scope file is
+         * silently truncated (Perspective 105 / P1-2). */
+        static char stdin_buf[1u << 20];
         const char *text;
         if (argc < idx + 2) {
             fprintf(stderr, "Usage: %s secret \"<text>\" | %s secret --stdin\n",
@@ -7523,8 +7743,20 @@ main(int argc, char **argv) {
     }
 
     if (strcmp(argv[idx], "email") == 0) {
-        char stdin_buf[65536];
+        static char stdin_buf[1u << 20];  /* 1 MiB, BSS (P1-2) */
         const char *headers;
+        /* Perspective 106 (P2-3): --from sets a delivery-channel prior that
+         * boosts URL/text scores, but email headers are BY DEFINITION
+         * received over email — the channel is intrinsic and fixed, so a
+         * --from override (especially a non-email one like sms) is
+         * meaningless here. The flag was silently ignored, which reads like a
+         * bug; make it explicit with a one-line stderr note instead. */
+        if (g_from_channel) {
+            fprintf(stderr,
+                    "hlse: note: --from is ignored for the email subcommand "
+                    "\xe2\x80\x94 email headers are intrinsically the email "
+                    "channel; the channel prior is not applied\n");
+        }
         if (argc < idx + 2) {
             fprintf(stderr, "Usage: %s email \"<headers>\" | %s email --stdin\n",
                     argv[0], argv[0]);
