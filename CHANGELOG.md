@@ -2,6 +2,40 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.108] — 2026-07-02
+
+### Added
+- **Perspective 108 (roadmap P1-8): `package --manifest <file>` scans every
+  dependency in a manifest, not one name at a time.**
+
+  The commercial-gap audit (vs socket.dev/Snyk/OSV-Scanner) noted the
+  single-name `package <name>` check is impractical for real projects — no one
+  hand-checks each dependency. `package --manifest <file>` now runs the
+  existing typosquat detector over every declared dependency in a
+  `requirements.txt` (pip) or `package.json` (npm); ecosystem is inferred from
+  the filename or given explicitly (pip|npm|cargo|go|gem).
+
+  - The pip parser extracts the leading package name from each requirement
+    line, skipping comments, blanks, and pip options (`-r`, `-e`, `--`).
+  - The npm parser extracts dependency names from `dependencies` /
+    `devDependencies` / `peerDependencies` / `optionalDependencies` objects,
+    handling both the canonical one-dep-per-line layout and the compact
+    single-line object form, and correctly ignoring top-level fields like
+    `name`/`version`.
+  - Emits one verdict per suspicious (score >= 40) package plus a
+    `manifest_summary` line; exits 1 if any package reaches `--fail-on`. An
+    un-inferable ecosystem or unreadable file is a usage error (exit 2).
+
+  Pure orchestration of the existing `hlse_check_package()` — no scoring
+  change (F1=1.000 preserved); the single-name path is byte-identical.
+
+  - **Schema**: `package` verdict gains an optional `ecosystem` field; new
+    `schema/hlse_manifest_summary.schema.json` for the summary line.
+  - **Tests**: 9 new CLI integration tests — pip and npm parsing (incl.
+    top-level-field exclusion), JSON schema validation, clean/exit-0,
+    un-inferable-ecosystem and missing-file usage errors, and an F1-invariant
+    single-name check (683 total).
+
 ## [1.0.107] — 2026-07-02
 
 ### Added

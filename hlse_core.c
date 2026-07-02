@@ -5399,6 +5399,100 @@ hlse_scan_suppress(const char *relpath, const char *pattern_id,
     return 0;
 }
 
+/* ── Manifest scanning (Perspective 108, roadmap P1-8) ─────────────────────
+ * The single-name `package <name>` check is impractical for real dependency
+ * files. `package --manifest <file>` parses a manifest and runs the existing
+ * hlse_check_package() over every declared dependency. Ecosystem is inferred
+ * from the filename or given explicitly. Pure orchestration of the existing
+ * detector — no scoring change, F1 unchanged. */
+
+/* Infer package ecosystem from a manifest filename (basename match). Returns
+ * a canonical eco string or NULL if unrecognised. */
+static const char *
+manifest_ecosystem(const char *path) {
+    const char *b = strrchr(path, '/');
+    b = b ? b + 1 : path;
+    if (strncmp(b, "requirements", 12) == 0 || strcmp(b, "Pipfile") == 0)
+        return "pip";
+    if (strcmp(b, "package.json") == 0 ||
+        strcmp(b, "package-lock.json") == 0) return "npm";
+    if (strcmp(b, "Cargo.toml") == 0 || strcmp(b, "Cargo.lock") == 0)
+        return "cargo";
+    if (strcmp(b, "go.mod") == 0) return "go";
+    if (strcmp(b, "Gemfile") == 0 || strcmp(b, "Gemfile.lock") == 0)
+        return "gem";
+    return NULL;
+}
+
+/* Extract the leading pip/requirements-style package name from a line into
+ * out (name = leading run of [A-Za-z0-9._-], stopping at a version operator
+ * or extras bracket). Returns 1 if a name was found, else 0. Skips blank
+ * lines, comments, and pip options (-r/-e/--). */
+static int
+manifest_name_pip(const char *line, char *out, size_t outcap) {
+    const char *s = line;
+    size_t n = 0;
+    while (*s == ' ' || *s == '\t') s++;
+    if (*s == '\0' || *s == '\n' || *s == '#' || *s == '-') return 0;
+    while (*s && n + 1 < outcap &&
+           ((*s >= 'A' && *s <= 'Z') || (*s >= 'a' && *s <= 'z') ||
+            (*s >= '0' && *s <= '9') || *s == '.' || *s == '_' || *s == '-'))
+        out[n++] = *s++;
+    out[n] = '\0';
+    return n > 0;
+}
+
+/* Extract the next npm dependency name at/after *cursor, tracking whether we
+ * are inside a *dependencies object via *in_deps. Handles both the canonical
+ * one-dep-per-line layout and the compact single-line object form, and can be
+ * called repeatedly on the same line: it advances *cursor past what it
+ * consumed. A dependency entry is  "name" : "version"  inside a dependencies
+ * object. Returns 1 and fills out when a name is extracted, 0 when the current
+ * text is exhausted. */
+static int
+manifest_name_npm(const char **cursor, int *in_deps, char *out, size_t outcap) {
+    const char *p = *cursor;
+    for (;;) {
+        if (!*in_deps) {
+            /* Look for a dependencies-section keyword on this text. */
+            const char *k = NULL, *cands[4]; int ci, best = -1;
+            cands[0] = strstr(p, "\"dependencies\"");
+            cands[1] = strstr(p, "\"devDependencies\"");
+            cands[2] = strstr(p, "\"peerDependencies\"");
+            cands[3] = strstr(p, "\"optionalDependencies\"");
+            for (ci = 0; ci < 4; ci++)
+                if (cands[ci] && (best < 0 || cands[ci] < cands[best])) best = ci;
+            if (best < 0) { *cursor = p + strlen(p); return 0; }
+            k = strchr(cands[best], '{');
+            if (!k) { *cursor = p + strlen(p); return 0; }
+            *in_deps = 1;
+            p = k + 1;
+            continue;
+        }
+        /* In a deps object: the next '}' closes it; the next '"' before it
+         * starts a "name": "ver" entry. */
+        {
+            const char *close = strchr(p, '}');
+            const char *q = strchr(p, '"');
+            size_t n = 0;
+            const char *r;
+            if (!q || (close && close < q)) {
+                if (close) { *in_deps = 0; p = close + 1; continue; }
+                *cursor = p + strlen(p); return 0;
+            }
+            r = q + 1;
+            while (*r && *r != '"' && n + 1 < outcap) out[n++] = *r++;
+            out[n] = '\0';
+            if (*r != '"') { *cursor = p + strlen(p); return 0; }
+            r++;                                  /* past closing quote */
+            while (*r == ' ' || *r == '\t') r++;
+            if (*r != ':') { p = r; continue; }   /* not a key — keep scanning */
+            *cursor = r + 1;
+            if (n > 0) return 1;
+        }
+    }
+}
+
 /* Per-finding remediation hint for HIGH/CRIT audit findings.
  * Returns a short command or action string, or NULL if no specific fix
  * is available for this finding. Keyed to the A-code prefix + keywords. */
@@ -6207,6 +6301,7 @@ print_usage(const char *prog) {
         "  %s email \"<headers>\"        Email-header forensics (SPF/DKIM, BEC)\n"
         "  %s clipboard <copied> <pasted>  Crypto address-swap (clipper) check\n"
         "  %s package <name> [eco]     Package typosquat check\n"
+        "  %s package --manifest <f>   Scan every dep in requirements.txt / package.json\n"
         "  %s paste \"<command>\"        Pastejacking detection\n"
         "  %s network                  ARP / DNS / hosts safety check\n"
         "  %s file <path>              File masquerade detection\n"
@@ -6235,7 +6330,7 @@ print_usage(const char *prog) {
         "Exit code: 0 = safe, 1 = threat (>= --fail-on, default block/60), 2 = usage error\n",
         HLSE_VERSION,
         prog, prog, prog,                                /* scanning: 3 */
-        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 12 */
+        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 13 */
         prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* options: 13 */
         prog, prog); /* baseline workflow: 2 */
 }
@@ -7318,9 +7413,106 @@ main(int argc, char **argv) {
 
     if (strcmp(argv[idx], "package") == 0) {
         if (argc < idx + 2) {
-            fprintf(stderr, "Usage: %s package <name> [pip|npm|cargo|go]\n",
-                    argv[0]);
+            fprintf(stderr, "Usage: %s package <name> [pip|npm|cargo|go]\n"
+                    "       %s package --manifest <file> [pip|npm|cargo|go|gem]\n",
+                    argv[0], argv[0]);
             return 2;
+        }
+        /* --manifest <file>: scan every dependency in a manifest (P1-8). */
+        if (strcmp(argv[idx + 1], "--manifest") == 0) {
+            const char *mpath, *eco;
+            FILE *mf;
+            char line[4096];
+            int in_deps = 0, checked = 0, threats = 0, gate_hits = 0;
+            int max_score = 0;
+            if (argc < idx + 3) {
+                fprintf(stderr, "Usage: %s package --manifest <file> [eco]\n",
+                        argv[0]);
+                return 2;
+            }
+            mpath = argv[idx + 2];
+            eco = (argc > idx + 3) ? argv[idx + 3] : manifest_ecosystem(mpath);
+            if (!eco) {
+                fprintf(stderr, "Error: cannot infer ecosystem from '%s' \xe2\x80\x94 "
+                        "pass one explicitly (pip|npm|cargo|go|gem)\n", mpath);
+                return 2;
+            }
+            mf = fopen(mpath, "r");
+            if (!mf) {
+                fprintf(stderr, "Error: cannot read manifest '%s': %s\n",
+                        mpath, strerror(errno));
+                return 2;
+            }
+            while (fgets(line, sizeof(line), mf)) {
+                char name[128];
+                const char *cursor = line;
+                int is_npm = (strcmp(eco, "npm") == 0);
+                /* npm: a line may hold several "name":"ver" pairs (compact
+                 * object form), so drain the cursor. pip: one name per line. */
+                for (;;) {
+                    int got;
+                    if (is_npm)
+                        got = manifest_name_npm(&cursor, &in_deps, name, sizeof(name));
+                    else
+                        got = manifest_name_pip(line, name, sizeof(name));
+                    if (!got || name[0] == '\0') break;
+                {
+                    PackageVerdict pv = hlse_check_package(name, eco);
+                    checked++;
+                    if (pv.score >= 40) {
+                        threats++;
+                        if (pv.score > max_score) max_score = pv.score;
+                        if (pv.score >= g_fail_threshold) gate_hits++;
+                        if (json_out) {
+                            char en[128];
+                            int i;
+                            json_escape(name, en, sizeof(en));
+                            printf("{\"kind\":\"package\",\"hlse_version\":\""
+                                   HLSE_VERSION "\",\"name\":\"%s\","
+                                   "\"ecosystem\":\"%s\",\"score\":%d,"
+                                   "\"action\":\"%s\",\"severity\":%d,"
+                                   "\"pattern_id\":\"HLSE-PKG-TYPOSQUAT\","
+                                   "\"matches\":[",
+                                   en, eco, pv.score,
+                                   hlse_action_for_score(pv.score),
+                                   hlse_severity_for_score(pv.score));
+                            for (i = 0; i < pv.n_matches; i++)
+                                printf("%s{\"name\":\"%s\",\"registry\":\"%s\","
+                                       "\"distance\":%d}", i ? "," : "",
+                                       pv.matches[i].legit_name,
+                                       pv.matches[i].registry,
+                                       pv.matches[i].distance);
+                            printf("]}\n");
+                        } else {
+                            printf("%-7s [%d]  %s (%s)\n",
+                                   hlse_action_for_score(pv.score), pv.score,
+                                   name, eco);
+                            if (pv.reason[0])
+                                printf("  \xc2\xb7 %s\n", pv.reason);
+                        }
+                    }
+                }
+                    if (!is_npm) break;   /* pip: one name per line */
+                }  /* for(;;) drain-line */
+            }
+            fclose(mf);
+            if (json_out) {
+                char ep[4096];
+                json_escape(mpath, ep, sizeof(ep));
+                printf("{\"kind\":\"manifest_summary\",\"hlse_version\":\""
+                       HLSE_VERSION "\",\"manifest\":\"%s\",\"ecosystem\":\"%s\","
+                       "\"packages_checked\":%d,\"threats\":%d,"
+                       "\"max_severity\":%d,\"gate_hits\":%d}\n",
+                       ep, eco, checked, threats,
+                       hlse_severity_for_score(max_score), gate_hits);
+            } else if (threats == 0) {
+                printf("OK    %s (%d packages checked, 0 typosquat risks)\n",
+                       mpath, checked);
+            } else {
+                printf("\n%d suspicious package(s) of %d checked in %s\n",
+                       threats, checked, mpath);
+            }
+            return gate_hits > 0 ? 1 : 0;
         }
         {
             const char *eco = (argc > idx + 2) ? argv[idx + 2] : NULL;

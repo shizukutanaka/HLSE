@@ -93,7 +93,17 @@ replacement was ground to share the original's leading/trailing characters.
 .TP
 .B package \fIname\fR [\fIecosystem\fR]
 Check a package name for typosquatting against known popular packages
-(pip, npm, cargo, go).
+(pip, npm, cargo, go, gem).
+.TP
+.B package --manifest \fIfile\fR [\fIecosystem\fR]
+Check every dependency declared in a manifest
+.RB ( requirements.txt ", " package.json ,
+etc.). The ecosystem is inferred from the filename or given explicitly.
+Emits one verdict per suspicious package and a
+.B manifest_summary
+line; exits 1 if any package reaches the
+.B --fail-on
+threshold.
 .TP
 .B paste \fI"command"\fR
 Detect pastejacking and dangerous shell one-liners (e.g. curl piped to a

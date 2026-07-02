@@ -5597,6 +5597,90 @@ rm -rf "$P107_DIR"
     && check "p107: --help documents the baseline workflow" "0" "0" \
     || check "p107: --help documents the baseline workflow" "0" "1"
 
+# ─── P108 (P1-8): package --manifest bulk dependency scanning ──────────────
+# The single-name `package <name>` check is impractical for real dependency
+# files. `package --manifest <file>` runs the existing detector over every
+# declared dependency (requirements.txt / package.json). Pure orchestration —
+# no scoring change.
+
+P108_DIR=$(mktemp -d)
+
+# requirements.txt: catches a typosquat, skips comments/options, exit 1
+cat > "$P108_DIR/requirements.txt" <<'REQEOF'
+# project deps
+requests==2.31.0
+reqeusts>=1.0
+flask
+-r other.txt
+REQEOF
+P108_REQ=$(./hlse_core package --manifest "$P108_DIR/requirements.txt" 2>/dev/null || true)
+echo "$P108_REQ" | grep -q "reqeusts" \
+    && echo "$P108_REQ" | grep -q "1 suspicious" \
+    && check "p108: requirements.txt manifest catches typosquat, skips comments" "0" "0" \
+    || check "p108: requirements.txt manifest catches typosquat, skips comments" "0" "1"
+
+# requirements.txt manifest exits 1 on a BLOCK typosquat
+./hlse_core package --manifest "$P108_DIR/requirements.txt" >/dev/null 2>&1 && rc=0 || rc=$?
+check "p108: manifest with a typosquat fails the gate (exit 1)" "1" "$rc"
+
+# package.json: catches deps typosquats, ignores top-level name/version
+cat > "$P108_DIR/package.json" <<'PKGEOF'
+{
+  "name": "myapp",
+  "version": "1.0.0",
+  "dependencies": { "express": "^4.18.0", "expres": "^4.0.0" },
+  "devDependencies": { "chalkk": "^5.0.0" }
+}
+PKGEOF
+P108_NPM=$(./hlse_core package --manifest "$P108_DIR/package.json" 2>/dev/null || true)
+echo "$P108_NPM" | grep -q "expres" && echo "$P108_NPM" | grep -q "chalkk" \
+    && ! echo "$P108_NPM" | grep -qE '^\S+ \[[0-9]+\]  (myapp|version) ' \
+    && check "p108: package.json manifest catches dep typosquats, ignores top-level fields" "0" "0" \
+    || check "p108: package.json manifest catches dep typosquats, ignores top-level fields" "0" "1"
+
+# JSON mode: NDJSON package entries + manifest_summary, both schema-valid
+./hlse_core --json package --manifest "$P108_DIR/package.json" 2>/dev/null | python3 -c '
+import sys, json, jsonschema
+pkg_s = json.load(open("schema/hlse_package_verdict.schema.json"))
+sum_s = json.load(open("schema/hlse_manifest_summary.schema.json"))
+saw_summary = False
+for ln in sys.stdin:
+    d = json.loads(ln)
+    if d["kind"] == "manifest_summary":
+        jsonschema.validate(d, sum_s); saw_summary = True
+        assert d["threats"] == 2, d
+    else:
+        jsonschema.validate(d, pkg_s)
+        assert d.get("ecosystem") == "npm", d
+assert saw_summary
+' && check "p108: JSON manifest output validates against schemas, summary correct" "0" "0" \
+   || check "p108: JSON manifest output validates against schemas, summary correct" "0" "1"
+
+# Clean manifest → exit 0
+printf 'requests==2.31.0\nflask\n' > "$P108_DIR/clean.txt"
+./hlse_core package --manifest "$P108_DIR/clean.txt" pip >/dev/null 2>&1 && rc=0 || rc=$?
+check "p108: clean manifest exits 0" "0" "$rc"
+
+# Unknown ecosystem with no explicit arg → usage error (exit 2)
+printf 'requests\n' > "$P108_DIR/deps.unknown"
+./hlse_core package --manifest "$P108_DIR/deps.unknown" >/dev/null 2>&1 && rc=0 || rc=$?
+check "p108: un-inferable ecosystem is a usage error (exit 2)" "2" "$rc"
+
+# Missing manifest file → usage error (exit 2)
+./hlse_core package --manifest "$P108_DIR/nope.txt" pip >/dev/null 2>&1 && rc=0 || rc=$?
+check "p108: missing manifest file is a usage error (exit 2)" "2" "$rc"
+
+# F1 invariant: single-name package check is unchanged by the manifest branch
+./hlse_core --json package "reqeusts" pip 2>/dev/null | \
+grep -q '"score":70,"action":"BLOCK"' && check "p108: single-name package check unchanged (F1 invariant)" "0" "0" \
+   || check "p108: single-name package check unchanged (F1 invariant)" "0" "1"
+
+# --help documents --manifest
+./hlse_core --help 2>&1 | grep -q -- "--manifest" \
+    && check "p108: --help documents package --manifest" "0" "0" \
+    || check "p108: --help documents package --manifest" "0" "1"
+rm -rf "$P108_DIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

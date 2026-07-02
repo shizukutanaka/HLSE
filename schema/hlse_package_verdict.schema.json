@@ -79,6 +79,10 @@
       "type": "string",
       "description": "What HLSE cannot detect (score 0 only)."
     },
+    "ecosystem": {
+      "type": "string",
+      "description": "Package ecosystem (pip|npm|cargo|go|gem). Present in `package --manifest` output entries."
+    },
     "signal_count": {
       "type": "integer",
       "minimum": 1,
