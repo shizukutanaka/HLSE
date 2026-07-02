@@ -72,6 +72,12 @@ is_alnum_or_dash(char c) {
            (c >= '0' && c <= '9') || c == '-' || c == '_';
 }
 
+static int
+is_alnum_plain(char c) {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+           (c >= '0' && c <= '9');
+}
+
 /* Case-insensitive substring search (returns pointer to first match in
  * `hay`, or NULL). Needed because real-world credential files use mixed
  * case for the same key (AWS_SECRET_ACCESS_KEY vs aws_secret_access_key). */
@@ -273,6 +279,67 @@ static const SecretPattern SECRET_PATTERNS[] = {
 
     { NULL, 0, 0, NULL, NULL, 0 }
 };
+
+/* ── Custom secret patterns (roadmap P0-3) ──────────────────────────────
+ * Runtime-registered patterns, checked by hlse_scan_secrets() using the
+ * same match + placeholder-suppression logic as the built-in table above.
+ * Fixed-size, own storage (not `const char *`) since prefix/label come from
+ * caller-owned or parsed-file buffers that may not outlive the call. */
+typedef struct {
+    char prefix[32];
+    int  prefix_len;
+    int  min_suffix;
+    HlseCharset charset;
+    char label[64];
+    int  score;
+} CustomSecretPattern;
+
+static CustomSecretPattern g_custom_patterns[HLSE_CUSTOM_SECRET_MAX];
+static int                 g_custom_pattern_n = 0;
+
+static int
+charset_char_ok(HlseCharset cs, char c) {
+    switch (cs) {
+        case HLSE_CHARSET_ALNUM:      return is_alnum_plain(c);
+        case HLSE_CHARSET_ALNUM_DASH: return is_alnum_or_dash(c);
+        case HLSE_CHARSET_HEX:        return is_hex(c);
+        case HLSE_CHARSET_ALPHA:      return is_alpha(c);
+        case HLSE_CHARSET_DIGIT:      return is_digit_c(c);
+        default:                      return 0;
+    }
+}
+
+int
+hlse_register_custom_secret_pattern(const char *prefix, int min_suffix,
+                                    HlseCharset charset,
+                                    const char *label, int score) {
+    CustomSecretPattern *cp;
+    size_t plen;
+    if (!prefix || !prefix[0] || min_suffix <= 0 || !label || !label[0])
+        return 0;
+    if (g_custom_pattern_n >= HLSE_CUSTOM_SECRET_MAX) return 0;
+    plen = strlen(prefix);
+    if (plen >= sizeof(cp->prefix)) return 0;
+    cp = &g_custom_patterns[g_custom_pattern_n];
+    snprintf(cp->prefix, sizeof(cp->prefix), "%s", prefix);
+    cp->prefix_len = (int)plen;
+    cp->min_suffix = min_suffix;
+    cp->charset = charset;
+    snprintf(cp->label, sizeof(cp->label), "%s", label);
+    cp->score = (score < 0) ? 0 : (score > 100 ? 100 : score);
+    g_custom_pattern_n++;
+    return 1;
+}
+
+void
+hlse_clear_custom_secret_patterns(void) {
+    g_custom_pattern_n = 0;
+}
+
+int
+hlse_custom_secret_pattern_count(void) {
+    return g_custom_pattern_n;
+}
 
 /* Check for SSH private key headers */
 static int
@@ -563,6 +630,38 @@ hlse_scan_secrets(const char *text) {
                 }
             }
             p += sp->prefix_len;
+        }
+    }
+
+    /* Custom (runtime-registered) patterns — roadmap P0-3. Identical
+     * matching + placeholder-suppression logic as the built-in loop above,
+     * over the caller-supplied table instead of SECRET_PATTERNS[]. */
+    for (i = 0; i < g_custom_pattern_n; i++) {
+        const CustomSecretPattern *cp = &g_custom_patterns[i];
+        p = text;
+        while ((p = strstr(p, cp->prefix)) != NULL) {
+            const char *suffix = p + cp->prefix_len;
+            int valid = 0;
+            int j;
+            for (j = 0; j < cp->min_suffix && suffix[j]; j++) {
+                if (!charset_char_ok(cp->charset, suffix[j])) break;
+                valid++;
+            }
+            if (valid >= cp->min_suffix) {
+                size_t tok_len = (size_t)cp->prefix_len;
+                while (suffix[tok_len - (size_t)cp->prefix_len] &&
+                       charset_char_ok(cp->charset,
+                           suffix[tok_len - (size_t)cp->prefix_len]))
+                    tok_len++;
+                if (!is_placeholder_secret(text, p, p, tok_len)) {
+                    char preview[64];
+                    snprintf(preview, sizeof(preview), "%.8s%.4s...",
+                             cp->prefix, suffix);
+                    sv_add(&v, cp->score, cp->label,
+                           "%s found: %s", cp->label, preview);
+                }
+            }
+            p += cp->prefix_len;
         }
     }
 

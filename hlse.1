@@ -160,6 +160,32 @@ suppressed. An inline
 .B hlse:allow
 token on a scanned line also suppresses findings on that line.
 .TP
+.BI --patterns " file"
+Load organization-specific secret patterns from
+.I file
+without a rebuild. Each non-comment, non-blank line is:
+.RS
+.IP
+.B SECRET \fIprefix min_suffix charset score label...\fR
+.RE
+.IP
+.I charset
+is one of
+.BR alnum ", " alnum_dash ", " hex ", " alpha ", " digit .
+.I label
+is free text to end of line. A malformed line is skipped with a warning; an
+unreadable
+.I file
+is a usage error (exit 2). Custom patterns are checked with the same
+matching and placeholder-suppression logic as the built-in table, and never
+affect the corpus benchmark
+.RB ( --benchmark ).
+Example:
+.RS
+.IP
+.B SECRET ACME_KEY_ 20 alnum 85 ACME Internal API Key
+.RE
+.TP
 .B --self-test
 Run the built-in test suite.
 .TP

@@ -5725,6 +5725,89 @@ assert any(r["ruleId"] == "secret" for r in d["runs"][0]["results"])
    || check "p109: scan --sarif still valid after adding package rule (regression)" "0" "1"
 rm -rf "$SC_DIR" "$P109_DIR"
 
+# ─── P110 (P0-3): custom secret patterns via --patterns <file> ─────────────
+# The built-in credential patterns are compiled in and cannot name an
+# organization's internal token formats without a rebuild — a real
+# commercial-adoption blocker. --patterns <file> registers additional
+# prefix+charset+length patterns at runtime, checked with the same matching
+# logic as the built-in table. Purely additive: the benchmark never passes
+# --patterns, so F1 is unaffected.
+
+P110_PAT=$(mktemp)
+cat > "$P110_PAT" <<'PATEOF'
+# ACME Corp internal token formats
+SECRET ACME_KEY_ 20 alnum 85 ACME Internal API Key
+PATEOF
+
+# Without --patterns, the custom token type is invisible (exit 0)
+./hlse_core secret "token=ACME_KEY_abcdefghij1234567890XY" >/dev/null 2>&1 && rc=0 || rc=$?
+check "p110: custom token type undetected without --patterns" "0" "$rc"
+
+# With --patterns, the custom token is detected at its configured score
+P110_OUT=$(./hlse_core --patterns "$P110_PAT" secret "token=ACME_KEY_abcdefghij1234567890XY" 2>/dev/null || true)
+echo "$P110_OUT" | grep -q "ACME Internal API Key" \
+    && echo "$P110_OUT" | grep -q "ISOLATE \[85\]" \
+    && check "p110: --patterns detects custom token at configured score" "0" "0" \
+    || check "p110: --patterns detects custom token at configured score" "0" "1"
+
+# JSON mode: custom finding present, pattern_id falls back to the generic
+# append-only token (no new pattern_id is minted for a user-defined type)
+./hlse_core --patterns "$P110_PAT" --json secret "token=ACME_KEY_abcdefghij1234567890XY" 2>/dev/null | \
+python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] == 85, d
+assert d["pattern_id"] == "HLSE-SECRET-GENERIC", d
+assert d["findings"][0]["type"] == "ACME Internal API Key", d
+' && check "p110 json: custom finding present, pattern_id falls back to generic" "0" "0" \
+   || check "p110 json: custom finding present, pattern_id falls back to generic" "0" "1"
+
+# Built-in patterns still fire normally when --patterns is also loaded
+./hlse_core --patterns "$P110_PAT" --json secret "aws_access_key_id=AKIA1234567890ABCDEF" 2>/dev/null | \
+grep -q '"score":80' && check "p110: built-in patterns unaffected when --patterns loaded" "0" "0" \
+   || check "p110: built-in patterns unaffected when --patterns loaded" "0" "1"
+
+# scan picks up custom patterns too (global flag, applies to all subcommands)
+P110_DIR=$(mktemp -d)
+echo "token=ACME_KEY_abcdefghij1234567890XY" > "$P110_DIR/config.txt"
+P110_SCAN=$(./hlse_core --patterns "$P110_PAT" scan "$P110_DIR" 2>/dev/null || true)
+echo "$P110_SCAN" | grep -q "ACME Internal API Key" \
+    && check "p110: scan honors --patterns for custom detection" "0" "0" \
+    || check "p110: scan honors --patterns for custom detection" "0" "1"
+rm -rf "$P110_DIR"
+
+# A malformed line is skipped with a stderr warning, not a hard failure —
+# valid patterns later in the same file still load and work
+P110_BAD=$(mktemp)
+cat > "$P110_BAD" <<'BADEOF'
+SECRET short
+SECRET BADCHARSET_ 10 not_a_charset 80 Bad Charset
+SECRET WORKS_ 10 hex 60 Works Fine
+BADEOF
+./hlse_core --patterns "$P110_BAD" secret "x=WORKS_1234567890abcdef" 2>/tmp/hlse_p110_warn.txt >/dev/null || true
+grep -qi "malformed line" /tmp/hlse_p110_warn.txt && grep -qi "unknown charset" /tmp/hlse_p110_warn.txt \
+    && check "p110: malformed pattern lines warn without aborting the file" "0" "0" \
+    || check "p110: malformed pattern lines warn without aborting the file" "0" "1"
+./hlse_core --patterns "$P110_BAD" secret "x=WORKS_1234567890abcdef" >/dev/null 2>&1 && rc=0 || rc=$?
+check "p110: a later valid pattern in the same file still loads and fires" "1" "$rc"
+rm -f "$P110_BAD" /tmp/hlse_p110_warn.txt
+
+# An unreadable --patterns file is a usage error (exit 2), not a silent no-op
+./hlse_core --patterns /nonexistent/path.patterns secret "test" >/dev/null 2>&1 && rc=0 || rc=$?
+check "p110: unreadable --patterns file is a usage error (exit 2)" "2" "$rc"
+
+# F1 invariant: --patterns is never passed to --benchmark, so detection over
+# the corpus (and every existing test) is provably unaffected
+./hlse_core --json secret "aws_access_key_id=AKIA1234567890ABCDEF" 2>/dev/null | \
+grep -q '"score":80,"action":"ISOLATE"' && check "p110: AWS key score unchanged without --patterns (F1 invariant)" "0" "0" \
+   || check "p110: AWS key score unchanged without --patterns (F1 invariant)" "0" "1"
+
+# --help documents --patterns
+./hlse_core --help 2>&1 | grep -q -- "--patterns" \
+    && check "p110: --help documents --patterns" "0" "0" \
+    || check "p110: --help documents --patterns" "0" "1"
+rm -f "$P110_PAT"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

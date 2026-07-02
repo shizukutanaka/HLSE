@@ -1,0 +1,33 @@
+# Example --patterns file for hlse_core (roadmap P0-3).
+#
+# Use this to teach HLSE your organization's internal token formats
+# without a rebuild:
+#
+#   hlse_core --patterns custom-patterns.example secret --stdin
+#   hlse_core --patterns custom-patterns.example scan .
+#
+# Format: one directive per line. '#' comments and blank lines are ignored.
+#
+#   SECRET <prefix> <min_suffix> <charset> <score> <label...>
+#
+#   prefix      literal token prefix to search for (e.g. "ACME_KEY_")
+#   min_suffix  minimum number of <charset>-valid characters required
+#               immediately after the prefix
+#   charset     one of: alnum | alnum_dash | hex | alpha | digit
+#   score       0-100 risk score for this credential type
+#   label       free text (may contain spaces) — the credential type name
+#               shown in findings; runs to end of line
+#
+# A malformed line is skipped with a warning; the rest of the file still
+# loads. Custom patterns use the exact same matching and
+# placeholder/example-value suppression logic as HLSE's built-in table, and
+# never affect --benchmark (F1 is computed without --patterns).
+
+# ACME Corp internal API key: "ACME_KEY_" + 20+ alphanumeric chars
+SECRET ACME_KEY_ 20 alnum 85 ACME Internal API Key
+
+# ACME Corp internal service token: "acme-svc-" + 16+ hex chars
+SECRET acme-svc- 16 hex 70 ACME Service Token
+
+# ACME Corp legacy deploy token: "DEPLOY-" + 24+ chars (letters/digits/-/_)
+SECRET DEPLOY- 24 alnum_dash 75 ACME Legacy Deploy Token

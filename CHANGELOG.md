@@ -2,6 +2,52 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.110] — 2026-07-02
+
+### Added
+- **Perspective 110 (roadmap P0-3): `--patterns <file>` registers custom
+  organization-specific secret patterns without a rebuild.**
+
+  The commercial-gap audit (vs gitleaks.toml / detect-secrets plugins /
+  GitGuardian custom detectors) found every credential pattern was compiled
+  into a fixed C table — an organization's internal token formats (internal
+  PKI, home-grown API keys, legacy deploy tokens) could never be taught to
+  HLSE without recompiling from source, which is incompatible with a binary
+  distribution model. `--patterns <file>` closes this: a small, non-regex
+  config format registers additional prefix + charset + length patterns at
+  runtime, checked by `hlse_scan_secrets()` using the *exact same* matching
+  and placeholder/example-value suppression logic as the built-in table.
+
+  File format (one directive per line; `#` comments and blanks ignored):
+  ```
+  SECRET <prefix> <min_suffix> <charset> <score> <label...>
+  ```
+  `charset` is one of `alnum | alnum_dash | hex | alpha | digit`; `label` is
+  free text to end of line. A malformed line is skipped with a stderr
+  warning (the rest of the file still loads); an unreadable file is a usage
+  error (exit 2). Applies globally — `secret`, `scan`, and every other
+  subcommand that scans text honor `--patterns` once loaded.
+
+  New public library API in `hlse_secrets.h`:
+  `hlse_register_custom_secret_pattern()`, `hlse_clear_custom_secret_patterns()`,
+  `hlse_custom_secret_pattern_count()`, and the `HlseCharset` enum — usable
+  directly by `libhlse.so` consumers, not just the CLI.
+
+  Purely additive — no built-in detection logic, score, or threshold
+  touched. `--benchmark` never passes `--patterns`, so F1=1.000 is
+  unaffected by construction, not just by testing. A custom finding's
+  `pattern_id` falls back to the existing `HLSE-SECRET-GENERIC` append-only
+  token (no new token minted for a user-defined type).
+
+  - **New**: `examples/custom-patterns.example` — a documented, runnable
+    example file.
+  - **Docs**: `--help` and the man page (`hlse.1`) document the format.
+  - **Tests**: 10 new CLI integration tests — detection on/off without the
+    flag, configured-score verification, JSON `pattern_id` fallback,
+    built-in patterns unaffected, `scan` honoring the flag, malformed-line
+    resilience, unreadable-file usage error, and an F1-invariant check
+    (696 total).
+
 ## [1.0.109] — 2026-07-02
 
 ### Added

@@ -5384,6 +5384,99 @@ hlse_line_allowed(const char *line) {
     return line && strstr(line, "hlse:allow") != NULL;
 }
 
+/* ── Custom pattern config file (Perspective 110, roadmap P0-3) ────────────
+ * The built-in credential patterns are compiled in and cannot name an
+ * organization's internal token formats without a rebuild — a real
+ * commercial-adoption blocker. `--patterns <file>` loads a small, non-regex
+ * config format and registers each entry via
+ * hlse_register_custom_secret_pattern() (hlse_secrets.c), which
+ * hlse_scan_secrets() then checks using the exact same match +
+ * placeholder-suppression logic as the built-in table. Purely additive —
+ * the benchmark corpus never passes --patterns, so F1 is unaffected.
+ *
+ * File format (one directive per line; '#' comments and blank lines ignored):
+ *   SECRET <prefix> <min_suffix> <charset> <score> <label...>
+ * charset is one of: alnum | alnum_dash | hex | alpha | digit
+ * label is free text (may contain spaces) to end of line.
+ *
+ * Example:
+ *   # ACME Corp internal API keys
+ *   SECRET ACME_KEY_ 20 alnum 85 ACME Internal API Key
+ */
+static int
+patterns_charset_from_name(const char *name, HlseCharset *out) {
+    if (strcmp(name, "alnum")      == 0) { *out = HLSE_CHARSET_ALNUM;      return 1; }
+    if (strcmp(name, "alnum_dash") == 0) { *out = HLSE_CHARSET_ALNUM_DASH; return 1; }
+    if (strcmp(name, "hex")        == 0) { *out = HLSE_CHARSET_HEX;        return 1; }
+    if (strcmp(name, "alpha")      == 0) { *out = HLSE_CHARSET_ALPHA;      return 1; }
+    if (strcmp(name, "digit")      == 0) { *out = HLSE_CHARSET_DIGIT;      return 1; }
+    return 0;
+}
+
+/* Load and register custom patterns from `path`. Returns 0 on success (even
+ * if individual malformed lines were skipped with a warning), -1 if the file
+ * cannot be opened. */
+static int
+hlse_patterns_load(const char *path) {
+    FILE *fp = fopen(path, "r");
+    char line[512];
+    int lineno = 0, loaded = 0;
+    if (!fp) return -1;
+    while (fgets(line, sizeof(line), fp)) {
+        char *s = line;
+        char directive[16], prefix[32], charset_name[16];
+        int min_suffix = 0, score = 0, consumed = 0;
+        HlseCharset cs;
+        lineno++;
+        while (*s == ' ' || *s == '\t') s++;
+        if (*s == '#' || *s == '\n' || *s == '\r' || *s == '\0') continue;
+        if (sscanf(s, "%15s %31s %d %15s %d %n", directive, prefix,
+                   &min_suffix, charset_name, &score, &consumed) != 5) {
+            fprintf(stderr, "hlse: warning: %s:%d: malformed line, skipped\n",
+                    path, lineno);
+            continue;
+        }
+        if (strcmp(directive, "SECRET") != 0) {
+            fprintf(stderr, "hlse: warning: %s:%d: unknown directive '%s', "
+                    "skipped\n", path, lineno, directive);
+            continue;
+        }
+        if (!patterns_charset_from_name(charset_name, &cs)) {
+            fprintf(stderr, "hlse: warning: %s:%d: unknown charset '%s' "
+                    "(expected alnum|alnum_dash|hex|alpha|digit), skipped\n",
+                    path, lineno, charset_name);
+            continue;
+        }
+        {
+            char *label = s + consumed;
+            size_t n;
+            while (*label == ' ' || *label == '\t') label++;
+            n = strlen(label);
+            while (n > 0 && (label[n-1] == '\n' || label[n-1] == '\r'))
+                label[--n] = '\0';
+            if (n == 0) {
+                fprintf(stderr, "hlse: warning: %s:%d: missing label, "
+                        "skipped\n", path, lineno);
+                continue;
+            }
+            if (!hlse_register_custom_secret_pattern(prefix, min_suffix, cs,
+                                                      label, score)) {
+                fprintf(stderr, "hlse: warning: %s:%d: pattern rejected "
+                        "(bad field or registry full), skipped\n",
+                        path, lineno);
+                continue;
+            }
+            loaded++;
+        }
+    }
+    fclose(fp);
+    if (loaded == 0) {
+        fprintf(stderr, "hlse: warning: %s: no valid SECRET patterns "
+                "loaded\n", path);
+    }
+    return 0;
+}
+
 /* Central suppression check for a scan finding, shared by all three checks
  * (file/secret/url). Computes the fingerprint; if --fingerprints is set,
  * prints it and returns 2 (caller skips all counting AND emission). Returns 1
@@ -6320,6 +6413,7 @@ print_usage(const char *prog) {
         "  %s --from <channel>         Delivery channel: email|sms|dm|qr|manual (boosts URL & text score)\n"
         "  %s --baseline <file>        scan: suppress findings whose fingerprint is listed (CI adoption)\n"
         "  %s --fingerprints scan <d>  scan: emit one fingerprint per finding (generate a baseline)\n"
+        "  %s --patterns <file>        Load custom org-specific secret patterns (no rebuild needed)\n"
         "  %s --stdin [--json]         Pipe mode (one input per line)\n"
         "  %s --self-test              Built-in tests\n"
         "  %s --benchmark              Corpus benchmark\n"
@@ -6332,12 +6426,16 @@ print_usage(const char *prog) {
         "  %s --baseline .hlse-baseline scan .          # only NEW findings fail\n"
         "  Inline suppression: put `hlse:allow` on a line to skip its findings.\n"
         "\n"
+        "Custom patterns (%s --patterns <file>): one 'SECRET <prefix> <min_suffix>\n"
+        "  <charset> <score> <label...>' line per pattern; charset is alnum|alnum_dash|\n"
+        "  hex|alpha|digit. Example: SECRET ACME_KEY_ 20 alnum 85 ACME Internal API Key\n"
+        "\n"
         "Exit code: 0 = safe, 1 = threat (>= --fail-on, default block/60), 2 = usage error\n",
         HLSE_VERSION,
         prog, prog, prog,                                /* scanning: 3 */
         prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 13 */
-        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* options: 13 */
-        prog, prog); /* baseline workflow: 2 */
+        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* options: 14 */
+        prog, prog, prog); /* baseline workflow: 2 + custom patterns: 1 */
 }
 
 /* Read all of stdin into buf (NUL-terminated, truncated to cap-1 bytes).
@@ -6552,6 +6650,25 @@ main(int argc, char **argv) {
                 g_emit_fingerprints = 1;
                 { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1];
                   argc--; }
+                break;
+            }
+        }
+    }
+
+    /* Parse --patterns <file> (Perspective 110 / P0-3) — register custom
+     * organization-specific secret patterns without a rebuild. */
+    {
+        int i;
+        for (i = 1; i < argc - 1; i++) {
+            if (strcmp(argv[i], "--patterns") == 0) {
+                const char *ppath = argv[i + 1];
+                if (hlse_patterns_load(ppath) != 0) {
+                    fprintf(stderr, "Error: cannot read --patterns file '%s': %s\n",
+                            ppath, strerror(errno));
+                    return 2;
+                }
+                { int j; for (j = i; j < argc - 2; j++) argv[j] = argv[j+2];
+                  argc -= 2; }
                 break;
             }
         }
