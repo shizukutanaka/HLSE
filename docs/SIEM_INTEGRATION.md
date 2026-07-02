@@ -171,6 +171,38 @@ hlse_core --json scan ./src \
 
 ---
 
+## 5b. Git history scanning
+
+`hlse_core scan ./src` only sees the current working tree. A credential that
+was committed and later deleted is still readable by anyone who clones the
+repository — `git rm` does not remove it from history. `--git-history` closes
+this gap:
+
+```bash
+# Scan every commit ever made to the repo, not just the checked-out files
+hlse_core scan . --git-history
+
+# Same exit-code contract; JSON findings additionally carry the full commit SHA
+hlse_core --json scan . --git-history \
+  | jq -c 'select(.kind=="secret") | {path, commit, score}'
+```
+
+Implementation notes:
+- Streams `git log --all -p` through one subprocess for the whole history
+  (not one per commit/blob), scanning only added lines — the moment a
+  credential entered history.
+- Spawned via `fork()`/`execlp()`, never `popen()`/`system()`: the directory
+  path is a discrete argument to `git`, never interpreted by a shell.
+- `git log` performs no network I/O (only `fetch`/`pull`/`clone` do), so this
+  does not affect HLSE's zero-network-calls guarantee.
+- Requires `directory` to be a git repository; a non-repository path is a
+  usage error (exit 2), not a false "clean" result.
+- Honors `--baseline`/`--fingerprints`/`hlse:allow` exactly like a normal
+  scan, so a brownfield repo's already-accepted historical findings can be
+  suppressed the same way.
+
+---
+
 ## 5a. GitHub Code Scanning (SARIF 2.1.0)
 
 `hlse_core --sarif scan <dir>` emits SARIF 2.1.0 for direct upload to GitHub

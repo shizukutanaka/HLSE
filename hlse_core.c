@@ -47,6 +47,7 @@
 #include "hlse_secrets.h"  /* SecretVerdict, hlse_scan_secrets */
 
 #include <sys/stat.h>
+#include <sys/wait.h>     /* waitpid — reap the `git log` child (P0-2) */
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -5310,6 +5311,7 @@ static const char *g_baseline_file = NULL;   /* --baseline <file> */
 static int         g_emit_fingerprints = 0;  /* --fingerprints */
 static char      **g_baseline_fps = NULL;    /* loaded fingerprint set */
 static size_t      g_baseline_n = 0;
+static int         g_git_history = 0;        /* --git-history (P0-2) */
 
 /* Write a stable 16-hex-char fingerprint of (relpath, pattern_id, match) into
  * out[17]. NUL-separated so distinct field boundaries can't alias. */
@@ -6395,6 +6397,7 @@ print_usage(const char *prog) {
         "  %s protect /dev/sda --mbr   MBR/GPT integrity (needs root)\n"
         "  %s esp [path]               UEFI/ESP bootkit-string scan\n"
         "  %s scan <directory>          Recursive secret + file scan (CI/CD)\n"
+        "  %s scan <dir> --git-history  Scan every commit ever made, not just the working tree\n"
         "  %s secret \"<text>\"          Scan text/stdin for leaked credentials\n"
         "  %s email \"<headers>\"        Email-header forensics (SPF/DKIM, BEC)\n"
         "  %s clipboard <copied> <pasted>  Crypto address-swap (clipper) check\n"
@@ -6433,7 +6436,7 @@ print_usage(const char *prog) {
         "Exit code: 0 = safe, 1 = threat (>= --fail-on, default block/60), 2 = usage error\n",
         HLSE_VERSION,
         prog, prog, prog,                                /* scanning: 3 */
-        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 13 */
+        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 14 */
         prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* options: 14 */
         prog, prog, prog); /* baseline workflow: 2 + custom patterns: 1 */
 }
@@ -6474,6 +6477,225 @@ read_stdin_all(char *buf, size_t cap) {
     }
     return total;
 }
+
+/* ── Git history scanning (Perspective 111, roadmap P0-2) ──────────────────
+ * `scan <dir> --git-history` finds secrets ANYWHERE in the repo's commit
+ * history, not just the current working tree — the primary use case for
+ * commercial secret scanners (gitleaks/trufflehog): a credential that was
+ * committed and later deleted is still readable by anyone who clones the
+ * repo, and a working-tree-only scan never sees it.
+ *
+ * Implementation: stream `git log --all -p` (every commit, unified diff,
+ * every ref) and scan only ADDED lines ('+' lines, excluding the '+++'
+ * file-header marker) — the lines that introduced a secret at the moment it
+ * entered history. This needs one git subprocess for the whole history
+ * (not one per blob), keeping it fast even on repos with thousands of
+ * commits.
+ *
+ * Spawned via fork()+execlp(), never popen()/system(): the directory path
+ * is passed as a discrete argv element to git, so it is never interpreted
+ * by a shell and no combination of characters in `dir` can inject a command.
+ * `git log` performs no network I/O (only fetch/pull/clone do), so this
+ * preserves HLSE's zero-network-calls guarantee — verified by the existing
+ * CI privacy tripwire, which traces socket-family syscalls, not process
+ * spawns. */
+static FILE *
+git_history_open(const char *dir, pid_t *out_pid) {
+    int pipefd[2];
+    pid_t pid;
+    if (pipe(pipefd) != 0) return NULL;
+    pid = fork();
+    if (pid < 0) {
+        close(pipefd[0]);
+        close(pipefd[1]);
+        return NULL;
+    }
+    if (pid == 0) {
+        /* Child: redirect stdout to the pipe, stderr to /dev/null (git
+         * prints progress/warnings we don't want mixed into our stream). */
+        int devnull;
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(pipefd[1]);
+        devnull = open("/dev/null", O_WRONLY);
+        if (devnull >= 0) { dup2(devnull, STDERR_FILENO); close(devnull); }
+        execlp("git", "git", "-C", dir, "log", "--all", "-p", "--no-color",
+               "--full-history", (char *)NULL);
+        _exit(127); /* execlp failed — git not installed / not found in PATH */
+    }
+    close(pipefd[1]);
+    *out_pid = pid;
+    return fdopen(pipefd[0], "r");
+}
+
+/* Scan every commit in `root`'s history for secrets. Returns the process
+ * exit code (0 = clean, 1 = threat, 2 = usage/environment error). */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+static int
+scan_git_history(const char *root, int json_out, int sarif_out) {
+    FILE *gp;
+    pid_t pid;
+    char line[8192];
+    char commit[41] = "";
+    char curpath[4096] = "";
+    int commits_seen = 0, threats = 0, gate_hits = 0, max_score = 0;
+    unsigned asset_mask = 0;
+    int child_status;
+
+    gp = git_history_open(root, &pid);
+    if (!gp) {
+        fprintf(stderr, "Error: cannot start 'git log' for '%s': %s\n",
+                root, strerror(errno));
+        return 2;
+    }
+
+    while (fgets(line, sizeof(line), gp)) {
+        size_t n = strlen(line);
+        while (n > 0 && (line[n-1] == '\n' || line[n-1] == '\r')) line[--n] = '\0';
+
+        if (strncmp(line, "commit ", 7) == 0) {
+            snprintf(commit, sizeof(commit), "%.40s", line + 7);
+            commits_seen++;
+            continue;
+        }
+        if (strncmp(line, "+++ ", 4) == 0) {
+            const char *p = line + 4;
+            if (strncmp(p, "b/", 2) == 0) p += 2;
+            if (strcmp(p, "/dev/null") != 0) {
+                /* Explicit bounded copy (not snprintf(dst, sizeof(dst), "%s",
+                 * p)) — `p` derives from `line` (larger than `curpath`), and
+                 * -Wformat-truncation cannot see that silent truncation here
+                 * is harmless (curpath is a display label, not a real path
+                 * used for I/O), so make the bound explicit instead of
+                 * suppressing the warning. */
+                size_t plen = strlen(p);
+                if (plen >= sizeof(curpath)) plen = sizeof(curpath) - 1;
+                memcpy(curpath, p, plen);
+                curpath[plen] = '\0';
+            } else {
+                curpath[0] = '\0'; /* file was deleted in this commit */
+            }
+            continue;
+        }
+        /* An added line: starts with '+' but is not the "+++ " file header
+         * and is not the empty "+" (context-only artifact). */
+        if (line[0] == '+' && strncmp(line, "+++", 3) != 0 && n > 1) {
+            const char *content = line + 1;
+            SecretVerdict sv = hlse_scan_secrets(content);
+            if (sv.score >= 40) {
+                const char *spid = sv.n_findings > 0
+                    ? secret_pattern_id(sv.findings[0].type)
+                    : "HLSE-SECRET-GENERIC";
+                const char *sdesc = sv.n_findings > 0
+                    ? sv.findings[0].description : "";
+                char loc[4200];
+                snprintf(loc, sizeof(loc), "%s@%.7s",
+                         curpath[0] ? curpath : "(unknown path)", commit);
+                /* Baseline/allowlist suppression reuses the same fingerprint
+                 * mechanism as the working-tree scan (P0-1); the "line" for
+                 * inline hlse:allow purposes is this diff line itself. */
+                if (hlse_scan_suppress(loc, spid, sdesc, content))
+                    continue;
+                threats++;
+                if (sv.score > max_score) max_score = sv.score;
+                if (sv.score >= g_fail_threshold) gate_hits++;
+                {
+                    int ai;
+                    for (ai = 0; ai < sv.n_findings; ai++)
+                        asset_mask |= asset_class_of(sv.findings[ai].type);
+                }
+                if (sarif_out) {
+                    char msg[512] = {0};
+                    int i;
+                    for (i = 0; i < sv.n_findings; i++) {
+                        size_t l = strlen(msg);
+                        snprintf(msg + l, sizeof(msg) - l, "%s%s",
+                                 i ? "; " : "", sv.findings[i].description);
+                    }
+                    snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg),
+                             " (commit %.7s)", commit);
+                    sarif_add(curpath[0] ? curpath : "(unknown path)", 1,
+                              "secret", spid, msg[0] ? msg : "secret", sv.score);
+                } else if (json_out) {
+                    int i;
+                    char ep[4096], ed[512];
+                    json_escape(curpath, ep, sizeof(ep));
+                    printf("{\"kind\":\"secret\",\"hlse_version\":\"" HLSE_VERSION
+                           "\",\"path\":\"%s\",\"commit\":\"%s\",\"score\":%d,"
+                           "\"action\":\"%s\",\"severity\":%d,\"findings\":[",
+                           ep, commit, sv.score, hlse_action_for_score(sv.score),
+                           hlse_severity_for_score(sv.score));
+                    for (i = 0; i < sv.n_findings; i++) {
+                        json_escape(sv.findings[i].description, ed, sizeof(ed));
+                        printf("%s{\"type\":\"%s\",\"description\":\"%s\"}",
+                               i ? "," : "", sv.findings[i].type, ed);
+                    }
+                    printf("],\"pattern_id\":\"%s\"}\n", spid);
+                } else {
+                    int i;
+                    printf("%-7s [%d]  %s@%.7s\n",
+                           hlse_action_for_score(sv.score), sv.score,
+                           curpath[0] ? curpath : "(unknown path)", commit);
+                    for (i = 0; i < sv.n_findings; i++)
+                        printf("  \xc2\xb7 %s\n", sv.findings[i].description);
+                }
+            }
+        }
+    }
+    fclose(gp);
+    /* Reap the child and distinguish real failure from a clean scan. A
+     * non-zero exit with zero commits seen means `git log` itself failed
+     * (not a repo, corrupt repo, etc.) — report it as a usage error rather
+     * than silently printing "OK, 0 commits scanned", which would read as
+     * "scanned and clean" instead of "did not scan anything at all". */
+    if (waitpid(pid, &child_status, 0) == pid &&
+        WIFEXITED(child_status) && WEXITSTATUS(child_status) != 0) {
+        int code = WEXITSTATUS(child_status);
+        if (code == 127) {
+            fprintf(stderr, "Error: 'git' not found in PATH \xe2\x80\x94 "
+                    "--git-history requires the git binary\n");
+        } else if (commits_seen == 0) {
+            fprintf(stderr, "Error: '%s' is not a git repository (git log "
+                    "exited %d) \xe2\x80\x94 --git-history requires a git "
+                    "repository\n", root, code);
+        } else {
+            /* git produced partial output before failing; still report what
+             * was found, but note the scan may be incomplete. */
+            fprintf(stderr, "hlse: warning: 'git log' exited %d after %d "
+                    "commit(s) \xe2\x80\x94 history scan may be incomplete\n",
+                    code, commits_seen);
+        }
+        if (commits_seen == 0) return 2;
+    }
+
+    if (sarif_out) {
+        sarif_emit(HLSE_VERSION);
+    } else if (json_out) {
+        char ep[4096], classes[256];
+        int nclasses = asset_mask_describe(asset_mask, classes, sizeof(classes));
+        json_escape(root, ep, sizeof(ep));
+        printf("{\"kind\":\"scan_summary\",\"hlse_version\":\"" HLSE_VERSION "\","
+               "\"target\":\"%s\",\"mode\":\"git-history\","
+               "\"commits_scanned\":%d,\"threats\":%d,"
+               "\"max_severity\":%d,\"gate_hits\":%d,\"fail_threshold\":%d,"
+               "\"asset_classes\":%d,\"blast_radius\":\"%s\"}\n",
+               ep, commits_seen, threats, hlse_severity_for_score(max_score),
+               gate_hits, g_fail_threshold, nclasses, classes);
+    } else if (threats == 0) {
+        printf("OK    %s (%d commits scanned, 0 secrets found in history)\n",
+               root, commits_seen);
+    } else {
+        printf("\n%d secret(s) found across %d commits in %s history\n",
+               threats, commits_seen, root);
+        printf("\xe2\x86\x92 Immediate action: rotate every credential found above "
+               "\xe2\x80\x94 they are readable in every existing clone regardless "
+               "of the current working tree, and deleting the file does not "
+               "remove them from history (use git filter-repo or BFG)\n");
+    }
+    return gate_hits > 0 ? 1 : 0;
+}
+#pragma GCC diagnostic pop
 
 int
 main(int argc, char **argv) {
@@ -6655,6 +6877,21 @@ main(int argc, char **argv) {
         }
     }
 
+    /* Parse --git-history (Perspective 111, roadmap P0-2) — `scan <dir>
+     * --git-history` scans every commit ever made to the repo for secrets,
+     * not just the current working tree. */
+    {
+        int i;
+        for (i = 1; i < argc; i++) {
+            if (strcmp(argv[i], "--git-history") == 0) {
+                g_git_history = 1;
+                { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1];
+                  argc--; }
+                break;
+            }
+        }
+    }
+
     /* Parse --patterns <file> (Perspective 110 / P0-3) — register custom
      * organization-specific secret patterns without a rebuild. */
     {
@@ -6724,8 +6961,16 @@ main(int argc, char **argv) {
      *   exit 0 = clean, exit 1 = threats found                        */
     if (strcmp(argv[idx], "scan") == 0) {
         if (argc < idx + 2) {
-            fprintf(stderr, "Usage: %s scan <directory>\n", argv[0]);
+            fprintf(stderr, "Usage: %s scan <directory> [--git-history]\n",
+                    argv[0]);
             return 2;
+        }
+        /* --git-history (Perspective 111 / P0-2): scan every commit in the
+         * repo's history for secrets, not just the working tree. Entirely
+         * different algorithm (git subprocess stream vs. directory walk),
+         * so it branches out before the normal walker below. */
+        if (g_git_history) {
+            return scan_git_history(argv[idx + 1], json_out, sarif_out);
         }
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-truncation"

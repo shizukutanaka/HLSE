@@ -5808,6 +5808,107 @@ grep -q '"score":80,"action":"ISOLATE"' && check "p110: AWS key score unchanged 
     || check "p110: --help documents --patterns" "0" "1"
 rm -f "$P110_PAT"
 
+# ─── P111 (roadmap P0-2): scan --git-history ────────────────────────────────
+# The primary use case for commercial secret scanners (gitleaks/trufflehog):
+# a credential committed and later deleted is still readable by anyone who
+# clones the repo. HLSE's working-tree-only scan never saw it; --git-history
+# streams `git log --all -p` (one subprocess, fork+execlp — never a shell)
+# and scans every added line across every commit.
+
+P111_DIR=$(mktemp -d)
+(
+    cd "$P111_DIR"
+    git init -q
+    git config user.email "test@hlse.local"
+    git config user.name "HLSE Test"
+    echo "readme" > README.md
+    git add README.md && git commit -q -m "initial commit"
+    echo "aws_access_key_id=AKIA1234567890ABCDEF" > config.env
+    git add config.env && git commit -q -m "add config"
+    git rm -q config.env
+    git commit -q -m "remove config (oops, too late)"
+)
+
+# Working-tree scan sees nothing — the secret was deleted before this scan
+P111_WT=$(cd "$P111_DIR" && /home/user/HLSE/hlse_core scan . 2>/dev/null || true)
+echo "$P111_WT" | grep -q "0 threats" \
+    && check "p111: working-tree scan is clean (secret was deleted)" "0" "0" \
+    || check "p111: working-tree scan is clean (secret was deleted)" "0" "1"
+
+# --git-history finds the deleted-but-once-committed secret; exit 1
+# (the finding is redacted in display output — "AKIA1234..." not the full
+# key — so match the redacted prefix and the AWS type label, not the key.)
+P111_GH=$(cd "$P111_DIR" && /home/user/HLSE/hlse_core scan . --git-history 2>/dev/null || true)
+echo "$P111_GH" | grep -q "AWS Access Key ID" \
+    && echo "$P111_GH" | grep -q "config.env" \
+    && check "p111: --git-history finds the deleted secret still in history" "0" "0" \
+    || check "p111: --git-history finds the deleted secret still in history" "0" "1"
+(cd "$P111_DIR" && /home/user/HLSE/hlse_core scan . --git-history >/dev/null 2>&1) && rc=0 || rc=$?
+check "p111: --git-history exits 1 when a historical secret is found" "1" "$rc"
+
+# JSON mode: findings carry "commit"; scan_summary carries mode=git-history
+(cd "$P111_DIR" && /home/user/HLSE/hlse_core --json scan . --git-history 2>/dev/null) | python3 -c '
+import sys, json
+lines = [json.loads(l) for l in sys.stdin if l.strip()]
+secrets = [d for d in lines if d["kind"] == "secret"]
+summaries = [d for d in lines if d["kind"] == "scan_summary"]
+assert len(secrets) >= 1, lines
+assert "commit" in secrets[0] and len(secrets[0]["commit"]) == 40, secrets[0]
+assert len(summaries) == 1, lines
+assert summaries[0]["mode"] == "git-history", summaries[0]
+assert summaries[0]["commits_scanned"] == 3, summaries[0]
+' && check "p111 json: findings carry full commit SHA, summary carries mode" "0" "0" \
+   || check "p111 json: findings carry full commit SHA, summary carries mode" "0" "1"
+
+# SARIF mode is valid and carries the finding
+(cd "$P111_DIR" && /home/user/HLSE/hlse_core --sarif scan . --git-history 2>/dev/null) | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+assert d["version"] == "2.1.0"
+assert len(d["runs"][0]["results"]) >= 1, d
+assert d["runs"][0]["results"][0]["ruleId"] == "secret"
+' && check "p111 sarif: --git-history emits valid SARIF with the finding" "0" "0" \
+   || check "p111 sarif: --git-history emits valid SARIF with the finding" "0" "1"
+
+# --fingerprints works for git-history mode (baseline generation)
+P111_FP=$(cd "$P111_DIR" && /home/user/HLSE/hlse_core --fingerprints scan . --git-history 2>/dev/null || true)
+echo "$P111_FP" | grep -qE '^[0-9a-f]{16}  HLSE-SECRET-AWS' \
+    && check "p111: --fingerprints emits a stable fingerprint for a historical finding" "0" "0" \
+    || check "p111: --fingerprints emits a stable fingerprint for a historical finding" "0" "1"
+
+# --baseline suppresses the historical finding — only NEW history entries fail
+echo "$P111_FP" > "$P111_DIR.baseline"
+(cd "$P111_DIR" && /home/user/HLSE/hlse_core --baseline "$P111_DIR.baseline" scan . --git-history >/dev/null 2>&1) && rc=0 || rc=$?
+check "p111: --baseline suppresses a known historical secret (exit 0)" "0" "$rc"
+rm -f "$P111_DIR.baseline"
+
+# A non-git directory is a usage error (exit 2), not a false "clean" result
+P111_NOTGIT=$(mktemp -d)
+echo "hello" > "$P111_NOTGIT/a.txt"
+./hlse_core scan "$P111_NOTGIT" --git-history >/dev/null 2>&1 && rc=0 || rc=$?
+check "p111: non-git directory under --git-history is a usage error (exit 2)" "2" "$rc"
+rm -rf "$P111_NOTGIT"
+
+# An empty (but valid) git repo is clean, not an error — distinguishes
+# "nothing to scan yet" from "not a repository"
+P111_EMPTY=$(mktemp -d)
+(cd "$P111_EMPTY" && git init -q)
+./hlse_core scan "$P111_EMPTY" --git-history >/dev/null 2>&1 && rc=0 || rc=$?
+check "p111: empty git repo under --git-history exits 0 (not an error)" "0" "$rc"
+rm -rf "$P111_EMPTY"
+
+# F1 invariant: normal (non-git-history) scan is byte-for-byte unaffected
+./hlse_core --json secret "aws_access_key_id=AKIA1234567890ABCDEF" 2>/dev/null | \
+grep -q '"score":80,"action":"ISOLATE"' && check "p111: secret detection unchanged without --git-history (F1 invariant)" "0" "0" \
+   || check "p111: secret detection unchanged without --git-history (F1 invariant)" "0" "1"
+
+# --help documents --git-history
+./hlse_core --help 2>&1 | grep -q -- "--git-history" \
+    && check "p111: --help documents scan --git-history" "0" "0" \
+    || check "p111: --help documents scan --git-history" "0" "1"
+
+rm -rf "$P111_DIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

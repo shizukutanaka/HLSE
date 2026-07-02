@@ -65,6 +65,24 @@ Recursively scan a directory for leaked secrets, file masquerade, and
 embedded phishing URLs. Skips vendor and build directories. Intended for
 CI/CD use.
 .TP
+.B scan \fIdirectory\fR " --git-history"
+Scan every commit ever made to the repository at
+.I directory
+for leaked secrets \[em] not just the current working tree. A credential
+that was committed and later deleted is still readable by anyone who clones
+the repository; a working-tree-only scan never sees it, but this does.
+Streams
+.B git log --all -p
+(one subprocess for the whole history, spawned via
+.BR fork (2)/\fBexecve\fR(2)
+with the directory passed as a discrete argument \[em] never through a
+shell, so no path can inject a command) and scans only added lines. Requires
+.I directory
+to be a git repository; a non-repository path is a usage error (exit 2).
+.B git log
+performs no network I/O, so this does not affect HLSE's zero-network-calls
+guarantee.
+.TP
 .B protect \fIpath\fR
 Behavioral protection checks: ransomware entropy and ransom-note
 detection, SMB canary files, mounted network drives, and MBR/GPT

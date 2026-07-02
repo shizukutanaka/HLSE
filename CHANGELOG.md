@@ -2,6 +2,53 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.111] — 2026-07-02
+
+### Added
+- **Perspective 111 (roadmap P0-2, the last remaining P0): `scan <dir>
+  --git-history` scans every commit ever made to a repository, not just the
+  working tree.**
+
+  The commercial-gap audit identified this as the primary use case for
+  commercial secret scanners (gitleaks/trufflehog) that HLSE lacked
+  entirely: a credential that was committed and later deleted (`git rm`) is
+  still readable by anyone who clones the repository, but a working-tree-
+  only scan never sees it. Verified end-to-end: a repo where a secret was
+  added in one commit and removed in the next scores clean under plain
+  `scan .` (0 threats) but is correctly flagged under `scan . --git-history`
+  (ISOLATE, the original commit and path identified).
+
+  Implementation: streams `git log --all -p --no-color --full-history`
+  through **one** subprocess for the entire history (not one per commit or
+  blob — keeps it fast on large repos) and scans only added ('+') lines,
+  the moment each credential entered history, using the exact same
+  `hlse_scan_secrets()` used everywhere else. Spawned via `fork()` +
+  `execlp()`, never `popen()`/`system()`: the directory path is passed as a
+  discrete argv element to `git`, so it is never interpreted by a shell and
+  no path can inject a command. `git log` performs no network I/O (only
+  `fetch`/`pull`/`clone` do), so this does not affect HLSE's zero-network-
+  calls guarantee — verified by the existing CI privacy tripwire, which
+  traces socket-family syscalls, not process spawns.
+
+  Fully integrated with the existing scan infrastructure: `--json`, `--sarif`,
+  `--baseline`, `--fingerprints`, and inline `hlse:allow` all work identically
+  to a normal `scan`. A non-git directory is a usage error (exit 2) rather
+  than a misleading "0 commits, clean" result; an empty-but-valid repo
+  correctly distinguishes as clean (exit 0).
+
+  Scoped to secrets (the dominant real-world case for history scanning, and
+  what gitleaks/trufflehog both focus on); file-masquerade and embedded-URL
+  checks remain working-tree-only for now.
+
+  No detection logic, score, or threshold touched — F1=1.000 preserved.
+
+  - **Docs**: `docs/SIEM_INTEGRATION.md` §5b, `--help`, and `hlse.1` document
+    the new flag.
+  - **Tests**: 13 new CLI integration tests using a real, disposable git
+    repo — working-tree-clean-but-history-dirty verification, JSON/SARIF/
+    fingerprint/baseline coverage, non-git and empty-repo edge cases, and an
+    F1-invariant check (707 total).
+
 ## [1.0.110] — 2026-07-02
 
 ### Added
