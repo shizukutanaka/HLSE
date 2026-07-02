@@ -2,6 +2,35 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.109] — 2026-07-02
+
+### Added
+- **Perspective 109 (roadmap P2-1): SARIF output for `package --manifest`.**
+
+  The commercial-gap audit noted SARIF (GitHub Code Scanning) was emitted for
+  only the three `scan` rules. A manifest typosquat maps naturally to Code
+  Scanning — it is a repo file (`requirements.txt` / `package.json`) with a
+  line number — so `package --manifest --sarif` now emits it. A new
+  `package-typosquat` SARIF rule (security-severity 7.0, CWE-1357
+  "Improper Neutralization of Dependencies") joins the existing three; each
+  result carries the manifest path, the line the dependency was declared on,
+  and the stable `HLSE-PKG-TYPOSQUAT` pattern_id in `properties.pattern_id`.
+
+  Reuses the existing `sarif_add()`/`sarif_emit()` infrastructure — no scoring
+  change (F1=1.000 preserved); `scan --sarif` output is unchanged apart from
+  the extra rule definition in the shared rule table.
+
+  (System `audit` findings were considered but deferred: they describe host
+  configuration, not repo files, so they do not map cleanly onto Code
+  Scanning's repo-file model.)
+
+  - **Docs**: `docs/SIEM_INTEGRATION.md` documents the new rule and the
+    `package --manifest --sarif` invocation.
+  - **Tests**: 3 new CLI integration tests — manifest SARIF emits the rule +
+    result at the right line, a clean manifest emits a valid empty-results
+    doc, and `scan --sarif` still validates after the rule-table change
+    (686 total).
+
 ## [1.0.108] — 2026-07-02
 
 ### Added

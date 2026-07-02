@@ -5190,6 +5190,11 @@ sarif_emit(const char *tool_version) {
           "File extension or magic bytes indicate the file is disguised malware.",
           "8.0",
           "\"security\", \"external/cwe/cwe-646\"" },
+        { "package-typosquat","Dependency Typosquat",
+          "Declared dependency name is a likely typosquat of a popular package "
+          "(dependency-confusion / supply-chain attack).",
+          "7.0",
+          "\"security\", \"external/cwe/cwe-1357\"" },
         { NULL, NULL, NULL, NULL, NULL }
     };
     char esc[1280];
@@ -6439,7 +6444,7 @@ main(int argc, char **argv) {
     }
 
     /* Parse --sarif flag (anywhere). SARIF 2.1.0 for GitHub code scanning;
-     * currently supported by the `scan` subcommand. */
+     * supported by the `scan` and `package --manifest` subcommands. */
     {
         int i;
         for (i = 1; i < argc; i++) {
@@ -7424,7 +7429,7 @@ main(int argc, char **argv) {
             FILE *mf;
             char line[4096];
             int in_deps = 0, checked = 0, threats = 0, gate_hits = 0;
-            int max_score = 0;
+            int max_score = 0, lineno = 0;
             if (argc < idx + 3) {
                 fprintf(stderr, "Usage: %s package --manifest <file> [eco]\n",
                         argv[0]);
@@ -7447,6 +7452,7 @@ main(int argc, char **argv) {
                 char name[128];
                 const char *cursor = line;
                 int is_npm = (strcmp(eco, "npm") == 0);
+                lineno++;
                 /* npm: a line may hold several "name":"ver" pairs (compact
                  * object form), so drain the cursor. pip: one name per line. */
                 for (;;) {
@@ -7463,7 +7469,14 @@ main(int argc, char **argv) {
                         threats++;
                         if (pv.score > max_score) max_score = pv.score;
                         if (pv.score >= g_fail_threshold) gate_hits++;
-                        if (json_out) {
+                        if (sarif_out) {
+                            char msg[512];
+                            snprintf(msg, sizeof(msg), "%s",
+                                     pv.reason[0] ? pv.reason
+                                     : "dependency typosquat");
+                            sarif_add(mpath, lineno, "package-typosquat",
+                                      "HLSE-PKG-TYPOSQUAT", msg, pv.score);
+                        } else if (json_out) {
                             char en[128];
                             int i;
                             json_escape(name, en, sizeof(en));
@@ -7496,7 +7509,9 @@ main(int argc, char **argv) {
                 }  /* for(;;) drain-line */
             }
             fclose(mf);
-            if (json_out) {
+            if (sarif_out) {
+                sarif_emit(HLSE_VERSION);
+            } else if (json_out) {
                 char ep[4096];
                 json_escape(mpath, ep, sizeof(ep));
                 printf("{\"kind\":\"manifest_summary\",\"hlse_version\":\""

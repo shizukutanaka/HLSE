@@ -5681,6 +5681,50 @@ grep -q '"score":70,"action":"BLOCK"' && check "p108: single-name package check 
     || check "p108: --help documents package --manifest" "0" "1"
 rm -rf "$P108_DIR"
 
+# ─── P109 (P2-1): SARIF output for package --manifest ──────────────────────
+# The commercial-gap audit noted only 3 scan rules emit SARIF; a manifest
+# typosquat maps naturally to GitHub code scanning (a repo file + line), so
+# `package --manifest --sarif` now emits it.
+P109_DIR=$(mktemp -d)
+printf 'requests==2.31.0\nreqeusts>=1.0\nflask\n' > "$P109_DIR/requirements.txt"
+
+# --sarif package --manifest emits a valid SARIF doc with the new rule + result
+./hlse_core --sarif package --manifest "$P109_DIR/requirements.txt" pip 2>/dev/null | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+assert d["version"] == "2.1.0", d.get("version")
+rules = [r["id"] for r in d["runs"][0]["tool"]["driver"]["rules"]]
+assert "package-typosquat" in rules, rules
+res = d["runs"][0]["results"]
+assert len(res) == 1, res
+assert res[0]["ruleId"] == "package-typosquat"
+assert res[0]["properties"]["pattern_id"] == "HLSE-PKG-TYPOSQUAT"
+loc = res[0]["locations"][0]["physicalLocation"]
+assert loc["region"]["startLine"] == 2, loc
+' && check "p109: package --manifest --sarif emits valid SARIF with typosquat rule+result" "0" "0" \
+   || check "p109: package --manifest --sarif emits valid SARIF with typosquat rule+result" "0" "1"
+
+# A clean manifest under --sarif emits a valid empty-results SARIF doc, exit 0
+printf 'requests==2.31.0\nflask\n' > "$P109_DIR/clean.txt"
+./hlse_core --sarif package --manifest "$P109_DIR/clean.txt" pip 2>/dev/null | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+assert d["runs"][0]["results"] == [], d["runs"][0]["results"]
+' && check "p109: clean manifest --sarif emits valid empty-results doc" "0" "0" \
+   || check "p109: clean manifest --sarif emits valid empty-results doc" "0" "1"
+
+# scan --sarif still works (regression: the shared rule table gained a rule)
+SC_DIR=$(mktemp -d)
+printf 'aws=AKIA1234567890ABCDEF\n' > "$SC_DIR/a.env"
+./hlse_core --sarif scan "$SC_DIR" 2>/dev/null | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+assert d["version"] == "2.1.0"
+assert any(r["ruleId"] == "secret" for r in d["runs"][0]["results"])
+' && check "p109: scan --sarif still valid after adding package rule (regression)" "0" "0" \
+   || check "p109: scan --sarif still valid after adding package rule (regression)" "0" "1"
+rm -rf "$SC_DIR" "$P109_DIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

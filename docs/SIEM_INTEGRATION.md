@@ -187,9 +187,18 @@ Code Scanning. Findings appear in the repo's **Security ▸ Code scanning** tab.
 Each SARIF result carries the stable `pattern_id` in `properties.pattern_id`
 (e.g. `HLSE-SECRET-AWS`, `HLSE-URL-HOMOGLYPH`, `HLSE-FILE-DOUBLE-EXT`), so SOAR
 automation can route off the Code Scanning export and security teams can triage
-by attack class — not just by the three coarse rule buckets (`secret`,
-`phishing-url`, `file-masquerade`). Rules ship `security-severity` (0–10), a
-`helpUri`, and CWE `tags` for GitHub's native rendering.
+by attack class — not just by the coarse rule buckets (`secret`,
+`phishing-url`, `file-masquerade`, `package-typosquat`). Rules ship
+`security-severity` (0–10), a `helpUri`, and CWE `tags` for GitHub's native
+rendering.
+
+`package --manifest --sarif` also emits SARIF, so a typosquatted dependency in
+`requirements.txt` or `package.json` shows up in the repo's Code Scanning tab
+with the manifest file and line:
+
+```bash
+./hlse_core --sarif package --manifest requirements.txt > deps.sarif
+```
 
 ```bash
 # Pull every finding's stable token out of a SARIF report
