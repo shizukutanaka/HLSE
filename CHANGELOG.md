@@ -65,6 +65,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
     from `SECURITY.md`/`CONTRIBUTING.md`, and an F1-invariant check
     (728 total).
 
+  **Known limitation**: `.github/workflows/release.yml` (and the
+  pre-existing `ci.yml`/`codeql.yml`, which were present in this working
+  tree but had never actually reached a remote branch) could not be pushed
+  in this session — the CI bot's GitHub App token lacks the `workflows`
+  permission scope GitHub requires to create or update files under
+  `.github/workflows/`. The files exist on disk and pass all local tests
+  above, but a repository maintainer with the right token/permissions
+  needs to add them directly (e.g. via the GitHub web UI, or a token with
+  the `workflows` scope) before the CI/release automation they describe
+  actually runs.
+
 ## [1.0.112] — 2026-07-02
 
 ### Added
