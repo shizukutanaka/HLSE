@@ -6035,6 +6035,65 @@ rm -f "$P112_MW"
 
 rm -f "$P112_PAT"
 
+# ─── P113 (roadmap P2-12 / E-2): release-engineering cleanup ───────────────
+# Commercial procurement review treats an unexplained cryptocurrency address
+# embedded in a security tool's binary/source as a red flag (indistinguishable
+# from a supply-chain-compromise indicator). Moved to the standard GitHub
+# FUNDING.yml mechanism; --version and every source file's header comment no
+# longer reference it. Also adds a real release.yml (checksums + SBOM +
+# version/tag consistency gate) where none existed.
+
+# --version no longer prints the removed "Identity: bitcoin:..." line
+./hlse_core --version 2>&1 | grep -qi "bitcoin" \
+    && check "p113: --version no longer leaks the donation address" "0" "1" \
+    || check "p113: --version no longer leaks the donation address" "0" "0"
+
+# --version still prints the expected version/build info (nothing else broke)
+./hlse_core --version 2>&1 | grep -q "hlse_core 1\." \
+    && check "p113: --version still prints version info" "0" "0" \
+    || check "p113: --version still prints version info" "0" "1"
+
+# No source file's header comment references the address anymore
+grep -rl "bitcoin:bc1q" *.c *.h >/dev/null 2>&1 && rc=0 || rc=1
+check "p113: no source file header comment references the donation address" "1" "$rc"
+
+# .github/FUNDING.yml exists and carries the address in the standard,
+# GitHub-recognized location instead of scattered through source comments
+[ -f .github/FUNDING.yml ] && grep -q "bitcoin:bc1q" .github/FUNDING.yml \
+    && check "p113: .github/FUNDING.yml carries the donation address" "0" "0" \
+    || check "p113: .github/FUNDING.yml carries the donation address" "0" "1"
+
+# release.yml exists, is valid YAML, and gates on the full test suite +
+# F1 + a tag/HLSE_VERSION consistency check before publishing
+[ -f .github/workflows/release.yml ] \
+    && python3 -c "import yaml; yaml.safe_load(open('.github/workflows/release.yml'))" \
+    && check "p113: release.yml exists and is valid YAML" "0" "0" \
+    || check "p113: release.yml exists and is valid YAML" "0" "1"
+grep -q "make test" .github/workflows/release.yml \
+    && grep -q "HLSE_VERSION" .github/workflows/release.yml \
+    && grep -q "F1:        1.000" .github/workflows/release.yml \
+    && check "p113: release.yml gates on tests, F1, and version consistency" "0" "0" \
+    || check "p113: release.yml gates on tests, F1, and version consistency" "0" "1"
+
+# F1 invariant: purely release/doc/metadata cleanup, no detection touched
+./hlse_core --benchmark 2>&1 | grep -q "F1:        1.000" \
+    && check "p113: F1 unaffected by release-engineering cleanup (F1 invariant)" "0" "0" \
+    || check "p113: F1 unaffected by release-engineering cleanup (F1 invariant)" "0" "1"
+
+# SECURITY.md and CONTRIBUTING.md no longer make an unverifiable claim that
+# advisories/releases are "signed against" the donation address — there is
+# no signing/verification tooling anywhere in the repo to back that claim,
+# and CONTRIBUTING.md previously contradicted FUNDING.yml outright by
+# asserting "this is a cryptographic identity hash, not a donation address".
+grep -qi "signed against\|cryptographic identity hash" SECURITY.md CONTRIBUTING.md 2>/dev/null && rc=0 || rc=1
+check "p113: no unverifiable 'signed against' claim remains in SECURITY.md/CONTRIBUTING.md" "1" "$rc"
+
+# SECURITY.md's supported-versions table no longer references stale
+# pre-1.0 version ranges (0.6.x/0.7.x) that have nothing to do with the
+# current 1.0.x release line
+grep -qE "0\.[67]\.x" SECURITY.md && rc=0 || rc=1
+check "p113: SECURITY.md's stale 0.6.x/0.7.x version table is fixed" "1" "$rc"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

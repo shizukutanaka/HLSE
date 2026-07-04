@@ -25,8 +25,6 @@
  *
  * Build: gcc -O2 -Wall -Wextra -c hlse_protect.c -I.
  *        Link with hlse_core.c hlse_text.c for full binary.
- *
- * Identity: bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
  */
 
 #define _POSIX_C_SOURCE 200809L

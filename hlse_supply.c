@@ -15,7 +15,6 @@
  * beyond libc.
  *
  * Build: gcc -O2 -c hlse_supply.c -I.
- * Identity: bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
  */
 
 #define _POSIX_C_SOURCE 200809L

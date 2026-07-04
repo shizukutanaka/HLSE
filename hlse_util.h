@@ -6,8 +6,6 @@
  *   - Damerau-Levenshtein edit distance (was in hlse_core.c AND hlse_supply.c)
  *
  * All functions are pure, thread-safe, and allocation-free.
- *
- * Identity: bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
  */
 
 #ifndef HLSE_UTIL_H

@@ -108,12 +108,7 @@ under malicious config or weird input — that is a critical bug. Report
 it via the SECURITY.md process below. We will fix it in a hotfix
 release within 72 hours.
 
-## Identity anchor
+## Support the project
 
-The maintainer publishes signed releases verifying against:
-
-```
-bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```
-
-This is a cryptographic identity hash, not a donation address.
+If HLSE is useful to you, see [.github/FUNDING.yml](.github/FUNDING.yml) for
+donation options.

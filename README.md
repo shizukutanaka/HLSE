@@ -202,13 +202,10 @@ The full set of stable `pattern_id` routing tokens is discoverable with
 Zero network calls. Zero file I/O outside stdin/stdout. Zero telemetry.
 CI enforces this with a privacy tripwire job.
 
-## Identity anchor
+## Support the project
 
-```
-bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```
-
-Cryptographic identity hash for maintainer verification.
+If HLSE is useful to you, see the Sponsor button on the repository page or
+[.github/FUNDING.yml](.github/FUNDING.yml) for donation options.
 
 ## License
 

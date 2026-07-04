@@ -13,12 +13,13 @@
  *   - Pure C, zero dependencies beyond libc
  *   - Fully local (zero network access)
  *   - Deterministic (same input → same output)
- *   - Thread-safe (no global mutable state)
+ *   - Not thread-safe: hlse_register_custom_secret_pattern() and
+ *     hlse_register_custom_brand() (P0-3/P1-6) populate module-level
+ *     registries read by hlse_scan_secrets()/hlse_check_email_headers();
+ *     register from one thread before scanning starts.
  *
  * Build: gcc -O2 -c hlse_secrets.c -I.
  * Test:  see tests/hlse_secrets_tests.c
- *
- * Identity: bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
  */
 
 #define _POSIX_C_SOURCE 200809L

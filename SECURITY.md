@@ -13,8 +13,8 @@ seriously.
 Instead, contact the maintainer using one of the following private channels:
 
 - GitHub: https://github.com/shizukutanaka (use "Report content"
-  workflow, mark as security)
-- Identity-anchored signed message: bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
+  workflow, mark as security), or the repository's private vulnerability
+  reporting form under the Security tab
 
 When reporting, please include:
 
@@ -82,19 +82,14 @@ Use HLSE Core as one layer in defense-in-depth, not as the only line.
 
 ## Supported versions
 
-| Version | Status |
-|---------|--------|
-| 0.7.x   | ✓ Receives security fixes |
-| 0.6.x   | ✓ Critical fixes only, until 2026-12 |
-| < 0.6   | ✗ Unsupported |
+Only the latest released version (see [CHANGELOG.md](CHANGELOG.md) for the
+current version) receives security fixes. This is a single actively-developed
+reference implementation, not a project with maintained long-term-support
+branches; upgrading to the latest release is the supported path.
 
-## Identity anchor (for verifying advisories)
+## Verifying advisories
 
-Security advisories from the maintainer are signed against:
-
-```
-bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```
-
-If you receive an advisory not signed against this identity, treat it
-as suspicious and report it.
+Security advisories are published only through GitHub's official channels
+(GitHub Security Advisories on this repository, or the maintainer's GitHub
+account linked above). Treat any advisory received through another channel
+as unverified and report it.

@@ -2,6 +2,69 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.113] — 2026-07-04
+
+### Changed
+- **Perspective 113 (roadmap P2-12 + E-2): release-engineering maturity —
+  real `release.yml` with checksums/SBOM/version-gating, and the
+  donation-address cleanup a commercial-gap procurement review flagged.**
+
+  **E-2 (donation address)**: an unexplained cryptocurrency address embedded
+  in a security tool's compiled binary and every source file's header
+  comment is, in a procurement/supply-chain review, indistinguishable from
+  a compromise indicator — worse, the README labeled it "Cryptographic
+  identity hash for maintainer verification," which is not an accurate
+  description of what a Bitcoin address is or does (there is no signature
+  scheme tying it to commits or releases). Fixed:
+  - Removed `Identity: bitcoin:...` from `--version` output and from the
+    header comments of all 6 source files that carried it (one also
+    referenced a `MAINTAINER.md` that has never existed in this repo).
+  - Added `.github/FUNDING.yml` — the standard, GitHub-recognized location
+    for a project's donation address — and replaced the README's
+    "Identity anchor" section with an accurate "Support the project" one.
+  - `SECURITY.md` went further than README: it claimed security advisories
+    are "signed against" the address and told users to distrust anything
+    that isn't — an unverifiable claim, since no signing or verification
+    tooling exists anywhere in this repo. Replaced with a plain statement
+    that advisories are published only through GitHub's official channels.
+    Its "Supported versions" table was also still listing pre-1.0 `0.6.x`/
+    `0.7.x` ranges with nothing to do with the current `1.0.x` line; fixed
+    to describe the actual (single-latest-version) support policy.
+  - `CONTRIBUTING.md` directly *contradicted* the FUNDING.yml fix, stating
+    "This is a cryptographic identity hash, not a donation address" — one
+    more sign this narrative was never backed by an actual mechanism.
+    Replaced with a plain pointer to `FUNDING.yml`.
+
+  **P2-12 (release engineering)**: `release.yml` did not exist at all. Added
+  a tag-triggered (`v[0-9]+.[0-9]+.[0-9]+`) workflow that:
+  - Verifies the git tag matches the compiled-in `HLSE_VERSION` before doing
+    anything else — a release is never published under a mismatched version.
+  - Builds and gates on `make test` + `make check-warnings` + F1=1.000 on
+    the corpus benchmark — the same bar every commit meets, not a shortcut.
+  - Stages the CLI binary, static binary, shared library, public headers,
+    man page, and JSON schemas; generates a `SHA256SUMS` checksum file and a
+    minimal hand-written CycloneDX 1.5 SBOM (accurate by construction — HLSE
+    has zero third-party dependencies beyond the system libc/libm).
+  - Publishes a GitHub Release with these artifacts attached.
+
+  Caught and fixed during implementation: the first checksum-generation
+  draft (`find . -type f | ... | xargs sha256sum > SHA256SUMS`) hashed its
+  own output file — the shell creates/truncates the redirect target *before*
+  the pipeline runs, so `find` saw and hashed the empty `SHA256SUMS`,
+  producing a checksum that was wrong the instant real content was written.
+  Fixed with `find . -type f -not -name SHA256SUMS`; verified locally with a
+  full `sha256sum -c` pass.
+
+  Pure metadata/docs/CI change — no detection logic, score, or threshold
+  touched (F1=1.000 preserved).
+
+  - **Tests**: 9 new CLI integration tests — `--version` no longer leaks the
+    address, no source file references it, `FUNDING.yml` carries it
+    instead, `release.yml` exists/validates/gates correctly, the
+    unverifiable "signed against" claim and stale version table are gone
+    from `SECURITY.md`/`CONTRIBUTING.md`, and an F1-invariant check
+    (728 total).
+
 ## [1.0.112] — 2026-07-02
 
 ### Added

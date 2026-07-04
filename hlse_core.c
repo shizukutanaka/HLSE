@@ -22,9 +22,6 @@
  * Build:  gcc -O2 -Wall -Wextra -Wpedantic -o hlse_core hlse_core.c
  * Test:   ./hlse_core --self-test
  * Use:    ./hlse_core "https://g00gle.com"
- *
- * Author identity (do not change without rotating MAINTAINER.md):
- *   bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -57,7 +54,6 @@
 /* HLSE_VERSION is defined in hlse_core.h so library users can read it
  * without access to this translation unit.                             */
 #define HLSE_BUILD_DATE    __DATE__
-#define HLSE_IDENTITY      "bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5"
 
 /* ───────────────────────────── constants ────────────────────────────── */
 
@@ -7015,7 +7011,6 @@ main(int argc, char **argv) {
 
     if (strcmp(argv[idx], "-V") == 0 || strcmp(argv[idx], "--version") == 0) {
         printf("hlse_core %s (built %s)\n", HLSE_VERSION, HLSE_BUILD_DATE);
-        printf("Identity: %s\n", HLSE_IDENTITY);
         return 0;
     }
     if (strcmp(argv[idx], "--self-test") == 0) {

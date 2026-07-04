@@ -17,8 +17,6 @@
  *
  * Usage from other languages: link against libhlse.so via the FFI
  * facility of your language (Python ctypes, Go cgo, etc).
- *
- * Identity anchor: bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
  */
 
 #ifndef HLSE_CORE_H
@@ -28,7 +26,7 @@
 #include "hlse_text.h" /* TextVerdict, for hlse_classify_text_attack() */
 
 /* Version — available to library users without access to the .c source. */
-#define HLSE_VERSION "1.0.112"
+#define HLSE_VERSION "1.0.113"
 
 #ifdef __cplusplus
 extern "C" {
