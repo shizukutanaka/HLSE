@@ -5386,24 +5386,28 @@ hlse_line_allowed(const char *line) {
     return line && strstr(line, "hlse:allow") != NULL;
 }
 
-/* ── Custom pattern config file (Perspective 110, roadmap P0-3) ────────────
- * The built-in credential patterns are compiled in and cannot name an
- * organization's internal token formats without a rebuild — a real
- * commercial-adoption blocker. `--patterns <file>` loads a small, non-regex
- * config format and registers each entry via
- * hlse_register_custom_secret_pattern() (hlse_secrets.c), which
- * hlse_scan_secrets() then checks using the exact same match +
- * placeholder-suppression logic as the built-in table. Purely additive —
- * the benchmark corpus never passes --patterns, so F1 is unaffected.
+/* ── Custom pattern config file (Perspective 110/112, roadmap P0-3/P1-6) ───
+ * The built-in credential patterns and brand list are compiled in and
+ * cannot name an organization's internal token formats or protect its own
+ * name/executives without a rebuild — a real commercial-adoption blocker.
+ * `--patterns <file>` loads a small, non-regex config format and registers
+ * each entry via hlse_register_custom_secret_pattern() /
+ * hlse_register_custom_brand() (hlse_secrets.c), which hlse_scan_secrets()
+ * and hlse_check_email_headers() then check using the exact same logic as
+ * their built-in tables. Purely additive — the benchmark corpus never
+ * passes --patterns, so F1 is unaffected.
  *
  * File format (one directive per line; '#' comments and blank lines ignored):
  *   SECRET <prefix> <min_suffix> <charset> <score> <label...>
+ *   BRAND  <name> <owned_domain1>[,<owned_domain2>...]
  * charset is one of: alnum | alnum_dash | hex | alpha | digit
- * label is free text (may contain spaces) to end of line.
+ * SECRET's label is free text (may contain spaces) to end of line.
+ * BRAND's owned-domains list has no spaces (comma-separated, up to 4).
  *
  * Example:
- *   # ACME Corp internal API keys
+ *   # ACME Corp internal API keys and impersonation targets
  *   SECRET ACME_KEY_ 20 alnum 85 ACME Internal API Key
+ *   BRAND acmecorp acmecorp.com,acme-corp.com
  */
 static int
 patterns_charset_from_name(const char *name, HlseCharset *out) {
@@ -5415,9 +5419,109 @@ patterns_charset_from_name(const char *name, HlseCharset *out) {
     return 0;
 }
 
-/* Load and register custom patterns from `path`. Returns 0 on success (even
- * if individual malformed lines were skipped with a warning), -1 if the file
- * cannot be opened. */
+static int
+patterns_load_secret_line(const char *path, int lineno, const char *rest) {
+    char prefix[32], charset_name[16], label[256];
+    int min_suffix = 0, score = 0, consumed = 0;
+    HlseCharset cs;
+    if (sscanf(rest, "%31s %d %15s %d %n", prefix, &min_suffix,
+               charset_name, &score, &consumed) != 4) {
+        fprintf(stderr, "hlse: warning: %s:%d: malformed SECRET line, "
+                "skipped\n", path, lineno);
+        return 0;
+    }
+    if (!patterns_charset_from_name(charset_name, &cs)) {
+        fprintf(stderr, "hlse: warning: %s:%d: unknown charset '%s' "
+                "(expected alnum|alnum_dash|hex|alpha|digit), skipped\n",
+                path, lineno, charset_name);
+        return 0;
+    }
+    {
+        const char *lp = rest + consumed;
+        size_t n;
+        while (*lp == ' ' || *lp == '\t') lp++;
+        snprintf(label, sizeof(label), "%s", lp);
+        n = strlen(label);
+        while (n > 0 && (label[n-1] == '\n' || label[n-1] == '\r'))
+            label[--n] = '\0';
+        if (n == 0) {
+            fprintf(stderr, "hlse: warning: %s:%d: missing label, skipped\n",
+                    path, lineno);
+            return 0;
+        }
+    }
+    if (!hlse_register_custom_secret_pattern(prefix, min_suffix, cs,
+                                              label, score)) {
+        fprintf(stderr, "hlse: warning: %s:%d: pattern rejected (bad field "
+                "or registry full), skipped\n", path, lineno);
+        return 0;
+    }
+    return 1;
+}
+
+/* Parse a BRAND line's remainder as "<name> <domains>", where <domains> is
+ * the LAST whitespace-delimited token (comma-separated, no internal
+ * spaces by construction) and <name> is everything before it. Splitting
+ * from the end (not sscanf's %s, which stops at the first space) lets
+ * <name> itself contain spaces — real organization names commonly do
+ * ("Acme Corp", not "AcmeCorp"), matching how the built-in brand table
+ * already handles multi-word entries like "office 365" / "human resources"
+ * via contains_word()'s literal substring match. */
+static int
+patterns_load_brand_line(const char *path, int lineno, const char *rest) {
+    char name[64], domains[512];
+    char buf[600];
+    size_t len;
+    const char *end, *split, *name_end, *name_start;
+    size_t domlen, namelen;
+
+    snprintf(buf, sizeof(buf), "%s", rest);
+    len = strlen(buf);
+    while (len > 0 && (buf[len-1] == '\n' || buf[len-1] == '\r' ||
+                       buf[len-1] == ' '  || buf[len-1] == '\t'))
+        buf[--len] = '\0';
+    end = buf + len;
+
+    split = end;
+    while (split > buf && split[-1] != ' ' && split[-1] != '\t') split--;
+    if (split == buf || split == end) {
+        fprintf(stderr, "hlse: warning: %s:%d: malformed BRAND line "
+                "(expected: BRAND <name> <domain1>[,<domain2>...]), "
+                "skipped\n", path, lineno);
+        return 0;
+    }
+    domlen = (size_t)(end - split);
+    if (domlen >= sizeof(domains)) domlen = sizeof(domains) - 1;
+    memcpy(domains, split, domlen);
+    domains[domlen] = '\0';
+
+    name_end = split;
+    while (name_end > buf && (name_end[-1] == ' ' || name_end[-1] == '\t'))
+        name_end--;
+    name_start = buf;
+    while (name_start < name_end && (*name_start == ' ' || *name_start == '\t'))
+        name_start++;
+    namelen = (size_t)(name_end - name_start);
+    if (namelen == 0 || namelen >= sizeof(name)) {
+        fprintf(stderr, "hlse: warning: %s:%d: malformed BRAND line "
+                "(expected: BRAND <name> <domain1>[,<domain2>...]), "
+                "skipped\n", path, lineno);
+        return 0;
+    }
+    memcpy(name, name_start, namelen);
+    name[namelen] = '\0';
+
+    if (!hlse_register_custom_brand(name, domains)) {
+        fprintf(stderr, "hlse: warning: %s:%d: brand rejected (bad field "
+                "or registry full), skipped\n", path, lineno);
+        return 0;
+    }
+    return 1;
+}
+
+/* Load and register custom patterns/brands from `path`. Returns 0 on
+ * success (even if individual malformed lines were skipped with a warning),
+ * -1 if the file cannot be opened. */
 static int
 hlse_patterns_load(const char *path) {
     FILE *fp = fopen(path, "r");
@@ -5426,54 +5530,29 @@ hlse_patterns_load(const char *path) {
     if (!fp) return -1;
     while (fgets(line, sizeof(line), fp)) {
         char *s = line;
-        char directive[16], prefix[32], charset_name[16];
-        int min_suffix = 0, score = 0, consumed = 0;
-        HlseCharset cs;
+        char directive[16];
+        int consumed = 0;
         lineno++;
         while (*s == ' ' || *s == '\t') s++;
         if (*s == '#' || *s == '\n' || *s == '\r' || *s == '\0') continue;
-        if (sscanf(s, "%15s %31s %d %15s %d %n", directive, prefix,
-                   &min_suffix, charset_name, &score, &consumed) != 5) {
+        if (sscanf(s, "%15s %n", directive, &consumed) != 1) {
             fprintf(stderr, "hlse: warning: %s:%d: malformed line, skipped\n",
                     path, lineno);
             continue;
         }
-        if (strcmp(directive, "SECRET") != 0) {
-            fprintf(stderr, "hlse: warning: %s:%d: unknown directive '%s', "
-                    "skipped\n", path, lineno, directive);
-            continue;
-        }
-        if (!patterns_charset_from_name(charset_name, &cs)) {
-            fprintf(stderr, "hlse: warning: %s:%d: unknown charset '%s' "
-                    "(expected alnum|alnum_dash|hex|alpha|digit), skipped\n",
-                    path, lineno, charset_name);
-            continue;
-        }
-        {
-            char *label = s + consumed;
-            size_t n;
-            while (*label == ' ' || *label == '\t') label++;
-            n = strlen(label);
-            while (n > 0 && (label[n-1] == '\n' || label[n-1] == '\r'))
-                label[--n] = '\0';
-            if (n == 0) {
-                fprintf(stderr, "hlse: warning: %s:%d: missing label, "
-                        "skipped\n", path, lineno);
-                continue;
-            }
-            if (!hlse_register_custom_secret_pattern(prefix, min_suffix, cs,
-                                                      label, score)) {
-                fprintf(stderr, "hlse: warning: %s:%d: pattern rejected "
-                        "(bad field or registry full), skipped\n",
-                        path, lineno);
-                continue;
-            }
-            loaded++;
+        if (strcmp(directive, "SECRET") == 0) {
+            loaded += patterns_load_secret_line(path, lineno, s + consumed);
+        } else if (strcmp(directive, "BRAND") == 0) {
+            loaded += patterns_load_brand_line(path, lineno, s + consumed);
+        } else {
+            fprintf(stderr, "hlse: warning: %s:%d: unknown directive '%s' "
+                    "(expected SECRET or BRAND), skipped\n",
+                    path, lineno, directive);
         }
     }
     fclose(fp);
     if (loaded == 0) {
-        fprintf(stderr, "hlse: warning: %s: no valid SECRET patterns "
+        fprintf(stderr, "hlse: warning: %s: no valid SECRET/BRAND entries "
                 "loaded\n", path);
     }
     return 0;
@@ -6429,9 +6508,13 @@ print_usage(const char *prog) {
         "  %s --baseline .hlse-baseline scan .          # only NEW findings fail\n"
         "  Inline suppression: put `hlse:allow` on a line to skip its findings.\n"
         "\n"
-        "Custom patterns (%s --patterns <file>): one 'SECRET <prefix> <min_suffix>\n"
-        "  <charset> <score> <label...>' line per pattern; charset is alnum|alnum_dash|\n"
-        "  hex|alpha|digit. Example: SECRET ACME_KEY_ 20 alnum 85 ACME Internal API Key\n"
+        "Custom patterns (%s --patterns <file>), one directive per line:\n"
+        "  SECRET <prefix> <min_suffix> <charset> <score> <label...>\n"
+        "    charset is alnum|alnum_dash|hex|alpha|digit.\n"
+        "    Example: SECRET ACME_KEY_ 20 alnum 85 ACME Internal API Key\n"
+        "  BRAND <name> <owned_domain1>[,<owned_domain2>...]\n"
+        "    Protects your org's name/executives in email BEC display-name checks.\n"
+        "    Example: BRAND acmecorp acmecorp.com,acme-corp.com\n"
         "\n"
         "Exit code: 0 = safe, 1 = threat (>= --fail-on, default block/60), 2 = usage error\n",
         HLSE_VERSION,

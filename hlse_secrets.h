@@ -90,6 +90,34 @@ typedef struct {
  *         free-email corporate impersonation, urgent-subject pattern.  */
 EmailVerdict hlse_check_email_headers(const char *raw_headers);
 
+/* ── Custom brands / organization impersonation targets (roadmap P1-6) ────
+ * The built-in display-name-vs-domain mismatch check (E1) only knows a
+ * fixed set of major consumer brands — it has no way to protect an
+ * organization's OWN name or executives without a rebuild. A registered
+ * custom brand fires the exact same E1 check (score +45, same reason
+ * format) when its name appears in a From display name but the sending
+ * domain is not one of its registered owned domains. Purely additive: the
+ * corpus benchmark never registers custom brands, so F1 is unaffected. Not
+ * thread-safe; call before scanning, from one thread. */
+#define HLSE_CUSTOM_BRAND_MAX     32
+#define HLSE_CUSTOM_BRAND_DOMAINS 4
+
+/* Register a custom brand. `name` is matched as a whole word (case-
+ * insensitive) against the From display name (e.g. "Acme Corp" or a CEO's
+ * name). `owned_domains_csv` is a comma-separated list of up to
+ * HLSE_CUSTOM_BRAND_DOMAINS domains that legitimately send as this brand
+ * (e.g. "acmecorp.com,acme-corp.com"); a From domain matching none of them
+ * while the name appears in the display field triggers E1. Returns 1 on
+ * success, 0 if the registry is full or an argument is invalid (name
+ * empty/NULL, no valid domain parsed). */
+int hlse_register_custom_brand(const char *name, const char *owned_domains_csv);
+
+/* Discard all registered custom brands (built-in brand list is unaffected). */
+void hlse_clear_custom_brands(void);
+
+/* Number of currently registered custom brands. */
+int hlse_custom_brand_count(void);
+
 /* ── Module 3: Clipboard Crypto-Swap ──────────────────────────────────── */
 
 typedef struct {

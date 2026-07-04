@@ -179,30 +179,49 @@ suppressed. An inline
 token on a scanned line also suppresses findings on that line.
 .TP
 .BI --patterns " file"
-Load organization-specific secret patterns from
+Load organization-specific secret patterns and brand/impersonation targets
+from
 .I file
-without a rebuild. Each non-comment, non-blank line is:
+without a rebuild. Each non-comment, non-blank line is one of:
 .RS
 .IP
 .B SECRET \fIprefix min_suffix charset score label...\fR
+.br
+.B BRAND \fIname owned_domain1\fR[,\fIowned_domain2\fR...]
 .RE
 .IP
+For
+.BR SECRET ,
 .I charset
 is one of
-.BR alnum ", " alnum_dash ", " hex ", " alpha ", " digit .
+.BR alnum ", " alnum_dash ", " hex ", " alpha ", " digit ,
+and
 .I label
 is free text to end of line. A malformed line is skipped with a warning; an
 unreadable
 .I file
-is a usage error (exit 2). Custom patterns are checked with the same
+is a usage error (exit 2). Custom secret patterns are checked with the same
 matching and placeholder-suppression logic as the built-in table, and never
 affect the corpus benchmark
 .RB ( --benchmark ).
-Example:
+Examples:
 .RS
 .IP
 .B SECRET ACME_KEY_ 20 alnum 85 ACME Internal API Key
+.br
+.B BRAND acmecorp acmecorp.com,acme-corp.com
 .RE
+.IP
+A
+.B BRAND
+entry protects an organization's own name or executives in the
+.B email
+command's display-name-vs-domain mismatch check (the same check that
+already protects major consumer brands): if
+.I name
+appears in a From display name but the sending domain is not one of
+.IR owned_domain1 ", " owned_domain2 ", " \&...\&,
+it is flagged exactly like a built-in brand impersonation.
 .TP
 .B --self-test
 Run the built-in test suite.

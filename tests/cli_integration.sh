@@ -5785,7 +5785,7 @@ SECRET BADCHARSET_ 10 not_a_charset 80 Bad Charset
 SECRET WORKS_ 10 hex 60 Works Fine
 BADEOF
 ./hlse_core --patterns "$P110_BAD" secret "x=WORKS_1234567890abcdef" 2>/tmp/hlse_p110_warn.txt >/dev/null || true
-grep -qi "malformed line" /tmp/hlse_p110_warn.txt && grep -qi "unknown charset" /tmp/hlse_p110_warn.txt \
+grep -qi "malformed SECRET line" /tmp/hlse_p110_warn.txt && grep -qi "unknown charset" /tmp/hlse_p110_warn.txt \
     && check "p110: malformed pattern lines warn without aborting the file" "0" "0" \
     || check "p110: malformed pattern lines warn without aborting the file" "0" "1"
 ./hlse_core --patterns "$P110_BAD" secret "x=WORKS_1234567890abcdef" >/dev/null 2>&1 && rc=0 || rc=$?
@@ -5908,6 +5908,132 @@ grep -q '"score":80,"action":"ISOLATE"' && check "p111: secret detection unchang
     || check "p111: --help documents scan --git-history" "0" "1"
 
 rm -rf "$P111_DIR"
+
+# ─── P112 (roadmap P1-6): custom brand impersonation via BRAND directive ───
+# The built-in email display-name-vs-domain mismatch check (E1) only knows
+# major consumer brands — an organization cannot protect its own name or
+# executives without a rebuild. `--patterns <file>` now also accepts
+# `BRAND <name> <owned_domain1>[,<owned_domain2>...]` lines, checked by the
+# same E1 logic (score +45, same reason format) as the built-in table.
+
+P112_PAT=$(mktemp)
+cat > "$P112_PAT" <<'BRANDEOF'
+# ACME Corp impersonation targets
+BRAND acmecorp acmecorp.com,acme-corp.com
+BRANDEOF
+
+# Without --patterns, impersonating "Acmecorp" from an unrelated domain is invisible
+P112_NOFLAG=$(./hlse_core --json email "From: Acmecorp Finance <ceo@evil.com>
+Received: from mail.evil.com
+Subject: hello" 2>/dev/null || true)
+echo "$P112_NOFLAG" | grep -q '"score":0' \
+    && check "p112: brand impersonation undetected without --patterns" "0" "0" \
+    || check "p112: brand impersonation undetected without --patterns" "0" "1"
+
+# With --patterns, impersonation from a non-owned domain fires E1 at score 45
+P112_HIT=$(./hlse_core --patterns "$P112_PAT" --json email "From: Acmecorp Finance <ceo@evil.com>
+Received: from mail.evil.com
+Subject: hello" 2>/dev/null || true)
+echo "$P112_HIT" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] == 45, d
+assert "acmecorp" in d["reasons"][0] and "evil.com" in d["reasons"][0], d
+' && check "p112: --patterns BRAND directive detects impersonation from an unrelated domain" "0" "0" \
+   || check "p112: --patterns BRAND directive detects impersonation from an unrelated domain" "0" "1"
+
+# Sent from the primary registered owned domain: no false positive
+P112_OWN=$(./hlse_core --patterns "$P112_PAT" --json email "From: Acmecorp Finance <ceo@acmecorp.com>
+Received: from mail.acmecorp.com
+Received: from mx1.acmecorp.com
+Subject: hello" 2>/dev/null || true)
+echo "$P112_OWN" | grep -q '"score":0' \
+    && check "p112: sent from primary owned domain is not flagged" "0" "0" \
+    || check "p112: sent from primary owned domain is not flagged" "0" "1"
+
+# Sent from the ALTERNATE registered owned domain: also no false positive
+P112_ALT=$(./hlse_core --patterns "$P112_PAT" --json email "From: Acmecorp Finance <ceo@acme-corp.com>
+Received: from mail.acme-corp.com
+Received: from mx1.acme-corp.com
+Subject: hello" 2>/dev/null || true)
+echo "$P112_ALT" | grep -q '"score":0' \
+    && check "p112: sent from alternate owned domain is not flagged" "0" "0" \
+    || check "p112: sent from alternate owned domain is not flagged" "0" "1"
+
+# CLI plaintext mode shows the same E1 reason
+P112_TXT=$(./hlse_core --patterns "$P112_PAT" email "From: Acmecorp Finance <ceo@evil.com>
+Received: from mail.evil.com
+Subject: hello" 2>/dev/null || true)
+echo "$P112_TXT" | grep -q "implies acmecorp but From is evil.com" \
+    && check "p112: CLI plaintext shows the custom-brand E1 reason" "0" "0" \
+    || check "p112: CLI plaintext shows the custom-brand E1 reason" "0" "1"
+
+# A malformed BRAND line (missing owned-domain field) warns and is skipped,
+# without aborting the rest of the file
+P112_BAD=$(mktemp)
+cat > "$P112_BAD" <<'BADEOF'
+BRAND onlyonename
+BRAND acmecorp acmecorp.com
+BADEOF
+./hlse_core --patterns "$P112_BAD" email "From: Acmecorp Team <x@evil.com>
+Received: from mail.evil.com" 2>/tmp/hlse_p112_warn.txt >/dev/null || true
+grep -qi "malformed BRAND line" /tmp/hlse_p112_warn.txt \
+    && check "p112: malformed BRAND line warns without aborting the file" "0" "0" \
+    || check "p112: malformed BRAND line warns without aborting the file" "0" "1"
+P112_BADOUT=$(./hlse_core --patterns "$P112_BAD" --json email "From: Acmecorp Team <x@evil.com>
+Received: from mail.evil.com" 2>/dev/null || true)
+echo "$P112_BADOUT" | grep -q '"score":45' \
+    && check "p112: a later valid BRAND line in the same file still loads and fires" "0" "0" \
+    || check "p112: a later valid BRAND line in the same file still loads and fires" "0" "1"
+rm -f "$P112_BAD" /tmp/hlse_p112_warn.txt
+
+# An unrelated email (no registered brand name in the display field) is unaffected
+P112_UNREL=$(./hlse_core --patterns "$P112_PAT" --json email "From: John Doe <john@example.com>
+Received: from mail.example.com
+Subject: lunch tomorrow?" 2>/dev/null || true)
+echo "$P112_UNREL" | grep -q '"score":0' \
+    && check "p112: unrelated email is unaffected by a registered brand" "0" "0" \
+    || check "p112: unrelated email is unaffected by a registered brand" "0" "1"
+
+# F1 invariant: built-in brand impersonation detection (unregistered brands)
+# is unaffected by loading a --patterns file with custom brands
+P112_BUILTIN=$(./hlse_core --patterns "$P112_PAT" --json email "From: Microsoft Support <x@evil.com>
+Received: from mail.evil.com" 2>/dev/null || true)
+echo "$P112_BUILTIN" | grep -q '"score":45' \
+    && check "p112: built-in brand detection unaffected by custom --patterns (F1 invariant)" "0" "0" \
+    || check "p112: built-in brand detection unaffected by custom --patterns (F1 invariant)" "0" "1"
+
+# --help documents the BRAND directive
+./hlse_core --help 2>&1 | grep -q -- "BRAND <name>" \
+    && check "p112: --help documents the BRAND directive" "0" "0" \
+    || check "p112: --help documents the BRAND directive" "0" "1"
+
+# A multi-word brand name (real organization names commonly have spaces,
+# e.g. "Acme Corp" not "AcmeCorp") is parsed correctly: <name> is everything
+# before the LAST whitespace-delimited token (the domain list), not just
+# the first word.
+P112_MW=$(mktemp)
+printf 'BRAND acme corp acmecorp.com,acme-corp.com\n' > "$P112_MW"
+P112_MW_HIT=$(./hlse_core --patterns "$P112_MW" --json email "From: ACME Corp CEO <fraud@evil.com>
+Received: from mail.evil.com
+Subject: urgent" 2>/dev/null || true)
+echo "$P112_MW_HIT" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["score"] == 45, d
+assert "acme corp" in d["reasons"][0], d
+' && check "p112: multi-word BRAND name (\"acme corp\") is parsed and matched correctly" "0" "0" \
+   || check "p112: multi-word BRAND name (\"acme corp\") is parsed and matched correctly" "0" "1"
+P112_MW_OK=$(./hlse_core --patterns "$P112_MW" --json email "From: ACME Corp CEO <ceo@acmecorp.com>
+Received: from mail.acmecorp.com
+Received: from mx1.acmecorp.com
+Subject: hello" 2>/dev/null || true)
+echo "$P112_MW_OK" | grep -q '"score":0' \
+    && check "p112: multi-word BRAND name sent from its owned domain is not flagged" "0" "0" \
+    || check "p112: multi-word BRAND name sent from its owned domain is not flagged" "0" "1"
+rm -f "$P112_MW"
+
+rm -f "$P112_PAT"
 
 # ─── results ────────────────────────────────────────────────────────────
 

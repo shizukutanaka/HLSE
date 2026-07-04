@@ -341,6 +341,72 @@ hlse_custom_secret_pattern_count(void) {
     return g_custom_pattern_n;
 }
 
+/* ── Custom brands / organization impersonation targets (roadmap P1-6) ──── */
+typedef struct {
+    char name[64];
+    char owned_domains[HLSE_CUSTOM_BRAND_DOMAINS][128];
+    int  n_domains;
+} CustomBrand;
+
+static CustomBrand g_custom_brands[HLSE_CUSTOM_BRAND_MAX];
+static int         g_custom_brand_n = 0;
+
+static void
+lowercase_copy(char *dst, size_t dstcap, const char *src) {
+    size_t i;
+    for (i = 0; src[i] && i + 1 < dstcap; i++)
+        dst[i] = (char)tolower((unsigned char)src[i]);
+    dst[i] = '\0';
+}
+
+int
+hlse_register_custom_brand(const char *name, const char *owned_domains_csv) {
+    CustomBrand *b;
+    const char *p;
+    if (!name || !name[0] || strlen(name) >= sizeof(b->name)) return 0;
+    if (g_custom_brand_n >= HLSE_CUSTOM_BRAND_MAX) return 0;
+    b = &g_custom_brands[g_custom_brand_n];
+    lowercase_copy(b->name, sizeof(b->name), name);
+    b->n_domains = 0;
+    p = owned_domains_csv;
+    while (p && *p && b->n_domains < HLSE_CUSTOM_BRAND_DOMAINS) {
+        const char *comma = strchr(p, ',');
+        size_t len = comma ? (size_t)(comma - p) : strlen(p);
+        while (len > 0 && (p[0] == ' ')) { p++; len--; } /* trim leading ws */
+        while (len > 0 && p[len - 1] == ' ') len--;      /* trim trailing ws */
+        if (len > 0 && len < sizeof(b->owned_domains[0])) {
+            char tmp[128];
+            memcpy(tmp, p, len);
+            tmp[len] = '\0';
+            lowercase_copy(b->owned_domains[b->n_domains], sizeof(b->owned_domains[0]), tmp);
+            b->n_domains++;
+        }
+        p = comma ? comma + 1 : NULL;
+    }
+    if (b->n_domains == 0) return 0; /* need at least one owned domain */
+    g_custom_brand_n++;
+    return 1;
+}
+
+void
+hlse_clear_custom_brands(void) {
+    g_custom_brand_n = 0;
+}
+
+int
+hlse_custom_brand_count(void) {
+    return g_custom_brand_n;
+}
+
+static int
+custom_brand_owns_domain(const CustomBrand *b, const char *domain) {
+    int i;
+    if (!domain) return 0;
+    for (i = 0; i < b->n_domains; i++)
+        if (strcmp(b->owned_domains[i], domain) == 0) return 1;
+    return 0;
+}
+
 /* Check for SSH private key headers */
 static int
 check_ssh_key(const char *text, SecretVerdict *v) {
@@ -1162,6 +1228,7 @@ hlse_check_email_headers(const char *raw_headers) {
         /* Second pass: fire E1 only when brand truly mismatches. Skip
          * generic role words ("support", "security", ...) if the primary
          * brand already matches the domain.                                  */
+        int e1_fired = 0;
         for (i = 0; known[i]; i++) {
             /* Word-boundary match on the display name avoids substring
              * collisions ("irs" in "First", "ups" in "Backups Team");
@@ -1175,7 +1242,29 @@ hlse_check_email_headers(const char *raw_headers) {
                 snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
                     "E1: Display name '%.60s' implies %.40s but From is %.80s",
                     display_name, known[i], from_domain);
+                e1_fired = 1;
                 break;
+            }
+        }
+
+        /* Third pass: custom (runtime-registered) brands — roadmap P1-6.
+         * Same word-boundary match and mismatch rule as the built-in table,
+         * against each brand's own registered owned-domain list. Only
+         * checked when the built-in pass above did not already flag this
+         * email, so a message never double-counts E1 across two tables. */
+        if (!e1_fired && v.n_reasons < HLSE_EMAIL_MAX_REASONS) {
+            int j;
+            for (j = 0; j < g_custom_brand_n; j++) {
+                const CustomBrand *b = &g_custom_brands[j];
+                if (contains_word(lower_dn, b->name) &&
+                    !custom_brand_owns_domain(b, from_domain))
+                {
+                    v.score += 45;
+                    snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                        "E1: Display name '%.60s' implies %.40s but From is %.80s",
+                        display_name, b->name, from_domain);
+                    break;
+                }
             }
         }
     }

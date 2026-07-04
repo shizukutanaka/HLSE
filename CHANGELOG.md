@@ -2,6 +2,50 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.112] — 2026-07-02
+
+### Added
+- **Perspective 112 (roadmap P1-6): `--patterns <file>` gains a `BRAND`
+  directive — protect an organization's own name and executives from BEC/
+  CEO-fraud impersonation without a rebuild.**
+
+  The commercial-gap audit noted the built-in email display-name-vs-domain
+  mismatch check (E1) only knows major consumer brands (Microsoft, PayPal,
+  ...) — an organization could never protect its own name or executives from
+  impersonation without recompiling. Extends the `--patterns` config format
+  (introduced in P0-3 for custom secret patterns) with a second directive:
+  ```
+  BRAND <name> <owned_domain1>[,<owned_domain2>...]
+  ```
+  Registered via a new `hlse_register_custom_brand()` API in
+  `hlse_secrets.h`/`.c`, checked by the *exact same* E1 logic (score +45,
+  identical reason format) as the built-in brand table: if `<name>` appears
+  in a From display name but the sending domain matches none of the
+  registered owned domains, it fires — e.g. `BRAND acmecorp
+  acmecorp.com,acme-corp.com` flags "Acme Corp Finance" emailing from an
+  attacker's domain but not from either registered domain.
+
+  Fixed during implementation: the initial parser read `<name>` with a
+  single `%s` token, so it silently truncated at the first space — but real
+  organization names commonly contain spaces ("Acme Corp", not "AcmeCorp").
+  Rewrote the line parser to split from the end of the line (the domain
+  list is always the last whitespace-delimited token, comma-separated with
+  no internal spaces), so `<name>` can itself contain spaces, matching how
+  the built-in table already handles multi-word entries ("office 365",
+  "human resources") via the same `contains_word()` matcher.
+
+  Purely additive — no built-in detection logic, score, or threshold
+  touched. `--benchmark` never registers custom brands, so F1=1.000 is
+  unaffected by construction.
+
+  - **Docs**: `--help`, `hlse.1`, and `examples/custom-patterns.example`
+    document the `BRAND` directive.
+  - **Tests**: 12 new CLI integration tests — detection on/off without the
+    flag, owned-domain (primary and alternate) suppression, CLI plaintext,
+    malformed-line resilience, an unrelated-email no-op check, a built-in-
+    brand F1-invariant check, and the multi-word-name parsing fix
+    (719 total).
+
 ## [1.0.111] — 2026-07-02
 
 ### Added
