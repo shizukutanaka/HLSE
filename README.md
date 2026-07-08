@@ -77,7 +77,8 @@ make static     # portable static binary (no glibc needed)
 make test       # all test suites
 make coverage   # gcov code coverage report
 make fuzz       # 100K iteration fuzz test
-make install    # install to ~/.local/{bin,lib,include/hlse,share/man}
+make server     # build hlse-server (HTTP API + web dashboard)
+make install    # install CLI + hlse-server to ~/.local/{bin,lib,include/hlse,share/man,share/hlse}
 
 After install, compile your code against the library:
 ```bash
@@ -202,7 +203,8 @@ Endpoints: `GET /api/v1/health` · `GET /api/v1/version` ·
 `POST /api/v1/scan/{url,text,secrets,file}`. The dashboard (URL / message /
 secret / file scanning, live risk score, colour-coded signals) is served from
 `web/`. Requests are logged (`METHOD path -> status`). Full reference:
-[`docs/API.md`](docs/API.md); end-to-end smoke test: `make server-check`.
+[`docs/API.md`](docs/API.md) or `man hlse-server` once installed; end-to-end
+smoke test: `make server-check`.
 
 Concurrency: one thread per connection, capped at 64 simultaneous connections
 — bursts beyond that get an immediate `503` (`Retry-After: 1`), never a queue

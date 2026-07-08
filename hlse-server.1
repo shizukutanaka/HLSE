@@ -1,0 +1,156 @@
+.TH HLSE-SERVER 1 "2026-07-08" "HLSE 1.1.0" "User Commands"
+.SH NAME
+hlse-server \- HLSE HTTP/JSON API and web dashboard server
+.SH SYNOPSIS
+.B hlse-server
+.RB [ --host
+.IR addr ]
+.RB [ --port
+.IR n ]
+.RB [ --webroot
+.IR dir ]
+.br
+.B hlse-server
+.RB [ --help ]
+.SH DESCRIPTION
+.B hlse-server
+is a small, dependency-free HTTP/1.1 server (POSIX sockets, libc, and
+pthreads only \(em no third-party runtime) that exposes the HLSE detection
+engine as a JSON API and serves a local, self-contained web dashboard for
+scanning URLs, messages, code/config for leaked secrets, and files. It
+links the same detection engine the
+.BR hlse_core (1)
+CLI uses; verdicts are identical.
+.PP
+The server binds
+.B 127.0.0.1
+(loopback) by default and performs no authentication. It is a local
+developer tool, not a public-facing service: to expose it beyond the local
+host, place it behind a reverse proxy that terminates TLS and handles
+authentication.
+.PP
+Each accepted connection is handled on its own detached thread, capped at
+64 simultaneous connections. A connection beyond the cap receives an
+immediate
+.B 503
+response with no thread spawned, so a connection burst cannot exhaust
+memory or file descriptors.
+.SH OPTIONS
+.TP
+.BI --host " addr"
+Bind address. Default
+.BR 127.0.0.1 .
+.TP
+.BI --port " n"
+Listen port. Default
+.BR 8080 .
+.TP
+.BI --webroot " dir"
+Directory containing
+.IR index.html ", " app.js ", and " style.css .
+Default
+.BR ./web .
+.TP
+.BR -h ", " --help
+Show usage and exit.
+.SH ENDPOINTS
+All API responses are
+.BR application/json .
+.TP
+.B GET /
+The web dashboard.
+.TP
+.B GET /api/v1/health
+.nf
+{ "status": "ok", "engine": "<version>", "server": "<version>" }
+.fi
+.TP
+.B GET /api/v1/version
+.nf
+{ "version": "<version>" }
+.fi
+.TP
+.B "POST /api/v1/scan/url"
+.RS
+Body:
+.RS
+.nf
+{ "url": "<url>" }
+.fi
+.RE
+Scan a URL for phishing/spoofing. Returns
+.IR score ", " severity ", " action ", and " reasons .
+.RE
+.TP
+.B "POST /api/v1/scan/text"
+.RS
+Body:
+.RS
+.nf
+{ "text": "<message>" }
+.fi
+.RE
+Scan a message for scam/phishing language. Same response shape as
+.IR /scan/url .
+.RE
+.TP
+.B "POST /api/v1/scan/secrets"
+.RS
+Body:
+.RS
+.nf
+{ "text": "<code or config>" }
+.fi
+.RE
+Scan code or config text for leaked credentials.
+.RE
+.TP
+.B "POST /api/v1/scan/file"
+.RS
+Body:
+.RS
+.nf
+{ "filename": "<name>", "content": "<file text>" }
+.fi
+.RE
+Combine name-based masquerade detection with a leaked-secret content scan.
+Nothing is written to disk server-side.
+.RE
+.SH EXIT STATUS
+The server runs until interrupted (SIGINT/SIGTERM) and then exits
+.BR 0 .
+It exits
+.B 1
+on a socket error (bind/listen failure) and
+.B 2
+on a usage error (bad arguments).
+.SH EXAMPLES
+Start on the default port and open the dashboard at
+.UR http://127.0.0.1:8080
+.UE :
+.RS
+.B hlse-server
+.RE
+.PP
+Scan a URL from the command line:
+.RS
+.nf
+curl -s localhost:8080/api/v1/scan/url -d '{"url":"https://paypa1.com"}'
+.fi
+.RE
+.SH PRIVACY
+HLSE performs all detection locally. The server makes no outbound network
+connections and sends nothing off-host; every verdict is computed by the
+same engine the CLI uses.
+.SH SEE ALSO
+.BR hlse_core (1),
+.UR https://github.com/shizukutanaka/hlse/blob/main/docs/API.md
+docs/API.md
+.UE
+for the full endpoint reference.
+.PP
+Project home:
+.UR https://github.com/shizukutanaka/hlse
+.UE
+.SH LICENSE
+MIT.

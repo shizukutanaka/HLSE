@@ -86,8 +86,16 @@
 #define BACKLOG            128
 #define MAX_CONCURRENT      64   /* bounded thread-per-connection cap */
 
+/* Overridden at install time (see Makefile `install` target) to bake in the
+ * deployed asset path (e.g. $(PREFIX)/share/hlse/web), so an installed
+ * hlse-server finds its dashboard regardless of the caller's cwd. The plain
+ * `make server` / in-repo build leaves this at the repo-relative default. */
+#ifndef HLSE_DEFAULT_WEBROOT
+#define HLSE_DEFAULT_WEBROOT "./web"
+#endif
+
 static volatile sig_atomic_t g_stop = 0;
-static const char *g_webroot = "./web";
+static const char *g_webroot = HLSE_DEFAULT_WEBROOT;
 
 /* Active-connection counter, adjusted with GCC/Clang atomic builtins so the
  * accept loop and every connection thread can update it without a mutex. */

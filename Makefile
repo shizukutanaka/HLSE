@@ -44,6 +44,7 @@ BINDIR  := $(DESTDIR)$(PREFIX)/bin
 LIBDIR  := $(DESTDIR)$(PREFIX)/lib
 INCDIR  := $(DESTDIR)$(PREFIX)/include/hlse
 MANDIR  := $(DESTDIR)$(PREFIX)/share/man/man1
+DATADIR := $(DESTDIR)$(PREFIX)/share/hlse
 
 # Source files
 CORE_SRC  := hlse_core.c hlse_text.c hlse_protect.c hlse_secrets.c hlse_supply.c hlse_file.c hlse_audit.c hlse_util.c
@@ -447,23 +448,32 @@ hlse_core_static: $(CORE_SRC) hlse_text.h hlse_core.h hlse_protect.h
 # ─── install / uninstall ─────────────────────────────────────────────────
 
 install: $(BINARY) $(SHARED)
-	@mkdir -p $(BINDIR) $(LIBDIR) $(INCDIR) $(MANDIR)
+	@mkdir -p $(BINDIR) $(LIBDIR) $(INCDIR) $(MANDIR) $(DATADIR)/web
 	cp $(BINARY) $(BINDIR)/hlse_core
 	cp $(SHARED) $(LIBDIR)/libhlse.so
 	cp hlse_core.h hlse_text.h hlse_protect.h hlse_secrets.h \
 	   hlse_supply.h hlse_file.h hlse_audit.h $(INCDIR)/
 	cp hlse.1 $(MANDIR)/hlse.1
+	cp hlse-server.1 $(MANDIR)/hlse-server.1
+	cp web/index.html web/app.js web/style.css $(DATADIR)/web/
+	$(CC) $(CFLAGS) $(PIE_CFLAGS) -pthread -D_GNU_SOURCE -DHLSE_CORE_AS_LIB \
+		-DHLSE_DEFAULT_WEBROOT='"$(PREFIX)/share/hlse/web"' \
+		-o $(BINDIR)/hlse-server hlse_server.c $(CORE_SRC) $(PIE_LDFLAGS) -I. -lm -lpthread
 	@echo "Installed:"
 	@echo "  $(BINDIR)/hlse_core"
+	@echo "  $(BINDIR)/hlse-server  (webroot defaults to $(PREFIX)/share/hlse/web)"
 	@echo "  $(LIBDIR)/libhlse.so"
 	@echo "  $(INCDIR)/*.h"
 	@echo "  $(MANDIR)/hlse.1"
+	@echo "  $(MANDIR)/hlse-server.1"
+	@echo "  $(DATADIR)/web/*"
 	@echo ""
 	@echo "Compile against: gcc -I$(PREFIX)/include -L$(PREFIX)/lib -lhlse -lm"
 
 uninstall:
-	rm -f $(BINDIR)/hlse_core $(LIBDIR)/libhlse.so $(MANDIR)/hlse.1
-	rm -rf $(INCDIR)
+	rm -f $(BINDIR)/hlse_core $(BINDIR)/hlse-server $(LIBDIR)/libhlse.so \
+		$(MANDIR)/hlse.1 $(MANDIR)/hlse-server.1
+	rm -rf $(INCDIR) $(DATADIR)
 
 # ─── clean ───────────────────────────────────────────────────────────────
 

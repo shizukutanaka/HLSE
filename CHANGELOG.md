@@ -41,6 +41,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
     Verified with a 30-way concurrent request burst (all succeed, ~70ms
     total) and a 70-socket saturation test confirming the `503` path
     triggers at the cap and recovers once slots free up.
+  - **Packaging**: `make install`/`uninstall` now install `hlse-server`
+    alongside the CLI. The installed binary is rebuilt with
+    `HLSE_DEFAULT_WEBROOT` baked in as `$(PREFIX)/share/hlse/web` (the
+    dashboard assets are installed there too), so `hlse-server` run from any
+    directory after installation finds its assets — the plain in-repo
+    `make server` build is unaffected and still defaults to `./web`.
+    Added `hlse-server.1` man page (endpoints, concurrency model, examples),
+    installed to `$(MANDIR)`. Verified round-trip in an isolated `PREFIX`:
+    install → server run from an unrelated cwd serves the dashboard and API
+    correctly → `uninstall` leaves the prefix empty.
 
 ## [1.0.113] — 2026-07-04
 
