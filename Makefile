@@ -96,8 +96,8 @@ server: $(SERVER_BIN)   ## build the HTTP API + dashboard server
 server-check: $(SERVER_BIN)   ## end-to-end smoke test of the running server
 	@bash tests/server_integration.sh ./$(SERVER_BIN) ./web
 
-$(SERVER_BIN): hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h
-	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -o $@ hlse_server.c $(CORE_SRC) $(PIE_LDFLAGS) -I. -lm
+$(SERVER_BIN): hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h hlse_file.h
+	$(CC) $(CFLAGS) $(PIE_CFLAGS) -pthread -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -o $@ hlse_server.c $(CORE_SRC) $(PIE_LDFLAGS) -I. -lm -lpthread
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(PROP_BIN): $(TEST_SRC) hlse_text.c hlse_text.h
@@ -427,9 +427,9 @@ test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAU
 	@echo " All test suites passed"
 	@echo "═══════════════════════════════════════"
 
-$(SERVER_TEST): tests/hlse_server_tests.c hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h
+$(SERVER_TEST): tests/hlse_server_tests.c hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h hlse_file.h
 	@mkdir -p tests
-	$(CC) $(CFLAGS) -Wno-unused-function -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -DHLSE_SERVER_NO_MAIN -o $@ tests/hlse_server_tests.c $(CORE_SRC) -I. -lm
+	$(CC) $(CFLAGS) -Wno-unused-function -pthread -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -DHLSE_SERVER_NO_MAIN -o $@ tests/hlse_server_tests.c $(CORE_SRC) -I. -lm -lpthread
 	@printf '  %-20s %s\n' "CC" "$@"
 
 bench: $(BINARY)

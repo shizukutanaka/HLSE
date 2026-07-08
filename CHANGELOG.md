@@ -27,6 +27,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
     untrusted JSON request parser and output escaper — the security-critical
     surface). Wired into `make` (`server` target, built by `all`, run by
     `test`) and `.gitignore`.
+  - **Concurrency**: refactored to one detached pthread per connection
+    (previously a single-threaded accept loop), capped at 64 simultaneous
+    connections — a burst beyond the cap gets an immediate `503
+    Service Unavailable` (`Retry-After: 1`) from the accept loop with no
+    thread spawned, so it can't exhaust memory or file descriptors. Safe
+    because every handler only reads `static const` engine tables
+    (`hlse_scan()` / `hlse_scan_secrets()` / `hlse_check_filename()` are
+    documented thread-safe) and all per-request state now lives in a
+    stack-allocated `ConnCtx` — the prior per-request globals (log
+    method/path/status, HEAD-suppress flag) were removed, eliminating the
+    data races they would otherwise have under concurrent connections.
+    Verified with a 30-way concurrent request burst (all succeed, ~70ms
+    total) and a 70-socket saturation test confirming the `503` path
+    triggers at the cap and recovers once slots free up.
 
 ## [1.0.113] — 2026-07-04
 

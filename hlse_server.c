@@ -1,7 +1,7 @@
 /*
  * hlse_server.c — HLSE local HTTP/JSON API + web dashboard server.
  *
- * A small, dependency-free HTTP/1.1 server (POSIX sockets + libc only)
+ * A small, dependency-free HTTP/1.1 server (POSIX sockets + libc + pthreads)
  * that exposes the HLSE detection engine over a JSON API and serves the
  * bundled web dashboard. Consistent with HLSE's zero-third-party-dependency,
  * minimal-attack-surface design.
@@ -9,7 +9,7 @@
  * Build (see Makefile target `hlse-server`):
  *   cc -DHLSE_CORE_AS_LIB -o hlse-server hlse_server.c \
  *      hlse_core.c hlse_text.c hlse_protect.c hlse_secrets.c \
- *      hlse_supply.c hlse_file.c hlse_audit.c hlse_util.c -I. -lm
+ *      hlse_supply.c hlse_file.c hlse_audit.c hlse_util.c -I. -lm -lpthread
  *
  * Run:
  *   ./hlse-server --host 127.0.0.1 --port 8080 --webroot ./web
@@ -20,9 +20,22 @@
  *   GET  /app.js /style.css    -> bundled static assets (exact-route allowlist)
  *   GET  /api/v1/health        -> {"status":"ok","version":"..."}
  *   GET  /api/v1/version       -> {"version":"..."}
- *   POST /api/v1/scan/url      {"url":"..."}   -> verdict
- *   POST /api/v1/scan/text     {"text":"..."}  -> verdict
- *   POST /api/v1/scan/secrets  {"text":"..."}  -> secret findings
+ *   POST /api/v1/scan/url      {"url":"..."}              -> verdict
+ *   POST /api/v1/scan/text     {"text":"..."}             -> verdict
+ *   POST /api/v1/scan/secrets  {"text":"..."}             -> secret findings
+ *   POST /api/v1/scan/file     {"filename":"","content":""} -> masquerade + secrets
+ *
+ * Concurrency model:
+ *   One detached pthread per accepted connection, capped at MAX_CONCURRENT
+ *   simultaneous connections (excess connections get an immediate 503 from
+ *   the accept loop, no thread spawned). This is safe because every request
+ *   handler is reentrant: hlse_scan() / hlse_scan_secrets() /
+ *   hlse_check_filename() only read `static const` tables (documented
+ *   thread-safe in hlse_core.h), and the server never calls the engine's
+ *   non-thread-safe mutators (hlse_register_custom_secret_pattern() /
+ *   hlse_register_custom_brand()). All per-request state lives in a
+ *   stack-allocated ConnCtx — there are no shared mutable globals in the
+ *   request path, so there is nothing for two threads to race on.
  *
  * Security posture:
  *   - Binds to 127.0.0.1 by default (loopback only).
@@ -32,9 +45,11 @@
  *     traversal is structurally impossible.
  *   - Security headers (CSP, X-Content-Type-Options, Referrer-Policy,
  *     X-Frame-Options) on every response.
- *   - Per-connection recv timeout; SIGPIPE ignored; graceful SIGINT/SIGTERM.
- *   - Single-threaded accept loop: simple and robust for a local dashboard.
- *     (Not a public multi-tenant server; document accordingly.)
+ *   - Per-connection recv/send timeout; SIGPIPE ignored; graceful
+ *     SIGINT/SIGTERM (new connections stop being accepted; in-flight
+ *     threads finish naturally).
+ *   - Bounded concurrency (MAX_CONCURRENT) guards against fork-bomb-style
+ *     resource exhaustion from a burst of connections.
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -50,6 +65,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <stdint.h>
+#include <pthread.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -61,22 +77,34 @@
 #include "hlse_secrets.h"
 #include "hlse_file.h"
 
-#define HLSE_SERVER_VERSION "1.0.0"
+#define HLSE_SERVER_VERSION "1.1.0"
 
-#define MAX_HEADER     8192      /* max request-line + headers */
-#define MAX_BODY      65536      /* 64 KiB request body cap */
-#define MAX_REQUEST   (MAX_HEADER + MAX_BODY)
-#define RECV_TIMEOUT_S    10
-#define BACKLOG           64
+#define MAX_HEADER       8192    /* max request-line + headers */
+#define MAX_BODY        65536    /* 64 KiB request body cap */
+#define MAX_REQUEST     (MAX_HEADER + MAX_BODY)
+#define RECV_TIMEOUT_S      10
+#define BACKLOG            128
+#define MAX_CONCURRENT      64   /* bounded thread-per-connection cap */
 
 static volatile sig_atomic_t g_stop = 0;
 static const char *g_webroot = "./web";
-static int g_suppress_body = 0;  /* set for HEAD: emit headers, no body */
-static int  g_last_status = 0;      /* status of the most recent response (for access log) */
-static char g_log_method[8]  = {0}; /* method/path captured for the access log */
-static char g_log_path[1024] = {0};
+
+/* Active-connection counter, adjusted with GCC/Clang atomic builtins so the
+ * accept loop and every connection thread can update it without a mutex. */
+static volatile int g_active_conns = 0;
 
 static void on_signal(int sig) { (void)sig; g_stop = 1; }
+
+/* Per-connection state. Everything a request handler needs to read or write
+ * lives here — nothing is a shared global, so concurrent connection threads
+ * never touch each other's data. */
+typedef struct {
+    int  fd;
+    int  suppress_body;   /* set for HEAD: emit headers, no body */
+    int  status;          /* status of the most recent response (access log) */
+    char method[8];
+    char path[1024];
+} ConnCtx;
 
 /* --------------------------- JSON helpers ---------------------------- */
 
@@ -117,7 +145,8 @@ json_escape_append(char *dst, size_t cap, size_t *len, const char *src) {
  * double-quoted string, decoding \" \\ \/ \n \r \t \b \f and \uXXXX (BMP,
  * emitted as UTF-8). Returns 1 on success, 0 if the field is absent/invalid.
  * This is deliberately tiny -- the only untrusted parser in the server, so it
- * is also exercised by the fuzz target. */
+ * is also exercised by unit tests. Pure function of its arguments: no shared
+ * state, safe to call from any number of threads concurrently. */
 static int
 json_get_string(const char *json, const char *key, char *out, size_t outsz) {
     char needle[64];
@@ -217,7 +246,7 @@ write_all(int fd, const char *buf, size_t len) {
 }
 
 static void
-send_response(int fd, int status, const char *status_text,
+send_response(ConnCtx *cx, int status, const char *status_text,
               const char *content_type, const char *body, size_t body_len) {
     char header[1024];
     int hn = snprintf(header, sizeof(header),
@@ -231,19 +260,19 @@ send_response(int fd, int status, const char *status_text,
         status, status_text, HLSE_SERVER_VERSION, content_type, body_len,
         SECURITY_HEADERS);
     if (hn < 0) return;
-    g_last_status = status;
-    write_all(fd, header, (size_t)hn);
-    if (body_len && !g_suppress_body) write_all(fd, body, body_len);
+    cx->status = status;
+    write_all(cx->fd, header, (size_t)hn);
+    if (body_len && !cx->suppress_body) write_all(cx->fd, body, body_len);
 }
 
 static void
-send_json(int fd, int status, const char *status_text, const char *json) {
-    send_response(fd, status, status_text, "application/json; charset=utf-8",
+send_json(ConnCtx *cx, int status, const char *status_text, const char *json) {
+    send_response(cx, status, status_text, "application/json; charset=utf-8",
                   json, strlen(json));
 }
 
 static void
-send_error(int fd, int status, const char *status_text, const char *message) {
+send_error(ConnCtx *cx, int status, const char *status_text, const char *message) {
     char body[512];
     size_t len = 0;
     body[0] = '\0';
@@ -251,13 +280,13 @@ send_error(int fd, int status, const char *status_text, const char *message) {
     len = strlen(body);
     json_escape_append(body, sizeof(body), &len, message);
     if (len + 2 < sizeof(body)) { strcpy(body + len, "\"}"); }
-    send_json(fd, status, status_text, body);
+    send_json(cx, status, status_text, body);
 }
 
 /* --------------------------- verdict -> JSON ------------------------- */
 
 static void
-respond_scan(int fd, const char *input) {
+respond_scan(ConnCtx *cx, const char *input) {
     ScanResult r = hlse_scan(input);
     char body[8192];
     size_t len = 0;
@@ -285,11 +314,11 @@ respond_scan(int fd, const char *input) {
         if (len + 1 < sizeof(body)) { body[len++] = '"'; body[len] = '\0'; }
     }
     if (len + 2 < sizeof(body)) { body[len++] = ']'; body[len++] = '}'; body[len] = '\0'; }
-    send_json(fd, 200, "OK", body);
+    send_json(cx, 200, "OK", body);
 }
 
 static void
-respond_secrets(int fd, const char *input) {
+respond_secrets(ConnCtx *cx, const char *input) {
     SecretVerdict v = hlse_scan_secrets(input);
     char body[16384];
     size_t len = 0;
@@ -312,14 +341,14 @@ respond_secrets(int fd, const char *input) {
         if (len + 3 < sizeof(body)) { body[len++] = '"'; body[len++] = '}'; body[len] = '\0'; }
     }
     if (len + 2 < sizeof(body)) { body[len++] = ']'; body[len++] = '}'; body[len] = '\0'; }
-    send_json(fd, 200, "OK", body);
+    send_json(cx, 200, "OK", body);
 }
 
 /* Scan an uploaded file: name-based masquerade (hlse_check_filename) plus a
  * leaked-secret content scan (hlse_scan_secrets). No temp file / base64 — the
  * client sends the claimed filename and the file text. */
 static void
-respond_file(int fd, const char *filename, const char *content) {
+respond_file(ConnCtx *cx, const char *filename, const char *content) {
     FileVerdict fv = hlse_check_filename(filename);
     SecretVerdict sv = hlse_scan_secrets(content);
     int score = fv.score > sv.score ? fv.score : sv.score;
@@ -362,7 +391,7 @@ respond_file(int fd, const char *filename, const char *content) {
         if (len + 3 < sizeof(body)) { body[len++] = '"'; body[len++] = '}'; body[len] = '\0'; }
     }
     if (len + 2 < sizeof(body)) { body[len++] = ']'; body[len++] = '}'; body[len] = '\0'; }
-    send_json(fd, 200, "OK", body);
+    send_json(cx, 200, "OK", body);
 }
 
 /* --------------------------- static assets --------------------------- */
@@ -371,7 +400,7 @@ respond_file(int fd, const char *filename, const char *content) {
  * allowlist: the request path is compared, never used to build a filesystem
  * path, so traversal is impossible. */
 static int
-serve_static(int fd, const char *path) {
+serve_static(ConnCtx *cx, const char *path) {
     const char *fname = NULL;
     const char *ctype = NULL;
     char fullpath[1024];
@@ -393,20 +422,20 @@ serve_static(int fd, const char *path) {
     snprintf(fullpath, sizeof(fullpath), "%s/%s", g_webroot, fname);
     ffd = open(fullpath, O_RDONLY);
     if (ffd < 0) {
-        send_error(fd, 404, "Not Found", "asset not found (is --webroot correct?)");
+        send_error(cx, 404, "Not Found", "asset not found (is --webroot correct?)");
         return 1;
     }
     if (fstat(ffd, &st) != 0 || !S_ISREG(st.st_mode) || st.st_size > 4 * 1024 * 1024) {
         close(ffd);
-        send_error(fd, 404, "Not Found", "asset unavailable");
+        send_error(cx, 404, "Not Found", "asset unavailable");
         return 1;
     }
     contents = malloc((size_t)st.st_size);
-    if (!contents) { close(ffd); send_error(fd, 500, "Internal Server Error", "oom"); return 1; }
+    if (!contents) { close(ffd); send_error(cx, 500, "Internal Server Error", "oom"); return 1; }
     rd = read(ffd, contents, (size_t)st.st_size);
     close(ffd);
-    if (rd != st.st_size) { free(contents); send_error(fd, 500, "Internal Server Error", "read"); return 1; }
-    send_response(fd, 200, "OK", ctype, contents, (size_t)st.st_size);
+    if (rd != st.st_size) { free(contents); send_error(cx, 500, "Internal Server Error", "read"); return 1; }
+    send_response(cx, 200, "OK", ctype, contents, (size_t)st.st_size);
     free(contents);
     return 1;
 }
@@ -454,7 +483,7 @@ read_request(int fd, char *buf, size_t cap) {
 }
 
 static void
-handle_connection(int fd) {
+handle_connection(ConnCtx *cx) {
     char *buf = malloc(MAX_REQUEST + 1);
     char method[8];
     char path[1024];
@@ -463,41 +492,41 @@ handle_connection(int fd) {
 
     if (!buf) { return; }
 
-    total = read_request(fd, buf, MAX_REQUEST + 1);
-    if (total == -2) { send_error(fd, 413, "Payload Too Large", "request body exceeds limit"); free(buf); return; }
+    total = read_request(cx->fd, buf, MAX_REQUEST + 1);
+    if (total == -2) { send_error(cx, 413, "Payload Too Large", "request body exceeds limit"); free(buf); return; }
     if (total <= 0) { free(buf); return; }
 
     if (sscanf(buf, "%7s %1023s", method, path) != 2) {
-        send_error(fd, 400, "Bad Request", "malformed request line");
+        send_error(cx, 400, "Bad Request", "malformed request line");
         free(buf); return;
     }
 
     /* Strip query string from path for routing. */
     { char *q = strchr(path, '?'); if (q) *q = '\0'; }
 
-    /* Capture for the access log (emitted by the accept loop). */
-    snprintf(g_log_method, sizeof(g_log_method), "%s", method);
-    snprintf(g_log_path, sizeof(g_log_path), "%s", path);
+    /* Capture for the access log (emitted by the caller after this returns). */
+    snprintf(cx->method, sizeof(cx->method), "%s", method);
+    snprintf(cx->path, sizeof(cx->path), "%s", path);
 
     body = strstr(buf, "\r\n\r\n");
     body = body ? body + 4 : "";
 
     /* -- GET / HEAD routes (HEAD emits headers only) -- */
-    g_suppress_body = (strcmp(method, "HEAD") == 0);
+    cx->suppress_body = (strcmp(method, "HEAD") == 0);
     if (strcmp(method, "GET") == 0 || strcmp(method, "HEAD") == 0) {
         if (strcmp(path, "/api/v1/health") == 0) {
             char b[256];
             snprintf(b, sizeof(b), "{\"status\":\"ok\",\"engine\":\"%s\",\"server\":\"%s\"}",
                      hlse_version(), HLSE_SERVER_VERSION);
-            send_json(fd, 200, "OK", b);
+            send_json(cx, 200, "OK", b);
         } else if (strcmp(path, "/api/v1/version") == 0) {
             char b[128];
             snprintf(b, sizeof(b), "{\"version\":\"%s\"}", hlse_version());
-            send_json(fd, 200, "OK", b);
-        } else if (serve_static(fd, path)) {
+            send_json(cx, 200, "OK", b);
+        } else if (serve_static(cx, path)) {
             /* handled */
         } else {
-            send_error(fd, 404, "Not Found", "no such resource");
+            send_error(cx, 404, "Not Found", "no such resource");
         }
         free(buf); return;
     }
@@ -507,39 +536,79 @@ handle_connection(int fd) {
         char value[MAX_BODY];
         if (strcmp(path, "/api/v1/scan/url") == 0) {
             if (!json_get_string(body, "url", value, sizeof(value))) {
-                send_error(fd, 400, "Bad Request", "missing or invalid 'url' field");
+                send_error(cx, 400, "Bad Request", "missing or invalid 'url' field");
             } else {
-                respond_scan(fd, value);
+                respond_scan(cx, value);
             }
         } else if (strcmp(path, "/api/v1/scan/text") == 0) {
             if (!json_get_string(body, "text", value, sizeof(value))) {
-                send_error(fd, 400, "Bad Request", "missing or invalid 'text' field");
+                send_error(cx, 400, "Bad Request", "missing or invalid 'text' field");
             } else {
-                respond_scan(fd, value);
+                respond_scan(cx, value);
             }
         } else if (strcmp(path, "/api/v1/scan/secrets") == 0) {
             if (!json_get_string(body, "text", value, sizeof(value))) {
-                send_error(fd, 400, "Bad Request", "missing or invalid 'text' field");
+                send_error(cx, 400, "Bad Request", "missing or invalid 'text' field");
             } else {
-                respond_secrets(fd, value);
+                respond_secrets(cx, value);
             }
         } else if (strcmp(path, "/api/v1/scan/file") == 0) {
             char fname[512];
             if (!json_get_string(body, "filename", fname, sizeof(fname))) {
-                send_error(fd, 400, "Bad Request", "missing 'filename' field");
+                send_error(cx, 400, "Bad Request", "missing 'filename' field");
             } else if (!json_get_string(body, "content", value, sizeof(value))) {
-                send_error(fd, 400, "Bad Request", "missing 'content' field");
+                send_error(cx, 400, "Bad Request", "missing 'content' field");
             } else {
-                respond_file(fd, fname, value);
+                respond_file(cx, fname, value);
             }
         } else {
-            send_error(fd, 404, "Not Found", "no such endpoint");
+            send_error(cx, 404, "Not Found", "no such endpoint");
         }
         free(buf); return;
     }
 
-    send_error(fd, 405, "Method Not Allowed", "only GET, HEAD and POST are supported");
+    send_error(cx, 405, "Method Not Allowed", "only GET, HEAD and POST are supported");
     free(buf);
+}
+
+/* Log one completed request. A single fprintf call produces the whole line,
+ * and glibc serializes writes to the same FILE* internally, so concurrent
+ * threads logging at once still yield whole, non-interleaved lines. */
+static void
+log_request(const ConnCtx *cx) {
+    time_t now;
+    char ts[32];
+    struct tm tmv;
+
+    if (!cx->method[0]) return;
+    now = time(NULL);
+    gmtime_r(&now, &tmv);
+    strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%SZ", &tmv);
+    printf("%s  %-4s %s -> %d\n", ts, cx->method, cx->path, cx->status);
+    fflush(stdout);
+}
+
+/* Thread entry point: one per accepted connection. Decrements the shared
+ * active-connection counter on every exit path (including early return). */
+static void *
+connection_thread(void *arg) {
+    ConnCtx cx;
+    struct timeval tv;
+
+    memset(&cx, 0, sizeof(cx));
+    cx.fd = (int)(intptr_t)arg;
+
+    tv.tv_sec = RECV_TIMEOUT_S;
+    tv.tv_usec = 0;
+    setsockopt(cx.fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    setsockopt(cx.fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+
+    handle_connection(&cx);
+    close(cx.fd);
+    log_request(&cx);
+
+    __atomic_fetch_sub(&g_active_conns, 1, __ATOMIC_SEQ_CST);
+    return NULL;
 }
 
 /* --------------------------- main / socket --------------------------- */
@@ -554,7 +623,10 @@ usage(const char *prog) {
     printf("  --webroot DIR   directory with index.html/app.js/style.css (default ./web)\n");
     printf("  --help          this help\n\n");
     printf("Endpoints: GET /  /api/v1/health  /api/v1/version\n");
-    printf("           POST /api/v1/scan/{url,text,secrets}  (JSON body)\n");
+    printf("           POST /api/v1/scan/{url,text,secrets,file}  (JSON body)\n");
+    printf("Concurrency: up to %d simultaneous connections (thread per connection);\n",
+           MAX_CONCURRENT);
+    printf("             bursts beyond that get an immediate 503.\n");
 }
 
 #ifndef HLSE_SERVER_NO_MAIN
@@ -566,7 +638,6 @@ main(int argc, char **argv) {
     struct sockaddr_in addr;
     int opt = 1;
     int i;
-    struct timeval tv;
 
     for (i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--host") == 0 && i + 1 < argc) host = argv[++i];
@@ -602,11 +673,9 @@ main(int argc, char **argv) {
 
     printf("HLSE server %s (engine %s) listening on http://%s:%d  (webroot: %s)\n",
            HLSE_SERVER_VERSION, hlse_version(), host, port, g_webroot);
-    printf("Press Ctrl-C to stop.\n");
+    printf("Concurrency: up to %d simultaneous connections. Press Ctrl-C to stop.\n",
+           MAX_CONCURRENT);
     fflush(stdout);
-
-    tv.tv_sec = RECV_TIMEOUT_S;
-    tv.tv_usec = 0;
 
     while (!g_stop) {
         int cfd = accept(listen_fd, NULL, NULL);
@@ -614,23 +683,47 @@ main(int argc, char **argv) {
             if (errno == EINTR) continue;
             continue;
         }
-        setsockopt(cfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-        setsockopt(cfd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
-        g_log_method[0] = 0; g_log_path[0] = 0; g_last_status = 0;
-        handle_connection(cfd);
-        close(cfd);
-        if (g_log_method[0]) {
-            time_t now = time(NULL);
-            char ts[32];
-            struct tm tmv;
-            gmtime_r(&now, &tmv);
-            strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%SZ", &tmv);
-            printf("%s  %-4s %s -> %d\n", ts, g_log_method, g_log_path, g_last_status);
-            fflush(stdout);
+
+        if (__atomic_fetch_add(&g_active_conns, 1, __ATOMIC_SEQ_CST) >= MAX_CONCURRENT) {
+            /* Over capacity: reject synchronously, no thread spawned. */
+            static const char *body = "{\"error\":\"server busy, try again shortly\"}";
+            char header[256];
+            int hn = snprintf(header, sizeof(header),
+                "HTTP/1.1 503 Service Unavailable\r\n"
+                "Content-Type: application/json; charset=utf-8\r\n"
+                "Content-Length: %zu\r\n"
+                "Retry-After: 1\r\n"
+                "Connection: close\r\n\r\n",
+                strlen(body));
+            if (hn > 0) write_all(cfd, header, (size_t)hn);
+            write_all(cfd, body, strlen(body));
+            close(cfd);
+            __atomic_fetch_sub(&g_active_conns, 1, __ATOMIC_SEQ_CST);
+            continue;
+        }
+
+        {
+            pthread_t tid;
+            pthread_attr_t attr;
+            pthread_attr_init(&attr);
+            pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+            if (pthread_create(&tid, &attr, connection_thread,
+                                (void *)(intptr_t)cfd) != 0) {
+                /* Thread creation failed (e.g. resource limits) — handle
+                 * inline so the connection isn't silently dropped. */
+                ConnCtx cx;
+                memset(&cx, 0, sizeof(cx));
+                cx.fd = cfd;
+                handle_connection(&cx);
+                close(cfd);
+                log_request(&cx);
+                __atomic_fetch_sub(&g_active_conns, 1, __ATOMIC_SEQ_CST);
+            }
+            pthread_attr_destroy(&attr);
         }
     }
 
-    printf("\nShutting down.\n");
+    printf("\nShutting down (waiting is not performed for in-flight requests).\n");
     close(listen_fd);
     return 0;
 }

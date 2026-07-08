@@ -1,9 +1,9 @@
 # HLSE HTTP API & Web Dashboard
 
 `hlse-server` is a small, dependency-free HTTP/1.1 server (POSIX sockets +
-libc only) that exposes the HLSE detection engine as a JSON API and serves a
-local web dashboard. It links the same engine the CLI uses — no separate
-detection logic, no third-party runtime.
+libc + pthreads) that exposes the HLSE detection engine as a JSON API and
+serves a local web dashboard. It links the same engine the CLI uses — no
+separate detection logic, no third-party runtime.
 
 ## Running
 
@@ -101,8 +101,20 @@ stored server-side.
 | `404 Not Found` | Unknown route or asset. |
 | `405 Method Not Allowed` | Method other than GET/HEAD/POST. |
 | `413 Payload Too Large` | Request body exceeds 64 KiB. |
+| `503 Service Unavailable` | More than 64 simultaneous connections; retry shortly (`Retry-After: 1`). |
 
 Error bodies are `{ "error": "<message>" }`.
+
+## Concurrency
+
+Each accepted connection is handled on its own detached thread, capped at 64
+simultaneous connections (`MAX_CONCURRENT` in `hlse_server.c`). A connection
+beyond the cap gets an immediate `503` from the accept loop — no thread is
+spawned, so a burst can't exhaust memory or file descriptors. This is safe
+because every request handler only reads `static const` engine tables
+(`hlse_scan()` / `hlse_scan_secrets()` / `hlse_check_filename()` are
+documented thread-safe) and all per-request state lives in a stack-allocated
+context — there is no shared mutable state in the request path to race on.
 
 ## Security notes
 

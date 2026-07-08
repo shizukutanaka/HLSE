@@ -184,8 +184,8 @@ The full set of stable `pattern_id` routing tokens is discoverable with
 ## Web dashboard & HTTP API
 
 The same engine is available over HTTP via `hlse-server` — a small,
-dependency-free server (POSIX sockets + libc only) that serves a local web
-dashboard and a JSON API. No third-party runtime, no data leaves the host.
+dependency-free server (POSIX sockets + libc + pthreads) that serves a local
+web dashboard and a JSON API. No third-party runtime, no data leaves the host.
 
 ```bash
 make server            # builds ./hlse-server
@@ -203,6 +203,10 @@ Endpoints: `GET /api/v1/health` · `GET /api/v1/version` ·
 secret / file scanning, live risk score, colour-coded signals) is served from
 `web/`. Requests are logged (`METHOD path -> status`). Full reference:
 [`docs/API.md`](docs/API.md); end-to-end smoke test: `make server-check`.
+
+Concurrency: one thread per connection, capped at 64 simultaneous connections
+— bursts beyond that get an immediate `503` (`Retry-After: 1`), never a queue
+that exhausts memory or file descriptors.
 
 Security posture: binds loopback by default, request bodies capped at 64 KiB,
 static assets served through a fixed route allowlist (no path traversal), and
