@@ -1,0 +1,102 @@
+# HLSE HTTP API & Web Dashboard
+
+`hlse-server` is a small, dependency-free HTTP/1.1 server (POSIX sockets +
+libc only) that exposes the HLSE detection engine as a JSON API and serves a
+local web dashboard. It links the same engine the CLI uses — no separate
+detection logic, no third-party runtime.
+
+## Running
+
+```sh
+make server                 # builds ./hlse-server
+./hlse-server               # http://127.0.0.1:8080  (loopback only)
+./hlse-server --host 127.0.0.1 --port 8080 --webroot ./web
+```
+
+Open `http://127.0.0.1:8080` for the dashboard, or call the API directly.
+
+| Flag | Default | Meaning |
+|------|---------|---------|
+| `--host ADDR` | `127.0.0.1` | Bind address. Loopback by default; bind elsewhere only behind your own auth/TLS terminator. |
+| `--port N` | `8080` | Listen port. |
+| `--webroot DIR` | `./web` | Directory holding `index.html`, `app.js`, `style.css`. |
+
+## Endpoints
+
+All responses are `application/json; charset=utf-8` unless noted. Every
+response carries hardening headers (`Content-Security-Policy`,
+`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: no-referrer`).
+
+### `GET /api/v1/health`
+```json
+{ "status": "ok", "engine": "1.0.113", "server": "1.0.0" }
+```
+
+### `GET /api/v1/version`
+```json
+{ "version": "1.0.113" }
+```
+
+### `POST /api/v1/scan/url`
+Body: `{ "url": "https://..." }`
+
+```sh
+curl -s localhost:8080/api/v1/scan/url \
+  -d '{"url":"https://paypal.com@evil.xyz/login"}'
+```
+```json
+{
+  "kind": "url",
+  "score": 100,
+  "severity": 4,
+  "action": "ISOLATE",
+  "reasons": [
+    "URL credential trick: @ in authority — displayed host is fake, real host follows @",
+    "High-risk TLD: .xyz"
+  ]
+}
+```
+
+`severity` maps to `action`: `0 SAFE`, `1 LOG`, `2 ALERT`, `3 BLOCK`, `4 ISOLATE`.
+
+### `POST /api/v1/scan/text`
+Body: `{ "text": "..." }` — scans a message for scam/phishing language.
+Same response shape as `/scan/url` with `"kind":"text"`.
+
+### `POST /api/v1/scan/secrets`
+Body: `{ "text": "..." }` — scans code/config for leaked credentials.
+```json
+{
+  "kind": "secrets",
+  "score": 100,
+  "findings": [
+    { "type": "AWS Access Key ID", "detail": "AWS Access Key ID found: AKIA2E3M..." }
+  ]
+}
+```
+
+## Errors
+
+| Status | When |
+|--------|------|
+| `400 Bad Request` | Malformed request line, or missing/invalid JSON field. |
+| `404 Not Found` | Unknown route or asset. |
+| `405 Method Not Allowed` | Method other than GET/HEAD/POST. |
+| `413 Payload Too Large` | Request body exceeds 64 KiB. |
+
+Error bodies are `{ "error": "<message>" }`.
+
+## Security notes
+
+- **Loopback by default.** The server binds `127.0.0.1`; it performs no
+  authentication and is intended as a local tool. To expose it, place it
+  behind a reverse proxy that terminates TLS and handles auth.
+- **No path traversal.** Static assets are served through a fixed three-route
+  allowlist (`/`, `/app.js`, `/style.css`); the request path is never used to
+  build a filesystem path.
+- **Bounded input.** Request bodies are capped at 64 KiB.
+- **Single detection engine.** Verdicts come from `hlse_scan()` /
+  `hlse_scan_secrets()` — identical to the CLI. Nothing is sent off-host.
+- The JSON request parser and output escaper are unit-tested
+  (`tests/hlse_server_tests.c`).

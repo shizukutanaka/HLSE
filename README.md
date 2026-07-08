@@ -181,6 +181,33 @@ The full set of stable `pattern_id` routing tokens is discoverable with
 **ECS** and wiring exit codes into CI/CD, see
 [`docs/SIEM_INTEGRATION.md`](docs/SIEM_INTEGRATION.md).
 
+## Web dashboard & HTTP API
+
+The same engine is available over HTTP via `hlse-server` — a small,
+dependency-free server (POSIX sockets + libc only) that serves a local web
+dashboard and a JSON API. No third-party runtime, no data leaves the host.
+
+```bash
+make server            # builds ./hlse-server
+./hlse-server          # http://127.0.0.1:8080  (loopback only)
+```
+
+```bash
+curl -s localhost:8080/api/v1/scan/url \
+  -d '{"url":"https://paypal.com@evil.xyz/login"}'
+# → {"kind":"url","score":100,"severity":4,"action":"ISOLATE","reasons":[...]}
+```
+
+Endpoints: `GET /api/v1/health` · `GET /api/v1/version` ·
+`POST /api/v1/scan/{url,text,secrets}`. The dashboard (URL / message / secret
+scanning, live risk score, colour-coded signals) is served from `web/`.
+Full reference: [`docs/API.md`](docs/API.md).
+
+Security posture: binds loopback by default, request bodies capped at 64 KiB,
+static assets served through a fixed route allowlist (no path traversal), and
+hardening headers (CSP, `X-Content-Type-Options`, `X-Frame-Options`) on every
+response. The JSON parser/escaper is unit-tested in `tests/hlse_server_tests.c`.
+
 ## Test architecture
 
 | Suite | Count | What it verifies |

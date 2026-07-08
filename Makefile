@@ -52,6 +52,8 @@ TEST_SRC  := tests/hlse_property_tests.c
 # Outputs
 BINARY    := hlse_core
 SHARED    := libhlse.so
+SERVER_BIN := hlse-server
+SERVER_TEST := tests/server_tests
 PROP_BIN  := tests/property_tests
 PROT_BIN  := tests/protect_tests
 SECR_BIN  := tests/secrets_tests
@@ -73,9 +75,9 @@ FUZZ_URL_ASAN     := tests/fuzz_url_asan
 
 # ─── primary targets ─────────────────────────────────────────────────────
 
-.PHONY: all cli lib static test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test
+.PHONY: all cli lib static server test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test
 
-all: $(BINARY) $(SHARED)
+all: $(BINARY) $(SHARED) $(SERVER_BIN)
 
 cli: $(BINARY)         ## build CLI binary only
 lib: $(SHARED)         ## build shared library only
@@ -88,6 +90,12 @@ $(SHARED): $(CORE_SRC) hlse_text.h hlse_core.h hlse_protect.h
 	$(CC) $(CFLAGS) -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -fPIC -shared \
 		-o $@ $(CORE_SRC) -I. -lm
 	@printf '  %-20s %s\n' "CC (shared)" "$@"
+
+server: $(SERVER_BIN)   ## build the HTTP API + dashboard server
+
+$(SERVER_BIN): hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h
+	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -o $@ hlse_server.c $(CORE_SRC) $(PIE_LDFLAGS) -I. -lm
+	@printf '  %-20s %s\n' "CC" "$@"
 
 $(PROP_BIN): $(TEST_SRC) hlse_text.c hlse_text.h
 	@mkdir -p tests
@@ -373,7 +381,7 @@ asan-test:
 
 # ─── test ────────────────────────────────────────────────────────────────
 
-test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAUD_BIN) $(UTIL_BIN)
+test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAUD_BIN) $(UTIL_BIN) $(SERVER_TEST)
 	@echo ""
 	@echo "═══════════════════════════════════════"
 	@echo " HLSE Core — Test Suite"
@@ -400,6 +408,9 @@ test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAU
 	@echo "── Shared utility tests ────────────────"
 	@./$(UTIL_BIN)
 	@echo ""
+	@echo "── HTTP server + JSON parser tests ─────"
+	@./$(SERVER_TEST)
+	@echo ""
 	@echo "── In-distribution corpus benchmark ────"
 	@./$(BINARY) --benchmark
 	@echo ""
@@ -412,6 +423,11 @@ test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAU
 	@echo "═══════════════════════════════════════"
 	@echo " All test suites passed"
 	@echo "═══════════════════════════════════════"
+
+$(SERVER_TEST): tests/hlse_server_tests.c hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h
+	@mkdir -p tests
+	$(CC) $(CFLAGS) -Wno-unused-function -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -DHLSE_SERVER_NO_MAIN -o $@ tests/hlse_server_tests.c $(CORE_SRC) -I. -lm
+	@printf '  %-20s %s\n' "CC" "$@"
 
 bench: $(BINARY)
 	./$(BINARY) --benchmark
@@ -454,6 +470,6 @@ clean:
 		$(FUZZ_SECRETS) $(FUZZ_SECRETS_ASAN) \
 		$(FUZZ_SUPPLY) $(FUZZ_SUPPLY_ASAN) \
 		$(FUZZ_FILE) $(FUZZ_FILE_ASAN) \
-		$(EXT_BIN)
+		$(EXT_BIN) $(SERVER_BIN) $(SERVER_TEST)
 	rm -f hlse_core_static hlse_core_cov *.gcov *.gcda *.gcno *.o
 	@echo "Clean complete"

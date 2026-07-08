@@ -2,6 +2,27 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- **Web dashboard + HTTP API (`hlse-server`) — commercial-grade frontend to
+  backend on top of the existing engine.** A small, dependency-free HTTP/1.1
+  server (POSIX sockets + libc only; no third-party runtime) exposes the
+  detection engine over JSON and serves a local, responsive, light/dark web
+  dashboard for scanning URLs, messages, and code/config for leaked secrets.
+  - Endpoints: `GET /api/v1/health`, `GET /api/v1/version`,
+    `POST /api/v1/scan/{url,text,secrets}`. Verdicts come from the same
+    `hlse_scan()` / `hlse_scan_secrets()` the CLI uses — no forked logic.
+  - Hardening: loopback bind by default, 64 KiB request-body cap, static
+    assets via a fixed 3-route allowlist (path traversal structurally
+    impossible), and CSP / `X-Content-Type-Options` / `X-Frame-Options` /
+    `Referrer-Policy` headers on every response. GET/HEAD/POST only.
+  - New files: `hlse_server.c`, `web/{index.html,app.js,style.css}`,
+    `docs/API.md`, and `tests/hlse_server_tests.c` (11 unit tests for the
+    untrusted JSON request parser and output escaper — the security-critical
+    surface). Wired into `make` (`server` target, built by `all`, run by
+    `test`) and `.gitignore`.
+
 ## [1.0.113] — 2026-07-04
 
 ### Changed

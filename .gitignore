@@ -44,3 +44,7 @@ Thumbs.db
 *~
 .vscode/
 .idea/
+
+# API server binary
+hlse-server
+tests/server_tests
