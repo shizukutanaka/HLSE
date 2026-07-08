@@ -59,6 +59,7 @@
 
 #include "hlse_core.h"
 #include "hlse_secrets.h"
+#include "hlse_file.h"
 
 #define HLSE_SERVER_VERSION "1.0.0"
 
@@ -71,6 +72,9 @@
 static volatile sig_atomic_t g_stop = 0;
 static const char *g_webroot = "./web";
 static int g_suppress_body = 0;  /* set for HEAD: emit headers, no body */
+static int  g_last_status = 0;      /* status of the most recent response (for access log) */
+static char g_log_method[8]  = {0}; /* method/path captured for the access log */
+static char g_log_path[1024] = {0};
 
 static void on_signal(int sig) { (void)sig; g_stop = 1; }
 
@@ -227,6 +231,7 @@ send_response(int fd, int status, const char *status_text,
         status, status_text, HLSE_SERVER_VERSION, content_type, body_len,
         SECURITY_HEADERS);
     if (hn < 0) return;
+    g_last_status = status;
     write_all(fd, header, (size_t)hn);
     if (body_len && !g_suppress_body) write_all(fd, body, body_len);
 }
@@ -304,6 +309,56 @@ respond_secrets(int fd, const char *input) {
             len += (size_t)snprintf(body + len, sizeof(body) - len, "\",\"detail\":\"");
         }
         json_escape_append(body, sizeof(body), &len, v.findings[i].description);
+        if (len + 3 < sizeof(body)) { body[len++] = '"'; body[len++] = '}'; body[len] = '\0'; }
+    }
+    if (len + 2 < sizeof(body)) { body[len++] = ']'; body[len++] = '}'; body[len] = '\0'; }
+    send_json(fd, 200, "OK", body);
+}
+
+/* Scan an uploaded file: name-based masquerade (hlse_check_filename) plus a
+ * leaked-secret content scan (hlse_scan_secrets). No temp file / base64 — the
+ * client sends the claimed filename and the file text. */
+static void
+respond_file(int fd, const char *filename, const char *content) {
+    FileVerdict fv = hlse_check_filename(filename);
+    SecretVerdict sv = hlse_scan_secrets(content);
+    int score = fv.score > sv.score ? fv.score : sv.score;
+    int severity = hlse_severity_for_score(score);
+    const char *action;
+    char body[16384];
+    size_t len = 0;
+    int i;
+    char fn_esc[512];
+    size_t fnlen = 0;
+    fn_esc[0] = '\0';
+    json_escape_append(fn_esc, sizeof(fn_esc), &fnlen, filename);
+
+    switch (severity) {
+        case 4: action = "ISOLATE"; break;
+        case 3: action = "BLOCK";   break;
+        case 2: action = "ALERT";   break;
+        case 1: action = "LOG";     break;
+        default: action = "SAFE";   break;
+    }
+    len = (size_t)snprintf(body, sizeof(body),
+        "{\"kind\":\"file\",\"filename\":\"%s\",\"score\":%d,\"severity\":%d,"
+        "\"action\":\"%s\",\"reasons\":[", fn_esc, score, severity, action);
+    for (i = 0; i < fv.n_reasons; i++) {
+        if (i > 0 && len + 1 < sizeof(body)) { body[len++] = ','; body[len] = '\0'; }
+        if (len + 1 < sizeof(body)) { body[len++] = '"'; body[len] = '\0'; }
+        json_escape_append(body, sizeof(body), &len, fv.reasons[i]);
+        if (len + 1 < sizeof(body)) { body[len++] = '"'; body[len] = '\0'; }
+    }
+    if (len + 14 < sizeof(body))
+        len += (size_t)snprintf(body + len, sizeof(body) - len, "],\"secrets\":[");
+    for (i = 0; i < sv.n_findings; i++) {
+        if (i > 0 && len + 1 < sizeof(body)) { body[len++] = ','; body[len] = '\0'; }
+        if (len + 10 < sizeof(body))
+            len += (size_t)snprintf(body + len, sizeof(body) - len, "{\"type\":\"");
+        json_escape_append(body, sizeof(body), &len, sv.findings[i].type);
+        if (len + 12 < sizeof(body))
+            len += (size_t)snprintf(body + len, sizeof(body) - len, "\",\"detail\":\"");
+        json_escape_append(body, sizeof(body), &len, sv.findings[i].description);
         if (len + 3 < sizeof(body)) { body[len++] = '"'; body[len++] = '}'; body[len] = '\0'; }
     }
     if (len + 2 < sizeof(body)) { body[len++] = ']'; body[len++] = '}'; body[len] = '\0'; }
@@ -420,6 +475,10 @@ handle_connection(int fd) {
     /* Strip query string from path for routing. */
     { char *q = strchr(path, '?'); if (q) *q = '\0'; }
 
+    /* Capture for the access log (emitted by the accept loop). */
+    snprintf(g_log_method, sizeof(g_log_method), "%s", method);
+    snprintf(g_log_path, sizeof(g_log_path), "%s", path);
+
     body = strstr(buf, "\r\n\r\n");
     body = body ? body + 4 : "";
 
@@ -463,6 +522,15 @@ handle_connection(int fd) {
                 send_error(fd, 400, "Bad Request", "missing or invalid 'text' field");
             } else {
                 respond_secrets(fd, value);
+            }
+        } else if (strcmp(path, "/api/v1/scan/file") == 0) {
+            char fname[512];
+            if (!json_get_string(body, "filename", fname, sizeof(fname))) {
+                send_error(fd, 400, "Bad Request", "missing 'filename' field");
+            } else if (!json_get_string(body, "content", value, sizeof(value))) {
+                send_error(fd, 400, "Bad Request", "missing 'content' field");
+            } else {
+                respond_file(fd, fname, value);
             }
         } else {
             send_error(fd, 404, "Not Found", "no such endpoint");
@@ -548,8 +616,18 @@ main(int argc, char **argv) {
         }
         setsockopt(cfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
         setsockopt(cfd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+        g_log_method[0] = 0; g_log_path[0] = 0; g_last_status = 0;
         handle_connection(cfd);
         close(cfd);
+        if (g_log_method[0]) {
+            time_t now = time(NULL);
+            char ts[32];
+            struct tm tmv;
+            gmtime_r(&now, &tmv);
+            strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%SZ", &tmv);
+            printf("%s  %-4s %s -> %d\n", ts, g_log_method, g_log_path, g_last_status);
+            fflush(stdout);
+        }
     }
 
     printf("\nShutting down.\n");

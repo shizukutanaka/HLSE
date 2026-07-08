@@ -11,8 +11,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   detection engine over JSON and serves a local, responsive, light/dark web
   dashboard for scanning URLs, messages, and code/config for leaked secrets.
   - Endpoints: `GET /api/v1/health`, `GET /api/v1/version`,
-    `POST /api/v1/scan/{url,text,secrets}`. Verdicts come from the same
-    `hlse_scan()` / `hlse_scan_secrets()` the CLI uses — no forked logic.
+    `POST /api/v1/scan/{url,text,secrets,file}`. Verdicts come from the same
+    `hlse_scan()` / `hlse_scan_secrets()` / `hlse_check_filename()` the CLI
+    uses — no forked logic. `/scan/file` combines name-based masquerade
+    detection with a leaked-secret content scan.
+  - Access logging: each request is logged as `METHOD path -> status`.
+  - End-to-end smoke test `tests/server_integration.sh` (14 checks, exposed as
+    `make server-check`) plus the unit tests for the JSON parser/escaper.
   - Hardening: loopback bind by default, 64 KiB request-body cap, static
     assets via a fixed 3-route allowlist (path traversal structurally
     impossible), and CSP / `X-Content-Type-Options` / `X-Frame-Options` /

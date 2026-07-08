@@ -29,6 +29,7 @@
     fields.forEach(function (f) {
       f.classList.toggle("hidden", f.getAttribute("data-for") !== name);
     });
+    sampleBtn.style.display = (name === "file") ? "none" : "";
   }
 
   tabs.forEach(function (t) {
@@ -102,31 +103,75 @@
     result.innerHTML = html;
   }
 
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    var value = currentInput();
-    if (!value) { renderError("Please enter something to scan."); return; }
+  function renderFile(data) {
+    var action = ACTIONS[data.severity] || "SAFE";
+    var pct = Math.max(0, Math.min(100, data.score));
+    var nsec = data.secrets ? data.secrets.length : 0;
+    var html = '<div class="verdict sev-' + action + '">';
+    html += '<div class="gauge" style="--v:' + pct + '"><span class="score">' + pct + "</span></div>";
+    html += '<div class="verdict-main"><span class="badge">' + action + "</span>";
+    html += "<h2>File analysis</h2>";
+    html += '<p class="muted">' + escapeHtml(data.filename || "") + "</p></div></div>";
+    var items = (data.reasons || []).slice();
+    if (items.length) {
+      html += '<ul class="reasons sev-' + action + '">';
+      items.forEach(function (r) { html += "<li>" + escapeHtml(r) + "</li>"; });
+      html += "</ul>";
+    }
+    if (nsec) {
+      html += '<ul class="reasons sev-ISOLATE">';
+      data.secrets.forEach(function (f) {
+        html += '<li class="finding"><span class="ftype">' + escapeHtml(f.type) + "</span>" + escapeHtml(f.detail) + "</li>";
+      });
+      html += "</ul>";
+    }
+    if (!items.length && !nsec) html += '<p class="no-reasons">No masquerade or leaked secrets detected.</p>';
+    result.innerHTML = html;
+  }
+
+  function postScan(url, bodyObj, onOk) {
     scanBtn.disabled = true;
     scanBtn.textContent = "Scanning…";
-    var mode = current;
-    fetch(endpoint(), {
+    fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload(value))
+      body: JSON.stringify(bodyObj)
     })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (res) {
         if (!res.ok) { renderError(res.j && res.j.error ? res.j.error : "Scan failed."); return; }
-        if (mode === "secrets") renderSecrets(res.j); else renderScan(res.j);
+        onOk(res.j);
       })
       .catch(function () { renderError("Could not reach the HLSE server."); })
       .finally(function () { scanBtn.disabled = false; scanBtn.textContent = "Scan"; });
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (current === "file") {
+      var f = document.getElementById("in-file").files[0];
+      if (!f) { renderError("Please choose a file to scan."); return; }
+      if (f.size > 60000) { renderError("File too large for the dashboard (60 KB max)."); return; }
+      var reader = new FileReader();
+      reader.onload = function () {
+        postScan("/api/v1/scan/file", { filename: f.name, content: String(reader.result) }, renderFile);
+      };
+      reader.onerror = function () { renderError("Could not read the file."); };
+      reader.readAsText(f);
+      return;
+    }
+    var value = currentInput();
+    if (!value) { renderError("Please enter something to scan."); return; }
+    var mode = current;
+    postScan(endpoint(), payload(value), function (j) {
+      if (mode === "secrets") renderSecrets(j); else renderScan(j);
+    });
   });
 
   sampleBtn.addEventListener("click", function () {
     if (current === "url") document.getElementById("in-url").value = SAMPLES.url;
     else if (current === "text") document.getElementById("in-text").value = SAMPLES.text;
-    else document.getElementById("in-secrets").value = SAMPLES.secrets;
+    else if (current === "secrets") document.getElementById("in-secrets").value = SAMPLES.secrets;
   });
 
   // Load engine version for the header pill.

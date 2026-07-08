@@ -199,9 +199,10 @@ curl -s localhost:8080/api/v1/scan/url \
 ```
 
 Endpoints: `GET /api/v1/health` · `GET /api/v1/version` ·
-`POST /api/v1/scan/{url,text,secrets}`. The dashboard (URL / message / secret
-scanning, live risk score, colour-coded signals) is served from `web/`.
-Full reference: [`docs/API.md`](docs/API.md).
+`POST /api/v1/scan/{url,text,secrets,file}`. The dashboard (URL / message /
+secret / file scanning, live risk score, colour-coded signals) is served from
+`web/`. Requests are logged (`METHOD path -> status`). Full reference:
+[`docs/API.md`](docs/API.md); end-to-end smoke test: `make server-check`.
 
 Security posture: binds loopback by default, request bodies capped at 64 KiB,
 static assets served through a fixed route allowlist (no path traversal), and

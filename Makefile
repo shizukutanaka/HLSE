@@ -75,7 +75,7 @@ FUZZ_URL_ASAN     := tests/fuzz_url_asan
 
 # ─── primary targets ─────────────────────────────────────────────────────
 
-.PHONY: all cli lib static server test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test
+.PHONY: all cli lib static server server-check test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test
 
 all: $(BINARY) $(SHARED) $(SERVER_BIN)
 
@@ -92,6 +92,9 @@ $(SHARED): $(CORE_SRC) hlse_text.h hlse_core.h hlse_protect.h
 	@printf '  %-20s %s\n' "CC (shared)" "$@"
 
 server: $(SERVER_BIN)   ## build the HTTP API + dashboard server
+
+server-check: $(SERVER_BIN)   ## end-to-end smoke test of the running server
+	@bash tests/server_integration.sh ./$(SERVER_BIN) ./web
 
 $(SERVER_BIN): hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h
 	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -o $@ hlse_server.c $(CORE_SRC) $(PIE_LDFLAGS) -I. -lm

@@ -76,6 +76,23 @@ Body: `{ "text": "..." }` — scans code/config for leaked credentials.
 }
 ```
 
+### `POST /api/v1/scan/file`
+Body: `{ "filename": "...", "content": "..." }` — combines name-based masquerade
+detection (double extensions, RLO tricks) with a leaked-secret scan of the file
+content. The client sends the claimed filename and the file text; nothing is
+stored server-side.
+```json
+{
+  "kind": "file",
+  "filename": "invoice.pdf.exe",
+  "score": 85,
+  "severity": 4,
+  "action": "ISOLATE",
+  "reasons": ["F1: DOUBLE EXTENSION — '.pdf.exe' disguised as .pdf"],
+  "secrets": [ { "type": "AWS Access Key ID", "detail": "..." } ]
+}
+```
+
 ## Errors
 
 | Status | When |
@@ -99,4 +116,7 @@ Error bodies are `{ "error": "<message>" }`.
 - **Single detection engine.** Verdicts come from `hlse_scan()` /
   `hlse_scan_secrets()` — identical to the CLI. Nothing is sent off-host.
 - The JSON request parser and output escaper are unit-tested
-  (`tests/hlse_server_tests.c`).
+  (`tests/hlse_server_tests.c`); the running server is smoke-tested end-to-end
+  by `tests/server_integration.sh` (`make server-check`).
+- **Observability.** Every request is logged to stdout as
+  `<iso-8601> METHOD path -> status`.

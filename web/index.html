@@ -27,6 +27,7 @@
         <button class="tab active" role="tab" aria-selected="true" data-tab="url" id="tab-url">URL</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="text" id="tab-text">Message</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="secrets" id="tab-secrets">Secrets</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="file" id="tab-file">File</button>
       </div>
 
       <form id="scan-form" autocomplete="off">
@@ -44,6 +45,11 @@
           <label for="in-secrets">Code / config to scan for leaked secrets</label>
           <textarea id="in-secrets" name="secrets" rows="6"
                     placeholder="Paste code, .env, or config…"></textarea>
+        </div>
+        <div class="field hidden" data-for="file">
+          <label for="in-file">File to analyze (name masquerade + leaked secrets)</label>
+          <input type="file" id="in-file" name="file">
+          <p class="muted" id="file-hint">Analyzed locally — the file never leaves your machine.</p>
         </div>
 
         <div class="actions">
