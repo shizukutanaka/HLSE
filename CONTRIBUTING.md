@@ -5,7 +5,7 @@ real attacks, so we hold a high bar for changes.
 
 ## TL;DR
 
-1. Run `make test` before opening a PR — all 320+ tests must pass.
+1. Run `make test` before opening a PR — all 1084+ tests must pass.
 2. Run `make check-warnings` — every module must compile clean under
    `-Wpedantic -Wshadow -Wconversion`.
 3. New detection logic must come with a test case in the matching axis
@@ -20,10 +20,10 @@ Every PR must pass these gates (all run in CI, all runnable locally):
 
 | Gate | Command | What it enforces |
 |------|---------|------------------|
-| Tests | `make test` | All 8 suites + property + corpus + CLI integration (320+) |
+| Tests | `make test` | All 9 suites + property + corpus + CLI integration (1084+) |
 | Warnings | `make check-warnings` | Zero strict warnings across all modules |
 | Memory safety | `make asan-test` | No ASan/UBSan errors |
-| Fuzzing | `make fuzz` | 4 harnesses × 100K iterations, zero crashes |
+| Fuzzing | `make fuzz` | 6 harnesses × 100K iterations, zero crashes |
 | Coverage | `make coverage` | Aggregate line coverage ≥ 65% |
 | Privacy | (CI grep) | No network syscalls in source |
 | Secrets | gitleaks | No leaked credentials in history |
@@ -38,9 +38,9 @@ When adding a feature, ask: **which axis catches it?**
 | Property | `tests/hlse_property_tests.c` | A universal invariant (P1–P13: monotonicity, bounds, evasion…) |
 | Corpus | `hlse_core.c` `benchmark()` | Real-world phishing example or legitimate site |
 | Edge | `tests/hlse_property_tests.c` `edge_cases()` | Boundary input (empty, huge, malformed, null) |
-| Behavioral | `tests/hlse_*_tests.c` (protect, secrets, supply, file/audit, util) | Module-level contract (return type, field values, exit conditions) |
+| Behavioral | `tests/hlse_*_tests.c` (protect, secrets, supply, file/audit, util, server) | Module-level contract (return type, field values, exit conditions) |
 | CLI integration | `tests/cli_integration.sh` | End-to-end: subcommand exit codes, JSON schema, flag combos |
-| Fuzz | `tests/hlse_*_fuzz.c` (text, secrets, supply, file) | Random/adversarial bytes → no crash, no UB |
+| Fuzz | `tests/hlse_*_fuzz.c` (text, secrets, supply, file, url, server) | Random/adversarial bytes → no crash, no UB |
 
 Bugs that slipped through unit tests but were caught by property tests
 are documented in CHANGELOG.md — read those entries before claiming

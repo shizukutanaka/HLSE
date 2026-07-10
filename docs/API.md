@@ -142,6 +142,10 @@ context — there is no shared mutable state in the request path to race on.
   `hlse_scan_secrets()` — identical to the CLI. Nothing is sent off-host.
 - The JSON request parser, output escaper, and rate limiter are unit-tested
   (`tests/hlse_server_tests.c`); the running server is smoke-tested end-to-end
-  by `tests/server_integration.sh` (`make server-check`).
+  by `tests/server_integration.sh` (`make server-check`). The JSON parser is
+  also fuzzed (`tests/hlse_server_fuzz.c`, part of `make fuzz`/`make
+  fuzz-asan`) — it is the only parser in HLSE that consumes bytes directly
+  from a network peer, so it gets the same fuzzing rigor as the URL/text/
+  secrets/supply/file modules.
 - **Observability.** Every request is logged to stdout as
   `<iso-8601> METHOD path -> status`.

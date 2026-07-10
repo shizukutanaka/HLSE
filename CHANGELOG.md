@@ -68,6 +68,37 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
     isolation) — server unit tests now 15/15; verified live with a 305-request
     burst against a running server (299 succeed, 6 rejected with `429` +
     correct `Retry-After`, recovering after the window).
+  - **`tests/hlse_server_fuzz.c`**: a 6th fuzz harness (`make fuzz`/
+    `make fuzz-asan`), closing the one gap left by the round above — the
+    server's JSON request parser (`json_get_string`) and output escaper
+    (`json_escape_append`) are the only code in HLSE that consumes bytes
+    directly from a network peer, so they now get the same fuzzing rigor as
+    the URL/text/secrets/supply/file modules. Random bytes, adversarial
+    JSON-like fragments (unbalanced braces, invalid `\u` escapes, truncated
+    strings), and well-formed JSON generators; checks for crashes and an
+    unterminated-output invariant. 100K plain + 10K ASan iterations, 0
+    crashes, 0 invariant failures.
+
+### Fixed (repo hygiene / documentation audit)
+- Re-removed `files (1).zip` (a stale 1.1 MB v0.5.0 prebuilt-binary release
+  artifact) and added `*.zip`/`*.tar.gz`/`*.tar.bz2`/`*.dSYM/` to
+  `.gitignore`. This had been fixed once already in an earlier session, but
+  that fix was on a commit discarded when the branch was re-synced to a
+  parallel, more-advanced tip that never had it — recorded here so it
+  doesn't get silently re-lost the same way again.
+- `hlse.1` (the CLI man page)'s `.TH` version stamp was `"HLSE 0.9.15"` dated
+  `2026-06-08` — many releases stale against the actual `HLSE_VERSION`
+  (`1.0.113`). Bumped to match.
+- Corrected internally-inconsistent test/fuzz counts: `README.md` claimed
+  "460" structured tests and CONTRIBUTING.md claimed "320+" — neither traced
+  to the actual current totals (9 unit suites summing to 327 cases + 29
+  extended-corpus cases + 728 CLI-integration assertions = 1084+). Also
+  fixed the fuzz-harness count (both docs said 4-5; actual is 6 after this
+  round's addition) and added the missing `server`/`url` mentions to
+  CONTRIBUTING's axis and gate tables.
+- `Makefile`'s `clean` target was missing `$(FUZZ_URL)`/`$(FUZZ_URL_ASAN)`
+  (pre-existing gap, found while wiring in the new server fuzz targets) —
+  added alongside the new `$(FUZZ_SERVER)`/`$(FUZZ_SERVER_ASAN)`.
 
 ## [1.0.113] — 2026-07-04
 

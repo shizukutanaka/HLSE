@@ -73,6 +73,8 @@ FUZZ_FILE         := tests/fuzz_file
 FUZZ_FILE_ASAN    := tests/fuzz_file_asan
 FUZZ_URL          := tests/fuzz_url
 FUZZ_URL_ASAN     := tests/fuzz_url_asan
+FUZZ_SERVER       := tests/fuzz_server
+FUZZ_SERVER_ASAN  := tests/fuzz_server_asan
 
 # ─── primary targets ─────────────────────────────────────────────────────
 
@@ -195,6 +197,23 @@ $(FUZZ_URL_ASAN): tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c hlse
 		-o $@ tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
+$(FUZZ_SERVER): tests/hlse_server_fuzz.c hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h
+	@mkdir -p tests
+	$(CC) -O0 -g -Wall -Wextra -Wno-unused-function -Wno-format-truncation \
+		-D_POSIX_C_SOURCE=200809L \
+		-D_GNU_SOURCE -DHLSE_CORE_AS_LIB -DHLSE_SERVER_NO_MAIN \
+		-o $@ tests/hlse_server_fuzz.c $(CORE_SRC) -I. -lm -lpthread
+	@printf '  %-20s %s\n' "CC" "$@"
+
+$(FUZZ_SERVER_ASAN): tests/hlse_server_fuzz.c hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h
+	@mkdir -p tests
+	$(CC) -O1 -g -Wall -Wextra -Wno-unused-function -Wno-format-truncation \
+		-Wno-stringop-overread -D_POSIX_C_SOURCE=200809L \
+		-D_GNU_SOURCE -DHLSE_CORE_AS_LIB -DHLSE_SERVER_NO_MAIN \
+		-fsanitize=address,undefined \
+		-o $@ tests/hlse_server_fuzz.c $(CORE_SRC) -I. -lm -lpthread
+	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
+
 # Extended (out-of-distribution) corpus
 EXT_BIN   := tests/corpus_ext
 
@@ -308,7 +327,7 @@ coverage:
 
 # ─── fuzz ────────────────────────────────────────────────────────────────
 
-fuzz: $(FUZZ_BIN) $(FUZZ_SECRETS) $(FUZZ_SUPPLY) $(FUZZ_FILE) $(FUZZ_URL)
+fuzz: $(FUZZ_BIN) $(FUZZ_SECRETS) $(FUZZ_SUPPLY) $(FUZZ_FILE) $(FUZZ_URL) $(FUZZ_SERVER)
 	@echo "--- text fuzz ---"
 	./$(FUZZ_BIN) 100000 1
 	@echo "--- secrets fuzz ---"
@@ -319,8 +338,10 @@ fuzz: $(FUZZ_BIN) $(FUZZ_SECRETS) $(FUZZ_SUPPLY) $(FUZZ_FILE) $(FUZZ_URL)
 	./$(FUZZ_FILE) 100000 1
 	@echo "--- URL fuzz ---"
 	./$(FUZZ_URL) 100000 1
+	@echo "--- server JSON parser fuzz ---"
+	./$(FUZZ_SERVER) 100000 1
 
-fuzz-asan: $(FUZZ_ASAN) $(FUZZ_SECRETS_ASAN) $(FUZZ_SUPPLY_ASAN) $(FUZZ_FILE_ASAN) $(FUZZ_URL_ASAN)
+fuzz-asan: $(FUZZ_ASAN) $(FUZZ_SECRETS_ASAN) $(FUZZ_SUPPLY_ASAN) $(FUZZ_FILE_ASAN) $(FUZZ_URL_ASAN) $(FUZZ_SERVER_ASAN)
 	@echo "--- text fuzz (ASan) ---"
 	./$(FUZZ_ASAN) 10000 1
 	@echo "--- secrets fuzz (ASan) ---"
@@ -331,6 +352,8 @@ fuzz-asan: $(FUZZ_ASAN) $(FUZZ_SECRETS_ASAN) $(FUZZ_SUPPLY_ASAN) $(FUZZ_FILE_ASA
 	./$(FUZZ_FILE_ASAN) 10000 1
 	@echo "--- URL fuzz (ASan) ---"
 	./$(FUZZ_URL_ASAN) 10000 1
+	@echo "--- server JSON parser fuzz (ASan) ---"
+	./$(FUZZ_SERVER_ASAN) 10000 1
 
 # ─── quality gates (used by CI) ──────────────────────────────────────────
 
@@ -483,6 +506,8 @@ clean:
 		$(FUZZ_SECRETS) $(FUZZ_SECRETS_ASAN) \
 		$(FUZZ_SUPPLY) $(FUZZ_SUPPLY_ASAN) \
 		$(FUZZ_FILE) $(FUZZ_FILE_ASAN) \
+		$(FUZZ_URL) $(FUZZ_URL_ASAN) \
+		$(FUZZ_SERVER) $(FUZZ_SERVER_ASAN) \
 		$(EXT_BIN) $(SERVER_BIN) $(SERVER_TEST)
 	rm -f hlse_core_static hlse_core_cov *.gcov *.gcda *.gcno *.o
 	@echo "Clean complete"
