@@ -35,6 +35,13 @@ immediate
 .B 503
 response with no thread spawned, so a connection burst cannot exhaust
 memory or file descriptors.
+.PP
+Each source IP is further limited to 300 requests per 60 seconds. A source
+exceeding this receives
+.B 429
+with a
+.B Retry-After
+header, checked before a thread is spawned or the detection engine runs.
 .SH OPTIONS
 .TP
 .BI --host " addr"

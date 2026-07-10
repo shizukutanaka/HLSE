@@ -110,8 +110,45 @@ static void t_escape_bound(void) {
     else FAIL("overflow");
 }
 
+/* rate_limit_check() tests. Each test uses a distinct fake IP so the shared
+ * g_rate_buckets table (module-global, since we #include hlse_server.c
+ * directly) doesn't cross-contaminate between tests. */
+
+static void t_rate_fresh_ip_allowed(void) {
+    TEST("rate limit: fresh IP allowed");
+    if (rate_limit_check("10.0.0.1")) PASS();
+    else FAIL("first request from a new IP was rejected");
+}
+
+static void t_rate_burst_within_limit(void) {
+    int i, ok = 1;
+    TEST("rate limit: RATE_LIMIT_MAX requests all allowed");
+    for (i = 0; i < RATE_LIMIT_MAX; i++) {
+        if (!rate_limit_check("10.0.0.2")) { ok = 0; break; }
+    }
+    if (ok) PASS();
+    else FAIL("a request within the limit was rejected");
+}
+
+static void t_rate_exceeds_limit(void) {
+    int i;
+    TEST("rate limit: request beyond RATE_LIMIT_MAX is rejected");
+    for (i = 0; i < RATE_LIMIT_MAX; i++) rate_limit_check("10.0.0.3");
+    if (!rate_limit_check("10.0.0.3")) PASS();
+    else FAIL("the over-limit request was allowed");
+}
+
+static void t_rate_per_ip_isolation(void) {
+    int i;
+    TEST("rate limit: exhausting one IP doesn't affect another");
+    for (i = 0; i < RATE_LIMIT_MAX; i++) rate_limit_check("10.0.0.4");
+    (void)rate_limit_check("10.0.0.4"); /* exhaust it */
+    if (rate_limit_check("10.0.0.5")) PASS();
+    else FAIL("a different IP was incorrectly rate-limited");
+}
+
 int main(void) {
-    printf("HLSE Server — JSON parser / escaper tests\n");
+    printf("HLSE Server — JSON parser / escaper / rate-limit tests\n");
     printf("══════════════════════════════════════════\n\n");
     t_json_basic();
     t_json_whitespace();
@@ -124,6 +161,10 @@ int main(void) {
     t_json_truncation_safe();
     t_escape_output();
     t_escape_bound();
+    t_rate_fresh_ip_allowed();
+    t_rate_burst_within_limit();
+    t_rate_exceeds_limit();
+    t_rate_per_ip_isolation();
     printf("\n══════════════════════════════════════════\n");
     printf("Server tests: %d/%d passed", passed, total);
     if (failed) printf(", %d FAILED", failed);

@@ -208,12 +208,15 @@ smoke test: `make server-check`.
 
 Concurrency: one thread per connection, capped at 64 simultaneous connections
 — bursts beyond that get an immediate `503` (`Retry-After: 1`), never a queue
-that exhausts memory or file descriptors.
+that exhausts memory or file descriptors. Rate limiting: 300 requests per 60s
+per source IP, checked before a thread is spawned — excess gets a `429`
+(`Retry-After: 60`).
 
 Security posture: binds loopback by default, request bodies capped at 64 KiB,
 static assets served through a fixed route allowlist (no path traversal), and
 hardening headers (CSP, `X-Content-Type-Options`, `X-Frame-Options`) on every
-response. The JSON parser/escaper is unit-tested in `tests/hlse_server_tests.c`.
+response. The JSON parser/escaper/rate limiter are unit-tested in
+`tests/hlse_server_tests.c`.
 
 ## Test architecture
 

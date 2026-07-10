@@ -51,6 +51,23 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
     installed to `$(MANDIR)`. Verified round-trip in an isolated `PREFIX`:
     install → server run from an unrelated cwd serves the dashboard and API
     correctly → `uninstall` leaves the prefix empty.
+  - Fixed the man page's `SEE ALSO` link, which pointed to
+    `.../blob/main/docs/API.md` — a 404 until this branch merges, since that
+    file only exists here. Replaced with a plain source-file reference plus
+    the repository home page.
+  - **Rate limiting**: per-source-IP fixed-window counter (300 requests per
+    60s), checked in the accept loop before a thread is spawned or the
+    detection engine runs. A source over the limit gets `429 Too Many
+    Requests` with `Retry-After: 60`, logged as `RATE-LIMIT <ip> -> 429`.
+    Defense-in-depth against a single runaway or abusive source; complements
+    the existing `MAX_CONCURRENT` connection cap, which bounds simultaneous
+    connections but not a sustained low-concurrency request flood from one
+    IP. Implemented as a small mutex-guarded fixed-size table (256 buckets)
+    to keep the logic auditable at this connection scale. 4 new unit tests
+    (fresh-IP allowed, burst-at-limit allowed, over-limit rejected, per-IP
+    isolation) — server unit tests now 15/15; verified live with a 305-request
+    burst against a running server (299 succeed, 6 rejected with `429` +
+    correct `Retry-After`, recovering after the window).
 
 ## [1.0.113] — 2026-07-04
 

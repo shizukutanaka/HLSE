@@ -50,6 +50,9 @@
  *     threads finish naturally).
  *   - Bounded concurrency (MAX_CONCURRENT) guards against fork-bomb-style
  *     resource exhaustion from a burst of connections.
+ *   - Per-IP rate limiting (RATE_LIMIT_MAX requests per RATE_LIMIT_WINDOW_S
+ *     seconds) rejects a single source hammering the API with 429, checked
+ *     before a thread is spawned or the detection engine is invoked.
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -102,6 +105,76 @@ static const char *g_webroot = HLSE_DEFAULT_WEBROOT;
 static volatile int g_active_conns = 0;
 
 static void on_signal(int sig) { (void)sig; g_stop = 1; }
+
+/* --------------------------- per-IP rate limiting --------------------------
+ * Defense-in-depth against a single source hammering the API (accidental
+ * runaway script, or abuse if the operator exposes the server beyond
+ * loopback behind their own reverse proxy). Fixed-window counter per IP in a
+ * small fixed-size table guarded by one mutex — O(RATE_LIMIT_BUCKETS) per
+ * request, which is cheap at this connection scale (MAX_CONCURRENT callers
+ * at a time) and keeps the logic auditable. Checked in the accept loop
+ * before a thread is spawned, so a rate-limited request never touches
+ * g_active_conns or the detection engine. */
+#define RATE_LIMIT_BUCKETS   256
+#define RATE_LIMIT_WINDOW_S   60   /* window length */
+#define RATE_LIMIT_MAX       300   /* max requests per IP per window (~5/s) */
+
+typedef struct {
+    char   ip[INET_ADDRSTRLEN];
+    time_t window_start;
+    int    count;
+    int    used;
+} RateBucket;
+
+static RateBucket      g_rate_buckets[RATE_LIMIT_BUCKETS];
+static pthread_mutex_t g_rate_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/* Returns 1 if a request from `ip` is within its rate limit, 0 if it should
+ * be rejected with 429. When the table is full of *other* IPs, evicts the
+ * bucket with the oldest window_start (a fixed-size table can't grow, so an
+ * LRU-by-window eviction just means a very active long tail of distinct
+ * IPs resets each other's counters — acceptable for a defensive limiter,
+ * not a precise multi-tenant quota system). */
+static int
+rate_limit_check(const char *ip) {
+    time_t now = time(NULL);
+    int i, free_idx = -1, oldest_idx = -1;
+    time_t oldest = 0;
+    int allowed = 1;
+
+    pthread_mutex_lock(&g_rate_mutex);
+    for (i = 0; i < RATE_LIMIT_BUCKETS; i++) {
+        RateBucket *b = &g_rate_buckets[i];
+        if (b->used && strcmp(b->ip, ip) == 0) {
+            if (now - b->window_start >= RATE_LIMIT_WINDOW_S) {
+                b->window_start = now;
+                b->count = 1;
+            } else if (b->count >= RATE_LIMIT_MAX) {
+                allowed = 0;
+            } else {
+                b->count++;
+            }
+            pthread_mutex_unlock(&g_rate_mutex);
+            return allowed;
+        }
+        if (!b->used && free_idx < 0) free_idx = i;
+        if (b->used && (oldest_idx < 0 || b->window_start < oldest)) {
+            oldest = b->window_start;
+            oldest_idx = i;
+        }
+    }
+    /* New IP: claim a free slot, or evict the bucket with the oldest window. */
+    {
+        int idx = free_idx >= 0 ? free_idx : oldest_idx;
+        RateBucket *b = &g_rate_buckets[idx];
+        snprintf(b->ip, sizeof(b->ip), "%s", ip);
+        b->window_start = now;
+        b->count = 1;
+        b->used = 1;
+    }
+    pthread_mutex_unlock(&g_rate_mutex);
+    return 1;
+}
 
 /* Per-connection state. Everything a request handler needs to read or write
  * lives here — nothing is a shared global, so concurrent connection threads
@@ -635,6 +708,8 @@ usage(const char *prog) {
     printf("Concurrency: up to %d simultaneous connections (thread per connection);\n",
            MAX_CONCURRENT);
     printf("             bursts beyond that get an immediate 503.\n");
+    printf("Rate limit:  %d requests per %ds per source IP; over that gets a 429.\n",
+           RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
 }
 
 #ifndef HLSE_SERVER_NO_MAIN
@@ -681,14 +756,49 @@ main(int argc, char **argv) {
 
     printf("HLSE server %s (engine %s) listening on http://%s:%d  (webroot: %s)\n",
            HLSE_SERVER_VERSION, hlse_version(), host, port, g_webroot);
-    printf("Concurrency: up to %d simultaneous connections. Press Ctrl-C to stop.\n",
-           MAX_CONCURRENT);
+    printf("Concurrency: up to %d simultaneous connections. Rate limit: %d req/%ds per IP.\n"
+           "Press Ctrl-C to stop.\n",
+           MAX_CONCURRENT, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_S);
     fflush(stdout);
 
     while (!g_stop) {
-        int cfd = accept(listen_fd, NULL, NULL);
+        struct sockaddr_in peer;
+        socklen_t peerlen = sizeof(peer);
+        char peer_ip[INET_ADDRSTRLEN];
+        int cfd = accept(listen_fd, (struct sockaddr *)&peer, &peerlen);
         if (cfd < 0) {
             if (errno == EINTR) continue;
+            continue;
+        }
+
+        if (!inet_ntop(AF_INET, &peer.sin_addr, peer_ip, sizeof(peer_ip))) {
+            snprintf(peer_ip, sizeof(peer_ip), "?.?.?.?");
+        }
+
+        if (!rate_limit_check(peer_ip)) {
+            /* Per-IP limit exceeded: reject synchronously, no thread spawned,
+             * g_active_conns untouched. */
+            static const char *body = "{\"error\":\"rate limit exceeded, slow down\"}";
+            char header[256];
+            int hn = snprintf(header, sizeof(header),
+                "HTTP/1.1 429 Too Many Requests\r\n"
+                "Content-Type: application/json; charset=utf-8\r\n"
+                "Content-Length: %zu\r\n"
+                "Retry-After: %d\r\n"
+                "Connection: close\r\n\r\n",
+                strlen(body), RATE_LIMIT_WINDOW_S);
+            if (hn > 0) write_all(cfd, header, (size_t)hn);
+            write_all(cfd, body, strlen(body));
+            close(cfd);
+            {
+                time_t now = time(NULL);
+                char ts[32];
+                struct tm tmv;
+                gmtime_r(&now, &tmv);
+                strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%SZ", &tmv);
+                printf("%s  RATE-LIMIT %s -> 429\n", ts, peer_ip);
+                fflush(stdout);
+            }
             continue;
         }
 

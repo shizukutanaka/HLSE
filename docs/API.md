@@ -101,9 +101,21 @@ stored server-side.
 | `404 Not Found` | Unknown route or asset. |
 | `405 Method Not Allowed` | Method other than GET/HEAD/POST. |
 | `413 Payload Too Large` | Request body exceeds 64 KiB. |
+| `429 Too Many Requests` | More than 300 requests from one source IP within 60s (`Retry-After: 60`). |
 | `503 Service Unavailable` | More than 64 simultaneous connections; retry shortly (`Retry-After: 1`). |
 
 Error bodies are `{ "error": "<message>" }`.
+
+## Rate limiting
+
+Each source IP is limited to `RATE_LIMIT_MAX` requests (default 300) per
+`RATE_LIMIT_WINDOW_S` seconds (default 60) — a fixed-window counter in a small
+mutex-guarded table, checked in the accept loop before a thread is spawned or
+the detection engine runs. Exceeding it returns `429` with `Retry-After: 60`;
+the source IP is logged as `RATE-LIMIT <ip> -> 429`. This is a defense-in-depth
+limiter for a single runaway or abusive source, not a precise multi-tenant
+quota system — see `hlse_server.c` for the exact eviction behavior when many
+distinct IPs are active at once.
 
 ## Concurrency
 
@@ -125,9 +137,10 @@ context — there is no shared mutable state in the request path to race on.
   allowlist (`/`, `/app.js`, `/style.css`); the request path is never used to
   build a filesystem path.
 - **Bounded input.** Request bodies are capped at 64 KiB.
+- **Per-IP rate limiting.** 300 requests per 60s per source IP; see above.
 - **Single detection engine.** Verdicts come from `hlse_scan()` /
   `hlse_scan_secrets()` — identical to the CLI. Nothing is sent off-host.
-- The JSON request parser and output escaper are unit-tested
+- The JSON request parser, output escaper, and rate limiter are unit-tested
   (`tests/hlse_server_tests.c`); the running server is smoke-tested end-to-end
   by `tests/server_integration.sh` (`make server-check`).
 - **Observability.** Every request is logged to stdout as
