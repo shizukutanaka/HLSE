@@ -333,6 +333,32 @@ static const char *LURE_WORDS[] = {
     NULL
 };
 
+/* Scripted-SVG smuggling: an SVG that carries executable script. Most filters
+ * treat SVG as a passive image, but an <svg> containing <script>, an inline
+ * event handler (onload/onerror/onclick/onmouseover), a <foreignObject>, a
+ * javascript: URI, or an embedded base64 payload is a top 2026 phishing-
+ * delivery vector (MITRE ATT&CK T1027.017, Securelist SVG-phishing). Scans the
+ * already-read first 4 KB case-insensitively. Fires regardless of extension
+ * (a scripted SVG IS the attack), including for XML-declared SVGs that begin
+ * with "<?xml ...?>" rather than "<svg".                                    */
+static int
+svg_has_script(const unsigned char *head, size_t len) {
+    char low[4097];
+    size_t n = 0, i;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strstr(low, "<svg") == NULL) return 0;
+    return (strstr(low, "<script")       != NULL ||
+            strstr(low, "onload=")        != NULL ||
+            strstr(low, "onerror=")       != NULL ||
+            strstr(low, "onclick=")       != NULL ||
+            strstr(low, "onmouseover=")   != NULL ||
+            strstr(low, "<foreignobject") != NULL ||
+            strstr(low, "javascript:")    != NULL ||
+            strstr(low, ";base64,")       != NULL);
+}
+
 /* ─── main check function ─────────────────────────────────────────────── */
 
 FileVerdict
@@ -496,6 +522,16 @@ hlse_check_file(const char *filepath) {
                 "F2: MAGIC MISMATCH — file is HTML but extension '%s' implies "
                 "a document/image (possible HTML-smuggling phish)", ext);
         }
+    }
+
+    /* ── F5: Scripted-SVG smuggling ────────────────────────────────────
+     * An SVG carrying <script>/event-handler/foreignObject/javascript:/
+     * base64 payload. Extension-independent: unlike F2 (which excludes .svg
+     * as a non-masquerade), a scripted SVG is itself the delivery vehicle. */
+    if (head_len > 0 && svg_has_script(head, (size_t)head_len)) {
+        fv_add(&v, 55,
+            "F5: SCRIPTED SVG — image contains executable script "
+            "(<script>/event handler/foreignObject) — SVG-smuggling phish");
     }
 
     /* ── F3: Executable disguise ───────────────────────────────────── */

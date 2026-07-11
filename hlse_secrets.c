@@ -278,6 +278,29 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* 1Password service account token */
     { "ops_v",            5, 20, is_alnum_or_dash, "1Password Service Account Token", 85 },
 
+    /* ── 2026 formats (GitHub secret-scanning Mar-2026 detector batch) ──
+     * All have unique, vendor-reserved prefixes, so false positives are
+     * essentially zero. */
+
+    /* Supabase — personal access token (sbp_) and the newer secret API key
+     * (sb_secret_). The publishable key (sb_publishable_) is client-side by
+     * design and intentionally omitted to avoid flagging non-secrets. */
+    { "sbp_",           4, 40, is_alnum_or_dash, "Supabase Personal Access Token", 85 },
+    { "sb_secret_",    10, 20, is_alnum_or_dash, "Supabase Secret Key",           90 },
+
+    /* Figma personal access token (figd_) */
+    { "figd_",          5, 40, is_alnum_or_dash, "Figma Personal Access Token",   85 },
+
+    /* PostHog personal API key (phx_). The project key (phc_) is embedded in
+     * client code on purpose, so it is intentionally omitted. */
+    { "phx_",           4, 40, is_alnum_or_dash, "PostHog Personal API Key",      80 },
+
+    /* LangSmith / LangChain — personal token (lsv2_pt_) and service key
+     * (lsv2_sk_). Body carries an embedded '_', which is_alnum_or_dash
+     * accepts, so the full token validates. */
+    { "lsv2_pt_",       8, 30, is_alnum_or_dash, "LangSmith Personal Token",      85 },
+    { "lsv2_sk_",       8, 30, is_alnum_or_dash, "LangSmith Service Key",         90 },
+
     { NULL, 0, 0, NULL, NULL, 0 }
 };
 

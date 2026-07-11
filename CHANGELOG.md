@@ -5,6 +5,33 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [Unreleased]
 
 ### Added
+- **Detection: 2026 threat-research round (SVG smuggling + 2026 secret
+  formats).** Grounded in a July-2026 literature/threat-intel sweep
+  cross-checked against the existing engine so only genuine gaps were closed
+  (design contract kept: dependency-free C, zero network, no ML).
+  - **Scripted-SVG smuggling (`F5`)** — `hlse_check_file` now flags an SVG
+    whose first 4 KB carries executable script (`<script>`, an inline
+    `onload`/`onerror`/`onclick`/`onmouseover` handler, `<foreignObject>`, a
+    `javascript:` URI, or a `;base64,` payload). SVG-in-email smuggling was
+    2026's fastest-growing file-delivery vector (MITRE ATT&CK T1027.017,
+    Securelist), and `.svg` was previously *excluded* from masquerade
+    scoring; `F5` is extension-independent because a scripted SVG is itself
+    the vehicle, and also matches XML-declared SVGs (`<?xml …?><svg>`) that
+    the HTML heuristic skips. Scored 55 (ALERT). 3 tests (script-tag,
+    `onload=`, benign-chart-not-flagged); the `svg_has_script` scan is a
+    bounded, NUL-terminated 4 KB pass.
+  - **2026 secret token formats** — added the still-missing entries from the
+    GitHub Mar-2026 secret-scanning batch: Supabase `sbp_`/`sb_secret_`,
+    Figma `figd_`, PostHog `phx_`, LangSmith `lsv2_pt_`/`lsv2_sk_`. Each
+    prefix is vendor-reserved (≈zero FP); intentionally-public keys
+    (Supabase `sb_publishable_`, PostHog `phc_`) are omitted. Reuses the
+    existing placeholder filter. 2 tests (6 formats detected; a 2026-prefix
+    placeholder still excluded).
+  - Verified: 0 warnings (CLI + library strict builds); secrets tests 66/66,
+    file/audit tests 36/36; F1 = 1.000 on both in- and out-of-distribution
+    corpora (no new false positives on benign SVGs/images); secrets fuzz
+    100K + ASan clean; full `make test` shows the same 714 passed / 14
+    pre-existing unrelated failures as before.
 - **Web dashboard + HTTP API (`hlse-server`) — commercial-grade frontend to
   backend on top of the existing engine.** A small, dependency-free HTTP/1.1
   server (POSIX sockets + libc only; no third-party runtime) exposes the

@@ -697,6 +697,49 @@ static void test_vault_batch_token(void) {
 
 /* ─── Main ────────────────────────────────────────────────────────────── */
 
+static void test_2026_provider_tokens(void) {
+    /* 2026 GitHub secret-scanning batch: Supabase/Figma/PostHog/LangSmith.
+     * Prefixes are vendor-reserved (~zero FP). Assembled at runtime from
+     * split prefix+body so no literal token appears in source. */
+    struct { const char *pfx; const char *body; } cases[] = {
+        { "sbp_",      "0123456789abcdef0123456789abcdef01234567" },
+        { "sb_secret_","0123456789abcdefghijklmnopqrst" },
+        { "figd_",     "ABCdef1234567890-ABCdef1234567890xyzXYZ01" },
+        { "phx_",      "0123456789abcdefABCDEF0123456789abcdefABCD" },
+        { "lsv2_pt_",  "1234567890abcdef1234567890abcdef_12345678" },
+        { "lsv2_sk_",  "1234567890abcdef1234567890abcdef_12345678" },
+    };
+    size_t i, n = sizeof(cases) / sizeof(cases[0]);
+    int fail_idx = -1;
+
+    TEST("Secret: 6 x 2026 provider tokens (Supabase/Figma/PostHog/LangSmith)");
+    for (i = 0; i < n; i++) {
+        char text[256];
+        SecretVerdict v;
+        snprintf(text, sizeof(text), "API_TOKEN=%s%s\n",
+                 cases[i].pfx, cases[i].body);
+        v = hlse_scan_secrets(text);
+        if (v.score < 70 || v.n_findings < 1) { fail_idx = (int)i; break; }
+    }
+    if (fail_idx < 0) PASS();
+    else { char b[80]; snprintf(b,80,"undetected: prefix '%s'",
+           cases[fail_idx].pfx); FAIL(b); }
+}
+
+static void test_2026_token_placeholder_excluded(void) {
+    /* A 2026-format prefix on an obvious placeholder body must NOT fire. */
+    /* Prefix split from body so no contiguous token literal sits in source
+     * (avoids secret-scanner false positives on the test fixture itself). */
+    char text[128];
+    SecretVerdict v;
+    snprintf(text, sizeof(text), "SUPABASE_KEY=%s%s\n",
+             "sbp_", "your_supabase_token_here_xxxxxxxxxxxxxxxx");
+    v = hlse_scan_secrets(text);
+    TEST("Secret: 2026 prefix on placeholder body excluded");
+    if (v.score == 0) PASS();
+    else { char b[64]; snprintf(b,64,"false positive score=%d",v.score); FAIL(b); }
+}
+
 int main(void) {
     printf("HLSE Secrets / Email / Clipboard — Tests\n");
     printf("══════════════════════════════════════════\n\n");
@@ -721,6 +764,8 @@ int main(void) {
     test_shopify_token();
     test_aws_temp_key();
     test_extended_provider_tokens();
+    test_2026_provider_tokens();
+    test_2026_token_placeholder_excluded();
     test_discord_webhook();
     test_new_patterns_no_fp();
 

