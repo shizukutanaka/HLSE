@@ -99,6 +99,56 @@ read_file_head(const char *path, unsigned char *buf, size_t max_bytes) {
     return (n > 0) ? (size_t)n : 0;
 }
 
+/* Read max_bytes at a given offset (for multi-segment entropy sampling).
+ * Same symlink/FIFO/regular-file safety as read_file_head. */
+static size_t
+read_file_segment(const char *path, unsigned char *buf, size_t max_bytes,
+                  off_t offset) {
+    int fd;
+    ssize_t n;
+    struct stat st;
+
+    fd = open(path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+    if (fd < 0) return 0;
+    if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode)) { close(fd); return 0; }
+    n = pread(fd, buf, max_bytes, offset);
+    close(fd);
+    return (n > 0) ? (size_t)n : 0;
+}
+
+/* Extensions whose contents are expected to be LOW entropy end-to-end
+ * (text / source / config). Such a file legitimately never contains a
+ * high-entropy (>7.5 bits/byte) block, so a high-entropy body segment is a
+ * strong, low-false-positive signal of partial/intermittent encryption --
+ * unlike documents/media (.pdf/.jpg/.mp4) which carry benign high-entropy
+ * regions and are therefore excluded from the R6 check.                   */
+static const char *LOW_ENTROPY_EXTS[] = {
+    ".txt", ".csv", ".tsv", ".log", ".md", ".rst", ".sql", ".json",
+    ".xml", ".yaml", ".yml", ".ini", ".conf", ".cfg", ".toml", ".env",
+    ".html", ".htm", ".css", ".rtf",
+    ".c", ".h", ".cpp", ".hpp", ".cc", ".py", ".js", ".ts", ".java",
+    ".go", ".rs", ".rb", ".php", ".sh", ".pl", ".lua",
+    NULL
+};
+
+static int
+is_low_entropy_ext(const char *name, size_t nlen) {
+    int i;
+    for (i = 0; LOW_ENTROPY_EXTS[i]; i++) {
+        size_t elen = strlen(LOW_ENTROPY_EXTS[i]);
+        size_t j;
+        int match = 1;
+        if (nlen <= elen) continue;
+        for (j = 0; j < elen; j++) {
+            char a = name[nlen - elen + j];
+            if (a >= 'A' && a <= 'Z') a = (char)(a + 32);  /* case-fold */
+            if (a != LOW_ENTROPY_EXTS[i][j]) { match = 0; break; }
+        }
+        if (match) return 1;
+    }
+    return 0;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
  * Module 1: Ransomware Protection
  *
@@ -236,6 +286,7 @@ hlse_ransomware_check_directory(const char *dir_path) {
     struct dirent *ent;
     int suspicious_ext_count = 0;
     int high_entropy_count = 0;
+    int partial_encrypt_count = 0;   /* R6: intermittent/partial encryption */
     int total_files = 0;
     unsigned char buf[4096];
 
@@ -325,6 +376,29 @@ hlse_ransomware_check_directory(const char *dir_path) {
                         total_files++;
                         if (h_ent > 7.5) {
                             high_entropy_count++;
+                        } else if (h_ent < 6.5 && st.st_size >= 16384 &&
+                                   is_low_entropy_ext(name, nlen)) {
+                            /* R6: intermittent/partial encryption. A text/
+                             * source/config file whose header is still low-
+                             * entropy (left intact so the file "looks" normal)
+                             * but whose body carries an encrypted high-entropy
+                             * slice. Whole-file and head-only entropy both miss
+                             * this (arXiv 2510.15133); such files legitimately
+                             * never contain a >7.5 bit/byte block, so it is a
+                             * low-false-positive signal. Sample middle + tail. */
+                            unsigned char seg[4096];
+                            double mid_ent = 0.0, tail_ent = 0.0;
+                            size_t sm = read_file_segment(fullpath, seg,
+                                sizeof(seg), (off_t)(st.st_size / 2));
+                            if (sm > 64) mid_ent = shannon_entropy(seg, sm);
+                            {
+                                size_t stail = read_file_segment(fullpath, seg,
+                                    sizeof(seg), (off_t)(st.st_size - 4096));
+                                if (stail > 64)
+                                    tail_ent = shannon_entropy(seg, stail);
+                            }
+                            if (mid_ent > 7.5 || tail_ent > 7.5)
+                                partial_encrypt_count++;
                         }
                     }
                 }
@@ -338,6 +412,17 @@ hlse_ransomware_check_directory(const char *dir_path) {
         pv_add_reason(&v, 30,
             "R2: Entropy anomaly: %d/%d files above 7.5 bits/byte "
             "(likely encrypted)", high_entropy_count, total_files);
+    }
+
+    /* R6: Intermittent/partial encryption — text/config files whose headers
+     * stay low-entropy but whose bodies carry an encrypted high-entropy slice.
+     * This is the modern evasion of whole-file entropy checks (BlackCat-style
+     * "dot/smart/head-only" modes; arXiv 2510.15133). */
+    if (partial_encrypt_count >= 3) {
+        pv_add_reason(&v, 30,
+            "R6: Partial-encryption anomaly: %d text/config files have "
+            "low-entropy headers but high-entropy bodies "
+            "(intermittent-encryption ransomware)", partial_encrypt_count);
     }
 
     /* R4: Mass extension mutation */

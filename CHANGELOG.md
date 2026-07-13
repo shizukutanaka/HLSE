@@ -5,6 +5,25 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [Unreleased]
 
 ### Added
+- **Ransomware: R6 intermittent/partial-encryption detection**
+  (`hlse_protect.c`). Closes the Tier-2 stretch item from the same July-2026
+  research sweep (arXiv 2510.15133, BlackCat-style "dot/smart/head-only"
+  modes) — modern ransomware evades whole-file/head-only entropy checks by
+  encrypting only a slice of each file, leaving the header looking normal.
+  - `read_file_segment()`: `pread` at an arbitrary offset (reuses the same
+    symlink/FIFO/regular-file safety as `read_file_head`).
+  - `is_low_entropy_ext()` + `LOW_ENTROPY_EXTS[]`: restricts the check to
+    text/source/config extensions, which legitimately never contain a
+    >7.5 bit/byte block — unlike documents/media, which are excluded to
+    avoid the false positives whole-file entropy heuristics are known for.
+  - R6 fires when >= 3 such files have a low-entropy header (<6.5, size
+    >= 16 KiB) but a high-entropy (>7.5) middle or tail 4 KiB segment.
+    Score 30, same tier as the existing R2 whole-file entropy spike.
+  - 2 new protect tests (intermittent-encryption fires; genuinely low-entropy
+    text directory does not) — protect suite now 21/21.
+  - Verified: 0 warnings (CLI+lib strict), F1 = 1.000 on the in-distribution
+    corpus (no new false positives), ASan/UBSan clean, full `make test` at
+    the same 714 passed / 14 pre-existing unrelated failures as baseline.
 - **Detection: 2026 threat-research round (SVG smuggling + 2026 secret
   formats).** Grounded in a July-2026 literature/threat-intel sweep
   cross-checked against the existing engine so only genuine gaps were closed
