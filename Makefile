@@ -403,6 +403,14 @@ asan-test:
 	@mkdir -p /tmp/hlse_asan_scan && echo "AKIAIOSFODNN7EXAMPLE" > /tmp/hlse_asan_scan/k.env && \
 		./hlse_core_asan scan /tmp/hlse_asan_scan > /dev/null 2>&1 || true; \
 		rm -rf /tmp/hlse_asan_scan
+	@printf '# baseline\n0123456789abcdef ENV_SECRET k.env\n' > /tmp/hlse_asan_base.txt && \
+		mkdir -p /tmp/hlse_asan_bscan && echo "AKIAIOSFODNN7EXAMPLE" > /tmp/hlse_asan_bscan/k.env && \
+		./hlse_core_asan --baseline /tmp/hlse_asan_base.txt scan /tmp/hlse_asan_bscan > /dev/null 2>&1 || true; \
+		rm -rf /tmp/hlse_asan_bscan /tmp/hlse_asan_base.txt
+	@mkdir -p /tmp/hlse_asan_esp && \
+		printf 'MZ your files have been encrypted' > /tmp/hlse_asan_esp/boot.efi && \
+		./hlse_core_asan esp /tmp/hlse_asan_esp > /dev/null 2>&1 || true; \
+		rm -rf /tmp/hlse_asan_esp
 	@rm -f hlse_core_asan
 	@echo "ASan/UBSan: clean."
 

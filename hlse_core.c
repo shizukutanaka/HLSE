@@ -5376,6 +5376,21 @@ hlse_baseline_load(const char *path) {
     return 0;
 }
 
+/* Free every fingerprint string owned by the loaded baseline set and the
+ * backing array itself, then reset g_baseline_n/g_baseline_fps to their
+ * pre-load state so a subsequent hlse_baseline_load() call starts clean.
+ * Safe when no baseline was ever loaded, and idempotent. Named to match the
+ * hlse_clear_custom_secret_patterns()/hlse_clear_custom_brands() convention. */
+static void
+hlse_baseline_clear(void) {
+    size_t i;
+    for (i = 0; i < g_baseline_n; i++)
+        free(g_baseline_fps[i]);
+    free(g_baseline_fps);
+    g_baseline_fps = NULL;
+    g_baseline_n = 0;
+}
+
 /* Return 1 if a scanned line carries an inline `hlse:allow` suppression. */
 static int
 hlse_line_allowed(const char *line) {
@@ -6998,6 +7013,9 @@ main(int argc, char **argv) {
                 g_baseline_file, strerror(errno));
         return 2;
     }
+    /* Register cleanup once — covers every one of main()'s many return paths
+     * uniformly (atexit failure just reverts to pre-fix behavior: a no-op). */
+    if (g_baseline_file) atexit(hlse_baseline_clear);
 
     /* Quiet mode: redirect stdout to /dev/null. If the redirect fails we must
      * not silently keep printing — that would violate the quiet-mode contract

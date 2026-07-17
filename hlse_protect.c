@@ -973,7 +973,6 @@ esp_buf_contains(const unsigned char *hay, size_t haylen, const char *needle) {
 /* Read up to ESP_SCAN_BYTES of a regular .efi file into a shared buffer and
  * flag any ESP_INDICATORS phrase. Returns 1 if the file was scanned. */
 #define ESP_SCAN_BYTES (256 * 1024)
-static unsigned char esp_buf[ESP_SCAN_BYTES];
 
 static int
 esp_has_efi_ext(const char *name) {
@@ -987,7 +986,8 @@ esp_has_efi_ext(const char *name) {
 
 static void
 esp_scan_dir(const char *dir_path, int depth,
-             ProtectionVerdict *v, int *file_count) {
+             ProtectionVerdict *v, int *file_count,
+             unsigned char *scan_buf) {
     DIR *dir;
     struct dirent *ent;
 
@@ -1006,23 +1006,23 @@ esp_scan_dir(const char *dir_path, int depth,
         /* lstat: never follow symlinks into or out of the ESP. */
         if (lstat(fullpath, &st) != 0) continue;
         if (S_ISDIR(st.st_mode)) {
-            esp_scan_dir(fullpath, depth + 1, v, file_count);
+            esp_scan_dir(fullpath, depth + 1, v, file_count, scan_buf);
             continue;
         }
         if (!S_ISREG(st.st_mode) || !esp_has_efi_ext(ent->d_name)) continue;
 
         {
-            int fd = open(fullpath, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
-            ssize_t n;
-            if (fd < 0) continue;
-            n = read(fd, esp_buf, sizeof(esp_buf));
-            close(fd);
-            if (n <= 0) continue;
+            /* read_file_head opens with O_NOFOLLOW|O_NONBLOCK and re-checks
+             * S_ISREG on the fd (closing the lstat->open TOCTOU window), then
+             * reads into the caller's per-call buffer — reentrant, no shared
+             * static scratch. */
+            size_t n = read_file_head(fullpath, scan_buf, ESP_SCAN_BYTES);
+            if (n == 0) continue;
             (*file_count)++;
             {
                 int i;
                 for (i = 0; ESP_INDICATORS[i]; i++) {
-                    if (esp_buf_contains(esp_buf, (size_t)n, ESP_INDICATORS[i])) {
+                    if (esp_buf_contains(scan_buf, n, ESP_INDICATORS[i])) {
                         pv_add_reason(v, 70,
                             "E3: Ransom/bootkit string '%s' in ESP binary: %s",
                             ESP_INDICATORS[i], ent->d_name);
@@ -1052,7 +1052,20 @@ hlse_esp_verify(const char *esp_path) {
         return v;
     }
 
-    esp_scan_dir(path, 0, &v, &file_count);
+    {
+        /* One bounded heap allocation per top-level call (freed before every
+         * return). Replaces the former shared static scratch buffer, so two
+         * concurrent hlse_esp_verify() calls no longer race. */
+        unsigned char *scan_buf = malloc(ESP_SCAN_BYTES);
+        if (!scan_buf) {
+            pv_add_reason(&v, 0,
+                "ESP content scan skipped: buffer allocation failed (%s)",
+                strerror(errno));
+            return v;
+        }
+        esp_scan_dir(path, 0, &v, &file_count, scan_buf);
+        free(scan_buf);
+    }
 
     if (v.n_reasons == 0) {
         pv_add_reason(&v, 0,
