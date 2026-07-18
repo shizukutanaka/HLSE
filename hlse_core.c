@@ -8038,6 +8038,12 @@ main(int argc, char **argv) {
         {
             const char *eco = (argc > idx + 2) ? argv[idx + 2] : NULL;
             PackageVerdict pv = hlse_check_package(argv[idx + 1], eco);
+            {
+                const char *aar[1]; int aqn = 0;
+                if (pv.reason[0]) { aar[0] = pv.reason; aqn = 1; }
+                hlse_alert_emit("package", pv.score,
+                    hlse_severity_for_score(pv.score), argv[idx + 1], aar, aqn);
+            }
             if (json_out) {
                 printf("{\"kind\":\"package\",\"hlse_version\":\"" HLSE_VERSION "\","
                        "\"name\":\"%s\",\"score\":%d,"
@@ -8140,6 +8146,13 @@ main(int argc, char **argv) {
         }
         {
             PasteVerdict pv = hlse_check_paste(argv[idx + 1]);
+            {
+                const char *aar[16]; int aq, aqn = pv.n_reasons;
+                if (aqn > 16) aqn = 16;
+                for (aq = 0; aq < aqn; aq++) aar[aq] = pv.reasons[aq];
+                hlse_alert_emit("paste", pv.score,
+                    hlse_severity_for_score(pv.score), argv[idx + 1], aar, aqn);
+            }
             if (json_out) {
                 int i;
                 printf("{\"kind\":\"paste\",\"hlse_version\":\"" HLSE_VERSION "\","
@@ -8246,6 +8259,13 @@ main(int argc, char **argv) {
 
     if (strcmp(argv[idx], "network") == 0) {
         NetworkVerdict nv = hlse_check_network();
+        {
+            const char *aar[16]; int aq, aqn = nv.n_reasons;
+            if (aqn > 16) aqn = 16;
+            for (aq = 0; aq < aqn; aq++) aar[aq] = nv.reasons[aq];
+            hlse_alert_emit("network", nv.score,
+                hlse_severity_for_score(nv.score), "(network)", aar, aqn);
+        }
         if (json_out) {
             int i;
             printf("{\"kind\":\"network\",\"hlse_version\":\"" HLSE_VERSION "\","
@@ -8494,6 +8514,13 @@ main(int argc, char **argv) {
         }
         {
             EmailVerdict ev = hlse_check_email_headers(headers);
+            {
+                const char *aar[16]; int aq, aqn = ev.n_reasons;
+                if (aqn > 16) aqn = 16;
+                for (aq = 0; aq < aqn; aq++) aar[aq] = ev.reasons[aq];
+                hlse_alert_emit("email", ev.score,
+                    hlse_severity_for_score(ev.score), "(email headers)", aar, aqn);
+            }
             const char *rem = hlse_remediation_for("email", ev.score);
             /* Header forensics (SPF/DKIM/Reply-To/Received) is blind to the
              * message BODY's social engineering. Run text analysis on the same
@@ -8676,6 +8703,13 @@ main(int argc, char **argv) {
         {
             CryptoSwapVerdict cv =
                 hlse_check_crypto_swap(argv[idx + 1], argv[idx + 2]);
+            {
+                const char *aar[1]; int aqn = 0;
+                if (cv.reason[0]) { aar[0] = cv.reason; aqn = 1; }
+                hlse_alert_emit("clipboard", cv.score,
+                    hlse_severity_for_score(cv.score),
+                    cv.swapped[0] ? cv.swapped : "(clipboard)", aar, aqn);
+            }
             const char *rem = hlse_remediation_for("clipboard", cv.score);
             if (json_out) {
                 char eo[256], es[256], er[512], erm[512];
