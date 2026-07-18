@@ -18,8 +18,10 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
     unchecked `fchmod` that could silently defeat the `0600` confidentiality
     guarantee (now a hard error); and EINTR/partial-write handling so each
     record is one intact line.
-  - Wired into the default url/text auto-detect dispatch from the `ScanResult`,
-    covering all three output branches (`--json` / score-0 / default) uniformly.
+  - Wired into the default url/text auto-detect dispatch (from the `ScanResult`,
+    covering all three output branches uniformly) and into the `protect`,
+    `file`, and `secret` subcommands. The remaining single-verdict subcommands
+    (`package`/`paste`/`network`/`email`/`clipboard`) are a follow-up.
   - New shared `hlse_json_escape()` in `hlse_util.c` (consolidates the escaping
     logic instead of adding a third private copy); 3 unit tests (util 39/39).
   - `--log-file` opens `O_NOFOLLOW` (a fresh operator-owned append target has no

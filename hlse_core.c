@@ -7740,6 +7740,13 @@ main(int argc, char **argv) {
             }
 
             ProtectionVerdict pv = hlse_protect_scan(path, modules);
+            {
+                const char *aar[16]; int aq, aqn = pv.n_reasons;
+                if (aqn > 16) aqn = 16;
+                for (aq = 0; aq < aqn; aq++) aar[aq] = pv.reasons[aq];
+                hlse_alert_emit("protect", pv.score,
+                    hlse_severity_for_score(pv.score), path, aar, aqn);
+            }
 
             if (json_out) {
                 /* JSON output for protect.
@@ -8341,6 +8348,18 @@ main(int argc, char **argv) {
         }
         {
             SecretVerdict sv = hlse_scan_secrets(text);
+            {
+                const char *aar[16]; char rb[16][300];
+                int aq, aqn = sv.n_findings;
+                if (aqn > 16) aqn = 16;
+                for (aq = 0; aq < aqn; aq++) {
+                    snprintf(rb[aq], sizeof(rb[aq]), "%s: %s",
+                             sv.findings[aq].type, sv.findings[aq].description);
+                    aar[aq] = rb[aq];
+                }
+                hlse_alert_emit("secret", sv.score,
+                    hlse_severity_for_score(sv.score), "(secret scan)", aar, aqn);
+            }
             if (json_out) {
                 int i;
                 printf("{\"kind\":\"secret\",\"hlse_version\":\"" HLSE_VERSION "\","
@@ -8734,6 +8753,13 @@ main(int argc, char **argv) {
                 const char *base = strrchr(argv[idx + 1], '/');
                 base = base ? base + 1 : argv[idx + 1];
                 fv = hlse_check_filename(base);
+            }
+            {
+                const char *aar[16]; int aq, aqn = fv.n_reasons;
+                if (aqn > 16) aqn = 16;
+                for (aq = 0; aq < aqn; aq++) aar[aq] = fv.reasons[aq];
+                hlse_alert_emit("file", fv.score,
+                    hlse_severity_for_score(fv.score), argv[idx + 1], aar, aqn);
             }
             if (json_out) {
                 int i;
