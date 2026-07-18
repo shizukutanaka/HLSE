@@ -5,6 +5,31 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [Unreleased]
 
 ### Added
+- **Alert sink (`hlse_alert.c`) + `--syslog` / `--log-file` — push-model
+  finding delivery.** A one-shot scanner returns a verdict and exits; a
+  resident/daemon (and any operator who wants findings recorded) needs verdicts
+  PUSHED to a durable channel. New dependency-free module writes one JSON object
+  per finding to syslog (`LOG_AUTHPRIV`) and/or an append-only `0600` JSONL log.
+  This is a Phase-0 foundation for the planned `hlsed` daemon, but is immediately
+  useful from the CLI.
+  - Reviewed adversarially before implementation; the review caught and this
+    commit fixes: a stack buffer overflow in the line builder (length is now a
+    clamped `size_t`, every append bounded — no unchecked `snprintf`); an
+    unchecked `fchmod` that could silently defeat the `0600` confidentiality
+    guarantee (now a hard error); and EINTR/partial-write handling so each
+    record is one intact line.
+  - Wired into the default url/text auto-detect dispatch from the `ScanResult`,
+    covering all three output branches (`--json` / score-0 / default) uniformly.
+  - New shared `hlse_json_escape()` in `hlse_util.c` (consolidates the escaping
+    logic instead of adding a third private copy); 3 unit tests (util 39/39).
+  - `--log-file` opens `O_NOFOLLOW` (a fresh operator-owned append target has no
+    legitimate reason to be a symlink) + `fstat`/`S_ISREG` check.
+- **Daemon Phase-0 hygiene: fixed the only memory leak + one non-reentrant
+  buffer.** `hlse_baseline_clear()` frees/resets the `--baseline` fingerprint
+  set (previously never freed); ESP scanning now uses a per-call heap buffer
+  reused via `read_file_head()` (removing the shared static scratch and closing
+  an `lstat`->`open` TOCTOU window). `make asan-test` now actually exercises
+  `--baseline` and `esp` (it never did), so LeakSanitizer verifies both.
 - **Ransomware: R6 intermittent/partial-encryption detection**
   (`hlse_protect.c`). Closes the Tier-2 stretch item from the same July-2026
   research sweep (arXiv 2510.15133, BlackCat-style "dot/smart/head-only"

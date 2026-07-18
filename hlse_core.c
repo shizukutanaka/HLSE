@@ -42,6 +42,7 @@
 #include "hlse_file.h"    /* FileVerdict, hlse_check_file */
 #include "hlse_audit.h"   /* AuditVerdict, hlse_audit_all */
 #include "hlse_secrets.h"  /* SecretVerdict, hlse_scan_secrets */
+#include "hlse_alert.h"    /* hlse_alert_init/emit/shutdown */
 
 #include <sys/stat.h>
 #include <sys/wait.h>     /* waitpid — reap the `git log` child (P0-2) */
@@ -6507,6 +6508,8 @@ print_usage(const char *prog) {
         "  %s --baseline <file>        scan: suppress findings whose fingerprint is listed (CI adoption)\n"
         "  %s --fingerprints scan <d>  scan: emit one fingerprint per finding (generate a baseline)\n"
         "  %s --patterns <file>        Load custom org-specific secret patterns (no rebuild needed)\n"
+        "  %s --syslog                 Push findings to syslog (LOG_AUTHPRIV)\n"
+        "  %s --log-file <file>        Append one JSONL record per finding (0600)\n"
         "  %s --stdin [--json]         Pipe mode (one input per line)\n"
         "  %s --self-test              Built-in tests\n"
         "  %s --benchmark              Corpus benchmark\n"
@@ -6531,7 +6534,7 @@ print_usage(const char *prog) {
         HLSE_VERSION,
         prog, prog, prog,                                /* scanning: 3 */
         prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 14 */
-        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* options: 14 */
+        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* options: 16 */
         prog, prog, prog); /* baseline workflow: 2 + custom patterns: 1 */
 }
 
@@ -6796,6 +6799,8 @@ main(int argc, char **argv) {
     int json_out = 0;
     int quiet = 0;
     int sarif_out = 0;
+    int opt_syslog = 0;
+    const char *opt_log_file = NULL;
     int idx = 1;
 
     if (argc < 2) {
@@ -6956,6 +6961,32 @@ main(int argc, char **argv) {
         }
     }
 
+    /* Parse --syslog (boolean) — push findings to syslog(LOG_AUTHPRIV). */
+    {
+        int i;
+        for (i = 1; i < argc; i++) {
+            if (strcmp(argv[i], "--syslog") == 0) {
+                opt_syslog = 1;
+                { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1];
+                  argc--; }
+                break;
+            }
+        }
+    }
+
+    /* Parse --log-file <path> (value) — append one JSONL record per finding. */
+    {
+        int i;
+        for (i = 1; i < argc - 1; i++) {
+            if (strcmp(argv[i], "--log-file") == 0) {
+                opt_log_file = argv[i + 1];
+                { int j; for (j = i; j < argc - 2; j++) argv[j] = argv[j+2];
+                  argc -= 2; }
+                break;
+            }
+        }
+    }
+
     /* Parse --fingerprints (Perspective 107 / P0-1) — emit one stable
      * fingerprint per finding instead of the verdict; redirect to a file to
      * generate a baseline. */
@@ -7016,6 +7047,16 @@ main(int argc, char **argv) {
     /* Register cleanup once — covers every one of main()'s many return paths
      * uniformly (atexit failure just reverts to pre-fix behavior: a no-op). */
     if (g_baseline_file) atexit(hlse_baseline_clear);
+
+    /* Open alert sinks now that flags are parsed. A requested but unopenable
+     * --log-file is a usage error (same convention as --baseline/--patterns). */
+    if ((opt_syslog || opt_log_file) &&
+        hlse_alert_init(opt_syslog, opt_log_file) != 0) {
+        fprintf(stderr, "Error: cannot open --log-file '%s': %s\n",
+                opt_log_file ? opt_log_file : "(syslog only)", strerror(errno));
+        return 2;
+    }
+    if (opt_syslog || opt_log_file) atexit(hlse_alert_shutdown);
 
     /* Quiet mode: redirect stdout to /dev/null. If the redirect fails we must
      * not silently keep printing — that would violate the quiet-mode contract
@@ -9017,6 +9058,16 @@ main(int argc, char **argv) {
 
         /* Use unified scan API */
         ScanResult sr = hlse_scan(input);
+        /* Push to alert sinks (--syslog/--log-file) if enabled — emitted from
+         * the ScanResult so every output branch below is covered uniformly. */
+        {
+            const char *ar[16];
+            int ai, an = sr.n_reasons;
+            if (an > 16) an = 16;
+            for (ai = 0; ai < an; ai++) ar[ai] = sr.reasons[ai];
+            hlse_alert_emit(sr.is_url ? "url" : "text", sr.score,
+                            hlse_severity_for_score(sr.score), input, ar, an);
+        }
         if (json_out) {
             /* For JSON, delegate to the appropriate printer. For text
              * inputs use the ScanResult directly (not hlse_check_text

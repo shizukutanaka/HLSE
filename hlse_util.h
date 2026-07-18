@@ -65,6 +65,11 @@ int hlse_is_high_entropy_benign_magic(const unsigned char *buf, size_t n);
  * fclose() it.                                                          */
 FILE *hlse_open_system_file(const char *path);
 
+/* JSON-escape `s` into `out` (bounded by out_size), escaping ", \\, control
+ * chars (<0x20 -> \uXXXX) and \n/\r/\t. Always NUL-terminates within out_size.
+ * Shared helper so the CLI, server, and alert sink don't each carry a copy. */
+void hlse_json_escape(const char *s, char *out, size_t out_size);
+
 #ifdef __cplusplus
 }
 #endif

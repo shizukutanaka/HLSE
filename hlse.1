@@ -154,6 +154,24 @@ Suppress output; communicate only through the exit code (CI/CD mode).
 .B --stdin
 Pipe mode: read one input per line from standard input.
 .TP
+.B --syslog
+Push each finding to the system log via
+.BR syslog (3)
+using facility
+.B LOG_AUTHPRIV
+(severity maps SAFE\(->INFO, LOG\(->NOTICE, ALERT\(->WARNING,
+BLOCK\(->CRIT, ISOLATE\(->ALERT). Off by default.
+.TP
+.BI --log-file " file"
+Append one JSON object per finding (JSONL) to
+.IR file ,
+which is created if absent and opened
+.B O_APPEND
+with mode
+.B 0600
+(findings may contain secret fragments). A path that is a symlink or
+non-regular file is rejected.
+.TP
 .BI --baseline " file"
 For the
 .B scan

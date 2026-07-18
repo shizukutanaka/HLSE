@@ -285,6 +285,27 @@ static void test_sysopen_missing(void) {
     CHECK(ok, "missing and NULL must return NULL");
 }
 
+static void test_json_escape_basic(void) {
+    char out[64];
+    TEST("json_escape: quote/backslash escaped");
+    hlse_json_escape("a\"b\\c", out, sizeof out);
+    CHECK(strcmp(out, "a\\\"b\\\\c") == 0, out);
+}
+
+static void test_json_escape_control(void) {
+    char out[64];
+    TEST("json_escape: newline/tab/control -> \\n\\t\\u00XX");
+    hlse_json_escape("x\ny\tz\x01", out, sizeof out);
+    CHECK(strcmp(out, "x\\ny\\tz\\u0001") == 0, out);
+}
+
+static void test_json_escape_bounded(void) {
+    char out[8];
+    TEST("json_escape: truncates within bounds, always NUL-terminated");
+    hlse_json_escape("AAAAAAAAAAAAAAAAAAAA", out, sizeof out);
+    CHECK(strlen(out) < sizeof out, "overflow");
+}
+
 int main(void) {
     printf("HLSE Util — Shared Utility Tests\n");
     printf("══════════════════════════════════════\n\n");
@@ -332,6 +353,9 @@ int main(void) {
     test_sysopen_fifo();
     test_sysopen_directory();
     test_sysopen_missing();
+    test_json_escape_basic();
+    test_json_escape_control();
+    test_json_escape_bounded();
 
     printf("\n══════════════════════════════════════\n");
     printf("Util tests: %d/%d passed", passed, total);

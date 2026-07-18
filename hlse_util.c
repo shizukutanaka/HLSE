@@ -196,3 +196,31 @@ hlse_open_system_file(const char *path) {
     if (!fp) { close(fd); return NULL; }
     return fp;
 }
+
+/* Shared JSON string escaper (see hlse_util.h). Bounded, always terminates. */
+void
+hlse_json_escape(const char *s, char *out, size_t out_size) {
+    size_t k = 0;
+    if (out_size == 0) return;
+    while (*s && k < out_size - 7) {
+        unsigned char c = (unsigned char)*s;
+        switch (c) {
+            case '"':  out[k++] = '\\'; out[k++] = '"';  break;
+            case '\\': out[k++] = '\\'; out[k++] = '\\'; break;
+            case '\n': out[k++] = '\\'; out[k++] = 'n';  break;
+            case '\r': out[k++] = '\\'; out[k++] = 'r';  break;
+            case '\t': out[k++] = '\\'; out[k++] = 't';  break;
+            default:
+                if (c < 0x20) {
+                    static const char hexd[] = "0123456789abcdef";
+                    out[k++] = '\\'; out[k++] = 'u'; out[k++] = '0'; out[k++] = '0';
+                    out[k++] = hexd[(c >> 4) & 0xF];
+                    out[k++] = hexd[c & 0xF];
+                } else {
+                    out[k++] = (char)c;
+                }
+        }
+        s++;
+    }
+    out[k] = '\0';
+}
