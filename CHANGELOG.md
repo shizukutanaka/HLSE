@@ -4,6 +4,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Fixed
+- **Terminal-injection hardening in protect reasons** (`hlse_protect.c`).
+  Protection reasons embed attacker-controlled filenames (ESP `.efi` names,
+  ransom-note names, mutated extensions), and the plain-text CLI prints them
+  straight to a terminal. A file named with an embedded ESC byte could forge or
+  hide output lines. `pv_add_reason()` now neutralises control bytes (`<0x20`,
+  `0x7f`) once, at the single choke point every reason passes through, covering
+  all plain-text print sites; the JSON path was already safe via `json_escape`.
+  Flagged by the adversarial review of the ESP reentrancy work. +1 test
+  (protect 22/22).
+
 ### Added
 - **Alert sink (`hlse_alert.c`) + `--syslog` / `--log-file` — push-model
   finding delivery.** A one-shot scanner returns a verdict and exits; a

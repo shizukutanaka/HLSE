@@ -230,6 +230,31 @@ test_ransomware_intermittent_encryption(void) {
 }
 
 static void
+test_esp_filename_control_chars_sanitized(void) {
+    /* An attacker-controlled .efi filename may carry ANSI/control bytes; the
+     * plain-text CLI prints reasons straight to a terminal, so pv_add_reason
+     * must neutralise them (JSON output escapes separately). */
+    ProtectionVerdict v;
+    int i, found_ctrl = 0;
+    setup_tmpdir();
+    /* name contains ESC (0x1b) + a fake-looking line */
+    create_file("evil\033[31mFAKE.efi",
+                "MZ your files have been encrypted\n", 34);
+
+    TEST("ESP: control chars in .efi filename sanitized in reason");
+    v = hlse_esp_verify(tmpdir);
+    for (i = 0; i < v.n_reasons; i++) {
+        const unsigned char *r = (const unsigned char *)v.reasons[i];
+        size_t j;
+        for (j = 0; r[j]; j++)
+            if (r[j] < 0x20 || r[j] == 0x7f) found_ctrl = 1;
+    }
+    if (!found_ctrl) { PASS(); }
+    else { FAIL("control byte survived into reason text"); }
+    cleanup_tmpdir();
+}
+
+static void
 test_ransomware_normal_text_no_r6_fp(void) {
     setup_tmpdir();
     int i;
@@ -638,6 +663,7 @@ main(void) {
     test_ransomware_entropy_spike();
     test_ransomware_intermittent_encryption();
     test_ransomware_normal_text_no_r6_fp();
+    test_esp_filename_control_chars_sanitized();
     test_ransomware_compressed_not_flagged();
     test_ransomware_shadow_deletion_api();
     test_ransomware_new_extensions();
