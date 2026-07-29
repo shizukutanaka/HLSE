@@ -4,6 +4,23 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Security
+- **`--` end-of-options marker; global flags no longer parsed from operand
+  positions** (`hlse_core.c`). All 11 global-flag loops scanned the whole of
+  `argv` "anywhere", including OPERAND positions — which carry
+  attacker-influenced scan data (a URL, message, package name, clipboard
+  string). Two live consequences, both reproduced:
+  - `hlse_core clipboard "--log-file" "/tmp/x"` created a file from scan data.
+  - More seriously, the two-token argv shift meant **the real input was never
+    analysed while the process still exited 0 ("safe") — a silent detection
+    bypass.** In a pipeline scanning untrusted input, a crafted value disables
+    the check while appearing to pass.
+  Fix: an `argc_flags` boundary bounds every flag loop, and `--` sets it so
+  everything after the marker is data. Backward compatible (flags before `--`
+  behave exactly as before). Found by an adversarial review commissioned for a
+  different feature; the review also recommended rejecting that feature, which
+  was dropped. +4 CLI-integration tests (p114).
+
 ### Fixed
 - **Terminal-injection hardening in protect reasons** (`hlse_protect.c`).
   Protection reasons embed attacker-controlled filenames (ESP `.efi` names,

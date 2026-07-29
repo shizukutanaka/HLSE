@@ -6094,6 +6094,34 @@ check "p113: no unverifiable 'signed against' claim remains in SECURITY.md/CONTR
 grep -qE "0\.[67]\.x" SECURITY.md && rc=0 || rc=1
 check "p113: SECURITY.md's stale 0.6.x/0.7.x version table is fixed" "1" "$rc"
 
+# ── p114: `--` end-of-options guards operand positions ──────────────────
+# Global flags are matched "anywhere", which must never reach OPERAND
+# positions: operands are attacker-influenced scan data. Before this guard,
+# `clipboard "--log-file" "/tmp/x"` created a file from scan data AND shifted
+# argv so the real input was never analysed while still exiting 0 ("safe") —
+# a silent detection bypass. `--` marks the end of options.
+rm -f /tmp/hlse_p114_pwn.txt
+./hlse_core clipboard -- "--log-file" "/tmp/hlse_p114_pwn.txt" >/dev/null 2>&1
+[ ! -e /tmp/hlse_p114_pwn.txt ] && rc=0 || rc=1
+rm -f /tmp/hlse_p114_pwn.txt
+check "p114: -- prevents operand being consumed as --log-file flag" "0" "$rc"
+
+# Content after `--` is still fully scanned (the guard must not blind us)
+./hlse_core -- "https://paypal.com@evil.xyz/login" 2>/dev/null \
+    | grep -q "ISOLATE" \
+    && check "p114: input after -- is still scanned (no bypass)" "0" "0" \
+    || check "p114: input after -- is still scanned (no bypass)" "0" "1"
+
+# `--` itself must be consumed, never treated as the scan target
+./hlse_core -- "https://github.com" 2>/dev/null | grep -q "github.com" \
+    && check "p114: -- marker is consumed, not scanned as input" "0" "0" \
+    || check "p114: -- marker is consumed, not scanned as input" "0" "1"
+
+# Flags BEFORE -- still work normally
+./hlse_core --json -- "https://g00gle.com" 2>/dev/null | grep -q '"kind"' \
+    && check "p114: flags before -- still parsed" "0" "0" \
+    || check "p114: flags before -- still parsed" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

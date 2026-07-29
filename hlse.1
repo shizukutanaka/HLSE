@@ -154,6 +154,16 @@ Suppress output; communicate only through the exit code (CI/CD mode).
 .B --stdin
 Pipe mode: read one input per line from standard input.
 .TP
+.B --
+End of options. Every argument after this marker is treated as data, never
+as a flag. Use it whenever the scanned input is untrusted or may begin with
+a dash \(em otherwise a crafted operand such as
+.B --log-file
+can be consumed as an option, which both acts on attacker-chosen data and
+shifts the real input out of the scan (the process still exits 0, so the
+miss is silent). Example:
+.B hlse_core scan -- "$UNTRUSTED"
+.TP
 .B --syslog
 Push each finding to the system log via
 .BR syslog (3)

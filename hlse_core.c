@@ -6510,6 +6510,7 @@ print_usage(const char *prog) {
         "  %s --patterns <file>        Load custom org-specific secret patterns (no rebuild needed)\n"
         "  %s --syslog                 Push findings to syslog (LOG_AUTHPRIV)\n"
         "  %s --log-file <file>        Append one JSONL record per finding (0600)\n"
+        "  %s -- <input>               End of options: everything after is data, not flags\n"
         "  %s --stdin [--json]         Pipe mode (one input per line)\n"
         "  %s --self-test              Built-in tests\n"
         "  %s --benchmark              Corpus benchmark\n"
@@ -6534,7 +6535,7 @@ print_usage(const char *prog) {
         HLSE_VERSION,
         prog, prog, prog,                                /* scanning: 3 */
         prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 14 */
-        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* options: 16 */
+        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* options: 17 */
         prog, prog, prog); /* baseline workflow: 2 + custom patterns: 1 */
 }
 
@@ -6801,6 +6802,7 @@ main(int argc, char **argv) {
     int sarif_out = 0;
     int opt_syslog = 0;
     const char *opt_log_file = NULL;
+    int argc_flags;   /* argv index where "--" ends option scanning */
     int idx = 1;
 
     if (argc < 2) {
@@ -6850,10 +6852,35 @@ main(int argc, char **argv) {
         return 0;
     }
 
-    /* Parse --json flag (anywhere) */
+    /* End-of-options boundary. Global flags are matched "anywhere" for
+     * convenience, but that must never reach OPERAND positions: an operand is
+     * attacker-influenced data (a scanned URL, message, package name, clipboard
+     * string). Without a boundary, a crafted operand such as
+     *   hlse_core clipboard "--log-file" "/tmp/x"
+     * is consumed as a flag — creating a file from scan data, and worse,
+     * shifting argv so the real input is never analysed while the process still
+     * exits 0 ("safe"). That is a silent detection bypass.
+     *
+     * `--` marks the end of options: everything after it is data, never a flag.
+     * argc_flags bounds every flag loop below; the marker itself is removed
+     * once, here, so the subcommand dispatch never sees it. */
+    argc_flags = argc;
     {
         int i;
         for (i = 1; i < argc; i++) {
+            if (strcmp(argv[i], "--") == 0) {
+                argc_flags = i;                     /* scan flags only before it */
+                { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1]; argc--; }
+                break;
+            }
+        }
+        if (argc_flags > argc) argc_flags = argc;
+    }
+
+    /* Parse --json flag (anywhere) */
+    {
+        int i;
+        for (i = 1; i < argc_flags; i++) {
             if (strcmp(argv[i], "--json") == 0) {
                 json_out = 1;
                 { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1]; argc--; }
@@ -6866,7 +6893,7 @@ main(int argc, char **argv) {
      * supported by the `scan` and `package --manifest` subcommands. */
     {
         int i;
-        for (i = 1; i < argc; i++) {
+        for (i = 1; i < argc_flags; i++) {
             if (strcmp(argv[i], "--sarif") == 0) {
                 sarif_out = 1;
                 { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1]; argc--; }
@@ -6878,7 +6905,7 @@ main(int argc, char **argv) {
     /* Parse -q / --quiet flag (anywhere) — CI/CD mode: exit code only */
     {
         int i;
-        for (i = 1; i < argc; i++) {
+        for (i = 1; i < argc_flags; i++) {
             if (strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--quiet") == 0) {
                 quiet = 1;
                 { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1]; argc--; }
@@ -6895,7 +6922,7 @@ main(int argc, char **argv) {
      * exits 1. Default stays 60 (block) for backward compatibility.        */
     {
         int i;
-        for (i = 1; i < argc - 1; i++) {
+        for (i = 1; i < argc_flags - 1; i++) {
             if (strcmp(argv[i], "--fail-on") == 0) {
                 const char *t = argv[i + 1];
                 if      (strcmp(t, "log")     == 0) g_fail_threshold = 15;
@@ -6927,7 +6954,7 @@ main(int argc, char **argv) {
      * reflects real-world threat priors, not just URL structure alone.     */
     {
         int i;
-        for (i = 1; i < argc - 1; i++) {
+        for (i = 1; i < argc_flags - 1; i++) {
             if (strcmp(argv[i], "--from") == 0) {
                 const char *ch = argv[i + 1];
                 if (strcmp(ch, "email")  == 0 || strcmp(ch, "sms") == 0 ||
@@ -6951,7 +6978,7 @@ main(int argc, char **argv) {
      * do not fail the CI gate forever. */
     {
         int i;
-        for (i = 1; i < argc - 1; i++) {
+        for (i = 1; i < argc_flags - 1; i++) {
             if (strcmp(argv[i], "--baseline") == 0) {
                 g_baseline_file = argv[i + 1];
                 { int j; for (j = i; j < argc - 2; j++) argv[j] = argv[j+2];
@@ -6964,7 +6991,7 @@ main(int argc, char **argv) {
     /* Parse --syslog (boolean) — push findings to syslog(LOG_AUTHPRIV). */
     {
         int i;
-        for (i = 1; i < argc; i++) {
+        for (i = 1; i < argc_flags; i++) {
             if (strcmp(argv[i], "--syslog") == 0) {
                 opt_syslog = 1;
                 { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1];
@@ -6977,7 +7004,7 @@ main(int argc, char **argv) {
     /* Parse --log-file <path> (value) — append one JSONL record per finding. */
     {
         int i;
-        for (i = 1; i < argc - 1; i++) {
+        for (i = 1; i < argc_flags - 1; i++) {
             if (strcmp(argv[i], "--log-file") == 0) {
                 opt_log_file = argv[i + 1];
                 { int j; for (j = i; j < argc - 2; j++) argv[j] = argv[j+2];
@@ -6992,7 +7019,7 @@ main(int argc, char **argv) {
      * generate a baseline. */
     {
         int i;
-        for (i = 1; i < argc; i++) {
+        for (i = 1; i < argc_flags; i++) {
             if (strcmp(argv[i], "--fingerprints") == 0) {
                 g_emit_fingerprints = 1;
                 { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1];
@@ -7007,7 +7034,7 @@ main(int argc, char **argv) {
      * not just the current working tree. */
     {
         int i;
-        for (i = 1; i < argc; i++) {
+        for (i = 1; i < argc_flags; i++) {
             if (strcmp(argv[i], "--git-history") == 0) {
                 g_git_history = 1;
                 { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1];
@@ -7021,7 +7048,7 @@ main(int argc, char **argv) {
      * organization-specific secret patterns without a rebuild. */
     {
         int i;
-        for (i = 1; i < argc - 1; i++) {
+        for (i = 1; i < argc_flags - 1; i++) {
             if (strcmp(argv[i], "--patterns") == 0) {
                 const char *ppath = argv[i + 1];
                 if (hlse_patterns_load(ppath) != 0) {
