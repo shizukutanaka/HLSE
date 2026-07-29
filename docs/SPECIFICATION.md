@@ -31,8 +31,14 @@ Every detector returns an integer `score` in `0..100`, mapped to an action:
 | 0–14 | SAFE | no signal |
 | 15–39 | LOG | weak signal, record only |
 | 40–59 | ALERT | review |
-| 60–79 | BLOCK | block the action |
-| 80–100 | ISOLATE | block + isolate |
+| 60–79 | BLOCK | caller should block the action |
+| 80–100 | ISOLATE | caller should block + isolate |
+
+The band names are **recommendations to the caller**, not actions the engine
+takes. HLSE never blocks, quarantines, or modifies anything (see also
+`SECURITY.md`: "This is a detection tool, not a sandbox"); enforcement belongs
+to the integrating system, driven by the exit code, the JSON verdict, or the
+alert sink.
 
 **Process exit code:** `0` = safe, `1` = threat (`score >= 60`), `2` = usage error.
 

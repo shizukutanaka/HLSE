@@ -158,13 +158,20 @@ process-level.
 
 ## Score thresholds
 
-| Score | Action | Meaning |
+| Score | Action | Recommended response |
 |-------|--------|---------|
 | 0–14 | SAFE | No signals fired |
 | 15–39 | LOG | Advisory, log only |
-| 40–59 | ALERT | Warn user |
-| 60–79 | BLOCK | Block action |
-| 80+ | ISOLATE | Quarantine |
+| 40–59 | ALERT | Warn the user |
+| 60–79 | BLOCK | Caller should block the action |
+| 80+ | ISOLATE | Caller should block and quarantine |
+
+**These names are recommendations to the caller, not actions HLSE performs.**
+HLSE is a detection engine: it scores input and reports, but never blocks,
+quarantines, deletes, or modifies anything. Turning an `ISOLATE` verdict into an
+actual quarantine is the integrating system's job — drive it from the exit code
+(`0` safe / `1` threat, tunable with `--fail-on`), the `--json` verdict, or the
+`--syslog`/`--log-file` alert stream.
 
 ## JSON output
 
