@@ -5,6 +5,33 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [Unreleased]
 
 ### Added
+- **Prompt-injection detection: invisible instruction carriers**
+  (`hlse_text.c`). The repository description already advertised prompt-
+  injection coverage; no such detector existed. An AI agent consuming a
+  document reads code points, not rendered glyphs, and attackers exploit that
+  gap by encoding instructions in characters that render as nothing. Unit 42
+  documented this in the wild in March 2026 (ad-review evasion, system-prompt
+  leakage on live platforms); prompt injection is OWASP's top LLM risk for
+  2026.
+  - **Unicode Tags block** (U+E0000–U+E007F) mirrors ASCII one-to-one, so a
+    full English instruction encodes into it while rendering as nothing.
+    Detected when tag characters exceed what legitimate RGI emoji tag
+    sequences can account for (those are always introduced by U+1F3F4 and run
+    at most six tag characters each). Scores 70 (BLOCK).
+  - **Long zero-width runs** (U+200B/200C/200D/FEFF) used as a binary data
+    channel. Keyed on *run length*, not presence, because ZWJ in emoji
+    sequences and ZWNJ in Persian/Indic text are legitimate but sparse.
+    Scores 40 (ALERT).
+  - Runs on the raw input *before* the evasion-normalization pipeline, which
+    deliberately strips these code points — normalizing first would erase the
+    evidence.
+  - Verified against the false-positive boundaries: ZWJ family emoji, Persian
+    ZWNJ text, and all three UK subdivision flags together stay clean.
+  - **Structural only, and the blind spot now says so**: an injection written
+    in ordinary visible prose is a semantic problem this does not solve, and a
+    clean result is explicitly not clearance to feed untrusted content to an
+    agent. +5 CLI-integration tests (p118).
+
 - **Chi-square byte-distribution test to qualify the R2 entropy finding**
   (`hlse_util.c`, `hlse_protect.c`). Shannon entropy cannot separate
   *encrypted* from *compressed* data — both sit near 8 bits/byte — which is

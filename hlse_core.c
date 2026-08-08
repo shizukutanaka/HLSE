@@ -2092,7 +2092,12 @@ hlse_blindspot_for(const char *kind) {
     if (strcmp(kind, "text") == 0)
         return "keyword/structure based — a novel or carefully-worded scam "
                "with no known phrasing can read clean; trust your judgment on "
-               "unexpected requests for money or credentials.";
+               "unexpected requests for money or credentials. Prompt-injection "
+               "coverage is structural only: hidden carriers (Unicode Tags, "
+               "long zero-width runs) are detected, but an injection written "
+               "in ordinary visible prose is a semantic problem this does not "
+               "solve — do not treat a clean result as clearance to feed "
+               "untrusted content to an agent.";
     if (strcmp(kind, "email") == 0)
         return "header forensics only — authentication PASS (SPF/DKIM/DMARC) is "
                "not a safety guarantee: a brand name in the display field, an "
