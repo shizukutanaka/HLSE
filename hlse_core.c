@@ -7418,6 +7418,28 @@ main(int argc, char **argv) {
                                    fgets(line, sizeof(line), fp)) {
                                 lineno++;
                                 scanned_bytes += strlen(line);
+                                /* Indirect prompt injection: an agent reading
+                                 * a repo consumes these files directly, so the
+                                 * poisoned-document/skill-file path runs
+                                 * through `scan`, not just `text`. Checked on
+                                 * the raw line — the carriers are invisible,
+                                 * so nothing else here would notice them. */
+                                {
+                                    char inv_r[512];
+                                    int inv = hlse_check_invisible_carriers(
+                                        line, inv_r, sizeof(inv_r));
+                                    if (inv > 0 &&
+                                        !hlse_scan_suppress(sarif_path,
+                                            "HLSE-TEXT-INVISIBLE", inv_r, line))
+                                    {
+                                        threats++;
+                                        if (inv > max_score) max_score = inv;
+                                        if (inv >= g_fail_threshold) gate_hits++;
+                                        if (!quiet && !json_out && !sarif_out)
+                                            printf("  %s:%d: %s\n",
+                                                   sarif_path, lineno, inv_r);
+                                    }
+                                }
                                 SecretVerdict sv = hlse_scan_secrets(line);
                                 if (sv.score >= 40) {
                                     int ai;

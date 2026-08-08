@@ -1116,6 +1116,53 @@ scan_invisible_carriers(const char *s, int *out_tag_chars,
     *out_max_zw_run  = max_run;
 }
 
+/* Bounded copy into the caller's buffer; always NUL-terminates. */
+static void
+carrier_copy_reason(char *dst, size_t dst_size, const char *src) {
+    size_t n;
+    if (!dst || dst_size == 0) return;
+    n = strlen(src);
+    if (n >= dst_size) n = dst_size - 1;
+    memcpy(dst, src, n);
+    dst[n] = '\0';
+}
+
+int
+hlse_check_invisible_carriers(const char *text, char *reason,
+                              size_t reason_size) {
+    int tag_chars = 0, flag_bases = 0, zw_run = 0;
+
+    if (reason && reason_size) reason[0] = '\0';
+    if (!text) return 0;
+    scan_invisible_carriers(text, &tag_chars, &flag_bases, &zw_run);
+
+    /* Allow up to 6 tag characters per emoji flag base (RGI sequences are at
+     * most 5 subdivision letters plus the U+E007F terminator). */
+    /* Format into a fixed buffer the compiler can size-check, then copy out
+     * bounded — reason_size is a runtime value, so formatting straight into it
+     * trips -Wformat-truncation=2 (it must assume a size of 1). */
+    if (tag_chars > flag_bases * 6) {
+        char buf[320];
+        snprintf(buf, sizeof buf,
+            "Invisible instruction carrier: %d Unicode Tags character%s "
+            "(U+E0000..U+E007F) render as nothing but are read by an AI "
+            "agent as text — a known indirect prompt-injection vector",
+            tag_chars, tag_chars == 1 ? "" : "s");
+        carrier_copy_reason(reason, reason_size, buf);
+        return 70;
+    }
+    if (zw_run >= 8) {
+        char buf[256];
+        snprintf(buf, sizeof buf,
+            "Hidden data channel: run of %d consecutive zero-width "
+            "characters — legitimate use (emoji joiners, Persian/Indic "
+            "text) is sparse, not a run this long", zw_run);
+        carrier_copy_reason(reason, reason_size, buf);
+        return 40;
+    }
+    return 0;
+}
+
 static void
 add_text_reason(TextVerdict *v, int delta, const char *fmt, ...) {
     va_list ap;
@@ -1401,23 +1448,10 @@ hlse_check_text(const char *raw_text) {
      * code points so keyword matching survives evasion, which would erase the
      * evidence. Here their presence IS the finding. */
     {
-        int tag_chars = 0, flag_bases = 0, zw_run = 0;
-        scan_invisible_carriers(raw_text, &tag_chars, &flag_bases, &zw_run);
-        /* Allow up to 6 tag characters per emoji flag base (RGI sequences are
-         * at most 5 subdivision letters plus the U+E007F terminator). */
-        if (tag_chars > flag_bases * 6) {
-            add_text_reason(&v, 70,
-                "Invisible instruction carrier: %d Unicode Tags character%s "
-                "(U+E0000..U+E007F) render as nothing but are read by an AI "
-                "agent as text — a known indirect prompt-injection vector",
-                tag_chars, tag_chars == 1 ? "" : "s");
-        }
-        if (zw_run >= 8) {
-            add_text_reason(&v, 40,
-                "Hidden data channel: run of %d consecutive zero-width "
-                "characters — legitimate use (emoji joiners, Persian/Indic "
-                "text) is sparse, not a run this long", zw_run);
-        }
+        char inv_reason[512];
+        int inv = hlse_check_invisible_carriers(raw_text, inv_reason,
+                                                sizeof(inv_reason));
+        if (inv > 0) add_text_reason(&v, inv, "%s", inv_reason);
     }
 
     normalize_whitespace(raw_text, normalized, sizeof(normalized));

@@ -27,6 +27,11 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
     evidence.
   - Verified against the false-positive boundaries: ZWJ family emoji, Persian
     ZWNJ text, and all three UK subdivision flags together stay clean.
+  - Applied by **`scan <dir>`** as well as `text`. The realistic path is an AI
+    agent reading files out of a repository — CSA documented payloads planted
+    in tool descriptions, skill files and MCP server configs — not a human
+    pasting text into the CLI. Findings print with `file:line`, count toward
+    `threats`, and drive the exit gate. +5 CLI-integration tests (p119).
   - **Structural only, and the blind spot now says so**: an injection written
     in ordinary visible prose is a semantic problem this does not solve, and a
     clean result is explicitly not clearance to feed untrusted content to an
