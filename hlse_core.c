@@ -2131,6 +2131,30 @@ hlse_blindspot_for(const char *kind) {
                "inside a correctly-named package are not detected; review the "
                "package's repository, recent commits, and published checksums "
                "before installing in a production or privileged environment.";
+    /* Distinct from "package": the name matched no known package AND is not a
+     * near-miss of one, so this is the "cannot verify" case. Naming it
+     * separately matters because the residual risk is different in kind —
+     * slopsquatting. Edit-distance detection structurally cannot see a
+     * fully-invented name: the large-scale study of LLM package
+     * hallucinations (Spracklen et al., USENIX Security 2025 — 576k samples,
+     * 16 models) measured ~19.7% of LLM-recommended packages as
+     * non-existent, and found only ~13% of those were off-by-one typos while
+     * roughly half were highly dissimilar to any real package. Those are
+     * invisible to a distance<=2 check by construction, and HLSE is offline
+     * by design so it cannot confirm existence. Say so plainly. */
+    if (strcmp(kind, "package_unverified") == 0)
+        return "this name matches no package HLSE knows and is not a near-miss "
+               "of one — so nothing was detected, but nothing was confirmed "
+               "either: HLSE is offline by design and cannot check whether the "
+               "package exists. Typo-distance detection also cannot catch a "
+               "wholly invented name (slopsquatting): in the USENIX Security "
+               "2025 analysis of LLM-generated code, ~1 in 5 recommended "
+               "packages did not exist, and about half of those were not "
+               "near-misses of any real package. If this name came from an AI "
+               "assistant or an unfamiliar snippet, confirm it on the registry "
+               "and check its age, owner, and download history before "
+               "installing — attackers pre-register plausible hallucinated "
+               "names.";
     if (strcmp(kind, "file") == 0)
         return "magic-byte and filename analysis only — obfuscated payloads, "
                "encrypted content, or malicious macros inside office formats "
@@ -8091,7 +8115,10 @@ main(int argc, char **argv) {
                     printf("]");
                 }
                 if (pv.score == 0) {
-                    const char *bs = hlse_blindspot_for("package");
+                    /* reason non-empty => exact match to a known package;
+                     * empty => unknown name, which we cannot verify offline. */
+                    const char *bs = hlse_blindspot_for(
+                        pv.reason[0] ? "package" : "package_unverified");
                     if (bs) {
                         char esc_bs[512];
                         json_escape(bs, esc_bs, sizeof(esc_bs));
@@ -8139,8 +8166,13 @@ main(int argc, char **argv) {
                 }
                 printf("}\n");
             } else if (pv.score == 0) {
-                const char *bs = hlse_blindspot_for("package");
+                const char *bs = hlse_blindspot_for(
+                    pv.reason[0] ? "package" : "package_unverified");
                 printf("OK    %s\n", argv[idx + 1]);
+                /* Mirror the URL canonical-confirmation line: say explicitly
+                 * when the name IS recognised, so "OK" is not ambiguous
+                 * between "known good" and "never heard of it". */
+                if (pv.reason[0]) printf("  \xe2\x9c\x94 %s\n", pv.reason);
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 printf("%-7s [%d]  %s\n",

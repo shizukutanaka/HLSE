@@ -4,6 +4,30 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added
+- **Slopsquat honesty for unverifiable package names** (`hlse_supply.c`,
+  `hlse_core.c`). HLSE's package check is Damerau-Levenshtein distance<=2
+  against a curated list, so a *wholly invented* name is invisible to it by
+  construction — and it previously reported a bare `OK`, indistinguishable
+  from a genuinely recognised package.
+  Grounded in the USENIX Security 2025 analysis of LLM package hallucinations
+  (Spracklen et al.; 576k samples across 16 models), which measured ~19.7% of
+  LLM-recommended packages as non-existent and found only ~13% of those were
+  off-by-one typos while roughly half were *highly dissimilar* to any real
+  package — precisely the class an edit-distance check cannot see.
+  - An exact registry match now emits an explicit recognition line
+    (`Known package: 'requests' is a recognised pip package.`), mirroring the
+    URL canonical-confirmation pattern, so `OK` is no longer ambiguous.
+  - An unknown, non-near-miss name now selects a distinct `package_unverified`
+    blind spot that states plainly that nothing was confirmed, explains why
+    typo-distance cannot catch a fabricated name, and tells the user to verify
+    age/owner/downloads on the registry if the name came from an AI assistant.
+  - **Scoring is deliberately unchanged** — both cases remain score 0. A
+    structural "looks hallucinated" heuristic would false-positive across the
+    legitimate ecosystem (`flask-login`, `google-cloud-storage`, …), and the
+    research is explicit that these names are not structurally distinguishable.
+    F1 stays 1.000 / 0.0% FP. +5 CLI-integration tests (p115).
+
 ### Security
 - **`--` end-of-options marker; global flags no longer parsed from operand
   positions** (`hlse_core.c`). All 11 global-flag loops scanned the whole of

@@ -6122,6 +6122,39 @@ check "p114: -- prevents operand being consumed as --log-file flag" "0" "$rc"
     && check "p114: flags before -- still parsed" "0" "0" \
     || check "p114: flags before -- still parsed" "0" "1"
 
+# ── p115: slopsquat / unverifiable-package honesty ──────────────────────
+# HLSE's package check is Damerau-Levenshtein distance<=2 against a curated
+# list, so a WHOLLY INVENTED name is invisible to it by construction. The
+# USENIX Security 2025 study of LLM package hallucinations found ~19.7% of
+# recommended packages don't exist and about half of those are not near-misses
+# of any real package. Scoring is deliberately unchanged (no false positives);
+# what must not regress is that "OK" is no longer ambiguous between
+# "known-good" and "never heard of it".
+./hlse_core package requests pip 2>/dev/null | grep -q "Known package" \
+    && check "p115: known package gets an explicit recognition line" "0" "0" \
+    || check "p115: known package gets an explicit recognition line" "0" "1"
+
+./hlse_core package requests-oauth-helper pip 2>/dev/null \
+    | grep -qi "slopsquatting" \
+    && check "p115: unknown package discloses the slopsquat blind spot" "0" "0" \
+    || check "p115: unknown package discloses the slopsquat blind spot" "0" "1"
+
+# A known-good name must NOT get the unverified warning
+./hlse_core package requests pip 2>/dev/null | grep -qi "slopsquatting" \
+    && rc=1 || rc=0
+check "p115: known package does NOT get the unverified warning" "0" "$rc"
+
+# Scoring is unchanged: both remain score 0 / exit 0 (no new false positives)
+./hlse_core --json package requests-oauth-helper pip 2>/dev/null \
+    | python3 -c 'import sys,json; d=json.loads(sys.stdin.read()); assert d["score"]==0, d' \
+    && check "p115: unverified package still scores 0 (no false positive)" "0" "0" \
+    || check "p115: unverified package still scores 0 (no false positive)" "0" "1"
+
+# Typosquat detection itself must be unaffected
+./hlse_core package reqeusts pip 2>/dev/null | grep -q "Typosquat alert" \
+    && check "p115: typosquat detection unaffected by the change" "0" "0" \
+    || check "p115: typosquat detection unaffected by the change" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

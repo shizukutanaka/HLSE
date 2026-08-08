@@ -272,10 +272,17 @@ hlse_check_package(const char *pkg_name, const char *ecosystem) {
 
             normalize_pkg_name(pkgs[pi], norm_ref, sizeof(norm_ref));
 
-            /* Exact match → safe */
+            /* Exact match → safe. Record WHICH registry recognised it: the
+             * caller uses a non-empty reason here to tell "known-good name"
+             * apart from "name I have never heard of". Both are score 0 with
+             * 0 matches, but they carry very different residual risk — see the
+             * package blind-spot text in hlse_core.c. */
             if (strcmp(norm, norm_ref) == 0) {
                 v.score = 0;
                 v.n_matches = 0;
+                snprintf(v.reason, sizeof(v.reason),
+                         "Known package: '%s' is a recognised %s package.",
+                         pkgs[pi], REGISTRIES[ri].name);
                 return v;
             }
 
