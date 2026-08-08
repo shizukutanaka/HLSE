@@ -331,6 +331,33 @@ static void test_base62_6_radix(void) {
     CHECK(strcmp(out, "000010") == 0, out);
 }
 
+static void test_chi_square_perfect_uniform(void) {
+    unsigned char buf[2560];
+    int i;
+    TEST("chi_square: perfectly flat histogram -> 0");
+    for (i = 0; i < 2560; i++) buf[i] = (unsigned char)(i % 256);
+    CHECK(hlse_chi_square_uniform(buf, sizeof buf) < 0.0001, "not ~0");
+}
+
+static void test_chi_square_degenerate(void) {
+    unsigned char buf[2560];
+    TEST("chi_square: single-symbol buffer -> very large");
+    memset(buf, 'A', sizeof buf);
+    CHECK(hlse_chi_square_uniform(buf, sizeof buf) > 100000.0, "too small");
+}
+
+static void test_chi_square_small_sample(void) {
+    unsigned char buf[256];
+    TEST("chi_square: sample under 1280 bytes -> -1 (not meaningful)");
+    memset(buf, 0, sizeof buf);
+    CHECK(hlse_chi_square_uniform(buf, sizeof buf) < 0.0, "should be -1");
+}
+
+static void test_chi_square_null(void) {
+    TEST("chi_square: NULL input -> -1 (no crash)");
+    CHECK(hlse_chi_square_uniform(NULL, 4096) < 0.0, "should be -1");
+}
+
 int main(void) {
     printf("HLSE Util — Shared Utility Tests\n");
     printf("══════════════════════════════════════\n\n");
@@ -385,6 +412,10 @@ int main(void) {
     test_crc32_empty();
     test_base62_6_padding();
     test_base62_6_radix();
+    test_chi_square_perfect_uniform();
+    test_chi_square_degenerate();
+    test_chi_square_small_sample();
+    test_chi_square_null();
 
     printf("\n══════════════════════════════════════\n");
     printf("Util tests: %d/%d passed", passed, total);

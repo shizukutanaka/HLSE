@@ -258,3 +258,38 @@ hlse_base62_6(unsigned long v, char *out) {
         v /= 62u;
     }
 }
+
+/* Pearson chi-square goodness-of-fit of a byte buffer against the uniform
+ * distribution (256 bins, 255 degrees of freedom).
+ *
+ * Why this exists alongside Shannon entropy: entropy alone cannot separate
+ * ENCRYPTED from COMPRESSED data — both sit near 8 bits/byte — which is the
+ * dominant false-positive source in entropy-based ransomware detection.
+ * Compression leaves residual structure in the byte histogram, so compressed
+ * data lands far from uniform, while cipher output is uniform by design.
+ *
+ * Interpretation: for truly uniform data the statistic is distributed around
+ * df = 255 with sd = sqrt(2*255) ~= 22.6, so values within roughly 185..325
+ * are unremarkable. Published measurements put encrypted files near 253 and
+ * compressed files in the high hundreds to low thousands.
+ *
+ * Returns -1.0 if the sample is too small for the statistic to mean anything
+ * (each bin wants an expected count >= 5, i.e. n >= 1280). */
+double
+hlse_chi_square_uniform(const unsigned char *data, size_t len) {
+    unsigned long counts[256];
+    double expected, chi = 0.0;
+    size_t i;
+    int b;
+
+    if (!data || len < 1280) return -1.0;
+    for (b = 0; b < 256; b++) counts[b] = 0;
+    for (i = 0; i < len; i++) counts[data[i]]++;
+
+    expected = (double)len / 256.0;
+    for (b = 0; b < 256; b++) {
+        double d = (double)counts[b] - expected;
+        chi += (d * d) / expected;
+    }
+    return chi;
+}

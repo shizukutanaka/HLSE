@@ -5,6 +5,32 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [Unreleased]
 
 ### Added
+- **Chi-square byte-distribution test to qualify the R2 entropy finding**
+  (`hlse_util.c`, `hlse_protect.c`). Shannon entropy cannot separate
+  *encrypted* from *compressed* data — both sit near 8 bits/byte — which is
+  the dominant false-positive source in entropy-based ransomware detection.
+  The existing magic-byte skip only covers formats with a recognisable header,
+  so a headerless or unknown container still lands as "likely encrypted".
+  Reproduced here: six raw-deflate files (no magic) scored entropy 7.910 vs
+  7.958 for random bytes — indistinguishable — and R2 fired on the compressed
+  set. Chi-square separated the same samples 546 vs 242 (uniform ~255).
+  - New `hlse_chi_square_uniform()` (256 bins, df 255; returns -1 below 1280
+    bytes where the statistic is not meaningful). +4 util tests (47/47).
+  - **One-directional by design.** A clearly structured histogram is evidence
+    of compression and is reported as such; a *uniform* histogram is NOT
+    reported as evidence of encryption, because compressed data often looks
+    uniform too. Measured on a single deflate stream, the statistic ran
+    628 / 398 / 289 / 319 as the sample grew 2K -> 4K -> 8K -> whole file —
+    non-monotonic, and overlapping the encrypted range at the 4 KB HLSE
+    samples. This matches the literature (Davies et al.; and the Kent
+    "Why Current Statistical Approaches to Ransomware Detection Fail"
+    analysis), which reports high false-positive rates for every single
+    statistic taken alone.
+  - **Score-neutral**: it annotates an R2 finding that already fired and never
+    raises or lowers the score, so a misread can neither manufacture nor
+    suppress a ransomware verdict. F1 stays 1.000 / 0.0% FP.
+  +3 CLI-integration tests (p117).
+
 - **Offline checksum verification for GitHub-format tokens** (`hlse_util.c`,
   `hlse_secrets.c`). GitHub's token formats are `prefix_` + 30 chars of
   entropy + 6 chars of checksum, where the checksum is CRC-32 of the entropy

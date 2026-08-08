@@ -78,6 +78,13 @@ unsigned long hlse_crc32(const unsigned char *data, size_t len);
  * GitHub-format tokens carry, so their integrity is verifiable offline. */
 void hlse_base62_6(unsigned long v, char *out);
 
+/* Pearson chi-square of a byte buffer against the uniform distribution
+ * (256 bins, df = 255). Complements Shannon entropy, which cannot separate
+ * encrypted from compressed data: cipher output is uniform (statistic near
+ * 255), while compression leaves histogram structure (far above it).
+ * Returns -1.0 when len < 1280 (sample too small to be meaningful). */
+double hlse_chi_square_uniform(const unsigned char *data, size_t len);
+
 #ifdef __cplusplus
 }
 #endif

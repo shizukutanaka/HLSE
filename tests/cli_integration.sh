@@ -6183,6 +6183,45 @@ check "p116: checksum mismatch still exits non-zero (finding kept)" "1" "$rc"
     && rc=1 || rc=0
 check "p116: non-GitHub token carries no checksum claim" "0" "$rc"
 
+# ── p117: chi-square qualifies the R2 entropy finding ───────────────────
+# Shannon entropy cannot separate ENCRYPTED from COMPRESSED data (both ~8
+# bits/byte) — the dominant false-positive source in entropy-based ransomware
+# detection. The magic-byte skip only covers formats with a recognisable
+# header, so headerless/unknown containers still land as "likely encrypted".
+# Chi-square against the uniform distribution adds the missing evidence, but
+# ONE-DIRECTIONALLY: a structured histogram argues for compression, while a
+# uniform one proves nothing (compressed data often looks uniform too).
+# Score is never changed by this — annotation only.
+P117_S=$(mktemp -d); P117_U=$(mktemp -d)
+python3 - "$P117_S" "$P117_U" <<'P117PY'
+import os, random, sys
+struct_dir, uni_dir = sys.argv[1], sys.argv[2]
+random.seed(3)
+for i in range(6):
+    b = bytearray()
+    while len(b) < 20000:
+        b += bytes([random.choice(range(0, 128))]) + os.urandom(1)
+    open(os.path.join(struct_dir, "d%d.bin" % i), "wb").write(bytes(b))
+for i in range(6):
+    open(os.path.join(uni_dir, "d%d.bin" % i), "wb").write(os.urandom(20000))
+P117PY
+./hlse_core protect "$P117_S" --ransomware 2>/dev/null \
+    | grep -q "fits compressed data better than encryption" \
+    && check "p117: structured high-entropy data gets the compression hint" "0" "0" \
+    || check "p117: structured high-entropy data gets the compression hint" "0" "1"
+
+./hlse_core protect "$P117_U" --ransomware 2>/dev/null \
+    | grep -q "fits compressed data better than encryption" \
+    && rc=1 || rc=0
+check "p117: uniform (cipher-like) data makes no compression claim" "0" "$rc"
+
+# The annotation must not change the score: R2 still fires at the same level
+./hlse_core protect "$P117_S" --ransomware 2>/dev/null \
+    | grep -q "R2: Entropy anomaly" \
+    && check "p117: R2 still fires (annotation is score-neutral)" "0" "0" \
+    || check "p117: R2 still fires (annotation is score-neutral)" "0" "1"
+rm -rf "$P117_S" "$P117_U"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
