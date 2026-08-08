@@ -143,6 +143,27 @@ static struct ext_text_case ext_text_corpus[] = {
       "long weekend and see you Monday.", 0,
       "Legit: genuine executive message (authority, no payment/secrecy)" },
 
+    /* Double extortion ransomware demand */
+    { "Your data has been exfiltrated and all your files have been encrypted. "
+      "Contact us to decrypt before we publish your data will be published. "
+      "Pay 10 BTC to recover your files.", 60,
+      "Double extortion: exfil + encrypt + publish threat" },
+
+    /* Crypto wallet phishing */
+    { "URGENT: Your wallet has been compromised. Enter your seed phrase "
+      "immediately to verify ownership and prevent loss.", 25,
+      "Phishing: seed phrase + urgency" },
+
+    /* INTERPOL impersonation scam */
+    { "This is INTERPOL. You are under investigation for cybercrime. "
+      "Pay $5,000 via Western Union within 24 hours to avoid arrest.", 50,
+      "Authority: INTERPOL impersonation + wire demand" },
+
+    /* Legit crypto documentation — mentions seed phrase, no threat context */
+    { "Best practices for wallet security: always store your seed phrase "
+      "offline in a secure location. Never share it with anyone.", 0,
+      "Legit: crypto security guide (seed phrase in neutral context)" },
+
     /* JP legitimate */
     /* 明日の社内研修についてお知らせします */
     { "\xe6\x98\x8e\xe6\x97\xa5\xe3\x81\xae\xe7\xa4\xbe"

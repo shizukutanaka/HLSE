@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "$id": "hlse_protect_verdict",
+  "title": "HLSE Protect Verdict",
+  "description": "JSON output of `hlse_core --json protect <path> [--ransomware|--smb|--mbr|--net]` — ransomware, SMB canary, MBR/GPT, and network-drive integrity checks.",
+  "type": "object",
+  "required": [
+    "kind",
+    "hlse_version",
+    "target",
+    "score",
+    "action",
+    "severity",
+    "reasons"
+  ],
+  "properties": {
+    "kind": {
+      "const": "protect",
+      "description": "Discriminator — always 'protect' for this schema."
+    },
+    "hlse_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "HLSE engine version that produced this verdict. Use this field to identify verdicts that predate a new detector capability and should be re-scanned."
+    },
+    "target": {
+      "type": "string",
+      "description": "Path or device scanned (JSON-escaped)."
+    },
+    "score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "SAFE",
+        "LOG",
+        "ALERT",
+        "BLOCK",
+        "ISOLATE"
+      ]
+    },
+    "severity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "0=SAFE 1=LOG 2=ALERT 3=BLOCK 4=ISOLATE. Use severity >= 3 for actionable gates."
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Per-signal detector reasons (ransomware entropy, SMB canary access, mass rename, MBR/GPT anomaly). Empty array for SAFE verdicts."
+    },
+    "blind_spot": {
+      "type": "string",
+      "description": "What HLSE cannot detect for ransomware/integrity scanning (score 0 only)."
+    },
+    "signal_count": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of independent detector reasons that fired (score > 0 only)."
+    },
+    "confidence": {
+      "type": "string",
+      "description": "Corroboration level: 'single signal', 'corroborated', 'high confidence' (score > 0 only)."
+    },
+    "pattern": {
+      "type": "string",
+      "description": "Attack pattern label (score >= 40 — ALERT band and above)."
+    },
+    "pattern_id": {
+      "type": "string",
+      "const": "HLSE-PROTECT-RANSOM",
+      "description": "Stable SIEM/SOAR routing token (present iff pattern is present)."
+    },
+    "objective": {
+      "type": "string",
+      "description": "The attacker's likely objective (score >= 40 — ALERT band and above)."
+    },
+    "verify": {
+      "type": "string",
+      "description": "Independent check before taking action, e.g. before paying a ransom (score >= 40 — ALERT band and above)."
+    },
+    "triage": {
+      "type": "string",
+      "description": "Immediate incident response — disconnect network, preserve evidence (score >= 60 only)."
+    },
+    "cascade_risk": {
+      "type": "string",
+      "description": "Other credentials and network shares at risk (score >= 60 only)."
+    },
+    "exoneration": {
+      "type": "string",
+      "description": "Benign explanation and falsifying test for borderline scores (score 15-59 only)."
+    }
+  },
+  "additionalProperties": false
+}

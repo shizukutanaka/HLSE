@@ -106,17 +106,37 @@ static const unsigned char MAGIC_PNG[]  = { 0x89, 0x50, 0x4E, 0x47 };
 static const unsigned char MAGIC_JPG[]  = { 0xFF, 0xD8, 0xFF };
 static const unsigned char MAGIC_GIF[]  = { 0x47, 0x49, 0x46, 0x38 };   /* GIF8 */
 static const unsigned char MAGIC_OLE[]  = { 0xD0, 0xCF, 0x11, 0xE0 };   /* OLE compound (doc/xls/ppt) */
+static const unsigned char MAGIC_7ZIP[] = { 0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C }; /* 7-Zip */
+static const unsigned char MAGIC_CAB[]  = { 0x4D, 0x53, 0x43, 0x46 };   /* MSCF — Windows Cabinet */
+static const unsigned char MAGIC_WASM[] = { 0x00, 0x61, 0x73, 0x6D };   /* \0asm — WebAssembly */
+static const unsigned char MAGIC_SHEBANG[] = { 0x23, 0x21 };           /* #! — script shebang */
+/* Mach-O (macOS executables). Four unambiguous thin-binary magics, both
+ * endiannesses / word sizes. The fat/universal magic 0xCAFEBABE is omitted
+ * deliberately: it is indistinguishable from a Java .class file by header
+ * alone, so flagging it would risk false positives on legitimate bytecode. */
+static const unsigned char MAGIC_MACHO_32LE[] = { 0xCE, 0xFA, 0xED, 0xFE };
+static const unsigned char MAGIC_MACHO_64LE[] = { 0xCF, 0xFA, 0xED, 0xFE };
+static const unsigned char MAGIC_MACHO_32BE[] = { 0xFE, 0xED, 0xFA, 0xCE };
+static const unsigned char MAGIC_MACHO_64BE[] = { 0xFE, 0xED, 0xFA, 0xCF };
 static const MagicSig MAGIC_TABLE[] = {
     { MAGIC_PE,    2, "PE/EXE" },
     { MAGIC_ELF,   4, "ELF" },
+    { MAGIC_MACHO_32LE, 4, "Mach-O" },
+    { MAGIC_MACHO_64LE, 4, "Mach-O" },
+    { MAGIC_MACHO_32BE, 4, "Mach-O" },
+    { MAGIC_MACHO_64BE, 4, "Mach-O" },
     { MAGIC_PDF,   4, "PDF" },
     { MAGIC_ZIP,   4, "ZIP" },
     { MAGIC_GZIP,  2, "GZIP" },
     { MAGIC_RAR,   4, "RAR" },
+    { MAGIC_7ZIP,  6, "7ZIP" },
+    { MAGIC_CAB,   4, "Cabinet" },
+    { MAGIC_WASM,  4, "WebAssembly" },
     { MAGIC_PNG,   4, "PNG" },
     { MAGIC_JPG,   3, "JPEG" },
     { MAGIC_GIF,   4, "GIF" },
     { MAGIC_OLE,   4, "OLE" },
+    { MAGIC_SHEBANG, 2, "Script" },
     { NULL, 0, NULL }
 };
 
@@ -134,6 +154,37 @@ detect_magic(const unsigned char *head, size_t len) {
     return NULL;
 }
 
+/* HTML has no single fixed magic byte — it may begin with "<!DOCTYPE html>",
+ * "<html", "<head", "<script", or "<?xml" (for XHTML/SVG), possibly after a
+ * UTF-8 BOM and/or leading whitespace, in any case. Detect it separately so
+ * HTML-smuggling files wearing a document extension (invoice.pdf that is
+ * really HTML) can be flagged. Returns 1 if the head looks like HTML/XML
+ * markup with an HTML-ish tag.                                            */
+static int
+looks_like_html(const unsigned char *head, size_t len) {
+    size_t i = 0;
+    char low[64];
+    size_t n = 0;
+    /* Skip UTF-8 BOM */
+    if (len >= 3 && head[0] == 0xEF && head[1] == 0xBB && head[2] == 0xBF)
+        i = 3;
+    /* Skip leading whitespace */
+    while (i < len && (head[i] == ' ' || head[i] == '\t' ||
+                       head[i] == '\r' || head[i] == '\n'))
+        i++;
+    if (i >= len || head[i] != '<') return 0;
+    /* Lowercase a small window starting at the '<' for case-insensitive cmp */
+    for (; i < len && n < sizeof(low) - 1; i++)
+        low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    return (strncmp(low, "<!doctype html", 14) == 0 ||
+            strncmp(low, "<html", 5) == 0 ||
+            strncmp(low, "<head", 5) == 0 ||
+            strncmp(low, "<script", 7) == 0 ||
+            strncmp(low, "<!-- ", 5) == 0 ||  /* HTML comment lead-in */
+            strncmp(low, "<svg", 4) == 0);
+}
+
 /* ─── dangerous extensions ────────────────────────────────────────────── */
 
 static const char *EXECUTABLE_EXTS[] = {
@@ -142,10 +193,56 @@ static const char *EXECUTABLE_EXTS[] = {
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
+    /* macOS installer packages */
+    ".pkg", ".mpkg",
+    /* Macro-enabled Office documents (bypass Mark-of-the-Web in many configs) */
+    ".docm", ".xlsm", ".pptm", ".xlam", ".ppam", ".xlsb",
     /* Java */
     ".jar", ".class",
     /* Python */
     ".py", ".pyw",
+    /* Web server-side — can execute on upload */
+    ".php", ".php3", ".php5", ".phtml", ".asp", ".aspx", ".jsp",
+    /* Scripting languages used as malware droppers */
+    ".rb", ".pl", ".tcl", ".lua",
+    /* Windows shared libraries — commonly used as sideload/injection payloads */
+    ".dll",
+    /* Windows HTML Application — runs JScript/VBScript with no sandbox */
+    ".mshta",
+    /* PHP archive — executes like a PHP binary */
+    ".phar",
+    /* JSP variants */
+    ".jspx", ".jsw",
+    /* JVM scripting */
+    ".groovy",
+    /* Windows ClickOnce / WPF browser application */
+    ".application", ".xbap",
+    /* Windows Management / Script Component (msc duplicate-free) */
+    ".msc",
+    /* PowerShell XML formats */
+    ".ps1xml", ".cdxml",
+    /* Internet Shortcut (can embed URLs that auto-execute) */
+    ".url",
+    /* Excel/Word add-ins — shellcode delivery vector via COM (2021-2023 spike) */
+    ".xll", ".wll",
+    /* Compiled HTML Help — executes embedded JScript via hhctrl.ocx */
+    ".chm",
+    /* Windows Script Component / Script Encoder */
+    ".sct", ".wsc",
+    /* Remote Desktop connection file — can auto-connect to attacker RDP */
+    ".rdp",
+    /* Windows Task Scheduler job (XML form: .job used in older style) */
+    ".job",
+    /* OneNote embedded-attachment execution (top phishing vector 2022-2023) */
+    ".one", ".onetoc2",
+    /* Disk-container MOTW bypass: ISO/IMG/VHD drop files without MOTW flag */
+    ".iso", ".img", ".vhd", ".vhdx",
+    /* Macro-enabled PowerPoint variants */
+    ".ppsm", ".potm",
+    /* Excel Internet Query — fetches and executes remote content when opened */
+    ".iqy",
+    /* Windows Theme/ThemeBleed (CVE-2023-38146): NTLM hash theft via UNC path */
+    ".theme", ".themepack",
     NULL
 };
 
@@ -163,6 +260,9 @@ is_executable_ext(const char *ext) {
 static const char *DOCUMENT_EXTS[] = {
     ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
     ".odt", ".ods", ".odp", ".rtf", ".txt", ".csv",
+    /* Media containers — also passive data a user never expects to execute */
+    ".mp3", ".mp4", ".avi", ".mov", ".wav", ".mkv", ".flac",
+    ".epub", ".mobi",
     NULL
 };
 
@@ -204,13 +304,60 @@ static const char *LURE_WORDS[] = {
     "password", "credentials", "login",
     "scan", "fax", "document",
     "shipping", "delivery", "tracking", "order",
-    "tax", "refund", "irs",
+    "tax", "refund", "irs", "w2", "1099", "kyc",
+    "payslip", "salary", "payroll", "wire_transfer", "bank_transfer",
+    "immigration", "visa_doc", "passport_scan",
     "update", "patch", "security_update",
+    /* Software distribution lures (malware dropper filenames) */
+    "setup", "installer", "crack", "keygen", "activation",
+    /* Financial / HR fraud lures */
+    "bonus", "raise", "termination_notice",
+    /* Crypto fraud lures */
+    "airdrop", "nft", "whitelist",
+    /* Tech-lure dropper names */
+    "driver", "codec", "plugin", "extension",
+    /* Software brand impersonation (OS/browser update lures) */
+    "windows", "chrome", "firefox", "adobe", "flash", "java",
+    "system", "microsoft", "google",
+    /* Document lures */
+    "proof", "memo", "form", "benefit",
+    "leaked", "private", "confidential_",
+    /* Additional corporate social-engineering lures */
+    "readme", "report", "notification", "policy",
+    "hr", "compliance", "legal", "notice",
+    /* Malware attention names */
+    "hacked", "breach", "exposed",
     /* Japanese */
     "請求書", "見積書", "納品書", "契約書", "確認",
     "給与明細", "年末調整",
     NULL
 };
+
+/* Scripted-SVG smuggling: an SVG that carries executable script. Most filters
+ * treat SVG as a passive image, but an <svg> containing <script>, an inline
+ * event handler (onload/onerror/onclick/onmouseover), a <foreignObject>, a
+ * javascript: URI, or an embedded base64 payload is a top 2026 phishing-
+ * delivery vector (MITRE ATT&CK T1027.017, Securelist SVG-phishing). Scans the
+ * already-read first 4 KB case-insensitively. Fires regardless of extension
+ * (a scripted SVG IS the attack), including for XML-declared SVGs that begin
+ * with "<?xml ...?>" rather than "<svg".                                    */
+static int
+svg_has_script(const unsigned char *head, size_t len) {
+    char low[4097];
+    size_t n = 0, i;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strstr(low, "<svg") == NULL) return 0;
+    return (strstr(low, "<script")       != NULL ||
+            strstr(low, "onload=")        != NULL ||
+            strstr(low, "onerror=")       != NULL ||
+            strstr(low, "onclick=")       != NULL ||
+            strstr(low, "onmouseover=")   != NULL ||
+            strstr(low, "<foreignobject") != NULL ||
+            strstr(low, "javascript:")    != NULL ||
+            strstr(low, ";base64,")       != NULL);
+}
 
 /* ─── main check function ─────────────────────────────────────────────── */
 
@@ -259,6 +406,9 @@ hlse_check_file(const char *filepath) {
     /* Detect magic type */
     if (head_len >= 4) {
         magic_type = detect_magic(head, (size_t)head_len);
+        /* HTML has no fixed magic byte; detect it only if nothing else hit. */
+        if (!magic_type && looks_like_html(head, (size_t)head_len))
+            magic_type = "HTML";
     }
 
     /* ── F1: Double extension ──────────────────────────────────────── */
@@ -301,6 +451,16 @@ hlse_check_file(const char *filepath) {
                 "F2: MAGIC MISMATCH — file has ELF header but extension '%s'",
                 ext);
         }
+        /* Mach-O (macOS) header with a non-executable extension. .dylib,
+         * .bundle and .o are legitimate Mach-O containers, like .so/.o above. */
+        if (strcmp(magic_type, "Mach-O") == 0 && !is_executable_ext(ext)
+            && strcmp(ext, ".dylib") != 0 && strcmp(ext, ".bundle") != 0
+            && strcmp(ext, ".o") != 0)
+        {
+            fv_add(&v, 70,
+                "F2: MAGIC MISMATCH — file has Mach-O header but extension '%s'",
+                ext);
+        }
         /* PDF magic with executable extension */
         if (strcmp(magic_type, "PDF") == 0 && is_executable_ext(ext)) {
             fv_add(&v, 40,
@@ -312,15 +472,66 @@ hlse_check_file(const char *filepath) {
          * .exe, or a valid JPEG that is also a runnable script). The file
          * presents as benign content but carries an executable name.    */
         if (is_executable_ext(ext) &&
-            (strcmp(magic_type, "GIF")  == 0 ||
-             strcmp(magic_type, "JPEG") == 0 ||
-             strcmp(magic_type, "PNG")  == 0 ||
-             strcmp(magic_type, "ZIP")  == 0 ||
-             strcmp(magic_type, "GZIP") == 0)) {
+            (strcmp(magic_type, "GIF")         == 0 ||
+             strcmp(magic_type, "JPEG")        == 0 ||
+             strcmp(magic_type, "PNG")         == 0 ||
+             strcmp(magic_type, "ZIP")         == 0 ||
+             strcmp(magic_type, "GZIP")        == 0 ||
+             strcmp(magic_type, "7ZIP")        == 0 ||
+             strcmp(magic_type, "Cabinet")     == 0 ||
+             strcmp(magic_type, "WebAssembly") == 0)) {
             fv_add(&v, 50,
                 "F2: %s content with executable extension '%s' — "
                 "possible polyglot/payload disguise", magic_type, ext);
         }
+        /* WebAssembly binary masquerading as non-wasm — emerging attack vector */
+        if (strcmp(magic_type, "WebAssembly") == 0 &&
+            strcmp(ext, ".wasm") != 0 && strcmp(ext, ".wat") != 0) {
+            fv_add(&v, 55,
+                "F2: WebAssembly binary with extension '%s' — "
+                "possible WASM payload disguise", ext);
+        }
+        /* Cabinet file with non-cab extension — common for dropper delivery */
+        if (strcmp(magic_type, "Cabinet") == 0 &&
+            strcmp(ext, ".cab") != 0 && strcmp(ext, ".msi") != 0) {
+            fv_add(&v, 40,
+                "F2: Windows Cabinet (MSCF) magic with extension '%s' — "
+                "possible dropper disguise", ext);
+        }
+        /* Shebang (#!) script wearing a passive document/image extension —
+         * e.g. "invoice.pdf" or "photo.jpg" that is really a runnable shell /
+         * python / perl script. The victim double-clicks expecting inert data
+         * and runs attacker code instead.                                  */
+        if (strcmp(magic_type, "Script") == 0 &&
+            (is_document_ext(ext) || is_image_ext(ext))) {
+            fv_add(&v, 60,
+                "F2: MAGIC MISMATCH — file has script shebang (#!) but "
+                "extension '%s' implies passive data", ext);
+        }
+        /* HTML content wearing a document/image extension — HTML smuggling.
+         * A "invoice.pdf" or "statement.doc" that is actually HTML opens in
+         * the browser and can run embedded JS / reconstruct a payload from
+         * an in-page blob (top phishing delivery vector 2023-2025).
+         * (.svg is excluded here — an HTML/SVG file with an .svg extension is
+         * not a masquerade; the script-in-SVG concern is separate.)         */
+        if (strcmp(magic_type, "HTML") == 0 &&
+            (is_document_ext(ext) || is_image_ext(ext)) &&
+            strcmp(ext, ".svg") != 0 && strcmp(ext, ".html") != 0 &&
+            strcmp(ext, ".htm") != 0) {
+            fv_add(&v, 55,
+                "F2: MAGIC MISMATCH — file is HTML but extension '%s' implies "
+                "a document/image (possible HTML-smuggling phish)", ext);
+        }
+    }
+
+    /* ── F5: Scripted-SVG smuggling ────────────────────────────────────
+     * An SVG carrying <script>/event-handler/foreignObject/javascript:/
+     * base64 payload. Extension-independent: unlike F2 (which excludes .svg
+     * as a non-masquerade), a scripted SVG is itself the delivery vehicle. */
+    if (head_len > 0 && svg_has_script(head, (size_t)head_len)) {
+        fv_add(&v, 55,
+            "F5: SCRIPTED SVG — image contains executable script "
+            "(<script>/event handler/foreignObject) — SVG-smuggling phish");
     }
 
     /* ── F3: Executable disguise ───────────────────────────────────── */
@@ -378,13 +589,15 @@ hlse_check_file(const char *filepath) {
         }
     }
 
-    /* ZIP-based Office (docm, xlsm, pptm) — check for vbaProject.bin */
+    /* ZIP-based Office (docm/xlsm/pptm/ppsm/potm) — check for vbaProject.bin */
     if (magic_type && strcmp(magic_type, "ZIP") == 0) {
         char lower_ext[32];
         str_lower(ext, lower_ext, sizeof(lower_ext));
         if (strcmp(lower_ext, ".docm") == 0 ||
             strcmp(lower_ext, ".xlsm") == 0 ||
-            strcmp(lower_ext, ".pptm") == 0)
+            strcmp(lower_ext, ".pptm") == 0 ||
+            strcmp(lower_ext, ".ppsm") == 0 ||
+            strcmp(lower_ext, ".potm") == 0)
         {
             fv_add(&v, 30,
                 "F4: Macro-enabled Office document (%s)", ext);
@@ -459,6 +672,11 @@ hlse_check_filename(const char *filename) {
             else if (is_image_ext(inner) && is_executable_ext(outer)) {
                 fv_add(&v, 80,
                     "F1: DOUBLE EXTENSION — '%s%s' disguised as image",
+                    inner, outer);
+            }
+            else if (is_executable_ext(inner) && is_executable_ext(outer)) {
+                fv_add(&v, 50,
+                    "F1: Double executable extension '%s%s'",
                     inner, outer);
             }
         }

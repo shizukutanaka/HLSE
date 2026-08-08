@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>HLSE — Phishing &amp; Scam Detection</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">◈</span>
+      <div>
+        <h1>HLSE</h1>
+        <p class="tagline">Phishing &amp; scam detection — local, private, dependency-free</p>
+      </div>
+    </div>
+    <div class="meta">
+      <span class="pill" id="engine-version" title="Detection engine version">engine …</span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel input-panel" aria-label="Scan input">
+      <div class="tabs" role="tablist" aria-label="Scan type">
+        <button class="tab active" role="tab" aria-selected="true" data-tab="url" id="tab-url">URL</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="text" id="tab-text">Message</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="secrets" id="tab-secrets">Secrets</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="file" id="tab-file">File</button>
+      </div>
+
+      <form id="scan-form" autocomplete="off">
+        <div class="field" data-for="url">
+          <label for="in-url">URL to analyze</label>
+          <input type="text" id="in-url" name="url" placeholder="https://example.com/login"
+                 spellcheck="false" autocapitalize="off">
+        </div>
+        <div class="field hidden" data-for="text">
+          <label for="in-text">Message text</label>
+          <textarea id="in-text" name="text" rows="6"
+                    placeholder="Paste a suspicious email or message…"></textarea>
+        </div>
+        <div class="field hidden" data-for="secrets">
+          <label for="in-secrets">Code / config to scan for leaked secrets</label>
+          <textarea id="in-secrets" name="secrets" rows="6"
+                    placeholder="Paste code, .env, or config…"></textarea>
+        </div>
+        <div class="field hidden" data-for="file">
+          <label for="in-file">File to analyze (name masquerade + leaked secrets)</label>
+          <input type="file" id="in-file" name="file">
+          <p class="muted" id="file-hint">Analyzed locally — the file never leaves your machine.</p>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn primary" id="scan-btn">Scan</button>
+          <button type="button" class="btn ghost" id="sample-btn">Try a sample</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel result-panel" id="result" aria-live="polite" aria-atomic="true">
+      <div class="empty" id="empty-state">
+        <p>Enter a URL, message, or code above and press <strong>Scan</strong>.</p>
+        <p class="muted">Everything is analyzed locally by the HLSE engine. Nothing leaves this machine.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>HLSE runs entirely on your machine.</span>
+    <span class="muted" id="api-note">API: <code>POST /api/v1/scan/{url,text,secrets}</code></span>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "$id": "hlse_scan_summary",
+  "title": "HLSE Scan Summary",
+  "description": "The final line emitted by `hlse_core --json scan <dir>` — a rollup of all findings in the scanned directory tree.",
+  "type": "object",
+  "required": [
+    "kind",
+    "hlse_version",
+    "target",
+    "files_scanned",
+    "threats",
+    "max_severity",
+    "gate_hits",
+    "fail_threshold"
+  ],
+  "properties": {
+    "kind": {
+      "const": "scan_summary",
+      "description": "Discriminator — always 'scan_summary' for this schema."
+    },
+    "hlse_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "HLSE engine version that produced this verdict. Use this field to identify verdicts that predate a new detector capability and should be re-scanned."
+    },
+    "target": {
+      "type": "string",
+      "description": "The scanned directory path (JSON-escaped)."
+    },
+    "files_scanned": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of files examined."
+    },
+    "threats": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of findings with score >= 40 (ALERT or above)."
+    },
+    "max_severity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "Highest severity (0–4) across all findings in this scan. 0 when threats=0. Use max_severity >= 3 as a numeric BLOCK/ISOLATE gate on a single summary-line consumer."
+    },
+    "gate_hits": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of findings that crossed the fail threshold (triggers non-zero exit code)."
+    },
+    "fail_threshold": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Score threshold used to determine gate_hits (default 60; overridable with --fail-above)."
+    },
+    "asset_classes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Count of distinct asset classes detected (cloud, code, infrastructure, …)."
+    },
+    "blast_radius": {
+      "type": "string",
+      "description": "Highest-priority asset class label summarising combined exposure (e.g. 'cloud-infrastructure')."
+    },
+    "immediate_action": {
+      "type": "string",
+      "description": "One-line response directive for the highest-severity finding class. Present when threats > 0."
+    }
+  },
+  "additionalProperties": false
+}

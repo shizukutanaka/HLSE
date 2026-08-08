@@ -108,6 +108,31 @@ create_compressed_file(const char *name, const unsigned char *magic,
     }
 }
 
+/* Intermittent/partial-encryption simulation: a text-extension file whose
+ * first 5 KB stay low-entropy (header left intact) but whose body carries a
+ * high-entropy encrypted slice. This is what R6 targets. total_len must be
+ * >= 16 KB for R6 to sample mid/tail segments.                            */
+static void
+create_intermittent_file(const char *name, size_t total_len) {
+    char path[512];
+    FILE *fp;
+    size_t i;
+    const char *hdr = "# configuration file\nsetting = value\nkey = data\n";
+    size_t hdrlen = strlen(hdr);
+    snprintf(path, sizeof(path), "%s/%s", tmpdir, name);
+    fp = fopen(path, "wb");
+    if (fp) {
+        /* ~5 KB of repeated low-entropy text header */
+        for (i = 0; i < 5120; i++) fputc(hdr[i % hdrlen], fp);
+        /* high-entropy encrypted body slice */
+        for (i = 5120; i < total_len; i++) {
+            unsigned char c = (unsigned char)((i * 1103515245 + 12345) >> 8);
+            fputc(c, fp);
+        }
+        fclose(fp);
+    }
+}
+
 /* ─── Ransomware tests ────────────────────────────────────────────────── */
 
 static void
@@ -185,6 +210,75 @@ test_ransomware_entropy_spike(void) {
 }
 
 static void
+test_ransomware_intermittent_encryption(void) {
+    setup_tmpdir();
+    int i;
+    for (i = 0; i < 4; i++) {
+        char name[64];
+        snprintf(name, sizeof(name), "notes%d.txt", i);
+        create_intermittent_file(name, 20480);
+    }
+
+    TEST("Ransomware: R6 intermittent/partial encryption");
+    ProtectionVerdict v = hlse_ransomware_check_directory(tmpdir);
+    if (v.score >= 25) { PASS(); }
+    else {
+        char buf[64]; snprintf(buf, sizeof(buf), "score=%d", v.score);
+        FAIL(buf);
+    }
+    cleanup_tmpdir();
+}
+
+static void
+test_esp_filename_control_chars_sanitized(void) {
+    /* An attacker-controlled .efi filename may carry ANSI/control bytes; the
+     * plain-text CLI prints reasons straight to a terminal, so pv_add_reason
+     * must neutralise them (JSON output escapes separately). */
+    ProtectionVerdict v;
+    int i, found_ctrl = 0;
+    setup_tmpdir();
+    /* name contains ESC (0x1b) + a fake-looking line */
+    create_file("evil\033[31mFAKE.efi",
+                "MZ your files have been encrypted\n", 34);
+
+    TEST("ESP: control chars in .efi filename sanitized in reason");
+    v = hlse_esp_verify(tmpdir);
+    for (i = 0; i < v.n_reasons; i++) {
+        const unsigned char *r = (const unsigned char *)v.reasons[i];
+        size_t j;
+        for (j = 0; r[j]; j++)
+            if (r[j] < 0x20 || r[j] == 0x7f) found_ctrl = 1;
+    }
+    if (!found_ctrl) { PASS(); }
+    else { FAIL("control byte survived into reason text"); }
+    cleanup_tmpdir();
+}
+
+static void
+test_ransomware_normal_text_no_r6_fp(void) {
+    setup_tmpdir();
+    int i;
+    for (i = 0; i < 5; i++) {
+        char name[64], content[512];
+        int j, n = 0;
+        snprintf(name, sizeof(name), "doc%d.txt", i);
+        for (j = 0; j < 10; j++)
+            n += snprintf(content + n, sizeof(content) - (size_t)n,
+                          "The quick brown fox jumps over the lazy dog.\n");
+        create_file(name, content, (size_t)n);
+    }
+
+    TEST("Ransomware: normal text files -> R6 not triggered");
+    ProtectionVerdict v = hlse_ransomware_check_directory(tmpdir);
+    if (v.score < 25) { PASS(); }
+    else {
+        char buf[64]; snprintf(buf, sizeof(buf), "score=%d", v.score);
+        FAIL(buf);
+    }
+    cleanup_tmpdir();
+}
+
+static void
 test_ransomware_compressed_not_flagged(void) {
     setup_tmpdir();
     /* A directory full of legitimate high-entropy compressed files
@@ -251,6 +345,45 @@ test_ransomware_shadow_deletion_api(void) {
         char buf[64]; snprintf(buf, sizeof(buf), "score=%d", v.score);
         FAIL(buf);
     }
+}
+
+static void
+test_ransomware_new_extensions(void) {
+    setup_tmpdir();
+    int i;
+    for (i = 0; i < 3; i++) {
+        char name[64];
+        snprintf(name, sizeof(name), "doc%d.ryuk", i);
+        create_file(name, "encrypted content\n", 18);
+        snprintf(name, sizeof(name), "file%d.lockbit", i);
+        create_file(name, "encrypted content\n", 18);
+        snprintf(name, sizeof(name), "report%d.akira", i);
+        create_file(name, "encrypted content\n", 18);
+    }
+    TEST("Ransomware: .ryuk/.lockbit/.akira extensions → detected");
+    ProtectionVerdict v = hlse_ransomware_check_directory(tmpdir);
+    if (v.score >= 30) { PASS(); }
+    else {
+        char buf[64]; snprintf(buf, sizeof(buf), "score=%d", v.score);
+        FAIL(buf);
+    }
+    cleanup_tmpdir();
+}
+
+static void
+test_ransomware_stop_djvu_note(void) {
+    setup_tmpdir();
+    create_file("normal.txt", "Normal content\n", 15);
+    create_file("how_to_restore_files.txt",
+                "ATTENTION! Don't worry, you can return all your files!\n", 55);
+    TEST("Ransomware: STOP/DJVU note 'how_to_restore_files.txt' → detected");
+    ProtectionVerdict v = hlse_ransomware_check_directory(tmpdir);
+    if (v.score >= 30) { PASS(); }
+    else {
+        char buf[64]; snprintf(buf, sizeof(buf), "score=%d", v.score);
+        FAIL(buf);
+    }
+    cleanup_tmpdir();
 }
 
 static void
@@ -528,8 +661,13 @@ main(void) {
     test_ransomware_note_detection();
     test_ransomware_extension_mutation();
     test_ransomware_entropy_spike();
+    test_ransomware_intermittent_encryption();
+    test_ransomware_normal_text_no_r6_fp();
+    test_esp_filename_control_chars_sanitized();
     test_ransomware_compressed_not_flagged();
     test_ransomware_shadow_deletion_api();
+    test_ransomware_new_extensions();
+    test_ransomware_stop_djvu_note();
     test_ransomware_compound();
 
     printf("\nNetwork drive protection:\n");

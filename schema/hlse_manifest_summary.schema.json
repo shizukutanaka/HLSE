@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "$id": "hlse_manifest_summary",
+  "title": "HLSE Manifest Summary",
+  "description": "Final NDJSON line of `hlse_core --json package --manifest <file>` — aggregate result of checking every declared dependency for typosquats.",
+  "type": "object",
+  "required": [
+    "kind",
+    "hlse_version",
+    "manifest",
+    "ecosystem",
+    "packages_checked",
+    "threats",
+    "max_severity",
+    "gate_hits"
+  ],
+  "properties": {
+    "kind": {
+      "const": "manifest_summary",
+      "description": "Discriminator — always 'manifest_summary' for this schema."
+    },
+    "hlse_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "HLSE engine version that produced this summary."
+    },
+    "manifest": {
+      "type": "string",
+      "description": "Path to the scanned manifest file (JSON-escaped)."
+    },
+    "ecosystem": {
+      "type": "string",
+      "description": "Ecosystem the manifest was parsed as (pip|npm|cargo|go|gem)."
+    },
+    "packages_checked": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of declared dependencies checked."
+    },
+    "threats": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of dependencies scored ALERT (>= 40) or higher."
+    },
+    "max_severity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "Highest severity across all checked packages (0=SAFE..4=ISOLATE)."
+    },
+    "gate_hits": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of packages at/above the --fail-on threshold (drives exit code)."
+    }
+  },
+  "additionalProperties": false
+}

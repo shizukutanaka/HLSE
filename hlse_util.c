@@ -9,6 +9,9 @@
 
 #include <string.h>
 #include <math.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 /* ── Shannon entropy ──────────────────────────────────────────────────── */
 
@@ -64,10 +67,14 @@ hlse_edit_distance(const char *a, const char *b) {
             if (ins < best) best = ins;
             if (sub < best) best = sub;
 
-            /* Adjacent transposition (Damerau extension) */
+            /* Adjacent transposition (Damerau extension): a single swap
+             * costs 1, independent of `cost` (canonical OSA form). The two
+             * differ only when all four characters are equal, in which case
+             * the substitution path already yields the optimum, so the
+             * result is unchanged — this is purely for clarity/correctness. */
             if (i > 1 && j > 1 &&
                 a[i-1] == b[j-2] && a[i-2] == b[j-1]) {
-                int tra = d[i-2][j-2] + cost;
+                int tra = d[i-2][j-2] + 1;
                 if (tra < best) best = tra;
             }
             d[i][j] = best;
@@ -105,6 +112,115 @@ hlse_is_high_entropy_benign_magic(const unsigned char *buf, size_t n) {
     if (buf[0]==0x42 && buf[1]==0x5A && buf[2]==0x68) return 1;
     /* Zstandard: 28 B5 2F FD */
     if (buf[0]==0x28 && buf[1]==0xB5 && buf[2]==0x2F && buf[3]==0xFD) return 1;
+    /* LZ4 frame: 04 22 4D 18 */
+    if (buf[0]==0x04 && buf[1]==0x22 && buf[2]==0x4D && buf[3]==0x18) return 1;
+    /* WebP: RIFF....WEBP (bytes 0-3 = "RIFF", 8-11 = "WEBP") */
+    if (n >= 12 &&
+        buf[0]==0x52 && buf[1]==0x49 && buf[2]==0x46 && buf[3]==0x46 &&
+        buf[8]==0x57 && buf[9]==0x45 && buf[10]==0x42 && buf[11]==0x50) return 1;
+    /* FLAC lossless audio: fLaC */
+    if (buf[0]==0x66 && buf[1]==0x4C && buf[2]==0x61 && buf[3]==0x43) return 1;
+    /* GIF: GIF87a / GIF89a */
+    if (buf[0]==0x47 && buf[1]==0x49 && buf[2]==0x46 && buf[3]==0x38) return 1;
+    /* OGG container (Ogg Vorbis/Opus/FLAC streams): OggS */
+    if (buf[0]==0x4F && buf[1]==0x67 && buf[2]==0x67 && buf[3]==0x53) return 1;
+    /* SQLite database: SQLite format 3 */
+    if (n >= 6 && buf[0]==0x53 && buf[1]==0x51 && buf[2]==0x4C &&
+        buf[3]==0x69 && buf[4]==0x74 && buf[5]==0x65) return 1;
+    /* MP3 with ID3 tag: "ID3" */
+    if (buf[0]==0x49 && buf[1]==0x44 && buf[2]==0x33) return 1;
+    /* TIFF little-endian: II + 0x2A 0x00 */
+    if (buf[0]==0x49 && buf[1]==0x49 && buf[2]==0x2A && buf[3]==0x00) return 1;
+    /* TIFF big-endian: MM + 0x00 0x2A */
+    if (buf[0]==0x4D && buf[1]==0x4D && buf[2]==0x00 && buf[3]==0x2A) return 1;
+    /* AVI: RIFF....AVI  (bytes 0-3 = "RIFF", 8-11 = "AVI ") */
+    if (n >= 12 &&
+        buf[0]==0x52 && buf[1]==0x49 && buf[2]==0x46 && buf[3]==0x46 &&
+        buf[8]==0x41 && buf[9]==0x56 && buf[10]==0x49 && buf[11]==0x20) return 1;
+    /* WAV: RIFF....WAVE */
+    if (n >= 12 &&
+        buf[0]==0x52 && buf[1]==0x49 && buf[2]==0x46 && buf[3]==0x46 &&
+        buf[8]==0x57 && buf[9]==0x41 && buf[10]==0x56 && buf[11]==0x45) return 1;
+    /* EBML/WebM/Matroska: 1A 45 DF A3 */
+    if (buf[0]==0x1A && buf[1]==0x45 && buf[2]==0xDF && buf[3]==0xA3) return 1;
+    /* HDF5: 89 48 44 46 0D 0A 1A 0A (common in ML/scientific workflows) */
+    if (n >= 8 &&
+        buf[0]==0x89 && buf[1]==0x48 && buf[2]==0x44 && buf[3]==0x46 &&
+        buf[4]==0x0D && buf[5]==0x0A && buf[6]==0x1A && buf[7]==0x0A) return 1;
+    /* Apache Parquet: PAR1 at start (big data columnar format) */
+    if (buf[0]==0x50 && buf[1]==0x41 && buf[2]==0x52 && buf[3]==0x31) return 1;
+
+    /* OpenType font: OTTO (high entropy, found in web projects) */
+    if (buf[0]==0x4F && buf[1]==0x54 && buf[2]==0x54 && buf[3]==0x4F) return 1;
+    /* WOFF web font: wOFF */
+    if (buf[0]==0x77 && buf[1]==0x4F && buf[2]==0x46 && buf[3]==0x46) return 1;
+    /* WOFF2 web font: wOF2 */
+    if (buf[0]==0x77 && buf[1]==0x4F && buf[2]==0x46 && buf[3]==0x32) return 1;
+    /* Apache Arrow IPC stream/file format */
+    if (n >= 6 &&
+        buf[0]==0x41 && buf[1]==0x52 && buf[2]==0x52 && buf[3]==0x4F &&
+        buf[4]==0x57 && buf[5]==0x31) return 1;
+    /* DER-encoded X.509 certificate: SEQUENCE tag 0x30 + length 0x82 */
+    if (buf[0]==0x30 && buf[1]==0x82) return 1;
+    /* Snappy framing format: \xFF\x06\x00\x00 */
+    if (buf[0]==0xFF && buf[1]==0x06 && buf[2]==0x00 && buf[3]==0x00) return 1;
 
     return 0;
+}
+
+/* ── Safe open of a fixed/trusted system file ─────────────────────────── */
+
+FILE *
+hlse_open_system_file(const char *path) {
+    int fd;
+    struct stat st;
+    FILE *fp;
+
+    if (!path) return NULL;
+
+    /* O_NONBLOCK so a FIFO planted at the path returns immediately instead of
+     * blocking; S_ISREG (via fstat on the opened fd) then rejects anything
+     * that is not a regular file. We intentionally do NOT pass O_NOFOLLOW:
+     * these are fixed, root-owned paths that may legitimately be symlinks
+     * (e.g. /etc/resolv.conf on systemd). For a regular file O_NONBLOCK has
+     * no effect on subsequent reads, so buffered stdio behaves normally.   */
+    fd = open(path, O_RDONLY | O_NONBLOCK);
+    if (fd < 0) return NULL;
+
+    if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode)) {
+        close(fd);
+        return NULL;
+    }
+
+    fp = fdopen(fd, "r");
+    if (!fp) { close(fd); return NULL; }
+    return fp;
+}
+
+/* Shared JSON string escaper (see hlse_util.h). Bounded, always terminates. */
+void
+hlse_json_escape(const char *s, char *out, size_t out_size) {
+    size_t k = 0;
+    if (out_size == 0) return;
+    while (*s && k < out_size - 7) {
+        unsigned char c = (unsigned char)*s;
+        switch (c) {
+            case '"':  out[k++] = '\\'; out[k++] = '"';  break;
+            case '\\': out[k++] = '\\'; out[k++] = '\\'; break;
+            case '\n': out[k++] = '\\'; out[k++] = 'n';  break;
+            case '\r': out[k++] = '\\'; out[k++] = 'r';  break;
+            case '\t': out[k++] = '\\'; out[k++] = 't';  break;
+            default:
+                if (c < 0x20) {
+                    static const char hexd[] = "0123456789abcdef";
+                    out[k++] = '\\'; out[k++] = 'u'; out[k++] = '0'; out[k++] = '0';
+                    out[k++] = hexd[(c >> 4) & 0xF];
+                    out[k++] = hexd[c & 0xF];
+                } else {
+                    out[k++] = (char)c;
+                }
+        }
+        s++;
+    }
+    out[k] = '\0';
 }

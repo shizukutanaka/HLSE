@@ -48,19 +48,16 @@ for file in $STAGED; do
         THREATS=$((THREATS + 1))
     fi
 
-    # Secret scan (only text files < 1MB)
+    # Secret scan (credential-pattern scanner; text files < 1MB only)
+    # Use 'secret --stdin' (hlse_scan_secrets), NOT 'text' (scam-pattern scanner
+    # that misses API keys, tokens, and other credentials entirely).
     SIZE=$(wc -c < "$file" 2>/dev/null || echo 0)
     if [ "$SIZE" -lt 1048576 ]; then
-        while IFS= read -r line; do
-            LINE_RESULT=$($HLSE text "$line" 2>/dev/null || true)
-            # Only flag high-confidence credential leaks
-            if echo "$LINE_RESULT" | grep -qE "ISOLATE"; then
-                echo "HLSE: Secret detected in $file"
-                echo "  $LINE_RESULT"
-                THREATS=$((THREATS + 1))
-                break  # one finding per file is enough
-            fi
-        done < "$file"
+        if ! $HLSE --quiet secret --stdin < "$file" 2>/dev/null; then
+            echo "HLSE: Credential detected in $file"
+            $HLSE secret --stdin < "$file" 2>/dev/null || true
+            THREATS=$((THREATS + 1))
+        fi
     fi
 done
 

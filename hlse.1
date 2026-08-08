@@ -1,4 +1,4 @@
-.TH HLSE 1 "2026-05-31" "HLSE 0.9.0" "User Commands"
+.TH HLSE 1 "2026-07-04" "HLSE 1.0.113" "User Commands"
 .SH NAME
 hlse \- Human-Layer Security Engine: phishing, scam, and threat detection
 .SH SYNOPSIS
@@ -65,14 +65,63 @@ Recursively scan a directory for leaked secrets, file masquerade, and
 embedded phishing URLs. Skips vendor and build directories. Intended for
 CI/CD use.
 .TP
+.B scan \fIdirectory\fR " --git-history"
+Scan every commit ever made to the repository at
+.I directory
+for leaked secrets \[em] not just the current working tree. A credential
+that was committed and later deleted is still readable by anyone who clones
+the repository; a working-tree-only scan never sees it, but this does.
+Streams
+.B git log --all -p
+(one subprocess for the whole history, spawned via
+.BR fork (2)/\fBexecve\fR(2)
+with the directory passed as a discrete argument \[em] never through a
+shell, so no path can inject a command) and scans only added lines. Requires
+.I directory
+to be a git repository; a non-repository path is a usage error (exit 2).
+.B git log
+performs no network I/O, so this does not affect HLSE's zero-network-calls
+guarantee.
+.TP
 .B protect \fIpath\fR
 Behavioral protection checks: ransomware entropy and ransom-note
 detection, SMB canary files, mounted network drives, and MBR/GPT
 integrity (the last needs root and a device path).
 .TP
+.B esp \fR[\fIpath\fR]
+Scan the EFI System Partition (default
+.IR /boot/efi )
+for .efi binaries containing ransom/bootkit strings \(em UEFI-era boot
+integrity, complementing the legacy MBR check. Read-only; never follows
+symlinks.
+.TP
+.B secret \fI"text"\fR\fR | \fB--stdin\fR
+Scan a text blob or standard input for leaked credentials (AWS, GitHub,
+Stripe, Slack, SSH keys, .env passwords), excluding documented
+placeholder/example keys.
+.TP
+.B email \fI"headers"\fR\fR | \fB--stdin\fR
+Email-header forensics: SPF/DKIM failure, Reply-To mismatch, display-name
+spoofing, and free-mail corporate impersonation (BEC).
+.TP
+.B clipboard \fI"copied"\fR \fI"pasted"\fR
+Compare a copied and a pasted string; if both are crypto addresses of the
+same type but differ, flag a clipboard hijack, escalating when the
+replacement was ground to share the original's leading/trailing characters.
+.TP
 .B package \fIname\fR [\fIecosystem\fR]
 Check a package name for typosquatting against known popular packages
-(pip, npm, cargo, go).
+(pip, npm, cargo, go, gem).
+.TP
+.B package --manifest \fIfile\fR [\fIecosystem\fR]
+Check every dependency declared in a manifest
+.RB ( requirements.txt ", " package.json ,
+etc.). The ecosystem is inferred from the filename or given explicitly.
+Emits one verdict per suspicious package and a
+.B manifest_summary
+line; exits 1 if any package reaches the
+.B --fail-on
+threshold.
 .TP
 .B paste \fI"command"\fR
 Detect pastejacking and dangerous shell one-liners (e.g. curl piped to a
@@ -105,6 +154,103 @@ Suppress output; communicate only through the exit code (CI/CD mode).
 .B --stdin
 Pipe mode: read one input per line from standard input.
 .TP
+.B --
+End of options. Every argument after this marker is treated as data, never
+as a flag. Use it whenever the scanned input is untrusted or may begin with
+a dash \(em otherwise a crafted operand such as
+.B --log-file
+can be consumed as an option, which both acts on attacker-chosen data and
+shifts the real input out of the scan (the process still exits 0, so the
+miss is silent). Example:
+.B hlse_core scan -- "$UNTRUSTED"
+.TP
+.B --syslog
+Push each finding to the system log via
+.BR syslog (3)
+using facility
+.B LOG_AUTHPRIV
+(severity maps SAFE\(->INFO, LOG\(->NOTICE, ALERT\(->WARNING,
+BLOCK\(->CRIT, ISOLATE\(->ALERT). Off by default.
+.TP
+.BI --log-file " file"
+Append one JSON object per finding (JSONL) to
+.IR file ,
+which is created if absent and opened
+.B O_APPEND
+with mode
+.B 0600
+(findings may contain secret fragments). A path that is a symlink or
+non-regular file is rejected.
+.TP
+.BI --baseline " file"
+For the
+.B scan
+command: suppress every finding whose fingerprint is listed in
+.IR file ,
+so a brownfield repository's already-accepted findings do not fail the CI
+gate. Only findings absent from the baseline count toward the exit code. An
+unreadable
+.I file
+is a usage error (exit 2). Generate a baseline with
+.BR --fingerprints .
+.TP
+.B --fingerprints
+For the
+.B scan
+command: emit one stable fingerprint per finding (16 hex chars, plus its
+pattern id and relative path) instead of the normal verdict, and exit 0.
+Redirect to a file to create a baseline:
+.B hlse_core --fingerprints scan . > .hlse-baseline\fR.
+The fingerprint omits the line number, so a finding that moves lines stays
+suppressed. An inline
+.B hlse:allow
+token on a scanned line also suppresses findings on that line.
+.TP
+.BI --patterns " file"
+Load organization-specific secret patterns and brand/impersonation targets
+from
+.I file
+without a rebuild. Each non-comment, non-blank line is one of:
+.RS
+.IP
+.B SECRET \fIprefix min_suffix charset score label...\fR
+.br
+.B BRAND \fIname owned_domain1\fR[,\fIowned_domain2\fR...]
+.RE
+.IP
+For
+.BR SECRET ,
+.I charset
+is one of
+.BR alnum ", " alnum_dash ", " hex ", " alpha ", " digit ,
+and
+.I label
+is free text to end of line. A malformed line is skipped with a warning; an
+unreadable
+.I file
+is a usage error (exit 2). Custom secret patterns are checked with the same
+matching and placeholder-suppression logic as the built-in table, and never
+affect the corpus benchmark
+.RB ( --benchmark ).
+Examples:
+.RS
+.IP
+.B SECRET ACME_KEY_ 20 alnum 85 ACME Internal API Key
+.br
+.B BRAND acmecorp acmecorp.com,acme-corp.com
+.RE
+.IP
+A
+.B BRAND
+entry protects an organization's own name or executives in the
+.B email
+command's display-name-vs-domain mismatch check (the same check that
+already protects major consumer brands): if
+.I name
+appears in a From display name but the sending domain is not one of
+.IR owned_domain1 ", " owned_domain2 ", " \&...\&,
+it is flagged exactly like a built-in brand impersonation.
+.TP
 .B --self-test
 Run the built-in test suite.
 .TP
@@ -113,6 +259,9 @@ Run the in-distribution corpus benchmark and print F1.
 .TP
 .BR -V ", " --version
 Print version and exit.
+.TP
+.BR -h ", " --help
+Show usage and exit.
 .SH EXIT STATUS
 .TP
 .B 0

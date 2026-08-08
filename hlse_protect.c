@@ -25,8 +25,6 @@
  *
  * Build: gcc -O2 -Wall -Wextra -c hlse_protect.c -I.
  *        Link with hlse_core.c hlse_text.c for full binary.
- *
- * Identity: bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -66,6 +64,20 @@ pv_add_reason(ProtectionVerdict *v, int delta, const char *fmt, ...) {
     vsnprintf(v->reasons[v->n_reasons],
               sizeof(v->reasons[0]), fmt, ap);
     va_end(ap);
+    /* Reasons embed attacker-controlled filenames (ESP .efi names, ransom-note
+     * names, mutated extensions). Those can carry ANSI/control bytes that forge
+     * or hide lines when the plain-text CLI prints a reason to a terminal (the
+     * JSON path already escapes via json_escape). Legitimate reason text is
+     * printable ASCII, so neutralise any control byte here — one choke point
+     * covering every print site. */
+    {
+        char *r = v->reasons[v->n_reasons];
+        size_t j;
+        for (j = 0; r[j]; j++) {
+            unsigned char c = (unsigned char)r[j];
+            if (c < 0x20 || c == 0x7f) r[j] = '?';
+        }
+    }
     v->n_reasons++;
 }
 
@@ -81,14 +93,74 @@ static size_t
 read_file_head(const char *path, unsigned char *buf, size_t max_bytes) {
     int fd;
     ssize_t n;
+    struct stat st;
 
-    fd = open(path, O_RDONLY | O_NOFOLLOW);
+    /* O_NOFOLLOW: these paths come from an untrusted scanned directory, so a
+     * symlink must not redirect the read. O_NONBLOCK + S_ISREG: a FIFO in the
+     * tree must not block read() indefinitely, and only regular files are
+     * scanned (matches the scan-walker and the spec §1 invariant).         */
+    fd = open(path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
     if (fd < 0) return 0;
+
+    if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode)) {
+        close(fd);
+        return 0;
+    }
 
     n = read(fd, buf, max_bytes);
     close(fd);
 
     return (n > 0) ? (size_t)n : 0;
+}
+
+/* Read max_bytes at a given offset (for multi-segment entropy sampling).
+ * Same symlink/FIFO/regular-file safety as read_file_head. */
+static size_t
+read_file_segment(const char *path, unsigned char *buf, size_t max_bytes,
+                  off_t offset) {
+    int fd;
+    ssize_t n;
+    struct stat st;
+
+    fd = open(path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+    if (fd < 0) return 0;
+    if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode)) { close(fd); return 0; }
+    n = pread(fd, buf, max_bytes, offset);
+    close(fd);
+    return (n > 0) ? (size_t)n : 0;
+}
+
+/* Extensions whose contents are expected to be LOW entropy end-to-end
+ * (text / source / config). Such a file legitimately never contains a
+ * high-entropy (>7.5 bits/byte) block, so a high-entropy body segment is a
+ * strong, low-false-positive signal of partial/intermittent encryption --
+ * unlike documents/media (.pdf/.jpg/.mp4) which carry benign high-entropy
+ * regions and are therefore excluded from the R6 check.                   */
+static const char *LOW_ENTROPY_EXTS[] = {
+    ".txt", ".csv", ".tsv", ".log", ".md", ".rst", ".sql", ".json",
+    ".xml", ".yaml", ".yml", ".ini", ".conf", ".cfg", ".toml", ".env",
+    ".html", ".htm", ".css", ".rtf",
+    ".c", ".h", ".cpp", ".hpp", ".cc", ".py", ".js", ".ts", ".java",
+    ".go", ".rs", ".rb", ".php", ".sh", ".pl", ".lua",
+    NULL
+};
+
+static int
+is_low_entropy_ext(const char *name, size_t nlen) {
+    int i;
+    for (i = 0; LOW_ENTROPY_EXTS[i]; i++) {
+        size_t elen = strlen(LOW_ENTROPY_EXTS[i]);
+        size_t j;
+        int match = 1;
+        if (nlen <= elen) continue;
+        for (j = 0; j < elen; j++) {
+            char a = name[nlen - elen + j];
+            if (a >= 'A' && a <= 'Z') a = (char)(a + 32);  /* case-fold */
+            if (a != LOW_ENTROPY_EXTS[i][j]) { match = 0; break; }
+        }
+        if (match) return 1;
+    }
+    return 0;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -115,8 +187,51 @@ static const char *RANSOM_NOTE_NAMES[] = {
     "!readme!.txt", "_readme_.txt",
     "ransom_note.txt", "your_files.txt",
     "recovery.txt", "unlock_files.txt",
+    /* STOP/DJVU family */
+    "how_to_restore_files.txt",
+    /* DHARMA/PHOBOS family */
+    "decrypt_info.html",
+    /* Nemty / generic variants */
+    "readme_decrypt.txt",
+    "files_encrypted.txt",
+    "restore_my_files.txt",
+    /* Generic multi-exclamation variants (Cerber etc.) */
+    "!!!readme!!!.txt",
+    "!decrypt!.txt",
     /* Japanese ransomware notes */
     "身代金.txt", "ファイル復元.txt",
+    /* 2023-2025 active families */
+    "contact_us.txt", "contact_us.html",
+    "recovery_instructions.html", "recovery_instructions.txt",
+    "readme_now.txt",             /* Babuk variant */
+    "!!readme!!.txt", "!!!files_encrypted!!!.txt",
+    /* Akira / Rhysida / newer families */
+    "akira_readme.txt", "rhysida.readme.txt",
+    "fog_readme.txt", "interlock_note.txt",
+    "how_to_back_files.html",     /* INC Ransom */
+    "decrypt.txt",                /* generic */
+    "look_at_me.txt",             /* Lookout/generic */
+    "medusa_readme.txt",          /* Medusa ransomware */
+    "ransomhub_readme.txt",       /* RansomHub */
+    "!_readme_!.txt",             /* RansomHub variant */
+    "dragonforce_readme.txt",     /* DragonForce */
+    "cloak_readme.txt",           /* Cloak ransomware */
+    "3am_readme.txt",             /* ThreeAM/3AM */
+    "vanhelsing_readme.txt",      /* VanHelsing */
+    "hellcat_readme.txt",         /* HellCat */
+    "blacklock_readme.txt",       /* BlackLock */
+    "eldorado_readme.txt",        /* Eldorado */
+    /* ALPHV/BlackCat variants (2022-2024) */
+    "alphv_note.txt", "blackcat_note.txt",
+    "restore_my_files!.txt",
+    /* LockBit 3.0 variants */
+    "lockbit-readme.txt", "restore-my-files.txt",
+    /* 2024-2025 additional active families */
+    "nitrogen_readme.txt",        /* Nitrogen (2025) */
+    "arkana_readme.txt",          /* Arkana (2025, ex-ALPHV) */
+    "beast_readme.txt",           /* BEAST (2025) */
+    "safepay_readme.txt",         /* SafePay (2024) */
+    "play_readme.txt",            /* Play (2022+) */
     NULL
 };
 
@@ -128,6 +243,53 @@ static const char *RANSOM_EXTENSIONS[] = {
     ".r5a", ".WNCRY", ".wcry", ".wncrypt", ".wncryt",
     ".hacked", ".1btc", ".pays", ".paymst", ".STOP",
     ".djvu", ".shade", ".no_more_ransom",
+    /* Major families 2018-2024 */
+    ".ryuk",        /* Ryuk (Wizard Spider, 2018-2021) */
+    ".lockbit",     /* LockBit family */
+    ".clop",        /* Cl0p / Clop ransomware */
+    ".phobos",      /* PHOBOS family */
+    ".eking",       /* PHOBOS/Eking variant */
+    ".dharma",      /* DHARMA family */
+    ".karma",       /* KARMA ransomware */
+    ".conti",       /* Conti family */
+    ".avaddon",     /* Avaddon (closed 2021) */
+    ".deadbolt",    /* DeadBolt (NAS-targeting, 2022) */
+    ".akira",       /* Akira (2023+) */
+    ".rhysida",     /* Rhysida (2023-2024) */
+    ".monti",       /* Monti (Conti fork) */
+    ".cactus",      /* Cactus (2023+) */
+    ".cryptolocker",/* CryptoLocker (classic 2013) */
+    /* Emerging 2024+ families */
+    ".black",       /* BlackCat/ALPHV variant */
+    ".alphv",       /* ALPHV (BlackCat) */
+    ".play",        /* Play ransomware (2022+) */
+    ".royal",       /* Royal ransomware (2022+) */
+    ".blacksuit",   /* BlackSuit (Royal fork) */
+    ".fog",         /* Fog ransomware (2024) */
+    ".hunters",     /* Hunters International (2023+) */
+    ".cicada",      /* Cicada3301 (2024) */
+    ".qilin",       /* Qilin/Agenda (2022+) */
+    ".interlock",   /* Interlock (2024) */
+    ".embargo",     /* Embargo (2024) */
+    ".lynx",        /* Lynx ransomware (2024, INC fork) */
+    ".sarcoma",     /* Sarcoma (2024) */
+    ".meow",        /* Meow ransomware (2024) */
+    ".medusa",      /* Medusa ransomware (2023+, CISA advisory 2025) */
+    ".incransom",   /* INC Ransom (2024-2025) */
+    ".ransomhub",   /* RansomHub (2024-2025, high-volume successor to ALPHV) */
+    ".dragonforce", /* DragonForce (2024-2025) */
+    ".safepay",     /* SafePay (2024, LockBit-based) */
+    /* Active families 2025 */
+    ".cloak",       /* Cloak ransomware (2024-2025, healthcare) */
+    ".vanhelsing",  /* VanHelsing RaaS (launched March 2025) */
+    ".3am",         /* ThreeAM/3AM (2023+, Conti successor) */
+    ".nitrogen",    /* Nitrogen ransomware (2025) */
+    ".arkana",      /* Arkana (2025, ex-ALPHV successor) */
+    ".beast",       /* BEAST ransomware (2025) */
+    ".hellcat",     /* HellCat (2024-2025, education/govt targeting) */
+    ".blacklock",   /* BlackLock / El Dorado fork (2025) */
+    ".eldorado",    /* Eldorado (2024-2025, VMware/Windows) */
+    ".apt73",       /* APT73 / Bashe (2024, LockBit fork) */
     NULL
 };
 
@@ -138,6 +300,7 @@ hlse_ransomware_check_directory(const char *dir_path) {
     struct dirent *ent;
     int suspicious_ext_count = 0;
     int high_entropy_count = 0;
+    int partial_encrypt_count = 0;   /* R6: intermittent/partial encryption */
     int total_files = 0;
     unsigned char buf[4096];
 
@@ -227,6 +390,29 @@ hlse_ransomware_check_directory(const char *dir_path) {
                         total_files++;
                         if (h_ent > 7.5) {
                             high_entropy_count++;
+                        } else if (h_ent < 6.5 && st.st_size >= 16384 &&
+                                   is_low_entropy_ext(name, nlen)) {
+                            /* R6: intermittent/partial encryption. A text/
+                             * source/config file whose header is still low-
+                             * entropy (left intact so the file "looks" normal)
+                             * but whose body carries an encrypted high-entropy
+                             * slice. Whole-file and head-only entropy both miss
+                             * this (arXiv 2510.15133); such files legitimately
+                             * never contain a >7.5 bit/byte block, so it is a
+                             * low-false-positive signal. Sample middle + tail. */
+                            unsigned char seg[4096];
+                            double mid_ent = 0.0, tail_ent = 0.0;
+                            size_t sm = read_file_segment(fullpath, seg,
+                                sizeof(seg), (off_t)(st.st_size / 2));
+                            if (sm > 64) mid_ent = shannon_entropy(seg, sm);
+                            {
+                                size_t stail = read_file_segment(fullpath, seg,
+                                    sizeof(seg), (off_t)(st.st_size - 4096));
+                                if (stail > 64)
+                                    tail_ent = shannon_entropy(seg, stail);
+                            }
+                            if (mid_ent > 7.5 || tail_ent > 7.5)
+                                partial_encrypt_count++;
                         }
                     }
                 }
@@ -240,6 +426,17 @@ hlse_ransomware_check_directory(const char *dir_path) {
         pv_add_reason(&v, 30,
             "R2: Entropy anomaly: %d/%d files above 7.5 bits/byte "
             "(likely encrypted)", high_entropy_count, total_files);
+    }
+
+    /* R6: Intermittent/partial encryption — text/config files whose headers
+     * stay low-entropy but whose bodies carry an encrypted high-entropy slice.
+     * This is the modern evasion of whole-file entropy checks (BlackCat-style
+     * "dot/smart/head-only" modes; arXiv 2510.15133). */
+    if (partial_encrypt_count >= 3) {
+        pv_add_reason(&v, 30,
+            "R6: Partial-encryption anomaly: %d text/config files have "
+            "low-entropy headers but high-entropy bodies "
+            "(intermittent-encryption ransomware)", partial_encrypt_count);
     }
 
     /* R4: Mass extension mutation */
@@ -267,23 +464,67 @@ hlse_ransomware_check_shadow_deletion(void) {
     memset(&v, 0, sizeof(v));
     v.module = HLSE_PROTECT_RANSOMWARE;
 
-    /* Check /proc for vssadmin or wmic processes (Linux: check for
-     * equivalent btrfs/LVM snapshot deletion commands) */
+    /* Scan /proc/<pid>/cmdline for snapshot/backup deletion commands.
+     * Uses O_NOFOLLOW + O_NONBLOCK to avoid symlink traps and FIFOs. */
     {
-        const char *dangerous_cmds[] = {
-            "vssadmin delete shadows",
-            "wmic shadowcopy delete",
-            "btrfs subvolume delete",
-            "lvremove -f",
-            /* PowerShell variants */
-            "Get-WmiObject Win32_Shadowcopy | ForEach-Object",
+        static const char *dangerous_cmds[] = {
+            "vssadmin", "shadowcopy delete", "wmic shadow",
+            "btrfs subvolume delete", "lvremove",
+            "bcdedit /set", "wbadmin delete",
+            /* Additional anti-recovery / backup-destruction commands */
+            "delete shadows",          /* vssadmin delete shadows /all */
+            "delete catalog",          /* wbadmin delete catalog */
+            "delete systemstatebackup",/* wbadmin delete systemstatebackup */
+            "recoveryenabled no",      /* bcdedit /set recoveryenabled no */
+            "ignoreallfailures",       /* bcdedit bootstatuspolicy */
+            "zfs destroy",             /* ZFS snapshot destruction */
+            "rm -rf /var/backups",     /* Linux backup wipe */
+            "wevtutil cl",             /* Windows event-log clearing */
+            "fsutil usn deletejournal",/* NTFS change-journal wipe */
             NULL
         };
-        /* In a real implementation, this would scan
-         * /proc/<pid>/cmdline or audit logs. For the reference
-         * implementation, we provide the detection API that a
-         * daemon would call.                                         */
-        (void)dangerous_cmds;
+        DIR *proc = opendir("/proc");
+        if (proc) {
+            struct dirent *de;
+            while ((de = readdir(proc)) != NULL) {
+                /* Only numeric directories (PIDs) */
+                const char *np = de->d_name;
+                while (*np >= '0' && *np <= '9') np++;
+                if (*np || de->d_name[0] == '\0') continue;
+
+                char cpath[320];  /* /proc/ + NAME_MAX(255) + /cmdline + NUL */
+                snprintf(cpath, sizeof(cpath), "/proc/%s/cmdline", de->d_name);
+                int cfd = open(cpath, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+                if (cfd < 0) continue;
+                {
+                    struct stat cst;
+                    if (fstat(cfd, &cst) != 0 || !S_ISREG(cst.st_mode)) {
+                        close(cfd);
+                        continue;
+                    }
+                    char cmd[512];
+                    ssize_t nr = read(cfd, cmd, sizeof(cmd) - 1);
+                    close(cfd);
+                    if (nr <= 0) continue;
+                    /* cmdline uses NUL separators — replace with spaces */
+                    ssize_t i;
+                    for (i = 0; i < nr; i++) {
+                        if (cmd[i] == '\0') cmd[i] = ' ';
+                    }
+                    cmd[nr] = '\0';
+                    int j;
+                    for (j = 0; dangerous_cmds[j]; j++) {
+                        if (strstr(cmd, dangerous_cmds[j])) {
+                            pv_add_reason(&v, 60,
+                                "R5: Shadow/backup deletion command running: "
+                                "%.80s", cmd);
+                            break;
+                        }
+                    }
+                }
+            }
+            closedir(proc);
+        }
     }
 
     return v;
@@ -594,13 +835,17 @@ hlse_mbr_verify(const char *device_path) {
         for (i = 0; bootkit_strings[i]; i++) {
             /* Case-insensitive search in 512 bytes — portable,
              * no memmem (GNU extension unavailable on macOS/musl) */
-            char lower_mbr[512];
+            /* unsigned char: MBR bytes are binary (often >127); converting
+             * those to signed char would be implementation-defined. memcmp
+             * compares as unsigned char regardless, so this is also correct
+             * against the (char*) bootkit_strings.                         */
+            unsigned char lower_mbr[512];
             size_t needle_len = strlen(bootkit_strings[i]);
             int j;
             int found = 0;
             for (j = 0; j < 512; j++)
-                lower_mbr[j] = (char)((mbr[j] >= 'A' && mbr[j] <= 'Z')
-                               ? (mbr[j] + 32) : mbr[j]);
+                lower_mbr[j] = (mbr[j] >= 'A' && mbr[j] <= 'Z')
+                               ? (unsigned char)(mbr[j] + 32) : mbr[j];
             for (j = 0; j <= 512 - (int)needle_len; j++) {
                 if (memcmp(lower_mbr + j, bootkit_strings[i],
                            needle_len) == 0)
@@ -677,6 +922,170 @@ hlse_gpt_verify(const char *device_path) {
             device_path);
     }
 
+    return v;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Module: EFI System Partition (ESP) integrity
+ *
+ * The MBR check above only covers legacy BIOS boot. The live boot-level
+ * threat is UEFI bootkits (BlackLotus, Linux Bootkitty) which tamper with
+ * the EFI System Partition rather than the MBR. Without a recorded
+ * baseline or kernel keyring access we cannot validate Authenticode
+ * signatures offline, so this check uses the same low-false-positive
+ * signal as the MBR string scan: ransom/bootkit *text* embedded in a
+ * boot binary. The MBR's generic single-word tokens ("decrypt", "locked",
+ * "send") are deliberately NOT reused — they occur legitimately inside
+ * multi-megabyte signed bootloaders. Only high-specificity multi-word
+ * ransom-note phrases are matched here.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+static const char *ESP_INDICATORS[] = {
+    "your files have been encrypted",
+    "your files are encrypted",
+    "all your files",
+    "your important files",
+    "to decrypt your files",
+    "pay bitcoin",
+    "send bitcoin",
+    "petya",
+    /* UEFI bootkits — confirmed embedded strings */
+    "blacklotus",   /* Windows BlackLotus UEFI bootkit (2022-2023) */
+    "bootkitty",    /* Linux Bootkitty UEFI bootkit (2024) */
+    "lojax",        /* LoJax (Fancy Bear/APT28, 2018, first in-the-wild) */
+    "moonbounce",   /* MoonBounce (APT41, 2022) */
+    "cosmicstrand", /* CosmicStrand (Chinese APT, 2022) */
+    "espector",     /* ESPectre/ESPector UEFI implant framework */
+    "mosaicregressor", /* MosaicRegressor (first public UEFI implant, 2020) */
+    "finspy",       /* FinSpy/FinFisher UEFI bootkit component */
+    "trickboot",    /* TrickBot UEFI module (2020) */
+    "glupteba",     /* Glupteba bootloader tampering */
+    /* Generic ransom-note phrases embedded in tampered EFI binaries */
+    "contact us to decrypt",
+    "to recover your files",
+    NULL
+};
+
+/* Case-insensitive substring search over a (possibly NUL-containing)
+ * binary buffer. `needle` must already be lowercase. */
+static int
+esp_buf_contains(const unsigned char *hay, size_t haylen, const char *needle) {
+    size_t nl = strlen(needle);
+    size_t i, j;
+    if (nl == 0 || haylen < nl) return 0;
+    for (i = 0; i + nl <= haylen; i++) {
+        for (j = 0; j < nl; j++) {
+            unsigned char c = hay[i + j];
+            if (c >= 'A' && c <= 'Z') c = (unsigned char)(c + 32);
+            if (c != (unsigned char)needle[j]) break;
+        }
+        if (j == nl) return 1;
+    }
+    return 0;
+}
+
+/* Read up to ESP_SCAN_BYTES of a regular .efi file into a shared buffer and
+ * flag any ESP_INDICATORS phrase. Returns 1 if the file was scanned. */
+#define ESP_SCAN_BYTES (256 * 1024)
+
+static int
+esp_has_efi_ext(const char *name) {
+    size_t L = strlen(name);
+    if (L < 4) return 0;
+    return (name[L-4] == '.'
+            && (name[L-3] == 'e' || name[L-3] == 'E')
+            && (name[L-2] == 'f' || name[L-2] == 'F')
+            && (name[L-1] == 'i' || name[L-1] == 'I'));
+}
+
+static void
+esp_scan_dir(const char *dir_path, int depth,
+             ProtectionVerdict *v, int *file_count,
+             unsigned char *scan_buf) {
+    DIR *dir;
+    struct dirent *ent;
+
+    if (depth > 8) return;                 /* bound recursion */
+    if (*file_count > 5000) return;        /* bound work */
+    dir = opendir(dir_path);
+    if (!dir) return;
+
+    while ((ent = readdir(dir)) != NULL) {
+        char fullpath[4096];
+        struct stat st;
+        if (ent->d_name[0] == '.') continue;
+        if ((size_t)snprintf(fullpath, sizeof(fullpath), "%s/%s",
+                             dir_path, ent->d_name) >= sizeof(fullpath))
+            continue;
+        /* lstat: never follow symlinks into or out of the ESP. */
+        if (lstat(fullpath, &st) != 0) continue;
+        if (S_ISDIR(st.st_mode)) {
+            esp_scan_dir(fullpath, depth + 1, v, file_count, scan_buf);
+            continue;
+        }
+        if (!S_ISREG(st.st_mode) || !esp_has_efi_ext(ent->d_name)) continue;
+
+        {
+            /* read_file_head opens with O_NOFOLLOW|O_NONBLOCK and re-checks
+             * S_ISREG on the fd (closing the lstat->open TOCTOU window), then
+             * reads into the caller's per-call buffer — reentrant, no shared
+             * static scratch. */
+            size_t n = read_file_head(fullpath, scan_buf, ESP_SCAN_BYTES);
+            if (n == 0) continue;
+            (*file_count)++;
+            {
+                int i;
+                for (i = 0; ESP_INDICATORS[i]; i++) {
+                    if (esp_buf_contains(scan_buf, n, ESP_INDICATORS[i])) {
+                        pv_add_reason(v, 70,
+                            "E3: Ransom/bootkit string '%s' in ESP binary: %s",
+                            ESP_INDICATORS[i], ent->d_name);
+                        break;  /* one reason per file */
+                    }
+                }
+            }
+        }
+    }
+    closedir(dir);
+}
+
+ProtectionVerdict
+hlse_esp_verify(const char *esp_path) {
+    ProtectionVerdict v;
+    struct stat st;
+    int file_count = 0;
+    const char *path = (esp_path && esp_path[0]) ? esp_path : "/boot/efi";
+
+    memset(&v, 0, sizeof(v));
+    v.module = HLSE_PROTECT_ESP;
+
+    if (stat(path, &st) != 0 || !S_ISDIR(st.st_mode)) {
+        pv_add_reason(&v, 0,
+            "No EFI System Partition at %s (UEFI not in use or not mounted)",
+            path);
+        return v;
+    }
+
+    {
+        /* One bounded heap allocation per top-level call (freed before every
+         * return). Replaces the former shared static scratch buffer, so two
+         * concurrent hlse_esp_verify() calls no longer race. */
+        unsigned char *scan_buf = malloc(ESP_SCAN_BYTES);
+        if (!scan_buf) {
+            pv_add_reason(&v, 0,
+                "ESP content scan skipped: buffer allocation failed (%s)",
+                strerror(errno));
+            return v;
+        }
+        esp_scan_dir(path, 0, &v, &file_count, scan_buf);
+        free(scan_buf);
+    }
+
+    if (v.n_reasons == 0) {
+        pv_add_reason(&v, 0,
+            "ESP clean: scanned %d .efi binaries under %s, no ransom/bootkit "
+            "strings", file_count, path);
+    }
     return v;
 }
 

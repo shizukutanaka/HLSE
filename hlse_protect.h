@@ -26,6 +26,7 @@ extern "C" {
 #define HLSE_PROTECT_NETWORK_DRIVE  0x02
 #define HLSE_PROTECT_SMB            0x04
 #define HLSE_PROTECT_MBR            0x08
+#define HLSE_PROTECT_ESP            0x10  /* standalone; not in _ALL */
 #define HLSE_PROTECT_ALL            0x0F
 
 typedef struct {
@@ -85,6 +86,13 @@ ProtectionVerdict hlse_mbr_verify(const char *device_path);
 
 /* GPT header validation (EFI PART signature at LBA 1). */
 ProtectionVerdict hlse_gpt_verify(const char *device_path);
+
+/* EFI System Partition integrity: walk the ESP (default "/boot/efi" if
+ * `esp_path` is NULL/empty) and flag .efi binaries containing
+ * high-specificity ransom/bootkit text. Modernises boot-integrity
+ * coverage from the legacy MBR toward UEFI bootkits (BlackLotus,
+ * Bootkitty). Read-only; never follows symlinks.                       */
+ProtectionVerdict hlse_esp_verify(const char *esp_path);
 
 /* ── Unified scan ─────────────────────────────────────────────────────
  *

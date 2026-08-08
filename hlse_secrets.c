@@ -13,12 +13,13 @@
  *   - Pure C, zero dependencies beyond libc
  *   - Fully local (zero network access)
  *   - Deterministic (same input → same output)
- *   - Thread-safe (no global mutable state)
+ *   - Not thread-safe: hlse_register_custom_secret_pattern() and
+ *     hlse_register_custom_brand() (P0-3/P1-6) populate module-level
+ *     registries read by hlse_scan_secrets()/hlse_check_email_headers();
+ *     register from one thread before scanning starts.
  *
  * Build: gcc -O2 -c hlse_secrets.c -I.
  * Test:  see tests/hlse_secrets_tests.c
- *
- * Identity: bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -72,19 +73,48 @@ is_alnum_or_dash(char c) {
            (c >= '0' && c <= '9') || c == '-' || c == '_';
 }
 
+static int
+is_alnum_plain(char c) {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+           (c >= '0' && c <= '9');
+}
+
+/* Case-insensitive substring search (returns pointer to first match in
+ * `hay`, or NULL). Needed because real-world credential files use mixed
+ * case for the same key (AWS_SECRET_ACCESS_KEY vs aws_secret_access_key). */
+static const char *
+ci_strstr(const char *hay, const char *needle) {
+    size_t nlen = strlen(needle);
+    if (nlen == 0) return hay;
+    for (; *hay; hay++) {
+        if (strncasecmp(hay, needle, nlen) == 0) return hay;
+    }
+    return NULL;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
  * Module 1: Secret / Credential Exposure Scanner
  *
  * Detects high-entropy strings matching known API key formats:
  *
- *   - AWS Access Key ID:    AKIA[0-9A-Z]{16}
+ *   - AWS Access/STS Key:   AKIA|ABIA|ACCA|ASIA[0-9A-Z]{16}
  *   - AWS Secret Key:       40-char base64 after "aws_secret"
- *   - GitHub PAT:           ghp_[A-Za-z0-9]{36}
- *   - GitHub OAuth:         gho_[A-Za-z0-9]{36}
- *   - Stripe Live Key:      sk_live_[A-Za-z0-9]{24,}
- *   - Stripe Publishable:   pk_live_[A-Za-z0-9]{24,}
- *   - Slack Token:          xoxb-[0-9]{10,}
- *   - Slack Webhook:        hooks.slack.com/services/T
+ *   - GitHub token family:  ghp_|gho_|ghu_|ghs_|ghr_[A-Za-z0-9]{36}
+ *   - GitHub fine-grained:  github_pat_[A-Za-z0-9_]{20,}
+ *   - Stripe key family:    (sk|rk)_live_ / pk_live_ / sk_test_[A-Za-z0-9]{24,}
+ *   - Google API Key:       AIza[A-Za-z0-9_-]{35}
+ *   - GitLab PAT:           glpat-[A-Za-z0-9_-]{20}
+ *   - npm Access Token:     npm_[A-Za-z0-9]{36}
+ *   - OpenAI / Anthropic:   sk-proj-... / sk-ant-... (dash-prefixed LLM keys)
+ *   - Shopify tokens:       shpat_|shpss_|shppa_[0-9a-f]{32}
+ *   - Hugging Face:         hf_[A-Za-z]{34}
+ *   - PyPI Upload Token:    pypi-AgEIcHlwaS5vcmc[A-Za-z0-9_-]{20,}
+ *   - Postman / Square:     PMAK-[0-9a-f]{24} / sq0atp-[A-Za-z0-9-]{22,}
+ *   - Doppler / Grafana:    dp.pt.[A-Za-z0-9]{43} / glsa_[A-Za-z0-9]{32}
+ *   - Linear / New Relic:   lin_api_[A-Za-z0-9]{40} / NRAK-[A-Za-z0-9]{27}
+ *   - Databricks:           dapi[0-9a-f]{32}
+ *   - Slack Token:          xoxb-|xoxp-|xoxs-[0-9A-Za-z-]{10,}
+ *   - Slack / Discord Webhook URLs (URL-anchored, ~zero false positive)
  *   - Generic high-entropy: 32+ hex chars after "key" / "secret" / "token"
  *   - SSH Private Key:      -----BEGIN (RSA|OPENSSH) PRIVATE KEY-----
  *   - .env PASSWORD=:       PASSWORD= or PASS= followed by non-empty value
@@ -107,21 +137,37 @@ static int char_upper_digit(char c) {
     return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z');
 }
 
+/* Digits only — used for URL-anchored tokens whose first segment is a numeric
+ * ID (e.g. a Discord webhook ID after `.../webhooks/`). */
+static int is_digit_c(char c) {
+    return (c >= '0' && c <= '9');
+}
+
+/* Letters only — used for tokens whose body is pure alphabetic (e.g. Hugging
+ * Face `hf_` + 34 letters), so a 34-char run is far less likely to collide
+ * with an underscore/digit-bearing code identifier sharing the prefix. */
+static int is_alpha(char c) {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+}
+
 static const SecretPattern SECRET_PATTERNS[] = {
     /* AWS */
     { "AKIA",          4,  16, char_upper_digit,   "AWS Access Key ID",     80 },
     { "ABIA",          4,  16, char_upper_digit,   "AWS STS Token",         80 },
     { "ACCA",          4,  16, char_upper_digit,   "AWS CloudFront Key",    70 },
+    { "ASIA",          4,  16, char_upper_digit,   "AWS Temporary (STS) Access Key", 80 },
 
     /* GitHub */
     { "ghp_",          4,  36, is_alnum_or_dash,   "GitHub Personal Access Token", 90 },
     { "gho_",          4,  36, is_alnum_or_dash,   "GitHub OAuth Token",    85 },
     { "ghu_",          4,  36, is_alnum_or_dash,   "GitHub User Token",     85 },
     { "ghs_",          4,  36, is_alnum_or_dash,   "GitHub Server Token",   85 },
+    { "ghr_",          4,  36, is_alnum_or_dash,   "GitHub Refresh Token",  85 },
     { "github_pat_",  11,  20, is_alnum_or_dash,   "GitHub Fine-grained PAT", 90 },
 
     /* Stripe */
     { "sk_live_",      8,  24, is_alnum_or_dash,   "Stripe Live Secret Key", 95 },
+    { "rk_live_",      8,  24, is_alnum_or_dash,   "Stripe Restricted Key", 90 },
     { "pk_live_",      8,  24, is_alnum_or_dash,   "Stripe Live Publishable", 50 },
     { "sk_test_",      8,  24, is_alnum_or_dash,   "Stripe Test Key",       30 },
 
@@ -130,12 +176,260 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "xoxp-",         5,  10, is_alnum_or_dash,   "Slack User Token",      85 },
     { "xoxs-",         5,  10, is_alnum_or_dash,   "Slack Session Token",   85 },
 
-    /* Generic */
+    /* Google */
+    { "AIza",          4,  35, is_alnum_or_dash,   "Google API Key",        80 },
+    /* Google OAuth2 client secret — fixed "GOCSPX-" prefix, ~28-char body.
+     * The prefix is unique to Google, so false positives are essentially
+     * zero.                                                                */
+    { "GOCSPX-",       7,  28, is_alnum_or_dash,   "Google OAuth Client Secret", 90 },
+
+    /* GitLab */
+    { "glpat-",        6,  20, is_alnum_or_dash,   "GitLab Personal Access Token", 90 },
+
+    /* npm */
+    { "npm_",          4,  36, is_alnum_or_dash,   "npm Access Token",      85 },
+
+    /* OpenAI / Anthropic (distinctive dash-prefixed LLM provider keys) */
+    { "sk-proj-",      8,  20, is_alnum_or_dash,   "OpenAI Project Key",    90 },
+    { "sk-ant-",       7,  20, is_alnum_or_dash,   "Anthropic API Key",     90 },
+    /* Newer LLM providers with distinctive prefixes (~zero FP):
+     * Groq gsk_<52>, Perplexity pplx-<48>, xAI/Grok xai-<80>.            */
+    { "gsk_",          4,  20, is_alnum_or_dash,   "Groq API Key",          85 },
+    { "pplx-",         5,  20, is_alnum_or_dash,   "Perplexity API Key",    85 },
+    { "xai-",          4,  20, is_alnum_or_dash,   "xAI (Grok) API Key",    85 },
+
+    /* Shopify (32-hex body — very low false-positive prefix) */
+    { "shpat_",        6,  32, is_hex,             "Shopify Access Token",  85 },
+    { "shpss_",        6,  32, is_hex,             "Shopify Shared Secret", 85 },
+    { "shppa_",        6,  32, is_hex,             "Shopify Private App Token", 85 },
+
+    /* Hugging Face */
+    { "hf_",           3,  34, is_alpha,           "Hugging Face Token",    80 },
+
+    /* PyPI (fixed 20-char marker prefix — essentially zero false positives) */
+    { "pypi-AgEIcHlwaS5vcmc", 20, 20, is_alnum_or_dash, "PyPI Upload Token", 90 },
+
+    /* Postman */
+    { "PMAK-",         5,  24, is_hex,             "Postman API Key",       85 },
+
+    /* Square */
+    { "sq0atp-",       7,  22, is_alnum_or_dash,   "Square Access Token",   85 },
+
+    /* Doppler */
+    { "dp.pt.",        6,  43, is_alnum_or_dash,   "Doppler Personal Token", 85 },
+
+    /* Grafana */
+    { "glsa_",         5,  32, is_alnum_or_dash,   "Grafana Service Account Token", 85 },
+
+    /* Linear */
+    { "lin_api_",      8,  40, is_alnum_or_dash,   "Linear API Key",        85 },
+
+    /* New Relic */
+    { "NRAK-",         5,  27, is_alnum_or_dash,   "New Relic API Key",     85 },
+
+    /* Databricks */
+    { "dapi",          4,  32, is_hex,             "Databricks Access Token", 80 },
+
+    /* PlanetScale (highly distinctive 11-char prefix) */
+    { "pscale_tkn_",   11, 40, is_alnum_or_dash, "PlanetScale Service Token", 85 },
+
+    /* HashiCorp Vault service token v2 (hvs. prefix, long body) */
+    { "hvs.",           4, 50, is_alnum_or_dash, "HashiCorp Vault Token",     80 },
+
+    /* Netlify Personal Access Token */
+    { "nfp_",           4, 32, is_alnum_or_dash, "Netlify Personal Access Token", 85 },
+
+    /* Webhook URLs (URL-anchored — essentially zero false positives) */
     { "hooks.slack.com/services/T", 27, 5, is_alnum_or_dash,
                                             "Slack Webhook URL",     70 },
+    { "discord.com/api/webhooks/",     25, 17, is_digit_c,
+                                            "Discord Webhook URL",   75 },
+    { "discordapp.com/api/webhooks/",  28, 17, is_digit_c,
+                                            "Discord Webhook URL",   75 },
+
+    /* Render (cloud PaaS) */
+    { "rnd_",            4, 36, is_alnum_or_dash,   "Render API Key",        80 },
+
+    /* Fly.io — distinctive 5-char prefix before long base64 body */
+    { "FlyV1",           5, 30, is_alnum_or_dash,   "Fly.io API Token",      85 },
+
+    /* CircleCI personal API token */
+    { "CCIPAT_",         7, 32, is_alnum_or_dash,   "CircleCI API Token",    85 },
+
+    /* Contentful personal access token */
+    { "CFPAT-",          6, 43, is_alnum_or_dash,   "Contentful PAT",        85 },
+
+    /* SendGrid API Key — SG. + 22+ base64url chars (format: SG.<22>.<43>) */
+    { "SG.",             3, 22, is_alnum_or_dash,   "SendGrid API Key",      85 },
+
+    /* HashiCorp Vault batch and recovery tokens */
+    { "hvb.",            4, 50, is_alnum_or_dash,   "HashiCorp Vault Batch Token",    80 },
+    { "hvr.",            4, 50, is_alnum_or_dash,   "HashiCorp Vault Recovery Token", 80 },
+
+    /* Vercel deploy hook / automation token */
+    { "vercel_token_",  13, 20, is_alnum_or_dash,   "Vercel Token",          80 },
+
+    /* DigitalOcean Personal Access Token */
+    { "dop_v1_",         7, 64, is_alnum_or_dash, "DigitalOcean PAT",        85 },
+
+    /* Atlassian / Jira / Confluence API token (fixed prefix added in 2024) */
+    { "ATATT",            5, 32, is_alnum_or_dash, "Atlassian API Token",     85 },
+
+    /* 1Password service account token */
+    { "ops_v",            5, 20, is_alnum_or_dash, "1Password Service Account Token", 85 },
+
+    /* ── 2026 formats (GitHub secret-scanning Mar-2026 detector batch) ──
+     * All have unique, vendor-reserved prefixes, so false positives are
+     * essentially zero. */
+
+    /* Supabase — personal access token (sbp_) and the newer secret API key
+     * (sb_secret_). The publishable key (sb_publishable_) is client-side by
+     * design and intentionally omitted to avoid flagging non-secrets. */
+    { "sbp_",           4, 40, is_alnum_or_dash, "Supabase Personal Access Token", 85 },
+    { "sb_secret_",    10, 20, is_alnum_or_dash, "Supabase Secret Key",           90 },
+
+    /* Figma personal access token (figd_) */
+    { "figd_",          5, 40, is_alnum_or_dash, "Figma Personal Access Token",   85 },
+
+    /* PostHog personal API key (phx_). The project key (phc_) is embedded in
+     * client code on purpose, so it is intentionally omitted. */
+    { "phx_",           4, 40, is_alnum_or_dash, "PostHog Personal API Key",      80 },
+
+    /* LangSmith / LangChain — personal token (lsv2_pt_) and service key
+     * (lsv2_sk_). Body carries an embedded '_', which is_alnum_or_dash
+     * accepts, so the full token validates. */
+    { "lsv2_pt_",       8, 30, is_alnum_or_dash, "LangSmith Personal Token",      85 },
+    { "lsv2_sk_",       8, 30, is_alnum_or_dash, "LangSmith Service Key",         90 },
 
     { NULL, 0, 0, NULL, NULL, 0 }
 };
+
+/* ── Custom secret patterns (roadmap P0-3) ──────────────────────────────
+ * Runtime-registered patterns, checked by hlse_scan_secrets() using the
+ * same match + placeholder-suppression logic as the built-in table above.
+ * Fixed-size, own storage (not `const char *`) since prefix/label come from
+ * caller-owned or parsed-file buffers that may not outlive the call. */
+typedef struct {
+    char prefix[32];
+    int  prefix_len;
+    int  min_suffix;
+    HlseCharset charset;
+    char label[64];
+    int  score;
+} CustomSecretPattern;
+
+static CustomSecretPattern g_custom_patterns[HLSE_CUSTOM_SECRET_MAX];
+static int                 g_custom_pattern_n = 0;
+
+static int
+charset_char_ok(HlseCharset cs, char c) {
+    switch (cs) {
+        case HLSE_CHARSET_ALNUM:      return is_alnum_plain(c);
+        case HLSE_CHARSET_ALNUM_DASH: return is_alnum_or_dash(c);
+        case HLSE_CHARSET_HEX:        return is_hex(c);
+        case HLSE_CHARSET_ALPHA:      return is_alpha(c);
+        case HLSE_CHARSET_DIGIT:      return is_digit_c(c);
+        default:                      return 0;
+    }
+}
+
+int
+hlse_register_custom_secret_pattern(const char *prefix, int min_suffix,
+                                    HlseCharset charset,
+                                    const char *label, int score) {
+    CustomSecretPattern *cp;
+    size_t plen;
+    if (!prefix || !prefix[0] || min_suffix <= 0 || !label || !label[0])
+        return 0;
+    if (g_custom_pattern_n >= HLSE_CUSTOM_SECRET_MAX) return 0;
+    plen = strlen(prefix);
+    if (plen >= sizeof(cp->prefix)) return 0;
+    cp = &g_custom_patterns[g_custom_pattern_n];
+    snprintf(cp->prefix, sizeof(cp->prefix), "%s", prefix);
+    cp->prefix_len = (int)plen;
+    cp->min_suffix = min_suffix;
+    cp->charset = charset;
+    snprintf(cp->label, sizeof(cp->label), "%s", label);
+    cp->score = (score < 0) ? 0 : (score > 100 ? 100 : score);
+    g_custom_pattern_n++;
+    return 1;
+}
+
+void
+hlse_clear_custom_secret_patterns(void) {
+    g_custom_pattern_n = 0;
+}
+
+int
+hlse_custom_secret_pattern_count(void) {
+    return g_custom_pattern_n;
+}
+
+/* ── Custom brands / organization impersonation targets (roadmap P1-6) ──── */
+typedef struct {
+    char name[64];
+    char owned_domains[HLSE_CUSTOM_BRAND_DOMAINS][128];
+    int  n_domains;
+} CustomBrand;
+
+static CustomBrand g_custom_brands[HLSE_CUSTOM_BRAND_MAX];
+static int         g_custom_brand_n = 0;
+
+static void
+lowercase_copy(char *dst, size_t dstcap, const char *src) {
+    size_t i;
+    for (i = 0; src[i] && i + 1 < dstcap; i++)
+        dst[i] = (char)tolower((unsigned char)src[i]);
+    dst[i] = '\0';
+}
+
+int
+hlse_register_custom_brand(const char *name, const char *owned_domains_csv) {
+    CustomBrand *b;
+    const char *p;
+    if (!name || !name[0] || strlen(name) >= sizeof(b->name)) return 0;
+    if (g_custom_brand_n >= HLSE_CUSTOM_BRAND_MAX) return 0;
+    b = &g_custom_brands[g_custom_brand_n];
+    lowercase_copy(b->name, sizeof(b->name), name);
+    b->n_domains = 0;
+    p = owned_domains_csv;
+    while (p && *p && b->n_domains < HLSE_CUSTOM_BRAND_DOMAINS) {
+        const char *comma = strchr(p, ',');
+        size_t len = comma ? (size_t)(comma - p) : strlen(p);
+        while (len > 0 && (p[0] == ' ')) { p++; len--; } /* trim leading ws */
+        while (len > 0 && p[len - 1] == ' ') len--;      /* trim trailing ws */
+        if (len > 0 && len < sizeof(b->owned_domains[0])) {
+            char tmp[128];
+            memcpy(tmp, p, len);
+            tmp[len] = '\0';
+            lowercase_copy(b->owned_domains[b->n_domains], sizeof(b->owned_domains[0]), tmp);
+            b->n_domains++;
+        }
+        p = comma ? comma + 1 : NULL;
+    }
+    if (b->n_domains == 0) return 0; /* need at least one owned domain */
+    g_custom_brand_n++;
+    return 1;
+}
+
+void
+hlse_clear_custom_brands(void) {
+    g_custom_brand_n = 0;
+}
+
+int
+hlse_custom_brand_count(void) {
+    return g_custom_brand_n;
+}
+
+static int
+custom_brand_owns_domain(const CustomBrand *b, const char *domain) {
+    int i;
+    if (!domain) return 0;
+    for (i = 0; i < b->n_domains; i++)
+        if (strcmp(b->owned_domains[i], domain) == 0) return 1;
+    return 0;
+}
 
 /* Check for SSH private key headers */
 static int
@@ -170,6 +464,96 @@ check_env_passwords(const char *text, SecretVerdict *v) {
         "API_KEY=", "API_SECRET=", "SECRET_KEY=",
         "AWS_SECRET_ACCESS_KEY=", "ANTHROPIC_API_KEY=",
         "OPENAI_API_KEY=", "STRIPE_SECRET_KEY=",
+        "TWILIO_AUTH_TOKEN=", "SENDGRID_API_KEY=",
+        "FIREBASE_PRIVATE_KEY=", "CLOUDFLARE_API_TOKEN=",
+        /* SCM / CI / hosting */
+        "GITHUB_TOKEN=", "GITLAB_TOKEN=", "GITLAB_CI_TOKEN=",
+        "DIGITALOCEAN_TOKEN=", "DO_API_TOKEN=",
+        "HEROKU_API_KEY=", "LINODE_TOKEN=",
+        "VULTR_API_KEY=", "HETZNER_API_KEY=",
+        "NETLIFY_AUTH_TOKEN=", "VERCEL_TOKEN=",
+        "CIRCLE_TOKEN=", "SNYK_TOKEN=",
+        /* CDN and edge computing */
+        "FASTLY_API_KEY=", "CLOUDFRONT_KEY=",
+        "BUNNYCDN_API_KEY=",
+        /* Connection strings that embed credentials */
+        "DATABASE_URL=", "MONGODB_URI=", "MONGO_URI=", "MONGO_URL=",
+        "REDIS_URL=", "REDIS_URI=",
+        "MYSQL_URL=", "MYSQL_URI=", "POSTGRES_URL=", "POSTGRES_URI=",
+        "POSTGRESQL_URL=", "MARIADB_URL=", "COCKROACHDB_URL=",
+        "ELASTICSEARCH_URL=", "CASSANDRA_URL=",
+        /* Generic secrets commonly leaked in .env */
+        "JWT_SECRET=", "JWT_SECRET_KEY=", "APP_SECRET=",
+        "SECRET_KEY_BASE=", "APP_KEY=",
+        "ENCRYPTION_KEY=", "MASTER_KEY=", "SIGNING_SECRET=",
+        /* IaC / cloud provisioning */
+        "TF_VAR_", "PULUMI_ACCESS_TOKEN=", "PULUMI_CONFIG_PASSPHRASE=",
+        "ARM_CLIENT_SECRET=", "ARM_SUBSCRIPTION_ID=",
+        "GOOGLE_CREDENTIALS=", "GOOGLE_APPLICATION_CREDENTIALS=",
+        "TF_TOKEN_app_terraform_io=",
+        /* HashiCorp secrets management / orchestration */
+        "VAULT_TOKEN=", "CONSUL_HTTP_TOKEN=", "NOMAD_TOKEN=",
+        "BOUNDARY_TOKEN=",
+        /* GitHub Actions secrets in plaintext */
+        "ACTIONS_RUNTIME_TOKEN=", "ACTIONS_ID_TOKEN_REQUEST_TOKEN=",
+        /* Supabase / PlanetScale / Neon */
+        "SUPABASE_SERVICE_ROLE_KEY=", "SUPABASE_ANON_KEY=",
+        "SUPABASE_JWT_SECRET=",
+        "DATABASE_PASSWORD=", "NEON_DATABASE_URL=",
+        /* AI / ML providers */
+        "TOGETHER_API_KEY=", "COHERE_API_KEY=", "MISTRAL_API_KEY=",
+        "REPLICATE_API_TOKEN=", "HUGGINGFACE_API_KEY=",
+        "STABILITY_API_KEY=", "ELEVENLABS_API_KEY=",
+        "GROQ_API_KEY=", "PERPLEXITY_API_KEY=",
+        "DEEPSEEK_API_KEY=", "XAI_API_KEY=",
+        "FIREWORKS_API_KEY=", "ANYSCALE_API_KEY=",
+        "GEMINI_API_KEY=", "GOOGLE_GEMINI_API_KEY=",
+        "OPENROUTER_API_KEY=", "VERTEX_AI_KEY=",
+        /* Observability / APM */
+        "DATADOG_API_KEY=", "DATADOG_APP_KEY=",
+        "SENTRY_DSN=", "SENTRY_AUTH_TOKEN=",
+        "HONEYCOMB_API_KEY=", "NEWRELIC_LICENSE_KEY=",
+        "PAGERDUTY_API_KEY=", "PAGERDUTY_TOKEN=",
+        "OPSGENIE_API_KEY=", "GRAFANA_API_KEY=",
+        /* Payment processors */
+        "PAYPAL_CLIENT_SECRET=", "PAYPAL_CLIENT_ID=",
+        "SQUARE_ACCESS_TOKEN=", "SQUARE_APPLICATION_ID=",
+        "BRAINTREE_PUBLIC_KEY=", "BRAINTREE_PRIVATE_KEY=",
+        "ADYEN_API_KEY=", "ADYEN_CLIENT_KEY=",
+        "RAZORPAY_KEY_SECRET=", "RAZORPAY_KEY_ID=",
+        "KLARNA_API_KEY=", "MOLLIE_API_KEY=",
+        /* Azure storage and cognitive services */
+        "AZURE_STORAGE_CONNECTION_STRING=", "AZURE_STORAGE_ACCOUNT_KEY=",
+        "AZURE_COGNITIVE_KEY=", "AZURE_OPENAI_API_KEY=",
+        "AZURE_OPENAI_KEY=",
+        /* Google / GCP keys not yet covered */
+        "GOOGLE_API_KEY=", "GCP_API_KEY=", "FIREBASE_API_KEY=",
+        "GOOGLE_MAPS_API_KEY=", "GOOGLE_CLOUD_API_KEY=",
+        /* Cloud storage */
+        "S3_ACCESS_KEY=", "S3_SECRET_KEY=", "S3_SECRET_ACCESS_KEY=",
+        "STORAGE_ACCESS_KEY=", "STORAGE_SECRET_KEY=",
+        /* Collaboration / productivity APIs */
+        "NOTION_TOKEN=", "NOTION_SECRET=",
+        "AIRTABLE_API_KEY=", "AIRTABLE_PAT=",
+        "JIRA_API_TOKEN=", "JIRA_CLOUD_TOKEN=",
+        "ZENDESK_API_TOKEN=",
+        "INTERCOM_ACCESS_TOKEN=",
+        "HUBSPOT_API_KEY=", "SALESFORCE_ACCESS_TOKEN=",
+        /* Geo / mapping */
+        "MAPBOX_ACCESS_TOKEN=", "MAPBOX_TOKEN=",
+        "HERE_API_KEY=", "TOMTOM_API_KEY=",
+        /* Communication */
+        "DISCORD_BOT_TOKEN=", "DISCORD_TOKEN=", "TELEGRAM_BOT_TOKEN=",
+        "MAILGUN_API_KEY=", "POSTMARK_API_TOKEN=",
+        "TWILIO_API_KEY=", "VONAGE_API_SECRET=",
+        /* Testing / CI / build tools */
+        "CYPRESS_RECORD_KEY=", "TURBO_TOKEN=", "NX_CLOUD_AUTH_TOKEN=",
+        "SONAR_TOKEN=", "SONARQUBE_TOKEN=", "EXPO_TOKEN=", "EAS_BUILD_PROFILE=",
+        /* LLMOps / AI observability */
+        "LANGCHAIN_API_KEY=", "LANGFUSE_SECRET_KEY=", "LANGFUSE_PUBLIC_KEY=",
+        "LANGSMITH_API_KEY=", "TRACELOOP_API_KEY=",
+        /* Fly.io and other PaaS via env var */
+        "FLY_API_TOKEN=", "RAILWAY_TOKEN=",
         NULL
     };
     int found = 0;
@@ -256,17 +640,28 @@ is_placeholder_secret(const char *line_start, const char *match,
         }
     }
 
-    /* 2. Examine up to 64 chars of context before the match (variable
-     *    names like "example_key =", "test_token:", "# sample").       */
+    /* 2. Examine a SHORT window of context immediately before the match —
+     *    only the assignment prefix / variable name (e.g. "example_key =",
+     *    "test_token:", "# sample:"). The window is deliberately small (32
+     *    chars): a marker word must abut the secret to suppress it. A larger
+     *    window caused real keys to be silently dropped whenever unrelated
+     *    prose nearby contained "example"/"sample" (e.g. "Example config for
+     *    production: AKIA<real key>"). The repetitive-char markers
+     *    (xxxxxxxx/XXXXXXXX) are intentionally excluded here — a run of x's in
+     *    context is not an "example" signal; an x-filled *token* is already
+     *    caught by checks 1 and 3.                                          */
     {
         size_t before = (size_t)(match - line_start);
-        size_t take = before < 64 ? before : 64;
+        size_t take = before < 32 ? before : 32;
         const char *ctx = match - take;
         wlen = take;
         if (wlen >= sizeof(window)) wlen = sizeof(window) - 1;
         memcpy(window, ctx, wlen);
         window[wlen] = '\0';
         for (i = 0; MARKERS[i]; i++) {
+            if (strcmp(MARKERS[i], "xxxxxxxx") == 0 ||
+                strcmp(MARKERS[i], "XXXXXXXX") == 0)
+                continue;  /* not a context indicator */
             if (strstr(window, MARKERS[i]) != NULL) return 1;
         }
     }
@@ -328,12 +723,234 @@ hlse_scan_secrets(const char *text) {
         }
     }
 
+    /* Custom (runtime-registered) patterns — roadmap P0-3. Identical
+     * matching + placeholder-suppression logic as the built-in loop above,
+     * over the caller-supplied table instead of SECRET_PATTERNS[]. */
+    for (i = 0; i < g_custom_pattern_n; i++) {
+        const CustomSecretPattern *cp = &g_custom_patterns[i];
+        p = text;
+        while ((p = strstr(p, cp->prefix)) != NULL) {
+            const char *suffix = p + cp->prefix_len;
+            int valid = 0;
+            int j;
+            for (j = 0; j < cp->min_suffix && suffix[j]; j++) {
+                if (!charset_char_ok(cp->charset, suffix[j])) break;
+                valid++;
+            }
+            if (valid >= cp->min_suffix) {
+                size_t tok_len = (size_t)cp->prefix_len;
+                while (suffix[tok_len - (size_t)cp->prefix_len] &&
+                       charset_char_ok(cp->charset,
+                           suffix[tok_len - (size_t)cp->prefix_len]))
+                    tok_len++;
+                if (!is_placeholder_secret(text, p, p, tok_len)) {
+                    char preview[64];
+                    snprintf(preview, sizeof(preview), "%.8s%.4s...",
+                             cp->prefix, suffix);
+                    sv_add(&v, cp->score, cp->label,
+                           "%s found: %s", cp->label, preview);
+                }
+            }
+            p += cp->prefix_len;
+        }
+    }
+
     /* Structural checks */
     check_ssh_key(text, &v);
     check_env_passwords(text, &v);
     check_generic_hex_secret(text, &v);
 
+    /* GCP service account JSON — contains "type": "service_account" and
+     * "private_key" together. Near-zero false positives.               */
+    if (strstr(text, "\"type\"") && strstr(text, "service_account") &&
+        strstr(text, "\"private_key\"")) {
+        sv_add(&v, 90, "GCP_SERVICE_ACCOUNT",
+               "GCP service account JSON (type+private_key fields)");
+    }
+
+    /* AWS secret access key — the canonical `~/.aws/credentials` INI form
+     * uses lowercase keys with spaces around '=' (`aws_secret_access_key =
+     * wJal…`), which the case-sensitive, no-space env-pattern scan misses
+     * entirely. The bare 40-char base64 secret is too generic to flag alone,
+     * but anchored to its specific key name it is high-confidence. Match the
+     * key case-insensitively, skip '='/quotes/space, then require ≥40 base64
+     * chars (AWS secrets are exactly 40).                                  */
+    {
+        const char *k = ci_strstr(text, "aws_secret_access_key");
+        if (k) {
+            const char *val = k + strlen("aws_secret_access_key");
+            while (*val == ' ' || *val == '=' || *val == ':' ||
+                   *val == '"' || *val == '\'' || *val == '\t') val++;
+            {
+                const char *start = val;
+                int b64_run = 0;
+                while (is_base64(*val) && *val != '=') { b64_run++; val++; }
+                if (b64_run >= 40 &&
+                    !is_placeholder_secret(text, k, start, (size_t)b64_run)) {
+                    sv_add(&v, 90, "AWS_SECRET_KEY",
+                           "AWS secret access key (40-char base64 after "
+                           "'aws_secret_access_key')");
+                }
+            }
+        }
+    }
+
+    /* Azure storage connection string — AccountKey= followed by ≥40 base64
+     * chars (actual keys are 88-char base64). The key is the credential
+     * itself, not merely an env-variable reference.                      */
+    {
+        const char *ak = strstr(text, "AccountKey=");
+        if (ak) {
+            const char *val = ak + 11; /* strlen("AccountKey=") */
+            int b64_run = 0;
+            while (is_base64(*val) || *val == '=') { b64_run++; val++; }
+            if (b64_run >= 40 && !is_placeholder_secret(text, ak, ak + 11,
+                                                         (size_t)b64_run)) {
+                sv_add(&v, 85, "AZURE_ACCOUNT_KEY",
+                       "Azure storage AccountKey credential (%d chars)", b64_run);
+            }
+        }
+    }
+
+    /* Database / message-queue connection string with embedded credentials:
+     * "<scheme>://<user>:<password>@<host>". A hardcoded password inside a
+     * service URI is a high-volume real-world leak (.env, source, logs). We
+     * match a fixed set of credential-bearing schemes so a plain "https://"
+     * link (handled by the URL module) does not collide, and we suppress
+     * variable references ($VAR) and placeholders.                         */
+    {
+        static const char *URI_SCHEMES[] = {
+            "postgres://", "postgresql://", "mysql://", "mariadb://",
+            "mongodb://", "mongodb+srv://", "redis://", "rediss://",
+            "amqp://", "amqps://", "mssql://", "clickhouse://",
+            "cockroachdb://", "sftp://", "ftp://", NULL
+        };
+        int si;
+        for (si = 0; URI_SCHEMES[si]; si++) {
+            const char *u = strstr(text, URI_SCHEMES[si]);
+            if (!u) continue;
+            {
+                const char *userinfo = u + strlen(URI_SCHEMES[si]);
+                const char *at = userinfo;
+                const char *colon = NULL;
+                /* Scan the authority up to '@' (userinfo end) or a path/end. */
+                while (*at && *at != '@' && *at != '/' && *at != ' ' &&
+                       *at != '\n' && *at != '\r') {
+                    if (*at == ':' && !colon) colon = at;
+                    at++;
+                }
+                if (*at == '@' && colon) {
+                    const char *pw = colon + 1;
+                    size_t pwlen = (size_t)(at - pw);
+                    /* Non-trivial password, not a variable ref/placeholder. */
+                    if (pwlen >= 4 && *pw != '$' && *pw != '{' &&
+                        !is_placeholder_secret(text, pw, pw, pwlen)) {
+                        sv_add(&v, 80, "URI_CREDENTIALS",
+                               "Embedded credentials in %s connection string "
+                               "(user:password@host)", URI_SCHEMES[si]);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /* Azure SAS token — highly distinctive shared-access-signature pattern */
+    if ((strstr(text, "sv=") || strstr(text, "SharedAccessSignature")) &&
+        strstr(text, "sig=") && strstr(text, "se=")) {
+        sv_add(&v, 85, "AZURE_SAS",
+               "Azure SAS token (sv/sig/se fields)");
+    }
+
+    /* Telegram bot token — "<8-10 digits>:<35 base64url chars>". The numeric
+     * bot-id, the colon, and the 35-char secret are jointly distinctive
+     * (near-zero false positives: a bare port/time has far fewer trailing
+     * chars). Scan for a colon with a digit run before and a base64url run
+     * after.                                                              */
+    {
+        const char *c = text;
+        while ((c = strchr(c, ':')) != NULL) {
+            /* Count the digit run immediately before the colon. */
+            const char *d = c;
+            int digits = 0;
+            while (d > text && d[-1] >= '0' && d[-1] <= '9') { d--; digits++; }
+            /* Count the base64url run immediately after the colon. */
+            const char *a = c + 1;
+            int after = 0;
+            while ((*a >= 'A' && *a <= 'Z') || (*a >= 'a' && *a <= 'z') ||
+                   (*a >= '0' && *a <= '9') || *a == '-' || *a == '_') {
+                after++; a++;
+            }
+            /* The digit run must be the whole id (bounded by a non-digit or
+             * start) to avoid matching the tail of a longer number.        */
+            int bounded = (d == text || !(d[-1] >= '0' && d[-1] <= '9'));
+            if (bounded && digits >= 8 && digits <= 10 && after >= 35) {
+                sv_add(&v, 85, "TELEGRAM_BOT_TOKEN",
+                       "Telegram bot token (<id>:<35-char secret>)");
+                break;
+            }
+            c++;
+        }
+    }
+
+    /* JWT bearer token — header.payload.signature, all base64url. The "eyJ"
+     * prefix is base64 of '{"', which every JWT header begins with. The
+     * three-segment dotted structure with base64url segments is JWT-specific
+     * (near-zero false positives), and a signed JWT is a live bearer
+     * credential worth flagging.                                          */
+    {
+        const char *jp = text;
+        while ((jp = strstr(jp, "eyJ")) != NULL) {
+            const char *q = jp;
+            int seg = 0, seglen = 0, ok;
+            int seglens[3] = {0, 0, 0};
+            /* Walk up to 3 base64url segments separated by single dots. */
+            while (*q && seg < 3) {
+                char c = *q;
+                if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+                    (c >= '0' && c <= '9') || c == '-' || c == '_') {
+                    seglen++;
+                    q++;
+                } else if (c == '.') {
+                    seglens[seg++] = seglen;
+                    seglen = 0;
+                    q++;
+                } else {
+                    break;
+                }
+            }
+            if (seg == 2) { seglens[2] = seglen; seg = 3; } /* trailing sig */
+            /* Require all three segments present and non-trivial: a real
+             * signed JWT has header>=10, payload>=10, signature>=20.       */
+            ok = (seg == 3 && seglens[0] >= 10 && seglens[1] >= 10 &&
+                  seglens[2] >= 20);
+            if (ok) {
+                sv_add(&v, 60, "JWT",
+                       "JWT bearer token (header.payload.signature)");
+                break;
+            }
+            jp += 3;
+        }
+    }
+
     return v;
+}
+
+const char *
+hlse_secret_confidence(const SecretVerdict *v) {
+    int i;
+    if (!v || v->n_findings == 0) return "none";
+    /* Heuristic finding types: a match without a fixed, unforgeable anchor —
+     * a generic VAR=value env line or a high-entropy string after a keyword.
+     * Everything else (fixed-prefix tokens, private-key markers, structural
+     * cloud-credential shapes) is high-specificity → certain. */
+    for (i = 0; i < v->n_findings; i++) {
+        const char *t = v->findings[i].type;
+        if (strcmp(t, "ENV_SECRET") != 0 &&
+            strcmp(t, "GENERIC_SECRET") != 0)
+            return "certain";
+    }
+    return "heuristic";
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -396,6 +1013,28 @@ extract_domain(const char *addr, char *out, size_t out_sz) {
     }
 }
 
+/* Whole-word substring match: returns 1 if `needle` appears in `hay`
+ * bounded by non-alphanumeric characters (or string ends). This avoids
+ * substring collisions where a short token like "irs" matches inside
+ * "first" or "ups" matches inside "groups"/"backups". Both arguments
+ * must already be lowercase. Multi-word needles (e.g. "office 365")
+ * still match because only the outer boundaries are checked. */
+static int
+contains_word(const char *hay, const char *needle) {
+    size_t nlen = strlen(needle);
+    const char *p = hay;
+    if (nlen == 0) return 0;
+    while ((p = strstr(p, needle)) != NULL) {
+        int pre_ok  = (p == hay) ||
+                      !isalnum((unsigned char)p[-1]);
+        int post_ok = (p[nlen] == '\0') ||
+                      !isalnum((unsigned char)p[nlen]);
+        if (pre_ok && post_ok) return 1;
+        p++;
+    }
+    return 0;
+}
+
 /* Extract display name from "Display Name <email@domain>" format */
 static int
 extract_display_name(const char *from, char *out, size_t out_sz) {
@@ -418,6 +1057,18 @@ static const char *FREE_EMAIL_DOMAINS[] = {
     "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
     "aol.com", "protonmail.com", "icloud.com", "mail.com",
     "yandex.com", "zoho.com", "gmx.com", "live.com",
+    /* Disposable/temporary email services — very high fraud association */
+    "mailinator.com", "guerrillamail.com", "10minutemail.com",
+    "tempmail.com", "throwam.com", "trashmail.com", "sharklasers.com",
+    /* Asian free email providers */
+    "qq.com", "163.com", "126.com",         /* China */
+    "naver.com", "daum.net",                 /* Korea */
+    "yahoo.co.jp",                           /* Japan */
+    /* European free email providers */
+    "web.de", "gmx.de", "freenet.de",       /* Germany */
+    "orange.fr", "laposte.net",             /* France */
+    "mail.ru", "yandex.ru",                 /* Russia */
+    "libero.it", "virgilio.it",             /* Italy */
     NULL
 };
 
@@ -430,6 +1081,94 @@ is_free_email(const char *domain) {
     return 0;
 }
 
+/* Return 1 if `brand` legitimately owns `domain`.
+ *
+ * Uses suffix matching ("ends with base_domain") so subdomains like
+ * accountprotection.microsoft.com are accepted but look-alike domains
+ * like microsoft-verify.ru and apple-secure.net are NOT.                */
+static int
+brand_owns_domain(const char *brand, const char *domain) {
+    static const struct { const char *brand; const char *base; } BD[] = {
+        { "microsoft", "microsoft.com"    }, { "microsoft", "office.com"     },
+        { "microsoft", "live.com"         }, { "microsoft", "hotmail.com"    },
+        { "microsoft", "msn.com"          }, { "microsoft", "microsoft365.com"},
+        { "apple",     "apple.com"        }, { "apple",     "icloud.com"     },
+        { "apple",     "me.com"           }, { "apple",     "mac.com"        },
+        { "google",    "google.com"       }, { "google",    "gmail.com"      },
+        { "google",    "googlemail.com"   },
+        { "amazon",    "amazon.com"       }, { "amazon",    "amazonses.com"  },
+        { "amazon",    "amazon.co.uk"     }, { "amazon",    "amazon.de"      },
+        { "amazon",    "amazon.co.jp"     },
+        { "paypal",    "paypal.com"       }, { "paypal",    "paypal.co.uk"   },
+        { "facebook",  "facebook.com"     }, { "facebook",  "facebookmail.com"},
+        { "facebook",  "fb.com"           },
+        { "instagram", "instagram.com"    }, { "instagram", "facebookmail.com"},
+        { "netflix",   "netflix.com"      }, { "netflix",   "netflixmail.com"},
+        { "linkedin",  "linkedin.com"     }, { "linkedin",  "linkedin.email" },
+        { "twitter",   "twitter.com"      }, { "twitter",   "x.com"          },
+        { "twitter",   "twitteremail.com" },
+        { "stripe",    "stripe.com"       }, { "github",    "github.com"     },
+        { "docusign",  "docusign.com"     }, { "docusign",  "docusign.net"   },
+        { "zoom",      "zoom.us"          }, { "zoom",      "zoom.com"       },
+        { "fedex",     "fedex.com"        }, { "dhl",       "dhl.com"        },
+        { "ups",       "ups.com"          }, { "usps",      "usps.com"       },
+        { "irs",       "irs.gov"          }, { "shopify",   "shopify.com"    },
+        /* Financial institutions: "bank" keyword must not FP on their
+         * own sending domains. Add canonical domains for major banks.  */
+        { "bank", "chase.com"              }, { "bank", "bankofamerica.com"   },
+        { "bank", "wellsfargo.com"         }, { "bank", "citibank.com"        },
+        { "bank", "citi.com"               }, { "bank", "usbank.com"          },
+        { "bank", "capitalone.com"         }, { "bank", "pnc.com"             },
+        { "bank", "tdbank.com"             }, { "bank", "regions.com"         },
+        { "bank", "suntrust.com"           }, { "bank", "truist.com"          },
+        { "bank", "ally.com"               }, { "bank", "discoverbank.com"    },
+        { "bank", "discover.com"           },
+        /* JP banks */
+        { "bank", "smbc.co.jp"             }, { "bank", "mufg.jp"             },
+        { "bank", "mizuhobank.co.jp"       }, { "bank", "japanpost.jp"        },
+        { "bank", "rakuten-bank.co.jp"     }, { "bank", "aeon.co.jp"          },
+        /* EU banks */
+        { "bank", "ing.com"                }, { "bank", "n26.com"             },
+        { "bank", "bunq.com"               }, { "bank", "revolut.com"         },
+        /* KR banks */
+        { "bank", "kbstar.com"             }, { "bank", "ibk.co.kr"           },
+        { "bank", "nonghyup.com"           }, { "bank", "shinhan.com"         },
+        { NULL, NULL }
+    };
+    int i;
+    size_t dl = strlen(domain);
+    for (i = 0; BD[i].brand; i++) {
+        size_t bl;
+        if (strcmp(brand, BD[i].brand) != 0) continue;
+        bl = strlen(BD[i].base);
+        if (dl >= bl) {
+            size_t off = dl - bl;
+            /* Domain must end with base and have '.' or be identical */
+            if (strcmp(domain + off, BD[i].base) == 0 &&
+                (off == 0 || domain[off - 1] == '.'))
+                return 1;
+        }
+    }
+    return 0;
+}
+
+/* Generic display-name function words that should not trigger E1 when
+ * the email's primary brand already owns the From domain. For example,
+ * "Apple Support" from apple.com — "support" here is a department label,
+ * not an impersonation. We only suppress if brand_owns = 1.             */
+static int
+is_generic_display_role(const char *word) {
+    static const char *ROLES[] = {
+        "support", "security", "admin", "helpdesk", "accounts",
+        "notifications", "it department", "human resources",
+        "hr department", "it support", NULL
+    };
+    int i;
+    for (i = 0; ROLES[i]; i++)
+        if (strcmp(word, ROLES[i]) == 0) return 1;
+    return 0;
+}
+
 EmailVerdict
 hlse_check_email_headers(const char *raw_headers) {
     EmailVerdict v;
@@ -437,9 +1176,34 @@ hlse_check_email_headers(const char *raw_headers) {
     char from_domain[256] = {0};
     char reply_domain[256] = {0};
     char display_name[256] = {0};
+    char unfolded[8192];
 
     memset(&v, 0, sizeof(v));
     if (!raw_headers) return v;
+
+    /* RFC 5322 §2.2.3 unfolding: a CRLF immediately followed by whitespace is
+     * a single logical header split across lines. Join continuations back
+     * onto one line before parsing, otherwise a spoofed
+     *   From: PayPal Support
+     *    <service@evil.ru>
+     * leaves the domain on the folded line — extract_domain stops at the
+     * newline (missing it) and the display name keeps an embedded newline.   */
+    {
+        size_t w = 0;
+        const char *r = raw_headers;
+        while (*r && w < sizeof(unfolded) - 1) {
+            if (*r == '\r') { r++; continue; }      /* normalize CRLF → LF */
+            if (*r == '\n' && (r[1] == ' ' || r[1] == '\t')) {
+                r++;                                /* skip the fold LF */
+                while (*r == ' ' || *r == '\t') r++;/* and leading WSP run */
+                if (w > 0 && unfolded[w - 1] != ' ') unfolded[w++] = ' ';
+                continue;
+            }
+            unfolded[w++] = *r++;
+        }
+        unfolded[w] = '\0';
+        raw_headers = unfolded;
+    }
 
     from_val = find_header(raw_headers, "From");
     reply_to_val = find_header(raw_headers, "Reply-To");
@@ -456,6 +1220,14 @@ hlse_check_email_headers(const char *raw_headers) {
         const char *known[] = {
             "microsoft", "apple", "google", "amazon", "paypal",
             "bank", "support", "security", "admin", "helpdesk",
+            "facebook", "netflix", "linkedin", "twitter", "instagram",
+            "irs", "fbi", "government", "treasury", "customs",
+            "accounts", "notifications", "it department",
+            /* Additional high-value impersonation targets */
+            "stripe", "shopify", "github", "docusign", "zoom",
+            "office 365", "microsoft 365", "apple id",
+            "fedex", "dhl", "ups", "usps",
+            "human resources", "hr department", "it support",
             NULL
         };
         int i;
@@ -465,15 +1237,58 @@ hlse_check_email_headers(const char *raw_headers) {
             lower_dn[k] = (char)tolower((unsigned char)display_name[k]);
         lower_dn[k] = '\0';
 
+        /* First pass: check if any brand in display name legitimately owns
+         * the From domain (primary match OR trusted alternate domain).
+         * This suppresses false positives like "Apple Support" from apple.com
+         * — "support" is a department label, not an impersonation.          */
+        int brand_owns = 0;
         for (i = 0; known[i]; i++) {
-            if (strstr(lower_dn, known[i]) &&
-                !strstr(from_domain, known[i]))
+            if (contains_word(lower_dn, known[i]) &&
+                brand_owns_domain(known[i], from_domain)) {
+                brand_owns = 1; break;
+            }
+        }
+
+        /* Second pass: fire E1 only when brand truly mismatches. Skip
+         * generic role words ("support", "security", ...) if the primary
+         * brand already matches the domain.                                  */
+        int e1_fired = 0;
+        for (i = 0; known[i]; i++) {
+            /* Word-boundary match on the display name avoids substring
+             * collisions ("irs" in "First", "ups" in "Backups Team");
+             * brand_owns_domain() covers alternate sending domains so
+             * "Apple" from icloud.com is not flagged as a mismatch.         */
+            if (contains_word(lower_dn, known[i]) &&
+                !brand_owns_domain(known[i], from_domain) &&
+                !(brand_owns && is_generic_display_role(known[i])))
             {
                 v.score += 45;
                 snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
                     "E1: Display name '%.60s' implies %.40s but From is %.80s",
                     display_name, known[i], from_domain);
+                e1_fired = 1;
                 break;
+            }
+        }
+
+        /* Third pass: custom (runtime-registered) brands — roadmap P1-6.
+         * Same word-boundary match and mismatch rule as the built-in table,
+         * against each brand's own registered owned-domain list. Only
+         * checked when the built-in pass above did not already flag this
+         * email, so a message never double-counts E1 across two tables. */
+        if (!e1_fired && v.n_reasons < HLSE_EMAIL_MAX_REASONS) {
+            int j;
+            for (j = 0; j < g_custom_brand_n; j++) {
+                const CustomBrand *b = &g_custom_brands[j];
+                if (contains_word(lower_dn, b->name) &&
+                    !custom_brand_owns_domain(b, from_domain))
+                {
+                    v.score += 45;
+                    snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                        "E1: Display name '%.60s' implies %.40s but From is %.80s",
+                        display_name, b->name, from_domain);
+                    break;
+                }
             }
         }
     }
@@ -495,8 +1310,12 @@ hlse_check_email_headers(const char *raw_headers) {
     if (from_domain[0] && is_free_email(from_domain)) {
         if (display_name[0]) {
             const char *corp_words[] = {
-                "ceo", "cfo", "director", "manager", "president",
+                "ceo", "cfo", "coo", "director", "manager", "president",
                 "department", "hr ", "legal", "invoice",
+                "accounts payable", "accounting", "finance", "payroll",
+                "treasurer", "vp ", "vice president",
+                "cto", "chro", "chief", "executive", "board member",
+                "chairman", "controller", "auditor", "compliance",
                 NULL
             };
             char lower_dn[256];
@@ -535,6 +1354,48 @@ hlse_check_email_headers(const char *raw_headers) {
             snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
                 "E4: DMARC failed — high confidence of spoofing");
         }
+        /* All three returning "none" means no authentication was performed
+         * at all — a legitimate corporate mailer always publishes at least
+         * SPF or DKIM records.                                             */
+        if (strstr(auth_val, "spf=none") && strstr(auth_val, "dkim=none") &&
+            strstr(auth_val, "dmarc=none")) {
+            v.score += 20;
+            if (v.n_reasons < HLSE_EMAIL_MAX_REASONS)
+                snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                    "E4: No SPF/DKIM/DMARC records — sender domain has no "
+                    "email authentication (uncommon for legitimate senders)");
+        }
+    }
+
+    /* E5: Received chain anomaly — too few hops (direct injection)
+     * or first Received: from address contains a suspicious IP pattern.
+     * Legitimate email services always add 2+ Received headers.
+     * Direct injection (only 1 hop) is a common phishing technique.   */
+    {
+        int hop_count = 0;
+        const char *rp = raw_headers;
+        /* Count Received: headers */
+        while (rp && *rp) {
+            if (strncasecmp(rp, "received:", 9) == 0) hop_count++;
+            rp = strchr(rp, '\n');
+            if (rp) rp++;
+        }
+        /* 0 Received headers = local injection or header stripping */
+        if (hop_count == 0 && from_domain[0]) {
+            v.score += 20;
+            if (v.n_reasons < HLSE_EMAIL_MAX_REASONS)
+                snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                    "E5: No Received headers — possible local injection or "
+                    "header stripping");
+        }
+        /* Single hop from a free email domain is suspicious */
+        if (hop_count == 1 && from_domain[0] && is_free_email(from_domain)) {
+            v.score += 15;
+            if (v.n_reasons < HLSE_EMAIL_MAX_REASONS)
+                snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                    "E5: Only 1 Received hop from free email domain (%.80s) "
+                    "— atypical of legitimate delivery", from_domain);
+        }
     }
 
     /* E6: Urgent subject + external/free sender (BEC compound) */
@@ -542,6 +1403,11 @@ hlse_check_email_headers(const char *raw_headers) {
         const char *urgency[] = {
             "urgent", "immediately", "wire", "transfer",
             "asap", "time sensitive", "action required",
+            "payment", "invoice", "overdue", "confirmation",
+            "verify", "suspended", "locked",
+            "final notice", "deadline", "expires today",
+            "account closed", "your account", "security alert",
+            "important update", "required action",
             NULL
         };
         char lower_subj[512];
@@ -595,6 +1461,18 @@ typedef enum {
     CRYPTO_XMR,           /* 4... or 8... (95 chars) */
     CRYPTO_SOL,           /* base58 (32-44 chars) */
     CRYPTO_USDT_TRC20,    /* T... (34 chars) */
+    CRYPTO_LTC_LEGACY,    /* L... or M... (34 chars, base58) */
+    CRYPTO_LTC_SEGWIT,    /* ltc1q... (43 chars, bech32) */
+    CRYPTO_DOGE,          /* D... (34 chars, base58) */
+    CRYPTO_XRP,           /* r... (25-34 chars, base58-like) */
+    CRYPTO_DASH,          /* X... (34 chars, base58) */
+    CRYPTO_XLM,           /* G... (56 chars, Stellar base32) */
+    CRYPTO_ADA,           /* addr1... or stake1... (58-110 chars, bech32) */
+    CRYPTO_BCH,           /* bitcoincash:q/p... (CashAddr) */
+    CRYPTO_COSMOS,        /* cosmos1... (bech32, 45 chars) */
+    CRYPTO_XTZ,           /* tz1/tz2/tz3/KT1... (36 chars, base58) */
+    CRYPTO_DOT,           /* 1... (47-48 chars, SS58 base58) */
+    CRYPTO_ALGO,          /* 58 chars, base32 [A-Z2-7] */
 } CryptoType;
 
 static int
@@ -654,6 +1532,158 @@ detect_crypto_type(const char *addr) {
         if (ok) return CRYPTO_USDT_TRC20;
     }
 
+    /* Litecoin SegWit: ltc1q + ~38 bech32 chars = 43 total */
+    if (len == 43 && strncmp(addr, "ltc1q", 5) == 0)
+        return CRYPTO_LTC_SEGWIT;
+
+    /* Litecoin Legacy: L or M + 33 base58 chars = 34 total */
+    if (len == 34 && (addr[0] == 'L' || addr[0] == 'M')) {
+        int i, ok = 1;
+        for (i = 1; i < 34; i++) {
+            if (!is_base58(addr[i])) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_LTC_LEGACY;
+    }
+
+    /* Dogecoin: D + 33 base58 chars = 34 total */
+    if (len == 34 && addr[0] == 'D') {
+        int i, ok = 1;
+        for (i = 1; i < 34; i++) {
+            if (!is_base58(addr[i])) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_DOGE;
+    }
+
+    /* DASH: X + 33 base58 chars = 34 total */
+    if (len == 34 && addr[0] == 'X') {
+        int i, ok = 1;
+        for (i = 1; i < 34; i++) {
+            if (!is_base58(addr[i])) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_DASH;
+    }
+
+    /* Stellar (XLM): G + 55 chars in Stellar base32 [A-Z2-7] = 56 total */
+    if (len == 56 && addr[0] == 'G') {
+        int i, ok = 1;
+        for (i = 1; i < 56; i++) {
+            if (!((addr[i] >= 'A' && addr[i] <= 'Z') ||
+                  (addr[i] >= '2' && addr[i] <= '7'))) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_XLM;
+    }
+
+    /* XRP: r + 24-33 base58-like chars = 25-34 total. Checked before SOL
+     * since XRP addresses always start with 'r' at this length range.    */
+    if (len >= 25 && len <= 34 && addr[0] == 'r') {
+        int i, ok = 1;
+        for (i = 1; i < (int)len; i++) {
+            if (!is_base58(addr[i])) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_XRP;
+    }
+
+    /* Cardano: addr1... (58-110 chars, bech32 lowercase + digits) or
+     * stake1... stake address (~55-65 chars). The 5-char "addr1" and
+     * 6-char "stake1" prefixes are uniquely Cardano — essentially zero FP. */
+    if (len >= 55 && len <= 110 &&
+        (strncmp(addr, "addr1", 5) == 0 || strncmp(addr, "stake1", 6) == 0)) {
+        int i, ok = 1;
+        int start = (addr[4] == '1') ? 5 : 6;
+        for (i = start; i < (int)len; i++) {
+            char c = addr[i];
+            if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))) {
+                ok = 0; break;
+            }
+        }
+        if (ok) return CRYPTO_ADA;
+    }
+
+    /* Bitcoin Cash CashAddr: "bitcoincash:" prefix + q/p + 41 base32 chars.
+     * The explicit prefix makes this zero-FP. (Prefix-less CashAddr also
+     * starts q/p but we require the prefix to avoid colliding with other
+     * base32 formats.)                                                     */
+    if (strncmp(addr, "bitcoincash:", 12) == 0) {
+        const char *body = addr + 12;
+        size_t blen = strlen(body);
+        if (blen >= 42 && (body[0] == 'q' || body[0] == 'p')) {
+            int i, ok = 1;
+            /* CashAddr uses Bech32 charset (lowercase, no 1/b/i/o) */
+            for (i = 1; i < (int)blen; i++) {
+                char c = body[i];
+                if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))) {
+                    ok = 0; break;
+                }
+            }
+            if (ok) return CRYPTO_BCH;
+        }
+    }
+
+    /* Cosmos Hub (ATOM): "cosmos1" + 38 bech32 chars = 45 total. The
+     * "cosmos1" prefix is uniquely the Cosmos Hub — near-zero FP.          */
+    if (len >= 44 && len <= 46 && strncmp(addr, "cosmos1", 7) == 0) {
+        int i, ok = 1;
+        for (i = 7; i < (int)len; i++) {
+            char c = addr[i];
+            if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))) {
+                ok = 0; break;
+            }
+        }
+        if (ok) return CRYPTO_COSMOS;
+    }
+
+    /* Tezos: tz1/tz2/tz3 (implicit) or KT1 (contract), 36 chars, base58.
+     * Checked before the Solana catch-all so it is labeled correctly.     */
+    if (len == 36 &&
+        ((addr[0] == 't' && addr[1] == 'z' &&
+          (addr[2] == '1' || addr[2] == '2' || addr[2] == '3')) ||
+         (addr[0] == 'K' && addr[1] == 'T' && addr[2] == '1'))) {
+        int i, ok = 1;
+        for (i = 3; i < (int)len; i++) {
+            if (!is_base58(addr[i])) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_XTZ;
+    }
+
+    /* Algorand: 58 chars, Algorand/RFC-4648 base32 [A-Z2-7], no prefix.
+     * Length 58 distinguishes it from Stellar (56, 'G'-prefixed).         */
+    if (len == 58) {
+        int i, ok = 1;
+        for (i = 0; i < 58; i++) {
+            char c = addr[i];
+            if (!((c >= 'A' && c <= 'Z') || (c >= '2' && c <= '7'))) {
+                ok = 0; break;
+            }
+        }
+        if (ok) return CRYPTO_ALGO;
+    }
+
+    /* Polkadot (SS58): starts with '1', 47-48 base58 chars. Above the
+     * Solana catch-all's 44-char ceiling, so it is otherwise unclassified.
+     * (BTC legacy also starts with '1' but is 26-35 chars — length
+     * disambiguates.)                                                      */
+    if (len >= 46 && len <= 48 && addr[0] == '1') {
+        int i, ok = 1;
+        for (i = 1; i < (int)len; i++) {
+            if (!is_base58(addr[i])) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_DOT;
+    }
+
+    /* Solana: base58, 32-44 chars, no fixed prefix. Checked LAST so the
+     * prefixed / fixed-length formats above (BTC 1/3, USDT T, ETH 0x, …)
+     * win; only an otherwise-unclassified base58 string of Solana length
+     * lands here. detect_crypto_type feeds only the clipboard-swap
+     * comparison and the (test-only) validator, never the URL/text path,
+     * so this cannot affect phishing/scam scoring.                       */
+    if (len >= 32 && len <= 44) {
+        int i, ok = 1;
+        for (i = 0; i < (int)len; i++) {
+            if (!is_base58(addr[i])) { ok = 0; break; }
+        }
+        if (ok) return CRYPTO_SOL;
+    }
+
     return CRYPTO_NONE;
 }
 
@@ -667,16 +1697,77 @@ crypto_type_name(CryptoType t) {
         case CRYPTO_XMR:         return "XMR (Monero)";
         case CRYPTO_SOL:         return "SOL (Solana)";
         case CRYPTO_USDT_TRC20:  return "USDT (TRC20)";
+        case CRYPTO_LTC_LEGACY:  return "LTC (Legacy)";
+        case CRYPTO_LTC_SEGWIT:  return "LTC (SegWit)";
+        case CRYPTO_DOGE:        return "DOGE (Dogecoin)";
+        case CRYPTO_XRP:         return "XRP (Ripple)";
+        case CRYPTO_DASH:        return "DASH";
+        case CRYPTO_XLM:         return "XLM (Stellar)";
+        case CRYPTO_ADA:         return "ADA (Cardano)";
+        case CRYPTO_BCH:         return "BCH (Bitcoin Cash)";
+        case CRYPTO_COSMOS:      return "ATOM (Cosmos)";
+        case CRYPTO_XTZ:         return "XTZ (Tezos)";
+        case CRYPTO_DOT:         return "DOT (Polkadot)";
+        case CRYPTO_ALGO:        return "ALGO (Algorand)";
         default:                 return "Unknown";
     }
+}
+
+/* Count matching leading / trailing characters between two strings.
+ * The EthClipper finding (arXiv 2108.14004): a real clipper does not pick
+ * a random replacement — it grinds one that shares the victim address's
+ * first and last characters, so a glance at "bc1q…wr5" doesn't reveal the
+ * swap. A shared tail of 4+ chars between two *different* addresses is
+ * astronomically unlikely by chance (random/checksum suffix), so it is a
+ * high-confidence "deliberate look-alike" signal.                       */
+static int
+common_prefix_len(const char *a, const char *b) {
+    int n = 0;
+    while (a[n] && a[n] == b[n]) n++;
+    return n;
+}
+static int
+common_suffix_len(const char *a, const char *b) {
+    size_t la = strlen(a), lb = strlen(b);
+    size_t n = 0;
+    while (n < la && n < lb && a[la - 1 - n] == b[lb - 1 - n]) n++;
+    return (int)n;
+}
+
+/* Copy `s` into `buf` with leading/trailing whitespace removed. A clipboard
+ * selection routinely carries surrounding spaces/newlines (selecting an
+ * address on a web page, a trailing line break); without trimming, a swapped
+ * address with surrounding whitespace fails format detection and the hijack
+ * is silently missed. */
+static const char *
+trim_ws_copy(const char *s, char *buf, size_t bufsz) {
+    size_t len;
+    while (*s == ' ' || *s == '\t' || *s == '\n' || *s == '\r' || *s == '\f'
+           || *s == '\v')
+        s++;
+    len = strlen(s);
+    while (len > 0 && (s[len-1] == ' ' || s[len-1] == '\t' ||
+                       s[len-1] == '\n' || s[len-1] == '\r' ||
+                       s[len-1] == '\f' || s[len-1] == '\v'))
+        len--;
+    if (len >= bufsz) len = bufsz - 1;
+    memcpy(buf, s, len);
+    buf[len] = '\0';
+    return buf;
 }
 
 CryptoSwapVerdict
 hlse_check_crypto_swap(const char *copied, const char *pasted) {
     CryptoSwapVerdict v;
+    char cbuf[256], pbuf[256];
     memset(&v, 0, sizeof(v));
 
     if (!copied || !pasted) return v;
+
+    /* Trim surrounding whitespace — a real copy/paste often includes it, and
+     * an untrimmed address fails fixed-length/prefix format detection. */
+    copied = trim_ws_copy(copied, cbuf, sizeof(cbuf));
+    pasted = trim_ws_copy(pasted, pbuf, sizeof(pbuf));
 
     CryptoType type_copied = detect_crypto_type(copied);
     CryptoType type_pasted = detect_crypto_type(pasted);
@@ -692,14 +1783,29 @@ hlse_check_crypto_swap(const char *copied, const char *pasted) {
     if (type_copied != CRYPTO_NONE && type_pasted != CRYPTO_NONE
         && type_copied == type_pasted)
     {
+        int pre = common_prefix_len(copied, pasted);
+        int suf = common_suffix_len(copied, pasted);
         v.score = 95; /* Near-certain clipboard hijack */
         v.is_swap = 1;
         snprintf(v.original, sizeof(v.original), "%s", copied);
         snprintf(v.swapped, sizeof(v.swapped), "%s", pasted);
-        snprintf(v.reason, sizeof(v.reason),
-            "CLIPBOARD HIJACK: %s address swapped. "
-            "Original: %.12s... Pasted: %.12s...",
-            crypto_type_name(type_copied), copied, pasted);
+        /* Deliberate "vanity" look-alike: the replacement was ground to
+         * match the original's ends. A shared tail of 4+ chars (beyond the
+         * format prefix every same-type address shares) is the clipper
+         * tell — escalate to ISOLATE.                                    */
+        if (suf >= 4) {
+            v.score = 100;
+            snprintf(v.reason, sizeof(v.reason),
+                "CLIPBOARD HIJACK (deliberate look-alike): %s address swapped; "
+                "replacement shares first %d and last %d chars. "
+                "Original: %.10s... Pasted: %.10s...",
+                crypto_type_name(type_copied), pre, suf, copied, pasted);
+        } else {
+            snprintf(v.reason, sizeof(v.reason),
+                "CLIPBOARD HIJACK: %s address swapped. "
+                "Original: %.12s... Pasted: %.12s...",
+                crypto_type_name(type_copied), copied, pasted);
+        }
         return v;
     }
 

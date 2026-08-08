@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "$id": "hlse_clipboard_verdict",
+  "title": "HLSE Clipboard Verdict",
+  "description": "JSON output of `hlse_core --json clipboard \"<copied>\" \"<pasted>\"` — detects cryptocurrency address hijacking by clipper malware.",
+  "type": "object",
+  "required": [
+    "kind",
+    "hlse_version",
+    "score",
+    "action",
+    "severity",
+    "is_swap",
+    "original",
+    "swapped",
+    "reason",
+    "remediation"
+  ],
+  "properties": {
+    "kind": {
+      "const": "clipboard",
+      "description": "Discriminator — always 'clipboard' for this schema."
+    },
+    "hlse_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "HLSE engine version that produced this verdict."
+    },
+    "score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "SAFE",
+        "LOG",
+        "ALERT",
+        "BLOCK",
+        "ISOLATE"
+      ]
+    },
+    "severity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "0=SAFE 1=LOG 2=ALERT 3=BLOCK 4=ISOLATE. Use severity >= 3 for actionable gates."
+    },
+    "is_swap": {
+      "type": "integer",
+      "enum": [0, 1],
+      "description": "1 if copied and pasted addresses are different; 0 if identical."
+    },
+    "original": {
+      "type": "string",
+      "description": "The address that was copied."
+    },
+    "swapped": {
+      "type": "string",
+      "description": "The address that was pasted (may differ if hijacked)."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Explanation of whether and why the addresses differ."
+    },
+    "remediation": {
+      "type": "string",
+      "description": "Guidance based on whether a swap was detected."
+    },
+    "blind_spot": {
+      "type": "string",
+      "description": "What HLSE cannot detect (score 0 only)."
+    },
+    "pattern": {
+      "type": "string",
+      "description": "Attack pattern label (score >= 60 only)."
+    },
+    "pattern_id": {
+      "type": "string",
+      "const": "HLSE-CLIP-HIJACK",
+      "description": "Stable SIEM/SOAR routing token (present iff pattern is present)."
+    },
+    "objective": {
+      "type": "string",
+      "description": "The attacker's likely objective (score >= 60 only)."
+    },
+    "verify": {
+      "type": "string",
+      "description": "Independent check before sending funds (score >= 60 only)."
+    },
+    "triage": {
+      "type": "string",
+      "description": "Immediate response if funds were already sent (score >= 60 only)."
+    },
+    "cascade_risk": {
+      "type": "string",
+      "description": "Other cryptocurrency at risk from clipper malware (score >= 60 only)."
+    }
+  },
+  "additionalProperties": false
+}

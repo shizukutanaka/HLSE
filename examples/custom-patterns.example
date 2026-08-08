@@ -1,0 +1,56 @@
+# Example --patterns file for hlse_core (roadmap P0-3 / P1-6).
+#
+# Use this to teach HLSE your organization's internal token formats AND
+# protect your own name/executives from email impersonation — both without
+# a rebuild:
+#
+#   hlse_core --patterns custom-patterns.example secret --stdin
+#   hlse_core --patterns custom-patterns.example scan .
+#   hlse_core --patterns custom-patterns.example email "<headers>"
+#
+# Format: one directive per line. '#' comments and blank lines are ignored.
+#
+# ── SECRET: custom credential patterns ──────────────────────────────────
+#   SECRET <prefix> <min_suffix> <charset> <score> <label...>
+#
+#   prefix      literal token prefix to search for (e.g. "ACME_KEY_")
+#   min_suffix  minimum number of <charset>-valid characters required
+#               immediately after the prefix
+#   charset     one of: alnum | alnum_dash | hex | alpha | digit
+#   score       0-100 risk score for this credential type
+#   label       free text (may contain spaces) — the credential type name
+#               shown in findings; runs to end of line
+#
+# Checked with the exact same matching and placeholder/example-value
+# suppression logic as HLSE's built-in secret-pattern table.
+#
+# ── BRAND: custom impersonation targets ──────────────────────────────────
+#   BRAND <name> <owned_domain1>[,<owned_domain2>...]
+#
+#   name           matched as a whole word (case-insensitive) against the
+#                  From display name of a scanned email
+#   owned_domain*  comma-separated list (up to 4) of domains that
+#                  legitimately send as this brand; no spaces
+#
+# If <name> appears in a From display name but the sending domain is not
+# one of the registered owned domains, it fires the same E1 "display-name
+# vs. From-domain mismatch" check that already protects major consumer
+# brands (Microsoft, PayPal, ...) — e.g. "Acme Corp Finance" emailing from
+# an attacker's domain instead of acmecorp.com.
+#
+# A malformed line (either directive) is skipped with a warning; the rest
+# of the file still loads. Neither directive affects --benchmark (F1 is
+# computed without --patterns).
+
+# ACME Corp internal API key: "ACME_KEY_" + 20+ alphanumeric chars
+SECRET ACME_KEY_ 20 alnum 85 ACME Internal API Key
+
+# ACME Corp internal service token: "acme-svc-" + 16+ hex chars
+SECRET acme-svc- 16 hex 70 ACME Service Token
+
+# ACME Corp legacy deploy token: "DEPLOY-" + 24+ chars (letters/digits/-/_)
+SECRET DEPLOY- 24 alnum_dash 75 ACME Legacy Deploy Token
+
+# Protect "ACME Corp" impersonation in BEC/CEO-fraud emails: only
+# acmecorp.com and acme-corp.com may legitimately claim this name
+BRAND acmecorp acmecorp.com,acme-corp.com

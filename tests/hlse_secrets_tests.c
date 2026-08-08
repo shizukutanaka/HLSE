@@ -46,6 +46,28 @@ static void test_placeholder_excluded(void) {
     else { char b[64]; snprintf(b,64,"false positive score=%d",v.score); FAIL(b); }
 }
 
+static void test_real_key_in_example_prose(void) {
+    /* Regression: a real key must NOT be suppressed just because the word
+     * "example"/"sample" appears in unrelated prose nearby. The placeholder
+     * context window is now tight (assignment prefix only). */
+    TEST("Secret: real key after 'Example' prose still detected");
+    SecretVerdict v = hlse_scan_secrets(
+        "Example configuration for production here: "
+        "AKIA2E3MWORQXYZ4567PQ\n");
+    if (v.score >= 80 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"missed: score=%d",v.score); FAIL(b); }
+}
+
+static void test_assignment_placeholder_still_excluded(void) {
+    /* Precision guard: a marker word in the assignment prefix DOES still
+     * suppress (example_api_key = …). */
+    TEST("Secret: 'example_api_key =' assignment still excluded");
+    SecretVerdict v = hlse_scan_secrets(
+        "example_api_key = AKIAIOSFODNN7EXAMPLE\n");
+    if (v.score == 0) PASS();
+    else { char b[64]; snprintf(b,64,"false positive score=%d",v.score); FAIL(b); }
+}
+
 static void test_github_pat(void) {
     TEST("Secret: GitHub PAT detected");
     SecretVerdict v = hlse_scan_secrets(
@@ -110,6 +132,130 @@ static void test_generic_hex(void) {
     else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
 }
 
+/* These fixtures assemble each token at RUNTIME from a split prefix + body so
+ * the contiguous credential string never appears literally in this source
+ * file. That keeps push-protection / secret scanners (incl. GitHub's, which
+ * shares the same vendor formats HLSE now detects) from flagging the test
+ * data, while hlse_scan_secrets() still sees the fully-joined token. */
+
+static void test_google_api_key(void) {
+    TEST("Secret: Google API key (AIza) detected");
+    char text[160];
+    snprintf(text, sizeof(text), "GOOGLE_API_KEY=%s%s\n",
+             "AIza", "SyB1cD3fGh4Jk5lMn6oPq7rStUv8wXyZ0aB");
+    SecretVerdict v = hlse_scan_secrets(text);
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_gitlab_pat(void) {
+    TEST("Secret: GitLab PAT (glpat-) detected");
+    char text[160];
+    snprintf(text, sizeof(text), "token = %s%s\n",
+             "glpat-", "Ab3dEf6hIj9lMn2pQr5t");
+    SecretVerdict v = hlse_scan_secrets(text);
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_npm_token(void) {
+    TEST("Secret: npm access token (npm_) detected");
+    char text[160];
+    snprintf(text, sizeof(text), "_authToken=%s%s\n",
+             "npm_", "0123456789abcdefghijklmnopqrstuvwxyz");
+    SecretVerdict v = hlse_scan_secrets(text);
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_llm_provider_keys(void) {
+    TEST("Secret: OpenAI + Anthropic keys detected");
+    char text[256];
+    snprintf(text, sizeof(text),
+             "OPENAI_API_KEY=%s%s\nANTHROPIC_API_KEY=%s%s\n",
+             "sk-proj-", "Ab3dEf6hIj9lMn2pQr5tUv8wXyZ0",
+             "sk-ant-", "api03-Ab3dEf6hIj9lMn2pQr5tUv");
+    SecretVerdict v = hlse_scan_secrets(text);
+    if (v.score >= 80 && v.n_findings >= 2) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_shopify_token(void) {
+    TEST("Secret: Shopify access token (shpat_) detected");
+    char text[160];
+    snprintf(text, sizeof(text), "SHOPIFY_TOKEN=%s%s\n",
+             "shpat_", "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6");
+    SecretVerdict v = hlse_scan_secrets(text);
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_aws_temp_key(void) {
+    TEST("Secret: AWS temporary (ASIA) key detected");
+    char text[160];
+    snprintf(text, sizeof(text), "aws_session_token: %s%s\n",
+             "ASIA", "2E3MWORQXYZ4567PQ");
+    SecretVerdict v = hlse_scan_secrets(text);
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_extended_provider_tokens(void) {
+    /* Second peer-parity batch (HuggingFace/PyPI/Postman/Square/Doppler/
+     * Grafana/Linear/NewRelic/Databricks). Tokens assembled at runtime from
+     * split prefix+body so the literal never appears in source. */
+    struct { const char *pfx; const char *body; } cases[] = {
+        { "hf_",                  "abcdefghijklmnopqrstuvwxyzabcdefgh" },
+        { "pypi-AgEIcHlwaS5vcmc", "Ab3dEf6hIj9lMn2pQr5tUv8w" },
+        { "PMAK-",                "0123456789abcdef01234567" },
+        { "sq0atp-",              "0123456789abcdefghijkl" },
+        { "dp.pt.",               "0123456789abcdefghijklmnopqrstuvwxyz0123456" },
+        { "glsa_",                "0123456789abcdefghijklmnopqrstuv" },
+        { "lin_api_",             "0123456789abcdefghijklmnopqrstuvwxyz0123" },
+        { "NRAK-",                "0123456789abcdefghijklmnopq" },
+        { "dapi",                 "0123456789abcdef0123456789abcdef" },
+    };
+    size_t i, n = sizeof(cases) / sizeof(cases[0]);
+    int fail_idx = -1;
+
+    TEST("Secret: 9 extended provider tokens all detected");
+    for (i = 0; i < n; i++) {
+        char text[256];
+        SecretVerdict v;
+        snprintf(text, sizeof(text), "API_TOKEN=%s%s\n",
+                 cases[i].pfx, cases[i].body);
+        v = hlse_scan_secrets(text);
+        if (v.score < 70 || v.n_findings < 1) { fail_idx = (int)i; break; }
+    }
+    if (fail_idx < 0) PASS();
+    else { char b[80]; snprintf(b,80,"undetected: prefix '%s'",
+           cases[fail_idx].pfx); FAIL(b); }
+}
+
+static void test_discord_webhook(void) {
+    TEST("Secret: Discord webhook URL detected");
+    char text[200];
+    /* Split so the contiguous webhook URL never appears literally in source. */
+    snprintf(text, sizeof(text), "WEBHOOK=https://%s%s/%s\n",
+             "discord.com/api/webhooks/", "012345678901234567",
+             "Ab3dEf6hIj9lMn2pQr5tUv8wXyZ0aB1c2D3e4F5g6H7i8J9k");
+    SecretVerdict v = hlse_scan_secrets(text);
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_new_patterns_no_fp(void) {
+    TEST("Secret: new-pattern prefixes in prose → no false positive");
+    /* Words/identifiers that share a prefix but are not credentials. */
+    SecretVerdict v = hlse_scan_secrets(
+        "The npm_config setting and the Asian market and a glpat "
+        "report. shppa means nothing here. The dapi endpoint and "
+        "glsa group and hf_ tag are all harmless words.\n");
+    if (v.score == 0 && v.n_findings == 0) PASS();
+    else { char b[80]; snprintf(b,80,"false positive score=%d n=%d",
+           v.score,v.n_findings); FAIL(b); }
+}
+
 /* ─── Email Forensics ─────────────────────────────────────────────────── */
 
 static void test_email_clean(void) {
@@ -131,6 +277,22 @@ static void test_email_display_name_spoof(void) {
         "Subject: Account verification needed\n");
     if (v.score >= 40) PASS();
     else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
+static void test_email_folded_header_spoof(void) {
+    /* RFC 5322 folded header: the address is on a continuation line. The
+     * parser must unfold it so the From domain is found and E1 fires fully,
+     * and no reason may carry a raw embedded newline. */
+    TEST("Email: folded From header spoof unfolded + detected");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: PayPal Support\n"
+        " <service@evil.ru>\n"
+        "Subject: verify your account\n");
+    int clean = 1, i;
+    for (i = 0; i < v.n_reasons; i++)
+        if (strchr(v.reasons[i], '\n')) clean = 0;
+    if (v.score >= 60 && clean) PASS();
+    else { char b[80]; snprintf(b,80,"score=%d clean=%d",v.score,clean); FAIL(b); }
 }
 
 static void test_email_reply_to_mismatch(void) {
@@ -163,6 +325,103 @@ static void test_email_ceo_gmail_urgent(void) {
     else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
 }
 
+static void test_email_no_received_headers(void) {
+    TEST("Email: 0 Received headers → E5 injection signal");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: attacker@gmail.com\n"
+        "Subject: Urgent payment needed\n"
+        "To: victim@company.com\n");
+    if (v.score >= 20) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
+static void test_email_single_hop_free(void) {
+    TEST("Email: 1 Received hop from free email → E5 signal");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: boss@gmail.com\n"
+        "Subject: Wire transfer request\n"
+        "Received: from mail.gmail.com ([10.0.0.1]) by mx.victim.com\n"
+        "To: finance@victim.com\n");
+    if (v.score >= 15) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
+static void test_email_e1_substring_fp(void) {
+    TEST("Email: 'First Choice' display name does NOT trigger E1 (irs FP)");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: \"First Choice\" <hello@fcrealty.com>\n"
+        "To: client@example.com\n"
+        "Subject: Welcome\n"
+        "Received: from mail.fcrealty.com (mail [203.0.113.5])\n"
+        "Received: from internal.fcrealty.com (internal [10.0.0.1])\n");
+    /* Must not fire E1 IRS impersonation on the 'irs' inside 'First'. */
+    {
+        int e1_fired = 0, i;
+        for (i = 0; i < v.n_reasons; i++)
+            if (strstr(v.reasons[i], "E1:")) e1_fired = 1;
+        if (!e1_fired) PASS();
+        else FAIL("E1 false-positive on 'First Choice'");
+    }
+}
+
+static void test_email_e1_ups_real(void) {
+    TEST("Email: 'UPS Delivery' from non-UPS domain → E1 fires");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: \"UPS Delivery\" <tracking@random-domain.xyz>\n"
+        "To: victim@example.com\n"
+        "Subject: Package\n"
+        "Received: from mail.random-domain.xyz (mail [203.0.113.5])\n"
+        "Received: from x.random-domain.xyz (x [10.0.0.1])\n");
+    if (v.score >= 40) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
+static void test_email_e1_brand_dept_no_fp(void) {
+    TEST("Email: 'Apple Support' from apple.com → no E1 FP (brand owns domain)");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: \"Apple Support\" <no-reply@apple.com>\n"
+        "To: user@example.com\n"
+        "Subject: Your receipt\n"
+        "Received: from mail.apple.com (mail [17.0.0.1])\n"
+        "Received: from smtp.apple.com (smtp [17.0.0.2])\n");
+    {
+        int e1_fired = 0, i;
+        for (i = 0; i < v.n_reasons; i++)
+            if (strstr(v.reasons[i], "E1:")) e1_fired = 1;
+        if (!e1_fired) PASS();
+        else FAIL("E1 false-positive: 'Apple Support' from apple.com");
+    }
+}
+
+static void test_email_e1_brand_dept_phish(void) {
+    TEST("Email: 'Apple Support' from apple-verify.ru → E1 fires");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: \"Apple Support\" <no-reply@apple-verify.ru>\n"
+        "To: victim@example.com\n"
+        "Subject: Verify Account\n"
+        "Received: from mail.apple-verify.ru (mail [185.0.0.1])\n"
+        "Received: from mta.apple-verify.ru (mta [185.0.0.2])\n");
+    if (v.score >= 40) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
+static void test_email_e1_alternate_domain_no_fp(void) {
+    TEST("Email: 'Apple' from icloud.com → no E1 FP (alternate trusted domain)");
+    EmailVerdict v = hlse_check_email_headers(
+        "From: \"Apple\" <no-reply@icloud.com>\n"
+        "To: user@example.com\n"
+        "Subject: Your iCloud receipt\n"
+        "Received: from mail.icloud.com (mail [17.58.0.1])\n"
+        "Received: from smtp.icloud.com (smtp [17.58.0.2])\n");
+    {
+        int e1_fired = 0, i;
+        for (i = 0; i < v.n_reasons; i++)
+            if (strstr(v.reasons[i], "E1:")) e1_fired = 1;
+        if (!e1_fired) PASS();
+        else FAIL("E1 false-positive: 'Apple' from icloud.com");
+    }
+}
+
 /* ─── Clipboard Crypto-Swap ───────────────────────────────────────────── */
 
 static void test_crypto_no_swap(void) {
@@ -192,6 +451,17 @@ static void test_crypto_eth_swap(void) {
     else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
 }
 
+static void test_crypto_vanity_swap(void) {
+    TEST("Clipboard: vanity look-alike swap (shared ends) → score 100");
+    /* Two distinct ETH addresses sharing first 6 and last 6 hex digits —
+     * the deliberate-clipper (EthClipper) signature. */
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "0xabcdef0000000000000000000000000000c0ffee",
+        "0xabcdef1111111111111111111111111111c0ffee");
+    if (v.score == 100 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
 static void test_crypto_non_crypto(void) {
     TEST("Clipboard: non-crypto text → score 0");
     CryptoSwapVerdict v = hlse_check_crypto_swap(
@@ -216,6 +486,23 @@ static void test_crypto_validate_eth(void) {
     else FAIL("not recognized");
 }
 
+static void test_crypto_validate_sol(void) {
+    TEST("Validate: Solana base58 (44) is recognized");
+    int t = hlse_validate_crypto_address(
+        "So11111111111111111111111111111111111111112");
+    if (t != 0) PASS();  /* CRYPTO_SOL */
+    else FAIL("SOL not recognized");
+}
+
+static void test_crypto_sol_swap(void) {
+    TEST("Clipboard: SOL address swapped → score 95");
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "So11111111111111111111111111111111111111112",
+        "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d",v.score); FAIL(b); }
+}
+
 static void test_crypto_validate_garbage(void) {
     TEST("Validate: garbage → CRYPTO_NONE");
     int t = hlse_validate_crypto_address("not-a-crypto-address");
@@ -223,7 +510,235 @@ static void test_crypto_validate_garbage(void) {
     else { char b[32]; snprintf(b,32,"type=%d",t); FAIL(b); }
 }
 
+static void test_crypto_ltc_swap(void) {
+    TEST("Clipboard: LTC address swapped → score 95");
+    /* Two structurally valid LTC Legacy addresses (L + 33 base58 chars) */
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "LaBcDeFgHiJkMnPqRsTuVwXyZ12345678",
+        "LzYxWvUtSrQpNmKjHgFeDcBa98765432");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+static void test_crypto_doge_swap(void) {
+    TEST("Clipboard: DOGE address swapped → score 95");
+    /* Two structurally valid DOGE addresses (D + 33 base58 chars) */
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "DaBcDeFgHiJkMnPqRsTuVwXyZ12345678",
+        "DzYxWvUtSrQpNmKjHgFeDcBa98765432");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+static void test_crypto_xrp_swap(void) {
+    TEST("Clipboard: XRP address swapped → score 95");
+    /* Two structurally valid XRP addresses (r + base58-like, 25-34 chars) */
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "raBcDeFgHiJkMnPqRsTuVwXyZ12345",
+        "rzYxWvUtSrQpNmKjHgFeDcBa98765");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+static void test_crypto_validate_ltc(void) {
+    TEST("Validate: LTC Legacy address recognized");
+    int t = hlse_validate_crypto_address("LaBcDeFgHiJkMnPqRsTuVwXyZ12345678");
+    if (t != 0) PASS();
+    else FAIL("LTC not recognized");
+}
+
+static void test_crypto_validate_doge(void) {
+    TEST("Validate: DOGE address recognized");
+    int t = hlse_validate_crypto_address("DaBcDeFgHiJkMnPqRsTuVwXyZ12345678");
+    if (t != 0) PASS();
+    else FAIL("DOGE not recognized");
+}
+
+static void test_crypto_validate_xrp(void) {
+    TEST("Validate: XRP address recognized");
+    int t = hlse_validate_crypto_address("raBcDeFgHiJkMnPqRsTuVwXyZ12345");
+    if (t != 0) PASS();
+    else FAIL("XRP not recognized");
+}
+
+static void test_crypto_swap_whitespace(void) {
+    /* A real copy/paste carries surrounding whitespace; the swap must still
+     * be detected after trimming, and identical addresses that differ only in
+     * surrounding whitespace must NOT be reported as a swap. */
+    TEST("Clipboard: swap detected despite surrounding whitespace");
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "  1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf  ",
+        "1BoatSLRHtKNngkdXEeobR76b53LETtpyT");
+    CryptoSwapVerdict same = hlse_check_crypto_swap(
+        "  1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf  ",
+        "1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf");
+    if (v.score >= 90 && v.is_swap == 1 && same.score == 0) PASS();
+    else { char b[80]; snprintf(b,80,"swap=%d/%d same=%d",
+                                v.score,v.is_swap,same.score); FAIL(b); }
+}
+
+static void test_crypto_ada_swap(void) {
+    TEST("Clipboard: ADA (addr1) address swapped → score 95");
+    /* Two structurally valid Cardano payment addresses (addr1 + 54 bech32 chars) */
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "addr1qpzry9x8gf2tvdw0s3jn54khce6mua7lmqqq0xvwyz3rp8s9x2yy7p",
+        "addr1vqpzry9x8gf2tvdw0s3jn54khce6mua7lmqqq0xvwyz3rp8s9x2yy");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+static void test_crypto_validate_ada(void) {
+    TEST("Validate: Cardano addr1 address recognized");
+    int t = hlse_validate_crypto_address(
+        "addr1qpzry9x8gf2tvdw0s3jn54khce6mua7lmqqq0xvwyz3rp8s9x2yy7p");
+    if (t != 0) PASS();
+    else FAIL("ADA not recognized");
+}
+
+static void test_crypto_bch_swap(void) {
+    TEST("Clipboard: BCH (bitcoincash:) address swapped → score 95");
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a",
+        "bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+static void test_crypto_cosmos_swap(void) {
+    TEST("Clipboard: Cosmos (cosmos1) address swapped → score 95");
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "cosmos1xy4kvxx3v8tu2yappro73r5n0xkmct0qfvqvxdz",
+        "cosmos1pjmngrwcsatsuyk8m3qrh2x97ng2k89r4d2sds");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+static void test_crypto_xtz_swap(void) {
+    TEST("Clipboard: Tezos (tz1) address swapped → score 95");
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb",
+        "tz1Xek2VykgGYUxXhwN5jpe8jjUWQDdQrYzz");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+static void test_crypto_dot_swap(void) {
+    TEST("Clipboard: Polkadot (SS58) address swapped → score 95");
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5",
+        "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNgVxR3");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+static void test_crypto_algo_swap(void) {
+    TEST("Clipboard: Algorand (base32) address swapped → score 95");
+    CryptoSwapVerdict v = hlse_check_crypto_swap(
+        "ZW3ISEHZUHPO7OZGMKLKIIMKVICOUDRCERI454I3DB2BH52HGLSO67W754",
+        "MO2H6ZU47Q7NF2I7QLKMGFM6CKLSV3OOXLG37QHIFWQ6PT5LFLM3RYRDLU");
+    if (v.score >= 90 && v.is_swap == 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d swap=%d",v.score,v.is_swap); FAIL(b); }
+}
+
+/* ─── Cloud Credential Checks ─────────────────────────────────────────── */
+
+static void test_gcp_service_account(void) {
+    TEST("Secret: GCP service account JSON detected");
+    SecretVerdict v = hlse_scan_secrets(
+        "{\"type\": \"service_account\", "
+        "\"project_id\": \"myproject\", "
+        "\"private_key\": \"-----BEGIN RSA PRIVATE KEY-----\\nMIIEpAIBAAK...\", "
+        "\"client_email\": \"sa@myproject.iam.gserviceaccount.com\"}");
+    if (v.score >= 85 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_azure_sas_token(void) {
+    TEST("Secret: Azure SAS token detected");
+    SecretVerdict v = hlse_scan_secrets(
+        "BlobEndpoint=https://myaccount.blob.core.windows.net;"
+        "SharedAccessSignature=sv=2021-06-08&ss=b&srt=sco&sp=rwdlacupiytfx"
+        "&se=2024-01-01T00:00:00Z&st=2023-01-01T00:00:00Z&sig=XXXXXXXXXXX");
+    if (v.score >= 80 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_render_api_key(void) {
+    TEST("Secret: Render API key detected");
+    SecretVerdict v = hlse_scan_secrets(
+        "RENDER_API_KEY=rnd_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0");
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_fly_token(void) {
+    TEST("Secret: Fly.io API token detected");
+    SecretVerdict v = hlse_scan_secrets(
+        "Authorization: Bearer FlyV1fm2lJPECAAAAAAAAAAAAACDsometoken1234abcd");
+    if (v.score >= 75 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_sendgrid_key(void) {
+    TEST("Secret: SendGrid API key detected");
+    SecretVerdict v = hlse_scan_secrets(
+        "SENDGRID_API_KEY=SG.xKbGz8qT3mNpR7vW2yJ4sA.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmno");
+    if (v.score >= 75 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
+static void test_vault_batch_token(void) {
+    TEST("Secret: HashiCorp Vault batch token detected");
+    SecretVerdict v = hlse_scan_secrets(
+        "VAULT_TOKEN=hvb.AAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMxFake");
+    if (v.score >= 70 && v.n_findings >= 1) PASS();
+    else { char b[64]; snprintf(b,64,"score=%d n=%d",v.score,v.n_findings); FAIL(b); }
+}
+
 /* ─── Main ────────────────────────────────────────────────────────────── */
+
+static void test_2026_provider_tokens(void) {
+    /* 2026 GitHub secret-scanning batch: Supabase/Figma/PostHog/LangSmith.
+     * Prefixes are vendor-reserved (~zero FP). Assembled at runtime from
+     * split prefix+body so no literal token appears in source. */
+    struct { const char *pfx; const char *body; } cases[] = {
+        { "sbp_",      "0123456789abcdef0123456789abcdef01234567" },
+        { "sb_secret_","0123456789abcdefghijklmnopqrst" },
+        { "figd_",     "ABCdef1234567890-ABCdef1234567890xyzXYZ01" },
+        { "phx_",      "0123456789abcdefABCDEF0123456789abcdefABCD" },
+        { "lsv2_pt_",  "1234567890abcdef1234567890abcdef_12345678" },
+        { "lsv2_sk_",  "1234567890abcdef1234567890abcdef_12345678" },
+    };
+    size_t i, n = sizeof(cases) / sizeof(cases[0]);
+    int fail_idx = -1;
+
+    TEST("Secret: 6 x 2026 provider tokens (Supabase/Figma/PostHog/LangSmith)");
+    for (i = 0; i < n; i++) {
+        char text[256];
+        SecretVerdict v;
+        snprintf(text, sizeof(text), "API_TOKEN=%s%s\n",
+                 cases[i].pfx, cases[i].body);
+        v = hlse_scan_secrets(text);
+        if (v.score < 70 || v.n_findings < 1) { fail_idx = (int)i; break; }
+    }
+    if (fail_idx < 0) PASS();
+    else { char b[80]; snprintf(b,80,"undetected: prefix '%s'",
+           cases[fail_idx].pfx); FAIL(b); }
+}
+
+static void test_2026_token_placeholder_excluded(void) {
+    /* A 2026-format prefix on an obvious placeholder body must NOT fire. */
+    /* Prefix split from body so no contiguous token literal sits in source
+     * (avoids secret-scanner false positives on the test fixture itself). */
+    char text[128];
+    SecretVerdict v;
+    snprintf(text, sizeof(text), "SUPABASE_KEY=%s%s\n",
+             "sbp_", "your_supabase_token_here_xxxxxxxxxxxxxxxx");
+    v = hlse_scan_secrets(text);
+    TEST("Secret: 2026 prefix on placeholder body excluded");
+    if (v.score == 0) PASS();
+    else { char b[64]; snprintf(b,64,"false positive score=%d",v.score); FAIL(b); }
+}
 
 int main(void) {
     printf("HLSE Secrets / Email / Clipboard — Tests\n");
@@ -233,6 +748,8 @@ int main(void) {
     test_aws_key();
     test_aws_example_key_excluded();
     test_placeholder_excluded();
+    test_real_key_in_example_prose();
+    test_assignment_placeholder_still_excluded();
     test_github_pat();
     test_stripe_live();
     test_ssh_private_key();
@@ -240,22 +757,66 @@ int main(void) {
     test_clean_code();
     test_slack_token();
     test_generic_hex();
+    test_google_api_key();
+    test_gitlab_pat();
+    test_npm_token();
+    test_llm_provider_keys();
+    test_shopify_token();
+    test_aws_temp_key();
+    test_extended_provider_tokens();
+    test_2026_provider_tokens();
+    test_2026_token_placeholder_excluded();
+    test_discord_webhook();
+    test_new_patterns_no_fp();
 
     printf("\nEmail Forensics:\n");
     test_email_clean();
     test_email_display_name_spoof();
+    test_email_folded_header_spoof();
     test_email_reply_to_mismatch();
     test_email_spf_fail();
     test_email_ceo_gmail_urgent();
+    test_email_no_received_headers();
+    test_email_single_hop_free();
+    test_email_e1_substring_fp();
+    test_email_e1_ups_real();
+    test_email_e1_brand_dept_no_fp();
+    test_email_e1_brand_dept_phish();
+    test_email_e1_alternate_domain_no_fp();
 
     printf("\nClipboard Crypto-Swap:\n");
     test_crypto_no_swap();
     test_crypto_btc_swap();
     test_crypto_eth_swap();
+    test_crypto_vanity_swap();
     test_crypto_non_crypto();
     test_crypto_validate_btc();
     test_crypto_validate_eth();
+    test_crypto_validate_sol();
+    test_crypto_sol_swap();
+    test_crypto_ltc_swap();
+    test_crypto_doge_swap();
+    test_crypto_xrp_swap();
+    test_crypto_validate_ltc();
+    test_crypto_validate_doge();
+    test_crypto_validate_xrp();
+    test_crypto_swap_whitespace();
+    test_crypto_ada_swap();
+    test_crypto_validate_ada();
+    test_crypto_bch_swap();
+    test_crypto_cosmos_swap();
+    test_crypto_xtz_swap();
+    test_crypto_dot_swap();
+    test_crypto_algo_swap();
     test_crypto_validate_garbage();
+
+    printf("\nCloud credential checks:\n");
+    test_gcp_service_account();
+    test_azure_sas_token();
+    test_render_api_key();
+    test_fly_token();
+    test_sendgrid_key();
+    test_vault_batch_token();
 
     printf("\n══════════════════════════════════════════\n");
     printf("Secrets tests: %d/%d passed", passed, total);

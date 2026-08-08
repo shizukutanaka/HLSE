@@ -16,11 +16,25 @@ tests/util_tests
 tests/corpus_ext
 tests/fuzz
 tests/fuzz_asan
+tests/fuzz_secrets
+tests/fuzz_secrets_asan
+tests/fuzz_supply
+tests/fuzz_supply_asan
+tests/fuzz_file
+tests/fuzz_file_asan
+tests/fuzz_url
+tests/fuzz_url_asan
+tests/fuzz_server
+tests/fuzz_server_asan
 
 # Coverage
 *.gcov
 *.gcda
 *.gcno
+
+# Python (examples/python_integration.py byte-cache)
+__pycache__/
+*.pyc
 
 # OS
 .DS_Store
@@ -32,3 +46,15 @@ Thumbs.db
 *~
 .vscode/
 .idea/
+
+# API server binary
+hlse-server
+tests/server_tests
+
+# Release artifacts / prebuilt binaries (never commit these — see the
+# "files (1).zip" incident: a stale v0.5.0 build artifact was committed
+# twice because nothing blocked it)
+*.zip
+*.tar.gz
+*.tar.bz2
+*.dSYM/

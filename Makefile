@@ -44,14 +44,17 @@ BINDIR  := $(DESTDIR)$(PREFIX)/bin
 LIBDIR  := $(DESTDIR)$(PREFIX)/lib
 INCDIR  := $(DESTDIR)$(PREFIX)/include/hlse
 MANDIR  := $(DESTDIR)$(PREFIX)/share/man/man1
+DATADIR := $(DESTDIR)$(PREFIX)/share/hlse
 
 # Source files
-CORE_SRC  := hlse_core.c hlse_text.c hlse_protect.c hlse_secrets.c hlse_supply.c hlse_file.c hlse_audit.c hlse_util.c
+CORE_SRC  := hlse_core.c hlse_text.c hlse_protect.c hlse_secrets.c hlse_supply.c hlse_file.c hlse_audit.c hlse_util.c hlse_alert.c
 TEST_SRC  := tests/hlse_property_tests.c
 
 # Outputs
 BINARY    := hlse_core
 SHARED    := libhlse.so
+SERVER_BIN := hlse-server
+SERVER_TEST := tests/server_tests
 PROP_BIN  := tests/property_tests
 PROT_BIN  := tests/protect_tests
 SECR_BIN  := tests/secrets_tests
@@ -62,11 +65,22 @@ UTIL_BIN  := tests/util_tests
 FUZZ_BIN  := tests/fuzz
 FUZZ_ASAN := tests/fuzz_asan
 
+FUZZ_SECRETS      := tests/fuzz_secrets
+FUZZ_SECRETS_ASAN := tests/fuzz_secrets_asan
+FUZZ_SUPPLY       := tests/fuzz_supply
+FUZZ_SUPPLY_ASAN  := tests/fuzz_supply_asan
+FUZZ_FILE         := tests/fuzz_file
+FUZZ_FILE_ASAN    := tests/fuzz_file_asan
+FUZZ_URL          := tests/fuzz_url
+FUZZ_URL_ASAN     := tests/fuzz_url_asan
+FUZZ_SERVER       := tests/fuzz_server
+FUZZ_SERVER_ASAN  := tests/fuzz_server_asan
+
 # ─── primary targets ─────────────────────────────────────────────────────
 
-.PHONY: all cli lib static test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test
+.PHONY: all cli lib static server server-check test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test
 
-all: $(BINARY) $(SHARED)
+all: $(BINARY) $(SHARED) $(SERVER_BIN)
 
 cli: $(BINARY)         ## build CLI binary only
 lib: $(SHARED)         ## build shared library only
@@ -79,6 +93,15 @@ $(SHARED): $(CORE_SRC) hlse_text.h hlse_core.h hlse_protect.h
 	$(CC) $(CFLAGS) -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -fPIC -shared \
 		-o $@ $(CORE_SRC) -I. -lm
 	@printf '  %-20s %s\n' "CC (shared)" "$@"
+
+server: $(SERVER_BIN)   ## build the HTTP API + dashboard server
+
+server-check: $(SERVER_BIN)   ## end-to-end smoke test of the running server
+	@bash tests/server_integration.sh ./$(SERVER_BIN) ./web
+
+$(SERVER_BIN): hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h hlse_file.h
+	$(CC) $(CFLAGS) $(PIE_CFLAGS) -pthread -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -o $@ hlse_server.c $(CORE_SRC) $(PIE_LDFLAGS) -I. -lm -lpthread
+	@printf '  %-20s %s\n' "CC" "$@"
 
 $(PROP_BIN): $(TEST_SRC) hlse_text.c hlse_text.h
 	@mkdir -p tests
@@ -100,9 +123,9 @@ $(SUPP_BIN): tests/hlse_supply_tests.c hlse_supply.c hlse_supply.h
 	$(CC) $(CFLAGS) -o $@ tests/hlse_supply_tests.c hlse_supply.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
-$(FAUD_BIN): tests/hlse_file_audit_tests.c hlse_file.c hlse_file.h hlse_audit.c hlse_audit.h
+$(FAUD_BIN): tests/hlse_file_audit_tests.c hlse_file.c hlse_file.h hlse_audit.c hlse_audit.h hlse_util.c hlse_util.h
 	@mkdir -p tests
-	$(CC) $(CFLAGS) -D_GNU_SOURCE -o $@ tests/hlse_file_audit_tests.c hlse_file.c hlse_audit.c -I.
+	$(CC) $(CFLAGS) -D_GNU_SOURCE -o $@ tests/hlse_file_audit_tests.c hlse_file.c hlse_audit.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(UTIL_BIN): tests/hlse_util_tests.c hlse_util.c hlse_util.h
@@ -120,6 +143,75 @@ $(FUZZ_ASAN): tests/hlse_fuzz.c hlse_text.c hlse_text.h
 	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
 		-fsanitize=address,undefined \
 		-o $@ tests/hlse_fuzz.c hlse_text.c -I.
+	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
+
+$(FUZZ_SECRETS): tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_secrets.h
+	@mkdir -p tests
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
+		-o $@ tests/hlse_secrets_fuzz.c hlse_secrets.c -I.
+	@printf '  %-20s %s\n' "CC" "$@"
+
+$(FUZZ_SECRETS_ASAN): tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_secrets.h
+	@mkdir -p tests
+	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
+		-fsanitize=address,undefined \
+		-o $@ tests/hlse_secrets_fuzz.c hlse_secrets.c -I.
+	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
+
+$(FUZZ_SUPPLY): tests/hlse_supply_fuzz.c hlse_supply.c hlse_supply.h hlse_util.c
+	@mkdir -p tests
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
+		-o $@ tests/hlse_supply_fuzz.c hlse_supply.c hlse_util.c -I. -lm
+	@printf '  %-20s %s\n' "CC" "$@"
+
+$(FUZZ_SUPPLY_ASAN): tests/hlse_supply_fuzz.c hlse_supply.c hlse_supply.h hlse_util.c
+	@mkdir -p tests
+	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
+		-fsanitize=address,undefined \
+		-o $@ tests/hlse_supply_fuzz.c hlse_supply.c hlse_util.c -I. -lm
+	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
+
+$(FUZZ_FILE): tests/hlse_file_fuzz.c hlse_file.c hlse_file.h
+	@mkdir -p tests
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE \
+		-o $@ tests/hlse_file_fuzz.c hlse_file.c -I.
+	@printf '  %-20s %s\n' "CC" "$@"
+
+$(FUZZ_FILE_ASAN): tests/hlse_file_fuzz.c hlse_file.c hlse_file.h
+	@mkdir -p tests
+	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE \
+		-fsanitize=address,undefined \
+		-o $@ tests/hlse_file_fuzz.c hlse_file.c -I.
+	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
+
+$(FUZZ_URL): tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c hlse_core.h
+	@mkdir -p tests
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L -DHLSE_CORE_AS_LIB \
+		-o $@ tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c -I. -lm
+	@printf '  %-20s %s\n' "CC" "$@"
+
+$(FUZZ_URL_ASAN): tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c hlse_core.h
+	@mkdir -p tests
+	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L -DHLSE_CORE_AS_LIB \
+		-fsanitize=address,undefined \
+		-o $@ tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c -I. -lm
+	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
+
+$(FUZZ_SERVER): tests/hlse_server_fuzz.c hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h
+	@mkdir -p tests
+	$(CC) -O0 -g -Wall -Wextra -Wno-unused-function -Wno-format-truncation \
+		-D_POSIX_C_SOURCE=200809L \
+		-D_GNU_SOURCE -DHLSE_CORE_AS_LIB -DHLSE_SERVER_NO_MAIN \
+		-o $@ tests/hlse_server_fuzz.c $(CORE_SRC) -I. -lm -lpthread
+	@printf '  %-20s %s\n' "CC" "$@"
+
+$(FUZZ_SERVER_ASAN): tests/hlse_server_fuzz.c hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h
+	@mkdir -p tests
+	$(CC) -O1 -g -Wall -Wextra -Wno-unused-function -Wno-format-truncation \
+		-Wno-stringop-overread -D_POSIX_C_SOURCE=200809L \
+		-D_GNU_SOURCE -DHLSE_CORE_AS_LIB -DHLSE_SERVER_NO_MAIN \
+		-fsanitize=address,undefined \
+		-o $@ tests/hlse_server_fuzz.c $(CORE_SRC) -I. -lm -lpthread
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
 # Extended (out-of-distribution) corpus
@@ -235,11 +327,33 @@ coverage:
 
 # ─── fuzz ────────────────────────────────────────────────────────────────
 
-fuzz: $(FUZZ_BIN)
+fuzz: $(FUZZ_BIN) $(FUZZ_SECRETS) $(FUZZ_SUPPLY) $(FUZZ_FILE) $(FUZZ_URL) $(FUZZ_SERVER)
+	@echo "--- text fuzz ---"
 	./$(FUZZ_BIN) 100000 1
+	@echo "--- secrets fuzz ---"
+	./$(FUZZ_SECRETS) 100000 1
+	@echo "--- supply-chain fuzz ---"
+	./$(FUZZ_SUPPLY) 100000 1
+	@echo "--- file-masquerade fuzz ---"
+	./$(FUZZ_FILE) 100000 1
+	@echo "--- URL fuzz ---"
+	./$(FUZZ_URL) 100000 1
+	@echo "--- server JSON parser fuzz ---"
+	./$(FUZZ_SERVER) 100000 1
 
-fuzz-asan: $(FUZZ_ASAN)
+fuzz-asan: $(FUZZ_ASAN) $(FUZZ_SECRETS_ASAN) $(FUZZ_SUPPLY_ASAN) $(FUZZ_FILE_ASAN) $(FUZZ_URL_ASAN) $(FUZZ_SERVER_ASAN)
+	@echo "--- text fuzz (ASan) ---"
 	./$(FUZZ_ASAN) 10000 1
+	@echo "--- secrets fuzz (ASan) ---"
+	./$(FUZZ_SECRETS_ASAN) 10000 1
+	@echo "--- supply-chain fuzz (ASan) ---"
+	./$(FUZZ_SUPPLY_ASAN) 10000 1
+	@echo "--- file-masquerade fuzz (ASan) ---"
+	./$(FUZZ_FILE_ASAN) 10000 1
+	@echo "--- URL fuzz (ASan) ---"
+	./$(FUZZ_URL_ASAN) 10000 1
+	@echo "--- server JSON parser fuzz (ASan) ---"
+	./$(FUZZ_SERVER_ASAN) 10000 1
 
 # ─── quality gates (used by CI) ──────────────────────────────────────────
 
@@ -258,7 +372,20 @@ check-warnings:
 		fi; \
 	done; \
 	if [ "$$fail" -ne 0 ]; then echo "STRICT WARNINGS FOUND"; exit 1; fi; \
-	echo "All modules clean under strict flags."
+	echo "All modules clean under strict flags (CLI build)."
+	@echo "Checking strict warnings in library build (-DHLSE_CORE_AS_LIB)..."
+	@fail=0; for f in $(CORE_SRC); do \
+		w=$$($(CC) $(CFLAGS_STRICT) -DHLSE_CORE_AS_LIB -fPIC -c $$f -I. -o /dev/null 2>&1 | grep -c "warning:"); \
+		if [ "$$w" -ne 0 ]; then \
+			echo "  FAIL: $$f has $$w warning(s) in library mode"; \
+			$(CC) $(CFLAGS_STRICT) -DHLSE_CORE_AS_LIB -fPIC -c $$f -I. -o /dev/null 2>&1 | grep "warning:"; \
+			fail=1; \
+		else \
+			echo "  OK:   $$f"; \
+		fi; \
+	done; \
+	if [ "$$fail" -ne 0 ]; then echo "STRICT WARNINGS FOUND (library build)"; exit 1; fi; \
+	echo "All modules clean under strict flags (CLI + library builds)."
 
 # Build the CLI + tests with ASan/UBSan and run the full self-test.
 # Catches memory errors, UB, and leaks that normal builds miss.
@@ -276,12 +403,20 @@ asan-test:
 	@mkdir -p /tmp/hlse_asan_scan && echo "AKIAIOSFODNN7EXAMPLE" > /tmp/hlse_asan_scan/k.env && \
 		./hlse_core_asan scan /tmp/hlse_asan_scan > /dev/null 2>&1 || true; \
 		rm -rf /tmp/hlse_asan_scan
+	@printf '# baseline\n0123456789abcdef ENV_SECRET k.env\n' > /tmp/hlse_asan_base.txt && \
+		mkdir -p /tmp/hlse_asan_bscan && echo "AKIAIOSFODNN7EXAMPLE" > /tmp/hlse_asan_bscan/k.env && \
+		./hlse_core_asan --baseline /tmp/hlse_asan_base.txt scan /tmp/hlse_asan_bscan > /dev/null 2>&1 || true; \
+		rm -rf /tmp/hlse_asan_bscan /tmp/hlse_asan_base.txt
+	@mkdir -p /tmp/hlse_asan_esp && \
+		printf 'MZ your files have been encrypted' > /tmp/hlse_asan_esp/boot.efi && \
+		./hlse_core_asan esp /tmp/hlse_asan_esp > /dev/null 2>&1 || true; \
+		rm -rf /tmp/hlse_asan_esp
 	@rm -f hlse_core_asan
 	@echo "ASan/UBSan: clean."
 
 # ─── test ────────────────────────────────────────────────────────────────
 
-test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAUD_BIN) $(UTIL_BIN)
+test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAUD_BIN) $(UTIL_BIN) $(SERVER_TEST)
 	@echo ""
 	@echo "═══════════════════════════════════════"
 	@echo " HLSE Core — Test Suite"
@@ -308,6 +443,9 @@ test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAU
 	@echo "── Shared utility tests ────────────────"
 	@./$(UTIL_BIN)
 	@echo ""
+	@echo "── HTTP server + JSON parser tests ─────"
+	@./$(SERVER_TEST)
+	@echo ""
 	@echo "── In-distribution corpus benchmark ────"
 	@./$(BINARY) --benchmark
 	@echo ""
@@ -320,6 +458,11 @@ test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAU
 	@echo "═══════════════════════════════════════"
 	@echo " All test suites passed"
 	@echo "═══════════════════════════════════════"
+
+$(SERVER_TEST): tests/hlse_server_tests.c hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h hlse_file.h
+	@mkdir -p tests
+	$(CC) $(CFLAGS) -Wno-unused-function -pthread -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -DHLSE_SERVER_NO_MAIN -o $@ tests/hlse_server_tests.c $(CORE_SRC) -I. -lm -lpthread
+	@printf '  %-20s %s\n' "CC" "$@"
 
 bench: $(BINARY)
 	./$(BINARY) --benchmark
@@ -336,27 +479,43 @@ hlse_core_static: $(CORE_SRC) hlse_text.h hlse_core.h hlse_protect.h
 # ─── install / uninstall ─────────────────────────────────────────────────
 
 install: $(BINARY) $(SHARED)
-	@mkdir -p $(BINDIR) $(LIBDIR) $(INCDIR) $(MANDIR)
+	@mkdir -p $(BINDIR) $(LIBDIR) $(INCDIR) $(MANDIR) $(DATADIR)/web
 	cp $(BINARY) $(BINDIR)/hlse_core
 	cp $(SHARED) $(LIBDIR)/libhlse.so
 	cp hlse_core.h hlse_text.h hlse_protect.h hlse_secrets.h \
 	   hlse_supply.h hlse_file.h hlse_audit.h $(INCDIR)/
 	cp hlse.1 $(MANDIR)/hlse.1
+	cp hlse-server.1 $(MANDIR)/hlse-server.1
+	cp web/index.html web/app.js web/style.css $(DATADIR)/web/
+	$(CC) $(CFLAGS) $(PIE_CFLAGS) -pthread -D_GNU_SOURCE -DHLSE_CORE_AS_LIB \
+		-DHLSE_DEFAULT_WEBROOT='"$(PREFIX)/share/hlse/web"' \
+		-o $(BINDIR)/hlse-server hlse_server.c $(CORE_SRC) $(PIE_LDFLAGS) -I. -lm -lpthread
 	@echo "Installed:"
 	@echo "  $(BINDIR)/hlse_core"
+	@echo "  $(BINDIR)/hlse-server  (webroot defaults to $(PREFIX)/share/hlse/web)"
 	@echo "  $(LIBDIR)/libhlse.so"
 	@echo "  $(INCDIR)/*.h"
 	@echo "  $(MANDIR)/hlse.1"
+	@echo "  $(MANDIR)/hlse-server.1"
+	@echo "  $(DATADIR)/web/*"
 	@echo ""
 	@echo "Compile against: gcc -I$(PREFIX)/include -L$(PREFIX)/lib -lhlse -lm"
 
 uninstall:
-	rm -f $(BINDIR)/hlse_core $(LIBDIR)/libhlse.so $(MANDIR)/hlse.1
-	rm -rf $(INCDIR)
+	rm -f $(BINDIR)/hlse_core $(BINDIR)/hlse-server $(LIBDIR)/libhlse.so \
+		$(MANDIR)/hlse.1 $(MANDIR)/hlse-server.1
+	rm -rf $(INCDIR) $(DATADIR)
 
 # ─── clean ───────────────────────────────────────────────────────────────
 
 clean:
-	rm -f $(BINARY) $(SHARED) $(PROP_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAUD_BIN) $(UTIL_BIN) $(FUZZ_BIN) $(FUZZ_ASAN) $(EXT_BIN)
+	rm -f $(BINARY) $(SHARED) $(PROP_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAUD_BIN) $(UTIL_BIN) \
+		$(FUZZ_BIN) $(FUZZ_ASAN) \
+		$(FUZZ_SECRETS) $(FUZZ_SECRETS_ASAN) \
+		$(FUZZ_SUPPLY) $(FUZZ_SUPPLY_ASAN) \
+		$(FUZZ_FILE) $(FUZZ_FILE_ASAN) \
+		$(FUZZ_URL) $(FUZZ_URL_ASAN) \
+		$(FUZZ_SERVER) $(FUZZ_SERVER_ASAN) \
+		$(EXT_BIN) $(SERVER_BIN) $(SERVER_TEST)
 	rm -f hlse_core_static hlse_core_cov *.gcov *.gcda *.gcno *.o
 	@echo "Clean complete"

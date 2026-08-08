@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "$id": "hlse_network_verdict",
+  "title": "HLSE Network Verdict",
+  "description": "JSON output of `hlse_core --json network` — detects suspicious network activity such as C2 beaconing and data exfiltration.",
+  "type": "object",
+  "required": [
+    "kind",
+    "hlse_version",
+    "score",
+    "action",
+    "severity",
+    "reasons"
+  ],
+  "properties": {
+    "kind": {
+      "const": "network",
+      "description": "Discriminator — always 'network' for this schema."
+    },
+    "hlse_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "HLSE engine version that produced this verdict."
+    },
+    "score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "SAFE",
+        "LOG",
+        "ALERT",
+        "BLOCK",
+        "ISOLATE"
+      ]
+    },
+    "severity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "0=SAFE 1=LOG 2=ALERT 3=BLOCK 4=ISOLATE. Use severity >= 3 for actionable gates."
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Suspicious activity indicators. Empty for SAFE verdicts."
+    },
+    "blind_spot": {
+      "type": "string",
+      "description": "What HLSE cannot detect (score 0 only)."
+    },
+    "signal_count": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of independent C2/exfiltration indicators (score > 0 only)."
+    },
+    "confidence": {
+      "type": "string",
+      "description": "Corroboration level: 'single signal', 'corroborated', 'high confidence' (score > 0 only)."
+    },
+    "pattern": {
+      "type": "string",
+      "description": "Attack pattern label (score >= 60 only)."
+    },
+    "pattern_id": {
+      "type": "string",
+      "const": "HLSE-NET-C2",
+      "description": "Stable SIEM/SOAR routing token (present iff pattern is present)."
+    },
+    "objective": {
+      "type": "string",
+      "description": "The attacker's likely objective (score >= 40 — ALERT band and above)."
+    },
+    "verify": {
+      "type": "string",
+      "description": "Independent check before isolating (score >= 40 — ALERT band and above)."
+    },
+    "triage": {
+      "type": "string",
+      "description": "Immediate isolation and evidence preservation (score >= 60 only)."
+    },
+    "cascade_risk": {
+      "type": "string",
+      "description": "Credentials and sessions at risk (score >= 60 only)."
+    },
+    "exoneration": {
+      "type": "string",
+      "description": "Potential benign explanation (15 <= score < 60 only)."
+    }
+  },
+  "additionalProperties": false
+}
