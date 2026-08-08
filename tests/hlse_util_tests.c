@@ -306,6 +306,31 @@ static void test_json_escape_bounded(void) {
     CHECK(strlen(out) < sizeof out, "overflow");
 }
 
+static void test_crc32_known_vector(void) {
+    TEST("crc32: \"123456789\" -> 0xCBF43926 (standard vector)");
+    CHECK(hlse_crc32((const unsigned char *)"123456789", 9) == 0xCBF43926UL,
+          "crc mismatch");
+}
+
+static void test_crc32_empty(void) {
+    TEST("crc32: empty input -> 0");
+    CHECK(hlse_crc32((const unsigned char *)"", 0) == 0UL, "nonzero");
+}
+
+static void test_base62_6_padding(void) {
+    char out[7];
+    TEST("base62_6: pads to exactly 6 digits");
+    hlse_base62_6(0, out);
+    CHECK(strcmp(out, "000000") == 0 && strlen(out) == 6, out);
+}
+
+static void test_base62_6_radix(void) {
+    char out[7];
+    TEST("base62_6: 62 -> '000010' (radix boundary)");
+    hlse_base62_6(62, out);
+    CHECK(strcmp(out, "000010") == 0, out);
+}
+
 int main(void) {
     printf("HLSE Util — Shared Utility Tests\n");
     printf("══════════════════════════════════════\n\n");
@@ -356,6 +381,10 @@ int main(void) {
     test_json_escape_basic();
     test_json_escape_control();
     test_json_escape_bounded();
+    test_crc32_known_vector();
+    test_crc32_empty();
+    test_base62_6_padding();
+    test_base62_6_radix();
 
     printf("\n══════════════════════════════════════\n");
     printf("Util tests: %d/%d passed", passed, total);

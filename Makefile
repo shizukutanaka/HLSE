@@ -113,9 +113,9 @@ $(PROT_BIN): tests/hlse_protect_tests.c hlse_protect.c hlse_protect.h
 	$(CC) $(CFLAGS) -D_GNU_SOURCE -o $@ tests/hlse_protect_tests.c hlse_protect.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
-$(SECR_BIN): tests/hlse_secrets_tests.c hlse_secrets.c hlse_secrets.h
+$(SECR_BIN): tests/hlse_secrets_tests.c hlse_secrets.c hlse_secrets.h hlse_util.c
 	@mkdir -p tests
-	$(CC) $(CFLAGS) -D_GNU_SOURCE -o $@ tests/hlse_secrets_tests.c hlse_secrets.c -I.
+	$(CC) $(CFLAGS) -D_GNU_SOURCE -o $@ tests/hlse_secrets_tests.c hlse_secrets.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(SUPP_BIN): tests/hlse_supply_tests.c hlse_supply.c hlse_supply.h
@@ -145,17 +145,17 @@ $(FUZZ_ASAN): tests/hlse_fuzz.c hlse_text.c hlse_text.h
 		-o $@ tests/hlse_fuzz.c hlse_text.c -I.
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
-$(FUZZ_SECRETS): tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_secrets.h
+$(FUZZ_SECRETS): tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_secrets.h hlse_util.c
 	@mkdir -p tests
 	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
-		-o $@ tests/hlse_secrets_fuzz.c hlse_secrets.c -I.
+		-o $@ tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
-$(FUZZ_SECRETS_ASAN): tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_secrets.h
+$(FUZZ_SECRETS_ASAN): tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_secrets.h hlse_util.c
 	@mkdir -p tests
 	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
 		-fsanitize=address,undefined \
-		-o $@ tests/hlse_secrets_fuzz.c hlse_secrets.c -I.
+		-o $@ tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
 $(FUZZ_SUPPLY): tests/hlse_supply_fuzz.c hlse_supply.c hlse_supply.h hlse_util.c

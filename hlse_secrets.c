@@ -32,10 +32,39 @@
 #include <ctype.h>
 
 #include "hlse_secrets.h"
+#include "hlse_util.h"   /* hlse_crc32, hlse_base62_6 */
 
 /* ═══════════════════════════════════════════════════════════════════════
  * Internal helpers
  * ═══════════════════════════════════════════════════════════════════════ */
+
+/* GitHub's token formats carry a checksum, so their integrity is verifiable
+ * WITHOUT contacting GitHub — which suits an offline-by-design scanner. The
+ * layout is `prefix_` + 30 chars of entropy + 6 chars of checksum, where the
+ * checksum is CRC-32 of the entropy encoded as 6 base62 digits (GitHub
+ * Engineering, "Behind GitHub's new authentication token formats", 2021).
+ *
+ * Returns: 0 = not a fixed-length GitHub-family token (check not applicable),
+ *          1 = checksum verifies, 2 = checksum mismatch.
+ *
+ * This is used ONLY to qualify confidence, never to drop a finding. The
+ * encoding is reconstructed from public documentation rather than validated
+ * against live credentials, so treating a mismatch as "not a secret" could
+ * silently discard a real leaked token — the one failure a secret scanner
+ * must not have. A mismatch therefore still reports, just with the caveat
+ * that it may be a redacted, illustrative, or hand-typed value. */
+static int
+github_checksum_state(const char *prefix, const char *suffix, size_t suffix_len)
+{
+    char want[7];
+    if (suffix_len != 36) return 0;
+    if (strcmp(prefix, "ghp_") != 0 && strcmp(prefix, "gho_") != 0 &&
+        strcmp(prefix, "ghu_") != 0 && strcmp(prefix, "ghs_") != 0 &&
+        strcmp(prefix, "ghr_") != 0)
+        return 0;
+    hlse_base62_6(hlse_crc32((const unsigned char *)suffix, 30), want);
+    return (memcmp(want, suffix + 30, 6) == 0) ? 1 : 2;
+}
 
 static void
 sv_add(SecretVerdict *v, int delta, const char *type,
@@ -695,6 +724,8 @@ hlse_scan_secrets(const char *text) {
         const SecretPattern *sp = &SECRET_PATTERNS[i];
         p = text;
         while ((p = strstr(p, sp->prefix)) != NULL) {
+            /* set by github_checksum_state() below: 0 n/a, 1 valid, 2 bad */
+            int ck_state;
             /* Validate suffix characters */
             const char *suffix = p + sp->prefix_len;
             int valid = 0;
@@ -715,8 +746,19 @@ hlse_scan_secrets(const char *text) {
                     char preview[64];
                     snprintf(preview, sizeof(preview), "%.8s%.4s...",
                              sp->prefix, suffix);
+                    ck_state = github_checksum_state(
+                        sp->prefix, suffix,
+                        tok_len - (size_t)sp->prefix_len);
                     sv_add(&v, sp->score, sp->label,
-                           "%s found: %s", sp->label, preview);
+                           "%s found: %s%s", sp->label, preview,
+                           ck_state == 1
+                             ? " (checksum verifies — well-formed, "
+                               "treat as live until rotated)"
+                             : ck_state == 2
+                               ? " (checksum does NOT verify — may be a "
+                                 "redacted, illustrative, or mistyped value; "
+                                 "still reported, verify manually)"
+                               : "");
                 }
             }
             p += sp->prefix_len;

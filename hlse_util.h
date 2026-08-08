@@ -70,6 +70,14 @@ FILE *hlse_open_system_file(const char *path);
  * Shared helper so the CLI, server, and alert sink don't each carry a copy. */
 void hlse_json_escape(const char *s, char *out, size_t out_size);
 
+/* Standard CRC-32 (IEEE 802.3 / zlib, reflected poly 0xEDB88320). */
+unsigned long hlse_crc32(const unsigned char *data, size_t len);
+
+/* Encode a 32-bit value as exactly 6 base62 digits, '0'-padded on the left.
+ * `out` needs room for 7 bytes. Used to check the checksum suffix that
+ * GitHub-format tokens carry, so their integrity is verifiable offline. */
+void hlse_base62_6(unsigned long v, char *out);
+
 #ifdef __cplusplus
 }
 #endif

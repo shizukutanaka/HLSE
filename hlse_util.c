@@ -224,3 +224,37 @@ hlse_json_escape(const char *s, char *out, size_t out_size) {
     }
     out[k] = '\0';
 }
+
+/* Standard CRC-32 (IEEE 802.3 / zlib, reflected polynomial 0xEDB88320).
+ * Table-free: the bitwise form is ~8x slower but costs no static table and
+ * runs on inputs of 30 bytes here, where the difference is unmeasurable. */
+unsigned long
+hlse_crc32(const unsigned char *data, size_t len) {
+    unsigned long crc = 0xFFFFFFFFUL;
+    size_t i;
+    int k;
+    if (!data) return 0;
+    for (i = 0; i < len; i++) {
+        crc ^= (unsigned long)data[i];
+        for (k = 0; k < 8; k++)
+            crc = (crc >> 1) ^ (0xEDB88320UL & (unsigned long)(-(long)(crc & 1)));
+    }
+    return (crc ^ 0xFFFFFFFFUL) & 0xFFFFFFFFUL;
+}
+
+/* Encode a 32-bit value as base62, left-padded with '0' to exactly 6 chars
+ * (6 base62 digits hold 62^6 > 2^32, so every CRC-32 fits). `out` must have
+ * room for 7 bytes. This is the encoding GitHub uses for the checksum suffix
+ * of its token formats. */
+void
+hlse_base62_6(unsigned long v, char *out) {
+    static const char A[] =
+        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    int i;
+    if (!out) return;
+    out[6] = '\0';
+    for (i = 5; i >= 0; i--) {
+        out[i] = A[v % 62u];
+        v /= 62u;
+    }
+}

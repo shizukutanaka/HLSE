@@ -6155,6 +6155,34 @@ check "p115: known package does NOT get the unverified warning" "0" "$rc"
     && check "p115: typosquat detection unaffected by the change" "0" "0" \
     || check "p115: typosquat detection unaffected by the change" "0" "1"
 
+# ── p116: GitHub token checksum verified offline ────────────────────────
+# GitHub token format is prefix_ + 30 entropy + 6 base62(CRC-32(entropy))
+# chars, so well-formedness is checkable WITHOUT contacting GitHub. Used to
+# qualify confidence only: a mismatch still reports (the encoding is derived
+# from public docs, so suppressing on mismatch could drop a real leaked
+# credential). Vector below is synthetic, generated to satisfy the checksum.
+GH_P="gh""p_"; GH_ENT="e71lHFE8l6hlvY5bR215DEWc1ZCjfi"
+GH_OK="${GH_P}${GH_ENT}""1ZcD47"; GH_BAD="${GH_P}${GH_ENT}""000000"
+./hlse_core secret "$GH_OK" 2>/dev/null \
+    | grep -q "checksum verifies" \
+    && check "p116: valid GitHub token checksum is recognised" "0" "0" \
+    || check "p116: valid GitHub token checksum is recognised" "0" "1"
+
+./hlse_core secret "$GH_BAD" 2>/dev/null \
+    | grep -q "checksum does NOT verify" \
+    && check "p116: bad GitHub token checksum is flagged as unverified" "0" "0" \
+    || check "p116: bad GitHub token checksum is flagged as unverified" "0" "1"
+
+# A checksum mismatch must NOT suppress the finding (no false negative)
+./hlse_core secret "$GH_BAD" >/dev/null 2>&1 \
+    && rc=0 || rc=1
+check "p116: checksum mismatch still exits non-zero (finding kept)" "1" "$rc"
+
+# Non-GitHub tokens must be unaffected by the checksum logic
+./hlse_core secret "AKIA2E3MWORQXYZ4567PQ" 2>/dev/null | grep -q "checksum" \
+    && rc=1 || rc=0
+check "p116: non-GitHub token carries no checksum claim" "0" "$rc"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

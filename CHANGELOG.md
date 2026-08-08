@@ -5,6 +5,29 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [Unreleased]
 
 ### Added
+- **Offline checksum verification for GitHub-format tokens** (`hlse_util.c`,
+  `hlse_secrets.c`). GitHub's token formats are `prefix_` + 30 chars of
+  entropy + 6 chars of checksum, where the checksum is CRC-32 of the entropy
+  encoded as 6 base62 digits (GitHub Engineering, *Behind GitHub's new
+  authentication token formats*, 2021). That makes well-formedness checkable
+  **without contacting GitHub**, which suits an offline-by-design scanner.
+  - Previously a random 36-character string after `ghp_` was reported with
+    `confidence: certain` — the shape matched, but nothing confirmed it was a
+    real token. Findings now say whether the checksum actually verifies.
+  - New `hlse_crc32()` (standard IEEE 802.3 / zlib, reflected 0xEDB88320) and
+    `hlse_base62_6()` primitives, validated against the standard CRC-32 test
+    vectors (`"123456789"` -> 0xCBF43926, empty -> 0). +4 util tests (43/43).
+  - **A checksum mismatch never suppresses a finding.** The encoding is
+    reconstructed from public documentation rather than validated against live
+    credentials, so treating a mismatch as "not a secret" could silently drop a
+    real leaked token — the one failure a secret scanner must not have. A
+    mismatch reports with a caveat that the value may be redacted,
+    illustrative, or mistyped. Scores are unchanged; F1 stays 1.000 / 0.0% FP.
+  - `hlse_secrets.c` now depends on `hlse_util.c`; the standalone
+    `secrets_tests` and `fuzz_secrets` Makefile targets were updated to link it
+    (they compiled the module in isolation and would otherwise fail to link).
+  +4 CLI-integration tests (p116).
+
 - **Slopsquat honesty for unverifiable package names** (`hlse_supply.c`,
   `hlse_core.c`). HLSE's package check is Damerau-Levenshtein distance<=2
   against a curated list, so a *wholly invented* name is invisible to it by
