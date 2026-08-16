@@ -39,7 +39,7 @@ Platform:      Linux, macOS (partial)
 
 | Module | File | What it detects |
 |--------|------|-----------------|
-| **URL phishing** | hlse_core.c | Homoglyph, typosquat, suspicious TLD/path, subdomain spoofing |
+| **URL phishing** | hlse_core.c | Homoglyph, typosquat, suspicious TLD/path, subdomain spoofing. UTS #39-aligned confusable handling: *mixed-script* and *whole-script* confusables are distinguished and reported separately, with a per-script TLD allow-list so genuine internationalised domains aren't flagged |
 | **Text scam** | hlse_text.c | Urgency, financial bait, authority impersonation, ransom, BEC |
 | **Prompt injection** | hlse_text.c | Invisible instruction carriers aimed at AI agents — Unicode Tags block (U+E0000–U+E007F) payloads outside legitimate emoji tag sequences, and long zero-width runs used as a hidden data channel. Applied by both `text` and `scan <dir>`, so poisoned documents, agent skill files and MCP/tool descriptions in a repo are covered. Structural detection only: an injection written in ordinary visible prose is out of scope |
 | **Ransomware** | hlse_protect.c | Entropy spike, ransom notes, extension mutation, shadow deletion |

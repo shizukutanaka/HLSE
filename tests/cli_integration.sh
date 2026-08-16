@@ -6296,6 +6296,46 @@ P119C=$(mktemp -d); printf '# Title\nOrdinary text.\n' > "$P119C/a.md"
     || check "p119: ordinary directory still scans clean" "0" "1"
 rm -rf "$P119C"
 
+# ── p120: UTS #39 whole-script vs mixed-script confusables ──────────────
+# UTS #39 separates MIXED-script (Latin + a confusable char, "pаypal") from
+# WHOLE-script confusables (every letter one non-Latin script, "раураӏ").
+# The latter is the harder class precisely because the script-mixing tell is
+# absent; labelling it "mixed-script" was factually wrong. Analysis is
+# per-LABEL, since the ASCII ".com" would otherwise mark every host as Latin.
+P120_WHOLE=$(python3 -c "print('https://' + '\u0440\u0430\u0443\u0440\u0430\u04cf' + '.com/login')")
+P120_MIXED=$(python3 -c "print('https://p\u0430ypal.com/login')")
+
+./hlse_core "$P120_WHOLE" 2>/dev/null | grep -q "Whole-script confusable" \
+    && check "p120: all-Cyrillic brand spoof is labelled whole-script" "0" "0" \
+    || check "p120: all-Cyrillic brand spoof is labelled whole-script" "0" "1"
+
+./hlse_core "$P120_MIXED" 2>/dev/null | grep -q "Mixed-script homoglyph" \
+    && check "p120: Latin+Cyrillic spoof stays labelled mixed-script" "0" "0" \
+    || check "p120: Latin+Cyrillic spoof stays labelled mixed-script" "0" "1"
+
+# Both remain threats — this is a labelling fix, not a scoring change
+./hlse_core "$P120_WHOLE" >/dev/null 2>&1 && rc=0 || rc=1
+check "p120: whole-script spoof still gates non-zero" "1" "$rc"
+
+# FP carve-out: a single-script label under a registry that serves that script
+# is ordinary internationalisation (mirrors Chrome/Firefox punycode policy)
+P120_RU=$(python3 -c "print('https://' + '\u043f\u043e\u0447\u0442\u0430' + '.ru/')")
+./hlse_core "$P120_RU" >/dev/null 2>&1 \
+    && check "p120: legitimate Cyrillic IDN under .ru scans clean" "0" "0" \
+    || check "p120: legitimate Cyrillic IDN under .ru scans clean" "0" "1"
+
+# ...but the same label under .com keeps the advisory
+P120_COM=$(python3 -c "print('https://' + '\u043f\u043e\u0447\u0442\u0430' + '.com/')")
+./hlse_core "$P120_COM" 2>/dev/null | grep -q "Mixed-script characters in domain" \
+    && check "p120: same Cyrillic label under .com keeps the advisory" "0" "0" \
+    || check "p120: same Cyrillic label under .com keeps the advisory" "0" "1"
+
+# Mixed-script gets no TLD pass — no registry legitimately issues those
+P120_MIXRU=$(python3 -c "print('https://po\u0447\u0442a.ru/')")
+./hlse_core "$P120_MIXRU" 2>/dev/null | grep -q "Mixed-script characters in domain" \
+    && check "p120: mixed-script under .ru gets no TLD pass" "0" "0" \
+    || check "p120: mixed-script under .ru gets no TLD pass" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

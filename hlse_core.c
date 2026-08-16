@@ -1147,7 +1147,8 @@ detect_typosquat(const ParsedUrl *u, Verdict *v) {
     for (i = 0; i < v->n_reasons; i++) {
         if (strstr(v->reasons[i], "Brand homoglyph") != NULL ||
             strstr(v->reasons[i], "homoglyph (II→ll variant)") != NULL ||
-            strstr(v->reasons[i], "Mixed-script homoglyph") != NULL)
+            strstr(v->reasons[i], "Mixed-script homoglyph") != NULL ||
+            strstr(v->reasons[i], "Whole-script confusable") != NULL)
         {
             return;
         }
@@ -1210,6 +1211,23 @@ detect_typosquat(const ParsedUrl *u, Verdict *v) {
  * (defined below; shared with the Punycode/IDN homograph detector). */
 static char cp_fold(uint32_t cp);
 
+/* Script class of a code point, restricted to what homograph analysis needs
+ * (defined below at cp_script(); shared with the Punycode/IDN detector).
+ * The enum lives here so the raw-UTF-8 detector below can use it too. */
+enum { SCR_NEUTRAL = 0, SCR_LATIN = 1, SCR_CONFUSABLE = 2 };
+static int cp_script(uint32_t cp);
+
+/* Registries that legitimately host a Latin-confusable script, so a
+ * whole-script label there is ordinary internationalisation rather than a
+ * spoof. Mirrors the per-script TLD allow-lists Chrome and Firefox use when
+ * deciding whether to show an IDN as Unicode or fall back to Punycode. */
+static const char *CONFUSABLE_SCRIPT_TLDS[] = {
+    ".ru", ".su", ".ua", ".by", ".bg", ".rs", ".mk", ".kz", ".kg",  /* Cyrillic */
+    ".gr", ".cy",                                                    /* Greek    */
+    ".am",                                                           /* Armenian */
+    NULL
+};
+
 /* 8. Non-ASCII (Cyrillic, Greek, mixed-script) homoglyph detection.
  * Real Latin domains contain only ASCII letters/digits/hyphens. Any
  * non-ASCII code point in a domain that resembles a major brand is a
@@ -1230,11 +1248,35 @@ detect_mixed_script(const ParsedUrl *u, Verdict *v) {
     {
         char ascii[MAX_HOST];
         size_t k = 0;
+        /* UTS #39 distinguishes two cases the old code collapsed into one:
+         *   - MIXED-script: Latin letters alongside confusable ones
+         *     ("pаypal", one Cyrillic а) — the script mixing is the tell.
+         *   - WHOLE-script confusable: every letter from a single non-Latin
+         *     script ("раураӏ", all Cyrillic) — nothing is mixed, so the
+         *     mixing tell is absent. This is the harder and more dangerous
+         *     class, and calling it "mixed-script" was simply wrong. */
+        /* Flags are tracked PER LABEL, because the label is the unit UTS #39
+         * analyses and the unit a registry issues. Judging the whole host
+         * would be meaningless here: the ASCII ".com" would mark every host
+         * as containing Latin, so the whole-script case could never be
+         * reached. Reset at each dot; fold the finished label into the
+         * host-level answer. */
+        int lbl_latin = 0, lbl_confusable = 0;
+        int any_mixed_label = 0, any_whole_confusable_label = 0;
         const unsigned char *q = (const unsigned char *)u->host;
         while (*q && k < MAX_HOST - 1) {
             uint32_t cp;
             int nbytes, b, valid = 1;
             if (*q < 0x80) {
+                if (*q == '.') {           /* label boundary */
+                    if (lbl_confusable)
+                        { if (lbl_latin) any_mixed_label = 1;
+                          else any_whole_confusable_label = 1; }
+                    lbl_latin = lbl_confusable = 0;
+                } else if ((*q >= 'a' && *q <= 'z') ||
+                           (*q >= 'A' && *q <= 'Z')) {
+                    lbl_latin = 1;         /* ASCII letters are Latin too */
+                }
                 ascii[k++] = (char)*q;
                 q++;
                 continue;
@@ -1259,26 +1301,54 @@ detect_mixed_script(const ParsedUrl *u, Verdict *v) {
             if (!valid) { ascii[k++] = '?'; q++; continue; }
             {
                 char f = cp_fold(cp);
+                int s = cp_script(cp);
+                if (s == SCR_LATIN)           lbl_latin = 1;
+                else if (s == SCR_CONFUSABLE) lbl_confusable = 1;
                 ascii[k++] = f ? f : '?';
             }
             q += nbytes;
         }
         ascii[k] = '\0';
+        /* Close out the final label (no trailing dot to trigger the flush). */
+        if (lbl_confusable) {
+            if (lbl_latin) any_mixed_label = 1;
+            else           any_whole_confusable_label = 1;
+        }
 
         /* Now check brand match in the ASCII-collapsed form */
         {
             int i;
             for (i = 0; BRANDS[i] != NULL; i++) {
                 if (contains(ascii, BRANDS[i])) {
-                    add_reason(v, 60,
-                               "Mixed-script homoglyph: "
-                               "'%s' resembles '%s'", u->host, BRANDS[i]);
+                    /* Same severity either way — a brand impersonation is an
+                     * attack regardless of which class it falls in. Only the
+                     * name changes, so the finding says what actually
+                     * happened. */
+                    if (any_whole_confusable_label && !any_mixed_label)
+                        add_reason(v, 60,
+                                   "Whole-script confusable: '%s' is written "
+                                   "entirely in non-Latin characters but "
+                                   "resembles '%s'", u->host, BRANDS[i]);
+                    else
+                        add_reason(v, 60,
+                                   "Mixed-script homoglyph: "
+                                   "'%s' resembles '%s'", u->host, BRANDS[i]);
                     add_brand_canonical(v, BRANDS[i]);
                     return;
                 }
             }
         }
-        /* Even if no brand match, mixed-script in a domain is suspicious */
+        /* No brand match. A single-script non-Latin label under a registry
+         * that legitimately serves that script is ordinary
+         * internationalisation, not a spoof — the same carve-out Chrome and
+         * Firefox make before falling back to Punycode display. Mixed-script
+         * labels get no such pass: no registry legitimately issues those. */
+        if (any_whole_confusable_label && !any_mixed_label) {
+            int t;
+            for (t = 0; CONFUSABLE_SCRIPT_TLDS[t] != NULL; t++)
+                if (ends_with(u->host, CONFUSABLE_SCRIPT_TLDS[t]))
+                    return;
+        }
         add_reason(v, 25, "Mixed-script characters in domain (rare for Latin sites)");
     }
 }
@@ -1367,7 +1437,6 @@ punycode_decode(const char *input, uint32_t *out, int out_cap) {
 /* Script of a code point, restricted to what we need for homograph
  * analysis. Digits, hyphens and other scripts (CJK, Arabic, …) are
  * "neutral" and ignored by the mixing test.                            */
-enum { SCR_NEUTRAL = 0, SCR_LATIN = 1, SCR_CONFUSABLE = 2 };
 static int
 cp_script(uint32_t cp) {
     if ((cp >= 'a' && cp <= 'z') || (cp >= 'A' && cp <= 'Z')) return SCR_LATIN;

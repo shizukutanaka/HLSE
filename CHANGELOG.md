@@ -4,6 +4,32 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Fixed
+- **UTS #39: whole-script confusables are no longer mislabelled "mixed-script"**
+  (`hlse_core.c`). Unicode Technical Standard #39 separates two classes that
+  `detect_mixed_script()` collapsed into one: *mixed-script* (Latin alongside a
+  confusable character, `pаypal` with one Cyrillic а) and *whole-script
+  confusable* (every letter from a single non-Latin script, `раураӏ`, all
+  Cyrillic). The second is the harder and more dangerous class precisely
+  because the script-mixing tell is absent — browsers treat it separately —
+  yet HLSE reported it as `Mixed-script homoglyph`, which was factually wrong:
+  nothing was mixed.
+  - Script classification now reuses the existing `cp_script()` helper that the
+    Punycode detector already relied on, so both paths apply the same standard.
+  - Analysis is **per-label**, the unit UTS #39 defines and the unit a registry
+    issues. Judging the whole host would be meaningless: the ASCII `.com` marks
+    every host as containing Latin, so the whole-script case could never fire.
+  - **False-positive carve-out**: a single-script non-Latin label under a
+    registry that legitimately serves that script (`.ru`, `.su`, `.ua`, `.gr`,
+    `.am`, …) is ordinary internationalisation and no longer draws the generic
+    advisory — mirroring the per-script TLD allow-lists Chrome and Firefox use
+    before falling back to Punycode display. Mixed-script labels get no such
+    pass, since no registry legitimately issues those.
+  - Severity is unchanged in every attack case (brand spoofs still score 60 and
+    gate non-zero); only the wording changes, plus one clearly-legitimate class
+    stops being flagged. F1 stays 1.000 / 0.0% FP.
+  +6 CLI-integration tests (p120).
+
 ### Added
 - **Prompt-injection detection: invisible instruction carriers**
   (`hlse_text.c`). The repository description already advertised prompt-
