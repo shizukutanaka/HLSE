@@ -6342,7 +6342,7 @@ P120_MIXRU=$(python3 -c "print('https://po\u0447\u0442a.ru/')")
 # landed on the generic score-25 advisory — BELOW the default fail threshold
 # of 60, so they did not gate CI and never named the impersonated brand.
 P121_CHER=$(python3 -c "print('https://' + ''.join(chr(c) for c in [0x13E2,0x13AA,0x13A9,0x13E2,0x13AA,0x13DE]) + '.com/login')")
-P121_UPPER=$(python3 -c "print('https://' + ''.join(chr(c) for c in [0x0420,0x0410,0x0423,0x0420,0x0410,0x041B]) + '.com/login')")
+P121_UPPER=$(python3 -c "print('https://' + ''.join(chr(c) for c in [0x0420,0x0410,0x0423,0x0420,0x0410,0x04C0]) + '.com/login')")
 P121_FW=$(python3 -c "print('https://' + ''.join(chr(0xFF41+ord(c)-97) for c in 'paypal') + '.com/login')")
 
 # Cherokee: Chrome names it a whole-script-confusable script alongside

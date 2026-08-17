@@ -24,7 +24,10 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   - **Uppercase Cyrillic and Greek** added. The parser's `str_tolower()` only
     folds ASCII, so these reached `cp_fold()` un-lowercased and mapped to
     nothing. All new mappings return lowercase, matching the lowercase brand
-    table.
+    table. Only glyphs **visually identical** to their Latin counterpart are
+    listed — near-misses (Б, Л, Ω, σ, γ, η) were deliberately excluded, because
+    a wrong fold manufactures brand matches out of legitimate text. U+04C0
+    palochka is the genuine uppercase `l` look-alike.
   - **Fullwidth (U+FF21–FF5A) and mathematical Latin (U+1D400–1D6A3)** fold as
     ranges. These are Script=Latin — compatibility variants, not a script mix —
     so they get a third, accurate label: *"Confusable characters … uses

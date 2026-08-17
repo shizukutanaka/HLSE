@@ -1520,8 +1520,11 @@ cp_fold(uint32_t cp) {
         case 0x03C7: return 'x';  case 0x03C9: return 'w';
         /* Cyrillic UPPERCASE (U+0410..U+042F). The parser's str_tolower only
          * folds ASCII, so these survive to here and previously mapped to
-         * nothing — an all-uppercase spoof like РАУРАЛ.com never reached the
-         * brand table. */
+         * nothing — an all-uppercase spoof never reached the brand table.
+         * Only glyphs that are visually identical to their Latin counterpart
+         * are listed; near-misses (Б, Л, Ω, σ) are deliberately excluded, since
+         * a wrong fold would manufacture brand matches out of legitimate
+         * text. U+04C0 palochka is the genuine uppercase 'l' look-alike. */
         case 0x0410: return 'a';  case 0x0412: return 'b';
         case 0x0415: return 'e';  case 0x041A: return 'k';
         case 0x041C: return 'm';  case 0x041D: return 'h';
@@ -1529,8 +1532,7 @@ cp_fold(uint32_t cp) {
         case 0x0421: return 'c';  case 0x0422: return 't';
         case 0x0423: return 'y';  case 0x0425: return 'x';
         case 0x0406: return 'i';  case 0x0408: return 'j';
-        case 0x0405: return 's';  case 0x041B: return 'l';
-        case 0x0417: return '3';  case 0x0411: return 'b';
+        case 0x0405: return 's';  case 0x04C0: return 'l';
         /* Greek UPPERCASE */
         case 0x0391: return 'a';  case 0x0395: return 'e';
         case 0x0396: return 'z';  case 0x0397: return 'h';
@@ -1538,10 +1540,6 @@ cp_fold(uint32_t cp) {
         case 0x039C: return 'm';  case 0x039D: return 'n';
         case 0x03A1: return 'p';  case 0x03A4: return 't';
         case 0x03A5: return 'y';  case 0x03A7: return 'x';
-        case 0x03A9: return 'o';
-        /* Greek lowercase additions */
-        case 0x03B7: return 'n';  case 0x03C4: return 't';
-        case 0x03C3: return 'o';  case 0x03B3: return 'y';
         /* Cherokee (U+13A0..U+13F5). Chrome names Cherokee alongside Cyrillic
          * and Greek as a whole-script-confusable script: its syllabary
          * contains many Latin-capital look-alikes, so ᏢᎪᎩᏢᎪᏞ reads as
@@ -1554,7 +1552,6 @@ cp_fold(uint32_t cp) {
         case 0x13DF: return 'c';  case 0x13E2: return 'p';
         case 0x13E3: return 'r';  case 0x13E6: return 'k';
         case 0x13F3: return 'g';  case 0x13F4: return 'b';
-        case 0x13AC: return 'e';  case 0x13C6: return 'v';
         /* Armenian */
         case 0x0561: return 'a';  case 0x0565: return 'e';
         case 0x0578: return 'o';  case 0x0570: return 'h';
