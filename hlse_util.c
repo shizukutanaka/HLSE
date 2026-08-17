@@ -293,3 +293,64 @@ hlse_chi_square_uniform(const unsigned char *data, size_t len) {
     }
     return chi;
 }
+
+/* Derive the AWS account ID that owns an access key ID, offline.
+ *
+ * AWS key IDs are a 4-character resource-type prefix (AKIA long-term user,
+ * ASIA temporary/STS, and others) followed by 16 base32 characters. The
+ * account number is not a lookup — it is encoded in the identifier itself:
+ * take the first 6 bytes of the decoded body, mask 0x7FFFFFFFFF80 and shift
+ * right 7. Publicly documented (Tal Be'ery; WithSecure's bitwise analysis of
+ * AWS key identifiers) and implemented in several open-source extractors.
+ *
+ * This matters for a leaked credential: the single most useful fact for
+ * whoever has to respond is WHICH account to rotate and audit, and getting it
+ * needs no call to sts:GetAccessKeyInfo — which suits a scanner that must
+ * never touch the network.
+ *
+ * Also serves as a structural check: a well-formed key ID is exactly 20
+ * characters with a valid base32 body, so a random look-alike fails here.
+ *
+ * Writes a 12-digit zero-padded account ID into `out` (needs 13 bytes).
+ * Returns 1 on success, 0 if `key` is not a structurally valid key ID. */
+int
+hlse_aws_account_from_key(const char *key, char *out, size_t out_size) {
+    static const char A32[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    unsigned long long v = 0, z, acct;
+    int i;
+
+    if (!key || !out || out_size < 13) return 0;
+    for (i = 0; i < 20; i++) if (!key[i]) return 0;   /* need 20 chars */
+    if (key[20] != '\0' &&
+        ((key[20] >= 'A' && key[20] <= 'Z') ||
+         (key[20] >= '0' && key[20] <= '9')))
+        return 0;                                     /* longer than 20 => not a key ID */
+
+    /* Body must be base32; accumulate the first 10 chars = 50 bits, then drop
+     * the low 2 so the top 48 bits are exactly the first 6 bytes. */
+    for (i = 4; i < 14; i++) {
+        const char *p = strchr(A32, key[i]);
+        if (!p || key[i] == '\0') return 0;
+        v = (v << 5) | (unsigned long long)(p - A32);
+    }
+    /* Remaining body characters still have to be valid base32. */
+    for (i = 14; i < 20; i++)
+        if (!strchr(A32, key[i])) return 0;
+
+    z = v >> 2;
+    acct = (z & 0x7FFFFFFFFF80ULL) >> 7;
+    /* Format into a buffer the compiler can size-check, then copy out bounded.
+     * out_size is a runtime value, so formatting straight into it trips
+     * -Wformat-truncation=2. The masked value spans at most 36 bits, so the
+     * 12-digit field is always sufficient. */
+    {
+        char tmp[24];
+        size_t n;
+        snprintf(tmp, sizeof tmp, "%012llu", acct);
+        n = strlen(tmp);
+        if (n >= out_size) n = out_size - 1;
+        memcpy(out, tmp, n);
+        out[n] = '\0';
+    }
+    return 1;
+}

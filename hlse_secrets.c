@@ -726,6 +726,9 @@ hlse_scan_secrets(const char *text) {
         while ((p = strstr(p, sp->prefix)) != NULL) {
             /* set by github_checksum_state() below: 0 n/a, 1 valid, 2 bad */
             int ck_state;
+            /* " (AWS account NNNNNNNNNNNN — ...)" when the token is a
+             * structurally valid AWS key ID, empty otherwise. */
+            char aws_note[96];
             /* Validate suffix characters */
             const char *suffix = p + sp->prefix_len;
             int valid = 0;
@@ -749,8 +752,23 @@ hlse_scan_secrets(const char *text) {
                     ck_state = github_checksum_state(
                         sp->prefix, suffix,
                         tok_len - (size_t)sp->prefix_len);
+                    /* For an AWS key ID the owning account number is encoded
+                     * in the identifier itself. Surfacing it turns "a key
+                     * leaked" into "THIS account is exposed", which is the
+                     * fact whoever responds actually needs — and it costs no
+                     * network call. */
+                    aws_note[0] = '\0';
+                    if (tok_len == 20) {
+                        char keybuf[21], acct[13];
+                        memcpy(keybuf, p, 20);
+                        keybuf[20] = '\0';
+                        if (hlse_aws_account_from_key(keybuf, acct, sizeof acct))
+                            snprintf(aws_note, sizeof aws_note,
+                                     " (AWS account %s — rotate this key and "
+                                     "audit that account)", acct);
+                    }
                     sv_add(&v, sp->score, sp->label,
-                           "%s found: %s%s", sp->label, preview,
+                           "%s found: %s%s%s", sp->label, preview, aws_note,
                            ck_state == 1
                              ? " (checksum verifies — well-formed, "
                                "treat as live until rotated)"

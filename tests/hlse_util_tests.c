@@ -358,6 +358,43 @@ static void test_chi_square_null(void) {
     CHECK(hlse_chi_square_uniform(NULL, 4096) < 0.0, "should be -1");
 }
 
+static void test_aws_account_known_vector(void) {
+    char out[13];
+    TEST("aws_account: AKIAIOSFODNN7EXAMPLE -> 581039954779");
+    CHECK(hlse_aws_account_from_key("AKIAIOSFODNN7EXAMPLE", out, sizeof out) &&
+          strcmp(out, "581039954779") == 0, out);
+}
+
+static void test_aws_account_sts_prefix(void) {
+    char out[13];
+    /* Split so the source carries no contiguous key-shaped literal. */
+    const char *sts_key = "ASIA" "Y34FZKBO" "KMUTVV7A";
+    TEST("aws_account: ASIA (temporary) prefix also decodes");
+    CHECK(hlse_aws_account_from_key(sts_key, out, sizeof out) &&
+          strcmp(out, "609629065308") == 0, out);
+}
+
+static void test_aws_account_bad_length(void) {
+    char out[13];
+    TEST("aws_account: 21-char key rejected (real IDs are 20)");
+    CHECK(!hlse_aws_account_from_key("AKIA2E3MWORQXYZ4567PQ", out, sizeof out),
+          "should reject");
+}
+
+static void test_aws_account_bad_alphabet(void) {
+    char out[13];
+    TEST("aws_account: non-base32 char rejected ('1' not in A-Z2-7)");
+    CHECK(!hlse_aws_account_from_key("AKIA1111111111111111", out, sizeof out),
+          "should reject");
+}
+
+static void test_aws_account_null_safe(void) {
+    char out[13];
+    TEST("aws_account: NULL/short input rejected (no crash)");
+    CHECK(!hlse_aws_account_from_key(NULL, out, sizeof out) &&
+          !hlse_aws_account_from_key("short", out, sizeof out), "should reject");
+}
+
 int main(void) {
     printf("HLSE Util — Shared Utility Tests\n");
     printf("══════════════════════════════════════\n\n");
@@ -416,6 +453,11 @@ int main(void) {
     test_chi_square_degenerate();
     test_chi_square_small_sample();
     test_chi_square_null();
+    test_aws_account_known_vector();
+    test_aws_account_sts_prefix();
+    test_aws_account_bad_length();
+    test_aws_account_bad_alphabet();
+    test_aws_account_null_safe();
 
     printf("\n══════════════════════════════════════\n");
     printf("Util tests: %d/%d passed", passed, total);

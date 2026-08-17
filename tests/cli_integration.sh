@@ -6378,6 +6378,25 @@ check "p121: Cherokee spoof now gates non-zero" "1" "$rc"
     && check "p121: CJK domain scans clean" "0" "0" \
     || check "p121: CJK domain scans clean" "0" "1"
 
+# ── p122: AWS key IDs report their owning account (offline) ─────────────
+# The account number is encoded in the key ID itself, so the single most
+# actionable fact for incident response — WHICH account is exposed — needs no
+# sts:GetAccessKeyInfo call. Suits a scanner that must never touch the network.
+STS_KEY="ASIA""Y34FZKBO""KMUTVV7A"
+./hlse_core secret "aws_access_key_id = $STS_KEY" 2>/dev/null \
+    | grep -q "AWS account 609629065308" \
+    && check "p122: AWS key finding names the owning account" "0" "0" \
+    || check "p122: AWS key finding names the owning account" "0" "1"
+
+# Malformed length must not produce an account claim
+./hlse_core secret "key = AKIA2E3MWORQXYZ4567PQ" 2>/dev/null | grep -q "AWS account" \
+    && rc=1 || rc=0
+check "p122: malformed-length key makes no account claim" "0" "$rc"
+
+# Non-AWS tokens are untouched by the account logic
+./hlse_core secret "$GH_OK" 2>/dev/null | grep -q "AWS account" && rc=1 || rc=0
+check "p122: non-AWS token makes no account claim" "0" "$rc"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

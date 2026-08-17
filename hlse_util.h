@@ -85,6 +85,14 @@ void hlse_base62_6(unsigned long v, char *out);
  * Returns -1.0 when len < 1280 (sample too small to be meaningful). */
 double hlse_chi_square_uniform(const unsigned char *data, size_t len);
 
+/* Derive the owning AWS account ID from an access key ID, offline — the
+ * account number is encoded in the identifier, so no sts:GetAccessKeyInfo
+ * call is needed. Writes 12 zero-padded digits into `out` (needs >= 13 bytes).
+ * Returns 1 on success, 0 if `key` is not a structurally valid key ID
+ * (exactly 20 chars, 4-char prefix, base32 body), which doubles as a
+ * well-formedness check. */
+int hlse_aws_account_from_key(const char *key, char *out, size_t out_size);
+
 #ifdef __cplusplus
 }
 #endif

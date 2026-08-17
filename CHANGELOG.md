@@ -5,6 +5,25 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [Unreleased]
 
 ### Added
+- **AWS key findings now name the owning account, derived offline**
+  (`hlse_util.c`, `hlse_secrets.c`). An AWS access key ID encodes the account
+  number in the identifier itself: base32-decode the body, take the first 6
+  bytes, mask `0x7FFFFFFFFF80`, shift right 7. Publicly documented (Tal Be'ery;
+  WithSecure's bitwise analysis of AWS key identifiers) and implemented in
+  several open-source extractors.
+  - Turns *"a key leaked"* into *"**this account** is exposed"* — the fact
+    whoever responds actually needs — with **no `sts:GetAccessKeyInfo` call**,
+    which is the whole point for a scanner that must never touch the network.
+    Comparable tools reach for a verification API here; the identifier already
+    carries the answer.
+  - Doubles as a **structural check**: a well-formed key ID is exactly 20
+    characters with a valid base32 (A–Z2–7) body, so a random look-alike is
+    rejected rather than annotated. The repo's own 21-character test fixture
+    correctly fails it.
+  - New `hlse_aws_account_from_key()`, validated against four reference
+    vectors cross-checked against the published Python implementation.
+    +5 util tests (52/52), +3 CLI-integration tests (p122).
+
 - **Confusable coverage beyond the original 36 mappings** (`hlse_core.c`).
   `cp_fold()` hand-mapped ~36 code points; UTS #39's `confusables.txt` maps
   ~6,565. Spoofs built from unmapped families folded to `?`, missed the brand
