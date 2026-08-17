@@ -6326,15 +6326,57 @@ P120_RU=$(python3 -c "print('https://' + '\u043f\u043e\u0447\u0442\u0430' + '.ru
 
 # ...but the same label under .com keeps the advisory
 P120_COM=$(python3 -c "print('https://' + '\u043f\u043e\u0447\u0442\u0430' + '.com/')")
-./hlse_core "$P120_COM" 2>/dev/null | grep -q "Mixed-script characters in domain" \
+./hlse_core "$P120_COM" 2>/dev/null | grep -q "Latin-confusable script characters in domain" \
     && check "p120: same Cyrillic label under .com keeps the advisory" "0" "0" \
     || check "p120: same Cyrillic label under .com keeps the advisory" "0" "1"
 
 # Mixed-script gets no TLD pass — no registry legitimately issues those
 P120_MIXRU=$(python3 -c "print('https://po\u0447\u0442a.ru/')")
-./hlse_core "$P120_MIXRU" 2>/dev/null | grep -q "Mixed-script characters in domain" \
+./hlse_core "$P120_MIXRU" 2>/dev/null | grep -q "Latin-confusable script characters in domain" \
     && check "p120: mixed-script under .ru gets no TLD pass" "0" "0" \
     || check "p120: mixed-script under .ru gets no TLD pass" "0" "1"
+
+# ── p121: confusable coverage beyond the original 36 mappings ───────────
+# cp_fold() hand-mapped ~36 code points; UTS #39 maps thousands. Spoofs built
+# from unmapped families previously folded to '?', missed the brand table, and
+# landed on the generic score-25 advisory — BELOW the default fail threshold
+# of 60, so they did not gate CI and never named the impersonated brand.
+P121_CHER=$(python3 -c "print('https://' + ''.join(chr(c) for c in [0x13E2,0x13AA,0x13A9,0x13E2,0x13AA,0x13DE]) + '.com/login')")
+P121_UPPER=$(python3 -c "print('https://' + ''.join(chr(c) for c in [0x0420,0x0410,0x0423,0x0420,0x0410,0x041B]) + '.com/login')")
+P121_FW=$(python3 -c "print('https://' + ''.join(chr(0xFF41+ord(c)-97) for c in 'paypal') + '.com/login')")
+
+# Cherokee: Chrome names it a whole-script-confusable script alongside
+# Cyrillic and Greek; its syllabary has many Latin-capital look-alikes.
+./hlse_core "$P121_CHER" 2>/dev/null | grep -q "resembles 'paypal'" \
+    && check "p121: Cherokee whole-script spoof names the brand" "0" "0" \
+    || check "p121: Cherokee whole-script spoof names the brand" "0" "1"
+./hlse_core "$P121_CHER" >/dev/null 2>&1 && rc=0 || rc=1
+check "p121: Cherokee spoof now gates non-zero" "1" "$rc"
+
+# Cyrillic uppercase: str_tolower only folds ASCII, so these reach cp_fold
+# un-lowercased and previously mapped to nothing.
+./hlse_core "$P121_UPPER" 2>/dev/null | grep -q "resembles 'paypal'" \
+    && check "p121: uppercase-Cyrillic spoof names the brand" "0" "0" \
+    || check "p121: uppercase-Cyrillic spoof names the brand" "0" "1"
+
+# Fullwidth Latin is the SAME script, so it is neither mixed nor whole-script;
+# it must get the compatibility-variant label, not a script-confusion one.
+./hlse_core "$P121_FW" 2>/dev/null | grep -q "Confusable characters" \
+    && check "p121: fullwidth spoof uses the same-script label" "0" "0" \
+    || check "p121: fullwidth spoof uses the same-script label" "0" "1"
+./hlse_core "$P121_FW" 2>/dev/null | grep -q "resembling 'paypal'" \
+    && check "p121: fullwidth spoof names the brand" "0" "0" \
+    || check "p121: fullwidth spoof names the brand" "0" "1"
+
+# FP: non-ASCII with NO Latin-confusable script is ordinary
+# internationalisation — an accented Latin name or a different script
+# entirely. Warning on these penalised every non-English domain for existing.
+./hlse_core "https://münchen.de/" >/dev/null 2>&1 \
+    && check "p121: accented Latin domain (munchen.de) scans clean" "0" "0" \
+    || check "p121: accented Latin domain (munchen.de) scans clean" "0" "1"
+./hlse_core "$(python3 -c "print('https://' + chr(0x65E5)+chr(0x672C) + '.jp/')")" >/dev/null 2>&1 \
+    && check "p121: CJK domain scans clean" "0" "0" \
+    || check "p121: CJK domain scans clean" "0" "1"
 
 # ─── results ────────────────────────────────────────────────────────────
 

@@ -1329,10 +1329,19 @@ detect_mixed_script(const ParsedUrl *u, Verdict *v) {
                                    "Whole-script confusable: '%s' is written "
                                    "entirely in non-Latin characters but "
                                    "resembles '%s'", u->host, BRANDS[i]);
-                    else
+                    else if (any_mixed_label)
                         add_reason(v, 60,
                                    "Mixed-script homoglyph: "
                                    "'%s' resembles '%s'", u->host, BRANDS[i]);
+                    else
+                        /* No script mixing and no non-Latin script: the spoof
+                         * uses same-script compatibility variants (fullwidth
+                         * or mathematical Latin), which render as the brand
+                         * but are distinct code points. */
+                        add_reason(v, 60,
+                                   "Confusable characters: '%s' uses look-alike "
+                                   "variant characters resembling '%s'",
+                                   u->host, BRANDS[i]);
                     add_brand_canonical(v, BRANDS[i]);
                     return;
                 }
@@ -1343,13 +1352,24 @@ detect_mixed_script(const ParsedUrl *u, Verdict *v) {
          * internationalisation, not a spoof — the same carve-out Chrome and
          * Firefox make before falling back to Punycode display. Mixed-script
          * labels get no such pass: no registry legitimately issues those. */
+        if (!any_mixed_label && !any_whole_confusable_label) {
+            /* Non-ASCII, but none of it from a Latin-confusable script — an
+             * accented Latin name (münchen.de) or another script entirely
+             * (日本.jp). There is nothing for it to be confused WITH, so this
+             * is ordinary internationalisation. Warning here penalised every
+             * non-English domain for existing, which is not a security
+             * signal; browsers do not warn on these either. */
+            return;
+        }
         if (any_whole_confusable_label && !any_mixed_label) {
             int t;
             for (t = 0; CONFUSABLE_SCRIPT_TLDS[t] != NULL; t++)
                 if (ends_with(u->host, CONFUSABLE_SCRIPT_TLDS[t]))
                     return;
         }
-        add_reason(v, 25, "Mixed-script characters in domain (rare for Latin sites)");
+        add_reason(v, 25,
+                   "Latin-confusable script characters in domain "
+                   "(rare for Latin-brand sites)");
     }
 }
 
@@ -1441,9 +1461,16 @@ static int
 cp_script(uint32_t cp) {
     if ((cp >= 'a' && cp <= 'z') || (cp >= 'A' && cp <= 'Z')) return SCR_LATIN;
     if (cp >= 0x00C0 && cp <= 0x024F) return SCR_LATIN;        /* Latin-1 + ext */
+    /* Fullwidth and mathematical Latin are Script=Latin: they are
+     * compatibility variants of ASCII letters, not a different script. They
+     * still spoof, but via the confusable fold, not via script mixing. */
+    if (cp >= 0xFF21 && cp <= 0xFF3A) return SCR_LATIN;
+    if (cp >= 0xFF41 && cp <= 0xFF5A) return SCR_LATIN;
+    if (cp >= 0x1D400 && cp <= 0x1D6A3) return SCR_LATIN;
     if (cp >= 0x0400 && cp <= 0x04FF) return SCR_CONFUSABLE;   /* Cyrillic */
     if (cp >= 0x0370 && cp <= 0x03FF) return SCR_CONFUSABLE;   /* Greek */
     if (cp >= 0x0530 && cp <= 0x058F) return SCR_CONFUSABLE;   /* Armenian */
+    if (cp >= 0x13A0 && cp <= 0x13F5) return SCR_CONFUSABLE;   /* Cherokee */
     return SCR_NEUTRAL;
 }
 
@@ -1452,6 +1479,26 @@ cp_script(uint32_t cp) {
 static char
 cp_fold(uint32_t cp) {
     if (cp < 0x80) return (char)cp;
+
+    /* Range-folded families. The host has already been ASCII-lowercased by the
+     * parser (str_tolower), but that cannot touch non-ASCII, so every mapping
+     * here returns LOWERCASE Latin — otherwise the folded form would never
+     * match the lowercase BRANDS table. */
+
+    /* Fullwidth Latin (U+FF21..FF3A, U+FF41..FF5A). Same script as Latin, so
+     * this is a compatibility-variant spoof rather than a script mix, but it
+     * renders as an ordinary brand name and must fold. */
+    if (cp >= 0xFF21 && cp <= 0xFF3A) return (char)('a' + (int)(cp - 0xFF21));
+    if (cp >= 0xFF41 && cp <= 0xFF5A) return (char)('a' + (int)(cp - 0xFF41));
+
+    /* Mathematical alphanumeric Latin: bold, italic, bold-italic, script,
+     * fraktur, double-struck, sans, sans-bold, monospace. Each block is 26
+     * uppercase then 26 lowercase, contiguous from U+1D400. */
+    if (cp >= 0x1D400 && cp <= 0x1D6A3) {
+        uint32_t off = (cp - 0x1D400) % 52;
+        return (char)('a' + (int)(off % 26));
+    }
+
     switch (cp) {
         /* Cyrillic */
         case 0x0430: return 'a';  case 0x0435: return 'e';
@@ -1471,6 +1518,43 @@ cp_fold(uint32_t cp) {
         case 0x03BA: return 'k';  case 0x03C5: return 'u';
         case 0x0392: return 'b';  case 0x039F: return 'o';
         case 0x03C7: return 'x';  case 0x03C9: return 'w';
+        /* Cyrillic UPPERCASE (U+0410..U+042F). The parser's str_tolower only
+         * folds ASCII, so these survive to here and previously mapped to
+         * nothing — an all-uppercase spoof like РАУРАЛ.com never reached the
+         * brand table. */
+        case 0x0410: return 'a';  case 0x0412: return 'b';
+        case 0x0415: return 'e';  case 0x041A: return 'k';
+        case 0x041C: return 'm';  case 0x041D: return 'h';
+        case 0x041E: return 'o';  case 0x0420: return 'p';
+        case 0x0421: return 'c';  case 0x0422: return 't';
+        case 0x0423: return 'y';  case 0x0425: return 'x';
+        case 0x0406: return 'i';  case 0x0408: return 'j';
+        case 0x0405: return 's';  case 0x041B: return 'l';
+        case 0x0417: return '3';  case 0x0411: return 'b';
+        /* Greek UPPERCASE */
+        case 0x0391: return 'a';  case 0x0395: return 'e';
+        case 0x0396: return 'z';  case 0x0397: return 'h';
+        case 0x0399: return 'i';  case 0x039A: return 'k';
+        case 0x039C: return 'm';  case 0x039D: return 'n';
+        case 0x03A1: return 'p';  case 0x03A4: return 't';
+        case 0x03A5: return 'y';  case 0x03A7: return 'x';
+        case 0x03A9: return 'o';
+        /* Greek lowercase additions */
+        case 0x03B7: return 'n';  case 0x03C4: return 't';
+        case 0x03C3: return 'o';  case 0x03B3: return 'y';
+        /* Cherokee (U+13A0..U+13F5). Chrome names Cherokee alongside Cyrillic
+         * and Greek as a whole-script-confusable script: its syllabary
+         * contains many Latin-capital look-alikes, so ᏢᎪᎩᏢᎪᏞ reads as
+         * PAYPAL. Conservative, high-confidence shapes only. */
+        case 0x13A2: return 't';  case 0x13AA: return 'a';
+        case 0x13A9: return 'y';  case 0x13A1: return 'r';
+        case 0x13B3: return 'w';  case 0x13B7: return 'm';
+        case 0x13BB: return 'h';  case 0x13D9: return 'v';
+        case 0x13DA: return 's';  case 0x13DE: return 'l';
+        case 0x13DF: return 'c';  case 0x13E2: return 'p';
+        case 0x13E3: return 'r';  case 0x13E6: return 'k';
+        case 0x13F3: return 'g';  case 0x13F4: return 'b';
+        case 0x13AC: return 'e';  case 0x13C6: return 'v';
         /* Armenian */
         case 0x0561: return 'a';  case 0x0565: return 'e';
         case 0x0578: return 'o';  case 0x0570: return 'h';

@@ -4,7 +4,40 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added
+- **Confusable coverage beyond the original 36 mappings** (`hlse_core.c`).
+  `cp_fold()` hand-mapped ~36 code points; UTS #39's `confusables.txt` maps
+  ~6,565. Spoofs built from unmapped families folded to `?`, missed the brand
+  table entirely, and landed on the generic score-25 advisory — **below the
+  default fail threshold of 60, so they never gated CI and never named the
+  impersonated brand**. Measured before/after, all resolving to `paypal`:
+
+  | Spoof | Before | After |
+  |---|---|---|
+  | Cherokee `ᏢᎪᎩᏢᎪᏞ.com` | ALERT 40, no brand | BLOCK 75, whole-script confusable |
+  | Uppercase Cyrillic `РАУРАЛ.com` | ALERT 40, no brand | BLOCK 75, whole-script confusable |
+  | Fullwidth `ｐａｙｐａｌ.com` | ALERT 40, no brand | BLOCK 75, confusable characters |
+
+  - **Cherokee** (U+13A0–13F5) added to both `cp_fold()` and `cp_script()`.
+    Chrome names Cherokee alongside Cyrillic and Greek as a whole-script-
+    confusable script; its syllabary carries many Latin-capital look-alikes.
+  - **Uppercase Cyrillic and Greek** added. The parser's `str_tolower()` only
+    folds ASCII, so these reached `cp_fold()` un-lowercased and mapped to
+    nothing. All new mappings return lowercase, matching the lowercase brand
+    table.
+  - **Fullwidth (U+FF21–FF5A) and mathematical Latin (U+1D400–1D6A3)** fold as
+    ranges. These are Script=Latin — compatibility variants, not a script mix —
+    so they get a third, accurate label: *"Confusable characters … uses
+    look-alike variant characters"*, distinct from both mixed- and whole-script.
+
 ### Fixed
+- **Non-ASCII domains are no longer flagged merely for being non-ASCII.** The
+  fallback advisory fired on *any* non-ASCII host, so `münchen.de` and `日本.jp`
+  — ordinary internationalised domains — were reported suspicious. It now
+  requires a character from a Latin-**confusable** script to actually be
+  present: an accented Latin name or a wholly different script has nothing to
+  be confused with. Browsers do not warn on these either. Reason text renamed
+  to *"Latin-confusable script characters in domain"* to match what it means.
 - **UTS #39: whole-script confusables are no longer mislabelled "mixed-script"**
   (`hlse_core.c`). Unicode Technical Standard #39 separates two classes that
   `detect_mixed_script()` collapsed into one: *mixed-script* (Latin alongside a
