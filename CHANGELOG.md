@@ -5,6 +5,25 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [Unreleased]
 
 ### Added
+- **JWT algorithm inspection, including the `alg:none` signature bypass**
+  (`hlse_util.c`, `hlse_secrets.c`). A JWT's header is base64url — encoded, not
+  encrypted — so its algorithm is readable offline.
+  - **`alg:none` was structurally invisible.** Such a token has an *empty*
+    signature segment by construction, and the detector required
+    `signature >= 20`, so it excluded exactly the most dangerous case: an
+    unsigned token anyone can forge. This is the classic signature bypass and
+    it still produced CVEs through Q1 2026 (CVE-2026-28802 Authlib,
+    CVE-2026-23993 HarbourJwt). Now reported at 70 (BLOCK) as an attack
+    artifact or misconfiguration — deliberately a *different* finding class
+    from a leaked credential, with its own `HLSE-SECRET-JWT-ALG-NONE` routing
+    id.
+  - **Case-insensitive**, because libraries keep falling to `nOnE` / `NONE` /
+    `None` variants; all four are covered by tests.
+  - Ordinary signed tokens now **name their algorithm** (`alg hs256`), which is
+    triage information for free.
+  - New `hlse_base64url_decode()` (RFC 4648 §5, padding optional).
+    +6 CLI-integration tests (p123).
+
 - **AWS key findings now name the owning account, derived offline**
   (`hlse_util.c`, `hlse_secrets.c`). An AWS access key ID encodes the account
   number in the identifier itself: base32-decode the body, take the first 6

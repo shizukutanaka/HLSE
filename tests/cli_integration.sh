@@ -6397,6 +6397,38 @@ check "p122: malformed-length key makes no account claim" "0" "$rc"
 ./hlse_core secret "$GH_OK" 2>/dev/null | grep -q "AWS account" && rc=1 || rc=0
 check "p122: non-AWS token makes no account claim" "0" "$rc"
 
+# ── p123: JWT algorithm inspection (alg:none signature bypass) ──────────
+# A JWT header is base64url, not encrypted, so the algorithm is readable
+# offline. alg "none" means the token is unsigned and forgeable by anyone —
+# still producing CVEs through 2026 (CVE-2026-28802 Authlib, CVE-2026-23993
+# HarbourJwt). Such a token has an EMPTY signature by construction, so the
+# signature>=20 rule excluded exactly the most dangerous case.
+P123_MK='import base64,json,sys
+b=lambda o: base64.urlsafe_b64encode(json.dumps(o,separators=(",",":")).encode()).decode().rstrip("=")
+alg=sys.argv[1]; sig=sys.argv[2] if len(sys.argv)>2 else ""
+print(b({"alg":alg,"typ":"JWT"})+"."+b({"sub":"admin","iss":"https://a.example.com"})+"."+sig)'
+P123_NONE=$(python3 -c "$P123_MK" none)
+P123_SIGNED=$(python3 -c "$P123_MK" HS256 SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c)
+
+./hlse_core secret "$P123_NONE" 2>/dev/null | grep -q 'alg "none"' \
+    && check "p123: unsigned alg:none JWT is detected" "0" "0" \
+    || check "p123: unsigned alg:none JWT is detected" "0" "1"
+./hlse_core secret "$P123_NONE" >/dev/null 2>&1 && rc=0 || rc=1
+check "p123: alg:none JWT gates non-zero" "1" "$rc"
+
+# Libraries keep falling to case variants, so matching must be case-insensitive
+for P123_V in NONE nOnE None; do
+  ./hlse_core secret "$(python3 -c "$P123_MK" $P123_V)" 2>/dev/null \
+      | grep -q 'alg "none"' \
+      && check "p123: alg:none variant $P123_V detected" "0" "0" \
+      || check "p123: alg:none variant $P123_V detected" "0" "1"
+done
+
+# An ordinary signed token still reports, and now names its algorithm
+./hlse_core secret "$P123_SIGNED" 2>/dev/null | grep -q "alg hs256" \
+    && check "p123: signed JWT names its algorithm" "0" "0" \
+    || check "p123: signed JWT names its algorithm" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

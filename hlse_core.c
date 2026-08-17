@@ -4818,6 +4818,10 @@ secret_pattern_id(const char *ftype) {
     if (strstr(ftype, "Azure"))   return "HLSE-SECRET-AZURE";
     if (strstr(ftype, "Private key") || strstr(ftype, "private key"))
                                   return "HLSE-SECRET-PRIVATE-KEY";
+    /* Checked before the generic JWT arm: an unsigned token is a distinct
+     * finding class (forgeable credential / misconfiguration, not a leak) and
+     * deserves its own routing token downstream. */
+    if (strstr(ftype, "JWT_ALG_NONE")) return "HLSE-SECRET-JWT-ALG-NONE";
     if (strstr(ftype, "JWT"))     return "HLSE-SECRET-JWT";
     return "HLSE-SECRET-GENERIC";
 }

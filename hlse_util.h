@@ -93,6 +93,13 @@ double hlse_chi_square_uniform(const unsigned char *data, size_t len);
  * well-formedness check. */
 int hlse_aws_account_from_key(const char *key, char *out, size_t out_size);
 
+/* Decode base64url (RFC 4648 sec. 5, padding optional) into `out`; returns
+ * bytes written, 0 if malformed. NUL-terminates when there is room. Lets a
+ * JWT header be read offline — header and payload are encoded, not encrypted,
+ * so the algorithm and key id are plainly inspectable. */
+size_t hlse_base64url_decode(const char *in, size_t in_len,
+                             char *out, size_t out_size);
+
 #ifdef __cplusplus
 }
 #endif

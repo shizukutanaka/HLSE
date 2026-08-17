@@ -984,6 +984,57 @@ hlse_scan_secrets(const char *text) {
              * signed JWT has header>=10, payload>=10, signature>=20.       */
             ok = (seg == 3 && seglens[0] >= 10 && seglens[1] >= 10 &&
                   seglens[2] >= 20);
+
+            /* The header is base64url, not encrypted, so the algorithm is
+             * readable offline. Two things are worth saying about it:
+             *
+             *  - alg "none" means the token is unsigned and anyone can forge
+             *    one. This is the classic signature-bypass, still producing
+             *    CVEs through 2026 (e.g. CVE-2026-28802 in Authlib), and
+             *    libraries keep falling to CASE VARIANTS — nOnE, NONE — so the
+             *    comparison here is case-insensitive.
+             *  - Such a token has an EMPTY signature segment by construction,
+             *    so the seglens[2] >= 20 rule above excludes exactly the most
+             *    dangerous case. It is matched separately below.
+             *
+             * Naming the algorithm on an ordinary token is triage information
+             * for free: it says what to check without opening the token. */
+            if (seg == 3 && seglens[0] >= 10 && seglens[1] >= 10) {
+                char hdr[256];
+                size_t hn = hlse_base64url_decode(jp, (size_t)seglens[0],
+                                                  hdr, sizeof hdr);
+                if (hn > 0) {
+                    const char *a = strstr(hdr, "\"alg\"");
+                    if (a) {
+                        const char *q1 = strchr(a + 5, '"');
+                        const char *q2 = q1 ? strchr(q1 + 1, '"') : NULL;
+                        if (q1 && q2 && q2 > q1 + 1 &&
+                            (size_t)(q2 - q1 - 1) < 32) {
+                            char alg[32];
+                            size_t al = (size_t)(q2 - q1 - 1);
+                            size_t ai;
+                            memcpy(alg, q1 + 1, al);
+                            alg[al] = '\0';
+                            for (ai = 0; ai < al; ai++)
+                                alg[ai] = (char)tolower((unsigned char)alg[ai]);
+                            if (strcmp(alg, "none") == 0) {
+                                sv_add(&v, 70, "JWT_ALG_NONE",
+                                    "Unsigned JWT (alg \"none\"): the signature "
+                                    "is absent, so this token can be forged by "
+                                    "anyone — an attack artifact or a dangerous "
+                                    "misconfiguration, not a normal credential");
+                                break;
+                            }
+                            if (ok) {
+                                sv_add(&v, 60, "JWT",
+                                    "JWT bearer token (alg %s, "
+                                    "header.payload.signature)", alg);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
             if (ok) {
                 sv_add(&v, 60, "JWT",
                        "JWT bearer token (header.payload.signature)");

@@ -354,3 +354,40 @@ hlse_aws_account_from_key(const char *key, char *out, size_t out_size) {
     }
     return 1;
 }
+
+/* Decode base64url (RFC 4648 §5: '-' and '_' for the last two alphabet
+ * positions, padding optional) into `out`. Returns bytes written, or 0 on a
+ * malformed input. NUL-terminates when there is room, so the result can be
+ * treated as a string for substring inspection.
+ *
+ * Exists so JWT headers can be read offline: a JWT's header and payload are
+ * not encrypted, only encoded, so its algorithm and key id are plainly
+ * inspectable without contacting anything. */
+size_t
+hlse_base64url_decode(const char *in, size_t in_len, char *out, size_t out_size) {
+    unsigned long acc = 0;
+    int nbits = 0;
+    size_t i, n = 0;
+
+    if (!in || !out || out_size == 0) return 0;
+    for (i = 0; i < in_len; i++) {
+        int v;
+        char c = in[i];
+        if      (c >= 'A' && c <= 'Z') v = c - 'A';
+        else if (c >= 'a' && c <= 'z') v = c - 'a' + 26;
+        else if (c >= '0' && c <= '9') v = c - '0' + 52;
+        else if (c == '-')             v = 62;
+        else if (c == '_')             v = 63;
+        else if (c == '=')             break;      /* optional padding */
+        else return 0;                             /* not base64url */
+        acc = (acc << 6) | (unsigned long)v;
+        nbits += 6;
+        if (nbits >= 8) {
+            nbits -= 8;
+            if (n >= out_size - 1) break;          /* keep room for NUL */
+            out[n++] = (char)((acc >> nbits) & 0xFF);
+        }
+    }
+    out[n] = '\0';
+    return n;
+}
