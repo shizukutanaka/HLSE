@@ -1,0 +1,68 @@
+# Install: mkdir -p .github/workflows && cp examples/workflows/release.yml .github/workflows/
+#
+# Release gate. A tag must not become a release unless the engine still meets
+# the guarantees the README advertises, so this re-proves them from a clean
+# checkout rather than trusting the tagger:
+#   - the full test suite passes
+#   - corpus F1 is still 1.000 (the headline claim)
+#   - zero warnings under the strict flag set
+#   - the tag matches HLSE_VERSION in the source
+#
+# The version check exists because a tag and a compiled-in version that
+# disagree produce binaries nobody can trace back to a commit.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  gate:
+    name: Verify then publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag must match HLSE_VERSION
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          src=$(sed -n 's/.*#define HLSE_VERSION "\([^"]*\)".*/\1/p' hlse_core.h)
+          echo "tag=$tag source=$src"
+          if [ "$tag" != "$src" ]; then
+            echo "::error::tag v$tag does not match HLSE_VERSION $src"
+            exit 1
+          fi
+
+      - name: Build
+        run: make
+
+      - name: Zero strict warnings
+        run: make check-warnings
+
+      - name: Full test suite
+        run: make test
+
+      - name: Corpus F1 must still be 1.000
+        run: |
+          ./hlse_core --benchmark | tee /tmp/bench.txt
+          grep -q "F1:        1.000" /tmp/bench.txt \
+            || { echo "::error::F1 regressed below 1.000"; exit 1; }
+
+      - name: Memory safety
+        run: make asan-test
+
+      - name: Portable static binary
+        run: |
+          make static
+          sha256sum hlse_core_static > hlse_core_static.sha256
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            hlse_core_static
+            hlse_core_static.sha256
+          generate_release_notes: true

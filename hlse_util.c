@@ -224,3 +224,170 @@ hlse_json_escape(const char *s, char *out, size_t out_size) {
     }
     out[k] = '\0';
 }
+
+/* Standard CRC-32 (IEEE 802.3 / zlib, reflected polynomial 0xEDB88320).
+ * Table-free: the bitwise form is ~8x slower but costs no static table and
+ * runs on inputs of 30 bytes here, where the difference is unmeasurable. */
+unsigned long
+hlse_crc32(const unsigned char *data, size_t len) {
+    unsigned long crc = 0xFFFFFFFFUL;
+    size_t i;
+    int k;
+    if (!data) return 0;
+    for (i = 0; i < len; i++) {
+        crc ^= (unsigned long)data[i];
+        for (k = 0; k < 8; k++)
+            crc = (crc >> 1) ^ (0xEDB88320UL & (unsigned long)(-(long)(crc & 1)));
+    }
+    return (crc ^ 0xFFFFFFFFUL) & 0xFFFFFFFFUL;
+}
+
+/* Encode a 32-bit value as base62, left-padded with '0' to exactly 6 chars
+ * (6 base62 digits hold 62^6 > 2^32, so every CRC-32 fits). `out` must have
+ * room for 7 bytes. This is the encoding GitHub uses for the checksum suffix
+ * of its token formats. */
+void
+hlse_base62_6(unsigned long v, char *out) {
+    static const char A[] =
+        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    int i;
+    if (!out) return;
+    out[6] = '\0';
+    for (i = 5; i >= 0; i--) {
+        out[i] = A[v % 62u];
+        v /= 62u;
+    }
+}
+
+/* Pearson chi-square goodness-of-fit of a byte buffer against the uniform
+ * distribution (256 bins, 255 degrees of freedom).
+ *
+ * Why this exists alongside Shannon entropy: entropy alone cannot separate
+ * ENCRYPTED from COMPRESSED data — both sit near 8 bits/byte — which is the
+ * dominant false-positive source in entropy-based ransomware detection.
+ * Compression leaves residual structure in the byte histogram, so compressed
+ * data lands far from uniform, while cipher output is uniform by design.
+ *
+ * Interpretation: for truly uniform data the statistic is distributed around
+ * df = 255 with sd = sqrt(2*255) ~= 22.6, so values within roughly 185..325
+ * are unremarkable. Published measurements put encrypted files near 253 and
+ * compressed files in the high hundreds to low thousands.
+ *
+ * Returns -1.0 if the sample is too small for the statistic to mean anything
+ * (each bin wants an expected count >= 5, i.e. n >= 1280). */
+double
+hlse_chi_square_uniform(const unsigned char *data, size_t len) {
+    unsigned long counts[256];
+    double expected, chi = 0.0;
+    size_t i;
+    int b;
+
+    if (!data || len < 1280) return -1.0;
+    for (b = 0; b < 256; b++) counts[b] = 0;
+    for (i = 0; i < len; i++) counts[data[i]]++;
+
+    expected = (double)len / 256.0;
+    for (b = 0; b < 256; b++) {
+        double d = (double)counts[b] - expected;
+        chi += (d * d) / expected;
+    }
+    return chi;
+}
+
+/* Derive the AWS account ID that owns an access key ID, offline.
+ *
+ * AWS key IDs are a 4-character resource-type prefix (AKIA long-term user,
+ * ASIA temporary/STS, and others) followed by 16 base32 characters. The
+ * account number is not a lookup — it is encoded in the identifier itself:
+ * take the first 6 bytes of the decoded body, mask 0x7FFFFFFFFF80 and shift
+ * right 7. Publicly documented (Tal Be'ery; WithSecure's bitwise analysis of
+ * AWS key identifiers) and implemented in several open-source extractors.
+ *
+ * This matters for a leaked credential: the single most useful fact for
+ * whoever has to respond is WHICH account to rotate and audit, and getting it
+ * needs no call to sts:GetAccessKeyInfo — which suits a scanner that must
+ * never touch the network.
+ *
+ * Also serves as a structural check: a well-formed key ID is exactly 20
+ * characters with a valid base32 body, so a random look-alike fails here.
+ *
+ * Writes a 12-digit zero-padded account ID into `out` (needs 13 bytes).
+ * Returns 1 on success, 0 if `key` is not a structurally valid key ID. */
+int
+hlse_aws_account_from_key(const char *key, char *out, size_t out_size) {
+    static const char A32[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    unsigned long long v = 0, z, acct;
+    int i;
+
+    if (!key || !out || out_size < 13) return 0;
+    for (i = 0; i < 20; i++) if (!key[i]) return 0;   /* need 20 chars */
+    if (key[20] != '\0' &&
+        ((key[20] >= 'A' && key[20] <= 'Z') ||
+         (key[20] >= '0' && key[20] <= '9')))
+        return 0;                                     /* longer than 20 => not a key ID */
+
+    /* Body must be base32; accumulate the first 10 chars = 50 bits, then drop
+     * the low 2 so the top 48 bits are exactly the first 6 bytes. */
+    for (i = 4; i < 14; i++) {
+        const char *p = strchr(A32, key[i]);
+        if (!p || key[i] == '\0') return 0;
+        v = (v << 5) | (unsigned long long)(p - A32);
+    }
+    /* Remaining body characters still have to be valid base32. */
+    for (i = 14; i < 20; i++)
+        if (!strchr(A32, key[i])) return 0;
+
+    z = v >> 2;
+    acct = (z & 0x7FFFFFFFFF80ULL) >> 7;
+    /* Format into a buffer the compiler can size-check, then copy out bounded.
+     * out_size is a runtime value, so formatting straight into it trips
+     * -Wformat-truncation=2. The masked value spans at most 36 bits, so the
+     * 12-digit field is always sufficient. */
+    {
+        char tmp[24];
+        size_t n;
+        snprintf(tmp, sizeof tmp, "%012llu", acct);
+        n = strlen(tmp);
+        if (n >= out_size) n = out_size - 1;
+        memcpy(out, tmp, n);
+        out[n] = '\0';
+    }
+    return 1;
+}
+
+/* Decode base64url (RFC 4648 §5: '-' and '_' for the last two alphabet
+ * positions, padding optional) into `out`. Returns bytes written, or 0 on a
+ * malformed input. NUL-terminates when there is room, so the result can be
+ * treated as a string for substring inspection.
+ *
+ * Exists so JWT headers can be read offline: a JWT's header and payload are
+ * not encrypted, only encoded, so its algorithm and key id are plainly
+ * inspectable without contacting anything. */
+size_t
+hlse_base64url_decode(const char *in, size_t in_len, char *out, size_t out_size) {
+    unsigned long acc = 0;
+    int nbits = 0;
+    size_t i, n = 0;
+
+    if (!in || !out || out_size == 0) return 0;
+    for (i = 0; i < in_len; i++) {
+        int v;
+        char c = in[i];
+        if      (c >= 'A' && c <= 'Z') v = c - 'A';
+        else if (c >= 'a' && c <= 'z') v = c - 'a' + 26;
+        else if (c >= '0' && c <= '9') v = c - '0' + 52;
+        else if (c == '-')             v = 62;
+        else if (c == '_')             v = 63;
+        else if (c == '=')             break;      /* optional padding */
+        else return 0;                             /* not base64url */
+        acc = (acc << 6) | (unsigned long)v;
+        nbits += 6;
+        if (nbits >= 8) {
+            nbits -= 8;
+            if (n >= out_size - 1) break;          /* keep room for NUL */
+            out[n++] = (char)((acc >> nbits) & 0xFF);
+        }
+    }
+    out[n] = '\0';
+    return n;
+}

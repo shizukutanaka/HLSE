@@ -5,9 +5,9 @@ real attacks, so we hold a high bar for changes.
 
 ## TL;DR
 
-1. Run `make test` before opening a PR (1080+ checks; 14 CLI-integration
-   checks are known-failing for environment reasons — schema validators and
-   GitHub Actions workflow files absent in-tree — not engine bugs).
+1. Run `make test` before opening a PR. It must be **green** — 1164 checks,
+   0 failures. Schema-validation checks skip (with a printed NOTE) when the
+   optional `jsonschema` module is absent; install it to enforce them.
 2. Run `make check-warnings` — every module must compile clean under
    `-Wpedantic -Wshadow -Wconversion`.
 3. New detection logic must come with a test case in the matching axis
@@ -18,11 +18,13 @@ real attacks, so we hold a high bar for changes.
 
 ## CI quality gates
 
-Every PR must pass these gates (all run in CI, all runnable locally):
+Every PR must pass these gates. They are runnable locally, and shipped as CI
+workflows — run `make install-workflows` once to copy them into
+`.github/workflows/`, then commit, and every push is gated:
 
 | Gate | Command | What it enforces |
 |------|---------|------------------|
-| Tests | `make test` | All 9 suites + property + corpus + CLI integration (1080+) |
+| Tests | `make test` | All 9 suites + property + corpus + CLI integration (1164, must be green) |
 | Warnings | `make check-warnings` | Zero strict warnings across all modules |
 | Memory safety | `make asan-test` | No ASan/UBSan errors |
 | Fuzzing | `make fuzz` | 6 harnesses × 100K iterations, zero crashes |

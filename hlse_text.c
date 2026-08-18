@@ -1047,6 +1047,122 @@ normalize_whitespace(const char *in, char *out, size_t out_size) {
     out[k] = '\0';
 }
 
+/* ─── invisible instruction carriers (indirect prompt injection) ───────
+ *
+ * An AI agent that reads a document, page, or message consumes the raw code
+ * points, not the rendered glyphs. That gap is the attack: instructions are
+ * encoded in characters that render as nothing for a human reviewer but are
+ * tokenised normally by a model. Unit 42 documented this in the wild in
+ * March 2026 (ad-review evasion, system-prompt leakage on live platforms),
+ * and prompt injection is OWASP's top LLM risk for 2026.
+ *
+ * Two carriers are structural enough to detect without semantics:
+ *
+ *   1. The Unicode Tags block, U+E0000..U+E007F (UTF-8 F3 A0 80/81 xx).
+ *      It mirrors ASCII, so an entire English instruction encodes into it
+ *      one-to-one while rendering as nothing at all. Its only sanctioned
+ *      modern use is RGI emoji tag sequences, which are always introduced by
+ *      U+1F3F4 (F0 9F 8F B4) and run at most six tag characters each (e.g.
+ *      the England/Scotland/Wales flags). Tag characters materially in
+ *      excess of what the flags present can account for are a payload.
+ *
+ *   2. Long runs of zero-width characters (U+200B/200C/200D/FEFF), used to
+ *      encode data in binary. These code points have legitimate uses — ZWJ
+ *      in emoji sequences, ZWNJ in Persian and Indic scripts — but those are
+ *      sparse and interleaved with visible text, never in long runs, so the
+ *      signal is run length rather than mere presence.
+ *
+ * Deliberately structural only. This cannot catch a plain-language injection
+ * written in visible text; that is a semantic problem a pattern matcher does
+ * not solve, and the blind-spot text says so rather than implying coverage. */
+static void
+scan_invisible_carriers(const char *s, int *out_tag_chars,
+                        int *out_flag_bases, int *out_max_zw_run) {
+    const unsigned char *p = (const unsigned char *)s;
+    int tags = 0, flags = 0, run = 0, max_run = 0;
+
+    *out_tag_chars = *out_flag_bases = *out_max_zw_run = 0;
+    if (!s) return;
+
+    while (*p) {
+        int is_zw = 0;
+        if (p[0] == 0xF3 && p[1] == 0xA0 &&
+            (p[2] == 0x80 || p[2] == 0x81) && p[3] != 0) {
+            tags++;                       /* U+E0000..U+E007F */
+            p += 4;
+        } else if (p[0] == 0xF0 && p[1] == 0x9F &&
+                   p[2] == 0x8F && p[3] == 0xB4) {
+            flags++;                      /* U+1F3F4, emoji tag-sequence base */
+            p += 4;
+        } else if (p[0] == 0xE2 && p[1] == 0x80 &&
+                   (p[2] == 0x8B || p[2] == 0x8C || p[2] == 0x8D)) {
+            is_zw = 1;                    /* U+200B / U+200C / U+200D */
+            p += 3;
+        } else if (p[0] == 0xEF && p[1] == 0xBB && p[2] == 0xBF) {
+            is_zw = 1;                    /* U+FEFF */
+            p += 3;
+        } else {
+            p++;
+        }
+        if (is_zw) {
+            run++;
+            if (run > max_run) max_run = run;
+        } else {
+            run = 0;
+        }
+    }
+    *out_tag_chars   = tags;
+    *out_flag_bases  = flags;
+    *out_max_zw_run  = max_run;
+}
+
+/* Bounded copy into the caller's buffer; always NUL-terminates. */
+static void
+carrier_copy_reason(char *dst, size_t dst_size, const char *src) {
+    size_t n;
+    if (!dst || dst_size == 0) return;
+    n = strlen(src);
+    if (n >= dst_size) n = dst_size - 1;
+    memcpy(dst, src, n);
+    dst[n] = '\0';
+}
+
+int
+hlse_check_invisible_carriers(const char *text, char *reason,
+                              size_t reason_size) {
+    int tag_chars = 0, flag_bases = 0, zw_run = 0;
+
+    if (reason && reason_size) reason[0] = '\0';
+    if (!text) return 0;
+    scan_invisible_carriers(text, &tag_chars, &flag_bases, &zw_run);
+
+    /* Allow up to 6 tag characters per emoji flag base (RGI sequences are at
+     * most 5 subdivision letters plus the U+E007F terminator). */
+    /* Format into a fixed buffer the compiler can size-check, then copy out
+     * bounded — reason_size is a runtime value, so formatting straight into it
+     * trips -Wformat-truncation=2 (it must assume a size of 1). */
+    if (tag_chars > flag_bases * 6) {
+        char buf[320];
+        snprintf(buf, sizeof buf,
+            "Invisible instruction carrier: %d Unicode Tags character%s "
+            "(U+E0000..U+E007F) render as nothing but are read by an AI "
+            "agent as text — a known indirect prompt-injection vector",
+            tag_chars, tag_chars == 1 ? "" : "s");
+        carrier_copy_reason(reason, reason_size, buf);
+        return 70;
+    }
+    if (zw_run >= 8) {
+        char buf[256];
+        snprintf(buf, sizeof buf,
+            "Hidden data channel: run of %d consecutive zero-width "
+            "characters — legitimate use (emoji joiners, Persian/Indic "
+            "text) is sparse, not a run this long", zw_run);
+        carrier_copy_reason(reason, reason_size, buf);
+        return 40;
+    }
+    return 0;
+}
+
 static void
 add_text_reason(TextVerdict *v, int delta, const char *fmt, ...) {
     va_list ap;
@@ -1327,6 +1443,16 @@ hlse_check_text(const char *raw_text) {
 
     memset(&v, 0, sizeof(v));
     if (!raw_text) return v;
+
+    /* Run BEFORE normalization: the pipeline below deliberately strips these
+     * code points so keyword matching survives evasion, which would erase the
+     * evidence. Here their presence IS the finding. */
+    {
+        char inv_reason[512];
+        int inv = hlse_check_invisible_carriers(raw_text, inv_reason,
+                                                sizeof(inv_reason));
+        if (inv > 0) add_text_reason(&v, inv, "%s", inv_reason);
+    }
 
     normalize_whitespace(raw_text, normalized, sizeof(normalized));
 

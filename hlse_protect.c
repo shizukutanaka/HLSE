@@ -300,6 +300,11 @@ hlse_ransomware_check_directory(const char *dir_path) {
     struct dirent *ent;
     int suspicious_ext_count = 0;
     int high_entropy_count = 0;
+    /* Among the high-entropy files, how many have a byte histogram consistent
+     * with cipher output (uniform) vs one that still carries structure
+     * (compression)? See the chi-square block at the R2 site below. */
+    int chi_uniform_count = 0;
+    int chi_structured_count = 0;
     int partial_encrypt_count = 0;   /* R6: intermittent/partial encryption */
     int total_files = 0;
     unsigned char buf[4096];
@@ -390,6 +395,36 @@ hlse_ransomware_check_directory(const char *dir_path) {
                         total_files++;
                         if (h_ent > 7.5) {
                             high_entropy_count++;
+                            /* Entropy says "near 8 bits/byte" for BOTH cipher
+                             * output and compressed data, which is why the
+                             * magic-byte skip above exists — but that only
+                             * covers formats with a recognisable header. For
+                             * headerless or unknown containers it cannot help,
+                             * and the file lands here as a false "encrypted".
+                             *
+                             * Chi-square against the uniform distribution
+                             * discriminates where entropy cannot: cipher
+                             * output is uniform by construction (statistic
+                             * near df = 255), while compression leaves
+                             * histogram structure well above it.
+                             *
+                             * Deliberately three-way and score-neutral. The
+                             * bands are wide and the middle is left silent
+                             * because the separation is NOT clean in practice
+                             * (Davies et al., and the Kent "Why Current
+                             * Statistical Approaches to Ransomware Detection
+                             * Fail" analysis, report high false-positive rates
+                             * for every single statistic). This only annotates
+                             * an R2 finding that already fired; it never
+                             * raises or lowers the score, so a misread cannot
+                             * manufacture or suppress a ransomware verdict. */
+                            {
+                                double chi = hlse_chi_square_uniform(buf, n);
+                                if (chi >= 0.0) {
+                                    if (chi <= 350.0)       chi_uniform_count++;
+                                    else if (chi >= 500.0)  chi_structured_count++;
+                                }
+                            }
                         } else if (h_ent < 6.5 && st.st_size >= 16384 &&
                                    is_low_entropy_ext(name, nlen)) {
                             /* R6: intermittent/partial encryption. A text/
@@ -423,9 +458,28 @@ hlse_ransomware_check_directory(const char *dir_path) {
 
     /* R2: Entropy spike — if > 50% of files are high-entropy, suspicious */
     if (total_files >= 5 && high_entropy_count > total_files / 2) {
+        /* Qualify the finding with the byte-distribution evidence, so an
+         * operator triaging this alert knows whether the high entropy
+         * actually looks like ciphertext or merely like compression. */
+        /* Deliberately ONE-DIRECTIONAL. A clearly structured histogram is
+         * evidence the data is compressed rather than enciphered, and saying
+         * so helps triage. The converse does NOT hold: a uniform-looking
+         * histogram is not evidence of encryption, because compressed data
+         * often looks uniform too. Measured here on one deflate stream, the
+         * statistic ran 628 / 398 / 289 / 319 as the sample grew 2K -> 4K ->
+         * 8K -> whole file — non-monotonic, and overlapping the encrypted
+         * range at the 4 KB HLSE samples. Claiming "consistent with cipher
+         * output" off that would be asserting more than the number supports,
+         * so nothing is said in that case. */
+        const char *chi_note = "";
+        if (chi_structured_count > chi_uniform_count)
+            chi_note = "; byte distribution still carries structure, which "
+                       "fits compressed data better than encryption — check "
+                       "for an archive/media format before treating as "
+                       "ransomware";
         pv_add_reason(&v, 30,
             "R2: Entropy anomaly: %d/%d files above 7.5 bits/byte "
-            "(likely encrypted)", high_entropy_count, total_files);
+            "(likely encrypted)%s", high_entropy_count, total_files, chi_note);
     }
 
     /* R6: Intermittent/partial encryption — text/config files whose headers

@@ -306,6 +306,95 @@ static void test_json_escape_bounded(void) {
     CHECK(strlen(out) < sizeof out, "overflow");
 }
 
+static void test_crc32_known_vector(void) {
+    TEST("crc32: \"123456789\" -> 0xCBF43926 (standard vector)");
+    CHECK(hlse_crc32((const unsigned char *)"123456789", 9) == 0xCBF43926UL,
+          "crc mismatch");
+}
+
+static void test_crc32_empty(void) {
+    TEST("crc32: empty input -> 0");
+    CHECK(hlse_crc32((const unsigned char *)"", 0) == 0UL, "nonzero");
+}
+
+static void test_base62_6_padding(void) {
+    char out[7];
+    TEST("base62_6: pads to exactly 6 digits");
+    hlse_base62_6(0, out);
+    CHECK(strcmp(out, "000000") == 0 && strlen(out) == 6, out);
+}
+
+static void test_base62_6_radix(void) {
+    char out[7];
+    TEST("base62_6: 62 -> '000010' (radix boundary)");
+    hlse_base62_6(62, out);
+    CHECK(strcmp(out, "000010") == 0, out);
+}
+
+static void test_chi_square_perfect_uniform(void) {
+    unsigned char buf[2560];
+    int i;
+    TEST("chi_square: perfectly flat histogram -> 0");
+    for (i = 0; i < 2560; i++) buf[i] = (unsigned char)(i % 256);
+    CHECK(hlse_chi_square_uniform(buf, sizeof buf) < 0.0001, "not ~0");
+}
+
+static void test_chi_square_degenerate(void) {
+    unsigned char buf[2560];
+    TEST("chi_square: single-symbol buffer -> very large");
+    memset(buf, 'A', sizeof buf);
+    CHECK(hlse_chi_square_uniform(buf, sizeof buf) > 100000.0, "too small");
+}
+
+static void test_chi_square_small_sample(void) {
+    unsigned char buf[256];
+    TEST("chi_square: sample under 1280 bytes -> -1 (not meaningful)");
+    memset(buf, 0, sizeof buf);
+    CHECK(hlse_chi_square_uniform(buf, sizeof buf) < 0.0, "should be -1");
+}
+
+static void test_chi_square_null(void) {
+    TEST("chi_square: NULL input -> -1 (no crash)");
+    CHECK(hlse_chi_square_uniform(NULL, 4096) < 0.0, "should be -1");
+}
+
+static void test_aws_account_known_vector(void) {
+    char out[13];
+    TEST("aws_account: AKIAIOSFODNN7EXAMPLE -> 581039954779");
+    CHECK(hlse_aws_account_from_key("AKIAIOSFODNN7EXAMPLE", out, sizeof out) &&
+          strcmp(out, "581039954779") == 0, out);
+}
+
+static void test_aws_account_sts_prefix(void) {
+    char out[13];
+    /* Split so the source carries no contiguous key-shaped literal. */
+    const char *sts_key = "ASIA" "Y34FZKBO" "KMUTVV7A";
+    TEST("aws_account: ASIA (temporary) prefix also decodes");
+    CHECK(hlse_aws_account_from_key(sts_key, out, sizeof out) &&
+          strcmp(out, "609629065308") == 0, out);
+}
+
+static void test_aws_account_bad_length(void) {
+    char out[13];
+    TEST("aws_account: 21-char key rejected (real IDs are 20)");
+    CHECK(!hlse_aws_account_from_key("AKIA2E3MWORQXYZ4567PQ", out, sizeof out),
+          "should reject");
+}
+
+static void test_aws_account_bad_alphabet(void) {
+    char out[13];
+    TEST("aws_account: non-base32 char rejected ('1' not in A-Z2-7)");
+    CHECK(!hlse_aws_account_from_key("AKIA1111111111111111", out, sizeof out),
+          "should reject");
+}
+
+static void test_aws_account_null_safe(void) {
+    char out[13];
+    TEST("aws_account: NULL/short input rejected (no crash)");
+    CHECK(!hlse_aws_account_from_key(NULL, out, sizeof out) &&
+          !hlse_aws_account_from_key("short", out, sizeof out), "should reject");
+}
+
 int main(void) {
     printf("HLSE Util — Shared Utility Tests\n");
     printf("══════════════════════════════════════\n\n");
@@ -356,6 +445,19 @@ int main(void) {
     test_json_escape_basic();
     test_json_escape_control();
     test_json_escape_bounded();
+    test_crc32_known_vector();
+    test_crc32_empty();
+    test_base62_6_padding();
+    test_base62_6_radix();
+    test_chi_square_perfect_uniform();
+    test_chi_square_degenerate();
+    test_chi_square_small_sample();
+    test_chi_square_null();
+    test_aws_account_known_vector();
+    test_aws_account_sts_prefix();
+    test_aws_account_bad_length();
+    test_aws_account_bad_alphabet();
+    test_aws_account_null_safe();
 
     printf("\n══════════════════════════════════════\n");
     printf("Util tests: %d/%d passed", passed, total);

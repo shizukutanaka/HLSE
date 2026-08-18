@@ -13,6 +13,19 @@
 
 CC      ?= gcc
 
+# Build in parallel by default. The link targets are independent — each one
+# compiles its own objects, nothing shares intermediates — so this is safe, and
+# it cut a clean build from 14.3s to 6.0s on 4 cores. Waiting on a serial build
+# is time paid on every single edit, which is the cycle nobody budgets for.
+# `make -j1` still works: an explicit -j on the command line wins.
+NPROC   := $(shell nproc 2>/dev/null || echo 4)
+MAKEFLAGS += -j$(NPROC)
+
+# Make takes the FIRST target in the file as the default goal, so adding a
+# target above `all:` silently changes what a bare `make` does. Say it
+# explicitly: the default must never depend on where a target was inserted.
+.DEFAULT_GOAL := all
+
 # Security hardening. -fstack-protector-strong and _FORTIFY_SOURCE are
 # portable across GCC/Clang on Linux and macOS and apply to every object
 # (CLI, shared lib, tests). -fPIE + the linker flags below are added only
@@ -76,9 +89,29 @@ FUZZ_URL_ASAN     := tests/fuzz_url_asan
 FUZZ_SERVER       := tests/fuzz_server
 FUZZ_SERVER_ASAN  := tests/fuzz_server_asan
 
+
+install-workflows:   ## copy the shipped CI workflows into .github/workflows/
+	@# Every guarantee this project advertises — F1 = 1.000, zero warnings,
+	@# ASan clean — is a target someone has to remember to run. CI is what
+	@# turns a promise into something enforced, so the workflows ship in the
+	@# repo. They live under examples/ because the automation that maintains
+	@# the branch cannot write .github/workflows/ (no `workflows` permission),
+	@# and a documented manual step is a step that silently does not happen.
+	@mkdir -p .github/workflows
+	@for f in examples/workflows/*.yml; do \
+		b=$$(basename $$f); \
+		if [ -f .github/workflows/$$b ]; then \
+			printf '  %-20s %s\n' "SKIP (exists)" ".github/workflows/$$b"; \
+		else \
+			cp $$f .github/workflows/$$b; \
+			printf '  %-20s %s\n' "INSTALL" ".github/workflows/$$b"; \
+		fi; \
+	done
+	@echo "  Commit .github/workflows/ to enforce the gates on every push."
+
 # ─── primary targets ─────────────────────────────────────────────────────
 
-.PHONY: all cli lib static server server-check test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test
+.PHONY: all cli lib static server server-check test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test install-workflows
 
 all: $(BINARY) $(SHARED) $(SERVER_BIN)
 
@@ -113,9 +146,9 @@ $(PROT_BIN): tests/hlse_protect_tests.c hlse_protect.c hlse_protect.h
 	$(CC) $(CFLAGS) -D_GNU_SOURCE -o $@ tests/hlse_protect_tests.c hlse_protect.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
-$(SECR_BIN): tests/hlse_secrets_tests.c hlse_secrets.c hlse_secrets.h
+$(SECR_BIN): tests/hlse_secrets_tests.c hlse_secrets.c hlse_secrets.h hlse_util.c
 	@mkdir -p tests
-	$(CC) $(CFLAGS) -D_GNU_SOURCE -o $@ tests/hlse_secrets_tests.c hlse_secrets.c -I.
+	$(CC) $(CFLAGS) -D_GNU_SOURCE -o $@ tests/hlse_secrets_tests.c hlse_secrets.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(SUPP_BIN): tests/hlse_supply_tests.c hlse_supply.c hlse_supply.h
@@ -145,17 +178,17 @@ $(FUZZ_ASAN): tests/hlse_fuzz.c hlse_text.c hlse_text.h
 		-o $@ tests/hlse_fuzz.c hlse_text.c -I.
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
-$(FUZZ_SECRETS): tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_secrets.h
+$(FUZZ_SECRETS): tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_secrets.h hlse_util.c
 	@mkdir -p tests
 	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
-		-o $@ tests/hlse_secrets_fuzz.c hlse_secrets.c -I.
+		-o $@ tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
-$(FUZZ_SECRETS_ASAN): tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_secrets.h
+$(FUZZ_SECRETS_ASAN): tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_secrets.h hlse_util.c
 	@mkdir -p tests
 	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
 		-fsanitize=address,undefined \
-		-o $@ tests/hlse_secrets_fuzz.c hlse_secrets.c -I.
+		-o $@ tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
 $(FUZZ_SUPPLY): tests/hlse_supply_fuzz.c hlse_supply.c hlse_supply.h hlse_util.c

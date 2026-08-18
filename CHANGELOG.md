@@ -5,6 +5,187 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [Unreleased]
 
 ### Added
+- **JWT algorithm inspection, including the `alg:none` signature bypass**
+  (`hlse_util.c`, `hlse_secrets.c`). A JWT's header is base64url — encoded, not
+  encrypted — so its algorithm is readable offline.
+  - **`alg:none` was structurally invisible.** Such a token has an *empty*
+    signature segment by construction, and the detector required
+    `signature >= 20`, so it excluded exactly the most dangerous case: an
+    unsigned token anyone can forge. This is the classic signature bypass and
+    it still produced CVEs through Q1 2026 (CVE-2026-28802 Authlib,
+    CVE-2026-23993 HarbourJwt). Now reported at 70 (BLOCK) as an attack
+    artifact or misconfiguration — deliberately a *different* finding class
+    from a leaked credential, with its own `HLSE-SECRET-JWT-ALG-NONE` routing
+    id.
+  - **Case-insensitive**, because libraries keep falling to `nOnE` / `NONE` /
+    `None` variants; all four are covered by tests.
+  - Ordinary signed tokens now **name their algorithm** (`alg hs256`), which is
+    triage information for free.
+  - New `hlse_base64url_decode()` (RFC 4648 §5, padding optional).
+    +6 CLI-integration tests (p123).
+
+- **AWS key findings now name the owning account, derived offline**
+  (`hlse_util.c`, `hlse_secrets.c`). An AWS access key ID encodes the account
+  number in the identifier itself: base32-decode the body, take the first 6
+  bytes, mask `0x7FFFFFFFFF80`, shift right 7. Publicly documented (Tal Be'ery;
+  WithSecure's bitwise analysis of AWS key identifiers) and implemented in
+  several open-source extractors.
+  - Turns *"a key leaked"* into *"**this account** is exposed"* — the fact
+    whoever responds actually needs — with **no `sts:GetAccessKeyInfo` call**,
+    which is the whole point for a scanner that must never touch the network.
+    Comparable tools reach for a verification API here; the identifier already
+    carries the answer.
+  - Doubles as a **structural check**: a well-formed key ID is exactly 20
+    characters with a valid base32 (A–Z2–7) body, so a random look-alike is
+    rejected rather than annotated. The repo's own 21-character test fixture
+    correctly fails it.
+  - New `hlse_aws_account_from_key()`, validated against four reference
+    vectors cross-checked against the published Python implementation.
+    +5 util tests (52/52), +3 CLI-integration tests (p122).
+
+- **Confusable coverage beyond the original 36 mappings** (`hlse_core.c`).
+  `cp_fold()` hand-mapped ~36 code points; UTS #39's `confusables.txt` maps
+  ~6,565. Spoofs built from unmapped families folded to `?`, missed the brand
+  table entirely, and landed on the generic score-25 advisory — **below the
+  default fail threshold of 60, so they never gated CI and never named the
+  impersonated brand**. Measured before/after, all resolving to `paypal`:
+
+  | Spoof | Before | After |
+  |---|---|---|
+  | Cherokee `ᏢᎪᎩᏢᎪᏞ.com` | ALERT 40, no brand | BLOCK 75, whole-script confusable |
+  | Uppercase Cyrillic `РАУРАЛ.com` | ALERT 40, no brand | BLOCK 75, whole-script confusable |
+  | Fullwidth `ｐａｙｐａｌ.com` | ALERT 40, no brand | BLOCK 75, confusable characters |
+
+  - **Cherokee** (U+13A0–13F5) added to both `cp_fold()` and `cp_script()`.
+    Chrome names Cherokee alongside Cyrillic and Greek as a whole-script-
+    confusable script; its syllabary carries many Latin-capital look-alikes.
+  - **Uppercase Cyrillic and Greek** added. The parser's `str_tolower()` only
+    folds ASCII, so these reached `cp_fold()` un-lowercased and mapped to
+    nothing. All new mappings return lowercase, matching the lowercase brand
+    table. Only glyphs **visually identical** to their Latin counterpart are
+    listed — near-misses (Б, Л, Ω, σ, γ, η) were deliberately excluded, because
+    a wrong fold manufactures brand matches out of legitimate text. U+04C0
+    palochka is the genuine uppercase `l` look-alike.
+  - **Fullwidth (U+FF21–FF5A) and mathematical Latin (U+1D400–1D6A3)** fold as
+    ranges. These are Script=Latin — compatibility variants, not a script mix —
+    so they get a third, accurate label: *"Confusable characters … uses
+    look-alike variant characters"*, distinct from both mixed- and whole-script.
+
+### Fixed
+- **Non-ASCII domains are no longer flagged merely for being non-ASCII.** The
+  fallback advisory fired on *any* non-ASCII host, so `münchen.de` and `日本.jp`
+  — ordinary internationalised domains — were reported suspicious. It now
+  requires a character from a Latin-**confusable** script to actually be
+  present: an accented Latin name or a wholly different script has nothing to
+  be confused with. Browsers do not warn on these either. Reason text renamed
+  to *"Latin-confusable script characters in domain"* to match what it means.
+- **UTS #39: whole-script confusables are no longer mislabelled "mixed-script"**
+  (`hlse_core.c`). Unicode Technical Standard #39 separates two classes that
+  `detect_mixed_script()` collapsed into one: *mixed-script* (Latin alongside a
+  confusable character, `pаypal` with one Cyrillic а) and *whole-script
+  confusable* (every letter from a single non-Latin script, `раураӏ`, all
+  Cyrillic). The second is the harder and more dangerous class precisely
+  because the script-mixing tell is absent — browsers treat it separately —
+  yet HLSE reported it as `Mixed-script homoglyph`, which was factually wrong:
+  nothing was mixed.
+  - Script classification now reuses the existing `cp_script()` helper that the
+    Punycode detector already relied on, so both paths apply the same standard.
+  - Analysis is **per-label**, the unit UTS #39 defines and the unit a registry
+    issues. Judging the whole host would be meaningless: the ASCII `.com` marks
+    every host as containing Latin, so the whole-script case could never fire.
+  - **False-positive carve-out**: a single-script non-Latin label under a
+    registry that legitimately serves that script (`.ru`, `.su`, `.ua`, `.gr`,
+    `.am`, …) is ordinary internationalisation and no longer draws the generic
+    advisory — mirroring the per-script TLD allow-lists Chrome and Firefox use
+    before falling back to Punycode display. Mixed-script labels get no such
+    pass, since no registry legitimately issues those.
+  - Severity is unchanged in every attack case (brand spoofs still score 60 and
+    gate non-zero); only the wording changes, plus one clearly-legitimate class
+    stops being flagged. F1 stays 1.000 / 0.0% FP.
+  +6 CLI-integration tests (p120).
+
+### Added
+- **Prompt-injection detection: invisible instruction carriers**
+  (`hlse_text.c`). The repository description already advertised prompt-
+  injection coverage; no such detector existed. An AI agent consuming a
+  document reads code points, not rendered glyphs, and attackers exploit that
+  gap by encoding instructions in characters that render as nothing. Unit 42
+  documented this in the wild in March 2026 (ad-review evasion, system-prompt
+  leakage on live platforms); prompt injection is OWASP's top LLM risk for
+  2026.
+  - **Unicode Tags block** (U+E0000–U+E007F) mirrors ASCII one-to-one, so a
+    full English instruction encodes into it while rendering as nothing.
+    Detected when tag characters exceed what legitimate RGI emoji tag
+    sequences can account for (those are always introduced by U+1F3F4 and run
+    at most six tag characters each). Scores 70 (BLOCK).
+  - **Long zero-width runs** (U+200B/200C/200D/FEFF) used as a binary data
+    channel. Keyed on *run length*, not presence, because ZWJ in emoji
+    sequences and ZWNJ in Persian/Indic text are legitimate but sparse.
+    Scores 40 (ALERT).
+  - Runs on the raw input *before* the evasion-normalization pipeline, which
+    deliberately strips these code points — normalizing first would erase the
+    evidence.
+  - Verified against the false-positive boundaries: ZWJ family emoji, Persian
+    ZWNJ text, and all three UK subdivision flags together stay clean.
+  - Applied by **`scan <dir>`** as well as `text`. The realistic path is an AI
+    agent reading files out of a repository — CSA documented payloads planted
+    in tool descriptions, skill files and MCP server configs — not a human
+    pasting text into the CLI. Findings print with `file:line`, count toward
+    `threats`, and drive the exit gate. +5 CLI-integration tests (p119).
+  - **Structural only, and the blind spot now says so**: an injection written
+    in ordinary visible prose is a semantic problem this does not solve, and a
+    clean result is explicitly not clearance to feed untrusted content to an
+    agent. +5 CLI-integration tests (p118).
+
+- **Chi-square byte-distribution test to qualify the R2 entropy finding**
+  (`hlse_util.c`, `hlse_protect.c`). Shannon entropy cannot separate
+  *encrypted* from *compressed* data — both sit near 8 bits/byte — which is
+  the dominant false-positive source in entropy-based ransomware detection.
+  The existing magic-byte skip only covers formats with a recognisable header,
+  so a headerless or unknown container still lands as "likely encrypted".
+  Reproduced here: six raw-deflate files (no magic) scored entropy 7.910 vs
+  7.958 for random bytes — indistinguishable — and R2 fired on the compressed
+  set. Chi-square separated the same samples 546 vs 242 (uniform ~255).
+  - New `hlse_chi_square_uniform()` (256 bins, df 255; returns -1 below 1280
+    bytes where the statistic is not meaningful). +4 util tests (47/47).
+  - **One-directional by design.** A clearly structured histogram is evidence
+    of compression and is reported as such; a *uniform* histogram is NOT
+    reported as evidence of encryption, because compressed data often looks
+    uniform too. Measured on a single deflate stream, the statistic ran
+    628 / 398 / 289 / 319 as the sample grew 2K -> 4K -> 8K -> whole file —
+    non-monotonic, and overlapping the encrypted range at the 4 KB HLSE
+    samples. This matches the literature (Davies et al.; and the Kent
+    "Why Current Statistical Approaches to Ransomware Detection Fail"
+    analysis), which reports high false-positive rates for every single
+    statistic taken alone.
+  - **Score-neutral**: it annotates an R2 finding that already fired and never
+    raises or lowers the score, so a misread can neither manufacture nor
+    suppress a ransomware verdict. F1 stays 1.000 / 0.0% FP.
+  +3 CLI-integration tests (p117).
+
+- **Offline checksum verification for GitHub-format tokens** (`hlse_util.c`,
+  `hlse_secrets.c`). GitHub's token formats are `prefix_` + 30 chars of
+  entropy + 6 chars of checksum, where the checksum is CRC-32 of the entropy
+  encoded as 6 base62 digits (GitHub Engineering, *Behind GitHub's new
+  authentication token formats*, 2021). That makes well-formedness checkable
+  **without contacting GitHub**, which suits an offline-by-design scanner.
+  - Previously a random 36-character string after `ghp_` was reported with
+    `confidence: certain` — the shape matched, but nothing confirmed it was a
+    real token. Findings now say whether the checksum actually verifies.
+  - New `hlse_crc32()` (standard IEEE 802.3 / zlib, reflected 0xEDB88320) and
+    `hlse_base62_6()` primitives, validated against the standard CRC-32 test
+    vectors (`"123456789"` -> 0xCBF43926, empty -> 0). +4 util tests (43/43).
+  - **A checksum mismatch never suppresses a finding.** The encoding is
+    reconstructed from public documentation rather than validated against live
+    credentials, so treating a mismatch as "not a secret" could silently drop a
+    real leaked token — the one failure a secret scanner must not have. A
+    mismatch reports with a caveat that the value may be redacted,
+    illustrative, or mistyped. Scores are unchanged; F1 stays 1.000 / 0.0% FP.
+  - `hlse_secrets.c` now depends on `hlse_util.c`; the standalone
+    `secrets_tests` and `fuzz_secrets` Makefile targets were updated to link it
+    (they compiled the module in isolation and would otherwise fail to link).
+  +4 CLI-integration tests (p116).
+
 - **Slopsquat honesty for unverifiable package names** (`hlse_supply.c`,
   `hlse_core.c`). HLSE's package check is Damerau-Levenshtein distance<=2
   against a curated list, so a *wholly invented* name is invisible to it by

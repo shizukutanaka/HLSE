@@ -70,6 +70,36 @@ FILE *hlse_open_system_file(const char *path);
  * Shared helper so the CLI, server, and alert sink don't each carry a copy. */
 void hlse_json_escape(const char *s, char *out, size_t out_size);
 
+/* Standard CRC-32 (IEEE 802.3 / zlib, reflected poly 0xEDB88320). */
+unsigned long hlse_crc32(const unsigned char *data, size_t len);
+
+/* Encode a 32-bit value as exactly 6 base62 digits, '0'-padded on the left.
+ * `out` needs room for 7 bytes. Used to check the checksum suffix that
+ * GitHub-format tokens carry, so their integrity is verifiable offline. */
+void hlse_base62_6(unsigned long v, char *out);
+
+/* Pearson chi-square of a byte buffer against the uniform distribution
+ * (256 bins, df = 255). Complements Shannon entropy, which cannot separate
+ * encrypted from compressed data: cipher output is uniform (statistic near
+ * 255), while compression leaves histogram structure (far above it).
+ * Returns -1.0 when len < 1280 (sample too small to be meaningful). */
+double hlse_chi_square_uniform(const unsigned char *data, size_t len);
+
+/* Derive the owning AWS account ID from an access key ID, offline — the
+ * account number is encoded in the identifier, so no sts:GetAccessKeyInfo
+ * call is needed. Writes 12 zero-padded digits into `out` (needs >= 13 bytes).
+ * Returns 1 on success, 0 if `key` is not a structurally valid key ID
+ * (exactly 20 chars, 4-char prefix, base32 body), which doubles as a
+ * well-formedness check. */
+int hlse_aws_account_from_key(const char *key, char *out, size_t out_size);
+
+/* Decode base64url (RFC 4648 sec. 5, padding optional) into `out`; returns
+ * bytes written, 0 if malformed. NUL-terminates when there is room. Lets a
+ * JWT header be read offline — header and payload are encoded, not encrypted,
+ * so the algorithm and key id are plainly inspectable. */
+size_t hlse_base64url_decode(const char *in, size_t in_len,
+                             char *out, size_t out_size);
+
 #ifdef __cplusplus
 }
 #endif

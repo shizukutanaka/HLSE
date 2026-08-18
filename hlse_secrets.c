@@ -32,10 +32,39 @@
 #include <ctype.h>
 
 #include "hlse_secrets.h"
+#include "hlse_util.h"   /* hlse_crc32, hlse_base62_6 */
 
 /* ═══════════════════════════════════════════════════════════════════════
  * Internal helpers
  * ═══════════════════════════════════════════════════════════════════════ */
+
+/* GitHub's token formats carry a checksum, so their integrity is verifiable
+ * WITHOUT contacting GitHub — which suits an offline-by-design scanner. The
+ * layout is `prefix_` + 30 chars of entropy + 6 chars of checksum, where the
+ * checksum is CRC-32 of the entropy encoded as 6 base62 digits (GitHub
+ * Engineering, "Behind GitHub's new authentication token formats", 2021).
+ *
+ * Returns: 0 = not a fixed-length GitHub-family token (check not applicable),
+ *          1 = checksum verifies, 2 = checksum mismatch.
+ *
+ * This is used ONLY to qualify confidence, never to drop a finding. The
+ * encoding is reconstructed from public documentation rather than validated
+ * against live credentials, so treating a mismatch as "not a secret" could
+ * silently discard a real leaked token — the one failure a secret scanner
+ * must not have. A mismatch therefore still reports, just with the caveat
+ * that it may be a redacted, illustrative, or hand-typed value. */
+static int
+github_checksum_state(const char *prefix, const char *suffix, size_t suffix_len)
+{
+    char want[7];
+    if (suffix_len != 36) return 0;
+    if (strcmp(prefix, "ghp_") != 0 && strcmp(prefix, "gho_") != 0 &&
+        strcmp(prefix, "ghu_") != 0 && strcmp(prefix, "ghs_") != 0 &&
+        strcmp(prefix, "ghr_") != 0)
+        return 0;
+    hlse_base62_6(hlse_crc32((const unsigned char *)suffix, 30), want);
+    return (memcmp(want, suffix + 30, 6) == 0) ? 1 : 2;
+}
 
 static void
 sv_add(SecretVerdict *v, int delta, const char *type,
@@ -695,6 +724,11 @@ hlse_scan_secrets(const char *text) {
         const SecretPattern *sp = &SECRET_PATTERNS[i];
         p = text;
         while ((p = strstr(p, sp->prefix)) != NULL) {
+            /* set by github_checksum_state() below: 0 n/a, 1 valid, 2 bad */
+            int ck_state;
+            /* " (AWS account NNNNNNNNNNNN — ...)" when the token is a
+             * structurally valid AWS key ID, empty otherwise. */
+            char aws_note[96];
             /* Validate suffix characters */
             const char *suffix = p + sp->prefix_len;
             int valid = 0;
@@ -715,8 +749,34 @@ hlse_scan_secrets(const char *text) {
                     char preview[64];
                     snprintf(preview, sizeof(preview), "%.8s%.4s...",
                              sp->prefix, suffix);
+                    ck_state = github_checksum_state(
+                        sp->prefix, suffix,
+                        tok_len - (size_t)sp->prefix_len);
+                    /* For an AWS key ID the owning account number is encoded
+                     * in the identifier itself. Surfacing it turns "a key
+                     * leaked" into "THIS account is exposed", which is the
+                     * fact whoever responds actually needs — and it costs no
+                     * network call. */
+                    aws_note[0] = '\0';
+                    if (tok_len == 20) {
+                        char keybuf[21], acct[13];
+                        memcpy(keybuf, p, 20);
+                        keybuf[20] = '\0';
+                        if (hlse_aws_account_from_key(keybuf, acct, sizeof acct))
+                            snprintf(aws_note, sizeof aws_note,
+                                     " (AWS account %s — rotate this key and "
+                                     "audit that account)", acct);
+                    }
                     sv_add(&v, sp->score, sp->label,
-                           "%s found: %s", sp->label, preview);
+                           "%s found: %s%s%s", sp->label, preview, aws_note,
+                           ck_state == 1
+                             ? " (checksum verifies — well-formed, "
+                               "treat as live until rotated)"
+                             : ck_state == 2
+                               ? " (checksum does NOT verify — may be a "
+                                 "redacted, illustrative, or mistyped value; "
+                                 "still reported, verify manually)"
+                               : "");
                 }
             }
             p += sp->prefix_len;
@@ -924,6 +984,57 @@ hlse_scan_secrets(const char *text) {
              * signed JWT has header>=10, payload>=10, signature>=20.       */
             ok = (seg == 3 && seglens[0] >= 10 && seglens[1] >= 10 &&
                   seglens[2] >= 20);
+
+            /* The header is base64url, not encrypted, so the algorithm is
+             * readable offline. Two things are worth saying about it:
+             *
+             *  - alg "none" means the token is unsigned and anyone can forge
+             *    one. This is the classic signature-bypass, still producing
+             *    CVEs through 2026 (e.g. CVE-2026-28802 in Authlib), and
+             *    libraries keep falling to CASE VARIANTS — nOnE, NONE — so the
+             *    comparison here is case-insensitive.
+             *  - Such a token has an EMPTY signature segment by construction,
+             *    so the seglens[2] >= 20 rule above excludes exactly the most
+             *    dangerous case. It is matched separately below.
+             *
+             * Naming the algorithm on an ordinary token is triage information
+             * for free: it says what to check without opening the token. */
+            if (seg == 3 && seglens[0] >= 10 && seglens[1] >= 10) {
+                char hdr[256];
+                size_t hn = hlse_base64url_decode(jp, (size_t)seglens[0],
+                                                  hdr, sizeof hdr);
+                if (hn > 0) {
+                    const char *a = strstr(hdr, "\"alg\"");
+                    if (a) {
+                        const char *q1 = strchr(a + 5, '"');
+                        const char *q2 = q1 ? strchr(q1 + 1, '"') : NULL;
+                        if (q1 && q2 && q2 > q1 + 1 &&
+                            (size_t)(q2 - q1 - 1) < 32) {
+                            char alg[32];
+                            size_t al = (size_t)(q2 - q1 - 1);
+                            size_t ai;
+                            memcpy(alg, q1 + 1, al);
+                            alg[al] = '\0';
+                            for (ai = 0; ai < al; ai++)
+                                alg[ai] = (char)tolower((unsigned char)alg[ai]);
+                            if (strcmp(alg, "none") == 0) {
+                                sv_add(&v, 70, "JWT_ALG_NONE",
+                                    "Unsigned JWT (alg \"none\"): the signature "
+                                    "is absent, so this token can be forged by "
+                                    "anyone — an attack artifact or a dangerous "
+                                    "misconfiguration, not a normal credential");
+                                break;
+                            }
+                            if (ok) {
+                                sv_add(&v, 60, "JWT",
+                                    "JWT bearer token (alg %s, "
+                                    "header.payload.signature)", alg);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
             if (ok) {
                 sv_add(&v, 60, "JWT",
                        "JWT bearer token (header.payload.signature)");
