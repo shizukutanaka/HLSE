@@ -24,8 +24,8 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             1080 passing (9 unit suites + corpus + CLI
-                                 integration — see: make test)
+  Structured tests:             1156 passing, 0 failing (9 unit suites +
+                                 corpus + CLI integration — see: make test)
   Fuzz iterations:              600,000 (6 harnesses × 100K, 0 crashes)
   ASan + UBSan:                 0 errors
   Compiler warnings:            0 (-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
@@ -107,7 +107,7 @@ See `examples/hlse-scan.yml` for GitHub Actions integration and
 
 ## Evasion-resistant detection
 
-HLSE normalizes input through a 5-stage pipeline before keyword
+HLSE normalizes input through a 6-stage pipeline before keyword
 matching, defeating common evasion techniques:
 
 1. **Zero-width stripping** — U+200B, U+200C, U+200D, U+2060, U+FEFF
@@ -234,14 +234,14 @@ response. The JSON parser/escaper/rate limiter are unit-tested in
 | Unit (URL) | 39 | Individual URL detector accuracy (incl. IDN/Punycode + raw-UTF-8 Cyrillic/Greek/Armenian homograph, free-hosting, shorteners, new brands) |
 | Unit (text) | 18 | Individual text signal accuracy (incl. BEC patterns, IRS FP regression, smishing) |
 | Property invariants | 64 | Monotonicity, bounds, determinism, case, evasion (P1–P13) |
-| Protection | 21 | Ransomware (incl. R6 intermittent-encryption), network drive, SMB, MBR/GPT, ESP |
+| Protection | 22 | Ransomware (incl. R6 intermittent-encryption), network drive, SMB, MBR/GPT, ESP |
 | Secrets | 66 | Credentials (55 token patterns + GCP SA JSON + Azure SAS + Azure AccountKey + AWS creds-file + JWT + Telegram + URI creds), email headers (E1-E6 incl. E1 brand-domain ownership guard + E5 Received-chain anomaly), crypto addresses (BTC/ETH/SOL/XMR/LTC/DOGE/XRP/DASH/XLM/ADA/BCH/ATOM/XTZ/DOT/ALGO) |
 | Supply chain | 39 | Package typosquat (pip/npm/cargo/go/gem), pastejacking (Unix + Windows ClickFix + macOS osascript + Python download-exec + P9 reverse shell), network |
 | File/Audit | 36 | File masquerade (PE/ELF/Mach-O/7ZIP/CAB/WASM/shebang-script/HTML-smuggling), system hardening (SSH/perms/DNS/cron incl. /etc/cron.*+/etc/crontab/PATH/shell-rc incl. PROMPT_COMMAND/function-override/alias-hijack+/etc/profile.d, sudoers NOPASSWD A7) + hardening index |
-| Util | 39 | Entropy, JSON escaping, Damerau-Levenshtein, benign-magic (31 formats: archives/images/media/fonts/certs/scientific) + safe system-file open (FIFO/symlink) |
+| Util | 52 | Entropy, JSON escaping, Damerau-Levenshtein, benign-magic (31 formats: archives/images/media/fonts/certs/scientific) + safe system-file open (FIFO/symlink) |
 | Server | 15 | HTTP server JSON request parser/escaper + per-IP rate limiter |
 | OOD corpus | 29 | Out-of-distribution F1 (held-out phishing/scam) |
-| CLI integration | 714 | All 12 subcommands, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON, SARIF relative URIs, obfuscated-IP/@-authority URL guards, HTML-smuggling, secret-format coverage (JWT/AWS-creds/Telegram/URI-creds), no-arg exit=2 |
+| CLI integration | 776 | All 12 subcommands, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON, SARIF relative URIs, obfuscated-IP/@-authority URL guards, HTML-smuggling, secret-format coverage (JWT/AWS-creds/Telegram/URI-creds), no-arg exit=2 |
 | Fuzz | 6 × 100K | text / secrets / supply-chain / file / URL / server-JSON harnesses (random bytes, truncated UTF-8, keyword stuffing, typosquat mutation, bidi/control, Unicode mutation, percent-encoding, dangerous-scheme, malformed JSON) |
 
 ## Privacy
