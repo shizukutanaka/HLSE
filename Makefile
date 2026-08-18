@@ -21,6 +21,11 @@ CC      ?= gcc
 NPROC   := $(shell nproc 2>/dev/null || echo 4)
 MAKEFLAGS += -j$(NPROC)
 
+# Make takes the FIRST target in the file as the default goal, so adding a
+# target above `all:` silently changes what a bare `make` does. Say it
+# explicitly: the default must never depend on where a target was inserted.
+.DEFAULT_GOAL := all
+
 # Security hardening. -fstack-protector-strong and _FORTIFY_SOURCE are
 # portable across GCC/Clang on Linux and macOS and apply to every object
 # (CLI, shared lib, tests). -fPIE + the linker flags below are added only

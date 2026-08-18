@@ -6947,6 +6947,29 @@ scan_git_history(const char *root, int json_out, int sarif_out) {
 }
 #pragma GCC diagnostic pop
 
+
+/* Remove `n` argv elements starting at index `i`, keeping BOTH argc and the
+ * end-of-options boundary in step.
+ *
+ * The boundary decrement is the part that is easy to miss and expensive to get
+ * wrong: every removal slides the operands left by n, so a boundary left
+ * unchanged admits n operands into the flag-scanning range. Data written after
+ * `--` then gets parsed as options — which is exactly the bug the `--` marker
+ * exists to prevent. Doing the bookkeeping in one place is the only way this
+ * invariant stays true; it previously had to be restated at eleven call sites,
+ * and was wrong at all of them. */
+static void
+argv_remove(char **argv, int *argc, int *argc_flags, int i, int n) {
+    int j;
+    for (j = i; j + n < *argc; j++) argv[j] = argv[j + n];
+    *argc -= n;
+    if (i < *argc_flags) {
+        *argc_flags -= n;
+        if (*argc_flags < i) *argc_flags = i;
+    }
+}
+
+
 int
 main(int argc, char **argv) {
     int json_out = 0;
@@ -7029,39 +7052,29 @@ main(int argc, char **argv) {
         if (argc_flags > argc) argc_flags = argc;
     }
 
-    /* Parse --json flag (anywhere) */
+    /* Boolean global flags: one table, one pass. These were six separate
+     * scan loops that differed only in the flag name and the variable set,
+     * each restating the argv-shifting logic. Adding a flag is now a row. */
     {
-        int i;
+        struct { const char *name; const char *alias; int *flag; } bools[] = {
+            { "--json",         NULL, &json_out            },
+            { "--sarif",        NULL, &sarif_out           },
+            { "--quiet",        "-q", &quiet               },
+            { "--syslog",       NULL, &opt_syslog          },
+            { "--fingerprints", NULL, &g_emit_fingerprints },
+            { "--git-history",  NULL, &g_git_history       },
+        };
+        const int nbools = (int)(sizeof(bools) / sizeof(bools[0]));
+        int i, k;
         for (i = 1; i < argc_flags; i++) {
-            if (strcmp(argv[i], "--json") == 0) {
-                json_out = 1;
-                { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1]; argc--; }
-                break;
-            }
-        }
-    }
-
-    /* Parse --sarif flag (anywhere). SARIF 2.1.0 for GitHub code scanning;
-     * supported by the `scan` and `package --manifest` subcommands. */
-    {
-        int i;
-        for (i = 1; i < argc_flags; i++) {
-            if (strcmp(argv[i], "--sarif") == 0) {
-                sarif_out = 1;
-                { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1]; argc--; }
-                break;
-            }
-        }
-    }
-
-    /* Parse -q / --quiet flag (anywhere) — CI/CD mode: exit code only */
-    {
-        int i;
-        for (i = 1; i < argc_flags; i++) {
-            if (strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--quiet") == 0) {
-                quiet = 1;
-                { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1]; argc--; }
-                break;
+            for (k = 0; k < nbools; k++) {
+                if (strcmp(argv[i], bools[k].name) == 0 ||
+                    (bools[k].alias && strcmp(argv[i], bools[k].alias) == 0)) {
+                    *bools[k].flag = 1;
+                    argv_remove(argv, &argc, &argc_flags, i, 1);
+                    i--;            /* re-examine the element shifted into i */
+                    break;
+                }
             }
         }
     }
@@ -7093,8 +7106,7 @@ main(int argc, char **argv) {
                         return 2;
                     }
                 }
-                { int j; for (j = i; j < argc - 2; j++) argv[j] = argv[j+2];
-                  argc -= 2; }
+                argv_remove(argv, &argc, &argc_flags, i, 2);
                 break;
             }
         }
@@ -7118,8 +7130,7 @@ main(int argc, char **argv) {
                             "Error: --from expects email|sms|dm|qr|manual\n");
                     return 2;
                 }
-                { int j; for (j = i; j < argc - 2; j++) argv[j] = argv[j+2];
-                  argc -= 2; }
+                argv_remove(argv, &argc, &argc_flags, i, 2);
                 break;
             }
         }
@@ -7133,21 +7144,7 @@ main(int argc, char **argv) {
         for (i = 1; i < argc_flags - 1; i++) {
             if (strcmp(argv[i], "--baseline") == 0) {
                 g_baseline_file = argv[i + 1];
-                { int j; for (j = i; j < argc - 2; j++) argv[j] = argv[j+2];
-                  argc -= 2; }
-                break;
-            }
-        }
-    }
-
-    /* Parse --syslog (boolean) — push findings to syslog(LOG_AUTHPRIV). */
-    {
-        int i;
-        for (i = 1; i < argc_flags; i++) {
-            if (strcmp(argv[i], "--syslog") == 0) {
-                opt_syslog = 1;
-                { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1];
-                  argc--; }
+                argv_remove(argv, &argc, &argc_flags, i, 2);
                 break;
             }
         }
@@ -7159,38 +7156,7 @@ main(int argc, char **argv) {
         for (i = 1; i < argc_flags - 1; i++) {
             if (strcmp(argv[i], "--log-file") == 0) {
                 opt_log_file = argv[i + 1];
-                { int j; for (j = i; j < argc - 2; j++) argv[j] = argv[j+2];
-                  argc -= 2; }
-                break;
-            }
-        }
-    }
-
-    /* Parse --fingerprints (Perspective 107 / P0-1) — emit one stable
-     * fingerprint per finding instead of the verdict; redirect to a file to
-     * generate a baseline. */
-    {
-        int i;
-        for (i = 1; i < argc_flags; i++) {
-            if (strcmp(argv[i], "--fingerprints") == 0) {
-                g_emit_fingerprints = 1;
-                { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1];
-                  argc--; }
-                break;
-            }
-        }
-    }
-
-    /* Parse --git-history (Perspective 111, roadmap P0-2) — `scan <dir>
-     * --git-history` scans every commit ever made to the repo for secrets,
-     * not just the current working tree. */
-    {
-        int i;
-        for (i = 1; i < argc_flags; i++) {
-            if (strcmp(argv[i], "--git-history") == 0) {
-                g_git_history = 1;
-                { int j; for (j = i; j < argc - 1; j++) argv[j] = argv[j+1];
-                  argc--; }
+                argv_remove(argv, &argc, &argc_flags, i, 2);
                 break;
             }
         }
@@ -7208,8 +7174,7 @@ main(int argc, char **argv) {
                             ppath, strerror(errno));
                     return 2;
                 }
-                { int j; for (j = i; j < argc - 2; j++) argv[j] = argv[j+2];
-                  argc -= 2; }
+                argv_remove(argv, &argc, &argc_flags, i, 2);
                 break;
             }
         }

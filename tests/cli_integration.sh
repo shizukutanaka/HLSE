@@ -6502,6 +6502,43 @@ done
 python3 -c "import jsonschema" 2>/dev/null || \
   echo "  NOTE: python 'jsonschema' not installed — schema-validation checks were SKIPPED, not enforced."
 
+# ── p124: the -- boundary survives flag removal ─────────────────────────
+# Each removed flag slides the operands left, so the end-of-options boundary
+# must slide with them. When it did not, two preceding flags were enough to
+# admit an operand into the flag-scanning range and data written after `--`
+# was parsed as an option. The first `--` fix missed this; argv_remove() now
+# keeps argc and the boundary in step in one place.
+for P124_N in 0 1 2 3; do
+  rm -f /tmp/hlse_p124.txt
+  case $P124_N in
+    0) ./hlse_core -- "--log-file" /tmp/hlse_p124.txt X >/dev/null 2>&1 ;;
+    1) ./hlse_core --json -- "--log-file" /tmp/hlse_p124.txt X >/dev/null 2>&1 ;;
+    2) ./hlse_core --json --sarif -- "--log-file" /tmp/hlse_p124.txt X >/dev/null 2>&1 ;;
+    3) ./hlse_core --json --sarif -q -- "--log-file" /tmp/hlse_p124.txt X >/dev/null 2>&1 ;;
+  esac
+  [ -e /tmp/hlse_p124.txt ] && rc=1 || rc=0
+  rm -f /tmp/hlse_p124.txt
+  check "p124: operand after -- stays data with $P124_N preceding flag(s)" "0" "$rc"
+done
+
+# Every consolidated boolean flag still takes effect
+./hlse_core --json "https://g00gle.com" 2>/dev/null | grep -q '"kind"' \
+    && check "p124: --json still emits JSON after consolidation" "0" "0" \
+    || check "p124: --json still emits JSON after consolidation" "0" "1"
+[ -z "$(./hlse_core -q "https://g00gle.com" 2>/dev/null)" ] \
+    && check "p124: -q still silences output" "0" "0" \
+    || check "p124: -q still silences output" "0" "1"
+./hlse_core --sarif --json "https://g00gle.com" 2>/dev/null | grep -q '"kind"' \
+    && check "p124: flags work in any order" "0" "0" \
+    || check "p124: flags work in any order" "0" "1"
+
+# Make picks the FIRST target as the default goal, so inserting a target above
+# `all:` silently changed what a bare `make` does — it stopped building the
+# binary. Pin the default so target order can never decide it again.
+grep -q "^\.DEFAULT_GOAL := all" Makefile \
+    && check "p124: Makefile pins .DEFAULT_GOAL (bare make builds)" "0" "0" \
+    || check "p124: Makefile pins .DEFAULT_GOAL (bare make builds)" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
