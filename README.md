@@ -81,6 +81,7 @@ make coverage   # gcov code coverage report
 make fuzz       # 100K iteration fuzz test
 make server     # build hlse-server (HTTP API + web dashboard)
 make install    # install CLI + hlse-server to ~/.local/{bin,lib,include/hlse,share/man,share/hlse}
+make install-workflows  # copy the shipped CI workflows into .github/workflows/
 
 After install, compile your code against the library:
 ```bash

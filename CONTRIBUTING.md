@@ -18,7 +18,9 @@ real attacks, so we hold a high bar for changes.
 
 ## CI quality gates
 
-Every PR must pass these gates (all run in CI, all runnable locally):
+Every PR must pass these gates. They are runnable locally, and shipped as CI
+workflows — run `make install-workflows` once to copy them into
+`.github/workflows/`, then commit, and every push is gated:
 
 | Gate | Command | What it enforces |
 |------|---------|------------------|
