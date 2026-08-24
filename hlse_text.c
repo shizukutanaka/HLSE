@@ -20,6 +20,7 @@
 #include <stdarg.h>
 
 #include "hlse_text.h"
+#include "hlse_util.h"   /* hlse_sanitize_terminal */
 
 /* ─────────────── signal definitions ─────────────── */
 
@@ -1173,6 +1174,7 @@ add_text_reason(TextVerdict *v, int delta, const char *fmt, ...) {
     }
     va_start(ap, fmt);
     vsnprintf(v->reasons[v->n_reasons], sizeof(v->reasons[0]), fmt, ap);
+    hlse_sanitize_terminal(v->reasons[v->n_reasons]);
     va_end(ap);
     v->n_reasons++;
 }

@@ -7523,9 +7523,19 @@ main(int argc, char **argv) {
                                         threats++;
                                         if (inv > max_score) max_score = inv;
                                         if (inv >= g_fail_threshold) gate_hits++;
-                                        if (!quiet && !json_out && !sarif_out)
+                                        if (!quiet && !json_out && !sarif_out) {
+                                            /* Sanitize a DISPLAY copy of the
+                                             * path: the real path is still
+                                             * needed for file I/O, but an
+                                             * attacker-named file must not
+                                             * inject ANSI into the terminal
+                                             * (CWE-150). */
+                                            char dp[4096];
+                                            snprintf(dp, sizeof dp, "%s", sarif_path);
+                                            hlse_sanitize_terminal(dp);
                                             printf("  %s:%d: %s\n",
-                                                   sarif_path, lineno, inv_r);
+                                                   dp, lineno, inv_r);
+                                        }
                                     }
                                 }
                                 SecretVerdict sv = hlse_scan_secrets(line);
@@ -7630,9 +7640,16 @@ main(int argc, char **argv) {
                                         printf("}\n");
                                     } else {
                                         int i;
+                                        /* Display copy only: fullpath is still
+                                         * used for I/O; the terminal must not
+                                         * see raw control bytes from an
+                                         * attacker-chosen filename (CWE-150). */
+                                        char dp[4096];
+                                        snprintf(dp, sizeof dp, "%s", fullpath);
+                                        hlse_sanitize_terminal(dp);
                                         printf("%-7s [%d]  %s:%d\n",
                                                hlse_action_for_score(sv.score),
-                                               sv.score, fullpath, lineno);
+                                               sv.score, dp, lineno);
                                         for (i = 0; i < sv.n_findings; i++)
                                             printf("  \xc2\xb7 %s\n",
                                                    sv.findings[i].description);
@@ -8204,6 +8221,11 @@ main(int argc, char **argv) {
         {
             const char *eco = (argc > idx + 2) ? argv[idx + 2] : NULL;
             PackageVerdict pv = hlse_check_package(argv[idx + 1], eco);
+            /* Sanitized display copy of the package name for plain-text echoes
+             * (CWE-150); the raw name already drove the check. */
+            char pdisp[256];
+            snprintf(pdisp, sizeof pdisp, "%s", argv[idx + 1]);
+            hlse_sanitize_terminal(pdisp);
             {
                 const char *aar[1]; int aqn = 0;
                 if (pv.reason[0]) { aar[0] = pv.reason; aqn = 1; }
@@ -8283,7 +8305,7 @@ main(int argc, char **argv) {
             } else if (pv.score == 0) {
                 const char *bs = hlse_blindspot_for(
                     pv.reason[0] ? "package" : "package_unverified");
-                printf("OK    %s\n", argv[idx + 1]);
+                printf("OK    %s\n", pdisp);
                 /* Mirror the URL canonical-confirmation line: say explicitly
                  * when the name IS recognised, so "OK" is not ambiguous
                  * between "known good" and "never heard of it". */
@@ -8292,7 +8314,7 @@ main(int argc, char **argv) {
             } else {
                 printf("%-7s [%d]  %s\n",
                        hlse_action_for_score(pv.score), pv.score,
-                       argv[idx + 1]);
+                       pdisp);
                 if (pv.reason[0])
                     printf("  \xc2\xb7 %s\n", pv.reason);
                 if (pv.score >= 40) {
@@ -8951,6 +8973,13 @@ main(int argc, char **argv) {
         }
         {
             FileVerdict fv;
+            /* Display copy of the (attacker-controllable) filename: the raw
+             * argv value is still used for I/O and analysis, but the plain-text
+             * echo below must not carry ANSI/control bytes to the terminal
+             * (CWE-150). JSON output escapes separately via json_escape. */
+            char fdisp[4096];
+            snprintf(fdisp, sizeof fdisp, "%s", argv[idx + 1]);
+            hlse_sanitize_terminal(fdisp);
             /* If the file exists on disk, do full magic-byte + filename
              * analysis. If not, still check the NAME for disguise tricks
              * (RLO, double extension, lure words) — these are dangerous
@@ -9038,13 +9067,13 @@ main(int argc, char **argv) {
                 printf("}\n");
             } else if (fv.score == 0) {
                 const char *bs = hlse_blindspot_for("file");
-                printf("OK    %s\n", argv[idx + 1]);
+                printf("OK    %s\n", fdisp);
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
                 printf("%-7s [%d]  %s\n",
                        hlse_action_for_score(fv.score), fv.score,
-                       argv[idx + 1]);
+                       fdisp);
                 for (i = 0; i < fv.n_reasons; i++)
                     printf("  \xc2\xb7 %s\n", fv.reasons[i]);
                 if (fv.score >= 40) {
@@ -9290,6 +9319,15 @@ main(int argc, char **argv) {
             return 2;
         }
 
+        /* Sanitized display copy of the input for the plain-text echoes below.
+         * The raw `input` still drives detection; only the terminal echo must
+         * not carry attacker-supplied ANSI/control bytes (CWE-150). JSON uses
+         * json_escape separately. Bounded to the max URL/host the scanner
+         * handles; longer inputs are display-truncated, not scanned short. */
+        char idisp[MAX_HOST + MAX_PATH + 16];
+        snprintf(idisp, sizeof idisp, "%s", input);
+        hlse_sanitize_terminal(idisp);
+
         /* Use unified scan API */
         ScanResult sr = hlse_scan(input);
         /* Push to alert sinks (--syslog/--log-file) if enabled — emitted from
@@ -9328,7 +9366,7 @@ main(int argc, char **argv) {
                 if (d > 0) {
                     const char *ch_rsn = channel_reason(g_from_channel);
                     const char *bs2 = hlse_blindspot_for(sr.is_url ? "url" : "text");
-                    printf("%-7s [%d]  %s\n", hlse_action_for_score(d), d, input);
+                    printf("%-7s [%d]  %s\n", hlse_action_for_score(d), d, idisp);
                     if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                     if (bs2) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs2);
                     {
@@ -9343,7 +9381,7 @@ main(int argc, char **argv) {
                             hlse_canonical_confirm(input, canon_brand, sizeof(canon_brand));
                 const char *bs = hlse_blindspot_for(
                     has_c ? "url_canonical" : (sr.is_url ? "url" : "text"));
-                printf("OK    %s\n", input);
+                printf("OK    %s\n", idisp);
                 if (has_c)
                     printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
                            "(HLSE brand registry)\n", canon_brand);
@@ -9359,7 +9397,7 @@ main(int argc, char **argv) {
                 ch_rsn = channel_reason(g_from_channel);
             }
             printf("%-7s [%d]  %s\n",
-                   hlse_action_for_score(eff), eff, input);
+                   hlse_action_for_score(eff), eff, idisp);
             for (i = 0; i < sr.n_reasons; i++) {
                 if (strncmp(sr.reasons[i], "Amplifier:", 10) == 0) continue;
                 printf("  \xc2\xb7 %s\n", sr.reasons[i]);

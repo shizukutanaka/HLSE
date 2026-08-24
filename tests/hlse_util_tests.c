@@ -395,6 +395,28 @@ static void test_aws_account_null_safe(void) {
           !hlse_aws_account_from_key("short", out, sizeof out), "should reject");
 }
 
+static void test_sanitize_terminal_control(void) {
+    char b[] = "a\x1b" "[31mb\tc\x7f" "d";  /* split so \x escapes do not absorb the next char */
+    TEST("sanitize_terminal: control bytes and 0x7f -> ?");
+    hlse_sanitize_terminal(b);
+    CHECK(strcmp(b, "a?[31mb?c?d") == 0, b);
+}
+
+static void test_sanitize_terminal_printable(void) {
+    char b[] = "normal /path/to/file.env:42";
+    TEST("sanitize_terminal: printable ASCII untouched");
+    hlse_sanitize_terminal(b);
+    CHECK(strcmp(b, "normal /path/to/file.env:42") == 0, b);
+}
+
+static void test_sanitize_terminal_null_empty(void) {
+    char e[] = "";
+    TEST("sanitize_terminal: NULL and empty are safe");
+    hlse_sanitize_terminal(NULL);
+    hlse_sanitize_terminal(e);
+    CHECK(e[0] == '\0', "empty changed");
+}
+
 int main(void) {
     printf("HLSE Util — Shared Utility Tests\n");
     printf("══════════════════════════════════════\n\n");
@@ -458,6 +480,9 @@ int main(void) {
     test_aws_account_bad_length();
     test_aws_account_bad_alphabet();
     test_aws_account_null_safe();
+    test_sanitize_terminal_control();
+    test_sanitize_terminal_printable();
+    test_sanitize_terminal_null_empty();
 
     printf("\n══════════════════════════════════════\n");
     printf("Util tests: %d/%d passed", passed, total);

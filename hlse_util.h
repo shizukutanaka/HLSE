@@ -100,6 +100,14 @@ int hlse_aws_account_from_key(const char *key, char *out, size_t out_size);
 size_t hlse_base64url_decode(const char *in, size_t in_len,
                              char *out, size_t out_size);
 
+/* Neutralize terminal control bytes in `s`, in place: every byte < 0x20 and
+ * 0x7f becomes '?'. HLSE prints filenames and reason text to a terminal, and
+ * both can carry attacker-controlled bytes; raw ANSI/control sequences let an
+ * attacker forge or erase lines in an operator's output (CWE-150). Legitimate
+ * text is printable ASCII, so nothing valid changes. For the plain-text path;
+ * JSON escapes separately via hlse_json_escape(). */
+void hlse_sanitize_terminal(char *s);
+
 #ifdef __cplusplus
 }
 #endif

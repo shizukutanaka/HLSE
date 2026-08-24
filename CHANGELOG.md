@@ -4,6 +4,26 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Security
+- **Terminal escape-injection hardening, now applied uniformly (CWE-150).** An
+  earlier fix neutralized control bytes only in `hlse_protect.c`. But `scan`,
+  `secret`, `file`, `url`, and `package` all print attacker-controllable data
+  to a terminal — a file named `x\033[2Kfake` in a scanned tree, or scanned
+  content echoed in a finding — so a crafted name/content could forge or erase
+  lines in an operator's output. Reproduced: `scan` of a dir with an ANSI-named
+  file emitted the raw ESC.
+  - New shared `hlse_sanitize_terminal()` in `hlse_util.c` (bytes < 0x20 and
+    0x7f -> `?`); protect's inline copy now calls it, so there is one
+    implementation, not two.
+  - Applied at each detector's reason choke point (text/secrets/file/audit/
+    protect single `vsnprintf`; supply's scattered builders sanitized once per
+    function before return) and at every plain-text path/target echo in the CLI
+    (`scan`, `file`, `url`, `package`) via a sanitized *display copy* — the raw
+    value still drives I/O and detection.
+  - JSON/SARIF output was already safe via `hlse_json_escape`; unchanged.
+  - Legitimate reasons and paths are printable ASCII, so nothing valid changes:
+    F1 stays 1.000 / 0.0% FP. +3 util tests, +6 CLI-integration tests (p125).
+
 ### Added
 - **JWT algorithm inspection, including the `alg:none` signature bypass**
   (`hlse_util.c`, `hlse_secrets.c`). A JWT's header is base64url — encoded, not

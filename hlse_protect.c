@@ -65,19 +65,10 @@ pv_add_reason(ProtectionVerdict *v, int delta, const char *fmt, ...) {
               sizeof(v->reasons[0]), fmt, ap);
     va_end(ap);
     /* Reasons embed attacker-controlled filenames (ESP .efi names, ransom-note
-     * names, mutated extensions). Those can carry ANSI/control bytes that forge
-     * or hide lines when the plain-text CLI prints a reason to a terminal (the
-     * JSON path already escapes via json_escape). Legitimate reason text is
-     * printable ASCII, so neutralise any control byte here — one choke point
-     * covering every print site. */
-    {
-        char *r = v->reasons[v->n_reasons];
-        size_t j;
-        for (j = 0; r[j]; j++) {
-            unsigned char c = (unsigned char)r[j];
-            if (c < 0x20 || c == 0x7f) r[j] = '?';
-        }
-    }
+     * names, mutated extensions), which can carry ANSI/control bytes that forge
+     * or hide lines when the plain-text CLI prints a reason to a terminal. Now
+     * shared with every other detector via hlse_sanitize_terminal(). */
+    hlse_sanitize_terminal(v->reasons[v->n_reasons]);
     v->n_reasons++;
 }
 

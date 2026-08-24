@@ -319,6 +319,9 @@ hlse_check_package(const char *pkg_name, const char *ecosystem) {
     }
 
     if (v.score > 100) v.score = 100;
+    /* Neutralize terminal control bytes: reason text embeds attacker-controlled
+     * package names (from a manifest) that are printed to a terminal (CWE-150). */
+    hlse_sanitize_terminal(v.reason);
     return v;
 }
 
@@ -664,6 +667,9 @@ hlse_check_paste(const char *text) {
     }
 
     if (v.score > 100) v.score = 100;
+    /* Neutralize terminal control bytes in every reason before it can reach a
+     * terminal — the paste command / network data may be attacker-controlled. */
+    { int si; for (si = 0; si < v.n_reasons; si++) hlse_sanitize_terminal(v.reasons[si]); }
     return v;
 }
 
@@ -928,5 +934,8 @@ hlse_check_network(void) {
     }
 
     if (v.score > 100) v.score = 100;
+    /* Neutralize terminal control bytes in every reason before it can reach a
+     * terminal — the paste command / network data may be attacker-controlled. */
+    { int si; for (si = 0; si < v.n_reasons; si++) hlse_sanitize_terminal(v.reasons[si]); }
     return v;
 }

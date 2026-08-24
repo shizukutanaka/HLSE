@@ -29,6 +29,7 @@
 #include <unistd.h>
 
 #include "hlse_file.h"
+#include "hlse_util.h"   /* hlse_sanitize_terminal */
 
 /* ─── helpers ─────────────────────────────────────────────────────────── */
 
@@ -40,6 +41,7 @@ fv_add(FileVerdict *v, int delta, const char *fmt, ...) {
     if (v->score > 100) v->score = 100;
     va_start(ap, fmt);
     vsnprintf(v->reasons[v->n_reasons], sizeof(v->reasons[0]), fmt, ap);
+    hlse_sanitize_terminal(v->reasons[v->n_reasons]);
     va_end(ap);
     v->n_reasons++;
 }
