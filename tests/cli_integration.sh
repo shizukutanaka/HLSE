@@ -6539,6 +6539,45 @@ grep -q "^\.DEFAULT_GOAL := all" Makefile \
     && check "p124: Makefile pins .DEFAULT_GOAL (bare make builds)" "0" "0" \
     || check "p124: Makefile pins .DEFAULT_GOAL (bare make builds)" "0" "1"
 
+# ── p125: terminal control bytes are neutralized uniformly (CWE-150) ─────
+# HLSE prints filenames and reasons to a terminal; both can carry
+# attacker-controlled bytes (a file named "x\033[2Kfake" in a scanned tree, or
+# scanned content echoed in a finding). Raw ANSI/control sequences let an
+# attacker forge or erase an operator's output. The protect module was fixed
+# earlier; this asserts the same holds for scan, secret, and file. No byte
+# below 0x20 (except newline/tab) and no 0x7f may appear in human output.
+P125_DIR=$(mktemp -d)
+# a file whose NAME contains ESC, and whose CONTENT contains ESC + a real key
+printf 'k=AKIA2E3MWORQXYZ4567PQ\n' > "$P125_DIR/$(printf 'evil\033[31mFAKE').env"
+# LC_ALL=C so grep -P byte classes are literal; \x1b etc. must NOT appear.
+./hlse_core scan "$P125_DIR" 2>&1 \
+    | LC_ALL=C grep -qP '[\x00-\x08\x0b-\x1f\x7f]' \
+    && rc=1 || rc=0
+check "p125: scan output has no raw control bytes from an ANSI filename" "0" "$rc"
+
+printf 'x\033[2Ktoken=AKIA2E3MWORQXYZ4567PQ\n' | ./hlse_core secret --stdin 2>&1 \
+    | LC_ALL=C grep -qP '[\x00-\x08\x0b-\x1f\x7f]' \
+    && rc=1 || rc=0
+check "p125: secret finding neutralizes control bytes in echoed content" "0" "$rc"
+
+./hlse_core file "$(printf 'inv\033[31moice.pdf.exe')" 2>&1 \
+    | LC_ALL=C grep -qP '[\x00-\x08\x0b-\x1f\x7f]' \
+    && rc=1 || rc=0
+check "p125: file check neutralizes control bytes in a malicious name" "0" "$rc"
+
+# The finding itself must still fire — sanitizing must not suppress detection
+./hlse_core scan "$P125_DIR" >/dev/null 2>&1 && rc=0 || rc=1
+check "p125: sanitizing does not suppress the finding (still exits non-zero)" "1" "$rc"
+# url and package echo the raw target too — all subcommands must be uniform
+./hlse_core "$(printf 'https://evil\033[31m.com')" 2>&1 \
+    | LC_ALL=C grep -qP '[\x00-\x08\x0b-\x1f\x7f]' && rc=1 || rc=0
+check "p125: url echo neutralizes control bytes in the target" "0" "$rc"
+./hlse_core package "$(printf 'pk\033[31mg')" pip 2>&1 \
+    | LC_ALL=C grep -qP '[\x00-\x08\x0b-\x1f\x7f]' && rc=1 || rc=0
+check "p125: package echo neutralizes control bytes in the name" "0" "$rc"
+
+rm -rf "$P125_DIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

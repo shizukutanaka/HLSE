@@ -48,6 +48,7 @@ av_add(AuditVerdict *v, int delta, AuditSeverity sev,
     va_start(ap, fmt);
     vsnprintf(v->findings[v->n_findings].description,
               sizeof(v->findings[0].description), fmt, ap);
+    hlse_sanitize_terminal(v->findings[v->n_findings].description);
     va_end(ap);
     v->n_findings++;
 }
