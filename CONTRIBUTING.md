@@ -5,7 +5,7 @@ real attacks, so we hold a high bar for changes.
 
 ## TL;DR
 
-1. Run `make test` before opening a PR. It must be **green** — 1170 checks,
+1. Run `make test` before opening a PR. It must be **green** — 1173 checks,
    0 failures. Schema-validation checks skip (with a printed NOTE) when the
    optional `jsonschema` module is absent; install it to enforce them.
 2. Run `make check-warnings` — every module must compile clean under
@@ -24,11 +24,11 @@ workflows — run `make install-workflows` once to copy them into
 
 | Gate | Command | What it enforces |
 |------|---------|------------------|
-| Tests | `make test` | All 9 suites + property + corpus + CLI integration (1170, must be green) |
+| Tests | `make test` | All 9 suites + property + corpus + CLI integration (1173, must be green) |
 | Warnings | `make check-warnings` | Zero strict warnings across all modules |
 | Memory safety | `make asan-test` | No ASan/UBSan errors |
 | Fuzzing | `make fuzz` | 6 harnesses × 100K iterations, zero crashes |
-| Coverage | `make coverage` | Aggregate line coverage ≥ 65% |
+| Coverage | `make coverage` | Library-module line coverage ≥ 65% (secrets/protect/supply/file/audit, unit-test-inclusive: currently 69%). `hlse_core.c` is the CLI layer, exercised by the 790 integration checks rather than under gcov. |
 | Privacy | (CI grep) | No network syscalls in source |
 | Secrets | gitleaks | No leaked credentials in history |
 

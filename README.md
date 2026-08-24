@@ -24,7 +24,7 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             1170 passing, 0 failing (9 unit suites +
+  Structured tests:             1173 passing, 0 failing (9 unit suites +
                                  corpus + CLI integration — see: make test)
   Fuzz iterations:              600,000 (6 harnesses × 100K, 0 crashes)
   ASan + UBSan:                 0 errors
