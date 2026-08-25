@@ -7080,6 +7080,239 @@ argv_remove(char **argv, int *argc, int *argc_flags, int i, int n) {
 }
 
 
+/* The CLI flags every subcommand handler needs. Passing three ints beats
+ * either global state or a long parameter list, and makes it explicit
+ * which handlers actually care about output format. */
+typedef struct { int json_out, sarif_out, quiet; } CliOpts;
+
+/* `network` subcommand, extracted verbatim from main(). */
+static int
+cmd_network(int argc, char **argv, int idx, const CliOpts *o) {
+    (void)argc; (void)argv; (void)idx;
+    NetworkVerdict nv = hlse_check_network();
+    {
+        const char *aar[16]; int aq, aqn = nv.n_reasons;
+        if (aqn > 16) aqn = 16;
+        for (aq = 0; aq < aqn; aq++) aar[aq] = nv.reasons[aq];
+        hlse_alert_emit("network", nv.score,
+            hlse_severity_for_score(nv.score), "(network)", aar, aqn);
+    }
+    if (o->json_out) {
+        int i;
+        printf("{\"kind\":\"network\",\"hlse_version\":\"" HLSE_VERSION "\","
+               "\"score\":%d,\"action\":\"%s\","
+               "\"severity\":%d,\"reasons\":[",
+               nv.score, hlse_action_for_score(nv.score),
+               hlse_severity_for_score(nv.score));
+        for (i = 0; i < nv.n_reasons; i++) {
+            char esc[512];
+            hlse_json_escape(nv.reasons[i], esc, sizeof(esc));
+            printf("%s\"%s\"", i > 0 ? "," : "", esc);
+        }
+        printf("]");
+        if (nv.score == 0) {
+            const char *bs = hlse_blindspot_for("network");
+            json_field("blind_spot", bs);
+        }
+        if (nv.score > 0) {
+            int ns = nv.n_reasons;
+            const char *conf = ns >= 3 ? "high confidence" :
+                               ns >= 2 ? "corroborated" : "single signal";
+            printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
+        }
+        if (nv.score >= 40) {
+            /* Perspective 96: a single N2 (routing injection, +55) or N4
+             * (hosts-file pharming, +50) finding lands in ALERT (40-59)
+             * alone, but used to get no pattern/objective/verify — only
+             * BLOCK+ (60) did, the same gap P95 closed for URL/text/
+             * paste/scan. verify now fires from the ALERT floor;
+             * triage/cascade_risk (post-incident, presumes the user
+             * already acted) stay BLOCK+-only.
+             * Perspective 103: text now shared with the plaintext path
+             * below via network_*_text() accessors. */
+            json_field("pattern", net_pattern_text());
+            printf(",\"pattern_id\":\"HLSE-NET-C2\"");
+            json_field("objective", network_objective_text());
+            json_field("verify", network_verify_text());
+        }
+        if (nv.score >= 60) {
+            json_field("triage", network_triage_text());
+            json_field("cascade_risk", network_cascade_text());
+        }
+        if (nv.score > 0 && nv.score < 60) {
+            const char *ex = hlse_exoneration_for("network", nv.score);
+            if (ex) {
+                json_field("exoneration", ex);
+            }
+        }
+        printf("}\n");
+    } else if (nv.score == 0) {
+        const char *bs = hlse_blindspot_for("network");
+        printf("OK    (network \xe2\x80\x94 no anomalies detected)\n");
+        if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+    } else {
+        int i;
+        printf("%-7s [%d]  (network)\n",
+               hlse_action_for_score(nv.score), nv.score);
+        for (i = 0; i < nv.n_reasons; i++)
+            printf("  \xc2\xb7 %s\n", nv.reasons[i]);
+        if (nv.score >= 40) {
+            printf("  \xe2\x96\xb8 Pattern: %s\n", net_pattern_text());
+            printf("  \xe2\x97\x89 Attacker's goal: %s\n", network_objective_text());
+            printf("  \xe2\x9c\x93 Verify first: %s\n", network_verify_text());
+        }
+        if (nv.score >= 60) {
+            printf("  \xe2\x9a\x91 Immediate action: %s\n", network_triage_text());
+            printf("  \xe2\x8a\x95 Also change: %s\n", network_cascade_text());
+        }
+        if (nv.score < 60) {
+            const char *ex = hlse_exoneration_for("network", nv.score);
+            if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
+        }
+    }
+    return nv.score >= g_fail_threshold ? 1 : 0;
+}
+
+/* `esp` subcommand, extracted verbatim from main(). */
+static int
+cmd_esp(int argc, char **argv, int idx, const CliOpts *o) {
+    /* EFI System Partition integrity (UEFI bootkit indicators). */
+    const char *path = (argc > idx + 1) ? argv[idx + 1] : NULL;
+    ProtectionVerdict pv = hlse_esp_verify(path);
+    if (o->json_out) {
+        int i;
+        printf("{\"kind\":\"esp\",\"hlse_version\":\"" HLSE_VERSION "\","
+               "\"score\":%d,\"action\":\"%s\","
+               "\"severity\":%d,\"reasons\":[",
+               pv.score, hlse_action_for_score(pv.score),
+               hlse_severity_for_score(pv.score));
+        for (i = 0; i < pv.n_reasons; i++) {
+            char esc[512];
+            hlse_json_escape(pv.reasons[i], esc, sizeof(esc));
+            printf("%s\"%s\"", i > 0 ? "," : "", esc);
+        }
+        printf("]");
+        {
+            const char *bs = hlse_blindspot_for("esp");
+            if (pv.score == 0 && bs) json_field("blind_spot", bs);
+        }
+        if (pv.score > 0) {
+            int ns = pv.n_reasons;
+            const char *conf = ns >= 3 ? "high confidence" :
+                               ns >= 2 ? "corroborated" : "single signal";
+            printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
+        }
+        if (pv.score >= 60) {
+            json_field("pattern", esp_pattern_text());
+            printf(",\"pattern_id\":\"HLSE-ESP-BOOTKIT\"");
+            json_field("objective", esp_objective_text());
+            json_field("verify", esp_verify_text());
+            json_field("triage", esp_triage_text());
+            json_field("cascade_risk", esp_cascade_text());
+        }
+        if (pv.score > 0 && pv.score < 60) {
+            const char *ex = hlse_exoneration_for("esp", pv.score);
+            if (ex) {
+                json_field("exoneration", ex);
+            }
+        }
+        printf("}\n");
+    } else if (pv.score == 0) {
+        const char *bs = hlse_blindspot_for("esp");
+        printf("OK    (esp)%s%s\n",
+               pv.n_reasons ? " \xe2\x80\x94 " : "",
+               pv.n_reasons ? pv.reasons[0] : "");
+        if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+    } else {
+        int i;
+        printf("%-7s [%d]  (esp)\n",
+               hlse_action_for_score(pv.score), pv.score);
+        for (i = 0; i < pv.n_reasons; i++)
+            printf("  \xc2\xb7 %s\n", pv.reasons[i]);
+        if (pv.score >= 60) {
+            printf("  \xe2\x96\xb8 Pattern: %s\n", esp_pattern_text());
+            printf("  \xe2\x97\x89 Attacker's goal: %s\n", esp_objective_text());
+            printf("  \xe2\x9c\x93 Verify first: %s\n", esp_verify_text());
+            printf("  \xe2\x9a\x91 Immediate action: %s\n", esp_triage_text());
+            printf("  \xe2\x8a\x95 Also change: %s\n", esp_cascade_text());
+        } else {
+            const char *ex = hlse_exoneration_for("esp", pv.score);
+            if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
+        }
+    }
+    return pv.score >= g_fail_threshold ? 1 : 0;
+}
+
+/* `clipboard` subcommand, extracted verbatim from main(). */
+static int
+cmd_clipboard(int argc, char **argv, int idx, const CliOpts *o) {
+    if (argc < idx + 3) {
+        fprintf(stderr,
+                "Usage: %s clipboard \"<copied addr>\" \"<pasted addr>\"\n",
+                argv[0]);
+        return 2;
+    }
+    {
+        CryptoSwapVerdict cv =
+            hlse_check_crypto_swap(argv[idx + 1], argv[idx + 2]);
+        {
+            const char *aar[1]; int aqn = 0;
+            if (cv.reason[0]) { aar[0] = cv.reason; aqn = 1; }
+            hlse_alert_emit("clipboard", cv.score,
+                hlse_severity_for_score(cv.score),
+                cv.swapped[0] ? cv.swapped : "(clipboard)", aar, aqn);
+        }
+        const char *rem = hlse_remediation_for("clipboard", cv.score);
+        if (o->json_out) {
+            char eo[256], es[256], er[512], erm[512];
+            hlse_json_escape(cv.original, eo, sizeof(eo));
+            hlse_json_escape(cv.swapped, es, sizeof(es));
+            hlse_json_escape(cv.reason, er, sizeof(er));
+            hlse_json_escape(rem ? rem : "", erm, sizeof(erm));
+            printf("{\"kind\":\"clipboard\",\"hlse_version\":\"" HLSE_VERSION "\","
+                   "\"score\":%d,\"action\":\"%s\","
+                   "\"severity\":%d,"
+                   "\"is_swap\":%d,"
+                   "\"original\":\"%s\",\"swapped\":\"%s\",\"reason\":\"%s\","
+                   "\"remediation\":\"%s\"",
+                   cv.score, hlse_action_for_score(cv.score),
+                   hlse_severity_for_score(cv.score),
+                   cv.is_swap, eo, es, er, erm);
+            if (cv.score == 0) {
+                const char *bs = hlse_blindspot_for("clipboard");
+                json_field("blind_spot", bs);
+            }
+            if (cv.score >= 60) {
+                json_field("pattern", clipboard_pattern_text());
+                printf(",\"pattern_id\":\"HLSE-CLIP-HIJACK\"");
+                json_field("objective", clipboard_objective_text());
+                json_field("verify", clipboard_verify_text());
+                json_field("triage", clipboard_triage_text());
+                json_field("cascade_risk", clipboard_cascade_text());
+            }
+            printf("}\n");
+        } else if (cv.score == 0) {
+            const char *bs = hlse_blindspot_for("clipboard");
+            printf("OK    (clipboard \xe2\x80\x94 no address swap detected)\n");
+            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+        } else {
+            printf("%-7s [%d]  (clipboard)\n",
+                   hlse_action_for_score(cv.score), cv.score);
+            if (cv.reason[0]) printf("  \xc2\xb7 %s\n", cv.reason);
+            if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
+            if (cv.score >= 60) {
+                printf("  \xe2\x96\xb8 Pattern: %s\n", clipboard_pattern_text());
+                printf("  \xe2\x97\x89 Attacker's goal: %s\n", clipboard_objective_text());
+                printf("  \xe2\x9c\x93 Verify first: %s\n", clipboard_verify_text());
+                printf("  \xe2\x9a\x91 If you acted: %s\n", clipboard_triage_text());
+                printf("  \xe2\x8a\x95 Also change: %s\n", clipboard_cascade_text());
+            }
+        }
+        return cv.score >= g_fail_threshold ? 1 : 0;
+    }
+}
+
+
 int
 main(int argc, char **argv) {
     int json_out = 0;
@@ -7088,6 +7321,7 @@ main(int argc, char **argv) {
     int opt_syslog = 0;
     const char *opt_log_file = NULL;
     int argc_flags;   /* argv index where "--" ends option scanning */
+    CliOpts opts;
     int idx = 1;
 
     if (argc < 2) {
@@ -7916,6 +8150,11 @@ main(int argc, char **argv) {
     /* ── protect subcommand ──────────────────────────────────────────
      * Usage: hlse_core protect <path> [--ransomware|--smb|--mbr|--net]
      * Without flags: runs all modules applicable to the path.        */
+    /* Flags are fully parsed by here; freeze them for the handlers. */
+    opts.json_out  = json_out;
+    opts.sarif_out = sarif_out;
+    opts.quiet     = quiet;
+
     if (strcmp(argv[idx], "protect") == 0) {
         if (argc < idx + 2) {
             fprintf(stderr, "Usage: %s protect <path> [--ransomware|--smb|--mbr|--net]\n", argv[0]);
@@ -8047,73 +8286,8 @@ main(int argc, char **argv) {
         }
     }
 
-    if (strcmp(argv[idx], "esp") == 0) {
-        /* EFI System Partition integrity (UEFI bootkit indicators). */
-        const char *path = (argc > idx + 1) ? argv[idx + 1] : NULL;
-        ProtectionVerdict pv = hlse_esp_verify(path);
-        if (json_out) {
-            int i;
-            printf("{\"kind\":\"esp\",\"hlse_version\":\"" HLSE_VERSION "\","
-                   "\"score\":%d,\"action\":\"%s\","
-                   "\"severity\":%d,\"reasons\":[",
-                   pv.score, hlse_action_for_score(pv.score),
-                   hlse_severity_for_score(pv.score));
-            for (i = 0; i < pv.n_reasons; i++) {
-                char esc[512];
-                hlse_json_escape(pv.reasons[i], esc, sizeof(esc));
-                printf("%s\"%s\"", i > 0 ? "," : "", esc);
-            }
-            printf("]");
-            {
-                const char *bs = hlse_blindspot_for("esp");
-                if (pv.score == 0 && bs) json_field("blind_spot", bs);
-            }
-            if (pv.score > 0) {
-                int ns = pv.n_reasons;
-                const char *conf = ns >= 3 ? "high confidence" :
-                                   ns >= 2 ? "corroborated" : "single signal";
-                printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
-            }
-            if (pv.score >= 60) {
-                json_field("pattern", esp_pattern_text());
-                printf(",\"pattern_id\":\"HLSE-ESP-BOOTKIT\"");
-                json_field("objective", esp_objective_text());
-                json_field("verify", esp_verify_text());
-                json_field("triage", esp_triage_text());
-                json_field("cascade_risk", esp_cascade_text());
-            }
-            if (pv.score > 0 && pv.score < 60) {
-                const char *ex = hlse_exoneration_for("esp", pv.score);
-                if (ex) {
-                    json_field("exoneration", ex);
-                }
-            }
-            printf("}\n");
-        } else if (pv.score == 0) {
-            const char *bs = hlse_blindspot_for("esp");
-            printf("OK    (esp)%s%s\n",
-                   pv.n_reasons ? " \xe2\x80\x94 " : "",
-                   pv.n_reasons ? pv.reasons[0] : "");
-            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-        } else {
-            int i;
-            printf("%-7s [%d]  (esp)\n",
-                   hlse_action_for_score(pv.score), pv.score);
-            for (i = 0; i < pv.n_reasons; i++)
-                printf("  \xc2\xb7 %s\n", pv.reasons[i]);
-            if (pv.score >= 60) {
-                printf("  \xe2\x96\xb8 Pattern: %s\n", esp_pattern_text());
-                printf("  \xe2\x97\x89 Attacker's goal: %s\n", esp_objective_text());
-                printf("  \xe2\x9c\x93 Verify first: %s\n", esp_verify_text());
-                printf("  \xe2\x9a\x91 Immediate action: %s\n", esp_triage_text());
-                printf("  \xe2\x8a\x95 Also change: %s\n", esp_cascade_text());
-            } else {
-                const char *ex = hlse_exoneration_for("esp", pv.score);
-                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-            }
-        }
-        return pv.score >= g_fail_threshold ? 1 : 0;
-    }
+    if (strcmp(argv[idx], "esp") == 0)
+        return cmd_esp(argc, argv, idx, &opts);
 
     /* ── Supply Chain Defense subcommands ───────────────────────────── */
 
@@ -8440,90 +8614,8 @@ main(int argc, char **argv) {
         }
     }
 
-    if (strcmp(argv[idx], "network") == 0) {
-        NetworkVerdict nv = hlse_check_network();
-        {
-            const char *aar[16]; int aq, aqn = nv.n_reasons;
-            if (aqn > 16) aqn = 16;
-            for (aq = 0; aq < aqn; aq++) aar[aq] = nv.reasons[aq];
-            hlse_alert_emit("network", nv.score,
-                hlse_severity_for_score(nv.score), "(network)", aar, aqn);
-        }
-        if (json_out) {
-            int i;
-            printf("{\"kind\":\"network\",\"hlse_version\":\"" HLSE_VERSION "\","
-                   "\"score\":%d,\"action\":\"%s\","
-                   "\"severity\":%d,\"reasons\":[",
-                   nv.score, hlse_action_for_score(nv.score),
-                   hlse_severity_for_score(nv.score));
-            for (i = 0; i < nv.n_reasons; i++) {
-                char esc[512];
-                hlse_json_escape(nv.reasons[i], esc, sizeof(esc));
-                printf("%s\"%s\"", i > 0 ? "," : "", esc);
-            }
-            printf("]");
-            if (nv.score == 0) {
-                const char *bs = hlse_blindspot_for("network");
-                json_field("blind_spot", bs);
-            }
-            if (nv.score > 0) {
-                int ns = nv.n_reasons;
-                const char *conf = ns >= 3 ? "high confidence" :
-                                   ns >= 2 ? "corroborated" : "single signal";
-                printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
-            }
-            if (nv.score >= 40) {
-                /* Perspective 96: a single N2 (routing injection, +55) or N4
-                 * (hosts-file pharming, +50) finding lands in ALERT (40-59)
-                 * alone, but used to get no pattern/objective/verify — only
-                 * BLOCK+ (60) did, the same gap P95 closed for URL/text/
-                 * paste/scan. verify now fires from the ALERT floor;
-                 * triage/cascade_risk (post-incident, presumes the user
-                 * already acted) stay BLOCK+-only.
-                 * Perspective 103: text now shared with the plaintext path
-                 * below via network_*_text() accessors. */
-                json_field("pattern", net_pattern_text());
-                printf(",\"pattern_id\":\"HLSE-NET-C2\"");
-                json_field("objective", network_objective_text());
-                json_field("verify", network_verify_text());
-            }
-            if (nv.score >= 60) {
-                json_field("triage", network_triage_text());
-                json_field("cascade_risk", network_cascade_text());
-            }
-            if (nv.score > 0 && nv.score < 60) {
-                const char *ex = hlse_exoneration_for("network", nv.score);
-                if (ex) {
-                    json_field("exoneration", ex);
-                }
-            }
-            printf("}\n");
-        } else if (nv.score == 0) {
-            const char *bs = hlse_blindspot_for("network");
-            printf("OK    (network \xe2\x80\x94 no anomalies detected)\n");
-            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-        } else {
-            int i;
-            printf("%-7s [%d]  (network)\n",
-                   hlse_action_for_score(nv.score), nv.score);
-            for (i = 0; i < nv.n_reasons; i++)
-                printf("  \xc2\xb7 %s\n", nv.reasons[i]);
-            if (nv.score >= 40) {
-                printf("  \xe2\x96\xb8 Pattern: %s\n", net_pattern_text());
-                printf("  \xe2\x97\x89 Attacker's goal: %s\n", network_objective_text());
-                printf("  \xe2\x9c\x93 Verify first: %s\n", network_verify_text());
-            }
-            if (nv.score >= 60) {
-                printf("  \xe2\x9a\x91 Immediate action: %s\n", network_triage_text());
-                printf("  \xe2\x8a\x95 Also change: %s\n", network_cascade_text());
-            }
-            if (nv.score < 60) {
-                const char *ex = hlse_exoneration_for("network", nv.score);
-                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-            }
-        }
-        return nv.score >= g_fail_threshold ? 1 : 0;
-    }
+    if (strcmp(argv[idx], "network") == 0)
+        return cmd_network(argc, argv, idx, &opts);
 
     if (strcmp(argv[idx], "secret") == 0) {
         /* 1 MiB, BSS-allocated (static) not stack — matches the shipped
@@ -8798,72 +8890,8 @@ main(int argc, char **argv) {
         }
     }
 
-    if (strcmp(argv[idx], "clipboard") == 0) {
-        if (argc < idx + 3) {
-            fprintf(stderr,
-                    "Usage: %s clipboard \"<copied addr>\" \"<pasted addr>\"\n",
-                    argv[0]);
-            return 2;
-        }
-        {
-            CryptoSwapVerdict cv =
-                hlse_check_crypto_swap(argv[idx + 1], argv[idx + 2]);
-            {
-                const char *aar[1]; int aqn = 0;
-                if (cv.reason[0]) { aar[0] = cv.reason; aqn = 1; }
-                hlse_alert_emit("clipboard", cv.score,
-                    hlse_severity_for_score(cv.score),
-                    cv.swapped[0] ? cv.swapped : "(clipboard)", aar, aqn);
-            }
-            const char *rem = hlse_remediation_for("clipboard", cv.score);
-            if (json_out) {
-                char eo[256], es[256], er[512], erm[512];
-                hlse_json_escape(cv.original, eo, sizeof(eo));
-                hlse_json_escape(cv.swapped, es, sizeof(es));
-                hlse_json_escape(cv.reason, er, sizeof(er));
-                hlse_json_escape(rem ? rem : "", erm, sizeof(erm));
-                printf("{\"kind\":\"clipboard\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"score\":%d,\"action\":\"%s\","
-                       "\"severity\":%d,"
-                       "\"is_swap\":%d,"
-                       "\"original\":\"%s\",\"swapped\":\"%s\",\"reason\":\"%s\","
-                       "\"remediation\":\"%s\"",
-                       cv.score, hlse_action_for_score(cv.score),
-                       hlse_severity_for_score(cv.score),
-                       cv.is_swap, eo, es, er, erm);
-                if (cv.score == 0) {
-                    const char *bs = hlse_blindspot_for("clipboard");
-                    json_field("blind_spot", bs);
-                }
-                if (cv.score >= 60) {
-                    json_field("pattern", clipboard_pattern_text());
-                    printf(",\"pattern_id\":\"HLSE-CLIP-HIJACK\"");
-                    json_field("objective", clipboard_objective_text());
-                    json_field("verify", clipboard_verify_text());
-                    json_field("triage", clipboard_triage_text());
-                    json_field("cascade_risk", clipboard_cascade_text());
-                }
-                printf("}\n");
-            } else if (cv.score == 0) {
-                const char *bs = hlse_blindspot_for("clipboard");
-                printf("OK    (clipboard \xe2\x80\x94 no address swap detected)\n");
-                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-            } else {
-                printf("%-7s [%d]  (clipboard)\n",
-                       hlse_action_for_score(cv.score), cv.score);
-                if (cv.reason[0]) printf("  \xc2\xb7 %s\n", cv.reason);
-                if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
-                if (cv.score >= 60) {
-                    printf("  \xe2\x96\xb8 Pattern: %s\n", clipboard_pattern_text());
-                    printf("  \xe2\x97\x89 Attacker's goal: %s\n", clipboard_objective_text());
-                    printf("  \xe2\x9c\x93 Verify first: %s\n", clipboard_verify_text());
-                    printf("  \xe2\x9a\x91 If you acted: %s\n", clipboard_triage_text());
-                    printf("  \xe2\x8a\x95 Also change: %s\n", clipboard_cascade_text());
-                }
-            }
-            return cv.score >= g_fail_threshold ? 1 : 0;
-        }
-    }
+    if (strcmp(argv[idx], "clipboard") == 0)
+        return cmd_clipboard(argc, argv, idx, &opts);
 
     if (strcmp(argv[idx], "file") == 0) {
         if (argc < idx + 2) {
