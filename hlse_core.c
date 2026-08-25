@@ -6557,6 +6557,32 @@ print_file_verdict_plain(const FileVerdict *fv, const char *display) {
  * subcommand prints the finding type and a confidence note), but the advice
  * itself must not — a leaked credential does not become less urgent because
  * of which entry point found it. */
+/* The JSON counterpart of print_secret_advisories(): caveat, the actionable
+ * pattern / objective / verify / triage / cascade fields, and the
+ * benign-explanation field. Duplicated between the `scan <dir>` walker and the
+ * `secret` subcommand, exactly as the plain-text ladder was. */
+static void
+json_secret_advisories(const SecretVerdict *sv) {
+    if (sv->n_findings > 0) {
+        /* Unconditional on score: a Stripe publishable key is public by
+         * design at any score, not a probabilistic false-positive hedge. */
+        json_field("caveat", secret_finding_caveat(sv->findings[0].type));
+    }
+    if (sv->score >= 60 && sv->n_findings > 0) {
+        const char *ftype = sv->findings[0].type;
+        char epat[128];
+        secret_pattern_label(ftype, epat, sizeof(epat));
+        json_field("pattern", epat);
+        json_field("pattern_id", secret_pattern_id(ftype));
+        json_field("objective", secret_objective_for(ftype));
+        json_field("verify", secret_verify_text());
+        json_field("triage", secret_triage_text());
+        json_field("cascade_risk", secret_cascade_text());
+    }
+    if (sv->score > 0 && sv->score < 60)
+        json_field("exoneration", hlse_exoneration_for("secret", sv->score));
+}
+
 static void
 print_secret_advisories(const SecretVerdict *sv) {
     if (sv->n_findings > 0) {
@@ -7662,31 +7688,7 @@ main(int argc, char **argv) {
                                                 json_field("remediation", rem);
                                             }
                                         }
-                                        if (sv.n_findings > 0) {
-                                            const char *cav = secret_finding_caveat(sv.findings[0].type);
-                                            if (cav) {
-                                                json_field("caveat", cav);
-                                            }
-                                        }
-                                        if (sv.score >= 60 && sv.n_findings > 0) {
-                                            const char *ftype = sv.findings[0].type;
-                                            const char *sobj  = secret_objective_for(ftype);
-                                            secret_pattern_label(ftype, esc_p, sizeof(esc_p));
-                                            json_field("pattern", esc_p);
-                                            printf(",\"pattern_id\":\"%s\"", secret_pattern_id(ftype));
-                                            if (sobj) {
-                                                json_field("objective", sobj);
-                                            }
-                                            json_field("verify", secret_verify_text());
-                                            json_field("triage", secret_triage_text());
-                                            json_field("cascade_risk", secret_cascade_text());
-                                        }
-                                        if (sv.score > 0 && sv.score < 60) {
-                                            const char *ex = hlse_exoneration_for("secret", sv.score);
-                                            if (ex) {
-                                                json_field("exoneration", ex);
-                                            }
-                                        }
+                                        json_secret_advisories(&sv);
                                         printf("}\n");
                                     } else {
                                         int i;
@@ -8579,33 +8581,7 @@ main(int argc, char **argv) {
                     const char *bs = hlse_blindspot_for("secret");
                     json_field("blind_spot", bs);
                 }
-                if (sv.n_findings > 0) {
-                    /* Perspective 99: unconditional on score — a Stripe
-                     * publishable key is public-by-design at any score,
-                     * not just a probabilistic false-positive hedge. */
-                    const char *cav = secret_finding_caveat(sv.findings[0].type);
-                    if (cav) {
-                        json_field("caveat", cav);
-                    }
-                }
-                if (sv.score >= 60 && sv.n_findings > 0) {
-                    const char *ftype = sv.findings[0].type;
-                    const char *sobj  = secret_objective_for(ftype);
-                    char epat[128];
-                    secret_pattern_label(ftype, epat, sizeof(epat));
-                    json_field("pattern", epat);
-                    printf(",\"pattern_id\":\"%s\"", secret_pattern_id(ftype));
-                    if (sobj) { json_field("objective", sobj); }
-                    json_field("verify", secret_verify_text());
-                    json_field("triage", secret_triage_text());
-                    json_field("cascade_risk", secret_cascade_text());
-                }
-                if (sv.score > 0 && sv.score < 60) {
-                    const char *ex = hlse_exoneration_for("secret", sv.score);
-                    if (ex) {
-                        json_field("exoneration", ex);
-                    }
-                }
+                json_secret_advisories(&sv);
                 printf("}\n");
             } else if (sv.score == 0) {
                 const char *bs = hlse_blindspot_for("secret");
