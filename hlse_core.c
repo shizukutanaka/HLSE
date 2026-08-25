@@ -6548,6 +6548,38 @@ print_file_verdict_plain(const FileVerdict *fv, const char *display) {
     }
 }
 
+/* The secret-verdict advisory ladder: caveat, then pattern / goal / verify /
+ * immediate action / also-change once the score is actionable, then the
+ * benign-explanation line below that.
+ *
+ * Duplicated between the `scan <dir>` walker and the `secret` subcommand. The
+ * headers around it legitimately differ (the walker prints path:line, the
+ * subcommand prints the finding type and a confidence note), but the advice
+ * itself must not — a leaked credential does not become less urgent because
+ * of which entry point found it. */
+static void
+print_secret_advisories(const SecretVerdict *sv) {
+    if (sv->n_findings > 0) {
+        const char *cav = secret_finding_caveat(sv->findings[0].type);
+        if (cav) printf("  \xe2\x9a\xa0 Caveat: %s\n", cav);
+    }
+    if (sv->score >= 60 && sv->n_findings > 0) {
+        const char *ftype = sv->findings[0].type;
+        const char *sobj  = secret_objective_for(ftype);
+        char epat[128];
+        secret_pattern_label(ftype, epat, sizeof(epat));
+        printf("  \xe2\x96\xb8 Pattern: %s\n", epat);
+        if (sobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", sobj);
+        printf("  \xe2\x9c\x93 Verify first: %s\n", secret_verify_text());
+        printf("  \xe2\x9a\x91 Immediate action: %s\n", secret_triage_text());
+        printf("  \xe2\x8a\x95 Also change: %s\n", secret_cascade_text());
+    }
+    if (sv->score > 0 && sv->score < 60) {
+        const char *ex = hlse_exoneration_for("secret", sv->score);
+        if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
+    }
+}
+
 static void
 print_text_advisories(const TextVerdict *tv) {
     const char *tpat = hlse_classify_text_attack(tv);
@@ -7657,25 +7689,7 @@ main(int argc, char **argv) {
                                         for (i = 0; i < sv.n_findings; i++)
                                             printf("  \xc2\xb7 %s\n",
                                                    sv.findings[i].description);
-                                        if (sv.n_findings > 0) {
-                                            const char *cav = secret_finding_caveat(sv.findings[0].type);
-                                            if (cav) printf("  \xe2\x9a\xa0 Caveat: %s\n", cav);
-                                        }
-                                        if (sv.score >= 60 && sv.n_findings > 0) {
-                                            const char *ftype = sv.findings[0].type;
-                                            const char *sobj  = secret_objective_for(ftype);
-                                            char epat[128];
-                                            secret_pattern_label(ftype, epat, sizeof(epat));
-                                            printf("  \xe2\x96\xb8 Pattern: %s\n", epat);
-                                            if (sobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", sobj);
-                                            printf("  \xe2\x9c\x93 Verify first: %s\n", secret_verify_text());
-                                            printf("  \xe2\x9a\x91 Immediate action: %s\n", secret_triage_text());
-                                            printf("  \xe2\x8a\x95 Also change: %s\n", secret_cascade_text());
-                                        }
-                                        if (sv.score > 0 && sv.score < 60) {
-                                            const char *ex = hlse_exoneration_for("secret", sv.score);
-                                            if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-                                        }
+                                        print_secret_advisories(&sv);
                                     }
                                 }
 
@@ -8602,25 +8616,7 @@ main(int argc, char **argv) {
                     printf("  \xe2\x86\x92 Confidence: heuristic — this is a "
                            "pattern guess (generic VAR=value / high-entropy "
                            "string); confirm it is a live credential.\n");
-                if (sv.n_findings > 0) {
-                    const char *cav = secret_finding_caveat(sv.findings[0].type);
-                    if (cav) printf("  \xe2\x9a\xa0 Caveat: %s\n", cav);
-                }
-                if (sv.score >= 60 && sv.n_findings > 0) {
-                    const char *ftype = sv.findings[0].type;
-                    const char *sobj  = secret_objective_for(ftype);
-                    char epat[128];
-                    secret_pattern_label(ftype, epat, sizeof(epat));
-                    printf("  \xe2\x96\xb8 Pattern: %s\n", epat);
-                    if (sobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", sobj);
-                    printf("  \xe2\x9c\x93 Verify first: %s\n", secret_verify_text());
-                    printf("  \xe2\x9a\x91 Immediate action: %s\n", secret_triage_text());
-                    printf("  \xe2\x8a\x95 Also change: %s\n", secret_cascade_text());
-                }
-                if (sv.score > 0 && sv.score < 60) {
-                    const char *ex = hlse_exoneration_for("secret", sv.score);
-                    if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-                }
+                print_secret_advisories(&sv);
                 if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
             }
             return sv.score >= g_fail_threshold ? 1 : 0;
