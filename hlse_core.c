@@ -7761,7 +7761,7 @@ main(int argc, char **argv) {
                                                         int has_obj  = hlse_compound_objective(&uv, uobj_buf, sizeof(uobj_buf));
                                                         int has_safe = hlse_safe_destinations(&uv, usafe, sizeof(usafe));
                                                         if (upat)     { json_field("pattern", upat); }
-                                                        if (upat)     { const char *upid = hlse_url_pattern_id(&uv); if (upid) printf(",\"pattern_id\":\"%s\"", upid); }
+                                                        if (upat)     { const char *upid = hlse_url_pattern_id(&uv); json_field("pattern_id", upid); }
                                                         if (has_obj)  { json_field("objective", uobj_buf); }
                                                         if (has_safe) { json_field("safe_url", usafe); }
                                                         if (uvrf)     { json_field("verify", uvrf); }
@@ -8352,16 +8352,16 @@ main(int argc, char **argv) {
                     ppat = hlse_classify_text_attack(&ptv);
                     pobj = hlse_text_objective(&ptv);
                     pvrf = hlse_text_verify(&ptv);
-                    if (ppat) { char e[512]; hlse_json_escape(ppat,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
-                    if (ppat) { const char *pid = hlse_text_pattern_id(&ptv); if (pid) printf(",\"pattern_id\":\"%s\"",pid); }
-                    if (pobj) { char e[512]; hlse_json_escape(pobj,e,sizeof(e)); printf(",\"objective\":\"%s\"",e); }
-                    if (pvrf) { char e[512]; hlse_json_escape(pvrf,e,sizeof(e)); printf(",\"verify\":\"%s\"",e); }
+                    json_field("pattern", ppat);
+                    if (ppat) { const char *pid = hlse_text_pattern_id(&ptv); json_field("pattern_id", pid); }
+                    json_field("objective", pobj);
+                    json_field("verify", pvrf);
                     if (pv.score >= 60) {
                         const char *ptri, *pcas;
                         ptri = hlse_text_triage(&ptv);
                         pcas = hlse_text_cascade(&ptv);
-                        if (ptri) { char e[512]; hlse_json_escape(ptri,e,sizeof(e)); printf(",\"triage\":\"%s\"",e); }
-                        if (pcas) { char e[512]; hlse_json_escape(pcas,e,sizeof(e)); printf(",\"cascade_risk\":\"%s\"",e); }
+                        json_field("triage", ptri);
+                        json_field("cascade_risk", pcas);
                     }
                 }
                 if (pv.score > 0 && pv.score < 60) {
@@ -8695,10 +8695,10 @@ main(int argc, char **argv) {
                     bvrf = hlse_text_verify(&btv_hi);
                     btri = hlse_text_triage(&btv_hi);
                     bcas = hlse_text_cascade(&btv_hi);
-                    if (bpat) { hlse_json_escape(bpat,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
+                    json_field("pattern", bpat);
                     if (bpat) {
                         const char *bid = hlse_text_pattern_id(&btv_hi);
-                        if (bid) printf(",\"pattern_id\":\"%s\"", bid);
+                        json_field("pattern_id", bid);
                     }
                     if (bex && btv_hi.score >= 15 && btv_hi.score < 60) {
                         hlse_json_escape(bex,e,sizeof(e)); printf(",\"exoneration\":\"%s\"",e);
@@ -8711,14 +8711,13 @@ main(int argc, char **argv) {
                         hlse_json_escape(bvrf,e,sizeof(e)); printf(",\"verify\":\"%s\"",e);
                     }
                     if (ev.score >= 60) {
-                        if (bobj) { hlse_json_escape(bobj,e,sizeof(e)); printf(",\"objective\":\"%s\"",e); }
-                        if (btri) { hlse_json_escape(btri,e,sizeof(e)); printf(",\"triage\":\"%s\"",e); }
-                        if (bcas) { hlse_json_escape(bcas,e,sizeof(e)); printf(",\"cascade_risk\":\"%s\"",e); }
+                        json_field("objective", bobj);
+                        json_field("triage", btri);
+                        json_field("cascade_risk", bcas);
                     }
                 } else if (ev.score >= 60) {
                     /* Header-only BLOCK: synthesise BEC advisory lenses */
                     TextVerdict etv;
-                    char e[512];
                     const char *epat2, *eobj, *evrf, *etri, *ecas;
                     memset(&etv, 0, sizeof(etv));
                     etv.score = ev.score;
@@ -8732,12 +8731,12 @@ main(int argc, char **argv) {
                     etri  = hlse_text_triage(&etv);
                     ecas  = hlse_text_cascade(&etv);
                     printf(",\"signal_count\":1,\"confidence\":\"single signal — email header authentication anomalies detected\"");
-                    if (epat2) { hlse_json_escape(epat2,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
-                    if (epat2) { const char *pid = hlse_text_pattern_id(&etv); if (pid) printf(",\"pattern_id\":\"%s\"",pid); }
-                    if (eobj)  { hlse_json_escape(eobj,e,sizeof(e));  printf(",\"objective\":\"%s\"",e); }
-                    if (evrf)  { hlse_json_escape(evrf,e,sizeof(e));  printf(",\"verify\":\"%s\"",e); }
-                    if (etri)  { hlse_json_escape(etri,e,sizeof(e));  printf(",\"triage\":\"%s\"",e); }
-                    if (ecas)  { hlse_json_escape(ecas,e,sizeof(e));  printf(",\"cascade_risk\":\"%s\"",e); }
+                    json_field("pattern", epat2);
+                    if (epat2) { const char *pid = hlse_text_pattern_id(&etv); json_field("pattern_id", pid); }
+                    json_field("objective", eobj);
+                    json_field("verify", evrf);
+                    json_field("triage", etri);
+                    json_field("cascade_risk", ecas);
                 } else if (ev.score > 0) {
                     /* Borderline header score (1-59): emit signal_count, confidence, and exoneration */
                     printf(",\"signal_count\":1");
