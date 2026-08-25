@@ -6512,6 +6512,42 @@ print_url_advisories(const char *url, const Verdict *uv) {
  * those depend on caller-local state (channel reason) and are emitted by each
  * caller after this returns. Each line is conditional, so a low-score verdict
  * prints only the lenses that apply.                                         */
+/* Print a file verdict in human form: header, reasons, then the advisory
+ * ladder. `display` is the path or name to show.
+ *
+ * This body existed twice — once in the `scan <dir>` walker and once in the
+ * standalone `file` subcommand — and the copy in the walker carries a comment
+ * explaining that the advisory wording is shared "so plaintext and JSON never
+ * again describe the same verdict with different wording". The wording was
+ * indeed shared with JSON, and then duplicated within plaintext. One printer
+ * now, so the two entry points cannot drift from each other either. */
+static void
+print_file_verdict_plain(const FileVerdict *fv, const char *display) {
+    int i;
+    printf("%-7s [%d]  %s\n",
+           hlse_action_for_score(fv->score), fv->score, display);
+    for (i = 0; i < fv->n_reasons; i++)
+        printf("  \xc2\xb7 %s\n", fv->reasons[i]);
+    if (fv->score >= 40) {
+        printf("  \xe2\x96\xb8 Pattern: %s\n", file_classify_pattern(fv));
+        printf("  \xe2\x97\x89 Attacker's goal: %s\n", file_masquerade_objective());
+        printf("  \xe2\x9c\x93 Verify first: %s\n", file_masquerade_verify());
+    }
+    if (fv->score >= 60) {
+        printf("  \xe2\x9a\x91 If you acted: if already opened, disconnect "
+               "from the network; run antivirus; change credentials for "
+               "any active session\n");
+        printf("  \xe2\x8a\x95 Also change: all credentials and session "
+               "tokens active when the file was opened \xe2\x80\x94 check "
+               "for persistence (startup items, scheduled tasks, new "
+               "browser extensions)\n");
+    }
+    if (fv->score > 0 && fv->score < 60) {
+        const char *ex = hlse_exoneration_for("file", fv->score);
+        if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
+    }
+}
+
 static void
 print_text_advisories(const TextVerdict *tv) {
     const char *tpat = hlse_classify_text_attack(tv);
@@ -7447,34 +7483,7 @@ main(int argc, char **argv) {
                             }
                             printf("}\n");
                         } else {
-                            int i;
-                            printf("%-7s [%d]  %s\n",
-                                   hlse_action_for_score(fv.score),
-                                   fv.score, fullpath);
-                            for (i = 0; i < fv.n_reasons; i++)
-                                printf("  \xc2\xb7 %s\n", fv.reasons[i]);
-                            if (fv.score >= 40) {
-                                /* Perspective 101: shared with the JSON path
-                                 * above (and both standalone `file` sites)
-                                 * so plaintext and JSON never again describe
-                                 * the same verdict with different wording. */
-                                printf("  \xe2\x96\xb8 Pattern: %s\n", file_classify_pattern(&fv));
-                                printf("  \xe2\x97\x89 Attacker's goal: %s\n", file_masquerade_objective());
-                                printf("  \xe2\x9c\x93 Verify first: %s\n", file_masquerade_verify());
-                            }
-                            if (fv.score >= 60) {
-                                printf("  \xe2\x9a\x91 If you acted: if already opened, disconnect "
-                                       "from the network; run antivirus; change credentials for "
-                                       "any active session\n");
-                                printf("  \xe2\x8a\x95 Also change: all credentials and session "
-                                       "tokens active when the file was opened \xe2\x80\x94 check "
-                                       "for persistence (startup items, scheduled tasks, new "
-                                       "browser extensions)\n");
-                            }
-                            if (fv.score > 0 && fv.score < 60) {
-                                const char *ex = hlse_exoneration_for("file", fv.score);
-                                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-                            }
+                            print_file_verdict_plain(&fv, fullpath);
                         }
                     }
                     after_file_check: ;  /* P0-1 suppression jump target */
@@ -8978,30 +8987,7 @@ main(int argc, char **argv) {
                 printf("OK    %s\n", fdisp);
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
-                int i;
-                printf("%-7s [%d]  %s\n",
-                       hlse_action_for_score(fv.score), fv.score,
-                       fdisp);
-                for (i = 0; i < fv.n_reasons; i++)
-                    printf("  \xc2\xb7 %s\n", fv.reasons[i]);
-                if (fv.score >= 40) {
-                    printf("  \xe2\x96\xb8 Pattern: %s\n", file_classify_pattern(&fv));
-                    printf("  \xe2\x97\x89 Attacker's goal: %s\n", file_masquerade_objective());
-                    printf("  \xe2\x9c\x93 Verify first: %s\n", file_masquerade_verify());
-                }
-                if (fv.score >= 60) {
-                    printf("  \xe2\x9a\x91 If you acted: if already opened, disconnect "
-                           "from the network; run antivirus; change credentials for "
-                           "any active session\n");
-                    printf("  \xe2\x8a\x95 Also change: all credentials and session "
-                           "tokens active when the file was opened \xe2\x80\x94 check "
-                           "for persistence (startup items, scheduled tasks, new "
-                           "browser extensions)\n");
-                }
-                if (fv.score < 60) {
-                    const char *ex = hlse_exoneration_for("file", fv.score);
-                    if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-                }
+                print_file_verdict_plain(&fv, fdisp);
             }
             return fv.score >= g_fail_threshold ? 1 : 0;
         }
