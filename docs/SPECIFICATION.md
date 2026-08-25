@@ -88,7 +88,7 @@ in `print_usage()` and the man page (`hlse.1`).
 | Text scam / BEC | `hlse_text.c` | text | urgency, financial bait, authority, ransom, BEC amplifiers; evasion-normalised | `text` |
 | Ransomware | `hlse_protect.c` | dir | entropy spike (+magic exclusion), ransom notes, ext mutation, shadow delete | `protect` |
 | Boot integrity | `hlse_protect.c` | device / ESP | MBR signature/strings/entropy; ESP ransom/bootkit strings | `protect --mbr`, `esp` |
-| Credential leak | `hlse_secrets.c` | text/dir | 55 token patterns: AWS(+STS)/GitHub/GitLab/Google(+OAuth GOCSPX-)/npm/OpenAI/Anthropic/Groq/Perplexity/xAI/Stripe/Shopify/HuggingFace/PyPI/Postman/Square/Doppler/Grafana/Linear/NewRelic/Databricks/Slack+Discord webhooks/SSH/.env + 7 structural checks (GCP SA JSON, Azure SAS, Azure AccountKey, AWS creds-file secret, JWT, Telegram bot token, URI-embedded credentials), placeholder exclusion | `scan`, `secret` |
+| Credential leak | `hlse_secrets.c` | text/dir | 61 token patterns: AWS(+STS)/GitHub/GitLab/Google(+OAuth GOCSPX-)/npm/OpenAI/Anthropic/Groq/Perplexity/xAI/Stripe/Shopify/HuggingFace/PyPI/Postman/Square/Doppler/Grafana/Linear/NewRelic/Databricks/Slack+Discord webhooks/SSH/.env + 7 structural checks (GCP SA JSON, Azure SAS, Azure AccountKey, AWS creds-file secret, JWT, Telegram bot token, URI-embedded credentials), placeholder exclusion | `scan`, `secret` |
 | Email forensics | `hlse_secrets.c` | headers | SPF/DKIM fail (+all-none missing-auth), Reply-To mismatch, display-name spoof (+brand-domain ownership guard), BEC | `email` |
 | Clipboard swap | `hlse_secrets.c` | copied,pasted | same-type address swap + vanity look-alike, 16 chains (BTC/ETH/XMR/SOL/USDT-TRC20/LTC/DOGE/XRP/DASH/XLM/ADA/BCH/ATOM/XTZ/DOT/ALGO) | `clipboard` |
 | Supply chain | `hlse_supply.c` | pkg / paste / — | typosquat, pastejacking, network safety (N1 ARP / N2 routing injection / N3 DNS / N4 hosts pharming) | `package`, `paste`, `network` |
@@ -210,7 +210,7 @@ A fifth audit, of README numeric claims vs measured reality, found:
 
 - **GAP-H — stale README numbers**: "Structured tests: 237" and "Binary size:
   53 KB (dynamic), 932 KB (static)" no longer matched reality (≈328 checks;
-  ≈140 KB dynamic / ≈1.0 MB static-pie after the feature and hardening work).
+  ≈464 KB dynamic / ≈1.5 MB static-pie after the feature and hardening work).
   The detection/evasion example claims, F1, and 0% FP all verified accurate.
   → update the counts to a non-drifting `320+` and the sizes to measured
   approximate values; drop the brittle exact "237" from the `make test`
