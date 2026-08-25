@@ -9187,46 +9187,32 @@ main(int argc, char **argv) {
     opts.sarif_out = sarif_out;
     opts.quiet     = quiet;
 
-    if (strcmp(argv[idx], "scan") == 0)
-        return cmd_scan(argc, argv, idx, &opts);
+    /* Subcommand dispatch. This was twelve near-identical strcmp/return pairs;
+     * a table makes adding one a data change and keeps the list readable as a
+     * list. The order is preserved from the chain it replaces — it does not
+     * matter semantically, since the names are distinct, but keeping it makes
+     * the diff reviewable.
+     *
+     * `protect` takes optional module flags (--ransomware|--smb|--mbr|--net);
+     * without them it runs every module applicable to the path. */
+    {
+        static const struct {
+            const char *name;
+            int (*fn)(int argc, char **argv, int idx, const CliOpts *o);
+        } COMMANDS[] = {
+            { "scan",      cmd_scan      }, { "protect",   cmd_protect   },
+            { "esp",       cmd_esp       }, { "package",   cmd_package   },
+            { "paste",     cmd_paste     }, { "network",   cmd_network   },
+            { "secret",    cmd_secret    }, { "email",     cmd_email     },
+            { "clipboard", cmd_clipboard }, { "file",      cmd_file      },
+            { "audit",     cmd_audit     }, { "text",      cmd_text      },
+        };
+        size_t ci;
+        for (ci = 0; ci < sizeof(COMMANDS) / sizeof(COMMANDS[0]); ci++)
+            if (strcmp(argv[idx], COMMANDS[ci].name) == 0)
+                return COMMANDS[ci].fn(argc, argv, idx, &opts);
+    }
 
-    /* ── protect subcommand ──────────────────────────────────────────
-     * Usage: hlse_core protect <path> [--ransomware|--smb|--mbr|--net]
-     * Without flags: runs all modules applicable to the path.        */
-    if (strcmp(argv[idx], "protect") == 0)
-        return cmd_protect(argc, argv, idx, &opts);
-
-    if (strcmp(argv[idx], "esp") == 0)
-        return cmd_esp(argc, argv, idx, &opts);
-
-    /* ── Supply Chain Defense subcommands ───────────────────────────── */
-
-    if (strcmp(argv[idx], "package") == 0)
-        return cmd_package(argc, argv, idx, &opts);
-
-    if (strcmp(argv[idx], "paste") == 0)
-        return cmd_paste(argc, argv, idx, &opts);
-
-    if (strcmp(argv[idx], "network") == 0)
-        return cmd_network(argc, argv, idx, &opts);
-
-    if (strcmp(argv[idx], "secret") == 0)
-        return cmd_secret(argc, argv, idx, &opts);
-
-    if (strcmp(argv[idx], "email") == 0)
-        return cmd_email(argc, argv, idx, &opts);
-
-    if (strcmp(argv[idx], "clipboard") == 0)
-        return cmd_clipboard(argc, argv, idx, &opts);
-
-    if (strcmp(argv[idx], "file") == 0)
-        return cmd_file(argc, argv, idx, &opts);
-
-    if (strcmp(argv[idx], "audit") == 0)
-        return cmd_audit(argc, argv, idx, &opts);
-
-    if (strcmp(argv[idx], "text") == 0)
-        return cmd_text(argc, argv, idx, &opts);
     /* Default: use unified scan (auto-detects URL vs text) */
     {
         const char *input = argv[idx];
