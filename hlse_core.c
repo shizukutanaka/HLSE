@@ -6580,6 +6580,20 @@ print_secret_advisories(const SecretVerdict *sv) {
     }
 }
 
+/* Build a one-reason TextVerdict so a non-text verdict can borrow the text
+ * classifier's pattern / objective / verify / triage / cascade wording.
+ *
+ * Five sites hand-rolled this — the email/BEC path and the paste path — each
+ * repeating the memset, the score copy, n_reasons = 1, and the snprintf into
+ * slot zero. It is one idea, so it is one function. */
+static void
+text_verdict_synth(TextVerdict *tv, int score, const char *reason) {
+    memset(tv, 0, sizeof(*tv));
+    tv->score = score;
+    tv->n_reasons = 1;
+    snprintf(tv->reasons[0], sizeof(tv->reasons[0]), "%s", reason);
+}
+
 static void
 print_text_advisories(const TextVerdict *tv) {
     const char *tpat = hlse_classify_text_attack(tv);
@@ -8366,11 +8380,8 @@ main(int argc, char **argv) {
                      * the user already acted. */
                     TextVerdict ptv;
                     const char *ppat, *pobj, *pvrf;
-                    memset(&ptv, 0, sizeof(ptv));
-                    ptv.score = pv.score;
-                    ptv.n_reasons = 1;
-                    snprintf(ptv.reasons[0], sizeof(ptv.reasons[0]),
-                             "Shell-pipe: paste-and-run pastejacking");
+                    text_verdict_synth(&ptv, pv.score,
+                                       "Shell-pipe: paste-and-run pastejacking");
                     ppat = hlse_classify_text_attack(&ptv);
                     pobj = hlse_text_objective(&ptv);
                     pvrf = hlse_text_verify(&ptv);
@@ -8414,11 +8425,8 @@ main(int argc, char **argv) {
                      * print_text_advisories internally gates verify at >=40 and
                      * triage/cascade_risk at >=60 (Perspective 95). */
                     TextVerdict ptv;
-                    memset(&ptv, 0, sizeof(ptv));
-                    ptv.score = pv.score;
-                    ptv.n_reasons = 1;
-                    snprintf(ptv.reasons[0], sizeof(ptv.reasons[0]),
-                             "Shell-pipe: paste-and-run pastejacking");
+                    text_verdict_synth(&ptv, pv.score,
+                                       "Shell-pipe: paste-and-run pastejacking");
                     print_text_advisories(&ptv);
                 }
                 if (pv.score > 0 && pv.score < 60) {
@@ -8723,12 +8731,8 @@ main(int argc, char **argv) {
                     /* Header-only BLOCK: synthesise BEC advisory lenses */
                     TextVerdict etv;
                     const char *epat2, *eobj, *evrf, *etri, *ecas;
-                    memset(&etv, 0, sizeof(etv));
-                    etv.score = ev.score;
-                    etv.n_reasons = 1;
-                    snprintf(etv.reasons[0], sizeof(etv.reasons[0]),
-                             "BEC: email header authentication failure "
-                             "(SPF/DKIM/Reply-To spoofing)");
+                    text_verdict_synth(&etv, ev.score,
+                                       "BEC: email header authentication failure ");
                     epat2 = hlse_classify_text_attack(&etv);
                     eobj  = hlse_text_objective(&etv);
                     evrf  = hlse_text_verify(&etv);
@@ -8796,12 +8800,8 @@ main(int argc, char **argv) {
                     /* Header-only BLOCK: synthesise BEC advisory lenses */
                     TextVerdict etv;
                     const char *epat2, *eobj, *evrf, *etri, *ecas;
-                    memset(&etv, 0, sizeof(etv));
-                    etv.score = ev.score;
-                    etv.n_reasons = 1;
-                    snprintf(etv.reasons[0], sizeof(etv.reasons[0]),
-                             "BEC: email header authentication failure "
-                             "(SPF/DKIM/Reply-To spoofing)");
+                    text_verdict_synth(&etv, ev.score,
+                                       "BEC: email header authentication failure ");
                     epat2 = hlse_classify_text_attack(&etv);
                     eobj  = hlse_text_objective(&etv);
                     evrf  = hlse_text_verify(&etv);
