@@ -7422,8 +7422,8 @@ main(int argc, char **argv) {
                                 const char *fpat = file_classify_pattern(&fv);
                                 json_field("pattern", fpat);
                                 printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
-                                hlse_json_escape(file_masquerade_objective(), esc, sizeof(esc)); printf(",\"objective\":\"%s\"", esc);
-                                hlse_json_escape(file_masquerade_verify(),    esc, sizeof(esc)); printf(",\"verify\":\"%s\"",    esc);
+                                json_field("objective", file_masquerade_objective());
+                                json_field("verify", file_masquerade_verify());
                             }
                             if (fv.score >= 60) {
                                 static const char sf_tri[] =
@@ -7623,9 +7623,9 @@ main(int argc, char **argv) {
                                             if (sobj) {
                                                 json_field("objective", sobj);
                                             }
-                                            hlse_json_escape(secret_verify_text(),  ed, sizeof(ed)); printf(",\"verify\":\"%s\"",       ed);
-                                            hlse_json_escape(secret_triage_text(),  ed, sizeof(ed)); printf(",\"triage\":\"%s\"",       ed);
-                                            hlse_json_escape(secret_cascade_text(), ed, sizeof(ed)); printf(",\"cascade_risk\":\"%s\"", ed);
+                                            json_field("verify", secret_verify_text());
+                                            json_field("triage", secret_triage_text());
+                                            json_field("cascade_risk", secret_cascade_text());
                                         }
                                         if (sv.score > 0 && sv.score < 60) {
                                             const char *ex = hlse_exoneration_for("secret", sv.score);
@@ -7760,18 +7760,18 @@ main(int argc, char **argv) {
                                                         char uobj_buf[320], usafe[384];
                                                         int has_obj  = hlse_compound_objective(&uv, uobj_buf, sizeof(uobj_buf));
                                                         int has_safe = hlse_safe_destinations(&uv, usafe, sizeof(usafe));
-                                                        if (upat)     { hlse_json_escape(upat,     eu, sizeof(eu)); printf(",\"pattern\":\"%s\"",      eu); }
+                                                        if (upat)     { json_field("pattern", upat); }
                                                         if (upat)     { const char *upid = hlse_url_pattern_id(&uv); if (upid) printf(",\"pattern_id\":\"%s\"", upid); }
                                                         if (has_obj)  { json_field("objective", uobj_buf); }
-                                                        if (has_safe) { hlse_json_escape(usafe,    eu, sizeof(eu)); printf(",\"safe_url\":\"%s\"",     eu); }
-                                                        if (uvrf)     { hlse_json_escape(uvrf,     eu, sizeof(eu)); printf(",\"verify\":\"%s\"",       eu); }
+                                                        if (has_safe) { json_field("safe_url", usafe); }
+                                                        if (uvrf)     { json_field("verify", uvrf); }
                                                     }
                                                     if (uv.score >= 60) {
                                                         const char *ucas = hlse_cascade_risk(&uv);
                                                         char utri_buf[512];
                                                         int has_tri  = hlse_compound_triage(&uv, utri_buf, sizeof(utri_buf));
                                                         if (has_tri)  { json_field("triage", utri_buf); }
-                                                        if (ucas)     { hlse_json_escape(ucas,     eu, sizeof(eu)); printf(",\"cascade_risk\":\"%s\"", eu); }
+                                                        if (ucas)     { json_field("cascade_risk", ucas); }
                                                     }
                                                     if (uv.score >= 40 && uv.score < 60) {
                                                         const char *uexon = hlse_url_exoneration(&uv);
@@ -7964,16 +7964,14 @@ main(int argc, char **argv) {
                      * BLOCK+-only (>= 60).
                      * Perspective 103: text now shared with the plaintext
                      * path below via protect_*_text() accessors. */
-                    char e[512];
-                    hlse_json_escape(protect_pattern_text(), e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                    json_field("pattern", protect_pattern_text());
                     printf(",\"pattern_id\":\"HLSE-PROTECT-RANSOM\"");
-                    hlse_json_escape(protect_objective_text(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                    hlse_json_escape(protect_verify_text(),    e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                    json_field("objective", protect_objective_text());
+                    json_field("verify", protect_verify_text());
                 }
                 if (pv.score >= 60) {
-                    char e[512];
-                    hlse_json_escape(protect_triage_text(),  e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(protect_cascade_text(), e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                    json_field("triage", protect_triage_text());
+                    json_field("cascade_risk", protect_cascade_text());
                 }
                 if (pv.score > 0 && pv.score < 60) {
                     const char *ex = hlse_exoneration_for("protect", pv.score);
@@ -8039,13 +8037,12 @@ main(int argc, char **argv) {
                 printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
             }
             if (pv.score >= 60) {
-                char e[512];
-                hlse_json_escape(esp_pattern_text(),   e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                json_field("pattern", esp_pattern_text());
                 printf(",\"pattern_id\":\"HLSE-ESP-BOOTKIT\"");
-                hlse_json_escape(esp_objective_text(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                hlse_json_escape(esp_verify_text(),     e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
-                hlse_json_escape(esp_triage_text(),     e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                hlse_json_escape(esp_cascade_text(),    e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                json_field("objective", esp_objective_text());
+                json_field("verify", esp_verify_text());
+                json_field("triage", esp_triage_text());
+                json_field("cascade_risk", esp_cascade_text());
             }
             if (pv.score > 0 && pv.score < 60) {
                 const char *ex = hlse_exoneration_for("esp", pv.score);
@@ -8250,21 +8247,14 @@ main(int argc, char **argv) {
                      * >= 60, the same gap P95/P96 closed elsewhere.
                      * Perspective 103: text now shared with the plaintext
                      * path below via package_*_text() accessors. */
-                    char e[512];
-                    hlse_json_escape(package_pattern_text(), e, sizeof(e));
-                    printf(",\"pattern\":\"%s\"", e);
+                    json_field("pattern", package_pattern_text());
                     printf(",\"pattern_id\":\"HLSE-PKG-TYPOSQUAT\"");
-                    hlse_json_escape(package_objective_text(), e, sizeof(e));
-                    printf(",\"objective\":\"%s\"", e);
-                    hlse_json_escape(package_verify_text(), e, sizeof(e));
-                    printf(",\"verify\":\"%s\"", e);
+                    json_field("objective", package_objective_text());
+                    json_field("verify", package_verify_text());
                 }
                 if (pv.score >= 60) {
-                    char e[512];
-                    hlse_json_escape(package_triage_text(), e, sizeof(e));
-                    printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(package_cascade_text(), e, sizeof(e));
-                    printf(",\"cascade_risk\":\"%s\"", e);
+                    json_field("triage", package_triage_text());
+                    json_field("cascade_risk", package_cascade_text());
                 }
                 if (pv.score > 0 && pv.score < 60) {
                     const char *ex = hlse_exoneration_for("package", pv.score);
@@ -8460,16 +8450,14 @@ main(int argc, char **argv) {
                  * already acted) stay BLOCK+-only.
                  * Perspective 103: text now shared with the plaintext path
                  * below via network_*_text() accessors. */
-                char e[512];
-                hlse_json_escape(net_pattern_text(), e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                json_field("pattern", net_pattern_text());
                 printf(",\"pattern_id\":\"HLSE-NET-C2\"");
-                hlse_json_escape(network_objective_text(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                hlse_json_escape(network_verify_text(),    e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                json_field("objective", network_objective_text());
+                json_field("verify", network_verify_text());
             }
             if (nv.score >= 60) {
-                char e[512];
-                hlse_json_escape(network_triage_text(),  e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                hlse_json_escape(network_cascade_text(), e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                json_field("triage", network_triage_text());
+                json_field("cascade_risk", network_cascade_text());
             }
             if (nv.score > 0 && nv.score < 60) {
                 const char *ex = hlse_exoneration_for("network", nv.score);
@@ -8573,14 +8561,14 @@ main(int argc, char **argv) {
                 if (sv.score >= 60 && sv.n_findings > 0) {
                     const char *ftype = sv.findings[0].type;
                     const char *sobj  = secret_objective_for(ftype);
-                    char e[512], epat[128];
+                    char epat[128];
                     secret_pattern_label(ftype, epat, sizeof(epat));
                     json_field("pattern", epat);
                     printf(",\"pattern_id\":\"%s\"", secret_pattern_id(ftype));
                     if (sobj) { json_field("objective", sobj); }
-                    hlse_json_escape(secret_verify_text(),  e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
-                    hlse_json_escape(secret_triage_text(),  e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(secret_cascade_text(), e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                    json_field("verify", secret_verify_text());
+                    json_field("triage", secret_triage_text());
+                    json_field("cascade_risk", secret_cascade_text());
                 }
                 if (sv.score > 0 && sv.score < 60) {
                     const char *ex = hlse_exoneration_for("secret", sv.score);
@@ -8867,18 +8855,12 @@ main(int argc, char **argv) {
                     json_field("blind_spot", bs);
                 }
                 if (cv.score >= 60) {
-                    char e[512];
-                    hlse_json_escape(clipboard_pattern_text(), e, sizeof(e));
-                    printf(",\"pattern\":\"%s\"", e);
+                    json_field("pattern", clipboard_pattern_text());
                     printf(",\"pattern_id\":\"HLSE-CLIP-HIJACK\"");
-                    hlse_json_escape(clipboard_objective_text(), e, sizeof(e));
-                    printf(",\"objective\":\"%s\"", e);
-                    hlse_json_escape(clipboard_verify_text(), e, sizeof(e));
-                    printf(",\"verify\":\"%s\"", e);
-                    hlse_json_escape(clipboard_triage_text(), e, sizeof(e));
-                    printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(clipboard_cascade_text(), e, sizeof(e));
-                    printf(",\"cascade_risk\":\"%s\"", e);
+                    json_field("objective", clipboard_objective_text());
+                    json_field("verify", clipboard_verify_text());
+                    json_field("triage", clipboard_triage_text());
+                    json_field("cascade_risk", clipboard_cascade_text());
                 }
                 printf("}\n");
             } else if (cv.score == 0) {
@@ -8966,11 +8948,10 @@ main(int argc, char **argv) {
                      * pattern/file_masquerade_objective/file_masquerade_verify
                      * above) instead of a fourth independent copy. */
                     const char *fpat = file_classify_pattern(&fv);
-                    char e[512];
                     json_field("pattern", fpat);
                     printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
-                    hlse_json_escape(file_masquerade_objective(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                    hlse_json_escape(file_masquerade_verify(),    e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                    json_field("objective", file_masquerade_objective());
+                    json_field("verify", file_masquerade_verify());
                 }
                 if (fv.score >= 60) {
                     static const char file_tri[] =
