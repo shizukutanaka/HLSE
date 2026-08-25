@@ -373,15 +373,12 @@ respond_scan(ConnCtx *cx, const char *input) {
     size_t len = 0;
     int i;
     int severity = hlse_severity_for_score(r.score);
-    const char *action;
+    /* Ask the engine rather than re-deriving the bands here. This was a
+     * private switch; had a band boundary ever moved, the CLI would have
+     * followed and the server would silently have kept the old answer —
+     * two components disagreeing about the same input. */
+    const char *action = hlse_action_for_score(r.score);
 
-    switch (severity) {
-        case 4: action = "ISOLATE"; break;
-        case 3: action = "BLOCK";   break;
-        case 2: action = "ALERT";   break;
-        case 1: action = "LOG";     break;
-        default: action = "SAFE";   break;
-    }
 
     body[0] = '\0';
     snprintf(body, sizeof(body),
@@ -443,13 +440,7 @@ respond_file(ConnCtx *cx, const char *filename, const char *content) {
     fn_esc[0] = '\0';
     json_escape_append(fn_esc, sizeof(fn_esc), &fnlen, filename);
 
-    switch (severity) {
-        case 4: action = "ISOLATE"; break;
-        case 3: action = "BLOCK";   break;
-        case 2: action = "ALERT";   break;
-        case 1: action = "LOG";     break;
-        default: action = "SAFE";   break;
-    }
+    action = hlse_action_for_score(score);
     len = (size_t)snprintf(body, sizeof(body),
         "{\"kind\":\"file\",\"filename\":\"%s\",\"score\":%d,\"severity\":%d,"
         "\"action\":\"%s\",\"reasons\":[", fn_esc, score, severity, action);
