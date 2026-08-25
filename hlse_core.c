@@ -620,6 +620,40 @@ add_reason(Verdict *v, int delta, const char *fmt, ...) {
     v->n_reasons++;
 }
 
+/* Readers for the reason format that add_brand_canonical() writes below.
+ *
+ * Three call sites used to parse "Legitimate '<brand>': <domain>" by hand —
+ * two pulling the domain, one the brand — each re-deriving the delimiters and
+ * the magic offset past the prefix. That is the format's structure known in
+ * four places, so changing the wording meant finding all four. The writer and
+ * its readers now sit together. */
+#define LEGIT_PREFIX "Legitimate '"
+
+/* Domain half: pointer to <domain>, or NULL if `reason` is not that format. */
+static const char *
+legit_domain_of(const char *reason) {
+    const char *brand = strstr(reason, LEGIT_PREFIX);
+    const char *colon = brand ? strstr(brand, "': ") : NULL;
+    return colon ? colon + 3 : NULL;
+}
+
+/* Brand half: copies <brand> into `out`. Returns 1 on success, 0 otherwise. */
+static int
+legit_brand_of(const char *reason, char *out, size_t outsz) {
+    const char *start = strstr(reason, LEGIT_PREFIX);
+    const char *end;
+    size_t len;
+    if (!start) return 0;
+    start += sizeof(LEGIT_PREFIX) - 1;
+    end = strchr(start, '\'');
+    if (!end) return 0;
+    len = (size_t)(end - start);
+    if (len == 0 || len >= outsz) return 0;
+    memcpy(out, start, len);
+    out[len] = '\0';
+    return 1;
+}
+
 /* Append the canonical-domain "Legitimate '<brand>': <domain>" reason for a
  * detected brand impersonation — but only once per verdict. Multiple brand
  * detectors can fire on the same URL (subdomain-spoof AND free-hosting, say);
@@ -3224,14 +3258,9 @@ hlse_safe_destination(const Verdict *v, char *out, size_t outsz) {
     if (!v || !out || outsz < 10) return 0;
     for (i = 0; i < v->n_reasons; i++) {
         const char *r     = v->reasons[i];
-        const char *brand = strstr(r, "Legitimate '");
-        const char *colon;
-        if (!brand) continue;
-        colon = strstr(brand, "': ");
-        if (!colon) continue;
-        /* colon+3 points at the canonical domain, which runs to end-of-reason
-         * (the reason is built as "Legitimate '<brand>': <domain>"). */
-        snprintf(out, outsz, "https://%s", colon + 3);
+        const char *dom = legit_domain_of(r);
+        if (!dom) continue;
+        snprintf(out, outsz, "https://%s", dom);
         return 1;
     }
     return 0;
@@ -3267,16 +3296,12 @@ hlse_safe_destinations(const Verdict *v, char *out, size_t outsz) {
 
     for (i = 0; i < v->n_reasons && n_found < 2; i++) {
         const char *r     = v->reasons[i];
-        const char *brand = strstr(r, "Legitimate '");
-        const char *colon;
-        if (!brand) continue;
-        colon = strstr(brand, "': ");
-        if (!colon) continue;
-        /* colon+3 is the canonical domain (to end of reason string) */
+        const char *dom = legit_domain_of(r);
+        if (!dom) continue;
         if (n_found == 0)
-            snprintf(url1, sizeof(url1), "https://%s", colon + 3);
+            snprintf(url1, sizeof(url1), "https://%s", dom);
         else
-            snprintf(url2, sizeof(url2), "https://%s", colon + 3);
+            snprintf(url2, sizeof(url2), "https://%s", dom);
         n_found++;
     }
 
@@ -3416,18 +3441,8 @@ hlse_attacker_objective(const Verdict *v) {
     if (!v) return NULL;
     for (i = 0; i < v->n_reasons; i++) {
         const char *r     = v->reasons[i];
-        const char *start = strstr(r, "Legitimate '");
-        const char *end;
         char brand[64];
-        size_t len;
-        if (!start) continue;
-        start += 12;                 /* skip past "Legitimate '" */
-        end = strchr(start, '\'');
-        if (!end) continue;
-        len = (size_t)(end - start);
-        if (len == 0 || len >= sizeof(brand)) continue;
-        memcpy(brand, start, len);
-        brand[len] = '\0';
+        if (!legit_brand_of(r, brand, sizeof(brand))) continue;
         return brand_objective(brand);
     }
     return NULL;

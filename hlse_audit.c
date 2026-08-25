@@ -53,6 +53,21 @@ av_add(AuditVerdict *v, int delta, AuditSeverity sev,
     v->n_findings++;
 }
 
+/* Advance past leading blanks in a config line; return NULL when the line
+ * carries no content (comment, blank, or bare newline).
+ *
+ * Eight loops open-coded this. They had drifted apart: five treated a line
+ * that is only whitespace ('\0' after the skip) as empty, three did not, so
+ * the same file could be read two ways depending on which check happened to
+ * be nearby. One definition means one behaviour. */
+static char *
+config_line_content(char *line) {
+    char *p = line;
+    while (*p == ' ' || *p == '\t') p++;
+    if (*p == '#' || *p == '\n' || *p == '\r' || *p == '\0') return NULL;
+    return p;
+}
+
 static int
 file_contains(const char *path, const char *needle) {
     FILE *fp = hlse_open_system_file(path);
@@ -89,9 +104,8 @@ hlse_audit_ssh(void) {
 
             while (fgets(line, sizeof(line), fp)) {
                 /* Skip comments */
-                char *p = line;
-                while (*p == ' ' || *p == '\t') p++;
-                if (*p == '#' || *p == '\n') continue;
+                char *p = config_line_content(line);
+                if (!p) continue;
 
                 if (strstr(p, "PermitRootLogin")) {
                     root_login_found = 1;
@@ -327,9 +341,8 @@ hlse_audit_dns(void) {
 
     while (fgets(line, sizeof(line), fp)) {
         /* Skip comments and blank lines */
-        char *p = line;
-        while (*p == ' ' || *p == '\t') p++;
-        if (*p == '#' || *p == '\n' || *p == '\0') continue;
+        char *p = config_line_content(line);
+        if (!p) continue;
 
         /* Skip localhost entries */
         if (strstr(p, "127.0.0.1") && strstr(p, "localhost")) continue;
@@ -452,9 +465,8 @@ hlse_audit_cron(void) {
 
                     while (fgets(line, sizeof(line), fp)) {
                         int i;
-                        char *p = line;
-                        while (*p == ' ' || *p == '\t') p++;
-                        if (*p == '#' || *p == '\n') continue;
+                        char *p = config_line_content(line);
+                        if (!p) continue;
 
                         for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
                             if (strstr(p, SUSPICIOUS_CRON_PATTERNS[i])) {
@@ -518,9 +530,8 @@ hlse_audit_cron(void) {
             char line[2048];
             while (fgets(line, sizeof(line), fp)) {
                 int i;
-                char *p = line;
-                while (*p == ' ' || *p == '\t') p++;
-                if (*p == '#' || *p == '\n') continue;
+                char *p = config_line_content(line);
+                if (!p) continue;
                 for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
                     if (strstr(p, SUSPICIOUS_CRON_PATTERNS[i])) {
                         av_add(&v, 40, AUDIT_HIGH,
@@ -630,10 +641,10 @@ hlse_audit_shellrc(void) {
         if (!fp) continue;
 
         while (fgets(line, sizeof(line), fp)) {
-            char *p = line;
+            char *p;
             lineno++;
-            while (*p == ' ' || *p == '\t') p++;
-            if (*p == '#' || *p == '\n' || *p == '\0') continue;
+            p = config_line_content(line);
+            if (!p) continue;
 
             if (strstr(p, "/dev/tcp/") || strstr(p, "/dev/udp/")) {
                 av_add(&v, 45, AUDIT_CRITICAL,
@@ -751,10 +762,10 @@ hlse_audit_shellrc(void) {
                 if (!fp) continue;
 
                 while (fgets(line, sizeof(line), fp)) {
-                    char *p = line;
+                    char *p;
                     lineno++;
-                    while (*p == ' ' || *p == '\t') p++;
-                    if (*p == '#' || *p == '\n' || *p == '\0') continue;
+                    p = config_line_content(line);
+                    if (!p) continue;
 
                     if (strstr(p, "/dev/tcp/") || strstr(p, "/dev/udp/")) {
                         av_add(&v, 55, AUDIT_CRITICAL,
@@ -813,9 +824,8 @@ hlse_audit_sudoers(void) {
                 lineno++;
                 /* Skip comments and whitespace lines */
                 {
-                    char *p = line;
-                    while (*p == ' ' || *p == '\t') p++;
-                    if (*p == '#' || *p == '\n' || *p == '\0') continue;
+                    char *p = config_line_content(line);
+                    if (!p) continue;
                 }
                 if (strstr(line, "NOPASSWD") && !strstr(line, "#")) {
                     /* Strip trailing newline for cleaner output */
@@ -850,9 +860,8 @@ hlse_audit_sudoers(void) {
                     while (fgets(line, sizeof(line), fp)) {
                         lineno++;
                         {
-                            char *p = line;
-                            while (*p == ' ' || *p == '\t') p++;
-                            if (*p == '#' || *p == '\n' || *p == '\0') continue;
+                            char *p = config_line_content(line);
+                            if (!p) continue;
                         }
                         if (strstr(line, "NOPASSWD") && !strstr(line, "#")) {
                             char *nl = strchr(line, '\n');
