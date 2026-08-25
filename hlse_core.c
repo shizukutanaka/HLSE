@@ -8696,7 +8696,7 @@ main(int argc, char **argv) {
                      * objective/triage/cascade_risk stay gated on ev.score
                      * >= 60 (header-confidence threshold, unchanged). */
                     if (bvrf && btv_hi.score >= 40) {
-                        hlse_json_escape(bvrf,e,sizeof(e)); printf(",\"verify\":\"%s\"",e);
+                        json_field("verify", bvrf);
                     }
                     if (ev.score >= 60) {
                         json_field("objective", bobj);
@@ -8708,7 +8708,8 @@ main(int argc, char **argv) {
                     TextVerdict etv;
                     const char *epat2, *eobj, *evrf, *etri, *ecas;
                     text_verdict_synth(&etv, ev.score,
-                                       "BEC: email header authentication failure ");
+                                       "BEC: email header authentication failure "
+                                       "(SPF/DKIM/Reply-To spoofing)");
                     epat2 = hlse_classify_text_attack(&etv);
                     eobj  = hlse_text_objective(&etv);
                     evrf  = hlse_text_verify(&etv);
@@ -8777,7 +8778,8 @@ main(int argc, char **argv) {
                     TextVerdict etv;
                     const char *epat2, *eobj, *evrf, *etri, *ecas;
                     text_verdict_synth(&etv, ev.score,
-                                       "BEC: email header authentication failure ");
+                                       "BEC: email header authentication failure "
+                                       "(SPF/DKIM/Reply-To spoofing)");
                     epat2 = hlse_classify_text_attack(&etv);
                     eobj  = hlse_text_objective(&etv);
                     evrf  = hlse_text_verify(&etv);
