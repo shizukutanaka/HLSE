@@ -3480,19 +3480,11 @@ hlse_compound_objective(const Verdict *v, char *out, size_t outsz) {
     out[0] = '\0';
 
     for (i = 0; i < v->n_reasons && n_found < 2; i++) {
-        const char *r     = v->reasons[i];
-        const char *start = strstr(r, "Legitimate '");
-        const char *end;
+        const char *r = v->reasons[i];
         char brand[64];
         size_t len;
-        if (!start) continue;
-        start += 12;
-        end = strchr(start, '\'');
-        if (!end) continue;
-        len = (size_t)(end - start);
-        if (len == 0 || len >= sizeof(brand)) continue;
-        memcpy(brand, start, len);
-        brand[len] = '\0';
+        if (!legit_brand_of(r, brand, sizeof(brand))) continue;
+        len = strlen(brand);
         if (n_found == 0) {
             memcpy(brand1, brand, len + 1);
             obj1   = brand_objective(brand1);
@@ -3975,19 +3967,11 @@ hlse_compound_triage(const Verdict *v, char *out, size_t outsz) {
     out[0] = '\0';
 
     for (i = 0; i < v->n_reasons && n_found < 2; i++) {
-        const char *r     = v->reasons[i];
-        const char *start = strstr(r, "Legitimate '");
-        const char *end;
+        const char *r = v->reasons[i];
         char brand[64];
         size_t len;
-        if (!start) continue;
-        start += 12;
-        end = strchr(start, '\'');
-        if (!end) continue;
-        len = (size_t)(end - start);
-        if (len == 0 || len >= sizeof(brand)) continue;
-        memcpy(brand, start, len);
-        brand[len] = '\0';
+        if (!legit_brand_of(r, brand, sizeof(brand))) continue;
+        len = strlen(brand);
         if (n_found == 0) {
             memcpy(brand1, brand, len + 1);
             class1 = brand_objective_class(brand1);
