@@ -6249,6 +6249,36 @@ clipboard_cascade_text(void) {
            "transacting again";
 }
 
+/* Build a TextVerdict from a ScanResult.
+ *
+ * Six identical copies of this lived inline, each restating the clamp
+ * `sr->n_reasons < CAP ? sr->n_reasons : CAP`. That bound has to be right
+ * every time; here it is written once. */
+static void
+text_verdict_from_scan(TextVerdict *tv, const ScanResult *sr) {
+    const int cap = (int)(sizeof(tv->reasons) / sizeof(tv->reasons[0]));
+    int i;
+    memset(tv, 0, sizeof(*tv));
+    tv->score = sr->score;
+    tv->n_reasons = sr->n_reasons < cap ? sr->n_reasons : cap;
+    for (i = 0; i < tv->n_reasons; i++)
+        snprintf(tv->reasons[i], sizeof(tv->reasons[0]), "%s", sr->reasons[i]);
+}
+
+/* Emit  ,"name":"<escaped value>"  — or nothing at all when value is NULL.
+ *
+ * This existed inline at ~93 sites, each declaring its own char esc_x[512],
+ * calling hlse_json_escape(), then printf-ing. Beyond the repetition, that
+ * made escaping a property every call site had to remember: one that forgot
+ * would emit malformed or injectable JSON. Here it cannot be forgotten. */
+static void
+json_field(const char *name, const char *value) {
+    char esc[512];
+    if (!value) return;
+    hlse_json_escape(value, esc, sizeof(esc));
+    printf(",\"%s\":\"%s\"", name, esc);
+}
+
 static void
 print_json_url(const char *url, const Verdict *v) {
     char escaped_url[MAX_URL * 2];
@@ -6306,11 +6336,7 @@ print_json_url(const char *url, const Verdict *v) {
          * positively confirmed against the brand registry — the generic
          * "pixel-perfect clone" blind spot contradicts a canonical confirm. */
         const char *bs = hlse_blindspot_for(has_canon ? "url_canonical" : "url");
-        if (bs) {
-            char esc_bs[512];
-            hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-            printf(",\"blind_spot\":\"%s\"", esc_bs);
-        }
+        json_field("blind_spot", bs);
     }
     if (pat)        printf(",\"pattern\":\"%s\"", esc_pat);
     if (pid)        printf(",\"pattern_id\":\"%s\"", pid); /* stable SIEM token */
@@ -6332,9 +6358,7 @@ print_json_url(const char *url, const Verdict *v) {
         {
             const char *ch_rsn = channel_reason(g_from_channel);
             if (ch_rsn) {
-                char esc_ch[512];
-                hlse_json_escape(ch_rsn, esc_ch, sizeof(esc_ch));
-                printf(",\"channel_reason\":\"%s\"", esc_ch);
+                json_field("channel_reason", ch_rsn);
             }
         }
     }
@@ -6394,11 +6418,7 @@ print_json_text(const char *text, const TextVerdict *v) {
                             sig_cnt, esc_cf);
     if (v->score == 0) {
         const char *bs = hlse_blindspot_for("text");
-        if (bs) {
-            char esc_bs[512];
-            hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-            printf(",\"blind_spot\":\"%s\"", esc_bs);
-        }
+        json_field("blind_spot", bs);
     }
     if (pat)  printf(",\"pattern\":\"%s\"",     esc_pat);
     if (pid)  printf(",\"pattern_id\":\"%s\"", pid);   /* stable SIEM token */
@@ -6417,9 +6437,7 @@ print_json_text(const char *text, const TextVerdict *v) {
         {
             const char *ch_rsn = channel_reason(g_from_channel);
             if (ch_rsn) {
-                char esc_ch[512];
-                hlse_json_escape(ch_rsn, esc_ch, sizeof(esc_ch));
-                printf(",\"channel_reason\":\"%s\"", esc_ch);
+                json_field("channel_reason", ch_rsn);
             }
         }
     }
@@ -6539,14 +6557,7 @@ stdin_mode(int json_out) {
                 print_json_url(line, &uv);
             } else {
                 TextVerdict tv;
-                int ti;
-                memset(&tv, 0, sizeof(tv));
-                tv.score = sr.score;
-                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
-                               ? sr.n_reasons : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
-                for (ti = 0; ti < tv.n_reasons; ti++)
-                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
-                             "%s", sr.reasons[ti]);
+                text_verdict_from_scan(&tv, &sr);
                 print_json_text(line, &tv);
             }
         } else if (sr.score == 0) {
@@ -6594,15 +6605,7 @@ stdin_mode(int json_out) {
             } else {
                 TextVerdict tv;
                 const char *tex;
-                int ti;
-                memset(&tv, 0, sizeof(tv));
-                tv.score = sr.score;
-                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
-                               ? sr.n_reasons
-                               : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
-                for (ti = 0; ti < tv.n_reasons; ti++)
-                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
-                             "%s", sr.reasons[ti]);
+                text_verdict_from_scan(&tv, &sr);
                 tex  = hlse_text_exoneration(&tv);
                 print_text_advisories(&tv);
                 if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
@@ -7417,7 +7420,7 @@ main(int argc, char **argv) {
                                  * file_classify_pattern()/file_masquerade_*()
                                  * accessors instead of an inline copy. */
                                 const char *fpat = file_classify_pattern(&fv);
-                                hlse_json_escape(fpat, esc, sizeof(esc)); printf(",\"pattern\":\"%s\"",      esc);
+                                json_field("pattern", fpat);
                                 printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
                                 hlse_json_escape(file_masquerade_objective(), esc, sizeof(esc)); printf(",\"objective\":\"%s\"", esc);
                                 hlse_json_escape(file_masquerade_verify(),    esc, sizeof(esc)); printf(",\"verify\":\"%s\"",    esc);
@@ -7434,14 +7437,13 @@ main(int argc, char **argv) {
                                     "was opened \xe2\x80\x94 malware runs with your session "
                                     "context; also check for persistence (startup items, "
                                     "scheduled tasks, browser extensions added)";
-                                hlse_json_escape(sf_tri, esc, sizeof(esc)); printf(",\"triage\":\"%s\"",       esc);
-                                hlse_json_escape(sf_cas, esc, sizeof(esc)); printf(",\"cascade_risk\":\"%s\"", esc);
+                                json_field("triage", sf_tri);
+                                json_field("cascade_risk", sf_cas);
                             }
                             if (fv.score > 0 && fv.score < 60) {
                                 const char *ex = hlse_exoneration_for("file", fv.score);
                                 if (ex) {
-                                    hlse_json_escape(ex, esc, sizeof(esc));
-                                    printf(",\"exoneration\":\"%s\"", esc);
+                                    json_field("exoneration", ex);
                                 }
                             }
                             printf("}\n");
@@ -7597,34 +7599,29 @@ main(int argc, char **argv) {
                                         {
                                             const char *conf = hlse_secret_confidence(&sv);
                                             if (conf) {
-                                                hlse_json_escape(conf, ed, sizeof(ed));
-                                                printf(",\"confidence\":\"%s\"", ed);
+                                                json_field("confidence", conf);
                                             }
                                         }
                                         {
                                             const char *rem = hlse_remediation_for("secret", sv.score);
                                             if (rem) {
-                                                hlse_json_escape(rem, ed, sizeof(ed));
-                                                printf(",\"remediation\":\"%s\"", ed);
+                                                json_field("remediation", rem);
                                             }
                                         }
                                         if (sv.n_findings > 0) {
                                             const char *cav = secret_finding_caveat(sv.findings[0].type);
                                             if (cav) {
-                                                hlse_json_escape(cav, ed, sizeof(ed));
-                                                printf(",\"caveat\":\"%s\"", ed);
+                                                json_field("caveat", cav);
                                             }
                                         }
                                         if (sv.score >= 60 && sv.n_findings > 0) {
                                             const char *ftype = sv.findings[0].type;
                                             const char *sobj  = secret_objective_for(ftype);
                                             secret_pattern_label(ftype, esc_p, sizeof(esc_p));
-                                            hlse_json_escape(esc_p, ed, sizeof(ed));
-                                            printf(",\"pattern\":\"%s\"", ed);
+                                            json_field("pattern", esc_p);
                                             printf(",\"pattern_id\":\"%s\"", secret_pattern_id(ftype));
                                             if (sobj) {
-                                                hlse_json_escape(sobj, ed, sizeof(ed));
-                                                printf(",\"objective\":\"%s\"", ed);
+                                                json_field("objective", sobj);
                                             }
                                             hlse_json_escape(secret_verify_text(),  ed, sizeof(ed)); printf(",\"verify\":\"%s\"",       ed);
                                             hlse_json_escape(secret_triage_text(),  ed, sizeof(ed)); printf(",\"triage\":\"%s\"",       ed);
@@ -7633,8 +7630,7 @@ main(int argc, char **argv) {
                                         if (sv.score > 0 && sv.score < 60) {
                                             const char *ex = hlse_exoneration_for("secret", sv.score);
                                             if (ex) {
-                                                hlse_json_escape(ex, ed, sizeof(ed));
-                                                printf(",\"exoneration\":\"%s\"", ed);
+                                                json_field("exoneration", ex);
                                             }
                                         }
                                         printf("}\n");
@@ -7766,7 +7762,7 @@ main(int argc, char **argv) {
                                                         int has_safe = hlse_safe_destinations(&uv, usafe, sizeof(usafe));
                                                         if (upat)     { hlse_json_escape(upat,     eu, sizeof(eu)); printf(",\"pattern\":\"%s\"",      eu); }
                                                         if (upat)     { const char *upid = hlse_url_pattern_id(&uv); if (upid) printf(",\"pattern_id\":\"%s\"", upid); }
-                                                        if (has_obj)  { hlse_json_escape(uobj_buf, eu, sizeof(eu)); printf(",\"objective\":\"%s\"",    eu); }
+                                                        if (has_obj)  { json_field("objective", uobj_buf); }
                                                         if (has_safe) { hlse_json_escape(usafe,    eu, sizeof(eu)); printf(",\"safe_url\":\"%s\"",     eu); }
                                                         if (uvrf)     { hlse_json_escape(uvrf,     eu, sizeof(eu)); printf(",\"verify\":\"%s\"",       eu); }
                                                     }
@@ -7774,14 +7770,13 @@ main(int argc, char **argv) {
                                                         const char *ucas = hlse_cascade_risk(&uv);
                                                         char utri_buf[512];
                                                         int has_tri  = hlse_compound_triage(&uv, utri_buf, sizeof(utri_buf));
-                                                        if (has_tri)  { hlse_json_escape(utri_buf, eu, sizeof(eu)); printf(",\"triage\":\"%s\"",       eu); }
+                                                        if (has_tri)  { json_field("triage", utri_buf); }
                                                         if (ucas)     { hlse_json_escape(ucas,     eu, sizeof(eu)); printf(",\"cascade_risk\":\"%s\"", eu); }
                                                     }
                                                     if (uv.score >= 40 && uv.score < 60) {
                                                         const char *uexon = hlse_url_exoneration(&uv);
                                                         if (uexon) {
-                                                            hlse_json_escape(uexon, eu, sizeof(eu));
-                                                            printf(",\"exoneration\":\"%s\"", eu);
+                                                            json_field("exoneration", uexon);
                                                         }
                                                     }
                                                     printf("}\n");
@@ -7868,16 +7863,10 @@ main(int argc, char **argv) {
                        nclasses, classes);
                 if (threats == 0) {
                     const char *bs = hlse_blindspot_for("scan");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
+                    json_field("blind_spot", bs);
                 } else {
                     const char *ia = scan_immediate_action((unsigned)asset_mask, nclasses);
-                    char esc_ia[512];
-                    hlse_json_escape(ia, esc_ia, sizeof(esc_ia));
-                    printf(",\"immediate_action\":\"%s\"", esc_ia);
+                    json_field("immediate_action", ia);
                 }
                 printf("}\n");
             }
@@ -7957,11 +7946,7 @@ main(int argc, char **argv) {
                 printf("]");
                 if (pv.score == 0) {
                     const char *bs = hlse_blindspot_for("protect");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
+                    json_field("blind_spot", bs);
                 }
                 if (pv.score > 0) {
                     int ns = pv.n_reasons;
@@ -7993,9 +7978,7 @@ main(int argc, char **argv) {
                 if (pv.score > 0 && pv.score < 60) {
                     const char *ex = hlse_exoneration_for("protect", pv.score);
                     if (ex) {
-                        char e[512];
-                        hlse_json_escape(ex, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
+                        json_field("exoneration", ex);
                     }
                 }
                 printf("}\n");
@@ -8047,11 +8030,7 @@ main(int argc, char **argv) {
             printf("]");
             {
                 const char *bs = hlse_blindspot_for("esp");
-                if (pv.score == 0 && bs) {
-                    char esc_bs[512];
-                    hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                    printf(",\"blind_spot\":\"%s\"", esc_bs);
-                }
+                if (pv.score == 0 && bs) json_field("blind_spot", bs);
             }
             if (pv.score > 0) {
                 int ns = pv.n_reasons;
@@ -8071,9 +8050,7 @@ main(int argc, char **argv) {
             if (pv.score > 0 && pv.score < 60) {
                 const char *ex = hlse_exoneration_for("esp", pv.score);
                 if (ex) {
-                    char e[512];
-                    hlse_json_escape(ex, e, sizeof(e));
-                    printf(",\"exoneration\":\"%s\"", e);
+                    json_field("exoneration", ex);
                 }
             }
             printf("}\n");
@@ -8256,11 +8233,7 @@ main(int argc, char **argv) {
                      * empty => unknown name, which we cannot verify offline. */
                     const char *bs = hlse_blindspot_for(
                         pv.reason[0] ? "package" : "package_unverified");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
+                    json_field("blind_spot", bs);
                 }
                 if (pv.score > 0) {
                     int ns = pv.n_matches > 0 ? pv.n_matches : 1;
@@ -8296,9 +8269,7 @@ main(int argc, char **argv) {
                 if (pv.score > 0 && pv.score < 60) {
                     const char *ex = hlse_exoneration_for("package", pv.score);
                     if (ex) {
-                        char e[512];
-                        hlse_json_escape(ex, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
+                        json_field("exoneration", ex);
                     }
                 }
                 printf("}\n");
@@ -8358,11 +8329,7 @@ main(int argc, char **argv) {
                        hlse_severity_for_score(pv.score), pv.signals);
                 if (pv.score == 0) {
                     const char *bs = hlse_blindspot_for("paste");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
+                    json_field("blind_spot", bs);
                 }
                 if (pv.score > 0) {
                     /* Count distinct PASTE_* signal families from the bitmask —
@@ -8410,9 +8377,7 @@ main(int argc, char **argv) {
                 if (pv.score > 0 && pv.score < 60) {
                     const char *ex = hlse_exoneration_for("paste", pv.score);
                     if (ex) {
-                        char e[512];
-                        hlse_json_escape(ex, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
+                        json_field("exoneration", ex);
                     }
                 }
                 printf(",\"reasons\":[");
@@ -8477,11 +8442,7 @@ main(int argc, char **argv) {
             printf("]");
             if (nv.score == 0) {
                 const char *bs = hlse_blindspot_for("network");
-                if (bs) {
-                    char esc_bs[512];
-                    hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                    printf(",\"blind_spot\":\"%s\"", esc_bs);
-                }
+                json_field("blind_spot", bs);
             }
             if (nv.score > 0) {
                 int ns = nv.n_reasons;
@@ -8513,9 +8474,7 @@ main(int argc, char **argv) {
             if (nv.score > 0 && nv.score < 60) {
                 const char *ex = hlse_exoneration_for("network", nv.score);
                 if (ex) {
-                    char e[512];
-                    hlse_json_escape(ex, e, sizeof(e));
-                    printf(",\"exoneration\":\"%s\"", e);
+                    json_field("exoneration", ex);
                 }
             }
             printf("}\n");
@@ -8595,18 +8554,12 @@ main(int argc, char **argv) {
                 {
                     const char *rem = hlse_remediation_for("secret", sv.score);
                     if (rem) {
-                        char erm[512];
-                        hlse_json_escape(rem, erm, sizeof(erm));
-                        printf(",\"remediation\":\"%s\"", erm);
+                        json_field("remediation", rem);
                     }
                 }
                 if (sv.score == 0) {
                     const char *bs = hlse_blindspot_for("secret");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
+                    json_field("blind_spot", bs);
                 }
                 if (sv.n_findings > 0) {
                     /* Perspective 99: unconditional on score — a Stripe
@@ -8614,9 +8567,7 @@ main(int argc, char **argv) {
                      * not just a probabilistic false-positive hedge. */
                     const char *cav = secret_finding_caveat(sv.findings[0].type);
                     if (cav) {
-                        char e[768];
-                        hlse_json_escape(cav, e, sizeof(e));
-                        printf(",\"caveat\":\"%s\"", e);
+                        json_field("caveat", cav);
                     }
                 }
                 if (sv.score >= 60 && sv.n_findings > 0) {
@@ -8624,10 +8575,9 @@ main(int argc, char **argv) {
                     const char *sobj  = secret_objective_for(ftype);
                     char e[512], epat[128];
                     secret_pattern_label(ftype, epat, sizeof(epat));
-                    hlse_json_escape(epat, e, sizeof(e));
-                    printf(",\"pattern\":\"%s\"", e);
+                    json_field("pattern", epat);
                     printf(",\"pattern_id\":\"%s\"", secret_pattern_id(ftype));
-                    if (sobj) { hlse_json_escape(sobj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e); }
+                    if (sobj) { json_field("objective", sobj); }
                     hlse_json_escape(secret_verify_text(),  e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
                     hlse_json_escape(secret_triage_text(),  e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
                     hlse_json_escape(secret_cascade_text(), e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
@@ -8635,9 +8585,7 @@ main(int argc, char **argv) {
                 if (sv.score > 0 && sv.score < 60) {
                     const char *ex = hlse_exoneration_for("secret", sv.score);
                     if (ex) {
-                        char e[512];
-                        hlse_json_escape(ex, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
+                        json_field("exoneration", ex);
                     }
                 }
                 printf("}\n");
@@ -8740,11 +8688,7 @@ main(int argc, char **argv) {
                 printf("]");
                 if (ev.score == 0 && !body_pat) {
                     const char *bs = hlse_blindspot_for("email");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
+                    json_field("blind_spot", bs);
                 }
                 if (body_pat) {
                     char epat[256];
@@ -8812,18 +8756,14 @@ main(int argc, char **argv) {
                     TextVerdict etv;
                     const char *econn = hlse_exoneration_for("email", ev.score);
                     if (econn) {
-                        char e[512];
-                        hlse_json_escape(econn, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
+                        json_field("exoneration", econn);
                     }
                     memset(&etv, 0, sizeof(etv));
                     etv.score = ev.score;
                     printf(",\"confidence\":\"partial signal — some email header concerns but not conclusive spoofing\"");
                 }
                 if (rem) {
-                    char erm[512];
-                    hlse_json_escape(rem, erm, sizeof(erm));
-                    printf(",\"remediation\":\"%s\"", erm);
+                    json_field("remediation", rem);
                 }
                 printf("}\n");
             } else if (ev.score == 0 && !body_pat) {
@@ -8924,11 +8864,7 @@ main(int argc, char **argv) {
                        cv.is_swap, eo, es, er, erm);
                 if (cv.score == 0) {
                     const char *bs = hlse_blindspot_for("clipboard");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
+                    json_field("blind_spot", bs);
                 }
                 if (cv.score >= 60) {
                     char e[512];
@@ -9014,11 +8950,7 @@ main(int argc, char **argv) {
                 printf("]");
                 if (fv.score == 0) {
                     const char *bs = hlse_blindspot_for("file");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
+                    json_field("blind_spot", bs);
                 }
                 if (fv.score >= 40) {
                     /* Perspective 98: a single medium-confidence heuristic
@@ -9035,7 +8967,7 @@ main(int argc, char **argv) {
                      * above) instead of a fourth independent copy. */
                     const char *fpat = file_classify_pattern(&fv);
                     char e[512];
-                    hlse_json_escape(fpat, e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                    json_field("pattern", fpat);
                     printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
                     hlse_json_escape(file_masquerade_objective(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
                     hlse_json_escape(file_masquerade_verify(),    e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
@@ -9052,16 +8984,13 @@ main(int argc, char **argv) {
                         "was opened \xe2\x80\x94 malware runs with your session "
                         "context; also check for persistence (startup items, "
                         "scheduled tasks, browser extensions added)";
-                    char e[512];
-                    hlse_json_escape(file_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(file_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                    json_field("triage", file_tri);
+                    json_field("cascade_risk", file_cas);
                 }
                 if (fv.score > 0 && fv.score < 60) {
                     const char *ex = hlse_exoneration_for("file", fv.score);
                     if (ex) {
-                        char e[512];
-                        hlse_json_escape(ex, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
+                        json_field("exoneration", ex);
                     }
                 }
                 printf("}\n");
@@ -9134,20 +9063,14 @@ main(int argc, char **argv) {
                        i > 0 ? "," : "",
                        av.findings[i].severity, esc);
                 if (fix) {
-                    char efix[512];
-                    hlse_json_escape(fix, efix, sizeof(efix));
-                    printf(",\"fix\":\"%s\"", efix);
+                    json_field("fix", fix);
                 }
                 printf("}");
             }
             printf("]");
             if (av.score == 0) {
                 const char *bs = hlse_blindspot_for("audit");
-                if (bs) {
-                    char esc_bs[512];
-                    hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                    printf(",\"blind_spot\":\"%s\"", esc_bs);
-                }
+                json_field("blind_spot", bs);
             } else {
                 char ns[256];
                 if (crit_count > 0)
@@ -9165,10 +9088,7 @@ main(int argc, char **argv) {
                              "address remaining LOW/MED findings to improve "
                              "the hardening index (currently: %s)",
                              band);
-                { char ens[256];
-                  hlse_json_escape(ns, ens, sizeof(ens));
-                  printf(",\"next_steps\":\"%s\"", ens);
-                }
+                json_field("next_steps", ns);
             }
             printf("}\n");
         } else if (av.score == 0) {
@@ -9223,14 +9143,7 @@ main(int argc, char **argv) {
                 /* Build TextVerdict from the unified ScanResult so the JSON
                  * path honours embedded URL extraction (same as human path). */
                 TextVerdict tv;
-                int ti;
-                memset(&tv, 0, sizeof(tv));
-                tv.score = sr.score;
-                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
-                               ? sr.n_reasons : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
-                for (ti = 0; ti < tv.n_reasons; ti++)
-                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
-                             "%s", sr.reasons[ti]);
+                text_verdict_from_scan(&tv, &sr);
                 print_json_text(argv[idx + 1], &tv);
             } else if (sr.score == 0) {
                 /* Channel-only risk: content scored 0 but delivery channel adds prior */
@@ -9284,15 +9197,7 @@ main(int argc, char **argv) {
                     ex = hlse_url_exoneration(&uv);
                 } else {
                     TextVerdict tv;
-                    int ti;
-                    memset(&tv, 0, sizeof(tv));
-                    tv.score = sr.score;
-                    tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
-                                   ? sr.n_reasons
-                                   : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
-                    for (ti = 0; ti < tv.n_reasons; ti++)
-                        snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
-                                 "%s", sr.reasons[ti]);
+                    text_verdict_from_scan(&tv, &sr);
                     print_text_advisories(&tv);
                     ex = hlse_text_exoneration(&tv);
                 }
@@ -9349,14 +9254,7 @@ main(int argc, char **argv) {
                 print_json_url(input, &uv);
             } else {
                 TextVerdict tv;
-                int ti;
-                memset(&tv, 0, sizeof(tv));
-                tv.score = sr.score;
-                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
-                               ? sr.n_reasons : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
-                for (ti = 0; ti < tv.n_reasons; ti++)
-                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
-                             "%s", sr.reasons[ti]);
+                text_verdict_from_scan(&tv, &sr);
                 print_json_text(input, &tv);
             }
         } else if (sr.score == 0) {
@@ -9413,15 +9311,7 @@ main(int argc, char **argv) {
             } else {
                 TextVerdict tv;
                 const char *ex;
-                int ti;
-                memset(&tv, 0, sizeof(tv));
-                tv.score = sr.score;
-                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
-                               ? sr.n_reasons
-                               : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
-                for (ti = 0; ti < tv.n_reasons; ti++)
-                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
-                             "%s", sr.reasons[ti]);
+                text_verdict_from_scan(&tv, &sr);
                 ex   = hlse_text_exoneration(&tv);
                 print_text_advisories(&tv);
                 if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
