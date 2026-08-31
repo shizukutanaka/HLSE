@@ -85,7 +85,7 @@ make install-workflows  # copy the shipped CI workflows into .github/workflows/
 
 After install, compile your code against the library:
 ```bash
-gcc -I~/.local/include -L~/.local/lib -o myapp myapp.c -lhlse -lm
+gcc -I~/.local/include/hlse -L~/.local/lib -o myapp myapp.c -lhlse -lm
 LD_LIBRARY_PATH=~/.local/lib ./myapp
 ```
 ```
