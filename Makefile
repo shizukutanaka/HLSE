@@ -532,7 +532,7 @@ install: $(BINARY) $(SHARED)
 	@echo "  $(MANDIR)/hlse-server.1"
 	@echo "  $(DATADIR)/web/*"
 	@echo ""
-	@echo "Compile against: gcc -I$(PREFIX)/include -L$(PREFIX)/lib -lhlse -lm"
+	@echo "Compile against: gcc -I$(PREFIX)/include/hlse -L$(PREFIX)/lib -lhlse -lm"
 
 uninstall:
 	rm -f $(BINDIR)/hlse_core $(BINDIR)/hlse-server $(LIBDIR)/libhlse.so \

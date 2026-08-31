@@ -6627,6 +6627,42 @@ printf 'From: CEO <b@evil.ru>\nReply-To: x@gmail.com\nSubject: urgent wire\n' \
     || check "p125: --json email emits JSON" "0" "1"
 rm -rf "$P125"
 
+# ── p126: the documented library-install path actually compiles ─────────
+# `make install` puts headers under <prefix>/include/hlse/, but the README and
+# the Makefile's own "Compile against:" line pointed at <prefix>/include —
+# where nothing exists — so the documented way to use libhlse.so did not
+# compile. This installs to a temp prefix and builds a real consumer against
+# it, exactly as a user would. Skips cleanly if cc is unavailable so it can
+# never become a permanently-red check.
+if command -v cc >/dev/null 2>&1; then
+    P126=$(mktemp -d)
+    if make install PREFIX="$P126" >/dev/null 2>&1; then
+        cat > "$P126/consumer.c" <<'P126C'
+#include "hlse_core.h"
+#include <stdio.h>
+int main(void){ ScanResult r = hlse_scan("https://g00gle.com");
+                return r.score > 0 ? 0 : 1; }
+P126C
+        # the CORRECT documented path must compile, link and run
+        cc -I"$P126/include/hlse" -L"$P126/lib" -o "$P126/consumer" \
+           "$P126/consumer.c" -lhlse -lm >/dev/null 2>&1 \
+           && LD_LIBRARY_PATH="$P126/lib" "$P126/consumer" >/dev/null 2>&1 \
+           && check "p126: install + documented -I include/hlse compiles and runs" "0" "0" \
+           || check "p126: install + documented -I include/hlse compiles and runs" "0" "1"
+
+        # and the OLD path must still fail, proving the header namespacing is real
+        cc -I"$P126/include" -L"$P126/lib" -o "$P126/bad" \
+           "$P126/consumer.c" -lhlse -lm >/dev/null 2>&1 \
+           && rc=1 || rc=0
+        check "p126: bare -I include (the old wrong advice) does not resolve" "0" "$rc"
+    else
+        check "p126: install to temp prefix succeeds" "0" "1"
+    fi
+    rm -rf "$P126"
+else
+    echo "  NOTE: cc not available — p126 library-install round-trip SKIPPED."
+fi
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
