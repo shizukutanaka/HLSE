@@ -693,6 +693,7 @@ hlse_check_network(void) {
     {
         FILE *fp = hlse_open_system_file("/proc/net/arp");
         if (fp) {
+            v.sources_read |= HLSE_NET_SRC_ARP;
             char line[256];
             char ips[64][16];     /* up to 64 ARP entries */
             char macs[64][18];
@@ -740,6 +741,7 @@ hlse_check_network(void) {
     {
         FILE *fp = hlse_open_system_file("/proc/net/route");
         if (fp) {
+            v.sources_read |= HLSE_NET_SRC_ROUTE;
             char line[256];
             unsigned long gw_hex[8];
             int gw_metric[8];
@@ -812,6 +814,7 @@ hlse_check_network(void) {
     {
         FILE *fp = hlse_open_system_file("/etc/resolv.conf");
         if (fp) {
+            v.sources_read |= HLSE_NET_SRC_RESOLV;
             char line[256];
             int ns_count = 0;
 
@@ -879,6 +882,7 @@ hlse_check_network(void) {
     {
         FILE *fp = hlse_open_system_file("/etc/hosts");
         if (fp) {
+            v.sources_read |= HLSE_NET_SRC_HOSTS;
             char line[512];
             const char *sensitive_domains[] = {
                 /* US banks */

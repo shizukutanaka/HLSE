@@ -130,9 +130,19 @@ consumer never has to re-derive the band. Additional fields vary by kind:
 - `text`: `target` (the scanned string), `reasons:[...]`
 - `protect`: `target` (the scanned path), `reasons:[...]`
 - `network`/`esp`/`email`: `reasons:[...]`
+- `network` additionally: `sources_unavailable:[path,...]` — emitted only
+  when one of the four evidence sources (`/proc/net/arp`, `/proc/net/route`,
+  `/etc/resolv.conf`, `/etc/hosts`) could not be opened. A `score` of 0 with
+  a non-empty `sources_unavailable` means "nothing was found in what could
+  be read", not "nothing is wrong".
 - `paste`: `signals` (integer count of fired pastejacking signals), `reasons:[...]`
 - `package`: `name`, `matches:[{name,registry,distance}]`
-- `audit`: `hardening_index`, `hardening_band`, `findings:[{severity,description}]`
+- `audit`: `hardening_index`, `hardening_band`, `checks_run`, `checks_skipped`,
+  `findings:[{severity,description}]`. `hardening_band` is `partial` whenever
+  `checks_skipped > 0`: the index is `100 - score` and a check that could not
+  read its evidence contributes 0, so the index is inflated rather than wrong
+  and the reassuring band word is withheld. Checks that could not run emit an
+  `AUDIT_INFO` finding naming the unreadable path; they never emit `AUDIT_PASS`.
 - `secret`: `findings:[{type,description}]`
 - `clipboard`: `is_swap`, `original`, `swapped`, `reason`
 - `file`: `path`, `reasons:[...]`
