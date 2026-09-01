@@ -128,7 +128,9 @@ Every object carries a `"kind"` discriminator, an integer `"score"`, and an
 consumer never has to re-derive the band. Additional fields vary by kind:
 - `url`: `target` (the scanned URL), `reasons:[...]`
 - `text`: `target` (the scanned string), `reasons:[...]`
-- `protect`: `target` (the scanned path), `reasons:[...]`
+- `protect`: `target` (the scanned path), `reasons:[...]`, `target_scanned`
+  (false when the target could not be opened, meaning a score of 0 covers
+  nothing that was actually examined)
 - `network`/`esp`/`email`: `reasons:[...]`
 - `network` additionally: `sources_unavailable:[path,...]` — emitted only
   when one of the four evidence sources (`/proc/net/arp`, `/proc/net/route`,
@@ -145,7 +147,9 @@ consumer never has to re-derive the band. Additional fields vary by kind:
   `AUDIT_INFO` finding naming the unreadable path; they never emit `AUDIT_PASS`.
 - `secret`: `findings:[{type,description}]`
 - `clipboard`: `is_swap`, `original`, `swapped`, `reason`
-- `file`: `path`, `reasons:[...]`
+- `file`: `path`, `reasons:[...]`, `content_inspected` (false when the bytes
+  were not read, so the magic-byte checks did not run and the verdict rests
+  on the filename alone), plus `coverage` naming the reason
 - streaming `scan` records add `path`/`line`/`url` as applicable (record
   kinds are `url`, `file`, and `secret`).
 - `scan` emits a final `kind=scan_summary` terminator:

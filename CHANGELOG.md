@@ -48,12 +48,30 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   names the unreadable paths and, when nothing at all was readable, says so
   instead of claiming an all-clear. JSON gains `sources_unavailable`, emitted
   only when non-empty.
+- **`file` and `protect` had the same defect; `protect`'s diagnostics could
+  never reach output at all.**
+  - `hlse_core file <path>` fell back to filename-only analysis whenever the
+    bytes were unreadable — a missing file, or one it lacked permission to
+    open — so the magic-byte checks (F2/F3) silently never ran and the result
+    printed as a bare `OK`. `FileVerdict` gains `content_read`; the CLI now
+    marks such a verdict `(name only — contents NOT inspected)` and states that
+    it clears the filename, not the file. JSON gains `content_inspected`.
+  - `hlse_protect_scan()` merges a module's reasons only when its score is
+    `> 0`. Every "Cannot open directory" / "Cannot open Samba log" diagnostic
+    carries score 0, so those reasons were discarded at the merge and could not
+    appear in any output, JSON included. `protect` on a mode-000 directory
+    therefore reported a clean `OK`. `ProtectionVerdict` gains
+    `target_unreadable`, propagated across that gate, and the CLI reports
+    `(NOT scanned — target could not be opened)`. JSON gains `target_scanned`.
+  - +9 CLI-integration cases (p128), shown failing 7/9 against the pre-fix
+    binary. `scan` was checked too and is already honest: it prints
+    "0 files scanned" rather than implying it looked.
 - Scoring, actions, severities and exit codes are unchanged throughout: an
   `AUDIT_INFO` carries delta 0 and the network additions are disclosure only.
   Verified byte-identical root `audit` and fully-covered `network` output
   against the pre-fix binary; F1 stays 1.000 / 0.0% FP. +13 CLI-integration
-  cases (p127, shown failing 11/13 against the pre-fix binary), +1 supply unit
-  test. Coverage 69.60% -> 69.81%.
+  cases (p127, shown failing 11/13 against the pre-fix binary), +9 (p128),
+  +1 supply unit test; CLI integration 806 -> 828. Coverage 69.60% -> 69.76%.
 - **Terminal escape-injection hardening, now applied uniformly (CWE-150).** An
   earlier fix neutralized control bytes only in `hlse_protect.c`. But `scan`,
   `secret`, `file`, `url`, and `package` all print attacker-controllable data

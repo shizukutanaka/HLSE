@@ -6752,6 +6752,65 @@ else
     echo "  NOTE: unshare unavailable — p127 network-coverage SKIPPED."
 fi
 
+# ─── p128: `file` and `protect` must not pass off a non-inspection as OK ────
+#
+# `file` reports on a path it could not open by falling back to filename-only
+# analysis (magic-byte checks F2/F3 never run) and printed a bare "OK".
+# `protect` was worse: hlse_protect_scan() merges a module's reasons only when
+# its score is > 0, so the score-0 "Cannot open directory" diagnostic was
+# discarded before any output could show it, and a mode-000 directory scanned
+# as a clean OK.
+
+# A file that does not exist is judged on its name alone — say so.
+./hlse_core file /nonexistent-hlse-p128 2>&1 | grep -q "contents NOT inspected" \
+    && rc=0 || rc=1
+check "p128: file discloses a name-only verdict for a missing path" "0" "$rc"
+
+./hlse_core --json file /nonexistent-hlse-p128 2>/dev/null \
+    | grep -q '"content_inspected":false' && rc=0 || rc=1
+check "p128: file JSON reports content_inspected=false" "0" "$rc"
+
+# A readable file must be unaffected — no warning, and content_inspected true.
+./hlse_core file README.md 2>&1 | grep -q "contents NOT inspected" \
+    && rc=1 || rc=0
+check "p128: readable file carries no coverage warning" "0" "$rc"
+
+./hlse_core --json file README.md 2>/dev/null \
+    | grep -q '"content_inspected":true' && rc=0 || rc=1
+check "p128: file JSON reports content_inspected=true when read" "0" "$rc"
+
+if command -v setpriv >/dev/null 2>&1 && [ "$(id -u)" = "0" ]; then
+    P128="$(mktemp -d)"
+    chmod 000 "$P128"
+
+    setpriv --reuid=65534 --regid=65534 --clear-groups \
+        ./hlse_core protect "$P128" 2>&1 | grep -q "NOT scanned" && rc=0 || rc=1
+    check "p128: protect says an unopenable target was not scanned" "0" "$rc"
+
+    setpriv --reuid=65534 --regid=65534 --clear-groups \
+        ./hlse_core --json protect "$P128" 2>/dev/null \
+        | grep -q '"target_scanned":false' && rc=0 || rc=1
+    check "p128: protect JSON reports target_scanned=false" "0" "$rc"
+
+    # An existing-but-unreadable file: name-only, and it must say so.
+    setpriv --reuid=65534 --regid=65534 --clear-groups \
+        ./hlse_core file /etc/shadow 2>&1 | grep -q "contents NOT inspected" \
+        && rc=0 || rc=1
+    check "p128: file discloses an unreadable file was not inspected" "0" "$rc"
+
+    chmod 755 "$P128"; rmdir "$P128"
+else
+    echo "  NOTE: setpriv unavailable or not root — p128 denied-access SKIPPED."
+fi
+
+# A readable directory must still scan clean with no coverage warning.
+./hlse_core protect /tmp 2>&1 | grep -q "NOT scanned" && rc=1 || rc=0
+check "p128: readable protect target carries no coverage warning" "0" "$rc"
+
+./hlse_core --json protect /tmp 2>/dev/null \
+    | grep -q '"target_scanned":true' && rc=0 || rc=1
+check "p128: protect JSON reports target_scanned=true when readable" "0" "$rc"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
