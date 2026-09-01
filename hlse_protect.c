@@ -305,6 +305,7 @@ hlse_ransomware_check_directory(const char *dir_path) {
 
     dir = opendir(dir_path);
     if (!dir) {
+        v.target_unreadable = 1;
         pv_add_reason(&v, 0, "Cannot open directory: %s", strerror(errno));
         return v;
     }
@@ -1146,6 +1147,9 @@ hlse_protect_scan(const char *target_path, int modules) {
 
     if (modules & HLSE_PROTECT_RANSOMWARE) {
         ProtectionVerdict rv = hlse_ransomware_check_directory(target_path);
+        /* Carried across the score>0 gate below: an unreadable target is the
+         * one condition under which a score of 0 means nothing was looked at. */
+        combined.target_unreadable = rv.target_unreadable;
         if (rv.score > 0) {
             int i;
             for (i = 0; i < rv.n_reasons && combined.n_reasons < HLSE_PROTECT_MAX_REASONS; i++) {

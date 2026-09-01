@@ -8130,6 +8130,8 @@ cmd_protect(int argc, char **argv, int idx, const CliOpts *o) {
                 }
             }
             printf("]");
+            printf(",\"target_scanned\":%s",
+                   pv.target_unreadable ? "false" : "true");
             if (pv.score == 0) {
                 const char *bs = hlse_blindspot_for("protect");
                 json_field("blind_spot", bs);
@@ -8168,7 +8170,17 @@ cmd_protect(int argc, char **argv, int idx, const CliOpts *o) {
             printf("}\n");
         } else if (pv.score == 0) {
             const char *bs = hlse_blindspot_for("protect");
-            printf("OK    %s\n", path);
+            if (pv.target_unreadable) {
+                /* Nothing in the target was examined, so a score of 0 is the
+                 * absence of evidence, not evidence of absence. */
+                printf("OK    %s (NOT scanned \xe2\x80\x94 target could not be "
+                       "opened)\n", path);
+                printf("  \xe2\x9a\xa0 No file in this path was examined; this "
+                       "is not a clean result. Check permissions, or re-run "
+                       "with access to the directory.\n");
+            } else {
+                printf("OK    %s\n", path);
+            }
             if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
         } else {
             int i;
@@ -8461,12 +8473,21 @@ cmd_file(int argc, char **argv, int idx, const CliOpts *o) {
          * analysis. If not, still check the NAME for disguise tricks
          * (RLO, double extension, lure words) — these are dangerous
          * regardless of whether the file is present locally.        */
+        const char *name_only = NULL;
         if (access(argv[idx + 1], F_OK) == 0) {
             fv = hlse_check_file(argv[idx + 1]);
+            /* The file is there but its bytes were not read (permissions, or
+             * not a regular file), so F2/F3 magic-byte analysis never ran and
+             * the verdict rests on the name alone. Silence here would present
+             * a name-only guess as a full inspection. */
+            if (!fv.content_read)
+                name_only = "the file could not be read (permissions, or not "
+                            "a regular file)";
         } else {
             const char *base = strrchr(argv[idx + 1], '/');
             base = base ? base + 1 : argv[idx + 1];
             fv = hlse_check_filename(base);
+            name_only = "no such file here";
         }
         {
             const char *aar[16]; int aq, aqn = fv.n_reasons;
@@ -8489,6 +8510,10 @@ cmd_file(int argc, char **argv, int idx, const CliOpts *o) {
                 printf("%s\"%s\"", i > 0 ? "," : "", esc);
             }
             printf("]");
+            printf(",\"content_inspected\":%s", fv.content_read ? "true" : "false");
+            if (name_only) {
+                json_field("coverage", name_only);
+            }
             if (fv.score == 0) {
                 const char *bs = hlse_blindspot_for("file");
                 json_field("blind_spot", bs);
@@ -8536,7 +8561,15 @@ cmd_file(int argc, char **argv, int idx, const CliOpts *o) {
             printf("}\n");
         } else if (fv.score == 0) {
             const char *bs = hlse_blindspot_for("file");
-            printf("OK    %s\n", fdisp);
+            if (name_only) {
+                printf("OK    %s (name only \xe2\x80\x94 contents NOT "
+                       "inspected)\n", fdisp);
+                printf("  \xe2\x9a\xa0 %s, so the magic-byte checks did not "
+                       "run: this clears the filename, not the file.\n",
+                       name_only);
+            } else {
+                printf("OK    %s\n", fdisp);
+            }
             if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
         } else {
             print_file_verdict_plain(&fv, fdisp);

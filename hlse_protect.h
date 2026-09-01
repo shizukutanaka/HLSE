@@ -34,6 +34,13 @@ typedef struct {
     int  module;         /* which module produced this (bitmask) */
     int  n_reasons;
     char reasons[HLSE_PROTECT_MAX_REASONS][256];
+    /* Nonzero when the scan target itself could not be opened, so nothing in
+     * it was examined. hlse_protect_scan() merges a module's reasons only
+     * when its score is > 0, which means the score-0 "Cannot open directory"
+     * diagnostic never reached a caller: `protect` on a mode-000 directory
+     * printed a bare OK. This flag survives the merge so the CLI can say that
+     * a clean score covers nothing.                                       */
+    int  target_unreadable;
 } ProtectionVerdict;
 
 /* ── Module 1: Ransomware ─────────────────────────────────────────────

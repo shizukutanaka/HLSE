@@ -425,6 +425,7 @@ hlse_check_file(const char *filepath) {
             if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
                 head_len = read(fd, head, sizeof(head));
                 if (head_len < 0) head_len = 0;
+                else v.content_read = 1;
             }
             close(fd);
         }
