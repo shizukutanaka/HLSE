@@ -131,7 +131,9 @@ consumer never has to re-derive the band. Additional fields vary by kind:
 - `protect`: `target` (the scanned path), `reasons:[...]`, `target_scanned`
   (false when the target could not be opened, meaning a score of 0 covers
   nothing that was actually examined)
-- `network`/`esp`/`email`: `reasons:[...]`
+- `network`/`esp`/`email`: `reasons:[...]`; `esp` also carries
+  `target_scanned` (false when no `.efi` binary was examined — absent,
+  unreadable, or empty ESP — so a score of 0 covers nothing)
 - `network` additionally: `sources_unavailable:[path,...]` — emitted only
   when one of the four evidence sources (`/proc/net/arp`, `/proc/net/route`,
   `/etc/resolv.conf`, `/etc/hosts`) could not be opened. A `score` of 0 with

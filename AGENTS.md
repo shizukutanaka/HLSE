@@ -22,7 +22,27 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
      No third-party libraries.
    - **Deterministic** — no time/random dependence in scoring.
    - **Allocation-light** — bounded stack/static buffers; no unbounded input.
-2. **Verify every commit, in this order — all must pass:**
+2. **Never let a check that could not read its evidence report a pass.**
+   "I read it and found nothing" and "I could not read it" are different
+   claims and only the first clears anything. This was the single worst class
+   of bug found in the product: `hlse_audit_sudoers()` asserted
+   `AUDIT_PASS "No NOPASSWD entries found"` about `/etc/sudoers` (0440
+   root:root) whenever it had not opened the file, so an unprivileged run
+   awarded `100/100 (hardened)` to a host that root correctly rated
+   `ALERT [40]` for passwordless sudo. `file`, `protect` and `network` had the
+   same shape. When you add or touch a check that reads the filesystem:
+   - Distinguish **absent** from **unreadable** via `errno == ENOENT`. Absence
+     is a finding ("no SSH server"); denial is not.
+   - Denial, not reach, is the predicate. `/etc/sudoers.d` being listable must
+     not license a claim about the unreadable `/etc/sudoers`.
+   - Report the gap in the score-0 path too — that is where a reader is most
+     likely to stand down. Several clean branches printed only their headline
+     and dropped the very findings that explained the gap.
+   - Disclosure, never a score change, unless the user approves one.
+   - Reproduce the before-state (`setpriv --reuid=65534 ... ./hlse_core audit`,
+     `unshare -rm sh -c 'mount -t tmpfs none /proc; ...'`) and show the new
+     tests failing against a binary built from `git show HEAD:<file>`.
+3. **Verify every commit, in this order — all must pass:**
    ```
    make && make check-warnings      # 0 warnings, CLI AND -DHLSE_CORE_AS_LIB library builds
    ./hlse_core --benchmark          # F1 = 1.000, FP = 0.0% MUST hold
@@ -31,25 +51,25 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
    make fuzz                        # if you touched a parser/detector
    ```
    If anything regresses, **do not push.**
-3. **`make test` baseline is `714 passed / 14 failed`.** The 14 are pre-existing
-   and environment-dependent (JSON-schema-validation checks + a `release.yml`
-   existence check — see Weaknesses). **If the failure count rises above 14, you
-   caused a regression.** Always read the number.
-4. **Add a test for every new behavior.** Detection changes need a *pair*: a
+4. **`make test` baseline is `828 passed / 0 failed`.** The 14 formerly
+   permanent failures (JSON-schema-validation checks + a `release.yml`
+   existence check) are fixed; the suite is fully green, so **any** failure is
+   a regression you caused. Always read the number.
+5. **Add a test for every new behavior.** Detection changes need a *pair*: a
    positive case (fires) and a benign case (no false positive). Corpus F1 must
    stay 1.000.
-5. **Match the surrounding code** — its style, comment density, naming, and
+6. **Match the surrounding code** — its style, comment density, naming, and
    idioms. Reuse existing helpers before writing new ones (e.g.
    `hlse_json_escape` in `hlse_util.c`, `read_file_head`/`read_file_segment` in
    `hlse_protect.c`, `hlse_open_system_file` in `hlse_util.c`).
-6. **Git hygiene:** work on the active feature branch; `git fetch` before you
+7. **Git hygiene:** work on the active feature branch; `git fetch` before you
    start (this branch is sometimes force-pushed by parallel automation — rebase
    if it advanced). Push with `-u origin`, retry with exponential backoff on
    network errors. Do **not** open or merge a PR unless explicitly asked.
-7. **Secret-scanning:** write test tokens as **split literals**
+8. **Secret-scanning:** write test tokens as **split literals**
    (`"glpat-" + "abcd…"`), and before pushing, scan the staged diff for
    contiguous token patterns so GitHub push-protection doesn't block the push.
-8. **CI note:** the GitHub App here lacks the `workflows` permission, so
+9. **CI note:** the GitHub App here lacks the `workflows` permission, so
    `.github/workflows/*.yml` cannot be committed from an agent. Deliver CI YAML
    under `examples/` and note in the PR that the maintainer must copy it in.
 

@@ -66,12 +66,28 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   - +9 CLI-integration cases (p128), shown failing 7/9 against the pre-fix
     binary. `scan` was checked too and is already honest: it prints
     "0 files scanned" rather than implying it looked.
+- **`esp` reported "ESP clean" after examining zero binaries.** The absent-ESP
+  case was handled honestly ("No EFI System Partition at %s"), but an ESP
+  directory that was unreadable or held no `.efi` files still produced
+  *"ESP clean: scanned 0 .efi binaries ... no ransom/bootkit strings"* — a
+  clean bootloader verdict on content never read. It now says the bootloader
+  was NOT scanned, and `target_scanned` in the JSON answers the machine-readable
+  form of the same question for `esp` as well as `protect`. +4 cases (p129),
+  3 of 4 failing against the pre-fix binary.
+- **The class is now closed across every command that touches the filesystem.**
+  `audit`, `network`, `file`, `protect` and `esp` are fixed; `scan` was checked
+  and needed no change — it prints "N files scanned" and so never implies it
+  looked at more than it did. The pure-analysis commands (`url`, `text`,
+  `secret`, `email`, `clipboard`, `paste`, `package`) read no external
+  evidence and cannot exhibit this failure.
 - Scoring, actions, severities and exit codes are unchanged throughout: an
   `AUDIT_INFO` carries delta 0 and the network additions are disclosure only.
   Verified byte-identical root `audit` and fully-covered `network` output
   against the pre-fix binary; F1 stays 1.000 / 0.0% FP. +13 CLI-integration
-  cases (p127, shown failing 11/13 against the pre-fix binary), +9 (p128),
-  +1 supply unit test; CLI integration 806 -> 828. Coverage 69.60% -> 69.76%.
+  cases (p127, shown failing 11/13 against the pre-fix binary), +9 (p128), +4 (p129),
+  +1 supply unit test; CLI integration 806 -> 832. Aggregate coverage 69.60%,
+  unchanged (the new lines are covered, the denominator grew with them),
+  above the >= 65% gate in CONTRIBUTING.
 - **Terminal escape-injection hardening, now applied uniformly (CWE-150).** An
   earlier fix neutralized control bytes only in `hlse_protect.c`. But `scan`,
   `secret`, `file`, `url`, and `package` all print attacker-controllable data

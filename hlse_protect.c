@@ -1106,6 +1106,11 @@ hlse_esp_verify(const char *esp_path) {
     v.module = HLSE_PROTECT_ESP;
 
     if (stat(path, &st) != 0 || !S_ISDIR(st.st_mode)) {
+        /* Nothing was scanned. The reason is benign (this host does not boot
+         * via UEFI, or the ESP is simply not mounted) and the message says so,
+         * but the machine-readable answer to "was the target examined?" is
+         * still no. */
+        v.target_unreadable = 1;
         pv_add_reason(&v, 0,
             "No EFI System Partition at %s (UEFI not in use or not mounted)",
             path);
@@ -1118,6 +1123,7 @@ hlse_esp_verify(const char *esp_path) {
          * concurrent hlse_esp_verify() calls no longer race. */
         unsigned char *scan_buf = malloc(ESP_SCAN_BYTES);
         if (!scan_buf) {
+            v.target_unreadable = 1;
             pv_add_reason(&v, 0,
                 "ESP content scan skipped: buffer allocation failed (%s)",
                 strerror(errno));
@@ -1128,9 +1134,21 @@ hlse_esp_verify(const char *esp_path) {
     }
 
     if (v.n_reasons == 0) {
-        pv_add_reason(&v, 0,
-            "ESP clean: scanned %d .efi binaries under %s, no ransom/bootkit "
-            "strings", file_count, path);
+        if (file_count == 0) {
+            /* Zero binaries examined means the string scan had nothing to
+             * match against, so "clean" would be a claim about content that
+             * was never read — the directory may be unreadable, or simply
+             * hold no .efi files. Either way this is not an all-clear. */
+            v.target_unreadable = 1;
+            pv_add_reason(&v, 0,
+                "No .efi binary was examined under %s (unreadable, or none "
+                "present) \xe2\x80\x94 the bootloader was NOT scanned",
+                path);
+        } else {
+            pv_add_reason(&v, 0,
+                "ESP clean: scanned %d .efi binaries under %s, no ransom/bootkit "
+                "strings", file_count, path);
+        }
     }
     return v;
 }
