@@ -8903,6 +8903,8 @@ cmd_esp(int argc, char **argv, int idx, const CliOpts *o) {
             printf("%s\"%s\"", i > 0 ? "," : "", esc);
         }
         printf("]");
+        printf(",\"target_scanned\":%s",
+               pv.target_unreadable ? "false" : "true");
         {
             const char *bs = hlse_blindspot_for("esp");
             if (pv.score == 0 && bs) json_field("blind_spot", bs);

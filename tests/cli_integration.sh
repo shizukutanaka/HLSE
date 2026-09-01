@@ -6811,6 +6811,29 @@ check "p128: readable protect target carries no coverage warning" "0" "$rc"
     | grep -q '"target_scanned":true' && rc=0 || rc=1
 check "p128: protect JSON reports target_scanned=true when readable" "0" "$rc"
 
+# ─── p129: `esp` called a scan of nothing "clean" ───────────────────────────
+#
+# hlse_esp_verify() handled an ABSENT ESP honestly but not an unreadable or
+# empty one: with file_count == 0 it still reported "ESP clean: scanned 0 .efi
+# binaries ... no ransom/bootkit strings" — a clean verdict on content it had
+# never read.
+
+./hlse_core esp /nonexistent-hlse-p129 2>&1 | grep -q "No EFI System Partition" \
+    && rc=0 || rc=1
+check "p129: esp still names an absent ESP plainly" "0" "$rc"
+
+./hlse_core --json esp /nonexistent-hlse-p129 2>/dev/null \
+    | grep -q '"target_scanned":false' && rc=0 || rc=1
+check "p129: esp JSON reports target_scanned=false when nothing was scanned" "0" "$rc"
+
+P129="$(mktemp -d)"
+./hlse_core esp "$P129" 2>&1 | grep -q "ESP clean" && rc=1 || rc=0
+check "p129: esp does not claim 'clean' after examining 0 binaries" "0" "$rc"
+
+./hlse_core esp "$P129" 2>&1 | grep -q "NOT scanned" && rc=0 || rc=1
+check "p129: esp says the bootloader was not scanned" "0" "$rc"
+rmdir "$P129"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
