@@ -67,10 +67,21 @@ PasteVerdict hlse_check_paste(const char *text);
 
 #define HLSE_NET_MAX_REASONS 8
 
+/* Evidence sources for hlse_check_network(). Each is skipped silently when it
+ * cannot be opened (a container without /proc, a hardened host, a non-Linux
+ * system), so a caller needs to know which ones actually contributed before
+ * reading score==0 as "clean" rather than as "nothing was looked at".     */
+#define HLSE_NET_SRC_ARP     0x01   /* /proc/net/arp    (N1) */
+#define HLSE_NET_SRC_ROUTE   0x02   /* /proc/net/route  (N2) */
+#define HLSE_NET_SRC_RESOLV  0x04   /* /etc/resolv.conf (N3) */
+#define HLSE_NET_SRC_HOSTS   0x08   /* /etc/hosts       (N4) */
+#define HLSE_NET_SRC_ALL     0x0F
+
 typedef struct {
     int  score;              /* 0..100 */
     int  n_reasons;
     char reasons[HLSE_NET_MAX_REASONS][256];
+    int  sources_read;       /* bitmask of HLSE_NET_SRC_* actually opened */
 } NetworkVerdict;
 
 /* Read-only network safety check using /proc and /etc:

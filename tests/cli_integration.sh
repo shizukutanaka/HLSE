@@ -6663,6 +6663,95 @@ else
     echo "  NOTE: cc not available — p126 library-install round-trip SKIPPED."
 fi
 
+# ─── p127: a check that could not read its evidence must not claim a pass ───
+#
+# hlse_audit_sudoers() emitted AUDIT_PASS whenever its finding list was empty
+# — a condition also satisfied when /etc/sudoers (0440 root:root) was never
+# opened at all. On a host granting passwordless root, an unprivileged run
+# therefore reported "A7: No NOPASSWD entries found in sudoers" and
+# "Hardening index: 100/100 (hardened)" while root reported ALERT [40] for the
+# very same machine. These cases pin the distinction between "read it, found
+# nothing" and "could not read it".
+
+if command -v setpriv >/dev/null 2>&1 && [ "$(id -u)" = "0" ]; then
+    P127_OUT="$(setpriv --reuid=65534 --regid=65534 --clear-groups \
+                ./hlse_core audit 2>&1 || true)"
+
+    # The false PASS must be gone whenever /etc/sudoers is unreadable.
+    # Readability has to be probed AS THE UNPRIVILEGED USER: testing it from
+    # root always succeeds and would silently skip every assertion below.
+    if setpriv --reuid=65534 --regid=65534 --clear-groups \
+           test -r /etc/sudoers 2>/dev/null; then
+        echo "  NOTE: /etc/sudoers readable by nobody — p127 A7 case SKIPPED."
+    else
+        # The false PASS lived in the JSON findings array — the clean
+        # plain-text path dropped all findings, so grepping plain output for
+        # it would pass vacuously both before and after the fix.
+        P127_JSON="$(setpriv --reuid=65534 --regid=65534 --clear-groups \
+                     ./hlse_core --json audit 2>/dev/null || true)"
+
+        echo "$P127_JSON" | grep -q "A7: No NOPASSWD entries found" \
+            && rc=1 || rc=0
+        check "p127: no PASS asserted about an unreadable /etc/sudoers" "0" "$rc"
+
+        echo "$P127_JSON" | grep -q "A7: Cannot read /etc/sudoers" \
+            && rc=0 || rc=1
+        check "p127: A7 states that sudo was NOT checked (json)" "0" "$rc"
+
+        echo "$P127_OUT" | grep -q "A7: Cannot read /etc/sudoers" \
+            && rc=0 || rc=1
+        check "p127: A7 disclosure reaches plain output too" "0" "$rc"
+
+        # The reassuring band word must be withheld when coverage is partial.
+        echo "$P127_OUT" | grep -q "(hardened)" && rc=1 || rc=0
+        check "p127: band word withheld when coverage is incomplete" "0" "$rc"
+
+        echo "$P127_OUT" | grep -q "coverage incomplete" && rc=0 || rc=1
+        check "p127: clean verdict discloses incomplete coverage" "0" "$rc"
+
+        # The clean plain-text path used to drop every finding, hiding the
+        # "Cannot read" disclosures that --json showed all along.
+        echo "$P127_OUT" | grep -q "\[INFO\]" && rc=0 || rc=1
+        check "p127: clean plain output surfaces INFO findings" "0" "$rc"
+
+        echo "$P127_JSON" | grep -q '"checks_skipped":[1-9]' && rc=0 || rc=1
+        check "p127: audit JSON reports checks_skipped" "0" "$rc"
+    fi
+
+    # Root sees the real finding, and the band word is intact at full coverage.
+    ./hlse_core --json audit 2>/dev/null | grep -q '"checks_skipped":0' \
+        && rc=0 || rc=1
+    check "p127: root run reports full coverage" "0" "$rc"
+else
+    echo "  NOTE: setpriv unavailable or not root — p127 audit-coverage SKIPPED."
+fi
+
+# network degrades silently when /proc is absent; it must say so.
+if unshare -rm true >/dev/null 2>&1; then
+    P127_NET="$(unshare -rm sh -c \
+        'mount -t tmpfs none /proc 2>/dev/null; ./hlse_core network' 2>&1 || true)"
+    echo "$P127_NET" | grep -q "Not checked (unreadable)" && rc=0 || rc=1
+    check "p127: network names the sources it could not read" "0" "$rc"
+
+    echo "$P127_NET" | grep -q "/proc/net/arp" && rc=0 || rc=1
+    check "p127: network names /proc/net/arp specifically" "0" "$rc"
+
+    unshare -rm sh -c \
+        'mount -t tmpfs none /proc 2>/dev/null; ./hlse_core --json network' \
+        2>/dev/null | grep -q '"sources_unavailable"' && rc=0 || rc=1
+    check "p127: network JSON carries sources_unavailable" "0" "$rc"
+
+    # With every source readable the output must be unchanged from before.
+    ./hlse_core network 2>&1 | grep -q "Not checked" && rc=1 || rc=0
+    check "p127: no coverage warning when all sources are readable" "0" "$rc"
+
+    ./hlse_core --json network 2>/dev/null | grep -q "sources_unavailable" \
+        && rc=1 || rc=0
+    check "p127: no sources_unavailable key when coverage is complete" "0" "$rc"
+else
+    echo "  NOTE: unshare unavailable — p127 network-coverage SKIPPED."
+fi
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

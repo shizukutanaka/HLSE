@@ -314,6 +314,17 @@ static void test_network_runs(void) {
     CHECK(v.score >= 0 && v.score <= 100, "score in range");
 }
 
+/* A score of 0 means "found nothing in what I read", which is only a clean
+ * bill of health for the sources actually read. Library consumers need that
+ * distinction as much as CLI users do, so the bitmask must be populated and
+ * confined to the four defined sources. */
+static void test_network_reports_coverage(void) {
+    TEST("Network: reports which evidence sources were read");
+    NetworkVerdict v = hlse_check_network();
+    CHECK((v.sources_read & ~HLSE_NET_SRC_ALL) == 0,
+          "sources_read contains only defined source bits");
+}
+
 /* ─── main ────────────────────────────────────────────────────────────── */
 
 int main(void) {
@@ -366,6 +377,7 @@ int main(void) {
 
     printf("\nNetwork safety:\n");
     test_network_runs();
+    test_network_reports_coverage();
 
     printf("\n══════════════════════════════════════════\n");
     printf("Supply tests: %d/%d passed", passed, total);

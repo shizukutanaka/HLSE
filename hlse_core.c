@@ -8309,9 +8309,26 @@ cmd_audit(int argc, char **argv, int idx, const CliOpts *o) {
     (void)argc; (void)argv; (void)idx;
     AuditVerdict av = hlse_audit_all();
     int hi = hlse_audit_hardening_index(&av);
-    const char *band = hi >= 90 ? "hardened"
+    /* The index is 100 - score, so a check that could not read its evidence
+     * contributes 0 and silently inflates it. Reporting "100/100 (hardened)"
+     * for a host whose /etc/sudoers we were never allowed to open is the one
+     * output that could actively mislead someone into standing down, so the
+     * reassuring word is withheld whenever coverage is incomplete. The number
+     * itself is not adjusted: inventing a penalty would be a different claim,
+     * equally unfounded. */
+    int total = av.checks_run + av.checks_skipped;
+    int partial = (av.checks_skipped > 0);
+    const char *band = partial ? "partial"
+                     : hi >= 90 ? "hardened"
                      : hi >= 70 ? "good"
                      : hi >= 50 ? "fair" : "weak";
+    char band_disp[96];
+    if (partial)
+        snprintf(band_disp, sizeof(band_disp),
+                 "coverage incomplete \xe2\x80\x94 %d of %d checks ran",
+                 av.checks_run, total);
+    else
+        snprintf(band_disp, sizeof(band_disp), "%s", band);
     /* Pre-compute severity counts for next_steps guidance */
     int crit_count = 0, high_count = 0;
     { int ci;
@@ -8326,10 +8343,12 @@ cmd_audit(int argc, char **argv, int idx, const CliOpts *o) {
                "\"score\":%d,\"action\":\"%s\","
                "\"severity\":%d,"
                "\"hardening_index\":%d,\"hardening_band\":\"%s\","
+               "\"checks_run\":%d,\"checks_skipped\":%d,"
                "\"crit_count\":%d,\"high_count\":%d,"
                "\"findings\":[",
                av.score, hlse_action_for_score(av.score),
                hlse_severity_for_score(av.score), hi, band,
+               av.checks_run, av.checks_skipped,
                crit_count, high_count);
         for (i = 0; i < av.n_findings; i++) {
             char esc[512];
@@ -8371,13 +8390,27 @@ cmd_audit(int argc, char **argv, int idx, const CliOpts *o) {
         printf("}\n");
     } else if (av.score == 0) {
         const char *bs = hlse_blindspot_for("audit");
+        int i;
         printf("OK    (audit \xe2\x80\x94 no issues found)  "
-               "Hardening index: %d/100 (%s)\n", hi, band);
+               "Hardening index: %d/100 (%s)\n", hi, band_disp);
+        /* A clean verdict used to print nothing but this line, discarding the
+         * INFO findings that say which checks could not read their evidence.
+         * Those are exactly the caveats a reader needs when the headline says
+         * everything is fine, so they are shown here. PASS rows stay hidden:
+         * they would be noise on every clean run. */
+        for (i = 0; i < av.n_findings; i++)
+            if (av.findings[i].severity == AUDIT_INFO)
+                printf("  [INFO] %s\n", av.findings[i].description);
+        if (partial)
+            printf("  \xe2\x9a\xa0 %d of %d checks could not read their evidence "
+                   "\xe2\x80\x94 this is not a clean bill of health for those "
+                   "checks; re-run as root for full coverage.\n",
+                   av.checks_skipped, total);
         if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
     } else {
         int i;
         printf("%-7s [%d]  (system audit)  Hardening index: %d/100 (%s)\n",
-               hlse_action_for_score(av.score), av.score, hi, band);
+               hlse_action_for_score(av.score), av.score, hi, band_disp);
         for (i = 0; i < av.n_findings; i++) {
             const char *sev_str[] = {
                 "PASS", "INFO", "LOW", "MED", "HIGH", "CRIT"
@@ -8399,11 +8432,11 @@ cmd_audit(int argc, char **argv, int idx, const CliOpts *o) {
         else if (high_count > 0)
             printf("\xe2\x86\x92 Next step: fix the %d HIGH finding(s) to improve "
                    "from '%s' toward the next hardening band\n",
-                   high_count, band);
+                   high_count, band_disp);
         else
             printf("\xe2\x86\x92 Next step: address remaining findings to improve "
                    "the hardening index (currently %s: %d/100)\n",
-                   band, hi);
+                   band_disp, hi);
     }
     return av.score >= g_fail_threshold ? 1 : 0;
 }
@@ -8683,11 +8716,37 @@ cmd_secret(int argc, char **argv, int idx, const CliOpts *o) {
     }
 }
 
+/* Names the evidence sources hlse_check_network() could not open, newest
+ * concern first. Returns the count and fills `out` with static path strings.
+ *
+ * Each of N1..N4 is guarded by `if (fp)` and degrades silently, so on a host
+ * without /proc (a minimal container, a non-Linux system) the check looks at
+ * nothing and still returns score 0. Printed as "no anomalies detected" that
+ * is indistinguishable from a real all-clear, which is the same failure the
+ * package_unverified blind spot already calls out: nothing detected is not
+ * nothing confirmed. Naming the missing sources is what makes the difference
+ * visible to the reader.                                                  */
+static int
+network_unread_sources(const NetworkVerdict *v, const char *out[4]) {
+    static const struct { int flag; const char *path; } SRC[] = {
+        { HLSE_NET_SRC_ARP,    "/proc/net/arp"    },
+        { HLSE_NET_SRC_ROUTE,  "/proc/net/route"  },
+        { HLSE_NET_SRC_RESOLV, "/etc/resolv.conf" },
+        { HLSE_NET_SRC_HOSTS,  "/etc/hosts"       }
+    };
+    int i, n = 0;
+    for (i = 0; i < 4; i++)
+        if (!(v->sources_read & SRC[i].flag)) out[n++] = SRC[i].path;
+    return n;
+}
+
 /* `network` subcommand, extracted verbatim from main(). */
 static int
 cmd_network(int argc, char **argv, int idx, const CliOpts *o) {
     (void)argc; (void)argv; (void)idx;
     NetworkVerdict nv = hlse_check_network();
+    const char *unread[4];
+    int n_unread = network_unread_sources(&nv, unread);
     {
         const char *aar[16]; int aq, aqn = nv.n_reasons;
         if (aqn > 16) aqn = 16;
@@ -8708,6 +8767,13 @@ cmd_network(int argc, char **argv, int idx, const CliOpts *o) {
             printf("%s\"%s\"", i > 0 ? "," : "", esc);
         }
         printf("]");
+        if (n_unread > 0) {
+            int u;
+            printf(",\"sources_unavailable\":[");
+            for (u = 0; u < n_unread; u++)
+                printf("%s\"%s\"", u > 0 ? "," : "", unread[u]);
+            printf("]");
+        }
         if (nv.score == 0) {
             const char *bs = hlse_blindspot_for("network");
             json_field("blind_spot", bs);
@@ -8746,7 +8812,21 @@ cmd_network(int argc, char **argv, int idx, const CliOpts *o) {
         printf("}\n");
     } else if (nv.score == 0) {
         const char *bs = hlse_blindspot_for("network");
-        printf("OK    (network \xe2\x80\x94 no anomalies detected)\n");
+        if (nv.sources_read == 0) {
+            /* Nothing was read, so "no anomalies detected" would be a claim
+             * about evidence that was never seen. Say what actually happened. */
+            printf("OK    (network \xe2\x80\x94 nothing could be checked: none of "
+                   "/proc/net or /etc was readable)\n");
+        } else {
+            printf("OK    (network \xe2\x80\x94 no anomalies detected)\n");
+        }
+        if (n_unread > 0) {
+            int u;
+            printf("  \xe2\x9a\xa0 Not checked (unreadable): ");
+            for (u = 0; u < n_unread; u++)
+                printf("%s%s", u > 0 ? ", " : "", unread[u]);
+            printf("\n");
+        }
         if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
     } else {
         int i;

@@ -38,6 +38,14 @@ typedef struct {
     int          score;     /* 0..100 */
     int          n_findings;
     AuditFinding findings[HLSE_AUDIT_MAX_FINDINGS];
+    /* Evidence coverage. A check that could not open any of its sources has
+     * NOT cleared the system — it has said nothing. Reporting the two states
+     * identically is how `audit` came to award 100/100 "hardened" to a host
+     * with passwordless root sudo, purely because /etc/sudoers is 0440 and
+     * the caller was not root. Each hlse_audit_*() sets exactly one of these
+     * to 1; hlse_audit_all() sums them.                                   */
+    int          checks_run;      /* reached at least one evidence source  */
+    int          checks_skipped;  /* every evidence source was unreadable  */
 } AuditVerdict;
 
 /* Individual module audits */

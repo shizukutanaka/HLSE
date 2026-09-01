@@ -5,6 +5,55 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [Unreleased]
 
 ### Security
+- **`audit` asserted a PASS about a file it could not read, awarding
+  `100/100 (hardened)` to a host granting passwordless root.** Reproduced on
+  one machine, one instant, changing only the caller:
+
+      # as root
+      ALERT [40] (system audit)  Hardening index: 60/100 (fair)
+        [HIGH] A7: NOPASSWD in /etc/sudoers:58 — passwordless sudo: ALL=(ALL) NOPASSWD: ALL
+
+      # as an unprivileged user
+      OK    (audit — no issues found)  Hardening index: 100/100 (hardened)
+        {"severity":0,"description":"A7: No NOPASSWD entries found in sudoers"}
+
+  `hlse_audit_sudoers()` emitted `AUDIT_PASS` on `n_findings == 0`, a condition
+  equally satisfied when `/etc/sudoers` (0440 root:root on every mainstream
+  distro) was never opened. Non-root is the normal way to run the tool, so the
+  default invocation made an affirmative false claim about evidence it had
+  never seen — the failure mode the `package_unverified` blind spot already
+  names: *nothing detected is not nothing confirmed*.
+  - New `av_coverage()` in `hlse_audit.c` records, per check, whether any
+    source was **present but unreadable**. Denial rather than reach is the
+    predicate on purpose: `/etc/sudoers.d` is world-listable while
+    `/etc/sudoers` is not, so "opened at least one source" would still have
+    cleared A7 for a caller that never saw the file that matters.
+  - A source that is legitimately *absent* (no SSH server, no user unit dir)
+    still counts as checked — absence is a finding; unreadability is not. A1,
+    A4, A7 and A8 now distinguish the two via `errno == ENOENT`.
+  - A7 and A4 emit an `AUDIT_INFO` naming the unreadable path instead of a
+    PASS or silence. A8 no longer passes on an `EACCES` home directory.
+  - `AuditVerdict` gains `checks_run` / `checks_skipped`; `hardening_band`
+    becomes `partial` and the reassuring word is withheld from plain output
+    whenever coverage is incomplete. The index itself is untouched — inventing
+    a penalty would be a second unfounded claim.
+  - The clean plain-text branch printed only its headline, discarding the
+    `Cannot read` INFO findings that A1/A3 had emitted correctly all along and
+    that `--json` showed. They are now surfaced (PASS rows stay hidden), so the
+    caveats appear exactly when the headline says everything is fine.
+- **`network` reported "no anomalies detected" when it had checked nothing.**
+  All four evidence sources are guarded by a bare `if (fp)`, so on a host
+  without `/proc` the check looked at nothing and still returned score 0.
+  `NetworkVerdict` gains `sources_read` (`HLSE_NET_SRC_*` bitmask); the CLI
+  names the unreadable paths and, when nothing at all was readable, says so
+  instead of claiming an all-clear. JSON gains `sources_unavailable`, emitted
+  only when non-empty.
+- Scoring, actions, severities and exit codes are unchanged throughout: an
+  `AUDIT_INFO` carries delta 0 and the network additions are disclosure only.
+  Verified byte-identical root `audit` and fully-covered `network` output
+  against the pre-fix binary; F1 stays 1.000 / 0.0% FP. +13 CLI-integration
+  cases (p127, shown failing 11/13 against the pre-fix binary), +1 supply unit
+  test. Coverage 69.60% -> 69.81%.
 - **Terminal escape-injection hardening, now applied uniformly (CWE-150).** An
   earlier fix neutralized control bytes only in `hlse_protect.c`. But `scan`,
   `secret`, `file`, `url`, and `package` all print attacker-controllable data
