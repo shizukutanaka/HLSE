@@ -709,7 +709,17 @@ hlse_smb_check_canary(const char *share_path) {
 
         errno = 0;
         if (stat(path, &st) == 0) {
-            /* Canary exists. Check if recently accessed (atime). */
+            /* Canary exists. Check if recently accessed (atime).
+             *
+             * THE ONE DELIBERATE TEMPORAL DEPENDENCE IN ANY SCORE. The spec's
+             * determinism invariant holds unconditionally for the pure-analysis
+             * modules (URL/text/secret/file/package/paste/clipboard/email
+             * contain no time() or rand() at all), but "this decoy was opened
+             * in the last five minutes" cannot be expressed without a clock:
+             * the signal IS the recency. Identical filesystem state therefore
+             * scores 40 now and 0 six minutes from now, by design. Recorded in
+             * docs/SPECIFICATION.md §1 rather than left for a reader to
+             * discover from the source. */
             time_t now = time(NULL);
             double age_sec = difftime(now, st.st_atime);
             if (age_sec < 300) { /* accessed in last 5 minutes */

