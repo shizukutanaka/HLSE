@@ -306,6 +306,7 @@ hlse_ransomware_check_directory(const char *dir_path) {
     dir = opendir(dir_path);
     if (!dir) {
         v.target_unreadable = 1;
+        v.modules_unchecked |= HLSE_PROTECT_RANSOMWARE;
         pv_add_reason(&v, 0, "Cannot open directory: %s", strerror(errno));
         return v;
     }
@@ -597,8 +598,12 @@ hlse_netdrive_check_mounts(void) {
     memset(&v, 0, sizeof(v));
     v.module = HLSE_PROTECT_NETWORK_DRIVE;
 
-    fp = fopen("/proc/mounts", "r");
+    /* The one fixed system path in the codebase that still used a raw
+     * fopen(): hlse_open_system_file() adds the O_NONBLOCK + S_ISREG guard
+     * that stops a planted FIFO from blocking the read indefinitely. */
+    fp = hlse_open_system_file("/proc/mounts");
     if (!fp) {
+        v.modules_unchecked |= HLSE_PROTECT_NETWORK_DRIVE;
         pv_add_reason(&v, 0,
             "Cannot read /proc/mounts (not Linux or no permission)");
         return v;
@@ -702,6 +707,7 @@ hlse_smb_check_canary(const char *share_path) {
         snprintf(path, sizeof(path), "%s/%s",
                  share_path, CANARY_FILENAMES[i]);
 
+        errno = 0;
         if (stat(path, &st) == 0) {
             /* Canary exists. Check if recently accessed (atime). */
             time_t now = time(NULL);
@@ -711,6 +717,10 @@ hlse_smb_check_canary(const char *share_path) {
                     "S4: Canary file accessed: '%s' (%d sec ago)",
                     CANARY_FILENAMES[i], (int)age_sec);
             }
+        } else if (errno != ENOENT) {
+            /* A missing canary is the normal case and says nothing. Anything
+             * else (EACCES on a locked share) means we could not look.    */
+            v.modules_unchecked |= HLSE_PROTECT_SMB;
         }
     }
 
@@ -811,6 +821,7 @@ hlse_mbr_verify(const char *device_path) {
 
     fd = open(device_path, O_RDONLY);
     if (fd < 0) {
+        v.modules_unchecked |= HLSE_PROTECT_MBR;
         pv_add_reason(&v, 0,
             "Cannot read device %s: %s (need root?)",
             device_path, strerror(errno));
@@ -821,6 +832,7 @@ hlse_mbr_verify(const char *device_path) {
     close(fd);
 
     if (n < 512) {
+        v.modules_unchecked |= HLSE_PROTECT_MBR;
         pv_add_reason(&v, 0,
             "Short read from %s: only %zd bytes", device_path, n);
         return v;
@@ -936,6 +948,7 @@ hlse_gpt_verify(const char *device_path) {
 
     fd = open(device_path, O_RDONLY);
     if (fd < 0) {
+        v.modules_unchecked |= HLSE_PROTECT_MBR;
         pv_add_reason(&v, 0,
             "Cannot read device %s: %s", device_path, strerror(errno));
         return v;
@@ -944,6 +957,7 @@ hlse_gpt_verify(const char *device_path) {
     /* Seek to LBA 1 (byte 512) for GPT header */
     if (lseek(fd, 512, SEEK_SET) != 512) {
         close(fd);
+        v.modules_unchecked |= HLSE_PROTECT_MBR;
         pv_add_reason(&v, 0, "Cannot seek to GPT header on %s", device_path);
         return v;
     }
@@ -952,6 +966,7 @@ hlse_gpt_verify(const char *device_path) {
     close(fd);
 
     if (n < 512) {
+        v.modules_unchecked |= HLSE_PROTECT_MBR;
         pv_add_reason(&v, 0, "Short read at GPT header on %s", device_path);
         return v;
     }
@@ -1111,6 +1126,7 @@ hlse_esp_verify(const char *esp_path) {
          * but the machine-readable answer to "was the target examined?" is
          * still no. */
         v.target_unreadable = 1;
+        v.modules_unchecked |= HLSE_PROTECT_ESP;
         pv_add_reason(&v, 0,
             "No EFI System Partition at %s (UEFI not in use or not mounted)",
             path);
@@ -1124,6 +1140,7 @@ hlse_esp_verify(const char *esp_path) {
         unsigned char *scan_buf = malloc(ESP_SCAN_BYTES);
         if (!scan_buf) {
             v.target_unreadable = 1;
+            v.modules_unchecked |= HLSE_PROTECT_ESP;
             pv_add_reason(&v, 0,
                 "ESP content scan skipped: buffer allocation failed (%s)",
                 strerror(errno));
@@ -1140,6 +1157,7 @@ hlse_esp_verify(const char *esp_path) {
              * was never read — the directory may be unreadable, or simply
              * hold no .efi files. Either way this is not an all-clear. */
             v.target_unreadable = 1;
+            v.modules_unchecked |= HLSE_PROTECT_ESP;
             pv_add_reason(&v, 0,
                 "No .efi binary was examined under %s (unreadable, or none "
                 "present) \xe2\x80\x94 the bootloader was NOT scanned",
@@ -1157,6 +1175,30 @@ hlse_esp_verify(const char *esp_path) {
  * Unified protection scan
  * ═══════════════════════════════════════════════════════════════════════ */
 
+/* Fold one module's verdict into the combined one.
+ *
+ * Reasons and score are taken only when the module actually scored, which is
+ * the behaviour the four open-coded copies of this loop had. Coverage flags
+ * are taken UNCONDITIONALLY, and that is the point: a module that could not
+ * read its evidence scores 0, so under the old gate its "Cannot read device
+ * ... (need root?)" diagnostic was dropped and `protect <disk> --mbr` as a
+ * normal user printed a bare OK having read nothing. */
+static void
+pv_merge(ProtectionVerdict *into, const ProtectionVerdict *part) {
+    into->target_unreadable |= part->target_unreadable;
+    into->modules_unchecked |= part->modules_unchecked;
+    if (part->score > 0) {
+        int i;
+        for (i = 0; i < part->n_reasons
+             && into->n_reasons < HLSE_PROTECT_MAX_REASONS; i++) {
+            memcpy(into->reasons[into->n_reasons],
+                   part->reasons[i], sizeof(part->reasons[0]));
+            into->n_reasons++;
+        }
+        into->score += part->score;
+    }
+}
+
 ProtectionVerdict
 hlse_protect_scan(const char *target_path, int modules) {
     ProtectionVerdict combined;
@@ -1165,57 +1207,22 @@ hlse_protect_scan(const char *target_path, int modules) {
 
     if (modules & HLSE_PROTECT_RANSOMWARE) {
         ProtectionVerdict rv = hlse_ransomware_check_directory(target_path);
-        /* Carried across the score>0 gate below: an unreadable target is the
-         * one condition under which a score of 0 means nothing was looked at. */
-        combined.target_unreadable = rv.target_unreadable;
-        if (rv.score > 0) {
-            int i;
-            for (i = 0; i < rv.n_reasons && combined.n_reasons < HLSE_PROTECT_MAX_REASONS; i++) {
-                memcpy(combined.reasons[combined.n_reasons],
-                       rv.reasons[i], sizeof(rv.reasons[0]));
-                combined.n_reasons++;
-            }
-            combined.score += rv.score;
-        }
+        pv_merge(&combined, &rv);
     }
 
     if (modules & HLSE_PROTECT_NETWORK_DRIVE) {
         ProtectionVerdict nv = hlse_netdrive_check_mounts();
-        if (nv.score > 0) {
-            int i;
-            for (i = 0; i < nv.n_reasons && combined.n_reasons < HLSE_PROTECT_MAX_REASONS; i++) {
-                memcpy(combined.reasons[combined.n_reasons],
-                       nv.reasons[i], sizeof(nv.reasons[0]));
-                combined.n_reasons++;
-            }
-            combined.score += nv.score;
-        }
+        pv_merge(&combined, &nv);
     }
 
     if (modules & HLSE_PROTECT_SMB) {
         ProtectionVerdict sv = hlse_smb_check_canary(target_path);
-        if (sv.score > 0) {
-            int i;
-            for (i = 0; i < sv.n_reasons && combined.n_reasons < HLSE_PROTECT_MAX_REASONS; i++) {
-                memcpy(combined.reasons[combined.n_reasons],
-                       sv.reasons[i], sizeof(sv.reasons[0]));
-                combined.n_reasons++;
-            }
-            combined.score += sv.score;
-        }
+        pv_merge(&combined, &sv);
     }
 
     if (modules & HLSE_PROTECT_MBR) {
         ProtectionVerdict mv = hlse_mbr_verify(target_path);
-        if (mv.score > 0) {
-            int i;
-            for (i = 0; i < mv.n_reasons && combined.n_reasons < HLSE_PROTECT_MAX_REASONS; i++) {
-                memcpy(combined.reasons[combined.n_reasons],
-                       mv.reasons[i], sizeof(mv.reasons[0]));
-                combined.n_reasons++;
-            }
-            combined.score += mv.score;
-        }
+        pv_merge(&combined, &mv);
     }
 
     if (combined.score > 100) combined.score = 100;

@@ -39,9 +39,19 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
      likely to stand down. Several clean branches printed only their headline
      and dropped the very findings that explained the gap.
    - Disclosure, never a score change, unless the user approves one.
+   - **Check reachability end-to-end, not per function.** A merge step is a
+     second place a diagnostic can die: `hlse_protect_scan()` copied a module's
+     reasons only when its score was `> 0`, so ten score-0 diagnostics — every
+     "could not read" message plus two positive confirmations — could not reach
+     the CLI no matter how correct the module was. Fixing the modules one at a
+     time missed it; running the command and reading the output found it.
    - Reproduce the before-state (`setpriv --reuid=65534 ... ./hlse_core audit`,
      `unshare -rm sh -c 'mount -t tmpfs none /proc; ...'`) and show the new
      tests failing against a binary built from `git show HEAD:<file>`.
+   - **A test that branches on the tool's own output asserts nothing.** Decide
+     the precondition independently (`dd` the device, `setpriv test -r` the
+     file as the unprivileged user) — three checks in this suite passed
+     vacuously before that was fixed.
 3. **Verify every commit, in this order — all must pass:**
    ```
    make && make check-warnings      # 0 warnings, CLI AND -DHLSE_CORE_AS_LIB library builds
@@ -51,7 +61,7 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
    make fuzz                        # if you touched a parser/detector
    ```
    If anything regresses, **do not push.**
-4. **`make test` baseline is `828 passed / 0 failed`.** The 14 formerly
+4. **`make test` baseline is `840 passed / 0 failed`.** The 14 formerly
    permanent failures (JSON-schema-validation checks + a `release.yml`
    existence check) are fixed; the suite is fully green, so **any** failure is
    a regression you caused. Always read the number.

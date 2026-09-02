@@ -74,18 +74,49 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   was NOT scanned, and `target_scanned` in the JSON answers the machine-readable
   form of the same question for `esp` as well as `protect`. +4 cases (p129),
   3 of 4 failing against the pre-fix binary.
-- **The class is now closed across every command that touches the filesystem.**
-  `audit`, `network`, `file`, `protect` and `esp` are fixed; `scan` was checked
-  and needed no change — it prints "N files scanned" and so never implies it
-  looked at more than it did. The pure-analysis commands (`url`, `text`,
-  `secret`, `email`, `clipboard`, `paste`, `package`) read no external
-  evidence and cannot exhibit this failure.
+- **`protect`'s merge step was a second place the same diagnostic could die.**
+  An earlier bullet in this entry claimed the class was closed across every
+  filesystem-touching command. It was not, and the correction is worth stating
+  plainly: fixing each module in isolation is not enough when a *merge* sits
+  between the module and the caller. `hlse_protect_scan()` copies a module's
+  reasons only when its score is `> 0`, and the first fix carried only a
+  `target_unreadable` flag across that gate — so the network-drive, SMB and MBR
+  modules still had their score-0 diagnostics discarded. Reproduced:
+  `protect <disk> --mbr` printed a bare `OK` after reading zero bytes of the
+  device, swallowing *"Cannot read device ... (need root?)"*. Ten of the
+  fourteen score-0 `pv_add_reason` sites could not reach the CLI at all,
+  including two positive confirmations (*"MBR signature valid"*,
+  *"GPT header valid"*).
+  - `ProtectionVerdict` gains `modules_unchecked`, a bitmask each module sets
+    when its evidence existed but could not be read (absence still does not
+    count: a missing SMB canary is `ENOENT` and normal). The CLI names the
+    modules that did not run, on scored verdicts as well as clean ones, so a
+    partial result cannot read as a complete one. JSON gains
+    `modules_unchecked`.
+  - The four near-identical merge blocks became one `pv_merge()` helper that
+    takes coverage flags unconditionally and score/reasons only when the module
+    scored. Behaviour for every scored path is unchanged; the copy-paste is
+    gone.
+  - `hlse_netdrive_check_mounts()` was the last fixed system path still using a
+    raw `fopen()`; it now uses `hlse_open_system_file()` like every other, for
+    the `O_NONBLOCK` + `S_ISREG` guard against a planted FIFO.
+- **Now closed** across `audit`, `network`, `file`, `protect` and `esp`.
+  `scan` was checked and needs no change — it prints "N files scanned" and so
+  never implies it looked at more than it did. The pure-analysis commands
+  (`url`, `text`, `secret`, `email`, `clipboard`, `paste`, `package`) read no
+  external evidence and cannot exhibit this failure.
+- **Open improvement, not taken here:** `hlse_gpt_verify()` is public API that
+  the CLI never calls. On a GPT disk — most modern hardware — `protect --mbr`
+  runs only the MBR check, which correctly notes *"GPT-only (normal)"*. Wiring
+  GPT verification in would add `+10` on every legacy-BIOS disk, a scoring
+  change, and the module's own design note says UEFI-era boot integrity is
+  `esp`'s job. Left for the maintainer to decide.
 - Scoring, actions, severities and exit codes are unchanged throughout: an
   `AUDIT_INFO` carries delta 0 and the network additions are disclosure only.
   Verified byte-identical root `audit` and fully-covered `network` output
   against the pre-fix binary; F1 stays 1.000 / 0.0% FP. +13 CLI-integration
   cases (p127, shown failing 11/13 against the pre-fix binary), +9 (p128), +4 (p129),
-  +1 supply unit test; CLI integration 806 -> 832. Aggregate coverage 69.60%,
+  +8 (p130), +1 supply and +2 protect unit tests; CLI integration 806 -> 840. Aggregate coverage 69.60%,
   unchanged (the new lines are covered, the denominator grew with them),
   above the >= 65% gate in CONTRIBUTING.
 - **Terminal escape-injection hardening, now applied uniformly (CWE-150).** An

@@ -629,6 +629,48 @@ test_gpt_valid(void) {
     cleanup_tmpdir();
 }
 
+/* ─── Coverage reporting ──────────────────────────────────────────────── */
+
+/* A module that could not read its evidence scores 0, exactly like one that
+ * read everything and found nothing. hlse_protect_scan() used to merge
+ * reasons only on score > 0, so the difference was invisible to callers.
+ * modules_unchecked must now carry it. */
+static void
+test_mbr_unreadable_sets_unchecked(void) {
+    TEST("MBR: an unreadable device is reported as unchecked");
+    ProtectionVerdict v = hlse_mbr_verify("/nonexistent/hlse/device");
+    if (v.score == 0 && (v.modules_unchecked & HLSE_PROTECT_MBR)) { PASS(); }
+    else {
+        char buf[80];
+        snprintf(buf, sizeof(buf), "score=%d unchecked=0x%x",
+                 v.score, v.modules_unchecked);
+        FAIL(buf);
+    }
+}
+
+static void
+test_readable_device_is_not_unchecked(void) {
+    char devpath[512];
+    unsigned char disk[1024];
+    setup_tmpdir();
+    snprintf(devpath, sizeof(devpath), "%s/disk.img", tmpdir);
+    memset(disk, 0, sizeof(disk));
+    disk[0] = 0xEB; disk[510] = 0x55; disk[511] = 0xAA;
+
+    {
+        FILE *fp = fopen(devpath, "wb");
+        if (fp) { fwrite(disk, 1, 1024, fp); fclose(fp); }
+    }
+
+    TEST("MBR: a readable device is NOT reported as unchecked");
+    {
+        ProtectionVerdict v = hlse_mbr_verify(devpath);
+        if ((v.modules_unchecked & HLSE_PROTECT_MBR) == 0) { PASS(); }
+        else { FAIL("readable device wrongly marked unchecked"); }
+    }
+    cleanup_tmpdir();
+}
+
 /* ─── Score bounds ────────────────────────────────────────────────────── */
 
 static void
@@ -684,6 +726,8 @@ main(void) {
     test_mbr_ransom_note();
     test_mbr_tampered();
     test_gpt_valid();
+    test_mbr_unreadable_sets_unchecked();
+    test_readable_device_is_not_unchecked();
 
     printf("\nInvariants:\n");
     test_score_bounds();

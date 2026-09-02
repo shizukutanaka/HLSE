@@ -130,7 +130,9 @@ consumer never has to re-derive the band. Additional fields vary by kind:
 - `text`: `target` (the scanned string), `reasons:[...]`
 - `protect`: `target` (the scanned path), `reasons:[...]`, `target_scanned`
   (false when the target could not be opened, meaning a score of 0 covers
-  nothing that was actually examined)
+  nothing that was actually examined), `modules_unchecked:[id,...]` naming any
+  module whose evidence existed but was unreadable (`ransomware`,
+  `network_drive`, `smb`, `mbr`) — emitted only when non-empty
 - `network`/`esp`/`email`: `reasons:[...]`; `esp` also carries
   `target_scanned` (false when no `.efi` binary was examined — absent,
   unreadable, or empty ESP — so a score of 0 covers nothing)
