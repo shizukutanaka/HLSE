@@ -8062,6 +8062,35 @@ cmd_email(int argc, char **argv, int idx, const CliOpts *o) {
     }
 }
 
+/* Human labels and JSON ids for the protect modules, used by both output
+ * paths below. Nothing outside this file needs the mapping. */
+static const struct {
+    int flag; const char *id; const char *label; const char *hint;
+} PROTECT_MODULES[] = {
+    { HLSE_PROTECT_RANSOMWARE,    "ransomware",
+      "ransomware indicators",    "the target directory could not be opened" },
+    { HLSE_PROTECT_NETWORK_DRIVE, "network_drive",
+      "network-drive mounts",     "/proc/mounts could not be read" },
+    { HLSE_PROTECT_SMB,           "smb",
+      "SMB canary files",         "the share could not be stat'ed" },
+    { HLSE_PROTECT_MBR,           "mbr",
+      "MBR boot sector",
+      "the device could not be read \xe2\x80\x94 re-run as root" }
+};
+
+/* One line per module that scored 0 because it could not read its evidence.
+ * Without this the merge in hlse_protect_scan() silently dropped the module's
+ * own diagnostic and the run looked complete. */
+static void
+print_protect_unchecked(const ProtectionVerdict *pv) {
+    size_t mi;
+    if (!pv->modules_unchecked) return;
+    for (mi = 0; mi < sizeof(PROTECT_MODULES) / sizeof(PROTECT_MODULES[0]); mi++)
+        if (pv->modules_unchecked & PROTECT_MODULES[mi].flag)
+            printf("  \xe2\x9a\xa0 Not checked: %s \xe2\x80\x94 %s\n",
+                   PROTECT_MODULES[mi].label, PROTECT_MODULES[mi].hint);
+}
+
 /* `protect` subcommand, extracted verbatim from main(). */
 static int
 cmd_protect(int argc, char **argv, int idx, const CliOpts *o) {
@@ -8132,6 +8161,18 @@ cmd_protect(int argc, char **argv, int idx, const CliOpts *o) {
             printf("]");
             printf(",\"target_scanned\":%s",
                    pv.target_unreadable ? "false" : "true");
+            if (pv.modules_unchecked) {
+                size_t mi; int first = 1;
+                printf(",\"modules_unchecked\":[");
+                for (mi = 0; mi < sizeof(PROTECT_MODULES) /
+                                  sizeof(PROTECT_MODULES[0]); mi++)
+                    if (pv.modules_unchecked & PROTECT_MODULES[mi].flag) {
+                        printf("%s\"%s\"", first ? "" : ",",
+                               PROTECT_MODULES[mi].id);
+                        first = 0;
+                    }
+                printf("]");
+            }
             if (pv.score == 0) {
                 const char *bs = hlse_blindspot_for("protect");
                 json_field("blind_spot", bs);
@@ -8172,15 +8213,15 @@ cmd_protect(int argc, char **argv, int idx, const CliOpts *o) {
             const char *bs = hlse_blindspot_for("protect");
             if (pv.target_unreadable) {
                 /* Nothing in the target was examined, so a score of 0 is the
-                 * absence of evidence, not evidence of absence. */
+                 * absence of evidence, not evidence of absence. The per-module
+                 * lines printed just below say which checks that cost us, so
+                 * this only has to mark the headline. */
                 printf("OK    %s (NOT scanned \xe2\x80\x94 target could not be "
                        "opened)\n", path);
-                printf("  \xe2\x9a\xa0 No file in this path was examined; this "
-                       "is not a clean result. Check permissions, or re-run "
-                       "with access to the directory.\n");
             } else {
                 printf("OK    %s\n", path);
             }
+            print_protect_unchecked(&pv);
             if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
         } else {
             int i;
@@ -8189,6 +8230,9 @@ cmd_protect(int argc, char **argv, int idx, const CliOpts *o) {
             for (i = 0; i < pv.n_reasons; i++) {
                 printf("  \xc2\xb7 %s\n", pv.reasons[i]);
             }
+            /* Also on a scored verdict: a partial result must not read as a
+             * complete one just because something else did fire. */
+            print_protect_unchecked(&pv);
             if (pv.score >= 40) {
                 printf("  \xe2\x96\xb8 Pattern: %s\n", protect_pattern_text());
                 printf("  \xe2\x97\x89 Attacker's goal: %s\n", protect_objective_text());

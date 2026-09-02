@@ -6834,6 +6834,76 @@ check "p129: esp does not claim 'clean' after examining 0 binaries" "0" "$rc"
 check "p129: esp says the bootloader was not scanned" "0" "$rc"
 rmdir "$P129"
 
+# ─── p130: protect's merge step dropped three modules' "could not check" ────
+#
+# hlse_protect_scan() copies a module's reasons only when its score is > 0.
+# The previous round fixed the ransomware module by carrying a flag across
+# that gate, but the gate still discarded every score-0 diagnostic from the
+# network-drive, SMB and MBR modules — so `protect <disk> --mbr` as a normal
+# user printed a bare OK after reading zero bytes of the device. Coverage
+# flags are now merged unconditionally.
+
+P130_DEV=""
+for d in /dev/vda /dev/sda /dev/nvme0n1; do [ -b "$d" ] && P130_DEV="$d" && break; done
+
+if [ -n "$P130_DEV" ]; then
+    # Decide readability INDEPENDENTLY of the tool. Branching on hlse_core's
+    # own output would make the assertion pass vacuously against a binary that
+    # never emits the message — the trap already hit twice in this suite.
+    if dd if="$P130_DEV" bs=512 count=1 of=/dev/null >/dev/null 2>&1; then
+        # Readable: nothing may be reported as unchecked.
+        ./hlse_core --json protect "$P130_DEV" --mbr 2>/dev/null \
+            | grep -q "modules_unchecked" && rc=1 || rc=0
+        check "p130: readable device reports no unchecked module" "0" "$rc"
+    else
+        # Not readable: the MBR module must say so, in both formats.
+        ./hlse_core protect "$P130_DEV" --mbr 2>&1 \
+            | grep -q "Not checked: MBR boot sector" && rc=0 || rc=1
+        check "p130: unreadable device reports the MBR module as unchecked" "0" "$rc"
+
+        ./hlse_core --json protect "$P130_DEV" --mbr 2>/dev/null \
+            | grep -q '"modules_unchecked":\["mbr"\]' && rc=0 || rc=1
+        check "p130: protect JSON lists mbr in modules_unchecked" "0" "$rc"
+    fi
+else
+    echo "  NOTE: no block device available — p130 MBR case SKIPPED."
+fi
+
+# A readable directory must report nothing as unchecked, in both formats.
+./hlse_core protect /tmp 2>&1 | grep -q "Not checked:" && rc=1 || rc=0
+check "p130: readable protect target reports no unchecked module" "0" "$rc"
+
+./hlse_core --json protect /tmp 2>/dev/null | grep -q "modules_unchecked" \
+    && rc=1 || rc=0
+check "p130: protect JSON omits modules_unchecked when all modules ran" "0" "$rc"
+
+if command -v setpriv >/dev/null 2>&1 && [ "$(id -u)" = "0" ]; then
+    P130_DIR="$(mktemp -d)"
+    chmod 000 "$P130_DIR"
+
+    P130_OUT="$(setpriv --reuid=65534 --regid=65534 --clear-groups \
+                ./hlse_core protect "$P130_DIR" 2>&1 || true)"
+
+    echo "$P130_OUT" | grep -q "Not checked: ransomware indicators" && rc=0 || rc=1
+    check "p130: locked dir reports the ransomware module as unchecked" "0" "$rc"
+
+    echo "$P130_OUT" | grep -q "Not checked: SMB canary files" && rc=0 || rc=1
+    check "p130: locked dir reports the SMB module as unchecked" "0" "$rc"
+
+    # The old redundant second sentence must be gone; the module lines say it.
+    echo "$P130_OUT" | grep -q "No file in this path was examined" && rc=1 || rc=0
+    check "p130: the duplicated target-unreadable sentence is gone" "0" "$rc"
+
+    setpriv --reuid=65534 --regid=65534 --clear-groups \
+        ./hlse_core --json protect "$P130_DIR" 2>/dev/null \
+        | grep -q '"ransomware"' && rc=0 || rc=1
+    check "p130: protect JSON names ransomware in modules_unchecked" "0" "$rc"
+
+    chmod 755 "$P130_DIR"; rmdir "$P130_DIR"
+else
+    echo "  NOTE: setpriv unavailable or not root — p130 locked-dir case SKIPPED."
+fi
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
