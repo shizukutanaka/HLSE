@@ -100,11 +100,21 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   - `hlse_netdrive_check_mounts()` was the last fixed system path still using a
     raw `fopen()`; it now uses `hlse_open_system_file()` like every other, for
     the `O_NONBLOCK` + `S_ISREG` guard against a planted FIFO.
-- **Now closed** across `audit`, `network`, `file`, `protect` and `esp`.
-  `scan` was checked and needs no change — it prints "N files scanned" and so
-  never implies it looked at more than it did. The pure-analysis commands
-  (`url`, `text`, `secret`, `email`, `clipboard`, `paste`, `package`) read no
-  external evidence and cannot exhibit this failure.
+- **`scan` skipped unreadable directories silently.** The walker did
+  `d = opendir(cur_path); if (!d) continue;`, so a tree it had no permission to
+  read produced *"0 files scanned, 0 threats"* and exit 0. The count was
+  technically true, which is why an earlier pass judged this command adequate,
+  but `scan` is the CI/CD entry point: a gate over an unreadable checkout goes
+  green having inspected nothing. It now counts directories that existed but
+  could not be opened (`ENOENT` during the walk is a real answer and is not
+  counted) and says so, with `dirs_unreadable` in the JSON summary. Exit code
+  deliberately unchanged — existing CI consumers depend on it.
+- **Now closed**, verified by running every command against a mode-000 target
+  rather than by reasoning about the code: `scan`, `protect`, `esp`, `file`,
+  `audit` and `network` all state what they could not examine. The
+  pure-analysis commands (`url`, `text`, `secret`, `email`, `clipboard`,
+  `paste`, `package`) read no external evidence and cannot exhibit this
+  failure.
 - **Open improvement, not taken here:** `hlse_gpt_verify()` is public API that
   the CLI never calls. On a GPT disk — most modern hardware — `protect --mbr`
   runs only the MBR check, which correctly notes *"GPT-only (normal)"*. Wiring
@@ -116,7 +126,8 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   Verified byte-identical root `audit` and fully-covered `network` output
   against the pre-fix binary; F1 stays 1.000 / 0.0% FP. +13 CLI-integration
   cases (p127, shown failing 11/13 against the pre-fix binary), +9 (p128), +4 (p129),
-  +8 (p130), +1 supply and +2 protect unit tests; CLI integration 806 -> 840. Aggregate coverage 69.60%,
+  +8 (p130), +4 (p131), +1 supply and +2 protect unit tests; CLI integration
+  806 -> 844. Aggregate coverage 69.60%,
   unchanged (the new lines are covered, the denominator grew with them),
   above the >= 65% gate in CONTRIBUTING.
 - **Terminal escape-injection hardening, now applied uniformly (CWE-150).** An

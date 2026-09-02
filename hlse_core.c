@@ -7105,6 +7105,11 @@ cmd_scan(int argc, char **argv, int idx, const CliOpts *o) {
     {
         const char *root = argv[idx + 1];
         int threats = 0, files_scanned = 0, max_depth = 20;
+        /* Directories that exist but could not be opened. The walker skips
+         * them silently, so a run over a tree it has no permission to read
+         * reported "0 files scanned, 0 threats" and exited 0 — a CI gate on
+         * an unreadable checkout goes green having inspected nothing. */
+        int dirs_unreadable = 0;
         int gate_hits = 0;  /* findings at/above g_fail_threshold (exit gate) */
         int max_score = 0;  /* highest score seen — for max_severity in summary */
         unsigned asset_mask = 0;  /* blast-radius: classes seen across scan */
@@ -7140,8 +7145,14 @@ cmd_scan(int argc, char **argv, int idx, const CliOpts *o) {
             sp--;
             snprintf(cur_path, sizeof(cur_path), "%s", stack[sp].path);
             depth = stack[sp].depth;
+            errno = 0;
             d = opendir(cur_path);
-            if (!d) continue;
+            if (!d) {
+                /* ENOENT means it vanished between readdir and here (a real
+                 * answer); anything else means we were not allowed to look. */
+                if (errno != ENOENT) dirs_unreadable++;
+                continue;
+            }
 
             while ((ent = readdir(d)) != NULL) {
                 char fullpath[8192];
@@ -7596,6 +7607,13 @@ cmd_scan(int argc, char **argv, int idx, const CliOpts *o) {
                 const char *bs = hlse_blindspot_for("scan");
                 printf("OK    %s (%d files scanned, 0 threats)\n",
                        root, files_scanned);
+                if (dirs_unreadable > 0)
+                    printf("  \xe2\x9a\xa0 %d director%s could not be read and "
+                           "%s skipped \xe2\x80\x94 this result does not cover "
+                           "%s.\n", dirs_unreadable,
+                           dirs_unreadable == 1 ? "y" : "ies",
+                           dirs_unreadable == 1 ? "was" : "were",
+                           dirs_unreadable == 1 ? "it" : "them");
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 char classes[256];
@@ -7636,6 +7654,8 @@ cmd_scan(int argc, char **argv, int idx, const CliOpts *o) {
                    hlse_severity_for_score(max_score),
                    gate_hits, g_fail_threshold,
                    nclasses, classes);
+            if (dirs_unreadable > 0)
+                printf(",\"dirs_unreadable\":%d", dirs_unreadable);
             if (threats == 0) {
                 const char *bs = hlse_blindspot_for("scan");
                 json_field("blind_spot", bs);

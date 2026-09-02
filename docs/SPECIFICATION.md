@@ -154,6 +154,9 @@ consumer never has to re-derive the band. Additional fields vary by kind:
 - `file`: `path`, `reasons:[...]`, `content_inspected` (false when the bytes
   were not read, so the magic-byte checks did not run and the verdict rests
   on the filename alone), plus `coverage` naming the reason
+- `scan` summary: `dirs_unreadable` counts directories that existed but could
+  not be opened during the walk; emitted only when non-zero. A summary with
+  `threats: 0` and a non-zero `dirs_unreadable` does not cover the whole tree.
 - streaming `scan` records add `path`/`line`/`url` as applicable (record
   kinds are `url`, `file`, and `secret`).
 - `scan` emits a final `kind=scan_summary` terminator:
