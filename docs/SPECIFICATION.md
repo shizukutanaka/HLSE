@@ -15,9 +15,9 @@ Target version: 0.9.x.
 | Invariant | Requirement |
 |-----------|-------------|
 | Language | C99, portable (Linux + macOS). libc + libm only. |
-| Network | **Zero network calls**, ever (CI privacy-tripwire enforced). |
+| Network | **Zero network calls**, ever. Enforced by `make test` via `tests/privacy_check.sh`, which runs all 13 verdict-producing subcommands under `strace -e trace=network` and fails on any `socket`/`connect`/`bind`/`getaddrinfo`/`sendto`/`recvfrom`/`sendmsg`. Skips (never fails) where `strace` or `ptrace` is unavailable. |
 | Allocation | Allocation-light; bounded stack/static buffers; no unbounded input. |
-| Determinism | Same input → same verdict. No time/random dependence in scoring. |
+| Determinism | **Pure-analysis functions** (URL, text, secret, file, package, paste, clipboard, email) are total functions of their argument: same input → same verdict, forever, with no time, random, locale or environment dependence. Verified: those modules contain zero calls to `time()`/`rand()`/`clock()`. **Host-state functions** (`protect`, `audit`, `network`, `esp`, `scan`) observe a system that changes, so determinism means same *observed state* → same verdict. One deliberate temporal dependence exists and is documented at its site: the SMB canary check (`hlse_protect.c`, S4) scores a canary file accessed within the last 300 s, which cannot be expressed without a clock. |
 | Memory safety | Clean under ASan + UBSan; strict `-Wall -Wextra -Wpedantic -Wshadow -Wconversion`; cppcheck error-gate clean. |
 | File I/O | Read-only. **Untrusted paths** (directory-scan entries, ransomware-scan files): `O_NOFOLLOW` + `O_NONBLOCK` + `fstat`/`S_ISREG` — never follow attacker-controlled symlinks, never block on a planted FIFO, only read regular files. **Fixed trusted system paths** (`/etc/hosts`, `/etc/resolv.conf`, `/proc/net/arp`, `sshd_config`): `O_NONBLOCK` + `S_ISREG` via `hlse_open_system_file()`; symlinks ARE followed because these are root-owned and legitimately symlinked (e.g. `/etc/resolv.conf` on systemd). |
 | Thread-safety | Pure analysis functions (URL/text/secret/file/package) read only static const tables and are reentrant. Filesystem/host functions (protect/audit/network) are process-level. |

@@ -52,16 +52,22 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
      the precondition independently (`dd` the device, `setpriv test -r` the
      file as the unprivileged user) — three checks in this suite passed
      vacuously before that was fixed.
+   - **`tests/cli_integration.sh` runs under `set -eu`.** An unguarded
+     `"$(./hlse_core ...)"` on input that scores a threat exits 1 and silently
+     drops every check after it. Always append `|| true` to a capture. The
+     `MIN_CHECKS` floor at the end of the file exists to catch this; do not
+     lower it to make a run pass.
 3. **Verify every commit, in this order — all must pass:**
    ```
    make && make check-warnings      # 0 warnings, CLI AND -DHLSE_CORE_AS_LIB library builds
    ./hlse_core --benchmark          # F1 = 1.000, FP = 0.0% MUST hold
    ./tests/<affected>_tests         # the suites you touched
    make asan-test                   # ASan/UBSan clean
+   make privacy-check               # zero network syscalls (the core promise)
    make fuzz                        # if you touched a parser/detector
    ```
    If anything regresses, **do not push.**
-4. **`make test` baseline is `844 passed / 0 failed`.** The 14 formerly
+4. **`make test` baseline is `851 passed / 0 failed`.** The 14 formerly
    permanent failures (JSON-schema-validation checks + a `release.yml`
    existence check) are fixed; the suite is fully green, so **any** failure is
    a regression you caused. Always read the number.

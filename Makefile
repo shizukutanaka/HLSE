@@ -111,7 +111,7 @@ install-workflows:   ## copy the shipped CI workflows into .github/workflows/
 
 # ─── primary targets ─────────────────────────────────────────────────────
 
-.PHONY: all cli lib static server server-check test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test install-workflows
+.PHONY: all cli lib static server server-check test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test install-workflows privacy-check
 
 all: $(BINARY) $(SHARED) $(SERVER_BIN)
 
@@ -488,6 +488,9 @@ test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAU
 	@echo "── CLI integration ─────────────────────"
 	@bash tests/cli_integration.sh
 	@echo ""
+	@echo "── Privacy tripwire (zero network) ─────"
+	@bash tests/privacy_check.sh ./$(BINARY)
+	@echo ""
 	@echo "═══════════════════════════════════════"
 	@echo " All test suites passed"
 	@echo "═══════════════════════════════════════"
@@ -499,6 +502,13 @@ $(SERVER_TEST): tests/hlse_server_tests.c hlse_server.c $(CORE_SRC) hlse_core.h 
 
 bench: $(BINARY)
 	./$(BINARY) --benchmark
+
+# The zero-network invariant is the most consequential promise this tool
+# makes and was the only one not enforced by the build: it was documented as
+# "CI privacy-tripwire enforced" while no workflow was tracked in the repo.
+# Runs every subcommand under strace and fails on any socket syscall.
+privacy-check: $(BINARY)   ## prove zero network calls (needs strace)
+	@bash tests/privacy_check.sh ./$(BINARY)
 
 # ─── static binary (portable, no glibc needed) ──────────────────────────
 

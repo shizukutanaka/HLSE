@@ -5,6 +5,48 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [Unreleased]
 
 ### Security
+- **The most important invariant was the only one not enforced by the build.**
+  `docs/SPECIFICATION.md` §1 stated *"Zero network calls, ever (CI
+  privacy-tripwire enforced)"*. The tripwire existed only in
+  `examples/workflows/ci.yml`; **no workflow was tracked under `.github/` at
+  all**, so nothing enforced it. For a tool that reads source trees,
+  credentials and host configuration, "none of it leaves the machine" is the
+  promise that matters most, and it rested on a file a maintainer had to copy
+  in by hand.
+  - New `tests/privacy_check.sh`, run by `make test` and available as
+    `make privacy-check`. It traces **all 13** verdict-producing subcommands
+    under `strace -e trace=network` and fails on any `socket`/`connect`/`bind`/
+    `getaddrinfo`/`sendto`/`recvfrom`/`sendmsg`. The CI example covered four
+    and deliberately exempted `network`; that exemption was unnecessary, since
+    reading `/proc/net/arp` is a file read, so `network` is now covered too.
+  - The invariant does hold: 13 subcommands traced, 0 network syscalls. The
+    check was itself verified against a deliberately-violating binary, so it
+    is known to fail when it should.
+  - Skips (never fails) where `strace` is missing or `ptrace` is blocked.
+
+### Changed
+- **The determinism invariant was false as written, so the requirement was
+  fixed rather than the code.** §1 claimed *"Same input → same verdict. No
+  time/random dependence in scoring"* unconditionally, while the SMB canary
+  check scores +40 on `difftime(time(NULL), st.st_atime) < 300` — identical
+  filesystem state scores 40 now and 0 six minutes later. That dependence is
+  correct and irreducible: the signal *is* the recency. The invariant now
+  distinguishes pure-analysis functions (URL, text, secret, file, package,
+  paste, clipboard, email), which are total functions of their argument, from
+  host-state functions, which observe a system that changes. The one temporal
+  dependence is documented at its site instead of left for a reader to find.
+  - The strong half is now tested, not asserted: p132 checks that url, text,
+    package, file and paste verdicts are byte-identical across repeated runs
+    and across changed `LC_ALL`/`TZ`, and that the pure modules contain no
+    `time`/`rand`/`clock` call at all. Verified: they contain none.
+- **The integration suite could be silently truncated.** It runs under
+  `set -eu`, so a single unguarded `"$(./hlse_core ...)"` on an input that
+  scores a threat exits 1 and drops every check after it. This happened while
+  writing p132 and cost most of the suite without any visible failure. A
+  `MIN_CHECKS` floor now fails the run if fewer checks execute than expected,
+  which also catches quiet shrinkage from environment-dependent blocks
+  (`setpriv`, `unshare`, `strace`, `cc`) skipping themselves. Proved to fire
+  by temporarily raising it.
 - **`audit` asserted a PASS about a file it could not read, awarding
   `100/100 (hardened)` to a host granting passwordless root.** Reproduced on
   one machine, one instant, changing only the caller:
