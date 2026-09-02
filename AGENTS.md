@@ -61,7 +61,7 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
    make fuzz                        # if you touched a parser/detector
    ```
    If anything regresses, **do not push.**
-4. **`make test` baseline is `840 passed / 0 failed`.** The 14 formerly
+4. **`make test` baseline is `844 passed / 0 failed`.** The 14 formerly
    permanent failures (JSON-schema-validation checks + a `release.yml`
    existence check) are fixed; the suite is fully green, so **any** failure is
    a regression you caused. Always read the number.

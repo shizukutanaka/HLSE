@@ -6904,6 +6904,47 @@ else
     echo "  NOTE: setpriv unavailable or not root — p130 locked-dir case SKIPPED."
 fi
 
+# ─── p131: scan skipped unreadable directories silently ─────────────────────
+#
+# The walker did `d = opendir(cur_path); if (!d) continue;`, so a tree it had
+# no permission to read produced "0 files scanned, 0 threats" and exit 0. As
+# the CI/CD entry point that means a gate over an unreadable checkout goes
+# green having inspected nothing.
+
+if command -v setpriv >/dev/null 2>&1 && [ "$(id -u)" = "0" ]; then
+    P131="$(mktemp -d)"
+    mkdir -p "$P131/locked" "$P131/open"
+    echo "nothing to see" > "$P131/open/a.txt"
+    chmod 000 "$P131/locked"
+    chmod 755 "$P131" "$P131/open"
+
+    P131_OUT="$(setpriv --reuid=65534 --regid=65534 --clear-groups \
+                ./hlse_core scan "$P131" 2>&1 || true)"
+
+    echo "$P131_OUT" | grep -q "could not be read and was skipped" && rc=0 || rc=1
+    check "p131: scan discloses a directory it could not read" "0" "$rc"
+
+    setpriv --reuid=65534 --regid=65534 --clear-groups \
+        ./hlse_core --json scan "$P131" 2>/dev/null \
+        | grep -q '"dirs_unreadable":1' && rc=0 || rc=1
+    check "p131: scan JSON reports dirs_unreadable" "0" "$rc"
+
+    chmod 755 "$P131/locked"; rm -rf "$P131"
+else
+    echo "  NOTE: setpriv unavailable or not root — p131 SKIPPED."
+fi
+
+# A fully readable tree must be unchanged: no warning, no JSON key.
+P131B="$(mktemp -d)"
+echo "plain text" > "$P131B/a.txt"
+./hlse_core scan "$P131B" 2>&1 | grep -q "could not be read" && rc=1 || rc=0
+check "p131: readable tree carries no unreadable-directory warning" "0" "$rc"
+
+./hlse_core --json scan "$P131B" 2>/dev/null | grep -q "dirs_unreadable" \
+    && rc=1 || rc=0
+check "p131: scan JSON omits dirs_unreadable when the tree is readable" "0" "$rc"
+rm -rf "$P131B"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
