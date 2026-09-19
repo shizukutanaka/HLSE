@@ -3268,111 +3268,9 @@ main(int argc, char **argv) {
     if (strcmp(argv[idx], "audit") == 0)
         return hlse_cmd_audit(&o);
 
-    if (strcmp(argv[idx], "text") == 0) {
-        if (argc < idx + 2) {
-            fprintf(stderr, "Usage: %s text \"<message>\"\n", argv[0]);
-            return 2;
-        }
-        {
-            /* Use unified scan — it runs text detection AND extracts
-             * embedded URLs. This catches "Click here: https://g00gle.com" */
-            ScanResult sr = hlse_scan(argv[idx + 1]);
-            if (o.json_out) {
-                /* Build TextVerdict from the unified ScanResult so the JSON
-                 * path honours embedded URL extraction (same as human path). */
-                TextVerdict tv;
-                int ti;
-                memset(&tv, 0, sizeof(tv));
-                tv.score = sr.score;
-                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
-                               ? sr.n_reasons : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
-                for (ti = 0; ti < tv.n_reasons; ti++)
-                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
-                             "%s", sr.reasons[ti]);
-                hlse_print_json_text(argv[idx + 1], &tv);
-            } else if (sr.score == 0) {
-                /* Channel-only risk: content scored 0 but delivery channel adds prior */
-                if (hlse_from_channel()) {
-                    int d = hlse_channel_delta(hlse_from_channel());
-                    if (d > 0) {
-                        const char *ch_rsn = hlse_channel_reason(hlse_from_channel());
-                        const char *bs2 = hlse_blindspot_for("text");
-                        char db[8192];
-                        printf("%-7s [%d]  (text) %.60s%s\n",
-                               hlse_action_for_score(d), d,
-                               hlse_display_copy(db, sizeof(db), argv[idx + 1]),
-                               strlen(argv[idx + 1]) > 60 ? "..." : "");
-                        if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
-                        if (bs2) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs2);
-                        return d >= o.fail_threshold ? 1 : 0;
-                    }
-                }
-                {
-                    char canon_brand[64];
-                    int has_c = sr.is_url &&
-                                hlse_canonical_confirm(argv[idx + 1],
-                                                       canon_brand, sizeof(canon_brand));
-                    const char *bs = hlse_blindspot_for(
-                        has_c ? "url_canonical" : (sr.is_url ? "url" : "text"));
-                    printf("OK    (text)\n");
-                    if (has_c)
-                        printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
-                               "(HLSE brand registry)\n", canon_brand);
-                    if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-                }
-            } else {
-                int i;
-                int eff = sr.score;
-                const char *ch_rsn = NULL;
-                const char *ex;
-                if (hlse_from_channel()) {
-                    int d = hlse_channel_delta(hlse_from_channel());
-                    eff += d; if (eff > 100) eff = 100;
-                    ch_rsn = hlse_channel_reason(hlse_from_channel());
-                }
-                {
-                    char db[8192];
-                    printf("%-7s [%d]  (text) %.60s%s\n",
-                           hlse_action_for_score(eff),
-                           eff,
-                           hlse_display_copy(db, sizeof(db), argv[idx + 1]),
-                           strlen(argv[idx + 1]) > 60 ? "..." : "");
-                }
-                for (i = 0; i < sr.n_reasons; i++) {
-                    if (strncmp(sr.reasons[i], "Amplifier:", 10) == 0) continue;
-                    printf("  \xc2\xb7 %s\n", sr.reasons[i]);
-                }
-                if (sr.is_url) {
-                    Verdict uv = check_url(argv[idx + 1]);
-                    hlse_print_url_advisories(argv[idx + 1], &uv);
-                    ex = hlse_url_exoneration(&uv);
-                } else {
-                    TextVerdict tv;
-                    int ti;
-                    memset(&tv, 0, sizeof(tv));
-                    tv.score = sr.score;
-                    tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
-                                   ? sr.n_reasons
-                                   : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
-                    for (ti = 0; ti < tv.n_reasons; ti++)
-                        snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
-                                 "%s", sr.reasons[ti]);
-                    hlse_print_text_advisories(&tv);
-                    ex = hlse_text_exoneration(&tv);
-                }
-                if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
-                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-            }
-            {
-                int eff_gate = sr.score;
-                if (hlse_from_channel()) {
-                    int d = hlse_channel_delta(hlse_from_channel());
-                    eff_gate += d; if (eff_gate > 100) eff_gate = 100;
-                }
-                return eff_gate >= o.fail_threshold ? 1 : 0;
-            }
-        }
-    }
+    if (strcmp(argv[idx], "text") == 0)
+        return hlse_cmd_text(&o, argc, argv, idx);
+
     /* Default: use unified scan (auto-detects URL vs text) */
     {
         const char *input = argv[idx];
@@ -3400,7 +3298,7 @@ main(int argc, char **argv) {
              * inputs use the ScanResult directly (not hlse_check_text
              * alone) so embedded URL extraction is honoured. */
             if (sr.is_url) {
-                Verdict uv = check_url(input);
+                Verdict uv = hlse_check_url(input);
                 hlse_print_json_url(input, &uv);
             } else {
                 TextVerdict tv;
@@ -3468,7 +3366,7 @@ main(int argc, char **argv) {
             if (sr.is_url) {
                 /* Re-run URL check to get a Verdict for pattern synthesis.
                  * hlse_scan already ran this internally; the cost is low.  */
-                Verdict uv = check_url(input);
+                Verdict uv = hlse_check_url(input);
                 const char *ex = hlse_url_exoneration(&uv);
                 hlse_print_url_advisories(input, &uv);
                 if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);

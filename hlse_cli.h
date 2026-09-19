@@ -28,3 +28,4 @@ int hlse_cmd_audit(const HlseCli *o);
 int hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx);
 int hlse_cmd_secret(const HlseCli *o, int argc, char **argv, int idx);
 int hlse_cmd_email(const HlseCli *o, int argc, char **argv, int idx);
+int hlse_cmd_text(const HlseCli *o, int argc, char **argv, int idx);
