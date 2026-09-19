@@ -283,6 +283,7 @@ hlse_check_package(const char *pkg_name, const char *ecosystem) {
                 snprintf(v.reason, sizeof(v.reason),
                          "Known package: '%s' is a recognised %s package.",
                          pkgs[pi], REGISTRIES[ri].name);
+                hlse_sanitize_display(v.reason);
                 return v;
             }
 
@@ -319,6 +320,8 @@ hlse_check_package(const char *pkg_name, const char *ecosystem) {
     }
 
     if (v.score > 100) v.score = 100;
+    /* Reason text embeds the caller-supplied package name. */
+    hlse_sanitize_display(v.reason);
     return v;
 }
 
@@ -664,6 +667,12 @@ hlse_check_paste(const char *text) {
     }
 
     if (v.score > 100) v.score = 100;
+    /* Reasons may quote pasted text; sanitise display-hostile bytes. */
+    {
+        int i;
+        for (i = 0; i < v.n_reasons; i++)
+            hlse_sanitize_display(v.reasons[i]);
+    }
     return v;
 }
 
@@ -928,5 +937,11 @@ hlse_check_network(void) {
     }
 
     if (v.score > 100) v.score = 100;
+    /* Reasons embed hostnames read from attacker-writable system state. */
+    {
+        int i;
+        for (i = 0; i < v.n_reasons; i++)
+            hlse_sanitize_display(v.reasons[i]);
+    }
     return v;
 }

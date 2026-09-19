@@ -6570,6 +6570,42 @@ grep -q "^\.DEFAULT_GOAL := all" Makefile \
     && check "p124: Makefile pins .DEFAULT_GOAL (bare make builds)" "0" "0" \
     || check "p124: Makefile pins .DEFAULT_GOAL (bare make builds)" "0" "1"
 
+# ── p125: terminal-escape injection is neutralised in human output ──────
+# Filenames under scan, stdin lines, and operand echoes carry attacker bytes
+# to the terminal. A raw ESC/BEL or UTF-8 C1 control there can clear the
+# screen, rewrite prior lines, or hide a verdict. The JSON path was already
+# escaped; hlse_sanitize_display() now does the same for display text at the
+# verdict-add helpers and operand print sites.
+P125_OUT=$(printf 'hi \x1b[2J\x1b]8;;x\x07 http://g00gle.com urgent\n' \
+           | ./hlse_core --stdin 2>/dev/null || true)
+printf '%s' "$P125_OUT" | grep -q "$(printf '\033')" \
+    && check "p125: stdin echo strips terminal control bytes" "1" "0" \
+    || check "p125: stdin echo strips terminal control bytes" "0" "0"
+printf '%s' "$P125_OUT" | grep -q '?]8;;x? http://g00gle.com' \
+    && check "p125: injected bytes become '?' not removed context" "0" "0" \
+    || check "p125: injected bytes become '?' not removed context" "0" "1"
+
+# Filename under scan carries ESC — the ESP reason line embeds d_name.
+P125_DIR=/tmp/hlse_p125_esp
+rm -rf "$P125_DIR"; mkdir -p "$P125_DIR/EFI/BOOT"
+python3 -c "open('$P125_DIR/EFI/BOOT/evil\x1b[2J\x1b]8;;b\x07ad.efi','wb').write(b'MZ blacklotus')" \
+    2>/dev/null
+P125_ESP=$(./hlse_core esp "$P125_DIR" 2>/dev/null || true)
+printf '%s' "$P125_ESP" | grep -q "$(printf '\033')" \
+    && check "p125: ESP filename in reason strips ESC/OSC bytes" "1" "0" \
+    || check "p125: ESP filename in reason strips ESC/OSC bytes" "0" "0"
+printf '%s' "$P125_ESP" | grep -q 'blacklotus' \
+    && check "p125: ESP detection still fires (sanitizing is display-only)" "0" "0" \
+    || check "p125: ESP detection still fires (sanitizing is display-only)" "0" "1"
+rm -rf "$P125_DIR"
+
+# Benign counterpart: legitimate UTF-8 output must survive intact — the
+# sanitizer targets control/format codepoints only, never real text.
+printf 'caf\xc3\xa9 \xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e\n' | ./hlse_core --stdin 2>/dev/null \
+    | grep -q 'caf.*' \
+    && check "p125: benign UTF-8 input echoes untouched" "0" "0" \
+    || check "p125: benign UTF-8 input echoes untouched" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

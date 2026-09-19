@@ -225,6 +225,54 @@ hlse_json_escape(const char *s, char *out, size_t out_size) {
     out[k] = '\0';
 }
 
+/* See hlse_util.h. In-place; every replacement shrinks or preserves length.
+ * Look-ahead never reads past the terminator: r[1]/r[2] are only inspected
+ * after an earlier byte in the sequence matched, so the first unreadable
+ * byte is at worst the string's own NUL. */
+void
+hlse_sanitize_display(char *s) {
+    char *r, *w;
+    if (!s) return;
+    r = w = s;
+    while (*r) {
+        unsigned char c = (unsigned char)r[0];
+        /* C0 controls (incl. ESC — terminal escape sequences) and DEL */
+        if (c < 0x20 || c == 0x7F) { *w++ = '?'; r++; continue; }
+        /* U+0080..U+009F — the C1 control block (CSI, OSC, DCS …) */
+        if (c == 0xC2 && r[1] != '\0'
+                && (unsigned char)r[1] >= 0x80 && (unsigned char)r[1] <= 0x9F) {
+            *w++ = '?'; r += 2; continue;
+        }
+        if (c == 0xE2 && r[1] == (char)0x80 && r[2] != '\0') {
+            unsigned char c2 = (unsigned char)r[2];
+            /* U+200B..U+200F zero-widths & LRM/RLM; U+2028..U+202E
+             * line/paragraph separators & bidi embeds/overrides */
+            if ((c2 >= 0x8B && c2 <= 0x8F) || (c2 >= 0xA8 && c2 <= 0xAE)) {
+                *w++ = '?'; r += 3; continue;
+            }
+        }
+        /* U+2060..U+2069 — word joiner + bidi isolates */
+        if (c == 0xE2 && r[1] == (char)0x81 && r[2] != '\0'
+                && (unsigned char)r[2] >= 0xA0 && (unsigned char)r[2] <= 0xA9) {
+            *w++ = '?'; r += 3; continue;
+        }
+        /* U+FEFF — BOM / zero-width no-break space */
+        if (c == 0xEF && r[1] == (char)0xBB && r[2] == (char)0xBF) {
+            *w++ = '?'; r += 3; continue;
+        }
+        *w++ = (char)c; r++;
+    }
+    *w = '\0';
+}
+
+char *
+hlse_display_copy(char *dst, size_t cap, const char *src) {
+    if (!dst || cap == 0) return dst;
+    snprintf(dst, cap, "%s", src ? src : "");
+    hlse_sanitize_display(dst);
+    return dst;
+}
+
 /* Standard CRC-32 (IEEE 802.3 / zlib, reflected polynomial 0xEDB88320).
  * Table-free: the bitwise form is ~8x slower but costs no static table and
  * runs on inputs of 30 bytes here, where the difference is unmeasurable. */

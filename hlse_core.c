@@ -617,6 +617,10 @@ add_reason(Verdict *v, int delta, const char *fmt, ...) {
     va_start(ap, fmt);
     vsnprintf(v->reasons[v->n_reasons], sizeof(v->reasons[0]), fmt, ap);
     va_end(ap);
+    /* Reasons embed attacker-controlled bytes (URL/query fragments, brand
+     * lookalikes); strip terminal-hostile characters once here so every
+     * downstream print is safe. JSON sinks escape via hlse_json_escape. */
+    hlse_sanitize_display(v->reasons[v->n_reasons]);
     v->n_reasons++;
 }
 
@@ -6555,14 +6559,17 @@ stdin_mode(int json_out) {
                 int d = channel_delta(g_from_channel);
                 if (d > 0) {
                     const char *ch_rsn = channel_reason(g_from_channel);
-                    printf("%-7s [%d]  %s\n", hlse_action_for_score(d), d, line);
+                    char db[8192];
+                    printf("%-7s [%d]  %s\n", hlse_action_for_score(d), d,
+                           hlse_display_copy(db, sizeof(db), line));
                     if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                     continue;
                 }
             }
             {
                 char canon_brand[64];
-                printf("OK    %s\n", line);
+                char db[8192];
+                printf("OK    %s\n", hlse_display_copy(db, sizeof(db), line));
                 if (sr.is_url && hlse_canonical_confirm(line, canon_brand, sizeof(canon_brand)))
                     printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
                            "(HLSE brand registry)\n", canon_brand);
@@ -6576,8 +6583,12 @@ stdin_mode(int json_out) {
                 eff += d; if (eff > 100) eff = 100;
                 ch_rsn = channel_reason(g_from_channel);
             }
-            printf("%-7s [%d]  %s\n",
-                   hlse_action_for_score(eff), eff, line);
+            {
+                char db[8192];
+                printf("%-7s [%d]  %s\n",
+                       hlse_action_for_score(eff), eff,
+                       hlse_display_copy(db, sizeof(db), line));
+            }
             for (i = 0; i < sr.n_reasons; i++) {
                 /* Amplifier lines are derived meta-labels, not independently
                  * detected facts; the ▸ Pattern line already expresses them
@@ -6884,9 +6895,12 @@ scan_git_history(const char *root, int json_out, int sarif_out) {
                     printf("],\"pattern_id\":\"%s\"}\n", spid);
                 } else {
                     int i;
+                    char db[8192];
                     printf("%-7s [%d]  %s@%.7s\n",
                            hlse_action_for_score(sv.score), sv.score,
-                           curpath[0] ? curpath : "(unknown path)", commit);
+                           hlse_display_copy(db, sizeof(db),
+                                   curpath[0] ? curpath : "(unknown path)"),
+                           commit);
                     for (i = 0; i < sv.n_findings; i++)
                         printf("  \xc2\xb7 %s\n", sv.findings[i].description);
                 }
@@ -6933,11 +6947,14 @@ scan_git_history(const char *root, int json_out, int sarif_out) {
                ep, commits_seen, threats, hlse_severity_for_score(max_score),
                gate_hits, g_fail_threshold, nclasses, classes);
     } else if (threats == 0) {
+        char db[8192];
         printf("OK    %s (%d commits scanned, 0 secrets found in history)\n",
-               root, commits_seen);
+               hlse_display_copy(db, sizeof(db), root), commits_seen);
     } else {
+        char db[8192];
         printf("\n%d secret(s) found across %d commits in %s history\n",
-               threats, commits_seen, root);
+               threats, commits_seen,
+               hlse_display_copy(db, sizeof(db), root));
         printf("\xe2\x86\x92 Immediate action: rotate every credential found above "
                "\xe2\x80\x94 they are readable in every existing clone regardless "
                "of the current working tree, and deleting the file does not "
@@ -7447,9 +7464,11 @@ main(int argc, char **argv) {
                             printf("}\n");
                         } else {
                             int i;
+                            char db[8192];
                             printf("%-7s [%d]  %s\n",
                                    hlse_action_for_score(fv.score),
-                                   fv.score, fullpath);
+                                   fv.score,
+                                   hlse_display_copy(db, sizeof(db), fullpath));
                             for (i = 0; i < fv.n_reasons; i++)
                                 printf("  \xc2\xb7 %s\n", fv.reasons[i]);
                             if (fv.score >= 40) {
@@ -7630,9 +7649,13 @@ main(int argc, char **argv) {
                                         printf("}\n");
                                     } else {
                                         int i;
+                                        char db[8192];
                                         printf("%-7s [%d]  %s:%d\n",
                                                hlse_action_for_score(sv.score),
-                                               sv.score, fullpath, lineno);
+                                               sv.score,
+                                               hlse_display_copy(db, sizeof(db),
+                                                                 fullpath),
+                                               lineno);
                                         for (i = 0; i < sv.n_findings; i++)
                                             printf("  \xc2\xb7 %s\n",
                                                    sv.findings[i].description);
@@ -7770,9 +7793,15 @@ main(int argc, char **argv) {
                                                     printf("}\n");
                                                 } else {
                                                     int k;
+                                                    char db[8192], db2[2048];
                                                     printf("%-7s [%d]  %s:%d  %s\n",
                                                            hlse_action_for_score(uv.score),
-                                                           uv.score, fullpath, lineno, url_buf);
+                                                           uv.score,
+                                                           hlse_display_copy(db, sizeof(db),
+                                                                             fullpath),
+                                                           lineno,
+                                                           hlse_display_copy(db2, sizeof(db2),
+                                                                             url_buf));
                                                     for (k = 0; k < uv.n_reasons; k++)
                                                         printf("  \xc2\xb7 %s\n", uv.reasons[k]);
                                                     print_url_advisories(url_buf, &uv);
@@ -7807,8 +7836,10 @@ main(int argc, char **argv) {
             } else if (!json_out) {
                 if (threats == 0) {
                     const char *bs = hlse_blindspot_for("scan");
+                    char db[8192];
                     printf("OK    %s (%d files scanned, 0 threats)\n",
-                           root, files_scanned);
+                           hlse_display_copy(db, sizeof(db), root),
+                           files_scanned);
                     if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
                 } else {
                     char classes[256];
@@ -7984,12 +8015,16 @@ main(int argc, char **argv) {
                 printf("}\n");
             } else if (pv.score == 0) {
                 const char *bs = hlse_blindspot_for("protect");
-                printf("OK    %s\n", path);
+                char db[8192];
+                printf("OK    %s\n",
+                       hlse_display_copy(db, sizeof(db), path));
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
+                char db[8192];
                 printf("%-7s [%d]  %s\n",
-                       hlse_action_for_score(pv.score), pv.score, path);
+                       hlse_action_for_score(pv.score), pv.score,
+                       hlse_display_copy(db, sizeof(db), path));
                 for (i = 0; i < pv.n_reasons; i++) {
                     printf("  \xc2\xb7 %s\n", pv.reasons[i]);
                 }
@@ -8169,9 +8204,13 @@ main(int argc, char **argv) {
                                        pv.matches[i].distance);
                             printf("]}\n");
                         } else {
-                            printf("%-7s [%d]  %s (%s)\n",
-                                   hlse_action_for_score(pv.score), pv.score,
-                                   name, eco);
+                            {
+                                char db[8192];
+                                printf("%-7s [%d]  %s (%s)\n",
+                                       hlse_action_for_score(pv.score), pv.score,
+                                       hlse_display_copy(db, sizeof(db), name),
+                                       eco);
+                            }
                             if (pv.reason[0])
                                 printf("  \xc2\xb7 %s\n", pv.reason);
                         }
@@ -8193,11 +8232,14 @@ main(int argc, char **argv) {
                        ep, eco, checked, threats,
                        hlse_severity_for_score(max_score), gate_hits);
             } else if (threats == 0) {
+                char db[8192];
                 printf("OK    %s (%d packages checked, 0 typosquat risks)\n",
-                       mpath, checked);
+                       hlse_display_copy(db, sizeof(db), mpath), checked);
             } else {
+                char db[8192];
                 printf("\n%d suspicious package(s) of %d checked in %s\n",
-                       threats, checked, mpath);
+                       threats, checked,
+                       hlse_display_copy(db, sizeof(db), mpath));
             }
             return gate_hits > 0 ? 1 : 0;
         }
@@ -8283,16 +8325,19 @@ main(int argc, char **argv) {
             } else if (pv.score == 0) {
                 const char *bs = hlse_blindspot_for(
                     pv.reason[0] ? "package" : "package_unverified");
-                printf("OK    %s\n", argv[idx + 1]);
+                char db[8192];
+                printf("OK    %s\n",
+                       hlse_display_copy(db, sizeof(db), argv[idx + 1]));
                 /* Mirror the URL canonical-confirmation line: say explicitly
                  * when the name IS recognised, so "OK" is not ambiguous
                  * between "known good" and "never heard of it". */
                 if (pv.reason[0]) printf("  \xe2\x9c\x94 %s\n", pv.reason);
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
+                char db[8192];
                 printf("%-7s [%d]  %s\n",
                        hlse_action_for_score(pv.score), pv.score,
-                       argv[idx + 1]);
+                       hlse_display_copy(db, sizeof(db), argv[idx + 1]));
                 if (pv.reason[0])
                     printf("  \xc2\xb7 %s\n", pv.reason);
                 if (pv.score >= 40) {
@@ -9038,13 +9083,16 @@ main(int argc, char **argv) {
                 printf("}\n");
             } else if (fv.score == 0) {
                 const char *bs = hlse_blindspot_for("file");
-                printf("OK    %s\n", argv[idx + 1]);
+                char db[8192];
+                printf("OK    %s\n",
+                       hlse_display_copy(db, sizeof(db), argv[idx + 1]));
                 if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
             } else {
                 int i;
+                char db[8192];
                 printf("%-7s [%d]  %s\n",
                        hlse_action_for_score(fv.score), fv.score,
-                       argv[idx + 1]);
+                       hlse_display_copy(db, sizeof(db), argv[idx + 1]));
                 for (i = 0; i < fv.n_reasons; i++)
                     printf("  \xc2\xb7 %s\n", fv.reasons[i]);
                 if (fv.score >= 40) {
@@ -9210,8 +9258,10 @@ main(int argc, char **argv) {
                     if (d > 0) {
                         const char *ch_rsn = channel_reason(g_from_channel);
                         const char *bs2 = hlse_blindspot_for("text");
+                        char db[8192];
                         printf("%-7s [%d]  (text) %.60s%s\n",
-                               hlse_action_for_score(d), d, argv[idx + 1],
+                               hlse_action_for_score(d), d,
+                               hlse_display_copy(db, sizeof(db), argv[idx + 1]),
                                strlen(argv[idx + 1]) > 60 ? "..." : "");
                         if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                         if (bs2) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs2);
@@ -9241,10 +9291,14 @@ main(int argc, char **argv) {
                     eff += d; if (eff > 100) eff = 100;
                     ch_rsn = channel_reason(g_from_channel);
                 }
-                printf("%-7s [%d]  (text) %.60s%s\n",
-                       hlse_action_for_score(eff),
-                       eff, argv[idx + 1],
-                       strlen(argv[idx + 1]) > 60 ? "..." : "");
+                {
+                    char db[8192];
+                    printf("%-7s [%d]  (text) %.60s%s\n",
+                           hlse_action_for_score(eff),
+                           eff,
+                           hlse_display_copy(db, sizeof(db), argv[idx + 1]),
+                           strlen(argv[idx + 1]) > 60 ? "..." : "");
+                }
                 for (i = 0; i < sr.n_reasons; i++) {
                     if (strncmp(sr.reasons[i], "Amplifier:", 10) == 0) continue;
                     printf("  \xc2\xb7 %s\n", sr.reasons[i]);
@@ -9328,7 +9382,9 @@ main(int argc, char **argv) {
                 if (d > 0) {
                     const char *ch_rsn = channel_reason(g_from_channel);
                     const char *bs2 = hlse_blindspot_for(sr.is_url ? "url" : "text");
-                    printf("%-7s [%d]  %s\n", hlse_action_for_score(d), d, input);
+                    char db[8192];
+                    printf("%-7s [%d]  %s\n", hlse_action_for_score(d), d,
+                           hlse_display_copy(db, sizeof(db), input));
                     if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                     if (bs2) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs2);
                     {
@@ -9343,7 +9399,9 @@ main(int argc, char **argv) {
                             hlse_canonical_confirm(input, canon_brand, sizeof(canon_brand));
                 const char *bs = hlse_blindspot_for(
                     has_c ? "url_canonical" : (sr.is_url ? "url" : "text"));
-                printf("OK    %s\n", input);
+                char db[8192];
+                printf("OK    %s\n",
+                       hlse_display_copy(db, sizeof(db), input));
                 if (has_c)
                     printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
                            "(HLSE brand registry)\n", canon_brand);
@@ -9358,8 +9416,12 @@ main(int argc, char **argv) {
                 eff += d; if (eff > 100) eff = 100;
                 ch_rsn = channel_reason(g_from_channel);
             }
-            printf("%-7s [%d]  %s\n",
-                   hlse_action_for_score(eff), eff, input);
+            {
+                char db[8192];
+                printf("%-7s [%d]  %s\n",
+                       hlse_action_for_score(eff), eff,
+                       hlse_display_copy(db, sizeof(db), input));
+            }
             for (i = 0; i < sr.n_reasons; i++) {
                 if (strncmp(sr.reasons[i], "Amplifier:", 10) == 0) continue;
                 printf("  \xc2\xb7 %s\n", sr.reasons[i]);

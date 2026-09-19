@@ -159,9 +159,9 @@ $(SERVER_BIN): hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h hlse_file.h
 	$(CC) $(CFLAGS) $(PIE_CFLAGS) -pthread -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -o $@ hlse_server.c $(CORE_SRC) $(PIE_LDFLAGS) -I. -lm -lpthread
 	@printf '  %-20s %s\n' "CC" "$@"
 
-$(PROP_BIN): $(TEST_SRC) hlse_text.c hlse_text.h
+$(PROP_BIN): $(TEST_SRC) hlse_text.c hlse_text.h hlse_util.c hlse_util.h
 	@mkdir -p tests
-	$(CC) $(CFLAGS) -o $@ $(TEST_SRC) hlse_text.c -I.
+	$(CC) $(CFLAGS) -o $@ $(TEST_SRC) hlse_text.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(PROT_BIN): tests/hlse_protect_tests.c hlse_protect.c hlse_protect.h
@@ -189,16 +189,16 @@ $(UTIL_BIN): tests/hlse_util_tests.c hlse_util.c hlse_util.h
 	$(CC) $(CFLAGS) -o $@ tests/hlse_util_tests.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
-$(FUZZ_BIN): tests/hlse_fuzz.c hlse_text.c hlse_text.h
+$(FUZZ_BIN): tests/hlse_fuzz.c hlse_text.c hlse_text.h hlse_util.c hlse_util.h
 	@mkdir -p tests
-	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -o $@ tests/hlse_fuzz.c hlse_text.c -I.
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -o $@ tests/hlse_fuzz.c hlse_text.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
-$(FUZZ_ASAN): tests/hlse_fuzz.c hlse_text.c hlse_text.h
+$(FUZZ_ASAN): tests/hlse_fuzz.c hlse_text.c hlse_text.h hlse_util.c hlse_util.h
 	@mkdir -p tests
 	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) \
 		-fsanitize=address,undefined \
-		-o $@ tests/hlse_fuzz.c hlse_text.c -I.
+		-o $@ tests/hlse_fuzz.c hlse_text.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
 $(FUZZ_SECRETS): tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_secrets.h hlse_util.c
@@ -227,17 +227,17 @@ $(FUZZ_SUPPLY_ASAN): tests/hlse_supply_fuzz.c hlse_supply.c hlse_supply.h hlse_u
 		-o $@ tests/hlse_supply_fuzz.c hlse_supply.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
-$(FUZZ_FILE): tests/hlse_file_fuzz.c hlse_file.c hlse_file.h
+$(FUZZ_FILE): tests/hlse_file_fuzz.c hlse_file.c hlse_file.h hlse_util.c hlse_util.h
 	@mkdir -p tests
 	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -D_GNU_SOURCE \
-		-o $@ tests/hlse_file_fuzz.c hlse_file.c -I.
+		-o $@ tests/hlse_file_fuzz.c hlse_file.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
-$(FUZZ_FILE_ASAN): tests/hlse_file_fuzz.c hlse_file.c hlse_file.h
+$(FUZZ_FILE_ASAN): tests/hlse_file_fuzz.c hlse_file.c hlse_file.h hlse_util.c hlse_util.h
 	@mkdir -p tests
 	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -D_GNU_SOURCE \
 		-fsanitize=address,undefined \
-		-o $@ tests/hlse_file_fuzz.c hlse_file.c -I.
+		-o $@ tests/hlse_file_fuzz.c hlse_file.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
 $(FUZZ_URL): tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c hlse_core.h
@@ -273,7 +273,7 @@ $(FUZZ_SERVER_ASAN): tests/hlse_server_fuzz.c hlse_server.c $(CORE_SRC) hlse_cor
 # Extended (out-of-distribution) corpus
 EXT_BIN   := tests/corpus_ext
 
-$(EXT_BIN): tests/hlse_corpus_extended.c hlse_core.c hlse_text.c hlse_text.h
+$(EXT_BIN): tests/hlse_corpus_extended.c hlse_core.c hlse_text.c hlse_text.h hlse_util.c hlse_util.h
 	@mkdir -p tests
 	$(CC) $(CFLAGS) -DHLSE_CORE_AS_LIB -o $@ \
 		tests/hlse_corpus_extended.c hlse_core.c hlse_text.c hlse_util.c -I. -lm

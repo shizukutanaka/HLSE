@@ -80,6 +80,10 @@ sv_add(SecretVerdict *v, int delta, const char *type,
     vsnprintf(v->findings[v->n_findings].description,
               sizeof(v->findings[0].description), fmt, ap);
     va_end(ap);
+    /* Descriptions quote bytes from the scanned input (token context,
+     * header values); keep terminal-hostile characters out of every
+     * downstream print/syslog sink. */
+    hlse_sanitize_display(v->findings[v->n_findings].description);
     v->n_findings++;
 }
 
@@ -1542,6 +1546,13 @@ hlse_check_email_headers(const char *raw_headers) {
     }
 
     if (v.score > 100) v.score = 100;
+    /* Reasons embed attacker-controlled header values (display names,
+     * domains); sanitise display-hostile characters at the exit. */
+    {
+        int i;
+        for (i = 0; i < v.n_reasons; i++)
+            hlse_sanitize_display(v.reasons[i]);
+    }
     return v;
 }
 

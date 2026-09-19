@@ -20,6 +20,7 @@
 #include <stdarg.h>
 
 #include "hlse_text.h"
+#include "hlse_util.h"
 
 /* ─────────────── signal definitions ─────────────── */
 
@@ -1174,6 +1175,9 @@ add_text_reason(TextVerdict *v, int delta, const char *fmt, ...) {
     va_start(ap, fmt);
     vsnprintf(v->reasons[v->n_reasons], sizeof(v->reasons[0]), fmt, ap);
     va_end(ap);
+    /* Reasons quote attacker-controlled input (matched keywords, context);
+     * strip terminal-hostile characters at the choke point. */
+    hlse_sanitize_display(v->reasons[v->n_reasons]);
     v->n_reasons++;
 }
 

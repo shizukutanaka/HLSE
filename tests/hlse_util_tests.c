@@ -306,6 +306,85 @@ static void test_json_escape_bounded(void) {
     CHECK(strlen(out) < sizeof out, "overflow");
 }
 
+/* ─── display sanitization (terminal-escape injection defence) ────────── */
+
+static void test_sanitize_esc_csi(void) {
+    char s[64];
+    strcpy(s, "evil\x1b[2J\x1b[0m.efi");
+    hlse_sanitize_display(s);
+    TEST("sanitize: ESC + CSI sequences -> '?'");
+    CHECK(strcmp(s, "evil?[2J?[0m.efi") == 0, s);
+}
+
+static void test_sanitize_newline_del(void) {
+    char s[64];
+    strcpy(s, "a\nb\x7f" "c");
+    hlse_sanitize_display(s);
+    TEST("sanitize: newline and DEL -> '?' (forged log lines)");
+    CHECK(strcmp(s, "a?b?c") == 0, s);
+}
+
+static void test_sanitize_utf8_c1(void) {
+    char s[64];
+    strcpy(s, "x\xc2\x9b" "y");   /* U+009B — UTF-8 encoded CSI */
+    hlse_sanitize_display(s);
+    TEST("sanitize: UTF-8 C1 control (U+009B) -> '?'");
+    CHECK(strcmp(s, "x?y") == 0, s);
+}
+
+static void test_sanitize_bidi_override(void) {
+    char s[64];
+    strcpy(s, "safe\xe2\x80\xae" "txt");   /* U+202E RLO — Trojan Source */
+    hlse_sanitize_display(s);
+    TEST("sanitize: bidi override U+202E -> '?'");
+    CHECK(strcmp(s, "safe?txt") == 0, s);
+}
+
+static void test_sanitize_zerowidth_bom(void) {
+    char s[64];
+    strcpy(s, "a\xe2\x80\x8b" "b\xef\xbb\xbf" "c");   /* ZWSP + BOM */
+    hlse_sanitize_display(s);
+    TEST("sanitize: U+200B zero-width and U+FEFF -> '?'");
+    CHECK(strcmp(s, "a?b?c") == 0, s);
+}
+
+static void test_sanitize_benign_utf8(void) {
+    char s[64];
+    strcpy(s, "caf\xc3\xa9 \xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e \xe2\x9c\x94");
+    hlse_sanitize_display(s);
+    TEST("sanitize: benign UTF-8 (café, 日本語, ✔) untouched");
+    CHECK(strcmp(s, "caf\xc3\xa9 \xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e \xe2\x9c\x94") == 0,
+          s);
+}
+
+static void test_sanitize_truncated_seq_safe(void) {
+    char s[8];
+    strcpy(s, "ab\xc2");   /* dangling lead byte at NUL — must not overread */
+    hlse_sanitize_display(s);
+    TEST("sanitize: truncated UTF-8 tail passes through, no overrun");
+    CHECK(strcmp(s, "ab\xc2") == 0, s);
+}
+
+static void test_sanitize_null_safe(void) {
+    TEST("sanitize: NULL input is a no-op (no crash)");
+    hlse_sanitize_display(NULL);
+    PASS();
+}
+
+static void test_display_copy_basic(void) {
+    char out[32];
+    TEST("display_copy: copies + sanitizes + bounds");
+    CHECK(hlse_display_copy(out, sizeof out, "a\x1b" "b") == out
+          && strcmp(out, "a?b") == 0, out);
+}
+
+static void test_display_copy_truncate(void) {
+    char out[8];
+    TEST("display_copy: truncates to cap, NUL-terminated");
+    hlse_display_copy(out, sizeof out, "0123456789ABCDEF");
+    CHECK(strlen(out) == 7 && strcmp(out, "0123456") == 0, out);
+}
+
 static void test_crc32_known_vector(void) {
     TEST("crc32: \"123456789\" -> 0xCBF43926 (standard vector)");
     CHECK(hlse_crc32((const unsigned char *)"123456789", 9) == 0xCBF43926UL,
@@ -445,6 +524,18 @@ int main(void) {
     test_json_escape_basic();
     test_json_escape_control();
     test_json_escape_bounded();
+
+    printf("\nDisplay sanitization:\n");
+    test_sanitize_esc_csi();
+    test_sanitize_newline_del();
+    test_sanitize_utf8_c1();
+    test_sanitize_bidi_override();
+    test_sanitize_zerowidth_bom();
+    test_sanitize_benign_utf8();
+    test_sanitize_truncated_seq_safe();
+    test_sanitize_null_safe();
+    test_display_copy_basic();
+    test_display_copy_truncate();
     test_crc32_known_vector();
     test_crc32_empty();
     test_base62_6_padding();

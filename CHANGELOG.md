@@ -44,6 +44,36 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   9 unit suites green, 776/0 CLI integration checks (3 audit checks SKIPped
   as environment-dependent), 600K fuzz iterations 0 crashes, F1 = 1.000.
 
+- **Terminal-escape injection via attacker-controlled bytes in human
+  output** (`hlse_util.c/.h`, all six verdict modules, `hlse_core.c`).
+  Verdict reasons and operand echoes embed bytes the attacker chooses —
+  `.efi`/`package`/`paste` filenames under scan, file content lines, email
+  headers, stdin-scan echo of the input line itself. Printed raw to a
+  terminal, a filename like `evil\x1b[2J… .efi` clears the screen or rewrites
+  earlier verdict lines; an OSC-8 sequence plants a clickable hyperlink;
+  UTF-8 C1 controls and bidi overrides (Trojan-Source style U+202E) hide or
+  reorder text in terminals, pagers, and some log viewers.
+  - Root cause: the JSON sinks escaped untrusted text
+    (`hlse_json_escape`), but the human-readable paths printed
+    attacker-derived strings verbatim. Fixed at the source rather than at
+    each sink: new `hlse_sanitize_display()` in `hlse_util.c` replaces C0
+    controls, DEL, UTF-8-encoded C1 controls, bidi embeddings/overrides/
+    isolates, zero-width characters, U+FEFF, and the line/paragraph
+    separators with `?` — in-place, so it can be applied inside the
+    existing `pv_add_reason`/`av_add`/`sv_add`/`fv_add`/`add_reason`/
+    `add_text_reason` helpers and the supply/email verdict exits that
+    write reasons via inline `snprintf`. `hlse_display_copy()`
+    (bounded copy + sanitize) now wraps every attacker-controlled operand
+    at human print sites in `hlse_core.c`: stdin line echo, scanned
+    paths, git-history paths, extracted URLs, manifest package names, and
+    `argv` echoes for `text`/`file`/`package`/`protect`/`scan`.
+  - Legitimate UTF-8 (café, 日本語, ✔) passes through byte-identical —
+    only control and format codepoints are rewritten.
+  - Regression coverage: 10 new cases in `tests/hlse_util_tests.c`
+    (62/62) and CLI checks p125 (terminal bytes stripped from stdin echo
+    and ESP filename reasons; benign UTF-8 echoed untouched) —
+    781/781 CLI checks.
+
 ### Added
 - **JWT algorithm inspection, including the `alg:none` signature bypass**
   (`hlse_util.c`, `hlse_secrets.c`). A JWT's header is base64url — encoded, not

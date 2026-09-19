@@ -70,6 +70,27 @@ FILE *hlse_open_system_file(const char *path);
  * Shared helper so the CLI, server, and alert sink don't each carry a copy. */
 void hlse_json_escape(const char *s, char *out, size_t out_size);
 
+/* Neutralise terminal-hostile characters in `s`, in place: C0 controls,
+ * DEL, the UTF-8-encoded C1 controls (U+0080–U+009F — CSI/OSC/DCS live
+ * here), bidi embeddings/overrides/isolates, zero-width characters, and
+ * line/paragraph separators are each replaced by '?'. All other bytes —
+ * including legitimate non-ASCII UTF-8 — pass through untouched.
+ *
+ * Verdict text and scanned paths embed attacker-controlled bytes (filenames,
+ * file content, email headers, stdin lines). Printed raw, those bytes can
+ * forge or hide lines in a real terminal or in syslog. JSON consumers were
+ * already safe via hlse_json_escape; this is the display-side counterpart,
+ * applied where verdict text is built so every sink is covered.
+ *
+ * In-place is safe because every replacement is shorter than or equal to
+ * the input sequence it replaces. */
+void hlse_sanitize_display(char *s);
+
+/* Copy `src` into `dst` (bounded by `cap`, always NUL-terminates) and
+ * sanitize it in place via hlse_sanitize_display. Returns `dst` — a
+ * convenience for printf-style human output of untrusted strings. */
+char *hlse_display_copy(char *dst, size_t cap, const char *src);
+
 /* Standard CRC-32 (IEEE 802.3 / zlib, reflected poly 0xEDB88320). */
 unsigned long hlse_crc32(const unsigned char *data, size_t len);
 

@@ -49,6 +49,11 @@ av_add(AuditVerdict *v, int delta, AuditSeverity sev,
     vsnprintf(v->findings[v->n_findings].description,
               sizeof(v->findings[0].description), fmt, ap);
     va_end(ap);
+    /* Findings embed attacker-controlled bytes: filenames discovered under
+     * /etc/cron.d, /etc/profile.d, /etc/sudoers.d, user systemd units, and
+     * the offending file lines themselves. Sanitise display-hostile
+     * characters once here so every downstream print is safe. */
+    hlse_sanitize_display(v->findings[v->n_findings].description);
     v->n_findings++;
 }
 

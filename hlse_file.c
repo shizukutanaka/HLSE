@@ -29,6 +29,7 @@
 #include <unistd.h>
 
 #include "hlse_file.h"
+#include "hlse_util.h"
 
 /* ─── helpers ─────────────────────────────────────────────────────────── */
 
@@ -41,6 +42,9 @@ fv_add(FileVerdict *v, int delta, const char *fmt, ...) {
     va_start(ap, fmt);
     vsnprintf(v->reasons[v->n_reasons], sizeof(v->reasons[0]), fmt, ap);
     va_end(ap);
+    /* Reasons embed the filename under analysis; sanitise display-hostile
+     * characters at the choke point. */
+    hlse_sanitize_display(v->reasons[v->n_reasons]);
     v->n_reasons++;
 }
 
