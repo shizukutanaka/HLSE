@@ -32,7 +32,7 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
    ```
    If anything regresses, **do not push.**
 3. **`make test` baseline is all-green on a verified host** — measured on
-   macOS (Apple clang): 10 unit suites 379/379, extended corpus 29/29, CLI
+   macOS (Apple clang): 10 unit suites 381/381, extended corpus 29/29, CLI
    integration 786 passed / 0 failed. A few checks print SKIP instead of
    PASS when the host genuinely lacks the precondition (no sudoers NOPASSWD
    on a hardened box, `jsonschema` module absent, /etc/hosts not writable) —
@@ -75,11 +75,11 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 
 ## Weaknesses / risks (what to improve — cite when you touch them)
 
-- **`hlse_core.c` is ~9,400 lines** with a giant `main()` dispatching 12+
-  subcommands via flat `strcmp`. High regression surface. **JSON escaping is
-  duplicated 2 ways** (`hlse_util.c` `hlse_json_escape` — used by core and
-  SARIF — and `hlse_server.c` `json_escape_append`, a streaming-append
-  variant) — consolidation is only partial.
+- **`hlse_core.c` is ~9,075 lines** with a giant `main()` dispatching 12+
+  subcommands via flat `strcmp`. High regression surface. The split has
+  started (`hlse_selftest.c`, `hlse_registry.c` extracted; CLI helpers +
+  dispatch remain). JSON escaping is consolidated on
+  `hlse_util.c:hlse_json_escape` — `hlse_server.c` delegates to it.
 - **No hosted CI:** `.github/workflows/` is absent (only `FUNDING.yml`). The
   "CI enforces" wording in README/CONTRIBUTING is true only of the Makefile
   targets. Shipped `examples/workflows/{ci,codeql,release}.yml` +
@@ -102,7 +102,7 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 
 **P0 — consistency / reliability (low risk):**
 - ~~Sync doc numbers to measured reality~~ done: README/CONTRIBUTING/AGENTS
-  counts re-derived (1194 structured, 786 CLI, all-green baseline).
+  counts re-derived (1196 structured, 786 CLI, all-green baseline).
 - ~~Triage the 14 known failures~~ done: root causes were macOS build
   breakage + host-dependent assertions; suite is green, env-dependent checks
   SKIP explicitly.
@@ -112,15 +112,20 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 
 **P1 — maintainability / detection quality:**
 - Split `hlse_core.c` (extract CLI dispatch to `hlse_cli.c`; table-drive the
-  subcommand handlers) — behavior-preserving, incremental.
-- Consolidate JSON escaping onto `hlse_util.c:hlse_json_escape` — one copy
-  remains in `hlse_server.c` (`json_escape_append`, streaming variant).
+  subcommand handlers) — behavior-preserving, incremental. Done: selftest +
+  pattern registry extracted. Remaining clusters, in coupling order:
+  output printers (`print_json_*`, advisories, `channel_*` + `g_from_channel`),
+  scan-driver helpers (baseline/fingerprint/patterns-load/manifest/
+  git-history), `stdin_mode`, then the subcommand handlers + `main`.
+- ~~Consolidate JSON escaping onto `hlse_util.c:hlse_json_escape`~~ done:
+  `hlse_server.c:json_escape_append` now delegates.
 - ~~Escape attacker-controlled `.efi` filenames in `esp` output~~ done, and
   widened: `hlse_sanitize_display()`/`hlse_display_copy()` in `hlse_util.c`
   neutralise terminal-hostile bytes in every verdict-add helper and every
   human-facing operand echo, not just ESP.
-- 2026 detection gaps: slopsquat heuristic, offline structural secret validation
-  (base62+CRC32 etc.), chi-square uniformity test for intermittent encryption.
+- ~~2026 detection gaps~~ done: slopsquat dist-3 advisory in
+  `hlse_check_package`, base62+CRC32 structural secret validation,
+  chi-square uniformity for intermittent encryption.
 
 **P2 — resident/daemon mode (large; its own round, design-then-review-then-build):**
 - ~~`0.4` config-file loader~~ — DONE for the CLI scope: `--config <file>`

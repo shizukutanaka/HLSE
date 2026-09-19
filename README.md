@@ -24,7 +24,7 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             1194 passing, 0 failing (10 unit suites +
+  Structured tests:             1196 passing, 0 failing (10 unit suites +
                                  corpus + CLI integration — see: make test)
   Fuzz iterations:              600,000 (6 harnesses × 100K, 0 crashes)
   ASan + UBSan:                 0 errors
@@ -237,7 +237,7 @@ response. The JSON parser/escaper/rate limiter are unit-tested in
 | Property invariants | 64 | Monotonicity, bounds, determinism, case, evasion (P1–P13) |
 | Protection | 26 | Ransomware (incl. R6 intermittent-encryption), network drive, SMB, MBR/GPT, ESP |
 | Secrets | 66 | Credentials (55 token patterns + GCP SA JSON + Azure SAS + Azure AccountKey + AWS creds-file + JWT + Telegram + URI creds), email headers (E1-E6 incl. E1 brand-domain ownership guard + E5 Received-chain anomaly), crypto addresses (BTC/ETH/SOL/XMR/LTC/DOGE/XRP/DASH/XLM/ADA/BCH/ATOM/XTZ/DOT/ALGO) |
-| Supply chain | 39 | Package typosquat (pip/npm/cargo/go/gem), pastejacking (Unix + Windows ClickFix + macOS osascript + Python download-exec + P9 reverse shell), network |
+| Supply chain | 41 | Package typosquat + dist-3 slopsquat advisory (pip/npm/cargo/go/gem), pastejacking (Unix + Windows ClickFix + macOS osascript + Python download-exec + P9 reverse shell), network |
 | File/Audit | 36 | File masquerade (PE/ELF/Mach-O/7ZIP/CAB/WASM/shebang-script/HTML-smuggling), system hardening (SSH/perms/DNS/cron incl. /etc/cron.*+/etc/crontab/PATH/shell-rc incl. PROMPT_COMMAND/function-override/alias-hijack+/etc/profile.d, sudoers NOPASSWD A7) + hardening index |
 | Config | 14 | --config key=value parser: bools, fail-on tiers, channel, quoted paths, hard-error paths |
 | Util | 62 | Entropy, JSON escaping, display sanitization (C0/C1/bidi/zero-width → '?'), Damerau-Levenshtein, benign-magic (31 formats: archives/images/media/fonts/certs/scientific) + safe system-file open (FIFO/symlink) |

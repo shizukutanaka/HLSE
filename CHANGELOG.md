@@ -18,6 +18,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   exactly like the long flags minus the dashes; `#` comments, blank
   lines, optional quoting of paths with spaces. New suite
   `tests/config_tests` (14 checks) + 5 CLI integration checks (p126).
+- **Slopsquat advisory** (`hlse_supply.c`). Package names a full
+  distance-3 from a bundled top package but absent from the snapshot
+  are exactly where AI-hallucinated names land — they now produce a
+  LOG-band "Slopsquat candidate" reason instead of a bare unverified
+  blind spot. Dist-3 matches are advisory only: they cannot dilute the
+  distance-1 amplifier (reqeusts → still BLOCK 70) nor inflate the
+  close-match count that gates it (reqests → still ALERT 50).
 
 ### Removed
 

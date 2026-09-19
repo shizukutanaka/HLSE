@@ -85,6 +85,22 @@ static void test_pkg_all_ecosystems(void) {
           "should find tokio in cargo");
 }
 
+static void test_pkg_slopsquat_dist3(void) {
+    TEST("Package: 'reqwstes' (dist 3) → slopsquat LOG advisory");
+    PackageVerdict v = hlse_check_package("reqwstes", "pip");
+    CHECK(v.score == 15 && v.n_matches > 0 &&
+          strstr(v.reason, "Slopsquat") != NULL,
+          "dist-3 near-miss must emit the slopsquat advisory at LOG band");
+}
+
+static void test_pkg_dist2_still_typosquat(void) {
+    TEST("Package: 'requsetsx' (dist 2) → typosquat, not slopsquat");
+    PackageVerdict v = hlse_check_package("requsetsx", "pip");
+    CHECK(v.score >= 30 && v.n_matches > 0 &&
+          strstr(v.reason, "Possible typosquat") != NULL,
+          "dist-2 must keep the typosquat reason");
+}
+
 /* ─── Pastejacking ────────────────────────────────────────────────────── */
 
 static void test_paste_safe(void) {
@@ -330,6 +346,8 @@ int main(void) {
     test_pkg_safe_unrelated();
     test_pkg_underscore_hyphen();
     test_pkg_all_ecosystems();
+    test_pkg_slopsquat_dist3();
+    test_pkg_dist2_still_typosquat();
 
     printf("\nPastejacking:\n");
     test_paste_safe();

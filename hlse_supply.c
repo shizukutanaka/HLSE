@@ -250,6 +250,7 @@ hlse_check_package(const char *pkg_name, const char *ecosystem) {
     const char *eco_canon;
 
     memset(&v, 0, sizeof(v));
+    int best_dist = 99, best_idx = -1;
 
     if (!pkg_name || !pkg_name[0]) return v;
     normalize_pkg_name(pkg_name, norm, sizeof(norm));
@@ -288,10 +289,14 @@ hlse_check_package(const char *pkg_name, const char *ecosystem) {
             }
 
             dist = dl_distance(norm, norm_ref);
-            if (dist <= 2 && dist > 0 &&
+            /* dist 1-2: typosquat band. dist 3: slopsquat advisory — a
+             * name that close to a top package but absent from the
+             * snapshot is exactly where AI-hallucinated names land and
+             * where attackers register them. Low score: LOG, not ALERT. */
+            if (dist <= 3 && dist > 0 &&
                 v.n_matches < HLSE_SUPPLY_MAX_MATCHES)
             {
-                int score_add = (dist == 1) ? 50 : 35;
+                int score_add = (dist == 1) ? 50 : (dist == 2) ? 35 : 15;
                 snprintf(v.matches[v.n_matches].legit_name,
                          sizeof(v.matches[0].legit_name), "%s", pkgs[pi]);
                 snprintf(v.matches[v.n_matches].registry,
@@ -299,24 +304,44 @@ hlse_check_package(const char *pkg_name, const char *ecosystem) {
                          REGISTRIES[ri].name);
                 v.matches[v.n_matches].distance = dist;
                 v.n_matches++;
+                if (dist < best_dist) { best_dist = dist; best_idx = v.n_matches - 1; }
 
                 if (score_add > v.score) v.score = score_add;
             }
         }
     }
 
-    /* Amplifier: if exactly 1 match with distance 1, very likely typosquat */
-    if (v.n_matches == 1 && v.matches[0].distance == 1) {
-        v.score = 70;
-        snprintf(v.reason, sizeof(v.reason),
-                 "Typosquat alert: '%s' is 1 edit from '%s' (%s). "
-                 "Did you mean '%s'?",
-                 pkg_name, v.matches[0].legit_name,
-                 v.matches[0].registry, v.matches[0].legit_name);
-    } else if (v.n_matches > 0) {
-        snprintf(v.reason, sizeof(v.reason),
-                 "Possible typosquat: '%s' is close to %d known package(s)",
-                 pkg_name, v.n_matches);
+    /* Amplifier: a single distance-1 neighbour and NO other dist≤2 match →
+     * very likely typosquat. Dist-3 slopsquat matches are advisory only:
+     * they must not dilute the amplifier (reqeusts ~ requests@1 plus a
+     * reqwest@3 still fires) nor inflate the near-match count that gates
+     * it (reqests ~ requests@1 + reqwest@2 stays at the 2-match ALERT
+     * band). */
+    {
+        int n_close = 0, i;
+        for (i = 0; i < v.n_matches; i++)
+            if (v.matches[i].distance <= 2) n_close++;
+        if (n_close == 1 && best_dist == 1) {
+            v.score = 70;
+            snprintf(v.reason, sizeof(v.reason),
+                     "Typosquat alert: '%s' is 1 edit from '%s' (%s). "
+                     "Did you mean '%s'?",
+                     pkg_name, v.matches[best_idx].legit_name,
+                     v.matches[best_idx].registry,
+                     v.matches[best_idx].legit_name);
+        } else if (v.n_matches > 0 && best_dist == 3) {
+            snprintf(v.reason, sizeof(v.reason),
+                     "Slopsquat candidate: '%s' is 3 edits from '%s' (%s) and "
+                     "not a known package — AI-hallucinated names are "
+                     "predictable attacker registrations; verify it exists "
+                     "before installing",
+                     pkg_name, v.matches[best_idx].legit_name,
+                     v.matches[best_idx].registry);
+        } else if (v.n_matches > 0) {
+            snprintf(v.reason, sizeof(v.reason),
+                     "Possible typosquat: '%s' is close to %d known package(s)",
+                     pkg_name, v.n_matches);
+        }
     }
 
     if (v.score > 100) v.score = 100;
