@@ -82,7 +82,10 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   removed a duplicated static `action_for_score` — call sites now use
   the public `hlse_action_for_score`. Flag-state globals
   (`g_baseline_file`, `g_emit_fingerprints`, `g_git_history`) stay in
-  core and are passed as parameters. `hlse_core.c` is now ~8,059 lines;
+  core and are passed as parameters. `hlse_core.c` is now ~5,731 lines (increment 7
+  moved the 2,340-line public advisory/interpretation layer to
+  `hlse_advisory.c` — pure verdict-to-string mapping, no flag globals, no
+  printing);
   behavior unchanged.
 
 ### Fixed

@@ -75,7 +75,7 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 
 ## Weaknesses / risks (what to improve — cite when you touch them)
 
-- **`hlse_core.c` is ~8,059 lines** with a giant `main()` dispatching 12+
+- **`hlse_core.c` is ~5,731 lines** with a giant `main()` dispatching 12+
   subcommands via flat `strcmp`. High regression surface. The split has
   started — extracted so far: `hlse_selftest.c`, `hlse_registry.c`,
   `hlse_channel.c` (delivery-channel prior), `hlse_baseline.c`
@@ -83,7 +83,7 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
   loader), `hlse_sarif.c` (SARIF collector + emitter),
   `hlse_manifest.c` (manifest ecosystem/name parsers),
   `hlse_githistory.c` (`hlse_scan_git_history` fork/exec walker), and
-  `hlse_meta.c` (pattern-id + blast-radius metadata). Remaining in core:
+  `hlse_meta.c` (pattern-id + blast-radius metadata), and `hlse_advisory.c` (the public verdict-interpretation layer: score ladders, blind-spot/exoneration hedges, attack-class labels, confidence, objective/safe-destination, homoglyph/ASCII-diff reports, verify/triage/cascade advisories). Remaining in core:
   the JSON/print emitter cluster, `stdin_mode`, the subcommand handlers,
   and `main`. JSON escaping is consolidated on
   `hlse_util.c:hlse_json_escape` — `hlse_server.c` delegates to it.
