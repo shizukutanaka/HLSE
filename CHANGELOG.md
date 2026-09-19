@@ -74,6 +74,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
     and ESP filename reasons; benign UTF-8 echoed untouched) —
     781/781 CLI checks.
 
+- **Stale documentation numbers synced to measured reality**
+  (`README.md`, `CONTRIBUTING.md`, `AGENTS.md`). Structured-test totals
+  re-derived from the suites (1171: 9 unit suites + corpus + 781 CLI
+  checks; README claimed 1164, the CLI row claimed 784, AGENTS.md still
+  documented the pre-port "714 passed / 14 failed" baseline as expected
+  state). Binary-size claim updated to measured arm64 stripped size, and
+  the "macOS (partial)" platform claim now reflects that the tree builds
+  and passes the full suite on Darwin (`make static` remains
+  unsupported — no static libc exists).
+
 ### Added
 - **JWT algorithm inspection, including the `alg:none` signature bypass**
   (`hlse_util.c`, `hlse_secrets.c`). A JWT's header is base64url — encoded, not

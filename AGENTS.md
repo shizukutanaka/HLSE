@@ -31,10 +31,13 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
    make fuzz                        # if you touched a parser/detector
    ```
    If anything regresses, **do not push.**
-3. **`make test` baseline is `714 passed / 14 failed`.** The 14 are pre-existing
-   and environment-dependent (JSON-schema-validation checks + a `release.yml`
-   existence check — see Weaknesses). **If the failure count rises above 14, you
-   caused a regression.** Always read the number.
+3. **`make test` baseline is all-green on a verified host** — measured on
+   macOS (Apple clang): 9 unit suites 361/361, extended corpus 29/29, CLI
+   integration 781 passed / 0 failed. A few checks print SKIP instead of
+   PASS when the host genuinely lacks the precondition (no sudoers NOPASSWD
+   on a hardened box, `jsonschema` module absent, /etc/hosts not writable) —
+   SKIP is not a failure, but a FAIL line is. **Any FAIL you introduced is a
+   regression — do not push.** Always read the counts.
 4. **Add a test for every new behavior.** Detection changes need a *pair*: a
    positive case (fires) and a benign case (no false positive). Corpus F1 must
    stay 1.000.
@@ -72,18 +75,19 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 
 ## Weaknesses / risks (what to improve — cite when you touch them)
 
-- **`hlse_core.c` is ~9,200 lines** with a giant `main()` dispatching 12+
+- **`hlse_core.c` is ~9,400 lines** with a giant `main()` dispatching 12+
   subcommands via flat `strcmp`. High regression surface. **JSON escaping is
-  duplicated 3 ways** (`hlse_core.c` `json_escape`, `hlse_server.c`
-  `json_escape_append`, `hlse_util.c` `hlse_json_escape`) — consolidation is
-  only partial.
+  duplicated 2 ways** (`hlse_util.c` `hlse_json_escape` — used by core and
+  SARIF — and `hlse_server.c` `json_escape_append`, a streaming-append
+  variant) — consolidation is only partial.
 - **No hosted CI:** `.github/workflows/` is absent (only `FUNDING.yml`). The
   "CI enforces" wording in README/CONTRIBUTING is true only of the Makefile
-  targets.
-- **14 known `make test` failures** are environment/workflow-permission
-  artifacts, not engine bugs — but "not green" is the steady state.
-- **macOS is effectively unimplemented** (FSEvents is a stub; `/proc`,
-  `/dev/sd*`, systemd checks are Linux-only). **No continuous monitoring**:
+  targets. Shipped `examples/workflows/{ci,codeql,release}.yml` +
+  `make install-workflows` close the gap once the maintainer installs them.
+- **macOS builds and fully passes `make test`** (platform conditionals in
+  the Makefile; `make static` is unsupported — no static libc on Darwin).
+  Runtime coverage is still Linux-centric: FSEvents is a stub; `/proc`,
+  `/dev/sd*`, and systemd checks are Linux-only. **No continuous monitoring**:
   `inotify`/`fanotify` are comments only; the SMB canary is a single
   `stat`+atime check; R5 shadow-delete is implemented but uncalled; R1
   (N-files-in-T-seconds) is documented but unimplemented.
@@ -98,19 +102,24 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 ## Prioritized backlog
 
 **P0 — consistency / reliability (low risk):**
-- Sync doc numbers to measured reality (test/fuzz counts, stale "5×100K" line,
-  binary size, version stamps).
-- Triage the 14 known failures: separate the environment-dependent ones from
-  `make test`, or mark them `SKIP`, and document that no engine bug is involved.
-- Ship complete `ci.yml`/`codeql.yml`/`release.yml` under `examples/` with a
-  README pointer (maintainer copies to `.github/workflows/`).
+- ~~Sync doc numbers to measured reality~~ done: README/CONTRIBUTING/AGENTS
+  counts re-derived (1171 structured, 781 CLI, all-green baseline).
+- ~~Triage the 14 known failures~~ done: root causes were macOS build
+  breakage + host-dependent assertions; suite is green, env-dependent checks
+  SKIP explicitly.
+- ~~Ship `ci.yml`/`codeql.yml`/`release.yml` under `examples/`~~ shipped at
+  `examples/workflows/` + `make install-workflows` (pointer in CONTRIBUTING).
+  Remaining: a maintainer with `workflows` permission runs it once.
 
 **P1 — maintainability / detection quality:**
 - Split `hlse_core.c` (extract CLI dispatch to `hlse_cli.c`; table-drive the
   subcommand handlers) — behavior-preserving, incremental.
-- Consolidate JSON escaping onto `hlse_util.c:hlse_json_escape`.
-- Escape attacker-controlled `.efi` filenames in the plain-text `esp` CLI output
-  (JSON output is already escaped).
+- Consolidate JSON escaping onto `hlse_util.c:hlse_json_escape` — one copy
+  remains in `hlse_server.c` (`json_escape_append`, streaming variant).
+- ~~Escape attacker-controlled `.efi` filenames in `esp` output~~ done, and
+  widened: `hlse_sanitize_display()`/`hlse_display_copy()` in `hlse_util.c`
+  neutralise terminal-hostile bytes in every verdict-add helper and every
+  human-facing operand echo, not just ESP.
 - 2026 detection gaps: slopsquat heuristic, offline structural secret validation
   (base62+CRC32 etc.), chi-square uniformity test for intermittent encryption.
 
