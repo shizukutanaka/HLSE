@@ -981,8 +981,6 @@ static const Signal SIGNALS[] = {
     { NULL, NULL, 0, 0, 0 }
 };
 
-#define N_SIGNALS ((int)(sizeof(SIGNALS) / sizeof(SIGNALS[0]) - 1))
-
 /* ─────────────── helpers ─────────────── */
 
 static int
