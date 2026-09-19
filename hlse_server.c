@@ -198,10 +198,32 @@ typedef struct {
  * the rules in hlse_util.c.) */
 static void
 json_escape_append(char *dst, size_t cap, size_t *len, const char *src) {
+
     size_t room = (*len < cap) ? cap - *len : 0;
     if (room == 0) return;
     hlse_json_escape(src, dst + *len, room);
     *len += strlen(dst + *len);
+}
+
+static void
+json_append_char(char *dst, size_t cap, size_t *len, char c) {
+    if (*len + 1 < cap) { dst[(*len)++] = c; dst[*len] = '\0'; }
+}
+
+/* , or nothing + '"' + escaped s + '"' — one element of a JSON string array. */
+static void
+json_append_elem(char *dst, size_t cap, size_t *len, const char *s, int idx) {
+    if (idx > 0) json_append_char(dst, cap, len, ',');
+    json_append_char(dst, cap, len, '"');
+    json_escape_append(dst, cap, len, s);
+    json_append_char(dst, cap, len, '"');
+}
+
+static void
+json_append_lit(char *dst, size_t cap, size_t *len, const char *lit) {
+    size_t room = (*len < cap) ? cap - *len : 0;
+    if (room <= 1) return;
+    *len += (size_t)snprintf(dst + *len, room, "%s", lit);
 }
 
 /* Extract a string field named `key` from a flat JSON object into `out`.
@@ -356,28 +378,17 @@ respond_scan(ConnCtx *cx, const char *input) {
     size_t len = 0;
     int i;
     int severity = hlse_severity_for_score(r.score);
-    const char *action;
-
-    switch (severity) {
-        case 4: action = "ISOLATE"; break;
-        case 3: action = "BLOCK";   break;
-        case 2: action = "ALERT";   break;
-        case 1: action = "LOG";     break;
-        default: action = "SAFE";   break;
-    }
+    const char *action = hlse_action_for_score(r.score);
 
     body[0] = '\0';
     snprintf(body, sizeof(body),
         "{\"kind\":\"%s\",\"score\":%d,\"severity\":%d,\"action\":\"%s\",\"reasons\":[",
         r.is_url ? "url" : "text", r.score, severity, action);
     len = strlen(body);
-    for (i = 0; i < r.n_reasons; i++) {
-        if (i > 0 && len + 1 < sizeof(body)) { body[len++] = ','; body[len] = '\0'; }
-        if (len + 1 < sizeof(body)) { body[len++] = '"'; body[len] = '\0'; }
-        json_escape_append(body, sizeof(body), &len, r.reasons[i]);
-        if (len + 1 < sizeof(body)) { body[len++] = '"'; body[len] = '\0'; }
-    }
-    if (len + 2 < sizeof(body)) { body[len++] = ']'; body[len++] = '}'; body[len] = '\0'; }
+    for (i = 0; i < r.n_reasons; i++)
+        json_append_elem(body, sizeof(body), &len, r.reasons[i], i);
+    json_append_char(body, sizeof(body), &len, ']');
+    json_append_char(body, sizeof(body), &len, '}');
     send_json(cx, 200, "OK", body);
 }
 
@@ -393,18 +404,16 @@ respond_secrets(ConnCtx *cx, const char *input) {
         "{\"kind\":\"secrets\",\"score\":%d,\"findings\":[", v.score);
     len = strlen(body);
     for (i = 0; i < v.n_findings; i++) {
-        if (i > 0 && len + 1 < sizeof(body)) { body[len++] = ','; body[len] = '\0'; }
-        if (len + 10 < sizeof(body)) {
-            len += (size_t)snprintf(body + len, sizeof(body) - len, "{\"type\":\"");
-        }
+        if (i > 0) json_append_char(body, sizeof(body), &len, ',');
+        json_append_lit(body, sizeof(body), &len, "{\"type\":\"");
         json_escape_append(body, sizeof(body), &len, v.findings[i].type);
-        if (len + 16 < sizeof(body)) {
-            len += (size_t)snprintf(body + len, sizeof(body) - len, "\",\"detail\":\"");
-        }
+        json_append_lit(body, sizeof(body), &len, "\",\"detail\":\"");
         json_escape_append(body, sizeof(body), &len, v.findings[i].description);
-        if (len + 3 < sizeof(body)) { body[len++] = '"'; body[len++] = '}'; body[len] = '\0'; }
+        json_append_char(body, sizeof(body), &len, '"');
+        json_append_char(body, sizeof(body), &len, '}');
     }
-    if (len + 2 < sizeof(body)) { body[len++] = ']'; body[len++] = '}'; body[len] = '\0'; }
+    json_append_char(body, sizeof(body), &len, ']');
+    json_append_char(body, sizeof(body), &len, '}');
     send_json(cx, 200, "OK", body);
 }
 
@@ -417,7 +426,7 @@ respond_file(ConnCtx *cx, const char *filename, const char *content) {
     SecretVerdict sv = hlse_scan_secrets(content);
     int score = fv.score > sv.score ? fv.score : sv.score;
     int severity = hlse_severity_for_score(score);
-    const char *action;
+    const char *action = hlse_action_for_score(score);
     char body[16384];
     size_t len = 0;
     int i;
@@ -426,35 +435,23 @@ respond_file(ConnCtx *cx, const char *filename, const char *content) {
     fn_esc[0] = '\0';
     json_escape_append(fn_esc, sizeof(fn_esc), &fnlen, filename);
 
-    switch (severity) {
-        case 4: action = "ISOLATE"; break;
-        case 3: action = "BLOCK";   break;
-        case 2: action = "ALERT";   break;
-        case 1: action = "LOG";     break;
-        default: action = "SAFE";   break;
-    }
     len = (size_t)snprintf(body, sizeof(body),
         "{\"kind\":\"file\",\"filename\":\"%s\",\"score\":%d,\"severity\":%d,"
         "\"action\":\"%s\",\"reasons\":[", fn_esc, score, severity, action);
-    for (i = 0; i < fv.n_reasons; i++) {
-        if (i > 0 && len + 1 < sizeof(body)) { body[len++] = ','; body[len] = '\0'; }
-        if (len + 1 < sizeof(body)) { body[len++] = '"'; body[len] = '\0'; }
-        json_escape_append(body, sizeof(body), &len, fv.reasons[i]);
-        if (len + 1 < sizeof(body)) { body[len++] = '"'; body[len] = '\0'; }
-    }
-    if (len + 14 < sizeof(body))
-        len += (size_t)snprintf(body + len, sizeof(body) - len, "],\"secrets\":[");
+    for (i = 0; i < fv.n_reasons; i++)
+        json_append_elem(body, sizeof(body), &len, fv.reasons[i], i);
+    json_append_lit(body, sizeof(body), &len, "],\"secrets\":[");
     for (i = 0; i < sv.n_findings; i++) {
-        if (i > 0 && len + 1 < sizeof(body)) { body[len++] = ','; body[len] = '\0'; }
-        if (len + 10 < sizeof(body))
-            len += (size_t)snprintf(body + len, sizeof(body) - len, "{\"type\":\"");
+        if (i > 0) json_append_char(body, sizeof(body), &len, ',');
+        json_append_lit(body, sizeof(body), &len, "{\"type\":\"");
         json_escape_append(body, sizeof(body), &len, sv.findings[i].type);
-        if (len + 12 < sizeof(body))
-            len += (size_t)snprintf(body + len, sizeof(body) - len, "\",\"detail\":\"");
+        json_append_lit(body, sizeof(body), &len, "\",\"detail\":\"");
         json_escape_append(body, sizeof(body), &len, sv.findings[i].description);
-        if (len + 3 < sizeof(body)) { body[len++] = '"'; body[len++] = '}'; body[len] = '\0'; }
+        json_append_char(body, sizeof(body), &len, '"');
+        json_append_char(body, sizeof(body), &len, '}');
     }
-    if (len + 2 < sizeof(body)) { body[len++] = ']'; body[len++] = '}'; body[len] = '\0'; }
+    json_append_char(body, sizeof(body), &len, ']');
+    json_append_char(body, sizeof(body), &len, '}');
     send_json(cx, 200, "OK", body);
 }
 
