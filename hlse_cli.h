@@ -16,8 +16,12 @@ typedef struct {
     int fail_threshold;        /* --fail-on, default 60 (BLOCK) */
 } HlseCli;
 
-#endif /* HLSE_CLI_H */
 int hlse_cmd_protect(const HlseCli *o, int argc, char **argv, int idx);
 int hlse_cmd_esp(const HlseCli *o, int argc, char **argv, int idx);
-int hlse_cmd_esp(const HlseCli *o, int argc, char **argv, int idx);
 int hlse_cmd_clipboard(const HlseCli *o, int argc, char **argv, int idx);
+int hlse_cmd_paste(const HlseCli *o, int argc, char **argv, int idx);
+int hlse_cmd_network(const HlseCli *o);
+int hlse_cmd_file(const HlseCli *o, int argc, char **argv, int idx);
+int hlse_cmd_audit(const HlseCli *o);
+
+#endif /* HLSE_CLI_H */
