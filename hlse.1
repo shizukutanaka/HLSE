@@ -290,6 +290,16 @@ Run the built-in test suite.
 .B --benchmark
 Run the in-distribution corpus benchmark and print F1.
 .TP
+.BR --list-patterns " [" --json ]
+List the stable
+.I pattern_id
+registry (append-only detection tokens for SIEM/SOAR correlation) and
+exit. With
+.BR --json ,
+emit a single JSON object with a
+.I patterns
+array instead of the human-readable listing.
+.TP
 .BR -V ", " --version
 Print version and exit.
 .TP
