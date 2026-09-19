@@ -69,7 +69,6 @@
 
 /* ───────────────────────────── constants ────────────────────────────── */
 
-#define MAX_URL    2048
 #define MAX_HOST    256
 #define MAX_PATH   1024
 

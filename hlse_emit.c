@@ -5,7 +5,7 @@
  * exports. printf-based; reads no flag globals. */
 #include <stdio.h>
 
-#define MAX_URL 2048  /* shared with hlse_core.c */
+#define MAX_URL 2048  /* matches the engine url buffer bound */
 #include <string.h>
 #include <stddef.h>
 #include "hlse_core.h"
