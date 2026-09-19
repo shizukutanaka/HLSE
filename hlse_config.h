@@ -12,6 +12,12 @@
  *   log-file     <path>     (like --log-file)
  *   patterns     <path>     (like --patterns)
  *
+ * Daemon keys (hlsed only — hlse_core parses and ignores them):
+ *   watch          <path>  — directory to monitor; repeat the key up to
+ *                            HLSE_CONFIG_MAX_WATCH times for several dirs
+ *   scan-interval  <secs>  — seconds between sweeps (1..86400, default 60)
+ *   pid-file       <path>  — locked PID file preventing duplicate daemons
+ *
  * Bools accept true|yes|on|1 / false|no|off|0. Path values may be
  * wrapped in double quotes when they contain spaces.
  *
@@ -34,6 +40,8 @@
 
 #include <stddef.h>
 
+#define HLSE_CONFIG_MAX_WATCH 8
+
 typedef struct {
     int has_json;         int json;
     int has_sarif;        int sarif;
@@ -46,6 +54,11 @@ typedef struct {
     char baseline[1024];
     char log_file[1024];
     char patterns[1024];
+    /* daemon-only (hlsed); ignored by hlse_core */
+    int  scan_interval;                   /* 0 = unset -> 60  */
+    char pid_file[1024];
+    int  n_watch;
+    char watch[HLSE_CONFIG_MAX_WATCH][1024];
 } HlseConfig;
 
 /* Parse `path` into `cfg` (zeroed by caller or callee — contents are

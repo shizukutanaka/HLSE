@@ -87,12 +87,13 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 - **macOS builds and fully passes `make test`** (platform conditionals in
   the Makefile; `make static` is unsupported — no static libc on Darwin).
   Runtime coverage is still Linux-centric: FSEvents is a stub; `/proc`,
-  `/dev/sd*`, and systemd checks are Linux-only. **No continuous monitoring**:
-  `inotify`/`fanotify` are comments only; the SMB canary is a single
+  `/dev/sd*`, and systemd checks are Linux-only. ~~**No continuous
+  monitoring**~~ `hlsed` now covers incremental file monitoring
+  (poll-based FIM — see P2 below); the SMB canary is a single
   `stat`+atime check.
-- **Contract tension for a daemon:** `SECURITY.md:42` classes cross-invocation
-  persistent state as a High-severity bug — which a resident FIM baseline/dedup
-  store needs. Daemon mode requires an explicit, scoped contract amendment.
+- ~~**Contract tension for a daemon:**~~ resolved: `SECURITY.md` has a
+  scoped carve-out for `hlsed`'s in-memory dedup state
+  (intra-invocation only, dies with the process).
 - Documentation numbers (test/fuzz counts, binary size, version stamps) drift;
   re-derive from reality when you touch them.
 
@@ -102,7 +103,8 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 
 **P0 — consistency / reliability (low risk):**
 - ~~Sync doc numbers to measured reality~~ done: README/CONTRIBUTING/AGENTS
-  counts re-derived (1196 structured, 786 CLI, all-green baseline).
+  counts re-derived (1196 structured, 786 CLI, all-green baseline; now
+  1211 with the daemon-lifecycle suite).
 - ~~Triage the 14 known failures~~ done: root causes were macOS build
   breakage + host-dependent assertions; suite is green, env-dependent checks
   SKIP explicitly.
@@ -127,19 +129,20 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
   `hlse_check_package`, base62+CRC32 structural secret validation,
   chi-square uniformity for intermittent encryption.
 
-**P2 — resident/daemon mode (large; its own round, design-then-review-then-build):**
-- ~~`0.4` config-file loader~~ — DONE for the CLI scope: `--config <file>`
-  loads `key = value` defaults for every global flag (hlse_config.c/h),
-  warns on group/world-writable files, CLI flags override. The daemon-only
-  keys from the original spec (`WATCH`, `SCAN_INTERVAL`) still need `hlsed`
-  to exist before they mean anything; add them when the daemon lands
-  (`lstat` + reject `S_ISLNK` on `WATCH` at that point).
-- `hlsed` daemon: fanotify (Linux) / FSEvents (macOS) FIM → run existing
-  detectors incrementally → dedup → push via `hlse_alert.c`; systemd
-  `Type=notify` via a raw `$NOTIFY_SOCKET` write (no libsystemd), watchdog,
-  SIGHUP reload, PID flock, privilege drop. Amend
-  `SPECIFICATION.md`/`SECURITY.md` for scoped daemon state. Keep zero-network
-  (all sinks local).
+**P2 — resident/daemon mode:**
+- ~~`0.4` config-file loader~~ — DONE: `--config <file>` for the CLI
+  (hlse_config.c/h), plus the daemon keys `watch`/`scan-interval`/
+  `pid-file` (CLI parses + ignores them so one file serves both).
+- ~~`hlsed` daemon~~ — DONE (first increment, deliberately divergent
+  design): **poll-based FIM** instead of fanotify/FSEvents — same code
+  on Linux+macOS, rootless, no new framework dep. Walks each `watch`
+  dir on `scan-interval`, re-scans (hlse_check_file + bounded
+  hlse_scan_secrets) files whose (path,mtime,size) tuple is new in the
+  4096-entry in-memory dedup table → `hlse_alert` sinks. SIGHUP reload,
+  SIGTERM/INT clean exit, PID-file flock, `hlsed --check` validator.
+  systemd notify/watchdog/privilege-drop remain unbuilt — run foreground
+  under `Type=simple`. Event backends (inotify/FSEvents) can slot under
+  the same dedup contract later without changing the interface.
 
 ---
 

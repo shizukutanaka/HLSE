@@ -13,6 +13,7 @@ tests/secrets_tests
 tests/supply_tests
 tests/file_audit_tests
 tests/util_tests
+tests/config_tests
 tests/corpus_ext
 tests/fuzz
 tests/fuzz_asan
@@ -50,6 +51,9 @@ Thumbs.db
 # API server binary
 hlse-server
 tests/server_tests
+
+# FIM daemon binary
+hlsed
 
 # Release artifacts / prebuilt binaries (never commit these — see the
 # "files (1).zip" incident: a stale v0.5.0 build artifact was committed

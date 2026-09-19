@@ -90,6 +90,7 @@ TEST_SRC  := tests/hlse_property_tests.c
 BINARY    := hlse_core
 SHARED    := libhlse.so
 SERVER_BIN := hlse-server
+DAEMON_BIN := hlsed
 SERVER_TEST := tests/server_tests
 PROP_BIN  := tests/property_tests
 PROT_BIN  := tests/protect_tests
@@ -135,9 +136,9 @@ install-workflows:   ## copy the shipped CI workflows into .github/workflows/
 
 # ─── primary targets ─────────────────────────────────────────────────────
 
-.PHONY: all cli lib static server server-check test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test install-workflows
+.PHONY: all cli lib static server server-check daemon daemon-check test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test install-workflows
 
-all: $(BINARY) $(SHARED) $(SERVER_BIN)
+all: $(BINARY) $(SHARED) $(SERVER_BIN) $(DAEMON_BIN)
 
 cli: $(BINARY)         ## build CLI binary only
 lib: $(SHARED)         ## build shared library only
@@ -158,6 +159,15 @@ server-check: $(SERVER_BIN)   ## end-to-end smoke test of the running server
 
 $(SERVER_BIN): hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h hlse_file.h
 	$(CC) $(CFLAGS) $(PIE_CFLAGS) -pthread -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -o $@ hlse_server.c $(CORE_SRC) $(PIE_LDFLAGS) -I. -lm -lpthread
+	@printf '  %-20s %s\n' "CC" "$@"
+
+daemon: $(DAEMON_BIN)    ## build the resident file-integrity monitor
+
+daemon-check: $(DAEMON_BIN)   ## end-to-end smoke test of the running daemon
+	@bash tests/daemon_integration.sh ./$(DAEMON_BIN)
+
+$(DAEMON_BIN): hlsed.c hlse_daemon.c hlse_daemon.h $(CORE_SRC) hlse_config.h
+	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -o $@ hlsed.c hlse_daemon.c $(CORE_SRC) $(PIE_LDFLAGS) -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(PROP_BIN): $(TEST_SRC) hlse_text.c hlse_text.h hlse_util.c hlse_util.h
@@ -448,6 +458,18 @@ check-warnings:
 	done; \
 	if [ "$$fail" -ne 0 ]; then echo "STRICT WARNINGS FOUND (library build)"; exit 1; fi; \
 	echo "All modules clean under strict flags (CLI + library builds)."
+	@echo "Checking strict warnings in daemon sources..."
+	@fail=0; for f in hlsed.c hlse_daemon.c; do \
+		w=$$($(CC) $(CFLAGS_STRICT) -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -c $$f -I. -o /dev/null 2>&1 | grep -c "warning:"); \
+		if [ "$$w" -ne 0 ]; then \
+			echo "  FAIL: $$f has $$w warning(s)"; \
+			$(CC) $(CFLAGS_STRICT) -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -c $$f -I. -o /dev/null 2>&1 | grep "warning:"; \
+			fail=1; \
+		else \
+			echo "  OK:   $$f"; \
+		fi; \
+	done; \
+	if [ "$$fail" -ne 0 ]; then echo "STRICT WARNINGS FOUND (daemon build)"; exit 1; fi
 
 # Build the CLI + tests with ASan/UBSan and run the full self-test.
 # Catches memory errors, UB, and leaks that normal builds miss.
@@ -478,7 +500,7 @@ asan-test:
 
 # ─── test ────────────────────────────────────────────────────────────────
 
-test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAUD_BIN) $(UTIL_BIN) $(CONF_BIN) $(SERVER_TEST)
+test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAUD_BIN) $(UTIL_BIN) $(CONF_BIN) $(SERVER_TEST) $(DAEMON_BIN)
 	@echo ""
 	@echo "═══════════════════════════════════════"
 	@echo " HLSE Core — Test Suite"
@@ -520,6 +542,9 @@ test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAU
 	@echo "── CLI integration ─────────────────────"
 	@bash tests/cli_integration.sh
 	@echo ""
+	@echo "── Daemon lifecycle ────────────────────"
+	@bash tests/daemon_integration.sh ./$(DAEMON_BIN)
+	@echo ""
 	@echo "═══════════════════════════════════════"
 	@echo " All test suites passed"
 	@echo "═══════════════════════════════════════"
@@ -548,14 +573,16 @@ endif
 
 # ─── install / uninstall ─────────────────────────────────────────────────
 
-install: $(BINARY) $(SHARED)
+install: $(BINARY) $(SHARED) $(DAEMON_BIN)
 	@mkdir -p $(BINDIR) $(LIBDIR) $(INCDIR) $(MANDIR) $(DATADIR)/web
 	cp $(BINARY) $(BINDIR)/hlse_core
 	cp $(SHARED) $(LIBDIR)/libhlse.so
+	cp $(DAEMON_BIN) $(BINDIR)/hlsed
 	cp hlse_core.h hlse_text.h hlse_protect.h hlse_secrets.h \
 	   hlse_supply.h hlse_file.h hlse_audit.h $(INCDIR)/
 	cp hlse.1 $(MANDIR)/hlse.1
 	cp hlse-server.1 $(MANDIR)/hlse-server.1
+	cp hlsed.1 $(MANDIR)/hlsed.1
 	cp web/index.html web/app.js web/style.css $(DATADIR)/web/
 	$(CC) $(CFLAGS) $(PIE_CFLAGS) -pthread -D_GNU_SOURCE -DHLSE_CORE_AS_LIB \
 		-DHLSE_DEFAULT_WEBROOT='"$(PREFIX)/share/hlse/web"' \
@@ -563,17 +590,20 @@ install: $(BINARY) $(SHARED)
 	@echo "Installed:"
 	@echo "  $(BINDIR)/hlse_core"
 	@echo "  $(BINDIR)/hlse-server  (webroot defaults to $(PREFIX)/share/hlse/web)"
+	@echo "  $(BINDIR)/hlsed"
 	@echo "  $(LIBDIR)/libhlse.so"
 	@echo "  $(INCDIR)/*.h"
 	@echo "  $(MANDIR)/hlse.1"
 	@echo "  $(MANDIR)/hlse-server.1"
+	@echo "  $(MANDIR)/hlsed.1"
 	@echo "  $(DATADIR)/web/*"
 	@echo ""
 	@echo "Compile against: gcc -I$(PREFIX)/include -L$(PREFIX)/lib -lhlse -lm"
 
 uninstall:
-	rm -f $(BINDIR)/hlse_core $(BINDIR)/hlse-server $(LIBDIR)/libhlse.so \
-		$(MANDIR)/hlse.1 $(MANDIR)/hlse-server.1
+	rm -f $(BINDIR)/hlse_core $(BINDIR)/hlse-server $(BINDIR)/hlsed \
+		$(LIBDIR)/libhlse.so \
+		$(MANDIR)/hlse.1 $(MANDIR)/hlse-server.1 $(MANDIR)/hlsed.1
 	rm -rf $(INCDIR) $(DATADIR)
 
 # ─── clean ───────────────────────────────────────────────────────────────
@@ -586,6 +616,6 @@ clean:
 		$(FUZZ_FILE) $(FUZZ_FILE_ASAN) \
 		$(FUZZ_URL) $(FUZZ_URL_ASAN) \
 		$(FUZZ_SERVER) $(FUZZ_SERVER_ASAN) \
-		$(EXT_BIN) $(SERVER_BIN) $(SERVER_TEST)
+		$(EXT_BIN) $(SERVER_BIN) $(SERVER_TEST) $(DAEMON_BIN)
 	rm -f hlse_core_static hlse_core_cov *.gcov *.gcda *.gcno *.o
 	@echo "Clean complete"

@@ -276,6 +276,13 @@ file is skipped entirely when
 is passed. A group- or world-writable
 .I file
 produces a stderr warning: it can be edited to weaken the detection gate.
+.PP
+Three additional keys \(em
+.BR watch ", " scan-interval ", and " pid-file " \(em"
+configure the
+.BR hlsed (1)
+daemon; the CLI parses them (unknown-key typos still error) and otherwise
+ignores them, so one file can serve both programs.
 .TP
 .B --self-test
 Run the built-in test suite.

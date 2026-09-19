@@ -24,8 +24,8 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             1196 passing, 0 failing (10 unit suites +
-                                 corpus + CLI integration — see: make test)
+  Structured tests:             1211 passing, 0 failing (10 unit suites +
+                                 corpus + CLI + daemon integration — see: make test)
   Fuzz iterations:              600,000 (6 harnesses × 100K, 0 crashes)
   ASan + UBSan:                 0 errors
   Compiler warnings:            0 (-Wall -Wextra -Wpedantic -Wshadow -Wconversion)
@@ -228,6 +228,32 @@ hardening headers (CSP, `X-Content-Type-Options`, `X-Frame-Options`) on every
 response. The JSON parser/escaper/rate limiter are unit-tested in
 `tests/hlse_server_tests.c`.
 
+## Resident file-integrity monitor (hlsed)
+
+`hlsed` watches directories for new or modified files and runs the same
+detectors (file masquerade + bounded secret scan) on each change — a
+poll-based FIM with no event-API dependency, rootless, identical on Linux
+and macOS.
+
+```bash
+make daemon            # builds ./hlsed
+cat > hlsed.conf <<EOF
+watch         = /etc
+watch         = /srv/www
+scan-interval = 30
+pid-file      = /run/hlsed.pid
+log-file      = /var/log/hlse/findings.jsonl
+EOF
+./hlsed --check hlsed.conf     # validate
+./hlsed --config hlsed.conf    # run (foreground — supervise w/ systemd Type=simple)
+```
+
+Alerts ≥ `fail-on` (daemon default `alert`) go to `--log-file`/syslog sinks
+and stderr. `SIGTERM`/`SIGINT` stop cleanly (pid-file removed); `SIGHUP`
+reloads the config in place. All state is in-memory — see `SECURITY.md` for
+the scoped carve-out and `man hlsed` for the full reference. Smoke test:
+`make daemon-check`.
+
 ## Test architecture
 
 | Suite | Count | What it verifies |
@@ -242,6 +268,7 @@ response. The JSON parser/escaper/rate limiter are unit-tested in
 | Config | 14 | --config key=value parser: bools, fail-on tiers, channel, quoted paths, hard-error paths |
 | Util | 62 | Entropy, JSON escaping, display sanitization (C0/C1/bidi/zero-width → '?'), Damerau-Levenshtein, benign-magic (31 formats: archives/images/media/fonts/certs/scientific) + safe system-file open (FIFO/symlink) |
 | Server | 15 | HTTP server JSON request parser/escaper + per-IP rate limiter |
+| Daemon | 15 | hlsed lifecycle: config check, pid lock, change detection, dedup, SIGHUP reload, SIGTERM cleanup |
 | OOD corpus | 29 | Out-of-distribution F1 (held-out phishing/scam) |
 | CLI integration | 786 | All 12 subcommands + --config file, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON, SARIF relative URIs, obfuscated-IP/@-authority URL guards, HTML-smuggling, secret-format coverage (JWT/AWS-creds/Telegram/URI-creds), no-arg exit=2 |
 | Fuzz | 6 × 100K | text / secrets / supply-chain / file / URL / server-JSON harnesses (random bytes, truncated UTF-8, keyword stuffing, typosquat mutation, bidi/control, Unicode mutation, percent-encoding, dangerous-scheme, malformed JSON) |

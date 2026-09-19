@@ -72,13 +72,38 @@ alert sink.
 | `--sarif` | SARIF 2.1.0 (with `scan <dir>`) for GitHub code scanning |
 | `-q`, `--quiet` | exit code only, no stdout |
 | `--stdin [--json]` | pipe mode: one input per line |
+| `--config <file>` | defaults file for the global flags (§3.3); CLI flags always win |
 | `--self-test` | run built-in test cases |
 | `--benchmark` | corpus F1 benchmark |
+| `--list-patterns [json]` | print the secret-detector pattern registry |
 | `--version`, `-V` | version string |
 | `-h`, `--help` | usage |
 
 Every subcommand that produces a verdict MUST honour `--json` and MUST be listed
 in `print_usage()` and the man page (`hlse.1`).
+
+### 3.3 Config file (`--config`)
+
+`key = value`, `#` comments, one directive per line; keys mirror the global
+flags (`json|sarif|quiet|syslog|fingerprints|git-history|fail-on|from|
+baseline|log-file|patterns`) plus daemon keys (`watch`, `scan-interval`,
+`pid-file`) that `hlse_core` parses and ignores. Loaded before argv parsing →
+CLI flags override. Unknown keys / malformed values are hard errors (exit 2);
+a group/world-writable config warns on stderr (it controls the gate).
+
+### 3.4 Daemon (`hlsed`)
+
+`hlsed --config <file>` is a resident file-integrity monitor: every
+`scan-interval` seconds (default 60) it walks each `watch` directory and
+re-runs `hlse_check_file` + a bounded `hlse_scan_secrets` on files whose
+(path, mtime, size) tuple is not in its in-memory dedup table — incremental
+scanning, poll-based (no fanotify/FSEvents dependency, rootless, identical
+on Linux/macOS). Findings ≥ `fail-on` (daemon default: ALERT=40) flow to
+`hlse_alert` sinks (`log-file`, `syslog`) and stderr. Signals: SIGTERM/SIGINT
+stop cleanly; SIGHUP reloads the config. Optional `pid-file` is flock-ed for
+the process lifetime (a second instance exits 1). All state is in-memory and
+dies with the process — the scoped carve-out in `SECURITY.md` covers exactly
+this; on-disk state would need its own amendment.
 
 ## 4. Modules
 

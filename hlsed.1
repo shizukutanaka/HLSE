@@ -1,0 +1,154 @@
+.TH HLSED 1 "2026-09-19" "HLSE 1.0.113" "User Commands"
+.SH NAME
+hlsed \- HLSE resident file-integrity monitor daemon
+.SH SYNOPSIS
+.B hlsed
+.B \-\-config
+.IR file
+.br
+.B hlsed
+.B \-\-check
+.IR file
+.br
+.B hlsed
+.RB [ \-\-version |
+.BR \-h ]
+.SH DESCRIPTION
+.B hlsed
+watches one or more directories for new or modified files and runs the
+HLSE detection engine on the delta: file-masquerade checks
+.RB ( hlse_check_file (3))
+and a bounded content scan for leaked credentials
+.RB ( hlse_scan_secrets (3)).
+It is a poll-based file-integrity monitor: every
+.B scan\-interval
+seconds it walks each
+.B watch
+directory and re-scans only files whose
+.RI ( path ,
+mtime, size) tuple is not already in its in-memory dedup table.
+.PP
+The design is deliberately conservative: identical code on Linux and
+macOS, rootless, no event-API dependency, no threads, no network, and
+read-only file access. Untrusted watch-dir entries are opened
+O_RDONLY|O_NOFOLLOW|O_NONBLOCK and only ever read, matching the rules of
+the one-shot
+.BR "hlse_core scan" .
+.PP
+The daemon runs in the foreground and keeps all state in memory (see
+.IR SECURITY.md
+for the scoped state carve-out). It never detaches: supervise it with
+systemd
+.RI ( Type=simple ),
+launchd, or
+.BR nohup (1)
+for background operation.
+.SH OPTIONS
+.TP
+.BI \-\-config " file"
+Run the monitor using the directives in
+.IR file .
+.TP
+.BI \-\-check " file"
+Parse the config and verify every
+.B watch
+directory exists and is a directory, then exit (0 OK, 2 on error).
+Useful in
+.B ExecStartPre
+for systemd units.
+.TP
+.BR \-\-version ,\  \-V
+Print the HLSE version string.
+.TP
+.BR \-h ,\  \-\-help
+Usage.
+.SH CONFIGURATION
+The config file shares the format documented in
+.BR hlse_core (1)
+(\fBkey = value\fR, \fB#\fR comments). These keys drive the daemon;
+\fIlog\-file\fR, \fIsyslog\fR, \fIfail\-on\fR, \fIpatterns\fR and the
+other shared keys behave exactly as they do for the CLI.
+.TP
+.BI watch " = " dir
+Directory to monitor recursively. Repeat the key for multiple
+directories (maximum 8). Symlinked directory entries inside the tree are
+never followed.
+.TP
+.BI scan\-interval " = " seconds
+Seconds between sweeps, 1\(en86400. Default 60.
+.TP
+.BI pid\-file " = " path
+When set, the daemon creates the file and holds an exclusive
+.BR flock (2)
+on it for its lifetime; a second
+.B hlsed
+with the same pid-file refuses to start (exit 1). Removed on clean
+shutdown.
+.TP
+.BI fail\-on " = " band
+Alert threshold: \fBlog|alert|block|isolate\fR or 0\(en100. Daemon
+default: 40 (ALERT) \(em lower than the CLI default because a monitor's
+job is flagging change, not gating CI.
+.TP
+.BI log\-file " = " path ,\  syslog " = " bool
+Alert sinks; findings are emitted through
+.BR hlse_alert_emit (3)
+to whichever sinks are enabled, and always echoed on stderr.
+.SH SIGNALS
+.TP
+.B SIGTERM , SIGINT
+Finish the in-flight sweep step, remove the pid-file, exit 0.
+.TP
+.B SIGHUP
+Re-read the config file: new watch list, interval, threshold, alert
+sinks, and pid-file take effect without a restart. A parse failure keeps
+the previous config and logs the error.
+.SH EXIT STATUS
+.TP
+.B 0
+Clean stop after SIGTERM/SIGINT.
+.TP
+.B 1
+Runtime failure \(em e.g. the pid-file is already locked by another
+instance.
+.TP
+.B 2
+Usage or config error (unknown key, missing
+.BR watch ,
+unreadable watch directory, unwritable log file).
+.SH FILES
+.TP
+.I /etc/hlsed.conf
+Conventional location for the config file.
+.SH EXAMPLES
+A minimal deployable unit:
+.PP
+.nf
+  # /etc/hlsed.conf
+  watch         = /etc
+  watch         = /srv/www
+  scan-interval = 30
+  pid-file      = /run/hlsed.pid
+  log-file      = /var/log/hlse/findings.jsonl
+  fail-on       = alert
+.fi
+.PP
+.nf
+  # systemd unit (foreground model — no forking)
+  [Service]
+  Type=simple
+  ExecStartPre=/usr/bin/hlsed --check /etc/hlsed.conf
+  ExecStart=/usr/bin/hlsed --config /etc/hlsed.conf
+  Restart=on-failure
+.fi
+.SH SEE ALSO
+.BR hlse_core (1),
+.BR hlse-server (1),
+.IR SECURITY.md
+(scoped in-memory-state carve-out),
+.IR docs/SPECIFICATION.md .
+.SH BUGS
+The dedup table holds at most 4096 entries per process; once full, the
+oldest tuples are evicted and such files may re-alert on a later sweep
+(false repeat, never a missed change). The secrets scan reads at most
+256 KiB of a file \(em larger files are skipped, not partially scanned.

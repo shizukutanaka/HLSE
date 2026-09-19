@@ -38,7 +38,14 @@ Critical:
 High:
 - A way to bypass detection by formatting tricks (e.g., HTML entities,
   base64, non-standard whitespace)
-- Persistent state that survives across invocations when it shouldn't
+- Persistent state that survives across invocations when it shouldn't.
+  Scoped carve-out: `hlsed`'s in-memory dedup table (path→mtime/size of
+  already-scanned files) lives only for the resident process's lifetime,
+  never touches disk, and dies with the process — it is intra-invocation
+  state and is NOT in this class. `hlsed` writes no on-disk state of its
+  own: the PID file is operator-visible bookkeeping, and findings flow to
+  the same `--log-file`/syslog sinks a one-shot run would use. Any future
+  on-disk state the daemon might gain needs its own amendment here.
 
 Medium:
 - False positive rate exceeds 5% on a documented corpus

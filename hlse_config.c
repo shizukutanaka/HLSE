@@ -187,12 +187,40 @@ hlse_config_load(const char *path, HlseConfig *cfg,
             if (cfg_path(cfg->patterns, sizeof(cfg->patterns), v) != 0)
                 goto bad_path;
         }
+        else if (strcmp(key, "watch")        == 0) {
+            if (cfg->n_watch >= HLSE_CONFIG_MAX_WATCH) {
+                cfg_err(err, errcap, path, lineno,
+                        "too many watch entries (see HLSE_CONFIG_MAX_WATCH)");
+                fclose(fp);
+                return -1;
+            }
+            if (cfg_path(cfg->watch[cfg->n_watch],
+                         sizeof(cfg->watch[0]), v) != 0)
+                goto bad_path;
+            cfg->n_watch++;
+        }
+        else if (strcmp(key, "scan-interval") == 0) {
+            char *end;
+            long n = strtol(v, &end, 10);
+            if (*end != '\0' || end == v || n < 1 || n > 86400) {
+                cfg_err(err, errcap, path, lineno,
+                        "scan-interval expects 1..86400 seconds");
+                fclose(fp);
+                return -1;
+            }
+            cfg->scan_interval = (int)n;
+        }
+        else if (strcmp(key, "pid-file")     == 0) {
+            if (cfg_path(cfg->pid_file, sizeof(cfg->pid_file), v) != 0)
+                goto bad_path;
+        }
         else {
             char msg[160];
             snprintf(msg, sizeof(msg),
                      "unknown config key '%s' (expected json|sarif|quiet|"
                      "syslog|fingerprints|git-history|fail-on|from|"
-                     "baseline|log-file|patterns)", key);
+                     "baseline|log-file|patterns|watch|scan-interval|"
+                     "pid-file)", key);
             cfg_err(err, errcap, path, lineno, msg);
             fclose(fp);
             return -1;

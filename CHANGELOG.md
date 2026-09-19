@@ -6,6 +6,28 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **`hlsed` resident file-integrity monitor** (`hlsed.c`, `hlse_daemon.c/h`,
+  `hlsed.1`, `tests/daemon_integration.sh` — 15 lifecycle checks). Every
+  `scan-interval` seconds (default 60) the daemon walks each `watch`
+  directory and runs `hlse_check_file` + a bounded (256 KiB)
+  `hlse_scan_secrets` on files whose (path, mtime, size) tuple is not in
+  the in-memory dedup table — incremental scanning over the delta only.
+  Poll-based by design: no fanotify/FSEvents dependency, rootless,
+  identical code on Linux and macOS; an event backend can later slot
+  under the same dedup contract. Findings ≥ `fail-on` (daemon default
+  `alert`) are pushed through `hlse_alert` to `log-file`/syslog and
+  echoed on stderr. `SIGTERM`/`SIGINT` stop cleanly (pid-file removed),
+  `SIGHUP` reloads the config in place (watch list, interval, threshold,
+  sinks, pid-file). `hlsed --check` validates a config + its watch dirs
+  without starting — usable in a systemd `ExecStartPre`. A `pid-file` is
+  `flock`-ed for the process lifetime so a second instance refuses to
+  start. Foreground-only: supervise with systemd `Type=simple` or launchd.
+  `SECURITY.md` gained a scoped carve-out for this in-memory, intra-process
+  state (dedup table) vs. the banned cross-invocation persistent state;
+  any on-disk state would need its own amendment. Config gained the
+  daemon keys `watch` (repeatable, ≤8), `scan-interval` (1..86400),
+  `pid-file` — parsed by `hlse_core` too so one file can serve both
+  programs, and ignored there.
 - **`--config <file>` runtime configuration** (`hlse_config.c/h`, new).
   Every global flag can now be defaulted from a `key = value` file —
   `json`, `sarif`, `quiet`, `syslog`, `fingerprints`, `git-history`
