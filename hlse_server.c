@@ -79,6 +79,7 @@
 #include "hlse_core.h"
 #include "hlse_secrets.h"
 #include "hlse_file.h"
+#include "hlse_util.h"
 
 #define HLSE_SERVER_VERSION "1.1.0"
 
@@ -190,35 +191,17 @@ typedef struct {
 /* --------------------------- JSON helpers ---------------------------- */
 
 /* Append `src` to `dst` (size cap `cap`, current length *len), JSON-escaping
- * control chars and quotes. Truncates safely if the buffer is exhausted. */
+ * control chars and quotes. Truncates safely if the buffer is exhausted.
+ * This is now a one-line delegation: hlse_json_escape writes a bounded,
+ * NUL-terminated escaped copy — aiming it at the free tail of `dst` IS the
+ * append. (The per-byte escape table used to live here as a second copy of
+ * the rules in hlse_util.c.) */
 static void
 json_escape_append(char *dst, size_t cap, size_t *len, const char *src) {
-    size_t i;
-    for (i = 0; src[i]; i++) {
-        unsigned char c = (unsigned char)src[i];
-        char buf[8];
-        const char *rep = NULL;
-        int n = 1;
-        switch (c) {
-            case '"':  rep = "\\\""; n = 2; break;
-            case '\\': rep = "\\\\"; n = 2; break;
-            case '\n': rep = "\\n";  n = 2; break;
-            case '\r': rep = "\\r";  n = 2; break;
-            case '\t': rep = "\\t";  n = 2; break;
-            default:
-                if (c < 0x20) {
-                    snprintf(buf, sizeof(buf), "\\u%04x", c);
-                    rep = buf; n = 6;
-                } else {
-                    buf[0] = (char)c; buf[1] = '\0';
-                    rep = buf; n = 1;
-                }
-        }
-        if (*len + (size_t)n + 1 >= cap) return;  /* leave room for NUL */
-        memcpy(dst + *len, rep, (size_t)n);
-        *len += (size_t)n;
-        dst[*len] = '\0';
-    }
+    size_t room = (*len < cap) ? cap - *len : 0;
+    if (room == 0) return;
+    hlse_json_escape(src, dst + *len, room);
+    *len += strlen(dst + *len);
 }
 
 /* Extract a string field named `key` from a flat JSON object into `out`.

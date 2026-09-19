@@ -74,6 +74,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
     and ESP filename reasons; benign UTF-8 echoed untouched) —
     781/781 CLI checks.
 
+- **JSON escaping consolidated onto `hlse_json_escape`** (`hlse_server.c`).
+  `json_escape_append` was a second hand-rolled copy of the same per-byte
+  escape table; it now delegates — aiming the shared bounded escaper at the
+  free tail of the output buffer *is* the append. Zero behavior change; the
+  server integration suite (14/14, real HTTP responses) exercises it
+  end-to-end.
+
 - **Stale documentation numbers synced to measured reality**
   (`README.md`, `CONTRIBUTING.md`, `AGENTS.md`). Structured-test totals
   re-derived from the suites (1171: 9 unit suites + corpus + 781 CLI
