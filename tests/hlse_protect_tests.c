@@ -207,6 +207,47 @@ test_protect_scan_clean_dir(void) {
 }
 
 static void
+test_ransomware_mass_modification_burst(void) {
+    setup_tmpdir();
+    int i;
+    for (i = 0; i < 25; i++) {
+        char name[64];
+        snprintf(name, sizeof(name), "file%d.txt", i);
+        create_file(name, "content\n", 8);
+    }
+    TEST("Ransomware: >=20 freshly-modified files -> R1 burst signal");
+    ProtectionVerdict v = hlse_ransomware_check_directory(tmpdir);
+    int found = 0;
+    for (i = 0; i < v.n_reasons; i++)
+        if (strncmp(v.reasons[i], "R1:", 3) == 0) found = 1;
+    if (found && v.score >= 20) { PASS(); }
+    else {
+        char buf[64]; snprintf(buf, sizeof(buf), "score=%d", v.score);
+        FAIL(buf);
+    }
+    cleanup_tmpdir();
+}
+
+static void
+test_ransomware_few_recent_files_no_r1(void) {
+    setup_tmpdir();
+    int i;
+    for (i = 0; i < 5; i++) {
+        char name[64];
+        snprintf(name, sizeof(name), "file%d.txt", i);
+        create_file(name, "content\n", 8);
+    }
+    TEST("Ransomware: 5 recent files -> no R1 burst");
+    ProtectionVerdict v = hlse_ransomware_check_directory(tmpdir);
+    int found = 0;
+    for (i = 0; i < v.n_reasons; i++)
+        if (strncmp(v.reasons[i], "R1:", 3) == 0) found = 1;
+    if (!found) { PASS(); }
+    else FAIL("R1 fired on 5 files");
+    cleanup_tmpdir();
+}
+
+static void
 test_ransomware_extension_mutation(void) {
     setup_tmpdir();
     int i;
@@ -706,6 +747,8 @@ main(void) {
     test_ransomware_shadow_deletion_api();
     test_protect_scan_merges_sub_verdicts();
     test_protect_scan_clean_dir();
+    test_ransomware_mass_modification_burst();
+    test_ransomware_few_recent_files_no_r1();
     test_ransomware_new_extensions();
     test_ransomware_stop_djvu_note();
     test_ransomware_compound();

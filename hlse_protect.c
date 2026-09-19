@@ -81,6 +81,15 @@ pv_add_reason(ProtectionVerdict *v, int delta, const char *fmt, ...) {
  * encrypted by ransomware.                                               */
 #define shannon_entropy(d, l) hlse_shannon_entropy((d), (l))
 
+/* R1 (mass file modification): a burst of this many regular files with an
+ * mtime inside the window is the write pattern of mass encryption. Deliber-
+ * ately high — builds and package installs legitimately modify dozens of
+ * files, so the threshold only trips on a broad sweep, and even then R1 is
+ * a supporting signal, not a standalone verdict. */
+#define R1_WINDOW_S      120   /* seconds — "in T seconds"               */
+#define R1_MIN_FILES      20   /* files —    "N files changed"           */
+#define R1_CLOCK_SKEW_S   60   /* tolerate slightly-future mtimes        */
+
 /* Read first N bytes of a file for entropy analysis. Returns bytes read. */
 static size_t
 read_file_head(const char *path, unsigned char *buf, size_t max_bytes) {
@@ -293,6 +302,8 @@ hlse_ransomware_check_directory(const char *dir_path) {
     struct dirent *ent;
     int suspicious_ext_count = 0;
     int high_entropy_count = 0;
+    int recent_mod_count = 0;        /* R1: files modified in the window */
+    time_t now = time(NULL);
     /* Among the high-entropy files, how many have a byte histogram consistent
      * with cipher output (uniform) vs one that still carries structure
      * (compression)? See the chi-square block at the R2 site below. */
@@ -355,12 +366,22 @@ hlse_ransomware_check_directory(const char *dir_path) {
             }
         }
 
-        /* R2: Entropy analysis (sample first 4KB of regular files) */
+        /* R1 + R2 share the one stat per regular file. */
         {
             struct stat st;
-            if (stat(fullpath, &st) == 0 && S_ISREG(st.st_mode)
-                && st.st_size > 64)
+            if (stat(fullpath, &st) == 0 && S_ISREG(st.st_mode))
             {
+                /* R1: mass modification — a burst of files whose mtime is
+                 * inside the window. Ransomware rewrites many files fast;
+                 * a scattered mtime here and there is normal churn. mtime
+                 * is trivially forgeable, so this is a supporting signal,
+                 * never a standalone verdict (see the compound table in the
+                 * module header). */
+                if (now - st.st_mtime >= -R1_CLOCK_SKEW_S &&
+                    now - st.st_mtime <= R1_WINDOW_S)
+                    recent_mod_count++;
+                if (st.st_size > 64)
+                {
                 size_t n = read_file_head(fullpath, buf, sizeof(buf));
                 if (n > 64) {
                     /* Literature (arXiv 2106.14418, 2210.13376, 2103.17059):
@@ -445,9 +466,21 @@ hlse_ransomware_check_directory(const char *dir_path) {
                     }
                 }
             }
+            }
         }
     }
     closedir(dir);
+
+    /* R1: mass-modification burst. ≥R1_MIN_FILES regular files touched in
+     * the last R1_WINDOW_S is the classic write pattern of mass encryption.
+     * Legitimate bursts exist (builds, package installs), so R1 alone stays
+     * a supporting signal — its score only pushes the verdict over a band
+     * when it compounds with R2/R3/R4. */
+    if (recent_mod_count >= R1_MIN_FILES) {
+        pv_add_reason(&v, 20,
+            "R1: Mass-modification burst: %d files modified within %d s",
+            recent_mod_count, R1_WINDOW_S);
+    }
 
     /* R2: Entropy spike — if > 50% of files are high-entropy, suspicious */
     if (total_files >= 5 && high_entropy_count > total_files / 2) {

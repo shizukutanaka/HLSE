@@ -74,6 +74,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
     and ESP filename reasons; benign UTF-8 echoed untouched) —
     781/781 CLI checks.
 
+- **R1 mass-modification detection implemented**
+  (`hlse_protect.c`). The module header documented "R1. N files changed in
+  T seconds" as a compound signal, but no code ever counted it. The
+  directory scan now tallies regular files whose mtime falls inside a
+  120 s window (reusing the existing per-file `stat`, zero extra
+  syscalls); ≥20 such files adds a +20 "R1: mass-modification burst"
+  reason. Deliberately a supporting signal — it compounds with R2/R3/R4
+  through the additive score and alone sits in LOG band, so builds and
+  package installs stay quiet. New tests: 25 fresh files fire R1, 5 do
+  not (26/26 protection tests).
+
 - **R5 shadow-delete detection wired into `hlse_protect_scan`**
   (`hlse_protect.c`). `hlse_ransomware_check_shadow_deletion` was
   implemented, declared, and unit-tested — but never invoked by the
