@@ -40,6 +40,7 @@
 #include "hlse_config.h"  /* HlseConfig, hlse_config_load (--config) */
 #include "hlse_selftest.h" /* hlse_*_self_test, hlse_benchmark */
 #include "hlse_registry.h" /* hlse_list_patterns */
+#include "hlse_channel.h"  /* hlse_from_channel, hlse_channel_delta/reason */
 #include "hlse_util.h"    /* hlse_shannon_entropy, hlse_edit_distance */
 #include "hlse_supply.h"  /* PackageVerdict, PasteVerdict, NetworkVerdict */
 #include "hlse_file.h"    /* FileVerdict, hlse_check_file */
@@ -4719,7 +4720,9 @@ action_for_score(int score) {
 
 /* ──────────────────── CLI-only functions ─────────────────────────────
  * Everything from here to the end of the file is CLI-mode code.
- * Library users (HLSE_CORE_AS_LIB defined) get only check_url + types. */
+ * Library users (HLSE_CORE_AS_LIB defined) get only check_url + types.
+ * The delivery-channel prior itself lives in hlse_channel.c (set via
+ * hlse_set_from_channel, read via hlse_from_channel).                 */
 #ifndef HLSE_CORE_AS_LIB
 
 /* Stable machine-readable pattern id for a file-masquerade verdict — the file
@@ -4969,44 +4972,6 @@ sarif_emit(const char *tool_version) {
     printf("    }\n  ]\n}\n");
 }
 
-/* Delivery channel supplied via --from.  NULL when the flag is absent.
- * Socratic Q: "You analysed the URL — but HLSE has no idea how it reached
- * you.  A QR code in a parking meter and a link you typed yourself share
- * the same bytes, yet carry very different priors.  Should the channel
- * change the verdict?"  Answer: yes — the channel is a threat-prior.      */
-static const char *g_from_channel = NULL;
-
-/* Score boost applied to URLs when a high-risk delivery channel is set.
- * Only meaningful for URLs (not text); capped at 100 at output sites.    */
-static int
-channel_delta(const char *ch)
-{
-    if (!ch) return 0;
-    if (strcmp(ch, "qr")     == 0) return 20; /* quishing — QR masks destination */
-    if (strcmp(ch, "sms")    == 0) return 15; /* smishing — primary mobile vector  */
-    if (strcmp(ch, "email")  == 0) return 10; /* phishing — classic email vector   */
-    if (strcmp(ch, "dm")     == 0) return 10; /* social-engineering via DM         */
-    if (strcmp(ch, "manual") == 0) return  0; /* user typed it — lowest prior      */
-    return 0;
-}
-
-/* Human-readable reason string for the channel boost (NULL when delta==0). */
-static const char *
-channel_reason(const char *ch)
-{
-    if (!ch) return NULL;
-    if (strcmp(ch, "qr")    == 0)
-        return "Channel (qr): +20 \xe2\x80\x94 QR codes mask destinations (quishing)";
-    if (strcmp(ch, "sms")   == 0)
-        return "Channel (sms): +15 \xe2\x80\x94 SMS is the primary smishing "
-               "vector; on RCS the displayed sender name is set by the sender, "
-               "so a familiar brand or carrier label is NOT proof of identity";
-    if (strcmp(ch, "email") == 0)
-        return "Channel (email): +10 \xe2\x80\x94 email is the primary phishing vector";
-    if (strcmp(ch, "dm")    == 0)
-        return "Channel (dm): +10 \xe2\x80\x94 direct messages are used for social-engineering";
-    return NULL; /* manual → no delta, no noise */
-}
 
 /* ── Baseline / allowlist (Perspective 107, roadmap P0-1) ──────────────────
  * Commercial secret scanners (detect-secrets, gitleaks) need a way to accept
@@ -5888,15 +5853,15 @@ print_json_url(const char *url, const Verdict *v) {
     if (has_tri)    printf(",\"triage\":\"%s\"", esc_tri);
     if (cas)        printf(",\"cascade_risk\":\"%s\"", esc_cas);
     if (exon)       printf(",\"exoneration\":\"%s\"", esc_exon);
-    if (g_from_channel) {
-        int d   = channel_delta(g_from_channel);
+    if (hlse_from_channel()) {
+        int d   = hlse_channel_delta(hlse_from_channel());
         int eff = v->score + d; if (eff > 100) eff = 100;
         printf(",\"channel\":\"%s\",\"channel_delta\":%d,\"effective_score\":%d,"
                "\"effective_action\":\"%s\",\"effective_severity\":%d",
-               g_from_channel, d, eff, action_for_score(eff),
+               hlse_from_channel(), d, eff, action_for_score(eff),
                hlse_severity_for_score(eff));
         {
-            const char *ch_rsn = channel_reason(g_from_channel);
+            const char *ch_rsn = hlse_channel_reason(hlse_from_channel());
             if (ch_rsn) {
                 char esc_ch[512];
                 hlse_json_escape(ch_rsn, esc_ch, sizeof(esc_ch));
@@ -5973,15 +5938,15 @@ print_json_text(const char *text, const TextVerdict *v) {
     if (ttri) printf(",\"triage\":\"%s\"",      esc_ttri);
     if (tcas) printf(",\"cascade_risk\":\"%s\"",esc_tcas);
     if (exon) printf(",\"exoneration\":\"%s\"", esc_exon);
-    if (g_from_channel) {
-        int d   = channel_delta(g_from_channel);
+    if (hlse_from_channel()) {
+        int d   = hlse_channel_delta(hlse_from_channel());
         int eff = v->score + d; if (eff > 100) eff = 100;
         printf(",\"channel\":\"%s\",\"channel_delta\":%d,\"effective_score\":%d,"
                "\"effective_action\":\"%s\",\"effective_severity\":%d",
-               g_from_channel, d, eff, hlse_text_action_for_score(eff),
+               hlse_from_channel(), d, eff, hlse_text_action_for_score(eff),
                hlse_severity_for_score(eff));
         {
-            const char *ch_rsn = channel_reason(g_from_channel);
+            const char *ch_rsn = hlse_channel_reason(hlse_from_channel());
             if (ch_rsn) {
                 char esc_ch[512];
                 hlse_json_escape(ch_rsn, esc_ch, sizeof(esc_ch));
@@ -6117,10 +6082,10 @@ stdin_mode(int json_out) {
             }
         } else if (sr.score == 0) {
             /* Channel-only risk: content scored 0 but delivery channel adds prior */
-            if (g_from_channel) {
-                int d = channel_delta(g_from_channel);
+            if (hlse_from_channel()) {
+                int d = hlse_channel_delta(hlse_from_channel());
                 if (d > 0) {
-                    const char *ch_rsn = channel_reason(g_from_channel);
+                    const char *ch_rsn = hlse_channel_reason(hlse_from_channel());
                     char db[8192];
                     printf("%-7s [%d]  %s\n", hlse_action_for_score(d), d,
                            hlse_display_copy(db, sizeof(db), line));
@@ -6140,10 +6105,10 @@ stdin_mode(int json_out) {
             int i;
             int eff = sr.score;
             const char *ch_rsn = NULL;
-            if (g_from_channel) {
-                int d = channel_delta(g_from_channel);
+            if (hlse_from_channel()) {
+                int d = hlse_channel_delta(hlse_from_channel());
                 eff += d; if (eff > 100) eff = 100;
-                ch_rsn = channel_reason(g_from_channel);
+                ch_rsn = hlse_channel_reason(hlse_from_channel());
             }
             {
                 char db[8192];
@@ -6186,8 +6151,8 @@ stdin_mode(int json_out) {
          * --from sms raises exit 0 → exit 1 when boost crosses the threshold. */
         {
             int eff_gate = sr.score;
-            if (g_from_channel) {
-                int d = channel_delta(g_from_channel);
+            if (hlse_from_channel()) {
+                int d = hlse_channel_delta(hlse_from_channel());
                 eff_gate += d; if (eff_gate > 100) eff_gate = 100;
             }
             if (eff_gate >= g_fail_threshold) any_threat = 1;
@@ -6558,7 +6523,7 @@ main(int argc, char **argv) {
     int opt_syslog = 0;
     const char *opt_log_file = NULL;
     HlseConfig cfg;             /* --config defaults; must live for all of
-                                   main() — g_from_channel/g_baseline_file/
+                                   main() — hlse_from_channel()/g_baseline_file/
                                    opt_log_file may point into it.        */
     memset(&cfg, 0, sizeof(cfg));
     int argc_flags;   /* argv index where "--" ends option scanning */
@@ -6664,7 +6629,7 @@ main(int argc, char **argv) {
         if (cfg.has_fingerprints) g_emit_fingerprints = cfg.fingerprints;
         if (cfg.has_git_history)  g_git_history       = cfg.git_history;
         if (cfg.has_fail_on)      g_fail_threshold    = cfg.fail_on;
-        if (cfg.from[0])          g_from_channel      = cfg.from;
+        if (cfg.from[0])          hlse_set_from_channel(cfg.from);
         if (cfg.baseline[0])      g_baseline_file     = cfg.baseline;
         if (cfg.log_file[0])      opt_log_file        = cfg.log_file;
         if (cfg.patterns[0] && hlse_patterns_load(cfg.patterns) != 0) {
@@ -6746,7 +6711,7 @@ main(int argc, char **argv) {
                 if (strcmp(ch, "email")  == 0 || strcmp(ch, "sms") == 0 ||
                     strcmp(ch, "dm")     == 0 || strcmp(ch, "qr")  == 0 ||
                     strcmp(ch, "manual") == 0) {
-                    g_from_channel = ch;
+                    hlse_set_from_channel(ch);
                 } else {
                     fprintf(stderr,
                             "Error: --from expects email|sms|dm|qr|manual\n");
@@ -8324,7 +8289,7 @@ main(int argc, char **argv) {
          * --from override (especially a non-email one like sms) is
          * meaningless here. The flag was silently ignored, which reads like a
          * bug; make it explicit with a one-line stderr note instead. */
-        if (g_from_channel) {
+        if (hlse_from_channel()) {
             fprintf(stderr,
                     "hlse: note: --from is ignored for the email subcommand "
                     "\xe2\x80\x94 email headers are intrinsically the email "
@@ -8862,10 +8827,10 @@ main(int argc, char **argv) {
                 print_json_text(argv[idx + 1], &tv);
             } else if (sr.score == 0) {
                 /* Channel-only risk: content scored 0 but delivery channel adds prior */
-                if (g_from_channel) {
-                    int d = channel_delta(g_from_channel);
+                if (hlse_from_channel()) {
+                    int d = hlse_channel_delta(hlse_from_channel());
                     if (d > 0) {
-                        const char *ch_rsn = channel_reason(g_from_channel);
+                        const char *ch_rsn = hlse_channel_reason(hlse_from_channel());
                         const char *bs2 = hlse_blindspot_for("text");
                         char db[8192];
                         printf("%-7s [%d]  (text) %.60s%s\n",
@@ -8895,10 +8860,10 @@ main(int argc, char **argv) {
                 int eff = sr.score;
                 const char *ch_rsn = NULL;
                 const char *ex;
-                if (g_from_channel) {
-                    int d = channel_delta(g_from_channel);
+                if (hlse_from_channel()) {
+                    int d = hlse_channel_delta(hlse_from_channel());
                     eff += d; if (eff > 100) eff = 100;
-                    ch_rsn = channel_reason(g_from_channel);
+                    ch_rsn = hlse_channel_reason(hlse_from_channel());
                 }
                 {
                     char db[8192];
@@ -8935,8 +8900,8 @@ main(int argc, char **argv) {
             }
             {
                 int eff_gate = sr.score;
-                if (g_from_channel) {
-                    int d = channel_delta(g_from_channel);
+                if (hlse_from_channel()) {
+                    int d = hlse_channel_delta(hlse_from_channel());
                     eff_gate += d; if (eff_gate > 100) eff_gate = 100;
                 }
                 return eff_gate >= g_fail_threshold ? 1 : 0;
@@ -8986,10 +8951,10 @@ main(int argc, char **argv) {
             }
         } else if (sr.score == 0) {
             /* Channel-only risk: content scored 0 but delivery channel adds prior */
-            if (g_from_channel) {
-                int d = channel_delta(g_from_channel);
+            if (hlse_from_channel()) {
+                int d = hlse_channel_delta(hlse_from_channel());
                 if (d > 0) {
-                    const char *ch_rsn = channel_reason(g_from_channel);
+                    const char *ch_rsn = hlse_channel_reason(hlse_from_channel());
                     const char *bs2 = hlse_blindspot_for(sr.is_url ? "url" : "text");
                     char db[8192];
                     printf("%-7s [%d]  %s\n", hlse_action_for_score(d), d,
@@ -9020,10 +8985,10 @@ main(int argc, char **argv) {
             int i;
             int eff = sr.score;
             const char *ch_rsn = NULL;
-            if (g_from_channel) {
-                int d = channel_delta(g_from_channel);
+            if (hlse_from_channel()) {
+                int d = hlse_channel_delta(hlse_from_channel());
                 eff += d; if (eff > 100) eff = 100;
-                ch_rsn = channel_reason(g_from_channel);
+                ch_rsn = hlse_channel_reason(hlse_from_channel());
             }
             {
                 char db[8192];
@@ -9064,8 +9029,8 @@ main(int argc, char **argv) {
         /* Gate uses effective score so --from boost is honoured in exit code. */
         {
             int eff_gate = sr.score;
-            if (g_from_channel) {
-                int d = channel_delta(g_from_channel);
+            if (hlse_from_channel()) {
+                int d = hlse_channel_delta(hlse_from_channel());
                 eff_gate += d; if (eff_gate > 100) eff_gate = 100;
             }
             return eff_gate >= g_fail_threshold ? 1 : 0;
