@@ -32,7 +32,7 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
    ```
    If anything regresses, **do not push.**
 3. **`make test` baseline is all-green on a verified host** — measured on
-   macOS (Apple clang): 9 unit suites 361/361, extended corpus 29/29, CLI
+   macOS (Apple clang): 9 unit suites 363/363, extended corpus 29/29, CLI
    integration 781 passed / 0 failed. A few checks print SKIP instead of
    PASS when the host genuinely lacks the precondition (no sudoers NOPASSWD
    on a hardened box, `jsonschema` module absent, /etc/hosts not writable) —
@@ -89,8 +89,8 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
   Runtime coverage is still Linux-centric: FSEvents is a stub; `/proc`,
   `/dev/sd*`, and systemd checks are Linux-only. **No continuous monitoring**:
   `inotify`/`fanotify` are comments only; the SMB canary is a single
-  `stat`+atime check; R5 shadow-delete is implemented but uncalled; R1
-  (N-files-in-T-seconds) is documented but unimplemented.
+  `stat`+atime check; R1 (N-files-in-T-seconds) is documented but
+  unimplemented.
 - **Contract tension for a daemon:** `SECURITY.md:42` classes cross-invocation
   persistent state as a High-severity bug — which a resident FIM baseline/dedup
   store needs. Daemon mode requires an explicit, scoped contract amendment.
@@ -103,7 +103,7 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 
 **P0 — consistency / reliability (low risk):**
 - ~~Sync doc numbers to measured reality~~ done: README/CONTRIBUTING/AGENTS
-  counts re-derived (1171 structured, 781 CLI, all-green baseline).
+  counts re-derived (1173 structured, 781 CLI, all-green baseline).
 - ~~Triage the 14 known failures~~ done: root causes were macOS build
   breakage + host-dependent assertions; suite is green, env-dependent checks
   SKIP explicitly.

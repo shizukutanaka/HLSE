@@ -169,6 +169,44 @@ test_ransomware_note_detection(void) {
 }
 
 static void
+test_protect_scan_merges_sub_verdicts(void) {
+    setup_tmpdir();
+    create_file("document.txt", "Normal file\n", 12);
+    create_file("readme.txt", "All your files have been encrypted.\n", 36);
+
+    TEST("Unified scan: ransomware verdict merges into combined result");
+    ProtectionVerdict v = hlse_protect_scan(tmpdir, HLSE_PROTECT_RANSOMWARE);
+    if (v.score >= 30 && v.n_reasons > 0) { PASS(); }
+    else {
+        char buf[64]; snprintf(buf, sizeof(buf), "score=%d reasons=%d",
+                               v.score, v.n_reasons);
+        FAIL(buf);
+    }
+    cleanup_tmpdir();
+}
+
+static void
+test_protect_scan_clean_dir(void) {
+    setup_tmpdir();
+    create_file("document.txt", "Hello world, this is a normal document.\n", 40);
+
+    /* All modules: a clean dir must score 0 — proves the merge does not
+     * fabricate findings and that the /proc-based R5 check is a clean
+     * no-op where /proc is absent (e.g. macOS). */
+    TEST("Unified scan: clean directory -> score 0, no reasons");
+    ProtectionVerdict v = hlse_protect_scan(tmpdir,
+        HLSE_PROTECT_RANSOMWARE | HLSE_PROTECT_SMB |
+        HLSE_PROTECT_NETWORK_DRIVE);
+    if (v.score == 0 && v.n_reasons == 0) { PASS(); }
+    else {
+        char buf[64]; snprintf(buf, sizeof(buf), "score=%d reasons=%d",
+                               v.score, v.n_reasons);
+        FAIL(buf);
+    }
+    cleanup_tmpdir();
+}
+
+static void
 test_ransomware_extension_mutation(void) {
     setup_tmpdir();
     int i;
@@ -666,6 +704,8 @@ main(void) {
     test_esp_filename_control_chars_sanitized();
     test_ransomware_compressed_not_flagged();
     test_ransomware_shadow_deletion_api();
+    test_protect_scan_merges_sub_verdicts();
+    test_protect_scan_clean_dir();
     test_ransomware_new_extensions();
     test_ransomware_stop_djvu_note();
     test_ransomware_compound();

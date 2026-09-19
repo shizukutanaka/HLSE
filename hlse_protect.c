@@ -1140,6 +1140,21 @@ hlse_esp_verify(const char *esp_path) {
  * Unified protection scan
  * ═══════════════════════════════════════════════════════════════════════ */
 
+/* Merge a finished sub-verdict into the combined scan result. Reasons are
+ * already display-sanitized by pv_add_reason; memcpy preserves them as-is. */
+static void
+pv_merge(ProtectionVerdict *combined, const ProtectionVerdict *sub) {
+    int i;
+    if (sub->score <= 0) return;
+    for (i = 0; i < sub->n_reasons &&
+                combined->n_reasons < HLSE_PROTECT_MAX_REASONS; i++) {
+        memcpy(combined->reasons[combined->n_reasons],
+               sub->reasons[i], sizeof(sub->reasons[0]));
+        combined->n_reasons++;
+    }
+    combined->score += sub->score;
+}
+
 ProtectionVerdict
 hlse_protect_scan(const char *target_path, int modules) {
     ProtectionVerdict combined;
@@ -1148,54 +1163,30 @@ hlse_protect_scan(const char *target_path, int modules) {
 
     if (modules & HLSE_PROTECT_RANSOMWARE) {
         ProtectionVerdict rv = hlse_ransomware_check_directory(target_path);
-        if (rv.score > 0) {
-            int i;
-            for (i = 0; i < rv.n_reasons && combined.n_reasons < HLSE_PROTECT_MAX_REASONS; i++) {
-                memcpy(combined.reasons[combined.n_reasons],
-                       rv.reasons[i], sizeof(rv.reasons[0]));
-                combined.n_reasons++;
-            }
-            combined.score += rv.score;
+        pv_merge(&combined, &rv);
+        /* R5 watches /proc cmdlines for shadow/backup deletion — it has no
+         * target path and was previously implemented but never invoked, so
+         * a live `vssadmin delete shadows` beside a quiet directory went
+         * unseen. (Linux-only; /proc absent elsewhere is a clean no-op.) */
+        {
+            ProtectionVerdict r5 = hlse_ransomware_check_shadow_deletion();
+            pv_merge(&combined, &r5);
         }
     }
 
     if (modules & HLSE_PROTECT_NETWORK_DRIVE) {
         ProtectionVerdict nv = hlse_netdrive_check_mounts();
-        if (nv.score > 0) {
-            int i;
-            for (i = 0; i < nv.n_reasons && combined.n_reasons < HLSE_PROTECT_MAX_REASONS; i++) {
-                memcpy(combined.reasons[combined.n_reasons],
-                       nv.reasons[i], sizeof(nv.reasons[0]));
-                combined.n_reasons++;
-            }
-            combined.score += nv.score;
-        }
+        pv_merge(&combined, &nv);
     }
 
     if (modules & HLSE_PROTECT_SMB) {
         ProtectionVerdict sv = hlse_smb_check_canary(target_path);
-        if (sv.score > 0) {
-            int i;
-            for (i = 0; i < sv.n_reasons && combined.n_reasons < HLSE_PROTECT_MAX_REASONS; i++) {
-                memcpy(combined.reasons[combined.n_reasons],
-                       sv.reasons[i], sizeof(sv.reasons[0]));
-                combined.n_reasons++;
-            }
-            combined.score += sv.score;
-        }
+        pv_merge(&combined, &sv);
     }
 
     if (modules & HLSE_PROTECT_MBR) {
         ProtectionVerdict mv = hlse_mbr_verify(target_path);
-        if (mv.score > 0) {
-            int i;
-            for (i = 0; i < mv.n_reasons && combined.n_reasons < HLSE_PROTECT_MAX_REASONS; i++) {
-                memcpy(combined.reasons[combined.n_reasons],
-                       mv.reasons[i], sizeof(mv.reasons[0]));
-                combined.n_reasons++;
-            }
-            combined.score += mv.score;
-        }
+        pv_merge(&combined, &mv);
     }
 
     if (combined.score > 100) combined.score = 100;

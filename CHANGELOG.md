@@ -74,6 +74,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
     and ESP filename reasons; benign UTF-8 echoed untouched) —
     781/781 CLI checks.
 
+- **R5 shadow-delete detection wired into `hlse_protect_scan`**
+  (`hlse_protect.c`). `hlse_ransomware_check_shadow_deletion` was
+  implemented, declared, and unit-tested — but never invoked by the
+  unified scan, so a live `vssadmin delete shadows`/`wmic shadow`/...
+  process alongside a quiet directory produced no finding. It now merges
+  into the RANSOMWARE module result. The four hand-copied merge blocks
+  collapsed into a shared `pv_merge()` helper — the duplication is what
+  let R5 get forgotten. (Linux-only check; absent /proc is a clean no-op
+  elsewhere, verified by the new clean-dir unified-scan test.)
+
 - **JSON escaping consolidated onto `hlse_json_escape`** (`hlse_server.c`).
   `json_escape_append` was a second hand-rolled copy of the same per-byte
   escape table; it now delegates — aiming the shared bounded escaper at the
@@ -83,7 +93,7 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 - **Stale documentation numbers synced to measured reality**
   (`README.md`, `CONTRIBUTING.md`, `AGENTS.md`). Structured-test totals
-  re-derived from the suites (1171: 9 unit suites + corpus + 781 CLI
+  re-derived from the suites (1173: 9 unit suites + corpus + 781 CLI
   checks; README claimed 1164, the CLI row claimed 784, AGENTS.md still
   documented the pre-port "714 passed / 14 failed" baseline as expected
   state). Binary-size claim updated to measured arm64 stripped size, and
