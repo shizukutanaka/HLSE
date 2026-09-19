@@ -943,3 +943,12 @@ hlse_json_str_field(const char *name, const char *val) {
     hlse_json_escape(val, e, sizeof(e));
     printf(",\"%s\":\"%s\"", name, e);
 }
+
+/* One escaped element of an open JSON string array: "s" for the first
+ * element (idx 0), ,"s" for the rest. */
+void
+hlse_json_str_elem(int idx, const char *val) {
+    char e[8192];
+    hlse_json_escape(val, e, sizeof(e));
+    printf("%s\"%s\"", idx > 0 ? "," : "", e);
+}

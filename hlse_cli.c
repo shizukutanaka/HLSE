@@ -87,11 +87,8 @@ hlse_cmd_protect(const HlseCli *o, int argc, char **argv, int idx) {
                        hlse_severity_for_score(pv.score));
                 {
                     int i;
-                    for (i = 0; i < pv.n_reasons; i++) {
-                        char esc[512];
-                        hlse_json_escape(pv.reasons[i], esc, sizeof(esc));
-                        printf("%s\"%s\"", i > 0 ? "," : "", esc);
-                    }
+                    for (i = 0; i < pv.n_reasons; i++)
+                        hlse_json_str_elem(i, pv.reasons[i]);
                 }
                 printf("]");
                 if (pv.score == 0) {
@@ -180,11 +177,8 @@ hlse_cmd_esp(const HlseCli *o, int argc, char **argv, int idx) {
                    "\"severity\":%d,\"reasons\":[",
                    pv.score, hlse_action_for_score(pv.score),
                    hlse_severity_for_score(pv.score));
-            for (i = 0; i < pv.n_reasons; i++) {
-                char esc[512];
-                hlse_json_escape(pv.reasons[i], esc, sizeof(esc));
-                printf("%s\"%s\"", i > 0 ? "," : "", esc);
-            }
+            for (i = 0; i < pv.n_reasons; i++)
+                        hlse_json_str_elem(i, pv.reasons[i]);
             printf("]");
             {
                 const char *bs = hlse_blindspot_for("esp");
@@ -458,10 +452,8 @@ hlse_cmd_file(const HlseCli *o, int argc, char **argv, int idx) {
                        "\"action\":\"%s\",\"severity\":%d,\"reasons\":[",
                        esc, fv.score, hlse_action_for_score(fv.score),
                        hlse_severity_for_score(fv.score));
-                for (i = 0; i < fv.n_reasons; i++) {
-                    hlse_json_escape(fv.reasons[i], esc, sizeof(esc));
-                    printf("%s\"%s\"", i > 0 ? "," : "", esc);
-                }
+                for (i = 0; i < fv.n_reasons; i++)
+                    hlse_json_str_elem(i, fv.reasons[i]);
                 printf("]");
                 if (fv.score == 0) {
                     const char *bs = hlse_blindspot_for("file");
@@ -568,11 +560,8 @@ hlse_cmd_network(const HlseCli *o) {
                    "\"severity\":%d,\"reasons\":[",
                    nv.score, hlse_action_for_score(nv.score),
                    hlse_severity_for_score(nv.score));
-            for (i = 0; i < nv.n_reasons; i++) {
-                char esc[512];
-                hlse_json_escape(nv.reasons[i], esc, sizeof(esc));
-                printf("%s\"%s\"", i > 0 ? "," : "", esc);
-            }
+            for (i = 0; i < nv.n_reasons; i++)
+                        hlse_json_str_elem(i, nv.reasons[i]);
             printf("]");
             if (nv.score == 0) {
                 const char *bs = hlse_blindspot_for("network");
@@ -723,11 +712,8 @@ hlse_cmd_paste(const HlseCli *o, int argc, char **argv, int idx) {
                     }
                 }
                 printf(",\"reasons\":[");
-                for (i = 0; i < pv.n_reasons; i++) {
-                    char esc[512];
-                    hlse_json_escape(pv.reasons[i], esc, sizeof(esc));
-                    printf("%s\"%s\"", i > 0 ? "," : "", esc);
-                }
+                for (i = 0; i < pv.n_reasons; i++)
+                        hlse_json_str_elem(i, pv.reasons[i]);
                 printf("]}\n");
             } else if (pv.score == 0) {
                 const char *bs = hlse_blindspot_for("paste");
@@ -810,11 +796,8 @@ hlse_cmd_email(const HlseCli *o, int argc, char **argv, int idx) {
                        "\"severity\":%d,\"reasons\":[",
                        ev.score, hlse_action_for_score(ev.score),
                        hlse_severity_for_score(ev.score));
-                for (i = 0; i < ev.n_reasons; i++) {
-                    char esc[512];
-                    hlse_json_escape(ev.reasons[i], esc, sizeof(esc));
-                    printf("%s\"%s\"", i > 0 ? "," : "", esc);
-                }
+                for (i = 0; i < ev.n_reasons; i++)
+                        hlse_json_str_elem(i, ev.reasons[i]);
                 printf("]");
                 if (ev.score == 0 && !body_pat) {
                     const char *bs = hlse_blindspot_for("email");
@@ -1598,10 +1581,8 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                    "\"severity\":%d,\"reasons\":[",
                                    esc, fv.score, hlse_action_for_score(fv.score),
                                    hlse_severity_for_score(fv.score));
-                            for (i = 0; i < fv.n_reasons; i++) {
-                                hlse_json_escape(fv.reasons[i], esc, sizeof(esc));
-                                printf("%s\"%s\"", i ? "," : "", esc);
-                            }
+                            for (i = 0; i < fv.n_reasons; i++)
+                    hlse_json_str_elem(i, fv.reasons[i]);
                             printf("]");
                             if (fv.score >= 40) {
                                 /* Perspective 98: matches the standalone
@@ -1916,9 +1897,8 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                                            hlse_action_for_score(uv.score));
                                                     { int kr;
                                                       for (kr = 0; kr < uv.n_reasons; kr++) {
-                                                          char er[256];
-                                                          hlse_json_escape(uv.reasons[kr], er, sizeof(er));
-                                                          printf("%s\"%s\"", kr>0?",":"", er);
+                                                          
+                                                          hlse_json_str_elem(kr, uv.reasons[kr]);
                                                       }
                                                     }
                                                     printf("]");

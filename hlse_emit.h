@@ -50,3 +50,4 @@ size_t hlse_read_stdin_all(char *buf, size_t cap);
 void   hlse_argv_remove(char **argv, int *argc, int *argc_flags, int i, int n);
 void   hlse_json_open(const char *kind);
 void   hlse_json_str_field(const char *name, const char *val);
+void   hlse_json_str_elem(int idx, const char *val);
