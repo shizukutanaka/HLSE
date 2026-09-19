@@ -18,3 +18,6 @@ typedef struct {
 
 #endif /* HLSE_CLI_H */
 int hlse_cmd_protect(const HlseCli *o, int argc, char **argv, int idx);
+int hlse_cmd_esp(const HlseCli *o, int argc, char **argv, int idx);
+int hlse_cmd_esp(const HlseCli *o, int argc, char **argv, int idx);
+int hlse_cmd_clipboard(const HlseCli *o, int argc, char **argv, int idx);

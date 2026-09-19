@@ -3239,80 +3239,8 @@ main(int argc, char **argv) {
     if (strcmp(argv[idx], "protect") == 0)
         return hlse_cmd_protect(&o, argc, argv, idx);
 
-    if (strcmp(argv[idx], "esp") == 0) {
-        /* EFI System Partition integrity (UEFI bootkit indicators). */
-        const char *path = (argc > idx + 1) ? argv[idx + 1] : NULL;
-        ProtectionVerdict pv = hlse_esp_verify(path);
-        if (o.json_out) {
-            int i;
-            printf("{\"kind\":\"esp\",\"hlse_version\":\"" HLSE_VERSION "\","
-                   "\"score\":%d,\"action\":\"%s\","
-                   "\"severity\":%d,\"reasons\":[",
-                   pv.score, hlse_action_for_score(pv.score),
-                   hlse_severity_for_score(pv.score));
-            for (i = 0; i < pv.n_reasons; i++) {
-                char esc[512];
-                hlse_json_escape(pv.reasons[i], esc, sizeof(esc));
-                printf("%s\"%s\"", i > 0 ? "," : "", esc);
-            }
-            printf("]");
-            {
-                const char *bs = hlse_blindspot_for("esp");
-                if (pv.score == 0 && bs) {
-                    char esc_bs[512];
-                    hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                    printf(",\"blind_spot\":\"%s\"", esc_bs);
-                }
-            }
-            if (pv.score > 0) {
-                int ns = pv.n_reasons;
-                const char *conf = ns >= 3 ? "high confidence" :
-                                   ns >= 2 ? "corroborated" : "single signal";
-                printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
-            }
-            if (pv.score >= 60) {
-                char e[512];
-                hlse_json_escape(hlse_esp_pattern_text(),   e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
-                printf(",\"pattern_id\":\"HLSE-ESP-BOOTKIT\"");
-                hlse_json_escape(hlse_esp_objective_text(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                hlse_json_escape(hlse_esp_verify_text(),     e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
-                hlse_json_escape(hlse_esp_triage_text(),     e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                hlse_json_escape(hlse_esp_cascade_text(),    e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
-            }
-            if (pv.score > 0 && pv.score < 60) {
-                const char *ex = hlse_exoneration_for("esp", pv.score);
-                if (ex) {
-                    char e[512];
-                    hlse_json_escape(ex, e, sizeof(e));
-                    printf(",\"exoneration\":\"%s\"", e);
-                }
-            }
-            printf("}\n");
-        } else if (pv.score == 0) {
-            const char *bs = hlse_blindspot_for("esp");
-            printf("OK    (esp)%s%s\n",
-                   pv.n_reasons ? " \xe2\x80\x94 " : "",
-                   pv.n_reasons ? pv.reasons[0] : "");
-            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-        } else {
-            int i;
-            printf("%-7s [%d]  (esp)\n",
-                   hlse_action_for_score(pv.score), pv.score);
-            for (i = 0; i < pv.n_reasons; i++)
-                printf("  \xc2\xb7 %s\n", pv.reasons[i]);
-            if (pv.score >= 60) {
-                printf("  \xe2\x96\xb8 Pattern: %s\n", hlse_esp_pattern_text());
-                printf("  \xe2\x97\x89 Attacker's goal: %s\n", hlse_esp_objective_text());
-                printf("  \xe2\x9c\x93 Verify first: %s\n", hlse_esp_verify_text());
-                printf("  \xe2\x9a\x91 Immediate action: %s\n", hlse_esp_triage_text());
-                printf("  \xe2\x8a\x95 Also change: %s\n", hlse_esp_cascade_text());
-            } else {
-                const char *ex = hlse_exoneration_for("esp", pv.score);
-                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-            }
-        }
-        return pv.score >= o.fail_threshold ? 1 : 0;
-    }
+    if (strcmp(argv[idx], "esp") == 0)
+        return hlse_cmd_esp(&o, argc, argv, idx);
 
     /* ── Supply Chain Defense subcommands ───────────────────────────── */
 
@@ -4105,82 +4033,8 @@ main(int argc, char **argv) {
         }
     }
 
-    if (strcmp(argv[idx], "clipboard") == 0) {
-        if (argc < idx + 3) {
-            fprintf(stderr,
-                    "Usage: %s clipboard \"<copied addr>\" \"<pasted addr>\"\n",
-                    argv[0]);
-            return 2;
-        }
-        {
-            CryptoSwapVerdict cv =
-                hlse_check_crypto_swap(argv[idx + 1], argv[idx + 2]);
-            {
-                const char *aar[1]; int aqn = 0;
-                if (cv.reason[0]) { aar[0] = cv.reason; aqn = 1; }
-                hlse_alert_emit("clipboard", cv.score,
-                    hlse_severity_for_score(cv.score),
-                    cv.swapped[0] ? cv.swapped : "(clipboard)", aar, aqn);
-            }
-            const char *rem = hlse_remediation_for("clipboard", cv.score);
-            if (o.json_out) {
-                char eo[256], es[256], er[512], erm[512];
-                hlse_json_escape(cv.original, eo, sizeof(eo));
-                hlse_json_escape(cv.swapped, es, sizeof(es));
-                hlse_json_escape(cv.reason, er, sizeof(er));
-                hlse_json_escape(rem ? rem : "", erm, sizeof(erm));
-                printf("{\"kind\":\"clipboard\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"score\":%d,\"action\":\"%s\","
-                       "\"severity\":%d,"
-                       "\"is_swap\":%d,"
-                       "\"original\":\"%s\",\"swapped\":\"%s\",\"reason\":\"%s\","
-                       "\"remediation\":\"%s\"",
-                       cv.score, hlse_action_for_score(cv.score),
-                       hlse_severity_for_score(cv.score),
-                       cv.is_swap, eo, es, er, erm);
-                if (cv.score == 0) {
-                    const char *bs = hlse_blindspot_for("clipboard");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
-                }
-                if (cv.score >= 60) {
-                    char e[512];
-                    hlse_json_escape(hlse_clipboard_pattern_text(), e, sizeof(e));
-                    printf(",\"pattern\":\"%s\"", e);
-                    printf(",\"pattern_id\":\"HLSE-CLIP-HIJACK\"");
-                    hlse_json_escape(hlse_clipboard_objective_text(), e, sizeof(e));
-                    printf(",\"objective\":\"%s\"", e);
-                    hlse_json_escape(hlse_clipboard_verify_text(), e, sizeof(e));
-                    printf(",\"verify\":\"%s\"", e);
-                    hlse_json_escape(hlse_clipboard_triage_text(), e, sizeof(e));
-                    printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(hlse_clipboard_cascade_text(), e, sizeof(e));
-                    printf(",\"cascade_risk\":\"%s\"", e);
-                }
-                printf("}\n");
-            } else if (cv.score == 0) {
-                const char *bs = hlse_blindspot_for("clipboard");
-                printf("OK    (clipboard \xe2\x80\x94 no address swap detected)\n");
-                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-            } else {
-                printf("%-7s [%d]  (clipboard)\n",
-                       hlse_action_for_score(cv.score), cv.score);
-                if (cv.reason[0]) printf("  \xc2\xb7 %s\n", cv.reason);
-                if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
-                if (cv.score >= 60) {
-                    printf("  \xe2\x96\xb8 Pattern: %s\n", hlse_clipboard_pattern_text());
-                    printf("  \xe2\x97\x89 Attacker's goal: %s\n", hlse_clipboard_objective_text());
-                    printf("  \xe2\x9c\x93 Verify first: %s\n", hlse_clipboard_verify_text());
-                    printf("  \xe2\x9a\x91 If you acted: %s\n", hlse_clipboard_triage_text());
-                    printf("  \xe2\x8a\x95 Also change: %s\n", hlse_clipboard_cascade_text());
-                }
-            }
-            return cv.score >= o.fail_threshold ? 1 : 0;
-        }
-    }
+    if (strcmp(argv[idx], "clipboard") == 0)
+        return hlse_cmd_clipboard(&o, argc, argv, idx);
 
     if (strcmp(argv[idx], "file") == 0) {
         if (argc < idx + 2) {
