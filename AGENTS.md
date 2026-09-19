@@ -75,7 +75,7 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 
 ## Weaknesses / risks (what to improve — cite when you touch them)
 
-- **`hlse_core.c` is ~5,056 lines** with a giant `main()` dispatching 12+
+- **`hlse_core.c` is ~4,812 lines** with a giant `main()` dispatching 12+
   subcommands via flat `strcmp`. High regression surface. The split has
   started — extracted so far: `hlse_selftest.c`, `hlse_registry.c`,
   `hlse_channel.c` (delivery-channel prior), `hlse_baseline.c`

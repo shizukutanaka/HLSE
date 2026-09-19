@@ -690,3 +690,245 @@ hlse_print_text_advisories(const TextVerdict *tv) {
     if (tcas) printf("  \xe2\x8a\x95 Also change: %s\n", tcas);
 }
 
+/* ─────────────────────────── stdin pipe mode ────────────────────────── */
+
+int
+hlse_stdin_mode(int json_out, int fail_threshold) {
+    char line[MAX_URL];
+    int  any_threat = 0;
+
+    while (fgets(line, sizeof(line), stdin)) {
+        size_t n = strlen(line);
+        while (n > 0 && (line[n-1] == '\n' || line[n-1] == '\r'))
+            line[--n] = '\0';
+        if (n == 0) continue;
+
+        ScanResult sr = hlse_scan(line);
+        if (json_out) {
+            /* JSON uses specific formatters for structured output.
+             * For text lines, reuse sr (not hlse_check_text alone) so
+             * embedded URL extraction is honoured — same as GAP-N fix. */
+            if (sr.is_url) {
+                Verdict uv = hlse_check_url(line);
+                hlse_print_json_url(line, &uv);
+            } else {
+                TextVerdict tv;
+                int ti;
+                memset(&tv, 0, sizeof(tv));
+                tv.score = sr.score;
+                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
+                               ? sr.n_reasons : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
+                for (ti = 0; ti < tv.n_reasons; ti++)
+                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
+                             "%s", sr.reasons[ti]);
+                hlse_print_json_text(line, &tv);
+            }
+        } else if (sr.score == 0) {
+            /* Channel-only risk: content scored 0 but delivery channel adds prior */
+            if (hlse_from_channel()) {
+                int d = hlse_channel_delta(hlse_from_channel());
+                if (d > 0) {
+                    const char *ch_rsn = hlse_channel_reason(hlse_from_channel());
+                    char db[8192];
+                    printf("%-7s [%d]  %s\n", hlse_action_for_score(d), d,
+                           hlse_display_copy(db, sizeof(db), line));
+                    if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
+                    continue;
+                }
+            }
+            {
+                char canon_brand[64];
+                char db[8192];
+                printf("OK    %s\n", hlse_display_copy(db, sizeof(db), line));
+                if (sr.is_url && hlse_canonical_confirm(line, canon_brand, sizeof(canon_brand)))
+                    printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
+                           "(HLSE brand registry)\n", canon_brand);
+            }
+        } else {
+            int i;
+            int eff = sr.score;
+            const char *ch_rsn = NULL;
+            if (hlse_from_channel()) {
+                int d = hlse_channel_delta(hlse_from_channel());
+                eff += d; if (eff > 100) eff = 100;
+                ch_rsn = hlse_channel_reason(hlse_from_channel());
+            }
+            {
+                char db[8192];
+                printf("%-7s [%d]  %s\n",
+                       hlse_action_for_score(eff), eff,
+                       hlse_display_copy(db, sizeof(db), line));
+            }
+            for (i = 0; i < sr.n_reasons; i++) {
+                /* Amplifier lines are derived meta-labels, not independently
+                 * detected facts; the ▸ Pattern line already expresses them
+                 * in user-facing language. Keep them in JSON; filter here. */
+                if (strncmp(sr.reasons[i], "Amplifier:", 10) == 0) continue;
+                printf("  \xc2\xb7 %s\n", sr.reasons[i]);  /* · */
+            }
+            if (sr.is_url) {
+                Verdict uv = hlse_check_url(line);
+                const char *url_ex = hlse_url_exoneration(&uv);
+                hlse_print_url_advisories(line, &uv);
+                if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
+                if (url_ex) printf("  \xe2\x86\xba Could be benign: %s\n", url_ex);
+            } else {
+                TextVerdict tv;
+                const char *tex;
+                int ti;
+                memset(&tv, 0, sizeof(tv));
+                tv.score = sr.score;
+                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
+                               ? sr.n_reasons
+                               : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
+                for (ti = 0; ti < tv.n_reasons; ti++)
+                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
+                             "%s", sr.reasons[ti]);
+                tex  = hlse_text_exoneration(&tv);
+                hlse_print_text_advisories(&tv);
+                if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
+                if (tex) printf("  \xe2\x86\xba Could be benign: %s\n", tex);
+            }
+        }
+        /* Gate uses effective score (raw + channel boost) so that e.g.
+         * --from sms raises exit 0 → exit 1 when boost crosses the threshold. */
+        {
+            int eff_gate = sr.score;
+            if (hlse_from_channel()) {
+                int d = hlse_channel_delta(hlse_from_channel());
+                eff_gate += d; if (eff_gate > 100) eff_gate = 100;
+            }
+            if (eff_gate >= fail_threshold) any_threat = 1;
+        }
+    }
+    return any_threat ? 1 : 0;
+}
+
+/* ─────────────────────────── main ─────────────────────────────────── */
+
+void
+hlse_print_usage(const char *prog) {
+    fprintf(stderr,
+        "HLSE %s — Human-Layer Security Engine\n"
+        "\n"
+        "Scanning:\n"
+        "  %s <url>                    Scan a URL for phishing\n"
+        "  %s text \"<message>\"         Scan text for scam patterns\n"
+        "  %s <any input>              Auto-detect URL or text\n"
+        "\n"
+        "Protection:\n"
+        "  %s protect <path>           Ransomware / SMB / canary check\n"
+        "  %s protect /dev/sda --mbr   MBR/GPT integrity (needs root)\n"
+        "  %s esp [path]               UEFI/ESP bootkit-string scan\n"
+        "  %s scan <directory>          Recursive secret + file scan (CI/CD)\n"
+        "  %s scan <dir> --git-history  Scan every commit ever made, not just the working tree\n"
+        "  %s secret \"<text>\"          Scan text/stdin for leaked credentials\n"
+        "  %s email \"<headers>\"        Email-header forensics (SPF/DKIM, BEC)\n"
+        "  %s clipboard <copied> <pasted>  Crypto address-swap (clipper) check\n"
+        "  %s package <name> [eco]     Package typosquat check\n"
+        "  %s package --manifest <f>   Scan every dep in requirements.txt / package.json\n"
+        "  %s paste \"<command>\"        Pastejacking detection\n"
+        "  %s network                  ARP / DNS / hosts safety check\n"
+        "  %s file <path>              File masquerade detection\n"
+        "  %s audit                    System hardening audit\n"
+        "\n"
+        "Options:\n"
+        "  %s --json <subcommand>      JSON output\n"
+        "  %s --sarif scan <dir>       SARIF 2.1.0 output (GitHub code scanning)\n"
+        "  %s -q | --quiet             Exit code only (CI/CD mode)\n"
+        "  %s --fail-on <tier>         Exit-1 gate: log|alert|block|isolate|0-100 (default block)\n"
+        "  %s --from <channel>         Delivery channel: email|sms|dm|qr|manual (boosts URL & text score)\n"
+        "  %s --baseline <file>        scan: suppress findings whose fingerprint is listed (CI adoption)\n"
+        "  %s --fingerprints scan <d>  scan: emit one fingerprint per finding (generate a baseline)\n"
+        "  %s --patterns <file>        Load custom org-specific secret patterns (no rebuild needed)\n"
+        "  %s --config <file>          Load flag defaults from a key=value file\n"
+        "  %s --syslog                 Push findings to syslog (LOG_AUTHPRIV)\n"
+        "  %s --log-file <file>        Append one JSONL record per finding (0600)\n"
+        "  %s -- <input>               End of options: everything after is data, not flags\n"
+        "  %s --stdin [--json]         Pipe mode (one input per line)\n"
+        "  %s --self-test              Built-in tests\n"
+        "  %s --benchmark              Corpus benchmark\n"
+        "  %s --list-patterns [--json] List stable pattern_id tokens (SIEM/SOAR registry)\n"
+        "  %s --version | -V           Version\n"
+        "  %s -h | --help              Show this help\n"
+        "\n"
+        "Baseline workflow (brownfield CI adoption):\n"
+        "  %s --fingerprints scan . > .hlse-baseline   # accept today's findings\n"
+        "  %s --baseline .hlse-baseline scan .          # only NEW findings fail\n"
+        "  Inline suppression: put `hlse:allow` on a line to skip its findings.\n"
+        "\n"
+        "Custom patterns (%s --patterns <file>), one directive per line:\n"
+        "  SECRET <prefix> <min_suffix> <charset> <score> <label...>\n"
+        "    charset is alnum|alnum_dash|hex|alpha|digit.\n"
+        "    Example: SECRET ACME_KEY_ 20 alnum 85 ACME Internal API Key\n"
+        "  BRAND <name> <owned_domain1>[,<owned_domain2>...]\n"
+        "    Protects your org's name/executives in email BEC display-name checks.\n"
+        "    Example: BRAND acmecorp acmecorp.com,acme-corp.com\n"
+        "\n"
+        "Exit code: 0 = safe, 1 = threat (>= --fail-on, default block/60), 2 = usage error\n",
+        HLSE_VERSION,
+        prog, prog, prog,                                /* scanning: 3 */
+        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 14 */
+        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* options: 18 */
+        prog, prog, prog); /* baseline workflow: 2 + custom patterns: 1 */
+}
+
+/* Read all of stdin into buf (NUL-terminated, truncated to cap-1 bytes).
+ *
+ * Perspective 105 (P1-2): the previous version truncated silently at cap-1,
+ * so a secret past the buffer end read as "clean" (exit 0) — a false
+ * negative demonstrated through the shipped pre-commit hook. Now: if input
+ * exceeds the buffer, drain the rest of stdin so a pipe writer does not
+ * block on a full pipe, and print a clear warning to stderr naming how many
+ * bytes were dropped so the caller knows the result is not authoritative.
+ * The buffers were also enlarged to 1 MiB (see the --stdin call sites),
+ * matching the shipped hook's own 1 MB file-size guard, so the demonstrated
+ * gap is closed outright and the warning is a backstop for larger inputs. */
+size_t
+hlse_read_stdin_all(char *buf, size_t cap) {
+    size_t total = 0, r;
+    if (cap == 0) return 0;
+    while (total < cap - 1 &&
+           (r = fread(buf + total, 1, cap - 1 - total, stdin)) > 0)
+        total += r;
+    buf[total] = '\0';
+    if (total == cap - 1) {
+        /* Buffer filled exactly — there may be more input we cannot hold.
+         * Drain and count the overflow so the warning is precise, and so a
+         * writer piping into us does not block on a full pipe. */
+        size_t dropped = 0;
+        char sink[8192];
+        while ((r = fread(sink, 1, sizeof(sink), stdin)) > 0) dropped += r;
+        if (dropped > 0) {
+            fprintf(stderr,
+                    "hlse: warning: stdin exceeded %zu-byte buffer; %zu byte(s) "
+                    "dropped \xe2\x80\x94 scan of the truncated tail was skipped, "
+                    "so a clean result is NOT authoritative for the full input\n",
+                    cap - 1, dropped);
+        }
+    }
+    return total;
+}
+
+
+
+/* Remove `n` argv elements starting at index `i`, keeping BOTH argc and the
+ * end-of-options boundary in step.
+ *
+ * The boundary decrement is the part that is easy to miss and expensive to get
+ * wrong: every removal slides the operands left by n, so a boundary left
+ * unchanged admits n operands into the flag-scanning range. Data written after
+ * `--` then gets parsed as options — which is exactly the bug the `--` marker
+ * exists to prevent. Doing the bookkeeping in one place is the only way this
+ * invariant stays true; it previously had to be restated at eleven call sites,
+ * and was wrong at all of them. */
+void
+hlse_argv_remove(char **argv, int *argc, int *argc_flags, int i, int n) {
+    int j;
+    for (j = i; j + n < *argc; j++) argv[j] = argv[j + n];
+    *argc -= n;
+    if (i < *argc_flags) {
+        *argc_flags -= n;
+        if (*argc_flags < i) *argc_flags = i;
+    }
+}

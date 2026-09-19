@@ -44,3 +44,7 @@ void hlse_print_url_advisories(const char *url, const Verdict *uv);
 void hlse_print_text_advisories(const TextVerdict *tv);
 
 #endif /* HLSE_EMIT_H */
+int    hlse_stdin_mode(int json_out, int fail_threshold);
+void   hlse_print_usage(const char *prog);
+size_t hlse_read_stdin_all(char *buf, size_t cap);
+void   hlse_argv_remove(char **argv, int *argc, int *argc_flags, int i, int n);
