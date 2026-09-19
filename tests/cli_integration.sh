@@ -26,6 +26,7 @@ check() {
 }
 
 cd "$(dirname "$0")/.."
+HLSE_ROOT=$(pwd)   # absolute path for checks that cd into a temp dir
 [ -x ./hlse_core ] || { echo "Build hlse_core first: make"; exit 2; }
 
 # ─── exit codes ─────────────────────────────────────────────────────────
@@ -2790,11 +2791,33 @@ assert "triage" not in d, d
 
 # ─── P53: audit per-finding remediation hints ────────────────────────────
 
+# These assertions inspect the live host's audit verdict, so they need the
+# host to actually produce the finding under test: the A7 NOPASSWD check
+# only fires on a host whose sudoers still allows passwordless sudo. Probe
+# once via --json (audit exits non-zero when findings exist — hence ||true)
+# and SKIP on hardened hosts, like the /etc/hosts writability probes do.
+P53_AUDIT_JSON=$(./hlse_core --json audit 2>/dev/null || true)
+P53_HIGH=$(printf '%s' "$P53_AUDIT_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+print(sum(1 for f in d["findings"] if f["severity"] >= 4))
+' 2>/dev/null || echo 0)
+P53_A7_HIGH=$(printf '%s' "$P53_AUDIT_JSON" | python3 -c '
+import sys, json
+d = json.loads(sys.stdin.readline())
+print(sum(1 for f in d["findings"]
+          if f["severity"] >= 4 and f["description"].startswith("A7:")))
+' 2>/dev/null || echo 0)
+
 # p53: audit HIGH finding shows Fix line
-./hlse_core audit 2>&1 \
-    | grep -q "Fix:.*visudo" \
-    && check "p53: audit HIGH finding (A7 NOPASSWD) shows Fix command" "0" "0" \
-    || check "p53: audit HIGH finding (A7 NOPASSWD) shows Fix command" "0" "1"
+if [ "$P53_A7_HIGH" -gt 0 ]; then
+    ./hlse_core audit 2>&1 \
+        | grep -q "Fix:.*visudo" \
+        && check "p53: audit HIGH finding (A7 NOPASSWD) shows Fix command" "0" "0" \
+        || check "p53: audit HIGH finding (A7 NOPASSWD) shows Fix command" "0" "1"
+else
+    echo "SKIP  p53: no A7 NOPASSWD finding on this host — remediation check skipped"
+fi
 
 # p53: audit PASS findings do NOT show Fix line
 # Use [PASS] prefix match to avoid matching 'NOPASSWD' in the Fix line
@@ -2810,7 +2833,8 @@ assert "triage" not in d, d
     || check "p53: audit INFO findings have no Fix line" "0" "0"
 
 # p53 json: HIGH severity finding carries "fix" field
-./hlse_core --json audit 2>&1 | python3 -c '
+if [ "$P53_HIGH" -gt 0 ]; then
+    ./hlse_core --json audit 2>&1 | python3 -c '
 import sys, json
 d = json.loads(sys.stdin.readline())
 highs = [f for f in d["findings"] if f["severity"] >= 4]
@@ -2819,6 +2843,9 @@ for h in highs:
     assert "fix" in h, f"HIGH finding missing fix field: {h}"
 ' && check "p53 json: HIGH severity findings carry fix field" "0" "0" \
    || check "p53 json: HIGH severity findings carry fix field" "0" "1"
+else
+    echo "SKIP  p53 json: no HIGH audit finding on this host — fix-field check skipped"
+fi
 
 # p53 json: PASS/INFO findings do NOT carry "fix" field
 ./hlse_core --json audit 2>&1 | python3 -c '
@@ -3448,13 +3475,17 @@ if d["score"] > 0:
     || check "p61: audit human shows next step guidance" "0" "1"
 
 # p61 json: audit A7 HIGH finding increments high_count
-./hlse_core --json audit 2>&1 | python3 -c '
+if [ "$P53_HIGH" -gt 0 ]; then
+    ./hlse_core --json audit 2>&1 | python3 -c '
 import sys, json
 d = json.loads(sys.stdin.readline())
 # A7 NOPASSWD is HIGH (severity 4) in test environment
 assert d["high_count"] >= 1, d
 ' && check "p61 json: audit A7 HIGH increments high_count" "0" "0" \
    || check "p61 json: audit A7 HIGH increments high_count" "0" "1"
+else
+    echo "SKIP  p61 json: no HIGH audit finding on this host — high_count check skipped"
+fi
 
 # ─── P62: signal_count / confidence / exoneration for protect/esp/package/network ─
 
@@ -5884,7 +5915,7 @@ P111_DIR=$(mktemp -d)
 )
 
 # Working-tree scan sees nothing — the secret was deleted before this scan
-P111_WT=$(cd "$P111_DIR" && /home/user/HLSE/hlse_core scan . 2>/dev/null || true)
+P111_WT=$(cd "$P111_DIR" && "$HLSE_ROOT/hlse_core" scan . 2>/dev/null || true)
 echo "$P111_WT" | grep -q "0 threats" \
     && check "p111: working-tree scan is clean (secret was deleted)" "0" "0" \
     || check "p111: working-tree scan is clean (secret was deleted)" "0" "1"
@@ -5892,16 +5923,16 @@ echo "$P111_WT" | grep -q "0 threats" \
 # --git-history finds the deleted-but-once-committed secret; exit 1
 # (the finding is redacted in display output — "AKIA1234..." not the full
 # key — so match the redacted prefix and the AWS type label, not the key.)
-P111_GH=$(cd "$P111_DIR" && /home/user/HLSE/hlse_core scan . --git-history 2>/dev/null || true)
+P111_GH=$(cd "$P111_DIR" && "$HLSE_ROOT/hlse_core" scan . --git-history 2>/dev/null || true)
 echo "$P111_GH" | grep -q "AWS Access Key ID" \
     && echo "$P111_GH" | grep -q "config.env" \
     && check "p111: --git-history finds the deleted secret still in history" "0" "0" \
     || check "p111: --git-history finds the deleted secret still in history" "0" "1"
-(cd "$P111_DIR" && /home/user/HLSE/hlse_core scan . --git-history >/dev/null 2>&1) && rc=0 || rc=$?
+(cd "$P111_DIR" && "$HLSE_ROOT/hlse_core" scan . --git-history >/dev/null 2>&1) && rc=0 || rc=$?
 check "p111: --git-history exits 1 when a historical secret is found" "1" "$rc"
 
 # JSON mode: findings carry "commit"; scan_summary carries mode=git-history
-(cd "$P111_DIR" && /home/user/HLSE/hlse_core --json scan . --git-history 2>/dev/null) | python3 -c '
+(cd "$P111_DIR" && "$HLSE_ROOT/hlse_core" --json scan . --git-history 2>/dev/null) | python3 -c '
 import sys, json
 lines = [json.loads(l) for l in sys.stdin if l.strip()]
 secrets = [d for d in lines if d["kind"] == "secret"]
@@ -5915,7 +5946,7 @@ assert summaries[0]["commits_scanned"] == 3, summaries[0]
    || check "p111 json: findings carry full commit SHA, summary carries mode" "0" "1"
 
 # SARIF mode is valid and carries the finding
-(cd "$P111_DIR" && /home/user/HLSE/hlse_core --sarif scan . --git-history 2>/dev/null) | python3 -c '
+(cd "$P111_DIR" && "$HLSE_ROOT/hlse_core" --sarif scan . --git-history 2>/dev/null) | python3 -c '
 import sys, json
 d = json.load(sys.stdin)
 assert d["version"] == "2.1.0"
@@ -5925,14 +5956,14 @@ assert d["runs"][0]["results"][0]["ruleId"] == "secret"
    || check "p111 sarif: --git-history emits valid SARIF with the finding" "0" "1"
 
 # --fingerprints works for git-history mode (baseline generation)
-P111_FP=$(cd "$P111_DIR" && /home/user/HLSE/hlse_core --fingerprints scan . --git-history 2>/dev/null || true)
+P111_FP=$(cd "$P111_DIR" && "$HLSE_ROOT/hlse_core" --fingerprints scan . --git-history 2>/dev/null || true)
 echo "$P111_FP" | grep -qE '^[0-9a-f]{16}  HLSE-SECRET-AWS' \
     && check "p111: --fingerprints emits a stable fingerprint for a historical finding" "0" "0" \
     || check "p111: --fingerprints emits a stable fingerprint for a historical finding" "0" "1"
 
 # --baseline suppresses the historical finding — only NEW history entries fail
 echo "$P111_FP" > "$P111_DIR.baseline"
-(cd "$P111_DIR" && /home/user/HLSE/hlse_core --baseline "$P111_DIR.baseline" scan . --git-history >/dev/null 2>&1) && rc=0 || rc=$?
+(cd "$P111_DIR" && "$HLSE_ROOT/hlse_core" --baseline "$P111_DIR.baseline" scan . --git-history >/dev/null 2>&1) && rc=0 || rc=$?
 check "p111: --baseline suppresses a known historical secret (exit 0)" "0" "$rc"
 rm -f "$P111_DIR.baseline"
 

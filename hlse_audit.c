@@ -358,10 +358,8 @@ hlse_audit_dns(void) {
     /* Check resolv.conf for suspicious DNS */
     fp = hlse_open_system_file("/etc/resolv.conf");
     if (fp) {
-        int nameserver_count = 0;
         while (fgets(line, sizeof(line), fp)) {
             if (strncmp(line, "nameserver", 10) == 0) {
-                nameserver_count++;
                 /* Check for suspicious nameservers (non-well-known) */
                 char *ns = line + 10;
                 while (*ns == ' ') ns++;

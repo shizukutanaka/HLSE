@@ -4,6 +4,46 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Fixed
+- **macOS build and test portability** (`Makefile`, `hlse_audit.c`,
+  `hlse_core.c`, `tests/cli_integration.sh`). The README's "macOS (partial)"
+  platform claim was not literally true: the tree did not compile on Darwin
+  at all.
+  - `-D_POSIX_C_SOURCE=200809L` hides `O_NOFOLLOW` and `strcasestr` on
+    Darwin, so every file that opens a scanned path with symlink protection
+    failed with "use of undeclared identifier". The Makefile now adds
+    `-D_DARWIN_C_SOURCE` on macOS via a `PLATFORM_CFLAGS` variable that
+    rides along on every compile line — including the fuzz, coverage, and
+    ASan recipes that spell the POSIX macro out literally.
+  - `make check-warnings` was GCC-only: `-Wformat-truncation=2`,
+    `-Wformat-overflow=2`, and `-Wstringop-overread` do not exist under
+    those spellings in clang, which prints an unknown-option warning per
+    file and fails the gate. The strict-flag set is now
+    compiler-conditional (`STRICT_FORMAT_WFLAGS`, `WNO_STRINGOP_OVERREAD`);
+    clang runs the same warnings without the level argument.
+  - `-pie` is a no-op on macOS (all binaries are position-independent) and
+    clang warned about it on every link; `PIE_LDFLAGS` is empty on Darwin.
+  - `make static` cannot work on macOS (no static libc exists) — it now
+    fails with an explicit message instead of a cryptic linker error.
+  - Dead `nameserver_count` counter in `hlse_audit.c` removed, and a
+    clang-only `AuditSeverity`→`int` sign-conversion warning in the audit
+    CLI output fixed with an explicit cast — the strict gate is green under
+    Apple clang in both CLI and `-DHLSE_CORE_AS_LIB` modes.
+  - `tests/cli_integration.sh` p111 invoked the binary via a hardcoded
+    `/home/user/HLSE/hlse_core`, so the `--git-history` checks could only
+    pass on one developer's machine. The suite now captures the repo root
+    once (`HLSE_ROOT`) and uses it inside the temp-dir subshells.
+  - The p53/p61 audit-remediation assertions assumed the host sudoers has a
+    NOPASSWD entry; on a hardened host nothing reaches HIGH and they failed
+    spuriously. They now probe once via `--json audit` and SKIP when no
+    HIGH/A7 finding exists — same convention as the existing
+    /etc/hosts-writability skips.
+
+  Result: `make`, `make check-warnings`, `make test`, `make asan-test`,
+  `make fuzz`, and `make server-check` all pass on macOS (Apple clang 21):
+  9 unit suites green, 776/0 CLI integration checks (3 audit checks SKIPped
+  as environment-dependent), 600K fuzz iterations 0 crashes, F1 = 1.000.
+
 ### Added
 - **JWT algorithm inspection, including the `alg:none` signature bypass**
   (`hlse_util.c`, `hlse_secrets.c`). A JWT's header is base64url — encoded, not

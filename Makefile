@@ -32,24 +32,47 @@ MAKEFLAGS += -j$(NPROC)
 # to the standalone executables (see PIE_CFLAGS / PIE_LDFLAGS) so they do
 # not collide with the -fPIC -shared library build.
 HARDEN_CFLAGS := -fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
-CFLAGS  := -O2 -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(HARDEN_CFLAGS)
-CFLAGS_STRICT := -O2 -Wall -Wextra -Wpedantic -Wshadow -Wconversion \
-                 -Wformat-truncation=2 -Wformat-overflow=2 \
-                 -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE $(HARDEN_CFLAGS)
-LDFLAGS :=
 
-# Position-independent executable + linker hardening, applied to the CLI
-# and static binaries only. RELRO/BIND_NOW/noexecstack are GNU ld features
-# (Linux); Apple's ld rejects -Wl,-z,..., so guard by OS.
-UNAME_S    := $(shell uname -s)
-PIE_CFLAGS := -fPIE
+# Platform conditioning. -D_POSIX_C_SOURCE=200809L hides non-POSIX
+# extensions, so each platform needs its own escape hatch for the few
+# non-POSIX calls the engine makes (O_NOFOLLOW, strcasestr): _GNU_SOURCE
+# on Linux (added per-target), _DARWIN_C_SOURCE on macOS. PLATFORM_CFLAGS
+# rides along on every compile line, including the fuzz/coverage/ASan
+# recipes that spell the POSIX macro out literally.
+UNAME_S         := $(shell uname -s)
+PLATFORM_CFLAGS :=
+PIE_CFLAGS      := -fPIE
+PIE_LDFLAGS     := -pie
+STATIC_LDFLAGS  := -static
 ifeq ($(UNAME_S),Linux)
-PIE_LDFLAGS    := -pie -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack
-STATIC_LDFLAGS := -static-pie
-else
-PIE_LDFLAGS    := -pie
-STATIC_LDFLAGS := -static
+# RELRO/BIND_NOW/noexecstack are GNU ld features; Apple's ld rejects
+# -Wl,-z,..., so hardening beyond PIE is Linux-only.
+PIE_LDFLAGS     := -pie -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack
+STATIC_LDFLAGS  := -static-pie
+else ifeq ($(UNAME_S),Darwin)
+PLATFORM_CFLAGS := -D_DARWIN_C_SOURCE
+# macOS binaries are always position-independent; -pie is a no-op that
+# clang flags as an unused argument.
+PIE_LDFLAGS     :=
 endif
+
+# GCC-only diagnostic spellings: -Wformat-truncation/-Wformat-overflow take
+# a =level that clang rejects, and -Wstringop-overread does not exist in
+# clang (an unknown -Wno-* still prints a warning there).
+CC_IS_CLANG := $(shell $(CC) --version 2>/dev/null | head -n 1 | grep -ci clang)
+ifeq ($(CC_IS_CLANG),0)
+STRICT_FORMAT_WFLAGS := -Wformat-truncation=2 -Wformat-overflow=2
+WNO_STRINGOP_OVERREAD := -Wno-stringop-overread
+else
+STRICT_FORMAT_WFLAGS := -Wformat-truncation -Wformat-overflow
+WNO_STRINGOP_OVERREAD :=
+endif
+
+CFLAGS  := -O2 -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) $(HARDEN_CFLAGS)
+CFLAGS_STRICT := -O2 -Wall -Wextra -Wpedantic -Wshadow -Wconversion \
+                 $(STRICT_FORMAT_WFLAGS) \
+                 -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -D_GNU_SOURCE $(HARDEN_CFLAGS)
+LDFLAGS :=
 
 PREFIX  ?= $(HOME)/.local
 DESTDIR ?=
@@ -168,64 +191,64 @@ $(UTIL_BIN): tests/hlse_util_tests.c hlse_util.c hlse_util.h
 
 $(FUZZ_BIN): tests/hlse_fuzz.c hlse_text.c hlse_text.h
 	@mkdir -p tests
-	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L -o $@ tests/hlse_fuzz.c hlse_text.c -I.
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -o $@ tests/hlse_fuzz.c hlse_text.c -I.
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(FUZZ_ASAN): tests/hlse_fuzz.c hlse_text.c hlse_text.h
 	@mkdir -p tests
-	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
+	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) \
 		-fsanitize=address,undefined \
 		-o $@ tests/hlse_fuzz.c hlse_text.c -I.
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
 $(FUZZ_SECRETS): tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_secrets.h hlse_util.c
 	@mkdir -p tests
-	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) \
 		-o $@ tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(FUZZ_SECRETS_ASAN): tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_secrets.h hlse_util.c
 	@mkdir -p tests
-	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
+	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) \
 		-fsanitize=address,undefined \
 		-o $@ tests/hlse_secrets_fuzz.c hlse_secrets.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
 $(FUZZ_SUPPLY): tests/hlse_supply_fuzz.c hlse_supply.c hlse_supply.h hlse_util.c
 	@mkdir -p tests
-	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) \
 		-o $@ tests/hlse_supply_fuzz.c hlse_supply.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(FUZZ_SUPPLY_ASAN): tests/hlse_supply_fuzz.c hlse_supply.c hlse_supply.h hlse_util.c
 	@mkdir -p tests
-	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L \
+	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) \
 		-fsanitize=address,undefined \
 		-o $@ tests/hlse_supply_fuzz.c hlse_supply.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
 $(FUZZ_FILE): tests/hlse_file_fuzz.c hlse_file.c hlse_file.h
 	@mkdir -p tests
-	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE \
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -D_GNU_SOURCE \
 		-o $@ tests/hlse_file_fuzz.c hlse_file.c -I.
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(FUZZ_FILE_ASAN): tests/hlse_file_fuzz.c hlse_file.c hlse_file.h
 	@mkdir -p tests
-	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE \
+	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -D_GNU_SOURCE \
 		-fsanitize=address,undefined \
 		-o $@ tests/hlse_file_fuzz.c hlse_file.c -I.
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
 $(FUZZ_URL): tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c hlse_core.h
 	@mkdir -p tests
-	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L -DHLSE_CORE_AS_LIB \
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -DHLSE_CORE_AS_LIB \
 		-o $@ tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(FUZZ_URL_ASAN): tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c hlse_core.h
 	@mkdir -p tests
-	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L -DHLSE_CORE_AS_LIB \
+	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -DHLSE_CORE_AS_LIB \
 		-fsanitize=address,undefined \
 		-o $@ tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
@@ -233,7 +256,7 @@ $(FUZZ_URL_ASAN): tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c hlse
 $(FUZZ_SERVER): tests/hlse_server_fuzz.c hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h
 	@mkdir -p tests
 	$(CC) -O0 -g -Wall -Wextra -Wno-unused-function -Wno-format-truncation \
-		-D_POSIX_C_SOURCE=200809L \
+		-D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) \
 		-D_GNU_SOURCE -DHLSE_CORE_AS_LIB -DHLSE_SERVER_NO_MAIN \
 		-o $@ tests/hlse_server_fuzz.c $(CORE_SRC) -I. -lm -lpthread
 	@printf '  %-20s %s\n' "CC" "$@"
@@ -241,7 +264,7 @@ $(FUZZ_SERVER): tests/hlse_server_fuzz.c hlse_server.c $(CORE_SRC) hlse_core.h h
 $(FUZZ_SERVER_ASAN): tests/hlse_server_fuzz.c hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h
 	@mkdir -p tests
 	$(CC) -O1 -g -Wall -Wextra -Wno-unused-function -Wno-format-truncation \
-		-Wno-stringop-overread -D_POSIX_C_SOURCE=200809L \
+		$(WNO_STRINGOP_OVERREAD) -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) \
 		-D_GNU_SOURCE -DHLSE_CORE_AS_LIB -DHLSE_SERVER_NO_MAIN \
 		-fsanitize=address,undefined \
 		-o $@ tests/hlse_server_fuzz.c $(CORE_SRC) -I. -lm -lpthread
@@ -260,7 +283,7 @@ $(EXT_BIN): tests/hlse_corpus_extended.c hlse_core.c hlse_text.c hlse_text.h
 
 coverage:
 	@rm -f *.gcda *.gcno *.gcov
-	$(CC) -O0 -g --coverage -Wall -Wextra -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE \
+	$(CC) -O0 -g --coverage -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -D_GNU_SOURCE \
 		-o hlse_core_cov $(CORE_SRC) -I. -lm
 	@echo "Running comprehensive coverage exercises..."
 	@# Core CLI paths
@@ -332,16 +355,16 @@ coverage:
 	@#    crypto-swap, MBR ransom, edit distance, etc.) are counted. The
 	@#    test binaries are built from the same -fprofile source files,
 	@#    accumulating into the shared .gcda files. ──
-	@$(CC) -O0 -g --coverage -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE \
+	@$(CC) -O0 -g --coverage -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -D_GNU_SOURCE \
 		-o hlse_cov_secrets tests/hlse_secrets_tests.c hlse_secrets.c hlse_util.c \
 		-I. -lm 2>/dev/null && ./hlse_cov_secrets > /dev/null 2>&1 || true
-	@$(CC) -O0 -g --coverage -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE \
+	@$(CC) -O0 -g --coverage -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -D_GNU_SOURCE \
 		-o hlse_cov_protect tests/hlse_protect_tests.c hlse_protect.c hlse_util.c \
 		-I. -lm 2>/dev/null && ./hlse_cov_protect > /dev/null 2>&1 || true
-	@$(CC) -O0 -g --coverage -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE \
+	@$(CC) -O0 -g --coverage -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -D_GNU_SOURCE \
 		-o hlse_cov_supply tests/hlse_supply_tests.c hlse_supply.c hlse_util.c \
 		-I. -lm 2>/dev/null && ./hlse_cov_supply > /dev/null 2>&1 || true
-	@$(CC) -O0 -g --coverage -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE \
+	@$(CC) -O0 -g --coverage -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -D_GNU_SOURCE \
 		-o hlse_cov_fileaud tests/hlse_file_audit_tests.c hlse_file.c hlse_audit.c hlse_util.c \
 		-I. -lm 2>/dev/null && ./hlse_cov_fileaud > /dev/null 2>&1 || true
 	@# Collect and report (CLI binary objects)
@@ -425,7 +448,7 @@ check-warnings:
 asan-test:
 	@echo "Building with AddressSanitizer + UBSan..."
 	$(CC) -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer \
-		-D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE \
+		-D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -D_GNU_SOURCE \
 		-o hlse_core_asan $(CORE_SRC) -I. -lm
 	@echo "Running self-test under sanitizers..."
 	@./hlse_core_asan --self-test
@@ -504,10 +527,15 @@ bench: $(BINARY)
 
 static: hlse_core_static
 
+ifeq ($(UNAME_S),Darwin)
+hlse_core_static:
+	@echo "make static: unsupported on macOS (no static libc); build the normal binary" >&2; exit 1
+else
 hlse_core_static: $(CORE_SRC) hlse_text.h hlse_core.h hlse_protect.h
 	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE $(STATIC_LDFLAGS) -o $@ $(CORE_SRC) -I. -lm
 	strip $@
 	@printf '  %-20s %s (%s bytes)\n' "CC (static)" "$@" "$$(wc -c < $@)"
+endif
 
 # ─── install / uninstall ─────────────────────────────────────────────────
 
