@@ -47,7 +47,8 @@
 #include "hlse_manifest.h" /* manifest ecosystem + name parsers */
 #include "hlse_githistory.h" /* hlse_scan_git_history */
 #include "hlse_meta.h"    /* pattern ids, asset-class blast radius */
-#include "hlse_emit.h"    /* advisory text getters, verdict emitters */    /* pattern ids, asset-class blast radius */
+#include "hlse_emit.h"    /* advisory text getters, verdict emitters */
+#include "hlse_cli.h"     /* HlseCli — parsed-option state */
 #include "hlse_util.h"    /* hlse_shannon_entropy, hlse_edit_distance */
 #include "hlse_supply.h"  /* PackageVerdict, PasteVerdict, NetworkVerdict */
 #include "hlse_file.h"    /* FileVerdict, hlse_check_file */
@@ -2272,26 +2273,13 @@ hlse_canonical_confirm(const char *url, char *brand_out, size_t brand_outsz) {
  * hlse_set_from_channel, read via hlse_from_channel).                 */
 #ifndef HLSE_CORE_AS_LIB
 
-/* Flag state kept here: set by --baseline/--fingerprints/--git-history
- * (argv table + --config) and read at the scan gates. The fingerprint /
- * baseline-set machinery they feed lives in hlse_baseline.c. */
-static const char *g_baseline_file = NULL;   /* --baseline <file> */
-static int         g_emit_fingerprints = 0;  /* --fingerprints */
-static int         g_git_history = 0;        /* --git-history (P0-2) */
-/* Score at/above which the process exits 1 (threat). Configurable via
- * --fail-on so a pipeline picks its own risk gate. Default = BLOCK(60). */
-static int g_fail_threshold = 60;
-
 int
 main(int argc, char **argv) {
-    int json_out = 0;
-    int quiet = 0;
-    int sarif_out = 0;
-    int opt_syslog = 0;
-    const char *opt_log_file = NULL;
+    HlseCli o = {0};
+    o.fail_threshold = 60;   /* BLOCK — --fail-on overrides */
     HlseConfig cfg;             /* --config defaults; must live for all of
-                                   main() — hlse_from_channel()/g_baseline_file/
-                                   opt_log_file may point into it.        */
+                                   main() — hlse_from_channel()/o.baseline_file/
+                                   o.opt_log_file may point into it.        */
     memset(&cfg, 0, sizeof(cfg));
     int argc_flags;   /* argv index where "--" ends option scanning */
     int idx = 1;
@@ -2389,16 +2377,16 @@ main(int argc, char **argv) {
                 }
             }
         }
-        if (cfg.has_json)         json_out            = cfg.json;
-        if (cfg.has_sarif)        sarif_out           = cfg.sarif;
-        if (cfg.has_quiet)        quiet               = cfg.quiet;
-        if (cfg.has_syslog)       opt_syslog          = cfg.syslog;
-        if (cfg.has_fingerprints) g_emit_fingerprints = cfg.fingerprints;
-        if (cfg.has_git_history)  g_git_history       = cfg.git_history;
-        if (cfg.has_fail_on)      g_fail_threshold    = cfg.fail_on;
+        if (cfg.has_json)         o.json_out            = cfg.json;
+        if (cfg.has_sarif)        o.sarif_out           = cfg.sarif;
+        if (cfg.has_quiet)        o.quiet               = cfg.quiet;
+        if (cfg.has_syslog)       o.opt_syslog          = cfg.syslog;
+        if (cfg.has_fingerprints) o.emit_fingerprints = cfg.fingerprints;
+        if (cfg.has_git_history)  o.git_history       = cfg.git_history;
+        if (cfg.has_fail_on)      o.fail_threshold    = cfg.fail_on;
         if (cfg.from[0])          hlse_set_from_channel(cfg.from);
-        if (cfg.baseline[0])      g_baseline_file     = cfg.baseline;
-        if (cfg.log_file[0])      opt_log_file        = cfg.log_file;
+        if (cfg.baseline[0])      o.baseline_file     = cfg.baseline;
+        if (cfg.log_file[0])      o.opt_log_file        = cfg.log_file;
         if (cfg.patterns[0] && hlse_patterns_load(cfg.patterns) != 0) {
             fprintf(stderr, "Error: cannot read config patterns file "
                     "'%s': %s\n", cfg.patterns, strerror(errno));
@@ -2411,12 +2399,12 @@ main(int argc, char **argv) {
      * each restating the argv-shifting logic. Adding a flag is now a row. */
     {
         struct { const char *name; const char *alias; int *flag; } bools[] = {
-            { "--json",         NULL, &json_out            },
-            { "--sarif",        NULL, &sarif_out           },
-            { "--quiet",        "-q", &quiet               },
-            { "--syslog",       NULL, &opt_syslog          },
-            { "--fingerprints", NULL, &g_emit_fingerprints },
-            { "--git-history",  NULL, &g_git_history       },
+            { "--json",         NULL, &o.json_out            },
+            { "--sarif",        NULL, &o.sarif_out           },
+            { "--quiet",        "-q", &o.quiet               },
+            { "--syslog",       NULL, &o.opt_syslog          },
+            { "--fingerprints", NULL, &o.emit_fingerprints },
+            { "--git-history",  NULL, &o.git_history       },
         };
         const int nbools = (int)(sizeof(bools) / sizeof(bools[0]));
         int i, k;
@@ -2444,16 +2432,16 @@ main(int argc, char **argv) {
         for (i = 1; i < argc_flags - 1; i++) {
             if (strcmp(argv[i], "--fail-on") == 0) {
                 const char *t = argv[i + 1];
-                if      (strcmp(t, "log")     == 0) g_fail_threshold = 15;
-                else if (strcmp(t, "alert")   == 0) g_fail_threshold = 40;
-                else if (strcmp(t, "block")   == 0) g_fail_threshold = 60;
-                else if (strcmp(t, "isolate") == 0) g_fail_threshold = 80;
+                if      (strcmp(t, "log")     == 0) o.fail_threshold = 15;
+                else if (strcmp(t, "alert")   == 0) o.fail_threshold = 40;
+                else if (strcmp(t, "block")   == 0) o.fail_threshold = 60;
+                else if (strcmp(t, "isolate") == 0) o.fail_threshold = 80;
                 else {
                     /* Accept a bare numeric threshold (0..100) too. */
                     char *end;
                     long n = strtol(t, &end, 10);
                     if (*end == '\0' && n >= 0 && n <= 100)
-                        g_fail_threshold = (int)n;
+                        o.fail_threshold = (int)n;
                     else {
                         fprintf(stderr, "Error: --fail-on expects "
                                 "log|alert|block|isolate or 0..100\n");
@@ -2497,7 +2485,7 @@ main(int argc, char **argv) {
         int i;
         for (i = 1; i < argc_flags - 1; i++) {
             if (strcmp(argv[i], "--baseline") == 0) {
-                g_baseline_file = argv[i + 1];
+                o.baseline_file = argv[i + 1];
                 hlse_argv_remove(argv, &argc, &argc_flags, i, 2);
                 break;
             }
@@ -2509,7 +2497,7 @@ main(int argc, char **argv) {
         int i;
         for (i = 1; i < argc_flags - 1; i++) {
             if (strcmp(argv[i], "--log-file") == 0) {
-                opt_log_file = argv[i + 1];
+                o.opt_log_file = argv[i + 1];
                 hlse_argv_remove(argv, &argc, &argc_flags, i, 2);
                 break;
             }
@@ -2541,29 +2529,29 @@ main(int argc, char **argv) {
     /* Load the baseline file now that flags are parsed. A missing/unreadable
      * baseline is a usage error — silently ignoring it would let the gate
      * pass on a typo'd path, defeating the purpose. */
-    if (g_baseline_file && hlse_baseline_load(g_baseline_file) != 0) {
+    if (o.baseline_file && hlse_baseline_load(o.baseline_file) != 0) {
         fprintf(stderr, "Error: cannot read --baseline file '%s': %s\n",
-                g_baseline_file, strerror(errno));
+                o.baseline_file, strerror(errno));
         return 2;
     }
     /* Register cleanup once — covers every one of main()'s many return paths
      * uniformly (atexit failure just reverts to pre-fix behavior: a no-op). */
-    if (g_baseline_file) atexit(hlse_baseline_clear);
+    if (o.baseline_file) atexit(hlse_baseline_clear);
 
     /* Open alert sinks now that flags are parsed. A requested but unopenable
      * --log-file is a usage error (same convention as --baseline/--patterns). */
-    if ((opt_syslog || opt_log_file) &&
-        hlse_alert_init(opt_syslog, opt_log_file) != 0) {
+    if ((o.opt_syslog || o.opt_log_file) &&
+        hlse_alert_init(o.opt_syslog, o.opt_log_file) != 0) {
         fprintf(stderr, "Error: cannot open --log-file '%s': %s\n",
-                opt_log_file ? opt_log_file : "(syslog only)", strerror(errno));
+                o.opt_log_file ? o.opt_log_file : "(syslog only)", strerror(errno));
         return 2;
     }
-    if (opt_syslog || opt_log_file) atexit(hlse_alert_shutdown);
+    if (o.opt_syslog || o.opt_log_file) atexit(hlse_alert_shutdown);
 
     /* Quiet mode: redirect stdout to /dev/null. If the redirect fails we must
      * not silently keep printing — that would violate the quiet-mode contract
      * (callers rely on the exit code alone). Report and exit with usage error. */
-    if (quiet && !json_out) {
+    if (o.quiet && !o.json_out) {
         if (freopen("/dev/null", "w", stdout) == NULL) {
             fprintf(stderr, "Error: --quiet could not redirect stdout\n");
             return 2;
@@ -2580,13 +2568,13 @@ main(int argc, char **argv) {
         return rc1 || rc2 ? 1 : 0;
     }
     if (strcmp(argv[idx], "--list-patterns") == 0) {
-        return hlse_list_patterns(json_out);
+        return hlse_list_patterns(o.json_out);
     }
     if (strcmp(argv[idx], "--benchmark") == 0) {
         return hlse_benchmark();
     }
     if (strcmp(argv[idx], "--stdin") == 0) {
-        return hlse_stdin_mode(json_out, g_fail_threshold);
+        return hlse_stdin_mode(o.json_out, o.fail_threshold);
     }
     if (strcmp(argv[idx], "-h") == 0 || strcmp(argv[idx], "--help") == 0) {
         hlse_print_usage(argv[0]);
@@ -2608,16 +2596,16 @@ main(int argc, char **argv) {
          * repo's history for secrets, not just the working tree. Entirely
          * different algorithm (git subprocess stream vs. directory walk),
          * so it branches out before the normal walker below. */
-        if (g_git_history) {
-            return hlse_scan_git_history(argv[idx + 1], json_out, sarif_out,
-                               g_emit_fingerprints, g_fail_threshold);
+        if (o.git_history) {
+            return hlse_scan_git_history(argv[idx + 1], o.json_out, o.sarif_out,
+                               o.emit_fingerprints, o.fail_threshold);
         }
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-truncation"
         {
             const char *root = argv[idx + 1];
             int threats = 0, files_scanned = 0, max_depth = 20;
-            int gate_hits = 0;  /* findings at/above g_fail_threshold (exit gate) */
+            int gate_hits = 0;  /* findings at/above o.fail_threshold (exit gate) */
             int max_score = 0;  /* highest score seen — for max_severity in summary */
             unsigned asset_mask = 0;  /* blast-radius: classes seen across scan */
             struct stat root_st;
@@ -2736,12 +2724,12 @@ main(int argc, char **argv) {
                          * finding — no inline-allow line context. */
                         int sup = hlse_scan_suppress(sarif_path,
                                       hlse_file_verdict_pattern_id(&fv), NULL, NULL,
-                                      g_emit_fingerprints);
+                                      o.emit_fingerprints);
                         if (sup) goto after_file_check;
                         threats++;
                         if (fv.score > max_score) max_score = fv.score;
-                        if (fv.score >= g_fail_threshold) gate_hits++;
-                        if (sarif_out) {
+                        if (fv.score >= o.fail_threshold) gate_hits++;
+                        if (o.sarif_out) {
                             char msg[512] = {0};
                             int i;
                             for (i = 0; i < fv.n_reasons; i++) {
@@ -2752,7 +2740,7 @@ main(int argc, char **argv) {
                             hlse_sarif_add(sarif_path, 1, "file-masquerade",
                                       hlse_file_verdict_pattern_id(&fv),
                                       msg[0] ? msg : "file masquerade", fv.score);
-                        } else if (json_out) {
+                        } else if (o.json_out) {
                             int i;
                             char esc[512];
                             hlse_json_escape(fullpath, esc, sizeof(esc));
@@ -2881,12 +2869,12 @@ main(int argc, char **argv) {
                                     if (inv > 0 &&
                                         !hlse_scan_suppress(sarif_path,
                                             "HLSE-TEXT-INVISIBLE", inv_r, line,
-                                            g_emit_fingerprints))
+                                            o.emit_fingerprints))
                                     {
                                         threats++;
                                         if (inv > max_score) max_score = inv;
-                                        if (inv >= g_fail_threshold) gate_hits++;
-                                        if (!quiet && !json_out && !sarif_out)
+                                        if (inv >= o.fail_threshold) gate_hits++;
+                                        if (!o.quiet && !o.json_out && !o.sarif_out)
                                             printf("  %s:%d: %s\n",
                                                    sarif_path, lineno, inv_r);
                                     }
@@ -2903,15 +2891,15 @@ main(int argc, char **argv) {
                                         : "HLSE-SECRET-GENERIC";
                                     const char *sdesc = sv.n_findings > 0
                                         ? sv.findings[0].description : "";
-                                    if (hlse_scan_suppress(sarif_path, spid, sdesc, line, g_emit_fingerprints))
+                                    if (hlse_scan_suppress(sarif_path, spid, sdesc, line, o.emit_fingerprints))
                                         continue;
                                     threats++;
                                     if (sv.score > max_score) max_score = sv.score;
-                                    if (sv.score >= g_fail_threshold) gate_hits++;
+                                    if (sv.score >= o.fail_threshold) gate_hits++;
                                     for (ai = 0; ai < sv.n_findings; ai++)
                                         asset_mask |=
                                             hlse_asset_class_of(sv.findings[ai].type);
-                                    if (sarif_out) {
+                                    if (o.sarif_out) {
                                         char msg[512] = {0};
                                         int i;
                                         for (i = 0; i < sv.n_findings; i++) {
@@ -2925,7 +2913,7 @@ main(int argc, char **argv) {
                                                     ? hlse_secret_pattern_id(sv.findings[0].type)
                                                     : "HLSE-SECRET-GENERIC",
                                                   msg[0] ? msg : "secret", sv.score);
-                                    } else if (json_out) {
+                                    } else if (o.json_out) {
                                         int i;
                                         char esc_p[512], et[64], ed[512];
                                         hlse_json_escape(fullpath, esc_p, sizeof(esc_p));
@@ -3053,13 +3041,13 @@ main(int argc, char **argv) {
                                                 if (hlse_scan_suppress(sarif_path,
                                                         hlse_url_pattern_id(&uv),
                                                         url_buf, line,
-                                                        g_emit_fingerprints))
+                                                        o.emit_fingerprints))
                                                     goto url_advance;
                                                 threats++;
                                                 if (uv.score > max_score) max_score = uv.score;
-                                                if (uv.score >= g_fail_threshold)
+                                                if (uv.score >= o.fail_threshold)
                                                     gate_hits++;
-                                                if (sarif_out) {
+                                                if (o.sarif_out) {
                                                     char msg[512] = {0};
                                                     int k;
                                                     size_t l0 = strlen(url_buf) < 200 ?
@@ -3077,7 +3065,7 @@ main(int argc, char **argv) {
                                                               "phishing-url",
                                                               hlse_url_pattern_id(&uv),
                                                               msg, uv.score);
-                                                } else if (json_out) {
+                                                } else if (o.json_out) {
                                                     char eu[2048];
                                                     hlse_json_escape(url_buf, eu, sizeof(eu));
                                                     printf("{\"kind\":\"url\",\"path\":\"%s\","
@@ -3173,12 +3161,12 @@ main(int argc, char **argv) {
             /* --fingerprints mode emits only the per-finding fingerprint lines
              * (for baseline generation); skip the summary and never fail the
              * gate — generating a baseline must exit 0. */
-            if (g_emit_fingerprints) {
+            if (o.emit_fingerprints) {
                 return 0;
             }
-            if (sarif_out) {
+            if (o.sarif_out) {
                 hlse_sarif_emit(HLSE_VERSION);
-            } else if (!json_out) {
+            } else if (!o.json_out) {
                 if (threats == 0) {
                     const char *bs = hlse_blindspot_for("scan");
                     char db[8192];
@@ -3192,9 +3180,9 @@ main(int argc, char **argv) {
                                                        sizeof(classes));
                     printf("\n%d threat(s) in %d files under %s\n",
                            threats, files_scanned, root);
-                    if (gate_hits > 0 && g_fail_threshold != 60)
+                    if (gate_hits > 0 && o.fail_threshold != 60)
                         printf("  %d finding(s) exceeded the --fail-on threshold (%d)\n",
-                               gate_hits, g_fail_threshold);
+                               gate_hits, o.fail_threshold);
                     /* Immediate action: one-sentence triage keyed to the
                      * most severe asset class (or file/URL threats). */
                     printf("\xe2\x86\x92 Immediate action: %s\n",
@@ -3223,7 +3211,7 @@ main(int argc, char **argv) {
                        "\"asset_classes\":%d,\"blast_radius\":\"%s\"",
                        esc_root, files_scanned, threats,
                        hlse_severity_for_score(max_score),
-                       gate_hits, g_fail_threshold,
+                       gate_hits, o.fail_threshold,
                        nclasses, classes);
                 if (threats == 0) {
                     const char *bs = hlse_blindspot_for("scan");
@@ -3290,7 +3278,7 @@ main(int argc, char **argv) {
                     hlse_severity_for_score(pv.score), path, aar, aqn);
             }
 
-            if (json_out) {
+            if (o.json_out) {
                 /* JSON output for protect.
                  * Perspective 100: this was the only verdict kind still
                  * missing hlse_version and severity — every other kind
@@ -3387,7 +3375,7 @@ main(int argc, char **argv) {
                     if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                 }
             }
-            return pv.score >= g_fail_threshold ? 1 : 0;
+            return pv.score >= o.fail_threshold ? 1 : 0;
         }
     }
 
@@ -3395,7 +3383,7 @@ main(int argc, char **argv) {
         /* EFI System Partition integrity (UEFI bootkit indicators). */
         const char *path = (argc > idx + 1) ? argv[idx + 1] : NULL;
         ProtectionVerdict pv = hlse_esp_verify(path);
-        if (json_out) {
+        if (o.json_out) {
             int i;
             printf("{\"kind\":\"esp\",\"hlse_version\":\"" HLSE_VERSION "\","
                    "\"score\":%d,\"action\":\"%s\","
@@ -3463,7 +3451,7 @@ main(int argc, char **argv) {
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }
         }
-        return pv.score >= g_fail_threshold ? 1 : 0;
+        return pv.score >= o.fail_threshold ? 1 : 0;
     }
 
     /* ── Supply Chain Defense subcommands ───────────────────────────── */
@@ -3520,15 +3508,15 @@ main(int argc, char **argv) {
                     if (pv.score >= 40) {
                         threats++;
                         if (pv.score > max_score) max_score = pv.score;
-                        if (pv.score >= g_fail_threshold) gate_hits++;
-                        if (sarif_out) {
+                        if (pv.score >= o.fail_threshold) gate_hits++;
+                        if (o.sarif_out) {
                             char msg[512];
                             snprintf(msg, sizeof(msg), "%s",
                                      pv.reason[0] ? pv.reason
                                      : "dependency typosquat");
                             hlse_sarif_add(mpath, lineno, "package-typosquat",
                                       "HLSE-PKG-TYPOSQUAT", msg, pv.score);
-                        } else if (json_out) {
+                        } else if (o.json_out) {
                             char en[128];
                             int i;
                             hlse_json_escape(name, en, sizeof(en));
@@ -3565,9 +3553,9 @@ main(int argc, char **argv) {
                 }  /* for(;;) drain-line */
             }
             fclose(mf);
-            if (sarif_out) {
+            if (o.sarif_out) {
                 hlse_sarif_emit(HLSE_VERSION);
-            } else if (json_out) {
+            } else if (o.json_out) {
                 char ep[4096];
                 hlse_json_escape(mpath, ep, sizeof(ep));
                 printf("{\"kind\":\"manifest_summary\",\"hlse_version\":\""
@@ -3597,7 +3585,7 @@ main(int argc, char **argv) {
                 hlse_alert_emit("package", pv.score,
                     hlse_severity_for_score(pv.score), argv[idx + 1], aar, aqn);
             }
-            if (json_out) {
+            if (o.json_out) {
                 printf("{\"kind\":\"package\",\"hlse_version\":\"" HLSE_VERSION "\","
                        "\"name\":\"%s\",\"score\":%d,"
                        "\"action\":\"%s\",\"severity\":%d",
@@ -3699,7 +3687,7 @@ main(int argc, char **argv) {
                     if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                 }
             }
-            return pv.score >= g_fail_threshold ? 1 : 0;
+            return pv.score >= o.fail_threshold ? 1 : 0;
         }
     }
 
@@ -3717,7 +3705,7 @@ main(int argc, char **argv) {
                 hlse_alert_emit("paste", pv.score,
                     hlse_severity_for_score(pv.score), argv[idx + 1], aar, aqn);
             }
-            if (json_out) {
+            if (o.json_out) {
                 int i;
                 printf("{\"kind\":\"paste\",\"hlse_version\":\"" HLSE_VERSION "\","
                        "\"score\":%d,\"action\":\"%s\","
@@ -3817,7 +3805,7 @@ main(int argc, char **argv) {
                     if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                 }
             }
-            return pv.score >= g_fail_threshold ? 1 : 0;
+            return pv.score >= o.fail_threshold ? 1 : 0;
         }
     }
 
@@ -3830,7 +3818,7 @@ main(int argc, char **argv) {
             hlse_alert_emit("network", nv.score,
                 hlse_severity_for_score(nv.score), "(network)", aar, aqn);
         }
-        if (json_out) {
+        if (o.json_out) {
             int i;
             printf("{\"kind\":\"network\",\"hlse_version\":\"" HLSE_VERSION "\","
                    "\"score\":%d,\"action\":\"%s\","
@@ -3911,7 +3899,7 @@ main(int argc, char **argv) {
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
             }
         }
-        return nv.score >= g_fail_threshold ? 1 : 0;
+        return nv.score >= o.fail_threshold ? 1 : 0;
     }
 
     if (strcmp(argv[idx], "secret") == 0) {
@@ -3944,7 +3932,7 @@ main(int argc, char **argv) {
                 hlse_alert_emit("secret", sv.score,
                     hlse_severity_for_score(sv.score), "(secret scan)", aar, aqn);
             }
-            if (json_out) {
+            if (o.json_out) {
                 int i;
                 printf("{\"kind\":\"secret\",\"hlse_version\":\"" HLSE_VERSION "\","
                        "\"score\":%d,\"action\":\"%s\","
@@ -4047,7 +4035,7 @@ main(int argc, char **argv) {
                 }
                 if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
             }
-            return sv.score >= g_fail_threshold ? 1 : 0;
+            return sv.score >= o.fail_threshold ? 1 : 0;
         }
     }
 
@@ -4093,7 +4081,7 @@ main(int argc, char **argv) {
              * that header checks alone would miss is now named. */
             TextVerdict bodytv = hlse_check_text(headers);
             const char *body_pat = hlse_classify_text_attack(&bodytv);
-            if (json_out) {
+            if (o.json_out) {
                 int i;
                 printf("{\"kind\":\"email\",\"hlse_version\":\"" HLSE_VERSION "\","
                        "\"score\":%d,\"action\":\"%s\","
@@ -4253,7 +4241,7 @@ main(int argc, char **argv) {
                 if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                 if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
             }
-            return ev.score >= g_fail_threshold ? 1 : 0;
+            return ev.score >= o.fail_threshold ? 1 : 0;
         }
     }
 
@@ -4275,7 +4263,7 @@ main(int argc, char **argv) {
                     cv.swapped[0] ? cv.swapped : "(clipboard)", aar, aqn);
             }
             const char *rem = hlse_remediation_for("clipboard", cv.score);
-            if (json_out) {
+            if (o.json_out) {
                 char eo[256], es[256], er[512], erm[512];
                 hlse_json_escape(cv.original, eo, sizeof(eo));
                 hlse_json_escape(cv.swapped, es, sizeof(es));
@@ -4330,7 +4318,7 @@ main(int argc, char **argv) {
                     printf("  \xe2\x8a\x95 Also change: %s\n", hlse_clipboard_cascade_text());
                 }
             }
-            return cv.score >= g_fail_threshold ? 1 : 0;
+            return cv.score >= o.fail_threshold ? 1 : 0;
         }
     }
 
@@ -4359,7 +4347,7 @@ main(int argc, char **argv) {
                 hlse_alert_emit("file", fv.score,
                     hlse_severity_for_score(fv.score), argv[idx + 1], aar, aqn);
             }
-            if (json_out) {
+            if (o.json_out) {
                 int i;
                 char esc[512];
                 hlse_json_escape(argv[idx + 1], esc, sizeof(esc));
@@ -4459,7 +4447,7 @@ main(int argc, char **argv) {
                     if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
                 }
             }
-            return fv.score >= g_fail_threshold ? 1 : 0;
+            return fv.score >= o.fail_threshold ? 1 : 0;
         }
     }
 
@@ -4477,7 +4465,7 @@ main(int argc, char **argv) {
               else if (av.findings[ci].severity == 4) high_count++;
           }
         }
-        if (json_out) {
+        if (o.json_out) {
             int i;
             printf("{\"kind\":\"audit\",\"hlse_version\":\"" HLSE_VERSION "\","
                    "\"score\":%d,\"action\":\"%s\","
@@ -4571,7 +4559,7 @@ main(int argc, char **argv) {
                        "the hardening index (currently %s: %d/100)\n",
                        band, hi);
         }
-        return av.score >= g_fail_threshold ? 1 : 0;
+        return av.score >= o.fail_threshold ? 1 : 0;
     }
 
     if (strcmp(argv[idx], "text") == 0) {
@@ -4583,7 +4571,7 @@ main(int argc, char **argv) {
             /* Use unified scan — it runs text detection AND extracts
              * embedded URLs. This catches "Click here: https://g00gle.com" */
             ScanResult sr = hlse_scan(argv[idx + 1]);
-            if (json_out) {
+            if (o.json_out) {
                 /* Build TextVerdict from the unified ScanResult so the JSON
                  * path honours embedded URL extraction (same as human path). */
                 TextVerdict tv;
@@ -4610,7 +4598,7 @@ main(int argc, char **argv) {
                                strlen(argv[idx + 1]) > 60 ? "..." : "");
                         if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                         if (bs2) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs2);
-                        return d >= g_fail_threshold ? 1 : 0;
+                        return d >= o.fail_threshold ? 1 : 0;
                     }
                 }
                 {
@@ -4675,7 +4663,7 @@ main(int argc, char **argv) {
                     int d = hlse_channel_delta(hlse_from_channel());
                     eff_gate += d; if (eff_gate > 100) eff_gate = 100;
                 }
-                return eff_gate >= g_fail_threshold ? 1 : 0;
+                return eff_gate >= o.fail_threshold ? 1 : 0;
             }
         }
     }
@@ -4701,7 +4689,7 @@ main(int argc, char **argv) {
             hlse_alert_emit(sr.is_url ? "url" : "text", sr.score,
                             hlse_severity_for_score(sr.score), input, ar, an);
         }
-        if (json_out) {
+        if (o.json_out) {
             /* For JSON, delegate to the appropriate printer. For text
              * inputs use the ScanResult directly (not hlse_check_text
              * alone) so embedded URL extraction is honoured. */
@@ -4734,7 +4722,7 @@ main(int argc, char **argv) {
                     if (bs2) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs2);
                     {
                         int eff_gate = d;
-                        return eff_gate >= g_fail_threshold ? 1 : 0;
+                        return eff_gate >= o.fail_threshold ? 1 : 0;
                     }
                 }
             }
@@ -4804,7 +4792,7 @@ main(int argc, char **argv) {
                 int d = hlse_channel_delta(hlse_from_channel());
                 eff_gate += d; if (eff_gate > 100) eff_gate = 100;
             }
-            return eff_gate >= g_fail_threshold ? 1 : 0;
+            return eff_gate >= o.fail_threshold ? 1 : 0;
         }
     }
 }
