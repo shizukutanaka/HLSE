@@ -97,9 +97,7 @@ hlse_cmd_protect(const HlseCli *o, int argc, char **argv, int idx) {
                 if (pv.score == 0) {
                     const char *bs = hlse_blindspot_for("protect");
                     if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                        hlse_json_str_field("blind_spot", bs);
                     }
                 }
                 if (pv.score > 0) {
@@ -118,23 +116,22 @@ hlse_cmd_protect(const HlseCli *o, int argc, char **argv, int idx) {
                      * BLOCK+-only (>= 60).
                      * Perspective 103: text now shared with the plaintext
                      * path below via protect_*_text() accessors. */
-                    char e[512];
-                    hlse_json_escape(hlse_protect_pattern_text(), e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                    
+                    hlse_json_str_field("pattern", hlse_protect_pattern_text());
                     printf(",\"pattern_id\":\"HLSE-PROTECT-RANSOM\"");
-                    hlse_json_escape(hlse_protect_objective_text(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                    hlse_json_escape(hlse_protect_verify_text(),    e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                    hlse_json_str_field("objective", hlse_protect_objective_text());
+                    hlse_json_str_field("verify", hlse_protect_verify_text());
                 }
                 if (pv.score >= 60) {
-                    char e[512];
-                    hlse_json_escape(hlse_protect_triage_text(),  e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(hlse_protect_cascade_text(), e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                    
+                    hlse_json_str_field("triage", hlse_protect_triage_text());
+                    hlse_json_str_field("cascade_risk", hlse_protect_cascade_text());
                 }
                 if (pv.score > 0 && pv.score < 60) {
                     const char *ex = hlse_exoneration_for("protect", pv.score);
                     if (ex) {
-                        char e[512];
-                        hlse_json_escape(ex, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
+                        
+                        hlse_json_str_field("exoneration", ex);
                     }
                 }
                 printf("}\n");
@@ -192,9 +189,8 @@ hlse_cmd_esp(const HlseCli *o, int argc, char **argv, int idx) {
             {
                 const char *bs = hlse_blindspot_for("esp");
                 if (pv.score == 0 && bs) {
-                    char esc_bs[512];
-                    hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                    printf(",\"blind_spot\":\"%s\"", esc_bs);
+                    
+                    hlse_json_str_field("blind_spot", bs);
                 }
             }
             if (pv.score > 0) {
@@ -204,20 +200,19 @@ hlse_cmd_esp(const HlseCli *o, int argc, char **argv, int idx) {
                 printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
             }
             if (pv.score >= 60) {
-                char e[512];
-                hlse_json_escape(hlse_esp_pattern_text(),   e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                
+                hlse_json_str_field("pattern", hlse_esp_pattern_text());
                 printf(",\"pattern_id\":\"HLSE-ESP-BOOTKIT\"");
-                hlse_json_escape(hlse_esp_objective_text(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                hlse_json_escape(hlse_esp_verify_text(),     e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
-                hlse_json_escape(hlse_esp_triage_text(),     e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                hlse_json_escape(hlse_esp_cascade_text(),    e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                hlse_json_str_field("objective", hlse_esp_objective_text());
+                hlse_json_str_field("verify", hlse_esp_verify_text());
+                hlse_json_str_field("triage", hlse_esp_triage_text());
+                hlse_json_str_field("cascade_risk", hlse_esp_cascade_text());
             }
             if (pv.score > 0 && pv.score < 60) {
                 const char *ex = hlse_exoneration_for("esp", pv.score);
                 if (ex) {
-                    char e[512];
-                    hlse_json_escape(ex, e, sizeof(e));
-                    printf(",\"exoneration\":\"%s\"", e);
+                    
+                    hlse_json_str_field("exoneration", ex);
                 }
             }
             printf("}\n");
@@ -284,24 +279,18 @@ hlse_cmd_clipboard(const HlseCli *o, int argc, char **argv, int idx) {
                 if (cv.score == 0) {
                     const char *bs = hlse_blindspot_for("clipboard");
                     if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                        
+                        hlse_json_str_field("blind_spot", bs);
                     }
                 }
                 if (cv.score >= 60) {
-                    char e[512];
-                    hlse_json_escape(hlse_clipboard_pattern_text(), e, sizeof(e));
-                    printf(",\"pattern\":\"%s\"", e);
+                    
+                    hlse_json_str_field("pattern", hlse_clipboard_pattern_text());
                     printf(",\"pattern_id\":\"HLSE-CLIP-HIJACK\"");
-                    hlse_json_escape(hlse_clipboard_objective_text(), e, sizeof(e));
-                    printf(",\"objective\":\"%s\"", e);
-                    hlse_json_escape(hlse_clipboard_verify_text(), e, sizeof(e));
-                    printf(",\"verify\":\"%s\"", e);
-                    hlse_json_escape(hlse_clipboard_triage_text(), e, sizeof(e));
-                    printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(hlse_clipboard_cascade_text(), e, sizeof(e));
-                    printf(",\"cascade_risk\":\"%s\"", e);
+                    hlse_json_str_field("objective", hlse_clipboard_objective_text());
+                    hlse_json_str_field("verify", hlse_clipboard_verify_text());
+                    hlse_json_str_field("triage", hlse_clipboard_triage_text());
+                    hlse_json_str_field("cascade_risk", hlse_clipboard_cascade_text());
                 }
                 printf("}\n");
             } else if (cv.score == 0) {
@@ -361,9 +350,8 @@ hlse_cmd_audit(const HlseCli *o) {
                        i > 0 ? "," : "",
                        av.findings[i].severity, esc);
                 if (fix) {
-                    char efix[512];
-                    hlse_json_escape(fix, efix, sizeof(efix));
-                    printf(",\"fix\":\"%s\"", efix);
+                    
+                    hlse_json_str_field("fix", fix);
                 }
                 printf("}");
             }
@@ -371,9 +359,8 @@ hlse_cmd_audit(const HlseCli *o) {
             if (av.score == 0) {
                 const char *bs = hlse_blindspot_for("audit");
                 if (bs) {
-                    char esc_bs[512];
-                    hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                    printf(",\"blind_spot\":\"%s\"", esc_bs);
+                    
+                    hlse_json_str_field("blind_spot", bs);
                 }
             } else {
                 char ns[256];
@@ -392,9 +379,8 @@ hlse_cmd_audit(const HlseCli *o) {
                              "address remaining LOW/MED findings to improve "
                              "the hardening index (currently: %s)",
                              band);
-                { char ens[256];
-                  hlse_json_escape(ns, ens, sizeof(ens));
-                  printf(",\"next_steps\":\"%s\"", ens);
+                { 
+                  hlse_json_str_field("next_steps", ns);
                 }
             }
             printf("}\n");
@@ -480,9 +466,8 @@ hlse_cmd_file(const HlseCli *o, int argc, char **argv, int idx) {
                 if (fv.score == 0) {
                     const char *bs = hlse_blindspot_for("file");
                     if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                        
+                        hlse_json_str_field("blind_spot", bs);
                     }
                 }
                 if (fv.score >= 40) {
@@ -499,11 +484,11 @@ hlse_cmd_file(const HlseCli *o, int argc, char **argv, int idx) {
                      * pattern/file_masquerade_objective/file_masquerade_verify
                      * above) instead of a fourth independent copy. */
                     const char *fpat = hlse_file_classify_pattern(&fv);
-                    char e[512];
-                    hlse_json_escape(fpat, e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                    
+                    hlse_json_str_field("pattern", fpat);
                     printf(",\"pattern_id\":\"%s\"", hlse_file_pattern_id(fpat));
-                    hlse_json_escape(hlse_file_masquerade_objective(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                    hlse_json_escape(hlse_file_masquerade_verify(),    e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                    hlse_json_str_field("objective", hlse_file_masquerade_objective());
+                    hlse_json_str_field("verify", hlse_file_masquerade_verify());
                 }
                 if (fv.score >= 60) {
                     static const char file_tri[] =
@@ -517,16 +502,15 @@ hlse_cmd_file(const HlseCli *o, int argc, char **argv, int idx) {
                         "was opened \xe2\x80\x94 malware runs with your session "
                         "context; also check for persistence (startup items, "
                         "scheduled tasks, browser extensions added)";
-                    char e[512];
-                    hlse_json_escape(file_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(file_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                    
+                    hlse_json_str_field("triage", file_tri);
+                    hlse_json_str_field("cascade_risk", file_cas);
                 }
                 if (fv.score > 0 && fv.score < 60) {
                     const char *ex = hlse_exoneration_for("file", fv.score);
                     if (ex) {
-                        char e[512];
-                        hlse_json_escape(ex, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
+                        
+                        hlse_json_str_field("exoneration", ex);
                     }
                 }
                 printf("}\n");
@@ -593,9 +577,8 @@ hlse_cmd_network(const HlseCli *o) {
             if (nv.score == 0) {
                 const char *bs = hlse_blindspot_for("network");
                 if (bs) {
-                    char esc_bs[512];
-                    hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                    printf(",\"blind_spot\":\"%s\"", esc_bs);
+                    
+                    hlse_json_str_field("blind_spot", bs);
                 }
             }
             if (nv.score > 0) {
@@ -614,23 +597,22 @@ hlse_cmd_network(const HlseCli *o) {
                  * already acted) stay BLOCK+-only.
                  * Perspective 103: text now shared with the plaintext path
                  * below via network_*_text() accessors. */
-                char e[512];
-                hlse_json_escape(hlse_net_pattern_text(), e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
+                
+                hlse_json_str_field("pattern", hlse_net_pattern_text());
                 printf(",\"pattern_id\":\"HLSE-NET-C2\"");
-                hlse_json_escape(hlse_network_objective_text(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                hlse_json_escape(hlse_network_verify_text(),    e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                hlse_json_str_field("objective", hlse_network_objective_text());
+                hlse_json_str_field("verify", hlse_network_verify_text());
             }
             if (nv.score >= 60) {
-                char e[512];
-                hlse_json_escape(hlse_network_triage_text(),  e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                hlse_json_escape(hlse_network_cascade_text(), e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                
+                hlse_json_str_field("triage", hlse_network_triage_text());
+                hlse_json_str_field("cascade_risk", hlse_network_cascade_text());
             }
             if (nv.score > 0 && nv.score < 60) {
                 const char *ex = hlse_exoneration_for("network", nv.score);
                 if (ex) {
-                    char e[512];
-                    hlse_json_escape(ex, e, sizeof(e));
-                    printf(",\"exoneration\":\"%s\"", e);
+                    
+                    hlse_json_str_field("exoneration", ex);
                 }
             }
             printf("}\n");
@@ -686,9 +668,8 @@ hlse_cmd_paste(const HlseCli *o, int argc, char **argv, int idx) {
                 if (pv.score == 0) {
                     const char *bs = hlse_blindspot_for("paste");
                     if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                        
+                        hlse_json_str_field("blind_spot", bs);
                     }
                 }
                 if (pv.score > 0) {
@@ -722,24 +703,23 @@ hlse_cmd_paste(const HlseCli *o, int argc, char **argv, int idx) {
                     ppat = hlse_classify_text_attack(&ptv);
                     pobj = hlse_text_objective(&ptv);
                     pvrf = hlse_text_verify(&ptv);
-                    if (ppat) { char e[512]; hlse_json_escape(ppat,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
+                    if (ppat) {  hlse_json_str_field("pattern", ppat); }
                     if (ppat) { const char *pid = hlse_text_pattern_id(&ptv); if (pid) printf(",\"pattern_id\":\"%s\"",pid); }
-                    if (pobj) { char e[512]; hlse_json_escape(pobj,e,sizeof(e)); printf(",\"objective\":\"%s\"",e); }
-                    if (pvrf) { char e[512]; hlse_json_escape(pvrf,e,sizeof(e)); printf(",\"verify\":\"%s\"",e); }
+                    if (pobj) {  hlse_json_str_field("objective", pobj); }
+                    if (pvrf) { hlse_json_str_field("verify", pvrf); }
                     if (pv.score >= 60) {
                         const char *ptri, *pcas;
                         ptri = hlse_text_triage(&ptv);
                         pcas = hlse_text_cascade(&ptv);
-                        if (ptri) { char e[512]; hlse_json_escape(ptri,e,sizeof(e)); printf(",\"triage\":\"%s\"",e); }
-                        if (pcas) { char e[512]; hlse_json_escape(pcas,e,sizeof(e)); printf(",\"cascade_risk\":\"%s\"",e); }
+                        if (ptri) {  hlse_json_str_field("triage", ptri); }
+                        if (pcas) { hlse_json_str_field("cascade_risk", pcas); }
                     }
                 }
                 if (pv.score > 0 && pv.score < 60) {
                     const char *ex = hlse_exoneration_for("paste", pv.score);
                     if (ex) {
-                        char e[512];
-                        hlse_json_escape(ex, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
+                        
+                        hlse_json_str_field("exoneration", ex);
                     }
                 }
                 printf(",\"reasons\":[");
@@ -839,9 +819,8 @@ hlse_cmd_email(const HlseCli *o, int argc, char **argv, int idx) {
                 if (ev.score == 0 && !body_pat) {
                     const char *bs = hlse_blindspot_for("email");
                     if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                        
+                        hlse_json_str_field("blind_spot", bs);
                     }
                 }
                 if (body_pat) {
@@ -852,7 +831,7 @@ hlse_cmd_email(const HlseCli *o, int argc, char **argv, int idx) {
                     /* Emit pattern and pattern_id from body analysis, plus signal count/confidence */
                     printf(",\"signal_count\":2,\"confidence\":\"two independent signals — header authentication + body text both analyzed\"");
                     TextVerdict btv_hi = bodytv;
-                    char e[512];
+                    
                     const char *bpat, *bobj, *bvrf, *btri, *bcas, *bex;
                     btv_hi.score = ev.score > bodytv.score ? ev.score : bodytv.score;
                     bpat = hlse_classify_text_attack(&btv_hi);
@@ -861,30 +840,30 @@ hlse_cmd_email(const HlseCli *o, int argc, char **argv, int idx) {
                     bvrf = hlse_text_verify(&btv_hi);
                     btri = hlse_text_triage(&btv_hi);
                     bcas = hlse_text_cascade(&btv_hi);
-                    if (bpat) { hlse_json_escape(bpat,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
+                    if (bpat) { hlse_json_str_field("pattern", bpat); }
                     if (bpat) {
                         const char *bid = hlse_text_pattern_id(&btv_hi);
                         if (bid) printf(",\"pattern_id\":\"%s\"", bid);
                     }
                     if (bex && btv_hi.score >= 15 && btv_hi.score < 60) {
-                        hlse_json_escape(bex,e,sizeof(e)); printf(",\"exoneration\":\"%s\"",e);
+                        hlse_json_str_field("exoneration", bex);
                     }
                     /* Perspective 95: verify now fires from the ALERT floor
                      * (btv_hi.score >= 40, the combined header/body score) —
                      * objective/triage/cascade_risk stay gated on ev.score
                      * >= 60 (header-confidence threshold, unchanged). */
                     if (bvrf && btv_hi.score >= 40) {
-                        hlse_json_escape(bvrf,e,sizeof(e)); printf(",\"verify\":\"%s\"",e);
+                        hlse_json_str_field("verify", bvrf);
                     }
                     if (ev.score >= 60) {
-                        if (bobj) { hlse_json_escape(bobj,e,sizeof(e)); printf(",\"objective\":\"%s\"",e); }
-                        if (btri) { hlse_json_escape(btri,e,sizeof(e)); printf(",\"triage\":\"%s\"",e); }
-                        if (bcas) { hlse_json_escape(bcas,e,sizeof(e)); printf(",\"cascade_risk\":\"%s\"",e); }
+                        if (bobj) { hlse_json_str_field("objective", bobj); }
+                        if (btri) { hlse_json_str_field("triage", btri); }
+                        if (bcas) { hlse_json_str_field("cascade_risk", bcas); }
                     }
                 } else if (ev.score >= 60) {
                     /* Header-only BLOCK: synthesise BEC advisory lenses */
                     TextVerdict etv;
-                    char e[512];
+                    
                     const char *epat2, *eobj, *evrf, *etri, *ecas;
                     memset(&etv, 0, sizeof(etv));
                     etv.score = ev.score;
@@ -898,30 +877,28 @@ hlse_cmd_email(const HlseCli *o, int argc, char **argv, int idx) {
                     etri  = hlse_text_triage(&etv);
                     ecas  = hlse_text_cascade(&etv);
                     printf(",\"signal_count\":1,\"confidence\":\"single signal — email header authentication anomalies detected\"");
-                    if (epat2) { hlse_json_escape(epat2,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
+                    if (epat2) { hlse_json_str_field("pattern", epat2); }
                     if (epat2) { const char *pid = hlse_text_pattern_id(&etv); if (pid) printf(",\"pattern_id\":\"%s\"",pid); }
-                    if (eobj)  { hlse_json_escape(eobj,e,sizeof(e));  printf(",\"objective\":\"%s\"",e); }
-                    if (evrf)  { hlse_json_escape(evrf,e,sizeof(e));  printf(",\"verify\":\"%s\"",e); }
-                    if (etri)  { hlse_json_escape(etri,e,sizeof(e));  printf(",\"triage\":\"%s\"",e); }
-                    if (ecas)  { hlse_json_escape(ecas,e,sizeof(e));  printf(",\"cascade_risk\":\"%s\"",e); }
+                    if (eobj)  { hlse_json_str_field("objective", eobj); }
+                    if (evrf)  { hlse_json_str_field("verify", evrf); }
+                    if (etri)  { hlse_json_str_field("triage", etri); }
+                    if (ecas)  { hlse_json_str_field("cascade_risk", ecas); }
                 } else if (ev.score > 0) {
                     /* Borderline header score (1-59): emit signal_count, confidence, and exoneration */
                     printf(",\"signal_count\":1");
                     TextVerdict etv;
                     const char *econn = hlse_exoneration_for("email", ev.score);
                     if (econn) {
-                        char e[512];
-                        hlse_json_escape(econn, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
+                        
+                        hlse_json_str_field("exoneration", econn);
                     }
                     memset(&etv, 0, sizeof(etv));
                     etv.score = ev.score;
                     printf(",\"confidence\":\"partial signal — some email header concerns but not conclusive spoofing\"");
                 }
                 if (rem) {
-                    char erm[512];
-                    hlse_json_escape(rem, erm, sizeof(erm));
-                    printf(",\"remediation\":\"%s\"", erm);
+                    
+                    hlse_json_str_field("remediation", rem);
                 }
                 printf("}\n");
             } else if (ev.score == 0 && !body_pat) {
@@ -1037,17 +1014,15 @@ hlse_cmd_secret(const HlseCli *o, int argc, char **argv, int idx) {
                 {
                     const char *rem = hlse_remediation_for("secret", sv.score);
                     if (rem) {
-                        char erm[512];
-                        hlse_json_escape(rem, erm, sizeof(erm));
-                        printf(",\"remediation\":\"%s\"", erm);
+                        
+                        hlse_json_str_field("remediation", rem);
                     }
                 }
                 if (sv.score == 0) {
                     const char *bs = hlse_blindspot_for("secret");
                     if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                        
+                        hlse_json_str_field("blind_spot", bs);
                     }
                 }
                 if (sv.n_findings > 0) {
@@ -1056,30 +1031,27 @@ hlse_cmd_secret(const HlseCli *o, int argc, char **argv, int idx) {
                      * not just a probabilistic false-positive hedge. */
                     const char *cav = hlse_secret_finding_caveat(sv.findings[0].type);
                     if (cav) {
-                        char e[768];
-                        hlse_json_escape(cav, e, sizeof(e));
-                        printf(",\"caveat\":\"%s\"", e);
+                        
+                        hlse_json_str_field("caveat", cav);
                     }
                 }
                 if (sv.score >= 60 && sv.n_findings > 0) {
                     const char *ftype = sv.findings[0].type;
                     const char *sobj  = hlse_secret_objective_for(ftype);
-                    char e[512], epat[128];
+                    char epat[128];
                     hlse_secret_pattern_label(ftype, epat, sizeof(epat));
-                    hlse_json_escape(epat, e, sizeof(e));
-                    printf(",\"pattern\":\"%s\"", e);
+                    hlse_json_str_field("pattern", epat);
                     printf(",\"pattern_id\":\"%s\"", hlse_secret_pattern_id(ftype));
-                    if (sobj) { hlse_json_escape(sobj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e); }
-                    hlse_json_escape(hlse_secret_verify_text(),  e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
-                    hlse_json_escape(hlse_secret_triage_text(),  e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(hlse_secret_cascade_text(), e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
+                    if (sobj) { hlse_json_str_field("objective", sobj); }
+                    hlse_json_str_field("verify", hlse_secret_verify_text());
+                    hlse_json_str_field("triage", hlse_secret_triage_text());
+                    hlse_json_str_field("cascade_risk", hlse_secret_cascade_text());
                 }
                 if (sv.score > 0 && sv.score < 60) {
                     const char *ex = hlse_exoneration_for("secret", sv.score);
                     if (ex) {
-                        char e[512];
-                        hlse_json_escape(ex, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
+                        
+                        hlse_json_str_field("exoneration", ex);
                     }
                 }
                 printf("}\n");
@@ -1280,9 +1252,8 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                     const char *bs = hlse_blindspot_for(
                         pv.reason[0] ? "package" : "package_unverified");
                     if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                        
+                        hlse_json_str_field("blind_spot", bs);
                     }
                 }
                 if (pv.score > 0) {
@@ -1300,28 +1271,22 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                      * >= 60, the same gap P95/P96 closed elsewhere.
                      * Perspective 103: text now shared with the plaintext
                      * path below via package_*_text() accessors. */
-                    char e[512];
-                    hlse_json_escape(hlse_package_pattern_text(), e, sizeof(e));
-                    printf(",\"pattern\":\"%s\"", e);
+                    
+                    hlse_json_str_field("pattern", hlse_package_pattern_text());
                     printf(",\"pattern_id\":\"HLSE-PKG-TYPOSQUAT\"");
-                    hlse_json_escape(hlse_package_objective_text(), e, sizeof(e));
-                    printf(",\"objective\":\"%s\"", e);
-                    hlse_json_escape(hlse_package_verify_text(), e, sizeof(e));
-                    printf(",\"verify\":\"%s\"", e);
+                    hlse_json_str_field("objective", hlse_package_objective_text());
+                    hlse_json_str_field("verify", hlse_package_verify_text());
                 }
                 if (pv.score >= 60) {
-                    char e[512];
-                    hlse_json_escape(hlse_package_triage_text(), e, sizeof(e));
-                    printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(hlse_package_cascade_text(), e, sizeof(e));
-                    printf(",\"cascade_risk\":\"%s\"", e);
+                    
+                    hlse_json_str_field("triage", hlse_package_triage_text());
+                    hlse_json_str_field("cascade_risk", hlse_package_cascade_text());
                 }
                 if (pv.score > 0 && pv.score < 60) {
                     const char *ex = hlse_exoneration_for("package", pv.score);
                     if (ex) {
-                        char e[512];
-                        hlse_json_escape(ex, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
+                        
+                        hlse_json_str_field("exoneration", ex);
                     }
                 }
                 printf("}\n");
@@ -1648,10 +1613,10 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                  * hlse_file_classify_pattern()/file_masquerade_*()
                                  * accessors instead of an inline copy. */
                                 const char *fpat = hlse_file_classify_pattern(&fv);
-                                hlse_json_escape(fpat, esc, sizeof(esc)); printf(",\"pattern\":\"%s\"",      esc);
+                                hlse_json_str_field("pattern", fpat);
                                 printf(",\"pattern_id\":\"%s\"", hlse_file_pattern_id(fpat));
-                                hlse_json_escape(hlse_file_masquerade_objective(), esc, sizeof(esc)); printf(",\"objective\":\"%s\"", esc);
-                                hlse_json_escape(hlse_file_masquerade_verify(),    esc, sizeof(esc)); printf(",\"verify\":\"%s\"",    esc);
+                                hlse_json_str_field("objective", hlse_file_masquerade_objective());
+                                hlse_json_str_field("verify", hlse_file_masquerade_verify());
                             }
                             if (fv.score >= 60) {
                                 static const char sf_tri[] =
@@ -1665,14 +1630,13 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                     "was opened \xe2\x80\x94 malware runs with your session "
                                     "context; also check for persistence (startup items, "
                                     "scheduled tasks, browser extensions added)";
-                                hlse_json_escape(sf_tri, esc, sizeof(esc)); printf(",\"triage\":\"%s\"",       esc);
-                                hlse_json_escape(sf_cas, esc, sizeof(esc)); printf(",\"cascade_risk\":\"%s\"", esc);
+                                hlse_json_str_field("triage", sf_tri);
+                                hlse_json_str_field("cascade_risk", sf_cas);
                             }
                             if (fv.score > 0 && fv.score < 60) {
                                 const char *ex = hlse_exoneration_for("file", fv.score);
                                 if (ex) {
-                                    hlse_json_escape(ex, esc, sizeof(esc));
-                                    printf(",\"exoneration\":\"%s\"", esc);
+                                    hlse_json_str_field("exoneration", ex);
                                 }
                             }
                             printf("}\n");
@@ -1820,44 +1784,38 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                         {
                                             const char *conf = hlse_secret_confidence(&sv);
                                             if (conf) {
-                                                hlse_json_escape(conf, ed, sizeof(ed));
-                                                printf(",\"confidence\":\"%s\"", ed);
+                                                hlse_json_str_field("confidence", conf);
                                             }
                                         }
                                         {
                                             const char *rem = hlse_remediation_for("secret", sv.score);
                                             if (rem) {
-                                                hlse_json_escape(rem, ed, sizeof(ed));
-                                                printf(",\"remediation\":\"%s\"", ed);
+                                                hlse_json_str_field("remediation", rem);
                                             }
                                         }
                                         if (sv.n_findings > 0) {
                                             const char *cav = hlse_secret_finding_caveat(sv.findings[0].type);
                                             if (cav) {
-                                                hlse_json_escape(cav, ed, sizeof(ed));
-                                                printf(",\"caveat\":\"%s\"", ed);
+                                                hlse_json_str_field("caveat", cav);
                                             }
                                         }
                                         if (sv.score >= 60 && sv.n_findings > 0) {
                                             const char *ftype = sv.findings[0].type;
                                             const char *sobj  = hlse_secret_objective_for(ftype);
                                             hlse_secret_pattern_label(ftype, esc_p, sizeof(esc_p));
-                                            hlse_json_escape(esc_p, ed, sizeof(ed));
-                                            printf(",\"pattern\":\"%s\"", ed);
+                                            hlse_json_str_field("pattern", esc_p);
                                             printf(",\"pattern_id\":\"%s\"", hlse_secret_pattern_id(ftype));
                                             if (sobj) {
-                                                hlse_json_escape(sobj, ed, sizeof(ed));
-                                                printf(",\"objective\":\"%s\"", ed);
+                                                hlse_json_str_field("objective", sobj);
                                             }
-                                            hlse_json_escape(hlse_secret_verify_text(),  ed, sizeof(ed)); printf(",\"verify\":\"%s\"",       ed);
-                                            hlse_json_escape(hlse_secret_triage_text(),  ed, sizeof(ed)); printf(",\"triage\":\"%s\"",       ed);
-                                            hlse_json_escape(hlse_secret_cascade_text(), ed, sizeof(ed)); printf(",\"cascade_risk\":\"%s\"", ed);
+                                            hlse_json_str_field("verify", hlse_secret_verify_text());
+                                            hlse_json_str_field("triage", hlse_secret_triage_text());
+                                            hlse_json_str_field("cascade_risk", hlse_secret_cascade_text());
                                         }
                                         if (sv.score > 0 && sv.score < 60) {
                                             const char *ex = hlse_exoneration_for("secret", sv.score);
                                             if (ex) {
-                                                hlse_json_escape(ex, ed, sizeof(ed));
-                                                printf(",\"exoneration\":\"%s\"", ed);
+                                                hlse_json_str_field("exoneration", ex);
                                             }
                                         }
                                         printf("}\n");
@@ -1985,24 +1943,23 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                                         char uobj_buf[320], usafe[384];
                                                         int has_obj  = hlse_compound_objective(&uv, uobj_buf, sizeof(uobj_buf));
                                                         int has_safe = hlse_safe_destinations(&uv, usafe, sizeof(usafe));
-                                                        if (upat)     { hlse_json_escape(upat,     eu, sizeof(eu)); printf(",\"pattern\":\"%s\"",      eu); }
+                                                        if (upat)     { hlse_json_str_field("pattern", upat); }
                                                         if (upat)     { const char *upid = hlse_url_pattern_id(&uv); if (upid) printf(",\"pattern_id\":\"%s\"", upid); }
-                                                        if (has_obj)  { hlse_json_escape(uobj_buf, eu, sizeof(eu)); printf(",\"objective\":\"%s\"",    eu); }
-                                                        if (has_safe) { hlse_json_escape(usafe,    eu, sizeof(eu)); printf(",\"safe_url\":\"%s\"",     eu); }
-                                                        if (uvrf)     { hlse_json_escape(uvrf,     eu, sizeof(eu)); printf(",\"verify\":\"%s\"",       eu); }
+                                                        if (has_obj)  { hlse_json_str_field("objective", uobj_buf); }
+                                                        if (has_safe) { hlse_json_str_field("safe_url", usafe); }
+                                                        if (uvrf)     { hlse_json_str_field("verify", uvrf); }
                                                     }
                                                     if (uv.score >= 60) {
                                                         const char *ucas = hlse_cascade_risk(&uv);
                                                         char utri_buf[512];
                                                         int has_tri  = hlse_compound_triage(&uv, utri_buf, sizeof(utri_buf));
-                                                        if (has_tri)  { hlse_json_escape(utri_buf, eu, sizeof(eu)); printf(",\"triage\":\"%s\"",       eu); }
-                                                        if (ucas)     { hlse_json_escape(ucas,     eu, sizeof(eu)); printf(",\"cascade_risk\":\"%s\"", eu); }
+                                                        if (has_tri)  { hlse_json_str_field("triage", utri_buf); }
+                                                        if (ucas)     { hlse_json_str_field("cascade_risk", ucas); }
                                                     }
                                                     if (uv.score >= 40 && uv.score < 60) {
                                                         const char *uexon = hlse_url_exoneration(&uv);
                                                         if (uexon) {
-                                                            hlse_json_escape(uexon, eu, sizeof(eu));
-                                                            printf(",\"exoneration\":\"%s\"", eu);
+                                                            hlse_json_str_field("exoneration", uexon);
                                                         }
                                                     }
                                                     printf("}\n");
@@ -2098,15 +2055,13 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                 if (threats == 0) {
                     const char *bs = hlse_blindspot_for("scan");
                     if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
+                        
+                        hlse_json_str_field("blind_spot", bs);
                     }
                 } else {
                     const char *ia = hlse_scan_immediate_action((unsigned)asset_mask, nclasses);
-                    char esc_ia[512];
-                    hlse_json_escape(ia, esc_ia, sizeof(esc_ia));
-                    printf(",\"immediate_action\":\"%s\"", esc_ia);
+                    
+                    hlse_json_str_field("immediate_action", ia);
                 }
                 printf("}\n");
             }

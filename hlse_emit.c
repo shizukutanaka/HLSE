@@ -485,9 +485,7 @@ hlse_print_json_url(const char *url, const Verdict *v) {
          * "pixel-perfect clone" blind spot contradicts a canonical confirm. */
         const char *bs = hlse_blindspot_for(has_canon ? "url_canonical" : "url");
         if (bs) {
-            char esc_bs[512];
-            hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-            printf(",\"blind_spot\":\"%s\"", esc_bs);
+            hlse_json_str_field("blind_spot", bs);
         }
     }
     if (pat)        printf(",\"pattern\":\"%s\"", esc_pat);
@@ -510,9 +508,8 @@ hlse_print_json_url(const char *url, const Verdict *v) {
         {
             const char *ch_rsn = hlse_channel_reason(hlse_from_channel());
             if (ch_rsn) {
-                char esc_ch[512];
-                hlse_json_escape(ch_rsn, esc_ch, sizeof(esc_ch));
-                printf(",\"channel_reason\":\"%s\"", esc_ch);
+                
+                hlse_json_str_field("channel_reason", ch_rsn);
             }
         }
     }
@@ -573,9 +570,8 @@ hlse_print_json_text(const char *text, const TextVerdict *v) {
     if (v->score == 0) {
         const char *bs = hlse_blindspot_for("text");
         if (bs) {
-            char esc_bs[512];
-            hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-            printf(",\"blind_spot\":\"%s\"", esc_bs);
+            
+            hlse_json_str_field("blind_spot", bs);
         }
     }
     if (pat)  printf(",\"pattern\":\"%s\"",     esc_pat);
@@ -595,9 +591,8 @@ hlse_print_json_text(const char *text, const TextVerdict *v) {
         {
             const char *ch_rsn = hlse_channel_reason(hlse_from_channel());
             if (ch_rsn) {
-                char esc_ch[512];
-                hlse_json_escape(ch_rsn, esc_ch, sizeof(esc_ch));
-                printf(",\"channel_reason\":\"%s\"", esc_ch);
+                
+                hlse_json_str_field("channel_reason", ch_rsn);
             }
         }
     }
@@ -938,4 +933,13 @@ hlse_argv_remove(char **argv, int *argc, int *argc_flags, int i, int n) {
 void
 hlse_json_open(const char *kind) {
     printf("{\"kind\":\"%s\",\"hlse_version\":\"" HLSE_VERSION "\"", kind);
+}
+
+/* ,"<name>":"<escaped val>" — escapes internally; 8192 is strictly larger
+ * than every per-site buffer this replaced (max was 4096). */
+void
+hlse_json_str_field(const char *name, const char *val) {
+    char e[8192];
+    hlse_json_escape(val, e, sizeof(e));
+    printf(",\"%s\":\"%s\"", name, e);
 }
