@@ -471,8 +471,8 @@ hlse_print_json_url(const char *url, const Verdict *v) {
     if (has_safe) hlse_json_escape(safe, esc_safe, sizeof(esc_safe));
     if (has_conf) hlse_json_escape(conf, esc_conf, sizeof(esc_conf));
     if (exon)    hlse_json_escape(exon, esc_exon, sizeof(esc_exon));
-    printf("{\"kind\":\"url\",\"hlse_version\":\"" HLSE_VERSION "\","
-           "\"target\":\"%s\",\"score\":%d,\"action\":\"%s\","
+    hlse_json_open("url");
+           printf(",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\","
            "\"severity\":%d",
            escaped_url, v->score, hlse_action_for_score(v->score),
            hlse_severity_for_score(v->score));
@@ -563,8 +563,8 @@ hlse_print_json_text(const char *text, const TextVerdict *v) {
     if (tcas)       hlse_json_escape(tcas,   esc_tcas, sizeof(esc_tcas));
     if (exon)       hlse_json_escape(exon,   esc_exon, sizeof(esc_exon));
     if (sig_cnt > 0) hlse_json_escape(cf_buf, esc_cf,  sizeof(esc_cf));
-    printf("{\"kind\":\"text\",\"hlse_version\":\"" HLSE_VERSION "\","
-           "\"target\":\"%s\",\"score\":%d,\"action\":\"%s\","
+    hlse_json_open("text");
+           printf(",\"target\":\"%s\",\"score\":%d,\"action\":\"%s\","
            "\"severity\":%d",
            esc, v->score, hlse_text_action_for_score(v->score),
            hlse_severity_for_score(v->score));
@@ -931,4 +931,11 @@ hlse_argv_remove(char **argv, int *argc, int *argc_flags, int i, int n) {
         *argc_flags -= n;
         if (*argc_flags < i) *argc_flags = i;
     }
+}
+
+/* Shared JSON verdict prologue: {"kind":"<kind>","hlse_version":"<v>"
+ * (no trailing comma — the caller's first field supplies it). */
+void
+hlse_json_open(const char *kind) {
+    printf("{\"kind\":\"%s\",\"hlse_version\":\"" HLSE_VERSION "\"", kind);
 }

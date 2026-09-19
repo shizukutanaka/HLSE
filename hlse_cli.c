@@ -79,8 +79,8 @@ hlse_cmd_protect(const HlseCli *o, int argc, char **argv, int idx) {
                  * never brought in line. */
                 char esc_path[4096];
                 hlse_json_escape(path, esc_path, sizeof(esc_path));
-                printf("{\"kind\":\"protect\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"target\":\"%s\",\"score\":%d,"
+                hlse_json_open("protect");
+                       printf(",\"target\":\"%s\",\"score\":%d,"
                        "\"action\":\"%s\",\"severity\":%d,\"reasons\":[",
                        esc_path, pv.score,
                        hlse_action_for_score(pv.score),
@@ -178,8 +178,8 @@ hlse_cmd_esp(const HlseCli *o, int argc, char **argv, int idx) {
         ProtectionVerdict pv = hlse_esp_verify(path);
         if (o->json_out) {
             int i;
-            printf("{\"kind\":\"esp\",\"hlse_version\":\"" HLSE_VERSION "\","
-                   "\"score\":%d,\"action\":\"%s\","
+            hlse_json_open("esp");
+                   printf(",\"score\":%d,\"action\":\"%s\","
                    "\"severity\":%d,\"reasons\":[",
                    pv.score, hlse_action_for_score(pv.score),
                    hlse_severity_for_score(pv.score));
@@ -272,8 +272,8 @@ hlse_cmd_clipboard(const HlseCli *o, int argc, char **argv, int idx) {
                 hlse_json_escape(cv.swapped, es, sizeof(es));
                 hlse_json_escape(cv.reason, er, sizeof(er));
                 hlse_json_escape(rem ? rem : "", erm, sizeof(erm));
-                printf("{\"kind\":\"clipboard\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"score\":%d,\"action\":\"%s\","
+                hlse_json_open("clipboard");
+                       printf(",\"score\":%d,\"action\":\"%s\","
                        "\"severity\":%d,"
                        "\"is_swap\":%d,"
                        "\"original\":\"%s\",\"swapped\":\"%s\",\"reason\":\"%s\","
@@ -342,8 +342,8 @@ hlse_cmd_audit(const HlseCli *o) {
         }
         if (o->json_out) {
             int i;
-            printf("{\"kind\":\"audit\",\"hlse_version\":\"" HLSE_VERSION "\","
-                   "\"score\":%d,\"action\":\"%s\","
+            hlse_json_open("audit");
+                   printf(",\"score\":%d,\"action\":\"%s\","
                    "\"severity\":%d,"
                    "\"hardening_index\":%d,\"hardening_band\":\"%s\","
                    "\"crit_count\":%d,\"high_count\":%d,"
@@ -467,8 +467,8 @@ hlse_cmd_file(const HlseCli *o, int argc, char **argv, int idx) {
                 int i;
                 char esc[512];
                 hlse_json_escape(argv[idx + 1], esc, sizeof(esc));
-                printf("{\"kind\":\"file\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"path\":\"%s\",\"score\":%d,"
+                hlse_json_open("file");
+                       printf(",\"path\":\"%s\",\"score\":%d,"
                        "\"action\":\"%s\",\"severity\":%d,\"reasons\":[",
                        esc, fv.score, hlse_action_for_score(fv.score),
                        hlse_severity_for_score(fv.score));
@@ -579,8 +579,8 @@ hlse_cmd_network(const HlseCli *o) {
         }
         if (o->json_out) {
             int i;
-            printf("{\"kind\":\"network\",\"hlse_version\":\"" HLSE_VERSION "\","
-                   "\"score\":%d,\"action\":\"%s\","
+            hlse_json_open("network");
+                   printf(",\"score\":%d,\"action\":\"%s\","
                    "\"severity\":%d,\"reasons\":[",
                    nv.score, hlse_action_for_score(nv.score),
                    hlse_severity_for_score(nv.score));
@@ -678,8 +678,8 @@ hlse_cmd_paste(const HlseCli *o, int argc, char **argv, int idx) {
             }
             if (o->json_out) {
                 int i;
-                printf("{\"kind\":\"paste\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"score\":%d,\"action\":\"%s\","
+                hlse_json_open("paste");
+                       printf(",\"score\":%d,\"action\":\"%s\","
                        "\"severity\":%d,\"signals\":%d",
                        pv.score, hlse_action_for_score(pv.score),
                        hlse_severity_for_score(pv.score), pv.signals);
@@ -825,8 +825,8 @@ hlse_cmd_email(const HlseCli *o, int argc, char **argv, int idx) {
             const char *body_pat = hlse_classify_text_attack(&bodytv);
             if (o->json_out) {
                 int i;
-                printf("{\"kind\":\"email\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"score\":%d,\"action\":\"%s\","
+                hlse_json_open("email");
+                       printf(",\"score\":%d,\"action\":\"%s\","
                        "\"severity\":%d,\"reasons\":[",
                        ev.score, hlse_action_for_score(ev.score),
                        hlse_severity_for_score(ev.score));
@@ -1020,8 +1020,8 @@ hlse_cmd_secret(const HlseCli *o, int argc, char **argv, int idx) {
             }
             if (o->json_out) {
                 int i;
-                printf("{\"kind\":\"secret\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"score\":%d,\"action\":\"%s\","
+                hlse_json_open("secret");
+                       printf(",\"score\":%d,\"action\":\"%s\","
                        "\"severity\":%d,\"findings\":[",
                        sv.score, hlse_action_for_score(sv.score),
                        hlse_severity_for_score(sv.score));
@@ -1190,8 +1190,8 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                             char en[128];
                             int i;
                             hlse_json_escape(name, en, sizeof(en));
-                            printf("{\"kind\":\"package\",\"hlse_version\":\""
-                                   HLSE_VERSION "\",\"name\":\"%s\","
+                            hlse_json_open("package");
+                            printf(",\"name\":\"%s\","
                                    "\"ecosystem\":\"%s\",\"score\":%d,"
                                    "\"action\":\"%s\",\"severity\":%d,"
                                    "\"pattern_id\":\"HLSE-PKG-TYPOSQUAT\","
@@ -1228,8 +1228,8 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
             } else if (o->json_out) {
                 char ep[4096];
                 hlse_json_escape(mpath, ep, sizeof(ep));
-                printf("{\"kind\":\"manifest_summary\",\"hlse_version\":\""
-                       HLSE_VERSION "\",\"manifest\":\"%s\",\"ecosystem\":\"%s\","
+                hlse_json_open("manifest_summary");
+                printf(",\"manifest\":\"%s\",\"ecosystem\":\"%s\","
                        "\"packages_checked\":%d,\"threats\":%d,"
                        "\"max_severity\":%d,\"gate_hits\":%d}\n",
                        ep, eco, checked, threats,
@@ -1256,8 +1256,8 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                     hlse_severity_for_score(pv.score), argv[idx + 1], aar, aqn);
             }
             if (o->json_out) {
-                printf("{\"kind\":\"package\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"name\":\"%s\",\"score\":%d,"
+                hlse_json_open("package");
+                printf(",\"name\":\"%s\",\"score\":%d,"
                        "\"action\":\"%s\",\"severity\":%d",
                        argv[idx + 1], pv.score, hlse_action_for_score(pv.score),
                        hlse_severity_for_score(pv.score));
@@ -1627,8 +1627,8 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                             int i;
                             char esc[512];
                             hlse_json_escape(fullpath, esc, sizeof(esc));
-                            printf("{\"kind\":\"file\",\"hlse_version\":\"" HLSE_VERSION "\","
-                                   "\"path\":\"%s\","
+                            hlse_json_open("file");
+                                   printf(",\"path\":\"%s\","
                                    "\"score\":%d,\"action\":\"%s\","
                                    "\"severity\":%d,\"reasons\":[",
                                    esc, fv.score, hlse_action_for_score(fv.score),
@@ -1802,9 +1802,8 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                         hlse_json_escape(fullpath, esc_p, sizeof(esc_p));
                                         /* Emit findings:[{type,description}] per spec §5.2
                                          * (same schema as the standalone secret subcommand). */
-                                        printf("{\"kind\":\"secret\","
-                                               "\"hlse_version\":\"" HLSE_VERSION "\","
-                                               "\"path\":\"%s\","
+                                        hlse_json_open("secret");
+                                        printf(",\"path\":\"%s\","
                                                "\"line\":%d,\"score\":%d,"
                                                "\"action\":\"%s\",\"severity\":%d,"
                                                "\"findings\":[",
@@ -2086,8 +2085,8 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                 int nclasses = hlse_asset_mask_describe(asset_mask, classes,
                                                    sizeof(classes));
                 hlse_json_escape(root, esc_root, sizeof(esc_root));
-                printf("{\"kind\":\"scan_summary\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"target\":\"%s\","
+                hlse_json_open("scan_summary");
+                       printf(",\"target\":\"%s\","
                        "\"files_scanned\":%d,\"threats\":%d,"
                        "\"max_severity\":%d,"
                        "\"gate_hits\":%d,\"fail_threshold\":%d,"
