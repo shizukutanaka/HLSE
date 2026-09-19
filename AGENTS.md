@@ -82,11 +82,16 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
   (fingerprint + baseline suppress), `hlse_patterns.c` (SECRET/BRAND
   loader), `hlse_sarif.c` (SARIF collector + emitter),
   `hlse_manifest.c` (manifest ecosystem/name parsers),
-  `hlse_githistory.c` (`hlse_scan_git_history` fork/exec walker), and
-  `hlse_meta.c` (pattern-id + blast-radius metadata), and `moved the CLI emit/advisory-text layer to
-  `hlse_emit.c` — 34 hlse_ exports) and `hlse_advisory.c` (the public verdict-interpretation layer: score ladders, blind-spot/exoneration hedges, attack-class labels, confidence, objective/safe-destination, homoglyph/ASCII-diff reports, verify/triage/cascade advisories). Remaining in core:
-  the JSON/print emitter cluster, `stdin_mode`, the subcommand handlers,
-  and `main`. JSON escaping is consolidated on
+  `hlse_githistory.c` (`hlse_scan_git_history` fork/exec walker),
+  `hlse_meta.c` (pattern-id + blast-radius metadata),
+  `hlse_advisory.c` (public verdict-interpretation layer — score
+  ladders, blind-spot/exoneration hedges, attack-class labels,
+  confidence, objective/safe-destination, homoglyph/ASCII-diff reports,
+  verify/triage/cascade advisories), and `hlse_emit.c` (CLI output —
+  per-kind advisory-text getters, JSON/human verdict emitters,
+  `hlse_stdin_mode`, usage/stdin/argv helpers). Remaining in core: the
+  engine + thin public wrappers + the subcommand handlers inside
+  `main`. JSON escaping is consolidated on
   `hlse_util.c:hlse_json_escape` — `hlse_server.c` delegates to it.
 - **No hosted CI:** `.github/workflows/` is absent (only `FUNDING.yml`). The
   "CI enforces" wording in README/CONTRIBUTING is true only of the Makefile

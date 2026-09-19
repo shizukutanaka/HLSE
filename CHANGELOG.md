@@ -82,11 +82,24 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   removed a duplicated static `action_for_score` — call sites now use
   the public `hlse_action_for_score`. Flag-state globals
   (`g_baseline_file`, `g_emit_fingerprints`, `g_git_history`) stay in
-  core and are passed as parameters. `hlse_core.c` is now ~5,731 lines (increment 7
-  moved the 2,340-line public advisory/interpretation layer to
-  `hlse_advisory.c` — pure verdict-to-string mapping, no flag globals, no
-  printing);
-  behavior unchanged.
+  core and are passed as parameters.
+- **`hlse_core.c` split — increment 7** (`hlse_advisory.c`, new). The
+  2,340-line public verdict-interpretation layer moved out verbatim:
+  score→action ladders, blind-spot/exoneration hedges, attack-class
+  labels + pattern ids, confidence, attacker objective, safe
+  destinations, confusable/ASCII-diff reports, verify/triage/cascade
+  advisories. `hlse_canonical_confirm` stays in core — it closes over
+  the detector's static `BRANDS[]`/`brand_canonical` table.
+- **`hlse_core.c` split — increments 8–9** (`hlse_emit.c/h`, new). The
+  CLI output layer moved out verbatim with `hlse_` exports: the
+  per-kind Pattern/Objective/Verify/Triage/Cascade advisory getters,
+  `hlse_print_json_url`/`hlse_print_json_text`,
+  `hlse_print_url_advisories`/`hlse_print_text_advisories`,
+  `hlse_stdin_mode` (`g_fail_threshold` now a parameter),
+  `hlse_print_usage`, `hlse_read_stdin_all`, `hlse_argv_remove`.
+  `hlse_core.c` is now ~4,812 lines — engine + public API + `main`.
+  Behavior unchanged throughout: full `make test` green, benchmark
+  F1=1.000 / FP=0%, strict-warning gates pass in CLI and lib modes.
 
 ### Fixed
 - **macOS build and test portability** (`Makefile`, `hlse_audit.c`,
