@@ -24,6 +24,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 - Dead `N_SIGNALS` macro in `hlse_text.c` — the `SIGNALS` table iterates
   by its NULL sentinel; the computed-count macro was never referenced.
 
+### Changed
+
+- **`hlse_core.c` split — first increment** (`hlse_selftest.c/h`, new).
+  The built-in self-test corpus and benchmark (~270 lines of test data
+  driving only the public API) moved out of the orchestrator:
+  `hlse_url_self_test`, `hlse_text_self_test`, `hlse_benchmark`.
+  `hlse_core.c` 9.4k → 9.2k lines. Behavior unchanged — `--self-test`
+  and `--benchmark` produce identical output.
+
 ### Fixed
 - **macOS build and test portability** (`Makefile`, `hlse_audit.c`,
   `hlse_core.c`, `tests/cli_integration.sh`). The README's "macOS (partial)"
