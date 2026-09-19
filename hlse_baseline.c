@@ -9,7 +9,7 @@
 static char      **g_baseline_fps = NULL;    /* loaded fingerprint set */
 static size_t      g_baseline_n = 0;
 
-void
+static void
 hlse_fingerprint(const char *relpath, const char *pattern_id,
                  const char *match, char out[17]) {
     unsigned long long h = 1469598103934665603ULL; /* FNV-1a 64 offset basis */
@@ -26,7 +26,7 @@ hlse_fingerprint(const char *relpath, const char *pattern_id,
     snprintf(out, 17, "%016llx", h);
 }
 
-int
+static int
 hlse_baseline_has(const char *fp) {
     size_t i;
     for (i = 0; i < g_baseline_n; i++)

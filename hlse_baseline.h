@@ -14,19 +14,9 @@
 #ifndef HLSE_BASELINE_H
 #define HLSE_BASELINE_H
 
-/* Stable 16-hex-char fingerprint of (relpath, pattern_id, match) into
- * out[17]. 64-bit FNV-1a, NUL-separated fields; deliberately OMITS the
- * line number so a finding that moves lines stays suppressed. */
-void hlse_fingerprint(const char *relpath, const char *pattern_id,
-                      const char *match, char out[17]);
-
 /* Load fingerprints from a baseline file (one per line; '#' comments and
  * blank lines ignored). 0 on success, -1 when the file cannot be opened. */
 int  hlse_baseline_load(const char *path);
-
-/* 1 when fp is in the loaded baseline set (linear scan — baselines are
- * modest and this runs once per finding). */
-int  hlse_baseline_has(const char *fp);
 
 /* Free the loaded set; idempotent and safe when nothing was loaded. */
 void hlse_baseline_clear(void);
