@@ -17,3 +17,4 @@ typedef struct {
 } HlseCli;
 
 #endif /* HLSE_CLI_H */
+int hlse_cmd_protect(const HlseCli *o, int argc, char **argv, int idx);
