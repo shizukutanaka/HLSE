@@ -113,6 +113,8 @@ FUZZ_URL          := tests/fuzz_url
 FUZZ_URL_ASAN     := tests/fuzz_url_asan
 FUZZ_SERVER       := tests/fuzz_server
 FUZZ_SERVER_ASAN  := tests/fuzz_server_asan
+FUZZ_MANIFEST     := tests/fuzz_manifest
+FUZZ_MANIFEST_ASAN:= tests/fuzz_manifest_asan
 
 
 install-workflows:   ## copy the shipped CI workflows into .github/workflows/
@@ -286,6 +288,19 @@ $(FUZZ_SERVER_ASAN): tests/hlse_server_fuzz.c hlse_server.c $(CORE_SRC) hlse_cor
 		-o $@ tests/hlse_server_fuzz.c $(CORE_SRC) -I. -lm -lpthread
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
+$(FUZZ_MANIFEST): tests/hlse_manifest_fuzz.c hlse_manifest.c hlse_manifest.h hlse_util.c
+	@mkdir -p tests
+	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) \
+		-o $@ tests/hlse_manifest_fuzz.c hlse_manifest.c hlse_util.c -I. -lm
+	@printf '  %-20s %s\n' "CC" "$@"
+
+$(FUZZ_MANIFEST_ASAN): tests/hlse_manifest_fuzz.c hlse_manifest.c hlse_manifest.h hlse_util.c
+	@mkdir -p tests
+	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) \
+		-fsanitize=address,undefined \
+		-o $@ tests/hlse_manifest_fuzz.c hlse_manifest.c hlse_util.c -I. -lm
+	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
+
 # Extended (out-of-distribution) corpus
 EXT_BIN   := tests/corpus_ext
 
@@ -399,7 +414,7 @@ coverage:
 
 # ─── fuzz ────────────────────────────────────────────────────────────────
 
-fuzz: $(FUZZ_BIN) $(FUZZ_SECRETS) $(FUZZ_SUPPLY) $(FUZZ_FILE) $(FUZZ_URL) $(FUZZ_SERVER)
+fuzz: $(FUZZ_BIN) $(FUZZ_SECRETS) $(FUZZ_SUPPLY) $(FUZZ_FILE) $(FUZZ_URL) $(FUZZ_SERVER) $(FUZZ_MANIFEST)
 	@echo "--- text fuzz ---"
 	./$(FUZZ_BIN) 100000 1
 	@echo "--- secrets fuzz ---"
@@ -412,8 +427,10 @@ fuzz: $(FUZZ_BIN) $(FUZZ_SECRETS) $(FUZZ_SUPPLY) $(FUZZ_FILE) $(FUZZ_URL) $(FUZZ
 	./$(FUZZ_URL) 100000 1
 	@echo "--- server JSON parser fuzz ---"
 	./$(FUZZ_SERVER) 100000 1
+	@echo "--- manifest parser fuzz ---"
+	./$(FUZZ_MANIFEST) 100000 1
 
-fuzz-asan: $(FUZZ_ASAN) $(FUZZ_SECRETS_ASAN) $(FUZZ_SUPPLY_ASAN) $(FUZZ_FILE_ASAN) $(FUZZ_URL_ASAN) $(FUZZ_SERVER_ASAN)
+fuzz-asan: $(FUZZ_ASAN) $(FUZZ_SECRETS_ASAN) $(FUZZ_SUPPLY_ASAN) $(FUZZ_FILE_ASAN) $(FUZZ_URL_ASAN) $(FUZZ_SERVER_ASAN) $(FUZZ_MANIFEST_ASAN)
 	@echo "--- text fuzz (ASan) ---"
 	./$(FUZZ_ASAN) 10000 1
 	@echo "--- secrets fuzz (ASan) ---"
@@ -426,6 +443,8 @@ fuzz-asan: $(FUZZ_ASAN) $(FUZZ_SECRETS_ASAN) $(FUZZ_SUPPLY_ASAN) $(FUZZ_FILE_ASA
 	./$(FUZZ_URL_ASAN) 10000 1
 	@echo "--- server JSON parser fuzz (ASan) ---"
 	./$(FUZZ_SERVER_ASAN) 10000 1
+	@echo "--- manifest parser fuzz (ASan) ---"
+	./$(FUZZ_MANIFEST_ASAN) 10000 1
 
 # ─── quality gates (used by CI) ──────────────────────────────────────────
 
@@ -616,6 +635,7 @@ clean:
 		$(FUZZ_FILE) $(FUZZ_FILE_ASAN) \
 		$(FUZZ_URL) $(FUZZ_URL_ASAN) \
 		$(FUZZ_SERVER) $(FUZZ_SERVER_ASAN) \
+		$(FUZZ_MANIFEST) $(FUZZ_MANIFEST_ASAN) \
 		$(EXT_BIN) $(SERVER_BIN) $(SERVER_TEST) $(DAEMON_BIN)
 	rm -f hlse_core_static hlse_core_cov *.gcov *.gcda *.gcno *.o
 	@echo "Clean complete"

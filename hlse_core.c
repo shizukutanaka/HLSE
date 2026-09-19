@@ -1141,7 +1141,6 @@ detect_security_hyphenation(const ParsedUrl *u, Verdict *v) {
                         "Brand present in hyphenated domain — "
                         "real '%s' does not use a hyphenated SLD", BRANDS[i]);
                     add_brand_canonical(v, BRANDS[i]);
-                    brand_matched = 1;
                     break;
                 }
             }
