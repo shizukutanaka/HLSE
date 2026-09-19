@@ -43,6 +43,10 @@
 #include "hlse_channel.h"  /* hlse_from_channel, hlse_channel_delta/reason */
 #include "hlse_baseline.h" /* hlse_scan_suppress, hlse_baseline_load/clear */
 #include "hlse_patterns.h" /* hlse_patterns_load (--patterns) */
+#include "hlse_sarif.h"    /* hlse_sarif_add, hlse_sarif_emit */
+#include "hlse_manifest.h" /* manifest ecosystem + name parsers */
+#include "hlse_githistory.h" /* hlse_scan_git_history */
+#include "hlse_meta.h"    /* pattern ids, asset-class blast radius */
 #include "hlse_util.h"    /* hlse_shannon_entropy, hlse_edit_distance */
 #include "hlse_supply.h"  /* PackageVerdict, PasteVerdict, NetworkVerdict */
 #include "hlse_file.h"    /* FileVerdict, hlse_check_file */
@@ -4586,139 +4590,8 @@ hlse_canonical_confirm(const char *url, char *brand_out, size_t brand_outsz) {
     }
     return 0;
 }
+/* ─────────────────────────── JSON output ────────────────────────────── */
 
-/* ───────────────── blast-radius / asset-class correlation ─────────────────
- * A leaked credential's danger is not its count but what the *set* of leaked
- * credentials collectively unlocks. We bucket each secret-finding type into a
- * coarse asset class; when a scan turns up credentials spanning two or more
- * classes, an attacker can pivot across systems (code → cloud → data), which
- * is materially worse than many tokens of a single class. */
-enum {
-    ASSET_CLOUD    = 1 << 0,   /* AWS/GCP/Azure/DO infrastructure          */
-    ASSET_SCM      = 1 << 1,   /* GitHub/GitLab source control             */
-    ASSET_DATABASE = 1 << 2,   /* DB / service connection-string creds     */
-    ASSET_PAYMENT  = 1 << 3,   /* Stripe/PayPal/Square                     */
-    ASSET_COMMS    = 1 << 4,   /* Slack/Discord/Telegram/SendGrid/Twilio   */
-    ASSET_AI       = 1 << 5,   /* OpenAI/Anthropic/Groq/… provider keys    */
-    ASSET_CRYPTO   = 1 << 6    /* SSH/PGP private keys                      */
-};
-
-/* CLI-only (scan/secret blast-radius reporting); marked unused so the
- * library build, which excludes the CLI, does not warn. */
-#if defined(__GNUC__) || defined(__clang__)
-__attribute__((unused))
-#endif
-static unsigned
-asset_class_of(const char *type) {
-    if (!type) return 0;
-    if (strstr(type, "AWS") || strstr(type, "GCP") || strstr(type, "Google") ||
-        strstr(type, "AZURE") || strstr(type, "Azure") ||
-        strstr(type, "DigitalOcean") || strstr(type, "Databricks") ||
-        strstr(type, "Render") || strstr(type, "Fly.io") ||
-        strstr(type, "Vercel") || strstr(type, "Netlify"))
-        return ASSET_CLOUD;
-    if (strstr(type, "GitHub") || strstr(type, "GitLab"))
-        return ASSET_SCM;
-    if (strstr(type, "URI_CREDENTIALS") || strstr(type, "Database") ||
-        strstr(type, "PlanetScale"))
-        return ASSET_DATABASE;
-    if (strstr(type, "Stripe") || strstr(type, "PayPal") ||
-        strstr(type, "Square"))
-        return ASSET_PAYMENT;
-    if (strstr(type, "Slack") || strstr(type, "Discord") ||
-        strstr(type, "Telegram") || strstr(type, "SendGrid") ||
-        strstr(type, "Twilio") || strstr(type, "Postman"))
-        return ASSET_COMMS;
-    if (strstr(type, "OpenAI") || strstr(type, "Anthropic") ||
-        strstr(type, "Groq") || strstr(type, "Perplexity") ||
-        strstr(type, "xAI") || strstr(type, "Hugging"))
-        return ASSET_AI;
-    if (strstr(type, "PRIVATE_KEY") || strstr(type, "Private key"))
-        return ASSET_CRYPTO;
-    return 0;  /* generic env/JWT/entropy — not pivot-defining */
-}
-
-/* Priority action for the threat mix found by a scan pass.
- * Returns a one-sentence triage hint keyed to the highest-severity
- * asset class (or file/URL threats when no credentials were found). */
-#if defined(__GNUC__) || defined(__clang__)
-__attribute__((unused))
-#endif
-static const char *
-scan_immediate_action(unsigned mask, int nclasses) {
-    if (nclasses >= 2)
-        return "MULTI-CLASS: rotate ALL leaked credentials immediately \xe2\x80\x94 "
-               "an attacker with multiple asset classes can pivot across systems";
-    if (mask & ASSET_CLOUD)
-        return "rotate all cloud API keys immediately \xe2\x80\x94 cloud access "
-               "enables server control, data exfiltration, and billing fraud";
-    if (mask & ASSET_PAYMENT)
-        return "contact your payment processor to invalidate the leaked key \xe2\x80\x94 "
-               "payment keys can be used for fraud within minutes";
-    if (mask & ASSET_SCM)
-        return "revoke the leaked source control token from repository settings "
-               "\xe2\x80\x94 then audit CI/CD pipeline secret access";
-    if (mask & ASSET_DATABASE)
-        return "rotate database credentials and audit the query log for "
-               "unauthorized reads \xe2\x80\x94 database access exposes all records";
-    if (mask & ASSET_CRYPTO)
-        return "replace the private key and remove it from authorized_keys "
-               "on every host that trusts it";
-    if (mask & ASSET_AI)
-        return "regenerate the API key in the provider dashboard \xe2\x80\x94 "
-               "AI provider keys can incur large charges when abused";
-    if (mask & ASSET_COMMS)
-        return "regenerate the webhook or bot token from the service dashboard";
-    return "review per-finding output \xe2\x80\x94 quarantine or delete flagged "
-           "files before deploying or sharing";
-}
-
-/* CLI-only (scan/secret blast-radius reporting); see asset_class_of above. */
-#if defined(__GNUC__) || defined(__clang__)
-__attribute__((unused))
-#endif
-static int
-asset_mask_describe(unsigned mask, char *out, size_t outsz) {
-    static const struct { unsigned bit; const char *name; } A[] = {
-        { ASSET_CLOUD,    "cloud-infrastructure" },
-        { ASSET_SCM,      "source-control" },
-        { ASSET_DATABASE, "database" },
-        { ASSET_PAYMENT,  "payment" },
-        { ASSET_COMMS,    "communications" },
-        { ASSET_AI,       "AI-provider" },
-        { ASSET_CRYPTO,   "private-key" },
-        { 0, NULL }
-    };
-    int i, n = 0;
-    size_t w = 0;
-    out[0] = '\0';
-    for (i = 0; A[i].name; i++) {
-        if (mask & A[i].bit) {
-            int k = snprintf(out + w, outsz - w, "%s%s",
-                             n ? ", " : "", A[i].name);
-            if (k > 0 && (size_t)k < outsz - w) w += (size_t)k;
-            n++;
-        }
-    }
-    return n;  /* number of distinct asset classes */
-}
-
-/* ──────────────────────── output formatting ──────────────────────────── */
-
-/* Used by print_verdict (CLI mode) and exposed for library users.
- * `__attribute__((unused))` silences the warning when only the URL
- * library is used and CLI helpers are excluded.                       */
-#if defined(__GNUC__) || defined(__clang__)
-__attribute__((unused))
-#endif
-static const char *
-action_for_score(int score) {
-    if (score >= 80) return "ISOLATE";
-    if (score >= 60) return "BLOCK";
-    if (score >= 40) return "ALERT";
-    if (score >= 15) return "LOG";
-    return "SAFE";
-}
 
 /* ──────────────────── CLI-only functions ─────────────────────────────
  * Everything from here to the end of the file is CLI-mode code.
@@ -4727,354 +4600,12 @@ action_for_score(int score) {
  * hlse_set_from_channel, read via hlse_from_channel).                 */
 #ifndef HLSE_CORE_AS_LIB
 
-/* Stable machine-readable pattern id for a file-masquerade verdict — the file
- * counterpart of hlse_text_pattern_id (P86). Keyed to the prose label computed
- * inline at the file display sites so the same append-only HLSE-FILE-* tokens
- * are emitted everywhere a file `pattern` is shown. Returns "HLSE-FILE-MASQUERADE"
- * for the catch-all masquerade label; never NULL when called with a non-NULL
- * fpat. */
-static const char *
-file_pattern_id(const char *fpat) {
-    if (!fpat) return NULL;
-    if (strstr(fpat, "RTL override"))    return "HLSE-FILE-RTL-OVERRIDE";
-    if (strstr(fpat, "double-extension")) return "HLSE-FILE-DOUBLE-EXT";
-    if (strstr(fpat, "macro"))            return "HLSE-FILE-MACRO";
-    if (strstr(fpat, "embedded JavaScript")) return "HLSE-FILE-PDF-JS";
-    return "HLSE-FILE-MASQUERADE";
-}
-
-/* Stable file pattern_id derived directly from a FileVerdict's first reason —
- * mirrors the prose-label ladder at the file display sites so the SARIF scan
- * path (P91) emits the same HLSE-FILE-* token as the standalone `file` JSON. */
-static const char *
-file_verdict_pattern_id(const FileVerdict *fv) {
-    if (fv->n_reasons > 0) {
-        const char *r = fv->reasons[0];
-        if (strstr(r, "RLO") || strstr(r, "Unicode"))
-            return "HLSE-FILE-RTL-OVERRIDE";
-        if (strstr(r, "DOUBLE EXTENSION") || strstr(r, "double"))
-            return "HLSE-FILE-DOUBLE-EXT";
-        if (strstr(r, "macro") || strstr(r, "Macro"))
-            return "HLSE-FILE-MACRO";
-        if (strstr(r, "PDF") || strstr(r, "JavaScript"))
-            return "HLSE-FILE-PDF-JS";
-    }
-    return "HLSE-FILE-MASQUERADE";
-}
-
-/* Socratic question (Perspective 101): "The same RLO/DOUBLE-EXTENSION/macro/
- * PDF if-else classification ladder is copy-pasted at all four file display
- * sites (standalone `file` JSON, standalone plaintext, `scan`'s embedded-file
- * JSON, `scan`'s embedded-file plaintext) as an inline local `fpat` variable —
- * four independent copies of the same four conditions, right next to the
- * single shared file_verdict_pattern_id() a few lines above that already
- * performs the identical match for the pattern_id token. Four independently
- * maintained copies is exactly how the standalone-vs-scan field asymmetry
- * that Perspective 95 had to fix originally happened. Shouldn't the
- * human-readable label share one function the way the token already does?"
- *
- * Consolidates the four inline copies into one function so pattern label and
- * pattern_id can never again drift apart between the standalone and scan
- * code paths. Pure refactor — every branch and return value is unchanged. */
-static const char *
-file_classify_pattern(const FileVerdict *fv) {
-    if (fv->n_reasons > 0) {
-        const char *r = fv->reasons[0];
-        if (strstr(r, "RLO") || strstr(r, "Unicode"))
-            return "Unicode RTL override trick (hidden file extension)";
-        if (strstr(r, "DOUBLE EXTENSION") || strstr(r, "double"))
-            return "double-extension file masquerade (disguised executable)";
-        if (strstr(r, "macro") || strstr(r, "Macro"))
-            return "Office macro delivery (document-based malware lure)";
-        if (strstr(r, "PDF") || strstr(r, "JavaScript"))
-            return "PDF with embedded JavaScript (drive-by execution lure)";
-    }
-    return "file masquerade / malicious file delivery";
-}
-
-/* The two ALERT-floor (score >= 40) advisory lines for any file-masquerade
- * verdict — identical regardless of which specific pattern fired, so a
- * single pair of accessors (mirroring file_classify_pattern above) replaces
- * the four independently duplicated string literals this used to be. */
-static const char *
-file_masquerade_objective(void) {
-    return "code execution \xe2\x80\x94 opening a disguised executable "
-           "or document with macros runs the payload with your "
-           "user privileges; the visual disguise is designed to "
-           "bypass 'I checked the extension' caution";
-}
-
-static const char *
-file_masquerade_verify(void) {
-    return "do NOT open the file; scan it with a multi-engine "
-           "sandbox (e.g. VirusTotal) first \xe2\x80\x94 right-click "
-           "to upload; confirm the file came from a trusted source "
-           "through a separately-known channel";
-}
-
-/* Stable machine-readable pattern id for an exposed-credential verdict — the
- * secret counterpart of hlse_text_pattern_id (P86). Keyed to the credential
- * type label (sv.findings[0].type) so SIEM rules route on a stable HLSE-SECRET-*
- * token instead of the freeform provider string. Returns "HLSE-SECRET-GENERIC"
- * for unrecognised types; never NULL when called with a non-NULL ftype. */
-static const char *
-secret_pattern_id(const char *ftype) {
-    if (!ftype) return NULL;
-    if (strstr(ftype, "AWS"))     return "HLSE-SECRET-AWS";
-    if (strstr(ftype, "GitHub"))  return "HLSE-SECRET-GITHUB";
-    if (strstr(ftype, "Stripe"))  return "HLSE-SECRET-STRIPE";
-    if (strstr(ftype, "Slack"))   return "HLSE-SECRET-SLACK";
-    if (strstr(ftype, "Google"))  return "HLSE-SECRET-GOOGLE";
-    if (strstr(ftype, "OpenAI"))  return "HLSE-SECRET-OPENAI";
-    if (strstr(ftype, "Anthropic")) return "HLSE-SECRET-ANTHROPIC";
-    if (strstr(ftype, "Azure"))   return "HLSE-SECRET-AZURE";
-    if (strstr(ftype, "Private key") || strstr(ftype, "private key"))
-                                  return "HLSE-SECRET-PRIVATE-KEY";
-    /* Checked before the generic JWT arm: an unsigned token is a distinct
-     * finding class (forgeable credential / misconfiguration, not a leak) and
-     * deserves its own routing token downstream. */
-    if (strstr(ftype, "JWT_ALG_NONE")) return "HLSE-SECRET-JWT-ALG-NONE";
-    if (strstr(ftype, "JWT"))     return "HLSE-SECRET-JWT";
-    return "HLSE-SECRET-GENERIC";
-}
-
-/* ─────────────────────────── JSON output ────────────────────────────── */
-
-
-/* ── SARIF 2.1.0 output (GitHub code-scanning compatible) ─────────────────
- *
- * The scan subcommand streams findings as it walks the tree. SARIF needs a
- * single JSON document, so when --sarif is set we accumulate findings into
- * this fixed-capacity buffer and emit them all at the end. The cap is
- * generous; overflow simply truncates the report (a logged note is added).
- *
- * Each finding: file path, 1-based line, rule id, message, score.        */
-#define SARIF_MAX_FINDINGS 4096
-
-typedef struct {
-    char  path[1024];
-    int   line;
-    char  rule[32];      /* e.g. "secret", "phishing-url", "file-masquerade" */
-    char  pattern_id[40];/* stable HLSE-* token for SOAR routing (P91)        */
-    char  message[512];
-    int   score;
-} SarifFinding;
-
-static SarifFinding g_sarif[SARIF_MAX_FINDINGS];
-static int          g_sarif_n = 0;
-static int          g_sarif_overflow = 0;
-
-static void
-sarif_add(const char *path, int line, const char *rule,
-          const char *pattern_id, const char *message, int score) {
-    SarifFinding *f;
-    if (g_sarif_n >= SARIF_MAX_FINDINGS) { g_sarif_overflow = 1; return; }
-    f = &g_sarif[g_sarif_n++];
-    snprintf(f->path, sizeof(f->path), "%s", path);
-    f->line = line < 1 ? 1 : line;
-    snprintf(f->rule, sizeof(f->rule), "%s", rule);
-    snprintf(f->pattern_id, sizeof(f->pattern_id), "%s",
-             pattern_id ? pattern_id : "");
-    snprintf(f->message, sizeof(f->message), "%s", message);
-    f->score = score;
-}
-
-/* Map HLSE 0-100 score to SARIF level + security-severity (0.0-10.0). */
-static const char *
-sarif_level(int score) {
-    if (score >= 60) return "error";
-    if (score >= 40) return "warning";
-    return "note";
-}
-
-static void
-sarif_emit(const char *tool_version) {
-    int i;
-    /* Rule metadata — id, display name, short description, and
-     * security-severity (CVSS-like 0–10 for GitHub code scanning).    */
-    static const struct {
-        const char *id;
-        const char *name;
-        const char *description;
-        const char *severity; /* string to avoid float formatting issues */
-        const char *tags;     /* JSON array body for properties.tags        */
-    } RULES[] = {
-        { "secret",         "Credential Leak",
-          "Exposed API key, token, or private key found in source file.",
-          "9.0",
-          "\"security\", \"external/cwe/cwe-798\"" },
-        { "phishing-url",   "Phishing URL",
-          "URL exhibits homoglyph, typosquat, or subdomain-spoof phishing indicators.",
-          "7.5",
-          "\"security\", \"external/cwe/cwe-1021\"" },
-        { "file-masquerade","File Masquerade",
-          "File extension or magic bytes indicate the file is disguised malware.",
-          "8.0",
-          "\"security\", \"external/cwe/cwe-646\"" },
-        { "package-typosquat","Dependency Typosquat",
-          "Declared dependency name is a likely typosquat of a popular package "
-          "(dependency-confusion / supply-chain attack).",
-          "7.0",
-          "\"security\", \"external/cwe/cwe-1357\"" },
-        { NULL, NULL, NULL, NULL, NULL }
-    };
-    char esc[1280];
-
-    printf("{\n");
-    printf("  \"$schema\": \"https://json.schemastore.org/sarif-2.1.0.json\",\n");
-    printf("  \"version\": \"2.1.0\",\n");
-    printf("  \"runs\": [\n    {\n");
-    printf("      \"tool\": {\n        \"driver\": {\n");
-    printf("          \"name\": \"HLSE\",\n");
-    printf("          \"informationUri\": \"https://github.com/shizukutanaka/hlse\",\n");
-    printf("          \"version\": \"%s\",\n", tool_version);
-    printf("          \"rules\": [\n");
-    for (i = 0; RULES[i].id; i++) {
-        printf("            {\n"
-               "              \"id\": \"%s\", \"name\": \"%s\",\n"
-               "              \"shortDescription\": { \"text\": \"%s\" },\n"
-               "              \"helpUri\": \"https://github.com/shizukutanaka/hlse/blob/main/docs/SIEM_INTEGRATION.md\",\n"
-               "              \"properties\": { \"security-severity\": \"%s\", \"tags\": [%s] }\n"
-               "            }%s\n",
-               RULES[i].id, RULES[i].name, RULES[i].description,
-               RULES[i].severity, RULES[i].tags, RULES[i+1].id ? "," : "");
-    }
-    printf("          ]\n        }\n      },\n");
-    printf("      \"results\": [\n");
-    for (i = 0; i < g_sarif_n; i++) {
-        SarifFinding *f = &g_sarif[i];
-        double sev = (double)f->score / 10.0;
-        printf("        {\n");
-        printf("          \"ruleId\": \"%s\",\n", f->rule);
-        printf("          \"level\": \"%s\",\n", sarif_level(f->score));
-        hlse_json_escape(f->message, esc, sizeof(esc));
-        printf("          \"message\": { \"text\": \"%s\" },\n", esc);
-        if (f->pattern_id[0]) {
-            char epid[64];
-            hlse_json_escape(f->pattern_id, epid, sizeof(epid));
-            printf("          \"properties\": { \"security-severity\": \"%.1f\","
-                   " \"hlse-score\": %d, \"pattern_id\": \"%s\" },\n",
-                   sev, f->score, epid);
-        } else {
-            printf("          \"properties\": { \"security-severity\": \"%.1f\","
-                   " \"hlse-score\": %d },\n", sev, f->score);
-        }
-        printf("          \"locations\": [\n            {\n");
-        printf("              \"physicalLocation\": {\n");
-        hlse_json_escape(f->path, esc, sizeof(esc));
-        printf("                \"artifactLocation\": { \"uri\": \"%s\" },\n", esc);
-        printf("                \"region\": { \"startLine\": %d }\n", f->line);
-        printf("              }\n            }\n          ]\n");
-        printf("        }%s\n", (i + 1 < g_sarif_n) ? "," : "");
-    }
-    printf("      ]\n");
-    if (g_sarif_overflow) {
-        printf("      ,\"properties\": { \"truncated\": true }\n");
-    }
-    printf("    }\n  ]\n}\n");
-}
-
 /* Flag state kept here: set by --baseline/--fingerprints/--git-history
  * (argv table + --config) and read at the scan gates. The fingerprint /
  * baseline-set machinery they feed lives in hlse_baseline.c. */
 static const char *g_baseline_file = NULL;   /* --baseline <file> */
 static int         g_emit_fingerprints = 0;  /* --fingerprints */
 static int         g_git_history = 0;        /* --git-history (P0-2) */
-
-/* ── Manifest scanning (Perspective 108, roadmap P1-8) ─────────────────────
- * The single-name `package <name>` check is impractical for real dependency
- * files. `package --manifest <file>` parses a manifest and runs the existing
- * hlse_check_package() over every declared dependency. Ecosystem is inferred
- * from the filename or given explicitly. Pure orchestration of the existing
- * detector — no scoring change, F1 unchanged. */
-
-/* Infer package ecosystem from a manifest filename (basename match). Returns
- * a canonical eco string or NULL if unrecognised. */
-static const char *
-manifest_ecosystem(const char *path) {
-    const char *b = strrchr(path, '/');
-    b = b ? b + 1 : path;
-    if (strncmp(b, "requirements", 12) == 0 || strcmp(b, "Pipfile") == 0)
-        return "pip";
-    if (strcmp(b, "package.json") == 0 ||
-        strcmp(b, "package-lock.json") == 0) return "npm";
-    if (strcmp(b, "Cargo.toml") == 0 || strcmp(b, "Cargo.lock") == 0)
-        return "cargo";
-    if (strcmp(b, "go.mod") == 0) return "go";
-    if (strcmp(b, "Gemfile") == 0 || strcmp(b, "Gemfile.lock") == 0)
-        return "gem";
-    return NULL;
-}
-
-/* Extract the leading pip/requirements-style package name from a line into
- * out (name = leading run of [A-Za-z0-9._-], stopping at a version operator
- * or extras bracket). Returns 1 if a name was found, else 0. Skips blank
- * lines, comments, and pip options (-r/-e/--). */
-static int
-manifest_name_pip(const char *line, char *out, size_t outcap) {
-    const char *s = line;
-    size_t n = 0;
-    while (*s == ' ' || *s == '\t') s++;
-    if (*s == '\0' || *s == '\n' || *s == '#' || *s == '-') return 0;
-    while (*s && n + 1 < outcap &&
-           ((*s >= 'A' && *s <= 'Z') || (*s >= 'a' && *s <= 'z') ||
-            (*s >= '0' && *s <= '9') || *s == '.' || *s == '_' || *s == '-'))
-        out[n++] = *s++;
-    out[n] = '\0';
-    return n > 0;
-}
-
-/* Extract the next npm dependency name at/after *cursor, tracking whether we
- * are inside a *dependencies object via *in_deps. Handles both the canonical
- * one-dep-per-line layout and the compact single-line object form, and can be
- * called repeatedly on the same line: it advances *cursor past what it
- * consumed. A dependency entry is  "name" : "version"  inside a dependencies
- * object. Returns 1 and fills out when a name is extracted, 0 when the current
- * text is exhausted. */
-static int
-manifest_name_npm(const char **cursor, int *in_deps, char *out, size_t outcap) {
-    const char *p = *cursor;
-    for (;;) {
-        if (!*in_deps) {
-            /* Look for a dependencies-section keyword on this text. */
-            const char *k = NULL, *cands[4]; int ci, best = -1;
-            cands[0] = strstr(p, "\"dependencies\"");
-            cands[1] = strstr(p, "\"devDependencies\"");
-            cands[2] = strstr(p, "\"peerDependencies\"");
-            cands[3] = strstr(p, "\"optionalDependencies\"");
-            for (ci = 0; ci < 4; ci++)
-                if (cands[ci] && (best < 0 || cands[ci] < cands[best])) best = ci;
-            if (best < 0) { *cursor = p + strlen(p); return 0; }
-            k = strchr(cands[best], '{');
-            if (!k) { *cursor = p + strlen(p); return 0; }
-            *in_deps = 1;
-            p = k + 1;
-            continue;
-        }
-        /* In a deps object: the next '}' closes it; the next '"' before it
-         * starts a "name": "ver" entry. */
-        {
-            const char *close = strchr(p, '}');
-            const char *q = strchr(p, '"');
-            size_t n = 0;
-            const char *r;
-            if (!q || (close && close < q)) {
-                if (close) { *in_deps = 0; p = close + 1; continue; }
-                *cursor = p + strlen(p); return 0;
-            }
-            r = q + 1;
-            while (*r && *r != '"' && n + 1 < outcap) out[n++] = *r++;
-            out[n] = '\0';
-            if (*r != '"') { *cursor = p + strlen(p); return 0; }
-            r++;                                  /* past closing quote */
-            while (*r == ' ' || *r == '\t') r++;
-            if (*r != ':') { p = r; continue; }   /* not a key — keep scanning */
-            *cursor = r + 1;
-            if (n > 0) return 1;
-        }
-    }
-}
-
 /* Per-finding remediation hint for HIGH/CRIT audit findings.
  * Returns a short command or action string, or NULL if no specific fix
  * is available for this finding. Keyed to the A-code prefix + keywords. */
@@ -5243,7 +4774,7 @@ secret_finding_caveat(const char *type) {
  * worded printf literals at the two plaintext sites — so a `secret` verdict
  * read as JSON and the same verdict read as plaintext described the
  * independent verification step differently. Consolidated into shared
- * accessors, mirroring file_masquerade_objective()/file_masquerade_verify();
+ * accessors, mirroring hlse_file_masquerade_objective()/hlse_file_masquerade_verify();
  * every one of the four sites and both output formats now say the same
  * thing. Pure refactor — no detection logic, score, or field value changed. */
 static void
@@ -5535,7 +5066,7 @@ print_json_url(const char *url, const Verdict *v) {
     printf("{\"kind\":\"url\",\"hlse_version\":\"" HLSE_VERSION "\","
            "\"target\":\"%s\",\"score\":%d,\"action\":\"%s\","
            "\"severity\":%d",
-           escaped_url, v->score, action_for_score(v->score),
+           escaped_url, v->score, hlse_action_for_score(v->score),
            hlse_severity_for_score(v->score));
     if (signal_cnt > 0) printf(",\"signal_count\":%d,\"confidence\":\"%s\"",
                                signal_cnt, esc_cf);
@@ -5566,7 +5097,7 @@ print_json_url(const char *url, const Verdict *v) {
         int eff = v->score + d; if (eff > 100) eff = 100;
         printf(",\"channel\":\"%s\",\"channel_delta\":%d,\"effective_score\":%d,"
                "\"effective_action\":\"%s\",\"effective_severity\":%d",
-               hlse_from_channel(), d, eff, action_for_score(eff),
+               hlse_from_channel(), d, eff, hlse_action_for_score(eff),
                hlse_severity_for_score(eff));
         {
             const char *ch_rsn = hlse_channel_reason(hlse_from_channel());
@@ -5975,230 +5506,6 @@ read_stdin_all(char *buf, size_t cap) {
     return total;
 }
 
-/* ── Git history scanning (Perspective 111, roadmap P0-2) ──────────────────
- * `scan <dir> --git-history` finds secrets ANYWHERE in the repo's commit
- * history, not just the current working tree — the primary use case for
- * commercial secret scanners (gitleaks/trufflehog): a credential that was
- * committed and later deleted is still readable by anyone who clones the
- * repo, and a working-tree-only scan never sees it.
- *
- * Implementation: stream `git log --all -p` (every commit, unified diff,
- * every ref) and scan only ADDED lines ('+' lines, excluding the '+++'
- * file-header marker) — the lines that introduced a secret at the moment it
- * entered history. This needs one git subprocess for the whole history
- * (not one per blob), keeping it fast even on repos with thousands of
- * commits.
- *
- * Spawned via fork()+execlp(), never popen()/system(): the directory path
- * is passed as a discrete argv element to git, so it is never interpreted
- * by a shell and no combination of characters in `dir` can inject a command.
- * `git log` performs no network I/O (only fetch/pull/clone do), so this
- * preserves HLSE's zero-network-calls guarantee — verified by the existing
- * CI privacy tripwire, which traces socket-family syscalls, not process
- * spawns. */
-static FILE *
-git_history_open(const char *dir, pid_t *out_pid) {
-    int pipefd[2];
-    pid_t pid;
-    if (pipe(pipefd) != 0) return NULL;
-    pid = fork();
-    if (pid < 0) {
-        close(pipefd[0]);
-        close(pipefd[1]);
-        return NULL;
-    }
-    if (pid == 0) {
-        /* Child: redirect stdout to the pipe, stderr to /dev/null (git
-         * prints progress/warnings we don't want mixed into our stream). */
-        int devnull;
-        close(pipefd[0]);
-        dup2(pipefd[1], STDOUT_FILENO);
-        close(pipefd[1]);
-        devnull = open("/dev/null", O_WRONLY);
-        if (devnull >= 0) { dup2(devnull, STDERR_FILENO); close(devnull); }
-        execlp("git", "git", "-C", dir, "log", "--all", "-p", "--no-color",
-               "--full-history", (char *)NULL);
-        _exit(127); /* execlp failed — git not installed / not found in PATH */
-    }
-    close(pipefd[1]);
-    *out_pid = pid;
-    return fdopen(pipefd[0], "r");
-}
-
-/* Scan every commit in `root`'s history for secrets. Returns the process
- * exit code (0 = clean, 1 = threat, 2 = usage/environment error). */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-truncation"
-static int
-scan_git_history(const char *root, int json_out, int sarif_out) {
-    FILE *gp;
-    pid_t pid;
-    char line[8192];
-    char commit[41] = "";
-    char curpath[4096] = "";
-    int commits_seen = 0, threats = 0, gate_hits = 0, max_score = 0;
-    unsigned asset_mask = 0;
-    int child_status;
-
-    gp = git_history_open(root, &pid);
-    if (!gp) {
-        fprintf(stderr, "Error: cannot start 'git log' for '%s': %s\n",
-                root, strerror(errno));
-        return 2;
-    }
-
-    while (fgets(line, sizeof(line), gp)) {
-        size_t n = strlen(line);
-        while (n > 0 && (line[n-1] == '\n' || line[n-1] == '\r')) line[--n] = '\0';
-
-        if (strncmp(line, "commit ", 7) == 0) {
-            snprintf(commit, sizeof(commit), "%.40s", line + 7);
-            commits_seen++;
-            continue;
-        }
-        if (strncmp(line, "+++ ", 4) == 0) {
-            const char *p = line + 4;
-            if (strncmp(p, "b/", 2) == 0) p += 2;
-            if (strcmp(p, "/dev/null") != 0) {
-                /* Explicit bounded copy (not snprintf(dst, sizeof(dst), "%s",
-                 * p)) — `p` derives from `line` (larger than `curpath`), and
-                 * -Wformat-truncation cannot see that silent truncation here
-                 * is harmless (curpath is a display label, not a real path
-                 * used for I/O), so make the bound explicit instead of
-                 * suppressing the warning. */
-                size_t plen = strlen(p);
-                if (plen >= sizeof(curpath)) plen = sizeof(curpath) - 1;
-                memcpy(curpath, p, plen);
-                curpath[plen] = '\0';
-            } else {
-                curpath[0] = '\0'; /* file was deleted in this commit */
-            }
-            continue;
-        }
-        /* An added line: starts with '+' but is not the "+++ " file header
-         * and is not the empty "+" (context-only artifact). */
-        if (line[0] == '+' && strncmp(line, "+++", 3) != 0 && n > 1) {
-            const char *content = line + 1;
-            SecretVerdict sv = hlse_scan_secrets(content);
-            if (sv.score >= 40) {
-                const char *spid = sv.n_findings > 0
-                    ? secret_pattern_id(sv.findings[0].type)
-                    : "HLSE-SECRET-GENERIC";
-                const char *sdesc = sv.n_findings > 0
-                    ? sv.findings[0].description : "";
-                char loc[4200];
-                snprintf(loc, sizeof(loc), "%s@%.7s",
-                         curpath[0] ? curpath : "(unknown path)", commit);
-                /* Baseline/allowlist suppression reuses the same fingerprint
-                 * mechanism as the working-tree scan (P0-1); the "line" for
-                 * inline hlse:allow purposes is this diff line itself. */
-                if (hlse_scan_suppress(loc, spid, sdesc, content, g_emit_fingerprints))
-                    continue;
-                threats++;
-                if (sv.score > max_score) max_score = sv.score;
-                if (sv.score >= g_fail_threshold) gate_hits++;
-                {
-                    int ai;
-                    for (ai = 0; ai < sv.n_findings; ai++)
-                        asset_mask |= asset_class_of(sv.findings[ai].type);
-                }
-                if (sarif_out) {
-                    char msg[512] = {0};
-                    int i;
-                    for (i = 0; i < sv.n_findings; i++) {
-                        size_t l = strlen(msg);
-                        snprintf(msg + l, sizeof(msg) - l, "%s%s",
-                                 i ? "; " : "", sv.findings[i].description);
-                    }
-                    snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg),
-                             " (commit %.7s)", commit);
-                    sarif_add(curpath[0] ? curpath : "(unknown path)", 1,
-                              "secret", spid, msg[0] ? msg : "secret", sv.score);
-                } else if (json_out) {
-                    int i;
-                    char ep[4096], ed[512];
-                    hlse_json_escape(curpath, ep, sizeof(ep));
-                    printf("{\"kind\":\"secret\",\"hlse_version\":\"" HLSE_VERSION
-                           "\",\"path\":\"%s\",\"commit\":\"%s\",\"score\":%d,"
-                           "\"action\":\"%s\",\"severity\":%d,\"findings\":[",
-                           ep, commit, sv.score, hlse_action_for_score(sv.score),
-                           hlse_severity_for_score(sv.score));
-                    for (i = 0; i < sv.n_findings; i++) {
-                        hlse_json_escape(sv.findings[i].description, ed, sizeof(ed));
-                        printf("%s{\"type\":\"%s\",\"description\":\"%s\"}",
-                               i ? "," : "", sv.findings[i].type, ed);
-                    }
-                    printf("],\"pattern_id\":\"%s\"}\n", spid);
-                } else {
-                    int i;
-                    char db[8192];
-                    printf("%-7s [%d]  %s@%.7s\n",
-                           hlse_action_for_score(sv.score), sv.score,
-                           hlse_display_copy(db, sizeof(db),
-                                   curpath[0] ? curpath : "(unknown path)"),
-                           commit);
-                    for (i = 0; i < sv.n_findings; i++)
-                        printf("  \xc2\xb7 %s\n", sv.findings[i].description);
-                }
-            }
-        }
-    }
-    fclose(gp);
-    /* Reap the child and distinguish real failure from a clean scan. A
-     * non-zero exit with zero commits seen means `git log` itself failed
-     * (not a repo, corrupt repo, etc.) — report it as a usage error rather
-     * than silently printing "OK, 0 commits scanned", which would read as
-     * "scanned and clean" instead of "did not scan anything at all". */
-    if (waitpid(pid, &child_status, 0) == pid &&
-        WIFEXITED(child_status) && WEXITSTATUS(child_status) != 0) {
-        int code = WEXITSTATUS(child_status);
-        if (code == 127) {
-            fprintf(stderr, "Error: 'git' not found in PATH \xe2\x80\x94 "
-                    "--git-history requires the git binary\n");
-        } else if (commits_seen == 0) {
-            fprintf(stderr, "Error: '%s' is not a git repository (git log "
-                    "exited %d) \xe2\x80\x94 --git-history requires a git "
-                    "repository\n", root, code);
-        } else {
-            /* git produced partial output before failing; still report what
-             * was found, but note the scan may be incomplete. */
-            fprintf(stderr, "hlse: warning: 'git log' exited %d after %d "
-                    "commit(s) \xe2\x80\x94 history scan may be incomplete\n",
-                    code, commits_seen);
-        }
-        if (commits_seen == 0) return 2;
-    }
-
-    if (sarif_out) {
-        sarif_emit(HLSE_VERSION);
-    } else if (json_out) {
-        char ep[4096], classes[256];
-        int nclasses = asset_mask_describe(asset_mask, classes, sizeof(classes));
-        hlse_json_escape(root, ep, sizeof(ep));
-        printf("{\"kind\":\"scan_summary\",\"hlse_version\":\"" HLSE_VERSION "\","
-               "\"target\":\"%s\",\"mode\":\"git-history\","
-               "\"commits_scanned\":%d,\"threats\":%d,"
-               "\"max_severity\":%d,\"gate_hits\":%d,\"fail_threshold\":%d,"
-               "\"asset_classes\":%d,\"blast_radius\":\"%s\"}\n",
-               ep, commits_seen, threats, hlse_severity_for_score(max_score),
-               gate_hits, g_fail_threshold, nclasses, classes);
-    } else if (threats == 0) {
-        char db[8192];
-        printf("OK    %s (%d commits scanned, 0 secrets found in history)\n",
-               hlse_display_copy(db, sizeof(db), root), commits_seen);
-    } else {
-        char db[8192];
-        printf("\n%d secret(s) found across %d commits in %s history\n",
-               threats, commits_seen,
-               hlse_display_copy(db, sizeof(db), root));
-        printf("\xe2\x86\x92 Immediate action: rotate every credential found above "
-               "\xe2\x80\x94 they are readable in every existing clone regardless "
-               "of the current working tree, and deleting the file does not "
-               "remove them from history (use git filter-repo or BFG)\n");
-    }
-    return gate_hits > 0 ? 1 : 0;
-}
-#pragma GCC diagnostic pop
 
 
 /* Remove `n` argv elements starting at index `i`, keeping BOTH argc and the
@@ -6246,13 +5553,13 @@ main(int argc, char **argv) {
         printf("  Safe URL:\n");
         { Verdict v = check_url("https://github.com");
           printf("    https://github.com");
-          printf("  →  %s\n\n", action_for_score(v.score)); }
+          printf("  →  %s\n\n", hlse_action_for_score(v.score)); }
 
         printf("  Phishing URL:\n");
         { Verdict v = check_url("https://g00gle.com");
           int i;
           printf("    https://g00gle.com");
-          printf("  →  %s [%d/100]\n", action_for_score(v.score), v.score);
+          printf("  →  %s [%d/100]\n", hlse_action_for_score(v.score), v.score);
           for (i = 0; i < v.n_reasons; i++)
               printf("      %s\n", v.reasons[i]);
           printf("\n"); }
@@ -6550,7 +5857,8 @@ main(int argc, char **argv) {
          * different algorithm (git subprocess stream vs. directory walk),
          * so it branches out before the normal walker below. */
         if (g_git_history) {
-            return scan_git_history(argv[idx + 1], json_out, sarif_out);
+            return hlse_scan_git_history(argv[idx + 1], json_out, sarif_out,
+                               g_emit_fingerprints, g_fail_threshold);
         }
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-truncation"
@@ -6675,7 +5983,7 @@ main(int argc, char **argv) {
                         /* P0-1: baseline/allowlist suppression. Whole-file
                          * finding — no inline-allow line context. */
                         int sup = hlse_scan_suppress(sarif_path,
-                                      file_verdict_pattern_id(&fv), NULL, NULL,
+                                      hlse_file_verdict_pattern_id(&fv), NULL, NULL,
                                       g_emit_fingerprints);
                         if (sup) goto after_file_check;
                         threats++;
@@ -6689,8 +5997,8 @@ main(int argc, char **argv) {
                                 snprintf(msg + l, sizeof(msg) - l, "%s%s",
                                          i ? "; " : "", fv.reasons[i]);
                             }
-                            sarif_add(sarif_path, 1, "file-masquerade",
-                                      file_verdict_pattern_id(&fv),
+                            hlse_sarif_add(sarif_path, 1, "file-masquerade",
+                                      hlse_file_verdict_pattern_id(&fv),
                                       msg[0] ? msg : "file masquerade", fv.score);
                         } else if (json_out) {
                             int i;
@@ -6714,13 +6022,13 @@ main(int argc, char **argv) {
                                  * cascade_risk stay BLOCK+-only (60).
                                  * Perspective 101: classification and the two
                                  * advisory lines now come from the shared
-                                 * file_classify_pattern()/file_masquerade_*()
+                                 * hlse_file_classify_pattern()/file_masquerade_*()
                                  * accessors instead of an inline copy. */
-                                const char *fpat = file_classify_pattern(&fv);
+                                const char *fpat = hlse_file_classify_pattern(&fv);
                                 hlse_json_escape(fpat, esc, sizeof(esc)); printf(",\"pattern\":\"%s\"",      esc);
-                                printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
-                                hlse_json_escape(file_masquerade_objective(), esc, sizeof(esc)); printf(",\"objective\":\"%s\"", esc);
-                                hlse_json_escape(file_masquerade_verify(),    esc, sizeof(esc)); printf(",\"verify\":\"%s\"",    esc);
+                                printf(",\"pattern_id\":\"%s\"", hlse_file_pattern_id(fpat));
+                                hlse_json_escape(hlse_file_masquerade_objective(), esc, sizeof(esc)); printf(",\"objective\":\"%s\"", esc);
+                                hlse_json_escape(hlse_file_masquerade_verify(),    esc, sizeof(esc)); printf(",\"verify\":\"%s\"",    esc);
                             }
                             if (fv.score >= 60) {
                                 static const char sf_tri[] =
@@ -6759,9 +6067,9 @@ main(int argc, char **argv) {
                                  * above (and both standalone `file` sites)
                                  * so plaintext and JSON never again describe
                                  * the same verdict with different wording. */
-                                printf("  \xe2\x96\xb8 Pattern: %s\n", file_classify_pattern(&fv));
-                                printf("  \xe2\x97\x89 Attacker's goal: %s\n", file_masquerade_objective());
-                                printf("  \xe2\x9c\x93 Verify first: %s\n", file_masquerade_verify());
+                                printf("  \xe2\x96\xb8 Pattern: %s\n", hlse_file_classify_pattern(&fv));
+                                printf("  \xe2\x97\x89 Attacker's goal: %s\n", hlse_file_masquerade_objective());
+                                printf("  \xe2\x9c\x93 Verify first: %s\n", hlse_file_masquerade_verify());
                             }
                             if (fv.score >= 60) {
                                 printf("  \xe2\x9a\x91 If you acted: if already opened, disconnect "
@@ -6839,7 +6147,7 @@ main(int argc, char **argv) {
                                      * the redacted finding description (stable
                                      * per distinct secret, line-independent). */
                                     const char *spid = sv.n_findings > 0
-                                        ? secret_pattern_id(sv.findings[0].type)
+                                        ? hlse_secret_pattern_id(sv.findings[0].type)
                                         : "HLSE-SECRET-GENERIC";
                                     const char *sdesc = sv.n_findings > 0
                                         ? sv.findings[0].description : "";
@@ -6850,7 +6158,7 @@ main(int argc, char **argv) {
                                     if (sv.score >= g_fail_threshold) gate_hits++;
                                     for (ai = 0; ai < sv.n_findings; ai++)
                                         asset_mask |=
-                                            asset_class_of(sv.findings[ai].type);
+                                            hlse_asset_class_of(sv.findings[ai].type);
                                     if (sarif_out) {
                                         char msg[512] = {0};
                                         int i;
@@ -6860,9 +6168,9 @@ main(int argc, char **argv) {
                                                      i ? "; " : "",
                                                      sv.findings[i].description);
                                         }
-                                        sarif_add(sarif_path, lineno, "secret",
+                                        hlse_sarif_add(sarif_path, lineno, "secret",
                                                   sv.n_findings > 0
-                                                    ? secret_pattern_id(sv.findings[0].type)
+                                                    ? hlse_secret_pattern_id(sv.findings[0].type)
                                                     : "HLSE-SECRET-GENERIC",
                                                   msg[0] ? msg : "secret", sv.score);
                                     } else if (json_out) {
@@ -6914,7 +6222,7 @@ main(int argc, char **argv) {
                                             secret_pattern_label(ftype, esc_p, sizeof(esc_p));
                                             hlse_json_escape(esc_p, ed, sizeof(ed));
                                             printf(",\"pattern\":\"%s\"", ed);
-                                            printf(",\"pattern_id\":\"%s\"", secret_pattern_id(ftype));
+                                            printf(",\"pattern_id\":\"%s\"", hlse_secret_pattern_id(ftype));
                                             if (sobj) {
                                                 hlse_json_escape(sobj, ed, sizeof(ed));
                                                 printf(",\"objective\":\"%s\"", ed);
@@ -7013,7 +6321,7 @@ main(int argc, char **argv) {
                                                                  "%s%s", k ? "; " : "",
                                                                  uv.reasons[k]);
                                                     }
-                                                    sarif_add(sarif_path, lineno,
+                                                    hlse_sarif_add(sarif_path, lineno,
                                                               "phishing-url",
                                                               hlse_url_pattern_id(&uv),
                                                               msg, uv.score);
@@ -7117,7 +6425,7 @@ main(int argc, char **argv) {
                 return 0;
             }
             if (sarif_out) {
-                sarif_emit(HLSE_VERSION);
+                hlse_sarif_emit(HLSE_VERSION);
             } else if (!json_out) {
                 if (threats == 0) {
                     const char *bs = hlse_blindspot_for("scan");
@@ -7128,7 +6436,7 @@ main(int argc, char **argv) {
                     if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
                 } else {
                     char classes[256];
-                    int nclasses = asset_mask_describe(asset_mask, classes,
+                    int nclasses = hlse_asset_mask_describe(asset_mask, classes,
                                                        sizeof(classes));
                     printf("\n%d threat(s) in %d files under %s\n",
                            threats, files_scanned, root);
@@ -7138,7 +6446,7 @@ main(int argc, char **argv) {
                     /* Immediate action: one-sentence triage keyed to the
                      * most severe asset class (or file/URL threats). */
                     printf("\xe2\x86\x92 Immediate action: %s\n",
-                           scan_immediate_action((unsigned)asset_mask, nclasses));
+                           hlse_scan_immediate_action((unsigned)asset_mask, nclasses));
                     /* Blast radius: credentials spanning 2+ asset classes let
                      * an attacker pivot across systems — worse than the count
                      * alone suggests. */
@@ -7152,7 +6460,7 @@ main(int argc, char **argv) {
             } else {
                 /* NDJSON: final summary line for CI tooling */
                 char esc_root[4096], classes[256];
-                int nclasses = asset_mask_describe(asset_mask, classes,
+                int nclasses = hlse_asset_mask_describe(asset_mask, classes,
                                                    sizeof(classes));
                 hlse_json_escape(root, esc_root, sizeof(esc_root));
                 printf("{\"kind\":\"scan_summary\",\"hlse_version\":\"" HLSE_VERSION "\","
@@ -7173,7 +6481,7 @@ main(int argc, char **argv) {
                         printf(",\"blind_spot\":\"%s\"", esc_bs);
                     }
                 } else {
-                    const char *ia = scan_immediate_action((unsigned)asset_mask, nclasses);
+                    const char *ia = hlse_scan_immediate_action((unsigned)asset_mask, nclasses);
                     char esc_ia[512];
                     hlse_json_escape(ia, esc_ia, sizeof(esc_ia));
                     printf(",\"immediate_action\":\"%s\"", esc_ia);
@@ -7428,7 +6736,7 @@ main(int argc, char **argv) {
                 return 2;
             }
             mpath = argv[idx + 2];
-            eco = (argc > idx + 3) ? argv[idx + 3] : manifest_ecosystem(mpath);
+            eco = (argc > idx + 3) ? argv[idx + 3] : hlse_manifest_ecosystem(mpath);
             if (!eco) {
                 fprintf(stderr, "Error: cannot infer ecosystem from '%s' \xe2\x80\x94 "
                         "pass one explicitly (pip|npm|cargo|go|gem)\n", mpath);
@@ -7450,9 +6758,9 @@ main(int argc, char **argv) {
                 for (;;) {
                     int got;
                     if (is_npm)
-                        got = manifest_name_npm(&cursor, &in_deps, name, sizeof(name));
+                        got = hlse_manifest_name_npm(&cursor, &in_deps, name, sizeof(name));
                     else
-                        got = manifest_name_pip(line, name, sizeof(name));
+                        got = hlse_manifest_name_pip(line, name, sizeof(name));
                     if (!got || name[0] == '\0') break;
                 {
                     PackageVerdict pv = hlse_check_package(name, eco);
@@ -7466,7 +6774,7 @@ main(int argc, char **argv) {
                             snprintf(msg, sizeof(msg), "%s",
                                      pv.reason[0] ? pv.reason
                                      : "dependency typosquat");
-                            sarif_add(mpath, lineno, "package-typosquat",
+                            hlse_sarif_add(mpath, lineno, "package-typosquat",
                                       "HLSE-PKG-TYPOSQUAT", msg, pv.score);
                         } else if (json_out) {
                             char en[128];
@@ -7506,7 +6814,7 @@ main(int argc, char **argv) {
             }
             fclose(mf);
             if (sarif_out) {
-                sarif_emit(HLSE_VERSION);
+                hlse_sarif_emit(HLSE_VERSION);
             } else if (json_out) {
                 char ep[4096];
                 hlse_json_escape(mpath, ep, sizeof(ep));
@@ -7934,7 +7242,7 @@ main(int argc, char **argv) {
                     secret_pattern_label(ftype, epat, sizeof(epat));
                     hlse_json_escape(epat, e, sizeof(e));
                     printf(",\"pattern\":\"%s\"", e);
-                    printf(",\"pattern_id\":\"%s\"", secret_pattern_id(ftype));
+                    printf(",\"pattern_id\":\"%s\"", hlse_secret_pattern_id(ftype));
                     if (sobj) { hlse_json_escape(sobj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e); }
                     hlse_json_escape(secret_verify_text(),  e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
                     hlse_json_escape(secret_triage_text(),  e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
@@ -8334,12 +7642,12 @@ main(int argc, char **argv) {
                      * come from the shared accessors (see file_classify_
                      * pattern/file_masquerade_objective/file_masquerade_verify
                      * above) instead of a fourth independent copy. */
-                    const char *fpat = file_classify_pattern(&fv);
+                    const char *fpat = hlse_file_classify_pattern(&fv);
                     char e[512];
                     hlse_json_escape(fpat, e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
-                    printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
-                    hlse_json_escape(file_masquerade_objective(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                    hlse_json_escape(file_masquerade_verify(),    e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
+                    printf(",\"pattern_id\":\"%s\"", hlse_file_pattern_id(fpat));
+                    hlse_json_escape(hlse_file_masquerade_objective(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
+                    hlse_json_escape(hlse_file_masquerade_verify(),    e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
                 }
                 if (fv.score >= 60) {
                     static const char file_tri[] =
@@ -8381,9 +7689,9 @@ main(int argc, char **argv) {
                 for (i = 0; i < fv.n_reasons; i++)
                     printf("  \xc2\xb7 %s\n", fv.reasons[i]);
                 if (fv.score >= 40) {
-                    printf("  \xe2\x96\xb8 Pattern: %s\n", file_classify_pattern(&fv));
-                    printf("  \xe2\x97\x89 Attacker's goal: %s\n", file_masquerade_objective());
-                    printf("  \xe2\x9c\x93 Verify first: %s\n", file_masquerade_verify());
+                    printf("  \xe2\x96\xb8 Pattern: %s\n", hlse_file_classify_pattern(&fv));
+                    printf("  \xe2\x97\x89 Attacker's goal: %s\n", hlse_file_masquerade_objective());
+                    printf("  \xe2\x9c\x93 Verify first: %s\n", hlse_file_masquerade_verify());
                 }
                 if (fv.score >= 60) {
                     printf("  \xe2\x9a\x91 If you acted: if already opened, disconnect "

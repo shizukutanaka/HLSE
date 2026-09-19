@@ -65,6 +65,25 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   append-only `HLSE-*` pattern-id registry table + `--list-patterns`
   printer (~120 lines, pure data) moved out as `hlse_list_patterns`.
   `hlse_core.c` now 9075 lines.
+- **`hlse_core.c` split — increments 3–6** (`hlse_channel.c/h`,
+  `hlse_baseline.c/h`, `hlse_patterns.c/h`, `hlse_sarif.c/h`,
+  `hlse_manifest.c/h`, `hlse_githistory.c/h`, `hlse_meta.c/h`, all new).
+  Verbatim extractions along the file's own section boundaries:
+  delivery-channel prior (`hlse_set_from_channel`,
+  `hlse_channel_delta`, `hlse_channel_reason`); fingerprint + baseline
+  suppress (`hlse_fingerprint`, `hlse_baseline_*`,
+  `hlse_scan_suppress`); `--patterns` loader (`hlse_patterns_load`);
+  SARIF collector + emitter (`hlse_sarif_add`, `hlse_sarif_emit`);
+  manifest ecosystem/name parsers (`hlse_manifest_*`); the
+  `--git-history` fork/exec walker (`hlse_scan_git_history`, now taking
+  `emit_fingerprints`/`fail_threshold` as parameters instead of reading
+  flag globals); and report-metadata helpers (`hlse_meta.c`: pattern-id
+  ladders, blast-radius asset classes). Extracting the metadata cluster
+  removed a duplicated static `action_for_score` — call sites now use
+  the public `hlse_action_for_score`. Flag-state globals
+  (`g_baseline_file`, `g_emit_fingerprints`, `g_git_history`) stay in
+  core and are passed as parameters. `hlse_core.c` is now ~8,059 lines;
+  behavior unchanged.
 
 ### Fixed
 - **macOS build and test portability** (`Makefile`, `hlse_audit.c`,
