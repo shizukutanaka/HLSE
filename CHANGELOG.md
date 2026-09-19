@@ -32,6 +32,10 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `hlse_url_self_test`, `hlse_text_self_test`, `hlse_benchmark`.
   `hlse_core.c` 9.4k → 9.2k lines. Behavior unchanged — `--self-test`
   and `--benchmark` produce identical output.
+- **`hlse_core.c` split — increment 2** (`hlse_registry.c/h`, new). The
+  append-only `HLSE-*` pattern-id registry table + `--list-patterns`
+  printer (~120 lines, pure data) moved out as `hlse_list_patterns`.
+  `hlse_core.c` now 9075 lines.
 
 ### Fixed
 - **macOS build and test portability** (`Makefile`, `hlse_audit.c`,
