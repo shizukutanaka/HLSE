@@ -28,6 +28,10 @@
 /* Version — available to library users without access to the .c source. */
 #define HLSE_VERSION "1.0.113"
 
+/* Upper bound on a URL the engine parses end-to-end — shared by the URL
+ * engine's staging buffers, the CLI scan driver, and stdin mode. */
+#define HLSE_MAX_URL 2048
+
 #ifdef __cplusplus
 extern "C" {
 #endif

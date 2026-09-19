@@ -5,7 +5,7 @@
  * exports. printf-based; reads no flag globals. */
 #include <stdio.h>
 
-#define MAX_URL 2048  /* matches the engine url buffer bound */
+
 #include <string.h>
 #include <stddef.h>
 #include "hlse_core.h"
@@ -429,7 +429,7 @@ hlse_clipboard_cascade_text(void) {
 
 void
 hlse_print_json_url(const char *url, const Verdict *v) {
-    char escaped_url[MAX_URL * 2];
+    char escaped_url[HLSE_MAX_URL * 2];
     const char *pat  = hlse_classify_url_attack(v);
     const char *pid  = hlse_url_pattern_id(v);  /* stable HLSE-URL-* token */
     const char *vrf  = hlse_verification_for(v);
@@ -694,7 +694,7 @@ hlse_print_text_advisories(const TextVerdict *tv) {
 
 int
 hlse_stdin_mode(int json_out, int fail_threshold) {
-    char line[MAX_URL];
+    char line[HLSE_MAX_URL];
     int  any_threat = 0;
 
     while (fgets(line, sizeof(line), stdin)) {

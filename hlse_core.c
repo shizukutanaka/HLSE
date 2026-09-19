@@ -1956,7 +1956,7 @@ hlse_scan(const char *input) {
                     if (strncmp(ep, "http://",  7) == 0 ||
                         strncmp(ep, "https://", 8) == 0)
                     {
-                        char redir[2048];
+                        char redir[HLSE_MAX_URL];
                         int k = 0;
                         while (ep[k] && ep[k] != ' ' && ep[k] != '\t' &&
                                ep[k] != '&' && ep[k] != '#' &&
@@ -2019,7 +2019,7 @@ hlse_scan(const char *input) {
                     strncmp(p, "https://", 8) == 0)
                 {
                     /* Extract URL (until whitespace or end) */
-                    char url_buf[2048];
+                    char url_buf[HLSE_MAX_URL];
                     int k = 0;
                     while (p[k] && p[k] != ' ' && p[k] != '\t' &&
                            p[k] != '\n' && p[k] != '\r' &&
@@ -2138,7 +2138,7 @@ hlse_scan(const char *input) {
                             {
                                 size_t dlen2 = (size_t)(dom_e - dom_s);
                                 if (dlen2 >= 4U && dlen2 + 9U < 2048U) {
-                                    char syn2[2048];
+                                    char syn2[HLSE_MAX_URL];
                                     Verdict uv3;
                                     memcpy(syn2, "https://", 8);
                                     memcpy(syn2 + 8, dom_s, dlen2);

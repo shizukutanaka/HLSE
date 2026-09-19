@@ -1904,7 +1904,7 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                             strncmp(p, "https://", 8) != 0) {
                                             p += 4; continue;
                                         }
-                                        char url_buf[2048];
+                                        char url_buf[HLSE_MAX_URL];
                                         int ui = 0;
                                         while (p[ui] && p[ui] != ' ' && p[ui] != '\t'
                                                && p[ui] != '\n' && p[ui] != '"'
@@ -1949,7 +1949,7 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                                               hlse_url_pattern_id(&uv),
                                                               msg, uv.score);
                                                 } else if (o->json_out) {
-                                                    char eu[2048];
+                                                    char eu[HLSE_MAX_URL];
                                                     hlse_json_escape(url_buf, eu, sizeof(eu));
                                                     printf("{\"kind\":\"url\",\"path\":\"%s\","
                                                            "\"line\":%d,\"url\":\"%s\","
@@ -2009,7 +2009,7 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                                     printf("}\n");
                                                 } else {
                                                     int k;
-                                                    char db[8192], db2[2048];
+                                                    char db[8192], db2[HLSE_MAX_URL];
                                                     printf("%-7s [%d]  %s:%d  %s\n",
                                                            hlse_action_for_score(uv.score),
                                                            uv.score,
