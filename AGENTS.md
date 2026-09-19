@@ -75,23 +75,20 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 
 ## Weaknesses / risks (what to improve — cite when you touch them)
 
-- **`hlse_core.c` is ~4,812 lines** with a giant `main()` dispatching 12+
-  subcommands via flat `strcmp`. High regression surface. The split has
-  started — extracted so far: `hlse_selftest.c`, `hlse_registry.c`,
-  `hlse_channel.c` (delivery-channel prior), `hlse_baseline.c`
-  (fingerprint + baseline suppress), `hlse_patterns.c` (SECRET/BRAND
-  loader), `hlse_sarif.c` (SARIF collector + emitter),
-  `hlse_manifest.c` (manifest ecosystem/name parsers),
-  `hlse_githistory.c` (`hlse_scan_git_history` fork/exec walker),
-  `hlse_meta.c` (pattern-id + blast-radius metadata),
-  `hlse_advisory.c` (public verdict-interpretation layer — score
-  ladders, blind-spot/exoneration hedges, attack-class labels,
-  confidence, objective/safe-destination, homoglyph/ASCII-diff reports,
-  verify/triage/cascade advisories), and `hlse_emit.c` (CLI output —
-  per-kind advisory-text getters, JSON/human verdict emitters,
-  `hlse_stdin_mode`, usage/stdin/argv helpers). Remaining in core: the
-  engine + thin public wrappers + the subcommand handlers inside
-  `main`. JSON escaping is consolidated on
+- **`hlse_core.c` is ~2,759 lines**: the URL engine + thin public
+  wrappers + `hlse_canonical_confirm` (closes over the static BRANDS[]
+  table) + a thin `main()` (config load, flag parse into `HlseCli`,
+  alert-sink init, one-line dispatch). Extracted modules:
+  `hlse_selftest.c`, `hlse_registry.c`, `hlse_channel.c` (channel
+  prior), `hlse_baseline.c` (fingerprint + suppress),
+  `hlse_patterns.c` (SECRET/BRAND loader), `hlse_sarif.c` (collector +
+  emitter), `hlse_manifest.c` (manifest parsers), `hlse_githistory.c`
+  (fork/exec walker), `hlse_meta.c` (pattern ids + blast radius),
+  `hlse_advisory.c` (public verdict-interpretation layer),
+  `hlse_emit.c` (CLI output: advisory getters, JSON/human emitters,
+  stdin mode), `hlse_cli.c` (all 12 subcommand handlers taking
+  `const HlseCli *`). No file-scope flag statics remain.
+  JSON escaping is consolidated on
   `hlse_util.c:hlse_json_escape` — `hlse_server.c` delegates to it.
 - **No hosted CI:** `.github/workflows/` is absent (only `FUNDING.yml`). The
   "CI enforces" wording in README/CONTRIBUTING is true only of the Makefile

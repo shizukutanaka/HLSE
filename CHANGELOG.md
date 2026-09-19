@@ -97,7 +97,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `hlse_print_url_advisories`/`hlse_print_text_advisories`,
   `hlse_stdin_mode` (`g_fail_threshold` now a parameter),
   `hlse_print_usage`, `hlse_read_stdin_all`, `hlse_argv_remove`.
-  `hlse_core.c` is now ~4,812 lines — engine + public API + `main`.
+
+- **`hlse_core.c` split — increments 10-14** (`hlse_cli.h`, `hlse_cli.c`,
+  new). The flag globals (`g_baseline_file`, `g_emit_fingerprints`,
+  `g_git_history`, `g_fail_threshold`) and the option locals merged into
+  a single `HlseCli` struct in `main()` — no file-scope flag statics
+  remain. All 12 subcommand handlers then moved verbatim into
+  `hlse_cli.c` as `hlse_cmd_<name>(const HlseCli *o, argc, argv, idx)`
+  (network/audit take `o` only — no operand). `main()` is now config
+  load + flag parse + sink init + one-line dispatch.
+  `hlse_core.c` is now ~2,759 lines — engine + public API + a thin
+  `main`.
+  `hlse_core.c` is now ~2,759 lines — engine + public API + a thin `main`.
   Behavior unchanged throughout: full `make test` green, benchmark
   F1=1.000 / FP=0%, strict-warning gates pass in CLI and lib modes.
 
