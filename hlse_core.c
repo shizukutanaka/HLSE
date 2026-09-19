@@ -41,6 +41,7 @@
 #include "hlse_selftest.h" /* hlse_*_self_test, hlse_benchmark */
 #include "hlse_registry.h" /* hlse_list_patterns */
 #include "hlse_channel.h"  /* hlse_from_channel, hlse_channel_delta/reason */
+#include "hlse_baseline.h" /* hlse_scan_suppress, hlse_baseline_load/clear */
 #include "hlse_util.h"    /* hlse_shannon_entropy, hlse_edit_distance */
 #include "hlse_supply.h"  /* PackageVerdict, PasteVerdict, NetworkVerdict */
 #include "hlse_file.h"    /* FileVerdict, hlse_check_file */
@@ -4972,114 +4973,13 @@ sarif_emit(const char *tool_version) {
     printf("    }\n  ]\n}\n");
 }
 
-
-/* ── Baseline / allowlist (Perspective 107, roadmap P0-1) ──────────────────
- * Commercial secret scanners (detect-secrets, gitleaks) need a way to accept
- * known findings so a brownfield repo's first scan does not fail the CI gate
- * forever. HLSE implements this as a pure post-detection output filter — no
- * detection logic touched, F1 unchanged:
- *   1. `hlse_core --fingerprints scan .` emits one stable fingerprint per
- *      finding; redirect to a file to create a baseline.
- *   2. `hlse_core --baseline <file> scan .` suppresses every finding whose
- *      fingerprint is listed; only NEW findings count toward the gate.
- *   3. an inline `hlse:allow` token on a scanned line suppresses findings on
- *      that line (gitleaks:allow-style).
- * The fingerprint is a 64-bit FNV-1a hash of relpath\0pattern_id\0match,
- * rendered as 16 hex chars. It deliberately OMITS the line number so a
- * finding that moves lines stays suppressed. */
+/* Flag state kept here: set by --baseline/--fingerprints/--git-history
+ * (argv table + --config) and read at the scan gates. The fingerprint /
+ * baseline-set machinery they feed lives in hlse_baseline.c. */
 static const char *g_baseline_file = NULL;   /* --baseline <file> */
 static int         g_emit_fingerprints = 0;  /* --fingerprints */
-static char      **g_baseline_fps = NULL;    /* loaded fingerprint set */
-static size_t      g_baseline_n = 0;
 static int         g_git_history = 0;        /* --git-history (P0-2) */
 
-/* Write a stable 16-hex-char fingerprint of (relpath, pattern_id, match) into
- * out[17]. NUL-separated so distinct field boundaries can't alias. */
-static void
-hlse_fingerprint(const char *relpath, const char *pattern_id,
-                 const char *match, char out[17]) {
-    unsigned long long h = 1469598103934665603ULL; /* FNV-1a 64 offset basis */
-    const char *parts[3];
-    int p;
-    parts[0] = relpath ? relpath : "";
-    parts[1] = pattern_id ? pattern_id : "";
-    parts[2] = match ? match : "";
-    for (p = 0; p < 3; p++) {
-        const unsigned char *s = (const unsigned char *)parts[p];
-        while (*s) { h ^= (unsigned long long)*s++; h *= 1099511628211ULL; }
-        h *= 1099511628211ULL; /* absorb the NUL field separator */
-    }
-    snprintf(out, 17, "%016llx", h);
-}
-
-/* Return 1 if fp is in the loaded baseline set (linear scan; baselines are
- * modest and this runs once per finding). */
-static int
-hlse_baseline_has(const char *fp) {
-    size_t i;
-    for (i = 0; i < g_baseline_n; i++)
-        if (strcmp(g_baseline_fps[i], fp) == 0) return 1;
-    return 0;
-}
-
-/* Load fingerprints from the baseline file (one per line; '#' comments and
- * blank lines ignored; surrounding whitespace trimmed). Returns 0 on success,
- * -1 if the file cannot be opened. */
-static int
-hlse_baseline_load(const char *path) {
-    FILE *fp = fopen(path, "r");
-    char line[128];
-    if (!fp) return -1;
-    while (fgets(line, sizeof(line), fp)) {
-        char *s = line, *t;
-        size_t n;
-        while (*s == ' ' || *s == '\t') s++;
-        if (*s == '#' || *s == '\n' || *s == '\r' || *s == '\0') continue;
-        /* Keep only the first whitespace-delimited token: the --fingerprints
-         * output is "<fp>  <pattern_id>  <relpath>" for human readability, but
-         * the lookup key is just the 16-hex fingerprint. Truncate at the first
-         * space/tab so the readable columns are ignored on load. */
-        for (t = s; *t && *t != ' ' && *t != '\t' && *t != '\n' && *t != '\r'; t++)
-            ;
-        *t = '\0';
-        n = strlen(s);
-        if (n == 0) continue;
-        {
-            char **grown = realloc(g_baseline_fps,
-                                   (g_baseline_n + 1) * sizeof(char *));
-            char *dup;
-            if (!grown) break;
-            g_baseline_fps = grown;
-            dup = malloc(n + 1);
-            if (!dup) break;
-            memcpy(dup, s, n + 1);
-            g_baseline_fps[g_baseline_n++] = dup;
-        }
-    }
-    fclose(fp);
-    return 0;
-}
-
-/* Free every fingerprint string owned by the loaded baseline set and the
- * backing array itself, then reset g_baseline_n/g_baseline_fps to their
- * pre-load state so a subsequent hlse_baseline_load() call starts clean.
- * Safe when no baseline was ever loaded, and idempotent. Named to match the
- * hlse_clear_custom_secret_patterns()/hlse_clear_custom_brands() convention. */
-static void
-hlse_baseline_clear(void) {
-    size_t i;
-    for (i = 0; i < g_baseline_n; i++)
-        free(g_baseline_fps[i]);
-    free(g_baseline_fps);
-    g_baseline_fps = NULL;
-    g_baseline_n = 0;
-}
-
-/* Return 1 if a scanned line carries an inline `hlse:allow` suppression. */
-static int
-hlse_line_allowed(const char *line) {
-    return line && strstr(line, "hlse:allow") != NULL;
-}
 
 /* ── Custom pattern config file (Perspective 110/112, roadmap P0-3/P1-6) ───
  * The built-in credential patterns and brand list are compiled in and
@@ -5250,26 +5150,6 @@ hlse_patterns_load(const char *path) {
         fprintf(stderr, "hlse: warning: %s: no valid SECRET/BRAND entries "
                 "loaded\n", path);
     }
-    return 0;
-}
-
-/* Central suppression check for a scan finding, shared by all three checks
- * (file/secret/url). Computes the fingerprint; if --fingerprints is set,
- * prints it and returns 2 (caller skips all counting AND emission). Returns 1
- * to suppress (baseline hit or inline allow), 0 to emit normally. `line` may
- * be NULL for whole-file findings that have no inline-allow context. */
-static int
-hlse_scan_suppress(const char *relpath, const char *pattern_id,
-                   const char *match, const char *line) {
-    char fp[17];
-    hlse_fingerprint(relpath, pattern_id, match, fp);
-    if (g_emit_fingerprints) {
-        printf("%s  %s  %s\n", fp, pattern_id ? pattern_id : "-",
-               relpath ? relpath : "-");
-        return 2;
-    }
-    if (hlse_baseline_has(fp)) return 1;
-    if (hlse_line_allowed(line)) return 1;
     return 0;
 }
 
@@ -6384,7 +6264,7 @@ scan_git_history(const char *root, int json_out, int sarif_out) {
                 /* Baseline/allowlist suppression reuses the same fingerprint
                  * mechanism as the working-tree scan (P0-1); the "line" for
                  * inline hlse:allow purposes is this diff line itself. */
-                if (hlse_scan_suppress(loc, spid, sdesc, content))
+                if (hlse_scan_suppress(loc, spid, sdesc, content, g_emit_fingerprints))
                     continue;
                 threats++;
                 if (sv.score > max_score) max_score = sv.score;
@@ -6967,7 +6847,8 @@ main(int argc, char **argv) {
                         /* P0-1: baseline/allowlist suppression. Whole-file
                          * finding — no inline-allow line context. */
                         int sup = hlse_scan_suppress(sarif_path,
-                                      file_verdict_pattern_id(&fv), NULL, NULL);
+                                      file_verdict_pattern_id(&fv), NULL, NULL,
+                                      g_emit_fingerprints);
                         if (sup) goto after_file_check;
                         threats++;
                         if (fv.score > max_score) max_score = fv.score;
@@ -7111,7 +6992,8 @@ main(int argc, char **argv) {
                                         line, inv_r, sizeof(inv_r));
                                     if (inv > 0 &&
                                         !hlse_scan_suppress(sarif_path,
-                                            "HLSE-TEXT-INVISIBLE", inv_r, line))
+                                            "HLSE-TEXT-INVISIBLE", inv_r, line,
+                                            g_emit_fingerprints))
                                     {
                                         threats++;
                                         if (inv > max_score) max_score = inv;
@@ -7133,7 +7015,7 @@ main(int argc, char **argv) {
                                         : "HLSE-SECRET-GENERIC";
                                     const char *sdesc = sv.n_findings > 0
                                         ? sv.findings[0].description : "";
-                                    if (hlse_scan_suppress(sarif_path, spid, sdesc, line))
+                                    if (hlse_scan_suppress(sarif_path, spid, sdesc, line, g_emit_fingerprints))
                                         continue;
                                     threats++;
                                     if (sv.score > max_score) max_score = sv.score;
@@ -7282,7 +7164,8 @@ main(int argc, char **argv) {
                                                  * fall through to p += ui. */
                                                 if (hlse_scan_suppress(sarif_path,
                                                         hlse_url_pattern_id(&uv),
-                                                        url_buf, line))
+                                                        url_buf, line,
+                                                        g_emit_fingerprints))
                                                     goto url_advance;
                                                 threats++;
                                                 if (uv.score > max_score) max_score = uv.score;
