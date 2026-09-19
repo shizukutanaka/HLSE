@@ -32,8 +32,8 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
    ```
    If anything regresses, **do not push.**
 3. **`make test` baseline is all-green on a verified host** — measured on
-   macOS (Apple clang): 9 unit suites 365/365, extended corpus 29/29, CLI
-   integration 781 passed / 0 failed. A few checks print SKIP instead of
+   macOS (Apple clang): 10 unit suites 379/379, extended corpus 29/29, CLI
+   integration 786 passed / 0 failed. A few checks print SKIP instead of
    PASS when the host genuinely lacks the precondition (no sudoers NOPASSWD
    on a hardened box, `jsonschema` module absent, /etc/hosts not writable) —
    SKIP is not a failure, but a FAIL line is. **Any FAIL you introduced is a
@@ -102,7 +102,7 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 
 **P0 — consistency / reliability (low risk):**
 - ~~Sync doc numbers to measured reality~~ done: README/CONTRIBUTING/AGENTS
-  counts re-derived (1175 structured, 781 CLI, all-green baseline).
+  counts re-derived (1194 structured, 786 CLI, all-green baseline).
 - ~~Triage the 14 known failures~~ done: root causes were macOS build
   breakage + host-dependent assertions; suite is green, env-dependent checks
   SKIP explicitly.
@@ -123,11 +123,12 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
   (base62+CRC32 etc.), chi-square uniformity test for intermittent encryption.
 
 **P2 — resident/daemon mode (large; its own round, design-then-review-then-build):**
-- `0.4` config-file loader (`--config`: `WATCH`/`PATTERNS`/`BASELINE`/`SYSLOG`/
-  `LOGFILE`/`SCAN_INTERVAL`; reuse `hlse_patterns_load`/`hlse_baseline_load`;
-  `lstat` + reject `S_ISLNK` on `WATCH`; check the config file's own perms;
-  a CLI-only source list so the module isn't an empty translation unit under
-  `-DHLSE_CORE_AS_LIB`).
+- ~~`0.4` config-file loader~~ — DONE for the CLI scope: `--config <file>`
+  loads `key = value` defaults for every global flag (hlse_config.c/h),
+  warns on group/world-writable files, CLI flags override. The daemon-only
+  keys from the original spec (`WATCH`, `SCAN_INTERVAL`) still need `hlsed`
+  to exist before they mean anything; add them when the daemon lands
+  (`lstat` + reject `S_ISLNK` on `WATCH` at that point).
 - `hlsed` daemon: fanotify (Linux) / FSEvents (macOS) FIM → run existing
   detectors incrementally → dedup → push via `hlse_alert.c`; systemd
   `Type=notify` via a raw `$NOTIFY_SOCKET` write (no libsystemd), watchdog,

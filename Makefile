@@ -83,7 +83,7 @@ MANDIR  := $(DESTDIR)$(PREFIX)/share/man/man1
 DATADIR := $(DESTDIR)$(PREFIX)/share/hlse
 
 # Source files
-CORE_SRC  := hlse_core.c hlse_text.c hlse_protect.c hlse_secrets.c hlse_supply.c hlse_file.c hlse_audit.c hlse_util.c hlse_alert.c
+CORE_SRC  := hlse_core.c hlse_text.c hlse_protect.c hlse_secrets.c hlse_supply.c hlse_file.c hlse_audit.c hlse_util.c hlse_alert.c hlse_config.c
 TEST_SRC  := tests/hlse_property_tests.c
 
 # Outputs
@@ -97,6 +97,7 @@ SECR_BIN  := tests/secrets_tests
 SUPP_BIN  := tests/supply_tests
 FAUD_BIN  := tests/file_audit_tests
 UTIL_BIN  := tests/util_tests
+CONF_BIN  := tests/config_tests
 
 FUZZ_BIN  := tests/fuzz
 FUZZ_ASAN := tests/fuzz_asan
@@ -187,6 +188,11 @@ $(FAUD_BIN): tests/hlse_file_audit_tests.c hlse_file.c hlse_file.h hlse_audit.c 
 $(UTIL_BIN): tests/hlse_util_tests.c hlse_util.c hlse_util.h
 	@mkdir -p tests
 	$(CC) $(CFLAGS) -o $@ tests/hlse_util_tests.c hlse_util.c -I. -lm
+	@printf '  %-20s %s\n' "CC" "$@"
+
+$(CONF_BIN): tests/hlse_config_tests.c hlse_config.c hlse_config.h
+	@mkdir -p tests
+	$(CC) $(CFLAGS) -o $@ tests/hlse_config_tests.c hlse_config.c -I.
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(FUZZ_BIN): tests/hlse_fuzz.c hlse_text.c hlse_text.h hlse_util.c hlse_util.h
@@ -472,7 +478,7 @@ asan-test:
 
 # ─── test ────────────────────────────────────────────────────────────────
 
-test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAUD_BIN) $(UTIL_BIN) $(SERVER_TEST)
+test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAUD_BIN) $(UTIL_BIN) $(CONF_BIN) $(SERVER_TEST)
 	@echo ""
 	@echo "═══════════════════════════════════════"
 	@echo " HLSE Core — Test Suite"
@@ -498,6 +504,9 @@ test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAU
 	@echo ""
 	@echo "── Shared utility tests ────────────────"
 	@./$(UTIL_BIN)
+	@echo ""
+	@echo "── Config file loader tests ────────────"
+	@./$(CONF_BIN)
 	@echo ""
 	@echo "── HTTP server + JSON parser tests ─────"
 	@./$(SERVER_TEST)
@@ -570,7 +579,7 @@ uninstall:
 # ─── clean ───────────────────────────────────────────────────────────────
 
 clean:
-	rm -f $(BINARY) $(SHARED) $(PROP_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAUD_BIN) $(UTIL_BIN) \
+	rm -f $(BINARY) $(SHARED) $(PROP_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAUD_BIN) $(UTIL_BIN) $(CONF_BIN) \
 		$(FUZZ_BIN) $(FUZZ_ASAN) \
 		$(FUZZ_SECRETS) $(FUZZ_SECRETS_ASAN) \
 		$(FUZZ_SUPPLY) $(FUZZ_SUPPLY_ASAN) \

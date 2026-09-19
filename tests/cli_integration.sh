@@ -6606,6 +6606,36 @@ printf 'caf\xc3\xa9 \xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e\n' | ./hlse_core --stdi
     && check "p125: benign UTF-8 input echoes untouched" "0" "0" \
     || check "p125: benign UTF-8 input echoes untouched" "0" "1"
 
+# p126: --config file — flag defaults loaded, CLI flags override, and
+# malformed configs are hard errors (exit 2) rather than silent defaults.
+P126=/tmp/hlse_p126_$$
+mkdir -p "$P126"
+printf 'fail-on = 0\nfrom = sms\n' > "$P126/all.conf"
+./hlse_core --config "$P126/all.conf" "https://github.com" >/dev/null 2>&1 && rc=0 || rc=$?
+[ "$rc" -eq 1 ] \
+    && check "p126: config fail-on=0 gates a clean URL" "0" "0" \
+    || check "p126: config fail-on=0 gates a clean URL" "0" "1"
+./hlse_core --config "$P126/all.conf" --fail-on 60 "https://github.com" >/dev/null 2>&1 && rc=0 || rc=$?
+[ "$rc" -eq 0 ] \
+    && check "p126: CLI --fail-on overrides config" "0" "0" \
+    || check "p126: CLI --fail-on overrides config" "0" "1"
+./hlse_core --config "$P126/all.conf" --json "https://paypa1.com" 2>/dev/null \
+    | grep -q '"channel":"sms"' \
+    && check "p126: config from=sms applies channel prior" "0" "0" \
+    || check "p126: config from=sms applies channel prior" "0" "1"
+printf 'bogus = 1\n' > "$P126/bad.conf"
+./hlse_core --config "$P126/bad.conf" "https://github.com" >/dev/null 2>&1 && rc=0 || rc=$?
+[ "$rc" -eq 2 ] \
+    && check "p126: unknown config key -> usage error" "0" "0" \
+    || check "p126: unknown config key -> usage error" "0" "1"
+printf 'SECRET ACME_ 6 alnum 90 Acme Corp API Key\n' > "$P126/pats.txt"
+printf 'patterns = %s/pats.txt\n' "$P126" > "$P126/pat.conf"
+./hlse_core --config "$P126/pat.conf" secret "k=ACME_abc12345" >/dev/null 2>&1 && rc=0 || rc=$?
+[ "$rc" -eq 1 ] \
+    && check "p126: config patterns file registers SECRET directive" "0" "0" \
+    || check "p126: config patterns file registers SECRET directive" "0" "1"
+rm -rf "$P126"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

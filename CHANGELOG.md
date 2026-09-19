@@ -4,6 +4,26 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added
+
+- **`--config <file>` runtime configuration** (`hlse_config.c/h`, new).
+  Every global flag can now be defaulted from a `key = value` file —
+  `json`, `sarif`, `quiet`, `syslog`, `fingerprints`, `git-history`
+  (bool), `fail-on` (tier or 0–100), `from` (channel), and the
+  path-valued `baseline`, `log-file`, `patterns`. The file is applied
+  before argv parsing, so an explicit command-line flag always overrides
+  it; a config `patterns` file is skipped wholesale when `--patterns` is
+  given. Unknown keys and malformed values are hard errors (exit 2) —
+  a typo'd key must never silently weaken the gate. Keys are spelled
+  exactly like the long flags minus the dashes; `#` comments, blank
+  lines, optional quoting of paths with spaces. New suite
+  `tests/config_tests` (14 checks) + 5 CLI integration checks (p126).
+
+### Removed
+
+- Dead `N_SIGNALS` macro in `hlse_text.c` — the `SIGNALS` table iterates
+  by its NULL sentinel; the computed-count macro was never referenced.
+
 ### Fixed
 - **macOS build and test portability** (`Makefile`, `hlse_audit.c`,
   `hlse_core.c`, `tests/cli_integration.sh`). The README's "macOS (partial)"

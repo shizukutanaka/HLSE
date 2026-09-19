@@ -251,6 +251,32 @@ appears in a From display name but the sending domain is not one of
 .IR owned_domain1 ", " owned_domain2 ", " \&...\&,
 it is flagged exactly like a built-in brand impersonation.
 .TP
+.BI --config " file"
+Load flag defaults from a
+.I key Ns = Ns value
+configuration file before parsing the command line, so any flag given on
+the command line overrides the corresponding key. One directive per line;
+.B #
+comments and blank lines are ignored. Keys are the long flag names minus
+the dashes:
+.BR json ", " sarif ", " quiet ", " syslog ", " fingerprints ", "
+.BR git-history " (bool),"
+.BR fail-on " (" log | alert | block | isolate | 0-100 ),
+.BR from " (" email | sms | dm | qr | manual ),
+and path-valued
+.BR baseline ", " log-file ", and " patterns .
+Bools accept
+.BR true | yes | on | 1 " or " false | no | off | 0 ;
+path values may be double-quoted when they contain spaces. Unknown keys
+and malformed values are usage errors (exit 2) — a typo'd key must never
+silently weaken the gate. A config
+.B patterns
+file is skipped entirely when
+.B --patterns
+is passed. A group- or world-writable
+.I file
+produces a stderr warning: it can be edited to weaken the detection gate.
+.TP
 .B --self-test
 Run the built-in test suite.
 .TP

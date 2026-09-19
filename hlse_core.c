@@ -37,6 +37,7 @@
 #include "hlse_core.h"   /* Verdict, ScanResult, public API declarations */
 #include "hlse_text.h"   /* TextVerdict, hlse_check_text */
 #include "hlse_protect.h" /* ProtectionVerdict, hlse_protect_scan */
+#include "hlse_config.h"  /* HlseConfig, hlse_config_load (--config) */
 #include "hlse_util.h"    /* hlse_shannon_entropy, hlse_edit_distance */
 #include "hlse_supply.h"  /* PackageVerdict, PasteVerdict, NetworkVerdict */
 #include "hlse_file.h"    /* FileVerdict, hlse_check_file */
@@ -6671,6 +6672,7 @@ print_usage(const char *prog) {
         "  %s --baseline <file>        scan: suppress findings whose fingerprint is listed (CI adoption)\n"
         "  %s --fingerprints scan <d>  scan: emit one fingerprint per finding (generate a baseline)\n"
         "  %s --patterns <file>        Load custom org-specific secret patterns (no rebuild needed)\n"
+        "  %s --config <file>          Load flag defaults from a key=value file\n"
         "  %s --syslog                 Push findings to syslog (LOG_AUTHPRIV)\n"
         "  %s --log-file <file>        Append one JSONL record per finding (0600)\n"
         "  %s -- <input>               End of options: everything after is data, not flags\n"
@@ -6698,7 +6700,7 @@ print_usage(const char *prog) {
         HLSE_VERSION,
         prog, prog, prog,                                /* scanning: 3 */
         prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 14 */
-        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* options: 17 */
+        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* options: 18 */
         prog, prog, prog); /* baseline workflow: 2 + custom patterns: 1 */
 }
 
@@ -6994,6 +6996,10 @@ main(int argc, char **argv) {
     int sarif_out = 0;
     int opt_syslog = 0;
     const char *opt_log_file = NULL;
+    HlseConfig cfg;             /* --config defaults; must live for all of
+                                   main() — g_from_channel/g_baseline_file/
+                                   opt_log_file may point into it.        */
+    memset(&cfg, 0, sizeof(cfg));
     int argc_flags;   /* argv index where "--" ends option scanning */
     int idx = 1;
 
@@ -7067,6 +7073,44 @@ main(int argc, char **argv) {
             }
         }
         if (argc_flags > argc) argc_flags = argc;
+    }
+
+    /* Parse --config <file> FIRST, before any other flag loop: config keys
+     * write defaults into the same globals the loops below assign, so an
+     * explicit CLI flag always wins. A config `patterns` file is loaded
+     * here too — if --patterns is also given, its handler clears the
+     * custom registries and replaces it. */
+    {
+        {
+            int i;
+            for (i = 1; i < argc_flags - 1; i++) {
+                if (strcmp(argv[i], "--config") == 0) {
+                    char cerr[256];
+                    if (hlse_config_load(argv[i + 1], &cfg,
+                                         cerr, sizeof(cerr)) != 0) {
+                        fprintf(stderr, "Error: %s\n", cerr);
+                        return 2;
+                    }
+                    argv_remove(argv, &argc, &argc_flags, i, 2);
+                    break;
+                }
+            }
+        }
+        if (cfg.has_json)         json_out            = cfg.json;
+        if (cfg.has_sarif)        sarif_out           = cfg.sarif;
+        if (cfg.has_quiet)        quiet               = cfg.quiet;
+        if (cfg.has_syslog)       opt_syslog          = cfg.syslog;
+        if (cfg.has_fingerprints) g_emit_fingerprints = cfg.fingerprints;
+        if (cfg.has_git_history)  g_git_history       = cfg.git_history;
+        if (cfg.has_fail_on)      g_fail_threshold    = cfg.fail_on;
+        if (cfg.from[0])          g_from_channel      = cfg.from;
+        if (cfg.baseline[0])      g_baseline_file     = cfg.baseline;
+        if (cfg.log_file[0])      opt_log_file        = cfg.log_file;
+        if (cfg.patterns[0] && hlse_patterns_load(cfg.patterns) != 0) {
+            fprintf(stderr, "Error: cannot read config patterns file "
+                    "'%s': %s\n", cfg.patterns, strerror(errno));
+            return 2;
+        }
     }
 
     /* Boolean global flags: one table, one pass. These were six separate
@@ -7186,6 +7230,10 @@ main(int argc, char **argv) {
         for (i = 1; i < argc_flags - 1; i++) {
             if (strcmp(argv[i], "--patterns") == 0) {
                 const char *ppath = argv[i + 1];
+                /* Replace any config-file patterns wholesale so CLI
+                 * precedence is clean, not additive. */
+                hlse_clear_custom_secret_patterns();
+                hlse_clear_custom_brands();
                 if (hlse_patterns_load(ppath) != 0) {
                     fprintf(stderr, "Error: cannot read --patterns file '%s': %s\n",
                             ppath, strerror(errno));
