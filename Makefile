@@ -83,7 +83,7 @@ MANDIR  := $(DESTDIR)$(PREFIX)/share/man/man1
 DATADIR := $(DESTDIR)$(PREFIX)/share/hlse
 
 # Source files
-CORE_SRC  := hlse_core.c hlse_selftest.c hlse_registry.c hlse_channel.c hlse_baseline.c hlse_text.c hlse_protect.c hlse_secrets.c hlse_supply.c hlse_file.c hlse_audit.c hlse_util.c hlse_alert.c hlse_config.c
+CORE_SRC  := hlse_core.c hlse_selftest.c hlse_registry.c hlse_channel.c hlse_baseline.c hlse_patterns.c hlse_text.c hlse_protect.c hlse_secrets.c hlse_supply.c hlse_file.c hlse_audit.c hlse_util.c hlse_alert.c hlse_config.c
 TEST_SRC  := tests/hlse_property_tests.c
 
 # Outputs
