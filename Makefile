@@ -260,17 +260,17 @@ $(FUZZ_FILE_ASAN): tests/hlse_file_fuzz.c hlse_file.c hlse_file.h hlse_util.c hl
 		-o $@ tests/hlse_file_fuzz.c hlse_file.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
-$(FUZZ_URL): tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c hlse_core.h
+$(FUZZ_URL): tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c hlse_advisory.c hlse_core.h
 	@mkdir -p tests
 	$(CC) -O0 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -DHLSE_CORE_AS_LIB \
-		-o $@ tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c -I. -lm
+		-o $@ tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c hlse_advisory.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
-$(FUZZ_URL_ASAN): tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c hlse_core.h
+$(FUZZ_URL_ASAN): tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c hlse_advisory.c hlse_core.h
 	@mkdir -p tests
 	$(CC) -O1 -g -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -DHLSE_CORE_AS_LIB \
 		-fsanitize=address,undefined \
-		-o $@ tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c -I. -lm
+		-o $@ tests/hlse_url_fuzz.c hlse_core.c hlse_text.c hlse_util.c hlse_advisory.c -I. -lm
 	@printf '  %-20s %s\n' "CC (ASAN)" "$@"
 
 $(FUZZ_SERVER): tests/hlse_server_fuzz.c hlse_server.c $(CORE_SRC) hlse_core.h hlse_secrets.h
