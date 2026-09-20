@@ -11,6 +11,8 @@
 #ifndef HLSE_ALERT_H
 #define HLSE_ALERT_H
 
+#include <stddef.h>      /* size_t */
+
 #include "hlse_core.h"   /* Verdict, HLSE_VERSION */
 #include "hlse_text.h"   /* TextVerdict */
 
@@ -32,6 +34,12 @@ int hlse_alert_init(int use_syslog, const char *log_file_path);
  * strings (may be NULL when n_reasons == 0). */
 void hlse_alert_emit(const char *kind, int score, int severity,
                      const char *target, const char **reasons, int n_reasons);
+
+/* For verdict structs whose reasons are a fixed-width char[M][W] array:
+ * pass the array as rows, sizeof(row) as stride. Caps at 16 reasons. */
+void hlse_alert_emit_rows(const char *kind, int score, int severity,
+                          const char *target, const void *rows,
+                          size_t stride, int n_rows);
 
 /* Convenience wrappers for the two verdict types the default CLI path builds. */
 void hlse_alert_emit_url(const char *url, const Verdict *v);

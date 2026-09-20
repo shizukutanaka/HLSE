@@ -6636,6 +6636,28 @@ printf 'patterns = %s/pats.txt\n' "$P126" > "$P126/pat.conf"
     || check "p126: config patterns file registers SECRET directive" "0" "1"
 rm -rf "$P126"
 
+# ─── unknown-option rejection (silent-SAFE regression) ──────────────────
+# An unknown --flag must exit 2 — never a fake SAFE scan of the literal.
+./hlse_core --bogusflag 'https://github.com' >/dev/null 2>&1 && rc=0 || rc=$?
+check "unknown --flag: exit 2" "2" "$rc"
+./hlse_core --url x >/dev/null 2>&1 && rc=0 || rc=$?
+check "--url (no such flag): exit 2" "2" "$rc"
+./hlse_core text --bogus x >/dev/null 2>&1 && rc=0 || rc=$?
+check "unknown flag after subcommand: exit 2" "2" "$rc"
+./hlse_core -- -dash-operand >/dev/null 2>&1 && rc=0 || rc=$?
+check "-- escapes dash operand" "0" "$rc"
+
+# --log-file covers every subcommand, not just some: text/esp/audit/scan
+# findings previously emitted no record at all.
+LF=/tmp/hlse_lf.$$.jsonl; rm -f "$LF"
+./hlse_core --log-file "$LF" text "x" >/dev/null 2>&1
+./hlse_core --log-file "$LF" audit >/dev/null 2>&1
+./hlse_core --log-file "$LF" esp /tmp >/dev/null 2>&1
+n=$(wc -l < "$LF" | tr -d ' ')
+[ "$n" -ge 3 ] && check "log-file: text/esp/audit emit records" "0" "0" \
+    || check "log-file: text/esp/audit emit records" "3" "$n"
+rm -f "$LF"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

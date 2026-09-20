@@ -164,6 +164,18 @@ hlse_alert_emit(const char *kind, int score, int severity,
 }
 
 void
+hlse_alert_emit_rows(const char *kind, int score, int severity,
+                     const char *target, const void *rows, size_t stride,
+                     int n_rows) {
+    const char *ar[16];
+    int i, n = n_rows;
+    if (n > (int)(sizeof ar / sizeof ar[0])) n = (int)(sizeof ar / sizeof ar[0]);
+    for (i = 0; i < n; i++)
+        ar[i] = (const char *)rows + (size_t)i * stride;
+    hlse_alert_emit(kind, score, severity, target, ar, n);
+}
+
+void
 hlse_alert_emit_url(const char *url, const Verdict *v) {
     const char *r[16];
     int i, n = v->n_reasons;

@@ -2525,6 +2525,33 @@ main(int argc, char **argv) {
         }
     }
 
+    /* Every legitimate flag was consumed above, so a '-'-leading token left
+     * inside the flag region is an unknown option — except dispatch flags
+     * (--version/--stdin/...) and subcommand-local flags (--mbr/--smb/...)
+     * which are recognised downstream. Reject the rest: without this check a
+     * typo'd flag (--baselne) falls through to the operand position and is
+     * scanned as literal text — a fake SAFE verdict, exit 0. `--` still
+     * separates real operands that begin with '-'. */
+    {
+        static const char *const dash_ok[] = {
+            "-h", "--help", "-V", "--version", "--self-test", "--benchmark",
+            "--stdin", "--list-patterns",
+            "--manifest", "--mbr", "--ransomware", "--smb", "--net",
+        };
+        int i, k;
+        for (i = 1; i < argc_flags; i++) {
+            if (argv[i][0] != '-') continue;
+            for (k = 0; k < (int)(sizeof(dash_ok) / sizeof(dash_ok[0])); k++)
+                if (strcmp(argv[i], dash_ok[k]) == 0) break;
+            if (k == (int)(sizeof(dash_ok) / sizeof(dash_ok[0]))) {
+                fprintf(stderr, "unknown option: %s "
+                        "(use -- before operands that begin with '-')\n",
+                        argv[i]);
+                return 2;
+            }
+        }
+    }
+
     /* Load the baseline file now that flags are parsed. A missing/unreadable
      * baseline is a usage error — silently ignoring it would let the gate
      * pass on a typo'd path, defeating the purpose. */

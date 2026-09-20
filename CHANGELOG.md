@@ -132,6 +132,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   F1=1.000 / FP=0%, strict-warning gates pass in CLI and lib modes.
 
 ### Fixed
+- **Unknown `--flags` silently scanned as text → fake SAFE**: flag parsing
+  is match-and-remove, so a typo'd flag (`--baselne`, `--url`) fell through
+  to the operand position and was scored as literal text — exit 0, "SAFE".
+  Any leftover `-`-leading token in the flag region (before `--`) is now a
+  usage error, except dispatch flags and subcommand-local flags
+  (`--mbr`/`--manifest`/`--ransomware`/`--smb`/`--net`). `--` still escapes
+  real operands that begin with '-'. Regression tests added.
+- **`--log-file`/`--syslog` had no coverage on 4 subcommands + `scan`**:
+  `text`, `esp`, `audit` and every `scan` finding emitted nothing to the
+  sinks (only the bare-operand path did) — the JSONL trail silently
+  dropped those verdicts. All now emit; `scan`/`--manifest` emit one
+  record per finding. New `hlse_alert_emit_rows()` helper also collapsed
+  the 8 existing copy-into-`aar[]` emit blocks to one call each.
 - **`hlse-server` ignored SIGTERM/SIGINT while blocked in `accept()`**:
   handlers were installed with `signal()`, which on BSD/macOS implies
   `SA_RESTART` — the flag was set but `accept()` restarted, so the

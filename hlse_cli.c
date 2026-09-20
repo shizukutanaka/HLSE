@@ -62,13 +62,9 @@ hlse_cmd_protect(const HlseCli *o, int argc, char **argv, int idx) {
             }
 
             ProtectionVerdict pv = hlse_protect_scan(path, modules);
-            {
-                const char *aar[16]; int aq, aqn = pv.n_reasons;
-                if (aqn > 16) aqn = 16;
-                for (aq = 0; aq < aqn; aq++) aar[aq] = pv.reasons[aq];
-                hlse_alert_emit("protect", pv.score,
-                    hlse_severity_for_score(pv.score), path, aar, aqn);
-            }
+            hlse_alert_emit_rows("protect", pv.score,
+                hlse_severity_for_score(pv.score), path,
+                pv.reasons, sizeof pv.reasons[0], pv.n_reasons);
 
             if (o->json_out) {
                 /* JSON output for protect.
@@ -170,6 +166,9 @@ hlse_cmd_esp(const HlseCli *o, int argc, char **argv, int idx) {
         /* EFI System Partition integrity (UEFI bootkit indicators). */
         const char *path = (argc > idx + 1) ? argv[idx + 1] : NULL;
         ProtectionVerdict pv = hlse_esp_verify(path);
+        hlse_alert_emit_rows("esp", pv.score,
+            hlse_severity_for_score(pv.score), path ? path : "(esp)",
+            pv.reasons, sizeof pv.reasons[0], pv.n_reasons);
         if (o->json_out) {
             int i;
             hlse_json_open("esp");
@@ -247,13 +246,10 @@ hlse_cmd_clipboard(const HlseCli *o, int argc, char **argv, int idx) {
         {
             CryptoSwapVerdict cv =
                 hlse_check_crypto_swap(argv[idx + 1], argv[idx + 2]);
-            {
-                const char *aar[1]; int aqn = 0;
-                if (cv.reason[0]) { aar[0] = cv.reason; aqn = 1; }
-                hlse_alert_emit("clipboard", cv.score,
-                    hlse_severity_for_score(cv.score),
-                    cv.swapped[0] ? cv.swapped : "(clipboard)", aar, aqn);
-            }
+            hlse_alert_emit_rows("clipboard", cv.score,
+                hlse_severity_for_score(cv.score),
+                cv.swapped[0] ? cv.swapped : "(clipboard)",
+                cv.reason, sizeof cv.reason, cv.reason[0] ? 1 : 0);
             const char *rem = hlse_remediation_for("clipboard", cv.score);
             if (o->json_out) {
                 char eo[256], es[256], er[512], erm[512];
@@ -311,6 +307,10 @@ hlse_cmd_clipboard(const HlseCli *o, int argc, char **argv, int idx) {
 int
 hlse_cmd_audit(const HlseCli *o) {
         AuditVerdict av = hlse_audit_all();
+        hlse_alert_emit_rows("audit", av.score,
+            hlse_severity_for_score(av.score), "(system audit)",
+            &av.findings[0].description, sizeof av.findings[0],
+            av.n_findings);
         int hi = hlse_audit_hardening_index(&av);
         const char *band = hi >= 90 ? "hardened"
                          : hi >= 70 ? "good"
@@ -436,13 +436,9 @@ hlse_cmd_file(const HlseCli *o, int argc, char **argv, int idx) {
                 base = base ? base + 1 : argv[idx + 1];
                 fv = hlse_check_filename(base);
             }
-            {
-                const char *aar[16]; int aq, aqn = fv.n_reasons;
-                if (aqn > 16) aqn = 16;
-                for (aq = 0; aq < aqn; aq++) aar[aq] = fv.reasons[aq];
-                hlse_alert_emit("file", fv.score,
-                    hlse_severity_for_score(fv.score), argv[idx + 1], aar, aqn);
-            }
+            hlse_alert_emit_rows("file", fv.score,
+                hlse_severity_for_score(fv.score), argv[idx + 1],
+                fv.reasons, sizeof fv.reasons[0], fv.n_reasons);
             if (o->json_out) {
                 int i;
                 char esc[512];
@@ -546,13 +542,9 @@ hlse_cmd_file(const HlseCli *o, int argc, char **argv, int idx) {
 int
 hlse_cmd_network(const HlseCli *o) {
         NetworkVerdict nv = hlse_check_network();
-        {
-            const char *aar[16]; int aq, aqn = nv.n_reasons;
-            if (aqn > 16) aqn = 16;
-            for (aq = 0; aq < aqn; aq++) aar[aq] = nv.reasons[aq];
-            hlse_alert_emit("network", nv.score,
-                hlse_severity_for_score(nv.score), "(network)", aar, aqn);
-        }
+        hlse_alert_emit_rows("network", nv.score,
+            hlse_severity_for_score(nv.score), "(network)",
+            nv.reasons, sizeof nv.reasons[0], nv.n_reasons);
         if (o->json_out) {
             int i;
             hlse_json_open("network");
@@ -640,13 +632,9 @@ hlse_cmd_paste(const HlseCli *o, int argc, char **argv, int idx) {
         }
         {
             PasteVerdict pv = hlse_check_paste(argv[idx + 1]);
-            {
-                const char *aar[16]; int aq, aqn = pv.n_reasons;
-                if (aqn > 16) aqn = 16;
-                for (aq = 0; aq < aqn; aq++) aar[aq] = pv.reasons[aq];
-                hlse_alert_emit("paste", pv.score,
-                    hlse_severity_for_score(pv.score), argv[idx + 1], aar, aqn);
-            }
+            hlse_alert_emit_rows("paste", pv.score,
+                hlse_severity_for_score(pv.score), argv[idx + 1],
+                pv.reasons, sizeof pv.reasons[0], pv.n_reasons);
             if (o->json_out) {
                 int i;
                 hlse_json_open("paste");
@@ -774,13 +762,9 @@ hlse_cmd_email(const HlseCli *o, int argc, char **argv, int idx) {
         }
         {
             EmailVerdict ev = hlse_check_email_headers(headers);
-            {
-                const char *aar[16]; int aq, aqn = ev.n_reasons;
-                if (aqn > 16) aqn = 16;
-                for (aq = 0; aq < aqn; aq++) aar[aq] = ev.reasons[aq];
-                hlse_alert_emit("email", ev.score,
-                    hlse_severity_for_score(ev.score), "(email headers)", aar, aqn);
-            }
+            hlse_alert_emit_rows("email", ev.score,
+                hlse_severity_for_score(ev.score), "(email headers)",
+                ev.reasons, sizeof ev.reasons[0], ev.n_reasons);
             const char *rem = hlse_remediation_for("email", ev.score);
             /* Header forensics (SPF/DKIM/Reply-To/Received) is blind to the
              * message BODY's social engineering. Run text analysis on the same
@@ -1132,6 +1116,9 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                     checked++;
                     if (pv.score >= 40) {
                         threats++;
+                        hlse_alert_emit_rows("package", pv.score,
+                            hlse_severity_for_score(pv.score), name,
+                            pv.reason, sizeof pv.reason, pv.reason[0] ? 1 : 0);
                         if (pv.score > max_score) max_score = pv.score;
                         if (pv.score >= o->fail_threshold) gate_hits++;
                         if (o->sarif_out) {
@@ -1204,12 +1191,9 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
         {
             const char *eco = (argc > idx + 2) ? argv[idx + 2] : NULL;
             PackageVerdict pv = hlse_check_package(argv[idx + 1], eco);
-            {
-                const char *aar[1]; int aqn = 0;
-                if (pv.reason[0]) { aar[0] = pv.reason; aqn = 1; }
-                hlse_alert_emit("package", pv.score,
-                    hlse_severity_for_score(pv.score), argv[idx + 1], aar, aqn);
-            }
+            hlse_alert_emit_rows("package", pv.score,
+                hlse_severity_for_score(pv.score), argv[idx + 1],
+                pv.reason, sizeof pv.reason, pv.reason[0] ? 1 : 0);
             if (o->json_out) {
                 hlse_json_open("package");
                 printf(",\"name\":\"%s\",\"score\":%d,"
@@ -1319,6 +1303,9 @@ hlse_cmd_text(const HlseCli *o, int argc, char **argv, int idx) {
             /* Use unified scan — it runs text detection AND extracts
              * embedded URLs. This catches "Click here: https://g00gle.com" */
             ScanResult sr = hlse_scan(argv[idx + 1]);
+            hlse_alert_emit_rows(sr.is_url ? "url" : "text", sr.score,
+                hlse_severity_for_score(sr.score), argv[idx + 1],
+                sr.reasons, sizeof sr.reasons[0], sr.n_reasons);
             if (o->json_out) {
                 /* Build TextVerdict from the unified ScanResult so the JSON
                  * path honours embedded URL extraction (same as human path). */
@@ -1558,6 +1545,9 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                       o->emit_fingerprints);
                         if (sup) goto after_file_check;
                         threats++;
+                        hlse_alert_emit_rows("file", fv.score,
+                            hlse_severity_for_score(fv.score), fullpath,
+                            fv.reasons, sizeof fv.reasons[0], fv.n_reasons);
                         if (fv.score > max_score) max_score = fv.score;
                         if (fv.score >= o->fail_threshold) gate_hits++;
                         if (o->sarif_out) {
@@ -1700,6 +1690,12 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                             o->emit_fingerprints))
                                     {
                                         threats++;
+                                        {
+                                            const char *ir = inv_r;
+                                            hlse_alert_emit("text", inv,
+                                                hlse_severity_for_score(inv),
+                                                sarif_path, &ir, 1);
+                                        }
                                         if (inv > max_score) max_score = inv;
                                         if (inv >= o->fail_threshold) gate_hits++;
                                         if (!o->quiet && !o->json_out && !o->sarif_out)
@@ -1722,6 +1718,10 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                     if (hlse_scan_suppress(sarif_path, spid, sdesc, line, o->emit_fingerprints))
                                         continue;
                                     threats++;
+                                    hlse_alert_emit_rows("secret", sv.score,
+                                        hlse_severity_for_score(sv.score),
+                                        sarif_path, sv.findings,
+                                        sizeof sv.findings[0], sv.n_findings);
                                     if (sv.score > max_score) max_score = sv.score;
                                     if (sv.score >= o->fail_threshold) gate_hits++;
                                     for (ai = 0; ai < sv.n_findings; ai++)
@@ -1865,6 +1865,12 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                                         o->emit_fingerprints))
                                                     goto url_advance;
                                                 threats++;
+                                                hlse_alert_emit_rows("url",
+                                                    uv.score,
+                                                    hlse_severity_for_score(uv.score),
+                                                    url_buf, uv.reasons,
+                                                    sizeof uv.reasons[0],
+                                                    uv.n_reasons);
                                                 if (uv.score > max_score) max_score = uv.score;
                                                 if (uv.score >= o->fail_threshold)
                                                     gate_hits++;
