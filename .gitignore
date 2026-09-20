@@ -29,6 +29,8 @@ tests/fuzz_server
 tests/fuzz_server_asan
 tests/fuzz_manifest
 tests/fuzz_manifest_asan
+tests/fuzz_config
+tests/fuzz_config_asan
 
 # Coverage
 *.gcov
