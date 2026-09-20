@@ -148,23 +148,47 @@ properties at every version. `make test` verifies these via
 `<ACTION> [<score>]  <subject>` followed by ` · <reason>` lines, or `OK    <subject>` when safe.
 
 ### 5.2 JSON (`--json`)
-Every object carries a `"kind"` discriminator, an integer `"score"`, and an
-`"action"` string (the §2 band: `SAFE`/`LOG`/`ALERT`/`BLOCK`/`ISOLATE`), so a
-consumer never has to re-derive the band. Additional fields vary by kind:
-- `url`: `target` (the scanned URL), `reasons:[...]`
-- `text`: `target` (the scanned string), `reasons:[...]`
-- `protect`: `target` (the scanned path), `reasons:[...]`
-- `network`/`esp`/`email`: `reasons:[...]`
-- `paste`: `signals` (integer count of fired pastejacking signals), `reasons:[...]`
-- `package`: `name`, `matches:[{name,registry,distance}]`
-- `audit`: `hardening_index`, `hardening_band`, `findings:[{severity,description}]`
-- `secret`: `findings:[{type,description}]`
-- `clipboard`: `is_swap`, `original`, `swapped`, `reason`
-- `file`: `path`, `reasons:[...]`
+Every object carries a `"kind"` discriminator, `"hlse_version"`, an integer
+`"score"`, an `"action"` string (the §2 band:
+`SAFE`/`LOG`/`ALERT`/`BLOCK`/`ISOLATE`) and a numeric `"severity"` (0–4), so a
+consumer never has to re-derive the band. Three shared field rules apply:
+
+- **`blind_spot`** — emitted only when `score == 0`: discloses what the
+  clean verdict cannot see. Never present on a detection.
+- **Advisory fields** — emitted on detections only when the advisory layer
+  has data for that verdict: `pattern`, `pattern_id` (stable SIEM token),
+  `objective`, `verify`, `triage`, `cascade_risk`, `exoneration`,
+  `signal_count`, `confidence`. The subset varies by kind.
+- **Channel block** — `url`/`text` with `--from <channel>` add `channel`,
+  `channel_delta`, `effective_score`, `effective_action`,
+  `effective_severity`, `channel_reason` (pre/post-boost verdict pair).
+
+Additional fields vary by kind:
+- `url`: `target` (the scanned URL), `reasons:[...]`; detection-only:
+  `canonical_brand`, `confusable`, `ascii_diff`, `safe_url`.
+- `text`: `target` (the scanned string), `reasons:[...]`.
+- `protect`: `target` (the scanned path), `reasons:[...]`.
+- `network`/`esp`: `reasons:[...]`.
+- `email`: `reasons:[...]`; `body_pattern`/`body_score` when a body was
+  inspected; `remediation` on detections.
+- `paste`: `signals` (integer count of fired pastejacking signals), `reasons:[...]`.
+- `clipboard`: `is_swap`, `original`, `swapped`, `reason`, `remediation`.
+- `file`: `path`, `reasons:[...]`.
+- `secret`: `findings:[{type,description,confidence?,remediation?}]`;
+  `caveat` on detections.
+- `package`: `name`, `ecosystem`, `pattern_id`; `matches:[{name,registry,
+  distance}]` only on hits. `--manifest` emits one `kind=package` record per
+  finding plus a `kind=manifest_summary` terminator: `manifest`,
+  `ecosystem`, `packages_checked`, `threats`, `max_severity`, `gate_hits`.
+- `audit`: `hardening_index`, `hardening_band`, `crit_count`, `high_count`,
+  `findings:[{severity,description,fix?}]`, `next_steps` on non-SAFE.
 - streaming `scan` records add `path`/`line`/`url` as applicable (record
-  kinds are `url`, `file`, and `secret`).
-- `scan` emits a final `kind=scan_summary` terminator:
-  `target` (scanned root path), `files_scanned` (integer), `threats` (integer).
+  kinds are `url`, `file`, and `secret`; secret records carry `findings`
+  and `caveat`, url records carry `safe_url`).
+- `scan` emits a final `kind=scan_summary` terminator: `target` (scanned
+  root path), `files_scanned`, `threats`, `max_severity`, `gate_hits`,
+  `fail_threshold`, `asset_classes`, `blast_radius`; plus `blind_spot`
+  (clean) or `immediate_action` (threats found).
 
 ### 5.3 SARIF (`--sarif scan <dir>`)
 SARIF 2.1.0 with rule definitions and `security-severity`.

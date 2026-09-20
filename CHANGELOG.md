@@ -152,6 +152,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   bracket-tested with `utime()` fixtures. Row now states the scoped
   exception explicitly (same pattern as the SECURITY.md daemon-state
   carve-out). AGENTS.md rule 1 bullet updated to match.
+- **SPECIFICATION.md §5.2 JSON inventory was far from reality** —
+  mechanically cross-checked every `--json` kind's actual field set
+  against the documented inventory. Undocumented fields now written
+  down: universal `hlse_version`/`severity`; `blind_spot` is
+  score==0-only (never on detections); the full conditional advisory
+  family (`pattern`, `pattern_id`, `objective`, `verify`, `triage`,
+  `cascade_risk`, `exoneration`, `signal_count`, `confidence`); the
+  `--from` channel block (`channel_delta`, `effective_score`, ...);
+  per-kind extras (`clipboard.remediation`, `secret` findings
+  `confidence`/`remediation` + `caveat`, `audit` `crit_count`/
+  `high_count`/`next_steps`/`fix`, `package` `ecosystem`/`pattern_id`
+  + `manifest_summary` terminator, `email` `body_pattern`/`body_score`,
+  `scan_summary` `max_severity`/`gate_hits`/`fail_threshold`/
+  `asset_classes`/`blast_radius`/`immediate_action`).
 - Dead `brand_matched` store flagged by `clang --analyze`
   (DeadStores) in the hyphenated-SLD brand check — set immediately
   before `break` in its last consumer.
