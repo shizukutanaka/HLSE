@@ -543,6 +543,21 @@ read_request(int fd, char *buf, size_t cap) {
     return (int)total;
 }
 
+/* Drain a still-in-flight request body after an early rejection. Without
+ * this, close() on a socket with unread input emits RST, which can discard
+ * the error response before the client reads it. Bounded by DRAIN_MAX;
+ * SO_RCVTIMEO bounds each read. */
+static void
+drain_request_body(int fd) {
+    char junk[8192];
+    size_t left = 4 * MAX_BODY;
+    while (left) {
+        ssize_t n = read(fd, junk, left < sizeof(junk) ? left : sizeof(junk));
+        if (n <= 0) break;
+        left -= (size_t)n;
+    }
+}
+
 static void
 handle_connection(ConnCtx *cx) {
     char *buf = malloc(MAX_REQUEST + 1);
@@ -554,7 +569,12 @@ handle_connection(ConnCtx *cx) {
     if (!buf) { return; }
 
     total = read_request(cx->fd, buf, MAX_REQUEST + 1);
-    if (total == -2) { send_error(cx, 413, "Payload Too Large", "request body exceeds limit"); free(buf); return; }
+    if (total == -2) {
+        send_error(cx, 413, "Payload Too Large", "request body exceeds limit");
+        shutdown(cx->fd, SHUT_WR);
+        drain_request_body(cx->fd);
+        free(buf); return;
+    }
     if (total <= 0) { free(buf); return; }
 
     if (sscanf(buf, "%7s %1023s", method, path) != 2) {
@@ -699,6 +719,7 @@ main(int argc, char **argv) {
     int port = 8080;
     int listen_fd;
     struct sockaddr_in addr;
+    struct sigaction sa;
     int opt = 1;
     int i;
 
@@ -711,9 +732,12 @@ main(int argc, char **argv) {
     }
     if (port <= 0 || port > 65535) { fprintf(stderr, "invalid port\n"); return 2; }
 
-    signal(SIGPIPE, SIG_IGN);
-    signal(SIGINT, on_signal);
-    signal(SIGTERM, on_signal);
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = SIG_IGN;
+    sigaction(SIGPIPE, &sa, NULL);
+    sa.sa_handler = on_signal;   /* no SA_RESTART: accept() breaks on signal */
+    sigaction(SIGINT,  &sa, NULL);
+    sigaction(SIGTERM, &sa, NULL);
 
     listen_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (listen_fd < 0) { perror("socket"); return 1; }

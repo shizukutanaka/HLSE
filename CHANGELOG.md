@@ -132,6 +132,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   F1=1.000 / FP=0%, strict-warning gates pass in CLI and lib modes.
 
 ### Fixed
+- **`hlse-server` ignored SIGTERM/SIGINT while blocked in `accept()`**:
+  handlers were installed with `signal()`, which on BSD/macOS implies
+  `SA_RESTART` — the flag was set but `accept()` restarted, so the
+  process only exited when the *next connection* arrived (`kill` /
+  `systemctl stop` appeared to hang; test teardown orphaned the
+  server). Now uses `sigaction` without `SA_RESTART` (same idiom as
+  `hlse_daemon.c`), so the accept loop exits promptly.
+- **`hlse-server` oversize POST returned connection-reset instead of
+  413**: the early reject path closed the socket while the client's
+  body was still in flight; unread receive data turns close into RST,
+  discarding the response. The 413 path now half-closes
+  (`shutdown(SHUT_WR)`) and drains up to 4×`MAX_BODY` before close —
+  bounded, and each read is covered by `SO_RCVTIMEO`.
 - Dead `brand_matched` store flagged by `clang --analyze`
   (DeadStores) in the hyphenated-SLD brand check — set immediately
   before `break` in its last consumer.

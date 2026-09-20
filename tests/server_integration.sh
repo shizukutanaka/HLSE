@@ -21,7 +21,7 @@ check() { # desc  haystack  needle
 
 "$SERVER" --port "$PORT" --webroot "$WEBROOT" >/tmp/hlse_srv_it.log 2>&1 &
 SRV=$!
-trap 'kill "$SRV" 2>/dev/null' EXIT
+trap 'kill "$SRV" 2>/dev/null; wait "$SRV" 2>/dev/null' EXIT
 
 # Wait up to ~3s for readiness.
 up=0
@@ -60,6 +60,15 @@ check "oversize 413" \
 check "dashboard served" "$(curl -s $B/)" '<title>HLSE'
 check "static css" "$(curl -s -o /dev/null -w '%{http_code}' $B/style.css)" '200'
 check "security header" "$(curl -s -D - -o /dev/null $B/api/v1/health)" 'Content-Security-Policy'
+
+# SIGTERM must stop the accept loop promptly (no SA_RESTART on sigaction).
+kill -TERM "$SRV" 2>/dev/null
+stopped=0
+for _ in $(seq 1 30); do
+  if ! kill -0 "$SRV" 2>/dev/null; then stopped=1; break; fi
+  sleep 0.1
+done
+check "SIGTERM stops server" "$stopped" '1'
 
 echo "════════════════════════════════════════"
 echo "Integration: $PASS passed, $FAIL failed"
