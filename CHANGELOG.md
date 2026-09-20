@@ -47,6 +47,11 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   blind spot. Dist-3 matches are advisory only: they cannot dilute the
   distance-1 amplifier (reqeusts → still BLOCK 70) nor inflate the
   close-match count that gates it (reqests → still ALERT 50).
+- **Manifest-parser fuzz harness** (`tests/hlse_manifest_fuzz.c`,
+  wired into `make fuzz`/`make fuzz-asan`). The three untrusted-input
+  parsers — `hlse_manifest_ecosystem`, `hlse_manifest_name_pip`,
+  `hlse_manifest_name_npm` — were the only untrusted-input surface
+  without a fuzzer. 100k ASan iterations: 0 crashes.
 
 ### Removed
 
@@ -106,13 +111,32 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `hlse_cli.c` as `hlse_cmd_<name>(const HlseCli *o, argc, argv, idx)`
   (network/audit take `o` only — no operand). `main()` is now config
   load + flag parse + sink init + one-line dispatch.
-  `hlse_core.c` is now ~2,759 lines — engine + public API + a thin
-  `main`.
   `hlse_core.c` is now ~2,759 lines — engine + public API + a thin `main`.
+- **JSON emit consolidation** (`hlse_emit.c/h`, `hlse_cli.c`). Three
+  shared helpers now own what were per-site idioms: `hlse_json_open`
+  for the `{"kind":...,"hlse_version":...` prologue (16 sites),
+  `hlse_json_str_field` for the escape-then-print `,"name":"escaped"`
+  pair (102 sites, retiring 43 per-site scratch buffers), and
+  `hlse_json_str_elem` for escaped string-array elements (8 loops).
+  Emitted bytes are unchanged.
+- **`hlse_server.c` dedup.** The two `severity -> action` switch tables
+  (copies of `hlse_action_for_score`'s band table) now call the shared
+  mapper; the bounded-append guard idiom (~15 repetitions per
+  responder) collapsed into `json_append_char`/`json_append_elem`/
+  `json_append_lit`.
+- **Single URL bound.** `MAX_URL` was defined once in core and twice
+  more in cli/emit after the split; all sites now share
+  `HLSE_MAX_URL` from `hlse_core.h`.
+
   Behavior unchanged throughout: full `make test` green, benchmark
   F1=1.000 / FP=0%, strict-warning gates pass in CLI and lib modes.
 
 ### Fixed
+- Dead `brand_matched` store flagged by `clang --analyze`
+  (DeadStores) in the hyphenated-SLD brand check — set immediately
+  before `break` in its last consumer.
+- `hlse.1`: `--list-patterns [--json]` was implemented but
+  undocumented — added under OPTIONS.
 - **macOS build and test portability** (`Makefile`, `hlse_audit.c`,
   `hlse_core.c`, `tests/cli_integration.sh`). The README's "macOS (partial)"
   platform claim was not literally true: the tree did not compile on Darwin
