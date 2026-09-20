@@ -20,7 +20,10 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
      (`hlse-server` is the only socket user, by design.)
    - **Dependency-free** — link only `-lm` (and `-lpthread` for the server).
      No third-party libraries.
-   - **Deterministic** — no time/random dependence in scoring.
+   - **Deterministic** — no time/random dependence in scoring for
+     pure-input analysis; host-integrity recency checks (R1/S4 in
+     `hlse_protect.c`) compare fs metadata to wall-clock by design —
+     see SPECIFICATION.md §1.
    - **Allocation-light** — bounded stack/static buffers; no unbounded input.
 2. **Verify every commit, in this order — all must pass:**
    ```

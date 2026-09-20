@@ -17,7 +17,7 @@ Target version: 0.9.x.
 | Language | C99, portable (Linux + macOS). libc + libm only. |
 | Network | **Zero network calls**, ever (CI privacy-tripwire enforced). |
 | Allocation | Allocation-light; bounded stack/static buffers; no unbounded input. |
-| Determinism | Same input → same verdict. No time/random dependence in scoring. |
+| Determinism | Same input → same verdict: pure-input analysis (url/text/secrets/supply/file/package/email/clipboard/paste/esp) has no time/random dependence. Scoped exception — **host-integrity recency checks** (`hlse_protect` R1 mass-modification mtime window, S4 canary atime) compare filesystem metadata against wall-clock because "an attack is happening *now*" is the semantic; these are bracket-tested with `utime()`-controlled fixtures. |
 | Memory safety | Clean under ASan + UBSan; strict `-Wall -Wextra -Wpedantic -Wshadow -Wconversion`; cppcheck error-gate clean. |
 | File I/O | Read-only. **Untrusted paths** (directory-scan entries, ransomware-scan files): `O_NOFOLLOW` + `O_NONBLOCK` + `fstat`/`S_ISREG` — never follow attacker-controlled symlinks, never block on a planted FIFO, only read regular files. **Fixed trusted system paths** (`/etc/hosts`, `/etc/resolv.conf`, `/proc/net/arp`, `sshd_config`): `O_NONBLOCK` + `S_ISREG` via `hlse_open_system_file()`; symlinks ARE followed because these are root-owned and legitimately symlinked (e.g. `/etc/resolv.conf` on systemd). |
 | Thread-safety | Pure analysis functions (URL/text/secret/file/package) read only static const tables and are reentrant. Filesystem/host functions (protect/audit/network) are process-level. |

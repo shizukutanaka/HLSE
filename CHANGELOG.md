@@ -145,6 +145,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   discarding the response. The 413 path now half-closes
   (`shutdown(SHUT_WR)`) and drains up to 4×`MAX_BODY` before close —
   bounded, and each read is covered by `SO_RCVTIMEO`.
+- **SPECIFICATION.md §1 determinism row was literally false**: it claimed
+  "no time/random dependence in scoring" but `hlse_protect.c` R1 (mtime
+  burst window) and S4 (canary atime) compare filesystem metadata to
+  wall-clock — intentional live-incident semantics, already
+  bracket-tested with `utime()` fixtures. Row now states the scoped
+  exception explicitly (same pattern as the SECURITY.md daemon-state
+  carve-out). AGENTS.md rule 1 bullet updated to match.
 - Dead `brand_matched` store flagged by `clang --analyze`
   (DeadStores) in the hyphenated-SLD brand check — set immediately
   before `break` in its last consumer.
