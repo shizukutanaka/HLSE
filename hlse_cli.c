@@ -1651,6 +1651,46 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                         }
                     }
                 }
+                /* cargo config: rustc-wrapper/runner/linker/pre-build/
+                 * post-build replace what executes on every build —
+                 * build-time code-exec primitive */
+                if (strcmp(eco, "cargo") == 0) {
+                    const char *tk = hlse_manifest_cargo_toolchain(line);
+                    if (tk) {
+                        int csc = 50;
+                        char creason[HLSE_HOOK_REASON_LEN];
+                        snprintf(creason, sizeof(creason),
+                            "cargo config overrides '%s' — a non-toolchain "
+                            "binary/script runs on every build", tk);
+                        threats++;
+                        hlse_alert_emit_rows("package", csc,
+                            hlse_severity_for_score(csc), mpath,
+                            &creason, HLSE_HOOK_REASON_LEN, 1);
+                        if (csc > max_score) max_score = csc;
+                        if (csc >= o->fail_threshold) gate_hits++;
+                        if (o->sarif_out) {
+                            hlse_sarif_add(mpath, lineno,
+                                "package-cargo-toolchain",
+                                "HLSE-PKG-CARGOTC", creason, csc);
+                        } else if (o->json_out) {
+                            char ehB[384];
+                            hlse_json_escape(creason, ehB, sizeof(ehB));
+                            hlse_json_open("package");
+                            printf(",\"manifest\":\"%s\",\"score\":%d,"
+                                   "\"action\":\"%s\",\"severity\":%d,"
+                                   "\"pattern_id\":\"HLSE-PKG-CARGOTC\","
+                                   "\"reason\":\"%s\"}\n",
+                                   mpath, csc,
+                                   hlse_action_for_score(csc),
+                                   hlse_severity_for_score(csc),
+                                   ehB);
+                        } else {
+                            printf("%-7s [%d]  cargo toolchain: %s\n",
+                                   hlse_action_for_score(csc), csc,
+                                   creason);
+                        }
+                    }
+                }
                 for (;;) {
                     int got;
                     if (is_npm)

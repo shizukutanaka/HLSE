@@ -89,3 +89,7 @@ int hlse_manifest_gha_uses(const char *line, char *ref, size_t refcap);
 
 /* 'pull_request_target' trigger — runs fork code with repo secrets. */
 int hlse_manifest_gha_prt(const char *line);
+
+/* .cargo/config.toml build-toolchain override key (rustc-wrapper,
+ * runner, linker, pre/post-build) or NULL. */
+const char *hlse_manifest_cargo_toolchain(const char *line);

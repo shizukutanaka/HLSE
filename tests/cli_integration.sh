@@ -859,6 +859,18 @@ printf 'Host *\n  ProxyCommand nc X 22\n' > "$RS_DIR/.ssh/config"
     || check "f18: ssh ProxyCommand flagged" "0" "1"
 rm -rf "$RS_DIR"
 
+# cargo toolchain override (.cargo/config.toml)
+CG_DIR=$(mktemp -d); mkdir -p "$CG_DIR/.cargo"
+printf '[build]\nrustc-wrapper = "/tmp/evil-wrap"\n' > "$CG_DIR/.cargo/config.toml"
+./hlse_core package --manifest "$CG_DIR/.cargo/config.toml" 2>&1 | grep -q "cargo toolchain" \
+    && check "cargo: rustc-wrapper path flagged" "0" "0" \
+    || check "cargo: rustc-wrapper path flagged" "0" "1"
+printf '[build]\nrustc-wrapper = "sccache"\nlinker = "clang"\n' > "$CG_DIR/.cargo/config.toml"
+./hlse_core package --manifest "$CG_DIR/.cargo/config.toml" 2>&1 | grep -q "0 typosquat" \
+    && check "cargo FP guard: sccache/clang clean" "0" "0" \
+    || check "cargo FP guard: sccache/clang clean" "0" "1"
+rm -rf "$CG_DIR"
+
 # Dockerfile + CI workflow supply-chain (FROM off-registry, curl|sh,
 # uses: mutable ref, pull_request_target) + hex-key/mnemonic secrets
 DC_DIR=$(mktemp -d)

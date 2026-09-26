@@ -16,6 +16,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 - **F18 extension** — ssh client config: `.ssh/config` `ProxyCommand`/
   `LocalCommand`/`Match exec` → 55 (CVE-2023-51385 class),
   `PermitLocalCommand` → 40.
+- **Cargo build-toolchain override** (`hlse_manifest.c` +
+  `hlse_cli.c`): `.cargo/config.toml` `rustc-wrapper`/`runner`/
+  `linker`/`pre-build`/`post-build` with a path-form value → 50
+  (HLSE-PKG-CARGOTC). Bare tool names (`sccache`, `clang`) resolve via
+  PATH and stay clean.
+
 
 - **F18 rc/persistence-file check** (`hlse_file.c`): filenames a shell,
   sshd, or git reads automatically — `.bashrc`/`.zshrc`/`.profile`/

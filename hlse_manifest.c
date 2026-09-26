@@ -826,3 +826,52 @@ int
 hlse_manifest_gha_prt(const char *line) {
     return strstr(line, "pull_request_target") != NULL;
 }
+
+/* .cargo/config.toml toolchain override — rustc-wrapper / runner /
+ * linker / pre-build / post-build / rustc replace what executes on
+ * every `cargo build` (build-time code-exec primitive). Returns the
+ * matched key, NULL otherwise. */
+const char *
+hlse_manifest_cargo_toolchain(const char *line) {
+    static const char *const KEYS[] = {
+        "rustc-wrapper", "rustc_wrapper", "runner", "linker",
+        "pre-build", "post-build", NULL
+    };
+    char low[256];
+    size_t i, n = 0;
+    const char *s = line;
+    while (*s == ' ' || *s == '\t') s++;
+    if (*s == '[' || *s == '#') return NULL;
+    while (s[n] && n + 1 < sizeof(low)) {
+        low[n] = (char)tolower((unsigned char)s[n]);
+        n++;
+    }
+    low[n] = '\0';
+    for (i = 0; KEYS[i]; i++) {
+        size_t kl = strlen(KEYS[i]);
+        const char *eq;
+        if (strncmp(low, KEYS[i], kl) != 0) continue;
+        /* key must be a whole word ending at '=' */
+        eq = strchr(low + kl, '=');
+        if (!eq) continue;
+        {   const char *k = low + kl;
+            int ok = 1;
+            while (k < eq) {
+                if (*k != ' ' && *k != '\t' && *k != '"' &&
+                    *k != '\'') { ok = 0; break; }
+                k++;
+            }
+            if (!ok) continue;
+            /* flag only path-form values — a bare tool name
+             * (sccache, lld, qemu-*) resolves via PATH and is the
+             * canonical legit use; '/…' or './…' bypasses that */
+            {   const char *val = eq + 1;
+                while (*val == ' ' || *val == '\t' || *val == '"' ||
+                       *val == '\'') val++;
+                if (strchr(val, '/') == NULL) continue;
+                return KEYS[i];
+            }
+        }
+    }
+    return NULL;
+}
