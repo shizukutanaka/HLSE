@@ -12,6 +12,7 @@
  *   F7. ICS invite phishing     — VCALENDAR embedding malicious links
  *   F8. Launcher/shortcut       — .desktop/.url/.webloc payload carriers
  *   F9. Weaponized .lnk         — embedded interpreter/download command
+ *   F10. NetNTLM leak           — shell-meta file referencing \\UNC/WebDAV
  *
  * All detection is read-only. Files are never modified or executed.
  *
@@ -486,6 +487,17 @@ launcher_payload_score(const unsigned char *head, size_t len) {
                    strstr(low, "<key>url") != NULL);
     if (!is_desktop && !is_shortcut) return 0;
     best = links_max_score(low, n);
+    /* Remote-resource references that never become http(s) links:
+     * URL=\\host\share or IconFile=\\… pull from SMB/WebDAV the moment
+     * Explorer renders the shortcut (the NetNTLM-leak pattern —
+     * CVE-2025-24071 and the NCC .scf advisory); file:// targets
+     * sidestep the URL engine's scheme check entirely. */
+    if (strstr(low, "\\\\") != NULL || strstr(low, "webdav") != NULL ||
+        strstr(low, "davwwwroot") != NULL) {
+        if (best < 65) best = 65;
+    } else if (strstr(low, "file://") != NULL) {
+        if (best < 55) best = 55;
+    }
     if (is_desktop) {
         const char *e = strstr(low, "exec=");
         if (e) {
@@ -570,6 +582,7 @@ static const char *LNK_DANGEROUS[] = {
     "mshta", "wscript", "cscript", "rundll32", "regsvr32",
     "bitsadmin", "certutil", "wmic", "msbuild",
     "curl", "wget", "http://", "https://", "ftp://",
+    "\\\\", "davwwwroot", "webdav", "file://",
     NULL
 };
 
@@ -587,6 +600,35 @@ lnk_weaponized(const unsigned char *head, size_t len) {
             hits++;
     }
     return hits;
+}
+
+/* Shell-metadata carriers whose icon/URL fields fetch remote resources
+ * on render: desktop.ini ([.ShellClassInfo] + IconResource=), .scf
+ * ([Shell] + IconFile=), .library-ms / .searchConnector-ms XML, and any
+ * file carrying an IconFile=/IconUNC= key. A \\host\share UNC or WebDAV
+ * reference makes Explorer contact the attacker share on VIEW — the
+ * NetNTLM credential leak behind CVE-2025-24071 and the NCC .scf
+ * advisory. Local icon paths (C:\…) contain no '\\' prefix and pass. */
+static int
+unc_leak_score(const unsigned char *head, size_t len) {
+    char low[4097];
+    size_t n = 0, i;
+    int carrier;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    carrier = strstr(low, "[.shellclassinfo")          != NULL ||
+              strstr(low, "[shell]")                  != NULL ||
+              strstr(low, "<librarydescription")      != NULL ||
+              strstr(low, "searchconnectordescription") != NULL ||
+              strstr(low, "iconfile")                != NULL ||
+              strstr(low, "iconresource")            != NULL ||
+              strstr(low, "iconunc")                 != NULL;
+    if (!carrier) return 0;
+    if (strstr(low, "\\\\") != NULL) return 70;   /* UNC → SMB leak */
+    if (strstr(low, "webdav") != NULL || strstr(low, "davwwwroot") != NULL)
+        return 65;                              /* WebDAV redirector  */
+    return 0;
 }
 
 /* ─── main check function ─────────────────────────────────────────────── */
@@ -909,6 +951,18 @@ hlse_check_file(const char *filepath) {
                 "F9: .LNK shortcut embeds %d interpreter/download "
                 "command%s — document-delivered loader pattern",
                 lnk_hits, lnk_hits == 1 ? "" : "s");
+        }
+    }
+
+    /* ── F10: UNC/WebDAV references in shell-meta carriers — viewing
+     *      the file leaks NetNTLM credentials to a remote share ────── */
+    if (head_len > 0) {
+        int unc = unc_leak_score(head, (size_t)head_len);
+        if (unc >= 40) {
+            fv_add(&v, unc > 65 ? 65 : unc,
+                "F10: SHELL-META file references a remote resource — "
+                "viewing it leaks NetNTLM credentials over SMB/WebDAV "
+                "(score %d)", unc);
         }
     }
 

