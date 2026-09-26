@@ -83,6 +83,13 @@ int hlse_manifest_docker_pipeshell(const char *line);
 /* Dockerfile ADD http(s):// remote fetch. */
 int hlse_manifest_docker_add_remote(const char *line);
 
+/* devcontainer.json lifecycle/mount risk and .vscode folderOpen/
+ * binary-path risk — return score + reason, 0 when clean. */
+int hlse_manifest_devc_risk(const char *line, char *reason,
+                            size_t rcap);
+int hlse_manifest_vsc_risk(const char *line, char *reason,
+                           size_t rcap);
+
 /* docker-compose sandbox-strength check — returns score + reason,
  * 0 when the line is clean. */
 int hlse_manifest_docker_compose(const char *line, char *reason,

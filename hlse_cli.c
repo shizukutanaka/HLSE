@@ -1739,6 +1739,49 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                         }
                     }
                 }
+/* Repo-supplied IDE automation: devcontainer
+                 * lifecycle commands and .vscode folderOpen tasks /
+                 * binary-path settings execute when a reviewer opens
+                 * or trusts the workspace. */
+                if (strcmp(eco, "devc") == 0 ||
+                    strcmp(eco, "vsc") == 0) {
+                    char xreason[HLSE_HOOK_REASON_LEN];
+                    int xsc = (eco[0] == 'd')
+                        ? hlse_manifest_devc_risk(line, xreason,
+                                                  sizeof(xreason))
+                        : hlse_manifest_vsc_risk(line, xreason,
+                                                 sizeof(xreason));
+                    if (xsc) {
+                        threats++;
+                        hlse_alert_emit_rows("package", xsc,
+                            hlse_severity_for_score(xsc), mpath,
+                            &xreason, HLSE_HOOK_REASON_LEN, 1);
+                        if (xsc > max_score) max_score = xsc;
+                        if (xsc >= o->fail_threshold) gate_hits++;
+                        if (o->sarif_out) {
+                            hlse_sarif_add(mpath, lineno,
+                                eco[0] == 'd' ? "package-devcontainer"
+                                              : "package-vscode",
+                                "HLSE-PKG-IDEEXEC", xreason, xsc);
+                        } else if (o->json_out) {
+                            char exr[384];
+                            hlse_json_escape(xreason, exr,
+                                             sizeof(exr));
+                            hlse_json_open("package");
+                            printf(",\"manifest\":\"%s\",\"score\":%d,"
+                                   "\"action\":\"%s\",\"severity\":%d,"
+                                   "\"pattern_id\":\"HLSE-PKG-IDEEXEC\","
+                                   "\"reason\":\"%s\"}\n",
+                                   mpath, xsc,
+                                   hlse_action_for_score(xsc),
+                                   hlse_severity_for_score(xsc), exr);
+                        } else {
+                            printf("%-7s [%d]  ide autoexec: %s\n",
+                                   hlse_action_for_score(xsc), xsc,
+                                   xreason);
+                        }
+                    }
+                }
                 /* MCP server configs declare commands the client
                  * auto-executes at startup — a pipe-to-shell install
                  * or a plaintext remote endpoint is a tool-poisoning

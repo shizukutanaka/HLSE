@@ -69,6 +69,19 @@ hlse_manifest_ecosystem(const char *path) {
         strcmp(b, "cline_mcp_settings.json") == 0 ||
         strcmp(b, "claude_desktop_config.json") == 0)
         return "mcp";
+    /* Repo-supplied IDE automation: a devcontainer.json lifecycle
+     * command runs the moment a reviewer opens the repo in
+     * Codespaces/devcontainers; .vscode/tasks.json runOn:folderOpen
+     * and settings.json binary-path keys exec on workspace trust
+     * (Snyk "IDE file execution" research). Same substitution
+     * surface, same offline check.                                 */
+    if (strcmp(b, "devcontainer.json") == 0 ||
+        strstr(b, ".devcontainer.json") != NULL)
+        return "devc";
+    if (strstr(path, ".vscode/") != NULL &&
+        (strcmp(b, "tasks.json") == 0 ||
+         strcmp(b, "settings.json") == 0))
+        return "vsc";
     return NULL;
 }
 
@@ -801,6 +814,98 @@ hlse_manifest_docker_add_remote(const char *line) {
         while (*s == ' ' || *s == '\t') s++;
     }
     return strncmp(s, "http://", 7) == 0 || strncmp(s, "https://", 8) == 0;
+}
+
+/* Repo-supplied exec-config families (devcontainer lifecycle,
+ * .vscode folderOpen/tasks/binary-path settings). These files are
+ * trusted implicitly by the editor — "open the repo" is the exploit.
+ * Only exec-shaped VALUES flag: a plain npm ci postCreateCommand is
+ * the format's raison d'etre, but a pipe/fetch/path value is a
+ * weaponisable command. Returns score + reason, 0 clean.           */
+static int
+execish_value(const char *v) {
+    static const char *const X[] = {
+        "|", "curl", "wget", "http", "/tmp", "-c", "bash", "sh ",
+        "python", "ruby", "perl", "powershell", "pwsh", "eval",
+        "base64", NULL
+    };
+    size_t i;
+    for (i = 0; X[i]; i++)
+        if (strstr(v, X[i]) != NULL) return 1;
+    return 0;
+}
+
+int
+hlse_manifest_devc_risk(const char *line, char *reason, size_t rcap) {
+    static const char *const LIFECYCLE[] = {
+        "\"postCreateCommand\"", "\"postAttachCommand\"",
+        "\"initializeCommand\"", "\"preCreateCommand\"",
+        "\"postStartCommand\"", "\"updateContentCommand\"",
+        "\"postCloneCommand\"", "\"waitFor\"", NULL
+    };
+    size_t i;
+    for (i = 0; LIFECYCLE[i]; i++) {
+        const char *k = strstr(line, LIFECYCLE[i]);
+        if (k && execish_value(k)) {
+            snprintf(reason, rcap,
+                "devcontainer lifecycle command fetches/executes "
+                "remote or opaque content — opening the repo in a "
+                "devcontainer runs it verbatim");
+            return 60;
+        }
+    }
+    if ((strstr(line, "\"mounts\"") != NULL ||
+         strstr(line, "\"runArgs\"") != NULL ||
+         strstr(line, "\"capAdd\"") != NULL ||
+         strstr(line, "\"privileged\"") != NULL) &&
+        (strstr(line, "docker.sock") != NULL ||
+         strstr(line, "--privileged") != NULL ||
+         strstr(line, "privileged") != NULL ||
+         strstr(line, "source=/") != NULL ||
+         strstr(line, "SYS_ADMIN") != NULL)) {
+        snprintf(reason, rcap,
+            "devcontainer mounts host paths / grants privileged "
+            "container flags — the sandbox boundary is the config");
+        return 55;
+    }
+    return 0;
+}
+
+int
+hlse_manifest_vsc_risk(const char *line, char *reason, size_t rcap) {
+    static const char *const BINKEY[] = {
+        "defaultInterpreterPath", "terminal.integrated",
+        "\"git.path\"", "typescript.tsdk", "cmake.cmakePath",
+        "executablePath", "\"php\"", "lldb", "\"runtime\"",
+        NULL
+    };
+    size_t i;
+    if (strstr(line, "folderOpen") != NULL ||
+        (strstr(line, "\"runOn\"") != NULL &&
+         strstr(line, "Open") != NULL)) {
+        snprintf(reason, rcap,
+            "VS Code task runs on folderOpen — the task's command "
+            "executes the moment the workspace is trusted");
+        return 65;
+    }
+    for (i = 0; BINKEY[i]; i++) {
+        const char *k = strstr(line, BINKEY[i]);
+        if (k && (strstr(k, "..") != NULL || strstr(k, "/tmp") != NULL ||
+                  strstr(k, "${workspaceFolder}") != NULL ||
+                  strstr(k, "${workspaceRoot}") != NULL)) {
+            snprintf(reason, rcap,
+                "workspace settings point an interpreter/binary key at "
+                "a repo-relative or temp path — the repo ships the "
+                "program your editor will run");
+            return 60;
+        }
+    }
+    if (strstr(line, "\"command\"") != NULL && execish_value(line)) {
+        snprintf(reason, rcap,
+            "VS Code task command fetches or pipes remote content");
+        return 55;
+    }
+    return 0;
 }
 
 /* docker-compose hardening — `privileged`, host namespaces, the
