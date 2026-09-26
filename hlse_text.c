@@ -1101,15 +1101,16 @@ static void
 scan_invisible_carriers(const char *s, int *out_tag_chars,
                         int *out_flag_bases, int *out_max_zw_run,
                         int *out_vs_supp, int *out_max_vs_run,
-                        int *out_osc52, int *out_osc8, int *out_esc) {
+                        int *out_osc52, int *out_osc8, int *out_esc,
+                        int *out_bidi) {
     const unsigned char *p = (const unsigned char *)s;
     int tags = 0, flags = 0, run = 0, max_run = 0;
     int vs_supp = 0, vs_run = 0, max_vs_run = 0;
-    int osc52 = 0, osc8 = 0, esc = 0;
+    int osc52 = 0, osc8 = 0, esc = 0, bidi = 0;
 
     *out_tag_chars = *out_flag_bases = *out_max_zw_run =
         *out_vs_supp = *out_max_vs_run =
-        *out_osc52 = *out_osc8 = *out_esc = 0;
+        *out_osc52 = *out_osc8 = *out_esc = *out_bidi = 0;
     if (!s) return;
 
     while (*p) {
@@ -1137,6 +1138,14 @@ scan_invisible_carriers(const char *s, int *out_tag_chars,
         } else if (p[0] == 0xEF && p[1] == 0xB8 &&
                    p[2] >= 0x80 && p[2] <= 0x8F) {
             is_vs = 1;                    /* U+FE00..U+FE0F variation sel. */
+            p += 3;
+        } else if (p[0] == 0xE2 && p[1] == 0x80 &&
+                   p[2] >= 0xAA && p[2] <= 0xAE) {
+            bidi++;                       /* U+202A..U+202E bidi override */
+            p += 3;
+        } else if (p[0] == 0xE2 && p[1] == 0x81 &&
+                   p[2] >= 0xA6 && p[2] <= 0xA9) {
+            bidi++;                       /* U+2066..U+2069 bidi isolate */
             p += 3;
         } else if (p[0] == 0x1B && p[1] == ']') {  /* OSC (7-bit) */
             esc = 1;
@@ -1179,6 +1188,7 @@ scan_invisible_carriers(const char *s, int *out_tag_chars,
     *out_osc52       = osc52;
     *out_osc8        = osc8;
     *out_esc         = esc;
+    *out_bidi        = bidi;
 }
 
 /* Bounded copy into the caller's buffer; always NUL-terminates. */
@@ -1197,12 +1207,13 @@ hlse_check_invisible_carriers(const char *text, char *reason,
                               size_t reason_size) {
     int tag_chars = 0, flag_bases = 0, zw_run = 0;
     int vs_supp = 0, vs_run = 0;
-    int osc52 = 0, osc8 = 0, esc = 0;
+    int osc52 = 0, osc8 = 0, esc = 0, bidi = 0;
 
     if (reason && reason_size) reason[0] = '\0';
     if (!text) return 0;
     scan_invisible_carriers(text, &tag_chars, &flag_bases, &zw_run,
-                            &vs_supp, &vs_run, &osc52, &osc8, &esc);
+                            &vs_supp, &vs_run, &osc52, &osc8, &esc,
+                            &bidi);
 
     /* Allow up to 6 tag characters per emoji flag base (RGI sequences are at
      * most 5 subdivision letters plus the U+E007F terminator). */
@@ -1245,6 +1256,24 @@ hlse_check_invisible_carriers(const char *text, char *reason,
             vs_supp, vs_supp == 1 ? "" : "s");
         carrier_copy_reason(reason, reason_size, buf);
         return 60;
+    }
+    /* Trojan Source (CVE-2021-42574, Boucher & Anderson 2021): bidi
+     * override/isolate controls make displayed text order differ from
+     * the order the reader (or a code reviewer) actually sees — source
+     * code and messages that LOOK safe can compile/read as hostile.
+     * Legitimate RTL writing uses LRM/RLM (U+200E/F) and ALM (U+061C);
+     * the override (U+202A..E) and isolate (U+2066..9) blocks are
+     * essentially never present in typed text. */
+    if (bidi >= 1) {
+        char buf[320];
+        snprintf(buf, sizeof buf,
+            "Bidirectional text override: %d bidi control character%s "
+            "(U+202A..U+202E / U+2066..U+2069) — these reorder how text "
+            "displays vs. how it is stored, the Trojan Source technique "
+            "for hiding hostile logic in plain sight",
+            bidi, bidi == 1 ? "" : "s");
+        carrier_copy_reason(reason, reason_size, buf);
+        return bidi >= 3 ? 60 : 45;
     }
     /* Back-to-back variation selectors are malformed by definition — a
      * VS modifies the preceding base character, so a consecutive run

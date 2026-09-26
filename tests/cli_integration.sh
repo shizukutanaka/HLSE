@@ -519,6 +519,16 @@ rm -rf "$UNC_DIR"
     && check "escape FP guard: plain text has no terminal reason" "0" "1" \
     || check "escape FP guard: plain text has no terminal reason" "0" "0"
 
+# Trojan Source: bidi override/isolate controls in text → flagged
+./hlse_core text "$(printf 'return good /*\xe2\x80\xae\xe2\x81\xa6*/ evil')" 2>&1 | grep -q "Bidirectional" \
+    && check "bidi: U+202E/U+2066 controls flagged" "0" "0" \
+    || check "bidi: U+202E/U+2066 controls flagged" "0" "1"
+
+# bidi FP guard: ordinary text has no bidi reason
+./hlse_core text 'normal sentence without controls' 2>&1 | grep -q "Bidirectional" \
+    && check "bidi FP guard: plain text has no bidi reason" "0" "1" \
+    || check "bidi FP guard: plain text has no bidi reason" "0" "0"
+
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
 ./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "0" \
