@@ -6,6 +6,21 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F41–F43 script-host/installer carriers** (`hlse_file.c`): F41
+  `.wsf`/`.wsh` `<job><script>` scriptlet → 45, +CreateObject/
+  WScript.Shell/run/exec → 55 (script-host dropper); F42 `.inf`
+  `[DefaultInstall]`/`[Install]` → 40, +RunPreSetupCommands/
+  RunPostSetupCommands/AddService/CopyFiles/DelNodes → 55
+  (rundll32/cmstp exec); F43 ClickOnce `.application`/`.manifest`/
+  `.vsto` `<deployment codebase=>` remote URL/UNC → 55 (install+run
+  on open); F32 MSBuild ext list widened (.vcxproj/.vcproj/.wixproj/
+  .sqlproj/.ccproj/.pubxml).
+- **nuget manifest ecosystem** (`hlse_manifest.c`, `hlse_cli.c`):
+  `nuget.config`/`packages.config`/`Directory.Packages.props` route
+  to `package --manifest`; `<add value="url">` / `<packageSource>`
+  whose host is off the official feed (`nuget.org`/`api.nuget.org`
+  via `hlse_manifest_resolved_suspicious`) → ALERT 45 (NuGet
+  package-source substitution).
 - **F39–F40 archive-slip + build-tool exec** (`hlse_file.c`): F39 tar
   member `..`/absolute path or ustar prefix traversal → 70 (extends
   the ZIP-slip check to tar — permissive untars escape the extract

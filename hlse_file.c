@@ -1555,7 +1555,8 @@ msbuild_exec_score(const unsigned char *head, size_t len,
     size_t n = 0, i;
     static const char *const MEXT[] = {
         ".csproj", ".vbproj", ".fsproj", ".proj", ".targets",
-        ".props", ".xproj", NULL
+        ".props", ".xproj", ".vcxproj", ".vcproj", ".wixproj",
+        ".sqlproj", ".ccproj", ".pubxml", NULL
     };
     str_lower(ext ? ext : "", extl, sizeof(extl));
     for (i = 0; MEXT[i]; i++)
@@ -1641,6 +1642,74 @@ py_autoexec_score(const unsigned char *head, size_t len,
         strstr(low, "eval(") || strstr(low, "exec(") ||
         strstr(low, "__import__") || strstr(low, "urllib") ||
         strstr(low, "requests.") || strstr(low, "base64"))
+        return 55;
+    return 0;
+}
+
+/* ─── F41: .wsf/.wsh scriptlet — <job><script> wraps WScript code;
+ *      with CreateObject/Shell it is the classic JScript/VBScript
+ *      dropper (a text file that executes via wscript) ────────────── */
+static int
+wsf_scriptlet_score(const unsigned char *head, size_t len,
+                    const char *ext) {
+    char extl[32], low[4097];
+    size_t n = 0, i;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".wsf") && strcmp(extl, ".wsh")) return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(low, "<script") || !strstr(low, "<job"))
+        return 0;
+    if (strstr(low, "createobject") || strstr(low, "wscript.shell") ||
+        strstr(low, "shell.application") || strstr(low, ".run(") ||
+        strstr(low, ".exec(") || strstr(low, "getobject"))
+        return 55;
+    return 45;
+}
+
+/* ─── F42: .inf install sections — [DefaultInstall] blocks run via
+ *      rundll32/cmstp; RunPreSetupCommands/AddService/exec keys mean
+ *      a double-click or cmstp invocation is code exec ────────────── */
+static int
+inf_install_score(const unsigned char *head, size_t len,
+                  const char *ext) {
+    char extl[32], low[4097];
+    size_t n = 0, i;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".inf") != 0) return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(low, "[defaultinstall") && !strstr(low, "[install"))
+        return 0;
+    if (strstr(low, "runpresetupcommands") ||
+        strstr(low, "runpostsetupcommands") ||
+        strstr(low, "addservice") || strstr(low, "updatesysownfiles") ||
+        strstr(low, "copyfiles") || strstr(low, "delnodes"))
+        return 55;
+    return 40;
+}
+
+/* ─── F43: ClickOnce .application/.manifest — a <deployment codebase=
+ *      pointing at a remote URL installs+runs code from that host on
+ *      open (ClickOnce phishing class) ────────────────────────────── */
+static int
+clickonce_score(const unsigned char *head, size_t len, const char *ext) {
+    char extl[40], low[4097];
+    size_t n = 0, i;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".application") && strcmp(extl, ".manifest") &&
+        strcmp(extl, ".vsto"))
+        return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(low, "<deployment") && !strstr(low, "<assembly"))
+        return 0;
+    if (strstr(low, "codebase=\"http") || strstr(low, "codebase='http") ||
+        strstr(low, "codebase=\"\\\\") ||
+        strstr(low, "codebase='\\\\"))
         return 55;
     return 0;
 }
@@ -2450,6 +2519,39 @@ hlse_check_file(const char *filepath) {
                 "F38: MOBILECONFIG — profile installs a root CA / proxy /"
                 " VPN payload (silent traffic interception, score %d)",
                 mc);
+        }
+    }
+
+    /* ── F41: .wsf/.wsh scriptlet — <job><script> with shell object
+     *      calls executes via wscript ──────────────────────────────── */
+    if (head_len > 0) {
+        int ws = wsf_scriptlet_score(head, (size_t)head_len, ext);
+        if (ws > 0) {
+            fv_add(&v, ws,
+                "F41: WSF SCRIPTLET — <job><script> script-host "
+                "package runs via wscript (score %d)", ws);
+        }
+    }
+
+    /* ── F42: .inf install sections — [DefaultInstall] with exec/
+     *      copy/service keys runs via rundll32/cmstp ──────────────── */
+    if (head_len > 0) {
+        int ins = inf_install_score(head, (size_t)head_len, ext);
+        if (ins > 0) {
+            fv_add(&v, ins,
+                "F42: INF INSTALL — [DefaultInstall] with exec/service "
+                "keys runs via rundll32/cmstp (score %d)", ins);
+        }
+    }
+
+    /* ── F43: ClickOnce manifest — <deployment codebase=> at a remote
+     *      URL/UNC installs+runs code on open ─────────────────────── */
+    if (head_len > 0) {
+        int co = clickonce_score(head, (size_t)head_len, ext);
+        if (co > 0) {
+            fv_add(&v, co,
+                "F43: CLICKONCE — deployment codebase is a remote "
+                "URL/UNC (installs+runs remote code, score %d)", co);
         }
     }
 
