@@ -555,6 +555,24 @@ printf 'PK\x03\x04\x14\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x
     || check "F12 FP guard: normal zip has no F12" "0" "0"
 rm -rf "$SM_DIR"
 
+# Obfuscated IP literals: dotted hex/octal/shorthand → flagged
+./hlse_core 'https://0xC0.0x00.0x02.0x01/' 2>&1 | grep -q "Obfuscated IP" \
+    && check "obf-ip: dotted hex 0xC0.0x00 flagged" "0" "0" \
+    || check "obf-ip: dotted hex 0xC0.0x00 flagged" "0" "1"
+./hlse_core 'https://0300.0250.0001.0001/' 2>&1 | grep -q "Obfuscated IP" \
+    && check "obf-ip: octal 0300.0250 flagged" "0" "0" \
+    || check "obf-ip: octal 0300.0250 flagged" "0" "1"
+./hlse_core 'https://127.1/x' 2>&1 | grep -q "Obfuscated IP" \
+    && check "obf-ip: shorthand 127.1 flagged" "0" "0" \
+    || check "obf-ip: shorthand 127.1 flagged" "0" "1"
+# obf-ip FP guard: normal dotted quad + normal host stay clean
+./hlse_core 'https://192.168.1.1/' 2>&1 | grep -q "Obfuscated IP" \
+    && check "obf-ip FP guard: plain dotted quad clean" "0" "1" \
+    || check "obf-ip FP guard: plain dotted quad clean" "0" "0"
+./hlse_core 'https://example.com/' 2>&1 | grep -q "Obfuscated IP" \
+    && check "obf-ip FP guard: normal host clean" "0" "1" \
+    || check "obf-ip FP guard: normal host clean" "0" "0"
+
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
 ./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "0" \

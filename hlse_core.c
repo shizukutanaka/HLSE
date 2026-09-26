@@ -1864,6 +1864,65 @@ check_url(const char *raw_url) {
         }
     }
 
+    /* Obfuscated IP in DOTTED form — inet_aton and every browser accept
+     * per-label hex (0xC0.0x00.0x02.0x01), leading-zero octal
+     * (0300.0250.0001.0001), and short forms (127.1 == 127.0.0.1,
+     * 10.1 == 10.0.0.1). Phishing and SSRF kits use them to dodge
+     * blocklists that only know dotted quads. A hostname whose labels
+     * are all numeric-ish is never a registrable domain; a plain
+     * 4-label dotted quad stays unflagged here (it is not obfuscated —
+     * the IP+brand-in-path rules above cover it). */
+    {
+        const char *h = u.host;
+        char hb[MAX_HOST];
+        size_t hl = 0;
+        const char *p;
+        int labels = 0, allnum = 1, hexlab = 0, octlab = 0;
+        /* strip any :port before label analysis */
+        while (h[hl] && h[hl] != ':' && hl < sizeof(hb) - 1) {
+            hb[hl] = h[hl]; hl++;
+        }
+        hb[hl] = '\0';
+        if (hb[0] != '[' && strchr(hb, '.') != NULL) {
+            p = hb;
+            for (;;) {
+                const char *dot = strchr(p, '.');
+                size_t ll = dot ? (size_t)(dot - p) : strlen(p);
+                size_t k; int digits = 1;
+                labels++;
+                if (ll >= 3 && p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
+                    int ok = 1;
+                    for (k = 2; k < ll; k++) {
+                        char c = p[k];
+                        if (!((c >= '0' && c <= '9') ||
+                              (c >= 'a' && c <= 'f') ||
+                              (c >= 'A' && c <= 'F'))) { ok = 0; break; }
+                    }
+                    if (ok) hexlab = 1; else allnum = 0;
+                } else {
+                    if (ll == 0) allnum = 0;
+                    for (k = 0; k < ll && digits; k++)
+                        if (p[k] < '0' || p[k] > '9') digits = 0;
+                    if (!digits) allnum = 0;
+                    else if (ll > 1 && p[0] == '0') octlab = 1;
+                }
+                if (!dot) break;
+                p = dot + 1;
+            }
+            if (allnum) {
+                const char *enc = NULL;
+                if (hexlab) enc = "hex";
+                else if (octlab) enc = "octal";
+                else if (labels >= 2 && labels <= 3) enc = "shorthand";
+                if (enc) {
+                    add_reason(&v, 40,
+                        "Obfuscated IP host '%s' — %s-encoded address hides "
+                        "the real destination (evasion technique)", hb, enc);
+                }
+            }
+        }
+    }
+
     if (!u.is_https && v.score > 0) {
         add_reason(&v, 5, "Non-HTTPS connection");
     }

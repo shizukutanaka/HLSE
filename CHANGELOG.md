@@ -6,6 +6,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Obfuscated-IP host detection** (`hlse_core.c`): dotted IP literals
+  in non-decimal or abbreviated form — hex labels (`0xC0.0x00.0x02.0x01`),
+  octal labels (`0300.0250.0001.0001`), and shorthand 2–3-label quads
+  (`127.1`) — score 40. Plain 4-label dotted quads and normal hostnames
+  stay clean; the port is stripped before label analysis.
+
 - **HTML smuggling detection — file check F11** (`hlse_file.c`):
   a `<script>`-carrying file whose code decodes (atob/fromCharCode),
   materializes (Blob/createObjectURL/msSaveBlob), and delivers
