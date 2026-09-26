@@ -21,6 +21,10 @@
  *        rc-file persistence, reverse shells, <base>/meta-refresh
  *   F22. OOXML macro smuggling — vbaProject.bin inside a container
  *        named like a macro-free format (renamed .docm)
+ *   F23-F24 — Makefile $(shell)/!= parse-time exec, Terraform
+ *        external/provisioner plan-apply exec
+ *   F25. Privileged K8s manifest — apiVersion/kind YAML requesting
+ *        privileged containers, host namespaces, dangerous caps
  *
  * All detection is read-only. Files are never modified or executed.
  *
@@ -1212,6 +1216,73 @@ meta_refresh_score(const unsigned char *head, size_t len) {
     return 0;
 }
 
+/* ─── F25: privileged Kubernetes manifest — a .yaml/.yml doc carrying
+ *      apiVersion:/kind: that requests privilege the PodSecurity
+ *      baseline/restricted profiles forbid: privileged containers,
+ *      host-namespace sharing, hostPath mounts, dangerous capabilities.
+ *      A dropped manifest runs with one `kubectl apply` (container-
+ *      breakout class).                                               */
+static int
+yaml_bool_true(const char *low, const char *key) {
+    size_t kl = strlen(key);
+    const char *p = low;
+    while ((p = strstr(p, key)) != NULL) {
+        const char *v = p + kl;
+        /* key must sit at a YAML word boundary — reject prefix
+         * collisions like `nothostpid:` / `myhostpath:` */
+        if ((p == low || isspace((unsigned char)p[-1]) ||
+             p[-1] == '{' || p[-1] == ',') && *v == ':') {
+            v++;
+            while (*v == ' ' || *v == '\t') v++;
+            if (strncmp(v, "true", 4) == 0) return 1;
+        }
+        p += kl;
+    }
+    return 0;
+}
+
+static int
+k8s_priv_score(const unsigned char *head, size_t len, const char *ext) {
+    char extl[32], low[4097];
+    size_t n = 0, i;
+    int sc = 0;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".yaml") != 0 && strcmp(extl, ".yml") != 0)
+        return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(low, "apiversion:") || !strstr(low, "kind:"))
+        return 0;
+    if (yaml_bool_true(low, "privileged"))
+        sc = 70;
+    if (strstr(low, "sys_admin") ||
+        (strstr(low, "capabilities:") &&
+         (strstr(low, "- all") || strstr(low, "[all]") ||
+          strstr(low, "\"all\"") || strstr(low, "'all'")))) {
+        if (sc < 65) sc = 65;
+    }
+    if (yaml_bool_true(low, "hostpid") || yaml_bool_true(low, "hostipc") ||
+        yaml_bool_true(low, "hostnetwork")) {
+        if (sc < 55) sc = 55;
+    }
+    if (yaml_bool_true(low, "allowprivilegeescalation")) {
+        if (sc < 45) sc = 45;
+    }
+    {
+        const char *p = low;
+        while ((p = strstr(p, "hostpath")) != NULL) {
+            if ((p == low || isspace((unsigned char)p[-1]) ||
+                 p[-1] == '{' || p[-1] == ',') && p[8] == ':') {
+                if (sc < 30) sc = 30;
+                break;
+            }
+            p += 8;
+        }
+    }
+    return sc;
+}
+
 FileVerdict
 hlse_check_file(const char *filepath) {
     FileVerdict v;
@@ -1670,6 +1741,19 @@ hlse_check_file(const char *filepath) {
                     "F24: TF EXEC — external data source / provisioner "
                     "runs a program during terraform plan or apply "
                     "(score 55)");
+        }
+    }
+
+    /* ── F25: privileged Kubernetes manifest — apiVersion/kind YAML
+     *      asking for privileged containers, host namespaces,
+     *      dangerous caps or hostPath mounts (PodSecurity baseline/
+     *      restricted violations; container-breakout class) ────────── */
+    if (head_len > 0) {
+        int kp = k8s_priv_score(head, (size_t)head_len, ext);
+        if (kp > 0) {
+            fv_add(&v, kp,
+                "F25: K8S PRIVILEGED — manifest requests privileged/"
+                "host-namespace/capability escalation (score %d)", kp);
         }
     }
 

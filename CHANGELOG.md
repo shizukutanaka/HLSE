@@ -6,6 +6,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F25 privileged Kubernetes manifests** (`hlse_file.c`): a
+  `.yaml`/`.yml` doc carrying `apiVersion:`+`kind:` that requests
+  PodSecurity baseline/restricted violations — `privileged: true`
+  (70), `capabilities` `SYS_ADMIN`/`ALL` (65), `hostPID`/`hostIPC`/
+  `hostNetwork: true` (55), `allowPrivilegeEscalation: true` (45),
+  `hostPath:` mounts (30). Key-boundary matching rejects
+  `nothostpid:`/`myhostpath:` prefix collisions; non-k8s YAML and
+  `privileged: false` stay clean.
 - **plat ecosystem** (`hlse_manifest.c`): platform-automation
   configs — `.gitpod.yml` tasks, `netlify.toml`/`vercel.json`
   build commands, `Procfile`/`app.json` processes, `Jenkinsfile`

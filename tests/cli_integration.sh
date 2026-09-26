@@ -7686,6 +7686,37 @@ printf '%s\n' 'v="' "short." "abc" '"' \
     || check "scan: short non-token clean" "0" "1"
 rm -rf "$SDIR"
 
+# ── cycle-28: F25 privileged Kubernetes manifests ──
+# apiVersion/kind YAML asking for privilege escapes the pod sandbox
+# on kubectl apply (PodSecurity baseline/restricted violations)
+KDIR=$(mktemp -d)
+printf 'apiVersion: v1\nkind: Pod\nspec:\n  containers:\n  - name: x\n    securityContext:\n      privileged: true\n' \
+    > "$KDIR/priv.yaml"
+./hlse_core file "$KDIR/priv.yaml" 2>&1 | grep -q "K8S PRIVILEGED" \
+    && check "file: k8s privileged pod flagged" "0" "0" \
+    || check "file: k8s privileged pod flagged" "0" "1"
+printf 'apiVersion: apps/v1\nkind: DaemonSet\nspec:\n  template:\n    spec:\n      hostNetwork: true\n      hostPID: true\n' \
+    > "$KDIR/hostns.yaml"
+./hlse_core file "$KDIR/hostns.yaml" 2>&1 | grep -q "K8S PRIVILEGED" \
+    && check "file: k8s host-namespace flagged" "0" "0" \
+    || check "file: k8s host-namespace flagged" "0" "1"
+printf 'apiVersion: v1\nkind: Pod\nspec:\n  containers:\n  - name: x\n    securityContext:\n      capabilities:\n        add: ["SYS_ADMIN"]\n' \
+    > "$KDIR/caps.yaml"
+./hlse_core file "$KDIR/caps.yaml" 2>&1 | grep -q "K8S PRIVILEGED" \
+    && check "file: k8s SYS_ADMIN cap flagged" "0" "0" \
+    || check "file: k8s SYS_ADMIN cap flagged" "0" "1"
+printf 'apiVersion: v1\nkind: Pod\nspec:\n  containers:\n  - name: x\n    securityContext:\n      privileged: false\n      allowPrivilegeEscalation: false\n' \
+    > "$KDIR/clean.yaml"
+./hlse_core file "$KDIR/clean.yaml" 2>&1 | grep -q "OK" \
+    && check "file: hardened k8s pod clean" "0" "0" \
+    || check "file: hardened k8s pod clean" "0" "1"
+printf 'name: not-k8s\nprivileged: true\nhostPath: /etc\n' \
+    > "$KDIR/nogate.yaml"
+./hlse_core file "$KDIR/nogate.yaml" 2>&1 | grep -q "OK" \
+    && check "file: non-k8s yaml privileged key clean" "0" "0" \
+    || check "file: non-k8s yaml privileged key clean" "0" "1"
+rm -rf "$KDIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
