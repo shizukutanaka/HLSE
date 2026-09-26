@@ -6,15 +6,21 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F4 tiering for OLE macro docs** (`hlse_file.c`): the single
+  "VBA indicators" signal is now three bands — bare `VBA` byte-run →
+  LOG 35 (a doc may merely mention VBA), VBA + macro storage streams
+  (`Macros`/`PROJECT`/`dir`) → ALERT 55, auto-executing entry point
+  (`AutoOpen`/`AutoExec`/`Document_Open`/`Workbook_Open`) → BLOCK 65
+  (Emotet/Dridex-class maldoc payload).
 - **F41–F43 script-host/installer carriers** (`hlse_file.c`): F41
   `.wsf`/`.wsh` `<job><script>` scriptlet → 45, +CreateObject/
   WScript.Shell/run/exec → 55 (script-host dropper); F42 `.inf`
   `[DefaultInstall]`/`[Install]` → 40, +RunPreSetupCommands/
   RunPostSetupCommands/AddService/CopyFiles/DelNodes → 55
   (rundll32/cmstp exec); F43 ClickOnce `.application`/`.manifest`/
-  `.vsto` `<deployment codebase=>` remote URL/UNC → 55 (install+run
-  on open); F32 MSBuild ext list widened (.vcxproj/.vcproj/.wixproj/
-  .sqlproj/.ccproj/.pubxml).
+  `.vsto` `.appref-ms` `<deployment codebase=>` or bare remote
+  reference → 55 (install+run on open); F32 MSBuild ext list widened
+  (.vcxproj/.vcproj/.wixproj/.sqlproj/.ccproj/.pubxml).
 - **nuget manifest ecosystem** (`hlse_manifest.c`, `hlse_cli.c`):
   `nuget.config`/`packages.config`/`Directory.Packages.props` route
   to `package --manifest`; `<add value="url">` / `<packageSource>`

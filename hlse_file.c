@@ -1700,11 +1700,17 @@ clickonce_score(const unsigned char *head, size_t len, const char *ext) {
     size_t n = 0, i;
     str_lower(ext ? ext : "", extl, sizeof(extl));
     if (strcmp(extl, ".application") && strcmp(extl, ".manifest") &&
-        strcmp(extl, ".vsto"))
+        strcmp(extl, ".vsto") && strcmp(extl, ".appref-ms"))
         return 0;
     if (len > sizeof(low) - 1) len = sizeof(low) - 1;
     for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
     low[n] = '\0';
+    /* .appref-ms is not XML: its whole content is the remote reference
+     * "http://host/app.application#Culture=…" — an http(s)/UNC pointer
+     * IS the payload. */
+    if (strcmp(extl, ".appref-ms") == 0)
+        return (strstr(low, "http://") || strstr(low, "https://") ||
+                strstr(low, "\\\\")) ? 55 : 0;
     if (!strstr(low, "<deployment") && !strstr(low, "<assembly"))
         return 0;
     if (strstr(low, "codebase=\"http") || strstr(low, "codebase='http") ||
@@ -2107,16 +2113,46 @@ hlse_check_file(const char *filepath) {
          * Simple heuristic: search for "VBA" and "Attribute VB_" in bytes. */
         if (head_len > 100) {
             int has_vba = 0;
+            int has_streams = 0;
+            int has_auto = 0;
             ssize_t i;
             for (i = 0; i <= head_len - 3; i++) {
                 if (head[i] == 'V' && head[i+1] == 'B' && head[i+2] == 'A') {
                     has_vba = 1; break;
                 }
             }
-            if (has_vba) {
+            /* "VBA" in document text is weak (a doc can merely mention
+             * VBA); macro storage streams (Macros/, _VBA_PROJECT,
+             * PROJECT/dir) are structural — and an auto-executing entry
+             * point (AutoOpen/Document_Open/…) is the maldoc payload
+             * itself (Emotet/Dridex class). */
+            for (i = 0; i <= head_len - 6; i++) {
+                if (memcmp(head + i, "Macros", 6) == 0 ||
+                    (i <= head_len - 7 &&
+                     memcmp(head + i, "PROJECT", 7) == 0)) {
+                    has_streams = 1; break;
+                }
+            }
+            for (i = 0; i <= head_len - 8; i++) {
+                if (memcmp(head + i, "AutoOpen", 8) == 0 ||
+                    memcmp(head + i, "AutoExec", 8) == 0 ||
+                    (i <= head_len - 13 &&
+                     memcmp(head + i, "Document_Open", 13) == 0) ||
+                    (i <= head_len - 13 &&
+                     memcmp(head + i, "Workbook_Open", 13) == 0)) {
+                    has_auto = 1; break;
+                }
+            }
+            if (has_auto)
+                fv_add(&v, 65,
+                    "F4: OLE document contains auto-executing VBA macro "
+                    "(AutoOpen/Document_Open)");
+            else if (has_vba && has_streams)
+                fv_add(&v, 55,
+                    "F4: OLE document contains VBA macro storage streams");
+            else if (has_vba)
                 fv_add(&v, 35,
                     "F4: OLE document contains VBA macro indicators");
-            }
         }
     }
 
