@@ -6,6 +6,27 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F18 git exec-config keys** (`hlse_file.c`): under `[core]`/
+  `[filter]`/`[credential]` sections the exec keys appear bare —
+  `fsmonitor`/`editor`/`pager`/`external`/`clean`/`smudge`/`helper`/
+  `program` values that look executable (path, `!`, interpreter,
+  fetch) score 55; `include.path` scores 40. Plain `editor = vim` /
+  `helper = osxkeychain` stay clean.
+- **docker-compose hardening** (`hlse_manifest.c`): compose files
+  previously parsed through the Dockerfile grammar only; now
+  `privileged` → 65, docker.sock/containerd.sock/crio.sock mounts
+  → 55, host pid/network/ipc/uts → 50, `cap_add` SYS_*/ALL → 55,
+  seccomp unconfined → 45 (HLSE-PKG-DCOMPOSE).
+- **IDE autoexec ecosystems** (`devc`, `vsc`): `devcontainer.json` /
+  `*.devcontainer.json` lifecycle commands with exec-shaped values →
+  60 (60), privileged/mount hints → 55; `.vscode/tasks.json`
+  `runOn: folderOpen` → 65, `settings.json` binary-path keys
+  pointing into the workspace or /tmp → 60, task commands that
+  fetch/pipe → 55 (HLSE-PKG-IDEEXEC).
+- **GHA pwn-request compound** (`hlse_cli.c`): `pull_request_target`
+  plus a step materialising `${{ github.head_ref }}` /
+  `pull_request.head.*` → 65, once per file (HLSE-PKG-GHAPWN).
+
 - **URI-handler schemes** (`hlse_core.c`): `search-ms:`/`ms-msdt:`/
   `ms-officecmd:`/`ms-word:`/`ms-excel:`/`ms-powerpoint:`/`onenote:`/
   `itms-services:` route through `check_url`; an embedded remote
