@@ -791,6 +791,17 @@ printf '{\\rtf1 plain text document}' > "$SC_DIR/note.rtf"
     || check "f17 FP guard: plain RTF clean" "0" "0"
 rm -rf "$SC_DIR"
 
+# HTTP auth-header secret forms (Authorization: Bearer, x-api-key)
+./hlse_core secret 'Authorization: Bearer abcdef1234567890abcdefghij' 2>&1 | grep -q "KV_SECRET" \
+    && check "kv: Authorization Bearer header flagged" "0" "0" \
+    || check "kv: Authorization Bearer header flagged" "0" "1"
+./hlse_core secret 'x-api-key: zq9vliveroute88231px' 2>&1 | grep -q "KV_SECRET" \
+    && check "kv: x-api-key header flagged" "0" "0" \
+    || check "kv: x-api-key header flagged" "0" "1"
+./hlse_core secret 'GET /api HTTP/1.1' 2>&1 | grep -q "KV_SECRET" \
+    && check "kv FP guard: request line clean" "0" "1" \
+    || check "kv FP guard: request line clean" "0" "0"
+
 # Mobile deep-link schemes (sms:/tel:/intent:) — smishing vector
 ./hlse_core 'sms:+19005551234?body=Your%20code%20is%20991' 2>&1 | grep -q "smishing" \
     && check "deeplink: sms: scheme flagged" "0" "0" \

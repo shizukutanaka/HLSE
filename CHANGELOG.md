@@ -12,6 +12,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 - **F17 RTF object embedding** (`hlse_file.c`): `\objdata`/`\objocx`/
   `\objclass` OLE payloads → 65; `\*\template` with a remote URL
   (template injection) → 65.
+- **HTTP auth-header secrets** (`hlse_secrets.c`): KV_SECRET keys now
+  include `authorization`, `x-api-key`, `x-auth-token`,
+  `x-access-token`, `proxy-authorization`; a leading `Bearer`/`Basic`/
+  `token` scheme word is stripped so `Authorization: Bearer <tok>`
+  yields the credential.
+
+
 - **F14 script download-cradle check** (`hlse_file.c`): MITRE
   T1059/T1105 stagers — fetch+execute pairs (DownloadString/IEX,
   curl|bash, certutil, bitsadmin, mshta/regsvr32/rundll32) score 65

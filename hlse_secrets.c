@@ -745,6 +745,9 @@ check_kv_assignment(const char *text, SecretVerdict *v) {
         "client_secret", "private_key", "encryption_key",
         "master_key", "signing_key", "smtp_pass", "smtp_password",
         "ftp_password", "ssh_pass", "ssh_password", "token",
+        /* HTTP header forms */
+        "authorization", "x-api-key", "x-auth-token",
+        "x-access-token", "proxy-authorization",
         NULL
     };
     /* Schema/boolean words that appear as values in YAML/INI schemas —
@@ -813,7 +816,14 @@ check_kv_assignment(const char *text, SecretVerdict *v) {
             vl = (size_t)(e - val);
             quoted = 1;
         } else {
-            const char *e = val;
+            const char *e;
+            /* `Authorization: Bearer <token>` — the value leads with
+             * an auth-scheme word; the credential follows the space. */
+            if (strncasecmp(val, "bearer ", 7) == 0 ||
+                strncasecmp(val, "basic ", 6) == 0 ||
+                strncasecmp(val, "token ", 6) == 0)
+                val = strchr(val, ' ') + 1;
+            e = val;
             while (*e && *e != '\n' && *e != '\r' && *e != ',' &&
                    *e != ';' && *e != '}' && *e != ')' && *e != ' ' &&
                    *e != '\t' && *e != '#')
