@@ -90,6 +90,14 @@ int hlse_manifest_gha_uses(const char *line, char *ref, size_t refcap);
 /* 'pull_request_target' trigger — runs fork code with repo secrets. */
 int hlse_manifest_gha_prt(const char *line);
 
+/* Returns the canonical untrusted ${{ }} context path found on the
+ * line (github.event.issue.title …), NULL when none. */
+const char *hlse_manifest_gha_inj(const char *line);
+
+/* 1 = block-scalar run/script key (run: |), 2 = inline run/script
+ * value to scan directly, 0 = not a script key. */
+int hlse_manifest_gha_scriptkey(const char *line);
+
 /* .cargo/config.toml build-toolchain override key (rustc-wrapper,
  * runner, linker, pre/post-build) or NULL. */
 const char *hlse_manifest_cargo_toolchain(const char *line);

@@ -7375,6 +7375,21 @@ open('$PYDIR/clean.docx','wb').write(zm('word/document.xml'))"
     && check "file: macro-free .docx clean (F22)" "0" "0" \
     || check "file: macro-free .docx clean" "0" "1"
 rm -rf "$PYDIR"
+# GHA script injection — untrusted context inside run: block
+GHDIR=$(mktemp -d); mkdir -p "$GHDIR/.github/workflows"
+printf 'on: [issues]\njobs:\n  t:\n    steps:\n      - run: |\n          echo "${{ github.event.issue.title }}"\n' \
+    > "$GHDIR/.github/workflows/i.yml"
+printf 'on: [push]\njobs:\n  t:\n    steps:\n      - run: echo "${{ github.sha }}"\n' \
+    > "$GHDIR/.github/workflows/c.yml"
+./hlse_core package --manifest "$GHDIR/.github/workflows/i.yml" 2>&1 \
+    | grep -q "script injection" \
+    && check "pkg: gha run-block untrusted \${{ }} flagged" "0" "0" \
+    || check "pkg: gha run-block untrusted \${{ }} flagged" "0" "1"
+./hlse_core package --manifest "$GHDIR/.github/workflows/c.yml" 2>&1 \
+    | grep -q "OK" \
+    && check "pkg: gha safe context clean" "0" "0" \
+    || check "pkg: gha safe context clean" "0" "1"
+rm -rf "$GHDIR"
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

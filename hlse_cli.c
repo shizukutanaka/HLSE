@@ -1069,7 +1069,7 @@ int
 hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
         if (argc < idx + 2) {
             fprintf(stderr, "Usage: %s package <name> [pip|npm|cargo|go]\n"
-                    "       %s package --manifest <file> [pip|npm|cargo|go|gem]\n",
+                    "       %s package --manifest <file> [eco]\n",
                     argv[0], argv[0]);
             return 2;
         }
@@ -1079,7 +1079,7 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
             FILE *mf;
             char line[4096];
             int in_deps = 0, checked = 0, threats = 0, gate_hits = 0;
-            int max_score = 0, lineno = 0;
+            int max_score = 0, lineno = 0, run_blk = -1;
             if (argc < idx + 3) {
                 fprintf(stderr, "Usage: %s package --manifest <file> [eco]\n",
                         argv[0]);
@@ -1089,7 +1089,7 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
             eco = (argc > idx + 3) ? argv[idx + 3] : hlse_manifest_ecosystem(mpath);
             if (!eco) {
                 fprintf(stderr, "Error: cannot infer ecosystem from '%s' \xe2\x80\x94 "
-                        "pass one explicitly (pip|npm|cargo|go|gem)\n", mpath);
+                        "pass one explicitly (pip|npm|cargo|go|gem|docker|gha|mcp)\n", mpath);
                 return 2;
             }
             mf = fopen(mpath, "r");
@@ -1590,6 +1590,41 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                     int gsc = 0;
                     const char *gid = NULL;
                     char greason[HLSE_HOOK_REASON_LEN];
+                    /* Untrusted ${{ github.event.* }} interpolated
+                     * into run:/script: executes as shell code on the
+                     * runner (GitHub hardening guide — the pwn-request
+                     * class). run_blk tracks the indentation of a
+                     * block-scalar `run: |` so following body lines
+                     * count as shell context too. */
+                    {
+                        int indent = 0;
+                        int skey;
+                        const char *injf;
+                        while (line[indent] == ' ') indent++;
+                        skey = hlse_manifest_gha_scriptkey(line + indent);
+                        injf = hlse_manifest_gha_inj(line);
+                        if (injf && (skey == 2 ||
+                            (run_blk >= 0 &&
+                             (indent > run_blk ||
+                              line[indent] == '\n' ||
+                              line[indent] == '\0')))) {
+                            gsc = 60;
+                            gid = "HLSE-PKG-GHAINJ";
+                            snprintf(greason, sizeof(greason),
+                                "script injection — untrusted "
+                                "${{ %s }} interpolated into "
+                                "run/script becomes shell on the "
+                                "runner; pass it through env: "
+                                "indirection instead", injf);
+                        }
+                        /* block state update */
+                        if (skey == 1) run_blk = indent;
+                        else if (skey == 2) run_blk = -1;
+                        else if (run_blk >= 0 && indent <= run_blk &&
+                                 line[indent] != '\n' &&
+                                 line[indent] != '\0')
+                            run_blk = -1;
+                    }
                     if (hlse_manifest_gha_prt(line)) {
                         gsc = 40;
                         gid = "HLSE-PKG-GHAPRT";

