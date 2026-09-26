@@ -7429,6 +7429,21 @@ printf '[core]\n\teditor = vim\n[credential]\n\thelper = osxkeychain\n' \
     && check "file: plain gitconfig clean" "0" "0" \
     || check "file: plain gitconfig clean" "0" "1"
 rm -rf "$GDIR"
+# docker-compose sandbox-strength
+CDIR=$(mktemp -d)
+printf 'services:\n  app:\n    image: x\n    privileged: true\n' \
+    > "$CDIR/docker-compose.yml"
+./hlse_core package --manifest "$CDIR/docker-compose.yml" 2>&1 \
+    | grep -q "privileged" \
+    && check "pkg: compose privileged flagged" "0" "0" \
+    || check "pkg: compose privileged flagged" "0" "1"
+printf 'services:\n  app:\n    image: x\n    restart: always\n' \
+    > "$CDIR/docker-compose.yml"
+./hlse_core package --manifest "$CDIR/docker-compose.yml" 2>&1 \
+    | grep -q "OK" \
+    && check "pkg: plain compose clean" "0" "0" \
+    || check "pkg: plain compose clean" "0" "1"
+rm -rf "$CDIR"
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

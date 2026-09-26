@@ -1550,6 +1550,19 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                         snprintf(dreason, sizeof(dreason),
                             "Dockerfile ADD pulls a remote URL with no "
                             "integrity check (ADD does not verify)");
+                    } else {
+                        /* compose hardening — same file, different
+                         * grammar: privileged:, docker.sock mounts,
+                         * host namespaces, cap_add ALL/SYS_*       */
+                        char creason[HLSE_HOOK_REASON_LEN];
+                        int csc = hlse_manifest_docker_compose(line,
+                                creason, sizeof(creason));
+                        if (csc) {
+                            dsc = csc;
+                            did = "HLSE-PKG-DCOMPOSE";
+                            snprintf(dreason, sizeof(dreason),
+                                "%s", creason);
+                        }
                     }
                     if (dsc) {
                         threats++;

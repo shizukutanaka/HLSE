@@ -803,6 +803,71 @@ hlse_manifest_docker_add_remote(const char *line) {
     return strncmp(s, "http://", 7) == 0 || strncmp(s, "https://", 8) == 0;
 }
 
+/* docker-compose hardening — `privileged`, host namespaces, the
+ * docker.sock mount, and cap_add ALL/SYS_ADMIN/SYS_MODULE all hand
+ * the container kernel-level host control; the compose file reads
+ * like a manifest but configures sandbox strength. Returns a score
+ * and fills reason, 0 = clean line.                                */
+int
+hlse_manifest_docker_compose(const char *line, char *reason,
+                             size_t rcap) {
+    char low[256];
+    size_t n = 0;
+    const char *s = line;
+    while (*s == ' ' || *s == '\t') s++;
+    if (*s == '#' || *s == '\0') return 0;
+    while (s[n] && n + 1 < sizeof(low)) {
+        low[n] = (char)tolower((unsigned char)s[n]);
+        n++;
+    }
+    low[n] = '\0';
+    if (strstr(low, "privileged:") && strstr(low, "true")) {
+        snprintf(reason, rcap,
+            "compose service is privileged — full host device/kernel "
+            "access, no meaningful sandbox");
+        return 65;
+    }
+    if (strstr(low, "docker.sock") ||
+        strstr(low, "containerd.sock") || strstr(low, "crio.sock")) {
+        snprintf(reason, rcap,
+            "compose mounts the container-runtime socket — the service "
+            "can spawn arbitrary host containers");
+        return 55;
+    }
+    if ((strstr(low, "pid:") || strstr(low, "pid :")) &&
+        strstr(low, "host")) {
+        snprintf(reason, rcap,
+            "compose service shares the host PID namespace — sees and "
+            "signals every host process");
+        return 50;
+    }
+    if ((strstr(low, "network_mode:") || strstr(low, "ipc:") ||
+         strstr(low, "uts:")) && strstr(low, "host")) {
+        snprintf(reason, rcap,
+            "compose service shares a host namespace (network/ipc/uts) "
+            "— sandbox boundary removed");
+        return 50;
+    }
+    if ((strstr(low, "cap_add") || strstr(low, "- sys_admin") ||
+         strstr(low, "- sys_module") || strstr(low, "- sys_ptrace") ||
+         strstr(low, "- all")) &&
+        (strstr(low, "sys_admin") || strstr(low, "sys_module") ||
+         strstr(low, "sys_ptrace") || strstr(low, "- all") ||
+         strstr(low, "all"))) {
+        snprintf(reason, rcap,
+            "compose grants SYS_ADMIN/SYS_MODULE/SYS_PTRACE/ALL "
+            "capabilities — container escape capability set");
+        return 55;
+    }
+    if (strstr(low, "seccomp") && strstr(low, "unconfined")) {
+        snprintf(reason, rcap,
+            "compose disables the seccomp filter — syscall surface "
+            "unrestricted");
+        return 45;
+    }
+    return 0;
+}
+
 /* GitHub Actions `uses: owner/repo@ref` — extracts the ref into out.
  * Returns 1 with ref (may be empty when unpinned), 0 when not a uses
  * line. Also used for gitlab `uses:`/bitbucket steps. */
