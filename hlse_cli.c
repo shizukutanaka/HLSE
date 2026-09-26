@@ -1090,7 +1090,7 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
             eco = (argc > idx + 3) ? argv[idx + 3] : hlse_manifest_ecosystem(mpath);
             if (!eco) {
                 fprintf(stderr, "Error: cannot infer ecosystem from '%s' \xe2\x80\x94 "
-                        "pass one explicitly (pip|npm|cargo|go|gem|docker|gha|mcp|devc|vsc|pck|glci)\n", mpath);
+                        "pass one explicitly (pip|npm|cargo|go|gem|docker|gha|mcp|devc|vsc|pck|glci|comp)\n", mpath);
                 return 2;
             }
             mf = fopen(mpath, "r");
@@ -1764,7 +1764,8 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                 if (strcmp(eco, "devc") == 0 ||
                     strcmp(eco, "vsc") == 0 ||
                     strcmp(eco, "pck") == 0 ||
-                    strcmp(eco, "glci") == 0) {
+                    strcmp(eco, "glci") == 0 ||
+                    strcmp(eco, "comp") == 0) {
                     char xreason[HLSE_HOOK_REASON_LEN];
                     int xsc;
                     if (strcmp(eco, "devc") == 0)
@@ -1776,6 +1777,9 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                     else if (strcmp(eco, "pck") == 0)
                         xsc = hlse_manifest_pck_risk(line, xreason,
                                                      sizeof(xreason));
+                    else if (strcmp(eco, "comp") == 0)
+                        xsc = hlse_manifest_comp_risk(line, xreason,
+                                                      sizeof(xreason));
                     else {
                         /* gitlab-ci script steps are block lists:
                          *   script:
@@ -1822,6 +1826,7 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                             hlse_sarif_add(mpath, lineno,
                                 eco[0] == 'd' ? "package-devcontainer"
                                 : eco[0] == 'v' ? "package-vscode"
+                                : eco[0] == 'c' ? "package-composer"
                                 : eco[0] == 'p' ? "package-precommit"
                                               : "package-gitlabcicd",
                                 "HLSE-PKG-IDEEXEC", xreason, xsc);

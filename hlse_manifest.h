@@ -106,6 +106,11 @@ int hlse_manifest_pck_risk(const char *line, char *reason,
 int hlse_manifest_glci_risk(const char *line, char *reason,
                             size_t rcap);
 
+/* composer.json autoload-files / lifecycle-script / repository
+ * redirection risk — return score + reason, 0 when clean. */
+int hlse_manifest_comp_risk(const char *line, char *reason,
+                            size_t rcap);
+
 /* GitHub Actions 'uses: owner/repo@ref' — fills ref (empty when
  * unpinned). Returns 1 on a uses line, 0 otherwise. */
 int hlse_manifest_gha_uses(const char *line, char *ref, size_t refcap);

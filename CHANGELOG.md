@@ -6,6 +6,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F24 terraform plan-exec** (`hlse_file.c`): `external` data
+  source + `program` → runs at `terraform plan`; `local-exec`/
+  `remote-exec` provisioners → run at apply. .tf/.tf.json → 55.
+- **composer ecosystem** (`comp`): `composer.json`/`composer.lock` —
+  `autoload.files` entries execute at require/dump-autoload → 55;
+  `*-cmd`/`*-run`/`*-dump` lifecycle script keys with exec-shaped
+  values → 55; `repositories` with vcs/git/http source → 50
+  (package-resolution redirection off Packagist).
+- **launch.json joins vsc** — `runtimeExecutable`/`runtimeArgs`
+  binary-path keys pointing at /tmp/../absolute paths → 60.
 - **direnv .envrc + Makefile parse-time exec** (`hlse_file.c`):
   `.envrc` joins F18 (exec-shaped content → 55); F23 flags
   `$(shell …)`/`!=` with fetch/interp args in Makefile/*.mk → 55

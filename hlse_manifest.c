@@ -57,6 +57,9 @@ hlse_manifest_ecosystem(const char *path) {
     /* .gitlab-ci.yml must route to glci BEFORE the gha path rule:
      * GitLab syntax is not GitHub Actions — ${{ }} interpolation and
      * pull_request_target do not exist there; script/include do. */
+    if (strcmp(b, "composer.json") == 0 ||
+        strcmp(b, "composer.lock") == 0)
+        return "comp";
     if (strcmp(b, ".gitlab-ci.yml") == 0 ||
         strcmp(b, ".gitlab-ci.yaml") == 0 ||
         strcmp(b, "gitlab-ci.yml") == 0)
@@ -86,6 +89,7 @@ hlse_manifest_ecosystem(const char *path) {
         return "devc";
     if (strstr(path, ".vscode/") != NULL &&
         (strcmp(b, "tasks.json") == 0 ||
+         strcmp(b, "launch.json") == 0 ||
          strcmp(b, "settings.json") == 0))
         return "vsc";
     if (strcmp(b, ".pre-commit-config.yaml") == 0 ||
@@ -886,8 +890,8 @@ hlse_manifest_vsc_risk(const char *line, char *reason, size_t rcap) {
     static const char *const BINKEY[] = {
         "defaultInterpreterPath", "terminal.integrated",
         "\"git.path\"", "typescript.tsdk", "cmake.cmakePath",
-        "executablePath", "\"php\"", "lldb", "\"runtime\"",
-        NULL
+        "executablePath", "\"php\"", "lldb", "runtimeExecutable",
+        "runtimeArgs", NULL
     };
     size_t i;
     if (strstr(line, "folderOpen") != NULL ||
@@ -974,6 +978,45 @@ hlse_manifest_glci_risk(const char *line, char *reason, size_t rcap) {
         snprintf(reason, rcap,
             "gitlab-ci script step fetches/pipes remote or encoded "
             "content — executes with CI variable scope");
+        return 55;
+    }
+    return 0;
+}
+
+/* composer.json — "autoload": {"files": [...]} makes every listed
+ * PHP file execute at require time (install / dump-autoload), and
+ * the *-cmd / *-run script keys are composer lifecycle hooks that
+ * shell out verbatim. repositories{...} with a URL can redirect ANY
+ * package source — the composer dep-confusion surface.           */
+int
+hlse_manifest_comp_risk(const char *line, char *reason, size_t rcap) {
+    if (strstr(line, "\"files\"") != NULL &&
+        strstr(line, ".php") != NULL) {
+        snprintf(reason, rcap,
+            "composer autoload.files — every listed PHP file runs at "
+            "require/dump-autoload time, unconditionally");
+        return 55;
+    }
+    if (strstr(line, "\"repositories\"") != NULL ||
+        strstr(line, "packagist") != NULL) {
+        if (strstr(line, "http://") != NULL ||
+            strstr(line, "\"vcs\"") != NULL ||
+            strstr(line, "\"git\"") != NULL) {
+            snprintf(reason, rcap,
+                "composer repositories entry with vcs/git/http source "
+                "— can redirect package resolution off Packagist");
+            return 50;
+        }
+    }
+    if ((strstr(line, "-cmd\"") != NULL || strstr(line, "-run\"") != NULL ||
+         strstr(line, "-dump\"") != NULL || strstr(line, "\"init\"") != NULL ||
+         strstr(line, "\"command\"") != NULL ||
+         strstr(line, "-download\"") != NULL ||
+         strstr(line, "-pool-create\"") != NULL) &&
+        hlse_manifest_execish(line)) {
+        snprintf(reason, rcap,
+            "composer lifecycle script fetches/pipes or shells out — "
+            "runs at install/update with developer credentials");
         return 55;
     }
     return 0;
