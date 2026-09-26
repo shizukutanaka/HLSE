@@ -954,8 +954,8 @@ rc_persist_score(const unsigned char *head, size_t len,
     int sc = 0;
     const char *dotgit;
     if (!is_rc_persist_name(basename)) return 0;
-    /* a plain `config` only counts inside .git/ (systemd unit files
-     * and ssh_config named 'config' stay out) */
+    /* a plain `config` only counts inside .git/ or .ssh/ (systemd
+     * unit files and other `config` basenames stay out) */
     {
         char lown[64];
         str_lower(basename, lown, sizeof(lown));
@@ -963,7 +963,7 @@ rc_persist_score(const unsigned char *head, size_t len,
             char lp[512];
             str_lower(filepath, lp, sizeof(lp));
             if (strstr(lp, ".git/") == NULL &&
-                strstr(lp, ".git\\") == NULL)
+                strstr(lp, ".ssh/") == NULL)
                 return 0;
         }
     }
@@ -998,9 +998,73 @@ rc_persist_score(const unsigned char *head, size_t len,
             strstr(low, "permituserenv"))
             sc = sc < 50 ? 50 : sc;
     }
+    /* ssh client config — ProxyCommand/LocalCommand run a program on
+     * connect; `Match exec` is the same primitive (CVE-2023-51385
+     * class); PermitLocalCommand+LocalCommand is the dormant pair */
+    if (strstr(low, "proxycommand") || strstr(low, "localcommand") ||
+        strstr(low, "match exec"))
+        sc = sc < 55 ? 55 : sc;
+    if (strstr(low, "permitlocalcommand"))
+        sc = sc < 40 ? 40 : sc;
     return sc;
 }
 
+
+/* ─── F19: reverse-shell primitives in file content ───────────────────
+ * bash -i >& /dev/tcp, nc -e, socat exec, python socket+dup2 — the
+ * interactive-shell-back-to-attacker family. Content-driven (applies
+ * to any file: a Makefile or cron line is just as live).          */
+static int
+revshell_score(const unsigned char *head, size_t len) {
+    char low[4097];
+    size_t n = 0, i;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strstr(low, "/dev/tcp/")) return 65;
+    if (strstr(low, "nc -e ") || strstr(low, "ncat -e") ||
+        strstr(low, "nc.exe -e") || strstr(low, "ncat.exe -e"))
+        return 60;
+    if (strstr(low, "socat") &&
+        (strstr(low, "exec:") || strstr(low, "exec =")))
+        return 60;
+    if (strstr(low, "bash -i") &&
+        (strstr(low, ">&") || strstr(low, "0>&")))
+        return 60;
+    if (strstr(low, "socket") && strstr(low, "dup2") &&
+        (strstr(low, "pty") || strstr(low, "/bin/sh") ||
+         strstr(low, "/bin/bash")))
+        return 60;
+    return 0;
+}
+
+/* ─── F20: HTML <base> hijack — one tag repoints every relative link,
+ *      form action and image on the page to the attacker's host ──── */
+static int
+base_hijack_score(const unsigned char *head, size_t len) {
+    char low[4097];
+    size_t n = 0, i;
+    const char *b, *h;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    b = strstr(low, "<base");
+    if (!b) return 0;
+    h = strstr(b, "href");
+    if (!h) return 0;
+    /* bounded: href must land inside the tag */
+    {
+        const char *gt = strchr(b, '>');
+        if (gt && h > gt) return 0;
+    }
+    if (strstr(h, "http://") || strstr(h, "https://"))
+        return 55;
+    /* protocol-relative — inherits whatever scheme the page had */
+    h += 4;
+    while (*h == ' ' || *h == '=' || *h == '"' || *h == '\'') h++;
+    if (h[0] == '/' && h[1] == '/') return 50;
+    return 0;
+}
 
 FileVerdict
 hlse_check_file(const char *filepath) {
@@ -1415,7 +1479,29 @@ hlse_check_file(const char *filepath) {
         }
     }
 
-        /* ── F18: rc/persistence-file content — shell rc, git config,
+        /* ── F19: reverse-shell primitives — /dev/tcp, nc -e, socat exec,
+     *      python socket+dup2 (content-driven, any file) ──────────── */
+    if (head_len > 0) {
+        int rs = revshell_score(head, (size_t)head_len);
+        if (rs > 0) {
+            fv_add(&v, rs,
+                "F19: REVERSE SHELL — file content opens an interactive "
+                "shell back to a remote host (/dev/tcp/nc -e/socat/"
+                "pty.spawn family)");
+        }
+    }
+
+    /* ── F20: HTML <base href> hijack — repoints every relative URL ── */
+    if (head_len > 0) {
+        int bh = base_hijack_score(head, (size_t)head_len);
+        if (bh > 0) {
+            fv_add(&v, bh,
+                "F20: BASE HIJACK — <base href> repoints every relative "
+                "link, form action and image to a remote host");
+        }
+    }
+
+    /* ── F18: rc/persistence-file content — shell rc, git config,
      *      authorized_keys: env rootkits, hooksPath redirect,
      *      forced-command options ─────────────────────────────────── */
     if (head_len > 0) {

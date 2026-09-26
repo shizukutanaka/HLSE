@@ -6,6 +6,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F19 reverse-shell detection** (`hlse_file.c`): content-driven —
+  `/dev/tcp/` socket redirects → 65, `nc -e`/`ncat -e`/`socat exec:` →
+  60, `bash -i >&` → 60, python `socket`+`dup2`+`pty`/`/bin/sh` → 60.
+  Applies to any file type (a Makefile or cron line is just as live).
+- **F20 HTML `<base>` hijack** (`hlse_file.c`): `<base href>` with an
+  absolute http(s) URL → 55, protocol-relative `//host` → 50 — one tag
+  repoints every relative link, form action, and image on the page.
+- **F18 extension** — ssh client config: `.ssh/config` `ProxyCommand`/
+  `LocalCommand`/`Match exec` → 55 (CVE-2023-51385 class),
+  `PermitLocalCommand` → 40.
+
 - **F18 rc/persistence-file check** (`hlse_file.c`): filenames a shell,
   sshd, or git reads automatically — `.bashrc`/`.zshrc`/`.profile`/
   `authorized_keys`/`crontab`/`.gitconfig` (and `config` inside `.git/`

