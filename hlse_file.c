@@ -923,6 +923,85 @@ zip_slip_score(const unsigned char *head, size_t len) {
 
 /* ─── main check function ─────────────────────────────────────────────── */
 
+/* ─── F18: rc/persistence-file content ────────────────────────────────
+ * Filenames that a shell, sshd, or git reads automatically on every
+ * login/commit — a single line in .bashrc/.zshrc/.gitconfig/
+ * authorized_keys/crontab is a code-exec persistence primitive
+ * (LD_PRELOAD userland rootkits, PROMPT_COMMAND hooks, core.hooksPath
+ * redirect — the GitBless class, authorized_keys forced-command).
+ * Filename-keyed: the same lines in an arbitrary file are inert.    */
+static int
+is_rc_persist_name(const char *basename) {
+    static const char *const names[] = {
+        ".bashrc", ".zshrc", ".zshenv", ".bash_profile", ".zprofile",
+        ".profile", ".bash_login", ".kshrc", "profile", "crontab",
+        "authorized_keys", "authorized_keys2", ".gitconfig",
+        "config", NULL
+    };
+    char low[64];
+    int i;
+    str_lower(basename, low, sizeof(low));
+    for (i = 0; names[i]; i++)
+        if (strcmp(low, names[i]) == 0) return 1;
+    return 0;
+}
+
+static int
+rc_persist_score(const unsigned char *head, size_t len,
+                 const char *basename, const char *filepath) {
+    char low[4097];
+    size_t n = 0, i;
+    int sc = 0;
+    const char *dotgit;
+    if (!is_rc_persist_name(basename)) return 0;
+    /* a plain `config` only counts inside .git/ (systemd unit files
+     * and ssh_config named 'config' stay out) */
+    {
+        char lown[64];
+        str_lower(basename, lown, sizeof(lown));
+        if (strcmp(lown, "config") == 0) {
+            char lp[512];
+            str_lower(filepath, lp, sizeof(lp));
+            if (strstr(lp, ".git/") == NULL &&
+                strstr(lp, ".git\\") == NULL)
+                return 0;
+        }
+    }
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    /* userland rootkit primitives — env-var injection into every
+     * future process */
+    if (strstr(low, "ld_preload") || strstr(low, "dyld_insert") ||
+        strstr(low, "ld_library_path") || strstr(low, "ld_audit"))
+        return 65;
+    /* shell hook / alias hijack */
+    if (strstr(low, "prompt_command") || strstr(low, "precmd") ||
+        strstr(low, "alias sudo") || strstr(low, "alias ssh") ||
+        strstr(low, "trap ") )
+        sc = sc < 55 ? 55 : sc;
+    /* git config redirects (GitBless: core.hooksPath → attacker dir,
+     * core.sshCommand → attacker wrapper, url.insteadOf → host swap) */
+    dotgit = strstr(low, "hookspath");
+    if (dotgit || strstr(low, "hooks.path")) {
+        sc = sc < 60 ? 60 : sc;
+    }
+    if (strstr(low, "sshcommand"))
+        sc = sc < 45 ? 45 : sc;
+    if (strstr(low, "insteadof"))
+        sc = sc < 50 ? 50 : sc;
+    /* authorized_keys options that force a command or open tunnels */
+    if (strstr(low, "ssh-rsa") || strstr(low, "ssh-ed25519") ||
+        strstr(low, "ecdsa-sha2")) {
+        if (strstr(low, "command=") || strstr(low, "environment=") ||
+            strstr(low, "permitopen") || strstr(low, "permitlisten") ||
+            strstr(low, "permituserenv"))
+            sc = sc < 50 ? 50 : sc;
+    }
+    return sc;
+}
+
+
 FileVerdict
 hlse_check_file(const char *filepath) {
     FileVerdict v;
@@ -1335,6 +1414,22 @@ hlse_check_file(const char *filepath) {
                 "injection family)");
         }
     }
+
+        /* ── F18: rc/persistence-file content — shell rc, git config,
+     *      authorized_keys: env rootkits, hooksPath redirect,
+     *      forced-command options ─────────────────────────────────── */
+    if (head_len > 0) {
+        int rc = rc_persist_score(head, (size_t)head_len,
+                                  basename_start, filepath);
+        if (rc > 0) {
+            fv_add(&v, rc,
+                "F18: PERSISTENCE FILE — shell/git/ssh config carries "
+                "code-exec or redirect keys (LD_PRELOAD/hooksPath/"
+                "forced-command family)");
+        }
+    }
+
+
 
     return v;
 }

@@ -810,6 +810,30 @@ rm -rf "$SC_DIR"
     && check "kv FP guard: request line clean" "0" "1" \
     || check "kv FP guard: request line clean" "0" "0"
 
+# F18 rc/persistence-file checks (LD_PRELOAD, hooksPath, forced-command)
+RC_DIR=$(mktemp -d)
+printf 'export LD_PRELOAD=/tmp/ev.so\n' > "$RC_DIR/.bashrc"
+./hlse_core file "$RC_DIR/.bashrc" 2>&1 | grep -q "F18" \
+    && check "f18: .bashrc LD_PRELOAD flagged" "0" "0" \
+    || check "f18: .bashrc LD_PRELOAD flagged" "0" "1"
+printf '[core]\n\thooksPath = /tmp/evil-hooks\n' > "$RC_DIR/.gitconfig"
+./hlse_core file "$RC_DIR/.gitconfig" 2>&1 | grep -q "F18" \
+    && check "f18: gitconfig hooksPath flagged" "0" "0" \
+    || check "f18: gitconfig hooksPath flagged" "0" "1"
+printf 'ssh-ed25519 AAAA… command="/tmp/x" u@h\n' > "$RC_DIR/authorized_keys"
+./hlse_core file "$RC_DIR/authorized_keys" 2>&1 | grep -q "F18" \
+    && check "f18: authorized_keys command= flagged" "0" "0" \
+    || check "f18: authorized_keys command= flagged" "0" "1"
+printf 'export PATH=$HOME/bin:$PATH\nalias ll="ls -la"\n' > "$RC_DIR/.bashrc"
+./hlse_core file "$RC_DIR/.bashrc" 2>&1 | grep -q "OK\|Blind spot" \
+    && check "f18 FP guard: benign .bashrc clean" "0" "0" \
+    || check "f18 FP guard: benign .bashrc clean" "0" "1"
+printf 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI u@h\n' > "$RC_DIR/authorized_keys"
+./hlse_core file "$RC_DIR/authorized_keys" 2>&1 | grep -q "OK\|Blind spot" \
+    && check "f18 FP guard: plain key clean" "0" "0" \
+    || check "f18 FP guard: plain key clean" "0" "1"
+rm -rf "$RC_DIR"
+
 # Dockerfile + CI workflow supply-chain (FROM off-registry, curl|sh,
 # uses: mutable ref, pull_request_target) + hex-key/mnemonic secrets
 DC_DIR=$(mktemp -d)

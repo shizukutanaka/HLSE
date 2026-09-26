@@ -6,6 +6,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F18 rc/persistence-file check** (`hlse_file.c`): filenames a shell,
+  sshd, or git reads automatically — `.bashrc`/`.zshrc`/`.profile`/
+  `authorized_keys`/`crontab`/`.gitconfig` (and `config` inside `.git/`
+  only). Content keys: `LD_PRELOAD`/`DYLD_INSERT`/`LD_LIBRARY_PATH` →
+  65; `PROMPT_COMMAND`/`precmd`/`alias sudo`/`trap` → 55; git
+  `hooksPath` → 60 (GitBless-class redirect), `sshCommand` → 45,
+  `insteadOf` → 50; `authorized_keys` `command=`/`environment=`/
+  `permitopen`/`permitlisten`/`permituserenv` → 50. Filename-keyed so
+  the same lines in an inert file stay clean.
+
+
 - **Container/CI manifest scanning** (`hlse_manifest.c` +
   `hlse_cli.c`): `package --manifest` now infers two new ecosystems —
   `docker` (Dockerfile/Containerfile/docker-compose) and `gha`
