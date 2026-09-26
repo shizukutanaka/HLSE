@@ -1821,6 +1821,28 @@ sct_scriptlet_score(const unsigned char *head, size_t len,
     return 45;
 }
 
+/* ─── F48: .ica Citrix launch file — a [WFClient]/[ApplicationServers]
+ *      descriptor whose Address=/InitialProgram= launches a remote
+ *      published application on open (Citrix phishing delivery) ───── */
+static int
+ica_launch_score(const unsigned char *head, size_t len,
+    const char *ext) {
+    char extl[40], low[4097];
+    size_t n = 0, i;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".ica"))
+        return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(low, "[wfclient]") && !strstr(low, "[applicationservers]") &&
+        !strstr(low, "[application"))
+        return 0;
+    if (strstr(low, "initialprogram=") || strstr(low, "address="))
+        return 45;
+    return 0;
+}
+
 /* ─── F39: tar member slip — a ustar/v7 member name or ustar prefix
  *      carrying '..' or an absolute path escapes the extract dir on
  *      permissive untars (busybox, custom extractors). Reuses the
@@ -2743,6 +2765,17 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, ss,
                 "F46: SCT SCRIPTLET — COM scriptlet runs via regsvr32 "
                 "scrobj.dll bypass (score %d)", ss);
+        }
+    }
+
+    /* ── F48: .ica Citrix launch — [WFClient] Address/InitialProgram
+     *      launches a remote published app on open ────────────────── */
+    if (head_len > 0) {
+        int ica = ica_launch_score(head, (size_t)head_len, ext);
+        if (ica > 0) {
+            fv_add(&v, ica,
+                "F48: ICA LAUNCH — Citrix descriptor launches a remote "
+                "application on open (score %d)", ica);
         }
     }
 

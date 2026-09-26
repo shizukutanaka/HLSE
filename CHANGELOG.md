@@ -6,6 +6,22 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Internal-address + IMDS URL checks** (`hlse_core.c`): a URL host
+  that is RFC1918/loopback/link-local/CGNAT (incl. IPv6 `::1`/`fe80::`/
+  `fc`/`fd` literals) → ALERT 45; a cloud instance-metadata endpoint
+  (`169.254.169.254`, `169.254.170.2` ECS, `100.100.2.136` Alibaba,
+  `metadata.google.internal`, `metadata`, `instance-data`) → BLOCK 65
+  — IMDS is the SSRF credential-theft target itself. Previously all
+  internal destinations scored 0.
+- **pod/spm manifest ecosystems** (`hlse_manifest.c/h`, `hlse_cli.c`):
+  `Podfile`/`Podfile.lock` → `pod` (`source 'url'` off the CocoaPods
+  trunk/CDN → 60, reusing the Gemfile source check); `Package.swift`/
+  `Package.resolved` → `spm` (`.package(url:)`/`"location"` off-forge
+  host → 45). `cdn.cocoapods.org`/`trunk.cocoapods.org`/
+  `cocoapods.org` added to the known-registry list.
+- **F48 .ica Citrix launch** (`hlse_file.c`): `[WFClient]`/
+  `[ApplicationServers]` descriptor with `Address=`/`InitialProgram=`
+  → 45 — opening the file launches a remote published app.
 - **F47 UTF-16 decode before content analysis** (`hlse_file.c`): a
   BOM-prefixed UTF-16LE/BE file hides ASCII payloads behind
   interleaved NUL/high bytes — every string-based F-check saw only

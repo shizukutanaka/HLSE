@@ -8073,6 +8073,43 @@ printf '<?xml version="1.0"?>\n<configuration><packageSources><add key="nuget.or
 ./hlse_core package --manifest "$XDIR/ng2/nuget.config" 2>&1 | grep -q "OK" \
     && check "manifest: official nuget source clean" "0" "0" \
     || check "manifest: official nuget source clean" "0" "1"
+# internal-address + IMDS URL checks; pod/spm ecosystems; F48 .ica
+./hlse_core "http://169.254.169.254/latest/meta-data/iam/security-credentials" \
+    2>&1 | grep -q "metadata endpoint" \
+    && check "url: IMDS endpoint flagged" "0" "0" \
+    || check "url: IMDS endpoint flagged" "0" "1"
+./hlse_core "http://192.168.1.1/admin" 2>&1 | grep -q "Internal/private" \
+    && check "url: RFC1918 host flagged" "0" "0" \
+    || check "url: RFC1918 host flagged" "0" "1"
+./hlse_core "http://8.8.8.8/dns" 2>&1 | grep -q "Internal/private" \
+    && check "url: public IP host no internal flag" "0" "1" \
+    || check "url: public IP host no internal flag" "0" "0"
+./hlse_core "http://metadata.google.internal/x" 2>&1 | grep -q "metadata endpoint" \
+    && check "url: GCP metadata host flagged" "0" "0" \
+    || check "url: GCP metadata host flagged" "0" "1"
+printf 'source "https://evil.example"\npod "x"\n' > "$XDIR/Podfile"
+./hlse_core package --manifest "$XDIR/Podfile" 2>&1 | grep -q "pod source" \
+    && check "manifest: podfile off-trunk source flagged" "0" "0" \
+    || check "manifest: podfile off-trunk source flagged" "0" "1"
+printf 'source "https://cdn.cocoapods.org"\npod "x"\n' > "$XDIR/Podfile2"
+mkdir -p "$XDIR/podok" && mv "$XDIR/Podfile2" "$XDIR/podok/Podfile"
+./hlse_core package --manifest "$XDIR/podok/Podfile" 2>&1 | grep -q "pod source" \
+    && check "manifest: cocoapods cdn source clean" "0" "1" \
+    || check "manifest: cocoapods cdn source clean" "0" "0"
+printf 'import PackageDescription\nlet p = Package(name:"x", dependencies:[.package(url:"https://evil.example/p.git", from:"1.0.0")])\n' \
+    > "$XDIR/Package.swift"
+./hlse_core package --manifest "$XDIR/Package.swift" 2>&1 | grep -q "swift package" \
+    && check "manifest: swift off-forge dep flagged" "0" "0" \
+    || check "manifest: swift off-forge dep flagged" "0" "1"
+printf '[WFClient]\nAddress=evil.example:1494\nInitialProgram=#calc\n' \
+    > "$XDIR/x.ica"
+./hlse_core file "$XDIR/x.ica" 2>&1 | grep -q "ICA LAUNCH" \
+    && check "file: ica remote launch flagged" "0" "0" \
+    || check "file: ica remote launch flagged" "0" "1"
+printf '[Encoding]\nInputEncoding=UTF8\n' > "$XDIR/ok.ica"
+./hlse_core file "$XDIR/ok.ica" 2>&1 | grep -q "ICA LAUNCH" \
+    && check "file: encoding-only ica no F48" "0" "1" \
+    || check "file: encoding-only ica no F48" "0" "0"
 rm -rf "$XDIR"
 
 # ─── results ────────────────────────────────────────────────────────────
