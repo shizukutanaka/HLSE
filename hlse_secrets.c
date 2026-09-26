@@ -228,6 +228,14 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "glpat-",        6,  20, is_alnum_or_dash,   "GitLab Personal Access Token", 90 },
     { "gldt-",         5,  20, is_alnum_or_dash,   "GitLab Deploy Token",   80 },
     { "glrt-",         5,  20, is_alnum_or_dash,   "GitLab Runner Token",   80 },
+
+    /* age encryption secret key — fixed "AGE-SECRET-KEY-1" prefix,
+     * bech32-style lowercase body (~58 chars) */
+    { "AGE-SECRET-KEY-1", 16, 40, is_alnum_plain,  "Age Secret Key",       90 },
+    /* Doppler — dop_v1_ service token / dp.st. / dp.pt. */
+    { "dop_v1_",         7,  40, is_alnum_or_dash, "Doppler Service Token", 85 },
+    { "dp.st.",          6,  40, is_alnum_or_dash, "Doppler Service Token", 85 },
+    { "dp.pt.",          6,  40, is_alnum_or_dash, "Doppler Personal Token",85 },
     { "glsoat-",       7,  20, is_alnum_or_dash,   "GitLab Self-managed OAuth Token", 80 },
 
     /* npm */
@@ -2147,13 +2155,14 @@ check_mnemonic(const char *text, SecretVerdict *v) {
     int found = 0;
     while (*p) {
         const char *w = p;
+        const char *skip_end = NULL;
         char seen[26][16];
         int nseen = 0, nwords = 0;
         if (!(*w >= 'a' && *w <= 'z')) { p++; continue; }
         for (;;) {
             int wl = 0;
             while (w[wl] >= 'a' && w[wl] <= 'z') wl++;
-            if (wl < 3 || wl > 8) break;
+            if (wl < 3 || wl > 8) { skip_end = w + wl; break; }
             {
                 int dup = 0, i, c = wl < 15 ? wl : 15;
                 for (i = 0; i < nseen; i++)
@@ -2196,8 +2205,10 @@ check_mnemonic(const char *text, SecretVerdict *v) {
             found = 1;
         }
         /* advance past the whole run — rescanning inside it lets a
-         * 17-word prose sentence expose a canonical-length sub-run */
-        p = (w > p) ? w : p + 1;
+         * 17-word prose sentence expose a canonical-length sub-run;
+         * skip_end covers the over-long word that aborted the run
+         * (otherwise a megabyte of one letter rescans O(n^2)) */
+        p = skip_end ? skip_end : ((w > p) ? w : p + 1);
     }
     return found;
 }
