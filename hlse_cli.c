@@ -2,6 +2,7 @@
  * Each takes the parsed options plus argv (idx points at the subcommand
  * name) and returns the process exit status. Extracted verbatim from
  * main() (split increments 10+); flag state arrives via HlseCli. */
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -1512,6 +1513,141 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                             printf("%-7s [%d]  suspicious gem source: %s\n",
                                    hlse_action_for_score(ssc), ssc,
                                    sreason);
+                        }
+                    }
+                }
+                /* Container build files: `FROM` picks the registry,
+                 * `RUN curl|sh` is a pipe-exec, `ADD http` skips
+                 * checksums — same substitution surface as any
+                 * package manifest. */
+                if (strcmp(eco, "docker") == 0) {
+                    char dhost[256];
+                    int dsc = 0;
+                    const char *did = NULL;
+                    char dreason[HLSE_HOOK_REASON_LEN];
+                    if (hlse_manifest_docker_from(line, dhost,
+                            sizeof(dhost)) &&
+                        hlse_manifest_resolved_suspicious(dhost)) {
+                        char edh[256];
+                        hlse_json_escape(dhost, edh, sizeof(edh));
+                        dsc = 45;
+                        did = "HLSE-PKG-DFROM";
+                        snprintf(dreason, sizeof(dreason),
+                            "Dockerfile FROM '%s' — off the known "
+                            "registries; the whole base image resolves "
+                            "through an unvetted host", edh);
+                    } else if (hlse_manifest_docker_pipeshell(line)) {
+                        dsc = 60;
+                        did = "HLSE-PKG-DPIPESHL";
+                        snprintf(dreason, sizeof(dreason),
+                            "Dockerfile RUN/CMD fetches remote content "
+                            "and pipes it to an interpreter — "
+                            "unauthenticated remote-code execution at "
+                            "build time");
+                    } else if (hlse_manifest_docker_add_remote(line)) {
+                        dsc = 35;
+                        did = "HLSE-PKG-DADD";
+                        snprintf(dreason, sizeof(dreason),
+                            "Dockerfile ADD pulls a remote URL with no "
+                            "integrity check (ADD does not verify)");
+                    }
+                    if (dsc) {
+                        threats++;
+                        hlse_alert_emit_rows("package", dsc,
+                            hlse_severity_for_score(dsc), mpath,
+                            &dreason, HLSE_HOOK_REASON_LEN, 1);
+                        if (dsc > max_score) max_score = dsc;
+                        if (dsc >= o->fail_threshold) gate_hits++;
+                        if (o->sarif_out) {
+                            hlse_sarif_add(mpath, lineno,
+                                "package-docker", did, dreason, dsc);
+                        } else if (o->json_out) {
+                            char eh9[384];
+                            hlse_json_escape(dreason, eh9, sizeof(eh9));
+                            hlse_json_open("package");
+                            printf(",\"manifest\":\"%s\",\"score\":%d,"
+                                   "\"action\":\"%s\",\"severity\":%d,"
+                                   "\"pattern_id\":\"%s\","
+                                   "\"reason\":\"%s\"}\n",
+                                   mpath, dsc,
+                                   hlse_action_for_score(dsc),
+                                   hlse_severity_for_score(dsc),
+                                   did, eh9);
+                        } else {
+                            printf("%-7s [%d]  dockerfile: %s\n",
+                                   hlse_action_for_score(dsc), dsc,
+                                   dreason);
+                        }
+                    }
+                }
+                /* CI workflows: `uses:` chooses whose code runs with
+                 * the repo's secrets. An unpinned ref (no @) or a
+                 * mutable branch/tag can be silently repointed —
+                 * the tj-actions compromise class. pull_request_target
+                 * runs fork code with base-repo credentials. */
+                if (strcmp(eco, "gha") == 0) {
+                    char ref[128];
+                    int gsc = 0;
+                    const char *gid = NULL;
+                    char greason[HLSE_HOOK_REASON_LEN];
+                    if (hlse_manifest_gha_prt(line)) {
+                        gsc = 40;
+                        gid = "HLSE-PKG-GHAPRT";
+                        snprintf(greason, sizeof(greason),
+                            "pull_request_target runs PR-authored code "
+                            "with the base repo's secrets — verify the "
+                            "job checks out only trusted refs");
+                    } else if (hlse_manifest_gha_uses(line, ref,
+                            sizeof(ref))) {
+                        size_t rn = strlen(ref);
+                        int sha = (rn == 40);
+                        if (sha) {
+                            size_t k;
+                            for (k = 0; k < rn; k++)
+                                if (!isxdigit((unsigned char)ref[k])) {
+                                    sha = 0;
+                                    break;
+                                }
+                        }
+                        if (!sha) {
+                            gsc = rn ? 35 : 45;
+                            gid = "HLSE-PKG-GHAUNPIN";
+                            snprintf(greason, sizeof(greason),
+                                rn ? "uses: action pinned to mutable ref "
+                                     "'%s' — a tag/branch can be repointed; "
+                                     "pin to a commit SHA"
+                                   : "uses: action with no ref at all — "
+                                     "resolves the default branch tip; "
+                                     "pin to a commit SHA",
+                                ref);
+                        }
+                    }
+                    if (gsc) {
+                        threats++;
+                        hlse_alert_emit_rows("package", gsc,
+                            hlse_severity_for_score(gsc), mpath,
+                            &greason, HLSE_HOOK_REASON_LEN, 1);
+                        if (gsc > max_score) max_score = gsc;
+                        if (gsc >= o->fail_threshold) gate_hits++;
+                        if (o->sarif_out) {
+                            hlse_sarif_add(mpath, lineno,
+                                "package-gha", gid, greason, gsc);
+                        } else if (o->json_out) {
+                            char ehA[384];
+                            hlse_json_escape(greason, ehA, sizeof(ehA));
+                            hlse_json_open("package");
+                            printf(",\"manifest\":\"%s\",\"score\":%d,"
+                                   "\"action\":\"%s\",\"severity\":%d,"
+                                   "\"pattern_id\":\"%s\","
+                                   "\"reason\":\"%s\"}\n",
+                                   mpath, gsc,
+                                   hlse_action_for_score(gsc),
+                                   hlse_severity_for_score(gsc),
+                                   gid, ehA);
+                        } else {
+                            printf("%-7s [%d]  ci workflow: %s\n",
+                                   hlse_action_for_score(gsc), gsc,
+                                   greason);
                         }
                     }
                 }

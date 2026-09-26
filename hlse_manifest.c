@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <strings.h>
 
 /* ── Manifest scanning (Perspective 108, roadmap P1-8) ─────────────────────
  * The single-name `package <name>` check is impractical for real dependency
@@ -44,6 +45,19 @@ hlse_manifest_ecosystem(const char *path) {
     if (strcmp(b, ".gitmodules") == 0) return "git";
     if ((strcmp(b, "config.toml") == 0 || strcmp(b, "config") == 0) &&
         strstr(path, ".cargo/")) return "cargo";
+    /* Container and CI manifests carry the same substitution surface:
+     * `FROM` picks a whole registry, `RUN curl|sh` is a pipe-exec, and
+     * a workflow `uses:` ref chooses whose code runs on CI secrets. */
+    if (strncmp(b, "Dockerfile", 10) == 0 ||
+        strncmp(b, "dockerfile", 10) == 0 ||
+        strncmp(b, "Containerfile", 13) == 0 ||
+        strncmp(b, "docker-compose.y", 16) == 0 ||
+        (strstr(b, ".Dockerfile") != NULL))
+        return "docker";
+    if ((strstr(path, ".github/workflows/") != NULL ||
+         strstr(path, ".gitlab-ci") != NULL) &&
+        (strstr(b, ".yml") != NULL || strstr(b, ".yaml") != NULL))
+        return "gha";
     return NULL;
 }
 
@@ -337,6 +351,11 @@ static const char *const REGISTRY_HOSTS[] = {
     "rubygems.org", "pypi.org", "files.pythonhosted.org",
     "proxy.golang.org", "index.crates.io", "crates.io",
     "repo.maven.apache.org", "nuget.org", "api.nuget.org",
+    /* container registries — Dockerfile `FROM` targets */
+    "docker.io", "index.docker.io", "registry-1.docker.io",
+    "ghcr.io", "gcr.io", "us.gcr.io", "eu.gcr.io", "asia.gcr.io",
+    "quay.io", "mcr.microsoft.com", "public.ecr.aws",
+    "registry.k8s.io", "docker.pkg.dev",
     NULL
 };
 
@@ -674,4 +693,136 @@ hlse_manifest_source_host(const char *line, char *out, size_t outcap) {
     { char *c = strchr(out, ':'); if (c) *c = '\0'; }
     if (!out[0] || !strchr(out, '.')) return 0;
     return 1;
+}
+
+/* Dockerfile `FROM image[:tag]` — when the image's first path
+ * component carries a '.' or ':' it names a registry host
+ * (docker.io implied otherwise). Returns 1 with that host, else 0. */
+int
+hlse_manifest_docker_from(const char *line, char *out, size_t outcap) {
+    const char *s = line;
+    const char *e;
+    size_t n = 0;
+    while (*s == ' ' || *s == '\t') s++;
+    if (!(s[0] == 'F' || s[0] == 'f')) return 0;
+    if (strncasecmp(s, "from", 4) != 0 ||
+        (s[4] != ' ' && s[4] != '\t')) return 0;
+    s += 4;
+    while (*s == ' ' || *s == '\t') s++;
+    /* skip `--platform=` build flags */
+    while (s[0] == '-' && s[1] == '-') {
+        while (*s && *s != ' ' && *s != '\t') s++;
+        while (*s == ' ' || *s == '\t') s++;
+    }
+    e = s;
+    while (*e && *e != ' ' && *e != '\t' && *e != '\n' && *e != '\r')
+        e++;
+    /* image = [host/]path — first segment is a registry iff it has
+     * a '.' (dot in a domain) or ':' (explicit port) */
+    {
+        const char *slash = memchr(s, '/', (size_t)(e - s));
+        const char *h;
+        size_t hl;
+        if (!slash) return 0;      /* docker hub short name */
+        h = s;
+        hl = (size_t)(slash - h);
+        if (memchr(h, '.', hl) == NULL && memchr(h, ':', hl) == NULL)
+            return 0;              /* first segment is a namespace */
+        if (hl + 1 > outcap) return 0;
+        memcpy(out, h, hl);
+        out[hl] = '\0';
+        /* strip port */
+        { char *c = strchr(out, ':'); if (c) *c = '\0'; }
+        n = strlen(out);
+        /* lowercase */
+        { size_t i; for (i = 0; i < n; i++)
+            out[i] = (char)tolower((unsigned char)out[i]); }
+    }
+    return n > 0;
+}
+
+/* Dockerfile `RUN|CMD|ENTRYPOINT` carrying a fetch|pipe|interpreter —
+ * `curl x | sh` inside a build. Returns 1 when the pattern appears. */
+int
+hlse_manifest_docker_pipeshell(const char *line) {
+    char low[1024];
+    size_t n = 0;
+    const char *s = line;
+    while (*s == ' ' || *s == '\t') s++;
+    if (strncasecmp(s, "run", 3) == 0 && (s[3] == ' ' || s[3] == '\t'))
+        ;
+    else if (strncasecmp(s, "cmd", 3) == 0 &&
+             (s[3] == ' ' || s[3] == '\t')) ;
+    else if (strncasecmp(s, "entrypoint", 10) == 0 &&
+             (s[10] == ' ' || s[10] == '\t')) ;
+    else if (strncasecmp(s, "add", 3) == 0 &&
+             (s[3] == ' ' || s[3] == '\t')) ;
+    else
+        return 0;
+    while (s[n] && n + 1 < sizeof(low)) {
+        low[n] = (char)tolower((unsigned char)s[n]);
+        n++;
+    }
+    low[n] = '\0';
+    if (!(strstr(low, "curl") || strstr(low, "wget") ||
+          strstr(low, "fetch") || strstr(low, "invoke-webrequest") ||
+          strstr(low, "iwr ")))
+        return 0;
+    if (!(strstr(low, "| sh") || strstr(low, "|sh") ||
+          strstr(low, "| bash") || strstr(low, "|bash") ||
+          strstr(low, "| zsh") || strstr(low, "| python") ||
+          strstr(low, "| perl") || strstr(low, "| powershell")))
+        return 0;
+    return 1;
+}
+
+/* Dockerfile `ADD http(s)://…` — remote fetch without checksum. */
+int
+hlse_manifest_docker_add_remote(const char *line) {
+    const char *s = line;
+    while (*s == ' ' || *s == '\t') s++;
+    if (strncasecmp(s, "add", 3) != 0 || (s[3] != ' ' && s[3] != '\t'))
+        return 0;
+    s += 3;
+    while (*s == ' ' || *s == '\t') s++;
+    while (s[0] == '-' && s[1] == '-') {
+        while (*s && *s != ' ' && *s != '\t') s++;
+        while (*s == ' ' || *s == '\t') s++;
+    }
+    return strncmp(s, "http://", 7) == 0 || strncmp(s, "https://", 8) == 0;
+}
+
+/* GitHub Actions `uses: owner/repo@ref` — extracts the ref into out.
+ * Returns 1 with ref (may be empty when unpinned), 0 when not a uses
+ * line. Also used for gitlab `uses:`/bitbucket steps. */
+int
+hlse_manifest_gha_uses(const char *line, char *ref, size_t refcap) {
+    const char *p = strstr(line, "uses:");
+    const char *e;
+    const char *at;
+    size_t n;
+    if (!p) return 0;
+    /* 'uses' must start a key — preceded by start, space, '-' */
+    if (p != line && p[-1] != ' ' && p[-1] != '\t' && p[-1] != '-')
+        return 0;
+    p += 5;
+    while (*p == ' ' || *p == '\t' || *p == '"' || *p == '\'') p++;
+    e = p;
+    while (*e && *e != ' ' && *e != '\t' && *e != '\n' &&
+           *e != '\r' && *e != '"' && *e != '\'' && *e != '#')
+        e++;
+    at = memchr(p, '@', (size_t)(e - p));
+    if (!at) { ref[0] = '\0'; return 1; }
+    n = (size_t)(e - at - 1);
+    if (n >= refcap) n = refcap - 1;
+    memcpy(ref, at + 1, n);
+    ref[n] = '\0';
+    return 1;
+}
+
+/* GitHub Actions `pull_request_target` — runs PR-authored code with
+ * the base repo's secrets (pwn-request class). */
+int
+hlse_manifest_gha_prt(const char *line) {
+    return strstr(line, "pull_request_target") != NULL;
 }

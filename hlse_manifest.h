@@ -72,3 +72,20 @@ int hlse_manifest_replace_host(const char *line, char *out, size_t outcap);
 /* Gemfile source "url" / source: "url" target host. Returns 1 with
  * host, or 0. */
 int hlse_manifest_source_host(const char *line, char *out, size_t outcap);
+
+/* Dockerfile FROM registry host ('host/' segment when it carries a
+ * '.' or ':'). Returns 1 with host, or 0 for hub short names. */
+int hlse_manifest_docker_from(const char *line, char *out, size_t outcap);
+
+/* Dockerfile RUN/CMD/ENTRYPOINT fetch|pipe|interpreter (curl|sh). */
+int hlse_manifest_docker_pipeshell(const char *line);
+
+/* Dockerfile ADD http(s):// remote fetch. */
+int hlse_manifest_docker_add_remote(const char *line);
+
+/* GitHub Actions 'uses: owner/repo@ref' — fills ref (empty when
+ * unpinned). Returns 1 on a uses line, 0 otherwise. */
+int hlse_manifest_gha_uses(const char *line, char *ref, size_t refcap);
+
+/* 'pull_request_target' trigger — runs fork code with repo secrets. */
+int hlse_manifest_gha_prt(const char *line);
