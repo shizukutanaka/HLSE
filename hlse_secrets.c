@@ -66,6 +66,9 @@ github_checksum_state(const char *prefix, const char *suffix, size_t suffix_len)
     return (memcmp(want, suffix + 30, 6) == 0) ? 1 : 2;
 }
 
+static int check_hex_private_key(const char *text, SecretVerdict *v);
+static int check_mnemonic(const char *text, SecretVerdict *v);
+
 static void
 sv_add(SecretVerdict *v, int delta, const char *type,
        const char *fmt, ...) {
@@ -973,6 +976,8 @@ hlse_scan_secrets(const char *text) {
     check_env_passwords(text, &v);
     check_generic_hex_secret(text, &v);
     check_kv_assignment(text, &v);
+    check_hex_private_key(text, &v);
+    check_mnemonic(text, &v);
 
     /* GCP service account JSON — contains "type": "service_account" and
      * "private_key" together. Near-zero false positives.               */
@@ -1213,7 +1218,9 @@ hlse_secret_confidence(const SecretVerdict *v) {
         const char *t = v->findings[i].type;
         if (strcmp(t, "ENV_SECRET") != 0 &&
             strcmp(t, "GENERIC_SECRET") != 0 &&
-            strcmp(t, "KV_SECRET") != 0)
+            strcmp(t, "KV_SECRET") != 0 &&
+            strcmp(t, "HEX_PRIVATE_KEY") != 0 &&
+            strcmp(t, "MNEMONIC_PHRASE") != 0)
             return "certain";
     }
     return "heuristic";
@@ -2100,4 +2107,97 @@ hlse_check_crypto_swap(const char *copied, const char *pasted) {
 int
 hlse_validate_crypto_address(const char *addr) {
     return (int)detect_crypto_type(addr);
+}
+
+/* `0x` + exactly 64 hex chars — Ethereum/hex private-key shape.
+ * The 64-char bound keeps sha256-with-0x digests (also 64 hex) inside
+ * the same class — both are high-entropy material worth flagging;
+ * placeholder suppression removes doc fixtures. */
+static int
+check_hex_private_key(const char *text, SecretVerdict *v) {
+    const char *p = text;
+    int found = 0;
+    while ((p = strstr(p, "0x")) != NULL) {
+        const char *h = p + 2;
+        int run = 0;
+        if (p != text && isalnum((unsigned char)p[-1])) { p++; continue; }
+        while (is_hex(h[run])) run++;
+        if (run == 64 &&
+            !is_placeholder_secret(text, p, p + 2, (size_t)run)) {
+            sv_add(v, 55, "HEX_PRIVATE_KEY",
+                   "0x-prefixed 64-hex value — private-key shape");
+            found = 1;
+        }
+        p = h;
+    }
+    return found;
+}
+
+/* BIP39-shaped seed/recovery phrase: a run of >=12 lowercase alpha
+ * words (1-9 chars each, space-separated) with >=10 distinct — plain
+ * prose collides rarely because it repeats function words. A
+ * seed/mnemonic/recovery/wallet/phrase keyword within 48 chars before
+ * the run upgrades the score. */
+static int
+check_mnemonic(const char *text, SecretVerdict *v) {
+    static const char *const CTX[] = {
+        "seed", "mnemonic", "recovery", "wallet", "phrase", NULL
+    };
+    const char *p = text;
+    int found = 0;
+    while (*p) {
+        const char *w = p;
+        char seen[26][16];
+        int nseen = 0, nwords = 0;
+        if (!(*w >= 'a' && *w <= 'z')) { p++; continue; }
+        for (;;) {
+            int wl = 0;
+            while (w[wl] >= 'a' && w[wl] <= 'z') wl++;
+            if (wl < 3 || wl > 8) break;
+            {
+                int dup = 0, i, c = wl < 15 ? wl : 15;
+                for (i = 0; i < nseen; i++)
+                    if (strncmp(seen[i], w, (size_t)c) == 0 &&
+                        (int)strlen(seen[i]) == c) { dup = 1; break; }
+                if (!dup && nseen < 26) {
+                    memcpy(seen[nseen], w, (size_t)c);
+                    seen[nseen][c] = '\0';
+                    nseen++;
+                }
+            }
+            nwords++;
+            if (w[wl] == ' ' && w[wl + 1] >= 'a' && w[wl + 1] <= 'z') {
+                w += wl + 1;
+                continue;
+            }
+            break;
+        }
+        /* only canonical BIP39 lengths (12/15/18/21/24 words) — a
+         * run of 13 distinct prose words cannot be a mnemonic, and
+         * restricting to these lengths keeps ordinary sentences out */
+        if ((nwords == 12 || nwords == 15 || nwords == 18 ||
+             nwords == 21 || nwords == 24) && nseen >= nwords - 2 &&
+            !is_placeholder_secret(text, p, p, (size_t)(w - p))) {
+            char ctx[49];
+            const char *s = p - text > 48 ? p - 48 : text;
+            size_t cn = (size_t)(p - s), i;
+            int hot = 0;
+            for (i = 0; i < cn; i++)
+                ctx[i] = (char)tolower((unsigned char)s[i]);
+            ctx[cn] = '\0';
+            for (i = 0; CTX[i]; i++)
+                if (strstr(ctx, CTX[i])) { hot = 1; break; }
+            sv_add(v, hot ? 75 : 45, "MNEMONIC_PHRASE",
+                   hot ? "BIP39-shaped seed/recovery phrase "
+                         "(keyword context + %d distinct words)"
+                       : "possible seed phrase — %d consecutive "
+                         "distinct lowercase words",
+                   nseen);
+            found = 1;
+        }
+        /* advance past the whole run — rescanning inside it lets a
+         * 17-word prose sentence expose a canonical-length sub-run */
+        p = (w > p) ? w : p + 1;
+    }
+    return found;
 }
