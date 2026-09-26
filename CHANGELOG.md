@@ -6,6 +6,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F16 PDF auto-actions** (`hlse_file.c`): `%PDF` magic +
+  `/OpenAction`/`/AA` trigger with `/JS`/`/JavaScript`/`/Launch`/
+  `/EmbeddedFile` payload → 65; payload-only latent capability → 40.
+- **F17 RTF object embedding** (`hlse_file.c`): `\objdata`/`\objocx`/
+  `\objclass` OLE payloads → 65; `\*\template` with a remote URL
+  (template injection) → 65.
 - **F14 script download-cradle check** (`hlse_file.c`): MITRE
   T1059/T1105 stagers — fetch+execute pairs (DownloadString/IEX,
   curl|bash, certutil, bitsadmin, mshta/regsvr32/rundll32) score 65

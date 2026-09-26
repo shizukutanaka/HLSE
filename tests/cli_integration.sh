@@ -773,6 +773,22 @@ printf '[project]\ndependencies = ["requests>=2", "flask"]\n' > "$SC_DIR/pyproje
 ./hlse_core package --manifest "$SC_DIR/pyproject.toml" 2>&1 | grep -q "Typosquat" \
     && check "pyproject FP guard: real names clean" "0" "1" \
     || check "pyproject FP guard: real names clean" "0" "0"
+printf '%%PDF-1.4\n1 0 obj<</OpenAction<</S/JavaScript/JS(app.alert("x"))>>>>\n' > "$SC_DIR/act.pdf"
+./hlse_core file "$SC_DIR/act.pdf" 2>&1 | grep -q "F16" \
+    && check "f16: PDF /OpenAction flagged" "0" "0" \
+    || check "f16: PDF /OpenAction flagged" "0" "1"
+printf '%%PDF-1.4\n1 0 obj<</Pages 2 0 R>>\n' > "$SC_DIR/clean.pdf"
+./hlse_core file "$SC_DIR/clean.pdf" 2>&1 | grep -q "F16" \
+    && check "f16 FP guard: plain PDF clean" "0" "1" \
+    || check "f16 FP guard: plain PDF clean" "0" "0"
+printf '{\\rtf1 {\\object\\objdata 01050000}}' > "$SC_DIR/embed.rtf"
+./hlse_core file "$SC_DIR/embed.rtf" 2>&1 | grep -q "F17" \
+    && check "f17: RTF \\objdata flagged" "0" "0" \
+    || check "f17: RTF \\objdata flagged" "0" "1"
+printf '{\\rtf1 plain text document}' > "$SC_DIR/note.rtf"
+./hlse_core file "$SC_DIR/note.rtf" 2>&1 | grep -q "F17" \
+    && check "f17 FP guard: plain RTF clean" "0" "1" \
+    || check "f17 FP guard: plain RTF clean" "0" "0"
 rm -rf "$SC_DIR"
 
 # Mobile deep-link schemes (sms:/tel:/intent:) — smishing vector

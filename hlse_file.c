@@ -814,6 +814,60 @@ reg_persistence_score(const unsigned char *head, size_t len,
     return 0;
 }
 
+/* PDF auto-actions (Adobe/Foxit phishing advisories): document-level
+ * triggers that run JavaScript or launch a program when the file is
+ * merely opened — /OpenAction, /AA (additional actions), /JS +
+ * /JavaScript, /Launch, /EmbeddedFile. A receipt/invoices PDF that
+ * phishes needs no exploit: open == run. FP guard: requires the %
+ * PDF magic AND an action keyword, not just the word in prose.      */
+static int
+pdf_action_score(const unsigned char *head, size_t len) {
+    char low[4097];
+    size_t n = 0, i;
+    int act = 0, payload = 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    if (len < 5 || memcmp(head, "%PDF-", 5) != 0) return 0;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strstr(low, "/openaction") || strstr(low, "/aa ") ||
+        strstr(low, "/aa<") || strstr(low, "/aa/"))
+        act++;
+    if (strstr(low, "/launch") || strstr(low, "/embeddedfile") ||
+        strstr(low, "/embeddedfiles"))
+        payload++;
+    if (strstr(low, "/js") || strstr(low, "/javascript"))
+        payload++;
+    if (act && payload) return 65;
+    if (payload >= 2) return 60;   /* embedded file + JS, no open hook */
+    if (payload == 1) return 40;   /* latent capability, no trigger */
+    return 0;
+}
+
+/* RTF object embedding (CVE-2017-11882 family, still shipping in 2024+
+ * phishing): \objdata carries an OLE object payload; \*\template with
+ * a URL fetches a remote DOT on open ("template injection" — loads
+ * the malicious doc from the attacker server, bypassing attachment
+ * sandboxes). {\pict + .exe/.dll bytes is the file-embed variant.   */
+static int
+rtf_embed_score(const unsigned char *head, size_t len) {
+    char low[4097];
+    size_t n = 0, i;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    if (len < 5 || memcmp(head, "{\\rtf", 5) != 0) return 0;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strstr(low, "\\objdata") || strstr(low, "\\objocx") ||
+        strstr(low, "\\objclass"))
+        return 65;
+    if (strstr(low, "\\*\\template") &&
+        (strstr(low, "http:") || strstr(low, "https:") ||
+         strstr(low, "\\\\")))
+        return 65;
+    if (strstr(low, "\\*\\objdata") || strstr(low, "\\object"))
+        return 40;
+    return 0;
+}
+
 /* ZIP-slip (Snyk disclosure, CVE-2018-1002200 family): a member name
  * inside a ZIP archive carrying a `..` path segment, an absolute path,
  * or a drive letter escapes the extraction directory on unpack. The
@@ -1256,6 +1310,29 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, rp,
                 "F15: REG PERSISTENCE — .reg file installs an autostart/"
                 "debugger key (Run, RunOnce, IFEO, Winlogon)");
+        }
+    }
+
+    /* ── F16: PDF auto-actions — /OpenAction, /JS, /Launch, /AA fire
+     *      on open (Foxit/Adobe phishing advisories) ─────────────── */
+    if (head_len > 0) {
+        int pa = pdf_action_score(head, (size_t)head_len);
+        if (pa > 0) {
+            fv_add(&v, pa,
+                "F16: PDF AUTO-ACTION — document runs JavaScript or "
+                "launches a program on open (/OpenAction//JS//Launch)");
+        }
+    }
+
+    /* ── F17: RTF object embedding / remote template — \objdata OLE
+     *      payload or \*\template fetching a remote DOT ───────────── */
+    if (head_len > 0) {
+        int rt = rtf_embed_score(head, (size_t)head_len);
+        if (rt > 0) {
+            fv_add(&v, rt,
+                "F17: RTF OBJECT EMBED — \\objdata OLE object or remote "
+                "template reference (CVE-2017-11882 / template-"
+                "injection family)");
         }
     }
 
