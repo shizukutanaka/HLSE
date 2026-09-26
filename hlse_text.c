@@ -986,6 +986,39 @@ static const char *QR_PHISH_WORDS[] = {
     NULL
 };
 
+/* Visible prompt injection — the structural carrier check above covers
+ * hidden encodings; these are the canonical *visible* payloads found in
+ * emails/pages/files destined for an agent. Two families:
+ *   - override phrases ("ignore all previous instructions", DAN-style
+ *     "do anything now" jailbreaks, role reassignment)
+ *   - model control tokens (<<SYS>>, <|im_start|>, [INST], ChatML tags)
+ *     which are tokenizer artefacts — they never legitimately occur in a
+ *     scanned document.                                               */
+static const char *PROMPT_OVERRIDE_WORDS[] = {
+    "ignore all previous instructions",
+    "ignore previous instructions",
+    "ignore the above instructions",
+    "ignore your previous instructions",
+    "disregard all previous",
+    "disregard your instructions",
+    "forget your instructions",
+    "forget all previous instructions",
+    "override your instructions",
+    "new instructions:",
+    "new system prompt",
+    "do anything now",
+    "you are now dan",
+    "you are now chatgpt",
+    "you are now an ai",
+    NULL
+};
+
+static const char *LLM_CONTROL_TOKENS[] = {
+    "<<sys>>", "<|im_start|>", "<|im_end|>", "<|system|>",
+    "<|user|>", "<|assistant|>", "[inst]", "[/inst]", "<|endoftext|>",
+    NULL
+};
+
 static const Signal SIGNALS[] = {
     { "Urgency pressure",           URGENCY_WORDS,    8,  8, 25 },
     { "Financial/credential req",   BAIT_WORDS,      12, 12, 36 },
@@ -1001,6 +1034,8 @@ static const Signal SIGNALS[] = {
     { "QR code phishing (quishing)",QR_PHISH_WORDS,  20, 10, 30 },
     { "Callback/TOAD/smishing",     CALLBACK_PHISH_WORDS, 15, 10, 30 },
     { "Emergency/grandparent scam", EMERGENCY_SCAM_WORDS, 20, 15, 45 },
+    { "Prompt-injection override phrase", PROMPT_OVERRIDE_WORDS, 40, 10, 55 },
+    { "LLM control token in text",  LLM_CONTROL_TOKENS, 45, 10, 60 },
     { NULL, NULL, 0, 0, 0 }
 };
 

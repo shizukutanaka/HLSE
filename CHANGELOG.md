@@ -18,6 +18,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `git = "https://…"` / `"git": "ssh://…"` used by Cargo.toml and
   forge config — off-forge hosts score 55 alongside the existing
   git+/hg+/svn+ marker family.
+- **Visible prompt-injection signals** (`hlse_text.c`): two new
+  SIGNALS entries close the gap between hidden-carrier detection and
+  plain-prose injections — canonical override phrases ("ignore all
+  previous instructions", "disregard all previous", DAN-style "do
+  anything now", role reassignment) score 40–55, and LLM control
+  tokens (`<<SYS>>`, `<|im_start|>`, ChatML `[INST]`, …) score 45–60:
+  tokenizer artefacts that never legitimately occur in a scanned
+  document. The `blind_spot` text and `hlse_text.h` contract now
+  state this coverage accurately.
+
 - **Credential-harvest form detection — file check F13**
   (`hlse_file.c`): an HTML file whose `<form>` posts to an absolute
   remote URL and contains a password field — the standalone

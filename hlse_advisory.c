@@ -86,8 +86,9 @@ hlse_blindspot_for(const char *kind) {
                "with no known phrasing can read clean; trust your judgment on "
                "unexpected requests for money or credentials. Prompt-injection "
                "coverage is structural only: hidden carriers (Unicode Tags, "
-               "long zero-width runs) are detected, but an injection written "
-               "in ordinary visible prose is a semantic problem this does not "
+               "long zero-width runs), canonical override phrases and LLM "
+               "control tokens are detected, but a novel injection written "
+               "in ordinary prose is a semantic problem this does not "
                "solve — do not treat a clean result as clearance to feed "
                "untrusted content to an agent.";
     if (strcmp(kind, "email") == 0)

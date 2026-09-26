@@ -20,7 +20,9 @@ TextVerdict hlse_check_text(const char *raw_text);
  *
  * Returns 0 when clean, else a score (70 Tags payload, 40 zero-width run) and
  * writes an explanatory line into `reason` when it is non-NULL. Structural
- * only — an injection written in ordinary visible prose is out of scope.
+ * only — the canonical visible payloads (override phrases, LLM control
+ * tokens) are covered by the SIGNALS table, but a novel injection in
+ * ordinary prose is out of scope.
  *
  * Exposed because file/directory scanning needs it too: the realistic path is
  * an agent reading a poisoned document or skill file, not a human pasting the
