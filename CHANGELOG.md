@@ -6,6 +6,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Launcher/shortcut carrier detection — file check F8**
+  (`hlse_file.c`). `.desktop` `Exec=` droppers (the APT36 campaign of
+  Aug 2025: phishing ZIP → `.desktop` → curl payload to /tmp → chmod+x
+  → run, plus a decoy document open), `.url` InternetShortcut and macOS
+  `.webloc` plist files are screened by content marker regardless of
+  extension. Embedded http(s) links are delegated to `hlse_check_url`;
+  `Exec=` fetch→execute (curl/wget + |sh|bash|/tmp|chmod) scores 70,
+  opaque decode/exec (base64 -d, xxd -r, openssl, eval, python -c,
+  perl -e) 55, bare download 35. `.desktop` and `.webloc` join the
+  executable-extension table, so `invoice.pdf.desktop` hits F1=80 (the
+  documented APT36 masquerade). The ICS/launcher link extractor is now a
+  shared `links_max_score` helper.
+
 - **Variation-selector smuggling detection** (`hlse_text.c`): the
   invisible-carrier scan now also catches the "ASCII smuggling via
   variation selectors" exfiltration channel — Variation Selector

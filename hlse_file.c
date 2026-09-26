@@ -10,6 +10,7 @@
  *   F5. Scripted SVG            — <svg> carrying <script>/handlers
  *   F6. Suspicious filename     — social engineering lure names
  *   F7. ICS invite phishing     — VCALENDAR embedding malicious links
+ *   F8. Launcher/shortcut       — .desktop/.url/.webloc payload carriers
  *
  * All detection is read-only. Files are never modified or executed.
  *
@@ -229,6 +230,9 @@ static const char *EXECUTABLE_EXTS[] = {
     ".ps1xml", ".cdxml",
     /* Internet Shortcut (can embed URLs that auto-execute) */
     ".url",
+    /* Linux/macOS launcher files — Exec=/URL payload carriers
+     * (APT36 .desktop dropper campaign, Aug 2025) */
+    ".desktop", ".webloc",
     /* Excel/Word add-ins — shellcode delivery vector via COM (2021-2023 spike) */
     ".xll", ".wll",
     /* Compiled HTML Help — executes embedded JScript via hhctrl.ocx */
@@ -410,20 +414,13 @@ ics_has_injection(const char *low) {
     return 0;
 }
 
-/* Returns the highest embedded-link score in a VCALENDAR payload
- * (0 = clean / not ICS); sets *out_inj when agent-directed injection
- * phrasing is present.                                                */
+/* Scan a lowercased buffer for http(s) links; extract each and score it
+ * with the URL engine. A link ending in an executable extension scores
+ * ≥70 outright (documents/invites have no reason to serve one).        */
 static int
-ics_suspicious_link(const unsigned char *head, size_t len, int *out_inj) {
-    char low[4097];
-    size_t n = 0, i;
+links_max_score(const char *low, size_t n) {
+    size_t i;
     int best = 0;
-    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
-    *out_inj = 0;
-    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
-    low[n] = '\0';
-    if (strstr(low, "begin:vcalendar") == NULL) return 0;
-    if (ics_has_injection(low)) *out_inj = 1;
     for (i = 0; i + 8 <= n; i++) {
         if (strncmp(low + i, "http://", 7) != 0 &&
             strncmp(low + i, "https://", 8) != 0)
@@ -449,6 +446,71 @@ ics_suspicious_link(const unsigned char *head, size_t len, int *out_inj) {
                 if (sc > best) best = sc;
             }
             i = j;
+        }
+    }
+    return best;
+}
+
+/* Returns the highest embedded-link score in a VCALENDAR payload
+ * (0 = clean / not ICS); sets *out_inj when agent-directed injection
+ * phrasing is present.                                                */
+static int
+ics_suspicious_link(const unsigned char *head, size_t len, int *out_inj) {
+    char low[4097];
+    size_t n = 0, i;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    *out_inj = 0;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strstr(low, "begin:vcalendar") == NULL) return 0;
+    if (ics_has_injection(low)) *out_inj = 1;
+    return links_max_score(low, n);
+}
+
+/* Launcher/shortcut carriers: .desktop Exec= droppers (APT36, Aug 2025),
+ * .url InternetShortcut and .webloc plist files carrying phishing links.
+ * Content-marker based, like F5/F7. For .desktop the Exec= value is the
+ * payload: download-and-execute is the documented dropper pattern.     */
+static int
+launcher_payload_score(const unsigned char *head, size_t len) {
+    char low[4097];
+    size_t n = 0, i;
+    int best = 0, is_desktop, is_shortcut;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    is_desktop  = strstr(low, "[desktop entry") != NULL;
+    is_shortcut = strstr(low, "[internetshortcut") != NULL ||
+                  (strstr(low, "<plist") != NULL &&
+                   strstr(low, "<key>url") != NULL);
+    if (!is_desktop && !is_shortcut) return 0;
+    best = links_max_score(low, n);
+    if (is_desktop) {
+        const char *e = strstr(low, "exec=");
+        if (e) {
+            char ex[1024];
+            size_t u = 0;
+            int dl, shell;
+            e += 5;
+            while (*e && *e != '\n' && *e != '\r' && u < sizeof(ex) - 1)
+                ex[u++] = *e++;
+            ex[u] = '\0';
+            dl = strstr(ex, "curl ")  != NULL || strstr(ex, "curl\t") ||
+                 strstr(ex, "wget ")  != NULL || strstr(ex, "wget\t");
+            shell = strstr(ex, "| sh")  != NULL || strstr(ex, "|sh")   ||
+                    strstr(ex, "| bash") != NULL || strstr(ex, "|bash") ||
+                    strstr(ex, "sh -c")  != NULL || strstr(ex, "bash -c");
+            if (dl && (shell || strstr(ex, "/tmp/") != NULL ||
+                       strstr(ex, "chmod") != NULL)) {
+                if (best < 70) best = 70;   /* fetch → /tmp|pipe → exec */
+            } else if (strstr(ex, "base64 -d") || strstr(ex, "base64 --decode") ||
+                       strstr(ex, "xxd -r")     || strstr(ex, "openssl") ||
+                       strstr(ex, "eval ")      || strstr(ex, "python -c") ||
+                       strstr(ex, "perl -e")) {
+                if (best < 55) best = 55;   /* opaque decode/exec */
+            } else if (dl) {
+                if (best < 35) best = 35;   /* bare download in launcher */
+            }
         }
     }
     return best;
@@ -752,6 +814,16 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, ics > 65 ? 65 : ics,
                 "F7: CALENDAR INVITE embeds suspicious link "
                 "(embedded URL score %d)", ics);
+        }
+    }
+
+    /* ── F8: Launcher / shortcut carriers (.desktop/.url/.webloc) ──── */
+    if (head_len > 0) {
+        int lsc = launcher_payload_score(head, (size_t)head_len);
+        if (lsc >= 40) {
+            fv_add(&v, lsc > 65 ? 65 : lsc,
+                "F8: LAUNCHER file runs remote download/command or links "
+                "to a suspicious URL (score %d)", lsc);
         }
     }
 
