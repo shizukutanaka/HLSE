@@ -2041,6 +2041,28 @@ hlse_check_file(const char *filepath) {
         }
     }
 
+    /* UTF-16 evasion: a BOM-prefixed UTF-16 file stores ASCII text
+     * with interleaved NUL/high bytes, hiding it from every
+     * string-based check below (a UTF-16 .ps1 download cradle reads
+     * as a plain file). Decode in place — the decoded length is always
+     * shorter than the source span, so dst never overruns src. */
+    if (head_len >= 4) {
+        int le = (head[0] == 0xff && head[1] == 0xfe);
+        int be = (head[0] == 0xfe && head[1] == 0xff);
+        if (le || be) {
+            ssize_t si = 2, di = 0;
+            while (si + 1 < head_len) {
+                unsigned char c = le ? head[si] : head[si + 1];
+                head[di++] = c ? c : (unsigned char)'?';
+                si += 2;
+            }
+            head_len = di;
+            fv_add(&v, 15,
+                "F47: UTF-16 encoded content — decoded for analysis "
+                "(encoding can evade string-based detection)");
+        }
+    }
+
     /* Detect magic type */
     if (head_len >= 4) {
         magic_type = detect_magic(head, (size_t)head_len);

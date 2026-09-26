@@ -6,6 +6,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F47 UTF-16 decode before content analysis** (`hlse_file.c`): a
+  BOM-prefixed UTF-16LE/BE file hides ASCII payloads behind
+  interleaved NUL/high bytes — every string-based F-check saw only
+  noise (a UTF-16 .ps1 download cradle scored LOG 30). The first 4KB
+  head is now decoded in place when a BOM is present (LE low byte /
+  BE high byte, NULs → `?`) and all content checks run on the decoded
+  text; the decode itself is logged at 15 as an encoding-evasion
+  signal. Probed: UTF-16 cradle now reaches ISOLATE 100.
 - **F44–F46 spreadsheet/launch carriers** (`hlse_file.c`): F44 formula
   injection — `.slk` SYLK `EEXEC(`/auto-exec → 55 (runs without a
   macro prompt), `.iqy`/`.rqy`/`.dsy` WEB query to remote source → 45,
