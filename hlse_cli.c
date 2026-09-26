@@ -1189,6 +1189,49 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                         }
                     }
                 }
+                /* All ecosystems: a VCS/direct-URL dependency source whose
+                 * host is off the known forges substitutes package code at
+                 * install while the declared name still looks clean. */
+                {
+                    char vhost[256];
+                    if (hlse_manifest_vcs_host(line, vhost, sizeof(vhost)) &&
+                        hlse_manifest_resolved_suspicious(vhost)) {
+                        int vsc = 55;
+                        char vreason[HLSE_HOOK_REASON_LEN];
+                        snprintf(vreason, sizeof(vreason),
+                            "dependency source host '%s' is outside known "
+                            "forges/registries — VCS/direct URL installs "
+                            "unvetted code (dependency substitution)", vhost);
+                        threats++;
+                        hlse_alert_emit_rows("package", vsc,
+                            hlse_severity_for_score(vsc), mpath,
+                            &vreason, HLSE_HOOK_REASON_LEN, 1);
+                        if (vsc > max_score) max_score = vsc;
+                        if (vsc >= o->fail_threshold) gate_hits++;
+                        if (o->sarif_out) {
+                            hlse_sarif_add(mpath, lineno,
+                                "package-vcs-source",
+                                "HLSE-PKG-VCS", vreason, vsc);
+                        } else if (o->json_out) {
+                            char evh[256], eh3[384];
+                            hlse_json_escape(vhost, evh, sizeof(evh));
+                            hlse_json_escape(vreason, eh3, sizeof(eh3));
+                            hlse_json_open("package");
+                            printf(",\"name\":\"%s\",\"ecosystem\":\"%s\","
+                                   "\"score\":%d,\"action\":\"%s\","
+                                   "\"severity\":%d,"
+                                   "\"pattern_id\":\"HLSE-PKG-VCS\","
+                                   "\"reason\":\"%s\"}\n",
+                                   evh, eco, vsc,
+                                   hlse_action_for_score(vsc),
+                                   hlse_severity_for_score(vsc), eh3);
+                        } else {
+                            printf("%-7s [%d]  suspicious dependency source: %s\n",
+                                   hlse_action_for_score(vsc), vsc,
+                                   vreason);
+                        }
+                    }
+                }
                 for (;;) {
                     int got;
                     if (is_npm)

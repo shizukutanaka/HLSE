@@ -601,6 +601,22 @@ rm -rf "$LK_DIR"
     && check "enc-host FP guard: plain host clean" "0" "1" \
     || check "enc-host FP guard: plain host clean" "0" "0"
 
+# VCS/direct-URL dependency sources: off-forge host → flagged
+VCS_DIR=$(mktemp -d)
+printf -- '-e git+https://evil-mirror.example/repo.git#egg=requests\nrequests>=2.0\n' > "$VCS_DIR/requirements.txt"
+./hlse_core package --manifest "$VCS_DIR/requirements.txt" 2>&1 | grep -q "dependency source" \
+    && check "vcs-dep: off-forge git+ source flagged" "0" "0" \
+    || check "vcs-dep: off-forge git+ source flagged" "0" "1"
+printf -- 'git+https://github.com/pallets/flask.git#egg=flask\nrequests>=2.0\n' > "$VCS_DIR/requirements.txt"
+./hlse_core package --manifest "$VCS_DIR/requirements.txt" 2>&1 | grep -q "suspicious dependency source" \
+    && check "vcs-dep FP guard: github.com git dep clean" "0" "1" \
+    || check "vcs-dep FP guard: github.com git dep clean" "0" "0"
+printf '{\n "dependencies": {"evilpkg": "git+https://evil.example/x.git"}\n}\n' > "$VCS_DIR/package.json"
+./hlse_core package --manifest "$VCS_DIR/package.json" 2>&1 | grep -q "dependency source" \
+    && check "vcs-dep: npm git+ value flagged" "0" "0" \
+    || check "vcs-dep: npm git+ value flagged" "0" "1"
+rm -rf "$VCS_DIR"
+
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
 ./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "0" \

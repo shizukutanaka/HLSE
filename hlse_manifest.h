@@ -38,3 +38,9 @@ int hlse_manifest_resolved_host(const char *line, char *out, size_t outcap);
 /* Returns 1 when the resolved URL's host is outside the package
  * registries/git hosts a lockfile may legitimately reference. */
 int hlse_manifest_resolved_suspicious(const char *host);
+
+/* Extract the host of a VCS/direct-URL dependency source on a manifest
+ * line (git+/hg+/svn+/bzr+ URLs, PEP 440 `name @ url`, archive tails).
+ * Returns 1 with the lowercased host in out, or 0 when absent. Check the
+ * host with hlse_manifest_resolved_suspicious. */
+int hlse_manifest_vcs_host(const char *line, char *out, size_t outcap);

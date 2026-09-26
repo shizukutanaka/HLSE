@@ -259,9 +259,13 @@ hlse_manifest_resolved_host(const char *line, char *out, size_t outcap) {
                n + 1 < outcap)
             out[n++] = (char)tolower((unsigned char)*u++);
         out[n] = '\0';
-        {   /* strip any :port */
-            char *c = strchr(out, ':');
-            if (c) *c = '\0';
+        {   /* strip userinfo (user[:pass]@host) then any :port */
+            char *at = strrchr(out, '@');
+            if (at) memmove(out, at + 1, strlen(at + 1) + 1);
+            {
+                char *c = strchr(out, ':');
+                if (c) *c = '\0';
+            }
         }
         if (out[0]) return 1;
     }
@@ -290,5 +294,80 @@ hlse_manifest_resolved_suspicious(const char *host) {
         if (n > hl + 1 && host[n - hl - 1] == '.' &&
             strcmp(host + n - hl, h) == 0) return 0;
     }
+    return 1;
+}
+
+/* VCS / direct-URL dependency source: pip accepts
+ * `git+https://host/repo.git#egg=pkg`, `pkg @ https://host/pkg.tar.gz`;
+ * npm accepts `"dep": "git+https://host/x.git"` or a bare tarball URL as
+ * the version field. The dependency name (#egg= / key) says nothing
+ * about where the code actually comes from — an off-forge source is
+ * dependency substitution the typosquat check cannot see (a VCS URL has
+ * no registry pinning the name). Returns the host on such a reference.
+ * `resolved`-style fields are skipped: the resolved check owns them.  */
+int
+hlse_manifest_vcs_host(const char *line, char *out, size_t outcap) {
+    static const char *const RESOLVED_KEYS[] = {
+        "\"resolved\"", "resolved ", "resolved:",
+        "\"resolution\"", "resolution:",
+        "\"tarball\"", "tarball:",
+        NULL
+    };
+    static const char *const VCS_MARKERS[] = {
+        "git+", "hg+", "svn+", "bzr+", NULL
+    };
+    static const char *const DIRECT_EXTS[] = {
+        ".git", ".tgz", ".tar.gz", ".zip", ".whl", ".tar",
+        NULL
+    };
+    const char *u = NULL, *scheme_end;
+    size_t n = 0;
+    int i;
+
+    if (out && outcap) out[0] = '\0';
+    if (!line || !out || outcap == 0) return 0;
+    for (i = 0; RESOLVED_KEYS[i]; i++)
+        if (strstr(line, RESOLVED_KEYS[i])) return 0;
+
+    /* a vcs marker prefix makes any following scheme a VCS reference */
+    for (i = 0; VCS_MARKERS[i]; i++) {
+        const char *m = strstr(line, VCS_MARKERS[i]);
+        if (m) {
+            const char *sep = strstr(m + strlen(VCS_MARKERS[i]), "://");
+            if (sep) { u = sep; break; }
+        }
+    }
+    if (!u) {
+        /* bare scheme: keep it if the URL is a direct artifact reference
+         * (PEP 440 `name @ url`, or a recognisable archive/.git tail) */
+        const char *s = strstr(line, "://");
+        if (!s) return 0;
+        {
+            int direct = strstr(line, " @ ") != NULL ||
+                         strstr(line, "\" @ \"") != NULL ||
+                         strstr(line, "@https") != NULL ||
+                         strstr(line, "@ http") != NULL;
+            for (i = 0; DIRECT_EXTS[i] && !direct; i++)
+                if (strstr(line, DIRECT_EXTS[i])) direct = 1;
+            if (!direct) return 0;
+            u = s;
+        }
+    }
+    scheme_end = u + 3;
+    while (*scheme_end && *scheme_end != '/' && *scheme_end != '"' &&
+           *scheme_end != '\'' && *scheme_end != ' ' &&
+           *scheme_end != '\t' && *scheme_end != '#' &&
+           *scheme_end != ')' && *scheme_end != '>' &&
+           n + 1 < outcap)
+        out[n++] = (char)tolower((unsigned char)*scheme_end++);
+    out[n] = '\0';
+    {   /* strip userinfo (user[:pass]@host) then any :port */
+        char *at = strrchr(out, '@');
+        if (at) memmove(out, at + 1, strlen(at + 1) + 1);
+        { char *c = strchr(out, ':'); if (c) *c = '\0'; }
+    }
+    if (!out[0]) return 0;
+    /* reject a 'host' that is really a path fragment */
+    if (!strchr(out, '.')) return 0;
     return 1;
 }

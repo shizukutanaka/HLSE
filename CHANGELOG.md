@@ -15,6 +15,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   (`@`, `/`, `\`) the raw and resolved authority disagree and it scores
   55 (parsing-confusion evasion).
 
+- **VCS / direct-URL dependency-source check** (`hlse_manifest.c`,
+  `hlse_cli.c`): `package --manifest` flags `git+`/`hg+`/`svn+`/`bzr+`
+  URLs, PEP 440 `name @ url` direct references, and bare URLs ending in
+  a package/archive tail whose host is outside the forge/registry
+  allowlist — score 55. The declared dependency name says nothing about
+  where the code comes from, so this catches substitution a typosquat
+  check cannot see. Resolved-style fields are owned by the lockfile
+  check and skipped here.
+
 - **Obfuscated-IP host detection** (`hlse_core.c`): dotted IP literals
   in non-decimal or abbreviated form — hex labels (`0xC0.0x00.0x02.0x01`),
   octal labels (`0300.0250.0001.0001`), and shorthand 2–3-label quads

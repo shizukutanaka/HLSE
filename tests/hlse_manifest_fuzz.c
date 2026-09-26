@@ -10,6 +10,7 @@
  *   hlse_manifest_name_npm(&cursor, ...)    — package.json stream parse
  *   hlse_manifest_resolved_host(line, ...)  — resolved-URL host extract
  *   hlse_manifest_resolved_suspicious(host) — registry allowlist
+ *   hlse_manifest_vcs_host(line, ...)       — VCS/direct-URL source
  *   hlse_manifest_hook_flags(line, ...)     — lifecycle-hook risk scan
  *
  * All three are pure in-memory parsers — no disk access — so arbitrary
@@ -142,6 +143,13 @@ static size_t gen_lockfile(char *buf, size_t cap, unsigned long *rng) {
         "\"resolved\": https:",
         "\"resolved\": \"https://a:8080@evil.example/x.tgz\"",
         "resolved:////weird", "\"resolution\"\"resolution\"http://h/",
+        "-e git+https://evil.example/repo.git#egg=requests",
+        "git+ssh://git@github.com/x/y.git",
+        "pkg @ https://evil.example/p.tgz",
+        "\"dep\": \"git+https://evil.example/x.git\"",
+        "\"dep\": \"https://internal.example/x.tar.gz\"",
+        "# see https://docs.example for details",
+        "--index-url https://pypi.org/simple",
         NULL
     };
     int n = 0; while (frags[n]) n++;
@@ -203,6 +211,8 @@ static void exercise(const char *buf) {
             break;
     }
     if (hlse_manifest_resolved_host(buf, out, sizeof(out)))
+        (void)hlse_manifest_resolved_suspicious(out);
+    if (hlse_manifest_vcs_host(buf, out, sizeof(out)))
         (void)hlse_manifest_resolved_suspicious(out);
     hn = hlse_manifest_hook_flags(buf, hout, hsc, 4);
     (void)hn;
