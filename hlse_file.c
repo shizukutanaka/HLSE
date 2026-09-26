@@ -1501,6 +1501,150 @@ pac_hijack_score(const unsigned char *head, size_t len, const char *ext) {
     return 0;
 }
 
+/* ─── F31: XML XXE / entity-expansion bomb — <!ENTITY … SYSTEM
+ *      "file:///…|http://…"> exfiltrates local files on parse;
+ *      nested entity declarations expand exponentially (billion
+ *      laughs). Fires on parser-fed XML-family docs. ─────────────── */
+static int
+xml_xxe_score(const unsigned char *head, size_t len, const char *ext) {
+    char extl[32], low[4097];
+    size_t n = 0, i;
+    static const char *const XEXT[] = {
+        ".xml", ".svg", ".xsl", ".xslt", ".dtd", ".xsd", ".rss",
+        ".atom", ".plist", ".resx", ".config", ".rels", NULL
+    };
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    for (i = 0; XEXT[i]; i++)
+        if (strcmp(extl, XEXT[i]) == 0) break;
+    if (!XEXT[i]) return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(low, "<!entity") && !strstr(low, "<!doctype"))
+        return 0;
+    /* external entity / external DTD — SYSTEM or PUBLIC identifier */
+    if ((strstr(low, "<!entity") || strstr(low, "<!doctype")) &&
+        (strstr(low, "system") || strstr(low, "public")))
+        return 65;
+    /* entity-expansion bomb: an entity declaration whose quoted value
+     * itself references other entities (&name;) */
+    {
+        const char *p = low;
+        while ((p = strstr(p, "<!entity")) != NULL) {
+            const char *q = strchr(p, '"');
+            const char *e;
+            if (!q) q = strchr(p, '\'');
+            if (!q) { p += 8; continue; }
+            e = strchr(q + 1, *q);
+            if (!e) { p += 8; continue; }
+            for (q++; q < e; q++)
+                if (*q == '&') return 55;
+            p = e;
+        }
+    }
+    return 0;
+}
+
+/* ─── F32: MSBuild inline task / Exec — <UsingTask> with a code
+ *      task factory compiles+runs embedded C# at build; <Exec> runs
+ *      a raw command. A vendored .*proj builds to code-exec. ───────── */
+static int
+msbuild_exec_score(const unsigned char *head, size_t len,
+                   const char *ext) {
+    char extl[32], low[4097];
+    size_t n = 0, i;
+    static const char *const MEXT[] = {
+        ".csproj", ".vbproj", ".fsproj", ".proj", ".targets",
+        ".props", ".xproj", NULL
+    };
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    for (i = 0; MEXT[i]; i++)
+        if (strcmp(extl, MEXT[i]) == 0) break;
+    if (!MEXT[i]) return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strstr(low, "<usingtask") &&
+        (strstr(low, "codetaskfactory") ||
+         strstr(low, "roslyncodetaskfactory") ||
+         strstr(low, "taskfactory")))
+        return 60;
+    if (strstr(low, "<exec ") || strstr(low, "<exec\t") ||
+        strstr(low, "<exec>"))
+        return 55;
+    return 0;
+}
+
+/* ─── F33: debugger rc exec — .gdbinit/.lldbinit runs `shell`/`command
+ *      script import` lines when a developer opens the repo under a
+ *      debugger (autoexec-on-tool-start class) ────────────────────── */
+static int
+dbgrc_score(const unsigned char *head, size_t len,
+            const char *basename_start) {
+    char lown[64], low[4097];
+    size_t n = 0, i;
+    str_lower(basename_start, lown, sizeof(lown));
+    if (strcmp(lown, ".gdbinit") && strcmp(lown, "gdbinit") &&
+        strcmp(lown, ".lldbinit") && strcmp(lown, "lldbinit") &&
+        strcmp(lown, ".gdbinitearly"))
+        return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strncmp(low, "shell ", 6) == 0 || strstr(low, "\nshell ") ||
+        strstr(low, "command script import") ||
+        strstr(low, "process launch"))
+        return 45;
+    return 0;
+}
+
+/* ─── F34: SQL exec — COPY … FROM/TO PROGRAM pipes a shell command
+ *      through the DB superuser; `\!` runs a host shell; LOAD /
+ *      LANGUAGE C links a shared object (Postgres RCE class) ──────── */
+static int
+sql_exec_score(const unsigned char *head, size_t len, const char *ext) {
+    char extl[32], low[4097];
+    size_t n = 0, i;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".sql") != 0) return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if ((strstr(low, "copy") && strstr(low, " program")) ||
+        strstr(low, "language c") || strstr(low, "language 'c'") ||
+        strstr(low, "language \"c\"") ||
+        strncmp(low, "load '", 6) == 0 || strstr(low, "\nload '"))
+        return 55;
+    if (strstr(low, "\n\\!") || strncmp(low, "\\!", 2) == 0)
+        return 50;
+    return 0;
+}
+
+/* ─── F35: interpreter autoexec — sitecustomize.py / usercustomize.py
+ *      run on EVERY python startup (dropped into site-packages or a
+ *      dir on PYTHONPATH); a file with that name + exec markers is a
+ *      persistence payload, not a module ──────────────────────────── */
+static int
+py_autoexec_score(const unsigned char *head, size_t len,
+                  const char *basename_start) {
+    char lown[64], low[4097];
+    size_t n = 0, i;
+    str_lower(basename_start, lown, sizeof(lown));
+    if (strcmp(lown, "sitecustomize.py") &&
+        strcmp(lown, "usercustomize.py") && strcmp(lown, "conftest.py"))
+        return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strstr(low, "os.system") || strstr(low, "os.popen") ||
+        strstr(low, "subprocess") || strstr(low, "socket.socket") ||
+        strstr(low, "eval(") || strstr(low, "exec(") ||
+        strstr(low, "__import__") || strstr(low, "urllib") ||
+        strstr(low, "requests.") || strstr(low, "base64"))
+        return 55;
+    return 0;
+}
+
 FileVerdict
 hlse_check_file(const char *filepath) {
     FileVerdict v;
@@ -2034,6 +2178,64 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, ph,
                 "F30: WPAD PROXY HIJACK — .pac returns a remote "
                 "PROXY/SOCKS for all traffic (score %d)", ph);
+        }
+    }
+
+    /* ── F31: XML XXE / entity bomb — external entities or nested
+     *      entity declarations in parser-fed XML-family docs ──────── */
+    if (head_len > 0) {
+        int xx = xml_xxe_score(head, (size_t)head_len, ext);
+        if (xx > 0) {
+            fv_add(&v, xx,
+                "F31: XML XXE/BOMB — external entity (file/URL leak on "
+                "parse) or entity-expansion bomb (score %d)", xx);
+        }
+    }
+
+    /* ── F32: MSBuild inline task — <UsingTask> code factory or
+     *      <Exec> runs embedded code/commands at build ────────────── */
+    if (head_len > 0) {
+        int mb = msbuild_exec_score(head, (size_t)head_len, ext);
+        if (mb > 0) {
+            fv_add(&v, mb,
+                "F32: MSBUILD EXEC — inline task factory or <Exec> "
+                "runs code during build (score %d)", mb);
+        }
+    }
+
+    /* ── F33: debugger rc — .gdbinit/.lldbinit shell/script lines
+     *      execute when the repo is opened under a debugger ────────── */
+    if (head_len > 0) {
+        int db = dbgrc_score(head, (size_t)head_len, basename_start);
+        if (db > 0) {
+            fv_add(&v, db,
+                "F33: DEBUGGER RC — .gdbinit/.lldbinit runs shell/"
+                "script commands on debugger start (score %d)", db);
+        }
+    }
+
+    /* ── F34: SQL exec — COPY … PROGRAM / \! / LANGUAGE C reach the
+     *      host shell or a shared object via the DB ───────────────── */
+    if (head_len > 0) {
+        int sq = sql_exec_score(head, (size_t)head_len, ext);
+        if (sq > 0) {
+            fv_add(&v, sq,
+                "F34: SQL EXEC — COPY PROGRAM / \\! / LANGUAGE C runs "
+                "shell or a shared object via the database (score %d)",
+                sq);
+        }
+    }
+
+    /* ── F35: interpreter autoexec — sitecustomize.py/usercustomize.py
+     *      run at every python startup; exec markers flag a dropped
+     *      persistence payload ────────────────────────────────────── */
+    if (head_len > 0) {
+        int pa = py_autoexec_score(head, (size_t)head_len,
+                                   basename_start);
+        if (pa > 0) {
+            fv_add(&v, pa,
+                "F35: PY AUTOEXEC — sitecustomize/usercustomize module "
+                "runs at every interpreter start (score %d)", pa);
         }
     }
 

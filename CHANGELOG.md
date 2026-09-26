@@ -6,6 +6,22 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F31–F35 parser-fed carriers** (`hlse_file.c`): F31 XML external
+  entities / nested-entity expansion bomb → 65/55 on `.xml`/`.svg`/
+  `.xsl`/.dtd` family (file/URL leak on parse, billion-laughs);
+  F32 MSBuild `<UsingTask>` code-task factory / `<Exec>` → 60/55 on
+  `.csproj`/`.proj`/`.targets`/`.props` (build-time code exec);
+  F33 `.gdbinit`/`.lldbinit` `shell`/`command script import` lines →
+  45 (debugger-start exec); F34 `COPY … PROGRAM` / `\!` / `LANGUAGE C`
+  in `.sql` → 55/50 (DB-superuser shell/shared-object); F35
+  `sitecustomize.py`/`usercustomize.py`/`conftest.py` exec markers →
+  55 (interpreter autoexec persistence).
+- **Manifest redirection advisories** (`hlse_manifest.c`,
+  `hlse_cli.c`): go.mod `replace => ./../|/abs` local-path targets →
+  LOG 30 (vendored-tree module swap; remote-host replaces already
+  flagged 25/45); Cargo.toml `[patch.*]`/`[replace]` table headers →
+  LOG 30 (dependency-source redirection — each row's `git =` host is
+  still vetted by the VCS-source check).
 - **F26 docker-compose privilege** (`hlse_file.c`): compose-named
   or `services:`+`image:`/`build:` YAML running `privileged` (70),
   host-namespace modes `network_mode|pid|ipc|uts|cgroup|userns_mode:
