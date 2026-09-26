@@ -6,6 +6,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **npm lifecycle-hook risk in `package --manifest`** (`hlse_manifest.c`,
+  `hlse_cli.c`; pattern id `HLSE-PKG-HOOK`). 2025's self-propagating npm
+  worms (Shai-Hulud, s1ngularity/Nx fallout) run from install hooks —
+  `"postinstall": "node bundle.js"` is the canonical loader. Each
+  package.json line carrying a lifecycle key is now screened for: hard
+  IoCs (`node bundle.js`, webhook collectors, trufflehog), env-harvest +
+  egress (`process.env` + curl/fetch/http), fetch|pipe|execute,
+  credential-file + egress, and opaque decode/exec (`eval`, `atob`,
+  `node -e`, base64). Findings emit like package threats (SARIF rule
+  `package-lifecycle-hook`, alert rows, gate). 3 tests: both positive
+  shapes plus a node-gyp/husky benign guard.
+
 - **FileFix detection** (`hlse_text.c`). The mid-2025 ClickFix variant
   that makes File Explorer the paste target (KongTuke et al., per Check
   Point/mr.d0x): new CLICKFIX_WORDS entries cover the Explorer-address-bar

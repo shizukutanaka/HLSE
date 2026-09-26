@@ -1104,6 +1104,48 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                 lineno++;
                 /* npm: a line may hold several "name":"ver" pairs (compact
                  * object form), so drain the cursor. pip: one name per line. */
+                if (is_npm) {
+                    /* Lifecycle-hook risk (Shai-Hulud-style install worms). */
+                    char hout[4][HLSE_HOOK_REASON_LEN];
+                    int  hsc[4];
+                    size_t hn = hlse_manifest_hook_flags(line, hout, hsc, 4);
+                    size_t hi;
+                    for (hi = 0; hi < hn; hi++) {
+                        threats++;
+                        hlse_alert_emit_rows("package", hsc[hi],
+                            hlse_severity_for_score(hsc[hi]), mpath,
+                            hout[hi], sizeof hout[hi], 1);
+                        if (hsc[hi] > max_score) max_score = hsc[hi];
+                        if (hsc[hi] >= o->fail_threshold) gate_hits++;
+                        if (o->sarif_out) {
+                            hlse_sarif_add(mpath, lineno, "package-lifecycle-hook",
+                                      "HLSE-PKG-HOOK", hout[hi], hsc[hi]);
+                        } else if (o->json_out) {
+                            char eh[192], hk[64], ehk[64];
+                            const char *colon = strchr(hout[hi], ':');
+                            if (colon) {
+                                size_t kl = (size_t)(colon - hout[hi]);
+                                if (kl >= sizeof(hk)) kl = sizeof(hk) - 1;
+                                memcpy(hk, hout[hi], kl); hk[kl] = '\0';
+                            } else {
+                                snprintf(hk, sizeof(hk), "%s", hout[hi]);
+                            }
+                            hlse_json_escape(hk, ehk, sizeof(ehk));
+                            hlse_json_escape(hout[hi], eh, sizeof(eh));
+                            hlse_json_open("package");
+                            printf(",\"name\":\"%s\",\"ecosystem\":\"npm\","
+                                   "\"score\":%d,\"action\":\"%s\",\"severity\":%d,"
+                                   "\"pattern_id\":\"HLSE-PKG-HOOK\",\"reason\":\"%s\"}\n",
+                                   ehk, hsc[hi],
+                                   hlse_action_for_score(hsc[hi]),
+                                   hlse_severity_for_score(hsc[hi]), eh);
+                        } else {
+                            printf("%-7s [%d]  suspicious lifecycle hook: %s\n",
+                                   hlse_action_for_score(hsc[hi]), hsc[hi],
+                                   hout[hi]);
+                        }
+                    }
+                }
                 for (;;) {
                     int got;
                     if (is_npm)

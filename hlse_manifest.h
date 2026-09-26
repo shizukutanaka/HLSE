@@ -17,4 +17,15 @@ int hlse_manifest_name_pip(const char *line, char *out, size_t outcap);
 int hlse_manifest_name_npm(const char **cursor, int *in_deps,
                          char *out, size_t outcap);
 
+#define HLSE_HOOK_REASON_LEN 192
+
+/* Scan one line of a package.json for npm lifecycle-hook risk (the
+ * 2025 self-propagating-worm pattern: preinstall/install/postinstall/
+ * prepare hooks that harvest the process environment, fetch-and-pipe
+ * remote code, or run opaque decoded payloads). Returns the number of
+ * findings; out[i] holds the display reason and scores[i] its score. */
+size_t hlse_manifest_hook_flags(const char *line,
+                                char out[][HLSE_HOOK_REASON_LEN],
+                                int scores[], size_t outcap);
+
 #endif /* HLSE_MANIFEST_H */
