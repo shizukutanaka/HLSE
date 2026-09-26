@@ -631,7 +631,16 @@ unc_leak_score(const unsigned char *head, size_t len) {
               strstr(low, "searchconnectordescription") != NULL ||
               strstr(low, "iconfile")                != NULL ||
               strstr(low, "iconresource")            != NULL ||
-              strstr(low, "iconunc")                 != NULL;
+              strstr(low, "iconunc")                 != NULL ||
+              /* Windows .theme — ThemeBleed/CVE-2024-38030 class:
+               * [Theme]/[Slideshow] sections carry Wallpaper=,
+               * ItemNPath= or ImagesRootPIDL values that may point
+               * at a remote UNC and leak NetNTLM on load.         */
+              strstr(low, "[theme]")                 != NULL ||
+              strstr(low, "[slideshow]")             != NULL ||
+              strstr(low, "[visualstyles]")          != NULL ||
+              strstr(low, "wallpaper=")              != NULL ||
+              strstr(low, "imagesrootpidl")          != NULL;
     if (!carrier) return 0;
     if (strstr(low, "\\\\") != NULL) return 70;   /* UNC → SMB leak */
     if (strstr(low, "webdav") != NULL || strstr(low, "davwwwroot") != NULL)

