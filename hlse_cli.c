@@ -1472,6 +1472,85 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                                    rpreason);
                         }
                     }
+                    /* replace => ../local/path — the module is swapped
+                     * for on-disk files (a vendored repo ships its own
+                     * 'fork'); lower score than a remote host but still
+                     * worth surfacing. */
+                    else if (hlse_manifest_replace_local(line)) {
+                        int lsc = 30;
+                        char lreason[HLSE_HOOK_REASON_LEN];
+                        snprintf(lreason, sizeof(lreason),
+                            "go.mod replace directive points at a local "
+                            "path — a vendored tree swaps the module for "
+                            "on-disk files; verify the target");
+                        threats++;
+                        hlse_alert_emit_rows("package", lsc,
+                            hlse_severity_for_score(lsc), mpath,
+                            &lreason, HLSE_HOOK_REASON_LEN, 1);
+                        if (lsc > max_score) max_score = lsc;
+                        if (lsc >= o->fail_threshold) gate_hits++;
+                        if (o->sarif_out) {
+                            hlse_sarif_add(mpath, lineno,
+                                "package-go-replace-local",
+                                "HLSE-PKG-GOREPLACE-L", lreason, lsc);
+                        } else if (o->json_out) {
+                            char eh7b[384];
+                            hlse_json_escape(lreason, eh7b, sizeof(eh7b));
+                            hlse_json_open("package");
+                            printf(",\"manifest\":\"%s\",\"score\":%d,"
+                                   "\"action\":\"%s\",\"severity\":%d,"
+                                   "\"pattern_id\":\"HLSE-PKG-GOREPLACE-L\","
+                                   "\"reason\":\"%s\"}\n",
+                                   mpath, lsc,
+                                   hlse_action_for_score(lsc),
+                                   hlse_severity_for_score(lsc), eh7b);
+                        } else {
+                            printf("%-7s [%d]  go module replace: %s\n",
+                                   hlse_action_for_score(lsc), lsc,
+                                   lreason);
+                        }
+                    }
+                }
+                /* Cargo.toml [patch.*] / [replace] — the table
+                 * redirects every listed dependency's source (git, path,
+                 * other registry); the redirection itself is worth a
+                 * look even when each row's URL is a known forge. */
+                if (strcmp(eco, "cargo") == 0 &&
+                    hlse_manifest_cargo_patch(line)) {
+                    int psc = 30;
+                    char preason[HLSE_HOOK_REASON_LEN];
+                    snprintf(preason, sizeof(preason),
+                        "Cargo.toml %s table redirects dependency "
+                        "sources (git/path/registry) — verify every "
+                        "patched target is intended",
+                        strstr(line, "[replace]") ? "[replace]"
+                        : "[patch.*]");
+                    threats++;
+                    hlse_alert_emit_rows("package", psc,
+                        hlse_severity_for_score(psc), mpath,
+                        &preason, HLSE_HOOK_REASON_LEN, 1);
+                    if (psc > max_score) max_score = psc;
+                    if (psc >= o->fail_threshold) gate_hits++;
+                    if (o->sarif_out) {
+                        hlse_sarif_add(mpath, lineno,
+                            "package-cargo-patch",
+                            "HLSE-PKG-CARGOPATCH", preason, psc);
+                    } else if (o->json_out) {
+                        char eh7c[384];
+                        hlse_json_escape(preason, eh7c, sizeof(eh7c));
+                        hlse_json_open("package");
+                        printf(",\"manifest\":\"%s\",\"score\":%d,"
+                               "\"action\":\"%s\",\"severity\":%d,"
+                               "\"pattern_id\":\"HLSE-PKG-CARGOPATCH\","
+                               "\"reason\":\"%s\"}\n",
+                               mpath, psc,
+                               hlse_action_for_score(psc),
+                               hlse_severity_for_score(psc), eh7c);
+                    } else {
+                        printf("%-7s [%d]  cargo patch table: %s\n",
+                               hlse_action_for_score(psc), psc,
+                               preason);
+                    }
                 }
                 /* Gemfile `source "url"` / `source: "url"` — swaps the
                  * rubygems server every gem resolves through. */

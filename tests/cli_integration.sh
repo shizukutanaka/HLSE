@@ -717,9 +717,9 @@ printf 'module x\nrequire foo v1.0\nreplace foo => evil.example/repo v1.0\n' > "
     && check "goreplace: off-forge replace flagged" "0" "0" \
     || check "goreplace: off-forge replace flagged" "0" "1"
 printf 'module x\nrequire foo v1.0\nreplace foo => ./local/foo\n' > "$GR_DIR/go.mod"
-./hlse_core package --manifest "$GR_DIR/go.mod" 2>&1 | grep -q "go module replace" \
-    && check "goreplace FP guard: local-path replace clean" "0" "1" \
-    || check "goreplace FP guard: local-path replace clean" "0" "0"
+./hlse_core package --manifest "$GR_DIR/go.mod" 2>&1 | grep -q "local path" \
+    && check "goreplace: local-path replace flagged (advisory)" "0" "0" \
+    || check "goreplace: local-path replace flagged (advisory)" "0" "1"
 printf 'source "https://evil-gems.example"\ngem "rails"\n' > "$GR_DIR/Gemfile"
 ./hlse_core package --manifest "$GR_DIR/Gemfile" 2>&1 | grep -q "gem source" \
     && check "gemsource: off-registry source flagged" "0" "0" \

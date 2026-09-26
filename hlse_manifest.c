@@ -711,6 +711,36 @@ hlse_manifest_replace_host(const char *line, char *out, size_t outcap) {
     return 1;
 }
 
+/* go.mod `replace … => ../local|/abs/path` — the local-path form of
+ * the same substitution: the module is swapped for attacker-controlled
+ * files on disk (a vendored repo ships its own 'fork'). Returns 1 when
+ * the replacement target is a filesystem path.                    */
+int
+hlse_manifest_replace_local(const char *line) {
+    const char *a = strstr(line, "=>");
+    const char *t;
+    if (!a) return 0;
+    t = a + 2;
+    while (*t == ' ' || *t == '\t' || *t == '"' || *t == '\'') t++;
+    return (*t == '.' || *t == '/');
+}
+
+/* Cargo.toml `[patch.<registry>]` / `[replace]` table header — the
+ * table redirects dependency resolution wholesale (each row swaps the
+ * crates.io source for a git/path/other-registry one). The `git =`
+ * rows inside it are already scored by the VCS-source check; flagging
+ * the header marks the redirection itself for review. Returns 1 on a
+ * patch/replace table header.                                    */
+int
+hlse_manifest_cargo_patch(const char *line) {
+    const char *p = line;
+    while (*p == ' ' || *p == '\t') p++;
+    return strncmp(p, "[patch.", 6) == 0 ||
+           strcmp(p, "[patch]") == 0 ||
+           strncmp(p, "[patch]", 7) == 0 ||
+           strncmp(p, "[replace]", 9) == 0;
+}
+
 /* Gemfile `source "https://…"` / `source: "…"` — swaps the rubygems
  * server. Returns 1 with the source host, or 0. */
 int

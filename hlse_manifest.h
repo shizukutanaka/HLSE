@@ -69,6 +69,14 @@ int hlse_manifest_registry_host(const char *line, char *out, size_t outcap);
  * path replacements. */
 int hlse_manifest_replace_host(const char *line, char *out, size_t outcap);
 
+/* go.mod replace directive with a local-path target (=> ./ ../ /).
+ * Returns 1 when the replacement is a filesystem path. */
+int hlse_manifest_replace_local(const char *line);
+
+/* Cargo.toml [patch.*] / [replace] table header. Returns 1 on a
+ * redirection table header line. */
+int hlse_manifest_cargo_patch(const char *line);
+
 /* Gemfile source "url" / source: "url" target host. Returns 1 with
  * host, or 0. */
 int hlse_manifest_source_host(const char *line, char *out, size_t outcap);
