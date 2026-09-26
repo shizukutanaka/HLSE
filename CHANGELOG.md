@@ -6,6 +6,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Non-web URI scheme layer** (`hlse_core.c`): the URL gate was
+  limited to http(s)/javascript:/data:, so every other scheme fell
+  through to the text scanner clean. Now classified:
+  `file://host/…` and `\\host\share` UNC paths score 55 (SMB/NTLM
+  credential-leak, same class as file check F10); URL wrappers
+  (`jar:`/`blob:`/`view-source:`/`filesystem:`/`ms-appx`/`chrome:`/
+  extension schemes) score 35–40 AND unwrap an inner http(s) URL
+  which is scored recursively; `//` protocol-relative URLs are
+  scored as https; legacy cleartext transports (ftp/telnet/gopher/
+  nntp/dict/tftp/ldap) and non-web fetch schemes (ssh/git/svn/hg)
+  score 30. Unknown schemes remain clean.
+
 - **Package-manager config-file scanning** (`hlse_manifest.c`,
   `hlse_cli.c`): `package --manifest` now accepts `.npmrc`,
   `pip.conf`/`pip.ini`, `.gitmodules`, and `.cargo/config.toml` —

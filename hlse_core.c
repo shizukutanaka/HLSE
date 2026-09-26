@@ -1734,6 +1734,90 @@ check_url(const char *raw_url) {
              * filters (smishing, premium-rate, intent smuggling). */
             add_reason(&v, 35, "Mobile deep-link scheme — smishing vector");
         }
+        else if (raw_url && (strncmp(raw_url, "file://", 7) == 0
+                     || strncmp(raw_url, "file:", 5) == 0
+                     || strncmp(raw_url, "\\\\", 2) == 0)) {
+            /* file://host/share and \\host\share are SMB/UNC paths —
+             * opening one leaks the NetNTLM hash (same class as file
+             * check F10). Bare file:///path is a local path. */
+            if (strncmp(raw_url, "file://", 7) == 0 &&
+                raw_url[7] && raw_url[7] != '/')
+                add_reason(&v, 55, "Remote file:// host — SMB/UNC "
+                                   "credential-leak vector");
+            else if (strncmp(raw_url, "\\\\", 2) == 0)
+                add_reason(&v, 55, "UNC path — SMB credential-leak vector");
+            else
+                add_reason(&v, 40, "file: local-path scheme");
+        }
+        else if (raw_url && strncmp(raw_url, "//", 2) == 0) {
+            /* Protocol-relative URL inherits the embedding scheme —
+             * "//evil.com/x" inside a page is a full remote fetch */
+            Verdict iv;
+            char inner[2048];
+            int k;
+            snprintf(inner, sizeof(inner), "https:%s", raw_url);
+            iv = check_url(inner);
+            for (k = 0; k < iv.n_reasons; k++)
+                add_reason(&v, 0, "%s", iv.reasons[k]);
+            if (iv.score > v.score) v.score = iv.score;
+            if (v.score < 30)
+                add_reason(&v, 30, "Protocol-relative URL");
+        }
+        else if (raw_url) {
+            /* URL-wrapper schemes hide the real fetch inside: jar:/blob:/
+             * view-source:/filesystem: wrap an inner http(s) URL — score
+             * the inner target recursively, floor 40. Legacy cleartext
+             * transports get 30; unknown schemes stay clean.            */
+            static const char *const WRAPPERS[] = {
+                "jar:", "blob:", "view-source:", "filesystem:",
+                "ms-appx:", "ms-appx-web:", "chrome:", "about:",
+                "moz-extension:", "chrome-extension:", NULL
+            };
+            static const char *const LEGACY[] = {
+                "ftp:", "telnet:", "gopher:", "nntp:", "dict:",
+                "tftp:", "ldap:", NULL
+            };
+            static const char *const FETCH[] = {
+                "ssh:", "git:", "svn:", "hg:", NULL
+            };
+            const char *inner_u = NULL;
+            int i;
+            for (i = 0; WRAPPERS[i]; i++) {
+                size_t wl = strlen(WRAPPERS[i]);
+                if (strncmp(raw_url, WRAPPERS[i], wl) == 0) {
+                    inner_u = strstr(raw_url + wl, "http://");
+                    if (!inner_u)
+                        inner_u = strstr(raw_url + wl, "https://");
+                    add_reason(&v, inner_u ? 40 : 35,
+                               "URL-wrapper scheme '%.*s' — hides the "
+                               "real target", (int)wl, WRAPPERS[i]);
+                    break;
+                }
+            }
+            if (!inner_u) {
+                for (i = 0; LEGACY[i]; i++)
+                    if (strncmp(raw_url, LEGACY[i], strlen(LEGACY[i]))
+                            == 0) {
+                        add_reason(&v, 30, "Cleartext/legacy transport "
+                                           "scheme '%s'", LEGACY[i]);
+                        break;
+                    }
+                for (i = 0; FETCH[i]; i++)
+                    if (strncmp(raw_url, FETCH[i], strlen(FETCH[i]))
+                            == 0) {
+                        add_reason(&v, 30, "Non-web fetch scheme "
+                                           "'%s'", FETCH[i]);
+                        break;
+                    }
+            }
+            if (inner_u) {
+                Verdict iv = check_url(inner_u);
+                int k;
+                for (k = 0; k < iv.n_reasons; k++)
+                    add_reason(&v, 0, "%s", iv.reasons[k]);
+                if (iv.score > v.score) v.score = iv.score;
+            }
+        }
         return v;
     }
 
@@ -2060,7 +2144,30 @@ hlse_scan(const char *input) {
         strncmp(input, "whatsapp:", 9) == 0 ||
         strncmp(input, "facetime:", 9) == 0 ||
         strncmp(input, "skype:", 6) == 0 ||
-        strncmp(input, "mailto:", 7) == 0)
+        strncmp(input, "mailto:", 7) == 0 ||
+        strncmp(input, "file:", 5) == 0 ||
+        strncmp(input, "//", 2) == 0 ||
+        strncmp(input, "\\\\", 2) == 0 ||
+        strncmp(input, "jar:", 4) == 0 ||
+        strncmp(input, "blob:", 5) == 0 ||
+        strncmp(input, "view-source:", 12) == 0 ||
+        strncmp(input, "filesystem:", 11) == 0 ||
+        strncmp(input, "ms-appx", 7) == 0 ||
+        strncmp(input, "chrome:", 7) == 0 ||
+        strncmp(input, "about:", 6) == 0 ||
+        strncmp(input, "moz-extension:", 14) == 0 ||
+        strncmp(input, "chrome-extension:", 17) == 0 ||
+        strncmp(input, "ftp:", 4) == 0 ||
+        strncmp(input, "telnet:", 7) == 0 ||
+        strncmp(input, "gopher:", 7) == 0 ||
+        strncmp(input, "nntp:", 5) == 0 ||
+        strncmp(input, "dict:", 5) == 0 ||
+        strncmp(input, "tftp:", 5) == 0 ||
+        strncmp(input, "ldap:", 5) == 0 ||
+        strncmp(input, "ssh:", 4) == 0 ||
+        strncmp(input, "git:", 4) == 0 ||
+        strncmp(input, "svn:", 4) == 0 ||
+        strncmp(input, "hg:", 3) == 0)
     {
         Verdict uv = check_url(input);
         r.score = uv.score;
