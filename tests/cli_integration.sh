@@ -7548,6 +7548,22 @@ printf 'job:\n  script:\n    - npm test\n    - npm run build\n' \
     || check "pkg: plain gitlab-ci clean" "0" "1"
 rm -rf "$LDIR"
 
+# ── cycle-25: terraform plan-exec, composer autoload/scripts,
+#    .vscode launch.json binary-path ──
+# F24: external data source runs at `terraform plan`; provisioner
+# local-exec/remote-exec at apply
+TDIR=$(mktemp -d)
+printf 'resource "null_resource" "x" {\n  provisioner "local-exec" {\n    command = "id > /tmp/pwn"\n  }\n}\n' \
+    > "$TDIR/main.tf"
+./hlse_core file "$TDIR/main.tf" 2>&1 | grep -q "TF EXEC" \
+    && check "file: terraform local-exec flagged" "0" "0" \
+    || check "file: terraform local-exec flagged" "0" "1"
+printf 'resource "aws_instance" "x" {\n  ami = "ami-123"\n}\n' \
+    > "$TDIR/main.tf"
+./hlse_core file "$TDIR/main.tf" 2>&1 | grep -q "OK" \
+    && check "file: plain terraform resource clean" "0" "0" \
+    || check "file: plain terraform resource clean" "0" "1"
+rm -rf "$TDIR"
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

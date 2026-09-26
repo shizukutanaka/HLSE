@@ -1640,6 +1640,30 @@ hlse_check_file(const char *filepath) {
         }
     }
 
+    /* ── F24: Terraform plan/apply-time exec — `external` data
+     *      sources run their `program` during `terraform plan` (the
+     *      documented malicious-module RCE class); `local-exec` /
+     *      `remote-exec` provisioners run on apply. A vendored .tf
+     *      file you never audited still executes. ────────────────── */
+    if (head_len > 0) {
+        char extl[32];
+        str_lower(ext ? ext : "", extl, sizeof(extl));
+        if (strcmp(extl, ".tf") == 0 || strcmp(extl, ".tf.json") == 0) {
+            char low[4097];
+            size_t n = 0, k;
+            for (k = 0; k < (size_t)head_len && n < sizeof(low) - 1; k++)
+                low[n++] = (char)tolower(head[k]);
+            low[n] = '\0';
+            if ((strstr(low, "external") && strstr(low, "program")) ||
+                strstr(low, "local-exec") || strstr(low, "remote-exec") ||
+                (strstr(low, "provisioner") && strstr(low, "command")))
+                fv_add(&v, 55,
+                    "F24: TF EXEC — external data source / provisioner "
+                    "runs a program during terraform plan or apply "
+                    "(score 55)");
+        }
+    }
+
     /* ── F14: script download-cradle — LOLBin/interpreter stagers in
      *      script files (IEX+DownloadString, curl|bash, certutil,
      *      encoded -enc payloads, mshta/regsvr32/rundll32) ────────── */
