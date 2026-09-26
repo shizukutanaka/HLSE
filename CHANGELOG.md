@@ -6,6 +6,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **plat ecosystem** (`hlse_manifest.c`): platform-automation
+  configs — `.gitpod.yml` tasks, `netlify.toml`/`vercel.json`
+  build commands, `Procfile`/`app.json` processes, `Jenkinsfile`
+  @Library mutable-branch loads (55), `tsconfig.json`
+  compilerOptions.plugins (45); exec-shaped values → 55.
+- **typosquat name extraction scoped to real package ecosystems**
+  (pip/npm/cargo/go/gem only) — config files no longer emit fake
+  "pid (docker)" / "web (plat)" typosquat noise.
 - **F24 terraform plan-exec** (`hlse_file.c`): `external` data
   source + `program` → runs at `terraform plan`; `local-exec`/
   `remote-exec` provisioners → run at apply. .tf/.tf.json → 55.

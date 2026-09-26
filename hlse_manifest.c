@@ -57,6 +57,21 @@ hlse_manifest_ecosystem(const char *path) {
     /* .gitlab-ci.yml must route to glci BEFORE the gha path rule:
      * GitLab syntax is not GitHub Actions — ${{ }} interpolation and
      * pull_request_target do not exist there; script/include do. */
+    /* Platform-automation configs: files a platform executes on your
+     * behalf — gitpod tasks run on workspace open, netlify/vercel
+     * build commands run on deploy previews (a PR edit = RCE in the
+     * deploy context), Procfile/app.json run on heroku push,
+     * Jenkinsfile @Library loads remote pipeline code, tsconfig
+     * plugins load a tsserver extension on workspace open. */
+    if (strcmp(b, ".gitpod.yml") == 0 || strcmp(b, ".gitpod.yaml") == 0 ||
+        strcmp(b, "netlify.toml") == 0 || strcmp(b, "netlify.yml") == 0 ||
+        strcmp(b, "netlify.json") == 0 || strcmp(b, "vercel.json") == 0 ||
+        strcmp(b, "Procfile") == 0 || strcmp(b, "procfile") == 0 ||
+        strcmp(b, "app.json") == 0 ||
+        strncmp(b, "Jenkinsfile", 11) == 0 ||
+        strstr(b, ".jenkinsfile") != NULL ||
+        strcmp(b, "tsconfig.json") == 0 || strcmp(b, "jsconfig.json") == 0)
+        return "plat";
     if (strcmp(b, "composer.json") == 0 ||
         strcmp(b, "composer.lock") == 0)
         return "comp";
@@ -1017,6 +1032,54 @@ hlse_manifest_comp_risk(const char *line, char *reason, size_t rcap) {
         snprintf(reason, rcap,
             "composer lifecycle script fetches/pipes or shells out — "
             "runs at install/update with developer credentials");
+        return 55;
+    }
+    return 0;
+}
+
+/* Platform-automation configs — gitpod tasks / netlify|vercel build
+ * commands / Procfile|app.json processes / Jenkinsfile libraries /
+ * tsconfig plugins. Each executes in a privileged context (CI env,
+ * deploy env, editor), yet reviewers treat them as config, not code.
+ * Flag exec-shaped values and remote-resource references.        */
+int
+hlse_manifest_plat_risk(const char *line, char *reason, size_t rcap) {
+    /* Jenkinsfile shared-library loads: @Library('x@branch') pins a
+     * mutable ref — the library's code runs in the Jenkins context. */
+    if (strstr(line, "@Library") != NULL ||
+        strstr(line, "library(") != NULL) {
+        if (strstr(line, "@main") != NULL || strstr(line, "@master") != NULL ||
+            strstr(line, "@develop") != NULL || strstr(line, "@HEAD") != NULL) {
+            snprintf(reason, rcap,
+                "Jenkinsfile loads a shared library pinned to a mutable "
+                "branch — upstream push executes in your pipeline");
+            return 55;
+        }
+        if (strstr(line, "http://") != NULL || strstr(line, "git@") != NULL ||
+            strstr(line, "https://") != NULL) {
+            snprintf(reason, rcap,
+                "Jenkinsfile loads a shared library from a remote URL");
+            return 50;
+        }
+    }
+    /* tsconfig/jsconfig compilerOptions.plugins — a plugin name is
+     * resolved via node_modules and loaded by tsserver on open */
+    if (strstr(line, "\"plugins\"") != NULL &&
+        strstr(line, "\"name\"") != NULL) {
+        snprintf(reason, rcap,
+            "tsconfig compilerOptions.plugins loads a tsserver plugin "
+            "when the workspace is opened in an editor");
+        return 45;
+    }
+    /* exec-shaped task/build/release/command/script values across
+     * gitpod tasks, netlify/vercel build.command, Procfile entries */
+    if ((strstr(line, ":") != NULL || strstr(line, "=") != NULL ||
+         strstr(line, "\"") != NULL) &&
+        hlse_manifest_execish(line)) {
+        snprintf(reason, rcap,
+            "platform-automation config fetches/pipes remote or "
+            "encoded content — executes in CI/deploy/workspace "
+            "context with its credentials");
         return 55;
     }
     return 0;

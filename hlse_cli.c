@@ -1090,7 +1090,7 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
             eco = (argc > idx + 3) ? argv[idx + 3] : hlse_manifest_ecosystem(mpath);
             if (!eco) {
                 fprintf(stderr, "Error: cannot infer ecosystem from '%s' \xe2\x80\x94 "
-                        "pass one explicitly (pip|npm|cargo|go|gem|docker|gha|mcp|devc|vsc|pck|glci|comp)\n", mpath);
+                        "pass one explicitly (pip|npm|cargo|go|gem|docker|gha|mcp|devc|vsc|pck|glci|comp|plat)\n", mpath);
                 return 2;
             }
             mf = fopen(mpath, "r");
@@ -1765,7 +1765,8 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                     strcmp(eco, "vsc") == 0 ||
                     strcmp(eco, "pck") == 0 ||
                     strcmp(eco, "glci") == 0 ||
-                    strcmp(eco, "comp") == 0) {
+                    strcmp(eco, "comp") == 0 ||
+                    strcmp(eco, "plat") == 0) {
                     char xreason[HLSE_HOOK_REASON_LEN];
                     int xsc;
                     if (strcmp(eco, "devc") == 0)
@@ -1779,6 +1780,9 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                                                      sizeof(xreason));
                     else if (strcmp(eco, "comp") == 0)
                         xsc = hlse_manifest_comp_risk(line, xreason,
+                                                      sizeof(xreason));
+                    else if (strcmp(eco, "plat") == 0)
+                        xsc = hlse_manifest_plat_risk(line, xreason,
                                                       sizeof(xreason));
                     else {
                         /* gitlab-ci script steps are block lists:
@@ -1827,6 +1831,8 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                                 eco[0] == 'd' ? "package-devcontainer"
                                 : eco[0] == 'v' ? "package-vscode"
                                 : eco[0] == 'c' ? "package-composer"
+                                : eco[0] == 'p' &&
+                                  eco[2] == 'a' ? "package-platform"
                                 : eco[0] == 'p' ? "package-precommit"
                                               : "package-gitlabcicd",
                                 "HLSE-PKG-IDEEXEC", xreason, xsc);
@@ -1886,11 +1892,20 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                         }
                     }
                 }
+                /* Typosquat name extraction is only meaningful for
+                 * real package-registry ecosystems — in config files
+                 * every stray word (procfile 'web:', compose 'pid:')
+                 * becomes a fake package name and an FP. */
+                int is_pkg = (strcmp(eco, "pip") == 0 ||
+                              strcmp(eco, "npm") == 0 ||
+                              strcmp(eco, "cargo") == 0 ||
+                              strcmp(eco, "go") == 0 ||
+                              strcmp(eco, "gem") == 0);
                 for (;;) {
-                    int got;
+                    int got = 0;
                     if (is_npm)
                         got = hlse_manifest_name_npm(&cursor, &in_deps, name, sizeof(name));
-                    else
+                    else if (is_pkg)
                         got = hlse_manifest_name_pip(line, name, sizeof(name));
                     if (!got || name[0] == '\0') break;
                 {

