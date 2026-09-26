@@ -11,6 +11,7 @@
  *   F6. Suspicious filename     — social engineering lure names
  *   F7. ICS invite phishing     — VCALENDAR embedding malicious links
  *   F8. Launcher/shortcut       — .desktop/.url/.webloc payload carriers
+ *   F9. Weaponized .lnk         — embedded interpreter/download command
  *
  * All detection is read-only. Files are never modified or executed.
  *
@@ -516,6 +517,78 @@ launcher_payload_score(const unsigned char *head, size_t len) {
     return best;
 }
 
+/* Windows Shell Link (.lnk) weaponization — the maldocs→LNK loader chain
+ * (emotet/QakBot/APT dropper pattern): the shortcut's UTF-16LE command
+ * line carries powershell -enc / cmd /c / mshta / certutil -urlcache /
+ * a remote fetch. The header is 4C 00 00 00 followed by the fixed
+ * LinkCLSID. We string-scan the header+strings region for interpreter
+ * and download commands in both UTF-16LE and ASCII.                  */
+static const unsigned char LNK_MAGIC[4] = { 0x4C, 0x00, 0x00, 0x00 };
+static const unsigned char LNK_CLSID[16] = {
+    0x01, 0x14, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46
+};
+
+static int
+buf_has_utf16le(const unsigned char *buf, size_t len, const char *needle) {
+    size_t nl = strlen(needle), i;
+    if (len < nl * 2) return 0;
+    for (i = 0; i + nl * 2 <= len; i += 2) {
+        size_t k;
+        for (k = 0; k < nl; k++) {
+            int c = buf[i + k * 2];
+            if (c >= 'A' && c <= 'Z') c += 32;   /* ASCII case fold */
+            if (c != (unsigned char)needle[k] ||
+                buf[i + k * 2 + 1] != 0)
+                break;
+        }
+        if (k == nl) return 1;
+    }
+    return 0;
+}
+
+static int
+buf_has_ascii(const unsigned char *buf, size_t len, const char *needle) {
+    size_t nl = strlen(needle), i;
+    if (len < nl) return 0;
+    for (i = 0; i + nl <= len; i++) {
+        size_t k;
+        for (k = 0; k < nl; k++) {
+            int c = buf[i + k];
+            int nn = (unsigned char)needle[k];
+            if (c >= 'A' && c <= 'Z') c += 32;
+            if (nn >= 'A' && nn <= 'Z') nn += 32;
+            if (c != nn) break;
+        }
+        if (k == nl) return 1;
+    }
+    return 0;
+}
+
+static const char *LNK_DANGEROUS[] = {
+    "powershell", "-enc", "-encodedcommand", "cmd /c", "cmd.exe /c",
+    "mshta", "wscript", "cscript", "rundll32", "regsvr32",
+    "bitsadmin", "certutil", "wmic", "msbuild",
+    "curl", "wget", "http://", "https://", "ftp://",
+    NULL
+};
+
+static int
+lnk_weaponized(const unsigned char *head, size_t len) {
+    size_t i;
+    int hits = 0;
+    if (len < 20) return 0;
+    if (memcmp(head, LNK_MAGIC, 4) != 0 ||
+        memcmp(head + 4, LNK_CLSID, 16) != 0)
+        return 0;
+    for (i = 0; LNK_DANGEROUS[i]; i++) {
+        if (buf_has_utf16le(head, len, LNK_DANGEROUS[i]) ||
+            buf_has_ascii(head, len, LNK_DANGEROUS[i]))
+            hits++;
+    }
+    return hits;
+}
+
 /* ─── main check function ─────────────────────────────────────────────── */
 
 FileVerdict
@@ -824,6 +897,18 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, lsc > 65 ? 65 : lsc,
                 "F8: LAUNCHER file runs remote download/command or links "
                 "to a suspicious URL (score %d)", lsc);
+        }
+    }
+
+    /* ── F9: Weaponized .lnk — script interpreter / download in the
+     *      shortcut's embedded command line ───────────────────────── */
+    if (head_len > 20) {
+        int lnk_hits = lnk_weaponized(head, (size_t)head_len);
+        if (lnk_hits >= 1) {
+            fv_add(&v, lnk_hits >= 2 ? 70 : 60,
+                "F9: .LNK shortcut embeds %d interpreter/download "
+                "command%s — document-delivered loader pattern",
+                lnk_hits, lnk_hits == 1 ? "" : "s");
         }
     }
 

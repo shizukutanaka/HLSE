@@ -454,6 +454,26 @@ printf '[Desktop Entry]\nType=Application\nName=Firefox\nExec=firefox %%u\n' > "
     || check "F1: .pdf.desktop double extension flagged" "0" "1"
 rm -rf "$LCH_DIR"
 
+# F9: weaponized .lnk (UTF-16LE powershell -enc + URL) → flagged
+LNK_DIR=$(mktemp -d)
+{ printf '\x4c\x00\x00\x00\x01\x14\x02\x00\x00\x00\x00\x00\xc0\x00\x00\x00\x00\x00\x00\x46'
+  printf '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+  printf 'p\x00o\x00w\x00e\x00r\x00s\x00h\x00e\x00l\x00l\x00 \x00-\x00e\x00n\x00c\x00 \x00a\x00G\x00V\x00s\x00b\x00G\x008\x00=\x00 \x00h\x00t\x00t\x00p\x00s\x00:\x00/\x00/\x00e\x00v\x00i\x00l\x00.\x00e\x00x\x00a\x00m\x00p\x00l\x00e\x00/\x00x\x00'
+} > "$LNK_DIR/evil.lnk"
+./hlse_core file "$LNK_DIR/evil.lnk" 2>&1 | grep -q "F9" \
+    && check "F9: .lnk with powershell -enc flagged" "0" "0" \
+    || check "F9: .lnk with powershell -enc flagged" "0" "1"
+
+# F9 FP guard: clean .lnk (explorer.exe target) → no F9
+{ printf '\x4c\x00\x00\x00\x01\x14\x02\x00\x00\x00\x00\x00\xc0\x00\x00\x00\x00\x00\x00\x46'
+  printf '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+  printf 'e\x00x\x00p\x00l\x00o\x00r\x00e\x00r\x00.\x00e\x00x\x00e\x00'
+} > "$LNK_DIR/clean.lnk"
+./hlse_core file "$LNK_DIR/clean.lnk" 2>&1 | grep -q "F9" \
+    && check "F9 FP guard: clean .lnk has no F9" "0" "1" \
+    || check "F9 FP guard: clean .lnk has no F9" "0" "0"
+rm -rf "$LNK_DIR"
+
 # Free-host phishing: brand in tunnel/DDNS subdomain → ALERT+
 ./hlse_core 'https://paypal-login.verify.trycloudflare.com' 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "free-host: brand@trycloudflare.com → ALERT+" "0" "0" \
