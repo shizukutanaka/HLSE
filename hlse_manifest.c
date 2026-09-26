@@ -31,6 +31,17 @@ hlse_manifest_ecosystem(const char *path) {
     if (strcmp(b, "go.mod") == 0) return "go";
     if (strcmp(b, "Gemfile") == 0 || strcmp(b, "Gemfile.lock") == 0)
         return "gem";
+    /* config files carry the same substitution surface as manifests:
+     * .npmrc registry=/@scope:registry= redirects where names resolve,
+     * pip.conf index-url= is the INI form of --index-url, .gitmodules
+     * url= pins a submodule's fetch host, .cargo/config.toml [source]
+     * registry= replaces crates.io. */
+    if (strcmp(b, ".npmrc") == 0) return "npm";
+    if (strcmp(b, "pip.conf") == 0 || strcmp(b, "pip.ini") == 0)
+        return "pip";
+    if (strcmp(b, ".gitmodules") == 0) return "git";
+    if ((strcmp(b, "config.toml") == 0 || strcmp(b, "config") == 0) &&
+        strstr(path, ".cargo/")) return "cargo";
     return NULL;
 }
 
@@ -256,7 +267,8 @@ hlse_manifest_resolved_host(const char *line, char *out, size_t outcap) {
         if (!u) continue;
         u += (strncmp(u, "https://", 8) == 0) ? 8 : 7;
         while (*u && *u != '/' && *u != '"' && *u != '\'' &&
-               *u != ' ' && *u != '\t' && *u != ')' && *u != '>' &&
+               *u != ' ' && *u != '\t' && *u != '\n' && *u != '\r' &&
+               *u != ')' && *u != '>' &&
                n + 1 < outcap)
             out[n++] = (char)tolower((unsigned char)*u++);
         out[n] = '\0';
@@ -379,7 +391,9 @@ hlse_manifest_vcs_host(const char *line, char *out, size_t outcap) {
     scheme_end = u + 3;
     while (*scheme_end && *scheme_end != '/' && *scheme_end != '"' &&
            *scheme_end != '\'' && *scheme_end != ' ' &&
-           *scheme_end != '\t' && *scheme_end != '#' &&
+           *scheme_end != '\t' && *scheme_end != '\n' &&
+           *scheme_end != '\r' &&
+           *scheme_end != '#' &&
            *scheme_end != ')' && *scheme_end != '>' &&
            n + 1 < outcap)
         out[n++] = (char)tolower((unsigned char)*scheme_end++);
@@ -403,7 +417,11 @@ int
 hlse_manifest_index_host(const char *line, char *out, size_t outcap) {
     static const char *const FLAGS[] = {
         "--index-url", "--extra-index-url", "--find-links",
-        "--trusted-host", NULL
+        "--trusted-host",
+        /* pip.conf / tox INI forms — "index-url = …" (the `--` variants
+         * above also contain these substrings, order keeps them first) */
+        "index-url", "extra-index-url", "find-links", "trusted-host",
+        NULL
     };
     const char *v = NULL;
     size_t n = 0;
@@ -424,7 +442,8 @@ hlse_manifest_index_host(const char *line, char *out, size_t outcap) {
     else if (strncmp(v, "http://", 7) == 0) v += 7;
     /* bare host (e.g. --trusted-host) or scheme already skipped */
     while (*v && *v != '/' && *v != '"' && *v != '\'' &&
-           *v != ' ' && *v != '\t' && *v != '#' &&
+           *v != ' ' && *v != '\t' && *v != '\n' && *v != '\r' &&
+           *v != '#' &&
            *v != ')' && *v != '>' && n + 1 < outcap)
         out[n++] = (char)tolower((unsigned char)*v++);
     out[n] = '\0';
@@ -462,7 +481,8 @@ hlse_manifest_alias_target(const char *line, char *out, size_t outcap) {
         if (*t == '/' && tl + 1 < outcap) { out[tl++] = '/'; t++; }
     }
     while (*t && *t != '@' && *t != '"' && *t != '\'' &&
-           *t != ' ' && *t != '\t' && tl + 1 < outcap)
+           *t != ' ' && *t != '\t' && *t != '\n' && *t != '\r' &&
+           tl + 1 < outcap)
         out[tl++] = *t++;
     out[tl] = '\0';
     if (!out[0]) return 0;
@@ -492,5 +512,61 @@ hlse_manifest_key_before(const char *line, const char *pos,
     if (kl >= outcap) kl = outcap - 1;
     memcpy(out, q1 + 1, kl);
     out[kl] = '\0';
+    return 1;
+}
+
+/* Registry-override keys: .npmrc `registry=` / `@scope:registry=` /
+ * `disturl=`, cargo `[registries.*] registry=`/`[source.crates-io]
+ * registry=` — they redirect where every name resolves, so an
+ * off-allowlist host is dependency confusion at the source.        */
+int
+hlse_manifest_registry_host(const char *line, char *out, size_t outcap) {
+    static const char *const KEYS[] = { "registry", "disturl",
+                                        "dist-url", NULL };
+    const char *v = NULL;
+    size_t n = 0;
+    int i;
+    if (out && outcap) out[0] = '\0';
+    if (!line || !out || outcap == 0) return 0;
+    for (i = 0; KEYS[i]; i++) {
+        const char *k = strstr(line, KEYS[i]);
+        while (k) {
+            /* key boundary: preceded by start/space/quote/'@' scope */
+            int boundary = (k == line) ||
+                k[-1] == ' ' || k[-1] == '\t' || k[-1] == '"' ||
+                k[-1] == '\'' || k[-1] == ':' || k[-1] == '.';
+            const char *p;
+            if (!boundary) { k = strstr(k + 1, KEYS[i]); continue; }
+            p = k + strlen(KEYS[i]);
+            while (*p == ' ' || *p == '\t' || *p == '"' || *p == '\'')
+                p++;
+            if (*p == '=' || *p == ':') {
+                p++;
+                while (*p == ' ' || *p == '\t' || *p == '"' || *p == '\'')
+                    p++;
+                if (strncmp(p, "http://", 7) == 0 ||
+                    strncmp(p, "https://", 8) == 0) {
+                    v = p;
+                    break;
+                }
+            }
+            k = strstr(k + 1, KEYS[i]);
+        }
+        if (v) break;
+    }
+    if (!v) return 0;
+    v = strstr(v, "://") + 3;
+    while (*v && *v != '/' && *v != '"' && *v != '\'' &&
+           *v != ' ' && *v != '\t' && *v != '\n' && *v != '\r' &&
+           *v != '#' &&
+           *v != ')' && *v != '>' && *v != '}' && n + 1 < outcap)
+        out[n++] = (char)tolower((unsigned char)*v++);
+    out[n] = '\0';
+    {   /* strip userinfo then :port */
+        char *at = strrchr(out, '@');
+        if (at) memmove(out, at + 1, strlen(at + 1) + 1);
+        { char *c = strchr(out, ':'); if (c) *c = '\0'; }
+    }
+    if (!out[0] || !strchr(out, '.')) return 0;
     return 1;
 }

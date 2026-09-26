@@ -155,6 +155,11 @@ static size_t gen_lockfile(char *buf, size_t cap, unsigned long *rng) {
         "\"x\": \"npm:@scope/pkg@1\"",
         "foo = { git = \"https://evil.example/x\" }",
         "\"git\": \"https://evil.example/y\"",
+        "registry=https://evil-registry.example",
+        "@scope:registry=https://evil-scope.example",
+        "registry = \"https://registry.npmjs.org\"",
+        "index-url = https://evil-pypi.example/simple",
+        "  url = https://evil.example/x.git",
         NULL
     };
     int n = 0; while (frags[n]) n++;
@@ -220,6 +225,8 @@ static void exercise(const char *buf) {
     if (hlse_manifest_vcs_host(buf, out, sizeof(out)))
         (void)hlse_manifest_resolved_suspicious(out);
     (void)hlse_manifest_index_host(buf, out, sizeof(out));
+    if (hlse_manifest_registry_host(buf, out, sizeof(out)))
+        (void)hlse_manifest_resolved_suspicious(out);
     hn = hlse_manifest_hook_flags(buf, hout, hsc, 4);
     (void)hn;
     if (hlse_manifest_alias_target(buf, out, sizeof(out))) {

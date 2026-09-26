@@ -1373,6 +1373,54 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                         }
                     }
                 }
+                /* Registry override (.npmrc registry= / @scope:registry= /
+                 * disturl=, cargo config registry=): every name resolves
+                 * through it, so an off-allowlist host is confusion at
+                 * the source — harder hit than an index advisory. */
+                {
+                    char ghost[256];
+                    if (hlse_manifest_registry_host(line, ghost,
+                            sizeof(ghost)) &&
+                        hlse_manifest_resolved_suspicious(ghost)) {
+                        int gsc = 60;
+                        char greason[HLSE_HOOK_REASON_LEN];
+                        char eghost[256];
+                        hlse_json_escape(ghost, eghost, sizeof(eghost));
+                        snprintf(greason, sizeof(greason),
+                            "registry override points dependency resolution "
+                            "at '%s' — off the known registries; every "
+                            "package name resolves through it (dependency "
+                            "confusion)", eghost);
+                        threats++;
+                        hlse_alert_emit_rows("package", gsc,
+                            hlse_severity_for_score(gsc), mpath,
+                            &greason, HLSE_HOOK_REASON_LEN, 1);
+                        if (gsc > max_score) max_score = gsc;
+                        if (gsc >= o->fail_threshold) gate_hits++;
+                        if (o->sarif_out) {
+                            hlse_sarif_add(mpath, lineno,
+                                "package-registry-override",
+                                "HLSE-PKG-REGISTRY", greason, gsc);
+                        } else if (o->json_out) {
+                            char eh6[384];
+                            hlse_json_escape(greason, eh6, sizeof(eh6));
+                            hlse_json_open("package");
+                            printf(",\"manifest\":\"%s\",\"score\":%d,"
+                                   "\"action\":\"%s\",\"severity\":%d,"
+                                   "\"pattern_id\":\"HLSE-PKG-REGISTRY\","
+                                   "\"registry\":\"%s\","
+                                   "\"reason\":\"%s\"}\n",
+                                   mpath, gsc,
+                                   hlse_action_for_score(gsc),
+                                   hlse_severity_for_score(gsc),
+                                   eghost, eh6);
+                        } else {
+                            printf("%-7s [%d]  suspicious registry override: %s\n",
+                                   hlse_action_for_score(gsc), gsc,
+                                   greason);
+                        }
+                    }
+                }
                 for (;;) {
                     int got;
                     if (is_npm)

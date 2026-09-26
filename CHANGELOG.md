@@ -6,6 +6,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Package-manager config-file scanning** (`hlse_manifest.c`,
+  `hlse_cli.c`): `package --manifest` now accepts `.npmrc`,
+  `pip.conf`/`pip.ini`, `.gitmodules`, and `.cargo/config.toml` —
+  the same substitution surface as manifests was previously rejected
+  by ecosystem inference. New `hlse_manifest_registry_host` extracts
+  `registry=`/`@scope:registry=`/`disturl=` override targets; an
+  off-allowlist registry scores 60 (HLSE-PKG-REGISTRY). pip.conf's
+  INI `index-url = …` form feeds the existing index check;
+  `.gitmodules` `url =` feeds the VCS/forge check. Host extractors
+  now also stop at `\n`/`\r` (real newlines could leak into
+  displayed hosts).
 - **npm alias dependency-confusion check** (`hlse_manifest.c`,
   `hlse_cli.c`): `package --manifest` flags `"name": "npm:other@ver"`
   where the npm: target differs from the declared key — the manifest

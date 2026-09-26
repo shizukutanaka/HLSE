@@ -59,3 +59,8 @@ int hlse_manifest_alias_target(const char *line, char *out, size_t outcap);
  * ("key": value). Returns 1 with the key in out, or 0. */
 int hlse_manifest_key_before(const char *line, const char *pos,
                              char *out, size_t outcap);
+
+/* Extract the registry-override target host (npmrc registry= /
+ * @scope:registry= / disturl=, cargo registry=). Returns 1 with the
+ * host in out, or 0. */
+int hlse_manifest_registry_host(const char *line, char *out, size_t outcap);
