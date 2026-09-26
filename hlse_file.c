@@ -1032,6 +1032,69 @@ rc_persist_score(const unsigned char *head, size_t len,
         sc = sc < 55 ? 55 : sc;
     if (strstr(low, "permitlocalcommand"))
         sc = sc < 40 ? 40 : sc;
+    /* git exec config — INI sections hide the dotted name: under
+     * [core] the key is bare `fsmonitor`/`editor`/`pager`, under
+     * [filter "x"] it is `clean`/`smudge`, under [credential] it is
+     * `helper`. Flag only when the VALUE names a program a shell
+     * would run (path / `!` shell form / interpreter / fetch) — a
+     * bare `editor = vim` is the most common gitconfig line ever
+     * written and must stay clean.                               */
+    {
+        static const char *const EK[] = {
+            "fsmonitor", "editor", "pager", "external",
+            "clean", "smudge", "helper", "program", NULL
+        };
+        static const char *const EXECISH[] = {
+            "/", "!", "-c", "sh ", "curl", "wget", "python",
+            "ruby", "perl", "node ", "powershell", "pwsh", NULL
+        };
+        int ei, ej;
+        for (ei = 0; EK[ei]; ei++) {
+            char pat[48];
+            const char *kp, *vp;
+            size_t kl;
+            snprintf(pat, sizeof(pat), "%s", EK[ei]);
+            kp = strstr(low, pat);
+            while (kp) {
+                /* key must be at a token boundary: preceded by
+                 * start/newline/space/tab, and followed by
+                 * space/tab/= so `editors` or `helperx` don't hit */
+                int left_ok = (kp == low) || kp[-1] == '\n' ||
+                              kp[-1] == ' ' || kp[-1] == '\t' ||
+                              kp[-1] == '.';
+                kl = strlen(pat);
+                if (!left_ok ||
+                    (kp[kl] && kp[kl] != ' ' && kp[kl] != '\t' &&
+                     kp[kl] != '=')) {
+                    kp = strstr(kp + 1, pat);
+                    continue;
+                }
+                vp = strchr(kp, '=');
+                if (!vp) { kp = strstr(kp + 1, pat); continue; }
+                vp++;
+                {
+                    const char *eol = strchr(vp, '\n');
+                    char val[128];
+                    size_t vn = eol ? (size_t)(eol - vp)
+                                    : strlen(vp);
+                    if (vn >= sizeof(val)) vn = sizeof(val) - 1;
+                    memcpy(val, vp, vn);
+                    val[vn] = '\0';
+                    for (ej = 0; EXECISH[ej]; ej++)
+                        if (strstr(val, EXECISH[ej])) {
+                            sc = sc < 55 ? 55 : sc;
+                            break;
+                        }
+                }
+                break;  /* first occurrence of this key is enough */
+            }
+        }
+        /* include.path pulls an arbitrary file into the config —
+         * the included file's exec keys land on the victim anyway */
+        if (strstr(low, "include") && strstr(low, "path") &&
+            strstr(low, "="))
+            sc = sc < 40 ? 40 : sc;
+    }
     return sc;
 }
 

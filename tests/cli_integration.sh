@@ -7413,6 +7413,22 @@ rm -f "$MCDIR/mcp.json"; printf '{"mcpServers":{"ok":{"command":"npx","args":["-
     || check "pkg: benign mcp config clean" "0" "1"
 rm -rf "$MCDIR"
 
+# ── cycle-23: git exec-config keys, compose hardening, IDE
+#    autoexec, GHA pwn-request compound ──
+# F18 git exec keys: fsmonitor/filter-clean/helper run programs git
+# executes verbatim
+GDIR=$(mktemp -d); mkdir -p "$GDIR/.git"
+printf '[core]\n\tfsmonitor = /tmp/evil-watch.sh\n' \
+    > "$GDIR/.git/.gitconfig"
+./hlse_core file "$GDIR/.git/.gitconfig" 2>&1 | grep -q "PERSISTENCE" \
+    && check "file: .gitconfig fsmonitor path flagged" "0" "0" \
+    || check "file: .gitconfig fsmonitor path flagged" "0" "1"
+printf '[core]\n\teditor = vim\n[credential]\n\thelper = osxkeychain\n' \
+    > "$GDIR/.git/.gitconfig"
+./hlse_core file "$GDIR/.git/.gitconfig" 2>&1 | grep -q "OK" \
+    && check "file: plain gitconfig clean" "0" "0" \
+    || check "file: plain gitconfig clean" "0" "1"
+rm -rf "$GDIR"
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
