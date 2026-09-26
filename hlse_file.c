@@ -1066,6 +1066,40 @@ base_hijack_score(const unsigned char *head, size_t len) {
     return 0;
 }
 
+/* ─── F21: <meta http-equiv=refresh> redirect — a static HTML file that
+ *      throws the viewer to a remote page on open (the "attachment that
+ *      is just a redirect" phish; gateways render it as inert HTML) ── */
+static int
+meta_refresh_score(const unsigned char *head, size_t len) {
+    char low[4097];
+    size_t n = 0, i;
+    const char *m;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    m = strstr(low, "<meta");
+    while (m) {
+        const char *gt = strchr(m, '>');
+        const char *end = gt ? gt : low + n;
+        const char *r = strstr(m, "refresh");
+        const char *u;
+        if (r && r < end && (u = strstr(m, "url")) && u < end) {
+            u += 3;
+            while (u < end && (*u == ' ' || *u == '=' || *u == '"' ||
+                   *u == '\'' || *u == ';' || (*u >= '0' && *u <= '9')))
+                u++;
+            if (u + 8 <= end &&
+                (strncmp(u, "http://", 7) == 0 ||
+                 strncmp(u, "https://", 8) == 0))
+                return 55;
+            if (u + 2 <= end && u[0] == '/' && u[1] == '/')
+                return 50;
+        }
+        m = gt ? strstr(gt, "<meta") : NULL;
+    }
+    return 0;
+}
+
 FileVerdict
 hlse_check_file(const char *filepath) {
     FileVerdict v;
@@ -1479,7 +1513,18 @@ hlse_check_file(const char *filepath) {
         }
     }
 
-        /* ── F19: reverse-shell primitives — /dev/tcp, nc -e, socat exec,
+        /* ── F21: meta-refresh redirect — static HTML that bounces the
+     *      viewer to a remote page on open ─────────────────────────── */
+    if (head_len > 0) {
+        int mr = meta_refresh_score(head, (size_t)head_len);
+        if (mr > 0) {
+            fv_add(&v, mr,
+                "F21: META REFRESH — HTML redirects the viewer to a "
+                "remote page on open (file-gated redirect phish)");
+        }
+    }
+
+    /* ── F19: reverse-shell primitives — /dev/tcp, nc -e, socat exec,
      *      python socket+dup2 (content-driven, any file) ──────────── */
     if (head_len > 0) {
         int rs = revshell_score(head, (size_t)head_len);
