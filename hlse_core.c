@@ -1721,6 +1721,19 @@ check_url(const char *raw_url) {
                      || strncmp(raw_url, "data:", 5) == 0)) {
             add_reason(&v, 90, "Dangerous URI scheme");
         }
+        else if (raw_url && (strncmp(raw_url, "sms:", 4) == 0
+                     || strncmp(raw_url, "tel:", 4) == 0
+                     || strncmp(raw_url, "intent:", 7) == 0
+                     || strncmp(raw_url, "market:", 7) == 0
+                     || strncmp(raw_url, "whatsapp:", 9) == 0
+                     || strncmp(raw_url, "facetime:", 9) == 0
+                     || strncmp(raw_url, "skype:", 6) == 0
+                     || strncmp(raw_url, "mailto:", 7) == 0)) {
+            /* Mobile deep-link schemes: QR/social-engineering lures jump
+             * into messaging/dialler/app-store actions that bypass URL
+             * filters (smishing, premium-rate, intent smuggling). */
+            add_reason(&v, 35, "Mobile deep-link scheme — smishing vector");
+        }
         return v;
     }
 
@@ -2039,7 +2052,15 @@ hlse_scan(const char *input) {
     if (strncmp(input, "http://", 7) == 0 ||
         strncmp(input, "https://", 8) == 0 ||
         strncmp(input, "javascript:", 11) == 0 ||
-        strncmp(input, "data:", 5) == 0)
+        strncmp(input, "data:", 5) == 0 ||
+        strncmp(input, "sms:", 4) == 0 ||
+        strncmp(input, "tel:", 4) == 0 ||
+        strncmp(input, "intent:", 7) == 0 ||
+        strncmp(input, "market:", 7) == 0 ||
+        strncmp(input, "whatsapp:", 9) == 0 ||
+        strncmp(input, "facetime:", 9) == 0 ||
+        strncmp(input, "skype:", 6) == 0 ||
+        strncmp(input, "mailto:", 7) == 0)
     {
         Verdict uv = check_url(input);
         r.score = uv.score;

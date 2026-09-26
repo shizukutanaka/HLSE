@@ -17,6 +17,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `.gitmodules` `url =` feeds the VCS/forge check. Host extractors
   now also stop at `\n`/`\r` (real newlines could leak into
   displayed hosts).
+- **Mobile deep-link scheme detection** (`hlse_core.c`):
+  `sms:`/`tel:`/`intent:`/`market:`/`whatsapp:`/`facetime:`/
+  `skype:`/`mailto:` URIs score 35 — smishing, premium-rate, and
+  Android intent-smuggling vectors that bypass `http(s)` URL
+  filters (they sit alongside `javascript:`/`data:` in the
+  scheme gate).
+
 - **npm alias dependency-confusion check** (`hlse_manifest.c`,
   `hlse_cli.c`): `package --manifest` flags `"name": "npm:other@ver"`
   where the npm: target differs from the declared key — the manifest
