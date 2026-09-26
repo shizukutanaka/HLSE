@@ -1645,6 +1645,93 @@ py_autoexec_score(const unsigned char *head, size_t len,
     return 0;
 }
 
+/* ─── F39: tar member slip — a ustar/v7 member name or ustar prefix
+ *      carrying '..' or an absolute path escapes the extract dir on
+ *      permissive untars (busybox, custom extractors). Reuses the
+ *      zip-slip segment matcher ──────────────────────────────────── */
+static int
+tar_slip_score(const unsigned char *head, size_t len) {
+    size_t off = 0;
+    if (len < 512) return 0;
+    /* ustar magic at 257; v7 tar has no magic — require 'ustar' or a
+     * plausible typeflag+checksum to stay deterministic */
+    while (off + 512 <= len) {
+        const unsigned char *h = head + off;
+        int ustar = memcmp(h + 257, "ustar", 5) == 0;
+        char typeflag = (char)h[156];
+        if (!ustar &&
+            !(typeflag == '0' || typeflag == '\0' || typeflag == '5' ||
+              typeflag == '7'))
+            break;
+        if (zip_name_is_traversal(h, 100)) return 70;
+        if (h[0] == '/' || (h[0] >= 'a' && h[0] <= 'z' && h[1] == ':') ||
+            (h[0] >= 'A' && h[0] <= 'Z' && h[1] == ':'))
+            return 70;
+        if (ustar && zip_name_is_traversal(h + 345, 155)) return 70;
+        {
+            /* octal size at offset 124 (11 digits + NUL/space) */
+            unsigned long sz = 0;
+            int i;
+            for (i = 0; i < 11; i++) {
+                unsigned char c = h[124 + i];
+                if (c >= '0' && c <= '7') sz = sz * 8 + (c - '0');
+            }
+            off += 512 + ((sz + 511) & ~511UL);
+        }
+        if (off + 512 > len) break;
+        if (head[off] == '\0') break;
+    }
+    return 0;
+}
+
+/* ─── F40: build-tool exec+fetch — build.gradle/.kts/.sbt (and vendored
+ *      mvn/ant xml) that exec a downloader = code exec at build time.
+ *      exec/commandLine/processBuilder alone is normal build tooling;
+ *      combined with curl|wget|url fetch it is a supply-chain hole ── */
+static int
+build_exec_score(const unsigned char *head, size_t len,
+                 const char *basename_start, const char *ext) {
+    char extl[32], lown[64], low[4097];
+    size_t n = 0, i;
+    int is_build = 0;
+    static const char *const BEXT[] = {
+        ".gradle", ".kts", ".sbt", NULL
+    };
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    for (i = 0; BEXT[i]; i++)
+        if (strcmp(extl, BEXT[i]) == 0) { is_build = 1; break; }
+    if (!is_build) {
+        str_lower(basename_start, lown, sizeof(lown));
+        if (strncmp(lown, "build.gradle", 12) == 0 ||
+            strncmp(lown, "settings.gradle", 15) == 0 ||
+            strcmp(lown, "pom.xml") == 0 || strcmp(lown, "build.xml") == 0 ||
+            strcmp(lown, "setup.cfg") == 0)
+            is_build = 1;
+    }
+    if (!is_build) return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    /* exec primitive present? */
+    if (!strstr(low, "exec") && !strstr(low, "commandline") &&
+        !strstr(low, "processbuilder") && !strstr(low, "dolast") &&
+        !strstr(low, "ant.exec"))
+        return 0;
+    /* plus a fetch/exfil primitive? */
+    if (strstr(low, "curl") || strstr(low, "wget") ||
+        strstr(low, "invoke-webrequest") || strstr(low, "iwr ") ||
+        strstr(low, "url.openstream") || strstr(low, "new url(") ||
+        strstr(low, "httpclient"))
+        return 55;
+    /* gradle 'repositories' / maven mirrors to an unknown host is the
+     * quieter variant: injected repo substitutes all artifacts */
+    if (strstr(low, "repositories") &&
+        (strstr(low, "jitpack") || strstr(low, "maven { url") ||
+         strstr(low, "ivy { url") || strstr(low, "url \"http://")))
+        return 45;
+    return 0;
+}
+
 /* ─── F36: .rdp rogue redirect — an emailed .rdp that redirects
  *      drives/clipboard/smartcards to a remote desktop lets the rogue
  *      server read local files and harvest input (rogue-RDP class).
@@ -2363,6 +2450,31 @@ hlse_check_file(const char *filepath) {
                 "F38: MOBILECONFIG — profile installs a root CA / proxy /"
                 " VPN payload (silent traffic interception, score %d)",
                 mc);
+        }
+    }
+
+    /* ── F39: tar member slip — member name/prefix with '..' or an
+     *      absolute path escapes the extract dir on permissive untars ─ */
+    if (head_len > 0) {
+        int ts = tar_slip_score(head, (size_t)head_len);
+        if (ts > 0) {
+            fv_add(&v, ts,
+                "F39: TAR-SLIP — archive member name escapes the "
+                "extraction directory (../ or absolute path, score %d)",
+                ts);
+        }
+    }
+
+    /* ── F40: build-tool exec+fetch — build.gradle/.kts/.sbt (or
+     *      pom.xml/build.xml/setup.cfg) that exec a downloader runs
+     *      remote code at build time ──────────────────────────────── */
+    if (head_len > 0) {
+        int bx = build_exec_score(head, (size_t)head_len,
+                                  basename_start, ext);
+        if (bx > 0) {
+            fv_add(&v, bx,
+                "F40: BUILD EXEC — build script execs a fetch/downloader "
+                "(supply-chain exec at build time, score %d)", bx);
         }
     }
 

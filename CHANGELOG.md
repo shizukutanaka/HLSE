@@ -6,6 +6,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F39–F40 archive-slip + build-tool exec** (`hlse_file.c`): F39 tar
+  member `..`/absolute path or ustar prefix traversal → 70 (extends
+  the ZIP-slip check to tar — permissive untars escape the extract
+  dir); F40 `.gradle`/`.kts`/`.sbt`/`pom.xml`/`build.xml`/`setup.cfg`
+  containing an exec primitive (`exec`/`commandLine`/`processBuilder`/
+  `doLast`) *plus* a fetch/exfil primitive (curl/wget/Invoke-WebRequest/
+  `url.openStream`/HttpClient) → 55, or an injected non-forge
+  `repositories { maven/ivy url }` → 45 (dependency substitution).
 - **F36–F38 remote-access carriers** (`hlse_file.c`): F36 `.rdp`
   `drivestoredirect` → 55, clipboard/smartcard/printer/com-port/camera
   redirection → 45/40 (rogue-RDP server reads local drives and input —

