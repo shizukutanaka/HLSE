@@ -12,6 +12,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   fake-login-page attachment (Cofense/Microsoft phishing reports).
   Scores 55; relative actions and password-less forms stay clean.
 
+- **pip index-redirect check** (`hlse_manifest.c`, `hlse_cli.c`):
+  `package --manifest` inspects `--index-url`/`--extra-index-url`/
+  `--find-links`/`--trusted-host` hosts — every package resolves through
+  them. A host that is a distance-≤2 typosquat or `pypi.org.`/`pythonhosted`
+  -prefixed lookalike scores 65; a cleartext `http://` index scores 40
+  (MITM-able resolution); an unknown https index scores 25 as an
+  advisory (internal enterprise indexes are legitimate). Real PyPI
+  hosts stay clean.
+
 - **Authority control-character / root-dot normalization**
   (`hlse_core.c`): WHATWG URL parsing strips ASCII tab/CR/LF outright,
   so `pay\tpal.com` resolves as paypal.com while string-matching

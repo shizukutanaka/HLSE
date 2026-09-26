@@ -644,6 +644,22 @@ printf '<html><body><form action="/login" method="post"><input name="password" t
     || check "F13 FP guard: relative-action form clean" "0" "0"
 rm -rf "$CF_DIR"
 
+# pip resolver-redirect flags: off-pypi index / lookalike / cleartext
+IX_DIR=$(mktemp -d)
+printf -- '--index-url https://pypi.org.evil.example/simple\nrequests\n' > "$IX_DIR/requirements.txt"
+./hlse_core package --manifest "$IX_DIR/requirements.txt" 2>&1 | grep -q "lookalike of the real PyPI" \
+    && check "index: pypi.org-prefixed lookalike flagged" "0" "0" \
+    || check "index: pypi.org-prefixed lookalike flagged" "0" "1"
+printf -- '--index-url http://internal-mirror.example/simple\nrequests\n' > "$IX_DIR/requirements.txt"
+./hlse_core package --manifest "$IX_DIR/requirements.txt" 2>&1 | grep -q "cleartext http" \
+    && check "index: cleartext index flagged" "0" "0" \
+    || check "index: cleartext index flagged" "0" "1"
+printf -- '--index-url https://pypi.org/simple\nrequests\n' > "$IX_DIR/requirements.txt"
+./hlse_core package --manifest "$IX_DIR/requirements.txt" 2>&1 | grep -q "index redirect" \
+    && check "index FP guard: real pypi.org clean" "0" "1" \
+    || check "index FP guard: real pypi.org clean" "0" "0"
+rm -rf "$IX_DIR"
+
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
 ./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "0" \

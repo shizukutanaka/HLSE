@@ -44,3 +44,8 @@ int hlse_manifest_resolved_suspicious(const char *host);
  * Returns 1 with the lowercased host in out, or 0 when absent. Check the
  * host with hlse_manifest_resolved_suspicious. */
 int hlse_manifest_vcs_host(const char *line, char *out, size_t outcap);
+
+/* Extract the target host of a pip resolver-redirect flag
+ * (--index-url/--extra-index-url/--find-links/--trusted-host).
+ * Returns 1 with the lowercased host in out, or 0 when absent. */
+int hlse_manifest_index_host(const char *line, char *out, size_t outcap);

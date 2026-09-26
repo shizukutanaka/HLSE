@@ -1232,6 +1232,95 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                         }
                     }
                 }
+                /* pip resolver-redirect flags: --index-url et al. change
+                 * where EVERY dependency resolves from. Typosquatting the
+                 * index host is high confidence; an unknown index is an
+                 * advisory (internal enterprise indexes are legitimate). */
+                {
+                    char ihost[256];
+                    if (hlse_manifest_index_host(line, ihost,
+                            sizeof(ihost))) {
+                        static const char *const PYPI[] = {
+                            "pypi.org", "files.pythonhosted.org",
+                            "pypi.python.org", "pythonhosted.org", NULL
+                        };
+                        int isc = 0, known = 0, pi;
+                        for (pi = 0; PYPI[pi]; pi++) {
+                            size_t phl = strlen(PYPI[pi]),
+                                   ihl = strlen(ihost);
+                            if (ihl == phl &&
+                                strcmp(ihost, PYPI[pi]) == 0) known = 1;
+                            if (ihl > phl + 1 && ihost[ihl - phl - 1] == '.' &&
+                                strcmp(ihost + ihl - phl, PYPI[pi]) == 0)
+                                known = 1;
+                            if (!known && phl > 0 && ihl > 0 &&
+                                hlse_edit_distance(ihost, PYPI[pi]) <= 2)
+                                isc = 65;
+                            /* pypi.org.evil.example: the registry name as
+                             * a leading label — subdomain spoof of the
+                             * index itself */
+                            if (!known && ihl > phl + 1 &&
+                                strncmp(ihost, PYPI[pi], phl) == 0 &&
+                                ihost[phl] == '.')
+                                isc = 65;
+                        }
+                        if (!known && isc == 0) {
+                            if (strstr(line, "http://") != NULL) {
+                                isc = 40;  /* cleartext index = MITM-able */
+                            } else {
+                                isc = 25;  /* unverified third-party index */
+                            }
+                        }
+                        if (isc > 0) {
+                            char ireason[HLSE_HOOK_REASON_LEN];
+                            if (isc >= 65) {
+                                snprintf(ireason, sizeof(ireason),
+                                    "index host '%s' is a lookalike of the "
+                                    "real PyPI — typosquatted index "
+                                    "substitutes every resolved package",
+                                    ihost);
+                            } else if (isc == 40) {
+                                snprintf(ireason, sizeof(ireason),
+                                    "index host '%s' is cleartext http:// — "
+                                    "package resolution is MITM-able", ihost);
+                            } else {
+                                snprintf(ireason, sizeof(ireason),
+                                    "index host '%s' is outside PyPI — "
+                                    "verify this is your organization's "
+                                    "index (dependency resolution follows "
+                                    "it for every package)", ihost);
+                            }
+                            threats++;
+                            hlse_alert_emit_rows("package", isc,
+                                hlse_severity_for_score(isc), mpath,
+                                &ireason, HLSE_HOOK_REASON_LEN, 1);
+                            if (isc > max_score) max_score = isc;
+                            if (isc >= o->fail_threshold) gate_hits++;
+                            if (o->sarif_out) {
+                                hlse_sarif_add(mpath, lineno,
+                                    "package-index-redirect",
+                                    "HLSE-PKG-INDEX", ireason, isc);
+                            } else if (o->json_out) {
+                                char eih[256], eh4[384];
+                                hlse_json_escape(ihost, eih, sizeof(eih));
+                                hlse_json_escape(ireason, eh4, sizeof(eh4));
+                                hlse_json_open("package");
+                                printf(",\"name\":\"%s\",\"ecosystem\":\"%s\","
+                                       "\"score\":%d,\"action\":\"%s\","
+                                       "\"severity\":%d,"
+                                       "\"pattern_id\":\"HLSE-PKG-INDEX\","
+                                       "\"reason\":\"%s\"}\n",
+                                       eih, eco, isc,
+                                       hlse_action_for_score(isc),
+                                       hlse_severity_for_score(isc), eh4);
+                            } else {
+                                printf("%-7s [%d]  suspicious index redirect: %s\n",
+                                       hlse_action_for_score(isc), isc,
+                                       ireason);
+                            }
+                        }
+                    }
+                }
                 for (;;) {
                     int got;
                     if (is_npm)

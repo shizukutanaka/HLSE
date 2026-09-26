@@ -214,6 +214,7 @@ static void exercise(const char *buf) {
         (void)hlse_manifest_resolved_suspicious(out);
     if (hlse_manifest_vcs_host(buf, out, sizeof(out)))
         (void)hlse_manifest_resolved_suspicious(out);
+    (void)hlse_manifest_index_host(buf, out, sizeof(out));
     hn = hlse_manifest_hook_flags(buf, hout, hsc, 4);
     (void)hn;
 }

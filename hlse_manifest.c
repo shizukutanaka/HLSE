@@ -2,6 +2,7 @@
  * Extracted verbatim from hlse_core.c (split increment 6); pure
  * orchestration helpers around hlse_check_package(). */
 #include "hlse_manifest.h"
+#include "hlse_util.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -369,5 +370,47 @@ hlse_manifest_vcs_host(const char *line, char *out, size_t outcap) {
     if (!out[0]) return 0;
     /* reject a 'host' that is really a path fragment */
     if (!strchr(out, '.')) return 0;
+    return 1;
+}
+
+/* pip resolver-redirect flags: --index-url/--extra-index-url change
+ * where every dependency resolves from; --find-links adds an alternate
+ * download location; --trusted-host disables TLS verification for a
+ * host. Extracts the flag's target host (URL or bare host:port).      */
+int
+hlse_manifest_index_host(const char *line, char *out, size_t outcap) {
+    static const char *const FLAGS[] = {
+        "--index-url", "--extra-index-url", "--find-links",
+        "--trusted-host", NULL
+    };
+    const char *v = NULL;
+    size_t n = 0;
+    int i;
+    if (out && outcap) out[0] = '\0';
+    if (!line || !out || outcap == 0) return 0;
+    for (i = 0; FLAGS[i]; i++) {
+        const char *f = strstr(line, FLAGS[i]);
+        if (!f) continue;
+        v = f + strlen(FLAGS[i]);
+        while (*v == ' ' || *v == '\t' || *v == '=') v++;
+        break;
+    }
+    if (!v || !*v) return 0;
+    /* skip an inline comment start or a dangling flag */
+    if (*v == '#') return 0;
+    if (strncmp(v, "https://", 8) == 0) v += 8;
+    else if (strncmp(v, "http://", 7) == 0) v += 7;
+    /* bare host (e.g. --trusted-host) or scheme already skipped */
+    while (*v && *v != '/' && *v != '"' && *v != '\'' &&
+           *v != ' ' && *v != '\t' && *v != '#' &&
+           *v != ')' && *v != '>' && n + 1 < outcap)
+        out[n++] = (char)tolower((unsigned char)*v++);
+    out[n] = '\0';
+    {   /* strip userinfo then :port */
+        char *at = strrchr(out, '@');
+        if (at) memmove(out, at + 1, strlen(at + 1) + 1);
+        { char *c = strchr(out, ':'); if (c) *c = '\0'; }
+    }
+    if (!out[0] || !strchr(out, '.')) return 0;
     return 1;
 }
