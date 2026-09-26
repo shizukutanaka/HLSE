@@ -27,6 +27,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <ctype.h>
@@ -2050,6 +2051,52 @@ check_url(const char *raw_url) {
         add_reason(&v, 15,
             "Trailing DNS-root dot in host '%s.' — resolves identically "
             "but evades exact-match allowlists (evasion tell)", u.host);
+    }
+
+    /* Internal/private destination — an external-content URL pointing
+     * at RFC1918, loopback, link-local, CGNAT, or a cloud metadata
+     * endpoint is an SSRF/pivot signal: scanners see such URLs in
+     * fetched pages, configs, and injected redirects. Metadata
+     * endpoints are the credential-theft target itself.              */
+    {
+        const char *h = u.host;
+        if (h[0] == '[') {
+            /* IPv6 literal — ::1 loopback, fe80:: link-local,
+             * fc00::/7 ULA */
+            if (strncmp(h, "[::1]", 5) == 0 ||
+                strncmp(h, "[0:0:0:0:0:0:0:1]", 17) == 0 ||
+                strncasecmp(h, "[fe80", 5) == 0 ||
+                strncasecmp(h, "[fc", 3) == 0 ||
+                strncasecmp(h, "[fd", 3) == 0) {
+                add_reason(&v, 45,
+                    "IPv6 loopback/link-local/private literal host "
+                    "'%s' — external content pointing inside the "
+                    "network is an SSRF/pivot signal", h);
+            }
+        } else if (strcmp(h, "169.254.169.254") == 0 ||
+                   strcmp(h, "169.254.170.2") == 0 ||   /* ECS task */
+                   strcmp(h, "100.100.2.136") == 0 ||   /* Alibaba  */
+                   strcmp(h, "metadata.google.internal") == 0 ||
+                   strcmp(h, "metadata") == 0 ||
+                   strcmp(h, "instance-data") == 0) {
+            add_reason(&v, 65,
+                "Cloud instance-metadata endpoint '%s' — IMDS URLs "
+                "are the SSRF credential-theft target itself", h);
+        } else {
+            unsigned a, b, c, d;
+            if (sscanf(h, "%u.%u.%u.%u", &a, &b, &c, &d) == 4 &&
+                a <= 255 && b <= 255 && c <= 255 && d <= 255 &&
+                (a == 0 || a == 10 || a == 127 ||
+                 (a == 172 && b >= 16 && b <= 31) ||
+                 (a == 192 && b == 168) ||
+                 (a == 169 && b == 254) ||
+                 (a == 100 && b >= 64 && b <= 127))) {
+                add_reason(&v, 45,
+                    "Internal/private address host '%s' — RFC1918, "
+                    "loopback, link-local or CGNAT destinations in "
+                    "external content are an SSRF/pivot signal", h);
+            }
+        }
     }
 
     /* IP-based URL with brand names in path → phishing.
