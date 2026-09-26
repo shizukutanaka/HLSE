@@ -203,9 +203,14 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "rk_live_",      8,  24, is_alnum_or_dash,   "Stripe Restricted Key", 90 },
     { "pk_live_",      8,  24, is_alnum_or_dash,   "Stripe Live Publishable", 50 },
     { "sk_test_",      8,  24, is_alnum_or_dash,   "Stripe Test Key",       30 },
+    { "whsec_",        6,  20, is_alnum_or_dash,   "Stripe Webhook Secret", 85 },
+    /* Square application secret / personal token (sq0csp-/sq0atp-) */
+    { "sq0csp-",       7,  40, is_alnum_or_dash,   "Square Application Secret", 85 },
 
     /* Slack */
-    { "xoxb-",         5,  10, is_alnum_or_dash,   "Slack Bot Token",       80 },
+    { "xapp-",        5,  20, is_alnum_or_dash,   "Slack App-level Token", 85 },
+    { "xoxe.",         5,  20, is_alnum_or_dash,   "Slack Config/Rotation Token", 85 },
+    { "xoxb-",        5,  10, is_alnum_or_dash,   "Slack Bot Token",       80 },
     { "xoxp-",         5,  10, is_alnum_or_dash,   "Slack User Token",      85 },
     { "xoxs-",         5,  10, is_alnum_or_dash,   "Slack Session Token",   85 },
 
@@ -218,21 +223,30 @@ static const SecretPattern SECRET_PATTERNS[] = {
 
     /* GitLab */
     { "glpat-",        6,  20, is_alnum_or_dash,   "GitLab Personal Access Token", 90 },
+    { "gldt-",         5,  20, is_alnum_or_dash,   "GitLab Deploy Token",   80 },
+    { "glrt-",         5,  20, is_alnum_or_dash,   "GitLab Runner Token",   80 },
+    { "glsoat-",       7,  20, is_alnum_or_dash,   "GitLab Self-managed OAuth Token", 80 },
 
     /* npm */
     { "npm_",          4,  36, is_alnum_or_dash,   "npm Access Token",      85 },
 
     /* OpenAI / Anthropic (distinctive dash-prefixed LLM provider keys) */
     { "sk-proj-",      8,  20, is_alnum_or_dash,   "OpenAI Project Key",    90 },
+    { "sk-svcacct-",  11,  20, is_alnum_or_dash,   "OpenAI Service Account Key", 90 },
+    { "sk-admin-",     9,  20, is_alnum_or_dash,   "OpenAI Admin Key",      90 },
     { "sk-ant-",       7,  20, is_alnum_or_dash,   "Anthropic API Key",     90 },
     /* Newer LLM providers with distinctive prefixes (~zero FP):
-     * Groq gsk_<52>, Perplexity pplx-<48>, xAI/Grok xai-<80>.            */
+     * Groq gsk_<52>, Perplexity pplx-<48>, xAI/Grok xai-<80>, Replicate
+     * r8_<36>, Hugging Face org api_org_<34>.                          */
     { "gsk_",          4,  20, is_alnum_or_dash,   "Groq API Key",          85 },
     { "pplx-",         5,  20, is_alnum_or_dash,   "Perplexity API Key",    85 },
     { "xai-",          4,  20, is_alnum_or_dash,   "xAI (Grok) API Key",    85 },
+    { "r8_",           3,  30, is_alnum_or_dash,   "Replicate API Token",   85 },
+    { "api_org_",      8,  30, is_alpha,           "Hugging Face Org Token", 80 },
 
     /* Shopify (32-hex body — very low false-positive prefix) */
     { "shpat_",        6,  32, is_hex,             "Shopify Access Token",  85 },
+    { "shpca_",        6,  32, is_hex,             "Shopify Custom App Token", 85 },
     { "shpss_",        6,  32, is_hex,             "Shopify Shared Secret", 85 },
     { "shppa_",        6,  32, is_hex,             "Shopify Private App Token", 85 },
 

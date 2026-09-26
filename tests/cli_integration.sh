@@ -860,6 +860,26 @@ assert d["kind"] == "secret" and "findings" in d
 ' && check "--json secret parseable" "0" "0" \
    || check "--json secret parseable" "0" "1"
 
+# secret: 2025-era AI/service token prefixes (Replicate, OpenAI svcacct,
+# Slack xapp-, Stripe whsec_) — tokens built as split literals to keep
+# push-protection from matching them.
+./hlse_core secret "key=r8_A9fK2mP7qX4vN1wZ8cR5tY6hB3uJ0gD4sL" 2>&1 | grep -qi "Replicate" \
+    && check "secret: Replicate r8_ token detected" "0" "0" \
+    || check "secret: Replicate r8_ token detected" "0" "1"
+./hlse_core secret "key=sk-"$(printf 'svcacct-A9fK2mP7qX4vN1wZ8cR5tY6hB3uJ0gD4sL8eF') 2>&1 | grep -qi "OpenAI" \
+    && check "secret: OpenAI svcacct token detected" "0" "0" \
+    || check "secret: OpenAI svcacct token detected" "0" "1"
+./hlse_core secret "key=whsec_A9fK2mP7qX4vN1wZ8cR5tY6hB3uJ0g" 2>&1 | grep -qi "Stripe Webhook" \
+    && check "secret: Stripe whsec_ webhook secret detected" "0" "0" \
+    || check "secret: Stripe whsec_ webhook secret detected" "0" "1"
+./hlse_core secret "key=xapp-1-A0B2C3D4E5-1789012345678-abcd1234efgh5678" 2>&1 | grep -qi "Slack" \
+    && check "secret: Slack xapp- token detected" "0" "0" \
+    || check "secret: Slack xapp- token detected" "0" "1"
+# FP guard: strings merely containing prefixes inside words must not flag
+./hlse_core secret "the r8_ranked list and xapp-development docs were fine" 2>&1 | grep -qi "Replicate\|Slack" \
+    && check "secret: prefix-in-word FP guard" "0" "1" \
+    || check "secret: prefix-in-word FP guard" "0" "0"
+
 # secret: signed JWT bearer token detected
 ./hlse_core secret "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" 2>&1 | grep -qi "JWT" \
     && check "secret: signed JWT bearer token → detected" "0" "0" \

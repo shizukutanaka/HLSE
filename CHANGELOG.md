@@ -6,6 +6,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **12 more secret prefixes** (`hlse_secrets.c`): OpenAI
+  `sk-svcacct-`/`sk-admin-`, Replicate `r8_`, Hugging Face org
+  `api_org_`, Slack `xapp-`/`xoxe.`, Stripe webhook `whsec_`, Shopify
+  custom-app `shpca_`, Square `sq0csp-`, GitLab `gldt-`/`glrt-`/
+  `glsoat-` — all documented 2024-2025 token formats that the AI-era
+  leakage wave made high-value targets.
+
 - **npm lifecycle-hook risk in `package --manifest`** (`hlse_manifest.c`,
   `hlse_cli.c`; pattern id `HLSE-PKG-HOOK`). 2025's self-propagating npm
   worms (Shai-Hulud, s1ngularity/Nx fallout) run from install hooks —
