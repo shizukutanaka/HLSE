@@ -1221,6 +1221,23 @@ fi
     && check "confidence: generic env var → heuristic" "0" "0" \
     || check "confidence: generic env var → heuristic" "0" "1"
 
+# KV_SECRET: generic key=value credential assignments (lowercase, spaces, colons)
+./hlse_core secret 'password = "hunter2supersecret"' 2>&1 | grep -q "KV_SECRET" \
+    && check "kv: lowercase quoted password flagged" "0" "0" \
+    || check "kv: lowercase quoted password flagged" "0" "1"
+./hlse_core secret 'db_pass: S3cur3P@ssw0rd!' 2>&1 | grep -q "KV_SECRET" \
+    && check "kv: yaml-style colon assignment flagged" "0" "0" \
+    || check "kv: yaml-style colon assignment flagged" "0" "1"
+./hlse_core secret 'password: required' 2>&1 | grep -q "KV_SECRET" \
+    && check "kv FP guard: schema word clean" "0" "1" \
+    || check "kv FP guard: schema word clean" "0" "0"
+./hlse_core secret 'my_password = ask("enter")' 2>&1 | grep -q "KV_SECRET" \
+    && check "kv FP guard: function call clean" "0" "1" \
+    || check "kv FP guard: function call clean" "0" "0"
+./hlse_core secret 'api_key = "your_api_key_here"' 2>&1 | grep -q "KV_SECRET" \
+    && check "kv FP guard: placeholder suppressed" "0" "1" \
+    || check "kv FP guard: placeholder suppressed" "0" "0"
+
 # confidence: JSON exposes the 'confidence' field
 ./hlse_core --json secret "PASSWORD=hunter2value" 2>&1 | python3 -c '
 import sys, json
@@ -6296,11 +6313,11 @@ SECRET ACME_KEY_ 20 alnum 85 ACME Internal API Key
 PATEOF
 
 # Without --patterns, the custom token type is invisible (exit 0)
-./hlse_core secret "token=ACME_KEY_abcdefghij1234567890XY" >/dev/null 2>&1 && rc=0 || rc=$?
+./hlse_core secret "hdr ACME_KEY_abcdefghij1234567890XY" >/dev/null 2>&1 && rc=0 || rc=$?
 check "p110: custom token type undetected without --patterns" "0" "$rc"
 
 # With --patterns, the custom token is detected at its configured score
-P110_OUT=$(./hlse_core --patterns "$P110_PAT" secret "token=ACME_KEY_abcdefghij1234567890XY" 2>/dev/null || true)
+P110_OUT=$(./hlse_core --patterns "$P110_PAT" secret "hdr ACME_KEY_abcdefghij1234567890XY" 2>/dev/null || true)
 echo "$P110_OUT" | grep -q "ACME Internal API Key" \
     && echo "$P110_OUT" | grep -q "ISOLATE \[85\]" \
     && check "p110: --patterns detects custom token at configured score" "0" "0" \
@@ -6308,7 +6325,7 @@ echo "$P110_OUT" | grep -q "ACME Internal API Key" \
 
 # JSON mode: custom finding present, pattern_id falls back to the generic
 # append-only token (no new pattern_id is minted for a user-defined type)
-./hlse_core --patterns "$P110_PAT" --json secret "token=ACME_KEY_abcdefghij1234567890XY" 2>/dev/null | \
+./hlse_core --patterns "$P110_PAT" --json secret "hdr ACME_KEY_abcdefghij1234567890XY" 2>/dev/null | \
 python3 -c '
 import sys, json
 d = json.loads(sys.stdin.read())
@@ -6325,7 +6342,7 @@ grep -q '"score":80' && check "p110: built-in patterns unaffected when --pattern
 
 # scan picks up custom patterns too (global flag, applies to all subcommands)
 P110_DIR=$(mktemp -d)
-echo "token=ACME_KEY_abcdefghij1234567890XY" > "$P110_DIR/config.txt"
+echo "hdr ACME_KEY_abcdefghij1234567890XY" > "$P110_DIR/config.txt"
 P110_SCAN=$(./hlse_core --patterns "$P110_PAT" scan "$P110_DIR" 2>/dev/null || true)
 echo "$P110_SCAN" | grep -q "ACME Internal API Key" \
     && check "p110: scan honors --patterns for custom detection" "0" "0" \

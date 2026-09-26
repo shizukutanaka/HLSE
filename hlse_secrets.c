@@ -728,6 +728,131 @@ is_placeholder_secret(const char *line_start, const char *match,
     return 0;
 }
 
+/* Generic key=value / key: value secret assignments.
+ * check_env_passwords covers literal `KEY=` constants; this covers the
+ * freeform forms real config files actually use — `password = "x"`,
+ * `db_pass: hunter2`, `api-key: abc…` — lowercase keys, spaces around
+ * the separator, quoted or bare values. Literature on secret leakage
+ * (GitGuardian, trufflehog rulesets) treats these generic assignments
+ * as the single largest missed class after prefixed tokens.          */
+static int
+check_kv_assignment(const char *text, SecretVerdict *v) {
+    static const char *const KEYS[] = {
+        "password", "passwd", "passphrase", "db_pass", "db_password",
+        "api_key", "apikey", "api-key", "api_secret", "secret",
+        "secret_key", "access_key", "secret_access_key",
+        "auth_token", "access_token", "refresh_token", "id_token",
+        "client_secret", "private_key", "encryption_key",
+        "master_key", "signing_key", "smtp_pass", "smtp_password",
+        "ftp_password", "ssh_pass", "ssh_password", "token",
+        NULL
+    };
+    /* Schema/boolean words that appear as values in YAML/INI schemas —
+     * `password: required` is a form spec, not a credential.          */
+    static const char *const NONSECRET[] = {
+        "required", "optional", "true", "false", "none", "null",
+        "string", "integer", "boolean", "hidden", "yes", "no",
+        "str", "int", "bool", "input", "password", "text",
+        NULL
+    };
+    int found = 0;
+    const char *p = text;
+
+    while ((p = strpbrk(p, "=:")) != NULL) {
+        const char *sep = p;
+        const char *kstart;
+        const char *val;
+        char key[64];
+        char sval[220];
+        size_t kl = 0, vl = 0;
+        size_t ki;
+        int quoted = 0;
+
+        /* Walk back over the key: letters, digits, '_', '-' — the key
+         * token must abut the separator (spaces allowed before it).  */
+        kstart = sep;
+        while (kstart > text && (kstart[-1] == ' ' || kstart[-1] == '\t'))
+            kstart--;
+        {   const char *q = kstart;
+            while (q > text &&
+                   (isalnum((unsigned char)q[-1]) || q[-1] == '_' ||
+                    q[-1] == '-'))
+                q--;
+            kstart = q;
+        }
+        kl = (size_t)(sep - kstart);
+        /* Trim trailing whitespace already skipped above */
+        {   const char *e = sep;
+            while (e > kstart && (e[-1] == ' ' || e[-1] == '\t')) e--;
+            kl = (size_t)(e - kstart);
+        }
+        if (kl == 0 || kl >= sizeof(key)) { p = sep + 1; continue; }
+        /* Skip `==` / `=>` / `<=` / `>=` / `!=` comparison operators and
+         * `:` that is part of `://` (URI scheme).                      */
+        if (sep[1] == '=' || (sep[0] == '=' && sep > text &&
+            (sep[-1] == '!' || sep[-1] == '<' || sep[-1] == '>' ||
+             sep[-1] == '='))) { p = sep + 1; continue; }
+        if (sep[0] == ':' && sep[1] == '/' && sep[2] == '/')
+            { p = sep + 1; continue; }
+        for (ki = 0; ki < kl; ki++)
+            key[ki] = (char)tolower((unsigned char)kstart[ki]);
+        key[kl] = '\0';
+
+        for (ki = 0; KEYS[ki]; ki++)
+            if (strcmp(key, KEYS[ki]) == 0) break;
+        if (!KEYS[ki]) { p = sep + 1; continue; }
+
+        /* Parse value: optional whitespace, optional quote, then the
+         * value body up to the matching quote or a delimiter.        */
+        val = sep + 1;
+        while (*val == ' ' || *val == '\t') val++;
+        if (*val == '"' || *val == '\'') {
+            char qc = *val++;
+            const char *e = strchr(val, qc);
+            if (!e) { p = sep + 1; continue; }
+            vl = (size_t)(e - val);
+            quoted = 1;
+        } else {
+            const char *e = val;
+            while (*e && *e != '\n' && *e != '\r' && *e != ',' &&
+                   *e != ';' && *e != '}' && *e != ')' && *e != ' ' &&
+                   *e != '\t' && *e != '#')
+                e++;
+            vl = (size_t)(e - val);
+        }
+        if (vl < 8 || vl >= sizeof(sval)) { p = sep + 1; continue; }
+        memcpy(sval, val, vl);
+        sval[vl] = '\0';
+
+        /* Reject variable references / templates / function calls.    */
+        if (sval[0] == '$' || sval[0] == '<' || sval[0] == '{' ||
+            strchr(sval, '(') != NULL || strstr(sval, "${") != NULL) {
+            p = sep + 1; continue;
+        }
+        /* Reject schema words and all-whitespace/uniform values.      */
+        {   size_t n;
+            int uniform = 1;
+            for (n = 0; NONSECRET[n]; n++)
+                if (strcmp(sval, NONSECRET[n]) == 0) break;
+            if (NONSECRET[n]) { p = sep + 1; continue; }
+            for (n = 1; n < vl; n++)
+                if (sval[n] != sval[0]) { uniform = 0; break; }
+            if (uniform) { p = sep + 1; continue; }
+        }
+        /* Placeholder suppression — reuse the shared marker logic.    */
+        if (is_placeholder_secret(text, sep, sval, vl)) {
+            p = sep + 1; continue;
+        }
+        (void)quoted;
+        sv_add(v, 65, "KV_SECRET",
+               "Hardcoded credential assignment: %s = <redacted> "
+               "(%d chars)", key, (int)vl);
+        found = 1;
+        p = sep + 1;
+    }
+    return found;
+}
+
 SecretVerdict
 hlse_scan_secrets(const char *text) {
     SecretVerdict v;
@@ -837,6 +962,7 @@ hlse_scan_secrets(const char *text) {
     check_ssh_key(text, &v);
     check_env_passwords(text, &v);
     check_generic_hex_secret(text, &v);
+    check_kv_assignment(text, &v);
 
     /* GCP service account JSON — contains "type": "service_account" and
      * "private_key" together. Near-zero false positives.               */
@@ -1076,7 +1202,8 @@ hlse_secret_confidence(const SecretVerdict *v) {
     for (i = 0; i < v->n_findings; i++) {
         const char *t = v->findings[i].type;
         if (strcmp(t, "ENV_SECRET") != 0 &&
-            strcmp(t, "GENERIC_SECRET") != 0)
+            strcmp(t, "GENERIC_SECRET") != 0 &&
+            strcmp(t, "KV_SECRET") != 0)
             return "certain";
     }
     return "heuristic";

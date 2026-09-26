@@ -1019,6 +1019,18 @@ static const char *LLM_CONTROL_TOKENS[] = {
     NULL
 };
 
+/* Executable/active HTML embedded in a scanned message — HTML email
+ * and chat payloads carry these to run script or auto-load remote
+ * content when the message is rendered (email phishing's primary
+ * smuggling surface). Active markup in prose text is never benign:
+ * a user pasting "<script>alert(1)</script>" into a detector is
+ * testing it, and flagging is the correct answer.                  */
+static const char *HTML_INJECT_WORDS[] = {
+    "<script", "<iframe", "<embed", "<object", "srcdoc=",
+    "onerror=", "onload=", "onclick=", "onfocus=", "<form action",
+    "<base href", "<svg onload", "javascript:", NULL
+};
+
 static const Signal SIGNALS[] = {
     { "Urgency pressure",           URGENCY_WORDS,    8,  8, 25 },
     { "Financial/credential req",   BAIT_WORDS,      12, 12, 36 },
@@ -1036,6 +1048,7 @@ static const Signal SIGNALS[] = {
     { "Emergency/grandparent scam", EMERGENCY_SCAM_WORDS, 20, 15, 45 },
     { "Prompt-injection override phrase", PROMPT_OVERRIDE_WORDS, 40, 10, 55 },
     { "LLM control token in text",  LLM_CONTROL_TOKENS, 45, 10, 60 },
+    { "Active HTML markup in text", HTML_INJECT_WORDS, 30, 15, 50 },
     { NULL, NULL, 0, 0, 0 }
 };
 

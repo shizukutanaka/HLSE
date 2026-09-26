@@ -6,6 +6,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Generic key=value credential detection** (`hlse_secrets.c`):
+  `check_kv_assignment` catches freeform secret assignments that
+  `PASSWORD=` constants miss — lowercase keys, spaces around the
+  separator, `key: value` YAML/INI form, quoted or bare values
+  (`password = "x"`, `db_pass: hunter2`, `api-key: abc...`).
+  Schema words (`password: required`), variable/template refs
+  (`$`/`${`/`{`/`<`), function calls, uniform values, and the shared
+  placeholder-marker list are suppressed; KV_SECRET reports
+  confidence `heuristic` like ENV_SECRET/GENERIC_SECRET.
 - **Open-redirect laundering detection** (`hlse_core.c`): query
   parameters (`url=`/`next=`/`redirect=`/`return=`/`dest=`/
   `continue=`/`goto=`/`target=`/`rurl=`/`forward=`/`to=`/`out=`/…)
