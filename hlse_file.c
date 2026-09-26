@@ -7,9 +7,9 @@
  *   F2. MIME/magic mismatch     — file claims .pdf but magic bytes say EXE
  *   F3. Executable disguise     — dangerous extension hidden by icon/name
  *   F4. Office macro presence   — .doc/.xls with VBA macro indicators
- *   F5. Script in archive       — .zip/.tar containing .sh/.bat/.ps1
+ *   F5. Scripted SVG            — <svg> carrying <script>/handlers
  *   F6. Suspicious filename     — social engineering lure names
- *   F7. Polyglot detection      — file valid as multiple formats
+ *   F7. ICS invite phishing     — VCALENDAR embedding malicious links
  *
  * All detection is read-only. Files are never modified or executed.
  *
@@ -29,6 +29,8 @@
 #include <unistd.h>
 
 #include "hlse_file.h"
+#include "hlse_core.h"   /* hlse_check_url — embedded links are scored by
+                        * the URL engine rather than reimplemented here */
 #include "hlse_util.h"
 
 /* ─── helpers ─────────────────────────────────────────────────────────── */
@@ -363,6 +365,68 @@ svg_has_script(const unsigned char *head, size_t len) {
             strstr(low, ";base64,")       != NULL);
 }
 
+/* ICS calendar-invite phishing: a VCALENDAR payload carrying malicious
+ * links in URL/LOCATION/DESCRIPTION/ATTACH fields. Email clients auto-add
+ * such invites to the victim's calendar, giving the payload a second
+ * delivery path that bypasses message-body scanning (Sublime Security /
+ * Abnormal AI reports, 2025). Content-marker based like F5 — a VCALENDAR
+ * block IS the carrier, regardless of extension. Embedded http(s) links
+ * are delegated to hlse_check_url; a link ending in an executable
+ * extension is flagged outright (a meeting has no reason to serve one). */
+static int
+ics_is_delim(int c) {
+    return c == '\0' || c == ' ' || c == '\t' || c == '\r' ||
+           c == '\n' || c == '"'  || c == '\'' || c == '<'  ||
+           c == '>'  || c == '|';
+}
+
+static const char *ICS_EXEC_EXTS[] = {
+    ".exe", ".apk", ".scr", ".msi", ".bat", ".cmd", ".lnk",
+    ".vbs", ".ps1", ".jar", ".iso", ".img",
+    NULL
+};
+
+/* Returns the highest embedded-link score in a VCALENDAR payload
+ * (0 = clean / not ICS).                                               */
+static int
+ics_suspicious_link(const unsigned char *head, size_t len) {
+    char low[4097];
+    size_t n = 0, i;
+    int best = 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strstr(low, "begin:vcalendar") == NULL) return 0;
+    for (i = 0; i + 8 <= n; i++) {
+        if (strncmp(low + i, "http://", 7) != 0 &&
+            strncmp(low + i, "https://", 8) != 0)
+            continue;
+        {
+            size_t j = i, u = 0;
+            char url[1024];
+            while (j < n && !ics_is_delim(low[j]) && u < sizeof(url) - 1)
+                url[u++] = low[j++];
+            url[u] = '\0';
+            if (u > 8) {
+                Verdict uv = hlse_check_url(url);
+                int sc = uv.score, e;
+                for (e = 0; ICS_EXEC_EXTS[e]; e++) {
+                    size_t el = strlen(ICS_EXEC_EXTS[e]);
+                    if (u > el &&
+                        strcmp(url + u - el, ICS_EXEC_EXTS[e]) == 0)
+                    {
+                        if (sc < 70) sc = 70;
+                        break;
+                    }
+                }
+                if (sc > best) best = sc;
+            }
+            i = j;
+        }
+    }
+    return best;
+}
+
 /* ─── main check function ─────────────────────────────────────────────── */
 
 FileVerdict
@@ -644,6 +708,16 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, 10,
                 "F6: File name contains lure words (%d matches)",
                 lure_count);
+        }
+    }
+
+    /* ── F7: Calendar-invite (ICS) phishing ────────────────────────── */
+    if (head_len > 0) {
+        int ics = ics_suspicious_link(head, (size_t)head_len);
+        if (ics >= 40) {
+            fv_add(&v, ics > 65 ? 65 : ics,
+                "F7: CALENDAR INVITE embeds suspicious link "
+                "(embedded URL score %d)", ics);
         }
     }
 

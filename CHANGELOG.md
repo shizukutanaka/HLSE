@@ -6,6 +6,25 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **ICS calendar-invite phishing — file check F7** (`hlse_file.c`).
+  Malicious `.ics` invites embed credential-bait or malware links in
+  `URL:`/`LOCATION:`/`DESCRIPTION:`/`ATTACH:` fields and auto-add to the
+  victim's calendar, bypassing message-body scanning (Sublime Security /
+  Abnormal AI 2025 reports). Content-marker based like F5 — a
+  `BEGIN:VCALENDAR` block is screened regardless of extension: embedded
+  http(s) links are extracted (≤1024 B each) and delegated to
+  `hlse_check_url`; a link ending in an executable extension
+  (.exe/.apk/.scr/.msi/.bat/.cmd/.lnk/.vbs/.ps1/.jar/.iso/.img) scores
+  ≥70 outright. Contribution capped at 65. 3 tests: phish URL, exe link,
+  legit meet.google.com invite (clean).
+
+- **Japanese smishing vocabulary** (`hlse_text.c`): 16 documented
+  National Police Agency / Anti-Phishing Council lure phrases — ETC
+  toll impersonation (`etc利用照会`, `etcカードの有効期限`), unpaid-fee
+  (`未払い料金`, `料金未払い`), My Number point / card expiry, e-Tax
+  (`e-tax`, `国税電子申告`), and billing/account-update boilerplate
+  (`お支払い方法の確認`, `カード情報の更新`, `アカウントの一時停止` …).
+
 - **12 more secret prefixes** (`hlse_secrets.c`): OpenAI
   `sk-svcacct-`/`sk-admin-`, Replicate `r8_`, Hugging Face org
   `api_org_`, Slack `xapp-`/`xoxe.`, Stripe webhook `whsec_`, Shopify

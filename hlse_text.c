@@ -958,6 +958,18 @@ static const char *CALLBACK_PHISH_WORDS[] = {
     /* Japanese callback/smishing */
     "折り返しお電話", "お電話ください", "佐川急便",
     "宅急便", "不在通知", "再配達",
+    /* Japanese smishing lures documented by the National Police Agency /
+     * Anti-Phishing Council: ETC toll impersonation (the top-volume JP
+     * smishing family), My Number card expiry, e-Tax refund bait, and
+     * card/billing-update boilerplate. */
+    "etc利用照会", "etcサービス", "etcカードの有効期限",
+    "未払い料金", "料金未払い",
+    "マイナポイント", "マイナンバーカードの有効期限",
+    "e-tax", "国税電子申告",
+    "お支払い方法の確認", "お支払い方法を更新",
+    "カード情報の更新", "お支払い情報の更新",
+    "アカウントの一時停止", "本人確認のお願い",
+    "ご利用を制限しております", "セキュリティ上の理由",
     NULL
 };
 

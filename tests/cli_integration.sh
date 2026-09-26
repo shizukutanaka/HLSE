@@ -373,6 +373,36 @@ assert data["hardening_band"] in ("hardened", "good", "fair", "weak")
     && check "FileFix FP guard: legit Explorer navigation stays low" "0" "0" \
     || check "FileFix FP guard: legit Explorer navigation stays low" "0" "1"
 
+# ICS calendar-invite phishing (F7): VCALENDAR with credential-bait link → flagged
+ICS_DIR=$(mktemp -d)
+printf 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:Verify your account\r\nLOCATION:https://paypa1-secure.verify-account.top/login\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n' > "$ICS_DIR/invite.ics"
+./hlse_core file "$ICS_DIR/invite.ics" 2>&1 | grep -q "F7" \
+    && check "ICS phish: calendar invite with phish URL flagged" "0" "0" \
+    || check "ICS phish: calendar invite with phish URL flagged" "0" "1"
+
+# ICS dropper: invite linking an .exe → flagged even on a clean host
+printf 'BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nURL:https://cdn.example.com/setup.exe\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n' > "$ICS_DIR/dropper.ics"
+./hlse_core file "$ICS_DIR/dropper.ics" 2>&1 | grep -q "F7" \
+    && check "ICS phish: invite linking executable flagged" "0" "0" \
+    || check "ICS phish: invite linking executable flagged" "0" "1"
+
+# ICS FP guard: legit invite with a meet.google.com link → clean
+printf 'BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nSUMMARY:Standup\r\nLOCATION:https://meet.google.com/abc-defg-hij\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n' > "$ICS_DIR/legit.ics"
+./hlse_core file "$ICS_DIR/legit.ics" 2>&1 | grep -qE "^OK|^LOG" \
+    && check "ICS FP guard: legit meeting invite stays low" "0" "0" \
+    || check "ICS FP guard: legit meeting invite stays low" "0" "1"
+rm -rf "$ICS_DIR"
+
+# Japanese smishing: ETC fee lure → ALERT+
+./hlse_core text '【ETC利用照会】未払い料金がございます。本日中にお支払い方法を更新してください。' 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
+    && check "JP smishing: ETC unpaid-fee lure → ALERT+" "0" "0" \
+    || check "JP smishing: ETC unpaid-fee lure → ALERT+" "0" "1"
+
+# JP smishing FP guard: ordinary Japanese business text → clean
+./hlse_core text '明日の会議の議事録を送ります。ご確認ください。' 2>&1 | grep -qE "^OK|^LOG" \
+    && check "JP smishing FP guard: ordinary JP business text stays low" "0" "0" \
+    || check "JP smishing FP guard: ordinary JP business text stays low" "0" "1"
+
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
 ./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "0" \
