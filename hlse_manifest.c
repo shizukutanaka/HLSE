@@ -54,8 +54,14 @@ hlse_manifest_ecosystem(const char *path) {
         strncmp(b, "docker-compose.y", 16) == 0 ||
         (strstr(b, ".Dockerfile") != NULL))
         return "docker";
-    if ((strstr(path, ".github/workflows/") != NULL ||
-         strstr(path, ".gitlab-ci") != NULL) &&
+    /* .gitlab-ci.yml must route to glci BEFORE the gha path rule:
+     * GitLab syntax is not GitHub Actions — ${{ }} interpolation and
+     * pull_request_target do not exist there; script/include do. */
+    if (strcmp(b, ".gitlab-ci.yml") == 0 ||
+        strcmp(b, ".gitlab-ci.yaml") == 0 ||
+        strcmp(b, "gitlab-ci.yml") == 0)
+        return "glci";
+    if (strstr(path, ".github/workflows/") != NULL &&
         (strstr(b, ".yml") != NULL || strstr(b, ".yaml") != NULL))
         return "gha";
     /* MCP server configs (claude_desktop_config.json, .cursor/
@@ -82,6 +88,10 @@ hlse_manifest_ecosystem(const char *path) {
         (strcmp(b, "tasks.json") == 0 ||
          strcmp(b, "settings.json") == 0))
         return "vsc";
+    if (strcmp(b, ".pre-commit-config.yaml") == 0 ||
+        strcmp(b, ".pre-commit-config.yml") == 0 ||
+        strcmp(b, "pre-commit-config.yaml") == 0)
+        return "pck";
     return NULL;
 }
 
@@ -822,8 +832,8 @@ hlse_manifest_docker_add_remote(const char *line) {
  * Only exec-shaped VALUES flag: a plain npm ci postCreateCommand is
  * the format's raison d'etre, but a pipe/fetch/path value is a
  * weaponisable command. Returns score + reason, 0 clean.           */
-static int
-execish_value(const char *v) {
+int
+hlse_manifest_execish(const char *v) {
     static const char *const X[] = {
         "|", "curl", "wget", "http", "/tmp", "-c", "bash", "sh ",
         "python", "ruby", "perl", "powershell", "pwsh", "eval",
@@ -846,7 +856,7 @@ hlse_manifest_devc_risk(const char *line, char *reason, size_t rcap) {
     size_t i;
     for (i = 0; LIFECYCLE[i]; i++) {
         const char *k = strstr(line, LIFECYCLE[i]);
-        if (k && execish_value(k)) {
+        if (k && hlse_manifest_execish(k)) {
             snprintf(reason, rcap,
                 "devcontainer lifecycle command fetches/executes "
                 "remote or opaque content — opening the repo in a "
@@ -900,9 +910,70 @@ hlse_manifest_vsc_risk(const char *line, char *reason, size_t rcap) {
             return 60;
         }
     }
-    if (strstr(line, "\"command\"") != NULL && execish_value(line)) {
+    if (strstr(line, "\"command\"") != NULL && hlse_manifest_execish(line)) {
         snprintf(reason, rcap,
             "VS Code task command fetches or pipes remote content");
+        return 55;
+    }
+    return 0;
+}
+
+/* .pre-commit-config.yaml — `repo: local` hooks run arbitrary entry
+ * commands on every `git commit` (documented dev-machine vector: the
+ * hook config is repo-supplied, pre-commit auto-installs it, the
+ * "commit" gesture is the exec trigger). language: system/script
+ * run repo binaries with no isolation.                            */
+int
+hlse_manifest_pck_risk(const char *line, char *reason, size_t rcap) {
+    if (strstr(line, "repo:") != NULL && strstr(line, "local") != NULL) {
+        snprintf(reason, rcap,
+            "pre-commit 'repo: local' hook — its entry command runs "
+            "verbatim on every git commit, no sandbox");
+        return 40;
+    }
+    if (strstr(line, "entry:") != NULL && hlse_manifest_execish(line)) {
+        snprintf(reason, rcap,
+            "pre-commit hook entry fetches/pipes or shells out — "
+            "runs on every git commit in this repo");
+        return 60;
+    }
+    if (strstr(line, "language:") != NULL &&
+        (strstr(line, "system") != NULL || strstr(line, "script") != NULL)) {
+        snprintf(reason, rcap,
+            "pre-commit hook language system/script — executes a "
+            "repo-supplied binary with no environment isolation");
+        return 40;
+    }
+    return 0;
+}
+
+/* .gitlab-ci.yml — same substitution surface as GHA but GitLab
+ * syntax: `include: - remote:`/`include: { remote: }` pulls a
+ * pipeline definition from an arbitrary URL (executes with the
+ * project's CI variables); script:/before_script:/after_script:
+ * values that fetch|pipe are the classic token-theft shape.      */
+int
+hlse_manifest_glci_risk(const char *line, char *reason, size_t rcap) {
+    if (strstr(line, "remote:") != NULL &&
+        (strstr(line, "http://") != NULL || strstr(line, "https://") != NULL)) {
+        snprintf(reason, rcap,
+            "gitlab-ci include:remote pulls pipeline config from a "
+            "remote URL — runs with the project's CI variables");
+        return 55;
+    }
+    if (strstr(line, "include:") != NULL && strstr(line, "http") != NULL) {
+        snprintf(reason, rcap,
+            "gitlab-ci include loads a remote pipeline definition");
+        return 50;
+    }
+    if ((strstr(line, "script:") != NULL ||
+         strstr(line, "before_script:") != NULL ||
+         strstr(line, "after_script:") != NULL ||
+         strstr(line, "pre_get_sources_script:") != NULL) &&
+        hlse_manifest_execish(line)) {
+        snprintf(reason, rcap,
+            "gitlab-ci script step fetches/pipes remote or encoded "
+            "content — executes with CI variable scope");
         return 55;
     }
     return 0;
