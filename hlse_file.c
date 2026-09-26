@@ -1216,30 +1216,50 @@ meta_refresh_score(const unsigned char *head, size_t len) {
     return 0;
 }
 
+/* word-boundary prefix match: p[0..kl)==key, preceded by YAML key
+ * boundary (start/space/{/,), followed by ':' — shared by the YAML
+ * scorers below. Iterates via *cur; returns value cursor after ':'
+ * or NULL.                                                        */
+static const char *
+yaml_key_val(const char *low, const char *key, const char **cur) {
+    size_t kl = strlen(key);
+    const char *p = *cur ? *cur : low;
+    while ((p = strstr(p, key)) != NULL) {
+        const char *v = p + kl;
+        if ((p == low || isspace((unsigned char)p[-1]) ||
+             p[-1] == '{' || p[-1] == ',') && *v == ':') {
+            *cur = p + kl;
+            return v + 1;
+        }
+        p += kl;
+    }
+    *cur = NULL;
+    return NULL;
+}
+
+static int
+yaml_key_present(const char *low, const char *key) {
+    const char *cur = NULL;
+    return yaml_key_val(low, key, &cur) != NULL;
+}
+
+static int
+yaml_bool_true(const char *low, const char *key) {
+    const char *cur = NULL, *v;
+    while ((v = yaml_key_val(low, key, &cur)) != NULL) {
+        while (*v == ' ' || *v == '\t') v++;
+        if (strncmp(v, "true", 4) == 0) return 1;
+    }
+    return 0;
+}
+
 /* ─── F25: privileged Kubernetes manifest — a .yaml/.yml doc carrying
  *      apiVersion:/kind: that requests privilege the PodSecurity
  *      baseline/restricted profiles forbid: privileged containers,
  *      host-namespace sharing, hostPath mounts, dangerous capabilities.
  *      A dropped manifest runs with one `kubectl apply` (container-
  *      breakout class).                                               */
-static int
-yaml_bool_true(const char *low, const char *key) {
-    size_t kl = strlen(key);
-    const char *p = low;
-    while ((p = strstr(p, key)) != NULL) {
-        const char *v = p + kl;
-        /* key must sit at a YAML word boundary — reject prefix
-         * collisions like `nothostpid:` / `myhostpath:` */
-        if ((p == low || isspace((unsigned char)p[-1]) ||
-             p[-1] == '{' || p[-1] == ',') && *v == ':') {
-            v++;
-            while (*v == ' ' || *v == '\t') v++;
-            if (strncmp(v, "true", 4) == 0) return 1;
-        }
-        p += kl;
-    }
-    return 0;
-}
+
 
 static int
 k8s_priv_score(const unsigned char *head, size_t len, const char *ext) {
@@ -1279,6 +1299,77 @@ k8s_priv_score(const unsigned char *head, size_t len, const char *ext) {
             }
             p += 8;
         }
+    }
+    return sc;
+}
+
+/* F26: docker-compose privilege — services that run privileged,
+ * share host namespaces, mount the docker socket or host root, or
+ * add dangerous caps. Gate: compose-named file or services:+image:/
+ * build: body (a plain YAML with a `services:` key is already a
+ * compose-shaped doc).                                             */
+static int
+compose_priv_score(const unsigned char *head, size_t len,
+                   const char *basename_start, const char *ext) {
+    char extl[32], lown[64], low[4097];
+    size_t n = 0, i;
+    int sc = 0;
+    const char *cur;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".yaml") != 0 && strcmp(extl, ".yml") != 0)
+        return 0;
+    str_lower(basename_start, lown, sizeof(lown));
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(lown, "compose") &&
+        !(yaml_key_present(low, "services") &&
+          (yaml_key_present(low, "image") ||
+           yaml_key_present(low, "build") ||
+           yaml_key_present(low, "container_name"))))
+        return 0;
+    if (yaml_bool_true(low, "privileged"))
+        sc = 70;
+    /* host-namespace modes take the value `host` (optionally quoted) */
+    {
+        static const char *const NSKEYS[] = {
+            "network_mode", "pid", "ipc", "uts", "cgroup",
+            "userns_mode", NULL
+        };
+        for (i = 0; NSKEYS[i]; i++) {
+            cur = NULL;
+            const char *v;
+            while ((v = yaml_key_val(low, NSKEYS[i], &cur)) != NULL) {
+                while (*v == ' ' || *v == '\t' || *v == '"' ||
+                       *v == '\'') v++;
+                if (strncmp(v, "host", 4) == 0) {
+                    if (sc < 55) sc = 55;
+                    break;
+                }
+            }
+        }
+    }
+    if (yaml_key_present(low, "cap_add") &&
+        (strstr(low, "sys_admin") || strstr(low, "- all") ||
+         strstr(low, "[all]"))) {
+        if (sc < 65) sc = 65;
+    }
+    if (strstr(low, "/var/run/docker.sock") ||
+        strstr(low, "/run/docker.sock")) {
+        if (sc < 60) sc = 60;
+    }
+    /* host-root / sensitive-dir bind mounts */
+    if (strstr(low, "- /:") || strstr(low, "- \"/:") ||
+        strstr(low, "- '/:") || strstr(low, "- /etc:") ||
+        strstr(low, "- /etc/") || strstr(low, "- /root:") ||
+        strstr(low, "- /root/") || strstr(low, "- /boot") ||
+        strstr(low, "- /dev/") || strstr(low, "- /proc") ||
+        strstr(low, "- /sys/") || strstr(low, "- /sys:")) {
+        if (sc < 50) sc = 50;
+    }
+    if (yaml_key_present(low, "security_opt") &&
+        strstr(low, "unconfined")) {
+        if (sc < 40) sc = 40;
     }
     return sc;
 }
@@ -1754,6 +1845,20 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, kp,
                 "F25: K8S PRIVILEGED — manifest requests privileged/"
                 "host-namespace/capability escalation (score %d)", kp);
+        }
+    }
+
+    /* ── F26: docker-compose privilege — compose service running
+     *      privileged, sharing host namespaces, mounting docker.sock
+     *      or host root, or adding dangerous caps ──────────────────── */
+    if (head_len > 0) {
+        int cp = compose_priv_score(head, (size_t)head_len,
+                                    basename_start, ext);
+        if (cp > 0) {
+            fv_add(&v, cp,
+                "F26: COMPOSE PRIVILEGED — docker-compose service runs "
+                "privileged / host-namespace / docker.sock / host-root "
+                "mount (score %d)", cp);
         }
     }
 

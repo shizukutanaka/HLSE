@@ -7717,6 +7717,31 @@ printf 'name: not-k8s\nprivileged: true\nhostPath: /etc\n' \
     || check "file: non-k8s yaml privileged key clean" "0" "1"
 rm -rf "$KDIR"
 
+# ── cycle-29a: F26 docker-compose privilege ──
+# privileged / host-namespace / docker.sock / host-root mounts in a
+# compose file are container-breakout class on `docker compose up`
+CDIR=$(mktemp -d)
+printf 'version: "3"\nservices:\n  app:\n    image: nginx\n    privileged: true\n' \
+    > "$CDIR/docker-compose.yml"
+./hlse_core file "$CDIR/docker-compose.yml" 2>&1 | grep -q "COMPOSE PRIVILEGED" \
+    && check "file: compose privileged flagged" "0" "0" \
+    || check "file: compose privileged flagged" "0" "1"
+printf 'services:\n  ci:\n    image: runner\n    volumes:\n      - /var/run/docker.sock:/var/run/docker.sock\n' \
+    > "$CDIR/sock.yml"
+./hlse_core file "$CDIR/sock.yml" 2>&1 | grep -q "COMPOSE PRIVILEGED" \
+    && check "file: compose docker.sock mount flagged" "0" "0" \
+    || check "file: compose docker.sock mount flagged" "0" "1"
+printf 'version: "3"\nservices:\n  web:\n    image: nginx\n    ports:\n      - "8080:80"\n' \
+    > "$CDIR/docker-compose.yml"
+./hlse_core file "$CDIR/docker-compose.yml" 2>&1 | grep -q "OK" \
+    && check "file: plain compose clean" "0" "0" \
+    || check "file: plain compose clean" "0" "1"
+printf 'foo:\n  privileged: true\n  pid: host\n' > "$CDIR/random.yaml"
+./hlse_core file "$CDIR/random.yaml" 2>&1 | grep -q "OK" \
+    && check "file: non-compose yaml privileged key clean" "0" "0" \
+    || check "file: non-compose yaml privileged key clean" "0" "1"
+rm -rf "$CDIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
