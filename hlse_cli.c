@@ -1090,7 +1090,7 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
             eco = (argc > idx + 3) ? argv[idx + 3] : hlse_manifest_ecosystem(mpath);
             if (!eco) {
                 fprintf(stderr, "Error: cannot infer ecosystem from '%s' \xe2\x80\x94 "
-                        "pass one explicitly (pip|npm|cargo|go|gem|docker|gha|mcp|devc|vsc|pck|glci|comp|plat|nuget)\n", mpath);
+                        "pass one explicitly (pip|npm|cargo|go|gem|docker|gha|mcp|devc|vsc|pck|glci|comp|plat|nuget|pod|spm)\n", mpath);
                 return 2;
             }
             mf = fopen(mpath, "r");
@@ -1550,6 +1550,97 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                         printf("%-7s [%d]  cargo patch table: %s\n",
                                hlse_action_for_score(psc), psc,
                                preason);
+                    }
+                }
+                /* Podfile `source 'url'` — swaps where every pod
+                 * resolves from (the CocoaPods form of the Gemfile
+                 * source= hijack; same key, same check). */
+                if (strcmp(eco, "pod") == 0) {
+                    char phost[256];
+                    if (hlse_manifest_source_host(line, phost,
+                            sizeof(phost)) &&
+                        hlse_manifest_resolved_suspicious(phost)) {
+                        int psc2 = 60;
+                        char preason[HLSE_HOOK_REASON_LEN];
+                        char eph[256];
+                        hlse_json_escape(phost, eph, sizeof(eph));
+                        snprintf(preason, sizeof(preason),
+                            "Podfile source '%s' is off the CocoaPods "
+                            "trunk/CDN — every pod resolves through it "
+                            "(dependency confusion)", eph);
+                        threats++;
+                        hlse_alert_emit_rows("package", psc2,
+                            hlse_severity_for_score(psc2), mpath,
+                            &preason, HLSE_HOOK_REASON_LEN, 1);
+                        if (psc2 > max_score) max_score = psc2;
+                        if (psc2 >= o->fail_threshold) gate_hits++;
+                        if (o->sarif_out) {
+                            hlse_sarif_add(mpath, lineno,
+                                "package-pod-source",
+                                "HLSE-PKG-PODSRC", preason, psc2);
+                        } else if (o->json_out) {
+                            char eh7e[384];
+                            hlse_json_escape(preason, eh7e, sizeof(eh7e));
+                            hlse_json_open("package");
+                            printf(",\"manifest\":\"%s\",\"score\":%d,"
+                                   "\"action\":\"%s\",\"severity\":%d,"
+                                   "\"pattern_id\":\"HLSE-PKG-PODSRC\","
+                                   "\"source\":\"%s\",\"reason\":\"%s\"}\n",
+                                   mpath, psc2,
+                                   hlse_action_for_score(psc2),
+                                   hlse_severity_for_score(psc2),
+                                   eph, eh7e);
+                        } else {
+                            printf("%-7s [%d]  suspicious pod source: %s\n",
+                                   hlse_action_for_score(psc2), psc2,
+                                   preason);
+                        }
+                    }
+                }
+                /* Package.swift .package(url:)/Package.resolved
+                 * "location" — a Swift dependency fetched from an
+                 * off-forge host. */
+                if (strcmp(eco, "spm") == 0) {
+                    char whost[256];
+                    if (hlse_manifest_swift_url(line, whost,
+                            sizeof(whost)) &&
+                        hlse_manifest_resolved_suspicious(whost)) {
+                        int wsc = 45;
+                        char wreason[HLSE_HOOK_REASON_LEN];
+                        char ewh[256];
+                        hlse_json_escape(whost, ewh, sizeof(ewh));
+                        snprintf(wreason, sizeof(wreason),
+                            "Package.swift dependency fetches from '%s' "
+                            "— an off-forge git host substitutes the "
+                            "package content (dependency confusion)", ewh);
+                        threats++;
+                        hlse_alert_emit_rows("package", wsc,
+                            hlse_severity_for_score(wsc), mpath,
+                            &wreason, HLSE_HOOK_REASON_LEN, 1);
+                        if (wsc > max_score) max_score = wsc;
+                        if (wsc >= o->fail_threshold) gate_hits++;
+                        if (o->sarif_out) {
+                            hlse_sarif_add(mpath, lineno,
+                                "package-swift-url",
+                                "HLSE-PKG-SWIFTURL", wreason, wsc);
+                        } else if (o->json_out) {
+                            char eh7f[384];
+                            hlse_json_escape(wreason, eh7f, sizeof(eh7f));
+                            hlse_json_open("package");
+                            printf(",\"manifest\":\"%s\",\"score\":%d,"
+                                   "\"action\":\"%s\",\"severity\":%d,"
+                                   "\"pattern_id\":\"HLSE-PKG-SWIFTURL\","
+                                   "\"source\":\"%s\",\"reason\":\"%s\"}\n",
+                                   mpath, wsc,
+                                   hlse_action_for_score(wsc),
+                                   hlse_severity_for_score(wsc),
+                                   ewh, eh7f);
+                        } else {
+                            printf("%-7s [%d]  suspicious swift package "
+                                   "url: %s\n",
+                                   hlse_action_for_score(wsc), wsc,
+                                   wreason);
+                        }
                     }
                 }
                 /* nuget.config <packageSources><add value="url"> —

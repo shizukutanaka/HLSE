@@ -111,6 +111,15 @@ hlse_manifest_ecosystem(const char *path) {
         strcmp(b, ".pre-commit-config.yml") == 0 ||
         strcmp(b, "pre-commit-config.yaml") == 0)
         return "pck";
+    /* CocoaPods Podfile (`source 'url'`) and Swift PM Package.swift
+     * (`.package(url: "…")`) — the iOS/macOS forms of registry/dep
+     * substitution */
+    if (strcmp(b, "Podfile") == 0 || strcmp(b, "Podfile.lock") == 0 ||
+        strcmp(b, "podfile") == 0)
+        return "pod";
+    if (strcmp(b, "Package.swift") == 0 ||
+        strcmp(b, "Package.resolved") == 0)
+        return "spm";
     /* NuGet config: <packageSources><add value="url"> swaps where
      * every package resolves from — the .NET form of registry hijack */
     if (strcmp(b, "nuget.config") == 0 || strcmp(b, "NuGet.Config") == 0 ||
@@ -411,6 +420,7 @@ static const char *const REGISTRY_HOSTS[] = {
     "rubygems.org", "pypi.org", "files.pythonhosted.org",
     "proxy.golang.org", "index.crates.io", "crates.io",
     "repo.maven.apache.org", "nuget.org", "api.nuget.org",
+    "cdn.cocoapods.org", "trunk.cocoapods.org", "cocoapods.org",
     /* container registries — Dockerfile `FROM` targets */
     "docker.io", "index.docker.io", "registry-1.docker.io",
     "ghcr.io", "gcr.io", "us.gcr.io", "eu.gcr.io", "asia.gcr.io",
@@ -746,6 +756,37 @@ hlse_manifest_cargo_patch(const char *line) {
            strcmp(p, "[patch]") == 0 ||
            strncmp(p, "[patch]", 7) == 0 ||
            strncmp(p, "[replace]", 9) == 0;
+}
+
+/* Package.swift `.package(url: "https://…", …)` / Package.resolved
+ * `"location": "url"` — the dependency's fetch host. Returns 1 with
+ * the lowercased host in out, or 0. */
+int
+hlse_manifest_swift_url(const char *line, char *out, size_t outcap) {
+    const char *p;
+    size_t n = 0;
+    if (out && outcap) out[0] = '\0';
+    if (!line || !out || outcap == 0) return 0;
+    p = strstr(line, ".package");
+    if (p) {
+        p = strstr(p, "url");
+    } else {
+        p = strstr(line, "\"location\"");
+        if (p) p = strchr(p, ':');
+    }
+    if (!p) return 0;
+    p = strstr(p, "http");
+    if (!p) return 0;
+    if (strncmp(p, "https://", 8) == 0) p += 8;
+    else if (strncmp(p, "http://", 7) == 0) p += 7;
+    else return 0;
+    while (*p && *p != '/' && *p != '"' && *p != '\'' &&
+           *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r' &&
+           *p != ')' && n + 1 < outcap)
+        out[n++] = (char)tolower((unsigned char)*p++);
+    out[n] = '\0';
+    { char *c = strchr(out, ':'); if (c) *c = '\0'; }
+    return out[0] && strchr(out, '.') ? 1 : 0;
 }
 
 /* nuget.config `<packageSources><add key="…" value="URL"/>` — an XML
