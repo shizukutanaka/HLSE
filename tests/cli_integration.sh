@@ -7361,6 +7361,20 @@ rm -f "$LF"
 ./hlse_core 'ms-msdt:/id PCWDiagnostic' 2>&1 | grep -q "URI-handler" \
     && check "url: ms-msdt handler scheme flagged" "0" "0" \
     || check "url: ms-msdt handler scheme flagged" "0" "1"
+# F22: vbaProject.bin member inside a .docx container = renamed macro doc
+PYDIR=$(mktemp -d)
+python3 -c "import struct,sys
+def zm(n,d=b'X'):
+    return b'PK\x03\x04'+struct.pack('<HHHHHIIIHH',20,0,8,0,0,0,len(d),len(d),len(n),0)+n.encode()+d
+open('$PYDIR/evil.docx','wb').write(zm('word/vbaProject.bin'))
+open('$PYDIR/clean.docx','wb').write(zm('word/document.xml'))"
+./hlse_core file "$PYDIR/evil.docx" 2>&1 | grep -q "MACRO SMUGGLING" \
+    && check "file: .docx carrying vbaProject.bin flagged (F22)" "0" "0" \
+    || check "file: .docx carrying vbaProject.bin flagged" "0" "1"
+./hlse_core file "$PYDIR/clean.docx" 2>&1 | grep -q "OK" \
+    && check "file: macro-free .docx clean (F22)" "0" "0" \
+    || check "file: macro-free .docx clean" "0" "1"
+rm -rf "$PYDIR"
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

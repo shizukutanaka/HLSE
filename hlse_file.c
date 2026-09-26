@@ -17,6 +17,10 @@
  *   F12. ZIP-slip               — archive member with ../ or absolute path
  *   F13. Credential-harvest form — HTML <form> posting a password to a
  *        remote absolute URL (fake-login attachment)
+ *   F14-F21 — script cradles, .reg persistence, PDF/RTF auto-actions,
+ *        rc-file persistence, reverse shells, <base>/meta-refresh
+ *   F22. OOXML macro smuggling — vbaProject.bin inside a container
+ *        named like a macro-free format (renamed .docm)
  *
  * All detection is read-only. Files are never modified or executed.
  *
@@ -890,8 +894,9 @@ zip_name_is_traversal(const unsigned char *name, size_t nl) {
 }
 
 static int
-zip_slip_score(const unsigned char *head, size_t len) {
+zip_slip_score(const unsigned char *head, size_t len, int *vba_seen) {
     size_t off = 0;
+    if (vba_seen) *vba_seen = 0;
     if (len < 30 || memcmp(head, MAGIC_ZIP, 4) != 0) return 0;
     while (off + 30 <= len && memcmp(head + off, MAGIC_ZIP, 4) == 0) {
         unsigned nl = (unsigned)head[off + 26] |
@@ -904,6 +909,27 @@ zip_slip_score(const unsigned char *head, size_t len) {
                       ((unsigned long)head[off + 21] << 24);
         size_t noff = off + 30;
         if (noff + nl > len) break;
+        if (vba_seen && nl >= 14) {
+            /* basename match on the last path segment — word/
+             * vbaProject.bin is the VBA project member            */
+            const unsigned char *nm = head + noff;
+            size_t base = nl;
+            size_t i;
+            for (i = 0; i < nl; i++)
+                if (nm[i] == '/' || nm[i] == '\\') base = i + 1;
+            if (nl - base == 14) {
+                static const char VBA[] = "vbaProject.bin";
+                size_t k;
+                int same = 1;
+                for (k = 0; k < 14; k++)
+                    if ((nm[base + k] | 0x20) !=
+                        (unsigned char)(VBA[k] | 0x20)) {
+                        same = 0;
+                        break;
+                    }
+                if (same) *vba_seen = 1;
+            }
+        }
         if (zip_name_is_traversal(head + noff, nl)) return 70;
         noff += nl + el;
         if (cs == 0) {
@@ -1446,11 +1472,41 @@ hlse_check_file(const char *filepath) {
 
     /* ── F12: ZIP-slip — archive member escaping the extract dir ───── */
     if (head_len > 30) {
-        int zs = zip_slip_score(head, (size_t)head_len);
+        int vba = 0;
+        int zs = zip_slip_score(head, (size_t)head_len, &vba);
         if (zs > 0) {
             fv_add(&v, zs,
                 "F12: ZIP-SLIP — archive member name escapes the "
                 "extraction directory (../ traversal or absolute path)");
+        }
+        /* ── F22: OOXML macro smuggling — a vbaProject.bin member in
+         *      a container named like a macro-free format (.docx/
+         *      .xlsx/.pptx) is a renamed .docm — the extension tells
+         *      the user "no macros" while the payload ships anyway.
+         *      Real .docm/.xlsm score lower: the macros there are
+         *      declared by the format itself. ──────────────────────── */
+        if (vba) {
+            char lex[32];
+            int fs;
+            str_lower(ext, lex, sizeof(lex));
+            if (!strcmp(lex, ".docx") || !strcmp(lex, ".xlsx") ||
+                !strcmp(lex, ".pptx") || !strcmp(lex, ".doc") ||
+                !strcmp(lex, ".xls")  || !strcmp(lex, ".ppt") ||
+                !strcmp(lex, ".dotx") || !strcmp(lex, ".xltx") ||
+                !strcmp(lex, ".potx") || !strcmp(lex, ".vsdx"))
+                fs = 65;
+            else if (!strcmp(lex, ".docm") || !strcmp(lex, ".xlsm") ||
+                     !strcmp(lex, ".pptm") || !strcmp(lex, ".dotm") ||
+                     !strcmp(lex, ".xltm") || !strcmp(lex, ".potm"))
+                fs = 35;
+            else
+                fs = 50;
+            fv_add(&v, fs,
+                "F22: OOXML MACRO SMUGGLING — vbaProject.bin member "
+                "in container named '%s'%s",
+                lex[0] ? lex : "(no extension)",
+                fs == 65 ? " — the extension says macro-free "
+                           "(renamed macro doc)" : "");
         }
     }
 
