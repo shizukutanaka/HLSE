@@ -6,6 +6,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F14 script download-cradle check** (`hlse_file.c`): MITRE
+  T1059/T1105 stagers — fetch+execute pairs (DownloadString/IEX,
+  curl|bash, certutil, bitsadmin, mshta/regsvr32/rundll32) score 65
+  in script files, 55 elsewhere; encoded `-enc` payloads (long
+  base64 run) 60; execution-policy bypass tells 45-60. Benign
+  `-enc utf8` (-Encoding abbreviation) stays clean.
+- **F15 .reg persistence check** (`hlse_file.c`): a `.reg` file
+  writing Run/RunOnce/IFEO/Debugger/Winlogon/UserInit keys → 65 —
+  the double-click autostart primitive.
 - **Generic key=value credential detection** (`hlse_secrets.c`):
   `check_kv_assignment` catches freeform secret assignments that
   `PASSWORD=` constants miss — lowercase keys, spaces around the

