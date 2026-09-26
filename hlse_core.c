@@ -437,6 +437,7 @@ typedef struct {
     char host[MAX_HOST];
     char path[MAX_PATH];
     int  is_https;
+    int  host_encoded;  /* host carried %-escapes (decoded in place) */
 } ParsedUrl;
 
 static int
@@ -468,6 +469,33 @@ parse_url(const char *raw, ParsedUrl *out) {
     memcpy(out->host, host_start, (size_t)(host_end - host_start));
     out->host[host_end - host_start] = '\0';
     str_tolower(out->host);
+
+    /* Decode %-escapes in the host too — a reg-name may carry them, and
+     * resolvers decode before DNS, so `pa%79pal.com` IS paypal.com to a
+     * browser but evades every host-based check if left encoded
+     * (brand matching, canonical auth, blocklists, log review).
+     * The raw-vs-decoded difference is itself an evasion tell, recorded
+     * in host_encoded. Same 0x20..0x7E bound as the path decode below. */
+    {
+        char *r = out->host, *w = out->host;
+        while (*r) {
+            if (*r == '%' && r[1] && r[2]) {
+                char hex[3] = { r[1], r[2], '\0' };
+                char *endp = NULL;
+                long val = strtol(hex, &endp, 16);
+                if (endp == hex + 2 && val >= 0x20 && val < 0x7F) {
+                    char c = (char)val;
+                    if (c >= 'A' && c <= 'Z') c = (char)(c + 32);
+                    *w++ = c;
+                    r += 3;
+                    out->host_encoded = 1;
+                    continue;
+                }
+            }
+            *w++ = *r++;
+        }
+        *w = '\0';
+    }
 
     if (slash) {
         size_t plen = strlen(slash);
@@ -1787,6 +1815,25 @@ check_url(const char *raw_url) {
                 }
                 break;
             }
+        }
+    }
+
+    /* Percent-encoded host — parse_url decoded it in place, so the
+     * downstream brand/canonical/free-host checks see the effective
+     * identity; the encoding itself is the tell here. Encoded
+     * authority-structural chars (@ / \) mean the raw and resolved
+     * authority disagree — an active parsing-confusion attempt.     */
+    if (u.host_encoded) {
+        if (strchr(u.host, '@') || strchr(u.host, '/') ||
+            strchr(u.host, '\\')) {
+            add_reason(&v, 55,
+                "Percent-encoded host '%s' decodes to an authority "
+                "delimiter — raw and resolved host disagree "
+                "(parsing-confusion evasion)", u.host);
+        } else {
+            add_reason(&v, 30,
+                "Percent-encoded host '%s' — hides the hostname from "
+                "allowlists and log review (evasion)", u.host);
         }
     }
 

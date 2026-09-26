@@ -586,6 +586,21 @@ printf '{\n "dependencies": {\n  "lodash": {\n   "version": "4.17.21",\n   "reso
     || check "lockfile FP guard: registry.npmjs.org clean" "0" "0"
 rm -rf "$LK_DIR"
 
+# Percent-encoded host: brand evasion and authority-confusion → flagged
+./hlse_core 'https://pa%79pal.com.evil.com/login' 2>&1 | grep -q "Subdomain spoofing" \
+    && check "enc-host: %79-encoded brand in subdomain flagged" "0" "0" \
+    || check "enc-host: %79-encoded brand in subdomain flagged" "0" "1"
+./hlse_core 'https://pa%79pal.com/' 2>&1 | grep -q "Percent-encoded host" \
+    && check "enc-host: encoded brand host flagged" "0" "0" \
+    || check "enc-host: encoded brand host flagged" "0" "1"
+./hlse_core 'https://example%2ecom%2f@evil.example/' 2>&1 | grep -q "authority" \
+    && check "enc-host: %2f+@ authority confusion flagged" "0" "0" \
+    || check "enc-host: %2f+@ authority confusion flagged" "0" "1"
+# enc-host FP guard: unencoded hosts stay clean
+./hlse_core 'https://example.com/' 2>&1 | grep -q "Percent-encoded host" \
+    && check "enc-host FP guard: plain host clean" "0" "1" \
+    || check "enc-host FP guard: plain host clean" "0" "0"
+
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
 ./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "0" \

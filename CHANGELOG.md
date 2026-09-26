@@ -6,6 +6,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Percent-encoded host detection** (`hlse_core.c`): `parse_url` now
+  decodes %-escapes in the authority in place (same 0x20–0x7E bound as
+  the path decode), so brand matching, canonical auth, free-host and
+  blocklist checks see the effective identity — `pa%79pal.com` is
+  paypal.com to a resolver. The raw/decoded difference scores 30 as an
+  evasion tell; when the decoded host contains an authority delimiter
+  (`@`, `/`, `\`) the raw and resolved authority disagree and it scores
+  55 (parsing-confusion evasion).
+
 - **Obfuscated-IP host detection** (`hlse_core.c`): dotted IP literals
   in non-decimal or abbreviated form — hex labels (`0xC0.0x00.0x02.0x01`),
   octal labels (`0300.0250.0001.0001`), and shorthand 2–3-label quads
