@@ -14,6 +14,7 @@
  *   F9. Weaponized .lnk         — embedded interpreter/download command
  *   F10. NetNTLM leak           — shell-meta file referencing \\UNC/WebDAV
  *   F11. HTML smuggling         — script reassembling a payload client-side
+ *   F12. ZIP-slip               — archive member with ../ or absolute path
  *
  * All detection is read-only. Files are never modified or executed.
  *
@@ -662,6 +663,59 @@ html_smuggling_score(const unsigned char *head, size_t len) {
     return 0;
 }
 
+/* ZIP-slip (Snyk disclosure, CVE-2018-1002200 family): a member name
+ * inside a ZIP archive carrying a `..` path segment, an absolute path,
+ * or a drive letter escapes the extraction directory on unpack. The
+ * local-file-header walk stays inside the bounded head buffer and
+ * resyncs on the next PK\x03\x04 signature when a compressed size of 0
+ * (streaming write) can't be trusted to skip the data.               */
+static int
+zip_name_is_traversal(const unsigned char *name, size_t nl) {
+    size_t i;
+    if (nl >= 1 && (name[0] == '/' || name[0] == '\\')) return 1;
+    if (nl >= 2 && name[1] == ':' &&
+        ((name[0] | 0x20) >= 'a' && (name[0] | 0x20) <= 'z')) return 1;
+    for (i = 0; i + 1 < nl; i++) {
+        if (name[i] == '.' && name[i + 1] == '.' &&
+            (i == 0 || name[i - 1] == '/' || name[i - 1] == '\\') &&
+            (i + 2 == nl || name[i + 2] == '/' || name[i + 2] == '\\'))
+            return 1;                     /* ../ or ..\ segment       */
+    }
+    return 0;
+}
+
+static int
+zip_slip_score(const unsigned char *head, size_t len) {
+    size_t off = 0;
+    if (len < 30 || memcmp(head, MAGIC_ZIP, 4) != 0) return 0;
+    while (off + 30 <= len && memcmp(head + off, MAGIC_ZIP, 4) == 0) {
+        unsigned nl = (unsigned)head[off + 26] |
+                      ((unsigned)head[off + 27] << 8);
+        unsigned el = (unsigned)head[off + 28] |
+                      ((unsigned)head[off + 29] << 8);
+        unsigned long cs = (unsigned long)head[off + 18] |
+                      ((unsigned long)head[off + 19] << 8) |
+                      ((unsigned long)head[off + 20] << 16) |
+                      ((unsigned long)head[off + 21] << 24);
+        size_t noff = off + 30;
+        if (noff + nl > len) break;
+        if (zip_name_is_traversal(head + noff, nl)) return 70;
+        noff += nl + el;
+        if (cs == 0) {
+            /* data-descriptor entry: resync on the next local header */
+            size_t j = noff;
+            off = len;                       /* stop unless resynced */
+            while (j + 30 <= len) {
+                if (memcmp(head + j, MAGIC_ZIP, 4) == 0) { off = j; break; }
+                j++;
+            }
+        } else {
+            off = noff + cs;
+        }
+    }
+    return 0;
+}
+
 /* ─── main check function ─────────────────────────────────────────────── */
 
 FileVerdict
@@ -1005,6 +1059,16 @@ hlse_check_file(const char *filepath) {
                 "F11: HTML SMUGGLING — script decodes and delivers a "
                 "payload client-side (atob/Blob/download pattern, "
                 "score %d)", smug);
+        }
+    }
+
+    /* ── F12: ZIP-slip — archive member escaping the extract dir ───── */
+    if (head_len > 30) {
+        int zs = zip_slip_score(head, (size_t)head_len);
+        if (zs > 0) {
+            fv_add(&v, zs,
+                "F12: ZIP-SLIP — archive member name escapes the "
+                "extraction directory (../ traversal or absolute path)");
         }
     }
 

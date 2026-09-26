@@ -542,6 +542,19 @@ printf '<!DOCTYPE html><html><body><p>hello</p></body></html>' > "$SM_DIR/benign
     && check "F11 FP guard: benign html has no F11" "0" "1" \
     || check "F11 FP guard: benign html has no F11" "0" "0"
 
+# F12: ZIP-slip — member name '../evil.sh' → flagged
+printf 'PK\x03\x04\x14\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0a\x00\x00\x00../evil.sh' > "$SM_DIR/slip.zip"
+./hlse_core file "$SM_DIR/slip.zip" 2>&1 | grep -q "F12" \
+    && check "F12: zip-slip ../ member flagged" "0" "0" \
+    || check "F12: zip-slip ../ member flagged" "0" "1"
+
+# F12 FP guard: normal member names → no F12
+printf 'PK\x03\x04\x14\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06\x00\x00\x00ok.txt' > "$SM_DIR/ok.zip"
+./hlse_core file "$SM_DIR/ok.zip" 2>&1 | grep -q "F12" \
+    && check "F12 FP guard: normal zip has no F12" "0" "1" \
+    || check "F12 FP guard: normal zip has no F12" "0" "0"
+rm -rf "$SM_DIR"
+
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
 ./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "0" \
