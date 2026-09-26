@@ -13,6 +13,7 @@
  *   F8. Launcher/shortcut       — .desktop/.url/.webloc payload carriers
  *   F9. Weaponized .lnk         — embedded interpreter/download command
  *   F10. NetNTLM leak           — shell-meta file referencing \\UNC/WebDAV
+ *   F11. HTML smuggling         — script reassembling a payload client-side
  *
  * All detection is read-only. Files are never modified or executed.
  *
@@ -631,6 +632,36 @@ unc_leak_score(const unsigned char *head, size_t len) {
     return 0;
 }
 
+/* HTML smuggling (Microsoft/Nobelium advisories, 2021+): an HTML
+ * attachment whose inline script reassembles a payload client-side —
+ * base64 via atob(), materialized through Blob/createObjectURL or
+ * msSaveBlob, delivered via a download= attribute or a programmatic
+ * click(). The payload never crosses the wire as a file, so gateway
+ * scanning misses it; presence of the decode+materialize+deliver
+ * pattern inside a <script> is the tell.                              */
+static int
+html_smuggling_score(const unsigned char *head, size_t len) {
+    char low[4097];
+    size_t n = 0, i;
+    int m = 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strstr(low, "<script") == NULL) return 0;
+    if (strstr(low, "atob(") != NULL ||
+        strstr(low, "fromcharcode") != NULL) m++;
+    if (strstr(low, "blob(") != NULL ||
+        strstr(low, "createobjecturl") != NULL ||
+        strstr(low, "mssaveblob") != NULL) m++;
+    if (strstr(low, "download=") != NULL ||
+        strstr(low, "download =") != NULL ||
+        strstr(low, ".click()") != NULL) m++;
+    if (m >= 2) return 65;
+    if (m == 1 && strstr(low, ";base64,") != NULL) return 55;
+    if (m == 1) return 35;
+    return 0;
+}
+
 /* ─── main check function ─────────────────────────────────────────────── */
 
 FileVerdict
@@ -963,6 +994,17 @@ hlse_check_file(const char *filepath) {
                 "F10: SHELL-META file references a remote resource — "
                 "viewing it leaks NetNTLM credentials over SMB/WebDAV "
                 "(score %d)", unc);
+        }
+    }
+
+    /* ── F11: HTML smuggling — script that reassembles a payload ───── */
+    if (head_len > 0) {
+        int smug = html_smuggling_score(head, (size_t)head_len);
+        if (smug >= 40) {
+            fv_add(&v, smug > 65 ? 65 : smug,
+                "F11: HTML SMUGGLING — script decodes and delivers a "
+                "payload client-side (atob/Blob/download pattern, "
+                "score %d)", smug);
         }
     }
 

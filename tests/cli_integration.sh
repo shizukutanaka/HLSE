@@ -529,6 +529,19 @@ rm -rf "$UNC_DIR"
     && check "bidi FP guard: plain text has no bidi reason" "0" "1" \
     || check "bidi FP guard: plain text has no bidi reason" "0" "0"
 
+# F11: HTML smuggling — atob + Blob + download= in a <script> → flagged
+SM_DIR=$(mktemp -d)
+printf '<!DOCTYPE html><html><body><script>var d=atob("TVo=");var b=new Blob([d]);var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="invoice.iso";a.click();</script></body></html>' > "$SM_DIR/smuggle.html"
+./hlse_core file "$SM_DIR/smuggle.html" 2>&1 | grep -q "F11" \
+    && check "F11: HTML smuggling flagged" "0" "0" \
+    || check "F11: HTML smuggling flagged" "0" "1"
+
+# F11 FP guard: plain HTML page → no F11
+printf '<!DOCTYPE html><html><body><p>hello</p></body></html>' > "$SM_DIR/benign.html"
+./hlse_core file "$SM_DIR/benign.html" 2>&1 | grep -q "F11" \
+    && check "F11 FP guard: benign html has no F11" "0" "1" \
+    || check "F11 FP guard: benign html has no F11" "0" "0"
+
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
 ./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "0" \
