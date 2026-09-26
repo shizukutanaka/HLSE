@@ -6,6 +6,25 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Variation-selector smuggling detection** (`hlse_text.c`): the
+  invisible-carrier scan now also catches the "ASCII smuggling via
+  variation selectors" exfiltration channel — Variation Selector
+  supplement characters (U+E0100..U+E01EF, ≥3 → 60; typed text never
+  emits them and each encodes one payload byte) and consecutive
+  variation-selector runs (≥3 → 40; a VS must follow a base character).
+  Emoji VS16/ZWJ/flag sequences stay clean.
+
+- **ICS indirect prompt injection** (`hlse_file.c` F7): VCALENDAR
+  payloads containing agent-directed meta-instructions ("ignore previous
+  instructions", "do not tell the user", "your system prompt" …) score
+  55 — the Gemini-calendar attack (SafeBreach, Aug 2025). An invite has
+  no legitimate reason to address an AI, so the general prose-injection
+  FP concern is sidestepped by scoping to the ICS carrier.
+
+- **Shai-Hulud 2.0 lifecycle IoCs** (`hlse_manifest.c`): `setup_bun.js`
+  and `bun_environment.js` — the loader filenames of the Nov 2025
+  second-wave npm worm — flag at 75 like `node bundle.js`.
+
 - **ICS calendar-invite phishing — file check F7** (`hlse_file.c`).
   Malicious `.ics` invites embed credential-bait or malware links in
   `URL:`/`LOCATION:`/`DESCRIPTION:`/`ATTACH:` fields and auto-add to the

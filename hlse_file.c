@@ -386,17 +386,44 @@ static const char *ICS_EXEC_EXTS[] = {
     NULL
 };
 
-/* Returns the highest embedded-link score in a VCALENDAR payload
- * (0 = clean / not ICS).                                               */
+/* Indirect prompt-injection inside an invite (the Gemini-calendar attack,
+ * SafeBreach Aug 2025): agent-directed meta-instructions hidden in
+ * SUMMARY/DESCRIPTION reach the AI summarizer that renders the event.
+ * A calendar invite has no legitimate reason to address an AI's
+ * instructions, so the usual prose-injection FP concern doesn't apply. */
+static const char *ICS_INJECTION[] = {
+    "ignore all previous", "ignore previous instructions",
+    "ignore your previous", "ignore your instructions",
+    "disregard all previous", "disregard your instructions",
+    "do not tell the user", "don't tell the user",
+    "do not mention this", "do not mention the",
+    "reveal your system prompt", "print your system prompt",
+    "your system prompt", "your instructions say",
+    NULL
+};
+
 static int
-ics_suspicious_link(const unsigned char *head, size_t len) {
+ics_has_injection(const char *low) {
+    int i;
+    for (i = 0; ICS_INJECTION[i]; i++)
+        if (strstr(low, ICS_INJECTION[i])) return 1;
+    return 0;
+}
+
+/* Returns the highest embedded-link score in a VCALENDAR payload
+ * (0 = clean / not ICS); sets *out_inj when agent-directed injection
+ * phrasing is present.                                                */
+static int
+ics_suspicious_link(const unsigned char *head, size_t len, int *out_inj) {
     char low[4097];
     size_t n = 0, i;
     int best = 0;
     if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    *out_inj = 0;
     for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
     low[n] = '\0';
     if (strstr(low, "begin:vcalendar") == NULL) return 0;
+    if (ics_has_injection(low)) *out_inj = 1;
     for (i = 0; i + 8 <= n; i++) {
         if (strncmp(low + i, "http://", 7) != 0 &&
             strncmp(low + i, "https://", 8) != 0)
@@ -713,7 +740,14 @@ hlse_check_file(const char *filepath) {
 
     /* ── F7: Calendar-invite (ICS) phishing ────────────────────────── */
     if (head_len > 0) {
-        int ics = ics_suspicious_link(head, (size_t)head_len);
+        int inj = 0;
+        int ics = ics_suspicious_link(head, (size_t)head_len, &inj);
+        if (inj) {
+            fv_add(&v, 55,
+                "F7: CALENDAR INVITE contains AI-directed instructions — "
+                "indirect prompt injection delivered through an invite "
+                "(Gemini-calendar attack)");
+        }
         if (ics >= 40) {
             fv_add(&v, ics > 65 ? 65 : ics,
                 "F7: CALENDAR INVITE embeds suspicious link "

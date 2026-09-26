@@ -153,6 +153,13 @@ hlse_manifest_hook_flags(const char *line, char out[][HLSE_HOOK_REASON_LEN],
                     "%s: runs 'node bundle.js' — canonical Shai-Hulud "
                     "loader name", hb);
                 scores[n++] = 75;
+            } else if (mh_ci(val, "setup_bun.js") ||
+                       mh_ci(val, "bun_environment.js") ||
+                       mh_ci(val, "node setup_bun")) {
+                snprintf(out[n], HLSE_HOOK_REASON_LEN,
+                    "%s: runs 'setup_bun.js'/'bun_environment.js' — "
+                    "Shai-Hulud 2.0 (Nov 2025 second wave) loader name", hb);
+                scores[n++] = 75;
             } else if (mh_ci(val, "webhook.site") ||
                        mh_ci(val, "webhook-test")) {
                 snprintf(out[n], HLSE_HOOK_REASON_LEN,

@@ -1099,18 +1099,26 @@ normalize_whitespace(const char *in, char *out, size_t out_size) {
  * not solve, and the blind-spot text says so rather than implying coverage. */
 static void
 scan_invisible_carriers(const char *s, int *out_tag_chars,
-                        int *out_flag_bases, int *out_max_zw_run) {
+                        int *out_flag_bases, int *out_max_zw_run,
+                        int *out_vs_supp, int *out_max_vs_run) {
     const unsigned char *p = (const unsigned char *)s;
     int tags = 0, flags = 0, run = 0, max_run = 0;
+    int vs_supp = 0, vs_run = 0, max_vs_run = 0;
 
-    *out_tag_chars = *out_flag_bases = *out_max_zw_run = 0;
+    *out_tag_chars = *out_flag_bases = *out_max_zw_run =
+        *out_vs_supp = *out_max_vs_run = 0;
     if (!s) return;
 
     while (*p) {
-        int is_zw = 0;
+        int is_zw = 0, is_vs = 0;
         if (p[0] == 0xF3 && p[1] == 0xA0 &&
             (p[2] == 0x80 || p[2] == 0x81) && p[3] != 0) {
             tags++;                       /* U+E0000..U+E007F */
+            p += 4;
+        } else if (p[0] == 0xF3 && p[1] == 0xA0 &&
+                   p[2] >= 0x84 && p[2] <= 0x87 && p[3] != 0) {
+            vs_supp++;                    /* U+E0100..U+E01EF VS supplement */
+            is_vs = 1;
             p += 4;
         } else if (p[0] == 0xF0 && p[1] == 0x9F &&
                    p[2] == 0x8F && p[3] == 0xB4) {
@@ -1123,6 +1131,10 @@ scan_invisible_carriers(const char *s, int *out_tag_chars,
         } else if (p[0] == 0xEF && p[1] == 0xBB && p[2] == 0xBF) {
             is_zw = 1;                    /* U+FEFF */
             p += 3;
+        } else if (p[0] == 0xEF && p[1] == 0xB8 &&
+                   p[2] >= 0x80 && p[2] <= 0x8F) {
+            is_vs = 1;                    /* U+FE00..U+FE0F variation sel. */
+            p += 3;
         } else {
             p++;
         }
@@ -1132,10 +1144,18 @@ scan_invisible_carriers(const char *s, int *out_tag_chars,
         } else {
             run = 0;
         }
+        if (is_vs) {
+            vs_run++;
+            if (vs_run > max_vs_run) max_vs_run = vs_run;
+        } else {
+            vs_run = 0;
+        }
     }
     *out_tag_chars   = tags;
     *out_flag_bases  = flags;
     *out_max_zw_run  = max_run;
+    *out_vs_supp     = vs_supp;
+    *out_max_vs_run  = max_vs_run;
 }
 
 /* Bounded copy into the caller's buffer; always NUL-terminates. */
@@ -1153,10 +1173,12 @@ int
 hlse_check_invisible_carriers(const char *text, char *reason,
                               size_t reason_size) {
     int tag_chars = 0, flag_bases = 0, zw_run = 0;
+    int vs_supp = 0, vs_run = 0;
 
     if (reason && reason_size) reason[0] = '\0';
     if (!text) return 0;
-    scan_invisible_carriers(text, &tag_chars, &flag_bases, &zw_run);
+    scan_invisible_carriers(text, &tag_chars, &flag_bases, &zw_run,
+                            &vs_supp, &vs_run);
 
     /* Allow up to 6 tag characters per emoji flag base (RGI sequences are at
      * most 5 subdivision letters plus the U+E007F terminator). */
@@ -1172,6 +1194,35 @@ hlse_check_invisible_carriers(const char *text, char *reason,
             tag_chars, tag_chars == 1 ? "" : "s");
         carrier_copy_reason(reason, reason_size, buf);
         return 70;
+    }
+    /* Variation Selectors Supplement (U+E0100..U+E01EF): each character
+     * encodes one payload byte in the documented "ASCII smuggling via
+     * variation selectors" scheme. They are designed for rare ideograph
+     * variant selection — typed text essentially never contains them,
+     * and a smuggling payload needs dozens. */
+    if (vs_supp >= 3) {
+        char buf[320];
+        snprintf(buf, sizeof buf,
+            "Hidden data channel: %d Variation Selector supplement "
+            "character%s (U+E0100..U+E01EF) — these encode one byte each "
+            "in the VS-smuggling exfiltration scheme and have no "
+            "legitimate use in typed text",
+            vs_supp, vs_supp == 1 ? "" : "s");
+        carrier_copy_reason(reason, reason_size, buf);
+        return 60;
+    }
+    /* Back-to-back variation selectors are malformed by definition — a
+     * VS modifies the preceding base character, so a consecutive run
+     * carries data rather than presentation. */
+    if (vs_run >= 3) {
+        char buf[256];
+        snprintf(buf, sizeof buf,
+            "Hidden data channel: %d consecutive variation selectors "
+            "(U+FE00..U+FE0F / U+E0100+) — a VS must follow a base "
+            "character; runs this long are only produced by data "
+            "encoding", vs_run);
+        carrier_copy_reason(reason, reason_size, buf);
+        return 40;
     }
     if (zw_run >= 8) {
         char buf[256];
