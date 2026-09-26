@@ -6,6 +6,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F36–F38 remote-access carriers** (`hlse_file.c`): F36 `.rdp`
+  `drivestoredirect` → 55, clipboard/smartcard/printer/com-port/camera
+  redirection → 45/40 (rogue-RDP server reads local drives and input —
+  `full address:` alone stays clean); F37 `.ovpn` `up`/`down`/
+  `route-up`/`ipchange`/`learn-address`/`client-connect`/`tls-verify`/
+  `auth-user-pass-verify` script hooks → 55, `management` socket → 45,
+  `script-security 3` → 50 (root script exec / remote control around
+  tunnel events); F38 `.mobileconfig` `PayloadType` root-CA
+  (`com.apple.security.*`) → 60, `com.apple.proxy`/`com.apple.vpn` →
+  55, dns/ldap → 45 (silent TLS interception / traffic reroute).
 - **F31–F35 parser-fed carriers** (`hlse_file.c`): F31 XML external
   entities / nested-entity expansion bomb → 65/55 on `.xml`/`.svg`/
   `.xsl`/.dtd` family (file/URL leak on parse, billion-laughs);

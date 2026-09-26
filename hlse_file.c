@@ -1645,6 +1645,97 @@ py_autoexec_score(const unsigned char *head, size_t len,
     return 0;
 }
 
+/* ─── F36: .rdp rogue redirect — an emailed .rdp that redirects
+ *      drives/clipboard/smartcards to a remote desktop lets the rogue
+ *      server read local files and harvest input (rogue-RDP class).
+ *      Full-address alone is normal; redirection keys are the tell ─── */
+static int
+rdp_redirect_score(const unsigned char *head, size_t len,
+                   const char *ext) {
+    char extl[32], low[4097];
+    size_t n = 0, i;
+    int sc = 0;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".rdp") != 0) return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(low, "full address:s:")) return 0;
+    if (strstr(low, "drivestoredirect")) sc = 55;
+    else if (strstr(low, "redirectsmartcards")) {
+        if (sc < 45) sc = 45;
+    }
+    if (strstr(low, "redirectclipboard") ||
+        strstr(low, "redirectprinters") || strstr(low, "redirectcomports") ||
+        strstr(low, "camerastoredirect")) {
+        if (sc < 40) sc = 40;
+    }
+    return sc;
+}
+
+/* ─── F37: .ovpn script hooks — up/down/route-up/ipchange/learn-
+ *      address run a script as root around tunnel events;
+ *      'management' opens a remote-control socket; script-security
+ *      ≥2 enables them ──────────────────────────────────────────── */
+static int
+ovpn_hook_score(const unsigned char *head, size_t len, const char *ext) {
+    char extl[32], low[4097];
+    size_t n = 0, i;
+    int sc = 0;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".ovpn") != 0) return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(low, "client") && !strstr(low, "dev tun") &&
+        !strstr(low, "dev tap") && !strstr(low, "remote "))
+        return 0;   /* not recognisably an openvpn config */
+    {
+        static const char *const HOOKS[] = {
+            "\nup ", "\ndown ", "\nroute-up ", "\nipchange ",
+            "\nlearn-address", "\nclient-connect", "\ntls-verify ",
+            "\nauth-user-pass-verify", NULL
+        };
+        for (i = 0; HOOKS[i]; i++)
+            if (strstr(low, HOOKS[i]) ||
+                strncmp(low, HOOKS[i] + 1, strlen(HOOKS[i]) - 1) == 0) {
+                sc = 55;
+                break;
+            }
+    }
+    if (strstr(low, "\nmanagement ") ||
+        strncmp(low, "management ", 11) == 0) {
+        if (sc < 45) sc = 45;
+    }
+    if (strstr(low, "script-security 3") && sc < 50) sc = 50;
+    return sc;
+}
+
+/* ─── F38: .mobileconfig rogue profile — a config profile can install
+ *      a root CA (com.apple.security.*) → silent TLS interception on
+ *      the device, or set a global HTTP proxy / managed VPN ───────── */
+static int
+mobileconfig_score(const unsigned char *head, size_t len,
+                   const char *ext) {
+    char extl[40], low[4097];
+    size_t n = 0, i;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".mobileconfig") != 0) return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(low, "payloadtype")) return 0;
+    if (strstr(low, "com.apple.security.root") ||
+        strstr(low, "com.apple.security.pkcs") ||
+        strstr(low, "com.apple.security.pem"))
+        return 60;
+    if (strstr(low, "com.apple.proxy") || strstr(low, "com.apple.vpn"))
+        return 55;
+    if (strstr(low, "com.apple.dns") || strstr(low, "com.apple.ldap"))
+        return 45;
+    return 0;
+}
+
 FileVerdict
 hlse_check_file(const char *filepath) {
     FileVerdict v;
@@ -2236,6 +2327,42 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, pa,
                 "F35: PY AUTOEXEC — sitecustomize/usercustomize module "
                 "runs at every interpreter start (score %d)", pa);
+        }
+    }
+
+    /* ── F36: .rdp rogue redirect — drive/clipboard/smartcard
+     *      redirection to a remote desktop exfiltrates local files ─── */
+    if (head_len > 0) {
+        int rd = rdp_redirect_score(head, (size_t)head_len, ext);
+        if (rd > 0) {
+            fv_add(&v, rd,
+                "F36: RDP REDIRECT — .rdp redirects drives/clipboard/"
+                "devices to a remote server (rogue-RDP file theft, "
+                "score %d)", rd);
+        }
+    }
+
+    /* ── F37: .ovpn script hooks — up/down/management execute or
+     *      remote-control the tunnel context (root script exec) ───── */
+    if (head_len > 0) {
+        int ov = ovpn_hook_score(head, (size_t)head_len, ext);
+        if (ov > 0) {
+            fv_add(&v, ov,
+                "F37: OVPN HOOK — up/down/route-up script hooks or the "
+                "management socket run/control code as root (score %d)",
+                ov);
+        }
+    }
+
+    /* ── F38: .mobileconfig rogue profile — root-CA/proxy/VPN payload
+     *      types silently intercept or reroute device traffic ──────── */
+    if (head_len > 0) {
+        int mc = mobileconfig_score(head, (size_t)head_len, ext);
+        if (mc > 0) {
+            fv_add(&v, mc,
+                "F38: MOBILECONFIG — profile installs a root CA / proxy /"
+                " VPN payload (silent traffic interception, score %d)",
+                mc);
         }
     }
 
