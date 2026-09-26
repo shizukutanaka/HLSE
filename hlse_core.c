@@ -1809,6 +1809,23 @@ check_url(const char *raw_url) {
             static const char *const FETCH[] = {
                 "ssh:", "git:", "svn:", "hg:", NULL
             };
+            /* OS/app URI-handler schemes hand the string to a local
+             * handler that resolves remote content itself — they never
+             * parse as URLs, so a host check can't see the destination:
+             * search-ms: opens an Explorer search on \\host (Trellix/
+             * Mitiga 2024-25 campaigns; leaks NetNTLM), ms-msdt: is the
+             * Follina RCE (CVE-2022-30190), ms-officecmd:/ms-word:
+             * ...ofv|u|<url> opens a remote doc (Varonis/eSentire),
+             * itms-services: sideloads an iOS OTA plist. The remote
+             * indicator (http inside args, UNC path, |u| pipe arg,
+             * location= share) is what makes it weaponised.            */
+            static const char *const HANDLER[] = {
+                "search-ms:", "ms-msdt:", "ms-officecmd:", "ms-word:",
+                "ms-excel:", "ms-powerpoint:", "ms-visio:", "ms-access:",
+                "ms-project:", "ms-publisher:", "onenote:", "onenote-cmd:",
+                "ms-settings:", "ms-people:", "ms-calculator:",
+                "itms-services:", "itms:", "itmss:", "itpc:", NULL
+            };
             const char *inner_u = NULL;
             int i;
             for (i = 0; WRAPPERS[i]; i++) {
@@ -1838,6 +1855,25 @@ check_url(const char *raw_url) {
                                            "'%s'", FETCH[i]);
                         break;
                     }
+                for (i = 0; HANDLER[i]; i++) {
+                    size_t hl = strlen(HANDLER[i]);
+                    if (strncmp(raw_url, HANDLER[i], hl) == 0) {
+                        const char *arg = raw_url + hl;
+                        int remote = strstr(arg, "http") != NULL ||
+                                     strstr(arg, "\\\\") != NULL ||
+                                     strstr(arg, "|u|") != NULL ||
+                                     strstr(arg, "location=") != NULL ||
+                                     strstr(arg, "LOCATION=") != NULL;
+                        add_reason(&v, remote ? 60 : 35,
+                            "URI-handler scheme '%.*s' — launches a local "
+                            "app that resolves remote content outside URL "
+                            "parsing%s",
+                            (int)hl - 1, HANDLER[i],
+                            remote ? " (remote target embedded)"
+                                   : "");
+                        break;
+                    }
+                }
             }
             if (inner_u) {
                 Verdict iv = check_url(inner_u);
@@ -2263,7 +2299,15 @@ hlse_scan(const char *input) {
             strncmp(dec, "https://", 8) == 0 ||
             strncmp(dec, "ftp://", 6) == 0 ||
             strncmp(dec, "javascript:", 11) == 0 ||
-            strncmp(dec, "data:", 5) == 0)) {
+            strncmp(dec, "data:", 5) == 0 ||
+            strncmp(dec, "search-ms:", 10) == 0 ||
+            strncmp(dec, "ms-msdt:", 8) == 0 ||
+            strncmp(dec, "ms-officecmd:", 13) == 0 ||
+            strncmp(dec, "ms-word:", 8) == 0 ||
+            strncmp(dec, "ms-excel:", 9) == 0 ||
+            strncmp(dec, "ms-powerpoint:", 14) == 0 ||
+            strncmp(dec, "onenote:", 8) == 0 ||
+            strncmp(dec, "itms-services:", 14) == 0)) {
             Verdict uv = check_url(dec);
             add_reason(&uv, 25,
                 "Entire URL is percent-encoded — nothing sees the link "
@@ -2320,7 +2364,17 @@ hlse_scan(const char *input) {
         strncmp(input, "ssh:", 4) == 0 ||
         strncmp(input, "git:", 4) == 0 ||
         strncmp(input, "svn:", 4) == 0 ||
-        strncmp(input, "hg:", 3) == 0)
+        strncmp(input, "hg:", 3) == 0 ||
+        /* OS/app URI-handler schemes (search-ms NetNTLM leak, Follina
+         * ms-msdt RCE, office remote-doc handlers, iOS OTA sideload) */
+        strncmp(input, "search-ms:", 10) == 0 ||
+        strncmp(input, "ms-msdt:", 8) == 0 ||
+        strncmp(input, "ms-officecmd:", 13) == 0 ||
+        strncmp(input, "ms-word:", 8) == 0 ||
+        strncmp(input, "ms-excel:", 9) == 0 ||
+        strncmp(input, "ms-powerpoint:", 14) == 0 ||
+        strncmp(input, "onenote:", 8) == 0 ||
+        strncmp(input, "itms-services:", 14) == 0)
     {
         Verdict uv = check_url(input);
         r.score = uv.score;

