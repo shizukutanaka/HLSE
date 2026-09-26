@@ -29,3 +29,12 @@ size_t hlse_manifest_hook_flags(const char *line,
                                 int scores[], size_t outcap);
 
 #endif /* HLSE_MANIFEST_H */
+
+/* Lockfile poisoning: extract the host of a resolved-style URL on a
+ * manifest line (resolved/resolution/tarball, JSON or yarn/pnpm style).
+ * Returns 1 with the lowercased host in out, or 0 when absent. */
+int hlse_manifest_resolved_host(const char *line, char *out, size_t outcap);
+
+/* Returns 1 when the resolved URL's host is outside the package
+ * registries/git hosts a lockfile may legitimately reference. */
+int hlse_manifest_resolved_suspicious(const char *host);

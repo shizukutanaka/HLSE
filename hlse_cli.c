@@ -1145,6 +1145,49 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                                    hout[hi]);
                         }
                     }
+                    /* Lockfile poisoning: a resolved/tarball URL pointing
+                     * off-registry substitutes the package at install. */
+                    {
+                        char rhost[256];
+                        if (hlse_manifest_resolved_host(line, rhost,
+                                sizeof(rhost)) &&
+                            hlse_manifest_resolved_suspicious(rhost)) {
+                            int rsc = 60;
+                            char rreason[HLSE_HOOK_REASON_LEN];
+                            snprintf(rreason, sizeof(rreason),
+                                "resolved URL host '%s' is outside the "
+                                "package registry — dependency "
+                                "substitution (lockfile poisoning)", rhost);
+                            threats++;
+                            hlse_alert_emit_rows("package", rsc,
+                                hlse_severity_for_score(rsc), mpath,
+                                &rreason, HLSE_HOOK_REASON_LEN, 1);
+                            if (rsc > max_score) max_score = rsc;
+                            if (rsc >= o->fail_threshold) gate_hits++;
+                            if (o->sarif_out) {
+                                hlse_sarif_add(mpath, lineno,
+                                    "package-lockfile-poisoning",
+                                    "HLSE-PKG-LOCKFILE", rreason, rsc);
+                            } else if (o->json_out) {
+                                char erh[256], eh2[384];
+                                hlse_json_escape(rhost, erh, sizeof(erh));
+                                hlse_json_escape(rreason, eh2, sizeof(eh2));
+                                hlse_json_open("package");
+                                printf(",\"name\":\"%s\",\"ecosystem\":\"npm\","
+                                       "\"score\":%d,\"action\":\"%s\","
+                                       "\"severity\":%d,"
+                                       "\"pattern_id\":\"HLSE-PKG-LOCKFILE\","
+                                       "\"reason\":\"%s\"}\n",
+                                       erh, rsc,
+                                       hlse_action_for_score(rsc),
+                                       hlse_severity_for_score(rsc), eh2);
+                            } else {
+                                printf("%-7s [%d]  suspicious resolved URL: %s\n",
+                                       hlse_action_for_score(rsc), rsc,
+                                       rreason);
+                            }
+                        }
+                    }
                 }
                 for (;;) {
                     int got;

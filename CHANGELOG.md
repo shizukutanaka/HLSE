@@ -12,6 +12,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   (`127.1`) — score 40. Plain 4-label dotted quads and normal hostnames
   stay clean; the port is stripped before label analysis.
 
+- **Lockfile `resolved`-URL poisoning detection** (`hlse_manifest.c`,
+  `hlse_cli.c`): `package --manifest` now inspects `resolved` /
+  `resolution` / `tarball` URL fields (npm, yarn, and pnpm formats);
+  a host outside the registry/git allowlist (registry.npmjs.org,
+  registry.yarnpkg.com, github.com, codeload.github.com, gitlab.com,
+  bitbucket.org, raw/objects.githubusercontent.com, npmjs.com) scores
+  60 — the dependency-substitution vector (Liran Tal / Snyk lockfile
+  poisoning). `yarn.lock` and `pnpm-lock.yaml` now infer the `npm`
+  ecosystem; subdomains of allowlisted hosts match, lookalike suffixes
+  (github.com.evil.example) do not.
+
 - **HTML smuggling detection — file check F11** (`hlse_file.c`):
   a `<script>`-carrying file whose code decodes (atob/fromCharCode),
   materializes (Blob/createObjectURL/msSaveBlob), and delivers

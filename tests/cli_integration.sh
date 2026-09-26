@@ -573,6 +573,19 @@ rm -rf "$SM_DIR"
     && check "obf-ip FP guard: normal host clean" "0" "1" \
     || check "obf-ip FP guard: normal host clean" "0" "0"
 
+# Lockfile poisoning: resolved URL off-registry → flagged
+LK_DIR=$(mktemp -d)
+printf '{\n "dependencies": {\n  "evilpkg": {\n   "version": "1.0.0",\n   "resolved": "https://attacker-cdn.example/evilpkg-1.0.0.tgz",\n   "integrity": "sha512-abc"\n  }\n }\n}\n' > "$LK_DIR/package-lock.json"
+./hlse_core package --manifest "$LK_DIR/package-lock.json" 2>&1 | grep -q "lockfile" \
+    && check "lockfile: off-registry resolved host flagged" "0" "0" \
+    || check "lockfile: off-registry resolved host flagged" "0" "1"
+mkdir -p "$LK_DIR/ok"
+printf '{\n "dependencies": {\n  "lodash": {\n   "version": "4.17.21",\n   "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz",\n   "integrity": "sha512-ok"\n  }\n }\n}\n' > "$LK_DIR/ok/package-lock.json"
+./hlse_core package --manifest "$LK_DIR/ok/package-lock.json" 2>&1 | grep -q "suspicious resolved" \
+    && check "lockfile FP guard: registry.npmjs.org clean" "0" "1" \
+    || check "lockfile FP guard: registry.npmjs.org clean" "0" "0"
+rm -rf "$LK_DIR"
+
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
 ./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "0" \

@@ -4,6 +4,7 @@
 #include "hlse_manifest.h"
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 /* ── Manifest scanning (Perspective 108, roadmap P1-8) ─────────────────────
  * The single-name `package <name>` check is impractical for real dependency
@@ -21,7 +22,9 @@ hlse_manifest_ecosystem(const char *path) {
     if (strncmp(b, "requirements", 12) == 0 || strcmp(b, "Pipfile") == 0)
         return "pip";
     if (strcmp(b, "package.json") == 0 ||
-        strcmp(b, "package-lock.json") == 0) return "npm";
+        strcmp(b, "package-lock.json") == 0 ||
+        strcmp(b, "yarn.lock") == 0 ||
+        strcmp(b, "pnpm-lock.yaml") == 0) return "npm";
     if (strcmp(b, "Cargo.toml") == 0 || strcmp(b, "Cargo.lock") == 0)
         return "cargo";
     if (strcmp(b, "go.mod") == 0) return "go";
@@ -224,4 +227,68 @@ hlse_manifest_hook_flags(const char *line, char out[][HLSE_HOOK_REASON_LEN],
         }
     }
     return n;
+}
+
+/* Lockfile poisoning: a `resolved`/`resolution`/`tarball` field whose URL
+ * points off-registry redirects the install to an attacker host — the
+ * dependency-substitution vector documented by Liran Tal / Snyk (2021) and
+ * still routine in poisoned PR lockfiles. Extracts the lowercased host of
+ * the first resolved-style URL on the line; returns 0 when there is none. */
+int
+hlse_manifest_resolved_host(const char *line, char *out, size_t outcap) {
+    static const char *const KEYS[] = {
+        "\"resolved\"", "\"resolution\"", "\"tarball\"",
+        "resolved \"", "resolved '", "resolved:",
+        "resolution:", "tarball:",
+        NULL
+    };
+    int k;
+    if (out && outcap) out[0] = '\0';
+    if (!line || !out || outcap == 0) return 0;
+    for (k = 0; KEYS[k]; k++) {
+        const char *kp = strstr(line, KEYS[k]);
+        const char *u;
+        size_t n = 0;
+        if (!kp) continue;
+        u = strstr(kp + strlen(KEYS[k]), "https://");
+        if (!u) u = strstr(kp + strlen(KEYS[k]), "http://");
+        if (!u) continue;
+        u += (strncmp(u, "https://", 8) == 0) ? 8 : 7;
+        while (*u && *u != '/' && *u != '"' && *u != '\'' &&
+               *u != ' ' && *u != '\t' && *u != ')' && *u != '>' &&
+               n + 1 < outcap)
+            out[n++] = (char)tolower((unsigned char)*u++);
+        out[n] = '\0';
+        {   /* strip any :port */
+            char *c = strchr(out, ':');
+            if (c) *c = '\0';
+        }
+        if (out[0]) return 1;
+    }
+    return 0;
+}
+
+/* Registry hosts a lockfile's resolved URL may legitimately point at.
+ * Subdomains match (x.github.com); lookalike suffixes do not
+ * (evilgithub.com). */
+static const char *const REGISTRY_HOSTS[] = {
+    "registry.npmjs.org", "registry.yarnpkg.com", "npmjs.com",
+    "github.com", "codeload.github.com", "api.github.com",
+    "gitlab.com", "bitbucket.org", "raw.githubusercontent.com",
+    "objects.githubusercontent.com",
+    NULL
+};
+
+int
+hlse_manifest_resolved_suspicious(const char *host) {
+    int i;
+    if (!host || !host[0]) return 0;
+    for (i = 0; REGISTRY_HOSTS[i]; i++) {
+        const char *h = REGISTRY_HOSTS[i];
+        size_t hl = strlen(h), n = strlen(host);
+        if (n == hl && strcmp(host, h) == 0) return 0;
+        if (n > hl + 1 && host[n - hl - 1] == '.' &&
+            strcmp(host + n - hl, h) == 0) return 0;
+    }
+    return 1;
 }
