@@ -98,6 +98,12 @@ const char *hlse_manifest_gha_inj(const char *line);
  * value to scan directly, 0 = not a script key. */
 int hlse_manifest_gha_scriptkey(const char *line);
 
+/* MCP server-config risk — per line; returns score and fills reason,
+ * 0 when clean. Covers pipe-to-shell installs, bare-shell command,
+ * fetch-execute command, privileged container, plaintext remote
+ * endpoint, and opaque -c/-enc argument strings. */
+int hlse_manifest_mcp_risk(const char *line, char *reason, size_t rcap);
+
 /* .cargo/config.toml build-toolchain override key (rustc-wrapper,
  * runner, linker, pre/post-build) or NULL. */
 const char *hlse_manifest_cargo_toolchain(const char *line);

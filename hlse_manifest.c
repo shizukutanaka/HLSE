@@ -58,6 +58,17 @@ hlse_manifest_ecosystem(const char *path) {
          strstr(path, ".gitlab-ci") != NULL) &&
         (strstr(b, ".yml") != NULL || strstr(b, ".yaml") != NULL))
         return "gha";
+    /* MCP server configs (claude_desktop_config.json, .cursor/
+     * mcp.json, Cline/Roo settings, …) declare commands the client
+     * auto-executes on startup — the tool-poisoning surface where a
+     * pipe-to-shell or plaintext-remote URL turns editor init into
+     * code exec (Invariant Labs TPA class, 2025).                  */
+    if (strcmp(b, "mcp.json") == 0 || strcmp(b, ".mcp.json") == 0 ||
+        strcmp(b, "mcp_settings.json") == 0 ||
+        strcmp(b, "mcp-settings.json") == 0 ||
+        strcmp(b, "cline_mcp_settings.json") == 0 ||
+        strcmp(b, "claude_desktop_config.json") == 0)
+        return "mcp";
     return NULL;
 }
 
@@ -908,6 +919,99 @@ hlse_manifest_gha_scriptkey(const char *line) {
         *v == '\n' || *v == '#')
         return 1;
     return 2;
+}
+
+/* MCP server-config risk — per JSON line. A config line that pipes a
+ * fetch into a shell, launches a bare shell, fetches directly, runs
+ * a container with host privileges, or points the client at a
+ * plaintext http endpoint turns "add a tool" into code exec or MITM
+ * tool poisoning. Returns the score and fills reason, 0 = clean.   */
+int
+hlse_manifest_mcp_risk(const char *line, char *reason, size_t rcap) {
+    static const char *const FETCH_SHELL[] = {
+        "| sh", "|sh", "| bash", "|bash", "| zsh", "|zsh",
+        "| powershell", "| iex", "| iwr", NULL
+    };
+    static const char *const SHELL_CMD[] = {
+        "\"command\":\"sh\"", "\"command\": \"sh\"",
+        "\"command\":\"bash\"", "\"command\": \"bash\"",
+        "\"command\":\"zsh\"", "\"command\": \"zsh\"",
+        "\"command\":\"cmd\"", "\"command\": \"cmd\"",
+        "\"command\":\"powershell\"",
+        "\"command\": \"powershell\"",
+        "\"command\":\"pwsh\"", "\"command\": \"pwsh\"", NULL
+    };
+    static const char *const FETCH_CMD[] = {
+        "\"command\":\"curl\"", "\"command\": \"curl\"",
+        "\"command\":\"wget\"", "\"command\": \"wget\"", NULL
+    };
+    static const char *const URL_KEY[] = {
+        "\"url\"", "\"serverUrl\"", "\"endpoint\"",
+        "\"server_url\"", NULL
+    };
+    static const char *const OPAQUE[] = {
+        " -c ", "bash -c", "sh -c", "zsh -c", "\"-c\"", "Invoke-Expression",
+        "iex ", "-enc ", "-ec ", NULL
+    };
+    size_t i;
+    for (i = 0; FETCH_SHELL[i]; i++)
+        if (strstr(line, FETCH_SHELL[i]) != NULL) {
+            snprintf(reason, rcap,
+                "MCP config pipes a fetch into a shell — installing the "
+                "server runs remote code verbatim (tool-poisoning "
+                "vector)");
+            return 70;
+        }
+    for (i = 0; SHELL_CMD[i]; i++)
+        if (strstr(line, SHELL_CMD[i]) != NULL) {
+            snprintf(reason, rcap,
+                "MCP server command is a bare shell — the real payload "
+                "hides in args, invisible to review");
+            return 60;
+        }
+    for (i = 0; FETCH_CMD[i]; i++)
+        if (strstr(line, FETCH_CMD[i]) != NULL) {
+            snprintf(reason, rcap,
+                "MCP server command is a downloader (curl/wget) — "
+                "fetch-and-execute at client startup");
+            return 70;
+        }
+    if ((strstr(line, "\"command\":\"docker\"") != NULL ||
+         strstr(line, "\"command\": \"docker\"") != NULL ||
+         strstr(line, "\"command\":\"podman\"") != NULL ||
+         strstr(line, "\"command\": \"podman\"") != NULL) &&
+        (strstr(line, "--privileged") != NULL ||
+         strstr(line, "-v /") != NULL || strstr(line, "\"-v\":\"/") != NULL ||
+         strstr(line, "--network host") != NULL ||
+         strstr(line, "--pid=host") != NULL)) {
+        snprintf(reason, rcap,
+            "MCP server container runs privileged / host-mounted — "
+            "the server escapes its sandbox by config");
+        return 65;
+    }
+    for (i = 0; URL_KEY[i]; i++) {
+        const char *u = strstr(line, URL_KEY[i]);
+        if (u) {
+            const char *h = strstr(u, "http://");
+            if (h && strncmp(h + 7, "localhost", 9) != 0 &&
+                strncmp(h + 7, "127.", 4) != 0 &&
+                strncmp(h + 7, "[::1]", 5) != 0) {
+                snprintf(reason, rcap,
+                    "MCP server endpoint is plaintext http:// remote — "
+                    "tool schemas and responses are MITM-rewriteable "
+                    "(silent tool poisoning)");
+                return 55;
+            }
+        }
+    }
+    for (i = 0; OPAQUE[i]; i++)
+        if (strstr(line, OPAQUE[i]) != NULL) {
+            snprintf(reason, rcap,
+                "MCP config hides the command behind -c/-enc — opaque "
+                "argument string, review cannot see what runs");
+            return 55;
+        }
+    return 0;
 }
 
 /* .cargo/config.toml toolchain override — rustc-wrapper / runner /

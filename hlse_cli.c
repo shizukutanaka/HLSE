@@ -1726,6 +1726,43 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                         }
                     }
                 }
+                /* MCP server configs declare commands the client
+                 * auto-executes at startup — a pipe-to-shell install
+                 * or a plaintext remote endpoint is a tool-poisoning
+                 * vector (Invariant Labs TPA class). */
+                if (strcmp(eco, "mcp") == 0) {
+                    char mreason[HLSE_HOOK_REASON_LEN];
+                    int msc = hlse_manifest_mcp_risk(line, mreason,
+                                                     sizeof(mreason));
+                    if (msc) {
+                        threats++;
+                        hlse_alert_emit_rows("package", msc,
+                            hlse_severity_for_score(msc), mpath,
+                            &mreason, HLSE_HOOK_REASON_LEN, 1);
+                        if (msc > max_score) max_score = msc;
+                        if (msc >= o->fail_threshold) gate_hits++;
+                        if (o->sarif_out) {
+                            hlse_sarif_add(mpath, lineno,
+                                "package-mcp", "HLSE-PKG-MCPRISK",
+                                mreason, msc);
+                        } else if (o->json_out) {
+                            char emr[384];
+                            hlse_json_escape(mreason, emr, sizeof(emr));
+                            hlse_json_open("package");
+                            printf(",\"manifest\":\"%s\",\"score\":%d,"
+                                   "\"action\":\"%s\",\"severity\":%d,"
+                                   "\"pattern_id\":\"HLSE-PKG-MCPRISK\","
+                                   "\"reason\":\"%s\"}\n",
+                                   mpath, msc,
+                                   hlse_action_for_score(msc),
+                                   hlse_severity_for_score(msc), emr);
+                        } else {
+                            printf("%-7s [%d]  mcp config: %s\n",
+                                   hlse_action_for_score(msc), msc,
+                                   mreason);
+                        }
+                    }
+                }
                 for (;;) {
                     int got;
                     if (is_npm)

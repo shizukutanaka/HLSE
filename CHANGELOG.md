@@ -6,6 +6,29 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **URI-handler schemes** (`hlse_core.c`): `search-ms:`/`ms-msdt:`/
+  `ms-officecmd:`/`ms-word:`/`ms-excel:`/`ms-powerpoint:`/`onenote:`/
+  `itms-services:` route through `check_url`; an embedded remote
+  indicator (http/UNC/|u|/location=) scores 60, bare scheme 35 —
+  the search-ms NetNTLM-leak / Follina / office-remote-doc class.
+- **F22 OOXML macro smuggling** (`hlse_file.c`): a `vbaProject.bin`
+  zip member in a container named like a macro-free format
+  (.docx/.xlsx/.pptx…) scores 65; declared macro containers
+  (.docm…) 35; unknown extension 50.
+- **GHA script-injection check** (`hlse_manifest.c` + `hlse_cli.c`):
+  untrusted `${{ github.event.* }}` contexts (issue/PR title+body,
+  comment, review, commits, inputs, head_ref, workflow_run head
+  fields) interpolated inside `run:`/`script:` — including
+  block-scalar `run: |` bodies tracked by indentation — score 60
+  (HLSE-PKG-GHAINJ).
+- **mcp ecosystem** (`hlse_manifest.c` + `hlse_cli.c`):
+  `mcp.json`/`.mcp.json`/`claude_desktop_config.json`/`cline_mcp_settings.json`
+  configs scan for pipe-to-shell installs (70), bare-shell or
+  fetch commands (60/70), privileged/host-mounted containers (65),
+  plaintext http:// remote endpoints (55), opaque `-c`/`-enc` args
+  (55) — MCP tool-poisoning surface (HLSE-PKG-MCPRISK).
+
+
 - **Fully percent-encoded URL** (`hlse_core.c`): input starting with
   `%` is decoded on a bounded copy; when a scheme emerges the decoded
   form is checked as a URL plus a 25-point extraction-evasion reason.
