@@ -6,6 +6,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F44–F46 spreadsheet/launch carriers** (`hlse_file.c`): F44 formula
+  injection — `.slk` SYLK `EEXEC(`/auto-exec → 55 (runs without a
+  macro prompt), `.iqy`/`.rqy`/`.dsy` WEB query to remote source → 45,
+  `.csv`/`.tsv`/`.txt` cell leading `=`/`+`/`-`/`@` + `cmd`/`dde`/
+  `webservice(`/`hyperlink("http` → 50 (DDE/Excel open-time exec);
+  F45 `.jnlp` `<jnlp` with remote `codebase=`/`href=`/`url=` → 50
+  (javaws fetches+launches jars on open); F46 `.sct` `<scriptlet>`
+  +`<script`/`<registration` → 45, +CreateObject/WScript.Shell/cmd/
+  powershell → 55 (regsvr32 scrobj.dll Squiblydoo bypass).
 - **F4 tiering for OLE macro docs** (`hlse_file.c`): the single
   "VBA indicators" signal is now three bands — bare `VBA` byte-run →
   LOG 35 (a doc may merely mention VBA), VBA + macro storage streams

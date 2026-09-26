@@ -1720,6 +1720,107 @@ clickonce_score(const unsigned char *head, size_t len, const char *ext) {
     return 0;
 }
 
+/* ─── F44: spreadsheet formula injection — .slk SYLK EEXEC()/EXEC()
+ *      runs at open (no macro prompt); .iqy/.rqy WEB queries and .csv
+ *      cells starting with =/+/-/@ + exec primitive are DDE/cmd
+ *      injection — Excel/Calc executes them on open ──────────────── */
+static int
+formula_injection_score(const unsigned char *head, size_t len,
+    const char *ext) {
+    char extl[40], low[4097];
+    size_t n = 0, i;
+    const char *p;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strcmp(extl, ".slk") == 0 || strcmp(extl, ".sylk") == 0) {
+        if (strstr(low, "eexec(") || strstr(low, ";eexec") ||
+            strstr(low, "exec(\"") || strstr(low, ";eopen"))
+            return 55;   /* SYLK macro auto-exec — no prompt in Excel */
+        return 0;
+    }
+    if (strcmp(extl, ".iqy") == 0 || strcmp(extl, ".rqy") == 0 ||
+        strcmp(extl, ".dsy") == 0) {
+        if (strstr(low, "web") && (strstr(low, "http://") ||
+            strstr(low, "https://") || strstr(low, "\\\\")))
+            return 45;   /* Excel web query pulling a remote source */
+        return 0;
+    }
+    if (strcmp(extl, ".csv") != 0 && strcmp(extl, ".tsv") != 0 &&
+        strcmp(extl, ".txt") != 0)
+        return 0;
+    /* CSV/TSV: a cell whose first char is =,+,-,@ followed by a cmd/
+     * DDE/WEBSERVICE/hyperlink primitive fires on open in Excel */
+    p = low;
+    while (*p) {
+        while (*p == ' ' || *p == '\t' || *p == ',' || *p == ';' ||
+               *p == '"' || *p == '\'')
+            p++;
+        if (*p == '=' || *p == '+' || *p == '-' || *p == '@') {
+            const char *q = p + 1;
+            if (strncmp(q, "cmd", 3) == 0 || strncmp(q, "dde", 3) == 0 ||
+                strncmp(q, "msexcel", 7) == 0 ||
+                strstr(q, "webservice(") == q ||
+                strstr(q, "hyperlink(\"http") == q ||
+                strstr(q, "hyperlink('http") == q)
+                return 50;
+        }
+        while (*p && *p != '\n' && *p != ',') p++;
+        if (*p == ',') { p++; continue; }
+        while (*p && *p != '\n') p++;
+        if (*p) p++;
+    }
+    return 0;
+}
+
+/* ─── F45: .jnlp Java Web Start — javaws fetches+launches jars from
+ *      the codebase on open (post-Java-9 phish resurfacing) ───────── */
+static int
+jnlp_score(const unsigned char *head, size_t len, const char *ext) {
+    char extl[40], low[4097];
+    size_t n = 0, i;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".jnlp"))
+        return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(low, "<jnlp"))
+        return 0;
+    if (strstr(low, "codebase=\"http") || strstr(low, "codebase='http") ||
+        strstr(low, "codebase=\"\\\\") ||
+        strstr(low, "href=\"http") || strstr(low, "href='http") ||
+        strstr(low, "url=\"http"))
+        return 50;
+    return 0;
+}
+
+/* ─── F46: .sct COM scriptlet — regsvr32 scrobj.dll runs the embedded
+ *      script with no file-type prompt (Squiblydoo bypass) ────────── */
+static int
+sct_scriptlet_score(const unsigned char *head, size_t len,
+    const char *ext) {
+    char extl[40], low[4097];
+    size_t n = 0, i;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".sct"))
+        return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(low, "<scriptlet"))
+        return 0;
+    if (!strstr(low, "<script") && !strstr(low, "<registration"))
+        return 0;
+    if (strstr(low, "createobject") || strstr(low, "getobject") ||
+        strstr(low, "wscript.shell") || strstr(low, "shell.application") ||
+        strstr(low, "powershell") || strstr(low, "cmd.exe") ||
+        strstr(low, ".run ") || strstr(low, ".exec "))
+        return 55;
+    return 45;
+}
+
 /* ─── F39: tar member slip — a ustar/v7 member name or ustar prefix
  *      carrying '..' or an absolute path escapes the extract dir on
  *      permissive untars (busybox, custom extractors). Reuses the
@@ -2588,6 +2689,38 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, co,
                 "F43: CLICKONCE — deployment codebase is a remote "
                 "URL/UNC (installs+runs remote code, score %d)", co);
+        }
+    }
+
+    /* ── F44: spreadsheet formula injection — .slk SYLK EEXEC, .iqy
+     *      WEB query, .csv/.tsv =cmd|/DDE cells run on open ───────── */
+    if (head_len > 0) {
+        int fi = formula_injection_score(head, (size_t)head_len, ext);
+        if (fi > 0) {
+            fv_add(&v, fi,
+                "F44: FORMULA INJECTION — spreadsheet cell/query runs "
+                "a command or remote fetch on open (score %d)", fi);
+        }
+    }
+
+    /* ── F45: .jnlp — javaws fetches+launches jars from the codebase ── */
+    if (head_len > 0) {
+        int js = jnlp_score(head, (size_t)head_len, ext);
+        if (js > 0) {
+            fv_add(&v, js,
+                "F45: JNLP — Java Web Start descriptor pulls jars from "
+                "a remote codebase (score %d)", js);
+        }
+    }
+
+    /* ── F46: .sct COM scriptlet — regsvr32 scrobj runs the embedded
+     *      script with no file-type prompt ────────────────────────── */
+    if (head_len > 0) {
+        int ss = sct_scriptlet_score(head, (size_t)head_len, ext);
+        if (ss > 0) {
+            fv_add(&v, ss,
+                "F46: SCT SCRIPTLET — COM scriptlet runs via regsvr32 "
+                "scrobj.dll bypass (score %d)", ss);
         }
     }
 

