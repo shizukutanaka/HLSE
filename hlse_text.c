@@ -1100,13 +1100,16 @@ normalize_whitespace(const char *in, char *out, size_t out_size) {
 static void
 scan_invisible_carriers(const char *s, int *out_tag_chars,
                         int *out_flag_bases, int *out_max_zw_run,
-                        int *out_vs_supp, int *out_max_vs_run) {
+                        int *out_vs_supp, int *out_max_vs_run,
+                        int *out_osc52, int *out_osc8, int *out_esc) {
     const unsigned char *p = (const unsigned char *)s;
     int tags = 0, flags = 0, run = 0, max_run = 0;
     int vs_supp = 0, vs_run = 0, max_vs_run = 0;
+    int osc52 = 0, osc8 = 0, esc = 0;
 
     *out_tag_chars = *out_flag_bases = *out_max_zw_run =
-        *out_vs_supp = *out_max_vs_run = 0;
+        *out_vs_supp = *out_max_vs_run =
+        *out_osc52 = *out_osc8 = *out_esc = 0;
     if (!s) return;
 
     while (*p) {
@@ -1135,6 +1138,23 @@ scan_invisible_carriers(const char *s, int *out_tag_chars,
                    p[2] >= 0x80 && p[2] <= 0x8F) {
             is_vs = 1;                    /* U+FE00..U+FE0F variation sel. */
             p += 3;
+        } else if (p[0] == 0x1B && p[1] == ']') {  /* OSC (7-bit) */
+            esc = 1;
+            if (p[2] == '5' && p[3] == '2' && p[4] == ';')
+                osc52 = 1;               /* clipboard write */
+            else if (p[2] == '8' && p[3] == ';' && p[4] == ';')
+                osc8 = 1;                /* hyperlink (text != target) */
+            p += 2;
+        } else if (p[0] == 0x9D) {                 /* OSC (C1) */
+            esc = 1;
+            if (p[1] == '5' && p[2] == '2' && p[3] == ';')
+                osc52 = 1;
+            else if (p[1] == '8' && p[2] == ';' && p[3] == ';')
+                osc8 = 1;
+            p++;
+        } else if (p[0] == 0x1B || p[0] == 0x9B) { /* ESC / CSI */
+            esc = 1;
+            p++;
         } else {
             p++;
         }
@@ -1156,6 +1176,9 @@ scan_invisible_carriers(const char *s, int *out_tag_chars,
     *out_max_zw_run  = max_run;
     *out_vs_supp     = vs_supp;
     *out_max_vs_run  = max_vs_run;
+    *out_osc52       = osc52;
+    *out_osc8        = osc8;
+    *out_esc         = esc;
 }
 
 /* Bounded copy into the caller's buffer; always NUL-terminates. */
@@ -1174,11 +1197,12 @@ hlse_check_invisible_carriers(const char *text, char *reason,
                               size_t reason_size) {
     int tag_chars = 0, flag_bases = 0, zw_run = 0;
     int vs_supp = 0, vs_run = 0;
+    int osc52 = 0, osc8 = 0, esc = 0;
 
     if (reason && reason_size) reason[0] = '\0';
     if (!text) return 0;
     scan_invisible_carriers(text, &tag_chars, &flag_bases, &zw_run,
-                            &vs_supp, &vs_run);
+                            &vs_supp, &vs_run, &osc52, &osc8, &esc);
 
     /* Allow up to 6 tag characters per emoji flag base (RGI sequences are at
      * most 5 subdivision letters plus the U+E007F terminator). */
@@ -1194,6 +1218,17 @@ hlse_check_invisible_carriers(const char *text, char *reason,
             tag_chars, tag_chars == 1 ? "" : "s");
         carrier_copy_reason(reason, reason_size, buf);
         return 70;
+    }
+    /* Terminal escape injection: raw control sequences embedded in text.
+     * OSC 52 silently overwrites the clipboard when the text is rendered
+     * by a terminal (poisoned logs, chat copy, `tail -f` output); OSC 8
+     * hyperlinks display text that can differ from the link target. */
+    if (osc52) {
+        carrier_copy_reason(reason, reason_size,
+            "Terminal escape injection: OSC 52 clipboard-write sequence "
+            "— when this text reaches a terminal it silently overwrites "
+            "the user's clipboard (log-tail / copy-paste poisoning)");
+        return 65;
     }
     /* Variation Selectors Supplement (U+E0100..U+E01EF): each character
      * encodes one payload byte in the documented "ASCII smuggling via
@@ -1232,6 +1267,20 @@ hlse_check_invisible_carriers(const char *text, char *reason,
             "text) is sparse, not a run this long", zw_run);
         carrier_copy_reason(reason, reason_size, buf);
         return 40;
+    }
+    if (osc8) {
+        carrier_copy_reason(reason, reason_size,
+            "Terminal escape injection: OSC 8 hyperlink sequence — the "
+            "displayed text and the actual link target can differ "
+            "(terminal link spoofing)");
+        return 45;
+    }
+    if (esc) {
+        carrier_copy_reason(reason, reason_size,
+            "Terminal control sequence (ESC/CSI/OSC) embedded in text — "
+            "erase and cursor codes can hide or rewrite what a terminal "
+            "displays when the text is printed");
+        return 30;
     }
     return 0;
 }

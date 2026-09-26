@@ -479,6 +479,26 @@ rm -rf "$LNK_DIR"
     && check "free-host: brand@trycloudflare.com → ALERT+" "0" "0" \
     || check "free-host: brand@trycloudflare.com → ALERT+" "0" "1"
 
+# Terminal escape injection: OSC 52 clipboard write → flagged
+./hlse_core text "$(printf 'log line\x1b]52;c;aGk=\x07')" 2>&1 | grep -q "OSC 52" \
+    && check "escape: OSC 52 clipboard-write flagged" "0" "0" \
+    || check "escape: OSC 52 clipboard-write flagged" "0" "1"
+
+# OSC 8 hyperlink spoof → flagged
+./hlse_core text "$(printf 'click \x1b]8;;https://evil.example\x07link')" 2>&1 | grep -q "OSC 8" \
+    && check "escape: OSC 8 hyperlink spoof flagged" "0" "0" \
+    || check "escape: OSC 8 hyperlink spoof flagged" "0" "1"
+
+# generic CSI erase sequence → flagged
+./hlse_core text "$(printf 'normal\x1b[2Jclear')" 2>&1 | grep -q "Terminal control sequence" \
+    && check "escape: CSI erase flagged" "0" "0" \
+    || check "escape: CSI erase flagged" "0" "1"
+
+# escape FP guard: plain text carries no terminal reason
+./hlse_core text 'hello world' 2>&1 | grep -q "Terminal" \
+    && check "escape FP guard: plain text has no terminal reason" "0" "1" \
+    || check "escape FP guard: plain text has no terminal reason" "0" "0"
+
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
 ./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "0" \
