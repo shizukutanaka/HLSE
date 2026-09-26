@@ -6,6 +6,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F26 docker-compose privilege** (`hlse_file.c`): compose-named
+  or `services:`+`image:`/`build:` YAML running `privileged` (70),
+  host-namespace modes `network_mode|pid|ipc|uts|cgroup|userns_mode:
+  host` (55), `cap_add` SYS_ADMIN/ALL (65), `docker.sock` mount (60),
+  host-root/sensitive-dir bind mounts (50), `security_opt` unconfined
+  (40). Shared `yaml_key_val`/`yaml_key_present` helpers.
+- **F27–F30 content carriers** (`hlse_file.c`): F27 YAML
+  unsafe-load tags `!!python/`, `!ruby/`, `!!perl/`, `!!php/` → 65
+  (deserialization-gadget RCE on yaml.load/Psych.load; CloudFormation
+  `!Ref`-style tags stay clean); F28 pickle GLOBAL opcodes to
+  `system`/`eval`/`subprocess` → 70 and `.pth` `import`-line startup
+  exec → 65; F29 `[autorun]` `open=`/`shellexecute`/`shell\` keys →
+  55; F30 `.pac` `FindProxyForURL` returning remote PROXY/SOCKS → 45
+  (WPAD traffic interception; localhost/DIRECT clean).
 - **F25 privileged Kubernetes manifests** (`hlse_file.c`): a
   `.yaml`/`.yml` doc carrying `apiVersion:`+`kind:` that requests
   PodSecurity baseline/restricted violations — `privileged: true`

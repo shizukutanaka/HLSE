@@ -7742,6 +7742,51 @@ printf 'foo:\n  privileged: true\n  pid: host\n' > "$CDIR/random.yaml"
     || check "file: non-compose yaml privileged key clean" "0" "1"
 rm -rf "$CDIR"
 
+# ── cycle-29b: F27 YAML unsafe-load tags, F28 pickle/.pth exec,
+#    F29 autorun.inf, F30 WPAD .pac ──
+YDIR=$(mktemp -d)
+printf 'evil: !!python/object/apply:os.system ["id"]\n' \
+    > "$YDIR/yamlload.yaml"
+./hlse_core file "$YDIR/yamlload.yaml" 2>&1 | grep -q "UNSAFE-LOAD" \
+    && check "file: yaml python-object tag flagged" "0" "0" \
+    || check "file: yaml python-object tag flagged" "0" "1"
+printf 'thing: !Ref SomeResource\n' > "$YDIR/cfn.yaml"
+./hlse_core file "$YDIR/cfn.yaml" 2>&1 | grep -q "OK" \
+    && check "file: cloudformation short-form tag clean" "0" "0" \
+    || check "file: cloudformation short-form tag clean" "0" "1"
+printf 'cos\nsystem\n(S"id"\ntR.\n' > "$YDIR/evil.pkl"
+./hlse_core file "$YDIR/evil.pkl" 2>&1 | grep -q "PY EXEC" \
+    && check "file: pickle GLOBAL system flagged" "0" "0" \
+    || check "file: pickle GLOBAL system flagged" "0" "1"
+printf 'import os; os.system("id")\n' > "$YDIR/site.pth"
+./hlse_core file "$YDIR/site.pth" 2>&1 | grep -q "PY EXEC" \
+    && check "file: .pth import-line flagged" "0" "0" \
+    || check "file: .pth import-line flagged" "0" "1"
+printf '# path config\n/usr/local/lib\n' > "$YDIR/ok.pth"
+./hlse_core file "$YDIR/ok.pth" 2>&1 | grep -q "OK" \
+    && check "file: plain .pth clean" "0" "0" \
+    || check "file: plain .pth clean" "0" "1"
+printf '[autorun]\nopen=setup.exe\nshell\\open\\command=setup.exe\n' \
+    > "$YDIR/autorun.inf"
+./hlse_core file "$YDIR/autorun.inf" 2>&1 | grep -q "AUTORUN" \
+    && check "file: autorun.inf open key flagged" "0" "0" \
+    || check "file: autorun.inf open key flagged" "0" "1"
+printf '[autorun]\nlabel=Drive\nicon=icon.ico\n' > "$YDIR/ok.inf"
+./hlse_core file "$YDIR/ok.inf" 2>&1 | grep -q "AUTORUN" \
+    && check "file: benign .inf no autorun reason" "0" "1" \
+    || check "file: benign .inf no autorun reason" "0" "0"
+printf 'function FindProxyForURL(u,h){return "PROXY evil.example:8080";}\n' \
+    > "$YDIR/wpad.pac"
+./hlse_core file "$YDIR/wpad.pac" 2>&1 | grep -q "WPAD" \
+    && check "file: .pac remote PROXY flagged" "0" "0" \
+    || check "file: .pac remote PROXY flagged" "0" "1"
+printf 'function FindProxyForURL(u,h){return "DIRECT";}\n' \
+    > "$YDIR/direct.pac"
+./hlse_core file "$YDIR/direct.pac" 2>&1 | grep -q "OK" \
+    && check "file: DIRECT .pac clean" "0" "0" \
+    || check "file: DIRECT .pac clean" "0" "1"
+rm -rf "$YDIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

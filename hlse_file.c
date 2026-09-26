@@ -25,6 +25,13 @@
  *        external/provisioner plan-apply exec
  *   F25. Privileged K8s manifest — apiVersion/kind YAML requesting
  *        privileged containers, host namespaces, dangerous caps
+ *   F26. docker-compose privilege — privileged/host-ns/docker.sock/
+ *        host-root mounts in compose services
+ *   F27. YAML unsafe-load tags — !!python/object, !ruby/, !!perl/
+ *   F28. pickle/.pth exec — GLOBAL opcode to system/eval/subprocess,
+ *        .pth import-line startup exec
+ *   F29. autorun.inf — [autorun] open/shell self-execute keys
+ *   F30. WPAD .pac hijack — FindProxyForURL returning remote PROXY
  *
  * All detection is read-only. Files are never modified or executed.
  *
@@ -1374,6 +1381,126 @@ compose_priv_score(const unsigned char *head, size_t len,
     return sc;
 }
 
+/* ─── F27: YAML unsafe-load tags — !!python/object[...], !ruby/…,
+ *      !!perl/… are inert text until yaml.load / unsafe_load /
+ *      Psych.load instantiates them into arbitrary objects (the
+ *      deserialization-gadget RCE class). Only fires on executable
+ *      tag families — CloudFormation !Ref/!GetAtt and ordinary
+ *      custom tags stay clean.                                   */
+static int
+yaml_unsafe_tag_score(const unsigned char *head, size_t len,
+                      const char *ext) {
+    char extl[32], low[4097];
+    size_t n = 0, i;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".yaml") != 0 && strcmp(extl, ".yml") != 0)
+        return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strstr(low, "!!python/") || strstr(low, "!python/object") ||
+        strstr(low, "!python/name") || strstr(low, "!python/module") ||
+        strstr(low, "!ruby/") || strstr(low, "!!perl/") ||
+        strstr(low, "!perl/") || strstr(low, "!!php/") ||
+        strstr(low, "!php/object"))
+        return 65;
+    return 0;
+}
+
+/* ─── F28: pickle/.pth code-exec — pickle GLOBAL opcodes referencing
+ *      system/eval/exec/subprocess (the ML-supply-chain payload
+ *      class: a "model" that runs code on load), and .pth files
+ *      carrying an `import` line (site-packages .pth lines starting
+ *      with `import` execute at interpreter startup).          */
+static int
+py_exec_score(const unsigned char *head, size_t len, const char *ext) {
+    char extl[32], low[4097];
+    size_t n = 0, i;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strcmp(extl, ".pkl") == 0 || strcmp(extl, ".pickle") == 0 ||
+        strcmp(extl, ".pth") == 0) {
+        /* pickle GLOBAL/STACK_GLOBAL refs — same byte pattern in
+         * text and binary protocols (`c<mod>\n<name>` / `\x93`) */
+        if (strstr(low, "cposix\nsystem") || strstr(low, "cnt\nsystem") ||
+            strstr(low, "cos\nsystem") || strstr(low, "cos\npopen") ||
+            strstr(low, "csubprocess") || strstr(low, "cpty\n") ||
+            strstr(low, "c__builtin__\neval") ||
+            strstr(low, "c__builtin__\nexec") ||
+            strstr(low, "c__builtin__\nsystem"))
+            return 70;
+    }
+    if (strcmp(extl, ".pth") == 0) {
+        /* .pth exec: a line whose first token is `import` runs at
+         * interpreter startup under site-packages */
+        const char *p = low;
+        if (strncmp(p, "import ", 7) == 0) return 65;
+        while ((p = strstr(p, "\nimport ")) != NULL) {
+            return 65;
+        }
+        if (strstr(low, "\nimport\t")) return 65;
+    }
+    return 0;
+}
+
+/* ─── F29: autorun.inf — [autorun] open=/shellexecute=/shell\…\command=
+ *      keys made removable media self-execute (USB worm class; modern
+ *      Windows suppresses it but the file is still a lure) ────────── */
+static int
+autorun_score(const unsigned char *head, size_t len, const char *ext) {
+    char extl[32], low[4097];
+    size_t n = 0, i;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".inf") != 0) return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(low, "[autorun]")) return 0;
+    if (strstr(low, "\nopen=") || strstr(low, "\nshellexecute=") ||
+        strstr(low, "shell\\") || strstr(low, "\nshell=") ||
+        strstr(low, "\nopen =") )
+        return 55;
+    return 0;
+}
+
+/* ─── F30: WPAD/.pac proxy hijack — a proxy auto-config script that
+ *      returns PROXY/SOCKS directives routes all browser traffic
+ *      through the named host (a dropped .pac is a traffic-
+ *      interception payload, not a document) ─────────────────────── */
+static int
+pac_hijack_score(const unsigned char *head, size_t len, const char *ext) {
+    char extl[32], low[4097];
+    size_t n = 0, i;
+    const char *p;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".pac") != 0 && strcmp(extl, ".dat") != 0)
+        return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(low, "findproxyforurl")) return 0;
+    p = low;
+    for (;;) {
+        const char *pp = strstr(p, "proxy ");
+        const char *ps = strstr(p, "socks");
+        const char *hit = (pp && ps) ? (pp < ps ? pp : ps)
+                                     : (pp ? pp : ps);
+        const char *q;
+        if (!hit) break;
+        q = hit + (hit == pp ? 6 : 5);
+        while (*q == ' ' || *q == '\t' || *q == '"' || *q == '\'' ||
+               (*q >= '0' && *q <= '9')) q++;
+        /* skip localhost/local resolver */
+        if (strncmp(q, "127.", 4) && strncmp(q, "localhost", 9) &&
+            strncmp(q, "[::1]", 5))
+            return 45;
+        p = q;
+    }
+    return 0;
+}
+
 FileVerdict
 hlse_check_file(const char *filepath) {
     FileVerdict v;
@@ -1859,6 +1986,54 @@ hlse_check_file(const char *filepath) {
                 "F26: COMPOSE PRIVILEGED — docker-compose service runs "
                 "privileged / host-namespace / docker.sock / host-root "
                 "mount (score %d)", cp);
+        }
+    }
+
+    /* ── F27: YAML unsafe-load tags — !!python/object / !ruby/…
+     *      deserialize into arbitrary objects under yaml.load /
+     *      Psych.load (gadget RCE class) ─────────────────────────── */
+    if (head_len > 0) {
+        int yt = yaml_unsafe_tag_score(head, (size_t)head_len, ext);
+        if (yt > 0) {
+            fv_add(&v, yt,
+                "F27: YAML UNSAFE-LOAD TAG — executable deserialization "
+                "tag (!!python/object, !ruby/, …) — instantiates code "
+                "under yaml.load/unsafe_load (score %d)", yt);
+        }
+    }
+
+    /* ── F28: pickle/.pth code-exec — pickle GLOBAL refs to system/
+     *      eval/exec/subprocess, or a .pth `import` line executing
+     *      at interpreter startup ─────────────────────────────────── */
+    if (head_len > 0) {
+        int pe = py_exec_score(head, (size_t)head_len, ext);
+        if (pe > 0) {
+            fv_add(&v, pe,
+                "F28: PY EXEC — pickle GLOBAL opcode references system/"
+                "eval/subprocess, or .pth import-line exec (score %d)",
+                pe);
+        }
+    }
+
+    /* ── F29: autorun.inf — [autorun] open=/shellexecute=/shell\…
+     *      self-executing removable-media lure ─────────────────────── */
+    if (head_len > 0) {
+        int ar = autorun_score(head, (size_t)head_len, ext);
+        if (ar > 0) {
+            fv_add(&v, ar,
+                "F29: AUTORUN — [autorun] open/shell command key "
+                "self-executes on media mount (score %d)", ar);
+        }
+    }
+
+    /* ── F30: .pac WPAD hijack — FindProxyForURL returning a remote
+     *      PROXY/SOCKS routes all browser traffic via attacker ─────── */
+    if (head_len > 0) {
+        int ph = pac_hijack_score(head, (size_t)head_len, ext);
+        if (ph > 0) {
+            fv_add(&v, ph,
+                "F30: WPAD PROXY HIJACK — .pac returns a remote "
+                "PROXY/SOCKS for all traffic (score %d)", ph);
         }
     }
 
