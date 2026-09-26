@@ -6,6 +6,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F49–F51 install-carrier + build-time exec** (`hlse_file.c`): F49
+  extension bundles (`.vsix`/`.xpi`/`.crx`/`.nex`/`.safariextz`/`.oxt`/
+  `.whl`/`.egg`/`.gem`/`.nupkg`/`.apk`/`.ipa`) → 35, cert/key
+  containers (`.cer`/`.crt`/`.der`/`.p12`/`.pfx`/`.p7b`/`.p7r`) → 30 —
+  install writes code into the host app or material into the trust
+  store; F50 `.rb` Homebrew formula (`< Formula`) containing
+  `system`/`curl`/`wget`/`open(`/`eval` → 55 (install-time exec);
+  F51 `.cabal` `build-type:Custom`/`custom-setup` → 40 (delegates the
+  build to a Setup.hs script).
 - **Internal-address + IMDS URL checks** (`hlse_core.c`): a URL host
   that is RFC1918/loopback/link-local/CGNAT (incl. IPv6 `::1`/`fe80::`/
   `fc`/`fd` literals) → ALERT 45; a cloud instance-metadata endpoint

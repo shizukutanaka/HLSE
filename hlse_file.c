@@ -1821,6 +1821,75 @@ sct_scriptlet_score(const unsigned char *head, size_t len,
     return 45;
 }
 
+/* ─── F49: install-carrier extensions — an extension bundle (.vsix/
+ *      .xpi/.crx/.oxt/.nex/.safariextz) installs code into the editor/
+ *      browser on add; a cert/key file (.cer/.crt/.der/.p12/.pfx) writes
+ *      the trust store on import. Extension-gated only. ────────────── */
+static int
+install_carrier_score(const char *ext) {
+    char extl[40];
+    static const char *const BUNDLES[] = {
+        ".vsix", ".xpi", ".crx", ".nex", ".safariextz", ".oxt",
+        ".whl", ".egg", ".gem", ".nupkg", ".apk", ".ipa",
+        NULL
+    };
+    static const char *const CERTS[] = {
+        ".cer", ".crt", ".der", ".p12", ".pfx", ".p7b", ".p7r",
+        NULL
+    };
+    int i;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    for (i = 0; BUNDLES[i]; i++)
+        if (strcmp(extl, BUNDLES[i]) == 0) return 35;
+    for (i = 0; CERTS[i]; i++)
+        if (strcmp(extl, CERTS[i]) == 0) return 30;
+    return 0;
+}
+
+/* ─── F50: Homebrew formula exec — a .rb formula's install{} block
+ *      runs on `brew install`; system/curl/wget inside one is an
+ *      install-time code-exec vector (tap supply chain) ───────────── */
+static int
+brew_formula_score(const unsigned char *head, size_t len,
+    const char *ext) {
+    char extl[40], low[4097];
+    size_t n = 0, i;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".rb"))
+        return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (!strstr(low, "< formula") && !strstr(low, "<formula"))
+        return 0;
+    if (strstr(low, "system ") || strstr(low, "system(") ||
+        strstr(low, "curl ") || strstr(low, "wget ") ||
+        strstr(low, "open(") || strstr(low, "eval "))
+        return 55;
+    return 0;   /* a plain formula is ordinary .rb — no signal */
+}
+
+/* ─── F51: .cabal custom build — `build-type: Custom`/`custom-setup`
+ *      delegates the build to a Setup.hs script that runs at
+ *      `cabal build` time ─────────────────────────────────────────── */
+static int
+cabal_custom_score(const unsigned char *head, size_t len,
+    const char *ext) {
+    char extl[40], low[4097];
+    size_t n = 0, i;
+    str_lower(ext ? ext : "", extl, sizeof(extl));
+    if (strcmp(extl, ".cabal"))
+        return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strstr(low, "build-type:") && strstr(low, "custom"))
+        return 40;
+    if (strstr(low, "custom-setup"))
+        return 40;
+    return 0;
+}
+
 /* ─── F48: .ica Citrix launch file — a [WFClient]/[ApplicationServers]
  *      descriptor whose Address=/InitialProgram= launches a remote
  *      published application on open (Citrix phishing delivery) ───── */
@@ -2776,6 +2845,38 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, ica,
                 "F48: ICA LAUNCH — Citrix descriptor launches a remote "
                 "application on open (score %d)", ica);
+        }
+    }
+
+    /* ── F49: install-carrier extensions — extension bundles and
+     *      cert/key files write code/trust on install ─────────────── */
+    {
+        int ic = install_carrier_score(ext);
+        if (ic > 0) {
+            fv_add(&v, ic,
+                "F49: INSTALL CARRIER — %s extension type installs code "
+                "or trust material on open (score %d)", ext, ic);
+        }
+    }
+
+    /* ── F50: Homebrew formula exec — install{} runs on brew install ── */
+    if (head_len > 0) {
+        int bf = brew_formula_score(head, (size_t)head_len, ext);
+        if (bf > 0) {
+            fv_add(&v, bf,
+                "F50: BREW FORMULA — formula install block executes "
+                "commands at brew install time (score %d)", bf);
+        }
+    }
+
+    /* ── F51: .cabal custom build — build-type:Custom delegates to a
+     *      Setup.hs script at build time ──────────────────────────── */
+    if (head_len > 0) {
+        int cb = cabal_custom_score(head, (size_t)head_len, ext);
+        if (cb > 0) {
+            fv_add(&v, cb,
+                "F51: CABAL CUSTOM BUILD — build-type:Custom runs a "
+                "Setup.hs script at build time (score %d)", cb);
         }
     }
 
