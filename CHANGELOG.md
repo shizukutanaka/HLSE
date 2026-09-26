@@ -6,6 +6,21 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Weaponized `.lnk` detection — file check F9** (`hlse_file.c`):
+  verifies the LNK header (`4C000000` + fixed LinkCLSID) and scans the
+  embedded UTF-16LE/ASCII command line, case-insensitively, for
+  interpreter/download commands (powershell -enc, cmd /c, mshta,
+  certutil, rundll32, bitsadmin, http(s) URLs) — the maldocs→LNK
+  loader chain used by emotet/QakBot droppers. 1 hit = 60, >=2 = 70.
+  A clean shortcut (e.g. explorer.exe target) stays at F3.
+
+- **Free-host phishing list expanded** (`hlse_core.c`): tunnels
+  (ngrok.*, trycloudflare.com, loca.lt), dynamic DNS (duckdns.org,
+  ddns.net, noip.me, hopto.org, zapto.org, sytes.net) and long-tail
+  blog/site hosts (blogspot.com, wordpress.com, square.site,
+  business.site, r2.dev). Still brand-in-subdomain gated, so bare
+  tunnel names stay clean.
+
 - **Launcher/shortcut carrier detection — file check F8**
   (`hlse_file.c`). `.desktop` `Exec=` droppers (the APT36 campaign of
   Aug 2025: phishing ZIP → `.desktop` → curl payload to /tmp → chmod+x
