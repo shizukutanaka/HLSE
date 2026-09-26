@@ -454,6 +454,11 @@ printf '[Desktop Entry]\nType=Application\nName=Firefox\nExec=firefox %%u\n' > "
     || check "F1: .pdf.desktop double extension flagged" "0" "1"
 rm -rf "$LCH_DIR"
 
+# Free-host phishing: brand in tunnel/DDNS subdomain → ALERT+
+./hlse_core 'https://paypal-login.verify.trycloudflare.com' 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
+    && check "free-host: brand@trycloudflare.com → ALERT+" "0" "0" \
+    || check "free-host: brand@trycloudflare.com → ALERT+" "0" "1"
+
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
 ./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "0" \
@@ -2039,7 +2044,7 @@ assert "(2)" in val, val
     || check "p24: shortener exoneration not generic hyphen text" "0" "1"
 
 # Subdomain spoofing: exoneration mentions right-to-left domain reading
-./hlse_core "https://secure-paypal-verify.blogspot.com" 2>/dev/null \
+./hlse_core "https://secure-paypal-verify.evil-example.com" 2>/dev/null \
     | grep "Could be benign:" \
     | grep -qi "right-to-left\|registrable" \
     && check "p24: subdomain exoneration mentions domain reading" "0" "0" \
@@ -2117,7 +2122,7 @@ assert "exoneration" not in d, d
    || check "p26 json: BLOCK URL no exoneration" "0" "1"
 
 # JSON URL ALERT: exoneration present (subdomain case)
-./hlse_core --json "https://secure-paypal-verify.blogspot.com" 2>/dev/null \
+./hlse_core --json "https://secure-paypal-verify.evil-example.com" 2>/dev/null \
     | python3 -c '
 import sys, json
 d = json.loads(sys.stdin.read())

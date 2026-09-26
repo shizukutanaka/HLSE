@@ -1748,6 +1748,16 @@ check_url(const char *raw_url) {
             "s3.amazonaws.com", "s3-website.amazonaws.com",
             "storage.googleapis.com",
             "cf-pages.com", "workers.dev",
+            /* Tunneling / dynamic-DNS infrastructure — documented phishing
+             * hosts (zero-trust tunnels and DDNS give attackers rotating,
+             * TLS-valid, reputation-free subdomains) */
+            "ngrok.io", "ngrok.app", "ngrok-free.app", "ngrok.dev",
+            "trycloudflare.com", "loca.lt",
+            "duckdns.org", "ddns.net", "noip.me", "hopto.org",
+            "zapto.org", "sytes.net",
+            /* Long-tail blog/site hosts — top phishing TLDs per APWG */
+            "blogspot.com", "wordpress.com", "square.site",
+            "business.site", "r2.dev",
             NULL
         };
         int fhi;
