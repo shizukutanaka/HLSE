@@ -7650,6 +7650,41 @@ printf '[Theme]\n[Control Panel\\Desktop]\nWallpaper=C:\\Windows\\img.jpg\n' \
     && check "file: local .theme not shell-meta" "0" "1" \
     || check "file: local .theme not shell-meta" "0" "0"
 rm -rf "$TDIR"
+# new credential formats: Google OAuth ya29., Tailscale tskey-,
+# SendGrid SG., Sentry sntrys_, Grafana glc_, Fly fo1_,
+# Terraform atlasv1., Dynatrace dt0c01.
+SDIR=$(mktemp -d)
+printf '%s' 'y="' "ya29." "PtYgjmUhBel31iEl2hpChYgCfrL1spNxnyVmihA_2O76UMFxFkM_R5Kjp1vR" '"' \
+    > "$SDIR/keys.py"
+./hlse_core scan "$SDIR" 2>&1 | grep -q "Google OAuth" \
+    && check "scan: ya29. Google OAuth token" "0" "0" \
+    || check "scan: ya29. Google OAuth token" "0" "1"
+printf '%s' 't="' "tskey-auth-" "t-1fjORS_6ilI8ihN5KXSc7T" '"' \
+    > "$SDIR/keys.py"
+./hlse_core scan "$SDIR" 2>&1 | grep -q "Tailscale" \
+    && check "scan: tskey- Tailscale auth key" "0" "0" \
+    || check "scan: tskey- Tailscale auth key" "0" "1"
+printf '%s' 's="' "SG." "vo_hBKqFYY_kv5ZJr3J1TW" "." "DtkwtDDb-xHKas1VOqg6YYZYn9ZhyiA4uoRgnatmUdj" '"' \
+    > "$SDIR/keys.py"
+./hlse_core scan "$SDIR" 2>&1 | grep -q "SendGrid" \
+    && check "scan: SG. SendGrid API key" "0" "0" \
+    || check "scan: SG. SendGrid API key" "0" "1"
+printf '%s' 'e="' "sntrys_" "AWtGSU8po-799NksnRH9ucAUsdMlHUvTCQCyEZDz_TddJ8HyS5" '"' \
+    > "$SDIR/keys.py"
+./hlse_core scan "$SDIR" 2>&1 | grep -q "Sentry" \
+    && check "scan: sntrys_ Sentry token" "0" "0" \
+    || check "scan: sntrys_ Sentry token" "0" "1"
+printf '%s' 'x="' "atlasv1." "P9nhFyJfm5di4PzJ59FHz5r1pY4OjE2jBMp" '"' \
+    > "$SDIR/keys.py"
+./hlse_core scan "$SDIR" 2>&1 | grep -q "Terraform Cloud" \
+    && check "scan: atlasv1. Terraform token" "0" "0" \
+    || check "scan: atlasv1. Terraform token" "0" "1"
+printf '%s\n' 'v="' "short." "abc" '"' \
+    > "$SDIR/keys.py"
+./hlse_core scan "$SDIR" 2>&1 | grep -q "0 threats\|OK" \
+    && check "scan: short non-token clean" "0" "0" \
+    || check "scan: short non-token clean" "0" "1"
+rm -rf "$SDIR"
 
 # ─── results ────────────────────────────────────────────────────────────
 

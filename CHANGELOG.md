@@ -55,6 +55,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   plus a step materialising `${{ github.head_ref }}` /
   `pull_request.head.*` → 65, once per file (HLSE-PKG-GHAPWN).
 
+- **`.theme` NetNTLM leak** — `.theme`/`[Theme]`-style INI carriers
+  (Wallpaper=, ItemNPath=, ImagesRootPIDL=) now feed the F10 UNC/WebDAV
+  check; a remote `\\host\share` wallpaper leaks NetNTLM on load
+  (ThemeBleed CVE-2024-38030 class).
+- **New credential formats** — secret patterns for Google OAuth
+  (`ya29.`), Tailscale (`tskey-`), Sentry (`sntrys_`), Grafana Cloud
+  (`glc_`), Fly.io (`fo1_`), Terraform Cloud (`atlasv1.`) and
+  Dynatrace (`dt0c01.`); `SG.` SendGrid already covered.
 - **URI-handler schemes** (`hlse_core.c`): `search-ms:`/`ms-msdt:`/
   `ms-officecmd:`/`ms-word:`/`ms-excel:`/`ms-powerpoint:`/`onenote:`/
   `itms-services:` route through `check_url`; an embedded remote

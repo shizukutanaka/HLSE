@@ -297,6 +297,29 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* Netlify Personal Access Token */
     { "nfp_",           4, 32, is_alnum_or_dash, "Netlify Personal Access Token", 85 },
 
+    /* Google OAuth access token (ya29. prefix — leaked in requests,
+     * logs, and proto payloads; ~100-char bearer token) */
+    { "ya29.",         5,  40, is_alnum_or_dash, "Google OAuth Access Token", 85 },
+
+    /* Tailscale auth/client/api keys (tskey-auth-/tskey-client-/…) */
+    { "tskey-",        6,  16, is_alnum_or_dash, "Tailscale Auth Key", 80 },
+
+    /* Sentry org auth token (sntrys_ + base64url JSON payload) */
+    { "sntrys_",       7,  30, is_alnum_or_dash, "Sentry Auth Token", 85 },
+
+    /* Grafana Cloud access-policy token (glc_) — distinct from glsa_
+     * service-account keys already covered */
+    { "glc_",          4,  30, is_alnum_or_dash, "Grafana Cloud Token", 80 },
+
+    /* Fly.io API token (fo1_) */
+    { "fo1_",          4,  30, is_alnum_or_dash, "Fly.io API Token",  80 },
+
+    /* Terraform Cloud / Atlas (atlasv1.) */
+    { "atlasv1.",      8,  30, is_alnum_or_dash, "Terraform Cloud Token", 80 },
+
+    /* Dynatrace API v2 token (dt0c01.<24>.<64>) */
+    { "dt0c01.",       7,  24, is_alnum_or_dash, "Dynatrace API Token", 80 },
+
     /* Webhook URLs (URL-anchored — essentially zero false positives) */
     { "hooks.slack.com/services/T", 27, 5, is_alnum_or_dash,
                                             "Slack Webhook URL",     70 },
