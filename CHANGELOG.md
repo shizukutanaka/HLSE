@@ -6,6 +6,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Authority control-character / root-dot normalization**
+  (`hlse_core.c`): WHATWG URL parsing strips ASCII tab/CR/LF outright,
+  so `pay\tpal.com` resolves as paypal.com while string-matching
+  checks see a different host — the browser-evading spelling defeated
+  every host-based check. `parse_url` now strips those controls in
+  place (score 45 evasion tell) and removes a single trailing DNS-root
+  dot (score 15 tell) so canonical/free-host matching sees the
+  resolved identity.
+
 - **Percent-encoded host detection** (`hlse_core.c`): `parse_url` now
   decodes %-escapes in the authority in place (same 0x20–0x7E bound as
   the path decode), so brand matching, canonical auth, free-host and

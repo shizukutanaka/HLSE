@@ -438,6 +438,8 @@ typedef struct {
     char path[MAX_PATH];
     int  is_https;
     int  host_encoded;  /* host carried %-escapes (decoded in place) */
+    int  host_controls; /* host carried tab/CR/LF (stripped in place) */
+    int  host_rootdot;  /* host ended in the DNS root '.'  (stripped) */
 } ParsedUrl;
 
 static int
@@ -495,6 +497,33 @@ parse_url(const char *raw, ParsedUrl *out) {
             *w++ = *r++;
         }
         *w = '\0';
+    }
+
+    /* Strip tab/CR/LF from the host — WHATWG URL parsing removes ASCII
+     * tab and newline characters outright, so a browser resolves
+     * "pay\tpal.com" to paypal.com while a string-matching check sees a
+     * different host (brand check fully evaded). Normalize to what the
+     * resolver sees and mark the mutation as an evasion tell.
+     * A single trailing '.' is the DNS root label: paypal.com. resolves
+     * identically to paypal.com — strip it so canonical/free-host checks
+     * match, also recorded as a tell (FQDN notation is rare in URLs
+     * people share and evades exact-match allowlists).               */
+    {
+        char *r = out->host, *w = out->host;
+        int stripped = 0;
+        while (*r) {
+            if (*r == '\t' || *r == '\r' || *r == '\n') { stripped = 1; r++; continue; }
+            *w++ = *r++;
+        }
+        *w = '\0';
+        if (stripped) out->host_controls = 1;
+        {
+            size_t hl = strlen(out->host);
+            if (hl > 1 && out->host[hl - 1] == '.') {
+                out->host[hl - 1] = '\0';
+                out->host_rootdot = 1;
+            }
+        }
     }
 
     if (slash) {
@@ -1835,6 +1864,22 @@ check_url(const char *raw_url) {
                 "Percent-encoded host '%s' — hides the hostname from "
                 "allowlists and log review (evasion)", u.host);
         }
+    }
+
+    /* Tab/CR/LF inside the authority — WHATWG strips them, so the
+     * browser resolves '%s' while a string-matching allowlist sees the
+     * raw (brand-evading) form. A trailing DNS-root '.' normalizes to
+     * the same host and likewise evades exact-match allowlists.     */
+    if (u.host_controls) {
+        add_reason(&v, 45,
+            "Control characters in URL host — browsers strip tab/CR/LF, "
+            "so '%s' resolves to a different host than it displays "
+            "(brand-evasion evasion)", u.host);
+    }
+    if (u.host_rootdot) {
+        add_reason(&v, 15,
+            "Trailing DNS-root dot in host '%s.' — resolves identically "
+            "but evades exact-match allowlists (evasion tell)", u.host);
     }
 
     /* IP-based URL with brand names in path → phishing.

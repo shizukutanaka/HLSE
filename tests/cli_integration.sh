@@ -617,6 +617,21 @@ printf '{\n "dependencies": {"evilpkg": "git+https://evil.example/x.git"}\n}\n' 
     || check "vcs-dep: npm git+ value flagged" "0" "1"
 rm -rf "$VCS_DIR"
 
+# Authority control chars / trailing root dot: WHATWG strips tab/CR/LF
+./hlse_core $'https://pay\tpal.com.evil.com/' 2>&1 | grep -q "Subdomain spoofing" \
+    && check "ctl-host: tab-embedded brand flagged" "0" "0" \
+    || check "ctl-host: tab-embedded brand flagged" "0" "1"
+./hlse_core $'https://pay\npal.com.evil.com/' 2>&1 | grep -q "Control characters in URL host" \
+    && check "ctl-host: newline-embedded host flagged" "0" "0" \
+    || check "ctl-host: newline-embedded host flagged" "0" "1"
+./hlse_core 'https://evil.example./x' 2>&1 | grep -q "DNS-root dot" \
+    && check "rootdot: trailing-dot host flagged" "0" "0" \
+    || check "rootdot: trailing-dot host flagged" "0" "1"
+# FP guards: clean hosts unaffected
+./hlse_core 'https://example.com/' 2>&1 | grep -qE "Control characters|DNS-root" \
+    && check "ctl/rootdot FP guard: clean host stays clean" "0" "1" \
+    || check "ctl/rootdot FP guard: clean host stays clean" "0" "0"
+
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
 ./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "0" \
