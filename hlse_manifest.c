@@ -339,6 +339,28 @@ hlse_manifest_vcs_host(const char *line, char *out, size_t outcap) {
         }
     }
     if (!u) {
+        /* cargo/forge-style `git = "url"` / `"git": "url"` keys — no
+         * git+ scheme marker, just a named key whose value is a URL */
+        const char *g = line;
+        while ((g = strstr(g, "git")) != NULL) {
+            const char *s = g + 3;
+            while (*s == ' ' || *s == '\t' || *s == '"' || *s == '\'') s++;
+            if (*s == '=' || *s == ':') {
+                s++;
+                while (*s == ' ' || *s == '\t' || *s == '"' || *s == '\'')
+                    s++;
+                if (strncmp(s, "http://", 7) == 0 ||
+                    strncmp(s, "https://", 8) == 0 ||
+                    strncmp(s, "git://", 6) == 0 ||
+                    strncmp(s, "ssh://", 6) == 0) {
+                    u = strstr(s, "://");
+                    break;
+                }
+            }
+            g += 3;
+        }
+    }
+    if (!u) {
         /* bare scheme: keep it if the URL is a direct artifact reference
          * (PEP 440 `name @ url`, or a recognisable archive/.git tail) */
         const char *s = strstr(line, "://");
@@ -412,5 +434,63 @@ hlse_manifest_index_host(const char *line, char *out, size_t outcap) {
         { char *c = strchr(out, ':'); if (c) *c = '\0'; }
     }
     if (!out[0] || !strchr(out, '.')) return 0;
+    return 1;
+}
+
+/* npm alias specifier: `"name": "npm:other@1.0.0"` installs `other`
+ * under the declared name — the name says one package, the registry
+ * source is another (dependency confusion that hides in the value).
+ * Returns 1 with the alias target's package name in out (scope kept),
+ * or 0 when the line carries no npm: specifier. The caller compares
+ * target != declared key. */
+int
+hlse_manifest_alias_target(const char *line, char *out, size_t outcap) {
+    const char *nm, *t;
+    size_t tl = 0;
+    if (out && outcap) out[0] = '\0';
+    if (!line || !out || outcap == 0) return 0;
+    nm = strstr(line, "npm:");
+    if (!nm) nm = strstr(line, "npm: ");   /* tolerates "npm: pkg" */
+    if (!nm) return 0;
+    t = nm + 4;
+    while (*t == ' ' || *t == '"' || *t == '\'') t++;
+    if (*t == '@') {            /* scoped target @scope/pkg */
+        t++;
+        while (*t && *t != '/' && *t != '"' && *t != '\'' &&
+               *t != ' ' && tl + 1 < outcap)
+            out[tl++] = *t++;
+        if (*t == '/' && tl + 1 < outcap) { out[tl++] = '/'; t++; }
+    }
+    while (*t && *t != '@' && *t != '"' && *t != '\'' &&
+           *t != ' ' && *t != '\t' && tl + 1 < outcap)
+        out[tl++] = *t++;
+    out[tl] = '\0';
+    if (!out[0]) return 0;
+    return 1;
+}
+
+/* The manifest key a value belongs to: for `"name": "npm:x"` returns
+ * "name". Used to compare an npm: alias target against the declared
+ * dependency name. Returns 0 when no "key": form precedes pos.      */
+int
+hlse_manifest_key_before(const char *line, const char *pos,
+                         char *out, size_t outcap) {
+    const char *colon, *q2, *q1;
+    size_t kl;
+    if (out && outcap) out[0] = '\0';
+    if (!line || !pos || pos <= line || !out || outcap == 0) return 0;
+    colon = pos;
+    while (colon > line && *colon != ':') colon--;
+    if (*colon != ':') return 0;
+    q2 = colon;
+    while (q2 > line && *q2 != '"') q2--;
+    if (*q2 != '"') return 0;
+    q1 = q2 - 1;
+    while (q1 > line && *q1 != '"') q1--;
+    if (*q1 != '"' || q2 - q1 < 2) return 0;
+    kl = (size_t)(q2 - q1 - 1);
+    if (kl >= outcap) kl = outcap - 1;
+    memcpy(out, q1 + 1, kl);
+    out[kl] = '\0';
     return 1;
 }

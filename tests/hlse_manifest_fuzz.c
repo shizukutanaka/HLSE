@@ -150,6 +150,11 @@ static size_t gen_lockfile(char *buf, size_t cap, unsigned long *rng) {
         "\"dep\": \"https://internal.example/x.tar.gz\"",
         "# see https://docs.example for details",
         "--index-url https://pypi.org/simple",
+        "\"leftpad\": \"npm:evil-typosquat@1.0.0\"",
+        "\"chalk\": \"npm:chalk@5.0.0\"",
+        "\"x\": \"npm:@scope/pkg@1\"",
+        "foo = { git = \"https://evil.example/x\" }",
+        "\"git\": \"https://evil.example/y\"",
         NULL
     };
     int n = 0; while (frags[n]) n++;
@@ -217,6 +222,12 @@ static void exercise(const char *buf) {
     (void)hlse_manifest_index_host(buf, out, sizeof(out));
     hn = hlse_manifest_hook_flags(buf, hout, hsc, 4);
     (void)hn;
+    if (hlse_manifest_alias_target(buf, out, sizeof(out))) {
+        const char *anm = strstr(buf, "npm:");
+        char key[128];
+        if (anm)
+            (void)hlse_manifest_key_before(buf, anm, key, sizeof(key));
+    }
 }
 
 /* ── Main ─────────────────────────────────────────────────────────────── */

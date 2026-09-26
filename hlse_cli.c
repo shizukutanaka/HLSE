@@ -1188,6 +1188,58 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                             }
                         }
                     }
+                    /* npm alias: "name": "npm:other@x" installs `other`
+                     * under `name` — the declared name hides the real
+                     * package source (dependency confusion). */
+                    {
+                        char atgt[256], akey[256];
+                        const char *anm;
+                        if (hlse_manifest_alias_target(line, atgt,
+                                sizeof(atgt)) &&
+                            (anm = strstr(line, "npm:")) != NULL &&
+                            hlse_manifest_key_before(line, anm, akey,
+                                sizeof(akey)) &&
+                            strcmp(akey, atgt) != 0) {
+                            int asc = 50;
+                            char areason[HLSE_HOOK_REASON_LEN];
+                            snprintf(areason, sizeof(areason),
+                                "dependency '%s' aliases to a different "
+                                "package 'npm:%s' — the declared name hides "
+                                "the real install source (dependency "
+                                "confusion)", akey, atgt);
+                            threats++;
+                            hlse_alert_emit_rows("package", asc,
+                                hlse_severity_for_score(asc), mpath,
+                                &areason, HLSE_HOOK_REASON_LEN, 1);
+                            if (asc > max_score) max_score = asc;
+                            if (asc >= o->fail_threshold) gate_hits++;
+                            if (o->sarif_out) {
+                                hlse_sarif_add(mpath, lineno,
+                                    "package-npm-alias",
+                                    "HLSE-PKG-ALIAS", areason, asc);
+                            } else if (o->json_out) {
+                                char eak[256], eav[256], eh5[384];
+                                hlse_json_escape(akey, eak, sizeof(eak));
+                                hlse_json_escape(atgt, eav, sizeof(eav));
+                                hlse_json_escape(areason, eh5, sizeof(eh5));
+                                hlse_json_open("package");
+                                printf(",\"name\":\"%s\",\"ecosystem\":\"npm\","
+                                       "\"score\":%d,\"action\":\"%s\","
+                                       "\"severity\":%d,"
+                                       "\"pattern_id\":\"HLSE-PKG-ALIAS\","
+                                       "\"alias_target\":\"%s\","
+                                       "\"reason\":\"%s\"}\n",
+                                       eak, asc,
+                                       hlse_action_for_score(asc),
+                                       hlse_severity_for_score(asc),
+                                       eav, eh5);
+                            } else {
+                                printf("%-7s [%d]  suspicious npm alias: %s\n",
+                                       hlse_action_for_score(asc), asc,
+                                       areason);
+                            }
+                        }
+                    }
                 }
                 /* All ecosystems: a VCS/direct-URL dependency source whose
                  * host is off the known forges substitutes package code at

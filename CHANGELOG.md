@@ -6,6 +6,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **npm alias dependency-confusion check** (`hlse_manifest.c`,
+  `hlse_cli.c`): `package --manifest` flags `"name": "npm:other@ver"`
+  where the npm: target differs from the declared key — the manifest
+  name hides the real package source (pattern_id HLSE-PKG-ALIAS,
+  score 50). `hlse_manifest_alias_target` /
+  `hlse_manifest_key_before` parse the specifier without a JSON
+  library; self-aliases (`"x": "npm:x@…"`) stay clean.
+- **Cargo `git =` dependency sources** (`hlse_manifest.c`):
+  `hlse_manifest_vcs_host` now recognises the key-style form
+  `git = "https://…"` / `"git": "ssh://…"` used by Cargo.toml and
+  forge config — off-forge hosts score 55 alongside the existing
+  git+/hg+/svn+ marker family.
 - **Credential-harvest form detection — file check F13**
   (`hlse_file.c`): an HTML file whose `<form>` posts to an absolute
   remote URL and contains a password field — the standalone

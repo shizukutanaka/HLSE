@@ -49,3 +49,13 @@ int hlse_manifest_vcs_host(const char *line, char *out, size_t outcap);
  * (--index-url/--extra-index-url/--find-links/--trusted-host).
  * Returns 1 with the lowercased host in out, or 0 when absent. */
 int hlse_manifest_index_host(const char *line, char *out, size_t outcap);
+
+/* Extract an npm: alias target name on a manifest line — the package
+ * actually installed under the declared key. Returns 1 with the target
+ * (scope kept, version stripped) or 0. */
+int hlse_manifest_alias_target(const char *line, char *out, size_t outcap);
+
+/* Extract the quoted manifest key preceding position pos
+ * ("key": value). Returns 1 with the key in out, or 0. */
+int hlse_manifest_key_before(const char *line, const char *pos,
+                             char *out, size_t outcap);

@@ -658,6 +658,28 @@ printf -- '--index-url https://pypi.org/simple\nrequests\n' > "$IX_DIR/requireme
 ./hlse_core package --manifest "$IX_DIR/requirements.txt" 2>&1 | grep -q "index redirect" \
     && check "index FP guard: real pypi.org clean" "0" "1" \
     || check "index FP guard: real pypi.org clean" "0" "0"
+
+# npm alias: declared name != npm: target → dependency confusion flagged
+AL_DIR=$(mktemp -d)
+printf '{\n "dependencies": {"leftpad": "npm:evil-typosquat@1.0.0"}\n}\n' > "$AL_DIR/package.json"
+./hlse_core package --manifest "$AL_DIR/package.json" 2>&1 | grep -q "npm alias" \
+    && check "npm-alias: mismatched target flagged" "0" "0" \
+    || check "npm-alias: mismatched target flagged" "0" "1"
+printf '{\n "dependencies": {"chalk": "npm:chalk@5.0.0"}\n}\n' > "$AL_DIR/package.json"
+./hlse_core package --manifest "$AL_DIR/package.json" 2>&1 | grep -q "npm alias" \
+    && check "npm-alias FP guard: self-alias clean" "0" "1" \
+    || check "npm-alias FP guard: self-alias clean" "0" "0"
+# cargo git = dep: off-forge host → flagged; crates.io-style version dep clean
+printf '[dependencies]\nfoo = { git = "https://evil.example/x" }\n' > "$AL_DIR/Cargo.toml"
+./hlse_core package --manifest "$AL_DIR/Cargo.toml" 2>&1 | grep -q "dependency source" \
+    && check "cargo-git: off-forge git dep flagged" "0" "0" \
+    || check "cargo-git: off-forge git dep flagged" "0" "1"
+printf '[dependencies]\nserde = { version = "1" }\n' > "$AL_DIR/Cargo.toml"
+./hlse_core package --manifest "$AL_DIR/Cargo.toml" 2>&1 | grep -q "dependency source" \
+    && check "cargo-git FP guard: registry dep clean" "0" "1" \
+    || check "cargo-git FP guard: registry dep clean" "0" "0"
+rm -rf "$AL_DIR"
+
 rm -rf "$IX_DIR"
 
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
