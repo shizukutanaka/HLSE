@@ -6,6 +6,24 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **HTML smuggling detection — file check F11** (`hlse_file.c`):
+  a `<script>`-carrying file whose code decodes (atob/fromCharCode),
+  materializes (Blob/createObjectURL/msSaveBlob), and delivers
+  (download=/.click()) a payload client-side — the wire never carries
+  a file, so gateways miss it. >=2 marker families → 65, one + inline
+  base64 blob → 55, one alone → 35.
+
+- **ZIP-slip detection — file check F12** (`hlse_file.c`): walks local
+  file headers in the bounded head buffer; a member name with a `..`
+  segment, absolute path, or drive letter (escapes the extraction dir,
+  CVE-2018-1002200 family) scores 70. `..` must be a full path
+  segment, so `a..b` stays clean.
+
+- **Trojan Source bidi detection** (`hlse_text.c`): U+202A..U+202E
+  overrides and U+2066..U+2069 isolates in text content — displayed
+  order differs from stored order (CVE-2021-42574). >=3 → 60, one →
+  45; LRM/RLM and ALM excluded (legitimate in RTL writing).
+
 - **NetNTLM-leak detection — file check F10** (`hlse_file.c`):
   shell-metadata carriers whose icon/URL fields fetch remote resources
   on render — desktop.ini (`[.ShellClassInfo]`+`IconResource=`), `.scf`
