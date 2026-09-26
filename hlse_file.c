@@ -15,6 +15,8 @@
  *   F10. NetNTLM leak           — shell-meta file referencing \\UNC/WebDAV
  *   F11. HTML smuggling         — script reassembling a payload client-side
  *   F12. ZIP-slip               — archive member with ../ or absolute path
+ *   F13. Credential-harvest form — HTML <form> posting a password to a
+ *        remote absolute URL (fake-login attachment)
  *
  * All detection is read-only. Files are never modified or executed.
  *
@@ -663,6 +665,39 @@ html_smuggling_score(const unsigned char *head, size_t len) {
     return 0;
 }
 
+/* Credential-harvest form (classic phishing attachment, Cofense/
+ * Microsoft reports): an HTML file carrying a <form> whose action
+ * posts credentials to an absolute remote URL plus a password input —
+ * the standalone "fake login page" shipped as an attachment. The form
+ * needs no script: it renders and submits with nothing but the file.
+ * FP guard: relative action targets and forms without a password
+ * field stay clean.                                                */
+static int
+credential_form_score(const unsigned char *head, size_t len) {
+    char low[4097];
+    size_t n = 0, i;
+    const char *a;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    if (strstr(low, "<form") == NULL) return 0;
+    /* password capture is the tell: an input typed password, or the
+     * literal word inside the form's field set */
+    if (strstr(low, "password") == NULL &&
+        strstr(low, "passwd") == NULL) return 0;
+    /* action must be present and absolute http(s) — a relative action
+     * posts back to the hosting site (normal behaviour) */
+    a = strstr(low, "action=");
+    if (!a) a = strstr(low, "action =");
+    if (!a) return 0;
+    a = strchr(a, '=') + 1;
+    while (*a == ' ' || *a == '\t') a++;
+    if (*a == '"' || *a == '\'') a++;
+    if (strncmp(a, "http://", 7) != 0 && strncmp(a, "https://", 8) != 0)
+        return 0;
+    return 55;
+}
+
 /* ZIP-slip (Snyk disclosure, CVE-2018-1002200 family): a member name
  * inside a ZIP archive carrying a `..` path segment, an absolute path,
  * or a drive letter escapes the extraction directory on unpack. The
@@ -1069,6 +1104,18 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, zs,
                 "F12: ZIP-SLIP — archive member name escapes the "
                 "extraction directory (../ traversal or absolute path)");
+        }
+    }
+
+    /* ── F13: credential-harvest form — HTML attachment posting a
+     *      password to a remote URL ───────────────────────────────── */
+    if (head_len > 0) {
+        int cf = credential_form_score(head, (size_t)head_len);
+        if (cf > 0) {
+            fv_add(&v, cf,
+                "F13: CREDENTIAL-HARVEST form — HTML <form> posts a "
+                "password field to an absolute remote URL (fake-login "
+                "attachment pattern)");
         }
     }
 

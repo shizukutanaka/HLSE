@@ -6,6 +6,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Credential-harvest form detection — file check F13**
+  (`hlse_file.c`): an HTML file whose `<form>` posts to an absolute
+  remote URL and contains a password field — the standalone
+  fake-login-page attachment (Cofense/Microsoft phishing reports).
+  Scores 55; relative actions and password-less forms stay clean.
+
 - **Authority control-character / root-dot normalization**
   (`hlse_core.c`): WHATWG URL parsing strips ASCII tab/CR/LF outright,
   so `pay\tpal.com` resolves as paypal.com while string-matching
