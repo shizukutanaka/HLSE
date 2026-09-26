@@ -6,6 +6,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Backslash URL confusion** (`hlse_core.c`): WHATWG treats `\` as
+  a path separator in special schemes — `https:\\evil.example\x`
+  resolves like `https://evil.example/x`; `evil.com\@brand.com`
+  displays a credential-trick the wrong way round (the REAL host is
+  the first one). Special-scheme URLs are backslash-normalized on a
+  stack copy before parsing; a `\` before `@` adds reason 50.
+  Dispatch gate accepts `http(s):\\`, `http(s):/\` prefixes.
 - **F16 PDF auto-actions** (`hlse_file.c`): `%PDF` magic +
   `/OpenAction`/`/AA` trigger with `/JS`/`/JavaScript`/`/Launch`/
   `/EmbeddedFile` payload → 65; payload-only latent capability → 40.

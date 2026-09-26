@@ -1713,8 +1713,37 @@ static Verdict
 check_url(const char *raw_url) {
     Verdict v;
     ParsedUrl u;
+    /* WHATWG: in the special schemes (ftp/file/http/https/ws/wss) a
+     * backslash is a path separator — `https:\\evil.example\x`
+     * resolves exactly like `https://evil.example/x`. Normalize on a
+     * stack copy so a backslash can't launder the host through the
+     * parser while displaying a different structure.               */
+    char nbuf[2100];
+    int bs_at_trick = 0;
 
     memset(&v, 0, sizeof(v));
+
+    if (raw_url && strchr(raw_url, '\\') != NULL &&
+        strlen(raw_url) < sizeof(nbuf) &&
+        (strncmp(raw_url, "https:", 6) == 0 ||
+         strncmp(raw_url, "http:", 5) == 0 ||
+         strncmp(raw_url, "ftp:", 4) == 0 ||
+         strncmp(raw_url, "wss:", 4) == 0 ||
+         strncmp(raw_url, "ws:", 3) == 0 ||
+         strncmp(raw_url, "file:", 5) == 0)) {
+        size_t i;
+        /* `evil.com\@paypal.com` — displays like a credential-trick
+         * but resolves to the FIRST host: the reader's eye lands on
+         * the brand after '@'. Any '\' followed later by '@' is the
+         * tell.                                                     */
+        const char *bs = strchr(raw_url, '\\');
+        const char *at = strchr(bs, '@');
+        if (at) bs_at_trick = 1;
+        for (i = 0; raw_url[i]; i++)
+            nbuf[i] = raw_url[i] == '\\' ? '/' : raw_url[i];
+        nbuf[i] = '\0';
+        raw_url = nbuf;
+    }
 
     if (!parse_url(raw_url, &u)) {
         if (raw_url && (strncmp(raw_url, "javascript:", 11) == 0
@@ -1819,6 +1848,14 @@ check_url(const char *raw_url) {
             }
         }
         return v;
+    }
+
+    /* \→/ normalized: `host\@brand` fooled the eye — flag the
+     * structural confusion itself (the real host stays checked).   */
+    if (bs_at_trick) {
+        add_reason(&v, 50,
+            "Backslash-before-@ URL — '\\' parses as '/', so the text "
+            "after '@' is NOT the host (visual authority confusion)");
     }
 
     /* @ credential trick: "https://google.com@evil.com" — the part before
@@ -2201,6 +2238,12 @@ hlse_scan(const char *input) {
     /* Detect URL by prefix */
     if (strncmp(input, "http://", 7) == 0 ||
         strncmp(input, "https://", 8) == 0 ||
+        /* \ used where // belongs — WHATWG treats it as a separator
+         * in special schemes, so the host still resolves           */
+        strncmp(input, "http:\\\\", 7) == 0 ||
+        strncmp(input, "https:\\\\", 8) == 0 ||
+        strncmp(input, "http:/\\", 7) == 0 ||
+        strncmp(input, "https:/\\", 8) == 0 ||
         strncmp(input, "javascript:", 11) == 0 ||
         strncmp(input, "data:", 5) == 0 ||
         strncmp(input, "sms:", 4) == 0 ||

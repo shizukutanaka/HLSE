@@ -791,6 +791,14 @@ printf '{\\rtf1 plain text document}' > "$SC_DIR/note.rtf"
     || check "f17 FP guard: plain RTF clean" "0" "0"
 rm -rf "$SC_DIR"
 
+# Backslash URL confusion (WHATWG: \ is a separator in special schemes)
+./hlse_core 'https:\\evil.example\@paypal.com/' 2>&1 | grep -q "Backslash-before-@" \
+    && check "bslash: \\@ authority confusion flagged" "0" "0" \
+    || check "bslash: \\@ authority confusion flagged" "0" "1"
+./hlse_core 'c:\windows\system32' 2>&1 | grep -q "Backslash" \
+    && check "bslash FP guard: windows path clean" "0" "1" \
+    || check "bslash FP guard: windows path clean" "0" "0"
+
 # HTTP auth-header secret forms (Authorization: Bearer, x-api-key)
 ./hlse_core secret 'Authorization: Bearer abcdef1234567890abcdefghij' 2>&1 | grep -q "KV_SECRET" \
     && check "kv: Authorization Bearer header flagged" "0" "0" \
