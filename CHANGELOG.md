@@ -15,6 +15,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   (`$`/`${`/`{`/`<`), function calls, uniform values, and the shared
   placeholder-marker list are suppressed; KV_SECRET reports
   confidence `heuristic` like ENV_SECRET/GENERIC_SECRET.
+- **Active-HTML-markup signal** (`hlse_text.c`): `<script`,
+  `<iframe`, `<embed`, `<object`, `srcdoc=`, `onX=` handlers,
+  `<form action`, `<base href`, `javascript:` inside scanned text
+  score 30+15/hit (cap 50) — the primary payload surface of HTML
+  email phishing and chat-based script smuggling. Inert tags
+  (`<div>`, `<p>`) are unaffected.
+
 - **Open-redirect laundering detection** (`hlse_core.c`): query
   parameters (`url=`/`next=`/`redirect=`/`return=`/`dest=`/
   `continue=`/`goto=`/`target=`/`rurl=`/`forward=`/`to=`/`out=`/…)

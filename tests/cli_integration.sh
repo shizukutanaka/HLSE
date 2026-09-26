@@ -1238,6 +1238,17 @@ fi
     && check "kv FP guard: placeholder suppressed" "0" "1" \
     || check "kv FP guard: placeholder suppressed" "0" "0"
 
+# HTML injection: active markup embedded in scanned text
+./hlse_core text 'please review <script src=https://evil.example/x.js></script>' 2>&1 | grep -q "Active HTML markup" \
+    && check "htmlinj: <script> in text flagged" "0" "0" \
+    || check "htmlinj: <script> in text flagged" "0" "1"
+./hlse_core text 'see <iframe srcdoc="<script>alert(1)</script>"></iframe>' 2>&1 | grep -q "Active HTML markup" \
+    && check "htmlinj: iframe+srcdoc flagged" "0" "0" \
+    || check "htmlinj: iframe+srcdoc flagged" "0" "1"
+./hlse_core text 'the report used <div> and <p> tags' 2>&1 | grep -q "Active HTML markup" \
+    && check "htmlinj FP guard: inert markup clean" "0" "1" \
+    || check "htmlinj FP guard: inert markup clean" "0" "0"
+
 # confidence: JSON exposes the 'confidence' field
 ./hlse_core --json secret "PASSWORD=hunter2value" 2>&1 | python3 -c '
 import sys, json
