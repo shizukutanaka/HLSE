@@ -6,6 +6,26 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Fully percent-encoded URL** (`hlse_core.c`): input starting with
+  `%` is decoded on a bounded copy; when a scheme emerges the decoded
+  form is checked as a URL plus a 25-point extraction-evasion reason.
+  Browsers reject encoded schemes, but any layer that decodes first
+  (redirect params, sanitizers, log viewers) resolves the real link.
+- **F21 meta-refresh redirect** (`hlse_file.c`): `<meta
+  http-equiv=refresh content="N;url=http(s)://…">` → 55 (or `//host`
+  → 50) — a static HTML attachment that bounces the viewer to a
+  remote page on open, invisible to gateways rendering it as HTML.
+- **New secret formats** (`hlse_secrets.c`): `AGE-SECRET-KEY-1…` (Age
+  encryption key, 90), `dop_v1_`/`dp.st.`/`dp.pt.` Doppler tokens (85).
+
+### Fixed
+
+- **`check_mnemonic` quadratic scan**: a lowercase run longer than the
+  8-char word cap (e.g. a megabyte of one letter) rescanned the run on
+  every position — the scanner now skips the whole over-long word.
+  Found by the >1 MiB stdin integration check hanging.
+
+
 - **F19 reverse-shell detection** (`hlse_file.c`): content-driven —
   `/dev/tcp/` socket redirects → 65, `nc -e`/`ncat -e`/`socat exec:` →
   60, `bash -i >&` → 60, python `socket`+`dup2`+`pty`/`/bin/sh` → 60.

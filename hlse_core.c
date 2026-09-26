@@ -2235,6 +2235,50 @@ hlse_scan(const char *input) {
     memset(&r, 0, sizeof(r));
     if (!input) return r;
 
+    /* A fully %-encoded URL ("%%68ttps://…" / "%%68%%74%%74%%70…")
+     * never reaches the scheme gate: browsers reject an encoded
+     * scheme, but anything that percent-decodes first (redirect
+     * parameters, markdown sanitizers, log viewers) resolves it —
+     * and every URL extractor in between sees plain text. Decode a
+     * bounded copy and re-dispatch when a scheme emerges.          */
+    if (input[0] == '%') {
+        char dec[2100];
+        size_t i = 0, j = 0;
+        while (input[i] && j + 1 < sizeof(dec)) {
+            if (input[i] == '%' && input[i+1] && input[i+2] &&
+                isxdigit((unsigned char)input[i+1]) &&
+                isxdigit((unsigned char)input[i+2])) {
+                dec[j++] = (char)((input[i+1] <= '9' ?
+                    input[i+1] - '0' :
+                    (input[i+1] | 32) - 'a' + 10) * 16 +
+                    (input[i+2] <= '9' ? input[i+2] - '0' :
+                     (input[i+2] | 32) - 'a' + 10));
+                i += 3;
+            } else {
+                dec[j++] = input[i++];
+            }
+        }
+        dec[j] = '\0';
+        if (j > 0 && (strncmp(dec, "http://", 7) == 0 ||
+            strncmp(dec, "https://", 8) == 0 ||
+            strncmp(dec, "ftp://", 6) == 0 ||
+            strncmp(dec, "javascript:", 11) == 0 ||
+            strncmp(dec, "data:", 5) == 0)) {
+            Verdict uv = check_url(dec);
+            add_reason(&uv, 25,
+                "Entire URL is percent-encoded — nothing sees the link "
+                "until a decoder resolves it (extraction/log evasion)");
+            r.score = uv.score;
+            r.is_url = 1;
+            r.n_reasons = uv.n_reasons;
+            { int k; const int cap =
+                (int)(sizeof(uv.reasons) / sizeof(uv.reasons[0]));
+              for (k = 0; k < uv.n_reasons && k < cap; k++)
+                memcpy(r.reasons[k], uv.reasons[k],
+                       sizeof(uv.reasons[k])); }
+            return r;
+        }
+    }
     /* Detect URL by prefix */
     if (strncmp(input, "http://", 7) == 0 ||
         strncmp(input, "https://", 8) == 0 ||
