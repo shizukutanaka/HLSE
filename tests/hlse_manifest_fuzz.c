@@ -160,6 +160,10 @@ static size_t gen_lockfile(char *buf, size_t cap, unsigned long *rng) {
         "registry = \"https://registry.npmjs.org\"",
         "index-url = https://evil-pypi.example/simple",
         "  url = https://evil.example/x.git",
+        "replace foo => evil.example/repo v1.0",
+        "foo => ./local/foo",
+        "source \"https://evil-gems.example\"",
+        "source: 'https://rubygems.org'",
         NULL
     };
     int n = 0; while (frags[n]) n++;
@@ -226,6 +230,10 @@ static void exercise(const char *buf) {
         (void)hlse_manifest_resolved_suspicious(out);
     (void)hlse_manifest_index_host(buf, out, sizeof(out));
     if (hlse_manifest_registry_host(buf, out, sizeof(out)))
+        (void)hlse_manifest_resolved_suspicious(out);
+    if (hlse_manifest_replace_host(buf, out, sizeof(out)))
+        (void)hlse_manifest_resolved_suspicious(out);
+    if (hlse_manifest_source_host(buf, out, sizeof(out)))
         (void)hlse_manifest_resolved_suspicious(out);
     hn = hlse_manifest_hook_flags(buf, hout, hsc, 4);
     (void)hn;

@@ -1421,6 +1421,100 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                         }
                     }
                 }
+                /* go.mod `replace … => host/path` substitutes a module's
+                 * source wholesale — the canonical Go supply-chain
+                 * attack; the replacement host is arbitrary by design,
+                 * so off-forge replacements are an advisory flag. */
+                if (strcmp(eco, "go") == 0) {
+                    char rphost[256];
+                    if (hlse_manifest_replace_host(line, rphost,
+                            sizeof(rphost))) {
+                        int is_forge =
+                            !hlse_manifest_resolved_suspicious(rphost);
+                        int rpsc = is_forge ? 25 : 45;
+                        char rpreason[HLSE_HOOK_REASON_LEN];
+                        char erp[256];
+                        hlse_json_escape(rphost, erp, sizeof(erp));
+                        snprintf(rpreason, sizeof(rpreason),
+                            "go.mod replace directive substitutes a module "
+                            "with %s '%s' — verify this is an intended "
+                            "internal fork",
+                            is_forge ? "forge-hosted" : "non-forge host",
+                            erp);
+                        threats++;
+                        hlse_alert_emit_rows("package", rpsc,
+                            hlse_severity_for_score(rpsc), mpath,
+                            &rpreason, HLSE_HOOK_REASON_LEN, 1);
+                        if (rpsc > max_score) max_score = rpsc;
+                        if (rpsc >= o->fail_threshold) gate_hits++;
+                        if (o->sarif_out) {
+                            hlse_sarif_add(mpath, lineno,
+                                "package-go-replace",
+                                "HLSE-PKG-GOREPLACE", rpreason, rpsc);
+                        } else if (o->json_out) {
+                            char eh7[384];
+                            hlse_json_escape(rpreason, eh7, sizeof(eh7));
+                            hlse_json_open("package");
+                            printf(",\"manifest\":\"%s\",\"score\":%d,"
+                                   "\"action\":\"%s\",\"severity\":%d,"
+                                   "\"pattern_id\":\"HLSE-PKG-GOREPLACE\","
+                                   "\"replace_host\":\"%s\","
+                                   "\"reason\":\"%s\"}\n",
+                                   mpath, rpsc,
+                                   hlse_action_for_score(rpsc),
+                                   hlse_severity_for_score(rpsc),
+                                   erp, eh7);
+                        } else {
+                            printf("%-7s [%d]  go module replace: %s\n",
+                                   hlse_action_for_score(rpsc), rpsc,
+                                   rpreason);
+                        }
+                    }
+                }
+                /* Gemfile `source "url"` / `source: "url"` — swaps the
+                 * rubygems server every gem resolves through. */
+                if (strcmp(eco, "gem") == 0) {
+                    char shost[256];
+                    if (hlse_manifest_source_host(line, shost,
+                            sizeof(shost)) &&
+                        hlse_manifest_resolved_suspicious(shost)) {
+                        int ssc = 60;
+                        char sreason[HLSE_HOOK_REASON_LEN];
+                        char esh[256];
+                        hlse_json_escape(shost, esh, sizeof(esh));
+                        snprintf(sreason, sizeof(sreason),
+                            "Gemfile source override '%s' — off the known "
+                            "registries/forges; every gem resolves through "
+                            "it (dependency confusion)", esh);
+                        threats++;
+                        hlse_alert_emit_rows("package", ssc,
+                            hlse_severity_for_score(ssc), mpath,
+                            &sreason, HLSE_HOOK_REASON_LEN, 1);
+                        if (ssc > max_score) max_score = ssc;
+                        if (ssc >= o->fail_threshold) gate_hits++;
+                        if (o->sarif_out) {
+                            hlse_sarif_add(mpath, lineno,
+                                "package-gem-source",
+                                "HLSE-PKG-GEMSOURCE", sreason, ssc);
+                        } else if (o->json_out) {
+                            char eh8[384];
+                            hlse_json_escape(sreason, eh8, sizeof(eh8));
+                            hlse_json_open("package");
+                            printf(",\"manifest\":\"%s\",\"score\":%d,"
+                                   "\"action\":\"%s\",\"severity\":%d,"
+                                   "\"pattern_id\":\"HLSE-PKG-GEMSOURCE\","
+                                   "\"source\":\"%s\",\"reason\":\"%s\"}\n",
+                                   mpath, ssc,
+                                   hlse_action_for_score(ssc),
+                                   hlse_severity_for_score(ssc),
+                                   esh, eh8);
+                        } else {
+                            printf("%-7s [%d]  suspicious gem source: %s\n",
+                                   hlse_action_for_score(ssc), ssc,
+                                   sreason);
+                        }
+                    }
+                }
                 for (;;) {
                     int got;
                     if (is_npm)

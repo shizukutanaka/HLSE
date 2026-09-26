@@ -6,6 +6,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **go.mod `replace` and Gemfile `source` checks**
+  (`hlse_manifest.c`, `hlse_cli.c`): `replace foo => host/path`
+  substitutes a module's source — off-forge hosts score 45,
+  forge-hosted 25 advisory (HLSE-PKG-GOREPLACE); local `./`/`../`
+  replacements stay clean. `source "url"`/`source: "url"` swaps the
+  whole rubygems server — off-allowlist scores 60
+  (HLSE-PKG-GEMSOURCE). `REGISTRY_HOSTS` now covers the other
+  canonical registries (rubygems.org, pypi.org, proxy.golang.org,
+  crates.io/index.crates.io, repo.maven.apache.org, nuget.org).
+
 - **Non-web URI scheme layer** (`hlse_core.c`): the URL gate was
   limited to http(s)/javascript:/data:, so every other scheme fell
   through to the text scanner clean. Now classified:

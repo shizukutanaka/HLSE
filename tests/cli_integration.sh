@@ -710,6 +710,26 @@ printf '[source.crates-io]\nregistry = "https://evil.example/idx"\n' > "$CFG_DIR
     || check "cfg: cargo config registry replace flagged" "0" "1"
 rm -rf "$CFG_DIR"
 
+# go.mod replace / Gemfile source override / open-redirect param
+GR_DIR=$(mktemp -d)
+printf 'module x\nrequire foo v1.0\nreplace foo => evil.example/repo v1.0\n' > "$GR_DIR/go.mod"
+./hlse_core package --manifest "$GR_DIR/go.mod" 2>&1 | grep -q "go module replace" \
+    && check "goreplace: off-forge replace flagged" "0" "0" \
+    || check "goreplace: off-forge replace flagged" "0" "1"
+printf 'module x\nrequire foo v1.0\nreplace foo => ./local/foo\n' > "$GR_DIR/go.mod"
+./hlse_core package --manifest "$GR_DIR/go.mod" 2>&1 | grep -q "go module replace" \
+    && check "goreplace FP guard: local-path replace clean" "0" "1" \
+    || check "goreplace FP guard: local-path replace clean" "0" "0"
+printf 'source "https://evil-gems.example"\ngem "rails"\n' > "$GR_DIR/Gemfile"
+./hlse_core package --manifest "$GR_DIR/Gemfile" 2>&1 | grep -q "gem source" \
+    && check "gemsource: off-registry source flagged" "0" "0" \
+    || check "gemsource: off-registry source flagged" "0" "1"
+printf 'source "https://rubygems.org"\ngem "rails"\n' > "$GR_DIR/Gemfile"
+./hlse_core package --manifest "$GR_DIR/Gemfile" 2>&1 | grep -q "gem source" \
+    && check "gemsource FP guard: rubygems.org clean" "0" "1" \
+    || check "gemsource FP guard: rubygems.org clean" "0" "0"
+rm -rf "$GR_DIR"
+
 # Mobile deep-link schemes (sms:/tel:/intent:) — smishing vector
 ./hlse_core 'sms:+19005551234?body=Your%20code%20is%20991' 2>&1 | grep -q "smishing" \
     && check "deeplink: sms: scheme flagged" "0" "0" \

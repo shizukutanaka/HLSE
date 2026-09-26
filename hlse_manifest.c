@@ -293,6 +293,11 @@ static const char *const REGISTRY_HOSTS[] = {
     "github.com", "codeload.github.com", "api.github.com",
     "gitlab.com", "bitbucket.org", "raw.githubusercontent.com",
     "objects.githubusercontent.com",
+    /* the other canonical package registries — a manifest may point at
+     * any of them legitimately */
+    "rubygems.org", "pypi.org", "files.pythonhosted.org",
+    "proxy.golang.org", "index.crates.io", "crates.io",
+    "repo.maven.apache.org", "nuget.org", "api.nuget.org",
     NULL
 };
 
@@ -567,6 +572,67 @@ hlse_manifest_registry_host(const char *line, char *out, size_t outcap) {
         if (at) memmove(out, at + 1, strlen(at + 1) + 1);
         { char *c = strchr(out, ':'); if (c) *c = '\0'; }
     }
+    if (!out[0] || !strchr(out, '.')) return 0;
+    return 1;
+}
+
+/* go.mod `replace` directive: `replace foo => host/path v1.0` or the
+ * block form `foo => host/path` — substitutes module source, the
+ * canonical Go supply-chain vector. Returns 1 with the replacement
+ * host in out (0 for local ./ ../ or / paths).                    */
+int
+hlse_manifest_replace_host(const char *line, char *out, size_t outcap) {
+    const char *a = strstr(line, "=>");
+    const char *t;
+    size_t n = 0;
+    if (out && outcap) out[0] = '\0';
+    if (!a || !out || outcap == 0) return 0;
+    t = a + 2;
+    while (*t == ' ' || *t == '\t' || *t == '"' || *t == '\'') t++;
+    if (*t == '.' || *t == '/') return 0;   /* local path replacement */
+    while (*t && *t != '/' && *t != ' ' && *t != '\t' &&
+           *t != '"' && *t != '\'' && *t != '\n' && *t != '\r' &&
+           n + 1 < outcap)
+        out[n++] = (char)tolower((unsigned char)*t++);
+    out[n] = '\0';
+    { char *c = strchr(out, ':'); if (c) *c = '\0'; }
+    if (!out[0] || !strchr(out, '.')) return 0;
+    return 1;
+}
+
+/* Gemfile `source "https://…"` / `source: "…"` — swaps the rubygems
+ * server. Returns 1 with the source host, or 0. */
+int
+hlse_manifest_source_host(const char *line, char *out, size_t outcap) {
+    const char *k = strstr(line, "source");
+    const char *p;
+    size_t n = 0;
+    if (out && outcap) out[0] = '\0';
+    if (!line || !out || outcap == 0) return 0;
+    while (k) {
+        int boundary = (k == line) || k[-1] == ' ' || k[-1] == '\t' ||
+                       k[-1] == '"' || k[-1] == '\'' || k[-1] == ':' ||
+                       k[-1] == '[';
+        if (boundary) break;
+        k = strstr(k + 1, "source");
+    }
+    if (!k) return 0;
+    p = k + 6;
+    while (*p == ' ' || *p == '\t') p++;
+    if (*p == '=' || *p == ':') {
+        p++;
+        while (*p == ' ' || *p == '\t' || *p == '>') p++;
+    }
+    while (*p == '"' || *p == '\'') p++;
+    if (strncmp(p, "https://", 8) == 0) p += 8;
+    else if (strncmp(p, "http://", 7) == 0) p += 7;
+    else return 0;
+    while (*p && *p != '/' && *p != '"' && *p != '\'' &&
+           *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r' &&
+           *p != ')' && *p != '>' && n + 1 < outcap)
+        out[n++] = (char)tolower((unsigned char)*p++);
+    out[n] = '\0';
+    { char *c = strchr(out, ':'); if (c) *c = '\0'; }
     if (!out[0] || !strchr(out, '.')) return 0;
     return 1;
 }

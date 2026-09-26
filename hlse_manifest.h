@@ -64,3 +64,11 @@ int hlse_manifest_key_before(const char *line, const char *pos,
  * @scope:registry= / disturl=, cargo registry=). Returns 1 with the
  * host in out, or 0. */
 int hlse_manifest_registry_host(const char *line, char *out, size_t outcap);
+
+/* go.mod replace directive target host (=> host/path), 0 for local
+ * path replacements. */
+int hlse_manifest_replace_host(const char *line, char *out, size_t outcap);
+
+/* Gemfile source "url" / source: "url" target host. Returns 1 with
+ * host, or 0. */
+int hlse_manifest_source_host(const char *line, char *out, size_t outcap);
