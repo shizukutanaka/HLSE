@@ -233,6 +233,7 @@ assert data["score"] >= 40
 ' && check "--json package parseable" "0" "0" \
    || check "--json package parseable" "0" "1"
 
+
 # ─── paste subcommand ──────────────────────────────────────────────
 
 # Safe command
@@ -337,6 +338,21 @@ assert data["hardening_band"] in ("hardened", "good", "fair", "weak")
 ./hlse_core "Press Windows + R to open the Run dialog, then type cmd to launch the command prompt." 2>&1 | grep -qE "^OK|^LOG" \
     && check "ClickFix FP guard: legit Win+R IT instruction stays low" "0" "0" \
     || check "ClickFix FP guard: legit Win+R IT instruction stays low" "0" "1"
+
+# FileFix (2025 ClickFix variant): paste path into File Explorer address bar → flagged
+./hlse_core text 'A file has been shared with you. Open File Explorer, then paste the path into the file explorer and press Enter.' 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
+    && check "FileFix Explorer-paste lure detected" "0" "0" \
+    || check "FileFix Explorer-paste lure detected" "0" "1"
+
+# FileFix amplifier: clickfix phrasing + explorer target → named in JSON reasons
+./hlse_core --json text 'To verify you are human, paste this command into the File Explorer address bar and press Enter.' 2>&1 | grep -q "FileFix" \
+    && check "FileFix amplifier labels Explorer-paste ClickFix" "0" "0" \
+    || check "FileFix amplifier labels Explorer-paste ClickFix" "0" "1"
+
+# FileFix FP guard: legit File Explorer usage (no paste-execute) → clean
+./hlse_core text 'Open File Explorer and type the folder path into the address bar to navigate there.' 2>&1 | grep -qE "^OK|^LOG" \
+    && check "FileFix FP guard: legit Explorer navigation stays low" "0" "0" \
+    || check "FileFix FP guard: legit Explorer navigation stays low" "0" "1"
 
 # Toll-road smishing (E-ZPass + urgency + payment) → ALERT/BLOCK
 ./hlse_core "E-ZPass: your account has an outstanding toll balance. Settle immediately to avoid penalties." 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \

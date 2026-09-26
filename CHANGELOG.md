@@ -6,6 +6,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **FileFix detection** (`hlse_text.c`). The mid-2025 ClickFix variant
+  that makes File Explorer the paste target (KongTuke et al., per Check
+  Point/mr.d0x): new CLICKFIX_WORDS entries cover the Explorer-address-bar
+  instruction shape, and a new amplifier adds +25 when a fired
+  paste-execute signal co-occurs with a File Explorer reference —
+  reported as "FileFix (ClickFix variant)" in JSON reasons.
+
 - **`hlse.pc` pkg-config descriptor** (`hlse.pc.in`, new; `Makefile`).
   `make install` now generates `$(PREFIX)/lib/pkgconfig/hlse.pc` (prefix
   substituted, `Version:` extracted from `HLSE_VERSION` so it cannot

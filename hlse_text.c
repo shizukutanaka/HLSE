@@ -888,6 +888,17 @@ static const char *CLICKFIX_WORDS[] = {
     "powershell -w hidden", "powershell -windowstyle hidden",
     "mshta ", "mshta.exe", "invoke-expression", "iex(", "iex (",
     "certutil -urlcache",
+    /* FileFix (mid-2025 ClickFix variant — KongTuke et al.): the paste
+     * target is the Windows File Explorer address bar, not the Run
+     * dialog. The lure pretends a file was shared and asks the user to
+     * paste "the path" into Explorer — which executes the command.   */
+    "paste into file explorer", "paste in file explorer",
+    "paste it into file explorer", "paste into the file explorer",
+    "paste the path into the file explorer",
+    "paste the path into the address bar",
+    "paste the file path into file explorer",
+    "file explorer address bar and press",
+    "explorer address bar and press",
     NULL
 };
 
@@ -1717,6 +1728,12 @@ hlse_check_text(const char *raw_text) {
             add_text_reason(&v, 25,
                 "Amplifier: run-dialog invocation + paste-execute = "
                 "ClickFix paste-and-run attack");
+        }
+        if (str_contains(lower, "file explorer")
+                || str_contains(lower, "explorer address bar")) {
+            add_text_reason(&v, 25,
+                "Amplifier: paste-execute aimed at the File Explorer "
+                "address bar = FileFix (ClickFix variant)");
         }
         if (fired_urgency) {
             add_text_reason(&v, 15,
