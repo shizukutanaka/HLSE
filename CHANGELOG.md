@@ -6,6 +6,23 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **NetNTLM-leak detection — file check F10** (`hlse_file.c`):
+  shell-metadata carriers whose icon/URL fields fetch remote resources
+  on render — desktop.ini (`[.ShellClassInfo]`+`IconResource=`), `.scf`
+  (`[Shell]`+`IconFile=`), `.library-ms`/`.searchConnector-ms` XML, any
+  `IconFile=`/`IconUNC=` key — score 70 on a `\\host\share` UNC
+  reference and 65 on WebDAV/`DavWWWRoot` (CVE-2025-24071, NCC .scf
+  advisory). The launcher path now also flags `URL=\\…` (65) and
+  `file://` targets (55) in `.url`/`.webloc`/`.desktop`, and the F9
+  `.lnk` table gained UNC/WebDAV/file:// needles.
+
+- **Terminal escape injection detection** (`hlse_text.c`): raw control
+  sequences embedded in untrusted text — OSC 52 clipboard write (65),
+  OSC 8 hyperlink where display text can differ from the target (45),
+  and any other ESC/CSI sequence that can erase or rewrite terminal
+  output (30). Detected inside `hlse_check_invisible_carriers`, so both
+  `text` and the per-line `scan` path cover it.
+
 - **Weaponized `.lnk` detection — file check F9** (`hlse_file.c`):
   verifies the LNK header (`4C000000` + fixed LinkCLSID) and scans the
   embedded UTF-16LE/ASCII command line, case-insensitively, for
