@@ -1079,7 +1079,7 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
             FILE *mf;
             char line[4096];
             int in_deps = 0, checked = 0, threats = 0, gate_hits = 0;
-            int max_score = 0, lineno = 0, run_blk = -1;
+            int max_score = 0, lineno = 0, run_blk = -1, prt_seen = 0;
             if (argc < idx + 3) {
                 fprintf(stderr, "Usage: %s package --manifest <file> [eco]\n",
                         argv[0]);
@@ -1089,7 +1089,7 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
             eco = (argc > idx + 3) ? argv[idx + 3] : hlse_manifest_ecosystem(mpath);
             if (!eco) {
                 fprintf(stderr, "Error: cannot infer ecosystem from '%s' \xe2\x80\x94 "
-                        "pass one explicitly (pip|npm|cargo|go|gem|docker|gha|mcp)\n", mpath);
+                        "pass one explicitly (pip|npm|cargo|go|gem|docker|gha|mcp|devc|vsc)\n", mpath);
                 return 2;
             }
             mf = fopen(mpath, "r");
@@ -1638,9 +1638,24 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                                  line[indent] != '\0')
                             run_blk = -1;
                     }
-                    if (hlse_manifest_gha_prt(line)) {
+                    /* pwn-request compound: pull_request_target
+                     * (secrets context) + a checkout/step that
+                     * materialises attacker refs means PR code runs
+                     * with the base repo's GITHUB_TOKEN.   */
+                    if (prt_seen &&
+                        (strstr(line, "github.head_ref") != NULL ||
+                         strstr(line, "pull_request.head") != NULL)) {
+                        gsc = 65;
+                        gid = "HLSE-PKG-GHAPWN";
+                        snprintf(greason, sizeof(greason),
+                            "pwn-request — pull_request_target job "
+                            "checks out attacker-controlled ref code "
+                            "with base-repo secrets");
+                        prt_seen = 2;   /* report once per file */
+                    } else if (hlse_manifest_gha_prt(line)) {
                         gsc = 40;
                         gid = "HLSE-PKG-GHAPRT";
+                        prt_seen = 1;
                         snprintf(greason, sizeof(greason),
                             "pull_request_target runs PR-authored code "
                             "with the base repo's secrets — verify the "
@@ -1739,7 +1754,7 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                         }
                     }
                 }
-/* Repo-supplied IDE automation: devcontainer
+                /* Repo-supplied IDE automation: devcontainer
                  * lifecycle commands and .vscode folderOpen tasks /
                  * binary-path settings execute when a reviewer opens
                  * or trusts the workspace. */

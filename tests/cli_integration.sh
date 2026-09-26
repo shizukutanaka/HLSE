@@ -7465,6 +7465,24 @@ printf '{\n"tasks": [{"command": "npm test"}]\n}\n' \
     && check "pkg: plain vscode task clean" "0" "0" \
     || check "pkg: plain vscode task clean" "0" "1"
 rm -rf "$IDIR"
+# GHA pwn-request compound: pull_request_target + head_ref checkout
+WDIR=$(mktemp -d); mkdir -p "$WDIR/.github/workflows"
+printf 'on: [pull_request_target]\njobs:\n  t:\n    steps:\n      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8\n        with:\n          ref: ${{ github.head_ref }}\n' \
+    > "$WDIR/.github/workflows/pwn.yml"
+./hlse_core package --manifest "$WDIR/.github/workflows/pwn.yml" 2>&1 \
+    | grep -q "pwn-request" \
+    && check "pkg: pull_request_target+head_ref compound flagged" \
+        "0" "0" \
+    || check "pkg: pull_request_target+head_ref compound flagged" \
+        "0" "1"
+printf 'on: [push]\njobs:\n  t:\n    steps:\n      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8\n        with:\n          ref: ${{ github.head_ref }}\n' \
+    > "$WDIR/.github/workflows/safe.yml"
+./hlse_core package --manifest "$WDIR/.github/workflows/safe.yml" \
+    2>&1 | grep -q "pwn-request" \
+    && check "pkg: head_ref without PRT not pwn-request" "0" "1" \
+    || check "pkg: head_ref without PRT not pwn-request" "0" "0"
+rm -rf "$WDIR"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
