@@ -15,6 +15,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 - **F15 .reg persistence check** (`hlse_file.c`): a `.reg` file
   writing Run/RunOnce/IFEO/Debugger/Winlogon/UserInit keys → 65 —
   the double-click autostart primitive.
+- **pyproject.toml / poetry.lock / Pipfile.lock** map to the pip
+  ecosystem; `hlse_manifest_name_pip` now extracts quoted names —
+  PEP 621 `dependencies = ["req..."]` arrays and TOML continuation
+  lines.
+
+
 - **Generic key=value credential detection** (`hlse_secrets.c`):
   `check_kv_assignment` catches freeform secret assignments that
   `PASSWORD=` constants miss — lowercase keys, spaces around the

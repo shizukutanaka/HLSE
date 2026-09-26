@@ -20,7 +20,9 @@ const char *
 hlse_manifest_ecosystem(const char *path) {
     const char *b = strrchr(path, '/');
     b = b ? b + 1 : path;
-    if (strncmp(b, "requirements", 12) == 0 || strcmp(b, "Pipfile") == 0)
+    if (strncmp(b, "requirements", 12) == 0 || strcmp(b, "Pipfile") == 0 ||
+        strcmp(b, "Pipfile.lock") == 0 || strcmp(b, "pyproject.toml") == 0 ||
+        strcmp(b, "poetry.lock") == 0)
         return "pip";
     if (strcmp(b, "package.json") == 0 ||
         strcmp(b, "package-lock.json") == 0 ||
@@ -55,12 +57,49 @@ hlse_manifest_name_pip(const char *line, char *out, size_t outcap) {
     size_t n = 0;
     while (*s == ' ' || *s == '\t') s++;
     if (*s == '\0' || *s == '\n' || *s == '#' || *s == '-') return 0;
+    /* Quoted-name form: pyproject.toml/TOML dependency arrays and
+     * continuation lines (`dependencies = ["requets==1.0",` or the
+     * `  "requets==1.0",` lines inside them). Strip a version spec or
+     * extras bracket after the name. */
+    if (*s == '"' || *s == '\'') {
+        char qc = *s++;
+        while (*s && *s != qc && n + 1 < outcap &&
+               ((*s >= 'A' && *s <= 'Z') || (*s >= 'a' && *s <= 'z') ||
+                (*s >= '0' && *s <= '9') || *s == '.' || *s == '_' ||
+                *s == '-'))
+            out[n++] = *s++;
+        out[n] = '\0';
+        return n > 0;
+    }
     while (*s && n + 1 < outcap &&
            ((*s >= 'A' && *s <= 'Z') || (*s >= 'a' && *s <= 'z') ||
             (*s >= '0' && *s <= '9') || *s == '.' || *s == '_' || *s == '-'))
         out[n++] = *s++;
     out[n] = '\0';
-    return n > 0;
+    if (n > 0) {
+        /* PEP 621 header line: `dependencies = ["name", ...]` — the
+         * first quoted entry inside the array is the package name. */
+        if ((strcmp(out, "dependencies") == 0 ||
+             strcmp(out, "requires") == 0 ||
+             strcmp(out, "dev-dependencies") == 0 ||
+             strcmp(out, "optional-dependencies") == 0)) {
+            const char *q = s;
+            while (*q && *q != '"' && *q != '\'' && *q != '\n') q++;
+            if (*q == '"' || *q == '\'') {
+                char qc = *q++;
+                n = 0;
+                while (*q && *q != qc && n + 1 < outcap &&
+                       ((*q >= 'A' && *q <= 'Z') ||
+                        (*q >= 'a' && *q <= 'z') ||
+                        (*q >= '0' && *q <= '9') || *q == '.' ||
+                        *q == '_' || *q == '-'))
+                    out[n++] = *q++;
+                out[n] = '\0';
+            }
+        }
+        return 1;
+    }
+    return 0;
 }
 
 /* Extract the next npm dependency name at/after *cursor, tracking whether we

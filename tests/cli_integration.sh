@@ -765,6 +765,14 @@ printf 'Windows Registry Editor Version 5.00\n[HKEY_CURRENT_USER\\Software\\MyAp
 ./hlse_core file "$SC_DIR/settings.reg" 2>&1 | grep -q "F15" \
     && check "f15 FP guard: ordinary .reg clean" "0" "1" \
     || check "f15 FP guard: ordinary .reg clean" "0" "0"
+printf '[project]\ndependencies = ["requets==1.0", "requests"]\n' > "$SC_DIR/pyproject.toml"
+./hlse_core package --manifest "$SC_DIR/pyproject.toml" 2>&1 | grep -q "requets" \
+    && check "pyproject: PEP621 dep typosquat flagged" "0" "0" \
+    || check "pyproject: PEP621 dep typosquat flagged" "0" "1"
+printf '[project]\ndependencies = ["requests>=2", "flask"]\n' > "$SC_DIR/pyproject.toml"
+./hlse_core package --manifest "$SC_DIR/pyproject.toml" 2>&1 | grep -q "Typosquat" \
+    && check "pyproject FP guard: real names clean" "0" "1" \
+    || check "pyproject FP guard: real names clean" "0" "0"
 rm -rf "$SC_DIR"
 
 # Mobile deep-link schemes (sms:/tel:/intent:) — smishing vector

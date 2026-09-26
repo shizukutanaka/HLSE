@@ -164,6 +164,9 @@ static size_t gen_lockfile(char *buf, size_t cap, unsigned long *rng) {
         "foo => ./local/foo",
         "source \"https://evil-gems.example\"",
         "source: 'https://rubygems.org'",
+        "\"requets==1.0\",",
+        "dependencies = [\"requets>=1\", \"requests\"]",
+        "'flask>=2',",
         NULL
     };
     int n = 0; while (frags[n]) n++;
