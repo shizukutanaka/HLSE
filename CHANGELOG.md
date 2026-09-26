@@ -6,6 +6,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **`hlse.pc` pkg-config descriptor** (`hlse.pc.in`, new; `Makefile`).
+  `make install` now generates `$(PREFIX)/lib/pkgconfig/hlse.pc` (prefix
+  substituted, `Version:` extracted from `HLSE_VERSION` so it cannot
+  drift) and `make uninstall` removes it — `pkg-config --cflags --libs
+  hlse` works against an installed tree.
+
 - **`hlsed` resident file-integrity monitor** (`hlsed.c`, `hlse_daemon.c/h`,
   `hlsed.1`, `tests/daemon_integration.sh` — 15 lifecycle checks). Every
   `scan-interval` seconds (default 60) the daemon walks each `watch`

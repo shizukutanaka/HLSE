@@ -81,6 +81,7 @@ LIBDIR  := $(DESTDIR)$(PREFIX)/lib
 INCDIR  := $(DESTDIR)$(PREFIX)/include/hlse
 MANDIR  := $(DESTDIR)$(PREFIX)/share/man/man1
 DATADIR := $(DESTDIR)$(PREFIX)/share/hlse
+PKGCDIR := $(DESTDIR)$(PREFIX)/lib/pkgconfig
 
 # Source files
 CORE_SRC  := hlse_core.c hlse_selftest.c hlse_registry.c hlse_channel.c hlse_baseline.c hlse_patterns.c hlse_sarif.c hlse_manifest.c hlse_githistory.c hlse_meta.c hlse_advisory.c hlse_emit.c hlse_cli.c hlse_text.c hlse_protect.c hlse_secrets.c hlse_supply.c hlse_file.c hlse_audit.c hlse_util.c hlse_alert.c hlse_config.c
@@ -612,7 +613,7 @@ endif
 # ─── install / uninstall ─────────────────────────────────────────────────
 
 install: $(BINARY) $(SHARED) $(DAEMON_BIN)
-	@mkdir -p $(BINDIR) $(LIBDIR) $(INCDIR) $(MANDIR) $(DATADIR)/web
+	@mkdir -p $(BINDIR) $(LIBDIR) $(INCDIR) $(MANDIR) $(DATADIR)/web $(PKGCDIR)
 	cp $(BINARY) $(BINDIR)/hlse_core
 	cp $(SHARED) $(LIBDIR)/libhlse.so
 	cp $(DAEMON_BIN) $(BINDIR)/hlsed
@@ -622,6 +623,10 @@ install: $(BINARY) $(SHARED) $(DAEMON_BIN)
 	cp hlse-server.1 $(MANDIR)/hlse-server.1
 	cp hlsed.1 $(MANDIR)/hlsed.1
 	cp web/index.html web/app.js web/style.css $(DATADIR)/web/
+	@V=$$(sed -n 's/^#define HLSE_VERSION "\(.*\)"/\1/p' hlse_core.h); \
+	sed -e 's|@PREFIX@|$(PREFIX)|g' -e "s|@VERSION@|$$V|g" \
+		hlse.pc.in > $(PKGCDIR)/hlse.pc
+	@printf '  %-20s %s\n' "GEN" "$(PKGCDIR)/hlse.pc"
 	$(CC) $(CFLAGS) $(PIE_CFLAGS) -pthread -D_GNU_SOURCE -DHLSE_CORE_AS_LIB \
 		-DHLSE_DEFAULT_WEBROOT='"$(PREFIX)/share/hlse/web"' \
 		-o $(BINDIR)/hlse-server hlse_server.c $(CORE_SRC) $(PIE_LDFLAGS) -I. -lm -lpthread
@@ -635,13 +640,16 @@ install: $(BINARY) $(SHARED) $(DAEMON_BIN)
 	@echo "  $(MANDIR)/hlse-server.1"
 	@echo "  $(MANDIR)/hlsed.1"
 	@echo "  $(DATADIR)/web/*"
+	@echo "  $(PKGCDIR)/hlse.pc"
 	@echo ""
 	@echo "Compile against: gcc -I$(PREFIX)/include -L$(PREFIX)/lib -lhlse -lm"
+	@echo "          or via: PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig pkg-config --cflags --libs hlse"
 
 uninstall:
 	rm -f $(BINDIR)/hlse_core $(BINDIR)/hlse-server $(BINDIR)/hlsed \
 		$(LIBDIR)/libhlse.so \
-		$(MANDIR)/hlse.1 $(MANDIR)/hlse-server.1 $(MANDIR)/hlsed.1
+		$(MANDIR)/hlse.1 $(MANDIR)/hlse-server.1 $(MANDIR)/hlsed.1 \
+		$(PKGCDIR)/hlse.pc
 	rm -rf $(INCDIR) $(DATADIR)
 
 # ─── clean ───────────────────────────────────────────────────────────────

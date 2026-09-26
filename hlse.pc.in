@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: hlse
+Description: Dependency-free multi-vector security detection engine (URL/text/secrets/supply-chain/file/protect/audit)
+URL: https://github.com/shizukutanaka/HLSE
+Version: @VERSION@
+Libs: -L${libdir} -lhlse
+Libs.private: -lm
+Cflags: -I${includedir}
