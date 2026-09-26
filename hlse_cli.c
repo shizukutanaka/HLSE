@@ -1090,7 +1090,7 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
             eco = (argc > idx + 3) ? argv[idx + 3] : hlse_manifest_ecosystem(mpath);
             if (!eco) {
                 fprintf(stderr, "Error: cannot infer ecosystem from '%s' \xe2\x80\x94 "
-                        "pass one explicitly (pip|npm|cargo|go|gem|docker|gha|mcp|devc|vsc|pck|glci|comp|plat)\n", mpath);
+                        "pass one explicitly (pip|npm|cargo|go|gem|docker|gha|mcp|devc|vsc|pck|glci|comp|plat|nuget)\n", mpath);
                 return 2;
             }
             mf = fopen(mpath, "r");
@@ -1550,6 +1550,53 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                         printf("%-7s [%d]  cargo patch table: %s\n",
                                hlse_action_for_score(psc), psc,
                                preason);
+                    }
+                }
+                /* nuget.config <packageSources><add value="url"> —
+                 * adds/changes where every .NET package resolves from;
+                 * an off-registry host substitutes all packages
+                 * (the .NET form of the npmrc registry= hijack). */
+                if (strcmp(eco, "nuget") == 0) {
+                    char nhost[256];
+                    if (hlse_manifest_nuget_source(line, nhost,
+                            sizeof(nhost)) &&
+                        hlse_manifest_resolved_suspicious(nhost)) {
+                        int nsc = 45;
+                        char nreason[HLSE_HOOK_REASON_LEN];
+                        char enh[256];
+                        hlse_json_escape(nhost, enh, sizeof(enh));
+                        snprintf(nreason, sizeof(nreason),
+                            "nuget.config package source '%s' is outside "
+                            "the official NuGet feed — all resolved "
+                            "packages substitute through it", enh);
+                        threats++;
+                        hlse_alert_emit_rows("package", nsc,
+                            hlse_severity_for_score(nsc), mpath,
+                            &nreason, HLSE_HOOK_REASON_LEN, 1);
+                        if (nsc > max_score) max_score = nsc;
+                        if (nsc >= o->fail_threshold) gate_hits++;
+                        if (o->sarif_out) {
+                            hlse_sarif_add(mpath, lineno,
+                                "package-nuget-source",
+                                "HLSE-PKG-NUGETSRC", nreason, nsc);
+                        } else if (o->json_out) {
+                            char eh7d[384];
+                            hlse_json_escape(nreason, eh7d, sizeof(eh7d));
+                            hlse_json_open("package");
+                            printf(",\"manifest\":\"%s\",\"score\":%d,"
+                                   "\"action\":\"%s\",\"severity\":%d,"
+                                   "\"pattern_id\":\"HLSE-PKG-NUGETSRC\","
+                                   "\"source_host\":\"%s\","
+                                   "\"reason\":\"%s\"}\n",
+                                   mpath, nsc,
+                                   hlse_action_for_score(nsc),
+                                   hlse_severity_for_score(nsc),
+                                   enh, eh7d);
+                        } else {
+                            printf("%-7s [%d]  nuget package source: %s\n",
+                                   hlse_action_for_score(nsc), nsc,
+                                   nreason);
+                        }
                     }
                 }
                 /* Gemfile `source "url"` / `source: "url"` — swaps the

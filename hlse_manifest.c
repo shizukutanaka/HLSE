@@ -111,6 +111,13 @@ hlse_manifest_ecosystem(const char *path) {
         strcmp(b, ".pre-commit-config.yml") == 0 ||
         strcmp(b, "pre-commit-config.yaml") == 0)
         return "pck";
+    /* NuGet config: <packageSources><add value="url"> swaps where
+     * every package resolves from — the .NET form of registry hijack */
+    if (strcmp(b, "nuget.config") == 0 || strcmp(b, "NuGet.Config") == 0 ||
+        strcmp(b, "packages.config") == 0 ||
+        strcmp(b, "Directory.Packages.props") == 0 ||
+        strcmp(b, "directory.packages.props") == 0)
+        return "nuget";
     return NULL;
 }
 
@@ -739,6 +746,40 @@ hlse_manifest_cargo_patch(const char *line) {
            strcmp(p, "[patch]") == 0 ||
            strncmp(p, "[patch]", 7) == 0 ||
            strncmp(p, "[replace]", 9) == 0;
+}
+
+/* nuget.config `<packageSources><add key="…" value="URL"/>` — an XML
+ * attribute carrying the source URL. Extracts the host of a `value=`
+ * (or `key=`-bearing `<add`) that is an http(s) URL. Returns 1 with
+ * the lowercased host in out, or 0. */
+int
+hlse_manifest_nuget_source(const char *line, char *out, size_t outcap) {
+    const char *v;
+    size_t n = 0;
+    if (out && outcap) out[0] = '\0';
+    if (!line || !out || outcap == 0) return 0;
+    if (!strstr(line, "<add") && !strstr(line, "<packageSource"))
+        return 0;
+    v = strstr(line, "value");
+    if (v) {
+        v += 5;
+        while (*v == ' ' || *v == '\t' || *v == '=' || *v == '"' ||
+               *v == '\'')
+            v++;
+    } else {
+        v = strstr(line, "http");
+    }
+    if (!v) return 0;
+    if (strncmp(v, "http://", 7) && strncmp(v, "https://", 8))
+        return 0;
+    v = strstr(v, "://") + 3;
+    while (*v && *v != '/' && *v != '"' && *v != '\'' && *v != ' ' &&
+           *v != '\t' && *v != '\n' && *v != '\r' && *v != '>' &&
+           n + 1 < outcap)
+        out[n++] = (char)tolower((unsigned char)*v++);
+    out[n] = '\0';
+    { char *c = strchr(out, ':'); if (c) *c = '\0'; }
+    return out[0] && strchr(out, '.') ? 1 : 0;
 }
 
 /* Gemfile `source "https://…"` / `source: "…"` — swaps the rubygems

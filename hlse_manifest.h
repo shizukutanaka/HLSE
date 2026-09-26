@@ -77,6 +77,10 @@ int hlse_manifest_replace_local(const char *line);
  * redirection table header line. */
 int hlse_manifest_cargo_patch(const char *line);
 
+/* nuget.config <add … value="url"> package-source host. Returns 1
+ * with the lowercased host in out, or 0. */
+int hlse_manifest_nuget_source(const char *line, char *out, size_t outcap);
+
 /* Gemfile source "url" / source: "url" target host. Returns 1 with
  * host, or 0. */
 int hlse_manifest_source_host(const char *line, char *out, size_t outcap);
