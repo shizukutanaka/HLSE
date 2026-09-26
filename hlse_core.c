@@ -2112,6 +2112,72 @@ check_url(const char *raw_url) {
         }
     }
 
+    /* Open-redirect laundering: ?next=/?url=/?redirect=… pointing at an
+     * absolute URL on a DIFFERENT host — the displayed trusted domain
+     * forwards to the attacker's. Phishing kits staple this onto big
+     * brands (Microsoft/Google/DocuSign). A relative target is fine. */
+    {
+        static const char *const RDIR[] = {
+            "url=", "next=", "redirect=", "redirect_uri=", "redir=",
+            "return=", "return_url=", "dest=", "destination=",
+            "continue=", "goto=", "target=", "rurl=", "forward=",
+            "to=", "out=", NULL
+        };
+        char q[2048];
+        const char *qm = strchr(raw_url, '?');
+        if (qm) {
+            size_t ql = strlen(qm);
+            int i;
+            if (ql >= sizeof(q)) ql = sizeof(q) - 1;
+            for (i = 0; i < (int)ql; i++)
+                q[i] = (char)tolower((unsigned char)qm[i]);
+            q[ql] = '\0';
+            for (i = 0; RDIR[i]; i++) {
+                const char *hit = q;
+                size_t kl = strlen(RDIR[i]);
+                while ((hit = strstr(hit, RDIR[i])) != NULL) {
+                    /* key boundary: at query start ('?') or after '&' */
+                    const char *val;
+                    char ihost[MAX_HOST];
+                    size_t hn = 0;
+                    const char *h;
+                    if (hit != q && hit[-1] != '&' && hit[-1] != '?')
+                        { hit += kl; continue; }
+                    val = hit + kl;
+                    if (strncmp(val, "https://", 8) == 0) val += 8;
+                    else if (strncmp(val, "http://", 7) == 0) val += 7;
+                    else if (strncmp(val, "https%3a%2f%2f", 14) == 0)
+                        val += 14;
+                    else if (strncmp(val, "http%3a%2f%2f", 13) == 0)
+                        val += 13;
+                    else { hit += kl; continue; }
+                    h = val;
+                    while (*h && *h != '/' && *h != '&' && *h != '%' &&
+                           *h != '#' && hn + 1 < sizeof(ihost))
+                        ihost[hn++] = *h++;
+                    ihost[hn] = '\0';
+                    { char *c = strchr(ihost, ':');
+                      if (c) *c = '\0'; }
+                    { char *at = strrchr(ihost, '@');
+                      if (at) memmove(ihost, at + 1,
+                                      strlen(at + 1) + 1); }
+                    if (ihost[0] && strcmp(ihost, u.host) != 0) {
+                        size_t oh = strlen(u.host), ih = hn;
+                        int subdomain = ih > oh + 1 &&
+                            ihost[ih - oh - 1] == '.' &&
+                            strcmp(ihost + ih - oh, u.host) == 0;
+                        if (!subdomain)
+                            add_reason(&v, 40,
+                                "Open-redirect parameter '%.*s' targets "
+                                "'%s' — trusted domain launders a foreign "
+                                "destination", (int)kl - 1, hit, ihost);
+                    }
+                    hit += kl;
+                }
+            }
+        }
+    }
+
     if (!u.is_https && v.score > 0) {
         add_reason(&v, 5, "Non-HTTPS connection");
     }

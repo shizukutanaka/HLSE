@@ -730,6 +730,19 @@ printf 'source "https://rubygems.org"\ngem "rails"\n' > "$GR_DIR/Gemfile"
     || check "gemsource FP guard: rubygems.org clean" "0" "0"
 rm -rf "$GR_DIR"
 
+./hlse_core 'https://trusted.example/?next=https://evil.example/login' 2>&1 | grep -q "Open-redirect" \
+    && check "openredir: cross-host next= flagged" "0" "0" \
+    || check "openredir: cross-host next= flagged" "0" "1"
+./hlse_core 'https://t.example/?return_url=https%3a%2f%2fevil.example%2fph' 2>&1 | grep -q "Open-redirect" \
+    && check "openredir: %-encoded target flagged" "0" "0" \
+    || check "openredir: %-encoded target flagged" "0" "1"
+./hlse_core 'https://trusted.example/?next=/dashboard' 2>&1 | grep -q "Open-redirect" \
+    && check "openredir FP guard: relative target clean" "0" "1" \
+    || check "openredir FP guard: relative target clean" "0" "0"
+./hlse_core 'https://a.example/?next=https://sub.a.example/x' 2>&1 | grep -q "Open-redirect" \
+    && check "openredir FP guard: same-site subdomain clean" "0" "1" \
+    || check "openredir FP guard: same-site subdomain clean" "0" "0"
+
 # Mobile deep-link schemes (sms:/tel:/intent:) — smishing vector
 ./hlse_core 'sms:+19005551234?body=Your%20code%20is%20991' 2>&1 | grep -q "smishing" \
     && check "deeplink: sms: scheme flagged" "0" "0" \

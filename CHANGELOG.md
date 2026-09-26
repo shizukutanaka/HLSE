@@ -6,6 +6,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Open-redirect laundering detection** (`hlse_core.c`): query
+  parameters (`url=`/`next=`/`redirect=`/`return=`/`dest=`/
+  `continue=`/`goto=`/`target=`/`rurl=`/`forward=`/`to=`/`out=`/…)
+  carrying an absolute URL whose host differs from the outer host
+  score 40 — the trusted-domain-forwards-to-attacker staple of
+  phishing kits. `%3a%2f%2f`-encoded targets recognised; relative
+  and same-site (subdomain) targets stay clean.
 - **go.mod `replace` and Gemfile `source` checks**
   (`hlse_manifest.c`, `hlse_cli.c`): `replace foo => host/path`
   substitutes a module's source — off-forge hosts score 45,
