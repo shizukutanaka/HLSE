@@ -175,6 +175,9 @@ static int char_upper_digit(char c) {
 
 /* Digits only — used for URL-anchored tokens whose first segment is a numeric
  * ID (e.g. a Discord webhook ID after `.../webhooks/`). */
+static int is_hex_c(char c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+}
 static int is_digit_c(char c) {
     return (c >= '0' && c <= '9');
 }
@@ -358,6 +361,14 @@ static const SecretPattern SECRET_PATTERNS[] = {
 
     /* 1Password service account token */
     { "ops_v",            5, 20, is_alnum_or_dash, "1Password Service Account Token", 85 },
+
+    /* Discord MFA token (mfa. prefix + ~84-char session secret) */
+    { "mfa.",            4, 30, is_alnum_or_dash, "Discord MFA Token",       85 },
+
+    /* Twilio Account SID / API Key — AC/SK + exactly 32 lowercase hex.
+     * Hex-only suffix keeps false positives low (short 2-char prefix). */
+    { "AC",              2, 32, is_hex_c,          "Twilio Account SID",     70 },
+    { "SK",              2, 32, is_hex_c,          "Twilio API Key",         70 },
 
     /* ── 2026 formats (GitHub secret-scanning Mar-2026 detector batch) ──
      * All have unique, vendor-reserved prefixes, so false positives are

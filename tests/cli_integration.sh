@@ -8162,6 +8162,35 @@ printf 'name: y\nbuild-type: Simple\n' > "$XDIR/ok.cabal"
 ./hlse_core 'https://example.com/safe' 2>&1 | grep -q "URI-handler\|Remote-mount" \
     && check "url: plain https no scheme flag" "0" "1" \
     || check "url: plain https no scheme flag" "0" "0"
+# secrets: Discord MFA + Twilio SID/API-key formats (split literals —
+# push protection blocks contiguous token-shaped strings)
+./hlse_core secret -- 'mfa.aBcDeFgHiJkLmNoPqRsTuVwXyZ0'"123456789abcdef" 2>&1 \
+    | grep -q "Discord MFA Token" \
+    && check "secret: discord mfa token flagged" "0" "0" \
+    || check "secret: discord mfa token flagged" "0" "1"
+./hlse_core secret -- 'ACa1b2c3d4e5f6a7b8'"c9d0e1f2a3b4c5d6" 2>&1 \
+    | grep -q "Twilio Account SID" \
+    && check "secret: twilio account sid flagged" "0" "0" \
+    || check "secret: twilio account sid flagged" "0" "1"
+./hlse_core secret -- 'SK0123456789abcdef'"0123456789abcdef" 2>&1 \
+    | grep -q "Twilio API Key" \
+    && check "secret: twilio api key flagged" "0" "0" \
+    || check "secret: twilio api key flagged" "0" "1"
+./hlse_core secret -- 'ACGHIJK1234' 2>&1 | grep -q "Twilio" \
+    && check "secret: short non-hex AC no flag" "0" "1" \
+    || check "secret: short non-hex AC no flag" "0" "0"
+# text: CJK multibyte must not trip ESC/CSI; JP scam co-occurrence fires
+./hlse_core text '国民健康保険の払い戻しがあります。コンビニで電子マネーを購入してください' \
+    2>&1 | grep -q "Terminal control" \
+    && check "text: CJK no ESC false positive" "0" "1" \
+    || check "text: CJK no ESC false positive" "0" "0"
+./hlse_core text '国民健康保険の払い戻しがあります。コンビニで電子マネーを購入してください' \
+    2>&1 | grep -q "Financial/credential req" \
+    && check "text: jp refund-emoney scam flagged" "0" "0" \
+    || check "text: jp refund-emoney scam flagged" "0" "1"
+./hlse_core text '今日はATMで買い物した' 2>&1 | grep -q "Financial/credential req" \
+    && check "text: benign jp atm no flag" "0" "1" \
+    || check "text: benign jp atm no flag" "0" "0"
 # F52–F55: server-config carriers
 printf 'AddType application/x-httpd-php .jpg\nphp_flag engine on\n' \
     > "$XDIR/.htaccess"

@@ -4,8 +4,29 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Fixed
+
+- **CJK false positive in terminal-escape detection** (`hlse_text.c`):
+  the carrier scanner treated every bare `0x9B`/`0x9D` byte as CSI/OSC,
+  but those are valid UTF-8 continuation bytes — ordinary CJK text
+  (e.g. 電 = `E9 9B BB`, 購 = `E8 B3 BC`) hit "Terminal control
+  sequence" and scored BLOCK. A UTF-8 lead byte now consumes its whole
+  multibyte sequence before the byte is considered.
+
 ### Added
 
+- **Discord MFA + Twilio secret formats** (`hlse_secrets.c`): `mfa.`
+  (Discord MFA token) → 85; `AC`/`SK` + 32 lowercase hex (Twilio
+  Account SID / API Key) → 70 — new `is_hex_c` predicate keeps the
+  2-char prefixes' false positives low.
+- **Japanese refund/e-money scam vocabulary** (`hlse_text.c`): the
+  "還付金 at the ATM" / convenience-store e-money scam was invisible
+  because a lone `還付金` scores 12 — under the LOG floor. Added the
+  co-occurrence markers the police/FSA advisories document —
+  `atmで`, `コンビニで`, `電子マネー`, `プリペイド`, `webmoney`,
+  `ビットキャッシュ`, `払い戻し`, `還付`, `ご返金`, `保険料`, `年金`,
+  `国保`, `国民健康保険`, `振り込め`, `送金してください` — so the
+  two-signal pattern fires.
 - **Scheme-table sync + remote-mount schemes** (`hlse_core.c`): the URL
   scheme tables moved to file scope so `hlse_scan`'s "is this a URL"
   prefix check and `check_url`'s scoring read the same lists — ten
