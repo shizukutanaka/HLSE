@@ -576,6 +576,44 @@ hlse_check_paste(const char *text) {
                 "the pipe-to-shell cradle without the pipe");
     }
 
+    /* P13: Listener / privilege-escalation one-liners — a bind shell,
+     * a staging/exfil HTTP server, or a SUID bit install. These are
+     * pastejacked post-exploitation verbs, not admin commands: nobody
+     * needs `nc -l` or `chmod +s` in pasted content.            */
+    if (strstr(text, "nc -l") || strstr(text, "ncat -l") ||
+        strstr(text, "netcat -l") || strstr(text, " -lv") ||
+        strstr(text, "nc -p ")) {
+        v.signals |= PASTE_LISTENER_PRIV;
+        v.score += 45;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P13: Bind-shell listener — 'nc -l'/'ncat -l' opens a "
+                "shell port for the attacker to connect back to");
+    }
+    if (strstr(text, "chmod +s") || strstr(text, "chmod u+s") ||
+        strstr(text, "chmod 4") || strstr(text, "chmod 6") ||
+        strstr(text, "setuid") || strstr(text, "u+s ")) {
+        v.signals |= PASTE_LISTENER_PRIV;
+        v.score += 55;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P13: SUID/setuid bit install — pasted privilege "
+                "escalation primitive");
+    }
+    if ((strstr(text, "-m http.server") || strstr(text, "php -S ") ||
+         strstr(text, "SimpleHTTPServer") || strstr(text, "busybox httpd") ||
+         strstr(text, "-ehttpd")) &&
+        (strstr(text, "python") || strstr(text, "php") ||
+         strstr(text, "busybox") || strstr(text, "ruby") ||
+         strstr(text, "-m "))) {
+        v.signals |= PASTE_LISTENER_PRIV;
+        v.score += 35;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P13: Ad-hoc HTTP server — staged payload hosting / "
+                "loot-exfil listener");
+    }
+
     /* P8: Windows "ClickFix" / LOLBin remote execution. ClickFix lures (fake
      * CAPTCHA or browser-update pages) tell the victim to press Win+R and
      * paste a one-liner that runs PowerShell or a living-off-the-land binary.
@@ -695,10 +733,18 @@ hlse_check_paste(const char *text) {
             (strstr(text, "subprocess") || strstr(text, "os.dup2") ||
              strstr(text, "pty.spawn")))
             is_revshell = 1;
-        /* socat reverse shell */
+        /* socat reverse shell — address keywords are case-insensitive */
         if (!is_revshell &&
-            strstr(text, "socat") &&
-            (strstr(text, "EXEC:") || strstr(text, "TCP:")))
+            ci_contains(text, "socat") &&
+            (ci_contains(text, "exec:") || ci_contains(text, "tcp:") ||
+             ci_contains(text, "tcp4:") || ci_contains(text, "tcp6:") ||
+             ci_contains(text, "tcp-l")))
+            is_revshell = 1;
+        /* php/perl one-liner reverse shells: fsockopen/socket → exec */
+        if (!is_revshell &&
+            (strstr(text, "php -r") || strstr(text, "perl -e")) &&
+            (strstr(text, "fsockopen") || strstr(text, "socket_create") ||
+             strstr(text, "IO::Socket")))
             is_revshell = 1;
         if (is_revshell) {
             v.score += 60;

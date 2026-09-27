@@ -989,6 +989,9 @@ is_rc_persist_name(const char *basename) {
     str_lower(basename, low, sizeof(low));
     for (i = 0; names[i]; i++)
         if (strcmp(low, names[i]) == 0) return 1;
+    /* kubeconfig / *.kubeconfig — dropped kubeconfigs carry cluster
+     * creds and exec plugins that run on every kubectl call      */
+    if (strstr(low, "kubeconfig") != NULL) return 1;
     return 0;
 }
 
@@ -1063,6 +1066,14 @@ rc_persist_score(const unsigned char *head, size_t len,
         sc = sc < 55 ? 55 : sc;
     if (strstr(low, "exec:") && strstr(low, "command:"))
         sc = sc < 55 ? 55 : sc;
+    /* kubeconfig credential container — a dropped kubeconfig hands
+     * over cluster access (token/client-key/password) even without
+     * an exec plugin                                          */
+    if (strstr(low, "clusters:") && strstr(low, "users:") &&
+        (strstr(low, "token") || strstr(low, "client-key") ||
+         strstr(low, "password") || strstr(low, "client-certificate-data") ||
+         strstr(low, "client-key-data")))
+        sc = sc < 45 ? 45 : sc;
     /* .envrc is a shell script direnv runs on `cd` — after the
      * one-time `direnv allow` the reviewer rubber-stamps, every
      * visit re-executes it. Only exec-shaped content flags; a plain

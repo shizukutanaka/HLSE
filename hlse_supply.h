@@ -54,6 +54,7 @@ PackageVerdict hlse_check_package(const char *pkg_name,
 #define PASTE_CRED_ACCESS     0x200  /* reads of private keys / cloud creds / auth DBs */
 #define PASTE_PERSIST_WRITE   0x400  /* append/enable to rc, crontab, systemd, launchd */
 #define PASTE_EVAL_FETCH      0x800  /* eval/source of fetched content (non-pipe cradle) */
+#define PASTE_LISTENER_PRIV   0x1000 /* bind-shell listener / SUID bit / staging server */
 
 typedef struct {
     int  score;              /* 0..100 */

@@ -15,6 +15,25 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Paste: listener / privilege-escalation one-liners** (`hlse_supply.c`,
+  `hlse_supply.h`): new P13 signal (`PASTE_LISTENER_PRIV`) —
+  bind-shell listeners (`nc -l`, `ncat -l`, `netcat -l`, ` -lv`,
+  `nc -p`) → 45; SUID/setuid installs (`chmod +s`, `chmod u+s`,
+  `chmod 4…`/`6…`, `u+s`, `setuid`) → 55; ad-hoc HTTP servers
+  (`python -m http.server`, `php -S`, `SimpleHTTPServer`,
+  `busybox httpd`, `ruby -ehttpd`) → 35 — staged payload hosting /
+  loot-exfil listeners.
+- **Paste: reverse-shell coverage widened** (`hlse_supply.c`): the
+  socat detector now matches address keywords case-insensitively
+  (`exec:`/`tcp:`/`tcp4:`/`tcp6:`/`tcp-l`), and `php -r`/`perl -e`
+  one-liners carrying `fsockopen`/`socket_create`/`IO::Socket` join
+  the reverse-shell class (60).
+- **kubeconfig carrier** (`hlse_file.c`): basenames containing
+  `kubeconfig` enter the rc-persist gate — `exec:` + `command:`
+  (credential-plugin exec on every kubectl call) → 55, and
+  `clusters:` + `users:` carrying `token`/`client-key`/`password`/
+  `client-*-data` → 45 (a dropped kubeconfig hands over cluster
+  access).
 - **IPv4-mapped IPv6 SSRF evasion** (`hlse_core.c`): `[::ffff:a.b.c.d]`
   and `[::ffff:HHHH:HHHH]` literal hosts launder an internal v4 address
   past dotted-quad checks — the mapped tail is now evaluated as v4:

