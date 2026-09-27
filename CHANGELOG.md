@@ -15,6 +15,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Notebook / data-connection extensions** (`hlse_file.c`):
+  `.ipynb` (Jupyter — code cells execute; output cells can carry
+  executable HTML/JS rendered on open) and `.odc` (Office Data
+  Connection — OLE DB string + command text hits attacker
+  backends) →30. `.htaccess` confirmed already covered by the
+  F52 server-config check (`AddType x-httpd-php` →55).
 - **Legacy Office / template file extensions** (`hlse_file.c`):
   `.dotm`/`.xltm`/`.sldm` (macro-enabled templates), `.docb`
   (binary .docm), `.mdb`/`.accdb` (Access VBA + autoexec),

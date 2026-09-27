@@ -281,6 +281,12 @@ static const char *EXECUTABLE_EXTS[] = {
     ".mdb", ".accdb", ".vsdx", ".vsdm", ".pub", ".wpd",
     /* Excel Internet Query — fetches and executes remote content when opened */
     ".iqy",
+    /* Jupyter notebook — code cells run on execution and output cells
+     * can carry executable HTML/JS that renders on open            */
+    ".ipynb",
+    /* Office Data Connection — OLE DB connection string + command
+     * text drives queries against attacker-controlled backends    */
+    ".odc",
     /* Windows Theme/ThemeBleed (CVE-2023-38146): NTLM hash theft via UNC path */
     ".theme", ".themepack", ".deskthemepack",
     /* Explorer/library/search hijack files — .library-ms forces Explorer

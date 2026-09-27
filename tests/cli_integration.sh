@@ -10072,6 +10072,26 @@ done
     || check "package: express legit clean" "0" "1"
 rm -rf "$XDIR82"
 
+# ── cycle-83: notebook + office-data-connection extensions ──
+XDIR83=$(mktemp -d /tmp/hlse83.XXXXXX)
+printf '{"cells":[]}' > "$XDIR83/a.ipynb"
+printf '<connection>oledb</connection>' > "$XDIR83/b.odc"
+printf 'AddType application/x-httpd-php .jpg\n' > "$XDIR83/.htaccess"
+printf 'Options +FollowSymLinks\n' > "$XDIR83/htaccess.bak"
+./hlse_core file "$XDIR83/a.ipynb" 2>&1 | grep -q "LOG\|ALERT\|BLOCK" \
+    && check "file: ipynb flagged" "0" "0" \
+    || check "file: ipynb flagged" "0" "1"
+./hlse_core file "$XDIR83/b.odc" 2>&1 | grep -q "LOG\|ALERT\|BLOCK" \
+    && check "file: odc flagged" "0" "0" \
+    || check "file: odc flagged" "0" "1"
+./hlse_core file "$XDIR83/.htaccess" 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "file: htaccess php-handler flagged" "0" "0" \
+    || check "file: htaccess php-handler flagged" "0" "1"
+./hlse_core file "$XDIR83/htaccess.bak" 2>&1 | grep -q "OK" \
+    && check "file: htaccess.bak benign" "0" "0" \
+    || check "file: htaccess.bak benign" "0" "1"
+rm -rf "$XDIR83"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
