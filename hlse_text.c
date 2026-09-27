@@ -1451,6 +1451,24 @@ static const char *SSTI_CHAIN_WORDS[] = {
     "<%= runtime", "request.application", NULL
 };
 
+/* LOLBin download/exec primitives — living-off-the-land binaries whose
+ * specific flag forms exist ONLY to fetch or run remote payloads
+ * (certutil -urlcache has no other purpose; mshta/regsvr32/msiexec with
+ * an http(s) arg are the classic Squiblydoo-style loaders; wmic
+ * process call create and powershell -enc are the encoded-payload
+ * standard). Like SHELL_PIPE words, the pasted command line is itself
+ * the threat — documenting the technique is not a FP at this tier.   */
+static const char *LOLBIN_WORDS[] = {
+    "certutil -urlcache", "certutil -split", "bitsadmin /transfer",
+    "bitsadmin /create", "mshta http", "mshta javascript",
+    "mshta vbscript", "regsvr32 /i:", "scrobj.dll",
+    "msiexec /i http", "msiexec /q /i http",
+    "wmic process call create", "powershell -enc",
+    "powershell.exe -enc", "pwsh -enc", "-encodedcommand",
+    "rundll32 javascript:", "rundll32 url.dll", "msbuild.exe http",
+    NULL
+};
+
 static const Signal SIGNALS[] = {
     { "Urgency pressure",           URGENCY_WORDS,    8,  8, 25 },
     { "Financial/credential req",   BAIT_WORDS,      12, 12, 36 },
@@ -1479,6 +1497,7 @@ static const Signal SIGNALS[] = {
     { "Active HTML markup in text", HTML_INJECT_WORDS, 30, 15, 50 },
     { "JNDI/EL exploit lookup payload", EXPLOIT_LOOKUP_WORDS, 60, 15, 75 },
     { "SSTI template-probe chain",  SSTI_CHAIN_WORDS,     35, 10, 60 },
+    { "LOLBin download/exec primitive", LOLBIN_WORDS,     50, 15, 70 },
     { NULL, NULL, 0, 0, 0 }
 };
 

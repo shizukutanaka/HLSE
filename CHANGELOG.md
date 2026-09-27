@@ -15,6 +15,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **LOLBin download/exec primitives in text** (`hlse_text.c`): new
+  `LOLBIN` signal — flag forms whose only purpose is fetching or
+  executing remote payloads: `certutil -urlcache`/`-split`, `bitsadmin
+  /transfer`, `mshta http|javascript|vbscript`, `regsvr32 /i:` +
+  `scrobj.dll` (Squiblydoo), `msiexec /i http` (remote MSI),
+  `wmic process call create`, `powershell|pwsh -enc`/
+  `-EncodedCommand`, `rundll32 javascript:`/`url.dll`, `msbuild.exe
+  http`. →50+15/cap70 (single hit ALERT, combined with a URL the
+  other signals lift it to BLOCK/ISOLATE). Benign `certutil
+  -encode`/`-verifyctl`, `schtasks`, and narrative mentions stay OK.
 - **Dev-platform / mapping secret formats** (`hlse_secrets.c`):
   Mapbox `sk.eyJ`/`pk.eyJ` (base64url JWT segments — new
   `is_alnum_dash_dot` predicate), Grafana `glsa_` service accounts,
