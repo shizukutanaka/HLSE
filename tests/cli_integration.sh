@@ -10352,6 +10352,20 @@ done
     || check "file: benign txt clean" "0" "1"
 rm -rf "$XDIR95"
 
+# ── cycle-96: Chromium-derived browser-internal schemes ──
+for u in 'edge://flags' 'opera://settings' 'brave://rewards' \
+         'vivaldi://bookmarks' 'yandex://browser/settings'; do
+    ./hlse_core "$u" 2>&1 | grep -q "LOG" \
+        && check "url: ${u} browser-internal scheme flagged" "0" "0" \
+        || check "url: ${u} browser-internal scheme flagged" "0" "1"
+done
+./hlse_core 'edge://settings?http://evil.example' 2>&1 | grep -q "ALERT" \
+    && check "url: edge:// hiding http target escalates" "0" "0" \
+    || check "url: edge:// hiding http target escalates" "0" "1"
+./hlse_core 'http://legit.example.com' 2>&1 | grep -q "OK" \
+    && check "url: plain http stays OK" "0" "0" \
+    || check "url: plain http stays OK" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

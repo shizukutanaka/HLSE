@@ -15,6 +15,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Chromium-derived browser-internal schemes** (`hlse_core.c`):
+  `edge:`/`opera:`/`brave:`/`vivaldi:`/`yandex:` joined the URL-wrapper
+  table — `chrome:`/`about:`/`moz-extension:`/`chrome-extension:`
+  already scored 35/40 but the major derivative browsers' internal
+  schemes fell through to OK despite being the same internal-page /
+  extension-surface class. Registered in both the scoring table and
+  the `hlse_scan` dispatcher (the two must stay in sync).
 - **Remaining payment/dev-tool secret formats** (`hlse_secrets.c`):
   Razorpay `rzp_live_`/`rzp_test_` (IN's dominant gateway), Mercado
   Pago `APP_USR-` (LATAM's dominant), Flutterwave `FLWSECK-`/`FLWPUBK-`

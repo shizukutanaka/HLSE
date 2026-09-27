@@ -1708,7 +1708,11 @@ detect_idn_homograph(const ParsedUrl *u, Verdict *v) {
 static const char *const URL_WRAPPER_SCHEMES[] = {
     "jar:", "blob:", "view-source:", "filesystem:",
     "ms-appx:", "ms-appx-web:", "chrome:", "about:",
-    "moz-extension:", "chrome-extension:", NULL
+    "moz-extension:", "chrome-extension:",
+    /* Chromium-derived browser-internal schemes — same class as
+     * chrome:/about: (internal page / extension surface); previously
+     * chrome: alone flagged while its siblings fell through to OK   */
+    "edge:", "opera:", "brave:", "vivaldi:", "yandex:", NULL
 };
 static const char *const URL_LEGACY_SCHEMES[] = {
     "ftp:", "telnet:", "gopher:", "nntp:", "dict:",
@@ -2593,6 +2597,11 @@ hlse_scan(const char *input) {
         strncmp(input, "about:", 6) == 0 ||
         strncmp(input, "moz-extension:", 14) == 0 ||
         strncmp(input, "chrome-extension:", 17) == 0 ||
+        strncmp(input, "edge:", 5) == 0 ||
+        strncmp(input, "opera:", 6) == 0 ||
+        strncmp(input, "brave:", 6) == 0 ||
+        strncmp(input, "vivaldi:", 8) == 0 ||
+        strncmp(input, "yandex:", 7) == 0 ||
         strncmp(input, "ftp:", 4) == 0 ||
         /* Legacy/fetch/handler/net-mount scheme sets — table-driven so
          * the dispatcher can never drift behind check_url's scoring
