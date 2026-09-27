@@ -142,6 +142,13 @@ static const char *BAIT_WORDS[] = {
     /* Crypto wallet theft */
     "seed phrase", "recovery phrase", "mnemonic", "private key",
     "connect wallet", "wallet passphrase",
+    /* Drainer imperative forms — 'validate/restore/import your wallet'
+     * are the wallet-drain landing verbs that the noun-only list
+     * missed (a bare 'recovery phrase' doc mention stays OK)       */
+    "restore your wallet", "validate your wallet",
+    "import your wallet", "reactivate your wallet",
+    "wallet verification", "wallet validation",
+    "enter your phrase", "enter the phrase",
     /* Account takeover / 2FA bypass bait */
     "two-factor code", "verification code", "one-time code", "otp code",
     "phone number", "confirm identity", "verify your identity",
@@ -1128,6 +1135,21 @@ static const char *RANSOM_WORDS[] = {
     "access to your camera", "access to your webcam",
     "have compromising footage", "compromising material of you",
     "have been watching you", "have been monitoring you",
+    /* Group/pronoun variants — campaigns swap "i" for "we" and
+     * contacts for family/friends; the threat shape is identical  */
+    "we have footage of you", "we recorded you", "we have a video of you",
+    "we installed malware", "we know your password",
+    "we have your browsing history", "i know your password",
+    "shared with your family", "send this to your family",
+    "send it to your family", "to all your friends",
+    "will share this with", "share this video with",
+    "share it with your", "send the video to",
+    /* Passive-voice distribution threat — 'browsing history will be
+     * sent to all your contacts' (the same lure in passive form)   */
+    "sent to all your contacts", "be sent to your contacts",
+    "be sent to your family", "be sent to your friends",
+    "be shared with your contacts", "be shared with your family",
+    "be shared with your friends", "will be sent to all your",
     /* AI deepfake / voice clone extortion (2024-2025 emerging threat) */
     "cloned your voice", "deepfake video", "ai-generated video",
     "voice clone of you", "ai clone", "synthetic media",

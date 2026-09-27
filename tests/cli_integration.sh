@@ -10460,6 +10460,16 @@ printf 'x' > "$XDIR101/benign.txt"
     || check "file: benign txt clean" "0" "1"
 rm -rf "$XDIR101"
 
+# ── cycle-102: sextortion pronoun/passive variants + wallet-drain verbs ──
+check_text_hit 'we know your password is x and have footage' 'ALERT' "text: password-proof sextortion flagged"
+check_text_hit 'your browsing history will be sent to all your contacts' 'ALERT' "text: passive distribution threat flagged"
+check_text_hit 'the video will be shared with your family' 'ALERT' "text: family-distribution threat flagged"
+check_text_hit 'validate your wallet to continue' 'ALERT' "text: wallet-drain imperative flagged"
+check_text_hit 'restore your wallet here' 'ALERT' "text: restore-wallet drainer flagged"
+check_text_hit 'package will be sent to all addresses' 'OK' "text: benign distribution sentence clean"
+check_text_hit 'results will be shared with your team' 'OK' "text: benign team-sharing clean"
+check_text_hit 'notes sent to all attendees' 'OK' "text: benign notes sentence clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

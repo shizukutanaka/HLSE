@@ -15,6 +15,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Sextortion pronoun/passive variants** (`hlse_text.c` RANSOM):
+  campaigns swap "i" for "we" and contacts for family/friends —
+  "we installed/recorded/have footage", "we/i know your password"
+  (the proof-of-breach signature line), passive distribution
+  ("sent to all your contacts", "be shared with your
+  family/friends"), "to all your friends", "shared with your
+  family". Benign "sent to all addresses"/"shared with your team"
+  stay OK — the passive forms are scoped to contact-object phrases.
+- **Wallet-drain imperative forms** (`hlse_text.c` FIN_ACTION):
+  "restore/validate/import/reactivate your wallet", "wallet
+  verification/validation", "enter your phrase" — the noun-only
+  list missed drainer landing-page verbs; a bare "recovery phrase"
+  doc mention stays OK.
 - **Prompt-extraction probes in text** (`hlse_text.c`): new
   `PROMPT_EXTRACT` signal — the reconnaissance step before an
   injection: "reveal/show/print/repeat your system prompt",
