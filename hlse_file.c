@@ -273,7 +273,21 @@ static const char *EXECUTABLE_EXTS[] = {
     /* Excel Internet Query — fetches and executes remote content when opened */
     ".iqy",
     /* Windows Theme/ThemeBleed (CVE-2023-38146): NTLM hash theft via UNC path */
-    ".theme", ".themepack",
+    ".theme", ".themepack", ".deskthemepack",
+    /* Explorer/library/search hijack files — .library-ms forces Explorer
+     * onto an attacker-controlled WebDAV share (CVE-2024-38112 class),
+     * .search-ms drives Explorer searches against remote shares,
+     * .settingcontent-ms executes DeepLink commands (CVE-2018-8414)   */
+    ".library-ms", ".search-ms", ".settingcontent-ms",
+    /* Shell Command File — IconFile can point at a remote share,
+     * harvesting NetNTLM on folder open                               */
+    ".scf",
+    /* Windows Sidebar gadget / pinned-site shortcut — both auto-resolve
+     * remote package resources on open                                */
+    ".gadget", ".website",
+    /* ClickOnce application reference — used in the SolarWinds-era
+     * loader chain to bootstrap remote payloads                        */
+    ".appref-ms",
     NULL
 };
 

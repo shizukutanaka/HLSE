@@ -10014,6 +10014,28 @@ rm -rf "$XDIR77"
     && check "url: sftp plain fetch scheme" "0" "0" \
     || check "url: sftp plain fetch scheme" "0" "1"
 
+# ── cycle-81: Windows Explorer/handler file extensions ──
+XDIR81=$(mktemp -d /tmp/hlse81.XXXXXX)
+printf 'x' > "$XDIR81/a.library-ms"
+printf 'x' > "$XDIR81/b.search-ms"
+printf 'x' > "$XDIR81/c.settingcontent-ms"
+printf 'x' > "$XDIR81/d.scf"
+printf 'x' > "$XDIR81/e.gadget"
+printf 'x' > "$XDIR81/f.appref-ms"
+printf 'x' > "$XDIR81/g.website"
+printf 'x' > "$XDIR81/h.deskthemepack"
+printf 'x' > "$XDIR81/benign.txt"
+for fe in a.library-ms b.search-ms c.settingcontent-ms d.scf \
+    e.gadget f.appref-ms g.website h.deskthemepack; do
+    ./hlse_core file "$XDIR81/$fe" 2>&1 | grep -q "LOG\|ALERT\|BLOCK" \
+        && check "file: $fe flagged" "0" "0" \
+        || check "file: $fe flagged" "0" "1"
+done
+./hlse_core file "$XDIR81/benign.txt" 2>&1 | grep -q "OK" \
+    && check "file: benign txt clean" "0" "0" \
+    || check "file: benign txt clean" "0" "1"
+rm -rf "$XDIR81"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

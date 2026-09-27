@@ -15,6 +15,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Windows handler file extensions** (`hlse_file.c`):
+  `.library-ms`/`.search-ms`/`.settingcontent-ms` (Explorer
+  hijack — WebDAV share / remote search / DeepLink command
+  classes), `.scf` (IconFile NetNTLM harvest), `.gadget`/
+  `.website` (remote package resolution), `.appref-ms`
+  (ClickOnce bootstrap), `.deskthemepack` (ThemeBleed class)
+  — all →30 like `.url`/`.theme`.
 - **URI scheme coverage, cycle 80** (`hlse_core.c`): `vbscript:`
   now scores like `javascript:` (→90 ISOLATE, executable scheme);
   `res:`/`shell:`/`expect:`/`hcp:` join the URI-handler table
