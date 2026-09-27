@@ -106,6 +106,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 - **`.dist` productbuild installer definitions** (`hlse_file.c`,
   F56): a `.dist` targeting `LaunchDaemons`/`LaunchAgents`/`/Library/`
   plants a daemon on package install → 50.
+- **`ms-appinstaller:`/`ms-windows-store:` URI handlers**
+  (`hlse_core.c`): `ms-appinstaller:`/`ms-appinstaller-https:` hand a
+  remote `?source=` package URL to the App Installer (the Emotet/
+  BazarLoader AppX-installer lure) → 60 with a remote source, 35 bare;
+  `ms-windows-store:` → 35.
+- **Wallet-validation + task-scam lure vocabulary** (`hlse_text.c`):
+  `validate/verify/restore/sync/reactivate your wallet`, `wallet
+  validation` (seed-capture pages) and task-scam/pig-butchering phrases
+  (`complete tasks to earn`, `task commission`, `order grabbing`,
+  `recharge/deposit to unlock`, `pay to withdraw`, `unable to
+  withdraw`, `account is frozen`, …) join FAKE_ALERT.
 - **Payment URI schemes + wallet-drainer approval language**
   (`hlse_core.c`, `hlse_text.c`): new `URL_PAYMENT_SCHEMES` table —
   `bitcoin:`/`ethereum:`/`monero:`/`litecoin:`/`dogecoin:`/`tron:`/

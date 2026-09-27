@@ -704,6 +704,15 @@ static const char *FAKE_ALERT_WORDS[] = {
     "sign this message to verify", "permit2", "increase allowance",
     "connect wallet to claim", "claim your airdrop", "claim airdrop",
     "free mint", "exclusive mint", "wallet verification required",
+    "validate your wallet", "verify your wallet", "wallet validation",
+    "reactivate your wallet", "restore your wallet", "sync your wallet",
+    /* Task scams / pig-butchering job lures (兼職・刷单诈骗): paid-by-
+     * task platforms that escalate to "pay to unlock earnings" */
+    "complete tasks to earn", "complete the tasks", "tasks to earn",
+    "earn commission per", "task commission", "order grabbing",
+    "grab orders", "training account", "recharge to unlock",
+    "deposit to unlock", "pay to withdraw", "unable to withdraw",
+    "withdrawal frozen", "account is frozen", "funds are frozen",
     /* Unauthorized order / account fraud impersonation */
     "order you did not authorize", "purchase you did not make",
     "unauthorized purchase on your account", "did not make this purchase",

@@ -8469,6 +8469,31 @@ printf '<?xml version="1.0"?><installer-gui-script><pkg-ref id="a"/></installer-
 ./hlse_core file "$XDIR/clean.dist" 2>&1 | grep -q "F56" \
     && check "file: benign .dist no F56" "0" "1" \
     || check "file: benign .dist no F56" "0" "0"
+# ms-appinstaller / ms-windows-store handler schemes
+./hlse_core 'ms-appinstaller:?source=http://evil.com/x.appinstaller' \
+    2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+    && check "url: ms-appinstaller remote flagged" "0" "0" \
+    || check "url: ms-appinstaller remote flagged" "0" "1"
+./hlse_core 'ms-windows-store://pdp/?productid=abc' \
+    2>&1 | grep -qE 'LOG|ALERT|BLOCK' \
+    && check "url: ms-windows-store flagged" "0" "0" \
+    || check "url: ms-windows-store flagged" "0" "1"
+# text: wallet-validation + task-scam lures
+./hlse_core text 'validate your wallet to continue' 2>&1 \
+    | grep -qE 'LOG|ALERT|BLOCK' \
+    && check "text: wallet validation flagged" "0" "0" \
+    || check "text: wallet validation flagged" "0" "1"
+./hlse_core text 'complete tasks to earn daily rewards' 2>&1 \
+    | grep -qE 'ALERT|BLOCK' \
+    && check "text: task scam flagged" "0" "0" \
+    || check "text: task scam flagged" "0" "1"
+./hlse_core text 'pay to withdraw your earnings' 2>&1 \
+    | grep -qE 'LOG|ALERT|BLOCK' \
+    && check "text: pay-to-withdraw flagged" "0" "0" \
+    || check "text: pay-to-withdraw flagged" "0" "1"
+./hlse_core text 'your order is confirmed' 2>&1 | grep -q 'OK' \
+    && check "text: benign order confirm clean" "0" "0" \
+    || check "text: benign order confirm clean" "0" "1"
 # F52–F55: server-config carriers
 printf 'AddType application/x-httpd-php .jpg\nphp_flag engine on\n' \
     > "$XDIR/.htaccess"

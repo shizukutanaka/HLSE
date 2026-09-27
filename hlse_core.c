@@ -1732,6 +1732,7 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     "ms-excel:", "ms-powerpoint:", "ms-visio:", "ms-access:",
     "ms-project:", "ms-publisher:", "onenote:", "onenote-cmd:",
     "ms-settings:", "ms-people:", "ms-calculator:",
+    "ms-appinstaller:", "ms-appinstaller-https:", "ms-windows-store:",
     "itms-services:", "itms:", "itmss:", "itpc:",
     "vscode:", "vscode-insiders:", "atom:", NULL
 };
