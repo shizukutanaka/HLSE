@@ -15,6 +15,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Dev-platform / mapping secret formats** (`hlse_secrets.c`):
+  Mapbox `sk.eyJ`/`pk.eyJ` (base64url JWT segments — new
+  `is_alnum_dash_dot` predicate), Grafana `glsa_` service accounts,
+  Supabase `sbp_` service-role keys (bypass all RLS), Render `rnd_`,
+  Okta OAuth `xoa.` — each previously scored OK on a live credential.
+- **E7 duplicate-`From:` detection** (`hlse_secrets.c` email
+  forensics): multiple `From:` headers violate RFC 5322 §3.6 and are
+  a parser-confusion primitive — gateway verifies one, client
+  displays the other. +35.
+- **freedesktop/KDE remote-icon leak** (`hlse_file.c`):
+  `unc_leak_score` now recognises `[Desktop Entry]` and `icon=`
+  carriers — a `.directory` or `.desktop` whose `Icon=`/`Exec=`
+  points at `\\host\share` leaks NetNTLM on folder view, same class
+  as desktop.ini/.scf. Local icon paths stay clean.
 - **Server-side exploit payloads in text** (`hlse_text.c`): two new
   signals — `EXPLOIT_LOOKUP` (`${jndi:` Log4Shell primitive across
   ldap/rmi/dns/nis subschemes, `#{T(`/`${T(` Spring-EL class refs)

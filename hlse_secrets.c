@@ -203,6 +203,13 @@ static int is_alnum_or_dot(char c) {
            (c >= '0' && c <= '9') || c == '.';
 }
 
+/* Mapbox `sk.eyJ<base64>.<sig>` tokens carry '.' separators AND base64url
+ * '-'/'_' inside the body. */
+static int is_alnum_dash_dot(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+           (c >= '0' && c <= '9') || c == '.' || c == '-' || c == '_';
+}
+
 /* otpauth:// URIs carry the 2FA seed in a `secret=` query parameter —
  * the suffix is a URI tail, not a bare token charset.              */
 static int is_uri_tail(char c) {
@@ -313,6 +320,18 @@ static const SecretPattern SECRET_PATTERNS[] = {
 
     /* npm */
     { "npm_",          4,  36, is_alnum_or_dash,   "npm Access Token",      85 },
+
+    /* Mapbox tokens are `pk.eyJ`/`sk.eyJ` + base64url JWT segments
+     * (the `eyJ` is the base64 `{"` opener). Grafana service accounts
+     * `glsa_`, Supabase service-role `sbp_` (bypasses all RLS — full
+     * DB access), Render `rnd_`, Okta OAuth `xoa.` — each previously
+     * scored OK on a live credential                            */
+    { "sk.eyJ",        6,  30, is_alnum_dash_dot,  "Mapbox Secret Token",   85 },
+    { "pk.eyJ",        6,  30, is_alnum_dash_dot,  "Mapbox Public Token",   45 },
+    { "glsa_",         5,  30, is_alnum_or_dash,   "Grafana Service Account Token", 80 },
+    { "sbp_",          4,  30, is_alnum_or_dash,   "Supabase Service Role Key", 85 },
+    { "rnd_",          4,  30, is_alnum_or_dash,   "Render API Key",        80 },
+    { "xoa.",          4,  30, is_alnum_or_dash,   "Okta OAuth Token",      80 },
 
     /* OpenAI / Anthropic (distinctive dash-prefixed LLM provider keys) */
     { "sk-proj-",      8,  20, is_alnum_or_dash,   "OpenAI Project Key",    90 },
@@ -1856,6 +1875,28 @@ hlse_check_email_headers(const char *raw_headers) {
                 snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
                     "E5: Only 1 Received hop from free email domain (%.80s) "
                     "— atypical of legitimate delivery", from_domain);
+        }
+    }
+
+    /* E7: duplicate From: headers — violates RFC 5322 §3.6 (mailbox
+     * fields MUST NOT repeat) and is a delivery/parser-confusion
+     * primitive: the gateway verifies one From while the client
+     * displays the other (multiple-From spoofing).               */
+    {
+        int from_count = 0;
+        const char *fp = raw_headers;
+        while (fp && *fp) {
+            if (strncasecmp(fp, "from:", 5) == 0) from_count++;
+            fp = strchr(fp, '\n');
+            if (fp) fp++;
+        }
+        if (from_count > 1) {
+            v.score += 35;
+            if (v.n_reasons < HLSE_EMAIL_MAX_REASONS)
+                snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                    "E7: %d From: headers — RFC violation; parser "
+                    "confusion lets one be verified and another "
+                    "displayed", from_count);
         }
     }
 

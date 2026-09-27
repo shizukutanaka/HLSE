@@ -10392,6 +10392,41 @@ check_text_hit 'normal ${placeholder} text here' 'OK' "text: benign placeholder 
 check_text_hit 'Hello {{name}}, your order shipped' 'OK' "text: benign mustache template clean"
 check_text_hit 'python __init__ constructor docs' 'OK' "text: benign dunder mention clean"
 
+# ── cycle-99: mapbox/grafana/supabase/render/okta tokens + dup-From + .directory ──
+MB="sk.eyJ"; MB="${MB}1IjoidGVzdCIsImEiOiJja3d4OTAwMDAxMDAyIn0.abc123def456"
+check_secret_hit "$MB" "ISOLATE" "secret: Mapbox secret token flagged"
+MB="pk.eyJ"; MB="${MB}1IjoidGVzdCIsImEiOiJja3d4OTAwMDAxMDAyIn0.abc123"
+check_secret_hit "$MB" "ALERT" "secret: Mapbox public token flagged"
+GL="glsa_"; GL="${GL}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234"
+check_secret_hit "$GL" "ISOLATE" "secret: Grafana service account flagged"
+SB="sbp_"; SB="${SB}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234"
+check_secret_hit "$SB" "ISOLATE" "secret: Supabase service role flagged"
+RN="rnd_"; RN="${RN}8qAbCdEfGhIjKlMnOpQrStUvWxYz12"
+check_secret_hit "$RN" "ISOLATE" "secret: Render API key flagged"
+OK="xoa."; OK="${OK}b8qAbCdEfGhIjKlMnOpQrStUvWxYz1"
+check_secret_hit "$OK" "ISOLATE" "secret: Okta OAuth token flagged"
+XDIR99=$(mktemp -d /tmp/hlse99.XXXXXX)
+printf 'From: a@x.com\nFrom: b@y.com\nSubject: dual\n' > "$XDIR99/dup.eml"
+./hlse_core email "$(cat "$XDIR99/dup.eml")" 2>&1 | grep -q "ALERT" \
+    && check "email: duplicate From header flagged" "0" "0" \
+    || check "email: duplicate From header flagged" "0" "1"
+printf '[Desktop Entry]\nIcon=\\\\\\\\evil.example\\\\s\\\\i.ico\n' > "$XDIR99/.directory"
+./hlse_core file "$XDIR99/.directory" 2>&1 | grep -q "ISOLATE\|BLOCK" \
+    && check "file: .directory remote icon flagged" "0" "0" \
+    || check "file: .directory remote icon flagged" "0" "1"
+printf '[Desktop Entry]\nIcon=/usr/share/icons/folder.png\n' > "$XDIR99/.directory2"
+mv "$XDIR99/.directory2" "$XDIR99/local/.directory" 2>/dev/null || {
+    mkdir -p "$XDIR99/local"; mv "$XDIR99/.directory2" "$XDIR99/local/.directory"
+}
+./hlse_core file "$XDIR99/local/.directory" 2>&1 | grep -q "OK" \
+    && check "file: .directory local icon clean" "0" "0" \
+    || check "file: .directory local icon clean" "0" "1"
+printf 'To: x@y.com\nSubject: hi\n' > "$XDIR99/benign.eml"
+./hlse_core email "$(cat "$XDIR99/benign.eml")" 2>&1 | grep -qE "OK|LOG" \
+    && check "email: benign headers stay low" "0" "0" \
+    || check "email: benign headers stay low" "0" "1"
+rm -rf "$XDIR99"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

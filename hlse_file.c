@@ -710,7 +710,12 @@ unc_leak_score(const unsigned char *head, size_t len) {
               strstr(low, "[slideshow]")             != NULL ||
               strstr(low, "[visualstyles]")          != NULL ||
               strstr(low, "wallpaper=")              != NULL ||
-              strstr(low, "imagesrootpidl")          != NULL;
+              strstr(low, "imagesrootpidl")          != NULL ||
+              /* freedesktop `.desktop`/KDE `.directory` files — Icon=
+               * or Exec= pointing at \\host\share leaks NetNTLM on
+               * folder view, same class as desktop.ini/scf         */
+              strstr(low, "[desktop entry]")         != NULL ||
+              strstr(low, "icon=")                   != NULL;
     if (!carrier) return 0;
     if (strstr(low, "\\\\") != NULL) return 70;   /* UNC → SMB leak */
     if (strstr(low, "webdav") != NULL || strstr(low, "davwwwroot") != NULL)
