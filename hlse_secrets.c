@@ -409,6 +409,12 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* Terraform Cloud / Atlas (atlasv1.) */
     { "atlasv1.",      8,  30, is_alnum_or_dash, "Terraform Cloud Token", 80 },
 
+    /* IaC / CI/CD platform tokens */
+    { "pul-",          4,  40, is_alnum_or_dash, "Pulumi Access Token",  85 },
+    { "ccipat_",       7,  40, is_hex_c,         "CircleCI Personal API Token", 80 },
+    { "pscale_tkn_",  11,  30, is_alnum_or_dash, "PlanetScale Token",    85 },
+    { "pscale_pw_",   11,  30, is_alnum_or_dash, "PlanetScale Password", 85 },
+
     /* Dynatrace API v2 token (dt0c01.<24>.<64>) */
     { "dt0c01.",       7,  24, is_alnum_or_dash, "Dynatrace API Token", 80 },
 

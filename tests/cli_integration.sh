@@ -10470,6 +10470,17 @@ check_text_hit 'package will be sent to all addresses' 'OK' "text: benign distri
 check_text_hit 'results will be shared with your team' 'OK' "text: benign team-sharing clean"
 check_text_hit 'notes sent to all attendees' 'OK' "text: benign notes sentence clean"
 
+# ── cycle-103: IaC/CI-CD token formats (pul-/ccipat_/pscale_*) ──
+PU="pul-"; PU="${PU}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234567890123456"
+check_secret_hit "$PU" 'Pulumi Access Token' "secret: Pulumi access token flagged"
+CC="ccipat_"; CC="${CC}a1b2c3d4e5f6789012345678abcdef1234567890"
+check_secret_hit "$CC" 'CircleCI Personal API Token' "secret: CircleCI PAT flagged"
+PT="pscale_tkn_"; PT="${PT}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234"
+check_secret_hit "$PT" 'PlanetScale Token' "secret: PlanetScale token flagged"
+PW="pscale_pw_"; PW="${PW}8qAbCdEfGhIjKlMnOpQrStUvWxYz123456"
+check_secret_hit "$PW" 'PlanetScale Password' "secret: PlanetScale password flagged"
+check_secret_hit 'the pool was clean and calm today' 'OK' "secret: benign sentence clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

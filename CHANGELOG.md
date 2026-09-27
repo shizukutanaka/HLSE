@@ -15,6 +15,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **IaC / CI-CD token formats** (`hlse_secrets.c`): `pul-` Pulumi
+  access token (43-char suffix), `ccipat_` CircleCI personal API
+  token (40-hex suffix), `pscale_tkn_`/`pscale_pw_` PlanetScale
+  service token + branch password. All were silent-miss; the IaC
+  supply-chain class (terraform already covered via `atlasv1.`) now
+  includes the three most-leaked CI-adjacent credential families.
 - **Sextortion pronoun/passive variants** (`hlse_text.c` RANSOM):
   campaigns swap "i" for "we" and contacts for family/friends —
   "we installed/recorded/have footage", "we/i know your password"
