@@ -15,6 +15,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Korean / German / French smishing vocabulary** (`hlse_text.c`
+  KR_SMISH, DE_SMISH, FR_SMISH): Korea's dominant 스미싱 families —
+  택배 courier lures, 계좌동결/본인인증 account locks, 소액결제
+  micropayment approvals, 금융감독원 authority impersonation, and the
+  flagship 메신저 피싱 family (엄마 나야 / 번호 바뀌었어 / 돈 좀
+  보내줘 / 문화상품권 gift-card demands); Germany's DHL-Paket and
+  Konto-gesperrt kits (ihre sendung konnte nicht zugestellt,
+  zollgebühren für, vorübergehend gesperrt, identität bestätigen);
+  France's colis/douane kits (votre colis bloqué en douane, frais de
+  douane, compte bloqué, remboursement/carte vitale lures). All three
+  languages previously scored fully OK.
 - **Chinese smishing (短信钓鱼) vocabulary** (`hlse_text.c`
   CN_SMISH): parcel-delivery failure (您的包裹/无法投递/重新派送),
   customs-duty (缴纳关税/海关放行), frozen/abnormal account

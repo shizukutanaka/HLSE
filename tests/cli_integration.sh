@@ -10269,6 +10269,20 @@ done
     || check "file: benign txt clean" "0" "1"
 rm -rf "$XDIR91"
 
+# ── cycle-92: Korean / German / French smishing vocab ──
+check_text_hit '고객님의 택배가 주소 불일치로 반송되었습니다' "LOG\|ALERT" "text: KR parcel smishing flagged"
+check_text_hit '계좌가 동결되었습니다 본인인증을 진행해주세요' "ALERT\|BLOCK\|ISOLATE" "text: KR frozen-account smishing flagged"
+check_text_hit '엄마 나야 전화번호 바뀌었어 급하게 돈 좀 보내줘' "ALERT\|BLOCK\|ISOLATE" "text: KR messenger phishing flagged"
+check_text_hit '소액결제 승인이 완료되었습니다 확인해주세요' "LOG\|ALERT" "text: KR micropayment smishing flagged"
+check_text_hit 'ihre sendung konnte nicht zugestellt werden' "ALERT\|BLOCK\|ISOLATE" "text: DE parcel smishing flagged"
+check_text_hit 'ihr konto wurde vorübergehend gesperrt' "LOG\|ALERT" "text: DE account-lock smishing flagged"
+check_text_hit 'zollgebühren für ihr paket bezahlen' "LOG\|ALERT" "text: DE customs-fee smishing flagged"
+check_text_hit 'votre colis est bloqué en douane' "LOG\|ALERT" "text: FR customs smishing flagged"
+check_text_hit 'frais de douane pour votre colis' "LOG\|ALERT" "text: FR customs-fee smishing flagged"
+check_text_hit '오늘 점심은 김치찌개였어요' "OK" "text: benign korean clean"
+check_text_hit 'das wetter ist heute schön' "OK" "text: benign german clean"
+check_text_hit 'le temps est beau aujourdhui' "OK" "text: benign french clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

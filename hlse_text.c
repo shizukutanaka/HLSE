@@ -535,6 +535,88 @@ static const char *CN_SMISH_WORDS[] = {
     NULL
 };
 
+static const char *KR_SMISH_WORDS[] = {
+    /* Korean smishing (스미싱) — Korea's dominant SMS/messenger fraud
+     * family. Two clusters: (a) courier/account lures impersonating
+     * 택배 delivery, banks, and the FSS (금융감독원); (b) messenger
+     * phishing (메신저 피싱) — a KakaoTalk message impersonating a
+     * family member who "changed their number" and urgently needs a
+     * transfer or gift-card purchase. Real couriers and families do not
+     * route money through these phrases.                               */
+    /* Parcel / delivery failure */
+    "고객님의 택배", "택배가 반송", "주소 불일치", "주소지 불명",
+    "배송 불가", "배송 실패", "택배 조회", "배송지 변경", "배송지 확인",
+    /* Account frozen / verification */
+    "계좌가 동결", "계좌 동결", "계정이 정지", "본인인증을",
+    "본인 인증을", "비정상 로그인", "해외 로그인", "로그인 시도 감지",
+    /* Payment approval lure */
+    "소액결제 승인", "소액 결제 승인", "승인내역", "해외결제",
+    "해외 결제 승인", "카드 승인 내역", "자동이체 등록",
+    /* Authority impersonation */
+    "금융감독원", "금감원", "검찰청", "수사 협조",
+    "개인정보 유출", "명의 도용", "대포통장",
+    /* Messenger phishing (family impersonation) */
+    "엄마 나야", "아빠 나야", "엄마야", "전화번호 바뀌었어",
+    "번호 바뀌었어", "급하게 돈", "돈 좀 보내줘", "계좌로 입금해줘",
+    "문화상품권", "상품권 번호", "상품권 구매",
+    /* App-install lure (remote-control malware drop) */
+    "보안 프로그램 설치", "앱 설치 후 확인", "인증번호 입력",
+    "즉시 확인 바랍니다",
+    NULL
+};
+
+static const char *DE_SMISH_WORDS[] = {
+    /* German smishing/phishing — DHL Paket lures are DE's top SMS-phish
+     * vector; bank-lock and identity-verification kits follow the same
+     * pattern. Phrases are scam-defining: carriers never resolve a
+     * delivery or unlock an account through an SMS link.              */
+    /* Parcel / Zoll (customs) lures */
+    "ihre sendung", "sendung konnte nicht", "nicht zugestellt",
+    "zustellung fehlgeschlagen", "paket abholen", "paket wurde",
+    "zollgebühren für", "zollgebühr für", "zollgebühren bezahlen",
+    "neue zustellung", "paket erneut zustellen", "empfängeradresse",
+    /* Account lock / verification */
+    "ihr konto wurde", "konto vorübergehend gesperrt",
+    "vorübergehend gesperrt", "konto gesperrt", "konto deaktiviert",
+    "verifizieren sie ihre", "identität bestätigen",
+    "identität überprüfen", "sicherheitsüberprüfung",
+    "unberechtigter zugriff", "verdächtige aktivität",
+    "verdächtigen anmeldeversuch",
+    /* Urgency + action */
+    "handeln sie sofort", "sofort handeln", "innerhalb von 24 stunden",
+    "ihre daten aktualisieren", "zahlungsdaten aktualisieren",
+    "abonnement verlängern", "letzte mahnung", "offene rechnung",
+    "klicken sie auf den link", "klicken sie hier",
+    NULL
+};
+
+static const char *FR_SMISH_WORDS[] = {
+    /* French smishing/phishing — colis (parcel) and douane (customs)
+     * lures are FR's top SMS-phish vector (Mondial Relay / La Poste /
+     * Chronopost kits); compte-bloqué and vitale/CAF benefit lures are
+     * the second cluster.                                             */
+    /* Colis / douane lures */
+    "votre colis", "colis n'a pas pu", "pas pu être livré",
+    "livraison a échoué", "en attente de livraison",
+    "bloqué en douane", "bloquée en douane", "frais de douane",
+    "frais de dédouanement", "reprogrammer la livraison",
+    "confirmer votre adresse", "adresse de livraison",
+    "réexpédier votre colis", "frais de port",
+    /* Account lock / verification */
+    "votre compte a été", "compte été bloqué", "compte temporairement",
+    "accès limité", "activité inhabituelle", "connexion inhabituelle",
+    "vérifier votre identité", "confirmer vos informations",
+    "mettre à jour vos informations", "mettre à jour vos données",
+    "renouveler votre abonnement", "votre abonnement expire",
+    /* Benefits / tax-refund lures */
+    "remboursement", "rembourser vos frais", "carte vitale",
+    "allocation", "remboursement d'impôt", "remboursement des impôts",
+    /* Urgency + action */
+    "dans les 24 heures", "sous 24 heures", "dernier rappel",
+    "agissez maintenant", "cliquez sur le lien",
+    NULL
+};
+
 static const char *SECRECY_WORDS[] = {
     /* English */
     "don't tell", "do not tell", "keep this secret", "between us",
@@ -1288,6 +1370,9 @@ static const Signal SIGNALS[] = {
     { "Callback/TOAD/smishing",     CALLBACK_PHISH_WORDS, 15, 10, 30 },
     { "Emergency/grandparent scam", EMERGENCY_SCAM_WORDS, 20, 15, 45 },
     { "Chinese smishing lure",      CN_SMISH_WORDS,       20, 15, 45 },
+    { "Korean smishing lure",       KR_SMISH_WORDS,       20, 15, 45 },
+    { "German smishing lure",       DE_SMISH_WORDS,       20, 15, 45 },
+    { "French smishing lure",       FR_SMISH_WORDS,       20, 15, 45 },
     { "Prompt-injection override phrase", PROMPT_OVERRIDE_WORDS, 40, 10, 55 },
     { "LLM control token in text",  LLM_CONTROL_TOKENS, 45, 10, 60 },
     { "Active HTML markup in text", HTML_INJECT_WORDS, 30, 15, 50 },
