@@ -2201,6 +2201,88 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 45;
         return 0;
     }
+    /* Build-file carriers — wscript (waf), SConstruct (scons),
+     * meson.build, Rakefile/Rakefile.rb, Earthfile, Taskfile: all run
+     * embedded code at build/configure time. An exec or fetch primitive
+     * in one is the build-time equivalent of Makefile $(shell curl). */
+    if (strcmp(bn, "wscript") == 0 || strcmp(bn, "sconstruct") == 0 ||
+        strcmp(bn, "meson.build") == 0 || strcmp(bn, "rakefile") == 0 ||
+        strcmp(bn, "rakefile.rb") == 0 || strcmp(bn, "earthfile") == 0 ||
+        strcmp(bn, "taskfile.yml") == 0 || strcmp(bn, "taskfile.yaml") == 0) {
+        if (strstr(low, "os.system") || strstr(low, "subprocess") ||
+            strstr(low, "run_command") || strstr(low, "run_target") ||
+            strstr(low, "system(") || strstr(low, "`") ||
+            strstr(low, "curl") || strstr(low, "wget") ||
+            strstr(low, "invoke-webrequest") || strstr(low, "http") ||
+            strstr(low, "eval ") || strstr(low, "exec(") ||
+            strstr(low, "| sh") || strstr(low, "|sh") ||
+            strstr(low, "base64"))
+            return 55;
+        return 0;
+    }
+    /* Editor / repl / session startup files that evaluate code on
+     * launch — the "drop a rc, own the next session" family:
+     * init.el/.emacs (elisp), .Rprofile (R), .ghci (haskell),
+     * .latexmkrc (perl), .conkyrc (${exec}), activate/activate_this.py
+     * (venv activation runs arbitrary shell), .octaverc/.jl startup. */
+    if (strcmp(bn, "init.el") == 0 || strcmp(bn, ".emacs") == 0 ||
+        strcmp(bn, "early-init.el") == 0 ||
+        strcmp(bn, ".rprofile") == 0 || strcmp(bn, "rprofile.site") == 0 ||
+        strcmp(bn, ".ghci") == 0 || strcmp(bn, "ghci.conf") == 0 ||
+        strcmp(bn, ".latexmkrc") == 0 ||
+        strcmp(bn, ".conkyrc") == 0 || strcmp(bn, "conky.conf") == 0 ||
+        strcmp(bn, "activate") == 0 || strcmp(bn, "activate_this.py") == 0 ||
+        strcmp(bn, "activate.csh") == 0 || strcmp(bn, "activate.fish") == 0 ||
+        strcmp(bn, ".octaverc") == 0 || strcmp(bn, "octaverc") == 0) {
+        if (strstr(low, "shell-command") || strstr(low, "call-process") ||
+            strstr(low, "start-process") || strstr(low, "system") ||
+            strstr(low, "os.execute") || strstr(low, "io.popen") ||
+            strstr(low, "${exec") || strstr(low, "${texeci") ||
+            strstr(low, "exec") || strstr(low, ":!") ||
+            strstr(low, "curl") || strstr(low, "wget") ||
+            strstr(low, "eval") || strstr(low, "`") ||
+            strstr(low, "| sh") || strstr(low, "|sh"))
+            return 50;
+        return 0;
+    }
+    /* .gdbinit / .lldbinit — debugger startup files run their embedded
+     * commands (incl. python/shell blocks) whenever gdb/lldb opens in
+     * that directory — a dropped .gdbinit next to a repo is exec on
+     * "just debugged it" */
+    if (strcmp(bn, ".gdbinit") == 0 || strcmp(bn, "gdbinit") == 0 ||
+        strcmp(bn, ".lldbinit") == 0 || strcmp(bn, "lldbinit") == 0) {
+        if (strstr(low, "shell") || strstr(low, "python") ||
+            strstr(low, "system") || strstr(low, "source") ||
+            strstr(low, "eval") || strstr(low, "command script"))
+            return 50;
+        return 0;
+    }
+    /* .msmtprc passwordeval / .fetchmailrc postconnect|mda /
+     * .isyncrc PassCmd / .ripgreprc --pre — mailer/searcher configs
+     * that run an external command on every invocation; a dropped
+     * one turns "check mail / grep" into payload exec */
+    if (strcmp(bn, ".msmtprc") == 0 || strcmp(bn, "msmtprc") == 0) {
+        if (strstr(low, "passwordeval"))
+            return 50;
+        return 0;
+    }
+    if (strcmp(bn, ".fetchmailrc") == 0 || strcmp(bn, "fetchmailrc") == 0) {
+        if (strstr(low, "postconnect") || strstr(low, "preconnect") ||
+            strstr(low, "mda") || strstr(low, "bsmtp"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, ".isyncrc") == 0 || strcmp(bn, "mbsyncrc") == 0 ||
+        strcmp(bn, ".mbsyncrc") == 0) {
+        if (strstr(low, "passcmd") || strstr(low, "pipecommand"))
+            return 50;
+        return 0;
+    }
+    if (strcmp(bn, ".ripgreprc") == 0 || strcmp(bn, "ripgreprc") == 0) {
+        if (strstr(low, "--pre") || strstr(low, "--hostname-bin"))
+            return 50;
+        return 0;
+    }
     /* .rhosts — `+ host` / host lines grant passwordless rsh/rlogin
      * trust to the listed host: a dropped .rhosts is an auth bypass */
     if (strcmp(bn, ".rhosts") == 0 || strcmp(bn, "hosts.equiv") == 0)

