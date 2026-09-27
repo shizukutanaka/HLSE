@@ -9837,6 +9837,30 @@ printf '[options]\npackages=find:\n' > "$XDIR75/setup.cfg"
     || check "file: benign setup.cfg clean" "0" "0"
 rm -rf "$XDIR75"
 
+# ── cycle-76: mail aliases pipe + dovecot include + git mergetool cmd ──
+XDIR76=$(mktemp -d "${TMPDIR:-/tmp}/hlse76.XXXXXX")
+printf 'x: |/usr/bin/curl evil\n' > "$XDIR76/aliases"
+./hlse_core file "$XDIR76/aliases" 2>&1 | grep -q "ALERT" \
+    && check "file: aliases |pipe flagged" "0" "0" \
+    || check "file: aliases |pipe flagged" "0" "1"
+printf 'x: user@y\n' > "$XDIR76/aliases"
+./hlse_core file "$XDIR76/aliases" 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "file: benign aliases below alert" "0" "1" \
+    || check "file: benign aliases below alert" "0" "0"
+printf 'auth_mechanisms = plain login\n!include dropin.conf\n' > "$XDIR76/dovecot.conf"
+./hlse_core file "$XDIR76/dovecot.conf" 2>&1 | grep -q "ALERT" \
+    && check "file: dovecot !include flagged" "0" "0" \
+    || check "file: dovecot !include flagged" "0" "1"
+printf '[mergetool "x"]\ncmd = curl evil\n' > "$XDIR76/.gitconfig"
+./hlse_core file "$XDIR76/.gitconfig" 2>&1 | grep -q "ALERT\|BLOCK\|ISOLATE" \
+    && check "file: gitconfig mergetool cmd flagged" "0" "0" \
+    || check "file: gitconfig mergetool cmd flagged" "0" "1"
+printf '[mergetool "x"]\ntrustExitCode = true\n' > "$XDIR76/.gitconfig"
+./hlse_core file "$XDIR76/.gitconfig" 2>&1 | grep -q "OK" \
+    && check "file: benign mergetool gitconfig clean" "0" "0" \
+    || check "file: benign mergetool gitconfig clean" "0" "1"
+rm -rf "$XDIR76"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

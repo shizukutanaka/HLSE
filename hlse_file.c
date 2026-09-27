@@ -1098,7 +1098,7 @@ rc_persist_score(const unsigned char *head, size_t len,
     {
         static const char *const EK[] = {
             "fsmonitor", "editor", "pager", "external",
-            "clean", "smudge", "helper", "program", NULL
+            "clean", "smudge", "helper", "program", "cmd", NULL
         };
         static const char *const EXECISH[] = {
             "/", "!", "-c", "sh ", "curl", "wget", "python",
@@ -2074,9 +2074,25 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         return 50;
     /* mail-delivery redirects — .forward hands every message to the
      * attacker; .procmailrc/.mailfilter with a `|` recipe pipes mail
-     * through a program (execution on delivery) */
+     * through a program (execution on delivery); /etc/aliases does
+     * the same at the MTA: `name: |program` runs it on delivery */
     if (strcmp(bn, ".forward") == 0)
         return 45;
+    if (strcmp(bn, "aliases") == 0 || strcmp(bn, "aliases.db") == 0 ||
+        strcmp(bn, ".aliases") == 0) {
+        if (strchr(low, '|') != NULL)
+            return 50;
+        return 30;
+    }
+    /* dovecot.conf — `!include` pulls in an attacker config and
+     * mail_plugins/mail_plugin_dir loads .so modules into the IMAP
+     * daemon (auth bypass / session snooping at delivery time) */
+    if (strcmp(bn, "dovecot.conf") == 0 ||
+        strstr(bn, "dovecot") != NULL) {
+        if (strstr(low, "!include") || strstr(low, "mail_plugin"))
+            return 45;
+        return 30;
+    }
     if (strcmp(bn, ".procmailrc") == 0 || strcmp(bn, ".mailfilter") == 0) {
         if (strchr(low, '|') != NULL)
             return 55;

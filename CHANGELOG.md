@@ -15,6 +15,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Mail-delivery and MTA carriers** (`hlse_file.c` F56):
+  `aliases`/`aliases.db`/`.aliases` with a `|program` entry → 50
+  (runs a command on every inbound delivery at the MTA, root-context
+  on most mailers), bare list → 30; `dovecot.conf` with `!include`
+  or `mail_plugins`/`mail_plugin_dir` → 45, bare → 30 (the include
+  pulls attacker config; plugin dirs load .so into the IMAP daemon).
+- **`git mergetool`/`difftool` `cmd` key** (`hlse_file.c`): `cmd`
+  joins the git exec-key table — `[mergetool "x"] cmd = <shell>`
+  runs on every `git mergetool` invocation.
 - **Build/init carrier residual gaps** (`hlse_file.c` F56):
   `rakefile`/`Rakefile.rb` joins the build-file carrier group —
   `system "…"`/`sh "…"` (paren-less Ruby idiom, previously missing
