@@ -1432,6 +1432,25 @@ static const char *HTML_INJECT_WORDS[] = {
     "<base href", "<svg onload", "javascript:", NULL
 };
 
+/* Server-side exploit lookup payloads — `${jndi:` is the Log4Shell
+ * primitive (ldap/rmi/dns/nis subschemes share the prefix); `#{T(` /
+ * `${T(` are the Spring-EL class-reference form. None of these occur
+ * in legitimate prose — pasted exploit text is itself the threat.   */
+static const char *EXPLOIT_LOOKUP_WORDS[] = {
+    "${jndi:", "#{t(", "${t(", NULL
+};
+
+/* SSTI template-probe chains — Jinja2/Twig/EL sandbox escapes walk
+ * dunder chains (__class__ → __mro__ → __subclasses__ → __globals__)
+ * that never appear in legitimate prose. `{{7*7}}` is the canonical
+ * SSTI detection probe; `${ifs}` is the bash whitespace-bypass seen
+ * in command injection. Single tokens stay LOG; chains escalate.   */
+static const char *SSTI_CHAIN_WORDS[] = {
+    ".__class__", "__mro__", "__subclasses__", ".__globals__",
+    "config.items()", "${ifs}", "{{7*7}}", "<%= system",
+    "<%= runtime", "request.application", NULL
+};
+
 static const Signal SIGNALS[] = {
     { "Urgency pressure",           URGENCY_WORDS,    8,  8, 25 },
     { "Financial/credential req",   BAIT_WORDS,      12, 12, 36 },
@@ -1458,6 +1477,8 @@ static const Signal SIGNALS[] = {
     { "Prompt-injection override phrase", PROMPT_OVERRIDE_WORDS, 40, 10, 55 },
     { "LLM control token in text",  LLM_CONTROL_TOKENS, 45, 10, 60 },
     { "Active HTML markup in text", HTML_INJECT_WORDS, 30, 15, 50 },
+    { "JNDI/EL exploit lookup payload", EXPLOIT_LOOKUP_WORDS, 60, 15, 75 },
+    { "SSTI template-probe chain",  SSTI_CHAIN_WORDS,     35, 10, 60 },
     { NULL, NULL, 0, 0, 0 }
 };
 

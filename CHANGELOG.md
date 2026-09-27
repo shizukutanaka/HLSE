@@ -15,6 +15,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Server-side exploit payloads in text** (`hlse_text.c`): two new
+  signals — `EXPLOIT_LOOKUP` (`${jndi:` Log4Shell primitive across
+  ldap/rmi/dns/nis subschemes, `#{T(`/`${T(` Spring-EL class refs)
+  →60+15/cap75 BLOCK, and `SSTI_CHAIN` (Jinja2/Twig/EL dunder escape
+  chains `.__class__`/`__mro__`/`__subclasses__`/`.__globals__`/
+  `config.items()`, canonical probe `{{7*7}}`, `${ifs}` bash
+  whitespace bypass, `<%= system`/`runtime` ERB exec,
+  `request.application`) →35+10/cap60. Pasted exploit text is itself
+  the threat these engines guard; benign `${var}`/`{{name}}`
+  templates and `__init__` mentions stay OK.
 - **Scheme-relative open-redirect targets** (`hlse_core.c`): the
   open-redirect check required an absolute `http(s)://` value, so
   `?redir=//evil.com` (and its `%2f%2f`-encoded form) rode the outer

