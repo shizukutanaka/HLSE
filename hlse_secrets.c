@@ -589,6 +589,8 @@ check_ssh_key(const char *text, SecretVerdict *v) {
         "-----BEGIN DSA PRIVATE KEY-----",
         "-----BEGIN PRIVATE KEY-----",
         "-----BEGIN PGP PRIVATE KEY BLOCK-----",
+        "-----BEGIN ENCRYPTED PRIVATE KEY-----",
+        "-----BEGIN PKCS8 PRIVATE KEY-----",
         NULL
     };
     int found = 0;

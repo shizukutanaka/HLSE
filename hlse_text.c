@@ -716,10 +716,16 @@ static const char *FAKE_ALERT_WORDS[] = {
     /* Task scams / pig-butchering job lures (兼職・刷单诈骗): paid-by-
      * task platforms that escalate to "pay to unlock earnings" */
     "complete tasks to earn", "complete the tasks", "tasks to earn",
+    "complete tasks and earn", "tasks and earn", "earn commission",
     "earn commission per", "task commission", "order grabbing",
     "grab orders", "training account", "recharge to unlock",
     "deposit to unlock", "pay to withdraw", "unable to withdraw",
     "withdrawal frozen", "account is frozen", "funds are frozen",
+    "task platform", "task platform earnings", "optimize your tasks",
+    "optimize tasks", "unlock tasks", "deposit to unlock earnings",
+    "like posts and earn", "like posts for money", "boost sales",
+    "boost merchant", "merchant sales tasks", "help merchants",
+    "improve their ranking", "boost product ranking",
     /* Unauthorized order / account fraud impersonation */
     "order you did not authorize", "purchase you did not make",
     "unauthorized purchase on your account", "did not make this purchase",

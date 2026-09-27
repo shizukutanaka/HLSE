@@ -15,6 +15,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Encrypted private-key PEM markers** (`hlse_secrets.c`):
+  `-----BEGIN ENCRYPTED PRIVATE KEY-----` and
+  `-----BEGIN PKCS8 PRIVATE KEY-----` now flag like the other PEM
+  headers — an encrypted key is still key material in exfiltration
+  and a classic "open this attachment" lure payload.
+- **Task-scam phrasing variants** (`hlse_text.c`): the existing
+  task/job-scam word group gains the observed SAR strings that were
+  slipping through — "complete tasks and earn", "earn commission",
+  "task platform", "optimize your tasks", "unlock tasks",
+  "deposit to unlock earnings", "like posts and earn",
+  "boost sales"/"boost merchant", "merchant sales tasks",
+  "improve their ranking". Solo hits still LOG-tier by design.
 - **Credentials embedded in URL userinfo** (`hlse_core.c`): a `user:pass@`
   authority (non-numeric password field) adds +40 — on http/https it
   stacks with the existing @-trick score; on non-web schemes

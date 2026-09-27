@@ -9781,6 +9781,30 @@ rm -rf "$XDIR72"
     && check "text: benign deadline below block" "0" "1" \
     || check "text: benign deadline below block" "0" "0"
 
+# ── cycle-74: encrypted PEM + task-scam variant vocabulary ──
+./hlse_core secret -- '-----BEGIN ENCRYPTED PRIVATE KEY-----'" MIIF" 2>&1 \
+    | grep -q "PRIVATE_KEY" \
+    && check "secret: ENCRYPTED PRIVATE KEY flagged" "0" "0" \
+    || check "secret: ENCRYPTED PRIVATE KEY flagged" "0" "1"
+./hlse_core secret -- '-----BEGIN CERTIFICATE-----'" MIIF" 2>&1 \
+    | grep -q "no credentials" \
+    && check "secret: public certificate clean" "0" "0" \
+    || check "secret: public certificate clean" "0" "1"
+./hlse_core text 'complete tasks and earn commission' 2>&1 \
+    | grep -q "LOG\|ALERT" \
+    && check "text: task-scam earn-commission flagged" "0" "0" \
+    || check "text: task-scam earn-commission flagged" "0" "1"
+./hlse_core text 'optimize your tasks to earn more' 2>&1 \
+    | grep -q "LOG\|ALERT" \
+    && check "text: task-scam optimize flagged" "0" "0" \
+    || check "text: task-scam optimize flagged" "0" "1"
+./hlse_core text 'complete your daily tasks' 2>&1 | grep -q "OK" \
+    && check "text: benign task list clean" "0" "0" \
+    || check "text: benign task list clean" "0" "1"
+./hlse_core text 'deposit funds to proceed' 2>&1 | grep -q "OK" \
+    && check "text: benign deposit notice clean" "0" "0" \
+    || check "text: benign deposit notice clean" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
