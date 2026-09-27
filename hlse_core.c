@@ -1740,6 +1740,13 @@ static const char *const URL_HANDLER_SCHEMES[] = {
 static const char *const URL_NETMNT_SCHEMES[] = {
     "smb:", "nfs:", "afp:", "vnc:", "rdp:", NULL
 };
+/* Payment schemes hand a pre-filled transfer to a wallet/banking app —
+ * the destination is attacker-chosen, so a QR or link is a completed
+ * payment lure (drainer/BEC). payto: is RFC 8905.                  */
+static const char *const URL_PAYMENT_SCHEMES[] = {
+    "bitcoin:", "ethereum:", "monero:", "litecoin:", "dogecoin:",
+    "tron:", "tether:", "payto:", "alipay:", "weixin:", "upi:", NULL
+};
 
 static int
 url_has_scheme(const char *input, const char *const *tbl) {
@@ -1883,6 +1890,16 @@ check_url(const char *raw_url) {
                                    "Remote-mount scheme '%s' — attaches "
                                    "a remote share/session (credential "
                                    "leak class)", URL_NETMNT_SCHEMES[i]);
+                        break;
+                    }
+                for (i = 0; URL_PAYMENT_SCHEMES[i]; i++)
+                    if (strncmp(raw_url, URL_PAYMENT_SCHEMES[i],
+                            strlen(URL_PAYMENT_SCHEMES[i])) == 0) {
+                        add_reason(&v, 40, "Payment URI scheme '%s' — "
+                                   "hands a pre-filled transfer to a "
+                                   "wallet/banking app (destination is "
+                                   "attacker-chosen)",
+                                   URL_PAYMENT_SCHEMES[i]);
                         break;
                     }
                 for (i = 0; URL_HANDLER_SCHEMES[i]; i++) {
@@ -2432,6 +2449,7 @@ hlse_scan(const char *input) {
         url_has_scheme(input, URL_LEGACY_SCHEMES) ||
         url_has_scheme(input, URL_FETCH_SCHEMES) ||
         url_has_scheme(input, URL_NETMNT_SCHEMES) ||
+        url_has_scheme(input, URL_PAYMENT_SCHEMES) ||
         url_has_scheme(input, URL_HANDLER_SCHEMES))
     {
         Verdict uv = check_url(input);

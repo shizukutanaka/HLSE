@@ -19,6 +19,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   (Discord MFA token) → 85; `AC`/`SK` + 32 lowercase hex (Twilio
   Account SID / API Key) → 70 — new `is_hex_c` predicate keeps the
   2-char prefixes' false positives low.
+- **Payment URI schemes + wallet-drainer approval language**
+  (`hlse_core.c`, `hlse_text.c`): new `URL_PAYMENT_SCHEMES` table —
+  `bitcoin:`/`ethereum:`/`monero:`/`litecoin:`/`dogecoin:`/`tron:`/
+  `tether:`/`payto:` (RFC 8905)/`alipay:`/`weixin:`/`upi:` → 40 (a
+  payment URI hands a pre-filled transfer to the wallet/banking app;
+  the destination is attacker-chosen). Text gains the drainer approval
+  verbs (`setapprovalforall`, `approve unlimited`, `unlimited
+  approval`, `permit2`, `increase allowance`, `claim your airdrop`,
+  `connect wallet to claim`, `free mint`, `wallet verification
+  required`) and the JP delivery-fee scam variants (`不在配達`,
+  `配送料`, `配送料金`, `配達に失敗`, `お荷物をお届け`, `荷物の再配達`,
+  `配達先の確認`, `住所を確認`, `不在連絡票`).
 - **Japanese refund/e-money scam vocabulary** (`hlse_text.c`): the
   "還付金 at the ATM" / convenience-store e-money scam was invisible
   because a lone `還付金` scores 12 — under the LOG floor. Added the

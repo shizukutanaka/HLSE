@@ -8191,6 +8191,30 @@ printf 'name: y\nbuild-type: Simple\n' > "$XDIR/ok.cabal"
 ./hlse_core text '今日はATMで買い物した' 2>&1 | grep -q "Financial/credential req" \
     && check "text: benign jp atm no flag" "0" "1" \
     || check "text: benign jp atm no flag" "0" "0"
+# payment URI schemes + wallet-drainer approval language + JP delivery variants
+./hlse_core 'bitcoin:1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa?amount=0.5' 2>&1 \
+    | grep -q "Payment URI scheme" \
+    && check "url: bitcoin payment uri flagged" "0" "0" \
+    || check "url: bitcoin payment uri flagged" "0" "1"
+./hlse_core 'payto://iban/DE89370400440532013000?amount=100' 2>&1 \
+    | grep -q "Payment URI scheme" \
+    && check "url: payto payment uri flagged" "0" "0" \
+    || check "url: payto payment uri flagged" "0" "1"
+./hlse_core text 'setApprovalForAll to claim your airdrop' 2>&1 \
+    | grep -qi "credential\|fake security" \
+    && check "text: drainer approval flagged" "0" "0" \
+    || check "text: drainer approval flagged" "0" "1"
+./hlse_core text 'approve unlimited spending cap' 2>&1 \
+    | grep -qi "credential\|fake security" \
+    && check "text: unlimited approval flagged" "0" "0" \
+    || check "text: unlimited approval flagged" "0" "1"
+./hlse_core text '不在配達のため配送料をご確認ください' 2>&1 \
+    | grep -q "Callback/TOAD" \
+    && check "text: jp delivery fee scam flagged" "0" "0" \
+    || check "text: jp delivery fee scam flagged" "0" "1"
+./hlse_core text 'https://example.com/pay' 2>&1 | grep -q "Payment URI" \
+    && check "text: https url no payment flag" "0" "1" \
+    || check "text: https url no payment flag" "0" "0"
 # F52–F55: server-config carriers
 printf 'AddType application/x-httpd-php .jpg\nphp_flag engine on\n' \
     > "$XDIR/.htaccess"

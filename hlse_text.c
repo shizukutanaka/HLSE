@@ -695,6 +695,15 @@ static const char *FAKE_ALERT_WORDS[] = {
     "transfer your funds to a secure wallet", "move your crypto to safety",
     "your crypto assets are at risk", "coinbase security alert",
     "your crypto is at risk", "wallet draining",
+    /* Drainer approval mechanics — the technical verbs of a wallet
+     * drainer: signing setApprovalForAll/an unlimited approve hands the
+     * contract full transfer rights; "permit2" is the Permit2 batch
+     * approval vector used by Inferno/Angel Drainer kits.            */
+    "setapprovalforall", "approve unlimited", "unlimited approval",
+    "unlimited spending cap", "sign the transaction to claim",
+    "sign this message to verify", "permit2", "increase allowance",
+    "connect wallet to claim", "claim your airdrop", "claim airdrop",
+    "free mint", "exclusive mint", "wallet verification required",
     /* Unauthorized order / account fraud impersonation */
     "order you did not authorize", "purchase you did not make",
     "unauthorized purchase on your account", "did not make this purchase",
@@ -968,6 +977,11 @@ static const char *CALLBACK_PHISH_WORDS[] = {
     /* Japanese callback/smishing */
     "折り返しお電話", "お電話ください", "佐川急便",
     "宅急便", "不在通知", "再配達",
+    /* JP delivery-scam variants — the same lure worded around the
+     * redelivery fee / address confirmation angle (Sagawa/Yamato/Japan
+     * Post smishing families) */
+    "不在配達", "配送料", "配送料金", "配達に失敗", "お荷物をお届け",
+    "荷物の再配達", "配達先の確認", "住所を確認", "不在連絡票",
     /* Japanese smishing lures documented by the National Police Agency /
      * Anti-Phishing Council: ETC toll impersonation (the top-volume JP
      * smishing family), My Number card expiry, e-Tax refund bait, and
