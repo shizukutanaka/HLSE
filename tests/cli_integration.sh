@@ -8179,6 +8179,15 @@ printf 'name: y\nbuild-type: Simple\n' > "$XDIR/ok.cabal"
 ./hlse_core secret -- 'ACGHIJK1234' 2>&1 | grep -q "Twilio" \
     && check "secret: short non-hex AC no flag" "0" "1" \
     || check "secret: short non-hex AC no flag" "0" "0"
+# nostr nsec1 bech32 secret key
+./hlse_core secret -- 'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq'"qqqqqqqqqqqqqqqq" 2>&1 \
+    | grep -q "Nostr Secret Key" \
+    && check "secret: nostr nsec flagged" "0" "0" \
+    || check "secret: nostr nsec flagged" "0" "1"
+./hlse_core secret -- 'the word nsec here is fine' 2>&1 \
+    | grep -q "no credentials found" \
+    && check "secret: benign nsec text clean" "0" "0" \
+    || check "secret: benign nsec text clean" "0" "1"
 # text: CJK multibyte must not trip ESC/CSI; JP scam co-occurrence fires
 ./hlse_core text '国民健康保険の払い戻しがあります。コンビニで電子マネーを購入してください' \
     2>&1 | grep -q "Terminal control" \

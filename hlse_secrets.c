@@ -182,6 +182,13 @@ static int is_digit_c(char c) {
     return (c >= '0' && c <= '9');
 }
 
+/* Bech32 charset (Nostr/lightning-style keys): lowercase alnum minus
+ * 1, b, i, o — plus '1' separator already consumed by the prefix. */
+static int is_bech32(char c) {
+    return (c >= 'a' && c <= 'z' && c != 'b' && c != 'i' && c != 'o')
+        || (c >= '0' && c <= '9');
+}
+
 /* Letters only — used for tokens whose body is pure alphabetic (e.g. Hugging
  * Face `hf_` + 34 letters), so a 34-char run is far less likely to collide
  * with an underscore/digit-bearing code identifier sharing the prefix. */
@@ -237,6 +244,9 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "AGE-SECRET-KEY-1", 16, 40, is_alnum_plain,  "Age Secret Key",       90 },
     /* Doppler — dop_v1_ service token / dp.st. / dp.pt. */
     { "dop_v1_",         7,  40, is_alnum_or_dash, "Doppler Service Token", 85 },
+    /* Nostr secret key — bech32 `nsec1` + payload; nsec is the account
+     * itself (posting + DM history + zap wallet) */
+    { "nsec1",           5,  40, is_bech32,        "Nostr Secret Key",    80 },
     { "dp.st.",          6,  40, is_alnum_or_dash, "Doppler Service Token", 85 },
     { "dp.pt.",          6,  40, is_alnum_or_dash, "Doppler Personal Token",85 },
     { "glsoat-",       7,  20, is_alnum_or_dash,   "GitLab Self-managed OAuth Token", 80 },

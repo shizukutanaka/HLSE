@@ -19,6 +19,11 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   (Discord MFA token) → 85; `AC`/`SK` + 32 lowercase hex (Twilio
   Account SID / API Key) → 70 — new `is_hex_c` predicate keeps the
   2-char prefixes' false positives low.
+- **Nostr secret key format** (`hlse_secrets.c`): `nsec1` + ≥40 bech32
+  payload chars → 80 (a nsec is the account itself — posting, DMs and
+  the zap wallet); new `is_bech32` predicate restricts the suffix to
+  the bech32 charset (lowercase alnum minus b/i/o) so ordinary text
+  containing "nsec" stays clean.
 - **F56 system-config carriers** (`hlse_file.c`): files whose *name*
   makes them act when dropped in place — `sudoers`/`sudoers.*`/`doas.conf`
   with `NOPASSWD`/`permit nopass` → 60 (`ALL=(ALL)` grant alone → 40);
