@@ -218,11 +218,15 @@ looks_like_html(const unsigned char *head, size_t len) {
 /* ─── dangerous extensions ────────────────────────────────────────────── */
 
 static const char *EXECUTABLE_EXTS[] = {
-    ".exe", ".scr", ".com", ".bat", ".cmd", ".ps1", ".vbs",
+    ".exe", ".scr", ".com", ".bat", ".cmd", ".ps1", ".psm1",
+    ".psd1", ".vbs",
     ".vbe", ".js",  ".jse", ".wsf", ".wsh", ".msi", ".msp",
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
+    /* awk/sed script files — awk's system()/| getline and sed's e
+     * command execute arbitrary shell                     */
+    ".awk", ".sed",
     /* macOS installer packages + Safari web archive (bundled live
      * web content incl. scripts — attachment lure vector) */
     ".pkg", ".mpkg", ".webarchive",

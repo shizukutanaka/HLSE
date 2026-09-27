@@ -10213,6 +10213,22 @@ DCTOK="$DCTOK.Qp2LvR8sN4tB6yH3jF7wE1cV0zA5bD9gJ2kM4n"
     || check "file: benign txt clean" "0" "1"
 rm -rf "$XDIR88"
 
+# ── cycle-89: PowerShell module + awk/sed script carriers ──
+XDIR89=$(mktemp -d /tmp/hlse89.XXXXXX)
+for e in psm1 psd1 awk sed; do
+    printf 'x' > "$XDIR89/t.$e"
+done
+printf 'x' > "$XDIR89/benign.txt"
+for e in psm1 psd1 awk sed; do
+    ./hlse_core file "$XDIR89/t.$e" 2>&1 | grep -q "LOG\|ALERT" \
+        && check "file: .$e script carrier flagged" "0" "0" \
+        || check "file: .$e script carrier flagged" "0" "1"
+done
+./hlse_core file "$XDIR89/benign.txt" 2>&1 | grep -q "OK" \
+    && check "file: benign txt clean" "0" "0" \
+    || check "file: benign txt clean" "0" "1"
+rm -rf "$XDIR89"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

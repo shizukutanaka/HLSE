@@ -15,6 +15,10 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **PowerShell module + awk/sed script carriers** (`hlse_file.c`):
+  `.psm1`/`.psd1` (PowerShell modules auto-load and execute),
+  `.awk`/`.sed` (awk `system()`/`| getline`, sed `e` command
+  run arbitrary shell) →30.
 - **Discord bot token structural detection** (`hlse_secrets.c`):
   Discord bot tokens carry no fixed prefix — segment 1 is the
   base64 of the bot's numeric snowflake ID. The scanner now
