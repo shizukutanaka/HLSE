@@ -8713,6 +8713,67 @@ printf '[default]\nregion = us-east-1\n' > "$XDIR/aws2/.aws/config"
 ./hlse_core file "$XDIR/aws2/.aws/config" 2>&1 | grep -q "F18\|F56" \
     && check "file: benign aws config no flag" "0" "1" \
     || check "file: benign aws config no flag" "0" "0"
+# F56: credential-store + service-spawner + handler carriers
+mkdir -p "$XDIR/cs1" "$XDIR/cs2"
+printf 'pg:5432:db:user:pass\n' > "$XDIR/cs1/.pgpass"
+./hlse_core file "$XDIR/cs1/.pgpass" 2>&1 | grep -q "F56" \
+    && check "file: pgpass flagged" "0" "0" \
+    || check "file: pgpass flagged" "0" "1"
+printf '[Credentials]\naws_access_key_id = x\n' > "$XDIR/cs1/.boto"
+./hlse_core file "$XDIR/cs1/.boto" 2>&1 | grep -q "F56" \
+    && check "file: boto creds flagged" "0" "0" \
+    || check "file: boto creds flagged" "0" "1"
+printf '[pypi]\nrepository = http://evil\nusername = x\npassword = y\n' \
+    > "$XDIR/cs1/.pypirc"
+./hlse_core file "$XDIR/cs1/.pypirc" 2>&1 | grep -q "F56" \
+    && check "file: pypirc flagged" "0" "0" \
+    || check "file: pypirc flagged" "0" "1"
+printf '{"auths":{"evil":{"auth":"x"}}}\n' > "$XDIR/cs1/.dockercfg"
+./hlse_core file "$XDIR/cs1/.dockercfg" 2>&1 | grep -q "F56" \
+    && check "file: dockercfg auths flagged" "0" "0" \
+    || check "file: dockercfg auths flagged" "0" "1"
+printf 'userx:$apr1$xyz\n' > "$XDIR/cs1/.htpasswd"
+./hlse_core file "$XDIR/cs1/.htpasswd" 2>&1 | grep -q "F56" \
+    && check "file: htpasswd flagged" "0" "0" \
+    || check "file: htpasswd flagged" "0" "1"
+mkdir -p "$XDIR/sv1" "$XDIR/sv2" "$XDIR/sv3"
+printf '[Unit]\nDescription=x\n[Timer]\nOnCalendar=daily\n' \
+    > "$XDIR/sv1/x.timer"
+./hlse_core file "$XDIR/sv1/x.timer" 2>&1 | grep -q "F56" \
+    && check "file: timer flagged" "0" "0" \
+    || check "file: timer flagged" "0" "1"
+printf '[Socket]\nListenStream=0.0.0.0:9999\n' > "$XDIR/sv1/x.socket"
+./hlse_core file "$XDIR/sv1/x.socket" 2>&1 | grep -q "F56" \
+    && check "file: socket flagged" "0" "0" \
+    || check "file: socket flagged" "0" "1"
+printf '[main]\nx=1\n' > "$XDIR/sv2/x.timer"
+./hlse_core file "$XDIR/sv2/x.timer" 2>&1 | grep -q "F56" \
+    && check "file: benign timer no F56" "0" "1" \
+    || check "file: benign timer no F56" "0" "0"
+printf 'service x\n{\n\ttype\t= UNLISTED\n\tserver\t= /tmp/evil\n}\n' \
+    > "$XDIR/sv3/inetd.conf"
+./hlse_core file "$XDIR/sv3/inetd.conf" 2>&1 | grep -q "F56" \
+    && check "file: inetd.conf flagged" "0" "0" \
+    || check "file: inetd.conf flagged" "0" "1"
+printf '[program:x]\ncommand=/tmp/evil\nautostart=true\n' \
+    > "$XDIR/sv3/supervisord.conf"
+./hlse_core file "$XDIR/sv3/supervisord.conf" 2>&1 | grep -q "F56" \
+    && check "file: supervisord.conf flagged" "0" "0" \
+    || check "file: supervisord.conf flagged" "0" "1"
+printf 'port = 80\n' > "$XDIR/sv2/xinetd.conf"
+./hlse_core file "$XDIR/sv2/xinetd.conf" 2>&1 | grep -q "F56" \
+    && check "file: benign xinetd.conf no F56" "0" "1" \
+    || check "file: benign xinetd.conf no F56" "0" "0"
+mkdir -p "$XDIR/mh1" "$XDIR/mh2"
+printf '[Default Applications]\nx-scheme-handler/http=evil.desktop\n' \
+    > "$XDIR/mh1/mimeapps.list"
+./hlse_core file "$XDIR/mh1/mimeapps.list" 2>&1 | grep -q "F56" \
+    && check "file: mimeapps scheme-handler flagged" "0" "0" \
+    || check "file: mimeapps scheme-handler flagged" "0" "1"
+printf 'text/plain=vim.desktop\n' > "$XDIR/mh2/mimeapps.list"
+./hlse_core file "$XDIR/mh2/mimeapps.list" 2>&1 | grep -q "F56" \
+    && check "file: benign mimeapps no F56" "0" "1" \
+    || check "file: benign mimeapps no F56" "0" "0"
 # F56: credential/session carrier files
 printf '{"log":{"entries":[{"request":{"cookies":[{"name":"s","value":"x"}]}}]}}\n' \
     > "$XDIR/x.har"

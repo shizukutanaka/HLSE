@@ -119,6 +119,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `add_custom_target` reaches `curl`/`wget`/`Invoke-WebRequest`/
   `bitsadmin`/`|sh`/`base64` → 55 (configure/build-time payload — the
   CMake form of the Makefile `$(shell)` check).
+- **Credential-store + service-spawner + handler carriers**
+  (`hlse_file.c`, F56): `.pgpass`/`pgpass.conf` → 40/45, `.boto`
+  `aws_*` → 50, `.pypirc` `repository`/`password`/`username` → 45,
+  `.dockercfg`/`.dockerconfigjson` `auths` → 50, `.htpasswd` hash
+  entries → 45 (plaintext/encoded credential stores arriving as
+  files); `*.timer`/`*.socket`/`*.path` units with `[Timer]`/
+  `[Socket]`/`[Path]`/`OnCalendar`/`ListenStream`/`OnBootSec`/`Accept=`
+  → 45 (a dropped unit activates its paired .service on schedule,
+  connect, or path change); `xinetd.conf`/`inetd.conf`/`supervisord.
+  conf`/`supervisor.conf` with `server`/`command`/`socket_type`/
+  `[program:` → 50 (per-connection and boot daemon spawn);
+  `mimeapps.list`/`defaults.list` reassigning `x-scheme-handler` → 45
+  (xdg-open launches the attacker's .desktop; a plain local
+  `text/plain=vim.desktop` mapping stays clean).
 - **Package-manager / cloud-credential config carriers** (`hlse_file.c`,
   F56 + F18): `.npmrc`/`npmrc`/`.yarnrc*`/`yarnrc.yml` whose
   `registry`/`script-shell`/`unsafeHttpWhitelist`/`npmRegistryServer`/

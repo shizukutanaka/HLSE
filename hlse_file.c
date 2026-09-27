@@ -2368,6 +2368,72 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 50;
         return 0;
     }
+    /* credential-store carriers — .pgpass/.boto/.pypirc/.dockercfg/
+     * .dockerconfigjson/.htpasswd are plaintext or lightly-encoded
+     * auth files; arriving as a file means credentials in transit */
+    if (strcmp(bn, ".pgpass") == 0 || strcmp(bn, "pgpass.conf") == 0) {
+        if (strchr(low, ':') != NULL && strchr(low, '@') == NULL)
+            return 45;
+        return 40;
+    }
+    if (strcmp(bn, ".boto") == 0 || strcmp(bn, "boto") == 0) {
+        if (strstr(low, "aws_") || strstr(low, "credential"))
+            return 50;
+        return 40;
+    }
+    if (strcmp(bn, ".pypirc") == 0 || strcmp(bn, "pypirc") == 0) {
+        if (strstr(low, "repository") || strstr(low, "password") ||
+            strstr(low, "username"))
+            return 45;
+        return 40;
+    }
+    if (strcmp(bn, ".dockercfg") == 0 ||
+        strcmp(bn, ".dockerconfigjson") == 0 ||
+        strcmp(bn, "dockercfg") == 0) {
+        if (strstr(low, "auths") || strstr(low, "auth"))
+            return 50;
+        return 40;
+    }
+    if (strcmp(bn, ".htpasswd") == 0 || strcmp(bn, "htpasswd") == 0) {
+        if (strchr(low, ':') != NULL &&
+            (strstr(low, "$apr") || strstr(low, "$2y") ||
+             strstr(low, "{sha}") || strchr(low, '$')))
+            return 45;
+        return 40;
+    }
+    /* systemd timer/socket/path units — a dropped .timer/.socket/.path
+     * activates the paired .service on schedule/connect/path-change;
+     * activation keys are the content gate (a bare unit name is not
+     * dangerous on its own) */
+    if (strstr(bn, ".timer") != NULL || strstr(bn, ".socket") != NULL ||
+        strstr(bn, ".path") != NULL) {
+        if (strstr(low, "[timer]") || strstr(low, "[socket]") ||
+            strstr(low, "[path]") || strstr(low, "oncalendar") ||
+            strstr(low, "listenstream") || strstr(low, "onbootsec") ||
+            strstr(low, "accept="))
+            return 45;
+        return 0;
+    }
+    /* service-spawner configs — xinetd/inetd/supervisord/runit run a
+     * named binary per connection or on boot */
+    if (strcmp(bn, "xinetd.conf") == 0 || strcmp(bn, "inetd.conf") == 0 ||
+        strcmp(bn, "supervisord.conf") == 0 ||
+        strcmp(bn, "supervisor.conf") == 0) {
+        if (strstr(low, "server") || strstr(low, "command") ||
+            strstr(low, "socket_type") || strstr(low, "[program:"))
+            return 50;
+        return 0;
+    }
+    /* mimeapps.list / defaults.list — reassigns x-scheme-handler or
+     * MIME defaults so xdg-open launches the attacker's .desktop */
+    if (strcmp(bn, "mimeapps.list") == 0 ||
+        strcmp(bn, "defaults.list") == 0) {
+        /* only scheme-handler reassignment is the remote vector — a
+         * plain text/plain=vim.desktop local mapping stays clean */
+        if (strstr(low, "x-scheme-handler"))
+            return 45;
+        return 0;
+    }
     /* .rhosts — `+ host` / host lines grant passwordless rsh/rlogin
      * trust to the listed host: a dropped .rhosts is an auth bypass */
     if (strcmp(bn, ".rhosts") == 0 || strcmp(bn, "hosts.equiv") == 0)
