@@ -2434,6 +2434,146 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 45;
         return 0;
     }
+    /* package/build descriptor carriers — Pipfile [[source]] and
+     * MODULE.bazel/WORKSPACE http_archive/git_repository redirect what
+     * gets fetched; Brewfile tap/brew/cask installs named packages;
+     * conanfile.py runs Python on conan install; Dangerfile/Guardfile/
+     * Capfile run ruby in CI/watchers — each is a resolver or
+     * per-invocation exec surface */
+    if (strcmp(bn, "pipfile") == 0 || strcmp(bn, "pipfile.lock") == 0) {
+        if (strstr(low, "source") || strstr(low, "url") ||
+            strstr(low, "http"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, "module.bazel") == 0 || strcmp(bn, "workspace") == 0 ||
+        strcmp(bn, "workspace.bazel") == 0 ||
+        strcmp(bn, "workspace.bzlmod") == 0) {
+        /* remote-fetch/repo-override primitives only — bazel_dep and
+         * plain http:// are ordinary declarations, not the vector */
+        if (strstr(low, "http_archive") || strstr(low, "git_repository") ||
+            strstr(low, "new_git_repository") ||
+            strstr(low, "local_repository") ||
+            strstr(low, "register_toolchains"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, "brewfile") == 0) {
+        if (strstr(low, "tap ") || strstr(low, "brew ") ||
+            strstr(low, "cask ") || strstr(low, "mas ") ||
+            strstr(low, "whalebrew "))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, "conanfile.py") == 0) {
+        if (strstr(low, "os.system") || strstr(low, "subprocess") ||
+            strstr(low, "eval(") || strstr(low, "exec(") ||
+            strstr(low, "curl") || strstr(low, "wget") ||
+            strstr(low, "tools.download") || strstr(low, "tools.get"))
+            return 50;
+        return 0;   /* a plain conanfile.py is the normal case */
+    }
+    if (strcmp(bn, "dangerfile") == 0 || strcmp(bn, "guardfile") == 0 ||
+        strcmp(bn, "capfile") == 0) {
+        if (strstr(low, "sh ") || strstr(low, "sh(") ||
+            strstr(low, "system") || strstr(low, "`") ||
+            strstr(low, "eval") || strstr(low, "curl") ||
+            strstr(low, "wget") || strstr(low, "exec"))
+            return 45;
+        return 0;
+    }
+    /* downloader/hook configs — aria2 on-download-* runs a script per
+     * finished fetch; pacman XferCommand runs a fetcher as root;
+     * makepkg DLAGENTS override per-protocol fetch commands; apt
+     * *-Invoke/Pre-Install-Pkgs/Post-Invoke run during apt (root);
+     * sources.list deb lines repoint the whole package feed;
+     * .rtorrent.rc execute/schedule runs on torrent events */
+    if (strcmp(bn, "aria2.conf") == 0 || strcmp(bn, ".aria2.conf") == 0 ||
+        strcmp(bn, "aria2c.conf") == 0) {
+        if (strstr(low, "on-download") || strstr(low, "on-bt-") ||
+            strstr(low, "command") || strstr(low, "rpc-secret") ||
+            strstr(low, "save-session-interval"))
+            return 50;
+        return 0;
+    }
+    if (strcmp(bn, "pacman.conf") == 0) {
+        if (strstr(low, "xfercommand") || strstr(low, "siglevel = never") ||
+            strstr(low, "syncfirst"))
+            return 50;
+        return 0;
+    }
+    if (strcmp(bn, "makepkg.conf") == 0) {
+        if (strstr(low, "dlagents") || strstr(low, "buildenv") ||
+            strstr(low, "integrity_check"))
+            return 50;
+        return 0;
+    }
+    if (strcmp(bn, "apt.conf") == 0 || strstr(bn, "apt.conf") != NULL) {
+        if (strstr(low, "-invoke") || strstr(low, "pre-install") ||
+            strstr(low, "post-invoke") || strstr(low, "dpkg::"))
+            return 55;
+        return 0;
+    }
+    if (strcmp(bn, "sources.list") == 0 ||
+        strcmp(bn, "sources.list.d") == 0) {
+        if (strstr(low, "deb ") || strstr(low, "deb-src") ||
+            strstr(low, "signed-by") || strstr(low, "http"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, ".rtorrent.rc") == 0 || strcmp(bn, "rtorrent.rc") == 0) {
+        if (strstr(low, "execute") || strstr(low, "schedule") ||
+            strstr(low, "system.method"))
+            return 50;
+        return 0;
+    }
+    /* kernel/boot config carriers — sysctl.conf core_pattern=| runs a
+     * program as root on any crash; xorg.conf ModulePath loads .so as
+     * the X server; grub/syslinux/isolinux/pxelinux/loader configs can
+     * rewrite kernel args or chain-load an attacker image */
+    if (strcmp(bn, "sysctl.conf") == 0 || strstr(bn, "sysctl") != NULL) {
+        if ((strstr(low, "core_pattern") && strchr(low, '|')) ||
+            strstr(low, "core_pattern=|") || strstr(low, "core_pattern ="))
+            return 55;
+        return 0;
+    }
+    if (strcmp(bn, "xorg.conf") == 0 || strstr(bn, "xorg.conf") != NULL) {
+        if (strstr(low, "modulepath") || strstr(low, "load \"") ||
+            strstr(low, "fontpath") || strstr(low, "serverlayout"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, "grub.cfg") == 0 || strcmp(bn, "grub.conf") == 0 ||
+        strcmp(bn, "menu.lst") == 0 || strcmp(bn, "syslinux.cfg") == 0 ||
+        strcmp(bn, "isolinux.cfg") == 0 || strcmp(bn, "pxelinux.cfg") == 0 ||
+        strcmp(bn, "loader.conf") == 0 || strstr(bn, "grub.d") != NULL ||
+        strstr(bn, "_custom") != NULL) {
+        if (strstr(low, "init=") || strstr(low, "rdinit") ||
+            strstr(low, "chainloader") || strstr(low, "configfile") ||
+            strstr(low, "source ") || strstr(low, "module") ||
+            strstr(low, "linux ") || strstr(low, "append "))
+            return 50;
+        return 0;
+    }
+    /* anacrontab — same scheduled-exec carrier as crontab */
+    if (strcmp(bn, "anacrontab") == 0) {
+        if (strstr(low, "/") && (strstr(low, "*") || strstr(low, "@") ||
+            strstr(low, "daily") || strstr(low, "weekly") ||
+            strstr(low, "monthly")))
+            return 40;
+        return 0;
+    }
+    /* dir-locals.el — Emacs evaluates `(eval …)` dir-local entries when
+     * ANY file in the directory is opened: a dropped .dir-locals.el in
+     * a repo is exec-on-open for every contributor */
+    if (strcmp(bn, ".dir-locals.el") == 0 ||
+        strcmp(bn, "dir-locals.el") == 0 ||
+        strcmp(bn, ".dir-locals-2.el") == 0) {
+        if (strstr(low, "(eval") || strstr(low, "shell-command") ||
+            strstr(low, "call-process"))
+            return 55;
+        return 0;
+    }
     /* .rhosts — `+ host` / host lines grant passwordless rsh/rlogin
      * trust to the listed host: a dropped .rhosts is an auth bypass */
     if (strcmp(bn, ".rhosts") == 0 || strcmp(bn, "hosts.equiv") == 0)

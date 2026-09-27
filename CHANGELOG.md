@@ -119,6 +119,26 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `add_custom_target` reaches `curl`/`wget`/`Invoke-WebRequest`/
   `bitsadmin`/`|sh`/`base64` → 55 (configure/build-time payload — the
   CMake form of the Makefile `$(shell)` check).
+- **Package-descriptor + boot/kernel carriers** (`hlse_file.c`, F56):
+  `Pipfile`/`Pipfile.lock` `[[source]]`/url → 45; `MODULE.bazel`/
+  `WORKSPACE` `http_archive`/`git_repository`/`local_repository`/
+  `register_toolchains` → 45 (plain `bazel_dep` stays clean);
+  `Brewfile` `tap`/`brew`/`cask` → 45; `conanfile.py` with
+  `os.system`/`subprocess`/`eval(`/`exec(`/`tools.download`/`tools.get`
+  → 50 (a plain conanfile stays clean); `Dangerfile`/`Guardfile`/
+  `Capfile` `sh`/`system`/backtick/`exec`/`curl` → 45; `aria2.conf`
+  `on-download-*`/`command`/`rpc-secret` → 50; `pacman.conf`
+  `XferCommand`/`SigLevel = Never` → 50; `makepkg.conf` `DLAGENTS` → 50;
+  `apt.conf*` `*-Invoke`/`Pre-Install`/`DPkg::` → 55; `sources.list`
+  `deb `/`deb-src`/`signed-by` → 45; `.rtorrent.rc` `execute`/
+  `schedule`/`system.method` → 50; `sysctl.conf` `core_pattern` pipe
+  → 55 (root exec on any crash); `xorg.conf` `ModulePath`/`Load` → 45;
+  `grub.cfg`/`grub.conf`/`menu.lst`/`syslinux.cfg`/`isolinux.cfg`/
+  `pxelinux.cfg`/`loader.conf`/`grub.d`/`%_custom` with `init=`/
+  `rdinit`/`chainloader`/`configfile`/`linux`/`append` → 50 (boot-arg
+  or image swap); `anacrontab` schedule lines → 40; `.dir-locals.el`/
+  `dir-locals.el` `(eval`/`shell-command` → 55 (exec on any file open
+  in that directory).
 - **Credential-store + service-spawner + handler carriers**
   (`hlse_file.c`, F56): `.pgpass`/`pgpass.conf` → 40/45, `.boto`
   `aws_*` → 50, `.pypirc` `repository`/`password`/`username` → 45,
