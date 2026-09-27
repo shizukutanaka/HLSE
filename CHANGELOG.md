@@ -15,6 +15,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **URL backslash-evasion signal** (`hlse_core.c`): a special-scheme
+  URL written with `\` separators (`https:\\host`, `http:\\\\host\path`)
+  is normalized for analysis and now also scored +30 — WHATWG folds
+  `\` to `/`, so the written form exists only as filter evasion.
+  Previously it normalized silently and scored as the bare host.
+  The `\@` credential-confusion case keeps its stronger +50.
+- **`.webarchive` extension** (`hlse_file.c`): Safari web archives
+  (binary plist bundling full web content incl. scripts) →30, a
+  macOS attachment-lure vector.
 - **F58 mail-carrier forensics** (`hlse_file.c`): `hlse_check_file`
   routes the header block of `.eml`/`.msg`/`.mbox` files through
   `hlse_check_email_headers` — display-name spoofing, Reply-To

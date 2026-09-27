@@ -10145,6 +10145,30 @@ printf 'From: "PayPal Security" <sec@evil.example>\nReply-To: collect@evil2.exam
     || check "file: non-.eml with mail headers clean" "0" "1"
 rm -rf "$XDIR85"
 
+# ── cycle-86: URL backslash evasion + .webarchive carrier ──
+XDIR86=$(mktemp -d /tmp/hlse86.XXXXXX)
+printf 'x' > "$XDIR86/x.webarchive"
+printf 'x' > "$XDIR86/benign.txt"
+./hlse_core 'https:\\evil.example' 2>&1 | grep -q "LOG\|ALERT" \
+    && check "url: https:\\\\ backslash form flagged" "0" "0" \
+    || check "url: https:\\\\ backslash form flagged" "0" "1"
+./hlse_core 'http:\\\\evil.example\path\a.exe' 2>&1 | grep -q "LOG\|ALERT" \
+    && check "url: http:\\\\\\\\ multi-backslash flagged" "0" "0" \
+    || check "url: http:\\\\\\\\ multi-backslash flagged" "0" "1"
+./hlse_core 'https:\\evil.example\@paypal.com' 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "url: backslash-at trick still fires" "0" "0" \
+    || check "url: backslash-at trick still fires" "0" "1"
+./hlse_core 'https://legit.example/normal' 2>&1 | grep -q "OK" \
+    && check "url: canonical https clean" "0" "0" \
+    || check "url: canonical https clean" "0" "1"
+./hlse_core file "$XDIR86/x.webarchive" 2>&1 | grep -q "LOG\|ALERT" \
+    && check "file: .webarchive flagged" "0" "0" \
+    || check "file: .webarchive flagged" "0" "1"
+./hlse_core file "$XDIR86/benign.txt" 2>&1 | grep -q "OK" \
+    && check "file: benign txt clean" "0" "0" \
+    || check "file: benign txt clean" "0" "1"
+rm -rf "$XDIR86"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

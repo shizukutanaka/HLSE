@@ -223,8 +223,9 @@ static const char *EXECUTABLE_EXTS[] = {
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
-    /* macOS installer packages */
-    ".pkg", ".mpkg",
+    /* macOS installer packages + Safari web archive (bundled live
+     * web content incl. scripts — attachment lure vector) */
+    ".pkg", ".mpkg", ".webarchive",
     /* Macro-enabled Office documents (bypass Mark-of-the-Web in many configs) */
     ".docm", ".xlsm", ".pptm", ".xlam", ".ppam", ".xlsb",
     /* Java */

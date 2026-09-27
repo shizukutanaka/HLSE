@@ -1806,6 +1806,7 @@ check_url(const char *raw_url) {
      * parser while displaying a different structure.               */
     char nbuf[2100];
     int bs_at_trick = 0;
+    int bs_norm = 0;
 
     memset(&v, 0, sizeof(v));
 
@@ -1829,6 +1830,7 @@ check_url(const char *raw_url) {
             nbuf[i] = raw_url[i] == '\\' ? '/' : raw_url[i];
         nbuf[i] = '\0';
         raw_url = nbuf;
+        bs_norm = 1;
     }
 
     if (!parse_url(raw_url, &u)) {
@@ -2003,6 +2005,11 @@ check_url(const char *raw_url) {
                 if (iv.score > v.score) v.score = iv.score;
             }
         }
+        if (bs_norm && v.score == 0)
+            add_reason(&v, 30,
+                "Backslash separators in URL — browsers normalize them "
+                "to '/', so the written form is deliberate filter "
+                "evasion");
         return v;
     }
 
@@ -2012,6 +2019,14 @@ check_url(const char *raw_url) {
         add_reason(&v, 50,
             "Backslash-before-@ URL — '\\' parses as '/', so the text "
             "after '@' is NOT the host (visual authority confusion)");
+    }
+    else if (bs_norm) {
+        /* A special-scheme URL written with '\' separators — WHATWG
+         * folds them to '/', so the *written* form exists only to
+         * slip past filters that expect the canonical '//'.     */
+        add_reason(&v, 30,
+            "Backslash separators in URL — browsers normalize them to "
+            "'/', so the written form is deliberate filter evasion");
     }
 
     /* @ credential trick: "https://google.com@evil.com" — the part before
