@@ -15,6 +15,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Vendor credential prefixes** (`hlse_secrets.c`): `xkeysib-`
+  (Brevo/Sendinblue, →80), `sl.` + 60-char tail (Dropbox long-form,
+  →80), `AKCp` (JFrog Artifactory identity key, →80),
+  `ATCTT`/`ATBB` (Bitbucket app password, →80), `dp.ct.` (Doppler
+  config token, →85).
+- **Romance-compensation / health-scam / pyramid vocabulary**
+  (`hlse_text.c`): `GROOMING_WORDS` gains the sugar-daddy family
+  ("sugar daddy", "weekly allowance", "text me on whatsapp",
+  "dm me on telegram") plus miracle-cure clickbait ("miracle cure",
+  "doctors hate", "big pharma", "fda banned", "one weird trick",
+  "natural cure for"); `PRIZE_WORDS` gains the doubling/send-back
+  family ("send 1 btc", "and get 2 back", "celebrity giveaway",
+  bare "giveaway") and the gifting-circle pyramid family
+  ("blessing loom", "susu", "savings circle", "abundance circle").
 - **Daemon exec-hook carriers** (`hlse_file.c` F56): `snmpd.conf`
   `exec`/`extend`/`pass_persist`/`traphandle`/`monitor` → 50 (a
   command runs per SNMP query or trap); `rsyslog.conf` `omprog`/

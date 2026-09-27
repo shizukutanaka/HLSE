@@ -286,6 +286,21 @@ static const char *PRIZE_WORDS[] = {
     "send bitcoin and receive", "send btc and receive",
     "bitcoin giveaway", "crypto giveaway", "ethereum giveaway",
     "giving away bitcoin", "giving away crypto", "giving away ethereum",
+    /* Doubling / send-back scams — 'send X and get 2X back' plus
+     * celebrity giveaway lures without a coin word           */
+    "send 1 btc", "send 0.5 btc", "send 1 eth", "send 0.1 btc",
+    "and get 2 back", "get double back", "get twice back",
+    "receive double", "doubled in return", "send crypto and get",
+    "celebrity giveaway", "giveaway event", "special giveaway",
+    "live giveaway", "airdrop giveaway", "giveaway",
+    "giveaway ends", "enter the giveaway",
+    /* Pyramid / gifting-circle schemes — Ponzi with 'community'
+     * framing (blessing loom / susu / gifting circle variants)  */
+    "gifting circle", "gifting wheel", "blessing loom",
+    "loom circle", "susu circle", "abundance circle",
+    "share the wealth", "circle of abundance", "pay it forward circle",
+    "mandala game", "gift cloud", "savings circle scam",
+    "susu", "savings circle", "blessing circle",
     /* Japanese */
     "おめでとう", "当選", "賞品",
     /* Korean */
@@ -507,6 +522,27 @@ static const char *GROOMING_WORDS[] = {
     "military overseas", "doctor without borders",
     "successful trader", "successful investor",
     "crypto trader with", "years of experience in trading",
+    /* Sugar-daddy / romance-compensation scam — the 'paid to chat'
+     * family that ends in gift-card / 'verification fee' theft;
+     * off-platform hops move the victim to unmoderated channels  */
+    "sugar daddy", "sugar baby", "weekly allowance",
+    "pay your bills", "i'll take care of you",
+    "i will take care of you", "spoil you",
+    "text me on whatsapp", "message me on whatsapp",
+    "add me on whatsapp", "dm me on telegram",
+    "text me on telegram", "message me on telegram",
+    "talk on whatsapp", "chat on whatsapp", "chat on telegram",  
+    "move to whatsapp", "switch to telegram", "continue on whatsapp",
+    /* Miracle-cure / health-scam clickbait — supplement and
+     * pseudo-medicine lures that end in subscription billing or
+     * a credential 'account verification' page                  */
+    "miracle cure", "doctors hate", "big pharma",
+    "fda banned", "fda doesn't want", "banned by the fda",
+    "one weird trick", "weird trick", "weird old tip",
+    "they don't want you to know", "doctors don't want",
+    "secret cure", "natural cure for", "cures diabetes",
+    "cures cancer", "reverse diabetes", "melt fat overnight",
+    "big pharma doesn't want", "the pharmaceutical industry",
     "found your contact by accident", "sent this by accident",
     /* Additional pig-butchering patterns 2024-2025 */
     "my mentor taught me", "my uncle works in finance",
@@ -665,6 +701,11 @@ static const char *FAKE_ALERT_WORDS[] = {
     "allow us to remote access", "give us remote access",
     "microsoft has detected", "windows has detected",
     "apple has detected", "your icloud has been",
+    /* Apple/iCloud impersonation — 'verification required' and
+     * storage-full lures that harvest apple-id credentials    */
+    "icloud account", "icloud verification", "icloud storage is full",
+    "icloud locked", "apple id disabled", "apple-id locked",
+    "itunes account", "apple pay suspended",
     /* Apple ID / account impersonation (high-volume phishing 2024-2025) */
     "your apple id has been", "apple id has been locked",
     "apple id locked", "apple id was used to sign in",

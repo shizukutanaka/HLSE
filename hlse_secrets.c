@@ -277,6 +277,15 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "nsec1",           5,  40, is_bech32,        "Nostr Secret Key",    80 },
     { "dp.st.",          6,  40, is_alnum_or_dash, "Doppler Service Token", 85 },
     { "dp.pt.",          6,  40, is_alnum_or_dash, "Doppler Personal Token",85 },
+    { "dp.ct.",          6,  40, is_alnum_or_dash, "Doppler Config Token", 85 },
+    /* Brevo/Sendinblue SMTP+API key, Dropbox long-form token,
+     * JFrog Artifactory identity key, Bitbucket app password —
+     * each has a fixed vendor prefix that hands over an account */
+    { "xkeysib-",        9,  40, is_alnum_or_dash, "Brevo (Sendinblue) API Key", 80 },
+    { "sl.",             3,  60, is_alnum_or_dash, "Dropbox Access Token", 80 },
+    { "AKCp",            4,  30, is_alnum_or_dash, "JFrog Artifactory API Key", 80 },
+    { "ATCTT",           5,  20, is_alnum_or_dash, "Bitbucket App Password", 80 },
+    { "ATBB",            4,  20, is_alnum_or_dash, "Bitbucket App Password", 80 },
     { "glsoat-",       7,  20, is_alnum_or_dash,   "GitLab Self-managed OAuth Token", 80 },
 
     /* Postman / Docker Hub / Dynatrace — collaboration + registry +

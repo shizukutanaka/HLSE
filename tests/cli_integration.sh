@@ -9899,6 +9899,53 @@ printf 'FOO=bar\n' > "$XDIR77/.ssh/environment"
 printf 'net.ifnames=0\n' > "$XDIR77/sysctl.conf" 2>/dev/null || true
 rm -rf "$XDIR77"
 
+# ── cycle-78: vendor secret prefixes + scam-family vocabulary ──
+./hlse_core secret -- 'k: xkeysib-'"xK9mQ2wE7rT4yU8iO1pA3sD6fG5hJ9kL0zX2cV4bN7mQ8wE1r" 2>&1 \
+    | grep -q "Brevo" \
+    && check "secret: xkeysib- flagged" "0" "0" \
+    || check "secret: xkeysib- flagged" "0" "1"
+./hlse_core secret -- 'k: sl.'"xK9mQ2wE7rT4yU8iO1pA3sD6fG5hJ9kL0zX2cV4bN7mQ8wE1rT3yU5iO7pA9sD1" 2>&1 \
+    | grep -q "Dropbox" \
+    && check "secret: sl. flagged" "0" "0" \
+    || check "secret: sl. flagged" "0" "1"
+./hlse_core secret -- 'k: ATCTT'"xK9mQ2wE7rT4yU8iO1pA3sD6fG" 2>&1 \
+    | grep -q "Bitbucket" \
+    && check "secret: ATCTT flagged" "0" "0" \
+    || check "secret: ATCTT flagged" "0" "1"
+./hlse_core secret -- 'k: dp.ct.'"xK9mQ2wE7rT4yU8iO1pA3sD6fG5hJ9kL0zX2cV4bN7m" 2>&1 \
+    | grep -q "Doppler" \
+    && check "secret: dp.ct. flagged" "0" "0" \
+    || check "secret: dp.ct. flagged" "0" "1"
+./hlse_core text 'i am a sugar daddy looking for a sugar baby' 2>&1 \
+    | grep -q "LOG\|ALERT" \
+    && check "text: sugar-daddy flagged" "0" "0" \
+    || check "text: sugar-daddy flagged" "0" "1"
+./hlse_core text 'send 1 btc and get 2 back' 2>&1 \
+    | grep -q "ALERT\|BLOCK" \
+    && check "text: doubling scam flagged" "0" "0" \
+    || check "text: doubling scam flagged" "0" "1"
+./hlse_core text 'blessing loom gifting circle' 2>&1 \
+    | grep -q "LOG\|ALERT" \
+    && check "text: gifting circle flagged" "0" "0" \
+    || check "text: gifting circle flagged" "0" "1"
+./hlse_core text 'this miracle cure doctors hate' 2>&1 \
+    | grep -q "LOG\|ALERT" \
+    && check "text: miracle cure flagged" "0" "0" \
+    || check "text: miracle cure flagged" "0" "1"
+./hlse_core text 'icloud account verification required' 2>&1 \
+    | grep -q "LOG\|ALERT" \
+    && check "text: icloud lure flagged" "0" "0" \
+    || check "text: icloud lure flagged" "0" "1"
+./hlse_core text 'discuss this on the phone' 2>&1 | grep -q "OK" \
+    && check "text: benign phone chat clean" "0" "0" \
+    || check "text: benign phone chat clean" "0" "1"
+./hlse_core text 'natural language processing' 2>&1 | grep -q "OK" \
+    && check "text: benign tech term clean" "0" "0" \
+    || check "text: benign tech term clean" "0" "1"
+./hlse_core secret -- 'k: sl.short' 2>&1 | grep -q "no credentials" \
+    && check "secret: short sl. clean" "0" "0" \
+    || check "secret: short sl. clean" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
