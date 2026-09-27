@@ -9715,6 +9715,42 @@ rm -rf "$XDIR70"
     && check "text: benign bill notice clean" "0" "0" \
     || check "text: benign bill notice clean" "0" "1"
 
+# ── cycle-72: Slack session tokens + credential-store carriers ──
+./hlse_core secret -- 'k: xoxc-'"xK9mQ2wE7rT4yU8iO1p" 2>&1 \
+    | grep -q "Slack Client Token" \
+    && check "secret: xoxc- flagged" "0" "0" \
+    || check "secret: xoxc- flagged" "0" "1"
+./hlse_core secret -- 'k: xoxd-'"xK9mQ2wE7rT4yU8iO1pA3sD6fG5hJ9" 2>&1 \
+    | grep -q "Slack Session Cookie" \
+    && check "secret: xoxd- flagged" "0" "0" \
+    || check "secret: xoxd- flagged" "0" "1"
+XDIR72=$(mktemp -d "${TMPDIR:-/tmp}/hlse72.XXXXXX")
+printf 'https://user:tok@evil.example\n' > "$XDIR72/git-credentials"
+./hlse_core file "$XDIR72/git-credentials" 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "file: git-credentials flagged" "0" "0" \
+    || check "file: git-credentials flagged" "0" "1"
+printf 'realm:user:$apr1$abc\n' > "$XDIR72/.htdigest"
+./hlse_core file "$XDIR72/.htdigest" 2>&1 | grep -q "ALERT" \
+    && check "file: .htdigest flagged" "0" "0" \
+    || check "file: .htdigest flagged" "0" "1"
+printf '[myservice]\nhost=x\nuser=u\npassword=p\n' > "$XDIR72/pg_service.conf"
+./hlse_core file "$XDIR72/pg_service.conf" 2>&1 | grep -q "ALERT" \
+    && check "file: pg_service.conf flagged" "0" "0" \
+    || check "file: pg_service.conf flagged" "0" "1"
+printf 'http_access allow all\n' > "$XDIR72/squid.conf"
+./hlse_core file "$XDIR72/squid.conf" 2>&1 | grep -q "ALERT" \
+    && check "file: squid open-proxy flagged" "0" "0" \
+    || check "file: squid open-proxy flagged" "0" "1"
+printf 'http_port 3128\n' > "$XDIR72/squid2.conf"
+./hlse_core file "$XDIR72/squid2.conf" 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "file: non-squid basename clean" "0" "1" \
+    || check "file: non-squid basename clean" "0" "0"
+printf 'https://example.com\n' > "$XDIR72/git-credentials2"
+./hlse_core file "$XDIR72/git-credentials2" 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "file: plain URL list clean" "0" "1" \
+    || check "file: plain URL list clean" "0" "0"
+rm -rf "$XDIR72"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

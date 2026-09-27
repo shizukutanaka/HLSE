@@ -15,6 +15,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Slack session-theft token formats** (`hlse_secrets.c`): `xoxc-`
+  (Slack client token) → 85 and `xoxd-` (Slack `d` session cookie)
+  → 90 — the exfiltrated pair replays a full workspace session
+  without the browser.
+- **Credential-store / proxy carriers** (`hlse_file.c` F56):
+  `git-credentials`/`.git-credentials` holding `://user:tok@host`
+  lines → 55; `.htdigest`/`htdigest` → 40–45; `pg_service.conf`/
+  `.pg_service` with `host`/`password` → 50; `squid.conf` with
+  `http_access allow all`/`url_rewrite`/`ssl_bump` (open relay or
+  interception hook) → 45.
 - **JP utility/authority smishing + EN legal-threat vocabulary**
   (`hlse_text.c`): `CALLBACK_PHISH_WORDS` gains the JP utility
   non-payment and account-problem families — 水道料金/電気料金/

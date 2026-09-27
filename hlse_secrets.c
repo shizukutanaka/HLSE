@@ -243,6 +243,11 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "xoxb-",        5,  10, is_alnum_or_dash,   "Slack Bot Token",       80 },
     { "xoxp-",         5,  10, is_alnum_or_dash,   "Slack User Token",      85 },
     { "xoxs-",         5,  10, is_alnum_or_dash,   "Slack Session Token",   85 },
+    /* Slack desktop/client session theft — xoxc- is the client token
+     * and xoxd- the 'd' cookie; exfiltrating the pair replays the
+     * whole workspace session (browser-independent)             */
+    { "xoxc-",         5,  10, is_alnum_or_dash,   "Slack Client Token",   85 },
+    { "xoxd-",         5,  20, is_alnum_or_dash,   "Slack Session Cookie", 90 },
 
     /* Google */
     { "AIza",          4,  35, is_alnum_or_dash,   "Google API Key",        80 },

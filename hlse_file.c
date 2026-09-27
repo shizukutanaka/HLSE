@@ -2412,6 +2412,41 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 45;
         return 40;
     }
+    /* .htdigest — the digest-auth sibling of htpasswd (realm:user:hash) */
+    if (strcmp(bn, ".htdigest") == 0 || strcmp(bn, "htdigest") == 0) {
+        if (strchr(low, ':') != NULL && strchr(low, '$') != NULL)
+            return 45;
+        return 40;
+    }
+    /* git-credentials / .git-credentials — plaintext
+     * `https://user:token@host` lines the credential-store helper
+     * replays to remotes. A captured file is a ready-made token set */
+    if (strcmp(bn, "git-credentials") == 0 ||
+        strcmp(bn, ".git-credentials") == 0 ||
+        strcmp(bn, "git-credentials.txt") == 0) {
+        if (strstr(low, "://") && strchr(low, '@'))
+            return 55;
+        return 40;
+    }
+    /* PostgreSQL service file — pg_service.conf / .pg_service carries
+     * host+user+password for named connection services           */
+    if (strcmp(bn, "pg_service.conf") == 0 ||
+        strcmp(bn, ".pg_service.conf") == 0 ||
+        strcmp(bn, ".pg_service") == 0) {
+        if (strstr(low, "password") || strstr(low, "host"))
+            return 50;
+        return 40;
+    }
+    /* squid.conf — a proxy config dropped in place becomes the
+     * egress path; `http_access allow all` makes it an open
+     * relay and url_rewrite/ssl_bump are interception hooks   */
+    if (strcmp(bn, "squid.conf") == 0) {
+        if (strstr(low, "http_access allow all") ||
+            strstr(low, "url_rewrite") || strstr(low, "ssl_bump") ||
+            strstr(low, "ssl bump"))
+            return 45;
+        return 0;
+    }
     /* systemd timer/socket/path units — a dropped .timer/.socket/.path
      * activates the paired .service on schedule/connect/path-change;
      * activation keys are the content gate (a bare unit name is not
