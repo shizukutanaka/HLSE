@@ -511,6 +511,71 @@ hlse_check_paste(const char *text) {
         }
     }
 
+    /* P9: Destructive commands — the classic baited one-liner */
+    if (strstr(text, "rm -rf /") || strstr(text, "rm -rf ~") ||
+        strstr(text, "rm -rf $HOME") || strstr(text, "rm -fr /") ||
+        strstr(text, ":(){ :|:") ||
+        strstr(text, "mkfs.") || strstr(text, "dd if=") ||
+        strstr(text, "shred ") || strstr(text, "> /dev/sd") ||
+        strstr(text, "chmod -R 777") || strstr(text, "chmod -R 777 /")) {
+        v.signals |= PASTE_DESTRUCTIVE;
+        v.score += 60;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P9: Destructive payload — recursive delete/disk wipe/"
+                "fork bomb");
+    }
+
+    /* P10: Credential-file access — reading private keys/credentials is
+     * the pre-exfiltration step of pastejacking */
+    if (strstr(text, ".ssh/id_") || strstr(text, "id_rsa") ||
+        strstr(text, "id_ed25519") || strstr(text, ".ssh/authorized_keys") ||
+        strstr(text, ".aws/credentials") || strstr(text, ".aws/config") ||
+        strstr(text, ".gnupg/") || strstr(text, ".kube/config") ||
+        strstr(text, ".docker/config.json") || strstr(text, ".netrc") ||
+        strstr(text, ".git-credentials") || strstr(text, "shadow") ||
+        strstr(text, "/etc/passwd")) {
+        v.signals |= PASTE_CRED_ACCESS;
+        v.score += 40;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P10: Credential/key file access — private key, cloud "
+                "creds, or auth database read (pre-exfiltration)");
+    }
+
+    /* P11: Persistence writes — appending to rc/config/ssh/crontab
+     * installs the payload to run on every login */
+    if ((strstr(text, ">>") || strstr(text, "echo ") ||
+         strstr(text, "crontab") || strstr(text, "at now") ||
+         strstr(text, "systemctl enable") || strstr(text, "launchctl load")) &&
+        (strstr(text, ".bashrc") || strstr(text, ".zshrc") ||
+         strstr(text, ".profile") || strstr(text, "authorized_keys") ||
+         strstr(text, "crontab") || strstr(text, "systemctl enable") ||
+         strstr(text, "launchctl") || strstr(text, "rc.local") ||
+         strstr(text, ".xinitrc") || strstr(text, ".zshenv"))) {
+        v.signals |= PASTE_PERSIST_WRITE;
+        v.score += 45;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P11: Persistence write — appends/enables code to run "
+                "on every login or boot");
+    }
+
+    /* P12: eval/exec of fetched content — the non-pipe form of the
+     * download cradle (P2 only catches the `| sh` shape) */
+    if ((strstr(text, "eval") || strstr(text, "exec") ||
+         ci_contains(text, "source ") || ci_contains(text, ". /")) &&
+        (strstr(text, "$(") || strstr(text, "`") ||
+         strstr(text, "curl") || strstr(text, "wget") ||
+         strstr(text, "fetch"))) {
+        v.signals |= PASTE_EVAL_FETCH;
+        v.score += 45;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P12: Eval/source of fetched content — same RCE class as "
+                "the pipe-to-shell cradle without the pipe");
+    }
+
     /* P8: Windows "ClickFix" / LOLBin remote execution. ClickFix lures (fake
      * CAPTCHA or browser-update pages) tell the victim to press Win+R and
      * paste a one-liner that runs PowerShell or a living-off-the-land binary.

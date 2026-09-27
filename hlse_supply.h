@@ -50,6 +50,10 @@ PackageVerdict hlse_check_package(const char *pkg_name,
 #define PASTE_HISTORY_EVASION 0x20
 #define PASTE_BACKGROUND_EXEC 0x40
 #define PASTE_WINDOWS_LOLBIN  0x80   /* ClickFix: PowerShell/mshta/certutil etc. */
+#define PASTE_DESTRUCTIVE     0x100  /* rm -rf /, dd if=, fork bomb, mkfs, shred */
+#define PASTE_CRED_ACCESS     0x200  /* reads of private keys / cloud creds / auth DBs */
+#define PASTE_PERSIST_WRITE   0x400  /* append/enable to rc, crontab, systemd, launchd */
+#define PASTE_EVAL_FETCH      0x800  /* eval/source of fetched content (non-pipe cradle) */
 
 typedef struct {
     int  score;              /* 0..100 */

@@ -19,6 +19,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   (Discord MFA token) → 85; `AC`/`SK` + 32 lowercase hex (Twilio
   Account SID / API Key) → 70 — new `is_hex_c` predicate keeps the
   2-char prefixes' false positives low.
+- **Paste: destructive/credential/persistence/eval-fetch patterns**
+  (`hlse_supply.c`, `hlse_supply.h`): P9 → 60 for destructive payloads
+  (`rm -rf /`/`rm -rf ~`/`rm -rf $HOME`, fork bomb, `mkfs.`,
+  `dd if=`, `shred`, `> /dev/sd`, `chmod -R 777`); P10 → 40 for
+  credential/key file access (`.ssh/id_*`, `.aws/credentials`,
+  `.gnupg/`, `.kube/config`, `.docker/config.json`, `.netrc`,
+  `.git-credentials`, `shadow`, `/etc/passwd`); P11 → 45 for
+  persistence writes (appending to `.bashrc`/`.zshrc`/`.profile`/
+  `authorized_keys`/`rc.local`/`.xinitrc`/`.zshenv`, `crontab`,
+  `systemctl enable`, `launchctl load`); P12 → 45 for eval/source of
+  fetched content (`eval $(curl …)`, `source /tmp/x`, backtick
+  command-substitution fetch) — the non-pipe form of the download
+  cradle P2 catches.
 - **Vishing/IM deep-link schemes** (`hlse_core.c`): `callto:`,
   `facetime-audio:`, `wtai:`, `sip:`, `im:`, `xmpp:` join the mobile
   deep-link family at 35 — the same click-to-call/message handler
