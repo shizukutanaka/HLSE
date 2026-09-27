@@ -2093,6 +2093,55 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         (strstr(low, "launchdaemons") || strstr(low, "launchagents") ||
          strstr(low, "/library/")))
         return 50;
+    /* .curlrc/.wgetrc — every curl/wget invocation applies them: an
+     * output/output_document/directory_prefix + url/input pair redirects
+     * downloads to an attacker path without a visible flag */
+    if (strcmp(bn, ".curlrc") == 0 || strcmp(bn, "_curlrc") == 0 ||
+        strcmp(bn, ".wgetrc") == 0) {
+        if ((strstr(low, "output") || strstr(low, "directory_prefix") ||
+             strstr(low, "dir_prefix")) &&
+            (strstr(low, "url") || strstr(low, "input") ||
+             strstr(low, "http")))
+            return 50;
+        return 40;
+    }
+    /* .vimrc / init.vim / init.lua — editor startup files evaluate
+     * autocmd/system()/os.execute()/io.popen on every launch */
+    if (strcmp(bn, ".vimrc") == 0 || strcmp(bn, "_vimrc") == 0 ||
+        strcmp(bn, "init.vim") == 0 || strcmp(bn, "init.lua") == 0 ||
+        strcmp(bn, ".exrc") == 0 || strcmp(bn, "_exrc") == 0) {
+        if (strstr(low, "autocmd") || strstr(low, "system(") ||
+            strstr(low, "os.execute") || strstr(low, "io.popen") ||
+            strstr(low, ":!") || strstr(low, "vim.fn"))
+            return 50;
+        return 0;   /* ordinary vim config — no signal */
+    }
+    /* win.ini / system.ini — run= / load= auto-starts a program at
+     * boot; a shell= line that is not the default explorer.exe
+     * reassigns the shell outright (classic INI persistence) */
+    if (strcmp(bn, "win.ini") == 0 || strcmp(bn, "system.ini") == 0) {
+        if (strstr(low, "run=") || strstr(low, "load="))
+            return 50;
+        if (strstr(low, "shell=") &&
+            strstr(low, "shell=explorer.exe") == NULL)
+            return 50;
+        return 0;
+    }
+    /* CMakeLists.txt — execute_process / ExternalProject run at
+     * configure/build time; a fetch or shell-pipe in one is a
+     * build-time payload (the CMake form of the Makefile $(shell) check) */
+    if (strcmp(bn, "cmakelists.txt") == 0) {
+        if ((strstr(low, "execute_process") ||
+             strstr(low, "externalproject") ||
+             strstr(low, "add_custom_command") ||
+             strstr(low, "add_custom_target")) &&
+            (strstr(low, "curl") || strstr(low, "wget") ||
+             strstr(low, "invoke-webrequest") || strstr(low, "bitsadmin") ||
+             strstr(low, "| sh") || strstr(low, "|sh") ||
+             strstr(low, "base64")))
+            return 55;
+        return 0;
+    }
     /* .rhosts — `+ host` / host lines grant passwordless rsh/rlogin
      * trust to the listed host: a dropped .rhosts is an auth bypass */
     if (strcmp(bn, ".rhosts") == 0 || strcmp(bn, "hosts.equiv") == 0)

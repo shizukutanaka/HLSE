@@ -106,6 +106,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 - **`.dist` productbuild installer definitions** (`hlse_file.c`,
   F56): a `.dist` targeting `LaunchDaemons`/`LaunchAgents`/`/Library/`
   plants a daemon on package install → 50.
+- **Tool default-option + editor/boot init carriers** (`hlse_file.c`,
+  F56): `.curlrc`/`_curlrc`/`.wgetrc` whose `output*`/`directory_prefix`
+  pairs with `url`/`input`/`http` → 50 (every curl/wget run applies the
+  redirect — an invisible download-destination hijack); `.vimrc`/
+  `_vimrc`/`init.vim`/`init.lua`/`.exrc`/`_exrc` with
+  `autocmd`/`system(`/`os.execute`/`io.popen`/`:!`/`vim.fn` → 50
+  (editor-startup code exec); `win.ini`/`system.ini` with `run=`/`load=`
+  or a non-default `shell=` → 50 (classic boot persistence; the stock
+  `shell=explorer.exe` does not fire); `CMakeLists.txt` whose
+  `execute_process`/`ExternalProject`/`add_custom_command`/
+  `add_custom_target` reaches `curl`/`wget`/`Invoke-WebRequest`/
+  `bitsadmin`/`|sh`/`base64` → 55 (configure/build-time payload — the
+  CMake form of the Makefile `$(shell)` check).
 - **Credential/session carrier files** (`hlse_file.c`, F56):
   `.har` exports carrying cookies/authorization/token entries → 45 (a
   stolen-session file); `.rhosts`/`hosts.equiv` trust entries → 50

