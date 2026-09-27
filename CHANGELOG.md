@@ -106,6 +106,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 - **`.dist` productbuild installer definitions** (`hlse_file.c`,
   F56): a `.dist` targeting `LaunchDaemons`/`LaunchAgents`/`/Library/`
   plants a daemon on package install → 50.
+- **Credential/session carrier files** (`hlse_file.c`, F56):
+  `.har` exports carrying cookies/authorization/token entries → 45 (a
+  stolen-session file); `.rhosts`/`hosts.equiv` trust entries → 50
+  (passwordless rsh auth bypass); `.netrc`/`_netrc` with
+  `machine…password` → 50 (plaintext cred store); network device
+  configs (`running-config`/`startup-config`/`*.cfg`) with
+  `enable password`/`enable secret`/`snmp-server community`/
+  `crypto isakmp key`/`tacacs|radius key`/`username … password` → 45
+  (exfiltrated device credentials).
 - **`.appinstaller` App Installer manifests** (`hlse_file.c`, F43):
   the msix/bundle install manifest whose `<AppInstaller>`/
   `<MainPackage>` `Uri=` points at a remote URL — the payload twin of

