@@ -119,6 +119,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `add_custom_target` reaches `curl`/`wget`/`Invoke-WebRequest`/
   `bitsadmin`/`|sh`/`base64` → 55 (configure/build-time payload — the
   CMake form of the Makefile `$(shell)` check).
+- **Daemon/client hook carriers** (`hlse_file.c`, F56): `rsyncd.conf`/
+  `rsyncd.secrets` `xfer exec`/`early exec`/`secrets file` → 50;
+  `crypttab` `keyscript`/`precheck`/`postcheck` → 55 (root exec in the
+  initramfs on every boot); `ansible.cfg` `*_plugins`/`*_paths`/
+  `library`/`module_utils`/`stdout_callback`/`connection` → 45 (loads
+  Python as code on every run); `.hgrc`/`hgrc`/`mercurial.ini`
+  `[hooks]`/`[extensions]` with `=` → 50; `lynx.cfg`/`lynxrc`/
+  `.lynxrc` `EXTERNAL`/`DOWNLOADER`/`PRINTER`/`SYSTEM_EDITOR` → 45;
+  `.offlineimaprc`/`offlineimaprc`/`offlineimap.conf` `*tunnel`/
+  `*eval`/`hook` → 50; `.authinfo`/`authinfo`/`*.authinfo.gpg`
+  `machine`+`password`/`login` → 40.
 - **Repo-fetch + hook-pipeline carriers** (`hlse_file.c`, F56):
   `.gitmodules` `url` → 45 (next `git submodule update` fetches the
   attacker repo); `.pre-commit-config.yaml` `repo:`+`http` → 45

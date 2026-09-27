@@ -2636,6 +2636,66 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 50;
         return 0;
     }
+    /* daemon-side exec hooks — rsyncd.conf pre-/post-xfer exec run per
+     * transfer; crypttab keyscript/precheck/postcheck run as root in
+     * the initramfs on every boot; ansible.cfg *_plugins and *_paths
+     * load Python modules as code on every run */
+    if (strcmp(bn, "rsyncd.conf") == 0 || strcmp(bn, "rsyncd.secrets") == 0) {
+        if (strstr(low, "xfer exec") || strstr(low, "early exec") ||
+            strstr(low, "exec =") || strstr(low, "secrets file") ||
+            strstr(low, "rsyncable"))
+            return 50;
+        return 0;
+    }
+    if (strcmp(bn, "crypttab") == 0 || strcmp(bn, "crypttab.d") == 0) {
+        if (strstr(low, "keyscript") || strstr(low, "precheck") ||
+            strstr(low, "postcheck"))
+            return 55;
+        return 0;
+    }
+    if (strcmp(bn, "ansible.cfg") == 0) {
+        if (strstr(low, "_plugins") || strstr(low, "_paths") ||
+            strstr(low, "library") || strstr(low, "module_utils") ||
+            strstr(low, "stdout_callback") || strstr(low, "connection"))
+            return 45;
+        return 0;
+    }
+    /* VCS / client-side hook configs — .hgrc [hooks]/[extensions] run a
+     * shell line or load Python on hg events; lynx.cfg EXTERNAL/
+     * DOWNLOADER/PRINTER/SYSTEM_EDITOR names a program lynx runs;
+     * .offlineimaprc *tunnel, *eval, and *hook eval python or run ssh;
+     * .authinfo stores machine/login/password credentials */
+    if (strcmp(bn, ".hgrc") == 0 || strcmp(bn, "hgrc") == 0 ||
+        strcmp(bn, "mercurial.ini") == 0) {
+        if ((strstr(low, "[hooks]") || strstr(low, "[extensions]") ||
+             strstr(low, "update") || strstr(low, "commit")) &&
+            strchr(low, '='))
+            return 50;
+        return 0;
+    }
+    if (strcmp(bn, "lynx.cfg") == 0 || strcmp(bn, "lynxrc") == 0 ||
+        strcmp(bn, ".lynxrc") == 0) {
+        if (strstr(low, "external") || strstr(low, "downloader") ||
+            strstr(low, "printer") || strstr(low, "system_editor") ||
+            strstr(low, "trusted_exec"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, ".offlineimaprc") == 0 || strcmp(bn, "offlineimaprc") == 0 ||
+        strcmp(bn, "offlineimap.conf") == 0) {
+        if (strstr(low, "preauthtunnel") || strstr(low, "postauthtunnel") ||
+            strstr(low, "remotepasseval") || strstr(low, "hook") ||
+            strstr(low, "eval"))
+            return 50;
+        return 0;
+    }
+    if (strcmp(bn, ".authinfo") == 0 || strcmp(bn, "authinfo") == 0 ||
+        strcmp(bn, ".authinfo.gpg") == 0) {
+        if (strstr(low, "machine") && (strstr(low, "password") ||
+            strstr(low, "login") || strstr(low, "port")))
+            return 40;
+        return 0;
+    }
     /* .rhosts — `+ host` / host lines grant passwordless rsh/rlogin
      * trust to the listed host: a dropped .rhosts is an auth bypass */
     if (strcmp(bn, ".rhosts") == 0 || strcmp(bn, "hosts.equiv") == 0)

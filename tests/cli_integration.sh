@@ -8953,6 +8953,61 @@ printf 'plugin_cache_dir = "/tmp/x"\n' > "$XDIR/rf1/.terraformrc"
     && check "file: terraformrc plugin_cache flagged" "0" "0" \
     || check "file: terraformrc plugin_cache flagged" "0" "1"
 
+# F56: daemon/client hook carriers
+mkdir -p "$XDIR/dh1" "$XDIR/dh2"
+printf '[x]\npre-xfer exec = /tmp/evil\n' > "$XDIR/dh1/rsyncd.conf"
+./hlse_core file "$XDIR/dh1/rsyncd.conf" 2>&1 | grep -q "F56" \
+    && check "file: rsyncd xfer-exec flagged" "0" "0" \
+    || check "file: rsyncd xfer-exec flagged" "0" "1"
+printf '[x]\npath = /srv/ftp\n' > "$XDIR/dh2/rsyncd.conf"
+./hlse_core file "$XDIR/dh2/rsyncd.conf" 2>&1 | grep -q "F56" \
+    && check "file: benign rsyncd no F56" "0" "1" \
+    || check "file: benign rsyncd no F56" "0" "0"
+printf 'x /dev/x keyscript=/tmp/evil\n' > "$XDIR/dh1/crypttab"
+./hlse_core file "$XDIR/dh1/crypttab" 2>&1 | grep -q "F56" \
+    && check "file: crypttab keyscript flagged" "0" "0" \
+    || check "file: crypttab keyscript flagged" "0" "1"
+printf 'x /dev/x luks\n' > "$XDIR/dh2/crypttab"
+./hlse_core file "$XDIR/dh2/crypttab" 2>&1 | grep -q "F56" \
+    && check "file: benign crypttab no F56" "0" "1" \
+    || check "file: benign crypttab no F56" "0" "0"
+printf '[defaults]\ncallback_plugins = /tmp/evil\n' > "$XDIR/dh1/ansible.cfg"
+./hlse_core file "$XDIR/dh1/ansible.cfg" 2>&1 | grep -q "F56" \
+    && check "file: ansible callback_plugins flagged" "0" "0" \
+    || check "file: ansible callback_plugins flagged" "0" "1"
+printf '[defaults]\ninventory = hosts\n' > "$XDIR/dh2/ansible.cfg"
+./hlse_core file "$XDIR/dh2/ansible.cfg" 2>&1 | grep -q "F56" \
+    && check "file: benign ansible no F56" "0" "1" \
+    || check "file: benign ansible no F56" "0" "0"
+printf '[hooks]\nupdate = /tmp/evil\n' > "$XDIR/dh1/.hgrc"
+./hlse_core file "$XDIR/dh1/.hgrc" 2>&1 | grep -q "F56" \
+    && check "file: hgrc hooks flagged" "0" "0" \
+    || check "file: hgrc hooks flagged" "0" "1"
+printf '[ui]\nusername = x\n' > "$XDIR/dh2/.hgrc"
+./hlse_core file "$XDIR/dh2/.hgrc" 2>&1 | grep -q "F56" \
+    && check "file: benign hgrc no F56" "0" "1" \
+    || check "file: benign hgrc no F56" "0" "0"
+printf 'EXTERNAL:http:curl %%s:TRUE\n' > "$XDIR/dh1/lynx.cfg"
+./hlse_core file "$XDIR/dh1/lynx.cfg" 2>&1 | grep -q "F56" \
+    && check "file: lynx EXTERNAL flagged" "0" "0" \
+    || check "file: lynx EXTERNAL flagged" "0" "1"
+printf 'preauthtunnel = ssh evil\n' > "$XDIR/dh1/.offlineimaprc"
+./hlse_core file "$XDIR/dh1/.offlineimaprc" 2>&1 | grep -q "F56" \
+    && check "file: offlineimap preauthtunnel flagged" "0" "0" \
+    || check "file: offlineimap preauthtunnel flagged" "0" "1"
+printf 'ssl = yes\n' > "$XDIR/dh2/.offlineimaprc"
+./hlse_core file "$XDIR/dh2/.offlineimaprc" 2>&1 | grep -q "F56" \
+    && check "file: benign offlineimap no F56" "0" "1" \
+    || check "file: benign offlineimap no F56" "0" "0"
+printf 'machine evil.com login x password y\n' > "$XDIR/dh1/.authinfo"
+./hlse_core file "$XDIR/dh1/.authinfo" 2>&1 | grep -q "F56" \
+    && check "file: authinfo creds flagged" "0" "0" \
+    || check "file: authinfo creds flagged" "0" "1"
+printf 'machine x\n' > "$XDIR/dh2/.authinfo"
+./hlse_core file "$XDIR/dh2/.authinfo" 2>&1 | grep -q "F56" \
+    && check "file: benign authinfo no F56" "0" "1" \
+    || check "file: benign authinfo no F56" "0" "0"
+
 # F56: credential/session carrier files
 printf '{"log":{"entries":[{"request":{"cookies":[{"name":"s","value":"x"}]}}]}}\n' \
     > "$XDIR/x.har"
