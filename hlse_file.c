@@ -2935,7 +2935,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     if (strstr(bn, ".csproj") || strstr(bn, ".fsproj") ||
         strstr(bn, ".vcxproj") || strstr(bn, ".vbproj") ||
         strstr(bn, ".targets") || strstr(bn, ".props") ||
-        strstr(bn, ".proj")) {
+        (strstr(bn, ".proj") != NULL && strstr(bn, ".proj")[5] == '\0')) {
         if (strstr(low, "exec") || strstr(low, "prebuild") ||
             strstr(low, "postbuild") || strstr(low, "usingtask") ||
             strstr(low, "codetask") || strstr(low, "beforetargets") ||
@@ -3215,6 +3215,264 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
              strstr(low, "sound") || strstr(low, "logo")) &&
             (strstr(low, "uri") || strstr(low, "http")))
             return 35;
+        return 0;
+    }
+    /* tool configs that are code — *.config.{js,ts,mjs,cjs} and
+     * *.conf.js are evaluated by the tool at startup; the Python/Ruby
+     * hook files (conftest.py hooks run at pytest collection, setup.py
+     * runs at pip install, config.ru at rackup) are the same shape */
+    {
+        const char *cext;
+        int is_tool_cfg = 0;
+        if ((cext = strstr(bn, ".config.")) != NULL &&
+            (!strcmp(cext, ".config.js") || !strcmp(cext, ".config.ts") ||
+             !strcmp(cext, ".config.mjs") || !strcmp(cext, ".config.cjs") ||
+             !strcmp(cext, ".config.mts")))
+            is_tool_cfg = 1;
+        if (strstr(bn, ".conf.js") || strstr(bn, ".conf.ts") ||
+            strstr(bn, "gulpfile.") || strstr(bn, "gruntfile.") ||
+            strcmp(bn, "conftest.py") == 0 || strcmp(bn, "noxfile.py") == 0 ||
+            strcmp(bn, "setup.py") == 0 || strcmp(bn, "config.ru") == 0 ||
+            strcmp(bn, "tsconfig.json") == 0 || strcmp(bn, "jsconfig.json") == 0 ||
+            strcmp(bn, "jsr.json") == 0 || strcmp(bn, "deno.json") == 0 ||
+            strcmp(bn, "deno.jsonc") == 0 || strcmp(bn, "bunfig.toml") == 0)
+            is_tool_cfg = 1;
+        if (is_tool_cfg &&
+            (strstr(low, "require(") || strstr(low, "import ") ||
+             strstr(low, "plugins") || strstr(low, "presets") ||
+             strstr(low, "exec") || strstr(low, "spawn") ||
+             strstr(low, "child_process") || strstr(low, "eval") ||
+             strstr(low, "curl") || strstr(low, "wget") ||
+             strstr(low, "http") || strstr(low, "setup(") ||
+             strstr(low, "cmdclass") || strstr(low, "entry_points") ||
+             strstr(low, "pytest") || strstr(low, "fixture") ||
+             strstr(low, "hookimpl") || strstr(low, "tasks") ||
+             strstr(low, "paths") || strstr(low, "extends") ||
+             strstr(low, "imports") || strstr(low, "importmap") ||
+             strstr(low, "registry") || strstr(low, "trusteddependencies") ||
+             strstr(low, "postinstall") || strstr(low, "loader") ||
+             strstr(low, "map ") || strstr(low, "use ") ||
+             strstr(low, "run ") || strstr(low, "process.")))
+            return 40;
+    }
+    /* CI/build descriptor remainder — wercker/bitrise/concourse/
+     * netlify/vercel/now/fly/app.yaml/render/heroku/railway/app.json
+     * all declare commands or remote resources CI/deploy runs */
+    if (strcmp(bn, "wercker.yml") == 0 || strcmp(bn, "bitrise.yml") == 0 ||
+        strcmp(bn, "bitrise.yaml") == 0 || strcmp(bn, "pipeline.yml") == 0 ||
+        strcmp(bn, "pipeline.yaml") == 0 || strcmp(bn, "concourse.yml") == 0) {
+        /* the vector is a runnable step/image — schema keys like
+         * `steps:` alone are the normal empty case */
+        if (strstr(low, "script") || strstr(low, "run:") ||
+            strstr(low, "command") || strstr(low, "exec") ||
+            strstr(low, "curl") || strstr(low, "wget") ||
+            strstr(low, "bash") || strstr(low, "powershell") ||
+            strstr(low, "entrypoint") || strstr(low, "args") ||
+            strstr(low, "path:") || strstr(low, "privileged") ||
+            strstr(low, "params") || strstr(low, "image") ||
+            strstr(low, "cwd") || strstr(low, "run_if"))
+            return 45;
+        return 0;
+    }
+    if (strstr(bn, ".nomad") || strstr(bn, ".hcl") ||
+        strcmp(bn, "nomad.hcl") == 0 || strcmp(bn, "consul.hcl") == 0 ||
+        strcmp(bn, "vault.hcl") == 0 || strstr(bn, "waypoint") != NULL) {
+        if (strstr(low, "task") || strstr(low, "driver") ||
+            strstr(low, "config") || strstr(low, "command") ||
+            strstr(low, "artifact") || strstr(low, "template") ||
+            strstr(low, "provisioner") || strstr(low, "script") ||
+            strstr(low, "check") || strstr(low, "listener") ||
+            strstr(low, "plugin") || strstr(low, "source") ||
+            strstr(low, "build") || strstr(low, "job") ||
+            strstr(low, "exec") || strstr(low, "shell"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, "serverless.yml") == 0 || strcmp(bn, "serverless.yaml") == 0 ||
+        strcmp(bn, "serverless.ts") == 0 || strcmp(bn, "serverless.js") == 0 ||
+        strcmp(bn, "sst.config.ts") == 0 || strcmp(bn, "sst.config.js") == 0) {
+        if (strstr(low, "plugins") || strstr(low, "functions") ||
+            strstr(low, "provider") || strstr(low, "resources") ||
+            strstr(low, "hooks") || strstr(low, "custom"))
+            return 40;
+        return 0;
+    }
+    if (strcmp(bn, "netlify.toml") == 0 || strcmp(bn, "netlify.yaml") == 0) {
+        if (strstr(low, "command") || strstr(low, "plugins") ||
+            strstr(low, "package") || strstr(low, "edge_functions") ||
+            strstr(low, "redirects") || strstr(low, "functions") ||
+            strstr(low, "build"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, "vercel.json") == 0 || strcmp(bn, "now.json") == 0) {
+        if (strstr(low, "functions") || strstr(low, "rewrites") ||
+            strstr(low, "redirects") || strstr(low, "crons") ||
+            strstr(low, "builds") || strstr(low, "cleanurls") ||
+            strstr(low, "regions"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, "fly.toml") == 0 || (strstr(bn, "fly.") != NULL &&
+        strstr(bn, ".toml") != NULL)) {
+        if (strstr(low, "release_command") || strstr(low, "exec") ||
+            strstr(low, "cmd") || strstr(low, "entrypoint") ||
+            strstr(low, "mounts") || strstr(low, "processes") ||
+            strstr(low, "checks") || strstr(low, "deploy") ||
+            strstr(low, "services"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, "app.yaml") == 0 || strcmp(bn, "app.yml") == 0 ||
+        strcmp(bn, "appengine-web.xml") == 0 ||
+        strcmp(bn, "render.yaml") == 0 || strcmp(bn, "heroku.yml") == 0 ||
+        strcmp(bn, "app.json") == 0 || strcmp(bn, "dokku.json") == 0 ||
+        strcmp(bn, "railway.json") == 0 || strcmp(bn, "railway.toml") == 0) {
+        if (strstr(low, "entrypoint") || strstr(low, "runtime") ||
+            strstr(low, "handlers") || strstr(low, "env_variables") ||
+            strstr(low, "inbound_services") || strstr(low, "script") ||
+            strstr(low, "buildcommand") || strstr(low, "startcommand") ||
+            strstr(low, "predeploycommand") || strstr(low, "healthcheck") ||
+            strstr(low, "run") || strstr(low, "scripts") ||
+            strstr(low, "build") || strstr(low, "release") ||
+            strstr(low, "formation") || strstr(low, "addons") ||
+            strstr(low, "buildpacks") || strstr(low, "cron"))
+            return 45;
+        return 0;
+    }
+    /* java container/framework configs — server.xml/context.xml/
+     * web.xml/spring/struts/beans instantiate classes, realms and
+     * datasources; log4j/logback ${jndi: is the Log4Shell lookup;
+     * MANIFEST Premain/Agent-Class/Class-Path is a java-agent exec */
+    if (strcmp(bn, "server.xml") == 0 || strcmp(bn, "context.xml") == 0 ||
+        strcmp(bn, "tomcat-users.xml") == 0 || strcmp(bn, "web.xml") == 0 ||
+        strcmp(bn, "weblogic.xml") == 0 || strcmp(bn, "beans.xml") == 0 ||
+        strcmp(bn, "applicationcontext.xml") == 0 ||
+        strcmp(bn, "struts.xml") == 0 || strcmp(bn, "faces-config.xml") == 0 ||
+        strcmp(bn, "ejb-jar.xml") == 0 || strcmp(bn, "persistence.xml") == 0 ||
+        strcmp(bn, "hibernate.cfg.xml") == 0 ||
+        (strstr(bn, "spring") != NULL && strstr(bn, ".xml") != NULL) ||
+        (strstr(bn, "jboss") != NULL && strstr(bn, ".xml") != NULL)) {
+        if (strstr(low, "classname") || strstr(low, "listener") ||
+            strstr(low, "resource") || strstr(low, "jndi") ||
+            strstr(low, "servlet-class") || strstr(low, "filter-class") ||
+            strstr(low, "listener-class") || strstr(low, "<bean ") ||
+            strstr(low, "factory-bean") || strstr(low, "init-method") ||
+            strstr(low, "valve") || strstr(low, "realm") ||
+            strstr(low, "environment") || strstr(low, "password") ||
+            strstr(low, "datasource") || strstr(low, "connection-url") ||
+            strstr(low, "driver-class") || strstr(low, "destroy-method"))
+            return 50;
+        return 0;
+    }
+    if (strstr(bn, "log4j") != NULL || strstr(bn, "logback") != NULL ||
+        strcmp(bn, "logging.properties") == 0 ||
+        strcmp(bn, "log4j2-test.xml") == 0) {
+        if (strstr(low, "${jndi") || strstr(low, "jndi") ||
+            strstr(low, "socketappender") || strstr(low, "smtpappender") ||
+            strstr(low, "jmsappender") || strstr(low, "script") ||
+            strstr(low, "lookup") || strstr(low, "http") ||
+            strstr(low, "write"))
+            return 55;
+        return 0;
+    }
+    if (strcmp(bn, "manifest.mf") == 0) {
+        if (strstr(low, "premain-class") || strstr(low, "agent-class") ||
+            strstr(low, "launcher-agent-class") || strstr(low, "class-path") ||
+            strstr(low, "main-class") || strstr(low, "extension-name") ||
+            strstr(low, "can-redefine") || strstr(low, "can-retransform"))
+            return 50;
+        return 0;
+    }
+    if (strstr(bn, ".slk") != NULL && strstr(bn, ".slk")[4] == 0) {
+        if (strstr(low, "cmd") || strstr(low, "exec") ||
+            strstr(low, "shell") || strstr(low, "dde") ||
+            strstr(low, "macro") || strstr(low, "formula"))
+            return 55;
+        return 0;
+    }
+    /* ecosystem descriptors — pubspec git/hosted deps, deps.edn
+     * :git/url, mix.exs git/path deps, project.clj repositories,
+     * shard.yml github deps, composer.json scripts/repositories,
+     * cabal.project source-repository-package, stack.yaml extra-deps,
+     * rebar.config hooks, dune run/system actions, *.nix flake inputs/
+     * fetchurl/shellHook, nimble tasks, deno tasks/imports, bunfig
+     * registry — each repoints the resolver or runs at tool time */
+    if (strcmp(bn, "pubspec.yaml") == 0 || strcmp(bn, "pubspec.lock") == 0 ||
+        strcmp(bn, "pubspec_overrides.yaml") == 0 ||
+        strcmp(bn, "deps.edn") == 0 || strcmp(bn, "bb.edn") == 0 ||
+        strcmp(bn, "build.edn") == 0 || strcmp(bn, "mix.exs") == 0 ||
+        strcmp(bn, "project.clj") == 0 || strcmp(bn, "build.boot") == 0 ||
+        strcmp(bn, "shard.yml") == 0 || strcmp(bn, "shard.lock") == 0 ||
+        strcmp(bn, "composer.json") == 0 || strcmp(bn, "composer.lock") == 0 ||
+        strcmp(bn, "cabal.project") == 0 || strcmp(bn, "stack.yaml") == 0 ||
+        strcmp(bn, "stack.yml") == 0 || strcmp(bn, "rebar.config") == 0 ||
+        strcmp(bn, "rebar3.config") == 0 || strcmp(bn, "dune") == 0 ||
+        strcmp(bn, "dune-project") == 0 || strstr(bn, ".opam") != NULL ||
+        strstr(bn, ".nix") != NULL || strcmp(bn, "guix.scm") == 0 ||
+        strcmp(bn, "manifest.scm") == 0 || strcmp(bn, "channels.scm") == 0 ||
+        strcmp(bn, "nim.cfg") == 0 || strstr(bn, ".nimble") != NULL ||
+        strstr(bn, ".nims") != NULL || strcmp(bn, "nimble") == 0) {
+        if (strstr(low, "git:") || strstr(low, ":git") ||
+            strstr(low, "github:") || strstr(low, "gitlab:") ||
+            strstr(low, "hosted:") || strstr(low, "path:") ||
+            strstr(low, "dependency_overrides") ||
+            strstr(low, "source-repository") || strstr(low, "location") ||
+            strstr(low, "extra-deps") || strstr(low, "repositories") ||
+            strstr(low, "\"scripts\"") || strstr(low, "minimum-stability") ||
+            strstr(low, "allow-plugins") || strstr(low, "depexts") ||
+            strstr(low, "pin-depends") || strstr(low, "dev-repo") ||
+            strstr(low, "fetchurl") || strstr(low, "fetchgit") ||
+            strstr(low, "fetchtarball") || strstr(low, "builtins") ||
+            strstr(low, "inputs") || strstr(low, "shellhook") ||
+            strstr(low, "installphase") || strstr(low, "buildcommand") ||
+            strstr(low, "origin") || strstr(low, "channels") ||
+            strstr(low, "writeShellScript") || strstr(low, "mkderivation") ||
+            strstr(low, "(rule") || strstr(low, "(action") ||
+            strstr(low, "(run") || strstr(low, "(system") ||
+            strstr(low, "(bash") || strstr(low, "task") ||
+            strstr(low, "requires") || strstr(low, "hooks") ||
+            strstr(low, "post_hooks") || strstr(low, "pre_hooks") ||
+            strstr(low, "escript") || strstr(low, "erl_opts") ||
+            strstr(low, "eval_in_leiningen") || strstr(low, "deftask") ||
+            strstr(low, "set-env!") || strstr(low, "executables") ||
+            strstr(low, "targets") || strstr(low, "switch") ||
+            strstr(low, "installdirs") || strstr(low, "srcDir") ||
+            strstr(low, "scripts"))
+            return 45;
+        return 0;
+    }
+    /* vscode multi-root workspace — folders/settings/tasks can point
+     * interpreters and language-server binaries at attacker paths */
+    if (strstr(bn, ".code-workspace") != NULL) {
+        if (strstr(low, "\"tasks\"") || strstr(low, "\"launch\"") ||
+            strstr(low, "executablepath") || strstr(low, "server.path") ||
+            strstr(low, "defaultinterpreterpath") ||
+            strstr(low, "alternatetools") || strstr(low, "\"terminal\"") ||
+            strstr(low, "\"folders\"") || strstr(low, "\"extensions\""))
+            return 45;
+        return 0;
+    }
+    /* makefile family — recipes run on `make`; fetch/eval primitives */
+    if (strcmp(bn, "makefile") == 0 || strcmp(bn, "gnumakefile") == 0 ||
+        strcmp(bn, "bsdmakefile") == 0 || strstr(bn, "makefile.") != NULL) {
+        /* $(shell …) is normal make syntax — the vector is a fetch or
+         * interpreter inside it or a recipe line */
+        if (strstr(low, "$(shell curl") || strstr(low, "$(shell wget") ||
+            strstr(low, "$(shell nc") || strstr(low, "$(shell sh") ||
+            strstr(low, "$(shell bash") || strstr(low, "$(shell eval") ||
+            strstr(low, "$(shell python") || strstr(low, "$(shell perl") ||
+            strstr(low, "$(shell ruby") || strstr(low, "$(shell php") ||
+            strstr(low, "$(shell node") || strstr(low, "$(shell http") ||
+            strstr(low, "-include") || strstr(low, "curl") ||
+            strstr(low, "wget") || strstr(low, "nc ") ||
+            strstr(low, "powershell") || strstr(low, "invoke-webrequest") ||
+            strstr(low, "bitsadmin") || strstr(low, "certutil") ||
+            strstr(low, "iwr ") || strstr(low, "iex(") ||
+            strstr(low, "base64") || strstr(low, "|sh") ||
+            strstr(low, "| sh") || strstr(low, "|bash") ||
+            strstr(low, "| bash"))
+            return 45;
         return 0;
     }
     /* .rhosts — `+ host` / host lines grant passwordless rsh/rlogin

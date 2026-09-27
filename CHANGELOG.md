@@ -119,6 +119,50 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `add_custom_target` reaches `curl`/`wget`/`Invoke-WebRequest`/
   `bitsadmin`/`|sh`/`base64` → 55 (configure/build-time payload — the
   CMake form of the Makefile `$(shell)` check).
+- **Tool-config-as-code + Java container + deploy descriptors**
+  (`hlse_file.c`, F56): `*.config.{js,ts,mjs,cjs,mts}`/`*.conf.{js,ts}`/
+  `gulpfile.*`/`gruntfile.*`/`conftest.py`/`noxfile.py`/`setup.py`/
+  `config.ru`/`tsconfig.json`/`jsconfig.json`/`jsr.json`/`deno.json(c)`/
+  `bunfig.toml` with require/import/plugins/exec/spawn/cmdclass/
+  pytest hooks/tasks/paths/registry → 40 (these files evaluate code at
+  tool startup); `wercker.yml`/`bitrise.yml`/`pipeline.y*ml`/
+  `concourse.yml` runnable step keys → 45; `*.nomad`/`*.hcl` nomad/
+  consul/packer/vault/waypoint task/driver/provisioner/script → 45;
+  `serverless.y*ml`/`sst.config.*` plugins/functions → 40;
+  `netlify.toml` command/plugins/redirects → 45; `vercel.json`/
+  `now.json` functions/rewrites/crons → 45; `fly.toml` release_command/
+  entrypoint → 45; `app.yaml`/`appengine-web.xml`/`render.yaml`/
+  `heroku.yml`/`app.json`/`dokku.json`/`railway.*` entrypoint/
+  buildCommand/startCommand/preDeployCommand/buildpacks → 45;
+  `server.xml`/`context.xml`/`web.xml`/`applicationContext.xml`/
+  `beans.xml`/`struts.xml`/`faces-config.xml`/`ejb-jar.xml`/
+  `persistence.xml`/`hibernate.cfg.xml`/`weblogic.xml`/`spring*.xml`/
+  `jboss*.xml` class/listener/resource/jndi/datasource → 50;
+  `log4j*`/`logback*`/`logging.properties` `${jndi:`/socketAppender/
+  smtpAppender/JMSAppender → 55 (Log4Shell lookup surface);
+  `MANIFEST.MF` `Premain-Class`/`Agent-Class`/`Launcher-Agent-Class`/
+  `Class-Path`/`Can-Redefine` → 50 (java-agent exec);
+  `*.slk` `Cmd=`/`EXEC`/`shell`/`dde`/`macro` → 55 (SYLK DDE);
+  `makefile`/`gnumakefile`/`bsdmakefile` `$(shell`/`-include`/`curl`/
+  `wget`/`eval`/`bash`/`powershell` → 45.
+- **Ecosystem descriptor redirects** (`hlse_file.c`, F56):
+  `pubspec.yaml`/`.lock`/`_overrides` git:/hosted:/path:/deps → 45;
+  `deps.edn`/`bb.edn`/`build.edn` `:git/url`/`tasks`/`deps` → 45;
+  `mix.exs` git:/github:/path: deps → 45; `project.clj`/`build.boot`
+  repositories/eval-in-leiningen/deftask → 45; `shard.yml`/
+  `shard.lock` github:/gitlab:/git: deps/postinstall → 45;
+  `composer.json`/`composer.lock` scripts/repositories/
+  minimum-stability/allow-plugins → 45; `cabal.project`/`stack.y*ml`
+  source-repository/location/extra-deps → 45; `rebar.config`/
+  `rebar3.config` deps/hooks/escript → 45; `dune`/`dune-project`/
+  `*.opam` `(rule`/`(action`/`(run`/`(system`/`depexts`/`pin-depends`
+  → 45; `*.nix`/`guix.scm`/`manifest.scm`/`channels.scm` fetchurl/
+  fetchgit/fetchtarball/inputs/shellHook/installPhase/mkDerivation/
+  origin/channels → 45; `nim.cfg`/`*.nimble`/`*.nims` task/requires/
+  switch/installDirs → 45; `.code-workspace` tasks/launch/
+  executablePath/server.path/defaultInterpreterPath/alternateTools →
+  45 (vscode settings can point language-server/interpreter binaries
+  at attacker paths).
 - **IaC + remote-tool credential + mail/location carriers**
   (`hlse_file.c`, F56): `kustomization.yaml` resources/bases/
   helmCharts/generators/patches reaching `http`/`git@`/`.git` → 45;

