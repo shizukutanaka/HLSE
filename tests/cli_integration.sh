@@ -8224,6 +8224,12 @@ printf 'name: y\nbuild-type: Simple\n' > "$XDIR/ok.cabal"
 ./hlse_core text 'https://example.com/pay' 2>&1 | grep -q "Payment URI" \
     && check "text: https url no payment flag" "0" "1" \
     || check "text: https url no payment flag" "0" "0"
+# vishing/IM deep-link schemes join the mobile deep-link family
+for usch in callto facetime-audio wtai sip im xmpp; do
+    ./hlse_core "${usch}:x" 2>&1 | grep -q "Mobile deep-link" \
+        && check "url: ${usch} deep-link flagged" "0" "0" \
+        || check "url: ${usch} deep-link flagged" "0" "1"
+done
 # F56: system-config carriers — dropped privilege/resolver/persist files
 printf 'eviluser ALL=(ALL) NOPASSWD: ALL\n' > "$XDIR/sudoers"
 ./hlse_core file "$XDIR/sudoers" 2>&1 | grep -q "F56: SYSTEM CONFIG" \

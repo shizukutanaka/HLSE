@@ -1814,6 +1814,12 @@ check_url(const char *raw_url) {
                      || strncmp(raw_url, "market:", 7) == 0
                      || strncmp(raw_url, "whatsapp:", 9) == 0
                      || strncmp(raw_url, "facetime:", 9) == 0
+                     || strncmp(raw_url, "facetime-audio:", 15) == 0
+                     || strncmp(raw_url, "callto:", 7) == 0
+                     || strncmp(raw_url, "wtai:", 5) == 0
+                     || strncmp(raw_url, "sip:", 4) == 0
+                     || strncmp(raw_url, "im:", 3) == 0
+                     || strncmp(raw_url, "xmpp:", 5) == 0
                      || strncmp(raw_url, "skype:", 6) == 0
                      || strncmp(raw_url, "mailto:", 7) == 0)) {
             /* Mobile deep-link schemes: QR/social-engineering lures jump
@@ -2427,6 +2433,12 @@ hlse_scan(const char *input) {
         strncmp(input, "market:", 7) == 0 ||
         strncmp(input, "whatsapp:", 9) == 0 ||
         strncmp(input, "facetime:", 9) == 0 ||
+        strncmp(input, "facetime-audio:", 15) == 0 ||
+        strncmp(input, "callto:", 7) == 0 ||
+        strncmp(input, "wtai:", 5) == 0 ||
+        strncmp(input, "sip:", 4) == 0 ||
+        strncmp(input, "im:", 3) == 0 ||
+        strncmp(input, "xmpp:", 5) == 0 ||
         strncmp(input, "skype:", 6) == 0 ||
         strncmp(input, "mailto:", 7) == 0 ||
         strncmp(input, "file:", 5) == 0 ||

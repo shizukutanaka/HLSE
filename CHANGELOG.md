@@ -19,6 +19,11 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   (Discord MFA token) → 85; `AC`/`SK` + 32 lowercase hex (Twilio
   Account SID / API Key) → 70 — new `is_hex_c` predicate keeps the
   2-char prefixes' false positives low.
+- **Vishing/IM deep-link schemes** (`hlse_core.c`): `callto:`,
+  `facetime-audio:`, `wtai:`, `sip:`, `im:`, `xmpp:` join the mobile
+  deep-link family at 35 — the same click-to-call/message handler
+  vector as `tel:`/`sms:`/`skype:` (premium-rate vishing, attacker
+  contact pivoting).
 - **Nostr secret key format** (`hlse_secrets.c`): `nsec1` + ≥40 bech32
   payload chars → 80 (a nsec is the account itself — posting, DMs and
   the zap wallet); new `is_bech32` predicate restricts the suffix to
