@@ -504,6 +504,37 @@ static const char *EMERGENCY_SCAM_WORDS[] = {
     NULL
 };
 
+static const char *CN_SMISH_WORDS[] = {
+    /* Chinese smishing (短信钓鱼) — the world's highest-volume SMS-phishing
+     * family (PostalTriot-class kits impersonate postal/快递 delivery, ETC
+     * tolls, banks, and 社保/医保 social-insurance). Each phrase is
+     * lure-defining: real carriers never resolve delivery or unfreeze an
+     * account through an SMS link.                                     */
+    /* Parcel / delivery failure */
+    "您的包裹", "包裹因地址不完整", "无法投递", "无法送达",
+    "重新派送", "派送失败", "确认收货地址", "快递包裹",
+    /* Customs / duty fee */
+    "缴纳关税", "补缴关税", "海关放行", "关税缴纳",
+    /* Account abnormal / frozen */
+    "您的账户", "账户存在异常", "账户已被冻结", "已被冻结",
+    "点击解冻", "立即解冻", "解冻账户", "异常交易",
+    "安全验证", "请立即验证", "立即更新信息",
+    /* Identity / real-name expiry */
+    "身份信息过期", "实名认证", "尊敬的用户",
+    /* ETC toll account suspension (CN+JP kits) */
+    "etc已停用", "etc异常", "etc过期", "etc失效", "etc卡失效",
+    "etc利用照会", "etcカードの有効期限", "etcカードが無効",
+    /* Loyalty-points expiry lure */
+    "积分清零", "积分兑换", "积分即将过期", "积分到期",
+    /* Social insurance / health-insurance lure */
+    "医保卡异常", "社保卡异常", "社会保障卡", "医保报销", "社保账户",
+    /* Traffic-violation lure */
+    "违章处理", "交通违章", "违章未处理",
+    /* Fee shortfall */
+    "欠费补缴", "欠费停机",
+    NULL
+};
+
 static const char *SECRECY_WORDS[] = {
     /* English */
     "don't tell", "do not tell", "keep this secret", "between us",
@@ -1256,6 +1287,7 @@ static const Signal SIGNALS[] = {
     { "QR code phishing (quishing)",QR_PHISH_WORDS,  20, 10, 30 },
     { "Callback/TOAD/smishing",     CALLBACK_PHISH_WORDS, 15, 10, 30 },
     { "Emergency/grandparent scam", EMERGENCY_SCAM_WORDS, 20, 15, 45 },
+    { "Chinese smishing lure",      CN_SMISH_WORDS,       20, 15, 45 },
     { "Prompt-injection override phrase", PROMPT_OVERRIDE_WORDS, 40, 10, 55 },
     { "LLM control token in text",  LLM_CONTROL_TOKENS, 45, 10, 60 },
     { "Active HTML markup in text", HTML_INJECT_WORDS, 30, 15, 50 },

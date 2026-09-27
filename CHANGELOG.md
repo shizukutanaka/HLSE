@@ -15,6 +15,22 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Chinese smishing (短信钓鱼) vocabulary** (`hlse_text.c`
+  CN_SMISH): parcel-delivery failure (您的包裹/无法投递/重新派送),
+  customs-duty (缴纳关税/海关放行), frozen/abnormal account
+  (账户已被冻结/点击解冻/异常交易), real-name & identity expiry
+  (身份信息过期/实名认证), ETC suspension (etc已停用/etc卡失效,
+  plus JP ETC利用照会), loyalty-points expiry (积分清零/积分到期),
+  social-insurance (医保卡异常/社保卡异常), traffic-violation
+  (违章处理), and fee-shortfall (欠费补缴) lures — the
+  PostalTriot-class kit family that is the world's highest-volume
+  SMS-phishing vector, previously fully invisible (scored OK).
+- **Legacy help/archive carriers** (`hlse_file.c`): `.hlp`
+  (WinHelp — winhlp32 exploit surface), `.cab` (Windows install
+  container), `.ace`/`.arj`/`.lha`/`.lzh`/`.zoo` (obsolete archives
+  still used as mail-borne executable wrappers — .lzh/.lha a
+  historically JP-targeted format), and `.uue` (uuencoded binary
+  transport) →30.
 - **Japanese special-fraud (特殊詐欺) vocabulary** (`hlse_text.c`
   EMERGENCY_SCAM): オレオレ/ore-ore, 示談金, 保釈金, 逮捕され,
   使い込んでしま, 還付金, 医療費の還付, 給付金, ATM guidance

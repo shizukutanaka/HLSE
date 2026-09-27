@@ -10245,6 +10245,30 @@ check_text_hit '電話を切らないでくださいそのまま' "LOG\|ALERT" "
 check_text_hit '今日の昼食はラーメンでした' "OK" "text: benign japanese clean"
 check_text_hit 'industry standard best practices' "OK" "text: benign english clean"
 
+# ── cycle-91: Chinese smishing vocab + legacy archive/help carriers ──
+check_text_hit '您的包裹因地址不完整无法投递请立即更新' "ALERT\|BLOCK\|ISOLATE" "text: CN parcel smishing flagged"
+check_text_hit '您的银行账户已被冻结请点击解冻' "ALERT\|BLOCK\|ISOLATE" "text: CN frozen-account smishing flagged"
+check_text_hit '社保卡异常请立即验证身份' "ALERT\|BLOCK\|ISOLATE" "text: CN social-insurance smishing flagged"
+check_text_hit '您的快递包裹需要缴纳关税' "LOG\|ALERT" "text: CN customs-duty smishing flagged"
+check_text_hit '积分即将过期请立即兑换' "LOG\|ALERT" "text: CN points-expiry smishing flagged"
+check_text_hit '尊敬的用户您的ETC设备已停用' "LOG\|ALERT" "text: CN/JP ETC smishing flagged"
+check_text_hit '今天天气不错我们去公园吧' "OK" "text: benign chinese clean"
+check_text_hit '包裹将于明天送达请耐心等待' "OK" "text: benign delivery notice clean"
+XDIR91=$(mktemp -d /tmp/hlse91.XXXXXX)
+for e in hlp cab uue ace arj lha lzh zoo; do
+    printf 'x' > "$XDIR91/t.$e"
+done
+printf 'x' > "$XDIR91/benign.txt"
+for e in hlp cab uue ace arj lha lzh zoo; do
+    ./hlse_core file "$XDIR91/t.$e" 2>&1 | grep -q "LOG\|ALERT" \
+        && check "file: .$e legacy archive/help carrier flagged" "0" "0" \
+        || check "file: .$e legacy archive/help carrier flagged" "0" "1"
+done
+./hlse_core file "$XDIR91/benign.txt" 2>&1 | grep -q "OK" \
+    && check "file: benign txt clean" "0" "0" \
+    || check "file: benign txt clean" "0" "1"
+rm -rf "$XDIR91"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

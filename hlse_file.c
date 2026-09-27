@@ -322,6 +322,13 @@ static const char *EXECUTABLE_EXTS[] = {
     /* ClickOnce application reference — used in the SolarWinds-era
      * loader chain to bootstrap remote payloads                        */
     ".appref-ms",
+    /* Legacy help/archive containers — .hlp is WinHelp (winhlp32 exploit
+     * surface, executables embedded in help topics); .cab is a Windows
+     * install/extraction container; .ace/.arj/.lha/.lzh/.zoo are obsolete
+     * archives still seen as mail-borne executable wrappers (.lzh/.lha
+     * historically favored in JP-targeted campaigns); .uue is uuencoded
+     * binary content — a transport for executable payloads              */
+    ".hlp", ".cab", ".ace", ".arj", ".lha", ".lzh", ".zoo", ".uue",
     NULL
 };
 
