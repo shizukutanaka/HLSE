@@ -617,6 +617,84 @@ static const char *FR_SMISH_WORDS[] = {
     NULL
 };
 
+static const char *IT_SMISH_WORDS[] = {
+    /* Italian smishing/phishing — Poste Italiane / SDA / BRT pacco
+     * (parcel) and Agenzia delle Entrate rimborso (tax refund) kits are
+     * IT's top SMS-phish vectors; conto-bloccato bank lures follow.    */
+    /* Pacco / giacenza (customs-hold) lures */
+    "il tuo pacco", "pacco non è stato consegnato",
+    "non è stato consegnato", "pacco in giacenza", "in giacenza",
+    "in attesa di consegna", "consegna non riuscita",
+    "spese di dogana", "sdoganamento", "contrassegno",
+    "aggiorna il tuo indirizzo", "conferma l'indirizzo",
+    "riprogrammare la consegna", "riprogramma la consegna",
+    /* Conto bloccato / verification */
+    "il tuo conto è stato", "conto è stato bloccato", "conto bloccato",
+    "accesso sospeso", "conto sospeso", "verifica la tua identità",
+    "verifica immediata", "verifica la tua identità immediatamente",
+    "aggiorna i tuoi dati", "aggiorna i tuoi dati personali",
+    "accesso anomalo", "attività sospetta", "dispositivo sconosciuto",
+    /* Refund / authority lures */
+    "rimborso", "rimborso fiscale", "agenzia delle entrate",
+    "rimborso dovuto", "bonus",
+    /* Urgency + action */
+    "entro 24 ore", "ultimo avviso", "scade oggi", "scaduto",
+    "clicca sul link", "clicca qui", "comunicazione urgente",
+    "pagamento rifiutato", "metodo di pagamento",
+    NULL
+};
+
+static const char *TR_SMISH_WORDS[] = {
+    /* Turkish smishing/phishing — kargo (courier: MNG/Yurtiçi/PTT
+     * kits) and hesap-bloke bank lures are TR's top SMS-phish vectors;
+     * e-Devlet impersonation is the distinctive TR authority lure.    */
+    /* Kargo / gümrük lures */
+    "kargonuz", "kargonuz teslim edilemedi", "teslim edilemedi",
+    "kargo ücreti", "gümrük ücreti", "gümrükte bekliyor",
+    "gümrükte takıldı", "adresinizi güncelleyin", "adres bilgisi",
+    /* Hesap / kart lures */
+    "hesabınız", "hesabınız askıya alındı", "hesabınız bloke",
+    "bloke edildi", "kartınız bloke", "kartınız",
+    "şüpheli işlem", "şüpheli giriş", "yasa dışı işlem",
+    /* Verification / data update */
+    "güvenlik doğrulaması", "kimliğinizi doğrulayın",
+    "kişisel bilgilerinizi doğrulayın", "bilgilerinizi güncelleyin",
+    "kimlik doğrulama", "tc kimlik",
+    /* Authority / urgency */
+    "e-devlet", "emniyet genel müdürlüğü", "savcılık",
+    "hemen tıklayın", "tıklayınız", "24 saat içinde",
+    "son uyarı", "ödeme başarısız", "borcunuz", "borç ihtarı",
+    "iade", "para iadesi",
+    NULL
+};
+
+static const char *TH_SMISH_WORDS[] = {
+    /* Thai smishing — Kerry/Flash Express พัสดุ courier kits and
+     * bank บัญชีถูกระงับ lures are TH's top SMS-phish vectors.     */
+    "พัสดุของคุณ", "ไม่สามารถจัดส่งได้", "จัดส่งไม่สำเร็จ",
+    "สินค้าค้างที่ศุลกากร", "ค่าธรรมเนียมศุลกากร", "ยืนยันที่อยู่",
+    "บัญชีของคุณ", "บัญชีถูกระงับ", "ถูกระงับ", "ถูกอายัด",
+    "ยืนยันตัวตน", "กรุณายืนยัน", "อัปเดตข้อมูล", "ปรับปรุงข้อมูล",
+    "คลิกที่ลิงก์", "ภายใน 24 ชั่วโมง", "รายการที่น่าสงสัย",
+    "ชำระเงินไม่สำเร็จ", "เงินคืน", "คุณได้รับ", "รางวัล",
+    "โอนเงินด่วน", "ยืนยันรายการ",
+    NULL
+};
+
+static const char *VN_SMISH_WORDS[] = {
+    /* Vietnamese smishing — gói hàng (parcel) and tài khoản bị khóa
+     * (bank lock) kits are VN's top SMS-phish vectors.               */
+    "gói hàng của bạn", "không thể giao hàng", "giao hàng thất bại",
+    "gói hàng bị giữ", "phí hải quan", "tại hải quan",
+    "xác nhận địa chỉ", "xác nhận lại địa chỉ", "giao lại",
+    "tài khoản của bạn", "tài khoản đã bị khóa", "tài khoản bị khóa",
+    "bị khóa", "tạm khóa", "xác minh danh tính", "vui lòng xác minh",
+    "cập nhật thông tin", "nhấp vào liên kết", "trong vòng 24 giờ",
+    "giao dịch đáng ngờ", "giao dịch bất thường", "thanh toán thất bại",
+    "tiền hoàn", "hoàn tiền", "trúng thưởng", "bạn đã trúng",
+    NULL
+};
+
 static const char *SECRECY_WORDS[] = {
     /* English */
     "don't tell", "do not tell", "keep this secret", "between us",
@@ -1373,6 +1451,10 @@ static const Signal SIGNALS[] = {
     { "Korean smishing lure",       KR_SMISH_WORDS,       20, 15, 45 },
     { "German smishing lure",       DE_SMISH_WORDS,       20, 15, 45 },
     { "French smishing lure",       FR_SMISH_WORDS,       20, 15, 45 },
+    { "Italian smishing lure",      IT_SMISH_WORDS,       20, 15, 45 },
+    { "Turkish smishing lure",      TR_SMISH_WORDS,       20, 15, 45 },
+    { "Thai smishing lure",         TH_SMISH_WORDS,       20, 15, 45 },
+    { "Vietnamese smishing lure",   VN_SMISH_WORDS,       20, 15, 45 },
     { "Prompt-injection override phrase", PROMPT_OVERRIDE_WORDS, 40, 10, 55 },
     { "LLM control token in text",  LLM_CONTROL_TOKENS, 45, 10, 60 },
     { "Active HTML markup in text", HTML_INJECT_WORDS, 30, 15, 50 },

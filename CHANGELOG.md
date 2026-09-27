@@ -15,6 +15,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Italian / Turkish / Thai / Vietnamese smishing vocabulary**
+  (`hlse_text.c` IT_SMISH, TR_SMISH, TH_SMISH, VN_SMISH): Poste
+  Italiane pacco/giacenza and Agenzia delle Entrate rimborso kits;
+  Turkish kargo/gümrük courier fees, hesap-bloke locks, and
+  e-Devlet/savcılık authority impersonation; Thai พัสดุ courier and
+  บัญชีถูกระงับ bank lures; Vietnamese gói hàng parcel and
+  tài khoản bị khóa lures. All four previously scored fully OK
+  (compound lures now →45 ALERT).
 - **Korean / German / French smishing vocabulary** (`hlse_text.c`
   KR_SMISH, DE_SMISH, FR_SMISH): Korea's dominant 스미싱 families —
   택배 courier lures, 계좌동결/본인인증 account locks, 소액결제

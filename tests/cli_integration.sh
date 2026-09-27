@@ -10283,6 +10283,20 @@ check_text_hit '오늘 점심은 김치찌개였어요' "OK" "text: benign korea
 check_text_hit 'das wetter ist heute schön' "OK" "text: benign german clean"
 check_text_hit 'le temps est beau aujourdhui' "OK" "text: benign french clean"
 
+# ── cycle-93: Italian / Turkish / Thai / Vietnamese smishing vocab ──
+check_text_hit 'il tuo pacco non è stato consegnato' "ALERT\|BLOCK\|ISOLATE" "text: IT parcel smishing flagged"
+check_text_hit 'rimborso fiscale agenzia delle entrate' "ALERT\|BLOCK\|ISOLATE" "text: IT tax-refund smishing flagged"
+check_text_hit 'kargonuz teslim edilemedi adresinizi güncelleyin' "ALERT\|BLOCK\|ISOLATE" "text: TR parcel smishing flagged"
+check_text_hit 'hesabınız bloke edildi kimliğinizi doğrulayın' "ALERT\|BLOCK\|ISOLATE" "text: TR account-lock smishing flagged"
+check_text_hit 'พัสดุของคุณไม่สามารถจัดส่งได้ ยืนยันที่อยู่' "ALERT\|BLOCK\|ISOLATE" "text: TH parcel smishing flagged"
+check_text_hit 'บัญชีของคุณถูกระงับ ยืนยันตัวตน' "ALERT\|BLOCK\|ISOLATE" "text: TH account-lock smishing flagged"
+check_text_hit 'gói hàng của bạn không thể giao' "LOG\|ALERT" "text: VN parcel smishing flagged"
+check_text_hit 'tài khoản của bạn đã bị khóa xác minh danh tính' "ALERT\|BLOCK\|ISOLATE" "text: VN account-lock smishing flagged"
+check_text_hit 'oggi è una bella giornata' "OK" "text: benign italian clean"
+check_text_hit 'bugün hava güzel' "OK" "text: benign turkish clean"
+check_text_hit 'วันนี้อากาศดี' "OK" "text: benign thai clean"
+check_text_hit 'hôm nay thời tiết đẹp' "OK" "text: benign vietnamese clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
