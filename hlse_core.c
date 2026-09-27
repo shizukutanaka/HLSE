@@ -1717,7 +1717,11 @@ static const char *const URL_WRAPPER_SCHEMES[] = {
 static const char *const URL_LEGACY_SCHEMES[] = {
     "ftp:", "telnet:", "gopher:", "nntp:", "dict:",
     "tftp:", "ldap:", "ldaps:", "finger:", "whois:",
-    "irc:", "ircs:", "feed:", "webcal:", "dayz:", NULL
+    "irc:", "ircs:", "feed:", "webcal:", "dayz:",
+    /* TLS-wrapped variants of the legacy transports — ftp/nntp over
+     * TLS are the same cleartext-era handler class; ldaps: was
+     * already listed while its ftp/nntp siblings fell through    */
+    "ftps:", "snews:", "nntps:", NULL
 };
 static const char *const URL_FETCH_SCHEMES[] = {
     "ssh:", "sftp:", "git:", "svn:", "hg:", "wss:", "ws:", NULL

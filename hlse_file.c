@@ -333,6 +333,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * managed add-in on open (Office-side code exec); .accde is a
      * compiled-locked Access DB (VBA + autoexec like .mdb/.accdb)    */
     ".vsto", ".accde",
+    /* .accda is a compiled Access add-in — same VBA/autoexec surface
+     * as .accde/.mdb/.accdb (the .laccdb lock file is a transient
+     * byproduct, not a carrier, and stays unlisted)                */
+    ".accda",
     NULL
 };
 

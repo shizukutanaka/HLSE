@@ -15,6 +15,21 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Prompt-extraction probes in text** (`hlse_text.c`): new
+  `PROMPT_EXTRACT` signal — the reconnaissance step before an
+  injection: "reveal/show/print/repeat your system prompt",
+  "repeat the words above", "what are/were your instructions",
+  "dump/leak/echo your prompt", "your hidden/secret/initial prompt",
+  "your system message". Distinct from PROMPT_OVERRIDE (which
+  replaces instructions); →45+10/cap60. Benign "describe your role"
+  and "summarize the above" stay OK.
+- **TLS-wrapped legacy schemes** (`hlse_core.c`): `ftps:`/`snews:`/
+  `nntps:` joined URL_LEGACY_SCHEMES — `ldaps:` was listed while its
+  ftp/nntp siblings fell through to OK; one table feeds both the
+  dispatcher and the scorer.
+- **`.accda` compiled Access add-in** (`hlse_file.c`): same
+  VBA/autoexec surface as .accde/.mdb/.accdb →30. (`.laccdb` is a
+  transient lock record, not a carrier — deliberately unlisted.)
 - **LOLBin download/exec primitives in text** (`hlse_text.c`): new
   `LOLBIN` signal — flag forms whose only purpose is fetching or
   executing remote payloads: `certutil -urlcache`/`-split`, `bitsadmin
