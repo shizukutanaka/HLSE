@@ -10126,6 +10126,25 @@ printf 'resolved: https://evil.example/x.tgz\n' > "$XDIR84/random.json"
     || check "file: non-lockfile json clean" "0" "1"
 rm -rf "$XDIR84"
 
+# ── cycle-85: F58 mail-carrier forensics on file path ──
+XDIR85=$(mktemp -d /tmp/hlse85.XXXXXX)
+printf 'From: "PayPal Security" <sec@evil.example>\nReply-To: collect@evil2.example\nSubject: verify\n\nhi\n' > "$XDIR85/dsp.eml"
+printf 'From: Alice <alice@corp.example>\nSubject: lunch\n\nsee you\n' > "$XDIR85/ok.eml"
+printf 'From: "PayPal Security" <sec@evil.example>\nReply-To: collect@evil2.example\nSubject: x\n\nhi\n' > "$XDIR85/notmail.txt"
+./hlse_core file "$XDIR85/dsp.eml" 2>&1 | grep -q "BLOCK\|ISOLATE" \
+    && check "file: .eml display-name spoof flagged" "0" "0" \
+    || check "file: .eml display-name spoof flagged" "0" "1"
+./hlse_core file "$XDIR85/dsp.eml" 2>&1 | grep -q "E1" \
+    && check "file: .eml carries E1 finding" "0" "0" \
+    || check "file: .eml carries E1 finding" "0" "1"
+./hlse_core file "$XDIR85/ok.eml" 2>&1 | grep -qv "BLOCK\|ISOLATE\|ALERT" \
+    && check "file: benign .eml stays under ALERT" "0" "0" \
+    || check "file: benign .eml stays under ALERT" "0" "1"
+./hlse_core file "$XDIR85/notmail.txt" 2>&1 | grep -q "OK" \
+    && check "file: non-.eml with mail headers clean" "0" "0" \
+    || check "file: non-.eml with mail headers clean" "0" "1"
+rm -rf "$XDIR85"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

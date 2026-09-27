@@ -51,6 +51,8 @@
 #include <unistd.h>
 
 #include "hlse_file.h"
+#include "hlse_secrets.h" /* hlse_check_email_headers — mail carrier
+                           * forensics (F58)                          */
 #include "hlse_core.h"   /* hlse_check_url — embedded links are scored by
                         * the URL engine rather than reimplemented here */
 #include "hlse_util.h"
@@ -4896,6 +4898,32 @@ hlse_check_file(const char *filepath) {
                 "F56: SYSTEM CONFIG — filename is a host config that "
                 "changes privilege/resolution when dropped in place "
                 "(score %d)", sc);
+        }
+    }
+
+    /* ── F58: mail carrier forensics — a .eml/.msg/.mbox file's header
+     *      block goes through the same email-forensics engine as the
+     *      `email` subcommand, so display-name spoofing / Reply-To
+     *      redirect / auth failures in a dropped mail file score
+     *      instead of passing as a harmless text file ─────────────── */
+    if (head_len > 0) {
+        char bn2[256];
+        str_lower(basename_start, bn2, sizeof(bn2));
+        if (strstr(bn2, ".eml") || strstr(bn2, ".msg") ||
+            strstr(bn2, ".mbox")) {
+            char hbuf[4097];
+            EmailVerdict ev;
+            int i;
+            memcpy(hbuf, head, (size_t)head_len);
+            hbuf[head_len] = '\0';
+            ev = hlse_check_email_headers(hbuf);
+            if (ev.score > 0) {
+                fv_add(&v, ev.score,
+                    "F58: EMAIL FORENSICS — mail file headers score %d",
+                    ev.score);
+                for (i = 0; i < ev.n_reasons; i++)
+                    fv_add(&v, 0, "    · %s", ev.reasons[i]);
+            }
         }
     }
 

@@ -15,6 +15,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F58 mail-carrier forensics** (`hlse_file.c`): `hlse_check_file`
+  routes the header block of `.eml`/`.msg`/`.mbox` files through
+  `hlse_check_email_headers` — display-name spoofing, Reply-To
+  redirects, and auth failures in a dropped mail file now score
+  exactly as the `email` subcommand instead of passing as a
+  harmless text file (previously a `From: "PayPal Security"
+  <x@evil.example>` .eml with no links scanned OK).
 - **F57 lockfile registry poisoning** (`hlse_file.c`): lockfiles
   (`package-lock.json`, `npm-shrinkwrap.json`, `yarn.lock`,
   `pnpm-lock.yaml`, `poetry.lock`, `uv.lock`, `Gemfile.lock`,
