@@ -1700,6 +1700,56 @@ detect_idn_homograph(const ParsedUrl *u, Verdict *v) {
     /* Pure single-script i18n with no brand resemblance: benign — no flag. */
 }
 
+/* URL scheme tables — file scope so hlse_scan's "is this a URL" prefix
+ * check and check_url's scoring read the SAME lists: a scheme present
+ * in the scoring table but missing from the dispatcher is unreachable
+ * (this drift was real: ms-visio/ms-settings/itms/... scored 0 via the
+ * bare-operand path). Keep both lists in these tables.               */
+static const char *const URL_WRAPPER_SCHEMES[] = {
+    "jar:", "blob:", "view-source:", "filesystem:",
+    "ms-appx:", "ms-appx-web:", "chrome:", "about:",
+    "moz-extension:", "chrome-extension:", NULL
+};
+static const char *const URL_LEGACY_SCHEMES[] = {
+    "ftp:", "telnet:", "gopher:", "nntp:", "dict:",
+    "tftp:", "ldap:", NULL
+};
+static const char *const URL_FETCH_SCHEMES[] = {
+    "ssh:", "git:", "svn:", "hg:", NULL
+};
+/* OS/app URI-handler schemes hand the string to a local handler that
+ * resolves remote content itself — they never parse as URLs, so a host
+ * check can't see the destination: search-ms: opens an Explorer search
+ * on \\host (Trellix/Mitiga 2024-25 campaigns; leaks NetNTLM), ms-msdt:
+ * is the Follina RCE (CVE-2022-30190), ms-officecmd:/ms-word: ...ofv|u|
+ * <url> opens a remote doc (Varonis/eSentire), itms-services: sideloads
+ * an iOS OTA plist, vscode:/atom: open an editor URI that can load an
+ * extension or folder. The remote indicator (http inside args, UNC
+ * path, |u| pipe arg, location= share) is what makes it weaponised.  */
+static const char *const URL_HANDLER_SCHEMES[] = {
+    "search-ms:", "ms-msdt:", "ms-officecmd:", "ms-word:",
+    "ms-excel:", "ms-powerpoint:", "ms-visio:", "ms-access:",
+    "ms-project:", "ms-publisher:", "onenote:", "onenote-cmd:",
+    "ms-settings:", "ms-people:", "ms-calculator:",
+    "itms-services:", "itms:", "itmss:", "itpc:",
+    "vscode:", "vscode-insiders:", "atom:", NULL
+};
+/* Remote-mount schemes: clicking one attaches a remote filesystem or
+ * session — smb: is the same NetNTLM-leak class as a \\ UNC path,
+ * nfs:/afp: mount attacker shares, vnc:/rdp: open a remote console. */
+static const char *const URL_NETMNT_SCHEMES[] = {
+    "smb:", "nfs:", "afp:", "vnc:", "rdp:", NULL
+};
+
+static int
+url_has_scheme(const char *input, const char *const *tbl) {
+    int i;
+    for (i = 0; tbl[i]; i++)
+        if (strncmp(input, tbl[i], strlen(tbl[i])) == 0)
+            return 1;
+    return 0;
+}
+
 /* ───────────────────────── public API ────────────────────────────────── */
 
 /* check_url — returns a Verdict.
@@ -1794,71 +1844,50 @@ check_url(const char *raw_url) {
                 add_reason(&v, 30, "Protocol-relative URL");
         }
         else if (raw_url) {
-            /* URL-wrapper schemes hide the real fetch inside: jar:/blob:/
-             * view-source:/filesystem: wrap an inner http(s) URL — score
-             * the inner target recursively, floor 40. Legacy cleartext
-             * transports get 30; unknown schemes stay clean.            */
-            static const char *const WRAPPERS[] = {
-                "jar:", "blob:", "view-source:", "filesystem:",
-                "ms-appx:", "ms-appx-web:", "chrome:", "about:",
-                "moz-extension:", "chrome-extension:", NULL
-            };
-            static const char *const LEGACY[] = {
-                "ftp:", "telnet:", "gopher:", "nntp:", "dict:",
-                "tftp:", "ldap:", NULL
-            };
-            static const char *const FETCH[] = {
-                "ssh:", "git:", "svn:", "hg:", NULL
-            };
-            /* OS/app URI-handler schemes hand the string to a local
-             * handler that resolves remote content itself — they never
-             * parse as URLs, so a host check can't see the destination:
-             * search-ms: opens an Explorer search on \\host (Trellix/
-             * Mitiga 2024-25 campaigns; leaks NetNTLM), ms-msdt: is the
-             * Follina RCE (CVE-2022-30190), ms-officecmd:/ms-word:
-             * ...ofv|u|<url> opens a remote doc (Varonis/eSentire),
-             * itms-services: sideloads an iOS OTA plist. The remote
-             * indicator (http inside args, UNC path, |u| pipe arg,
-             * location= share) is what makes it weaponised.            */
-            static const char *const HANDLER[] = {
-                "search-ms:", "ms-msdt:", "ms-officecmd:", "ms-word:",
-                "ms-excel:", "ms-powerpoint:", "ms-visio:", "ms-access:",
-                "ms-project:", "ms-publisher:", "onenote:", "onenote-cmd:",
-                "ms-settings:", "ms-people:", "ms-calculator:",
-                "itms-services:", "itms:", "itmss:", "itpc:", NULL
-            };
             const char *inner_u = NULL;
             int i;
-            for (i = 0; WRAPPERS[i]; i++) {
-                size_t wl = strlen(WRAPPERS[i]);
-                if (strncmp(raw_url, WRAPPERS[i], wl) == 0) {
+            for (i = 0; URL_WRAPPER_SCHEMES[i]; i++) {
+                size_t wl = strlen(URL_WRAPPER_SCHEMES[i]);
+                if (strncmp(raw_url, URL_WRAPPER_SCHEMES[i], wl) == 0) {
                     inner_u = strstr(raw_url + wl, "http://");
                     if (!inner_u)
                         inner_u = strstr(raw_url + wl, "https://");
                     add_reason(&v, inner_u ? 40 : 35,
                                "URL-wrapper scheme '%.*s' — hides the "
-                               "real target", (int)wl, WRAPPERS[i]);
+                               "real target", (int)wl,
+                               URL_WRAPPER_SCHEMES[i]);
                     break;
                 }
             }
             if (!inner_u) {
-                for (i = 0; LEGACY[i]; i++)
-                    if (strncmp(raw_url, LEGACY[i], strlen(LEGACY[i]))
-                            == 0) {
+                for (i = 0; URL_LEGACY_SCHEMES[i]; i++)
+                    if (strncmp(raw_url, URL_LEGACY_SCHEMES[i],
+                            strlen(URL_LEGACY_SCHEMES[i])) == 0) {
                         add_reason(&v, 30, "Cleartext/legacy transport "
-                                           "scheme '%s'", LEGACY[i]);
+                                           "scheme '%s'",
+                                   URL_LEGACY_SCHEMES[i]);
                         break;
                     }
-                for (i = 0; FETCH[i]; i++)
-                    if (strncmp(raw_url, FETCH[i], strlen(FETCH[i]))
-                            == 0) {
+                for (i = 0; URL_FETCH_SCHEMES[i]; i++)
+                    if (strncmp(raw_url, URL_FETCH_SCHEMES[i],
+                            strlen(URL_FETCH_SCHEMES[i])) == 0) {
                         add_reason(&v, 30, "Non-web fetch scheme "
-                                           "'%s'", FETCH[i]);
+                                           "'%s'", URL_FETCH_SCHEMES[i]);
                         break;
                     }
-                for (i = 0; HANDLER[i]; i++) {
-                    size_t hl = strlen(HANDLER[i]);
-                    if (strncmp(raw_url, HANDLER[i], hl) == 0) {
+                for (i = 0; URL_NETMNT_SCHEMES[i]; i++)
+                    if (strncmp(raw_url, URL_NETMNT_SCHEMES[i],
+                            strlen(URL_NETMNT_SCHEMES[i])) == 0) {
+                        add_reason(&v, strncmp(raw_url, "smb:", 4) == 0
+                                       ? 55 : 40,
+                                   "Remote-mount scheme '%s' — attaches "
+                                   "a remote share/session (credential "
+                                   "leak class)", URL_NETMNT_SCHEMES[i]);
+                        break;
+                    }
+                for (i = 0; URL_HANDLER_SCHEMES[i]; i++) {
+                    size_t hl = strlen(URL_HANDLER_SCHEMES[i]);
+                    if (strncmp(raw_url, URL_HANDLER_SCHEMES[i], hl) == 0) {
                         const char *arg = raw_url + hl;
                         int remote = strstr(arg, "http") != NULL ||
                                      strstr(arg, "\\\\") != NULL ||
@@ -1869,7 +1898,7 @@ check_url(const char *raw_url) {
                             "URI-handler scheme '%.*s' — launches a local "
                             "app that resolves remote content outside URL "
                             "parsing%s",
-                            (int)hl - 1, HANDLER[i],
+                            (int)hl - 1, URL_HANDLER_SCHEMES[i],
                             remote ? " (remote target embedded)"
                                    : "");
                         break;
@@ -2347,14 +2376,8 @@ hlse_scan(const char *input) {
             strncmp(dec, "ftp://", 6) == 0 ||
             strncmp(dec, "javascript:", 11) == 0 ||
             strncmp(dec, "data:", 5) == 0 ||
-            strncmp(dec, "search-ms:", 10) == 0 ||
-            strncmp(dec, "ms-msdt:", 8) == 0 ||
-            strncmp(dec, "ms-officecmd:", 13) == 0 ||
-            strncmp(dec, "ms-word:", 8) == 0 ||
-            strncmp(dec, "ms-excel:", 9) == 0 ||
-            strncmp(dec, "ms-powerpoint:", 14) == 0 ||
-            strncmp(dec, "onenote:", 8) == 0 ||
-            strncmp(dec, "itms-services:", 14) == 0)) {
+            url_has_scheme(dec, URL_HANDLER_SCHEMES) ||
+            url_has_scheme(dec, URL_NETMNT_SCHEMES))) {
             Verdict uv = check_url(dec);
             add_reason(&uv, 25,
                 "Entire URL is percent-encoded — nothing sees the link "
@@ -2402,26 +2425,14 @@ hlse_scan(const char *input) {
         strncmp(input, "moz-extension:", 14) == 0 ||
         strncmp(input, "chrome-extension:", 17) == 0 ||
         strncmp(input, "ftp:", 4) == 0 ||
-        strncmp(input, "telnet:", 7) == 0 ||
-        strncmp(input, "gopher:", 7) == 0 ||
-        strncmp(input, "nntp:", 5) == 0 ||
-        strncmp(input, "dict:", 5) == 0 ||
-        strncmp(input, "tftp:", 5) == 0 ||
-        strncmp(input, "ldap:", 5) == 0 ||
-        strncmp(input, "ssh:", 4) == 0 ||
-        strncmp(input, "git:", 4) == 0 ||
-        strncmp(input, "svn:", 4) == 0 ||
-        strncmp(input, "hg:", 3) == 0 ||
-        /* OS/app URI-handler schemes (search-ms NetNTLM leak, Follina
-         * ms-msdt RCE, office remote-doc handlers, iOS OTA sideload) */
-        strncmp(input, "search-ms:", 10) == 0 ||
-        strncmp(input, "ms-msdt:", 8) == 0 ||
-        strncmp(input, "ms-officecmd:", 13) == 0 ||
-        strncmp(input, "ms-word:", 8) == 0 ||
-        strncmp(input, "ms-excel:", 9) == 0 ||
-        strncmp(input, "ms-powerpoint:", 14) == 0 ||
-        strncmp(input, "onenote:", 8) == 0 ||
-        strncmp(input, "itms-services:", 14) == 0)
+        /* Legacy/fetch/handler/net-mount scheme sets — table-driven so
+         * the dispatcher can never drift behind check_url's scoring
+         * tables (search-ms NetNTLM leak, Follina ms-msdt RCE, office
+         * remote-doc handlers, iOS OTA sideload, smb/afp mounts).    */
+        url_has_scheme(input, URL_LEGACY_SCHEMES) ||
+        url_has_scheme(input, URL_FETCH_SCHEMES) ||
+        url_has_scheme(input, URL_NETMNT_SCHEMES) ||
+        url_has_scheme(input, URL_HANDLER_SCHEMES))
     {
         Verdict uv = check_url(input);
         r.score = uv.score;

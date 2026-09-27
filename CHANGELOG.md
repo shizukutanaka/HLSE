@@ -6,6 +6,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Scheme-table sync + remote-mount schemes** (`hlse_core.c`): the URL
+  scheme tables moved to file scope so `hlse_scan`'s "is this a URL"
+  prefix check and `check_url`'s scoring read the same lists — ten
+  `HANDLER` schemes (`ms-visio`/`ms-access`/`ms-project`/`ms-publisher`/
+  `ms-settings`/`ms-people`/`ms-calculator`/`onenote-cmd`/`itms`/`itmss`/
+  `itpc`) were in the scoring table but missing from the dispatcher, so
+  they never fired via the bare-operand path. `HANDLER` gains
+  `vscode:`/`vscode-insiders:`/`atom:`; new `NETMNT` table: `smb:` → 55
+  (NetNTLM-leak class, same as a `\\` UNC path), `nfs:`/`afp:`/`vnc:`/
+  `rdp:` → 40.
 - **F52–F55 dropped server-config checks** (`hlse_file.c`): `.htaccess`
   PHP-handler coercion (`AddType`/`SetHandler`/`php_flag`/`php_value`/
   `Options +ExecCGI`) → 55, `Redirect`/`RewriteRule` to a remote host →

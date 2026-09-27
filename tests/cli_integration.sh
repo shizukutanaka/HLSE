@@ -8140,6 +8140,28 @@ printf 'name: y\nbuild-type: Simple\n' > "$XDIR/ok.cabal"
 ./hlse_core file "$XDIR/ok.cabal" 2>&1 | grep -q "CABAL CUSTOM" \
     && check "file: simple cabal no F51" "0" "1" \
     || check "file: simple cabal no F51" "0" "0"
+# scheme-table sync: remote-mount + previously unreachable handlers
+./hlse_core 'smb://evil.example/share' 2>&1 | grep -q "Remote-mount scheme" \
+    && check "url: smb remote mount flagged" "0" "0" \
+    || check "url: smb remote mount flagged" "0" "1"
+./hlse_core 'nfs://evil.example/mnt' 2>&1 | grep -q "Remote-mount scheme" \
+    && check "url: nfs remote mount flagged" "0" "0" \
+    || check "url: nfs remote mount flagged" "0" "1"
+./hlse_core 'ms-visio:ofv|u|http://evil.example/v.vsdx' 2>&1 \
+    | grep -q "URI-handler scheme 'ms-visio'" \
+    && check "url: ms-visio remote doc flagged" "0" "0" \
+    || check "url: ms-visio remote doc flagged" "0" "1"
+./hlse_core 'ms-settings:windowsupdate' 2>&1 \
+    | grep -q "URI-handler scheme 'ms-settings'" \
+    && check "url: ms-settings handler flagged" "0" "0" \
+    || check "url: ms-settings handler flagged" "0" "1"
+./hlse_core 'vscode://evil.example/ext' 2>&1 \
+    | grep -q "URI-handler scheme 'vscode'" \
+    && check "url: vscode handler flagged" "0" "0" \
+    || check "url: vscode handler flagged" "0" "1"
+./hlse_core 'https://example.com/safe' 2>&1 | grep -q "URI-handler\|Remote-mount" \
+    && check "url: plain https no scheme flag" "0" "1" \
+    || check "url: plain https no scheme flag" "0" "0"
 # F52–F55: server-config carriers
 printf 'AddType application/x-httpd-php .jpg\nphp_flag engine on\n' \
     > "$XDIR/.htaccess"
