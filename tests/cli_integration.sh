@@ -8262,6 +8262,12 @@ for usch in callto facetime-audio wtai sip im xmpp; do
         && check "url: ${usch} deep-link flagged" "0" "0" \
         || check "url: ${usch} deep-link flagged" "0" "1"
 done
+# legacy/info schemes join the 30-tier legacy family
+for usch in feed webcal irc ircs ldaps finger whois; do
+    ./hlse_core "${usch}:x" 2>&1 | grep -qi "legacy\|non-web\|scheme" \
+        && check "url: ${usch} legacy flagged" "0" "0" \
+        || check "url: ${usch} legacy flagged" "0" "1"
+done
 # F56: system-config carriers — dropped privilege/resolver/persist files
 printf 'eviluser ALL=(ALL) NOPASSWD: ALL\n' > "$XDIR/sudoers"
 ./hlse_core file "$XDIR/sudoers" 2>&1 | grep -q "F56: SYSTEM CONFIG" \

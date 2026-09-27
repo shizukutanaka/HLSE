@@ -19,6 +19,11 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   (Discord MFA token) → 85; `AC`/`SK` + 32 lowercase hex (Twilio
   Account SID / API Key) → 70 — new `is_hex_c` predicate keeps the
   2-char prefixes' false positives low.
+- **Legacy/info URI schemes** (`hlse_core.c`): `feed:`, `webcal:`,
+  `irc:`, `ircs:`, `ldaps:`, `finger:`, `whois:`, `dayz:` join the
+  legacy-scheme family at 30 — non-web fetch/handler schemes that
+  bypass URL filters (IRC/directory/calendar-protocol lures,
+  information-disclosure handlers).
 - **Paste: destructive/credential/persistence/eval-fetch patterns**
   (`hlse_supply.c`, `hlse_supply.h`): P9 → 60 for destructive payloads
   (`rm -rf /`/`rm -rf ~`/`rm -rf $HOME`, fork bomb, `mkfs.`,

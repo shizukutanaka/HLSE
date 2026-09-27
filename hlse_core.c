@@ -1712,7 +1712,8 @@ static const char *const URL_WRAPPER_SCHEMES[] = {
 };
 static const char *const URL_LEGACY_SCHEMES[] = {
     "ftp:", "telnet:", "gopher:", "nntp:", "dict:",
-    "tftp:", "ldap:", NULL
+    "tftp:", "ldap:", "ldaps:", "finger:", "whois:",
+    "irc:", "ircs:", "feed:", "webcal:", "dayz:", NULL
 };
 static const char *const URL_FETCH_SCHEMES[] = {
     "ssh:", "git:", "svn:", "hg:", NULL
