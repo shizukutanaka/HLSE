@@ -2696,6 +2696,198 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 40;
         return 0;
     }
+    /* webshell bodies — a dropped server-side page that reads a request
+     * param into eval/system/exec is the classic RCE webshell;
+     * .sql with xp_cmdshell, INTO OUTFILE, sp_oa* or COPY PROGRAM
+     * turns a query file into host command execution; .lua os.execute/
+     * dofile(loadstring over http) does the same for lua hosts */
+    if (strstr(bn, ".php") || strstr(bn, ".phtml") ||
+        strstr(bn, ".php5") || strstr(bn, ".pht") ||
+        strstr(bn, ".phar") || strstr(bn, ".inc")) {
+        if ((strstr(low, "eval(") || strstr(low, "assert(") ||
+             strstr(low, "system(") || strstr(low, "passthru(") ||
+             strstr(low, "exec(") || strstr(low, "popen(") ||
+             strstr(low, "proc_open") || strstr(low, "shell_exec") ||
+             strstr(low, "`") || strstr(low, "preg_replace")) &&
+            (strstr(low, "$_") || strstr(low, "request") ||
+             strstr(low, "post[") || strstr(low, "get[")))
+            return 75;
+        if ((strstr(low, "base64_decode") || strstr(low, "gzinflate") ||
+             strstr(low, "gzuncompress") || strstr(low, "str_rot13") ||
+             strstr(low, "strrev")) &&
+            (strstr(low, "eval") || strstr(low, "assert") ||
+             strstr(low, "$_") || strstr(low, "post") ||
+             strstr(low, "get")))
+            return 60;
+        if (strstr(low, "move_uploaded_file") && strstr(low, "_files"))
+            return 50;
+        return 0;
+    }
+    if (strstr(bn, ".jsp") || strstr(bn, ".jspx") ||
+        strstr(bn, ".jspf")) {
+        if ((strstr(low, "exec(") || strstr(low, "exec ") ||
+             strstr(low, "processbuilder") ||
+             strstr(low, "getruntime")) &&
+            (strstr(low, "request") || strstr(low, "getparameter") ||
+             strstr(low, "param")))
+            return 75;
+        return 0;
+    }
+    if (strstr(bn, ".asp") || strstr(bn, ".aspx") ||
+        strstr(bn, ".ashx") || strstr(bn, ".asmx") ||
+        strstr(bn, ".cer")) {
+        if (strstr(low, "wscript.shell") || strstr(low, "createobject") ||
+            strstr(low, "process.start") || strstr(low, "cmd.exe") ||
+            strstr(low, "powershell") || strstr(low, "executeglobal") ||
+            strstr(low, "shell.application") ||
+            strstr(low, "request.form") || strstr(low, "request(") ||
+            strstr(low, "eval("))
+            return 75;
+        return 0;
+    }
+    if (strstr(bn, ".cfm") || strstr(bn, ".cfc")) {
+        if (strstr(low, "cfexecute") || strstr(low, "cfhttp") ||
+            strstr(low, "createobject") || strstr(low, "evaluate("))
+            return 60;
+        return 0;
+    }
+    if (strstr(bn, ".pl") || strstr(bn, ".cgi")) {
+        if ((strstr(low, "system(") || strstr(low, "exec(") ||
+             strstr(low, "open2") || strstr(low, "open3") ||
+             strstr(low, "`") || strstr(low, "qx(")) &&
+            (strstr(low, "param(") || strstr(low, "env") ||
+             strstr(low, "stdin") || strstr(low, "query")))
+            return 55;
+        return 0;
+    }
+    if (strstr(bn, ".lua")) {
+        if (strstr(low, "os.execute") || strstr(low, "io.popen") ||
+            strstr(low, "loadstring") ||
+            (strstr(low, "dofile") && strstr(low, "http")) ||
+            (strstr(low, "load(") && strstr(low, "http")))
+            return 55;
+        return 0;
+    }
+    if (strstr(bn, ".sql")) {
+        if (strstr(low, "xp_cmdshell") || strstr(low, "into outfile") ||
+            strstr(low, "into dumpfile") || strstr(low, "load_file") ||
+            strstr(low, "sp_oacreate") || strstr(low, "sp_oamethod") ||
+            (strstr(low, "sp_executesql") && strstr(low, "master.")) ||
+            (strstr(low, "copy ") && strstr(low, "program")) ||
+            strstr(low, "lo_import") || strstr(low, "lo_export") ||
+            strstr(low, "pg_read_file") || strstr(low, "sys_eval") ||
+            strstr(low, "sys_exec") || strstr(low, "utl_file") ||
+            strstr(low, "sqlmap"))
+            return 60;
+        return 0;
+    }
+    if (strstr(bn, ".hta")) {
+        if (strstr(low, "activexobject") || strstr(low, "wscript.shell") ||
+            strstr(low, "shell.application") || strstr(low, "run(") ||
+            strstr(low, "exec(") || strstr(low, "powershell") ||
+            strstr(low, "mshta") || strstr(low, "vbscript") ||
+            strstr(low, "javascript:") || strstr(low, "createobject"))
+            return 55;
+        return 0;
+    }
+    if (strstr(bn, ".wsf") || strstr(bn, ".wsh")) {
+        if (strstr(low, "<script") || strstr(low, "run(") ||
+            strstr(low, "exec(") || strstr(low, "cscript") ||
+            strstr(low, "wscript"))
+            return 50;
+        return 0;
+    }
+    if (strstr(bn, ".css") || strstr(bn, ".htc")) {
+        if (strstr(low, "expression(") || strstr(low, "behavior") ||
+            strstr(low, "-moz-binding") || strstr(low, "javascript:") ||
+            strstr(low, "vbscript:") || strstr(low, "binding:"))
+            return 45;
+        return 0;
+    }
+    if (strstr(bn, ".ics") || strstr(bn, ".ical") ||
+        strstr(bn, ".ifb")) {
+        if ((strstr(low, "attach") || strstr(low, "url")) &&
+            strstr(low, "http"))
+            return 35;
+        return 0;
+    }
+    if (strstr(bn, ".lsp") || strstr(bn, ".mnl") ||
+        strcmp(bn, "acad.lsp") == 0 || strcmp(bn, "acaddoc.lsp") == 0) {
+        if (strstr(low, "(command") || strstr(low, "startapp") ||
+            strstr(low, "vl-cmdf") || strstr(low, "arxload") ||
+            (strstr(low, "(load") && strstr(low, "http")) ||
+            strstr(low, "shell"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, "startup.m") == 0 || strcmp(bn, "finish.m") == 0 ||
+        strcmp(bn, "init.m") == 0) {
+        if (strstr(low, "system") || strstr(low, "eval") ||
+            strstr(low, "unix(") || strstr(low, "dos(") ||
+            strstr(low, "urlread") || strstr(low, "websave") ||
+            strstr(low, "run(") || strstr(low, "import") ||
+            strstr(low, "pacletinstall") || strstr(low, "install"))
+            return 45;
+        return 0;
+    }
+    /* private-key material arriving as a file — the key itself is the
+     * credential, so `file id_rsa` is a disclosure event; a bare
+     * CERTIFICATE/PUBLIC KEY block is public material, not a leak */
+    if (strstr(low, "private key") || strstr(low, "openssh-key-v1") ||
+        strstr(low, "putty-user-key-file")) {
+        if ((strstr(low, "begin") && strstr(low, "private")) ||
+            strstr(low, "openssh-key-v1") ||
+            strstr(low, "putty-user-key-file"))
+            return 80;
+        if (strstr(low, "certificate") || strstr(low, "public"))
+            return 30;
+        return 0;
+    }
+    if (strcmp(bn, "id_rsa") == 0 || strcmp(bn, "id_dsa") == 0 ||
+        strcmp(bn, "id_ecdsa") == 0 || strcmp(bn, "id_ed25519") == 0 ||
+        strcmp(bn, "identity") == 0) {
+        if (strstr(low, "private") || strstr(low, "begin") ||
+            strstr(low, "mii") || strstr(low, "key"))
+            return 80;
+        return 0;
+    }
+    /* credential containers — wallet.dat, .kirbi, .ccache, *.dmp,
+     * browser stores are exfiltration or replay material arriving as
+     * files; the basename alone is the signal (content is binary) */
+    if (strcmp(bn, "wallet.dat") == 0 || strcmp(bn, "electrum.dat") == 0 ||
+        strcmp(bn, "wallet.aes.json") == 0 || strstr(bn, ".wallet") ||
+        strstr(bn, ".keys"))
+        return 45;
+    if (strstr(bn, ".kirbi") || strstr(bn, ".ccache") ||
+        strstr(bn, ".ktb") || strcmp(bn, "krbtgt") == 0)
+        return 55;
+    if (strstr(bn, ".dmp") || strstr(bn, ".mdmp") ||
+        strstr(bn, ".dump") || strcmp(bn, "core") == 0 ||
+        strcmp(bn, "lsass.dmp") == 0 || strcmp(bn, "memory.dmp") == 0 ||
+        strcmp(bn, "hiberfil.sys") == 0 || strcmp(bn, "pagefile.sys") == 0)
+        return 45;
+    if (strcmp(bn, "logins.json") == 0 || strcmp(bn, "key4.db") == 0 ||
+        strcmp(bn, "key3.db") == 0 || strcmp(bn, "cert8.db") == 0 ||
+        strcmp(bn, "cert9.db") == 0 || strcmp(bn, "cookies.sqlite") == 0 ||
+        strcmp(bn, "signons.sqlite") == 0 || strcmp(bn, "formhistory.sqlite") == 0 ||
+        strcmp(bn, "login data") == 0 || strcmp(bn, "web data") == 0 ||
+        strcmp(bn, "secring.gpg") == 0 || strcmp(bn, "secring.skr") == 0 ||
+        strstr(bn, ".kdbx") || strstr(bn, ".kdb") ||
+        strstr(bn, ".keychain") || strstr(bn, ".agilekeychain") ||
+        strstr(bn, ".opvault") || strstr(bn, ".keystore") ||
+        strstr(bn, ".jks") || strstr(bn, ".ppk"))
+        return 45;
+    /* .pem/.key/.p8 — public cert material is LOG; the PRIVATE block
+     * above already returns 80 for key material */
+    if (strstr(bn, ".pem") || strstr(bn, ".p8") ||
+        strstr(bn, ".key"))
+        return 30;
+    if (strcmp(bn, "cookies.txt") == 0 || strcmp(bn, ".mozilla") == 0) {
+        if (strstr(low, "true") || strstr(low, "false") ||
+            strstr(low, "netscape") || strstr(low, ".com"))
+            return 45;
+        return 0;
+    }
     /* .rhosts — `+ host` / host lines grant passwordless rsh/rlogin
      * trust to the listed host: a dropped .rhosts is an auth bypass */
     if (strcmp(bn, ".rhosts") == 0 || strcmp(bn, "hosts.equiv") == 0)

