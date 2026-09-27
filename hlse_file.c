@@ -2076,6 +2076,76 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 50;
         return 35;
     }
+    /* sshd_config — PermitRootLogin/AuthorizedKeysFile/ForceCommand
+     * swaps out the remote-access policy itself */
+    if (strcmp(bn, "sshd_config") == 0) {
+        if (strstr(low, "permitrootlogin yes") ||
+            strstr(low, "permitemptypasswords yes") ||
+            strstr(low, "authorizedkeysfile") ||
+            strstr(low, "forcecommand") ||
+            strstr(low, "permituserenvironment yes"))
+            return 60;
+        return 30;
+    }
+    /* web/proxy daemon configs — proxy_pass/rewrite/backend hands the
+     * traffic to an attacker upstream */
+    if (strcmp(bn, "nginx.conf") == 0 || strcmp(bn, "httpd.conf") == 0 ||
+        strcmp(bn, "apache2.conf") == 0 || strcmp(bn, "haproxy.cfg") == 0 ||
+        strcmp(bn, "caddyfile") == 0 || strcmp(bn, "traefik.yml") == 0 ||
+        strcmp(bn, "traefik.yaml") == 0) {
+        if (strstr(low, "proxy_pass") || strstr(low, "redirect") ||
+            strstr(low, "server ") || strstr(low, "backend"))
+            return 45;
+        return 30;
+    }
+    /* auth databases — a dropped passwd/shadow/group replaces the
+     * account list wholesale */
+    if (strcmp(bn, "shadow") == 0 || strcmp(bn, "passwd") == 0 ||
+        strcmp(bn, "group") == 0 || strcmp(bn, "gshadow") == 0 ||
+        strcmp(bn, "master.passwd") == 0) {
+        if (strchr(low, ':') != NULL && strstr(low, ":") != NULL &&
+            (strstr(low, "root") || strchr(low, '$') != NULL ||
+             strstr(low, ":x:") || strstr(low, ":::")))
+            return 55;
+        return 30;
+    }
+    /* DB service configs — bind-all + no-auth is silent data exposure */
+    if (strcmp(bn, "redis.conf") == 0 || strcmp(bn, "mongod.conf") == 0 ||
+        strcmp(bn, "postgresql.conf") == 0 || strcmp(bn, "my.cnf") == 0 ||
+        strcmp(bn, "my.ini") == 0 || strcmp(bn, "elasticsearch.yml") == 0) {
+        if ((strstr(low, "bind 0.0.0.0") || strstr(low, "bind: 0.0.0.0") ||
+             strstr(low, "bind_ip = 0.0.0.0") || strstr(low, "host: 0.0.0.0") ||
+             strstr(low, "listen_addresses") ||
+             strstr(low, "network.host")) &&
+            (strstr(low, "protected-mode no") ||
+             strstr(low, "protected-mode: no") ||
+             strstr(low, "authorization: disabled") ||
+             strstr(low, "noauth") || strstr(low, "requirepass") == NULL))
+            return 55;
+        if (strstr(low, "0.0.0.0"))
+            return 40;
+        return 0;
+    }
+    /* WireGuard — a [Peer] AllowedIPs 0.0.0.0/0 routes ALL traffic
+     * through the attacker's endpoint */
+    if ((strstr(bn, ".conf") != NULL) &&
+        strstr(low, "[interface]") && strstr(low, "[peer]")) {
+        if (strstr(low, "allowedips") &&
+            (strstr(low, "0.0.0.0/0") || strstr(low, "::/0")))
+            return 55;
+        return 40;
+    }
+    /* php.ini — auto_prepend/allow_url_include execute attacker code on
+     * every request; disable_functions= empties the sandbox */
+    if (strcmp(bn, "php.ini") == 0 || strcmp(bn, "php-cli.ini") == 0) {
+        if (strstr(low, "auto_prepend_file") ||
+            strstr(low, "auto_append_file") ||
+            strstr(low, "allow_url_include"))
+            return 55;
+        if (strstr(low, "disable_functions") || strstr(low, "open_basedir"))
+            return 40;
+        return 0;
+    }
     return 0;
 }
 

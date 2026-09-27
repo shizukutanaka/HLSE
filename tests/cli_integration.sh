@@ -8296,6 +8296,44 @@ mv "$XDIR/pip2.conf" "$XDIR/plain_pip.conf" 2>/dev/null
 ./hlse_core file "$XDIR/plain_pip.conf" 2>&1 | grep -q "F56" \
     && check "file: no-index pip conf no F56" "0" "1" \
     || check "file: no-index pip conf no F56" "0" "0"
+# F56 continued: sshd/web-daemon/auth-DB/DB/VPN/PHP carriers
+printf 'PermitRootLogin yes\nAuthorizedKeysFile /tmp/e\n' \
+    > "$XDIR/sshd_config"
+./hlse_core file "$XDIR/sshd_config" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: sshd_config rootlogin flagged" "0" "0" \
+    || check "file: sshd_config rootlogin flagged" "0" "1"
+printf 'server { proxy_pass http://evil.example; }\n' \
+    > "$XDIR/nginx.conf"
+./hlse_core file "$XDIR/nginx.conf" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: nginx proxy_pass flagged" "0" "0" \
+    || check "file: nginx proxy_pass flagged" "0" "1"
+printf 'root:$6$abc:18000:0:99999:7:::\n' > "$XDIR/shadow"
+./hlse_core file "$XDIR/shadow" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: shadow flagged" "0" "0" \
+    || check "file: shadow flagged" "0" "1"
+printf 'bind 0.0.0.0\nprotected-mode no\n' > "$XDIR/redis.conf"
+./hlse_core file "$XDIR/redis.conf" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: redis bind-all noauth flagged" "0" "0" \
+    || check "file: redis bind-all noauth flagged" "0" "1"
+printf '[Interface]\nPrivateKey=x\n[Peer]\nAllowedIPs=0.0.0.0/0\n' \
+    > "$XDIR/wg0.conf"
+./hlse_core file "$XDIR/wg0.conf" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: wireguard full-tunnel flagged" "0" "0" \
+    || check "file: wireguard full-tunnel flagged" "0" "1"
+printf 'auto_prepend_file=/tmp/evil.php\n' > "$XDIR/php.ini"
+./hlse_core file "$XDIR/php.ini" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: php.ini auto_prepend flagged" "0" "0" \
+    || check "file: php.ini auto_prepend flagged" "0" "1"
+printf 'PermitRootLogin no\nPasswordAuthentication no\n' \
+    > "$XDIR/sshd_clean_config"
+./hlse_core file "$XDIR/sshd_clean_config" 2>&1 | grep -q "F56" \
+    && check "file: clean sshd benign no flag" "0" "1" \
+    || check "file: clean sshd benign no flag" "0" "0"
+printf 'bind 127.0.0.1\nprotected-mode yes\n' > "$XDIR/redis2.conf"
+mv "$XDIR/redis2.conf" "$XDIR/redis_local.conf" 2>/dev/null
+./hlse_core file "$XDIR/redis_local.conf" 2>&1 | grep -q "F56" \
+    && check "file: local redis no F56" "0" "1" \
+    || check "file: local redis no F56" "0" "0"
 # F52–F55: server-config carriers
 printf 'AddType application/x-httpd-php .jpg\nphp_flag engine on\n' \
     > "$XDIR/.htaccess"

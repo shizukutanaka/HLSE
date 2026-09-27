@@ -42,7 +42,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `condarc`/`.condarc` with index-url/extra-index/channels/trusted-host
   → 50, bare → 35 (dependency-confusion at install).  The ubiquitous
   `.bashrc`/`.zshrc`/`.profile` stay name-clean — F18's content gate
-  already covers them.
+  already covers them.  Extended further: `sshd_config` → 60
+  (PermitRootLogin/PermitEmptyPasswords/AuthorizedKeysFile/ForceCommand
+  /PermitUserEnvironment; bare → 30); web/proxy daemon configs
+  (`nginx.conf`/`httpd.conf`/`apache2.conf`/`haproxy.cfg`/`caddyfile`/
+  `traefik.*`) with proxy_pass/redirect/server/backend → 45 (bare 30);
+  auth DBs `shadow`/`passwd`/`group`/`gshadow`/`master.passwd` with
+  `root`/`$hash`/`:x:` entries → 55 (bare 30); DB configs
+  (`redis.conf`/`mongod.conf`/`postgresql.conf`/`my.*`/
+  `elasticsearch.yml`) bind-0.0.0.0 + no-auth → 55 (bind-all alone 40);
+  WireGuard `[Peer] AllowedIPs 0.0.0.0/0` or `::/0` → 55; `php.ini`
+  auto_prepend/auto_append/allow_url_include → 55 (disable_functions /
+  open_basedir 40).
 - **Payment URI schemes + wallet-drainer approval language**
   (`hlse_core.c`, `hlse_text.c`): new `URL_PAYMENT_SCHEMES` table —
   `bitcoin:`/`ethereum:`/`monero:`/`litecoin:`/`dogecoin:`/`tron:`/
