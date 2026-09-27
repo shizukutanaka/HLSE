@@ -81,7 +81,10 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `elasticsearch.yml`) bind-0.0.0.0 + no-auth → 55 (bind-all alone 40);
   WireGuard `[Peer] AllowedIPs 0.0.0.0/0` or `::/0` → 55; `php.ini`
   auto_prepend/auto_append/allow_url_include → 55 (disable_functions /
-  open_basedir 40).
+  open_basedir 40).  Extended further: tool launch configs —
+  `config.fish`/`.tmux.conf`/`tmux.conf`/`.muttrc`/`muttrc`/
+  `.screenrc`/`config.exs` → 45 (each evals or executes content when
+  the tool starts — same persistence class as shell rc).
 - **Payment URI schemes + wallet-drainer approval language**
   (`hlse_core.c`, `hlse_text.c`): new `URL_PAYMENT_SCHEMES` table —
   `bitcoin:`/`ethereum:`/`monero:`/`litecoin:`/`dogecoin:`/`tron:`/

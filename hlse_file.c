@@ -2067,6 +2067,16 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     if (strcmp(bn, ".bash_profile") == 0 || strcmp(bn, ".bash_login") == 0 ||
         strcmp(bn, ".bash_logout") == 0)
         return 40;
+    /* other tool launch configs that eval content on startup —
+     * config.fish runs on every fish shell, .tmux.conf `run-shell`
+     * executes a script, .muttrc hooks sendmail/mailcap, .screenrc
+     * `exec` runs commands — same persistence class as shell rc */
+    if (strcmp(bn, "config.fish") == 0 ||
+        strcmp(bn, ".tmux.conf") == 0 || strcmp(bn, "tmux.conf") == 0 ||
+        strcmp(bn, ".muttrc") == 0 || strcmp(bn, "muttrc") == 0 ||
+        strcmp(bn, ".screenrc") == 0 ||
+        strcmp(bn, "config.exs") == 0)
+        return 45;
     /* package-manager configs — an index-url/channel override hands the
      * resolver to an attacker mirror (dependency confusion at install) */
     if (strcmp(bn, "pip.conf") == 0 || strcmp(bn, "pip.ini") == 0 ||

@@ -8387,6 +8387,13 @@ mv "$XDIR/redis2.conf" "$XDIR/redis_local.conf" 2>/dev/null
 ./hlse_core file "$XDIR/redis_local.conf" 2>&1 | grep -q "F56" \
     && check "file: local redis no F56" "0" "1" \
     || check "file: local redis no F56" "0" "0"
+# F56 continued: tool launch-config carriers
+for bn in config.fish .tmux.conf .muttrc .screenrc config.exs; do
+    printf 'x\n' > "$XDIR/$bn"
+    ./hlse_core file "$XDIR/$bn" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+        && check "file: ${bn} flagged" "0" "0" \
+        || check "file: ${bn} flagged" "0" "1"
+done
 # F52–F55: server-config carriers
 printf 'AddType application/x-httpd-php .jpg\nphp_flag engine on\n' \
     > "$XDIR/.htaccess"
