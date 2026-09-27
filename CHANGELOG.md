@@ -29,6 +29,11 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   → 30, raised to 45 when a `hosts` line maps a hostname to a *public*
   IPv4 (domain hijack — loopback/RFC1918/ad-block entries stay clean);
   `crontab`/`*.cron*` files containing a schedule → 40.
+  Extended: bare `authorized_keys`/`authorized_keys2` → 50 (a dropped
+  file grants its key SSH access — option keys stay with F18);
+  `.forward` → 45 and `.procmailrc`/`.mailfilter` → 40, raised to 55
+  when a recipe pipes mail through a program; X login scripts
+  `.xinitrc`/`.xsession`/`.xprofile` → 45.
 - **Payment URI schemes + wallet-drainer approval language**
   (`hlse_core.c`, `hlse_text.c`): new `URL_PAYMENT_SCHEMES` table —
   `bitcoin:`/`ethereum:`/`monero:`/`litecoin:`/`dogecoin:`/`tron:`/

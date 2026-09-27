@@ -828,8 +828,8 @@ printf 'export PATH=$HOME/bin:$PATH\nalias ll="ls -la"\n' > "$RC_DIR/.bashrc"
 ./hlse_core file "$RC_DIR/.bashrc" 2>&1 | grep -q "OK\|Blind spot" \
     && check "f18 FP guard: benign .bashrc clean" "0" "0" \
     || check "f18 FP guard: benign .bashrc clean" "0" "1"
-printf 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI u@h\n' > "$RC_DIR/authorized_keys"
-./hlse_core file "$RC_DIR/authorized_keys" 2>&1 | grep -q "OK\|Blind spot" \
+printf 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI u@h\n' > "$RC_DIR/keylist.txt"
+./hlse_core file "$RC_DIR/keylist.txt" 2>&1 | grep -q "OK\|Blind spot" \
     && check "f18 FP guard: plain key clean" "0" "0" \
     || check "f18 FP guard: plain key clean" "0" "1"
 rm -rf "$RC_DIR"
@@ -8244,6 +8244,28 @@ printf 'MAILTO=""\n' > "$XDIR/crontab"
 ./hlse_core file "$XDIR/crontab" 2>&1 | grep -q "F56" \
     && check "file: empty crontab no F56" "0" "1" \
     || check "file: empty crontab no F56" "0" "0"
+# F56 continued: dropped access/mail/X-login carriers
+printf 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEgXmplKey user@h\n' \
+    > "$XDIR/authorized_keys"
+./hlse_core file "$XDIR/authorized_keys" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: dropped authorized_keys flagged" "0" "0" \
+    || check "file: dropped authorized_keys flagged" "0" "1"
+printf 'evil@example.com\n' > "$XDIR/.forward"
+./hlse_core file "$XDIR/.forward" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: dropped .forward flagged" "0" "0" \
+    || check "file: dropped .forward flagged" "0" "1"
+printf ':0\n|/tmp/evil.sh\n' > "$XDIR/.procmailrc"
+./hlse_core file "$XDIR/.procmailrc" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: procmailrc pipe recipe flagged" "0" "0" \
+    || check "file: procmailrc pipe recipe flagged" "0" "1"
+printf 'exec /tmp/evil\n' > "$XDIR/.xinitrc"
+./hlse_core file "$XDIR/.xinitrc" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: xinitrc flagged" "0" "0" \
+    || check "file: xinitrc flagged" "0" "1"
+printf 'exec /tmp/evil\n' > "$XDIR/rc.local"
+./hlse_core file "$XDIR/rc.local" 2>&1 | grep -q "F56" \
+    && check "file: non-carrier name no F56" "0" "1" \
+    || check "file: non-carrier name no F56" "0" "0"
 # F52–F55: server-config carriers
 printf 'AddType application/x-httpd-php .jpg\nphp_flag engine on\n' \
     > "$XDIR/.htaccess"

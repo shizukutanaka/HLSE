@@ -2030,6 +2030,26 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 40;
         return 0;
     }
+    /* authorized_keys — a dropped file grants its embedded key SSH
+     * access; content option keys (command=/from=) are F18's, the
+     * bare filename is the persistence carrier */
+    if (strcmp(bn, "authorized_keys") == 0 ||
+        strcmp(bn, "authorized_keys2") == 0)
+        return 50;
+    /* mail-delivery redirects — .forward hands every message to the
+     * attacker; .procmailrc/.mailfilter with a `|` recipe pipes mail
+     * through a program (execution on delivery) */
+    if (strcmp(bn, ".forward") == 0)
+        return 45;
+    if (strcmp(bn, ".procmailrc") == 0 || strcmp(bn, ".mailfilter") == 0) {
+        if (strchr(low, '|') != NULL)
+            return 55;
+        return 40;
+    }
+    /* X login scripts — run on every graphical login */
+    if (strcmp(bn, ".xinitrc") == 0 || strcmp(bn, ".xsession") == 0 ||
+        strcmp(bn, ".xprofile") == 0)
+        return 45;
     return 0;
 }
 
