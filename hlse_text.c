@@ -465,6 +465,16 @@ static const char *EMERGENCY_SCAM_WORDS[] = {
     "claim your prize today or lose it", "prize expires today",
     "processing fee to claim", "shipping fee to claim",
     "customs fee to release", "release fee",
+    /* Japanese "special fraud" (特殊詐欺) — the dominant JP phone-scam
+     * family: ore-ore (it's-me), refund, bail/settlement, ATM guidance.
+     * Phrases are scam-defining: a family member "needing" 示談金/保釈金,
+     * or any 還付金 handled "at an ATM", is never legitimate business.  */
+    "オレオレ", "ore-ore", "me me scam",
+    "示談金", "保釈金", "逮捕され", "息子が逮捕", "孫が逮捕",
+    "会社のお金を使い込", "使い込んでしま",
+    "還付金", "医療費の還付", "給付金の申請", "給付金があります",
+    "atmに向か", "atmにて手続き", "atmで手続き", "atmへ向か",
+    "電話を切らないで", "電話を切らずに", "電話口で誘導",
     /* Utility cutoff scam — impersonates power/gas/water company threatening
      * immediate service termination to extort payment via gift card or wire.
      * Real utilities disconnect via written notice, never via SMS with a

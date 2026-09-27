@@ -15,6 +15,22 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Japanese special-fraud (特殊詐欺) vocabulary** (`hlse_text.c`
+  EMERGENCY_SCAM): オレオレ/ore-ore, 示談金, 保釈金, 逮捕され,
+  使い込んでしま, 還付金, 医療費の還付, 給付金, ATM guidance
+  (atmに向か/atmにて手続き/atmで手続き/atmへ向か), and
+  電話を切らないで/切らずに/電話口で誘導 — the dominant JP
+  phone-scam family; refund-at-ATM and bail/settlement demands
+  previously scored OK-24 (now e.g. "還付金…ATM手続き" →79 BLOCK).
+
+### Fixed
+
+- **`make fuzz` link failure** (`Makefile`): F58's mail-forensics
+  call made `hlse_file.c` depend on `hlse_check_email_headers`;
+  `tests/fuzz_file` (+ ASan variant) now links `hlse_secrets.c`.
+
+### Added
+
 - **PowerShell module + awk/sed script carriers** (`hlse_file.c`):
   `.psm1`/`.psd1` (PowerShell modules auto-load and execute),
   `.awk`/`.sed` (awk `system()`/`| getline`, sed `e` command

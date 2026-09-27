@@ -10229,6 +10229,22 @@ done
     || check "file: benign txt clean" "0" "1"
 rm -rf "$XDIR89"
 
+# ── cycle-90: Japanese special-fraud (特殊詐欺) vocab ──
+check_text_hit() {
+    if ./hlse_core text "$1" 2>&1 | grep -q "$2"; then
+        check "$3" "0" "0"
+    else
+        check "$3" "0" "1"
+    fi
+}
+check_text_hit '還付金がありますのでATMにて手続きをお願いします' "BLOCK\|ISOLATE" "text: kanpuukin ATM refund scam flagged"
+check_text_hit '息子が逮捕されました保釈金が必要です' "ALERT\|BLOCK\|ISOLATE" "text: bail-money scam flagged"
+check_text_hit 'オレオレ、事故にあってお金が必要なんだ' "LOG\|ALERT" "text: ore-ore scam flagged"
+check_text_hit '示談金を用意してください' "LOG\|ALERT" "text: settlement-money demand flagged"
+check_text_hit '電話を切らないでくださいそのまま' "LOG\|ALERT" "text: phone-not-hangup guidance flagged"
+check_text_hit '今日の昼食はラーメンでした' "OK" "text: benign japanese clean"
+check_text_hit 'industry standard best practices' "OK" "text: benign english clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
