@@ -2142,6 +2142,65 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 55;
         return 0;
     }
+    /* .library-ms / .searchConnector-ms — Windows library/search
+     * descriptors whose <url>/<simpleLocation><url> point at a remote
+     * http:// or UNC share: opening the folder leaks the NTLM hash
+     * and shows attacker-controlled content as a local library */
+    if (strstr(bn, ".library-ms") != NULL ||
+        strstr(bn, ".searchconnector-ms") != NULL) {
+        if (strstr(low, "\\\\") || strstr(low, "http:") ||
+            strstr(low, "https:"))
+            return 45;
+        return 0;
+    }
+    /* .inputrc — readline key bindings; a macro binding that maps a key
+     * to a string ending in a newline types an attacker command the
+     * next time the victim presses that key in any readline app */
+    if (strcmp(bn, ".inputrc") == 0 || strcmp(bn, "_inputrc") == 0) {
+        if ((strstr(low, "\":") || strstr(low, "\"\":")) &&
+            (strstr(low, "\\n") || strstr(low, "\\r") ||
+             strstr(low, "^m") || strstr(low, "\\cm")))
+            return 45;
+        return 0;
+    }
+    /* .xbindkeysrc — maps a key chord to a shell command; the file's
+     * whole purpose is keypress-exec, so only flag when a bound command
+     * reaches a fetcher/shell/destructor primitive */
+    if (strcmp(bn, ".xbindkeysrc") == 0) {
+        if (strstr(low, "curl") || strstr(low, "wget") ||
+            strstr(low, "http") || strstr(low, "sh -c") ||
+            strstr(low, "bash ") || strstr(low, "rm -") ||
+            strstr(low, "nc ") || strstr(low, "ncat"))
+            return 50;
+        return 0;
+    }
+    /* .my.cnf — mysql/mariadb client config: a `pager =`/`tee =`
+     * directive runs an external program / pipes output on every
+     * session; `nopager`/`no-auto-rehash` style flags don't match
+     * the `key =` form */
+    if (strcmp(bn, ".my.cnf") == 0 || strcmp(bn, "my.ini") == 0 ||
+        strcmp(bn, "my.cnf") == 0) {
+        if (strstr(low, "pager =") || strstr(low, "pager=") ||
+            strstr(low, "tee =") || strstr(low, "tee="))
+            return 50;
+        return 0;
+    }
+    /* .sqliterc / .psqlrc — DB-client startup files: sqlite `.shell`/
+     * `.system`/`.output` and psql `\!`/`\o`/`copy … program` run or
+     * pipe to external commands on connect */
+    if (strcmp(bn, ".sqliterc") == 0 || strcmp(bn, "sqliterc") == 0) {
+        if (strstr(low, ".shell") || strstr(low, ".system") ||
+            strstr(low, ".output") || strstr(low, ".once"))
+            return 50;
+        return 0;
+    }
+    if (strcmp(bn, ".psqlrc") == 0 || strcmp(bn, "psqlrc") == 0 ||
+        strcmp(bn, "psqlrc.conf") == 0) {
+        if (strstr(low, "\\!") || strstr(low, "\\o") ||
+            strstr(low, "program") || strstr(low, "\\copy"))
+            return 45;
+        return 0;
+    }
     /* .rhosts — `+ host` / host lines grant passwordless rsh/rlogin
      * trust to the listed host: a dropped .rhosts is an auth bypass */
     if (strcmp(bn, ".rhosts") == 0 || strcmp(bn, "hosts.equiv") == 0)

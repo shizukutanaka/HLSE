@@ -119,6 +119,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `add_custom_target` reaches `curl`/`wget`/`Invoke-WebRequest`/
   `bitsadmin`/`|sh`/`base64` → 55 (configure/build-time payload — the
   CMake form of the Makefile `$(shell)` check).
+- **Windows-library / keybind / DB-client carriers** (`hlse_file.c`,
+  F56): `.library-ms`/`.searchConnector-ms` descriptors whose `<url>`
+  targets a remote http/UNC share → 45 (opening the folder leaks the
+  NTLM hash and shows attacker content as a local library);
+  `.inputrc`/`_inputrc` macro bindings that map a key to a string
+  ending in a newline escape → 45 (next keypress types the attacker's
+  command in any readline app); `.xbindkeysrc` binding to a fetcher/
+  shell/destructor primitive (`curl`/`wget`/`http`/`sh -c`/`bash`/
+  `rm -`/`nc`/`ncat`) → 50; `.my.cnf`/`my.cnf`/`my.ini` `pager =`/
+  `tee =` directives → 50 (client runs an external program or pipes
+  every session); `.sqliterc` `.shell`/`.system`/`.output`/`.once`
+  → 50 and `.psqlrc` `\!`/`\o`/`copy … program` → 45 (DB-client
+  startup files that execute or pipe to external commands on connect).
 - **Credential/session carrier files** (`hlse_file.c`, F56):
   `.har` exports carrying cookies/authorization/token entries → 45 (a
   stolen-session file); `.rhosts`/`hosts.equiv` trust entries → 50

