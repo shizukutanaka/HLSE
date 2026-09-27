@@ -224,6 +224,16 @@ static const char *BAIT_WORDS[] = {
     "パスワード", "暗証番号", "暗証番号をご入力", "クレジットカード", "銀行口座", "振込",
     "ビットコイン", "仮想通貨", "ギフトカード", "アマゾンギフト", "還付金", "返金",
     "本日中に", "本人確認",
+    /* Japanese refund/payment-scam co-occurrence vocabulary — a lone
+     * 還付金/返金 is 12 (below the LOG floor); the defining markers of
+     * the "refund at the ATM" / convenience-store e-money scam are the
+     * second signal: where to do it (ATM/コンビニ), what to buy
+     * (電子マネー/プリペイド/WebMoney/ビットキャッシュ), or the bait
+     * (払い戻し/還付/保険料/年金/国保). Police/FSA advisories document
+     * this exact phrasing in 振り込め詐欺・還付金詐欺 campaigns.      */
+    "atmで", "atmでの", "コンビニで", "電子マネー", "プリペイド",
+    "webmoney", "ビットキャッシュ", "払い戻し", "還付", "ご返金",
+    "保険料", "年金", "国保", "国民健康保険", "振り込め", "送金してください",
     /* Japanese payment/credential update asks — subscription & bank phishing */
     "支払い情報を更新", "支払い情報の更新", "お支払い情報を更新",
     "カード情報を更新", "アカウント情報を更新", "自動更新に失敗",
@@ -1212,6 +1222,18 @@ scan_invisible_carriers(const char *s, int *out_tag_chars,
         } else if (p[0] == 0x1B || p[0] == 0x9B) { /* ESC / CSI */
             esc = 1;
             p++;
+        } else if (p[0] >= 0xC0 && p[0] <= 0xF7) {
+            /* UTF-8 lead byte: consume the whole multibyte sequence so a
+             * C1 byte inside it is never examined as a standalone ESC/CSI
+             * — continuation bytes are 0x80..0xBF, which includes 0x9B
+             * (CSI) and 0x9D (OSC); CJK text like 電 (E9 9B BB) otherwise
+             * false-positives on every occurrence. Truncated or invalid
+             * sequences advance one byte. */
+            int seq = (p[0] < 0xE0) ? 2 : (p[0] < 0xF0) ? 3 : 4;
+            int k;
+            for (k = 1; k < seq; k++)
+                if (p[k] < 0x80 || p[k] > 0xBF) break;
+            p += (k == seq) ? seq : 1;
         } else {
             p++;
         }
