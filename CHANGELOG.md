@@ -119,6 +119,36 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `add_custom_target` reaches `curl`/`wget`/`Invoke-WebRequest`/
   `bitsadmin`/`|sh`/`base64` → 55 (configure/build-time payload — the
   CMake form of the Makefile `$(shell)` check).
+- **IaC + remote-tool credential + mail/location carriers**
+  (`hlse_file.c`, F56): `kustomization.yaml` resources/bases/
+  helmCharts/generators/patches reaching `http`/`git@`/`.git` → 45;
+  `Chart.yaml` dependencies/repository → 40; `*.tfvars`/`*.tfstate`
+  password/secret/private_key/access_key/token/resources/backend → 50
+  (plaintext infra secrets); `credentials.json`/`service-account*`/
+  `client_secret*`/`*-key.json` service_account/private_key/
+  client_secret/refresh_token/token_uri → 65 (cloud key material);
+  `.env`/`*.env`/`.env.*`/`env.list`/`envfile` password/secret/token/
+  key/api → 45 (`.env.example`/`.env.sample`/`.env.template`/`.env.dist`
+  excluded); FileZilla `sitemanager.xml`/`filezilla.xml`/
+  `recentservers.xml` Pass/User/Host → 55; `winscp.ini` password/
+  hostname/hostkey → 55; `.pcf` `enc_GroupPwd`/host/groupname → 50
+  (cisco VPN creds); `.remmina` server/password → 45; `.vnc` host/
+  password → 45; `confCons.xml`/mRemoteNG/`connections.xml`/`.rdg`
+  password/hostname/protocol → 55 — the harvested-file list every
+  infostealer targets.
+- **Mail-delivery, notification + location carriers** (`hlse_file.c`,
+  F56): `.sieve` `pipe`/`execute`/`vnd.dovecot.*`/`filter`/`include`+http
+  → 55 (program per delivered message); `getmailrc`/`fdm.conf`/
+  `.esmtprc` `mda`/`pipe`/`filter`/`external`/`preconnect`/
+  `postconnect`/`path=` → 50; `dunstrc` `script=`/`always_run_script`/
+  `on_*` → 45 (runs on every notification); `.xscreensaver`
+  `programs:` → 40; `gtkrc`/`*.gtkrc` `engine`/`module_path`/
+  `pixmap_path`/`include` → 45 (loads .so theme modules); macOS
+  `.terminal` `CommandString`/`RunCommandAsShell` → 60 (double-click
+  runs a shell line); `.ftploc`/`.afploc`/`.vloc`/`.mailloc`/
+  `.newsloc`/`.fileloc` → 45 (open mounts a remote share/VNC client);
+  `.eml`/`.msg`/`.mbox` From/Subject + http/attachment → 35 (phish
+  carrier); `.vcf`/`.vcard` PHOTO/URL/SOUND URI → 35 (fetch-on-import).
 - **Desktop/build/IDE + AI-instruction carriers** (`hlse_file.c`,
   F56): `.desktop`/`directory` `Exec=`/`TryExec`/`X-KDE-*` → 50;
   `.theme`/`.themepack` `SCRNSAVE.EXE`/`.scr`/`VisualStyles` → 50

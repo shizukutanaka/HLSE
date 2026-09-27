@@ -9113,6 +9113,103 @@ printf 'Mozilla/5.0\n.NeTscAPE\nevil.com\tTRUE\t/\tFALSE\t1\tc\tv\n' \
     && check "file: cookies.txt flagged" "0" "0" \
     || check "file: cookies.txt flagged" "0" "1"
 
+# F56: IaC/remote-tool credential + mail/location carriers
+mkdir -p "$XDIR/ia1" "$XDIR/ia2"
+printf '{"type":"service_account","private_key":"-----BEGIN"}\n' \
+    > "$XDIR/ia1/credentials.json"
+./hlse_core file "$XDIR/ia1/credentials.json" 2>&1 | grep -q "F56" \
+    && check "file: service_account creds flagged" "0" "0" \
+    || check "file: service_account creds flagged" "0" "1"
+printf '{"foo":1}\n' > "$XDIR/ia2/credentials.json"
+./hlse_core file "$XDIR/ia2/credentials.json" 2>&1 | grep -q "F56" \
+    && check "file: benign credentials.json no F56" "0" "1" \
+    || check "file: benign credentials.json no F56" "0" "0"
+printf 'db_password = "hunter2"\n' > "$XDIR/ia1/x.tfvars"
+./hlse_core file "$XDIR/ia1/x.tfvars" 2>&1 | grep -q "F56" \
+    && check "file: tfvars secret flagged" "0" "0" \
+    || check "file: tfvars secret flagged" "0" "1"
+printf 'region = "us"\n' > "$XDIR/ia2/x.tfvars"
+./hlse_core file "$XDIR/ia2/x.tfvars" 2>&1 | grep -q "F56" \
+    && check "file: benign tfvars no F56" "0" "1" \
+    || check "file: benign tfvars no F56" "0" "0"
+printf 'DB_PASSWORD=hunter2\n' > "$XDIR/ia1/.env"
+./hlse_core file "$XDIR/ia1/.env" 2>&1 | grep -q "F56" \
+    && check "file: .env secrets flagged" "0" "0" \
+    || check "file: .env secrets flagged" "0" "1"
+printf 'DB_PASSWORD=\n' > "$XDIR/ia2/.env.example"
+./hlse_core file "$XDIR/ia2/.env.example" 2>&1 | grep -q "F56" \
+    && check "file: .env.example no F56" "0" "1" \
+    || check "file: .env.example no F56" "0" "0"
+printf 'FOO=bar\n' > "$XDIR/ia2/.env"
+./hlse_core file "$XDIR/ia2/.env" 2>&1 | grep -q "F56" \
+    && check "file: benign .env no F56" "0" "1" \
+    || check "file: benign .env no F56" "0" "0"
+printf 'resources:\n- http://evil/x.yaml\n' > "$XDIR/ia1/kustomization.yaml"
+./hlse_core file "$XDIR/ia1/kustomization.yaml" 2>&1 | grep -q "F56" \
+    && check "file: kustomization remote flagged" "0" "0" \
+    || check "file: kustomization remote flagged" "0" "1"
+printf 'resources:\n- local.yaml\n' > "$XDIR/ia2/kustomization.yaml"
+./hlse_core file "$XDIR/ia2/kustomization.yaml" 2>&1 | grep -q "F56" \
+    && check "file: benign kustomization no F56" "0" "1" \
+    || check "file: benign kustomization no F56" "0" "0"
+printf 'dependencies:\n- name: x\n  repository: http://evil\n' \
+    > "$XDIR/ia1/Chart.yaml"
+./hlse_core file "$XDIR/ia1/Chart.yaml" 2>&1 | grep -q "F56" \
+    && check "file: Chart.yaml deps flagged" "0" "0" \
+    || check "file: Chart.yaml deps flagged" "0" "1"
+printf '<Servers><Server><Host>e</Host><Pass>y</Pass></Server></Servers>\n' \
+    > "$XDIR/ia1/sitemanager.xml"
+./hlse_core file "$XDIR/ia1/sitemanager.xml" 2>&1 | grep -q "F56" \
+    && check "file: sitemanager.xml creds flagged" "0" "0" \
+    || check "file: sitemanager.xml creds flagged" "0" "1"
+printf '[x]\nHostName=evil\nPassword=y\n' > "$XDIR/ia1/winscp.ini"
+./hlse_core file "$XDIR/ia1/winscp.ini" 2>&1 | grep -q "F56" \
+    && check "file: winscp.ini creds flagged" "0" "0" \
+    || check "file: winscp.ini creds flagged" "0" "1"
+printf '[main]\nHost=e\nenc_GroupPwd=xxxx\n' > "$XDIR/ia1/c.pcf"
+./hlse_core file "$XDIR/ia1/c.pcf" 2>&1 | grep -q "F56" \
+    && check "file: pcf group pwd flagged" "0" "0" \
+    || check "file: pcf group pwd flagged" "0" "1"
+printf '[x]\nserver=e\npassword=y\n' > "$XDIR/ia1/a.remmina"
+./hlse_core file "$XDIR/ia1/a.remmina" 2>&1 | grep -q "F56" \
+    && check "file: remmina creds flagged" "0" "0" \
+    || check "file: remmina creds flagged" "0" "1"
+printf '<Node Name="x"><Hostname>e</Hostname><Password>y</Password></Node>\n' \
+    > "$XDIR/ia1/confCons.xml"
+./hlse_core file "$XDIR/ia1/confCons.xml" 2>&1 | grep -q "F56" \
+    && check "file: mremoteng creds flagged" "0" "0" \
+    || check "file: mremoteng creds flagged" "0" "1"
+printf '<plist><dict><key>CommandString</key><string>evil</string></dict></plist>\n' \
+    > "$XDIR/ia1/x.terminal"
+./hlse_core file "$XDIR/ia1/x.terminal" 2>&1 | grep -q "F56" \
+    && check "file: terminal CommandString flagged" "0" "0" \
+    || check "file: terminal CommandString flagged" "0" "1"
+printf '[x]\nURL = ftp://evil\n' > "$XDIR/ia1/x.ftploc"
+./hlse_core file "$XDIR/ia1/x.ftploc" 2>&1 | grep -q "F56" \
+    && check "file: ftploc flagged" "0" "0" \
+    || check "file: ftploc flagged" "0" "1"
+printf 'require ["vnd.dovecot.pipe"];\npipe "evil";\n' > "$XDIR/ia1/f.sieve"
+./hlse_core file "$XDIR/ia1/f.sieve" 2>&1 | grep -q "F56" \
+    && check "file: sieve pipe flagged" "0" "0" \
+    || check "file: sieve pipe flagged" "0" "1"
+printf 'pipe x /tmp/evil\n' > "$XDIR/ia1/fdm.conf"
+./hlse_core file "$XDIR/ia1/fdm.conf" 2>&1 | grep -q "F56" \
+    && check "file: fdm pipe flagged" "0" "0" \
+    || check "file: fdm pipe flagged" "0" "1"
+printf '[x]\nscript = /tmp/evil\n' > "$XDIR/ia1/dunstrc"
+./hlse_core file "$XDIR/ia1/dunstrc" 2>&1 | grep -q "F56" \
+    && check "file: dunstrc script flagged" "0" "0" \
+    || check "file: dunstrc script flagged" "0" "1"
+printf 'From: x\nSubject: click http://evil\n' > "$XDIR/ia1/m.eml"
+./hlse_core file "$XDIR/ia1/m.eml" 2>&1 | grep -q "F56" \
+    && check "file: eml phish flagged" "0" "0" \
+    || check "file: eml phish flagged" "0" "1"
+printf 'BEGIN:VCARD\nPHOTO;VALUE=URI:http://evil/x\nEND:VCARD\n' \
+    > "$XDIR/ia1/c.vcf"
+./hlse_core file "$XDIR/ia1/c.vcf" 2>&1 | grep -q "F56" \
+    && check "file: vcf uri flagged" "0" "0" \
+    || check "file: vcf uri flagged" "0" "1"
+
 # F56: desktop/build/IDE + AI-instruction carriers
 mkdir -p "$XDIR/ld1" "$XDIR/ld2"
 printf '[Desktop Entry]\nName=x\nExec=/tmp/evil\nType=Application\n' \

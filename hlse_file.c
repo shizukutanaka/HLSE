@@ -3040,6 +3040,183 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 50;
         return 0;
     }
+    /* IaC/k8s descriptor redirects — kustomization resources/bases/
+     * helmCharts pull remote manifests; Chart.yaml dependencies pull
+     * remote charts; tfvars/tfstate carry plaintext infra secrets;
+     * credentials.json service_account/private_key is a cloud key;
+     * .env carries runtime secrets */
+    if (strcmp(bn, "kustomization.yaml") == 0 ||
+        strcmp(bn, "kustomization.yml") == 0 ||
+        strcmp(bn, "kustomization") == 0) {
+        if ((strstr(low, "resources") || strstr(low, "bases") ||
+             strstr(low, "helmcharts") || strstr(low, "generators") ||
+             strstr(low, "patches")) &&
+            (strstr(low, "http") || strstr(low, "git@") ||
+             strstr(low, ".git")))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, "chart.yaml") == 0 || strcmp(bn, "chart.yml") == 0) {
+        if (strstr(low, "dependencies") || strstr(low, "repository") ||
+            (strstr(low, "icon") && strstr(low, "http")))
+            return 40;
+        return 0;
+    }
+    if (strstr(bn, ".tfvars") || strstr(bn, ".tfstate") ||
+        strcmp(bn, "terraform.tfstate") == 0 ||
+        strstr(bn, "tfstate")) {
+        if (strstr(low, "password") || strstr(low, "secret") ||
+            strstr(low, "private_key") || strstr(low, "access_key") ||
+            strstr(low, "api_key") || strstr(low, "token") ||
+            strstr(low, "client_secret") || strstr(low, "resources") ||
+            strstr(low, "backend"))
+            return 50;
+        return 0;
+    }
+    if (strcmp(bn, "credentials.json") == 0 ||
+        strstr(bn, "service-account") != NULL ||
+        strstr(bn, "service_account") != NULL ||
+        strstr(bn, "client_secret") != NULL || strstr(bn, "-key.json") != NULL) {
+        if (strstr(low, "service_account") || strstr(low, "private_key") ||
+            strstr(low, "client_secret") || strstr(low, "refresh_token") ||
+            strstr(low, "token_uri") || strstr(low, "auth_uri") ||
+            strstr(low, "installed"))
+            return 65;
+        return 0;
+    }
+    {
+        /* .env / .env* / *.env — runtime-secrets files; a delivered
+         * one is either a leak or an attempt to set attacker env */
+        size_t bl_ = strlen(bn);
+        if ((strncmp(bn, ".env", 4) == 0 ||
+             (bl_ > 4 && strcmp(bn + bl_ - 4, ".env") == 0) ||
+             strcmp(bn, "env.list") == 0 || strcmp(bn, "envfile") == 0) &&
+            strstr(bn, "example") == NULL && strstr(bn, "sample") == NULL &&
+            strstr(bn, "template") == NULL && strstr(bn, "dist") == NULL) {
+            if (strstr(low, "password") || strstr(low, "secret") ||
+                strstr(low, "token") || strstr(low, "key") ||
+                strstr(low, "api") || strstr(low, "private") ||
+                strstr(low, "credential"))
+                return 45;
+            return 0;
+        }
+    }
+    /* FTP/remote-access credential stores — the harvested-file list
+     * every infostealer targets: filezilla sitemanager, winscp.ini,
+     * cisco .pcf enc_GroupPwd, remmina/vnc saved sessions, mRemoteNG
+     * confCons.xml, RDCMan .rdg */
+    if (strcmp(bn, "sitemanager.xml") == 0 ||
+        strcmp(bn, "filezilla.xml") == 0 || strcmp(bn, "recentservers.xml") == 0 ||
+        strcmp(bn, "queue.sqlite3") == 0) {
+        if (strstr(low, "pass") || strstr(low, "user") ||
+            strstr(low, "host") || strstr(low, "logontype"))
+            return 55;
+        return 0;
+    }
+    if (strcmp(bn, "winscp.ini") == 0) {
+        if (strstr(low, "password") || strstr(low, "hostname") ||
+            strstr(low, "hostkey") || strstr(low, "[sessions"))
+            return 55;
+        return 0;
+    }
+    if (strstr(bn, ".pcf") || strcmp(bn, "vpn.pcf") == 0) {
+        if (strstr(low, "enc_grouppwd") || strstr(low, "host") ||
+            strstr(low, "groupname") || strstr(low, "username"))
+            return 50;
+        return 0;
+    }
+    if (strstr(bn, ".remmina") || strstr(bn, ".remmina.prefs")) {
+        if (strstr(low, "password") || strstr(low, "server") ||
+            strstr(low, "ssh") || strstr(low, "protocol"))
+            return 45;
+        return 0;
+    }
+    if (strstr(bn, ".vnc") != NULL) {
+        if (strstr(low, "password") || strstr(low, "host"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, "confcons.xml") == 0 || strstr(bn, "mremoteng") != NULL ||
+        strcmp(bn, "connections.xml") == 0 || strstr(bn, ".rdg")) {
+        if (strstr(low, "password") || strstr(low, "hostname") ||
+            strstr(low, "protocol") || strstr(low, "username"))
+            return 55;
+        return 0;
+    }
+    /* macOS profile/location carriers — .terminal CommandString runs a
+     * shell line on double-click; .ftploc/.afploc/.vloc/.mailloc/
+     * .newsloc/.fileloc open a remote share or client */
+    if (strstr(bn, ".terminal")) {
+        if (strstr(low, "commandstring") || strstr(low, "runcommandasshell") ||
+            (strstr(low, "customtitle") && strstr(low, "exec")))
+            return 60;
+        return 0;
+    }
+    if (strstr(bn, ".ftploc") || strstr(bn, ".afploc") ||
+        strstr(bn, ".vloc") || strstr(bn, ".mailloc") ||
+        strstr(bn, ".newsloc") || strstr(bn, ".fileloc")) {
+        if (strstr(low, "url") || strstr(low, "ftp:") ||
+            strstr(low, "afp:") || strstr(low, "vnc:") ||
+            strstr(low, "http"))
+            return 45;
+        return 0;
+    }
+    /* mail-delivery and notification hooks — sieve pipe/execute/
+     * vnd.dovecot.* run a program per delivered message; getmailrc/
+     * fdm.conf/.esmtprc mda/pipe/filter entries run the delivery agent;
+     * dunstrc script= runs on every notification; .xscreensaver
+     * programs: lists what the screensaver launches */
+    if (strstr(bn, ".sieve") || strstr(bn, "dovecot.sieve")) {
+        if (strstr(low, "pipe") || strstr(low, "execute") ||
+            strstr(low, "vnd.dovecot") || strstr(low, "filter") ||
+            (strstr(low, "include") && strstr(low, "http")))
+            return 55;
+        return 0;
+    }
+    if (strcmp(bn, "getmailrc") == 0 || strcmp(bn, "fdm.conf") == 0 ||
+        strcmp(bn, ".esmtprc") == 0) {
+        if (strstr(low, "mda") || strstr(low, "pipe") ||
+            strstr(low, "filter") || strstr(low, "external") ||
+            strstr(low, "preconnect") || strstr(low, "postconnect") ||
+            strstr(low, "path ="))
+            return 50;
+        return 0;
+    }
+    if (strcmp(bn, "dunstrc") == 0) {
+        if (strstr(low, "script") || strstr(low, "always_run_script") ||
+            strstr(low, "browser") || strstr(low, "on_"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, ".xscreensaver") == 0) {
+        if (strstr(low, "programs") || strstr(low, "exec") ||
+            strstr(low, "capturestderr"))
+            return 40;
+        return 0;
+    }
+    if (strcmp(bn, "gtkrc") == 0 || strstr(bn, ".gtkrc") != NULL) {
+        if (strstr(low, "engine") || strstr(low, "module_path") ||
+            strstr(low, "pixmap_path") || strstr(low, "include"))
+            return 45;
+        return 0;
+    }
+    /* mail/message carriers — .eml/.msg/.mbox deliver phishing content;
+     * .vcf/.vcard PHOTO/URL/SOUND URI refs fetch remote on import */
+    if (strstr(bn, ".eml") || strstr(bn, ".msg") ||
+        strstr(bn, ".mbox")) {
+        if ((strstr(low, "from:") || strstr(low, "subject:")) &&
+            (strstr(low, "http") || strstr(low, "attachment") ||
+             strstr(low, "href") || strstr(low, "click")))
+            return 35;
+        return 0;
+    }
+    if (strstr(bn, ".vcf") || strstr(bn, ".vcard")) {
+        if ((strstr(low, "photo") || strstr(low, "url") ||
+             strstr(low, "sound") || strstr(low, "logo")) &&
+            (strstr(low, "uri") || strstr(low, "http")))
+            return 35;
+        return 0;
+    }
     /* .rhosts — `+ host` / host lines grant passwordless rsh/rlogin
      * trust to the listed host: a dropped .rhosts is an auth bypass */
     if (strcmp(bn, ".rhosts") == 0 || strcmp(bn, "hosts.equiv") == 0)
