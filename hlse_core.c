@@ -1958,6 +1958,36 @@ check_url(const char *raw_url) {
                         break;
                     }
                 }
+                /* user:pass@ in a non-web URL (ftp://creds@host) — the
+                 * @ trick check above only runs on parsed http/https,
+                 * but an embedded credential leaks the same way       */
+                {
+                    const char *sl = strstr(raw_url, "://");
+                    if (sl) {
+                        const char *auth = sl + 3;
+                        const char *at = strchr(auth, '@');
+                        const char *end = auth;
+                        while (*end && *end != '/' && *end != '?' &&
+                               *end != '#') end++;
+                        if (at && at < end) {
+                            const char *cl = memchr(auth, ':',
+                                                    (size_t)(at - auth));
+                            if (cl) {
+                                const char *q;
+                                int numeric = 1;
+                                for (q = cl + 1; q < at; q++)
+                                    if (*q < '0' || *q > '9')
+                                        { numeric = 0; break; }
+                                if (!numeric)
+                                    add_reason(&v, 40,
+                                        "Credentials embedded in URL "
+                                        "userinfo (user:pass@host) — "
+                                        "password exposed in the link "
+                                        "itself");
+                            }
+                        }
+                    }
+                }
             }
             if (inner_u) {
                 Verdict iv = check_url(inner_u);
@@ -1995,6 +2025,26 @@ check_url(const char *raw_url) {
             if (at < end) {
                 add_reason(&v, 45, "URL credential trick: @ in authority — "
                            "displayed host is fake, real host follows @");
+                /* user:pass@ — a ':' inside the userinfo embeds a
+                 * credential in the URL itself (ftp/http alike): the
+                 * password rides in logs, referrers and screen shares.
+                 * An all-digit tail is a port, not a password.      */
+                {
+                    const char *cl = memchr(auth, ':',
+                                            (size_t)(at - auth));
+                    if (cl) {
+                        const char *q;
+                        int numeric = 1;
+                        for (q = cl + 1; q < at; q++)
+                            if (*q < '0' || *q > '9')
+                                { numeric = 0; break; }
+                        if (!numeric)
+                            add_reason(&v, 40, "Credentials embedded in "
+                                       "URL userinfo (user:pass@host) — "
+                                       "password exposed in the link "
+                                       "itself");
+                    }
+                }
             }
         }
     }

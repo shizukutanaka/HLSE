@@ -798,6 +798,13 @@ static const char *FAKE_ALERT_WORDS[] = {
     /* Korean account-phishing alerts */
     "계정이 정지", "계정이 일시 정지", "계정이 잠겼습니다",
     "비정상적인 로그인", "의심스러운 활동", "비정상적인 활동",
+    /* Fake copyright/DMCA notice lure (2023-2024 infostealer campaigns:
+     * 'copyright strike'/'infringement notice' mails delivering
+     * LonePixel/Rhadamanthys via 'evidence' download links)            */
+    "copyright infringement", "copyright violation", "copyright strike",
+    "copyrighted content", "copyright claim", "takedown notice",
+    "intellectual property violation", "intellectual property rights",
+    "dmca notice", "dmca takedown", "dmca complaint", "violates dmca",
     NULL
 };
 
@@ -831,6 +838,24 @@ static const char *RANSOM_WORDS[] = {
     "cloned your voice", "deepfake video", "ai-generated video",
     "voice clone of you", "ai clone", "synthetic media",
     "unless you pay", "or i will release",
+    /* Sextortion completion phrases — device-control claims + payment
+     * deadline + wallet destination (the full 'hacked -> pay BTC in
+     * 48h' chain that partial lists missed)                             */
+    "your computer has been hacked", "your device has been hacked",
+    "your device was hacked", "your system has been hacked",
+    "i have full access", "i have complete access",
+    "full access to your device", "full control of your device",
+    "complete control of your device", "i control your device",
+    "i control your computer", "trojan gives me",
+    "installed a trojan", "planted a trojan",
+    "i have full control", "total control of your",
+    "my bitcoin address", "my btc address", "bitcoin address below",
+    "send bitcoin to", "transfer bitcoin to", "btc to the address",
+    "pay within 48 hours", "pay within 72 hours",
+    "within 96 hours", "within 24 hours or", "within 48 hours or",
+    "within 72 hours or", "72 hours to pay", "48 hours to pay",
+    "24 hours to pay", "you have 24 hours", "you have 48 hours",
+    "you have 72 hours",
     /* Japanese */
     "ファイルが暗号化", "復号キー", "身代金",
     "ウェブカメラを起動", "動画を送る",

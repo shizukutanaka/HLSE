@@ -9751,6 +9751,36 @@ printf 'https://example.com\n' > "$XDIR72/git-credentials2"
     || check "file: plain URL list clean" "0" "0"
 rm -rf "$XDIR72"
 
+# ── cycle-73: userinfo password + sextortion/DMCA vocabulary ──
+./hlse_core 'ftp://user:pass@evil.example/x' 2>&1 | grep -q "Credentials embedded" \
+    && check "url: ftp user:pass@ flagged" "0" "0" \
+    || check "url: ftp user:pass@ flagged" "0" "1"
+./hlse_core 'ftp://user@evil.example/x' 2>&1 | grep -q "Credentials embedded" \
+    && check "url: ftp user@ no creds" "0" "1" \
+    || check "url: ftp user@ no creds" "0" "0"
+./hlse_core 'https://example.com:8443/' 2>&1 | grep -q "Credentials embedded" \
+    && check "url: port number no creds" "0" "1" \
+    || check "url: port number no creds" "0" "0"
+./hlse_core text 'your computer has been hacked and i have full access' 2>&1 \
+    | grep -q "ALERT\|BLOCK" \
+    && check "text: sextortion device-control flagged" "0" "0" \
+    || check "text: sextortion device-control flagged" "0" "1"
+./hlse_core text 'pay within 72 hours to my bitcoin address' 2>&1 \
+    | grep -q "ALERT\|BLOCK" \
+    && check "text: sextortion payment deadline flagged" "0" "0" \
+    || check "text: sextortion payment deadline flagged" "0" "1"
+./hlse_core text 'copyright infringement notice for your account' 2>&1 \
+    | grep -q "LOG\|ALERT" \
+    && check "text: DMCA lure flagged" "0" "0" \
+    || check "text: DMCA lure flagged" "0" "1"
+./hlse_core text 'copyright 2024 company' 2>&1 | grep -q "OK" \
+    && check "text: benign copyright notice clean" "0" "0" \
+    || check "text: benign copyright notice clean" "0" "1"
+./hlse_core text 'you have 24 hours to think about it' 2>&1 \
+    | grep -q "ALERT\|BLOCK" \
+    && check "text: benign deadline below block" "0" "1" \
+    || check "text: benign deadline below block" "0" "0"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

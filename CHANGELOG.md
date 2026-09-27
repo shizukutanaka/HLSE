@@ -15,6 +15,22 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Credentials embedded in URL userinfo** (`hlse_core.c`): a `user:pass@`
+  authority (non-numeric password field) adds +40 — on http/https it
+  stacks with the existing @-trick score; on non-web schemes
+  (`ftp://user:pass@host`) a parallel check fires in the scheme-table
+  path, which previously never reached the @ logic. An all-digit tail
+  (`host:443@`) is a port, not a password, and is skipped.
+- **Sextortion completion + DMCA lure vocabulary** (`hlse_text.c`):
+  `RANSOM_WORDS` gains device-control claims ("your computer has been
+  hacked", "i have full access", "i control your device",
+  "installed a trojan"), wallet destinations ("my bitcoin address",
+  "send bitcoin to") and deadline phrasing ("pay within 72 hours",
+  "you have 48 hours") — the 'hacked → pay BTC in Nh' chains that
+  partial webcam lists missed. `FAKE_ALERT_WORDS` gains the fake
+  copyright/DMCA notice family ("copyright infringement",
+  "copyright strike", "takedown notice", "violates dmca") used by
+  LonePixel/Rhadamanthys infostealer campaigns.
 - **Slack session-theft token formats** (`hlse_secrets.c`): `xoxc-`
   (Slack client token) → 85 and `xoxd-` (Slack `d` session cookie)
   → 90 — the exfiltrated pair replays a full workspace session
