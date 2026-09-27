@@ -33,7 +33,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   file grants its key SSH access — option keys stay with F18);
   `.forward` → 45 and `.procmailrc`/`.mailfilter` → 40, raised to 55
   when a recipe pipes mail through a program; X login scripts
-  `.xinitrc`/`.xsession`/`.xprofile` → 45.
+  `.xinitrc`/`.xsession`/`.xprofile` → 45.  Extended further: launchd
+  `.plist` with RunAtLoad/KeepAlive/WatchPaths/StartInterval/
+  ProgramArguments → 55 (macOS persistence carrier); zsh startup files
+  `.zshenv`/`.zprofile`/`.zlogin` → 50 (.zshenv runs on every zsh,
+  incl. non-interactive) and `.bash_profile`/`.bash_login`/
+  `.bash_logout` → 40; package-manager configs `pip.conf`/`pip.ini`/
+  `condarc`/`.condarc` with index-url/extra-index/channels/trusted-host
+  → 50, bare → 35 (dependency-confusion at install).  The ubiquitous
+  `.bashrc`/`.zshrc`/`.profile` stay name-clean — F18's content gate
+  already covers them.
 - **Payment URI schemes + wallet-drainer approval language**
   (`hlse_core.c`, `hlse_text.c`): new `URL_PAYMENT_SCHEMES` table —
   `bitcoin:`/`ethereum:`/`monero:`/`litecoin:`/`dogecoin:`/`tron:`/

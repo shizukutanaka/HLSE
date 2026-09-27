@@ -2050,6 +2050,32 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     if (strcmp(bn, ".xinitrc") == 0 || strcmp(bn, ".xsession") == 0 ||
         strcmp(bn, ".xprofile") == 0)
         return 45;
+    /* launchd plist — RunAtLoad/KeepAlive/WatchPaths fires the payload
+     * on load/login; the classic macOS persistence carrier */
+    if (strstr(bn, ".plist") != NULL &&
+        (strstr(low, "runatload") || strstr(low, "keepalive") ||
+         strstr(low, "watchpaths") || strstr(low, "startinterval") ||
+         strstr(low, "programarguments") || strstr(low, "<key>program</key>")))
+        return 55;
+    /* shell login files — sourced at login/zsh startup; .zshenv is the
+     * aggressive one (every zsh, incl. non-interactive). The common
+     * .bashrc/.zshrc/.profile are excluded — ubiquitous in dotfiles and
+     * already covered by F18's content gate. */
+    if (strcmp(bn, ".zshenv") == 0 || strcmp(bn, ".zprofile") == 0 ||
+        strcmp(bn, ".zlogin") == 0)
+        return 50;
+    if (strcmp(bn, ".bash_profile") == 0 || strcmp(bn, ".bash_login") == 0 ||
+        strcmp(bn, ".bash_logout") == 0)
+        return 40;
+    /* package-manager configs — an index-url/channel override hands the
+     * resolver to an attacker mirror (dependency confusion at install) */
+    if (strcmp(bn, "pip.conf") == 0 || strcmp(bn, "pip.ini") == 0 ||
+        strcmp(bn, "condarc") == 0 || strcmp(bn, ".condarc") == 0) {
+        if (strstr(low, "index-url") || strstr(low, "extra-index") ||
+            strstr(low, "channels") || strstr(low, "trusted-host"))
+            return 50;
+        return 35;
+    }
     return 0;
 }
 
