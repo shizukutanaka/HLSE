@@ -1090,7 +1090,7 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
             eco = (argc > idx + 3) ? argv[idx + 3] : hlse_manifest_ecosystem(mpath);
             if (!eco) {
                 fprintf(stderr, "Error: cannot infer ecosystem from '%s' \xe2\x80\x94 "
-                        "pass one explicitly (pip|npm|cargo|go|gem|docker|gha|mcp|devc|vsc|pck|glci|comp|plat|nuget|pod|spm)\n", mpath);
+                        "pass one explicitly (pip|npm|cargo|go|gem|docker|gha|mcp|devc|vsc|pck|glci|comp|plat|nuget|pod|spm|pkbb)\n", mpath);
                 return 2;
             }
             mf = fopen(mpath, "r");
@@ -1983,7 +1983,8 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                     strcmp(eco, "pck") == 0 ||
                     strcmp(eco, "glci") == 0 ||
                     strcmp(eco, "comp") == 0 ||
-                    strcmp(eco, "plat") == 0) {
+                    strcmp(eco, "plat") == 0 ||
+                    strcmp(eco, "pkbb") == 0) {
                     char xreason[HLSE_HOOK_REASON_LEN];
                     int xsc;
                     if (strcmp(eco, "devc") == 0)
@@ -2000,6 +2001,9 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                                                       sizeof(xreason));
                     else if (strcmp(eco, "plat") == 0)
                         xsc = hlse_manifest_plat_risk(line, xreason,
+                                                      sizeof(xreason));
+                    else if (strcmp(eco, "pkbb") == 0)
+                        xsc = hlse_manifest_pkbb_risk(line, xreason,
                                                       sizeof(xreason));
                     else {
                         /* gitlab-ci script steps are block lists:
@@ -2048,6 +2052,8 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                                 eco[0] == 'd' ? "package-devcontainer"
                                 : eco[0] == 'v' ? "package-vscode"
                                 : eco[0] == 'c' ? "package-composer"
+                                : eco[0] == 'p' &&
+                                  eco[1] == 'k' ? "package-pkgbuild"
                                 : eco[0] == 'p' &&
                                   eco[2] == 'a' ? "package-platform"
                                 : eco[0] == 'p' ? "package-precommit"

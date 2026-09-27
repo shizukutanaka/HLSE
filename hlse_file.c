@@ -2078,6 +2078,12 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         (strstr(low, "spawn") || strstr(low, "unixprocess") ||
          strstr(low, "system(")))
         return 50;
+    /* productbuild .dist — the installer definition can target
+     * LaunchDaemons/LaunchAgents, planting a daemon on install */
+    if (strstr(bn, ".dist") != NULL &&
+        (strstr(low, "launchdaemons") || strstr(low, "launchagents") ||
+         strstr(low, "/library/")))
+        return 50;
     /* modprobe.d — `install <mod> <cmd>` / post-install hooks execute a
      * command when the module is loaded */
     if (strstr(bn, ".conf") != NULL &&

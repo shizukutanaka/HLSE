@@ -93,6 +93,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `f+`/`w`/`d`/`l` directives plant files at boot → 40; an `Info.plist`
   declaring `CFBundleExecutable` plus `LSUIElement`/`LSBackgroundOnly`
   is a stealth background app → 50.
+- **`pkbb` distro package-build ecosystem** (`hlse_manifest.c`,
+  `hlse_cli.c`): `PKGBUILD`/`APKBUILD`/`pkgname.install`/`*.ebuild`/
+  `*.spec` route to a new checker — their function bodies and
+  scriptlets execute verbatim on makepkg/abuild/emerge/rpmbuild and on
+  every package install (the AUR malicious-PKGBUILD class). Fetch-exec
+  lines (`curl`/`wget`/pipe-to-shell/`eval`/`base64 -d`/`chmod +x`)
+  → 55; install/upgrade/removal hook scriptlets (`post_install`,
+  `pkg_postinst`, `%post`, `%trigger`, …) → 45. `source=("http…")` and
+  `url=` are the declared-fetch idiom, so they do NOT flag — only
+  lines that fetch-and-execute, decode, or name a hook do.
+- **`.dist` productbuild installer definitions** (`hlse_file.c`,
+  F56): a `.dist` targeting `LaunchDaemons`/`LaunchAgents`/`/Library/`
+  plants a daemon on package install → 50.
 - **Payment URI schemes + wallet-drainer approval language**
   (`hlse_core.c`, `hlse_text.c`): new `URL_PAYMENT_SCHEMES` table —
   `bitcoin:`/`ethereum:`/`monero:`/`litecoin:`/`dogecoin:`/`tron:`/

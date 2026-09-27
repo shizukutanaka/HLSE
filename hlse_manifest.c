@@ -117,6 +117,15 @@ hlse_manifest_ecosystem(const char *path) {
     if (strcmp(b, "Podfile") == 0 || strcmp(b, "Podfile.lock") == 0 ||
         strcmp(b, "podfile") == 0)
         return "pod";
+    /* Distro package build scripts: PKGBUILD/APKBUILD function bodies
+     * run on makepkg/abuild; pkgname.install hooks run on every pacman
+     * install; .ebuild phase functions run on emerge; .spec scriptlets
+     * run on rpm install. All are shell executed at build/install. */
+    if (strcmp(b, "PKGBUILD") == 0 || strcmp(b, "APKBUILD") == 0 ||
+        strstr(b, ".install") != NULL ||
+        strstr(b, ".ebuild") != NULL ||
+        strstr(b, ".spec") != NULL)
+        return "pkbb";
     if (strcmp(b, "Package.swift") == 0 ||
         strcmp(b, "Package.resolved") == 0)
         return "spm";
@@ -1146,6 +1155,48 @@ hlse_manifest_comp_risk(const char *line, char *reason, size_t rcap) {
             "runs at install/update with developer credentials");
         return 55;
     }
+    return 0;
+}
+
+/* PKGBUILD / APKBUILD / pkgname.install / *.ebuild / *.spec — distro
+ * package build scripts whose function bodies run verbatim on
+ * makepkg/abuild/emerge/rpmbuild, and whose install/postinst
+ * scriptlets run on every pacman/emerge/rpm install. The AUR has
+ * shipped malicious PKGBUILDs (curl|sh inside build()).
+ * Deliberately NOT reusing execish(): `source=("http://…")` and
+ * `url="http…"` are the declared-fetch idiom present in every legit
+ * PKGBUILD, so only lines that fetch-and-execute, eval, decode, or
+ * name an install hook flag.                                    */
+int
+hlse_manifest_pkbb_risk(const char *line, char *reason, size_t rcap) {
+    static const char *const EXECISH[] = {
+        "| sh", "|sh", "| bash", "|bash", "bash -c", "sh -c",
+        "eval ", "base64 -d", "base64 --decode", "openssl enc",
+        "python -c", "perl -e", "source http", "curl ", "wget ",
+        "chmod +x", NULL
+    };
+    static const char *const HOOK[] = {
+        "post_install", "pre_install", "post_upgrade", "pre_upgrade",
+        "post_remove", "pre_remove", "pkg_postinst", "pkg_preinst",
+        "pkg_postrm", "pkg_prerm", "pkg_config",
+        "%post", "%pre", "%preun", "%postun", "%posttrans", "%trigger",
+        NULL
+    };
+    size_t i;
+    for (i = 0; EXECISH[i]; i++)
+        if (strstr(line, EXECISH[i]) != NULL) {
+            snprintf(reason, rcap,
+                "package build script fetches/pipes/decodes/shells "
+                "out — runs on makepkg/abuild/emerge/rpmbuild");
+            return 55;
+        }
+    for (i = 0; HOOK[i]; i++)
+        if (strstr(line, HOOK[i]) != NULL) {
+            snprintf(reason, rcap,
+                "install/upgrade/removal hook scriptlet — executes "
+                "on every package install on the target host");
+            return 45;
+        }
     return 0;
 }
 
