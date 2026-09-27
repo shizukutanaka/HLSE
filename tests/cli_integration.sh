@@ -10315,6 +10315,43 @@ printf 'just a normal readme\n' > "$XDIR94/benign.txt"
     || check "file: benign txt stays clean" "0" "1"
 rm -rf "$XDIR94"
 
+# ── cycle-95: remaining payment/dev-tool secret formats + VSTO ──
+check_secret_hit() {
+    if ./hlse_core secret "$1" 2>&1 | grep -q "$2"; then
+        check "$3" "0" "0"
+    else
+        check "$3" "0" "1"
+    fi
+}
+RZ="rzp_live_"; RZ="${RZ}8qAbCdEfGhIjKlMn"
+check_secret_hit "$RZ" "ISOLATE" "secret: Razorpay live key flagged"
+RZ="rzp_test_"; RZ="${RZ}8qAbCdEfGhIjKlMn"
+check_secret_hit "$RZ" "ALERT" "secret: Razorpay test key flagged"
+MP="APP_USR-"; MP="${MP}12345678-123456-abcdef1234567890abcdef1234567890-12345678"
+check_secret_hit "$MP" "ISOLATE" "secret: Mercado Pago token flagged"
+FL="FLWSECK-"; FL="${FL}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234-X"
+check_secret_hit "$FL" "ISOLATE" "secret: Flutterwave secret key flagged"
+SH="shippo_live_"; SH="${SH}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234567890AB"
+check_secret_hit "$SH" "ISOLATE" "secret: Shippo live key flagged"
+HR="HRKU-"; HR="${HR}8qAbCdEf-GhIj-KlMn-OpQr-StUvWxYz123456"
+check_secret_hit "$HR" "ISOLATE" "secret: Heroku API key flagged"
+NG="oy2"; NG="${NG}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234567890123456"
+check_secret_hit "$NG" "ISOLATE" "secret: NuGet API key flagged"
+XDIR95=$(mktemp -d /tmp/hlse95.XXXXXX)
+for e in vsto accde; do
+    printf 'x' > "$XDIR95/t.$e"
+done
+printf 'x' > "$XDIR95/benign.txt"
+for e in vsto accde; do
+    ./hlse_core file "$XDIR95/t.$e" 2>&1 | grep -q "LOG\|ALERT" \
+        && check "file: .$e office add-in carrier flagged" "0" "0" \
+        || check "file: .$e office add-in carrier flagged" "0" "1"
+done
+./hlse_core file "$XDIR95/benign.txt" 2>&1 | grep -q "OK" \
+    && check "file: benign txt clean" "0" "0" \
+    || check "file: benign txt clean" "0" "1"
+rm -rf "$XDIR95"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -236,6 +236,23 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "whsec_",        6,  20, is_alnum_or_dash,   "Stripe Webhook Secret", 85 },
     /* Square application secret / personal token (sq0csp-/sq0atp-) */
     { "sq0csp-",       7,  40, is_alnum_or_dash,   "Square Application Secret", 85 },
+    /* Remaining payment processors — Razorpay (IN's dominant gateway),
+     * Mercado Pago (LATAM's dominant), Flutterwave (Africa's dominant),
+     * Shippo (shipping API) — each fixed prefix hands over money-moving
+     * capability to whoever holds the token                        */
+    { "rzp_live_",     9,  14, is_alnum_or_dash,   "Razorpay Live Key",  85 },
+    { "rzp_test_",     9,  14, is_alnum_or_dash,   "Razorpay Test Key",  40 },
+    { "APP_USR-",      8,  30, is_alnum_or_dash,   "Mercado Pago Access Token", 80 },
+    { "FLWSECK-",      8,  30, is_alnum_or_dash,   "Flutterwave Secret Key", 85 },
+    { "FLWPUBK-",      9,  30, is_alnum_or_dash,   "Flutterwave Public Key", 40 },
+    { "shippo_live_", 12,  40, is_alnum_or_dash,   "Shippo Live API Key", 80 },
+    { "shippo_test_", 12,  40, is_alnum_or_dash,   "Shippo Test API Key", 40 },
+    /* Heroku legacy API key — HRKU- + UUID-style body; modern keys are
+     * UUIDs without the prefix but the HRKU- form is still in the wild */
+    { "HRKU-",         5,  30, is_alnum_or_dash,   "Heroku API Key",    80 },
+    /* NuGet — `oy2` + 43 base62 chars; short prefix but the long
+     * suffix keeps the pattern specific                              */
+    { "oy2",           3,  43, is_alnum_or_dash,   "NuGet API Key",     80 },
 
     /* Slack */
     { "xapp-",        5,  20, is_alnum_or_dash,   "Slack App-level Token", 85 },

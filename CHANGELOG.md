@@ -15,6 +15,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Remaining payment/dev-tool secret formats** (`hlse_secrets.c`):
+  Razorpay `rzp_live_`/`rzp_test_` (IN's dominant gateway), Mercado
+  Pago `APP_USR-` (LATAM's dominant), Flutterwave `FLWSECK-`/`FLWPUBK-`
+  (Africa's dominant), Shippo `shippo_live_`/`shippo_test_`, Heroku
+  legacy `HRKU-` UUID-form key, NuGet `oy2` + 43 base62 — each
+  previously scored OK on a live credential.
+- **VSTO/Access carriers** (`hlse_file.c`): `.vsto` (ClickOnce
+  installs a managed Office add-in on open) and `.accde`
+  (compiled-locked Access DB, VBA+autoexec like .mdb/.accdb) →30.
 - **`file` subcommand scans content for live credentials**
   (`hlse_cli.c`): the `scan`/daemon paths run their own secrets
   pass, but `hlse_core file <path>` analyzed only the name and

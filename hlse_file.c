@@ -329,6 +329,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * historically favored in JP-targeted campaigns); .uue is uuencoded
      * binary content — a transport for executable payloads              */
     ".hlp", ".cab", ".ace", ".arj", ".lha", ".lzh", ".zoo", ".uue",
+    /* VSTO Office add-in deployment manifest — ClickOnce-installs a
+     * managed add-in on open (Office-side code exec); .accde is a
+     * compiled-locked Access DB (VBA + autoexec like .mdb/.accdb)    */
+    ".vsto", ".accde",
     NULL
 };
 
