@@ -427,6 +427,18 @@ static const char *EMERGENCY_SCAM_WORDS[] = {
     "i got a new number", "i have a new number", "i changed my number",
     "got a new phone", "new phone save", "save my new number",
     "please save this number", "please update my number",
+    /* Grandparent-scam third-person framing — 'your grandchild is in
+     * jail' claims a relative is detained; bail-demand phrases are
+     * verb-anchored so benign 'he went to jail for tax fraud' news
+     * text does not reach the family-emergency pattern            */
+    "grandchild is in jail", "grandson is in jail",
+    "granddaughter is in jail", "grandchild was arrested",
+    "grandson was arrested", "granddaughter was arrested",
+    "grandchild needs bail", "grandson needs bail",
+    "needs bail money", "send bail money", "bail money for",
+    "pay the bail", "post bail for", "release from jail",
+    "out of jail", "get him out of jail", "get her out of jail",
+    "in jail and needs", "in jail and must", "jail until",
     /* Rental / real-estate fraud — attacker poses as a property owner who
      * is "abroad" or "overseas" and demands a deposit via wire transfer or
      * Western Union before the victim can view the property. The "overseas"
@@ -600,6 +612,20 @@ static const char *GROOMING_WORDS[] = {
     "regardless of credit history", "regardless of credit score",
     "regardless of your credit", "whatever your credit history",
     "even if you have bad credit", "even with no credit history",
+    /* Loan / debt-relief / warranty telemarketing scams — advance-fee
+     * loan, student-loan-forgiveness impersonation, and the 'extended
+     * car warranty expiring' robocall family                      */
+    "no credit check", "loan approved", "loan has been approved",
+    "pre-approved loan", "approved for a loan", "approved for the loan",
+    "student loan forgiveness", "student debt relief",
+    "debt relief program", "debt relief service",
+    "reduce your payments", "lower your payments",
+    "lower your interest rate", "reduce your interest",
+    "consolidate your debt", "eliminate your debt",
+    "extended warranty", "car warranty", "auto warranty",
+    "vehicle warranty", "warranty is about to expire",
+    "warranty is expiring", "warranty has expired",
+    "warranty is about to", "final notice",
     /* Crypto pump-and-dump micro-signals — phrases specific to coordinated
      * "buy now before the pump" campaigns on Telegram/Discord.           */
     "about to moon", "going to moon", "will 10x",
@@ -706,6 +732,26 @@ static const char *FAKE_ALERT_WORDS[] = {
     "icloud account", "icloud verification", "icloud storage is full",
     "icloud locked", "apple id disabled", "apple-id locked",
     "itunes account", "apple pay suspended",
+    /* Domain-expiration / mailbox-quota fake notices — classic lure
+     * family: 'your domain is expiring' SEO-renewal scam and the
+     * 'mailbox full, verify storage' credential harvester          */
+    "domain name is expiring", "domain is expiring",
+    "domain expiration", "domain has expired",
+    "renew your domain", "renew the domain",
+    "domain will be deleted", "domain will be suspended",
+    "mailbox is full", "mailbox quota", "mailbox storage",
+    "mail quota exceeded", "storage quota exceeded",
+    "upgrade your storage", "verify your mailbox",
+    "email account will be", "webmail upgrade",
+    "mail storage is full", "inbox is full",
+    /* Visa / immigration impersonation — only scam-defining claims
+     * ('your visa was denied', 'you won the green card lottery');
+     * generic 'visa application'/'work visa' fire on legitimate
+     * immigration correspondence                                   */
+    "visa has been denied", "visa has been approved",
+    "visa was denied", "your visa application has been",
+    "green card lottery", "won the green card",
+    "green card winner", "diversity visa lottery",
     /* Apple ID / account impersonation (high-volume phishing 2024-2025) */
     "your apple id has been", "apple id has been locked",
     "apple id locked", "apple id was used to sign in",
@@ -952,6 +998,20 @@ static const char *FIN_ACTION_WORDS[] = {
     "send the money to my account", "deposit to my account",
     "wire the money to my account", "transfer the money to my account",
     "wire money to my account", "transfer money to my account",
+    /* Invoice / check-overpayment fraud — 'unpaid invoice attached'
+     * lure (BEC invoice impersonation) plus the classic check scam
+     * 'deposit this check and send back the difference'          */
+    "unpaid invoice", "invoice attached", "invoice is attached",
+    "invoice enclosed", "outstanding invoice", "overdue invoice",
+    "remit payment", "remit the payment", "payment is due upon",
+    "pay the attached invoice", "settle the invoice",
+    "deposit this check", "deposit the check", "cash this check",
+    "cash the check", "keep a portion", "keep the extra",
+    "keep the commission", "keep your commission",
+    "send the difference", "wire the difference",
+    "refund the difference", "refund the excess",
+    "return the difference", "send back the difference",
+    "overpayment", "we overpaid", "excess amount",
     /* Japanese */
     "送金", "振り込んで", "ギフトカードを買って",
     /* Spanish financial action phrases */
@@ -1036,6 +1096,24 @@ static const char *CALLBACK_PHISH_WORDS[] = {
     "pay a small fee", "your delivery failed",
     "your shipment has been held", "your shipment requires",
     "click to pay the fee", "click to reschedule delivery",
+    /* Subscription-renewal callback scam — 'your antivirus renewed,
+     * call to cancel' TOAD pattern; the brand names appear only as
+     * part of the billing-renewal phrase so product mentions alone
+     * do not fire                                                 */
+    "auto renew", "auto-renew", "auto renewal",
+    "subscription will auto", "subscription has been renewed",
+    "subscription was renewed", "subscription is renewed",
+    "call to cancel", "call this number to cancel",
+    "to cancel call", "cancel your subscription call",
+    "renewal charge", "renewal fee", "renewal amount",
+    "geek squad", "norton renewal", "mcafee renewal",
+    "norton auto", "mcafee auto", "antivirus renewal",
+    "antivirus subscription", "security subscription renewed",
+    "billed for renewal", "charged for renewal",
+    "refund of 399", "refund of $399", "charged 399",
+    "charged $399", "debited 399", "debited $399",
+    "debited from your", "deducted from your account",
+    "amount will be deducted", "will be debited",
     "delivery charge unpaid", "unpaid shipping fee",
     "update delivery address", "confirm your delivery",
     /* Fake invoice / subscription renewal callback (BazarCall/TOAD).

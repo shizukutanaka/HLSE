@@ -9946,6 +9946,50 @@ rm -rf "$XDIR77"
     && check "secret: short sl. clean" "0" "0" \
     || check "secret: short sl. clean" "0" "1"
 
+# ── cycle-79: scam vocabulary — grandparent/invoice/renewal/loan ──
+./hlse_core text 'your grandchild is in jail and needs bail money' 2>&1 \
+    | grep -q "ALERT\|BLOCK" \
+    && check "text: grandparent scam flagged" "0" "0" \
+    || check "text: grandparent scam flagged" "0" "1"
+./hlse_core text 'you have an unpaid invoice attached' 2>&1 \
+    | grep -q "LOG\|ALERT\|BLOCK" \
+    && check "text: invoice lure flagged" "0" "0" \
+    || check "text: invoice lure flagged" "0" "1"
+./hlse_core text 'your domain name is expiring renew now' 2>&1 \
+    | grep -q "LOG\|ALERT\|BLOCK" \
+    && check "text: domain-expiration lure flagged" "0" "0" \
+    || check "text: domain-expiration lure flagged" "0" "1"
+./hlse_core text 'mailbox quota exceeded verify' 2>&1 \
+    | grep -q "LOG\|ALERT\|BLOCK" \
+    && check "text: mailbox-quota lure flagged" "0" "0" \
+    || check "text: mailbox-quota lure flagged" "0" "1"
+./hlse_core text 'cash this check and keep a portion' 2>&1 \
+    | grep -q "LOG\|ALERT\|BLOCK" \
+    && check "text: check overpayment flagged" "0" "0" \
+    || check "text: check overpayment flagged" "0" "1"
+./hlse_core text 'norton auto renewal billing' 2>&1 \
+    | grep -q "LOG\|ALERT\|BLOCK" \
+    && check "text: renewal callback flagged" "0" "0" \
+    || check "text: renewal callback flagged" "0" "1"
+./hlse_core text 'loan approved no credit check' 2>&1 \
+    | grep -q "ALERT\|BLOCK" \
+    && check "text: advance-fee loan flagged" "0" "0" \
+    || check "text: advance-fee loan flagged" "0" "1"
+./hlse_core text 'final notice vehicle warranty' 2>&1 \
+    | grep -q "ALERT\|BLOCK" \
+    && check "text: warranty robocall flagged" "0" "0" \
+    || check "text: warranty robocall flagged" "0" "1"
+./hlse_core text 'my visa application process is ongoing' 2>&1 | grep -q "OK" \
+    && check "text: benign visa mention clean" "0" "0" \
+    || check "text: benign visa mention clean" "0" "1"
+./hlse_core text 'invoice from your vendor for services rendered' 2>&1 \
+    | grep -q "OK" \
+    && check "text: benign invoice mention clean" "0" "0" \
+    || check "text: benign invoice mention clean" "0" "1"
+./hlse_core text 'our quarterly company newsletter' 2>&1 | grep -q "OK" \
+    && check "text: benign newsletter clean" "0" "0" \
+    || check "text: benign newsletter clean" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

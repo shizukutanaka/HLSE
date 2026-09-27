@@ -15,6 +15,21 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Scam-family vocabulary, cycle 79** (`hlse_text.c`):
+  `EMERGENCY_SCAM_WORDS` gains third-person grandparent-scam
+  framing ("grandchild is in jail", "needs bail money",
+  "post bail for"); `FIN_ACTION_WORDS` gains invoice-lure and
+  check-overpayment phrases ("unpaid invoice", "remit payment",
+  "cash this check", "keep a portion", "send the difference",
+  "overpayment"); `CALLBACK_PHISH_WORDS` gains the subscription-
+  renewal callback family ("auto renew", "call to cancel",
+  "renewal charge", "geek squad", "antivirus subscription",
+  "charged $399"); `BAIT_WORDS` gains advance-fee loan /
+  debt-relief / extended-warranty telemarketing phrases;
+  `FAKE_ALERT_WORDS` gains domain-expiration and mailbox-quota
+  fake notices plus scam-defining visa claims ("visa has been
+  denied", "green card lottery") — generic "visa application"
+  deliberately excluded (fires on legitimate correspondence).
 - **Vendor credential prefixes** (`hlse_secrets.c`): `xkeysib-`
   (Brevo/Sendinblue, →80), `sl.` + 60-char tail (Dropbox long-form,
   →80), `AKCp` (JFrog Artifactory identity key, →80),
