@@ -1890,6 +1890,67 @@ cabal_custom_score(const unsigned char *head, size_t len,
     return 0;
 }
 
+/* ─── F52–F55: server-config attack surface — dropped config files
+ *      that change what the server does with later content ────────── */
+static int
+serverconfig_score(const unsigned char *head, size_t len,
+    const char *basename_start) {
+    char low[4097], bn[256];
+    size_t n = 0, i;
+    str_lower(basename_start ? basename_start : "", bn, sizeof(bn));
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+
+    /* F52 .htaccess — a dropped Apache override file: PHP handler
+     * coercion (AddType/SetHandler/php_flag) turns an upload dir into
+     * a webshell; Redirect/RewriteRule to a remote host skims traffic */
+    if (strcmp(bn, ".htaccess") == 0) {
+        if (strstr(low, "addtype") || strstr(low, "sethandler") ||
+            strstr(low, "php_flag") || strstr(low, "php_value") ||
+            (strstr(low, "options") && strstr(low, "execcgi")) ||
+            strstr(low, "php_flag engine"))
+            return 55;
+        if (strstr(low, "redirect") ||
+            (strstr(low, "rewriterule") &&
+             (strstr(low, "http://") || strstr(low, "https://"))))
+            return 50;
+        return 0;
+    }
+    /* F53 .user.ini — PHP per-dir ini: auto_prepend_file runs on every
+     * request in that dir (persistence planted by an upload) */
+    if (strcmp(bn, ".user.ini") == 0 || strstr(bn, ".user.ini")) {
+        if (strstr(low, "auto_prepend_file") ||
+            strstr(low, "auto_append_file"))
+            return 55;
+        return 0;
+    }
+    /* F54 web.config — IIS: httpRedirect sends all traffic to a
+     * remote host; a <handlers>/<httpHandlers> script mapping execs */
+    if (strcmp(bn, "web.config") == 0 || strcmp(bn, "web.debug.config") == 0 ||
+        strcmp(bn, "web.release.config") == 0) {
+        if (strstr(low, "httpredirect") ||
+            (strstr(low, "<add") && strstr(low, "handler") &&
+             strstr(low, "verb")) ||
+            (strstr(low, "rewrite") && strstr(low, "action") &&
+             strstr(low, "url=\"http")))
+            return 55;
+        return 0;
+    }
+    /* F55 Office add-in manifest — an .xml whose <OfficeApp>/
+     * <SourceLocation> points at a remote page loads attacker content
+     * inside Office on add (taskpane phishing) */
+    if (strstr(bn, ".xml") || strcmp(bn, "manifest.xml") == 0) {
+        if ((strstr(low, "<officeapp") || strstr(low, "<officeappsettings")) ||
+            (strstr(low, "sourcelocation") &&
+             (strstr(low, "defaultvalue=\"http") ||
+              strstr(low, "defaultvalue='http"))))
+            return 50;
+        return 0;
+    }
+    return 0;
+}
+
 /* ─── F48: .ica Citrix launch file — a [WFClient]/[ApplicationServers]
  *      descriptor whose Address=/InitialProgram= launches a remote
  *      published application on open (Citrix phishing delivery) ───── */
@@ -2845,6 +2906,19 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, ica,
                 "F48: ICA LAUNCH — Citrix descriptor launches a remote "
                 "application on open (score %d)", ica);
+        }
+    }
+
+    /* ── F52–F55: dropped server-config files — .htaccess php handler
+     *      /redirect, .user.ini auto_prepend_file, web.config
+     *      httpRedirect, Office add-in manifest SourceLocation ──────── */
+    if (head_len > 0) {
+        int sc = serverconfig_score(head, (size_t)head_len,
+                                    basename_start);
+        if (sc > 0) {
+            fv_add(&v, sc,
+                "F52-55: SERVER CONFIG — dropped config changes what "
+                "the server does with later content (score %d)", sc);
         }
     }
 

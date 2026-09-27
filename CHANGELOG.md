@@ -6,6 +6,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F52–F55 dropped server-config checks** (`hlse_file.c`): `.htaccess`
+  PHP-handler coercion (`AddType`/`SetHandler`/`php_flag`/`php_value`/
+  `Options +ExecCGI`) → 55, `Redirect`/`RewriteRule` to a remote host →
+  50; `.user.ini` `auto_prepend_file`/`auto_append_file` → 55 (runs on
+  every request in the dir — upload-planted persistence); IIS
+  `web.config` `<httpRedirect>`/script `<handlers>`/rewrite `url="http"`
+  → 55; an `.xml` Office add-in manifest whose `<OfficeApp>`/
+  `SourceLocation` points at a remote page → 50.
 - **F49–F51 install-carrier + build-time exec** (`hlse_file.c`): F49
   extension bundles (`.vsix`/`.xpi`/`.crx`/`.nex`/`.safariextz`/`.oxt`/
   `.whl`/`.egg`/`.gem`/`.nupkg`/`.apk`/`.ipa`) → 35, cert/key
