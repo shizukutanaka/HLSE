@@ -9687,6 +9687,34 @@ printf 'clusters:\n- {}\nusers:\n- {}\n' > "$XDIR70/empty.kubeconfig"
     || check "file: empty kubeconfig no flag" "0" "0"
 rm -rf "$XDIR70"
 
+# ── cycle-71: JP utility/authority smishing + EN legal-threat vocab ──
+./hlse_core text '水道料金を未納のまま放置しています' 2>&1 \
+    | grep -q "LOG\|ALERT\|BLOCK" \
+    && check "text: JP utility non-payment flagged" "0" "0" \
+    || check "text: JP utility non-payment flagged" "0" "1"
+./hlse_core text 'マイナンバーカードの更新が必要です' 2>&1 \
+    | grep -q "LOG\|ALERT" \
+    && check "text: MyNumber update lure flagged" "0" "0" \
+    || check "text: MyNumber update lure flagged" "0" "1"
+./hlse_core text 'お支払い方法に問題があります' 2>&1 \
+    | grep -q "LOG\|ALERT" \
+    && check "text: payment-method problem flagged" "0" "0" \
+    || check "text: payment-method problem flagged" "0" "1"
+./hlse_core text 'arrest warrant issued against your social security number' 2>&1 \
+    | grep -q "BLOCK\|ISOLATE" \
+    && check "text: arrest warrant flagged" "0" "0" \
+    || check "text: arrest warrant flagged" "0" "1"
+./hlse_core text 'legal action will be taken unless you call now' 2>&1 \
+    | grep -q "LOG\|ALERT\|BLOCK" \
+    && check "text: legal action threat flagged" "0" "0" \
+    || check "text: legal action threat flagged" "0" "1"
+./hlse_core text '本日の予定を確認します' 2>&1 | grep -q "OK" \
+    && check "text: benign JP schedule clean" "0" "0" \
+    || check "text: benign JP schedule clean" "0" "1"
+./hlse_core text 'your electricity bill notice' 2>&1 | grep -q "OK" \
+    && check "text: benign bill notice clean" "0" "0" \
+    || check "text: benign bill notice clean" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

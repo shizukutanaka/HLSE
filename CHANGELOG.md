@@ -15,6 +15,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **JP utility/authority smishing + EN legal-threat vocabulary**
+  (`hlse_text.c`): `CALLBACK_PHISH_WORDS` gains the JP utility
+  non-payment and account-problem families — 水道料金/電気料金/
+  ガス料金/公共料金/未納/未納料金/口座振替/ご請求, マイナンバー,
+  お支払い方法に問題/支払い方法に問題, ご利用の確認/不正利用,
+  重要なお知らせ/更新が必要/ポイントの有効期限/会員資格;
+  `AUTHORITY_WORDS` gains the English legal-threat phrases used by
+  IRS/CRA/debt impersonation — arrest warrant, warrant (has been)
+  issued, legal action (will be taken), lawsuit has been filed /
+  against you, court summons, you will be arrested, going to jail,
+  wage garnishment, asset seizure, your assets will be.
 - **Paste: listener / privilege-escalation one-liners** (`hlse_supply.c`,
   `hlse_supply.h`): new P13 signal (`PASTE_LISTENER_PRIV`) —
   bind-shell listeners (`nc -l`, `ncat -l`, `netcat -l`, ` -lv`,

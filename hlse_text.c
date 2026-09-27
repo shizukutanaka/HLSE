@@ -373,6 +373,13 @@ static const char *AUTHORITY_WORDS[] = {
     "canada revenue agency", "from the canada revenue",
     "australian taxation office", "australian tax office",
     "from the tax office", "from revenue",
+    /* Legal-threat impersonation (IRS/CRA/justice-debt scams) — these
+     * phrases only appear in threats, never in legitimate outreach  */
+    "arrest warrant", "warrant issued", "warrant has been issued",
+    "legal action", "legal action will be taken",
+    "lawsuit has been filed", "lawsuit against you",
+    "court summons", "you will be arrested", "going to jail",
+    "wage garnishment", "asset seizure", "your assets will be",
     /* Japanese */
     "警察", "税務署", "国税庁", "総務省", "裁判所", "検察", "警視庁",
     /* Korean */
@@ -1003,6 +1010,16 @@ static const char *CALLBACK_PHISH_WORDS[] = {
     "カード情報の更新", "お支払い情報の更新",
     "アカウントの一時停止", "本人確認のお願い",
     "ご利用を制限しております", "セキュリティ上の理由",
+    /* JP utility/authority smishing — NPA-documented families: utility
+     * non-payment (水道/電気/ガス/公共料金/未納), My Number card
+     * (マイナンバー is enough — 有効期限/更新/確認 phrasing follows),
+     * payment-method-problem and unauthorized-use lures, and the
+     * generic "重要なお知らせ" subject line these campaigns share. */
+    "水道料金", "電気料金", "ガス料金", "公共料金",
+    "未納", "未納料金", "口座振替", "ご請求",
+    "マイナンバー", "お支払い方法に問題", "支払い方法に問題",
+    "ご利用の確認", "不正利用", "重要なお知らせ", "更新が必要",
+    "ポイントの有効期限", "会員資格",
     NULL
 };
 
