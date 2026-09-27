@@ -1716,7 +1716,13 @@ static const char *const URL_LEGACY_SCHEMES[] = {
     "irc:", "ircs:", "feed:", "webcal:", "dayz:", NULL
 };
 static const char *const URL_FETCH_SCHEMES[] = {
-    "ssh:", "git:", "svn:", "hg:", NULL
+    "ssh:", "git:", "svn:", "hg:", "wss:", "ws:", NULL
+};
+/* Non-web device/query handlers — bluetooth: pairs a device, search:
+ * opens an OS search, both launch a local handler on click. */
+static const char *const URL_DEVICE_SCHEMES[] = {
+    "bluetooth:", "bluetooth-le:", "search:", "smtps:", "pop3:",
+    "imap:", "mid:", "cid:", NULL
 };
 /* OS/app URI-handler schemes hand the string to a local handler that
  * resolves remote content itself — they never parse as URLs, so a host
@@ -1908,6 +1914,14 @@ check_url(const char *raw_url) {
                                    "wallet/banking app (destination is "
                                    "attacker-chosen)",
                                    URL_PAYMENT_SCHEMES[i]);
+                        break;
+                    }
+                for (i = 0; URL_DEVICE_SCHEMES[i]; i++)
+                    if (strncmp(raw_url, URL_DEVICE_SCHEMES[i],
+                            strlen(URL_DEVICE_SCHEMES[i])) == 0) {
+                        add_reason(&v, 30, "Non-web device/query "
+                                   "handler scheme '%s'",
+                                   URL_DEVICE_SCHEMES[i]);
                         break;
                     }
                 for (i = 0; URL_HANDLER_SCHEMES[i]; i++) {
@@ -2464,6 +2478,7 @@ hlse_scan(const char *input) {
         url_has_scheme(input, URL_FETCH_SCHEMES) ||
         url_has_scheme(input, URL_NETMNT_SCHEMES) ||
         url_has_scheme(input, URL_PAYMENT_SCHEMES) ||
+        url_has_scheme(input, URL_DEVICE_SCHEMES) ||
         url_has_scheme(input, URL_HANDLER_SCHEMES))
     {
         Verdict uv = check_url(input);

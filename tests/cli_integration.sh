@@ -8469,6 +8469,39 @@ printf '<?xml version="1.0"?><installer-gui-script><pkg-ref id="a"/></installer-
 ./hlse_core file "$XDIR/clean.dist" 2>&1 | grep -q "F56" \
     && check "file: benign .dist no F56" "0" "1" \
     || check "file: benign .dist no F56" "0" "0"
+# file: .appinstaller remote Uri (F43 extension)
+printf '<?xml version="1.0"?><AppInstaller Uri="http://evil.com/x.appinstaller" Version="1.0"><MainPackage Name="a" Publisher="b" Version="1" Uri="http://evil.com/x.msix"/></AppInstaller>\n' \
+    > "$XDIR/x.appinstaller"
+./hlse_core file "$XDIR/x.appinstaller" 2>&1 | grep -qE 'ALERT|BLOCK' \
+    && check "file: .appinstaller remote Uri flagged" "0" "0" \
+    || check "file: .appinstaller remote Uri flagged" "0" "1"
+printf '<?xml version="1.0"?><AppInstaller Uri="x" Version="1.0"/>\n' \
+    > "$XDIR/local.appinstaller"
+./hlse_core file "$XDIR/local.appinstaller" 2>&1 | grep -qE 'ALERT|BLOCK|F43' \
+    && check "file: local .appinstaller no flag" "0" "1" \
+    || check "file: local .appinstaller no flag" "0" "0"
+# url: device/query handler schemes
+for u in wss://evil.com/x 'bluetooth:xx' 'search:query=x' 'imap://evil.com' 'smtps://evil.com'; do
+    ./hlse_core "$u" 2>&1 | grep -qE 'LOG|ALERT|BLOCK' \
+        && check "url: $u flagged" "0" "0" \
+        || check "url: $u flagged" "0" "1"
+done
+# secret: Postman / Docker / Dynatrace formats
+./hlse_core secret -- 'PMAK-abcd1234efgh5678ijkl9012mnop3456abcd1234efgh5678' \
+    2>&1 | grep -qE 'ISOLATE|BLOCK' \
+    && check "secret: PMAK postman flagged" "0" "0" \
+    || check "secret: PMAK postman flagged" "0" "1"
+./hlse_core secret -- 'dckr_pat_AbCdEfGh1234567890IjKlMn' 2>&1 \
+    | grep -qE 'ISOLATE|BLOCK' \
+    && check "secret: dckr_pat flagged" "0" "0" \
+    || check "secret: dckr_pat flagged" "0" "1"
+./hlse_core secret -- 'dt0c01.ABCDEFGH234567.ABCDEF1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd' \
+    2>&1 | grep -qE 'ISOLATE|BLOCK' \
+    && check "secret: dt0c01 dynatrace flagged" "0" "0" \
+    || check "secret: dt0c01 dynatrace flagged" "0" "1"
+./hlse_core secret -- 'the word PMAK- here is fine' 2>&1 | grep -q 'OK' \
+    && check "secret: benign PMAK text clean" "0" "0" \
+    || check "secret: benign PMAK text clean" "0" "1"
 # ms-appinstaller / ms-windows-store handler schemes
 ./hlse_core 'ms-appinstaller:?source=http://evil.com/x.appinstaller' \
     2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \

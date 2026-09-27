@@ -1700,7 +1700,8 @@ clickonce_score(const unsigned char *head, size_t len, const char *ext) {
     size_t n = 0, i;
     str_lower(ext ? ext : "", extl, sizeof(extl));
     if (strcmp(extl, ".application") && strcmp(extl, ".manifest") &&
-        strcmp(extl, ".vsto") && strcmp(extl, ".appref-ms"))
+        strcmp(extl, ".vsto") && strcmp(extl, ".appref-ms") &&
+        strcmp(extl, ".appinstaller"))
         return 0;
     if (len > sizeof(low) - 1) len = sizeof(low) - 1;
     for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
@@ -1711,6 +1712,14 @@ clickonce_score(const unsigned char *head, size_t len, const char *ext) {
     if (strcmp(extl, ".appref-ms") == 0)
         return (strstr(low, "http://") || strstr(low, "https://") ||
                 strstr(low, "\\\\")) ? 55 : 0;
+    /* .appinstaller — App Installer manifest; a remote Uri= on
+     * <AppInstaller>/<MainPackage> installs+launches the msix/bundle */
+    if (strcmp(extl, ".appinstaller") == 0) {
+        if (!strstr(low, "<appinstaller") && !strstr(low, "<mainpackage"))
+            return 0;
+        return (strstr(low, "uri=\"http") || strstr(low, "uri='http") ||
+                strstr(low, "uri=\"\\\\")) ? 55 : 0;
+    }
     if (!strstr(low, "<deployment") && !strstr(low, "<assembly"))
         return 0;
     if (strstr(low, "codebase=\"http") || strstr(low, "codebase='http") ||

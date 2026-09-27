@@ -106,6 +106,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 - **`.dist` productbuild installer definitions** (`hlse_file.c`,
   F56): a `.dist` targeting `LaunchDaemons`/`LaunchAgents`/`/Library/`
   plants a daemon on package install → 50.
+- **`.appinstaller` App Installer manifests** (`hlse_file.c`, F43):
+  the msix/bundle install manifest whose `<AppInstaller>`/
+  `<MainPackage>` `Uri=` points at a remote URL — the payload twin of
+  the `ms-appinstaller:` URI handler → 55.
+- **Non-web device/query schemes** (`hlse_core.c`): new
+  `URL_DEVICE_SCHEMES` — `bluetooth:`/`bluetooth-le:`/`search:`/
+  `smtps:`/`pop3:`/`imap:`/`mid:`/`cid:` → 30 (a click launches a local
+  handler outside URL parsing). `wss:`/`ws:` join FETCH (a live
+  websocket endpoint in content is a C2/exfil channel) → 30.
+- **Postman / Docker Hub / Dynatrace secret formats**
+  (`hlse_secrets.c`): `PMAK-`+40 → 80, `dckr_pat_`+20 → 80,
+  `dt0c01.`+30 → 80 (new `is_alnum_or_dot` predicate carries the `.`
+  segment separator inside the Dynatrace body).
 - **`ms-appinstaller:`/`ms-windows-store:` URI handlers**
   (`hlse_core.c`): `ms-appinstaller:`/`ms-appinstaller-https:` hand a
   remote `?source=` package URL to the App Installer (the Emotet/

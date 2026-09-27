@@ -196,6 +196,13 @@ static int is_alpha(char c) {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 }
 
+/* Dynatrace `dt0c01.XXXXXX.<64>` tokens carry a '.' separator inside
+ * the body — alnum+dot. */
+static int is_alnum_or_dot(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+           (c >= '0' && c <= '9') || c == '.';
+}
+
 static const SecretPattern SECRET_PATTERNS[] = {
     /* AWS */
     { "AKIA",          4,  16, char_upper_digit,   "AWS Access Key ID",     80 },
@@ -250,6 +257,12 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "dp.st.",          6,  40, is_alnum_or_dash, "Doppler Service Token", 85 },
     { "dp.pt.",          6,  40, is_alnum_or_dash, "Doppler Personal Token",85 },
     { "glsoat-",       7,  20, is_alnum_or_dash,   "GitLab Self-managed OAuth Token", 80 },
+
+    /* Postman / Docker Hub / Dynatrace — collaboration + registry +
+     * observability credentials the earlier table rows lacked */
+    { "PMAK-",         5,  40, is_alnum_or_dash,   "Postman API Key",     80 },
+    { "dckr_pat_",     9,  20, is_alnum_or_dash,   "Docker Hub Personal Access Token", 80 },
+    { "dt0c01.",       7,  30, is_alnum_or_dot,    "Dynatrace API Token", 80 },
 
     /* npm */
     { "npm_",          4,  36, is_alnum_or_dash,   "npm Access Token",      85 },
