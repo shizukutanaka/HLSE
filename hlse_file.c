@@ -226,6 +226,12 @@ static const char *EXECUTABLE_EXTS[] = {
     /* macOS installer packages + Safari web archive (bundled live
      * web content incl. scripts — attachment lure vector) */
     ".pkg", ".mpkg", ".webarchive",
+    /* macOS script/automation carriers — .scpt/.scptd are compiled
+     * AppleScript (exec on open), .osax is a Scripting Addition
+     * (legacy persistence), .workflow/.wflow are Automator action
+     * bundles that run their steps on double-click            */
+    ".scpt", ".scptd", ".applescript", ".osax",
+    ".workflow", ".wflow",
     /* Macro-enabled Office documents (bypass Mark-of-the-Web in many configs) */
     ".docm", ".xlsm", ".pptm", ".xlam", ".ppam", ".xlsb",
     /* Java */
@@ -3399,10 +3405,11 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 45;
         return 0;
     }
-    /* mail/message carriers — .eml/.msg/.mbox deliver phishing content;
-     * .vcf/.vcard PHOTO/URL/SOUND URI refs fetch remote on import */
-    if (strstr(bn, ".eml") || strstr(bn, ".msg") ||
-        strstr(bn, ".mbox")) {
+    /* mail/message carriers — .eml/.emlx/.msg/.mbox deliver phishing
+     * content; .vcf/.vcard PHOTO/URL/SOUND URI refs fetch remote on
+     * import                                                */
+    if (strstr(bn, ".eml") || strstr(bn, ".emlx") ||
+        strstr(bn, ".msg") || strstr(bn, ".mbox")) {
         if ((strstr(low, "from:") || strstr(low, "subject:")) &&
             (strstr(low, "http") || strstr(low, "attachment") ||
              strstr(low, "href") || strstr(low, "click")))
@@ -4910,8 +4917,8 @@ hlse_check_file(const char *filepath) {
     if (head_len > 0) {
         char bn2[256];
         str_lower(basename_start, bn2, sizeof(bn2));
-        if (strstr(bn2, ".eml") || strstr(bn2, ".msg") ||
-            strstr(bn2, ".mbox")) {
+        if (strstr(bn2, ".eml") || strstr(bn2, ".emlx") ||
+            strstr(bn2, ".msg") || strstr(bn2, ".mbox")) {
             char hbuf[4097];
             EmailVerdict ev;
             int i;

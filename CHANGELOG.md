@@ -15,6 +15,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **macOS script/automation carriers** (`hlse_file.c`):
+  `.scpt`/`.scptd` (compiled AppleScript — runs on open),
+  `.applescript`, `.osax` (Scripting Addition — legacy
+  persistence slot), `.workflow`/`.wflow` (Automator action
+  bundles — run their steps on double-click) →30. `.pac`
+  deliberately excluded: enterprise proxy-auto-config files are
+  ubiquitous and a bare DIRECT file must stay clean.
+- **`.emlx` joins mail forensics** (`hlse_file.c`): the F58
+  mail-carrier gate and the `.eml` carrier check now cover Apple
+  Mail's single-message format too, so a spoofed-From `.emlx`
+  scores like `.eml` instead of passing OK.
 - **URL backslash-evasion signal** (`hlse_core.c`): a special-scheme
   URL written with `\` separators (`https:\\host`, `http:\\\\host\path`)
   is normalized for analysis and now also scored +30 — WHATWG folds

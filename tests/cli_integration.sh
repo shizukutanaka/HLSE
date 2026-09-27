@@ -10169,6 +10169,26 @@ printf 'x' > "$XDIR86/benign.txt"
     || check "file: benign txt clean" "0" "1"
 rm -rf "$XDIR86"
 
+# ── cycle-87: macOS script carriers + .emlx mail forensics ──
+XDIR87=$(mktemp -d /tmp/hlse87.XXXXXX)
+for e in scpt scptd applescript osax workflow wflow; do
+    printf 'x' > "$XDIR87/t.$e"
+done
+printf 'From: "Apple Support" <a@evil.example>\nSubject: id\n\nx\n' > "$XDIR87/sp.emlx"
+printf 'x' > "$XDIR87/benign.txt"
+for e in scpt scptd applescript osax workflow wflow; do
+    ./hlse_core file "$XDIR87/t.$e" 2>&1 | grep -q "LOG\|ALERT" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+./hlse_core file "$XDIR87/sp.emlx" 2>&1 | grep -q "BLOCK\|ISOLATE" \
+    && check "file: .emlx display-name spoof flagged" "0" "0" \
+    || check "file: .emlx display-name spoof flagged" "0" "1"
+./hlse_core file "$XDIR87/benign.txt" 2>&1 | grep -q "OK" \
+    && check "file: benign txt clean" "0" "0" \
+    || check "file: benign txt clean" "0" "1"
+rm -rf "$XDIR87"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
