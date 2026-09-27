@@ -1001,8 +1001,20 @@ rc_persist_score(const unsigned char *head, size_t len,
     char low[4097];
     size_t n = 0, i;
     int sc = 0;
+    int ssh_rc = 0;
     const char *dotgit;
-    if (!is_rc_persist_name(basename)) return 0;
+    /* .ssh/rc + .ssh/environment are not rc-named but sshd sources
+     * them on every login (PermitUserRC) — the path is the carrier */
+    if (!is_rc_persist_name(basename)) {
+        char lb[64], lp[512];
+        str_lower(basename, lb, sizeof(lb));
+        str_lower(filepath, lp, sizeof(lp));
+        if (strstr(lp, ".ssh/") != NULL &&
+            (strcmp(lb, "rc") == 0 || strcmp(lb, "environment") == 0))
+            ssh_rc = 1;
+        else
+            return 0;
+    }
     /* a plain `config` only counts inside .git/, .ssh/, .aws/, .kube/
      * or .docker/ (systemd unit files and other `config` basenames
      * stay out) */
@@ -1028,6 +1040,21 @@ rc_persist_score(const unsigned char *head, size_t len,
     if (strstr(low, "ld_preload") || strstr(low, "dyld_insert") ||
         strstr(low, "ld_library_path") || strstr(low, "ld_audit"))
         return 65;
+    /* .ssh/rc is a shell script run on every sshd login;
+     * .ssh/environment injects vars into every sshd session —
+     * BASH_ENV/Perl/Python env hooks there are the same primitive
+     * as LD_PRELOAD in a shell rc                                  */
+    if (ssh_rc) {
+        if (strstr(low, "bash_env") || strstr(low, "perl5opt") ||
+            strstr(low, "pythoninspect") || strstr(low, "perl5lib") ||
+            strstr(low, "curl") || strstr(low, "wget") ||
+            strstr(low, "sh -c") || strstr(low, "/bin/") ||
+            strstr(low, "system") || strchr(low, '`') ||
+            strstr(low, "$(") || strstr(low, "nc "))
+            return 55;
+    } else if (strstr(low, "bash_env") || strstr(low, "perl5opt") ||
+               strstr(low, "pythoninspect"))
+        sc = sc < 55 ? 55 : sc;
     /* shell hook / alias hijack */
     if (strstr(low, "prompt_command") || strstr(low, "precmd") ||
         strstr(low, "alias sudo") || strstr(low, "alias ssh") ||
@@ -2090,6 +2117,54 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     if (strcmp(bn, "dovecot.conf") == 0 ||
         strstr(bn, "dovecot") != NULL) {
         if (strstr(low, "!include") || strstr(low, "mail_plugin"))
+            return 45;
+        return 30;
+    }
+    /* .maildroprc — courier maildrop recipes with |program run on
+     * delivery, same primitive as .procmailrc                       */
+    if (strcmp(bn, ".maildroprc") == 0 || strcmp(bn, "mailfilter") == 0) {
+        if (strchr(low, '|') != NULL)
+            return 55;
+        return 40;
+    }
+    /* rsyslog/syslog-ng daemon hooks — omprog spawns a program per
+     * log line; syslog-ng program() does the same as a destination  */
+    if (strcmp(bn, "rsyslog.conf") == 0 || strstr(bn, "rsyslog") != NULL) {
+        if (strstr(low, "omprog") || strstr(low, "ompipe") ||
+            strstr(low, "ommail"))
+            return 50;
+        return 30;
+    }
+    if (strcmp(bn, "syslog-ng.conf") == 0 ||
+        strstr(bn, "syslog-ng") != NULL) {
+        if (strstr(low, "program(") || strstr(low, "program (") ||
+            strstr(low, "mail("))
+            return 45;
+        return 30;
+    }
+    /* snmpd.conf — exec/extend/pass/traphandle run a command per
+     * SNMP query or trap; the file is a daemon-side exec hook       */
+    if (strcmp(bn, "snmpd.conf") == 0 || strstr(bn, "snmpd") != NULL) {
+        if (strstr(low, "exec ") || strstr(low, "extend") ||
+            strstr(low, "pass_persist") || strstr(low, "traphandle") ||
+            strstr(low, "monitor"))
+            return 50;
+        return 30;
+    }
+    /* dhclient / dhcpcd hooks — enter/exit-hooks run a script as
+     * root on every DHCP lease renew                                */
+    if (strstr(bn, "dhclient") != NULL || strstr(bn, "dhcp") != NULL) {
+        if (strstr(low, "exit-hooks") || strstr(low, "enter-hooks") ||
+            strstr(low, "script") || strchr(low, '|') != NULL)
+            return 45;
+        return 0;
+    }
+    /* wifi credential containers — wpa_supplicant network{} and
+     * hostapd.conf carry the PSK/passphrase in cleartext           */
+    if (strstr(bn, "wpa_supplicant") != NULL ||
+        strstr(bn, "hostapd") != NULL) {
+        if (strstr(low, "psk=") || strstr(low, "wpa_passphrase") ||
+            strstr(low, "password=") || strstr(low, "key_mgmt"))
             return 45;
         return 30;
     }

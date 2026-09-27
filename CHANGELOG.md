@@ -15,6 +15,24 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Daemon exec-hook carriers** (`hlse_file.c` F56): `snmpd.conf`
+  `exec`/`extend`/`pass_persist`/`traphandle`/`monitor` → 50 (a
+  command runs per SNMP query or trap); `rsyslog.conf` `omprog`/
+  `ompipe`/`ommail` → 50 and `syslog-ng.conf` `program()` → 45
+  (a process spawned per matching log line); `dhclient`/`*dhcp*`
+  hook files with `exit-hooks`/`enter-hooks`/`script`/`|` → 45
+  (script runs as root on every lease). `.maildroprc`/`mailfilter`
+  with `|program` → 55 joins the delivery-pipe family.
+- **`.ssh/rc` + `.ssh/environment` path carrier** (`hlse_file.c`):
+  sshd sources `~/.ssh/rc` and `environment` on every login
+  (PermitUserRC) but neither is rc-named — a path gate now enters
+  them into rc-persist scoring; shell/exec content → 55, while a
+  plain `FOO=bar` environment stays clean. The same gate also makes
+  `BASH_ENV`/`PERL5OPT`/`PYTHONINSPECT` env-hook keys score 55 in
+  any rc-file carrier.
+- **Wi-Fi credential containers** (`hlse_file.c`): `wpa_supplicant.conf`
+  and `hostapd.conf` with `psk=`/`wpa_passphrase`/`password=`/
+  `key_mgmt` → 45 (cleartext wireless creds), bare file → 30.
 - **Mail-delivery and MTA carriers** (`hlse_file.c` F56):
   `aliases`/`aliases.db`/`.aliases` with a `|program` entry → 50
   (runs a command on every inbound delivery at the MTA, root-context
