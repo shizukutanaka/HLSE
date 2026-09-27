@@ -8215,6 +8215,35 @@ printf 'name: y\nbuild-type: Simple\n' > "$XDIR/ok.cabal"
 ./hlse_core text 'https://example.com/pay' 2>&1 | grep -q "Payment URI" \
     && check "text: https url no payment flag" "0" "1" \
     || check "text: https url no payment flag" "0" "0"
+# F56: system-config carriers — dropped privilege/resolver/persist files
+printf 'eviluser ALL=(ALL) NOPASSWD: ALL\n' > "$XDIR/sudoers"
+./hlse_core file "$XDIR/sudoers" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: sudoers nopasswd flagged" "0" "0" \
+    || check "file: sudoers nopasswd flagged" "0" "1"
+printf '/tmp/evil.so\n' > "$XDIR/ld.so.preload"
+./hlse_core file "$XDIR/ld.so.preload" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: ld.so.preload flagged" "0" "0" \
+    || check "file: ld.so.preload flagged" "0" "1"
+printf '8.8.8.8 login.bank.example\n127.0.0.1 localhost\n' > "$XDIR/hosts"
+./hlse_core file "$XDIR/hosts" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: hosts public-ip hijack flagged" "0" "0" \
+    || check "file: hosts public-ip hijack flagged" "0" "1"
+printf 'nameserver 6.6.6.6\n' > "$XDIR/resolv.conf"
+./hlse_core file "$XDIR/resolv.conf" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: resolv.conf flagged" "0" "0" \
+    || check "file: resolv.conf flagged" "0" "1"
+printf 'environment=LD_PRELOAD=/tmp/x.so\n' > "$XDIR/svc.conf"
+./hlse_core file "$XDIR/svc.conf" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: .conf ld_preload flagged" "0" "0" \
+    || check "file: .conf ld_preload flagged" "0" "1"
+printf 'permit admin\n' > "$XDIR/doas.conf"
+./hlse_core file "$XDIR/doas.conf" 2>&1 | grep -q "F56" \
+    && check "file: benign doas.conf no F56" "0" "1" \
+    || check "file: benign doas.conf no F56" "0" "0"
+printf 'MAILTO=""\n' > "$XDIR/crontab"
+./hlse_core file "$XDIR/crontab" 2>&1 | grep -q "F56" \
+    && check "file: empty crontab no F56" "0" "1" \
+    || check "file: empty crontab no F56" "0" "0"
 # F52–F55: server-config carriers
 printf 'AddType application/x-httpd-php .jpg\nphp_flag engine on\n' \
     > "$XDIR/.htaccess"

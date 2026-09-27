@@ -1951,6 +1951,88 @@ serverconfig_score(const unsigned char *head, size_t len,
     return 0;
 }
 
+/* ─── F56: system-config carrier — a file named like a host config
+ *      that changes privilege/resolution/library resolution when
+ *      dropped in place ─────────────────────────────────────────── */
+static int
+sysconfig_carrier_score(const unsigned char *head, size_t len,
+    const char *basename_start) {
+    char low[4097], bn[256];
+    size_t n = 0, i;
+    str_lower(basename_start ? basename_start : "", bn, sizeof(bn));
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+
+    /* sudoers / sudoers.d / doas.conf — passwordless privilege grant.
+     * A dropped fragment `u ALL=(ALL) NOPASSWD: ALL` / `permit nopass`
+     * is instant root. */
+    if (strcmp(bn, "sudoers") == 0 || strstr(bn, "sudoers") != NULL ||
+        strcmp(bn, "doas.conf") == 0) {
+        if (strstr(low, "nopasswd") || strstr(low, "nopass") ||
+            strstr(low, "permit nopass"))
+            return 60;
+        if (strstr(low, "all=(all") || strstr(low, "all=("))
+            return 40;
+        return 0;
+    }
+    /* ld.so.preload / ld.so.conf.d — the loader injects the listed .so
+     * into every dynamically-linked process (rootkit persistence). */
+    if (strcmp(bn, "ld.so.preload") == 0 ||
+        strstr(bn, "ld.so.conf") != NULL ||
+        strcmp(bn, "ld-musl") == 0) {
+        return 55;
+    }
+    /* environment= LD_PRELOAD/LD_LIBRARY_PATH in a unit/conf — same
+     * injection through a service manager */
+    if ((strstr(bn, ".conf") != NULL || strstr(bn, ".service") != NULL ||
+         strcmp(bn, "environment") == 0) &&
+        (strstr(low, "ld_preload") || strstr(low, "ld_library_path") ||
+         strstr(low, "dyld_insert_libraries")))
+        return 55;
+    /* hosts / resolv.conf — a dropped resolver/hosts file silently
+     * remaps auth and bank domains to attacker IPs */
+    if (strcmp(bn, "hosts") == 0 || strcmp(bn, "resolv.conf") == 0 ||
+        strcmp(bn, "nsswitch.conf") == 0) {
+        int hijack = 0;
+        /* a non-loopback IP mapped to a hostname = domain hijack */
+        const char *ln = low;
+        while (*ln) {
+            const char *eol = strchr(ln, '\n');
+            size_t ll = eol ? (size_t)(eol - ln) : strlen(ln);
+            if (ll > 0 && ll < 400 && ln[0] != '#' &&
+                ln[0] != '\xef' /* BOM-ish guard */) {
+                /* crude: starts with an IPv4 address not in
+                 * 0./127./169.254/10./192.168/172.16-31 */
+                unsigned a, b;
+                if (sscanf(ln, "%u.%u", &a, &b) == 2 &&
+                    !(a == 0 || a == 127 || a == 10 ||
+                      (a == 169 && b == 254) ||
+                      (a == 172 && b >= 16 && b <= 31) ||
+                      (a == 192 && b == 168) || a >= 224))
+                    hijack = 1;
+            }
+            if (!eol) break;
+            ln = eol + 1;
+        }
+        if (strstr(low, "nameserver") != NULL &&
+            strcmp(bn, "resolv.conf") == 0)
+            return 45;
+        if (hijack)
+            return 45;
+        if (strcmp(bn, "hosts") == 0 || strcmp(bn, "nsswitch.conf") == 0)
+            return 30;
+        return 0;
+    }
+    /* crontab / cron.d — the file itself is a persistence schedule */
+    if (strcmp(bn, "crontab") == 0 || strstr(bn, ".cron") != NULL) {
+        if (strstr(low, "* *") || strchr(low, '*') != NULL)
+            return 40;
+        return 0;
+    }
+    return 0;
+}
+
 /* ─── F48: .ica Citrix launch file — a [WFClient]/[ApplicationServers]
  *      descriptor whose Address=/InitialProgram= launches a remote
  *      published application on open (Citrix phishing delivery) ───── */
@@ -2906,6 +2988,20 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, ica,
                 "F48: ICA LAUNCH — Citrix descriptor launches a remote "
                 "application on open (score %d)", ica);
+        }
+    }
+
+    /* ── F56: system-config carrier — sudoers/doas nopasswd grant,
+     *      ld.so.preload persistence, hosts/resolv.conf DNS hijack,
+     *      crontab persistence schedule ────────────────────────────── */
+    if (head_len > 0) {
+        int sc = sysconfig_carrier_score(head, (size_t)head_len,
+                                         basename_start);
+        if (sc > 0) {
+            fv_add(&v, sc,
+                "F56: SYSTEM CONFIG — filename is a host config that "
+                "changes privilege/resolution when dropped in place "
+                "(score %d)", sc);
         }
     }
 

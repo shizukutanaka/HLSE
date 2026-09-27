@@ -19,6 +19,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   (Discord MFA token) → 85; `AC`/`SK` + 32 lowercase hex (Twilio
   Account SID / API Key) → 70 — new `is_hex_c` predicate keeps the
   2-char prefixes' false positives low.
+- **F56 system-config carriers** (`hlse_file.c`): files whose *name*
+  makes them act when dropped in place — `sudoers`/`sudoers.*`/`doas.conf`
+  with `NOPASSWD`/`permit nopass` → 60 (`ALL=(ALL)` grant alone → 40);
+  `ld.so.preload`/`ld.so.conf*` → 55 (loader injects the listed .so into
+  every process — rootkit persistence); `.conf`/`.service` carrying
+  `ld_preload`/`ld_library_path`/`dyld_insert_libraries` → 55;
+  `resolv.conf` with a `nameserver` line → 45 and `hosts`/`nsswitch.conf`
+  → 30, raised to 45 when a `hosts` line maps a hostname to a *public*
+  IPv4 (domain hijack — loopback/RFC1918/ad-block entries stay clean);
+  `crontab`/`*.cron*` files containing a schedule → 40.
 - **Payment URI schemes + wallet-drainer approval language**
   (`hlse_core.c`, `hlse_text.c`): new `URL_PAYMENT_SCHEMES` table —
   `bitcoin:`/`ethereum:`/`monero:`/`litecoin:`/`dogecoin:`/`tron:`/
