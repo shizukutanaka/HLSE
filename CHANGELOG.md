@@ -15,6 +15,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **URI scheme coverage, cycle 80** (`hlse_core.c`): `vbscript:`
+  now scores like `javascript:` (→90 ISOLATE, executable scheme);
+  `res:`/`shell:`/`expect:`/`hcp:` join the URI-handler table
+  (→35, remote indicator bumps to 60); `sftp:` joins the fetch
+  scheme table so the non-web userinfo-credential check reaches
+  it — `sftp://user:pass@host` now scores 70 like `ssh:`.
 - **Scam-family vocabulary, cycle 79** (`hlse_text.c`):
   `EMERGENCY_SCAM_WORDS` gains third-person grandparent-scam
   framing ("grandchild is in jail", "needs bail money",

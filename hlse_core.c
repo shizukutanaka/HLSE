@@ -1716,7 +1716,7 @@ static const char *const URL_LEGACY_SCHEMES[] = {
     "irc:", "ircs:", "feed:", "webcal:", "dayz:", NULL
 };
 static const char *const URL_FETCH_SCHEMES[] = {
-    "ssh:", "git:", "svn:", "hg:", "wss:", "ws:", NULL
+    "ssh:", "sftp:", "git:", "svn:", "hg:", "wss:", "ws:", NULL
 };
 /* Non-web device/query handlers — bluetooth: pairs a device, search:
  * opens an OS search, both launch a local handler on click. */
@@ -1755,7 +1755,12 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     "notion:", "figma:", "linear:", "raycast:",
     "fb:", "fb-messenger:", "instagram:", "twitter:",
     "comgooglemaps:", "geo:", "maps:",
-    "rtsp:", "rtmp:", "mms:", NULL
+    "rtsp:", "rtmp:", "mms:",
+    /* Windows resource/shell URI handlers — res:// loads a resource
+     * out of a named DLL/EXE (in-page code exec in IE contexts),
+     * shell: opens shell namespace folders, expect: hands a string
+     * to the Tcl expect tool's command channel                   */
+    "res:", "shell:", "expect:", "hcp:", NULL
 };
 /* Remote-mount schemes: clicking one attaches a remote filesystem or
  * session — smb: is the same NetNTLM-leak class as a \\ UNC path,
@@ -1828,6 +1833,7 @@ check_url(const char *raw_url) {
 
     if (!parse_url(raw_url, &u)) {
         if (raw_url && (strncmp(raw_url, "javascript:", 11) == 0
+                     || strncmp(raw_url, "vbscript:", 9) == 0
                      || strncmp(raw_url, "data:", 5) == 0)) {
             add_reason(&v, 90, "Dangerous URI scheme");
         }
@@ -2515,6 +2521,7 @@ hlse_scan(const char *input) {
             strncmp(dec, "https://", 8) == 0 ||
             strncmp(dec, "ftp://", 6) == 0 ||
             strncmp(dec, "javascript:", 11) == 0 ||
+            strncmp(dec, "vbscript:", 9) == 0 ||
             strncmp(dec, "data:", 5) == 0 ||
             url_has_scheme(dec, URL_HANDLER_SCHEMES) ||
             url_has_scheme(dec, URL_NETMNT_SCHEMES))) {
@@ -2543,6 +2550,7 @@ hlse_scan(const char *input) {
         strncmp(input, "http:/\\", 7) == 0 ||
         strncmp(input, "https:/\\", 8) == 0 ||
         strncmp(input, "javascript:", 11) == 0 ||
+        strncmp(input, "vbscript:", 9) == 0 ||
         strncmp(input, "data:", 5) == 0 ||
         strncmp(input, "sms:", 4) == 0 ||
         strncmp(input, "tel:", 4) == 0 ||

@@ -9990,6 +9990,30 @@ rm -rf "$XDIR77"
     && check "text: benign newsletter clean" "0" "0" \
     || check "text: benign newsletter clean" "0" "1"
 
+# ── cycle-80: script/resource URI schemes + sftp userinfo creds ──
+./hlse_core 'vbscript:msgbox(1)' 2>&1 | grep -q "Dangerous URI" \
+    && check "url: vbscript flagged" "0" "0" \
+    || check "url: vbscript flagged" "0" "1"
+./hlse_core 'res://evil.example/x.dll' 2>&1 | grep -q "LOG\|ALERT\|BLOCK" \
+    && check "url: res: flagged" "0" "0" \
+    || check "url: res: flagged" "0" "1"
+./hlse_core 'expect://evil.example/x' 2>&1 | grep -q "LOG\|ALERT\|BLOCK" \
+    && check "url: expect: flagged" "0" "0" \
+    || check "url: expect: flagged" "0" "1"
+./hlse_core 'hcp://evil.example/x' 2>&1 | grep -q "LOG\|ALERT\|BLOCK" \
+    && check "url: hcp: flagged" "0" "0" \
+    || check "url: hcp: flagged" "0" "1"
+./hlse_core 'sftp://user:pass@evil.example/' 2>&1 \
+    | grep -q "Credentials embedded" \
+    && check "url: sftp userinfo creds flagged" "0" "0" \
+    || check "url: sftp userinfo creds flagged" "0" "1"
+./hlse_core 'sftp://user@evil.example/' 2>&1 | grep -q "OK\|LOG" \
+    && check "url: sftp benign userinfo" "0" "0" \
+    || check "url: sftp benign userinfo" "0" "1"
+./hlse_core 'sftp://evil.example/path' 2>&1 | grep -q "LOG" \
+    && check "url: sftp plain fetch scheme" "0" "0" \
+    || check "url: sftp plain fetch scheme" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
