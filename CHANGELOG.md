@@ -119,6 +119,24 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `add_custom_target` reaches `curl`/`wget`/`Invoke-WebRequest`/
   `bitsadmin`/`|sh`/`base64` → 55 (configure/build-time payload — the
   CMake form of the Makefile `$(shell)` check).
+- **Repo-fetch + hook-pipeline carriers** (`hlse_file.c`, F56):
+  `.gitmodules` `url` → 45 (next `git submodule update` fetches the
+  attacker repo); `.pre-commit-config.yaml` `repo:`+`http` → 45
+  (clones+runs hook code on every commit); `terragrunt.hcl`/
+  `.terraformrc`/`terraform.rc` `before_`/`after_`/`error_hook`/
+  `run_cmd`/`dev_overrides`/`plugin_cache`/`provider_installation`
+  → 50; `plugins.sbt`/`build.sbt` `addSbtPlugin`/`resolver`/`http`
+  → 45; `uv.toml` `index-url`/`extra-index-url`/`find-links` → 45;
+  `pyproject.toml` `tool.poetry.source`/`tool.uv`/`index-url` → 45;
+  `settings.json` `executablePath`/`interpreterPath`/
+  `script-torrent-done`/`git.path` → 50 (the basename is generic so
+  only keys that name a program another tool will run fire).
+- **GitLab secondary token families** (`hlse_secrets.c`): `glcbt-`
+  CI build token → 80, `glptt-` pipeline trigger token → 80,
+  `glagent-` cluster agent token → 80, `glft-` feed token → 75,
+  `glimt-` incoming mail token → 75, `gloas-` OAuth app secret → 85
+  — the `glpat-`/`glrt-`/`gldt-`/`glsoat-` rows already covered the
+  primary families; these close the `gl*` prefix matrix.
 - **Package-descriptor + boot/kernel carriers** (`hlse_file.c`, F56):
   `Pipfile`/`Pipfile.lock` `[[source]]`/url → 45; `MODULE.bazel`/
   `WORKSPACE` `http_archive`/`git_repository`/`local_repository`/
