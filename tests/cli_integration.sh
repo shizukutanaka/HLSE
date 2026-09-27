@@ -9596,6 +9596,61 @@ printf '<?xml version="1.0"?>\n<OfficeApp><SourceLocation DefaultValue="https://
     || check "file: office addin remote source flagged" "0" "1"
 rm -rf "$XDIR"
 
+# ── cycle-69: IPv4-mapped IPv6 SSRF evasion + deep-link schemes ──
+./hlse_core 'http://[::ffff:127.0.0.1]/' 2>&1 \
+    | grep -q "IPv4-mapped" \
+    && check "url: v4-mapped loopback flagged" "0" "0" \
+    || check "url: v4-mapped loopback flagged" "0" "1"
+./hlse_core 'http://[::ffff:169.254.169.254]/x' 2>&1 \
+    | grep -q "instance-metadata" \
+    && check "url: v4-mapped IMDS flagged" "0" "0" \
+    || check "url: v4-mapped IMDS flagged" "0" "1"
+./hlse_core 'http://[::ffff:7f00:1]/' 2>&1 \
+    | grep -q "IPv4-mapped" \
+    && check "url: v4-mapped hex-pair flagged" "0" "0" \
+    || check "url: v4-mapped hex-pair flagged" "0" "1"
+./hlse_core 'http://[2001:4860:4860::8888]/' 2>&1 \
+    | grep -q "IPv4-mapped\|IPv6 loopback" \
+    && check "url: public v6 literal no mapped flag" "0" "1" \
+    || check "url: public v6 literal no mapped flag" "0" "0"
+./hlse_core 'steam://run/1234' 2>&1 \
+    | grep -q "URI-handler scheme 'steam'" \
+    && check "url: steam scheme flagged" "0" "0" \
+    || check "url: steam scheme flagged" "0" "1"
+./hlse_core 'discord://evil.example/ch/1' 2>&1 \
+    | grep -q "URI-handler scheme 'discord'" \
+    && check "url: discord scheme flagged" "0" "0" \
+    || check "url: discord scheme flagged" "0" "1"
+./hlse_core 'zoommtg://evil.example/j?confno=1' 2>&1 \
+    | grep -q "URI-handler scheme 'zoommtg'" \
+    && check "url: zoommtg scheme flagged" "0" "0" \
+    || check "url: zoommtg scheme flagged" "0" "1"
+./hlse_core 'php://filter/convert.base64-encode/resource=/etc/passwd' 2>&1 \
+    | grep -q "URI-handler scheme 'php'" \
+    && check "url: php wrapper scheme flagged" "0" "0" \
+    || check "url: php wrapper scheme flagged" "0" "1"
+# secrets: Notion / Meta / otpauth (split literals for push protection)
+./hlse_core secret -- 'k: ntn_'"xK9mQ2wE7rT4yU8iO1pA3sD6fG5hJ9kL0zX2cV4bN7m" 2>&1 \
+    | grep -q "Notion Integration Token" \
+    && check "secret: Notion ntn_ flagged" "0" "0" \
+    || check "secret: Notion ntn_ flagged" "0" "1"
+./hlse_core secret -- 'k: EAA'"xK9mQ2wE7rT4yU8iO1pA3sD6fG5hJ9kL0zX2cV4bN7m" 2>&1 \
+    | grep -q "Meta/Facebook Access Token" \
+    && check "secret: Meta EAA flagged" "0" "0" \
+    || check "secret: Meta EAA flagged" "0" "1"
+./hlse_core secret -- 'k: otpauth://totp/x?'"secret=JBSWY3DPEHPK3PXP" 2>&1 \
+    | grep -q "TOTP/2FA Seed URI" \
+    && check "secret: otpauth seed URI flagged" "0" "0" \
+    || check "secret: otpauth seed URI flagged" "0" "1"
+./hlse_core secret -- 'otpauth is a URI scheme name' 2>&1 \
+    | grep -q "TOTP/2FA" \
+    && check "secret: otpauth word no flag" "0" "1" \
+    || check "secret: otpauth word no flag" "0" "0"
+./hlse_core secret -- 'EAA: plain uppercase word EAAXYZ123' 2>&1 \
+    | grep -q "Meta/Facebook" \
+    && check "secret: short EAA no flag" "0" "1" \
+    || check "secret: short EAA no flag" "0" "0"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

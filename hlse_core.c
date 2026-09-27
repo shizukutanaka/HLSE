@@ -1740,7 +1740,22 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     "ms-settings:", "ms-people:", "ms-calculator:",
     "ms-appinstaller:", "ms-appinstaller-https:", "ms-windows-store:",
     "itms-services:", "itms:", "itmss:", "itpc:",
-    "vscode:", "vscode-insiders:", "atom:", NULL
+    "vscode:", "vscode-insiders:", "atom:",
+    /* conferencing/messenger/app deep-links — a click hands the URI
+     * to the client app (join meeting, open chat, run integration);
+     * steam: is a command-channel (steam://run/<id> executes), and the
+     * php: stream-wrapper family is an LFI/deserialize primitive in
+     * server-side contexts — remote args still bump to 60           */
+    "steam:", "php:", "phar:",
+    "discord:", "slack:", "tg:", "zoommtg:", "zoomus:",
+    "msteams:", "teams:", "lync:", "webex:", "webexteams:",
+    "gotomeeting:", "gotowebinar:", "ringcentral:",
+    "bluejeans:", "spark:", "meet:",
+    "android-app:", "spotify:", "obsidian:", "zotero:",
+    "notion:", "figma:", "linear:", "raycast:",
+    "fb:", "fb-messenger:", "instagram:", "twitter:",
+    "comgooglemaps:", "geo:", "maps:",
+    "rtsp:", "rtmp:", "mms:", NULL
 };
 /* Remote-mount schemes: clicking one attaches a remote filesystem or
  * session — smb: is the same NetNTLM-leak class as a \\ UNC path,
@@ -2140,6 +2155,42 @@ check_url(const char *raw_url) {
                     "IPv6 loopback/link-local/private literal host "
                     "'%s' — external content pointing inside the "
                     "network is an SSRF/pivot signal", h);
+            } else if (strncasecmp(h, "[::ffff:", 8) == 0) {
+                /* IPv4-mapped IPv6 — [::ffff:a.b.c.d] and
+                 * [::ffff:HHHH:HHHH] launder a v4 internal address
+                 * past dotted-quad checks; evaluate the tail as v4  */
+                unsigned a, b, c, d, x, y;
+                int mapped_priv = -1;
+                if (sscanf(h + 8, "%u.%u.%u.%u", &a, &b, &c, &d) == 4 &&
+                    a <= 255 && b <= 255 && c <= 255 && d <= 255) {
+                    mapped_priv = (a == 0 || a == 10 || a == 127 ||
+                        (a == 172 && b >= 16 && b <= 31) ||
+                        (a == 192 && b == 168) || (a == 169 && b == 254) ||
+                        (a == 100 && b >= 64 && b <= 127));
+                } else if (sscanf(h + 8, "%x:%x", &x, &y) == 2 &&
+                           x <= 0xffff && y <= 0xffff) {
+                    a = (x >> 8) & 255; b = x & 255;
+                    c = (y >> 8) & 255; d = y & 255;
+                    mapped_priv = (a == 0 || a == 10 || a == 127 ||
+                        (a == 172 && b >= 16 && b <= 31) ||
+                        (a == 192 && b == 168) || (a == 169 && b == 254) ||
+                        (a == 100 && b >= 64 && b <= 127));
+                }
+                if (mapped_priv == 1 && a == 169 && b == 254 &&
+                    c == 169 && d == 254)
+                    add_reason(&v, 65,
+                        "IPv4-mapped IPv6 literal '%s' is the cloud "
+                        "instance-metadata endpoint — SSRF credential "
+                        "theft via notation evasion", h);
+                else if (mapped_priv == 1)
+                    add_reason(&v, 45,
+                        "IPv4-mapped IPv6 literal '%s' resolves to an "
+                        "internal/private v4 address — an SSRF-evasion "
+                        "shape for the v4 checks", h);
+                else if (mapped_priv == 0)
+                    add_reason(&v, 30,
+                        "IPv4-mapped IPv6 literal '%s' — v6-in-v4 "
+                        "notation is a normalisation-evasion shape", h);
             }
         } else if (strcmp(h, "169.254.169.254") == 0 ||
                    strcmp(h, "169.254.170.2") == 0 ||   /* ECS task */

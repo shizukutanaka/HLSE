@@ -203,6 +203,16 @@ static int is_alnum_or_dot(char c) {
            (c >= '0' && c <= '9') || c == '.';
 }
 
+/* otpauth:// URIs carry the 2FA seed in a `secret=` query parameter —
+ * the suffix is a URI tail, not a bare token charset.              */
+static int is_uri_tail(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+           (c >= '0' && c <= '9') || c == ':' || c == '/' ||
+           c == '?' || c == '=' || c == '&' || c == '%' ||
+           c == '.' || c == '-' || c == '_' || c == '#' ||
+           c == '~' || c == '@';
+}
+
 static const SecretPattern SECRET_PATTERNS[] = {
     /* AWS */
     { "AKIA",          4,  16, char_upper_digit,   "AWS Access Key ID",     80 },
@@ -421,6 +431,18 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * accepts, so the full token validates. */
     { "lsv2_pt_",       8, 30, is_alnum_or_dash, "LangSmith Personal Token",      85 },
     { "lsv2_sk_",       8, 30, is_alnum_or_dash, "LangSmith Service Key",         90 },
+
+    /* Notion integration token (ntn_) — full workspace access. */
+    { "ntn_",           4, 40, is_alnum_or_dash, "Notion Integration Token",      85 },
+
+    /* Meta/Facebook long-lived tokens: EAA + variant letter + long
+     * base62ish tail (EAAB/EAAI/EAAA/EAAC…). Grants account/page
+     * posting and read access. */
+    { "EAA",            3, 28, is_alnum_or_dash, "Meta/Facebook Access Token",    80 },
+
+    /* TOTP/2FA seed URIs (otpauth://totp/...?secret=BASE32) — the URI
+     * itself is the shared secret for every future OTP. */
+    { "otpauth://",    10, 14, is_uri_tail,      "TOTP/2FA Seed URI",             85 },
 
     { NULL, 0, 0, NULL, NULL, 0 }
 };

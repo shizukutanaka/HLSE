@@ -15,6 +15,27 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **IPv4-mapped IPv6 SSRF evasion** (`hlse_core.c`): `[::ffff:a.b.c.d]`
+  and `[::ffff:HHHH:HHHH]` literal hosts launder an internal v4 address
+  past dotted-quad checks — the mapped tail is now evaluated as v4:
+  loopback/RFC1918/link-local/CGNAT → 45, the IMDS endpoint
+  (`169.254.169.254`) → 65, and any other mapped literal → 30 as a
+  normalisation-evasion shape.
+- **App/messenger/conference deep-link schemes** (`hlse_core.c`):
+  `steam:`, `php:`/`phar:` (stream-wrapper LFI/deserialize primitives),
+  `discord:`, `slack:`, `tg:`, `zoommtg:`/`zoomus:`, `msteams:`/`teams:`,
+  `lync:`, `webex:`/`webexteams:`, `gotomeeting:`/`gotowebinar:`,
+  `ringcentral:`, `bluejeans:`, `spark:`, `meet:`, `android-app:`,
+  `spotify:`, `obsidian:`, `zotero:`, `notion:`, `figma:`, `linear:`,
+  `raycast:`, `fb:`/`fb-messenger:`, `instagram:`, `twitter:`,
+  `comgooglemaps:`, `geo:`/`maps:`, `rtsp:`/`rtmp:`/`mms:` join
+  `URL_HANDLER_SCHEMES` — 35 base, 60 when a remote indicator
+  (`http`, `\\`, `|u|`, `location=`) is embedded.
+- **Notion/Meta/otpauth secret formats** (`hlse_secrets.c`):
+  `ntn_` + ≥40 (Notion integration token) → 85; `EAA` + ≥28
+  (Meta/Facebook long-lived access tokens: EAAB/EAAI/EAAA…) → 80;
+  `otpauth://` URIs carrying `secret=` TOTP seeds → 85 via a new
+  `is_uri_tail` predicate that accepts URI-tail characters.
 - **Discord MFA + Twilio secret formats** (`hlse_secrets.c`): `mfa.`
   (Discord MFA token) → 85; `AC`/`SK` + 32 lowercase hex (Twilio
   Account SID / API Key) → 70 — new `is_hex_c` predicate keeps the
