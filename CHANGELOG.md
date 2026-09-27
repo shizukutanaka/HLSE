@@ -15,6 +15,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Legacy Office / template file extensions** (`hlse_file.c`):
+  `.dotm`/`.xltm`/`.sldm` (macro-enabled templates), `.docb`
+  (binary .docm), `.mdb`/`.accdb` (Access VBA + autoexec),
+  `.vsdx`/`.vsdm` (Visio OLE embeds), `.pub` (Publisher),
+  `.wpd` (WordPerfect) — all →30. `.rtf` deliberately stays on
+  the safe-extension list: its exploits are caught by the
+  content check (`rtf_embed_score`), not the name.
+- **Typosquat registry coverage** (`hlse_supply.c`): PIP_TOP
+  gains 20 documented attack targets (colorama, urllib3, six,
+  certifi, python-dateutil, tqdm, pyjwt, botocore, opencv-python
+  — colourama→colorama was PyPI 2017, python3-dateutil shipped
+  malware Dec 2019); NPM_TOP gains 14 documented supply-chain
+  victims (ua-parser-js Oct 2021, coa/rc, node-ipc, event-stream,
+  colors/faker, bootstrap, jquery, core-js, tslib).
 - **Windows handler file extensions** (`hlse_file.c`):
   `.library-ms`/`.search-ms`/`.settingcontent-ms` (Explorer
   hijack — WebDAV share / remote search / DeepLink command

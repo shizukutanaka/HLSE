@@ -106,6 +106,14 @@ static const char *PIP_TOP[] = {
     "sentry-sdk", "opentelemetry-api",
     /* Web3 / crypto — typosquat targets for seed-phrase-stealing payloads */
     "web3", "eth-account", "eth-utils", "web3py", "solana", "bitcoinlib",
+    /* Highest-download infra packages — every one has had a documented
+     * typosquat incident (colourama→colorama PyPI 2017, python3-dateutil
+     * shipped malware Dec 2019, urllib3/requests-family dist-1 lures)   */
+    "colorama", "urllib3", "six", "certifi", "idna",
+    "charset-normalizer", "python-dateutil", "tqdm", "pyjwt",
+    "markupsafe", "werkzeug", "packaging", "attrs",
+    "botocore", "rsa", "pygments", "docutils", "humanize",
+    "opencv-python", "importlib-metadata",
     NULL
 };
 
@@ -138,6 +146,14 @@ static const char *NPM_TOP[] = {
     /* Web3 / crypto — wallet-drainer malware ships as fake ethers/web3 pkgs */
     "ethers", "web3", "wagmi", "viem", "hardhat",
     "@solana/web3.js", "@walletconnect/client", "web3modal",
+    /* Documented npm supply-chain victims — ua-parser-js (Oct 2021
+     * cryptominer/RAT hijack), coa+rc (Nov 2021), node-ipc (Mar 2022
+     * sabotage), event-stream (flatmap-stream payload 2018), colors+
+     * faker (Jan 2022 maintainer sabotage) — typosquats of these are
+     * worth flagging because the real packages are ubiquitous      */
+    "ua-parser-js", "coa", "rc", "node-ipc", "event-stream",
+    "colors", "faker", "bootstrap", "jquery", "core-js",
+    "tslib", "is-core-module", "inherits", "safe-buffer",
     NULL
 };
 

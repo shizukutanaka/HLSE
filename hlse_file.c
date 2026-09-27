@@ -270,6 +270,15 @@ static const char *EXECUTABLE_EXTS[] = {
     ".iso", ".img", ".vhd", ".vhdx",
     /* Macro-enabled PowerPoint variants */
     ".ppsm", ".potm",
+    /* Remaining macro/template Office carriers — .dotm/.xltm/.sldm are
+     * macro-enabled templates, .docb is the binary .docm counterpart  */
+    ".dotm", ".xltm", ".sldm", ".docb",
+    /* Legacy/lesser Office attack surface — Access databases carry VBA
+     * + autoexec macros, Visio/Publisher files embed OLE objects,
+     * .wpd is WordPerfect (OLE object carrier); .rtf stays on the
+     * safe-extension list — its exploits are caught by the content
+     * check (rtf_embed_score) rather than the name alone           */
+    ".mdb", ".accdb", ".vsdx", ".vsdm", ".pub", ".wpd",
     /* Excel Internet Query — fetches and executes remote content when opened */
     ".iqy",
     /* Windows Theme/ThemeBleed (CVE-2023-38146): NTLM hash theft via UNC path */

@@ -10036,6 +10036,42 @@ done
     || check "file: benign txt clean" "0" "1"
 rm -rf "$XDIR81"
 
+# ── cycle-82: legacy Office extensions + typosquat registry coverage ──
+XDIR82=$(mktemp -d /tmp/hlse82.XXXXXX)
+printf 'x' > "$XDIR82/a.dotm"
+printf 'x' > "$XDIR82/b.xltm"
+printf 'x' > "$XDIR82/c.sldm"
+printf 'x' > "$XDIR82/d.docb"
+printf 'x' > "$XDIR82/e.mdb"
+printf 'x' > "$XDIR82/f.accdb"
+printf 'x' > "$XDIR82/g.vsdm"
+printf 'x' > "$XDIR82/h.pub"
+printf 'x' > "$XDIR82/i.wpd"
+for fe in a.dotm b.xltm c.sldm d.docb e.mdb f.accdb g.vsdm h.pub i.wpd; do
+    ./hlse_core file "$XDIR82/$fe" 2>&1 | grep -q "LOG\|ALERT\|BLOCK" \
+        && check "file: $fe flagged" "0" "0" \
+        || check "file: $fe flagged" "0" "1"
+done
+./hlse_core package colourama 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "package: colourama typosquat flagged" "0" "0" \
+    || check "package: colourama typosquat flagged" "0" "1"
+./hlse_core package python3-dateutil 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "package: python3-dateutil flagged" "0" "0" \
+    || check "package: python3-dateutil flagged" "0" "1"
+./hlse_core package event-strream 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "package: event-strream flagged" "0" "0" \
+    || check "package: event-strream flagged" "0" "1"
+./hlse_core package colorama 2>&1 | grep -q "OK" \
+    && check "package: colorama legit clean" "0" "0" \
+    || check "package: colorama legit clean" "0" "1"
+./hlse_core package python-dateutil 2>&1 | grep -q "OK" \
+    && check "package: python-dateutil legit clean" "0" "0" \
+    || check "package: python-dateutil legit clean" "0" "1"
+./hlse_core package express 2>&1 | grep -q "OK" \
+    && check "package: express legit clean" "0" "0" \
+    || check "package: express legit clean" "0" "1"
+rm -rf "$XDIR82"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
