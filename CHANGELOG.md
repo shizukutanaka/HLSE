@@ -15,6 +15,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Build/init carrier residual gaps** (`hlse_file.c` F56):
+  `rakefile`/`Rakefile.rb` joins the build-file carrier group —
+  `system "…"`/`sh "…"` (paren-less Ruby idiom, previously missing
+  next to `system(`) → 55. `sysctl.conf` hardening removal
+  (`randomize_va_space`/`kptr_restrict`/`dmesg_restrict`/
+  `ptrace_scope`/`perf_event_paranoid`/`unprivileged_bpf_disabled`
+  =0/-1, or `unprivileged_userns_clone`=1) → 40 alongside
+  `core_pattern=|`. `cron.allow`/`cron.deny`/`at.allow`/`at.deny`
+  scheduling ACLs → 30. `setup.cfg` `[easy_install]` `index_url`/
+  `dependency_links`/`find-links` resolver redirect → 45, and
+  `pyproject.toml` `[tool.uv.sources]` git/path/index overrides → 45.
 - **Encrypted private-key PEM markers** (`hlse_secrets.c`):
   `-----BEGIN ENCRYPTED PRIVATE KEY-----` and
   `-----BEGIN PKCS8 PRIVATE KEY-----` now flag like the other PEM

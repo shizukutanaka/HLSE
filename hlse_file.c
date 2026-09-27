@@ -2055,6 +2055,11 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 30;
         return 0;
     }
+    /* cron/at access-control lists — a dropped cron.deny/at.allow
+     * re-enables scheduled jobs for accounts that shouldn't have them */
+    if (strcmp(bn, "cron.allow") == 0 || strcmp(bn, "cron.deny") == 0 ||
+        strcmp(bn, "at.allow") == 0 || strcmp(bn, "at.deny") == 0)
+        return 30;
     /* crontab / cron.d — the file itself is a persistence schedule */
     if (strcmp(bn, "crontab") == 0 || strstr(bn, ".cron") != NULL) {
         if (strstr(low, "* *") || strchr(low, '*') != NULL)
@@ -2233,7 +2238,8 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         strcmp(bn, "taskfile.yml") == 0 || strcmp(bn, "taskfile.yaml") == 0) {
         if (strstr(low, "os.system") || strstr(low, "subprocess") ||
             strstr(low, "run_command") || strstr(low, "run_target") ||
-            strstr(low, "system(") || strstr(low, "`") ||
+            strstr(low, "system(") || strstr(low, "system \"") ||
+            strstr(low, "sh \"") || strstr(low, "`") ||
             strstr(low, "curl") || strstr(low, "wget") ||
             strstr(low, "invoke-webrequest") || strstr(low, "http") ||
             strstr(low, "eval ") || strstr(low, "exec(") ||
@@ -2529,7 +2535,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         strcmp(bn, "pluginfile") == 0 || strcmp(bn, "appfile") == 0 ||
         strcmp(bn, "berksfile") == 0 || strcmp(bn, "cheffile") == 0 ||
         strcmp(bn, "thorfile") == 0 || strcmp(bn, "fastfile") == 0 ||
-        strcmp(bn, "policyfile.rb") == 0) {
+        strcmp(bn, "rakefile") == 0 || strcmp(bn, "policyfile.rb") == 0) {
         if (strstr(low, "sh ") || strstr(low, "sh(") ||
             strstr(low, "system") || strstr(low, "`") ||
             strstr(low, "eval") || strstr(low, "curl") ||
@@ -2592,6 +2598,20 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         if ((strstr(low, "core_pattern") && strchr(low, '|')) ||
             strstr(low, "core_pattern=|") || strstr(low, "core_pattern ="))
             return 55;
+        /* hardening removal: ASLR/ptrace/kptr/dmesg/perf restricted off,
+         * unprivileged user namespaces on — each weakens a boundary an
+         * attacker wants down before exploiting                          */
+        if (((strstr(low, "randomize_va_space") ||
+              strstr(low, "kptr_restrict") ||
+              strstr(low, "dmesg_restrict") ||
+              strstr(low, "ptrace_scope") ||
+              strstr(low, "perf_event_paranoid") ||
+              strstr(low, "unprivileged_bpf_disabled")) &&
+             (strstr(low, "= 0") || strstr(low, "=0") ||
+              strstr(low, "= -1") || strstr(low, "=-1"))) ||
+            (strstr(low, "unprivileged_userns_clone") &&
+             (strstr(low, "= 1") || strstr(low, "=1"))))
+            return 40;
         return 0;
     }
     if (strcmp(bn, "xorg.conf") == 0 || strstr(bn, "xorg.conf") != NULL) {
@@ -2678,6 +2698,16 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         if (strstr(low, "tool.poetry.source") ||
             strstr(low, "tool.uv") || strstr(low, "index-url") ||
             strstr(low, "extra-index-url") || strstr(low, "find-links"))
+            return 45;
+        return 0;
+    }
+    /* setup.cfg resolver hooks — [easy_install] index_url /
+     * dependency_links / find-links repoint the setuptools resolver
+     * just like pyproject index-url                                       */
+    if (strcmp(bn, "setup.cfg") == 0) {
+        if (strstr(low, "index_url") || strstr(low, "index-url") ||
+            strstr(low, "dependency_links") || strstr(low, "find-links") ||
+            strstr(low, "easy_install"))
             return 45;
         return 0;
     }
