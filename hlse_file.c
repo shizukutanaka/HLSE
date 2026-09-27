@@ -2473,12 +2473,23 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 50;
         return 0;   /* a plain conanfile.py is the normal case */
     }
+    /* fastlane/chef/thor ruby toolfiles — same `sh`/`system`/eval
+     * surface as Dangerfile: each runs ruby at tool invocation */
     if (strcmp(bn, "dangerfile") == 0 || strcmp(bn, "guardfile") == 0 ||
-        strcmp(bn, "capfile") == 0) {
+        strcmp(bn, "capfile") == 0 || strcmp(bn, "snapfile") == 0 ||
+        strcmp(bn, "gymfile") == 0 || strcmp(bn, "matchfile") == 0 ||
+        strcmp(bn, "deliverfile") == 0 || strcmp(bn, "scanfile") == 0 ||
+        strcmp(bn, "screengrabfile") == 0 || strcmp(bn, "pilotfile") == 0 ||
+        strcmp(bn, "pluginfile") == 0 || strcmp(bn, "appfile") == 0 ||
+        strcmp(bn, "berksfile") == 0 || strcmp(bn, "cheffile") == 0 ||
+        strcmp(bn, "thorfile") == 0 || strcmp(bn, "fastfile") == 0 ||
+        strcmp(bn, "policyfile.rb") == 0) {
         if (strstr(low, "sh ") || strstr(low, "sh(") ||
             strstr(low, "system") || strstr(low, "`") ||
             strstr(low, "eval") || strstr(low, "curl") ||
-            strstr(low, "wget") || strstr(low, "exec"))
+            strstr(low, "wget") || strstr(low, "exec") ||
+            strstr(low, "git:") || strstr(low, ":git") ||
+            strstr(low, "cookbook") || strstr(low, "source "))
             return 45;
         return 0;
     }
@@ -2886,6 +2897,147 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         if (strstr(low, "true") || strstr(low, "false") ||
             strstr(low, "netscape") || strstr(low, ".com"))
             return 45;
+        return 0;
+    }
+    /* desktop/launcher carriers — .desktop Exec= runs on double-click;
+     * .theme SCRNSAVE.EXE swaps the screensaver for a binary;
+     * .settingcontent-ms DeepLink/Cpl auto-launches (CVE-2018-8414);
+     * .application/.appref-ms codebase is a ClickOnce deploy feed */
+    if (strstr(bn, ".desktop") || strcmp(bn, ".directory") == 0) {
+        if (strstr(low, "exec=") || strstr(low, "tryexec") ||
+            strstr(low, "x-kde"))
+            return 50;
+        return 0;
+    }
+    if (strstr(bn, ".theme") || strstr(bn, ".themepack") ||
+        strstr(bn, "deskthemepack")) {
+        if (strstr(low, "scrnsave") || strstr(low, ".scr") ||
+            strstr(low, "visualstyles") || strstr(low, "msstyles"))
+            return 50;
+        return 0;
+    }
+    if (strstr(bn, ".settingcontent-ms")) {
+        if (strstr(low, "deeplink") || strstr(low, "hostpage") ||
+            strstr(low, "cpl") || strstr(low, "executable") ||
+            strstr(low, "arguments"))
+            return 60;
+        return 0;
+    }
+    if (strstr(bn, ".application") || strstr(bn, ".appref-ms")) {
+        if (strstr(low, "codebase") || strstr(low, "deploymentprovider") ||
+            strstr(low, "dependency") || strstr(low, "http"))
+            return 50;
+        return 0;
+    }
+    /* msbuild / build-descriptor exec — csproj Exec/PreBuildEvent/
+     * UsingTask run at build; *.cmake execute_process/file(DOWNLOAD)
+     * run at configure; build.ninja rule command= runs at build */
+    if (strstr(bn, ".csproj") || strstr(bn, ".fsproj") ||
+        strstr(bn, ".vcxproj") || strstr(bn, ".vbproj") ||
+        strstr(bn, ".targets") || strstr(bn, ".props") ||
+        strstr(bn, ".proj")) {
+        if (strstr(low, "exec") || strstr(low, "prebuild") ||
+            strstr(low, "postbuild") || strstr(low, "usingtask") ||
+            strstr(low, "codetask") || strstr(low, "beforetargets") ||
+            strstr(low, "aftertargets") || strstr(low, "downloadfile") ||
+            strstr(low, "webclient"))
+            return 55;
+        return 0;
+    }
+    if (strstr(bn, ".cmake") && strcmp(bn, "cmakelists.txt") != 0) {
+        if (strstr(low, "execute_process") || strstr(low, "file(download") ||
+            strstr(low, "externalproject") || strstr(low, "curl") ||
+            strstr(low, "wget") || strstr(low, "invoke-webrequest"))
+            return 55;
+        return 0;
+    }
+    if (strstr(bn, ".ninja") || strcmp(bn, "build.ninja") == 0) {
+        if (strstr(low, "command =") || strstr(low, "command="))
+            return 50;
+        return 0;
+    }
+    /* resolver-redirect remainder — go.mod replace/go.work use point
+     * module resolution elsewhere; Gemfile/gems.rb source/git/path
+     * repoints bundler; nuget.config packageSources repoints nuget */
+    if (strcmp(bn, "go.mod") == 0 || strcmp(bn, "go.work") == 0) {
+        if (strstr(low, "replace") || strstr(low, "retract"))
+            return 40;
+        return 0;
+    }
+    /* Gemfile: every file has a `source` — the dep-confusion vector
+     * is the non-registry specifiers :git/git:/path:/eval_gemfile */
+    if (strcmp(bn, "gemfile") == 0 || strcmp(bn, "gems.rb") == 0) {
+        if (strstr(low, ":git") || strstr(low, "git:") ||
+            strstr(low, "path:") || strstr(low, "eval_gemfile") ||
+            strstr(low, "instance_eval"))
+            return 45;
+        return 0;
+    }
+    if (strcmp(bn, "nuget.config") == 0 || strcmp(bn, "nugetconfig") == 0) {
+        if (strstr(low, "packagesources") || strstr(low, "add key") ||
+            (strstr(low, "value=") && strstr(low, "http")))
+            return 45;
+        return 0;
+    }
+    /* remaining CI configs — cloudbuild steps run images+args; woodpecker
+     * steps run commands; both arrive as files that CI executes */
+    if (strcmp(bn, "cloudbuild.yaml") == 0 ||
+        strcmp(bn, "cloudbuild.yml") == 0) {
+        if (strstr(low, "steps") || strstr(low, "args") ||
+            strstr(low, "entrypoint") || strstr(low, "script"))
+            return 50;
+        return 0;
+    }
+    if (strcmp(bn, ".woodpecker.yml") == 0 ||
+        strcmp(bn, ".woodpecker.yaml") == 0 ||
+        strcmp(bn, "woodpecker.yml") == 0) {
+        if ((strstr(low, "commands") || strstr(low, "script") ||
+             strstr(low, "steps")) &&
+            (strstr(low, "curl") || strstr(low, "wget") ||
+             strstr(low, "http") || strstr(low, "|sh") ||
+             strstr(low, "| sh") || strstr(low, "nc ") ||
+             strstr(low, "bash")))
+            return 45;
+        return 0;
+    }
+    /* vscode task/debug launch — tasks.json command/shell runs on the
+     * build task; launch.json program/runtimeExecutable launches a
+     * binary on F5; both generic basenames so key-gated */
+    if (strcmp(bn, "tasks.json") == 0) {
+        /* "command" is the schema — the vector is a command that
+         * fetches or shells out */
+        if ((strstr(low, "\"command\"") || strstr(low, "\"shell\"") ||
+             strstr(low, "\"script\"")) &&
+            (strstr(low, "curl") || strstr(low, "wget") ||
+             strstr(low, "http") || strstr(low, "powershell") ||
+             strstr(low, "cmd") || strstr(low, "bash") ||
+             strstr(low, "sh ") || strstr(low, "nc ") ||
+             strstr(low, "base64") || strstr(low, "eval")))
+            return 50;
+        return 0;
+    }
+    if (strcmp(bn, "launch.json") == 0) {
+        if (strstr(low, "\"program\"") || strstr(low, "runtimeexecutable") ||
+            strstr(low, "\"prelaunchtask\"") || strstr(low, "\"runtime\""))
+            return 45;
+        return 0;
+    }
+    /* AI-assistant instruction carriers — .cursorrules/copilot-
+     * instructions.md/CLAUDE.md/AGENTS.md/.windsurfrules are read into
+     * the model context by coding assistants; a payload line
+     * (fetch|pipe|decode-exec) is a prompt-injection supply-chain
+     * vector. Keyed tightly to exec payloads so real docs stay clean */
+    if (strcmp(bn, ".cursorrules") == 0 || strcmp(bn, ".windsurfrules") == 0 ||
+        strcmp(bn, "copilot-instructions.md") == 0 ||
+        strcmp(bn, "claude.md") == 0 || strcmp(bn, "agents.md") == 0 ||
+        strcmp(bn, ".cursorrules.md") == 0) {
+        if (((strstr(low, "curl") || strstr(low, "wget") ||
+              strstr(low, "invoke-webrequest") || strstr(low, "iwr ")) &&
+             strstr(low, "http")) || strstr(low, "| sh") ||
+            strstr(low, "|sh") || strstr(low, "base64 -d") ||
+            strstr(low, "nc -e") || strstr(low, "eval $(") ||
+            strstr(low, "bash -c") || strstr(low, "iex("))
+            return 50;
         return 0;
     }
     /* .rhosts — `+ host` / host lines grant passwordless rsh/rlogin

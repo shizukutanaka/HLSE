@@ -119,6 +119,37 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `add_custom_target` reaches `curl`/`wget`/`Invoke-WebRequest`/
   `bitsadmin`/`|sh`/`base64` → 55 (configure/build-time payload — the
   CMake form of the Makefile `$(shell)` check).
+- **Desktop/build/IDE + AI-instruction carriers** (`hlse_file.c`,
+  F56): `.desktop`/`directory` `Exec=`/`TryExec`/`X-KDE-*` → 50;
+  `.theme`/`.themepack` `SCRNSAVE.EXE`/`.scr`/`VisualStyles` → 50
+  (screensaver binary swap); `.settingcontent-ms` `DeepLink`/`Cpl`/
+  `HostPage` → 60 (CVE-2018-8414 auto-launch); `.application`/
+  `.appref-ms` `codebase`/`deploymentProvider` → 50 (ClickOnce feed);
+  `.csproj`/`.fsproj`/`.vcxproj`/`.vbproj`/`.targets`/`.props`/
+  `.proj` `Exec`/`PreBuildEvent`/`PostBuildEvent`/`UsingTask`/
+  `CodeTask`/`BeforeTargets`/`AfterTargets`/`DownloadFile` → 55
+  (MSBuild-time exec; `Directory.Build.props` already covered);
+  `*.cmake` `execute_process`/`file(DOWNLOAD)`/`ExternalProject` → 55;
+  `*.ninja` `command =` → 50; `go.mod`/`go.work` `replace`/`retract`
+  → 40; `Gemfile`/`gems.rb` `:git`/`git:`/`path:`/`eval_gemfile`/
+  `instance_eval` → 45; `nuget.config` `packageSources`/`add key`/
+  `value=`+`http` → 45; `cloudbuild.yaml` `steps`/`args`/`entrypoint`
+  → 50; `.woodpecker.yml`/`woodpecker.yml` `commands`/`script`/
+  `steps` + fetch/shell primitive → 45; vscode `tasks.json`
+  `command`/`shell`/`script` + fetch/shell primitive → 50;
+  `launch.json` `program`/`runtimeExecutable`/`preLaunchTask` → 45;
+  `.cursorrules`/`.windsurfrules`/`copilot-instructions.md`/
+  `CLAUDE.md`/`AGENTS.md` with a fetch/exec payload line (`curl`/
+  `wget`+`http`, `| sh`, `base64 -d`, `nc -e`, `eval $(`, `bash -c`,
+  `iex(`) → 50 — AI-assistant rule files are read into the model
+  context, so a poisoned line is a prompt-injection supply-chain
+  vector; plain documentation stays clean.
+- **Ruby toolfiles** (`hlse_file.c`, F56): the Dangerfile/Guardfile/
+  Capfile group extended to `Snapfile`/`Gymfile`/`Matchfile`/
+  `Deliverfile`/`Scanfile`/`Screengrabfile`/`Pilotfile`/`Pluginfile`/
+  `Appfile`/`Berksfile`/`Cheffile`/`Thorfile`/`Fastfile`/
+  `Policyfile.rb` — `sh`/`system`/backtick/`eval`/`exec`/`curl`/
+  `wget`/`git:`/`:git`/`cookbook`/`source` → 45.
 - **Webshell bodies + credential containers** (`hlse_file.c`, F56):
   `.php`/`.phtml`/`.php5`/`.pht`/`.phar`/`.inc` with eval/assert/
   system/passthru/exec/popen/proc_open/shell_exec/backtick/
