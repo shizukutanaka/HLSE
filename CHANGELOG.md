@@ -15,6 +15,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **`file` subcommand scans content for live credentials**
+  (`hlse_cli.c`): the `scan`/daemon paths run their own secrets
+  pass, but `hlse_core file <path>` analyzed only the name and
+  magic bytes — a file carrying a live `AKIA…`/`ghp_…`/PEM key
+  scored OK. The `file` handler now runs `hlse_scan_secrets` over
+  the head block and folds the verdict in (→ISOLATE on a live key).
+  The pass lives in the CLI layer so `scan`/daemon paths do not
+  double-count.
 - **Italian / Turkish / Thai / Vietnamese smishing vocabulary**
   (`hlse_text.c` IT_SMISH, TR_SMISH, TH_SMISH, VN_SMISH): Poste
   Italiane pacco/giacenza and Agenzia delle Entrate rimborso kits;

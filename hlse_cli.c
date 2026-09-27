@@ -432,6 +432,36 @@ hlse_cmd_file(const HlseCli *o, int argc, char **argv, int idx) {
              * regardless of whether the file is present locally.        */
             if (access(argv[idx + 1], F_OK) == 0) {
                 fv = hlse_check_file(argv[idx + 1]);
+                /* The scan/daemon paths run their own secrets pass; the
+                 * `file` subcommand is the only surface where a live
+                 * credential in file content would be invisible — scan
+                 * the head block and fold the verdict in.             */
+                {
+                    FILE *sf = fopen(argv[idx + 1], "rb");
+                    if (sf) {
+                        char sbuf[4097];
+                        size_t n = fread(sbuf, 1, 4096, sf);
+                        fclose(sf);
+                        sbuf[n] = '\0';
+                        if (n > 0) {
+                            SecretVerdict sv = hlse_scan_secrets(sbuf);
+                            if (sv.score >= 60 &&
+                                fv.n_reasons < HLSE_FILE_MAX_REASONS) {
+                                if (sv.score > fv.score)
+                                    fv.score = sv.score > 85 ? 85
+                                                           : sv.score;
+                                snprintf(fv.reasons[fv.n_reasons++], 256,
+                                    "CREDENTIAL CONTENT — %d exposed "
+                                    "secret finding%s, first: %s",
+                                    sv.n_findings,
+                                    sv.n_findings == 1 ? "" : "s",
+                                    sv.n_findings > 0
+                                        ? sv.findings[0].type
+                                        : "secret");
+                            }
+                        }
+                    }
+                }
             } else {
                 const char *base = strrchr(argv[idx + 1], '/');
                 base = base ? base + 1 : argv[idx + 1];

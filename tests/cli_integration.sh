@@ -10297,6 +10297,24 @@ check_text_hit 'bugün hava güzel' "OK" "text: benign turkish clean"
 check_text_hit 'วันนี้อากาศดี' "OK" "text: benign thai clean"
 check_text_hit 'hôm nay thời tiết đẹp' "OK" "text: benign vietnamese clean"
 
+# ── cycle-94: `file` subcommand scans content for live credentials ──
+XDIR94=$(mktemp -d /tmp/hlse94.XXXXXX)
+# split literals — push-protection safe
+AKIA_PT1="AKIA"; AKIA_PT2="QX7K2JABCDEFGHIJ"
+printf '[default]\naws_access_key_id = %s%s\n' "$AKIA_PT1" "$AKIA_PT2" \
+    > "$XDIR94/creds.txt"
+printf 'just a normal readme\n' > "$XDIR94/benign.txt"
+./hlse_core file "$XDIR94/creds.txt" 2>&1 | grep -q "CREDENTIAL CONTENT" \
+    && check "file: credential content in file flagged" "0" "0" \
+    || check "file: credential content in file flagged" "0" "1"
+./hlse_core file "$XDIR94/creds.txt" 2>&1 | grep -qE "ISOLATE|BLOCK" \
+    && check "file: credential file scores ISOLATE/BLOCK" "0" "0" \
+    || check "file: credential file scores ISOLATE/BLOCK" "0" "1"
+./hlse_core file "$XDIR94/benign.txt" 2>&1 | grep -q "OK" \
+    && check "file: benign txt stays clean" "0" "0" \
+    || check "file: benign txt stays clean" "0" "1"
+rm -rf "$XDIR94"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
