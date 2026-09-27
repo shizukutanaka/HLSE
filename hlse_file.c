@@ -1000,8 +1000,9 @@ rc_persist_score(const unsigned char *head, size_t len,
     int sc = 0;
     const char *dotgit;
     if (!is_rc_persist_name(basename)) return 0;
-    /* a plain `config` only counts inside .git/ or .ssh/ (systemd
-     * unit files and other `config` basenames stay out) */
+    /* a plain `config` only counts inside .git/, .ssh/, .aws/, .kube/
+     * or .docker/ (systemd unit files and other `config` basenames
+     * stay out) */
     {
         char lown[64];
         str_lower(basename, lown, sizeof(lown));
@@ -1009,7 +1010,10 @@ rc_persist_score(const unsigned char *head, size_t len,
             char lp[512];
             str_lower(filepath, lp, sizeof(lp));
             if (strstr(lp, ".git/") == NULL &&
-                strstr(lp, ".ssh/") == NULL)
+                strstr(lp, ".ssh/") == NULL &&
+                strstr(lp, ".aws/") == NULL &&
+                strstr(lp, ".kube/") == NULL &&
+                strstr(lp, ".docker/") == NULL)
                 return 0;
         }
     }
@@ -1052,6 +1056,13 @@ rc_persist_score(const unsigned char *head, size_t len,
         sc = sc < 55 ? 55 : sc;
     if (strstr(low, "permitlocalcommand"))
         sc = sc < 40 ? 40 : sc;
+    /* aws/kube credential-execution hooks — `credential_process` (aws)
+     * and an `exec:` block carrying `command:` (kubeconfig exec plugin)
+     * run an external program on every SDK/kubectl auth */
+    if (strstr(low, "credential_process"))
+        sc = sc < 55 ? 55 : sc;
+    if (strstr(low, "exec:") && strstr(low, "command:"))
+        sc = sc < 55 ? 55 : sc;
     /* .envrc is a shell script direnv runs on `cd` — after the
      * one-time `direnv allow` the reviewer rubber-stamps, every
      * visit re-executes it. Only exec-shaped content flags; a plain
@@ -2280,6 +2291,80 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     }
     if (strcmp(bn, ".ripgreprc") == 0 || strcmp(bn, "ripgreprc") == 0) {
         if (strstr(low, "--pre") || strstr(low, "--hostname-bin"))
+            return 50;
+        return 0;
+    }
+    /* package-manager config hijack — .npmrc/.yarnrc/.yarnrc.yml can
+     * re-point the registry (dependency confusion), change the script
+     * shell (script-shell = exec on lifecycle scripts), whitelist http
+     * registries, or name a plugin; .pnpmfile.cjs runs JS hooks on
+     * every install; .gemrc sources: redirects gem resolution */
+    if (strcmp(bn, ".npmrc") == 0 || strcmp(bn, "npmrc") == 0 ||
+        strcmp(bn, ".yarnrc") == 0 || strcmp(bn, ".yarnrc.yml") == 0 ||
+        strcmp(bn, ".yarnrc.yaml") == 0 || strcmp(bn, "yarnrc.yml") == 0) {
+        if (strstr(low, "registry") || strstr(low, "script-shell") ||
+            strstr(low, "unsafehttpwhitelist") ||
+            strstr(low, "npmregistryserver") ||
+            strstr(low, "plugin"))
+            return 50;
+        return 0;
+    }
+    if (strstr(bn, ".pnpmfile.") != NULL || strcmp(bn, "pnpmfile.cjs") == 0 ||
+        strcmp(bn, "pnpmfile.js") == 0) {
+        if (strstr(low, "eval") || strstr(low, "require(") ||
+            strstr(low, "curl") || strstr(low, "wget") ||
+            strstr(low, "child_process") || strstr(low, "exec"))
+            return 50;
+        return 45;
+    }
+    if (strcmp(bn, ".gemrc") == 0 || strcmp(bn, "gemrc") == 0) {
+        if (strstr(low, ":source") || strstr(low, "source") ||
+            strstr(low, "http"))
+            return 45;
+        return 0;
+    }
+    /* cargo config.toml — [build] rustc-wrapper / paths / [alias] let a
+     * config swap the compiler binary or override dep paths; a dropped
+     * config.toml inside .cargo/ runs the wrapper on every rustc call.
+     * Basename alone is too generic to flag (every tool ships one), so
+     * it gates on the cargo-specific keys. */
+    if (strcmp(bn, "config.toml") == 0) {
+        if (strstr(low, "rustc-wrapper") || strstr(low, "rustflags") ||
+            strstr(low, "[alias]") || strstr(low, "[patch.") ||
+            strstr(low, "[source.") || strstr(low, "[path"))
+            return 50;
+        return 0;
+    }
+    /* docker config.json — credsStore/credHelpers name an external
+     * credential-helper binary docker executes on login/pull; auths
+     * with a bearer or helper is the cred-steal surface */
+    if (strcmp(bn, "config.json") == 0) {
+        if (strstr(low, "credsstore") || strstr(low, "credhelpers") ||
+            strstr(low, "credstore"))
+            return 50;
+        return 0;
+    }
+    /* maven settings.xml — <mirror>/<server>/<proxy> redirect every
+     * artifact resolution to an attacker host (Maven dependency
+     * confusion; the mirror element is what makes it dangerous) */
+    if (strcmp(bn, "settings.xml") == 0 ||
+        strcmp(bn, "settings-security.xml") == 0 ||
+        strcmp(bn, "toolchains.xml") == 0) {
+        if (strstr(low, "<mirror") || strstr(low, "<server") ||
+            strstr(low, "<proxy") || strstr(low, "<url"))
+            return 45;
+        return 0;
+    }
+    /* gradle init/settings/build scripts — init.gradle(.kts) runs on
+     * EVERY build in the user home; build.gradle/.kts and
+     * settings.gradle(.kts) run at configure time. eval/exec/url
+     * inside one is a build-time payload */
+    if (strstr(bn, "init.gradle") != NULL ||
+        strstr(bn, "settings.gradle") != NULL ||
+        strstr(bn, "build.gradle") != NULL) {
+        if (strstr(low, "eval") || strstr(low, "exec") ||
+            strstr(low, "curl") || strstr(low, "wget") ||
+            strstr(low, "http") || strstr(low, "url"))
             return 50;
         return 0;
     }

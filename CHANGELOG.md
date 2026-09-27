@@ -119,6 +119,25 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `add_custom_target` reaches `curl`/`wget`/`Invoke-WebRequest`/
   `bitsadmin`/`|sh`/`base64` → 55 (configure/build-time payload — the
   CMake form of the Makefile `$(shell)` check).
+- **Package-manager / cloud-credential config carriers** (`hlse_file.c`,
+  F56 + F18): `.npmrc`/`npmrc`/`.yarnrc*`/`yarnrc.yml` whose
+  `registry`/`script-shell`/`unsafeHttpWhitelist`/`npmRegistryServer`/
+  `plugin` re-point the package resolver or lifecycle shell → 50;
+  `.pnpmfile.cjs`/`.pnpmfile.js` running JS hooks on every install
+  → 45 (bare) / 50 (with `eval`/`require(`/`child_process`/`exec`/
+  `curl`/`wget`); `.gemrc`/`gemrc` with a `source:`/`http` line → 45
+  (gem resolution redirect); `config.toml` carrying the cargo keys
+  `rustc-wrapper`/`rustflags`/`[alias]`/`[patch.*]`/`[source.*]`/`[path`
+  → 50 (a dropped `.cargo/config.toml` swaps the compiler binary);
+  `config.json` with `credsStore`/`credHelpers` → 50 (docker executes
+  the named credential-helper binary on login/pull); maven
+  `settings.xml`/`settings-security.xml`/`toolchains.xml` with
+  `<mirror>`/`<server>`/`<proxy>`/`<url` → 45 (artifact resolution
+  redirect); `init.gradle`/`settings.gradle`/`build.gradle` (+`.kts`)
+  with `eval`/`exec`/`curl`/`wget`/`http`/`url` → 50 (configure-time
+  payload). F18's plain-`config` path gate now also admits `.aws/` /
+  `.kube/` / `.docker/` trees, and flags `credential_process` and
+  kubeconfig `exec:`+`command:` blocks at 55.
 - **Build-file + session-startup + mailer carriers** (`hlse_file.c`,
   F56): `wscript`/`SConstruct`/`meson.build`/`Rakefile`/`Rakefile.rb`/
   `Earthfile`/`Taskfile.{yml,yaml}` whose body reaches `os.system`/

