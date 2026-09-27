@@ -8394,6 +8394,49 @@ for bn in config.fish .tmux.conf .muttrc .screenrc config.exs; do
         && check "file: ${bn} flagged" "0" "0" \
         || check "file: ${bn} flagged" "0" "1"
 done
+# F56 continued: device/auth/boot execution carriers
+printf 'ACTION=="add", SUBSYSTEM=="usb", RUN+="/tmp/evil.sh"\n' \
+    > "$XDIR/99-evil.rules"
+./hlse_core file "$XDIR/99-evil.rules" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: udev RUN+= flagged" "0" "0" \
+    || check "file: udev RUN+= flagged" "0" "1"
+printf 'SUBSYSTEM=="net", ACTION=="add", NAME="eth0"\n' \
+    > "$XDIR/clean.rules"
+./hlse_core file "$XDIR/clean.rules" 2>&1 | grep -q "F56" \
+    && check "file: benign udev rule no F56" "0" "1" \
+    || check "file: benign udev rule no F56" "0" "0"
+printf 'polkit.addRule(function(a,s){ polkit.spawn(["/tmp/x"]); return polkit.Result.YES; })\n' \
+    > "$XDIR/pk.rules"
+./hlse_core file "$XDIR/pk.rules" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: polkit spawn rule flagged" "0" "0" \
+    || check "file: polkit spawn rule flagged" "0" "1"
+printf 'polkit.addRule(function(a,s){ return polkit.Result.YES; })\n' \
+    > "$XDIR/cleanpk.rules"
+./hlse_core file "$XDIR/cleanpk.rules" 2>&1 | grep -q "F56" \
+    && check "file: benign polkit rule no F56" "0" "1" \
+    || check "file: benign polkit rule no F56" "0" "0"
+printf 'install ext4 /tmp/evil.sh\n' > "$XDIR/modprobe_evil.conf"
+./hlse_core file "$XDIR/modprobe_evil.conf" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: modprobe install= flagged" "0" "0" \
+    || check "file: modprobe install= flagged" "0" "1"
+printf 'softdep ext4 pre: e2fsprogs\n' > "$XDIR/cleanmod.conf"
+./hlse_core file "$XDIR/cleanmod.conf" 2>&1 | grep -q "F56" \
+    && check "file: benign modprobe no F56" "0" "1" \
+    || check "file: benign modprobe no F56" "0" "0"
+printf 'f+ /etc/evil 0644 - - - payload\n' > "$XDIR/tmpf.conf"
+./hlse_core file "$XDIR/tmpf.conf" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: tmpfiles f+ flagged" "0" "0" \
+    || check "file: tmpfiles f+ flagged" "0" "1"
+printf '<?xml version="1.0"?><plist><dict><key>CFBundleExecutable</key><string>e</string><key>LSUIElement</key><true/></dict></plist>\n' \
+    > "$XDIR/Stealth.plist"
+./hlse_core file "$XDIR/Stealth.plist" 2>&1 | grep -q "F56: SYSTEM CONFIG" \
+    && check "file: LSUIElement plist flagged" "0" "0" \
+    || check "file: LSUIElement plist flagged" "0" "1"
+printf '<?xml version="1.0"?><plist><dict><key>CFBundleExecutable</key><string>MyApp</string></dict></plist>\n' \
+    > "$XDIR/App.plist"
+./hlse_core file "$XDIR/App.plist" 2>&1 | grep -q "F56" \
+    && check "file: benign Info.plist no F56" "0" "1" \
+    || check "file: benign Info.plist no F56" "0" "0"
 # F52–F55: server-config carriers
 printf 'AddType application/x-httpd-php .jpg\nphp_flag engine on\n' \
     > "$XDIR/.htaccess"

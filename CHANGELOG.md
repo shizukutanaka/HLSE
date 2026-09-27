@@ -84,7 +84,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   open_basedir 40).  Extended further: tool launch configs —
   `config.fish`/`.tmux.conf`/`tmux.conf`/`.muttrc`/`muttrc`/
   `.screenrc`/`config.exs` → 45 (each evals or executes content when
-  the tool starts — same persistence class as shell rc).
+  the tool starts — same persistence class as shell rc). Further:
+  device/auth/boot execution carriers — udev `.rules` with
+  `RUN+=`/`PROGRAM=`/`IMPORT{` fire when a device is plugged → 55;
+  polkit `.rules` are JS evaluated at every authorization —
+  `polkit.spawn`/`UnixProcess`/`system(` → 50; modprobe `install
+  <mod> <cmd>`/`post-install`/`pre-remove` hooks → 55; systemd-tmpfiles
+  `f+`/`w`/`d`/`l` directives plant files at boot → 40; an `Info.plist`
+  declaring `CFBundleExecutable` plus `LSUIElement`/`LSBackgroundOnly`
+  is a stealth background app → 50.
 - **Payment URI schemes + wallet-drainer approval language**
   (`hlse_core.c`, `hlse_text.c`): new `URL_PAYMENT_SCHEMES` table —
   `bitcoin:`/`ethereum:`/`monero:`/`litecoin:`/`dogecoin:`/`tron:`/

@@ -2057,6 +2057,43 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
          strstr(low, "watchpaths") || strstr(low, "startinterval") ||
          strstr(low, "programarguments") || strstr(low, "<key>program</key>")))
         return 55;
+    /* Info.plist — a .app bundle that hides itself (LSUIElement/
+     * LSBackgroundOnly) while declaring an executable is the stealth
+     * persistence shape */
+    if (strstr(bn, ".plist") != NULL &&
+        strstr(low, "cfbundleexecutable") &&
+        (strstr(low, "lsuielement") || strstr(low, "lsbackgroundonly")))
+        return 50;
+    /* udev rules — RUN+=/PROGRAM=/IMPORT{program} fire when a device
+     * is plugged (badusb / rogue-device execution) */
+    if (strstr(bn, ".rules") != NULL &&
+        (strstr(low, "run+=") || strstr(low, "run =") ||
+         strstr(low, "program=") || strstr(low, "import{program}") ||
+         strstr(low, "import{")))
+        return 55;
+    /* polkit rules are JS evaluated on every authorization — a rule
+     * that spawns a process is persistence by privilege check */
+    if (strstr(bn, ".rules") != NULL &&
+        strstr(low, "polkit") &&
+        (strstr(low, "spawn") || strstr(low, "unixprocess") ||
+         strstr(low, "system(")))
+        return 50;
+    /* modprobe.d — `install <mod> <cmd>` / post-install hooks execute a
+     * command when the module is loaded */
+    if (strstr(bn, ".conf") != NULL &&
+        (strstr(low, "post-install") || strstr(low, "pre-remove") ||
+         (strstr(low, "install ") &&
+          (strstr(low, "modprobe") || strstr(low, "/bin/") ||
+           strstr(low, "/tmp/") || strstr(low, "/dev/")))))
+        return 55;
+    /* tmpfiles.d — a `f+`/`w`/`d`/`L` line plants or overwrites files
+     * (incl. authorized_keys) on boot */
+    if ((strstr(bn, ".conf") != NULL || strcmp(bn, "tmpfiles") == 0) &&
+        (strstr(low, "\nf+ ") || strstr(low, "\nf ") ||
+         strstr(low, "\nw ") || strstr(low, "\nd ") ||
+         strstr(low, "f+ /") || strstr(low, "w /") ||
+         strstr(low, "d /") || strstr(low, "l /")))
+        return 40;
     /* shell login files — sourced at login/zsh startup; .zshenv is the
      * aggressive one (every zsh, incl. non-interactive). The common
      * .bashrc/.zshrc/.profile are excluded — ubiquitous in dotfiles and
