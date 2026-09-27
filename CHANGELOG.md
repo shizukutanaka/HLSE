@@ -15,6 +15,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Scheme-relative open-redirect targets** (`hlse_core.c`): the
+  open-redirect check required an absolute `http(s)://` value, so
+  `?redir=//evil.com` (and its `%2f%2f`-encoded form) rode the outer
+  page's scheme to a foreign host unscored — the classic
+  google.com/url-style laundering shape. `//host` and `%2f%2fhost`
+  values now take the same cross-host comparison; same-host and
+  non-redirect-param `//` values stay OK.
 - **Chromium-derived browser-internal schemes** (`hlse_core.c`):
   `edge:`/`opera:`/`brave:`/`vivaldi:`/`yandex:` joined the URL-wrapper
   table — `chrome:`/`about:`/`moz-extension:`/`chrome-extension:`

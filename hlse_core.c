@@ -2464,6 +2464,15 @@ check_url(const char *raw_url) {
                         val += 14;
                     else if (strncmp(val, "http%3a%2f%2f", 13) == 0)
                         val += 13;
+                    /* Scheme-relative target — `?redir=//evil.com`
+                     * rides the outer page's scheme to a foreign
+                     * host just as an absolute URL does            */
+                    else if (strncmp(val, "//", 2) == 0 &&
+                             val[2] != '\0' && val[2] != '/' &&
+                             val[2] != '&' && val[2] != '%')
+                        val += 2;
+                    else if (strncmp(val, "%2f%2f", 6) == 0)
+                        val += 6;
                     else { hit += kl; continue; }
                     h = val;
                     while (*h && *h != '/' && *h != '&' && *h != '%' &&

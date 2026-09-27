@@ -10366,6 +10366,22 @@ done
     && check "url: plain http stays OK" "0" "0" \
     || check "url: plain http stays OK" "0" "1"
 
+# ── cycle-97: scheme-relative open-redirect values ──
+for u in 'https://l.com/?redir=//evil.example' \
+         'https://l.com/?url=//evil.example/path' \
+         'https://l.com/?next=%2f%2fevil.example'; do
+    ./hlse_core "$u" 2>&1 | grep -q "ALERT" \
+        && check "url: ${u} scheme-relative redirect flagged" "0" "0" \
+        || check "url: ${u} scheme-relative redirect flagged" "0" "1"
+done
+for u in 'https://l.com/?next=//l.com/self' \
+         'https://l.com/?next=/local/page' \
+         'https://l.com/?a=//nonparam.example'; do
+    ./hlse_core "$u" 2>&1 | grep -q "OK" \
+        && check "url: ${u} benign redirect stays OK" "0" "0" \
+        || check "url: ${u} benign redirect stays OK" "0" "1"
+done
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
