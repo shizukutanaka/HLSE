@@ -15,6 +15,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Discord bot token structural detection** (`hlse_secrets.c`):
+  Discord bot tokens carry no fixed prefix — segment 1 is the
+  base64 of the bot's numeric snowflake ID. The scanner now
+  finds a `<20-30 b64url>.<5-8>.<25-45>` shape, decodes segment
+  1, and requires an all-digit snowflake (15+ digits) — full
+  bot control, previously invisible.
+- **Remaining disk-image carriers** (`hlse_file.c`): `.dmg`
+  (macOS — mounting runs the image's logic), `.vmdk`/`.qcow2`
+  (VM), `.toast`/`.sparseimage`/`.flp`/`.ima` →30. `.iso`/
+  `.img`/`.vhd`/`.vhdx` were already covered.
 - **macOS script/automation carriers** (`hlse_file.c`):
   `.scpt`/`.scptd` (compiled AppleScript — runs on open),
   `.applescript`, `.osax` (Scripting Addition — legacy

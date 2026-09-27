@@ -10189,6 +10189,30 @@ done
     || check "file: benign txt clean" "0" "1"
 rm -rf "$XDIR87"
 
+# ── cycle-88: Discord bot token + disk-image carriers ──
+XDIR88=$(mktemp -d /tmp/hlse88.XXXXXX)
+for e in dmg vmdk qcow2 toast sparseimage flp ima; do
+    printf 'x' > "$XDIR88/t.$e"
+done
+printf 'x' > "$XDIR88/benign.txt"
+for e in dmg vmdk qcow2 toast sparseimage flp ima; do
+    ./hlse_core file "$XDIR88/t.$e" 2>&1 | grep -q "LOG\|ALERT" \
+        && check "file: .$e disk image flagged" "0" "0" \
+        || check "file: .$e disk image flagged" "0" "1"
+done
+DCTOK="MTIzNDU2Nzg5MDEyMzQ1Njc4OQ.G7xK9m"
+DCTOK="$DCTOK.Qp2LvR8sN4tB6yH3jF7wE1cV0zA5bD9gJ2kM4n"
+./hlse_core secret "$DCTOK" 2>&1 | grep -q "ISOLATE\|BLOCK" \
+    && check "secret: discord bot token flagged" "0" "0" \
+    || check "secret: discord bot token flagged" "0" "1"
+./hlse_core secret "version 1.2.3 build.4567.revision" 2>&1 | grep -q "OK" \
+    && check "secret: dotted non-token clean" "0" "0" \
+    || check "secret: dotted non-token clean" "0" "1"
+./hlse_core file "$XDIR88/benign.txt" 2>&1 | grep -q "OK" \
+    && check "file: benign txt clean" "0" "0" \
+    || check "file: benign txt clean" "0" "1"
+rm -rf "$XDIR88"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -1221,6 +1221,68 @@ hlse_scan_secrets(const char *text) {
         }
     }
 
+    /* Discord bot token — "<b64 snowflake>.<6-7 b64url>.<27-38 b64url>".
+     * Unlike a JWT there is no fixed prefix: segment 1 is the base64 of
+     * the bot's numeric snowflake ID. Decode it and require an all-digit
+     * run of plausible snowflake length (15+ digits) — that structure is
+     * near-unique to Discord tokens, so false positives are rare.       */
+    {
+        const char *p = text;
+        while ((p = strchr(p, '.')) != NULL) {
+            /* seg1 = the base64url run ending at this dot */
+            const char *s1 = p;
+            int s1len = 0;
+            while (s1 > text &&
+                   ((s1[-1] >= 'A' && s1[-1] <= 'Z') ||
+                    (s1[-1] >= 'a' && s1[-1] <= 'z') ||
+                    (s1[-1] >= '0' && s1[-1] <= '9') ||
+                    s1[-1] == '-' || s1[-1] == '_')) {
+                s1--; s1len++;
+            }
+            if (s1len >= 20 && s1len <= 30 &&
+                (s1 == text || !((s1[-1] >= 'A' && s1[-1] <= 'Z') ||
+                                 (s1[-1] >= 'a' && s1[-1] <= 'z') ||
+                                 (s1[-1] >= '0' && s1[-1] <= '9') ||
+                                 s1[-1] == '-' || s1[-1] == '_'))) {
+                /* seg2 after the dot */
+                const char *q = p + 1;
+                int s2 = 0;
+                while ((*q >= 'A' && *q <= 'Z') || (*q >= 'a' && *q <= 'z') ||
+                       (*q >= '0' && *q <= '9') || *q == '-' || *q == '_') {
+                    q++; s2++;
+                }
+                if (s2 >= 5 && s2 <= 8 && *q == '.') {
+                    const char *s3 = q + 1;
+                    int s3len = 0;
+                    while ((s3[s3len] >= 'A' && s3[s3len] <= 'Z') ||
+                           (s3[s3len] >= 'a' && s3[s3len] <= 'z') ||
+                           (s3[s3len] >= '0' && s3[s3len] <= '9') ||
+                           s3[s3len] == '-' || s3[s3len] == '_')
+                        s3len++;
+                    if (s3len >= 25 && s3len <= 45) {
+                        /* decode seg1 — a real token's seg1 is the bot's
+                         * numeric user id, so it decodes to digits    */
+                        char dec[64];
+                        size_t dn = hlse_base64url_decode(s1,
+                            (size_t)s1len, dec, sizeof(dec));
+                        int alldigit = (dn >= 15);
+                        size_t i;
+                        for (i = 0; i < dn; i++)
+                            if (dec[i] < '0' || dec[i] > '9') {
+                                alldigit = 0; break; }
+                        if (alldigit) {
+                            sv_add(&v, 85, "DISCORD_BOT_TOKEN",
+                                   "Discord bot token (<b64 snowflake>"
+                                   ".<short>.<hmac>) — full bot control");
+                            break;
+                        }
+                    }
+                }
+            }
+            p++;
+        }
+    }
+
     /* JWT bearer token — header.payload.signature, all base64url. The "eyJ"
      * prefix is base64 of '{"', which every JWT header begins with. The
      * three-segment dotted structure with base64url segments is JWT-specific

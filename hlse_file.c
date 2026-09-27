@@ -232,6 +232,12 @@ static const char *EXECUTABLE_EXTS[] = {
      * bundles that run their steps on double-click            */
     ".scpt", ".scptd", ".applescript", ".osax",
     ".workflow", ".wflow",
+    /* Remaining disk-image carriers — mounting one runs autorun /
+     * drops a writable filesystem the OS trusts more than a bare
+     * download (.dmg macOS, .vmdk/.qcow2 VM, .toast/.sparseimage/
+     * .flp/.ima legacy/floppy images)                          */
+    ".dmg", ".vmdk", ".qcow2", ".toast", ".sparseimage",
+    ".flp", ".ima",
     /* Macro-enabled Office documents (bypass Mark-of-the-Web in many configs) */
     ".docm", ".xlsm", ".pptm", ".xlam", ".ppam", ".xlsb",
     /* Java */
