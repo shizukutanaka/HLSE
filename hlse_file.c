@@ -3822,6 +3822,111 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     return 0;
 }
 
+/* ─── F57: lockfile registry poisoning — a lockfile's resolved/source/
+ *      remote URL pointing off the official registry (or at cleartext
+ *      http) swaps the package a `install` fetches. Scans each
+ *      resolved/source/url/remote key's URL, extracts the host, and
+ *      requires it to sit on the ecosystem's official registry or a
+ *      common git forge (git deps are legitimate); anything else is a
+ *      poisoned dependency. Basename-gated so random JSON/YAML with a
+ *      'source' key elsewhere stays clean.                           */
+static const char *const LOCKFILE_NAMES[] = {
+    "package-lock.json", "npm-shrinkwrap.json", "yarn.lock",
+    "pnpm-lock.yaml", "poetry.lock", "uv.lock", "gemfile.lock",
+    "composer.lock", "cargo.lock", "packages.lock.json", NULL
+};
+static const char *const REGISTRY_HOSTS[] = {
+    /* official package registries + ubiquitous git forges (git+https
+     * deps are a normal lockfile pattern)                        */
+    "registry.npmjs.org", "registry.yarnpkg.com",
+    "pypi.org", "files.pythonhosted.org",
+    "rubygems.org", "packagist.org", "repo.packagist.org",
+    "crates.io", "static.crates.io", "index.crates.io",
+    "github.com", "codeload.github.com", "gitlab.com",
+    "bitbucket.org", "dev.azure.com", "objects.githubusercontent.com",
+    "proxy.golang.org", "sum.golang.org", NULL
+};
+static int
+host_on_allowlist(const char *host, size_t hlen) {
+    int i;
+    for (i = 0; REGISTRY_HOSTS[i]; i++) {
+        const char *h = REGISTRY_HOSTS[i];
+        size_t hl = strlen(h);
+        /* exact match, or host ends with ".<registry>" (subdomain) */
+        if (hlen == hl && memcmp(host, h, hl) == 0)
+            return 1;
+        if (hlen > hl + 1 && memcmp(host + hlen - hl, h, hl) == 0 &&
+            host[hlen - hl - 1] == '.')
+            return 1;
+    }
+    return 0;
+}
+static int
+lockfile_url_score(const unsigned char *head, size_t len,
+    const char *basename_start) {
+    static const char *const KEYS[] = {
+        "\"resolved\"", "resolved:", "\"source\"", "source =",
+        "source=", "remote:", "\"remote\"", "\"url\"", "url =",
+        "url=", "download =", "download=", "tarball:",
+        "\"tarball\"", "resolution:", "\"resolution\"", NULL
+    };
+    char low[8193], bn[256];
+    size_t n = 0, i;
+    int is_lf = 0;
+    str_lower(basename_start ? basename_start : "", bn, sizeof(bn));
+    for (i = 0; LOCKFILE_NAMES[i]; i++)
+        if (strcmp(bn, LOCKFILE_NAMES[i]) == 0) { is_lf = 1; break; }
+    if (!is_lf)
+        return 0;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+
+    {
+        int cleartext = 0, offreg = 0;
+        int k;
+        for (k = 0; KEYS[k]; k++) {
+            const char *p = low;
+            size_t kl = strlen(KEYS[k]);
+            while ((p = strstr(p, KEYS[k])) != NULL) {
+                /* a URL should appear within ~64 chars of the key */
+                const char *win = p + kl;
+                const char *wlim = win + 64;
+                const char *u;
+                if (wlim > low + n) wlim = low + n;
+                for (u = win; u + 6 < wlim; u++) {
+                    if (memcmp(u, "http://", 7) == 0 ||
+                        memcmp(u, "https://", 8) == 0) {
+                        int https = (u[4] == 's');
+                        const char *host = u + (https ? 8 : 7);
+                        const char *hend = host;
+                        while (hend < low + n &&
+                               ((*hend >= 'a' && *hend <= 'z') ||
+                                (*hend >= '0' && *hend <= '9') ||
+                                *hend == '.' || *hend == '-' ||
+                                *hend == '[' || *hend == ']'))
+                            hend++;
+                        if (hend > host) {
+                            if (!https)
+                                cleartext = 1;
+                            if (!host_on_allowlist(host,
+                                    (size_t)(hend - host)))
+                                offreg = 1;
+                        }
+                        break;
+                    }
+                }
+                p += kl;
+            }
+        }
+        if (offreg)
+            return 55;
+        if (cleartext)
+            return 45;
+    }
+    return 0;
+}
+
 /* ─── F48: .ica Citrix launch file — a [WFClient]/[ApplicationServers]
  *      descriptor whose Address=/InitialProgram= launches a remote
  *      published application on open (Citrix phishing delivery) ───── */
@@ -4790,6 +4895,20 @@ hlse_check_file(const char *filepath) {
             fv_add(&v, sc,
                 "F56: SYSTEM CONFIG — filename is a host config that "
                 "changes privilege/resolution when dropped in place "
+                "(score %d)", sc);
+        }
+    }
+
+    /* ── F57: lockfile registry poisoning — resolved/source URL off the
+     *      official registry (or cleartext http) swaps the package an
+     *      install fetches ────────────────────────────────────────── */
+    if (head_len > 0) {
+        int sc = lockfile_url_score(head, (size_t)head_len,
+                                    basename_start);
+        if (sc > 0) {
+            fv_add(&v, sc,
+                "F57: LOCKFILE POISON — resolved/source URL points off "
+                "the official registry or over cleartext http "
                 "(score %d)", sc);
         }
     }

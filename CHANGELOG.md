@@ -15,6 +15,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F57 lockfile registry poisoning** (`hlse_file.c`): lockfiles
+  (`package-lock.json`, `npm-shrinkwrap.json`, `yarn.lock`,
+  `pnpm-lock.yaml`, `poetry.lock`, `uv.lock`, `Gemfile.lock`,
+  `composer.lock`, `Cargo.lock`, `packages.lock.json`) are
+  scanned for `resolved`/`source`/`remote`/`url`/`tarball`/
+  `resolution`/`download` values; a URL whose host isn't the
+  ecosystem's official registry or a common git forge scores
+  55 (ALERT), a cleartext `http://` fetch scores 45. Basename-
+  gated so non-lockfile JSON/YAML stays clean.
 - **Notebook / data-connection extensions** (`hlse_file.c`):
   `.ipynb` (Jupyter — code cells execute; output cells can carry
   executable HTML/JS rendered on open) and `.odc` (Office Data

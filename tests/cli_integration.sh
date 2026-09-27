@@ -10092,6 +10092,40 @@ printf 'Options +FollowSymLinks\n' > "$XDIR83/htaccess.bak"
     || check "file: htaccess.bak benign" "0" "1"
 rm -rf "$XDIR83"
 
+# ── cycle-84: F57 lockfile registry poisoning ──
+XDIR84=$(mktemp -d /tmp/hlse84.XXXXXX)
+printf '%s' '{"name":"x","packages":{"n":{"resolved":"http://evil.example/n-1.0.tgz"}}}' > "$XDIR84/package-lock.json"
+printf '%s' '{"name":"x","packages":{"n":{"resolved":"http://registry.npmjs.org/n/-/n-1.0.tgz"}}}' > "$XDIR84/package-lock2.json" 
+mkdir -p "$XDIR84/a" "$XDIR84/b" "$XDIR84/c" "$XDIR84/d" "$XDIR84/e"
+mv "$XDIR84/package-lock2.json" "$XDIR84/a/package-lock.json"
+printf 'importers:\npackages:\n  /req@1.0.0:\n    tarball: http://evil.example/req.tgz\n' > "$XDIR84/b/pnpm-lock.yaml"
+printf '[[package]]\nname="req"\nsource = { url = "https://evil.example/x.tar.gz" }\n' > "$XDIR84/c/uv.lock"
+printf 'GEM\n  remote: http://evil.example/\n  specs:\n    x (1.0)\n' > "$XDIR84/d/Gemfile.lock"
+printf '%s' '{"name":"x","packages":{"n":{"resolved":"https://registry.npmjs.org/n/-/n-1.0.tgz","integrity":"sha512-x"}}}' > "$XDIR84/e/package-lock.json"
+printf 'resolved: https://evil.example/x.tgz\n' > "$XDIR84/random.json"
+./hlse_core file "$XDIR84/package-lock.json" 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "file: package-lock off-registry flagged" "0" "0" \
+    || check "file: package-lock off-registry flagged" "0" "1"
+./hlse_core file "$XDIR84/a/package-lock.json" 2>&1 | grep -q "ALERT" \
+    && check "file: package-lock cleartext flagged" "0" "0" \
+    || check "file: package-lock cleartext flagged" "0" "1"
+./hlse_core file "$XDIR84/b/pnpm-lock.yaml" 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "file: pnpm-lock tarball poison flagged" "0" "0" \
+    || check "file: pnpm-lock tarball poison flagged" "0" "1"
+./hlse_core file "$XDIR84/c/uv.lock" 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "file: uv.lock source poison flagged" "0" "0" \
+    || check "file: uv.lock source poison flagged" "0" "1"
+./hlse_core file "$XDIR84/d/Gemfile.lock" 2>&1 | grep -q "ALERT\|BLOCK" \
+    && check "file: Gemfile.lock remote poison flagged" "0" "0" \
+    || check "file: Gemfile.lock remote poison flagged" "0" "1"
+./hlse_core file "$XDIR84/e/package-lock.json" 2>&1 | grep -q "OK" \
+    && check "file: package-lock benign registry clean" "0" "0" \
+    || check "file: package-lock benign registry clean" "0" "1"
+./hlse_core file "$XDIR84/random.json" 2>&1 | grep -q "OK" \
+    && check "file: non-lockfile json clean" "0" "0" \
+    || check "file: non-lockfile json clean" "0" "1"
+rm -rf "$XDIR84"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
