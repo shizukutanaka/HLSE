@@ -30,6 +30,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Shopify token family** (`hlse_secrets.c`): `shpat_` (Admin API),
+  `shppa_` (app token), `shpss_` (shared secret), `shpca_` (client
+  credential) — 32-hex suffix, store admin/customer-data access.
+- **`.mad`/`.maf`/`.mam`/`.maq`/`.mat`/`.maw`** (`hlse_file.c`):
+  MS Access project/macro/query carriers — VBA-capable containers
+  in the same class as `.mdb`/`.accdb`.
 - **Student-aid + veterans-benefits vocab** (`hlse_text.c`): "fafsa ·
   student aid · student loan · pell grant · financial aid package ·
   student grant" plus "va claim · veterans benefits · va disability ·

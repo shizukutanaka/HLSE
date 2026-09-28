@@ -328,6 +328,12 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * full read/write over the store's orders and customer data    */
     { "ck_",           3,  40, is_hex,             "WooCommerce Consumer Key",    80 },
     { "cs_",           3,  40, is_hex,             "WooCommerce Consumer Secret", 80 },
+    /* Shopify token family — Admin API access token, custom-app
+     * token, shared secret, and client credential (32-hex suffix)  */
+    { "shpat_",        6,  30, is_hex,             "Shopify Admin Access Token",   90 },
+    { "shppa_",        6,  30, is_hex,             "Shopify App Token",            85 },
+    { "shpss_",        6,  30, is_hex,             "Shopify Shared Secret",        80 },
+    { "shpca_",        6,  30, is_hex,             "Shopify Client Credential",    80 },
     /* Brevo/Sendinblue SMTP+API key, Dropbox long-form token,
      * JFrog Artifactory identity key, Bitbucket app password —
      * each has a fixed vendor prefix that hands over an account */

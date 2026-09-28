@@ -11100,6 +11100,22 @@ rm -rf "$XDIR145"
 CK="ck_"; CK="${CK}a1b2c3d4e5f6071829"
 check_secret_hit "${CK}3a4b5c6d7e8f90a1b2c3d4" 'WooCommerce' "secrets: ck_ flagged"
 
+# ── cycle-146: shopify token family + MS Access carriers ────────────────
+SP="shpat_"; SP="${SP}eb8450ae2a1c5ed5"
+check_secret_hit "${SP}571342c3967d286c" 'Shopify Admin' "secrets: shpat_ flagged"
+SP2="shppa_"; SP2="${SP2}8a160d1cf407d303"
+check_secret_hit "${SP2}66a02402f6d2c624" 'Shopify App' "secrets: shppa_ flagged"
+XDIR146=$(mktemp -d /tmp/hlse146.XXXXXX)
+printf 'x\n' > "$XDIR146/t.mam"
+./hlse_core file "$XDIR146/t.mam" 2>&1 | grep -q "LOG" \
+    && check "file: .mam access-macro flagged" "0" "0" \
+    || check "file: .mam access-macro flagged" "0" "1"
+printf 'x\n' > "$XDIR146/t.maq"
+./hlse_core file "$XDIR146/t.maq" 2>&1 | grep -q "LOG" \
+    && check "file: .maq access-query flagged" "0" "0" \
+    || check "file: .maq access-query flagged" "0" "1"
+rm -rf "$XDIR146"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

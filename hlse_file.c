@@ -462,6 +462,10 @@ static const char *EXECUTABLE_EXTS[] = {
     /* OpenDocument / legacy StarOffice templates — .ots/.ott/.otg/
      * .stw are macro-capable templates delivered as attachments    */
     ".ots", ".ott", ".otg", ".stw",
+    /* MS Access project/macro carriers — .mad/.maf/.mam/.maq/.mat/
+     * .maw are Access containers that can carry VBA (same carrier
+     * class as .mdb/.accdb already flagged)                        */
+    ".mad", ".maf", ".mam", ".maq", ".mat", ".maw",
     NULL
 };
 
