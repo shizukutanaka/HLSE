@@ -30,6 +30,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **P2P-payment + marketplace-scam vocab** (`hlse_text.c`):
+  "zelle/venmo/cashapp transfer|payment · pay through/via zelle ·
+  interested in your item · item on marketplace · marketplace
+  listing · facebook marketplace · craigslist · deposit to hold ·
+  hold the item · send the deposit · courier will pick up · is it
+  still available" — P2P transfer-notification lures and the
+  deposit-to-hold / overpayment marketplace scam.
+- **`.ipsw` + `.sparsebundle`** (`hlse_file.c`): iOS restore image
+  (forced-downgrade / profile-injection carrier) and macOS
+  disk-image bundle (same risk class as `.dmg`).
 - **Rebate + romance-scam vocab** (`hlse_text.c`): "energy rebate ·
   utility rebate · tax rebate · stimulus rebate · rebate check ·
   claim your rebate · rebate program" (utility/tax rebate phishing —

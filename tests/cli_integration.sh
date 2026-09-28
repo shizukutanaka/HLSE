@@ -10976,6 +10976,22 @@ check_text_hit 'the rebate offer expired last month' 'OK' "text: benign rebate c
 check_text_hit 'we met on whatsapp already' 'OK' "text: benign whatsapp clean"
 check_text_hit 'i saw your profile on linkedin' 'OK' "text: benign profile clean"
 
+# ── cycle-138: P2P/marketplace scams + .ipsw/.sparsebundle ──
+check_text_hit 'i will pay through zelle send the deposit to hold the item' 'LOG' "text: zelle-deposit flagged"
+check_text_hit 'interested in your item on marketplace is it still available' 'LOG' "text: marketplace-bait flagged"
+check_text_hit 'your zelle transfer of 500 was received' 'LOG' "text: zelle-notification flagged"
+check_text_hit 'the item is still available if you want it' 'OK' "text: benign marketplace clean"
+check_text_hit 'i paid through zelle last week' 'OK' "text: benign zelle clean"
+XDIR138=$(mktemp -d /tmp/hlse138.XXXXXX)
+printf 'x\n' > "$XDIR138/t.ipsw"
+printf 'x\n' > "$XDIR138/t.sparsebundle"
+for f in "$XDIR138/t.ipsw" "$XDIR138/t.sparsebundle"; do
+    ./hlse_core file "$f" 2>&1 | grep -q "LOG" \
+        && check "file: $(basename "$f") flagged" "0" "0" \
+        || check "file: $(basename "$f") flagged" "0" "1"
+done
+rm -rf "$XDIR138"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

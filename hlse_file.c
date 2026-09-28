@@ -437,6 +437,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * .xaml — WPF/workflow markup whose ObjectDataProvider can run
      * arbitrary methods (markup-embedded code execution)          */
     ".diagpkg", ".jnlp", ".xaml",
+    /* .ipsw — iOS restore image (forced-downgrade / profile-injection
+     * carrier); .sparsebundle — macOS disk-image bundle, same risk
+     * class as .dmg                                                */
+    ".ipsw", ".sparsebundle",
     NULL
 };
 

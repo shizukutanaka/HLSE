@@ -332,6 +332,16 @@ static const char *BAIT_WORDS[] = {
     "distance means nothing", "move to whatsapp", "move to telegram",
     "chat on whatsapp", "chat on telegram", "talk on whatsapp",
     "continue on whatsapp", "continue on telegram",
+    /* P2P-payment + marketplace scams — Zelle/Venmo/CashApp transfer
+     * notifications and deposit-to-hold-the-item overpayment lures  */
+    "zelle transfer", "zelle payment", "pay through zelle",
+    "pay via zelle", "zelle me", "venmo transfer", "venmo payment",
+    "cashapp payment", "cash app transfer", "cash app payment",
+    "interested in your item", "item on marketplace",
+    "marketplace listing", "facebook marketplace", "craigslist",
+    "deposit to hold", "hold the item", "send the deposit",
+    "shipping fee for the item", "courier will pick up",
+    "pick up the item", "is it still available",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */
