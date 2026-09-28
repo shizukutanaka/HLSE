@@ -1438,7 +1438,10 @@ static const char *RANSOM_WORDS[] = {
     "decryption tool", "restore your files",
     /* Sextortion / webcam extortion (2023-2025 high-volume campaigns) */
     "i have footage of you", "i have a video of you", "i have photos of you",
-    "recorded you", "i recorded you",
+    "i have a recording of you", "recording of you", "private video of you",
+    "your private video", "recorded you", "i recorded you",
+    "watching adult sites", "adult sites", "adult websites",
+    "send to all contacts", "sent to all contacts", "to all contacts",
     "i activated your webcam", "your camera was hacked",
     "watching adult content", "watching explicit",
     "what you've been watching", "what you have been watching",
@@ -1531,6 +1534,12 @@ static const char *FIN_ACTION_WORDS[] = {
      * packages' is parcel-mule fraud, not employment              */
     "reshipping packages", "reshipping service", "reship packages",
     "receive and reship", "receive packages and reship",
+    /* Financial-agent mule recruitment — the payroll-processing
+     * cover story: 'receive payments on our behalf, keep %'       */
+    "payment processing agent", "payments on our behalf",
+    "payments on behalf of", "process payments on behalf",
+    "financial agent", "transfer agent position",
+    "regional representative needed", "cashier position from home",
     /* Money mule recruitment — asking to use victim's account for transfers */
     "use your account", "use your bank account",
     "transfer to your account", "transfer into your account",

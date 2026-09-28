@@ -423,6 +423,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * connection-string dialog that can carry provider strings
      * reaching remote SMB/NTLM endpoints (credential-relay lure) */
     ".udl",
+    /* .prf — Outlook profile file: importing it silently registers
+     * attacker-controlled mail accounts/servers (credential +
+     * persistence channel)                                          */
+    ".prf",
     NULL
 };
 

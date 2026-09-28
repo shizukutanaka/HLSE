@@ -10898,6 +10898,20 @@ check_text_hit 'search engine registration required' 'LOG' "text: seo-registrati
 check_text_hit 'we will send a quotation tomorrow' 'OK' "text: benign quotation clean"
 check_text_hit 'the po attached is for our regular supplies' 'LOG' "text: benign po advisory"
 
+# ── cycle-132: sextortion variants + mule recruitment + .prf ──
+check_text_hit 'i have a recording of you visiting adult sites' 'ALERT' "text: sextortion-recording flagged"
+check_text_hit 'your private video will be sent to all contacts' 'ALERT' "text: sextortion-private flagged"
+check_text_hit 'financial agent receive payments on behalf of us' 'LOG' "text: mule-recruitment flagged"
+check_text_hit 'a recording of the meeting was shared' 'OK' "text: benign recording clean"
+check_text_hit 'the technician used remote access tools' 'OK' "text: benign remote-access clean"
+check_url_hit 'windowsdefender://open' 'LOG' "url: windowsdefender scheme flagged"
+XDIR132=$(mktemp -d /tmp/hlse132.XXXXXX)
+printf 'x\n' > "$XDIR132/t.prf"
+./hlse_core file "$XDIR132/t.prf" 2>&1 | grep -q "LOG" \
+    && check "file: .prf outlook-profile flagged" "0" "0" \
+    || check "file: .prf outlook-profile flagged" "0" "1"
+rm -rf "$XDIR132"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

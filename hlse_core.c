@@ -1811,6 +1811,7 @@ static const char *const URL_HANDLER_SCHEMES[] = {
      * actions to the named app (vscode: was already listed)      */
     "itms-apps:", "itms-appss:", "macappstore:",
     "zoomphonecall:", "confinstall:", "subl:", "mvim:",
+    "windowsdefender:",
     "txmt:", "fork:", "sourcetree:",
     /* podcast subscription schemes — a click subscribes the
      * reader to a remote feed (ongoing remote-content pull)      */

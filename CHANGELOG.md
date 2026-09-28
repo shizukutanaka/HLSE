@@ -30,6 +30,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Sextortion phrase variants + mule-recruitment vocab**
+  (`hlse_text.c`): "i have a recording of you · recording of you ·
+  private video of you · your private video · watching adult sites ·
+  send to all contacts · to all contacts" (campaign-specific wording
+  variants of the existing sextortion list) plus financial-agent
+  mule recruitment "payment processing agent · payments on our
+  behalf · process payments on behalf · financial agent · transfer
+  agent position · regional representative needed · cashier
+  position from home".
+- **`.prf` extension flag** (`hlse_file.c`): Outlook profile file —
+  importing one silently registers attacker-controlled mail
+  accounts/servers.
+- **`windowsdefender:` handler scheme** (`hlse_core.c`): Defender
+  app deep link, grouped with the other app-launch handlers.
 - **Domain-expiry inflections + procurement bait** (`hlse_text.c`):
   "domain name will expire / domain name expires / search engine
   registration / domain listing" (SEO-renewal scam variants of the
