@@ -11494,6 +11494,20 @@ check "secret: putty-ppk2 flagged" "$(./hlse_core secret -- 'PuTTY-User-Key-File
 check "secret: putty-ppk3 flagged" "$(./hlse_core secret -- 'PuTTY-User-Key-File-3: ssh-ed25519' | head -1 | grep -c 'ISOLATE')" "1"
 check "secret: benign cert clean" "$(./hlse_core secret -- '-----BEGIN CERTIFICATE-----' | head -1 | grep -c 'OK')" "1"
 
+# ── cycle-178: control-char-embedded scheme evasion (WHATWG strip) ────
+WSTAB=$(printf 'java\tscript:alert(1)')
+check "url: tab-in-javascript flagged" "$(./hlse_core "$WSTAB" | head -1 | grep -c 'ISOLATE')" "1"
+WSLF=$(printf 'java\nscript:alert(1)')
+check "url: lf-in-javascript flagged" "$(./hlse_core "$WSLF" | head -1 | grep -c 'ISOLATE')" "1"
+WSCR=$(printf 'vb\rscript:msgbox(1)')
+check "url: cr-in-vbscript flagged" "$(./hlse_core "$WSCR" | head -1 | grep -c 'ISOLATE')" "1"
+WSDATA=$(printf 'da\tta:text/html,<x>')
+check "url: tab-in-data flagged" "$(./hlse_core "$WSDATA" | head -1 | grep -c 'ISOLATE')" "1"
+WSHTTP=$(printf 'http://exa\tmple.com/x')
+check "url: tab-in-authority flagged" "$(./hlse_core "$WSHTTP" | head -1 | grep -c 'ALERT\|BLOCK\|ISOLATE')" "1"
+WSNL=$(printf 'plain text with\na newline')
+check "text: benign-newline clean" "$(./hlse_core "$WSNL" | head -1 | grep -c 'OK')" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

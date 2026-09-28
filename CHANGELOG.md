@@ -51,6 +51,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Control-char-embedded scheme evasion** (`hlse_core.c`):
+  WHATWG strips ASCII tab/LF/CR anywhere in a URL before
+  parsing, so `java\tscript:alert(1)` executes exactly like
+  `javascript:alert(1)` — but the embedded control char hid the
+  scheme from both `hlse_scan`'s prefix gate and `check_url`'s
+  parser, returning OK. Both entry points now strip `\t\n\r`
+  into a bounded copy up front, and `check_url` adds +15
+  "WHATWG-strip evasion" when it had to strip. Evasion inputs
+  resolve to ISOLATE 90 like their plain forms; a benign
+  `http://exa\tmple.com/` still scans clean.
+
 - **Residual private-key formats** (`hlse_secrets.c`): Tectia
   `-----BEGIN SSH2 ENCRYPTED PRIVATE KEY-----`, PEM-wrapped
   `-----BEGIN PKCS12-----` bundles, and PuTTY `.ppk` headers

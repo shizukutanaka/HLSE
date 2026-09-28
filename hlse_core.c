@@ -1930,6 +1930,47 @@ check_url(const char *raw_url) {
 
     memset(&v, 0, sizeof(v));
 
+    /* WHATWG strips ASCII tab/LF/CR anywhere in a URL before
+     * parsing — `java\tscript:alert(1)` executes exactly like
+     * `javascript:alert(1)`. Normalize the same way or the
+     * embedded control char launders a dangerous scheme past
+     * both the scheme gate and this parser.                    */
+    char wsbuf[2100];
+    int ws_norm = 0;
+    int ws_auth_ctl = 0;
+    if (raw_url && strpbrk(raw_url, "\t\n\r") != NULL &&
+        strlen(raw_url) < sizeof(wsbuf)) {
+        size_t r2 = 0, w2 = 0;
+        /* Control chars inside the authority deserve the dedicated
+         * host-evasion reason (below), not just the generic strip
+         * note — find the span after '://' up to '/?#' before
+         * wiping the evidence                                        */
+        const char *as = strstr(raw_url, "://");
+        const char *ae;
+        const char *cp;
+        if (as) {
+            as += 3;
+            ae = as + strcspn(as, "/?#");
+            for (cp = as; cp < ae; cp++)
+                if (*cp == '\t' || *cp == '\n' || *cp == '\r') {
+                    ws_auth_ctl = 1;
+                    break;
+                }
+        }
+        while (raw_url[r2]) {
+            if (raw_url[r2] != '\t' && raw_url[r2] != '\n' &&
+                raw_url[r2] != '\r')
+                wsbuf[w2++] = raw_url[r2];
+            r2++;
+        }
+        wsbuf[w2] = '\0';
+        raw_url = wsbuf;
+        ws_norm = 1;
+    }
+    if (ws_norm && !ws_auth_ctl)
+        add_reason(&v, 15, "Tab/newline embedded in URL — "
+                           "WHATWG-strip evasion");
+
     if (raw_url && strchr(raw_url, '\\') != NULL &&
         strlen(raw_url) < sizeof(nbuf) &&
         (strncmp(raw_url, "https:", 6) == 0 ||
@@ -2316,7 +2357,7 @@ check_url(const char *raw_url) {
      * browser resolves '%s' while a string-matching allowlist sees the
      * raw (brand-evading) form. A trailing DNS-root '.' normalizes to
      * the same host and likewise evades exact-match allowlists.     */
-    if (u.host_controls) {
+    if (u.host_controls || ws_auth_ctl) {
         add_reason(&v, 45,
             "Control characters in URL host — browsers strip tab/CR/LF, "
             "so '%s' resolves to a different host than it displays "
@@ -2638,6 +2679,27 @@ hlse_scan(const char *input) {
     memset(&r, 0, sizeof(r));
     if (!input) return r;
 
+    /* WHATWG strips ASCII tab/LF/CR anywhere in a URL before
+     * parsing — a control char inside the scheme ("jav\tascript:")
+     * would otherwise hide it from the prefix gate below. Strip
+     * up front so the gate sees the same string a browser would.
+     * check_url still receives the ORIGINAL (orig_input) so its
+     * own strip can report the evasion it found.                */
+    char wbuf[2100];
+    const char *orig_input = input;
+    if (strpbrk(input, "\t\n\r") != NULL &&
+        strlen(input) < sizeof(wbuf)) {
+        size_t rr = 0, ww = 0;
+        while (input[rr]) {
+            if (input[rr] != '\t' && input[rr] != '\n' &&
+                input[rr] != '\r')
+                wbuf[ww++] = input[rr];
+            rr++;
+        }
+        wbuf[ww] = '\0';
+        input = wbuf;
+    }
+
     /* A fully %-encoded URL ("%%68ttps://…" / "%%68%%74%%74%%70…")
      * never reaches the scheme gate: browsers reject an encoded
      * scheme, but anything that percent-decodes first (redirect
@@ -2741,7 +2803,7 @@ hlse_scan(const char *input) {
         url_has_scheme(input, URL_DEVICE_SCHEMES) ||
         url_has_scheme(input, URL_HANDLER_SCHEMES))
     {
-        Verdict uv = check_url(input);
+        Verdict uv = check_url(orig_input);
         r.score = uv.score;
         r.is_url = 1;
         r.n_reasons = uv.n_reasons;
