@@ -11460,6 +11460,19 @@ check_url_hit 'mqtt://evil.example/topic' 'LOG' "url: mqtt flagged"
 check_url_hit 'obex://evil.example/push' 'LOG' "url: obex flagged"
 check_url_hit 'snmp://evil.example/get' 'LOG' "url: snmp flagged"
 
+# ── cycle-175: ielts/ambassador/modeling/unban/voucher/audition/dna ────
+check_text_hit 'ielts certificate toefl score language certificate' 'LOG' "text: ielts flagged"
+check_text_hit 'brand ambassador ambassador program sponsorship opportunity' 'LOG' "text: ambassador flagged"
+check_text_hit 'modeling agency modeling portfolio casting call' 'LOG' "text: modeling flagged"
+check_text_hit 'account unban appeal your ban ban appeal' 'LOG' "text: unban flagged"
+check_text_hit 'voucher code travel voucher airline voucher redeem' 'LOG' "text: voucher flagged"
+check_text_hit 'audition fee talent agency audition registration' 'LOG' "text: audition flagged"
+check_text_hit 'dna test results ancestry results genetic test' 'LOG' "text: dna flagged"
+check_text_hit 'she works as a model in new york' 'OK' "text: benign model clean"
+check_text_hit 'i redeemed my store credit at checkout' 'OK' "text: benign voucher clean"
+check_url_hit 'acct:user@evil.example' 'LOG' "url: acct flagged"
+check_url_hit 'doi:10.1000/evil' 'LOG' "url: doi flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

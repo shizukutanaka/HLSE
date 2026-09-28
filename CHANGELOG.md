@@ -51,6 +51,27 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Certificate + ambassador + modeling + unban + voucher +
+  audition + DNA lures** (`hlse_text.c`): "ielts certificate ·
+  toefl score · language certificate · ielts score report ·
+  english test certificate · buy ielts · ielts result" (fake
+  certificates), "brand ambassador · ambassador program ·
+  sponsorship opportunity · become a brand ambassador · free
+  products · ambassador invite" (ambassador scams), "modeling
+  agency · modeling portfolio · casting call · talent scout ·
+  model search · audition casting · casting director" (modeling
+  fees), "account unban · appeal your ban · ban appeal · unban
+  your account · recover banned account · appeal suspension"
+  (unban services), "voucher code · travel voucher · airline
+  voucher · free voucher · hotel voucher · redeem voucher · gift
+  voucher" (travel vouchers), "audition fee · talent agency ·
+  audition registration · audition spot · talent showcase ·
+  modeling audition" (paid auditions), "dna test results ·
+  ancestry results · genetic test · dna results · ancestry report
+  · genetic testing kit" (DNA scams).
+- **`acct:`/`doi:` identifier-resolution schemes** (`hlse_core.c`)
+  → LOG 35.
+
 - **Childcare + veterans + disability + settlement + survey +
   telecom + reverse-mortgage lures** (`hlse_text.c`): "childcare
   subsidy · child care subsidy · daycare assistance · child care

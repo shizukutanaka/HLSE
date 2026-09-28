@@ -732,6 +732,30 @@ static const char *BAIT_WORDS[] = {
     "upgrade your internet", "loyalty discount", "your internet plan",
     "reverse mortgage", "hecm loan", "equity release",
     "home equity conversion", "unlock your equity",
+    /* Language-certificate + ambassador + modeling + unban +
+     * voucher + audition + DNA lures — fake IELTS/TOEFL sales,
+     * brand-ambassador gift scams, modeling-agency fee fraud,
+     * account-unban services, travel vouchers, paid-audition
+     * scams, and fake DNA/ancestry results                       */
+    "ielts certificate", "toefl score", "language certificate",
+    "ielts score report", "english test certificate", "buy ielts",
+    "ielts result",
+    "brand ambassador", "ambassador program",
+    "sponsorship opportunity", "become a brand ambassador",
+    "free products", "ambassador invite",
+    "modeling agency", "modeling portfolio", "casting call",
+    "talent scout", "model search", "audition casting",
+    "casting director",
+    "account unban", "appeal your ban", "ban appeal",
+    "unban your account", "recover banned account",
+    "appeal suspension",
+    "voucher code", "travel voucher", "airline voucher",
+    "free voucher", "hotel voucher", "redeem voucher",
+    "gift voucher",
+    "audition fee", "talent agency", "audition registration",
+    "audition spot", "talent showcase", "modeling audition",
+    "dna test results", "ancestry results", "genetic test",
+    "dna results", "ancestry report", "genetic testing kit",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

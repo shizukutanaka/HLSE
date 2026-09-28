@@ -1740,6 +1740,10 @@ static const char *const URL_LEGACY_SCHEMES[] = {
      * are real IoT fetch/messaging protocols; obex: is Bluetooth
      * object push; snmp: launches a network-management handler    */
     "coap:", "coaps:", "mqtt:", "obex:", "snmp:",
+    /* Identifier-resolution handlers — acct: (RFC 7565 account
+     * lookups) and doi: (resolver fetch) can launch external
+     * resolution clients                                       */
+    "acct:", "doi:",
     /* TLS-wrapped variants of the legacy transports — ftp/nntp over
      * TLS are the same cleartext-era handler class; ldaps: was
      * already listed while its ftp/nntp siblings fell through    */
