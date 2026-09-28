@@ -988,6 +988,12 @@ static const char *SECRECY_WORDS[] = {
     "do not loop in", "without involving", "off the record",
     "strictly confidential", "highly confidential", "this is confidential",
     "private and confidential",
+    /* BEC coaching scripts — the fraudster pre-scripts what the
+     * victim tells the bank ('say it's for family')              */
+    "between you and me", "strictly between us",
+    "keep this transaction confidential", "if anyone asks",
+    "do not tell your bank", "tell them it's for",
+    "do not discuss this transaction",
     /* Hitman hoax / threat scam secrecy pressure — "do not contact police"
      * also appears in grandparent scams, sextortion, and hitman hoaxes.   */
     "do not contact the police", "do not call the police",
@@ -1014,6 +1020,9 @@ static const char *GROOMING_WORDS[] = {
     "withdrawal fee", "withdrawal blocked", "account frozen",
     "profits are waiting", "compound interest daily",
     "wrong number", "i sent this by mistake",
+    "guaranteed daily", "daily returns",
+    "profit every day", "withdrawal requires", "fee to withdraw",
+    "unfreeze your account", "unlock your profits",
     /* Romance scam openers */
     "i'm a widower", "my wife passed away", "working on an oil rig",
     "military overseas", "doctor without borders",

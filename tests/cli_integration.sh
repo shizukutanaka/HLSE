@@ -10872,6 +10872,14 @@ printf 'x\n' > "$XDIR128/t.udl"
     || check "file: .udl data-link flagged" "0" "1"
 rm -rf "$XDIR128"
 
+# ── cycle-129: pig-butchering + BEC coaching vocab ──
+check_text_hit 'guaranteed daily returns on the platform' 'ALERT' "text: guaranteed-daily-returns flagged"
+check_text_hit 'withdrawal requires a fee before payout' 'LOG' "text: withdrawal-fee flagged"
+check_text_hit 'keep this transaction confidential' 'LOG' "text: transaction-secrecy flagged"
+check_text_hit 'if anyone asks say it is for family' 'LOG' "text: BEC-coaching flagged"
+check_text_hit 'we made a daily profit this quarter' 'OK' "text: benign daily-profit clean"
+check_text_hit 'the daily profits report is ready' 'OK' "text: benign profits-report clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

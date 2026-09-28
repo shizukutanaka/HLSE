@@ -30,6 +30,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Pig-butchering + BEC-coaching vocab** (`hlse_text.c`):
+  "guaranteed daily · daily returns · profit every day · withdrawal
+  requires · fee to withdraw · unfreeze your account · unlock your
+  profits" (investment-scam funnel) plus secrecy/coaching scripts
+  "between you and me · strictly between us · keep this transaction
+  confidential · if anyone asks · do not tell your bank · tell them
+  it's for · do not discuss this transaction" — the pre-scripted
+  cover story a BEC fraudster feeds the victim.
 - **Remote-access + overcharge-refund lures** (`hlse_text.c`):
   "our technician · technician will connect · remote access to fix ·
   grant/allow remote access · download/install anydesk · teamviewer ·
