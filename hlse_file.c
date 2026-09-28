@@ -415,6 +415,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * font engines and the X server (historic font-parsing
      * exploit class; .ttf/.otf stay out as everyday formats)     */
     ".fon", ".fnt", ".pfa", ".pfb", ".bdf", ".pcf", ".snf",
+    /* .appinstaller is the MSIX URI-handler manifest — feeds
+     * ms-appinstaller straight into Installer.app from a click
+     * (the CVE-2021-43890 spoof chain used by Emotet/BazarLoader) */
+    ".appinstaller",
     NULL
 };
 

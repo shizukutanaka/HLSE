@@ -345,6 +345,12 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "r8_",           3,  30, is_alnum_or_dash,   "Replicate API Token",   85 },
     { "api_org_",      8,  30, is_alnum_or_dash,   "Hugging Face Org Token", 80 },
 
+    /* Alibaba Cloud AccessKey ID (LTAI + ~20) and Tencent Cloud
+     * SecretId (AKID + 32 alnum) — the two largest Chinese cloud
+     * credential formats; pairs grant the same blast radius as AKIA */
+    { "LTAI",          4,  20, is_alnum_or_dash,   "Alibaba Cloud AccessKey ID", 85 },
+    { "AKID",          4,  30, is_alnum_or_dash,   "Tencent Cloud SecretId", 85 },
+
     /* Shopify (32-hex body — very low false-positive prefix) */
     { "shpat_",        6,  32, is_hex,             "Shopify Access Token",  85 },
     { "shpca_",        6,  32, is_hex,             "Shopify Custom App Token", 85 },

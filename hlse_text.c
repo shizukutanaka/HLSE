@@ -273,6 +273,15 @@ static const char *BAIT_WORDS[] = {
     "review quarantined", "did not request this code",
     "login code was requested", "code was requested",
     "ignore if not you", "ignore if this wasn't you",
+    /* renewal/refund scams — fake antivirus/geek-squad invoices that
+     * bait a 'cancel' call to a scam line, and browser-notification
+     * spam lures disguised as bot checks                        */
+    "subscription will renew", "subscription has been renewed",
+    "auto-renewed", "auto-renewal", "renewal charge",
+    "renewal order", "antivirus subscription", "geek squad",
+    "if you did not authorize", "cancel this purchase",
+    "cancel this order", "call to cancel", "click allow",
+    "click 'allow' to confirm", "tap allow to confirm",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

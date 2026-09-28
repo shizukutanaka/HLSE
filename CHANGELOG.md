@@ -30,6 +30,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Renewal/refund-scam + notification-spam lures** (`hlse_text.c`):
+  "subscription will renew · auto-renewed · renewal charge · antivirus
+  subscription · geek squad · cancel this order · call to cancel" —
+  the fake-invoice/callback-refund family — plus "click allow ·
+  tap allow to confirm" browser-notification-spam bot-check bait.
+- **Chinese cloud credential formats** (`hlse_secrets.c`): `LTAI`
+  (Alibaba Cloud AccessKey ID) and `AKID` (Tencent Cloud SecretId) —
+  same blast radius as the existing AWS `AKIA` rows.
+- **`.appinstaller` extension flag** (`hlse_file.c`): unconditional LOG
+  on the MSIX URI-handler manifest (previously only remote-Uri content
+  was gated; the bare extension itself is the CVE-2021-43890 carrier).
 - **Quarantine-release + unsolicited-code lures** (`hlse_text.c`):
   "quarantined messages/emails · messages in quarantine · quarantine
   digest · release the message · review quarantined" — the top O365
