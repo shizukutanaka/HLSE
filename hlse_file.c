@@ -398,6 +398,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * .do/.action are Struts mappings (Struts exploit class)     */
     ".jspf", ".ashx", ".asmx", ".svc", ".war", ".cgi",
     ".cfm", ".cfc", ".cfr", ".do", ".action", ".wsgi",
+    /* Windows Contacts — .contact/.group resolve IconPaths over
+     * UNC (credential-leak class); .desklink is the send-to
+     * launcher sibling. .msu runs wusa.exe package installs     */
+    ".contact", ".group", ".desklink", ".msu",
     NULL
 };
 

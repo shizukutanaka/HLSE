@@ -10748,6 +10748,21 @@ check_url_hit 'wbx://x' 'LOG' "url: wbx: flagged"
 check_url_hit 'apt://evil' 'LOG' "url: apt: flagged"
 check_url_hit 'deb://evil' 'LOG' "url: deb: flagged"
 
+# ── cycle-120: unsubscribe/final-warning lures + contacts/msu ──
+check_text_hit 'this is your final warning update now' 'LOG' "text: final-warning flagged"
+check_text_hit 'this is your last notice before suspension' 'LOG' "text: last-notice flagged"
+check_text_hit 'click here to unsubscribe stop these emails' 'LOG' "text: unsubscribe-bait flagged"
+check_text_hit 'unsubscribe from the newsletter' 'OK' "text: benign unsubscribe clean"
+check_text_hit 'the last notice period ended' 'LOG' "text: generic last-notice logged"
+XDIR120=$(mktemp -d /tmp/hlse120.XXXXXX)
+for e in contact group desklink msu; do
+    printf 'x\n' > "$XDIR120/t.$e"
+    ./hlse_core file "$XDIR120/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+rm -rf "$XDIR120"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -15,6 +15,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Unsubscribe-bait + final-warning lures** (`hlse_text.c`):
+  "click to unsubscribe / stop these emails" (the click is the
+  attack) plus "final warning / last warning / last notice /
+  before suspension" urgency variants.
+- **Windows Contacts + update carriers** (`hlse_file.c`):
+  `.contact`/`.group` resolve IconPaths over UNC (credential-leak
+  class), `.desklink` launcher sibling, `.msu` wusa.exe packages.
 - **Account-limit + fake-invoice lures** (`hlse_text.c`): "account
   has been limited / deactivated / restricted" and "attached
   invoice / receipt for payment / unpaid, outstanding or overdue

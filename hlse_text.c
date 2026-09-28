@@ -209,6 +209,14 @@ static const char *BAIT_WORDS[] = {
     "receipt for your payment", "receipt for payment",
     "your receipt", "unpaid invoice", "outstanding invoice",
     "overdue invoice", "your invoice",
+    /* unsubscribe-bait + final-warning framings — fake
+     * 'click to unsubscribe' links harvest or deliver malware
+     * (the click IS the attack); 'final warning/last notice'
+     * are urgency variants that evade 'final notice' wording   */
+    "click to unsubscribe", "click here to unsubscribe",
+    "unsubscribe click", "unsubscribe now", "stop these emails",
+    "final warning", "last warning", "last notice",
+    "before suspension", "before your account is",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */
