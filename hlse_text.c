@@ -139,6 +139,12 @@ static const char *BAIT_WORDS[] = {
     "amazon gift", "walmart gift", "target gift", "best buy gift", "steam card",
     "purchase gift", "purchase google", "purchase itunes",
     "refund", "reimbursement", "claim your",
+    /* Refund-department impersonation (Amazon/Geek Squad callback
+     * scams) — a 'refund department' asking you to act is the scam's
+     * defining claim; compound forms only                     */
+    "refund department", "refund processing", "process your refund",
+    "claim your refund", "unclaimed refund", "refund owed",
+    "outstanding refund", "eligible for a refund", "owed a refund",
     /* Crypto wallet theft */
     "seed phrase", "recovery phrase", "mnemonic", "private key",
     "connect wallet", "wallet passphrase",
@@ -287,6 +293,15 @@ static const char *PRIZE_WORDS[] = {
     "percentage of the funds", "you will receive",
     "sum of money", "million usd", "million euros",
     "foreign transfer", "over-invoiced contract", "overpayment scheme",
+    /* Consignment-box / diplomatic-pouch 419 lures — the 'abandoned
+     * trunk at customs, pay release fee' family; also the pious
+     * 'dear beloved / god fearing / dying widow' salutation forms  */
+    "consignment box", "trunk box", "diplomatic consignment",
+    "diplomatic courier", "diplomatic agent", "abandoned shipment",
+    "abandoned consignment", "release fee", "demurrage fee",
+    "customs clearance fee", "insurance certificate fee",
+    "dear beloved", "god fearing", "dying widow", "widow with",
+    "i am a barrister", "i am a diplomat",
     /* Celebrity crypto giveaway / doubling scam */
     "double your bitcoin", "double your btc", "double your crypto",
     "double your ethereum", "double your eth",
@@ -931,6 +946,13 @@ static const char *FAKE_ALERT_WORDS[] = {
     "at 1-833-", "at 1-855-",
     /* Tech support scam specific */
     "do not turn off your computer", "do not restart",
+    "your computer has been locked", "computer has been locked",
+    "your browser has been locked", "device has been locked",
+    "call microsoft", "call apple", "call our tech support",
+    "call our technical support", "call the toll-free",
+    "call the number on your screen", "call the number displayed",
+    "call the number shown", "call support immediately",
+    "windows defender has detected", "defender security warning",
     "your computer is sending error reports",
     "allow us to remote access", "give us remote access",
     "microsoft has detected", "windows has detected",

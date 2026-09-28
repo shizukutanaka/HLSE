@@ -15,6 +15,24 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **419 consignment/refund/tech-support vocab** (`hlse_text.c`):
+  PRIZE gains the diplomatic-pouch family ("consignment box",
+  "trunk box", "diplomatic consignment/courier/agent", "abandoned
+  shipment/consignment", "release fee", "demurrage fee", "customs
+  clearance fee", "insurance certificate fee") plus pious
+  salutations ("dear beloved", "god fearing", "dying widow",
+  "i am a barrister/diplomat"); BAIT gains refund-department
+  impersonation compounds ("refund department", "process your
+  refund", "unclaimed/owed/outstanding refund"); FAKE_ALERT gains
+  fake-lock + call-brand forms ("your computer/browser/device has
+  been locked", "call microsoft/apple", "call the number
+  displayed/shown/on your screen").
+- **Token formats** (`hlse_secrets.c`): `sq0idp-` Square OAuth,
+  `access_token$production$`/`access_token$sandbox$` Braintree/
+  PayPal Checkout (`$`-separated literal form), `dt0s01.` Dynatrace
+  ingest token. `hf_` Hugging Face predicate fixed from `is_alpha`
+  to `is_alnum_or_dash` — real tokens carry digits and were silently
+  dropped.
 - **Alternate-shell + MIME-HTML carriers** (`hlse_file.c`
   `EXECUTABLE_EXTS`): `.zsh`/`.fish`/`.nu` (zsh/fish/nushell scripts
   — same execute-on-open class as `.sh`/`.bash`) and

@@ -10512,6 +10512,20 @@ printf 'hello\n' > "$XDIR105/plain.txt"
     || check "file: plain txt stays clean" "0" "1"
 rm -rf "$XDIR105"
 
+# ── cycle-106: 419 consignment/refund/tech-support vocab + tokens ──
+check_text_hit 'i am a diplomat with an abandoned consignment box for you' 'LOG' "text: diplomatic consignment 419 flagged"
+check_text_hit 'pay the release fee for your diplomatic consignment' 'ALERT' "text: release-fee consignment scam flagged"
+check_text_hit 'amazon refund department process your refund now' 'LOG' "text: refund-department impersonation flagged"
+check_text_hit 'your computer has been locked call microsoft support' 'BLOCK' "text: fake lock + call-ms tech scam flagged"
+check_text_hit 'the package is at customs awaiting clearance' 'OK' "text: benign customs notice clean"
+HF="hf_"; HF="${HF}8qAbCdEfGhIjKlMnOpQrStUvWxYz123456"
+check_secret_hit "$HF" 'Hugging Face Token' "secret: huggingface token with digits flagged"
+SQ="sq0idp-"; SQ="${SQ}8qAbCdEfGhIjKlMnOpQrStUvWxYz"
+check_secret_hit "$SQ" 'Square OAuth Token' "secret: square oauth token flagged"
+DT="dt0s01."; DT="${DT}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234"
+check_secret_hit "$DT" 'Dynatrace Ingest Token' "secret: dynatrace ingest token flagged"
+check_secret_hit 'the pool was clean and calm today' 'OK' "secret: benign sentence still clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

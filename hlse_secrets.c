@@ -317,6 +317,8 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "PMAK-",         5,  40, is_alnum_or_dash,   "Postman API Key",     80 },
     { "dckr_pat_",     9,  20, is_alnum_or_dash,   "Docker Hub Personal Access Token", 80 },
     { "dt0c01.",       7,  30, is_alnum_or_dot,    "Dynatrace API Token", 80 },
+    /* Dynatrace ingest token — dt0s01. sibling of dt0c01. */
+    { "dt0s01.",       7,  30, is_alnum_or_dot,    "Dynatrace Ingest Token", 80 },
 
     /* npm */
     { "npm_",          4,  36, is_alnum_or_dash,   "npm Access Token",      85 },
@@ -353,8 +355,9 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "shpss_",        6,  32, is_hex,             "Shopify Shared Secret", 85 },
     { "shppa_",        6,  32, is_hex,             "Shopify Private App Token", 85 },
 
-    /* Hugging Face */
-    { "hf_",           3,  34, is_alpha,           "Hugging Face Token",    80 },
+    /* Hugging Face — hf_ + 34 alphanumeric (real tokens carry digits;
+     * is_alpha silently dropped any digit-bearing token)           */
+    { "hf_",           3,  34, is_alnum_or_dash,   "Hugging Face Token",    80 },
 
     /* PyPI (fixed 20-char marker prefix — essentially zero false positives) */
     { "pypi-AgEIcHlwaS5vcmc", 20, 20, is_alnum_or_dash, "PyPI Upload Token", 90 },
@@ -364,6 +367,14 @@ static const SecretPattern SECRET_PATTERNS[] = {
 
     /* Square */
     { "sq0atp-",       7,  22, is_alnum_or_dash,   "Square Access Token",   85 },
+    { "sq0idp-",       7,  22, is_alnum_or_dash,   "Square OAuth Token",    85 },
+
+    /* Braintree / PayPal Checkout access tokens carry literal '$'
+     * separators: access_token$production$<16>$<64>               */
+    { "access_token$production$", 24, 16, is_alnum_or_dash,
+                                        "Braintree Production Token", 85 },
+    { "access_token$sandbox$", 21, 16, is_alnum_or_dash,
+                                        "Braintree Sandbox Token",   40 },
 
     /* Doppler */
     { "dp.pt.",        6,  43, is_alnum_or_dash,   "Doppler Personal Token", 85 },
