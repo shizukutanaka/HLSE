@@ -1758,7 +1758,11 @@ static const char *const URL_LEGACY_SCHEMES[] = {
     /* pre-web information services — a legacy-handler URL that
      * modern browsers hand to nothing but still marks the URI as
      * an off-channel fetch reference                               */
-    "wais:", "prospero:", "acap:", "news:", NULL
+    "wais:", "prospero:", "acap:", "news:",
+    /* legacy UDP echo/query services — daytime:/chargen: are the
+     * RFC 867/864 diagnostic ports, abused for reflection and as
+     * obscure registered-handler fetch references               */
+    "daytime:", "chargen:", NULL
 };
 static const char *const URL_FETCH_SCHEMES[] = {
     "ssh:", "sftp:", "git:", "svn:", "hg:", "wss:", "ws:", NULL
@@ -1885,8 +1889,11 @@ static const char *const URL_HANDLER_SCHEMES[] = {
  * nfs:/afp: mount attacker shares, vnc:/rdp: open a remote console. */
 static const char *const URL_NETMNT_SCHEMES[] = {
     /* dav:/davs: — WebDAV remote filesystem; used with search-ms to
-     * host stageless payloads and leak NetNTLM (same mount class)   */
-    "smb:", "nfs:", "afp:", "vnc:", "rdp:", "dav:", "davs:", NULL
+     * host stageless payloads and leak NetNTLM (same mount class);
+     * cifs: is the smb: alias (same UNC/NetNTLM class); x11: opens
+     * an X Window connection to an attacker display              */
+    "smb:", "cifs:", "nfs:", "afp:", "vnc:", "rdp:", "x11:",
+    "dav:", "davs:", NULL
 };
 /* Payment schemes hand a pre-filled transfer to a wallet/banking app —
  * the destination is attacker-chosen, so a QR or link is a completed
@@ -2162,6 +2169,7 @@ check_url(const char *raw_url) {
                     if (strncmp(raw_url, URL_NETMNT_SCHEMES[i],
                             strlen(URL_NETMNT_SCHEMES[i])) == 0) {
                         add_reason(&v, strncmp(raw_url, "smb:", 4) == 0
+                                       || strncmp(raw_url, "cifs:", 5) == 0
                                        ? 55 : 40,
                                    "Remote-mount scheme '%s' — attaches "
                                    "a remote share/session (credential "

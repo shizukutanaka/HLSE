@@ -51,6 +51,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **`cifs:`/`x11:` mount-class + `daytime:`/`chargen:` legacy
+  schemes** (`hlse_core.c`): `cifs:` joins `smb:` in the
+  remote-mount set at +55 — it IS the SMB alias, so the
+  UNC/NetNTLM-leak verdict now applies to both spellings.
+  `x11:` opens an X Window connection to an attacker display
+  (remote-session class, +40). `daytime:`/`chargen:` (RFC
+  867/864 echo ports) join the legacy-fetch table (+30).
+
 - **SSI/XHTML web-code carriers + `<!--#exec` content rule**
   (`hlse_file.c`): `.shtm`/`.shtml`/`.stm`/`.xhtml` join the
   server-side code-carrier set (F3, +30) — SSI files execute

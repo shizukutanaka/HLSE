@@ -11540,6 +11540,13 @@ printf 'x\n' > "$XDIR181/l.svgz"; check "$XDIR181/l.svgz clean" "$(./hlse_core f
 printf '<html><body>index</body></html>\n' > "$XDIR181/m.shtml"; check "$XDIR181/m.shtml ext-only" "$(./hlse_core file "$XDIR181/m.shtml" | head -1 | grep -c 'LOG')" "1"
 rm -rf "$XDIR181"
 
+# ── cycle-182: cifs/x11 mount-class + daytime/chargen legacy ─────────
+check_url_hit 'cifs://evil.example/share' 'ALERT' "url: cifs flagged"
+check_url_hit 'x11://evil.example' 'ALERT' "url: x11 flagged"
+check_url_hit 'daytime://evil.example/x' 'LOG' "url: daytime flagged"
+check_url_hit 'chargen://evil.example/x' 'LOG' "url: chargen flagged"
+check_url_hit 'https://www.example.com/' 'OK' "url: https clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
