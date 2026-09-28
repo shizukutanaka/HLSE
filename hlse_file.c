@@ -230,6 +230,9 @@ static const char *EXECUTABLE_EXTS[] = {
      * (.iss/.isl), WiX (.wxs): all embed executable sections that
      * run on install and are abused as dropper delivery         */
     ".nsi", ".nsh", ".iss", ".isl", ".wxs",
+    /* ClickOnce deployment manifest — the sibling of .application
+     * that carries the payload reference                        */
+    ".manifest",
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
@@ -977,7 +980,7 @@ is_script_ext(const char *ext) {
         ".bat", ".cmd", ".vbs", ".vbe", ".js",
         ".jse", ".mjs", ".cjs", ".ksh", ".wsf", ".wsh", ".ws",
         ".hta", ".sh", ".py", ".reg", ".au3", ".a3x", ".kix",
-        ".nsi", ".nsh", ".iss", ".isl", ".wxs",
+        ".nsi", ".nsh", ".iss", ".isl", ".wxs", ".manifest",
         NULL
     };
     char lower[32];

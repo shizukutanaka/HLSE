@@ -51,6 +51,32 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Insurance-proof + deposit + rental + debt + loan + selfie
+  lures** (`hlse_text.c`): "proof of insurance · insurance card ·
+  insurance verification · proof of coverage · auto insurance
+  card · insurance id card" (insurance-proof phishing),
+  "security deposit return · deposit return · deposit withheld ·
+  deposit refund · get your deposit back" (rental deposit scams),
+  "vacation rental · airbnb reservation · airbnb booking · vrbo ·
+  rental reservation" (booking fraud), "debt validation ·
+  collection account · past due balance · pay for delete ·
+  collection notice · debt collector · validate your debt · debt
+  settlement offer" (FDCPA-collector fraud), "payday loan · cash
+  advance approved · instant loan · title loan · quick cash loan"
+  (instant-loan lures), "scholarship award · won a scholarship ·
+  scholarship selected · scholarship application fee" (scholarship
+  hooks), "selfie verification · video selfie · hold your id ·
+  take a selfie · photo of your id · selfie with your id"
+  (ID-selfie credential harvesting).
+- **`.manifest` ClickOnce deployment manifest** (`hlse_file.c`)
+  → LOG 30 — the sibling of `.application` carrying the payload
+  reference.
+- **`pres:` IMPP presence scheme** (`hlse_core.c`) → LOG 35 —
+  sibling of `im:`.
+- **`pk_` Klaviyo private API key** (`hlse_secrets.c`) →
+  ISOLATE 80 (pk_ + 32 hex; min_suffix=30 keeps Stripe
+  `pk_live_`/`pk_test_` at 29-char suffix on their own rows).
+
 - **Pharmacy + credit-limit + Medicare + settlement lures**
   (`hlse_text.c`): "prescription refill · medication recall ·
   pharmacy order · rx order · your prescription · prescription

@@ -11323,6 +11323,24 @@ check_text_hit 'i picked up my prescription at the pharmacy' 'OK' "text: benign 
 check_text_hit 'my subscription has been renewed thank you' 'LOG' "text: dedup renewal single-signal"
 check_text_hit 'the claim settlement arrived by mail' 'OK' "text: benign claim clean"
 
+# ── cycle-166: insurance/deposit/rental/debt/loan/selfie lures ─────────
+check_text_hit 'proof of insurance insurance card verification required' 'LOG' "text: ins-card flagged"
+check_text_hit 'security deposit return deposit refund withheld' 'LOG' "text: deposit flagged"
+check_text_hit 'airbnb reservation vrbo vacation rental booking' 'LOG' "text: rental flagged"
+check_text_hit 'debt validation collection account past due balance' 'LOG' "text: debt flagged"
+check_text_hit 'payday loan cash advance approved instant loan' 'LOG' "text: payday flagged"
+check_text_hit 'scholarship award won a scholarship selected' 'BLOCK' "text: scholarship flagged"
+check_text_hit 'selfie verification hold your id take a selfie' 'LOG' "text: selfie flagged"
+check_text_hit 'i carry my insurance card in the glovebox' 'OK' "text: benign ins clean"
+check_text_hit 'the vacation rental was perfect for our family' 'OK' "text: benign rental clean"
+check_text_hit 'take a selfie with your friends' 'OK' "text: benign selfie clean"
+XDIR166=$(mktemp -d /tmp/hlse166.XXXXXX)
+printf 'x\n' > "$XDIR166/app.manifest"; check "$XDIR166/app.manifest flagged" "$(./hlse_core file "$XDIR166/app.manifest" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"
+rm -rf "$XDIR166"
+check_url_hit 'pres:attacker@evil.example' 'LOG' "url: pres flagged"
+check "secret: klaviyo pk_ flagged" "$(./hlse_core secret 'pk_abcdef1234567890abcdef1234567890ab' | head -1 | grep -c 'ISOLATE\|BLOCK\|ALERT')" "1"
+check "secret: stripe pk_live still own row" "$(./hlse_core secret 'pk_live_abcdef1234567890abcdef12' | head -1 | grep -c 'LOG\|ALERT\|ISOLATE')" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

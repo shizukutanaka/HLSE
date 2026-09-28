@@ -550,6 +550,27 @@ static const char *BAIT_WORDS[] = {
     "switch your coverage", "medicaid renewal", "medicare card",
     "claim settlement", "settlement offer", "insurance payout",
     "settlement amount", "payout approved",
+    /* Insurance-proof + deposit-return + vacation-rental + debt +
+     * payday-loan + scholarship + selfie-verification lures —
+     * insurance-card verification, rental deposit refunds,
+     * Airbnb/Vrbo booking fraud, debt-validation collector
+     * scams, instant-loan approval lures, scholarship-award
+     * hooks, and ID-selfie credential harvesting                */
+    "proof of insurance", "insurance card", "insurance verification",
+    "proof of coverage", "auto insurance card", "insurance id card",
+    "security deposit return", "deposit return", "deposit withheld",
+    "deposit refund", "get your deposit back", "deposit back",
+    "vacation rental", "airbnb reservation", "airbnb booking",
+    "vrbo", "rental reservation", "booking confirmed your stay",
+    "debt validation", "collection account", "past due balance",
+    "pay for delete", "collection notice", "debt collector",
+    "validate your debt", "debt settlement offer",
+    "payday loan", "cash advance approved", "instant loan",
+    "title loan", "quick cash loan", "loan approved instantly",
+    "scholarship award", "won a scholarship", "scholarship selected",
+    "scholarship application fee", "scholarship notification",
+    "selfie verification", "video selfie", "hold your id",
+    "take a selfie", "photo of your id", "selfie with your id",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

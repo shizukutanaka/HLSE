@@ -242,6 +242,10 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "sk_test_",      8,  24, is_alnum_or_dash,   "Stripe Test Key",       30 },
     { "rk_test_",      8,  24, is_alnum_or_dash,   "Stripe Restricted Test Key", 30 },
     { "whsec_",        6,  20, is_alnum_or_dash,   "Stripe Webhook Secret", 85 },
+    /* Klaviyo private API key — pk_ + 32 hex. min_suffix=30 keeps
+     * Stripe pk_live_/pk_test_ (suffix 'live_'/'test_' + 24 = 29)
+     * below the bar, so each Stripe row still wins its own match */
+    { "pk_",           3,  30, is_alnum_or_dash,   "Klaviyo Private API Key", 80 },
     /* Square application secret / personal token (sq0csp-/sq0atp-) */
     { "sq0csp-",       7,  40, is_alnum_or_dash,   "Square Application Secret", 85 },
     /* Remaining payment processors — Razorpay (IN's dominant gateway),
