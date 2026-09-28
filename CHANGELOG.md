@@ -30,6 +30,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Solar-rebate + KYC-refresh + smart-meter lures** (`hlse_text.c`):
+  "free solar · solar rebate/program · government solar" (subsidy
+  fraud), "account review · periodic/annual review · kyc refresh ·
+  customer due diligence" (bank KYC-refresh phishing), and "smart
+  meter · meter upgrade/replacement" (fake utility notices).
+- **`itunes:` URI-handler flagging** (`hlse_core.c`): iTunes store
+  deep-link sibling of `itms:` → LOG 35.
+- **StarOffice 1.x carriers** (`hlse_file.c`): `.sxc`/`.sxi`/`.sdd`/
+  `.sxw`/`.sxm` — pre-ODF OpenOffice formats carrying macros + OLE
+  objects → LOG 30.
+
 - **Relief-payment + flight-compensation lures** (`hlse_text.c`):
   "stimulus check/payment · tariff rebate/dividend · inflation
   relief · relief payment" (fake-payout phishing collecting

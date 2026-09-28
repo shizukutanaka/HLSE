@@ -1751,7 +1751,7 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     "ms-project:", "ms-publisher:", "onenote:", "onenote-cmd:",
     "ms-settings:", "ms-people:", "ms-calculator:",
     "ms-appinstaller:", "ms-appinstaller-https:", "ms-windows-store:",
-    "itms-services:", "itms:", "itmss:", "itpc:",
+    "itms-services:", "itms:", "itmss:", "itpc:", "itunes:",
     "vscode:", "vscode-insiders:", "atom:",
     /* conferencing/messenger/app deep-links — a click hands the URI
      * to the client app (join meeting, open chat, run integration);

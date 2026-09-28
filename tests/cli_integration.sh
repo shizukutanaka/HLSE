@@ -11228,6 +11228,17 @@ XDIR157=$(mktemp -d /tmp/hlse157.XXXXXX)
 for e in mjs cjs ksh pssc psrc; do printf 'x\n' > "$XDIR157/drop.$e"; check "$XDIR157/drop.$e flagged" "$(./hlse_core file "$XDIR157/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
 rm -rf "$XDIR157"
 
+# ── cycle-158: solar/kyc/meter lures + itunes: + StarOffice carriers ────
+check_text_hit 'free solar panels government program solar rebate' 'LOG' "text: solar flagged"
+check_text_hit 'periodic review of your account required kyc refresh' 'LOG' "text: account-review flagged"
+check_text_hit 'smart meter upgrade required meter replacement schedule' 'LOG' "text: meter flagged"
+check_text_hit 'we reviewed the account in our quarterly audit' 'OK' "text: benign audit clean"
+check_text_hit 'the meter reading was recorded on friday' 'OK' "text: benign meter clean"
+check_url_hit 'itunes://evil.example/album/x' 'LOG' "url: itunes flagged"
+XDIR158=$(mktemp -d /tmp/hlse158.XXXXXX)
+for e in sxc sxi sdd sxw sxm; do printf 'x\n' > "$XDIR158/drop.$e"; check "$XDIR158/drop.$e flagged" "$(./hlse_core file "$XDIR158/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+rm -rf "$XDIR158"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

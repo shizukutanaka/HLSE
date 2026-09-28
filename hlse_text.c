@@ -465,6 +465,13 @@ static const char *BAIT_WORDS[] = {
     "flight delay compensation", "airline compensation",
     "compensation claim", "claim your compensation",
     "employee discount program",
+    /* Solar-rebate + account-review + smart-meter lures — 'free
+     * solar' subsidy fraud, bank KYC-refresh phishing, and fake
+     * utility meter-upgrade notices                               */
+    "free solar", "solar rebate", "solar program",
+    "government solar", "account review", "periodic review",
+    "annual account review", "kyc refresh", "customer due diligence",
+    "smart meter", "meter upgrade", "meter replacement",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

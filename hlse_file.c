@@ -472,6 +472,9 @@ static const char *EXECUTABLE_EXTS[] = {
     /* OpenDocument / legacy StarOffice templates — .ots/.ott/.otg/
      * .stw are macro-capable templates delivered as attachments    */
     ".ots", ".ott", ".otg", ".stw",
+    /* StarOffice/OpenOffice 1.x legacy formats — pre-ODF siblings of
+     * .ods/.odt that carry macros + OLE objects the same way       */
+    ".sxc", ".sxi", ".sdd", ".sxw", ".sxm",
     /* MS Access project/macro carriers — .mad/.maf/.mam/.maq/.mat/
      * .maw are Access containers that can carry VBA (same carrier
      * class as .mdb/.accdb already flagged)                        */
