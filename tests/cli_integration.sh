@@ -11201,6 +11201,19 @@ XDIR155=$(mktemp -d /tmp/hlse155.XXXXXX)
 for e in eps ps wmf emf; do printf 'x\n' > "$XDIR155/drop.$e"; check "$XDIR155/drop.$e flagged" "$(./hlse_core file "$XDIR155/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
 rm -rf "$XDIR155"
 
+# ── cycle-156: shopper/nft/mortgage lures + mlsn. + image carriers ──────
+check_text_hit 'secret shopper assignment deposit this check first' 'LOG' "text: secret-shopper flagged"
+check_text_hit 'whitelist spot mint your free nft claim your airdrop' 'BLOCK' "text: nft-mint flagged"
+check_text_hit 'mortgage relief loan modification program call now' 'LOG' "text: mortgage-relief flagged"
+check_text_hit 'vehicle purchase protection escrow service for your car' 'LOG' "text: vehicle-escrow flagged"
+check_text_hit 'i shop at the farmers market on weekends' 'OK' "text: benign shopper clean"
+check_text_hit 'the loan modification paperwork was filed' 'OK' "text: benign mortgage clean"
+ML="mlsn."; ML="${ML}a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7"
+check_secret_hit "$ML" 'MailerSend API Key' "secret: mailersend flagged"
+XDIR156=$(mktemp -d /tmp/hlse156.XXXXXX)
+for e in esd ffu; do printf 'x\n' > "$XDIR156/drop.$e"; check "$XDIR156/drop.$e flagged" "$(./hlse_core file "$XDIR156/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+rm -rf "$XDIR156"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

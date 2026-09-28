@@ -330,6 +330,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * has a rich RCE history; .wmf/.emf metafiles carry executable
      * Escape records (MS05-053 class)                                */
     ".ps", ".eps", ".wmf", ".emf",
+    /* Windows deployment-image carriers — .esd (Electronic Software
+     * Delivery) and .ffu (Full Flash Update) are WIM-class install
+     * images that drop arbitrary payloads (.wim already listed)    */
+    ".esd", ".ffu",
     /* Legacy help/archive containers — .hlp is WinHelp (winhlp32 exploit
      * surface, executables embedded in help topics); .cab is a Windows
      * install/extraction container; .ace/.arj/.lha/.lzh/.zoo are obsolete

@@ -449,6 +449,14 @@ static const char *BAIT_WORDS[] = {
     "timeshare exit", "exit your timeshare", "get out of your timeshare",
     "timeshare cancellation", "cancel your timeshare",
     "timeshare relief", "timeshare resale", "timeshare contract",
+    /* Mystery/secret-shopper + NFT-drainer + mortgage-relief lures —
+     * check-cashing advance-fee scams, wallet-drain mint pages, and
+     * fake loan-modification offers                               */
+    "secret shopper", "shopper assignment", "shopper evaluation",
+    "nft mint", "free mint", "whitelist spot", "mint your free",
+    "claim your airdrop", "airdrop claim", "mortgage relief",
+    "loan modification", "vehicle purchase protection",
+    "car escrow", "auto escrow",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

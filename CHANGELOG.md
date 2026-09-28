@@ -30,6 +30,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Shopper / NFT-drainer / mortgage-relief lures** (`hlse_text.c`):
+  "secret shopper · shopper assignment/evaluation" (check-cashing
+  advance-fee), "nft mint · free mint · whitelist spot · mint your
+  free · claim your airdrop · airdrop claim" (wallet-drainer mint
+  pages), "mortgage relief · loan modification · vehicle purchase
+  protection · car/auto escrow" (financial-fraud lures).
+- **`mlsn.` MailerSend API key** (`hlse_secrets.c`) → ISOLATE 80.
+- **`.esd`/`.ffu` Windows deployment images** (`hlse_file.c`):
+  Electronic Software Delivery + Full Flash Update install-image
+  carriers → LOG 30 (same class as `.wim`).
+
 - **Timeshare-exit + utility-shutoff variants** (`hlse_text.c`):
   "timeshare exit · exit your timeshare · timeshare cancellation ·
   cancel your timeshare · timeshare relief/resale/contract"

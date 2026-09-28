@@ -381,6 +381,8 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "sk-ant-",       7,  20, is_alnum_or_dash,   "Anthropic API Key",     90 },
     /* OpenRouter API key — 'sk-or-v1-' + 64-hex suffix              */
     { "sk-or-v1-",     9,  60, is_hex,             "OpenRouter API Key",    85 },
+    /* MailerSend API token — 'mlsn.' + long alnum/dot suffix        */
+    { "mlsn.",         5,  32, is_alnum_dash_dot,  "MailerSend API Key",    80 },
     /* Newer LLM providers with distinctive prefixes (~zero FP):
      * Groq gsk_<52>, Perplexity pplx-<48>, xAI/Grok xai-<80>, Replicate
      * r8_<36>, Hugging Face org api_org_<34>.                          */
