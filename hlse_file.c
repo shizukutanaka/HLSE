@@ -237,6 +237,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * application events, .inc is a script-include that executes
      * inline, .plx is a Perl executable script                  */
     ".asa", ".inc", ".plx",
+    /* Visio stencil/template carriers (OLE objects; .vstm is the
+     * macro-enabled template) + Excel toolbar (.xlb) and legacy
+     * Excel-4 macro variants (.xlv) — .xlm already listed        */
+    ".vss", ".vssx", ".vst", ".vstm", ".vstx", ".xlb", ".xlv",
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
@@ -985,7 +989,8 @@ is_script_ext(const char *ext) {
         ".jse", ".mjs", ".cjs", ".ksh", ".wsf", ".wsh", ".ws",
         ".hta", ".sh", ".py", ".reg", ".au3", ".a3x", ".kix",
         ".nsi", ".nsh", ".iss", ".isl", ".wxs", ".manifest",
-        ".asa", ".inc", ".plx",
+        ".asa", ".inc", ".plx", ".vss", ".vssx", ".vst",
+        ".vstm", ".vstx", ".xlb", ".xlv",
         NULL
     };
     char lower[32];

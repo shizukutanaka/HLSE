@@ -51,6 +51,27 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **REAL-ID + no-show + wire-recall + vault + MFA + termination
+  lures** (`hlse_text.c`): "real id · real id deadline · real id
+  appointment · real id requirement · real id compliant" (DMV
+  REAL-ID scams), "missed appointment fee · no-show fee · no show
+  fee · missed your appointment" (no-show charge fraud), "wire
+  recall · wire transfer recall · payment recall · recall the
+  wire · recall the payment · recall notice" (BEC recall
+  pretexts), "password manager · your vault · vault compromised ·
+  master password reset · vault breach · vault was accessed"
+  (password-manager breach phishing), "sign-in attempt blocked ·
+  deny the sign-in · deny this attempt · approve the sign-in ·
+  approve sign-in · deny the request · wasn't you button" (MFA-
+  fatigue denial lures), "termination letter · severance notice ·
+  final paycheck · employment is terminated · severance agreement ·
+  layoff notice · termination of employment" (HR termination
+  malspam).
+- **Visio/Excel residual carriers** (`hlse_file.c`): `.vss`/
+  `.vssx`/`.vst`/`.vstx` (Visio stencils — OLE objects), `.vstm`
+  (macro-enabled Visio template), `.xlb` (Excel toolbar),
+  `.xlv` (Excel-4 macro variant) → LOG 30.
+
 - **Pet-deposit + vehicle-deposit + app-fee + class-member +
   DME + Lifeline lures** (`hlse_text.c`): "puppy deposit · pet
   adoption fee · puppy shipping · pet delivery fee · deposit for

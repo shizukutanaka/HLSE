@@ -11356,6 +11356,19 @@ rm -rf "$XDIR167"
 check_url_hit 'z39.50://evil.example/db' 'LOG' "url: z3950 flagged"
 check_url_hit 'z39.50s://evil.example/db' 'LOG' "url: z3950s flagged"
 
+# ── cycle-168: realid/noshow/wirerecall/vault/mfa/termination lures ────
+check_text_hit 'real id deadline real id appointment requirement' 'ALERT' "text: realid flagged"
+check_text_hit 'missed appointment fee no-show fee charge' 'LOG' "text: noshow flagged"
+check_text_hit 'wire recall wire transfer recall payment recall' 'LOG' "text: wirerecall flagged"
+check_text_hit 'password manager vault compromised master password reset' 'LOG' "text: vault flagged"
+check_text_hit 'sign-in attempt blocked deny the sign-in deny this attempt' 'ALERT' "text: mfa flagged"
+check_text_hit 'termination letter severance notice employment is terminated' 'LOG' "text: termin flagged"
+check_text_hit 'i have a real id drivers license' 'OK' "text: benign realid clean"
+check_text_hit 'the password manager stores my logins' 'OK' "text: benign vault clean"
+XDIR168=$(mktemp -d /tmp/hlse168.XXXXXX)
+for e in vss vssx vst vstm vstx xlb xlv; do printf 'x\n' > "$XDIR168/d.$e"; check "$XDIR168/d.$e flagged" "$(./hlse_core file "$XDIR168/d.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+rm -rf "$XDIR168"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

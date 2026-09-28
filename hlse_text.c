@@ -592,6 +592,28 @@ static const char *BAIT_WORDS[] = {
     "durable medical equipment", "free brace", "orthopedic brace",
     "free government phone", "lifeline program", "free phone",
     "free tablet", "government phone", "lifeline benefit",
+    /* REAL-ID + no-show-fee + wire-recall + vault-breach + MFA-
+     * fatigue + termination-notice lures — DMV REAL-ID deadline
+     * scams, fake no-show charges, BEC wire-recall pretexts,
+     * password-manager breach phishing, sign-in denial lures,
+     * and fake HR termination malspam                            */
+    "real id", "real id deadline", "real id appointment",
+    "real id requirement", "real id compliant",
+    "missed appointment fee", "no-show fee", "no show fee",
+    "missed your appointment", "missed appointment",
+    "wire recall", "wire transfer recall", "payment recall",
+    "recall the wire", "recall the payment", "recall notice",
+    /* bare 'password manager' omitted — a common product mention
+     * in legitimate text (same rule as 'medicare'); the breach-
+     * qualified forms carry the detection                       */
+    "your vault", "vault compromised",
+    "master password reset", "vault breach", "vault was accessed",
+    "sign-in attempt blocked", "deny the sign-in",
+    "deny this attempt", "approve the sign-in", "approve sign-in",
+    "deny the request", "wasn't you button",
+    "termination letter", "severance notice", "final paycheck",
+    "employment is terminated", "severance agreement",
+    "layoff notice", "termination of employment",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",
