@@ -571,6 +571,27 @@ static const char *BAIT_WORDS[] = {
     "scholarship application fee", "scholarship notification",
     "selfie verification", "video selfie", "hold your id",
     "take a selfie", "photo of your id", "selfie with your id",
+    /* Pet-deposit + vehicle-deposit + rental-application +
+     * class-action + DME-brace + Lifeline-phone lures — pet
+     * shipping-fee fraud, car-hold deposits, rental screening
+     * fees, class-member settlement hooks, free-medical-
+     * equipment Medicare fraud, and free-government-phone
+     * benefit phishing                                           */
+    "puppy deposit", "pet adoption fee", "pet adoption",
+    "shipping fee for the puppy", "puppy shipping",
+    "pet delivery fee", "pet shipping", "deposit for the puppy",
+    "vehicle deposit", "car deposit", "deposit to hold the car",
+    "rv deposit", "boat deposit",
+    "credit check fee", "background check fee",
+    "rental application fee", "tenant screening fee",
+    "screening fee", "application processing fee",
+    /* 'class action settlement'/'settlement payment' already
+     * listed above                                              */
+    "class member", "class settlement", "you are a class member",
+    "back brace", "knee brace", "medical equipment",
+    "durable medical equipment", "free brace", "orthopedic brace",
+    "free government phone", "lifeline program", "free phone",
+    "free tablet", "government phone", "lifeline benefit",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

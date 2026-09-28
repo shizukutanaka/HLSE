@@ -51,6 +51,27 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Pet-deposit + vehicle-deposit + app-fee + class-member +
+  DME + Lifeline lures** (`hlse_text.c`): "puppy deposit · pet
+  adoption fee · puppy shipping · pet delivery fee · deposit for
+  the puppy" (pet scams), "vehicle deposit · car deposit · deposit
+  to hold the car · rv deposit · boat deposit" (vehicle-hold
+  fraud), "credit check fee · background check fee · rental
+  application fee · tenant screening fee · application processing
+  fee" (rental screening-fee fraud), "class member · class
+  settlement · you are a class member" (class-action hooks —
+  'class action settlement'/'settlement payment' already covered),
+  "back brace · knee brace · medical equipment · durable medical
+  equipment · free brace · orthopedic brace" (DME Medicare fraud),
+  "free government phone · lifeline program · free phone · free
+  tablet · government phone · lifeline benefit" (Lifeline/ACP
+  benefit phishing).
+- **Server-side code carriers** (`hlse_file.c`): `.asa`
+  (global.asa ASP events), `.inc` (script include), `.plx` (Perl
+  executable) → LOG 30.
+- **`z39.50:`/`z39.50s:` legacy library protocol**
+  (`hlse_core.c`) → LOG 30.
+
 - **Insurance-proof + deposit + rental + debt + loan + selfie
   lures** (`hlse_text.c`): "proof of insurance · insurance card ·
   insurance verification · proof of coverage · auto insurance

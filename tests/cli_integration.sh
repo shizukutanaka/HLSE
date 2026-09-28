@@ -11341,6 +11341,21 @@ check_url_hit 'pres:attacker@evil.example' 'LOG' "url: pres flagged"
 check "secret: klaviyo pk_ flagged" "$(./hlse_core secret 'pk_abcdef1234567890abcdef1234567890ab' | head -1 | grep -c 'ISOLATE\|BLOCK\|ALERT')" "1"
 check "secret: stripe pk_live still own row" "$(./hlse_core secret 'pk_live_abcdef1234567890abcdef12' | head -1 | grep -c 'LOG\|ALERT\|ISOLATE')" "1"
 
+# ── cycle-167: pet/vehicle/appfee/classaction/dme/lifeline lures ───────
+check_text_hit 'puppy deposit pet adoption fee puppy shipping' 'LOG' "text: pet-dep flagged"
+check_text_hit 'vehicle deposit car deposit deposit to hold the car' 'LOG' "text: veh-dep flagged"
+check_text_hit 'credit check fee background check fee rental application fee' 'LOG' "text: appfee flagged"
+check_text_hit 'class member class settlement you are a class member' 'LOG' "text: classmem flagged"
+check_text_hit 'back brace knee brace durable medical equipment free' 'LOG' "text: dme flagged"
+check_text_hit 'free government phone lifeline program free tablet' 'LOG' "text: lifeline flagged"
+check_text_hit 'we adopted our puppy from the shelter last year' 'OK' "text: benign pet clean"
+check_text_hit 'the class reunion is next month' 'OK' "text: benign class clean"
+XDIR167=$(mktemp -d /tmp/hlse167.XXXXXX)
+for e in asa inc plx; do printf 'x\n' > "$XDIR167/g.$e"; check "$XDIR167/g.$e flagged" "$(./hlse_core file "$XDIR167/g.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+rm -rf "$XDIR167"
+check_url_hit 'z39.50://evil.example/db' 'LOG' "url: z3950 flagged"
+check_url_hit 'z39.50s://evil.example/db' 'LOG' "url: z3950s flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

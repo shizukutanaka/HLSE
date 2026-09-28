@@ -1723,6 +1723,9 @@ static const char *const URL_LEGACY_SCHEMES[] = {
     "web+mail:", "web+cal:", "web+login:",
     /* IMPP presence scheme — sibling of im: (already flagged)    */
     "pres:",
+    /* Z39.50 library-retrieval protocol — legacy remote-fetch
+     * handler (plain + s=TLS variant)                            */
+    "z39.50:", "z39.50s:",
     /* TLS-wrapped variants of the legacy transports — ftp/nntp over
      * TLS are the same cleartext-era handler class; ldaps: was
      * already listed while its ftp/nntp siblings fell through    */

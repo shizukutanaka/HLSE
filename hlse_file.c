@@ -233,6 +233,10 @@ static const char *EXECUTABLE_EXTS[] = {
     /* ClickOnce deployment manifest — the sibling of .application
      * that carries the payload reference                        */
     ".manifest",
+    /* Server-side code carriers — global.asa runs ASP session/
+     * application events, .inc is a script-include that executes
+     * inline, .plx is a Perl executable script                  */
+    ".asa", ".inc", ".plx",
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
@@ -981,6 +985,7 @@ is_script_ext(const char *ext) {
         ".jse", ".mjs", ".cjs", ".ksh", ".wsf", ".wsh", ".ws",
         ".hta", ".sh", ".py", ".reg", ".au3", ".a3x", ".kix",
         ".nsi", ".nsh", ".iss", ".isl", ".wxs", ".manifest",
+        ".asa", ".inc", ".plx",
         NULL
     };
     char lower[32];
