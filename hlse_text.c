@@ -480,6 +480,16 @@ static const char *BAIT_WORDS[] = {
     "free energy audit", "energy audit", "home energy check",
     "irs transcript", "tax transcript", "dmv appointment",
     "license renewal online", "online license renewal",
+    /* Gold-bar courier + benefit-credit lures — victims are told to
+     * liquidate into gold and hand it to a courier (major 2024-25
+     * FBI-warned scam), plus child-tax-credit and medical-bill
+     * forgiveness hooks                                            */
+    "gold bar", "gold bars", "precious metals",
+    "courier will collect", "hand it to our", "hand them to",
+    "our agent will pick up", "liquidate your assets",
+    "convert to gold", "gold purchase", "gold delivery",
+    "child tax credit", "tax credit advance", "tax credit payment",
+    "hospital bill forgiveness", "medical bill forgiveness",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

@@ -392,6 +392,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * own links and attachments) inside an attachment; the classic
      * 'invoice.eml' phishing carrier                             */
     ".eml", ".msg",
+    /* Outlook message carriers — .otm is a VBA-macro-capable mail
+     * template, .oft a custom form with script handlers, .nws the
+     * OE news-message sibling of .eml                              */
+    ".otm", ".oft", ".nws",
     /* Cursor payloads — .ani animated cursors parse on preview
      * (historic ANIH exploit class, still parsed by the shell);
      * .cur is the static sibling                                  */

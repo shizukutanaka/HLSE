@@ -11255,6 +11255,20 @@ XDIR159=$(mktemp -d /tmp/hlse159.XXXXXX)
 for e in odg odb odf; do printf 'x\n' > "$XDIR159/drop.$e"; check "$XDIR159/drop.$e flagged" "$(./hlse_core file "$XDIR159/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
 rm -rf "$XDIR159"
 
+# ── cycle-160: gold-courier + outlook carriers + sips:/xoxr- ───────────
+check_text_hit 'liquidate your assets buy gold bars courier will collect' 'LOG' "text: gold-courier flagged"
+check_text_hit 'child tax credit advance tax credit payment approved' 'LOG' "text: tax-credit flagged"
+check_text_hit 'hospital bill forgiveness medical bill forgiveness' 'LOG' "text: bill-forgiveness flagged"
+check_text_hit 'the gold bar exhibit at the museum was popular' 'OK' "text: benign gold clean"
+check_text_hit 'our agent will pick up the documents tomorrow' 'OK' "text: benign agent clean"
+XR="xoxr-1-"; XR="${XR}abcdefghij1234"
+check_secret_hit "$XR" 'Slack Refresh Token' "secret: xoxr flagged"
+check_url_hit 'sips:attacker@evil.com' 'LOG' "url: sips flagged"
+check_url_hit 'office://open?u=x' 'LOG' "url: office flagged"
+XDIR160=$(mktemp -d /tmp/hlse160.XXXXXX)
+for e in otm oft nws; do printf 'x\n' > "$XDIR160/drop.$e"; check "$XDIR160/drop.$e flagged" "$(./hlse_core file "$XDIR160/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+rm -rf "$XDIR160"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

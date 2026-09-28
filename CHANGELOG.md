@@ -30,6 +30,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Gold-bar courier + benefit-credit lures** (`hlse_text.c`):
+  "gold bar(s) · precious metals · courier will collect · hand it
+  to our · our agent will pick up · liquidate your assets ·
+  convert to gold" (FBI-warned gold-courier fraud), "child tax
+  credit · tax credit advance/payment", "hospital/medical bill
+  forgiveness".
+- **`xoxr-` Slack refresh token** (`hlse_secrets.c`) → ISOLATE 85.
+- **`sips:`/`office:`/`feeds:`/`rtspu:` URI handlers**
+  (`hlse_core.c`): TLS SIP sibling (LOG 35, same band as `sip:`),
+  Office deep-link, feeds:/rtspu: legacy+streaming variants.
+- **Outlook message carriers** (`hlse_file.c`): `.otm` (VBA
+  macro-capable mail template), `.oft` (scripted custom form),
+  `.nws` (OE news-message sibling of `.eml`) → LOG 30.
+
 - **Digital-arrest + energy-audit + document lures** (`hlse_text.c`):
   "digital arrest · stay on the video call · video call
   verification · you are under arrest" (video-call detention scam),

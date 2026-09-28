@@ -1717,7 +1717,7 @@ static const char *const URL_WRAPPER_SCHEMES[] = {
 static const char *const URL_LEGACY_SCHEMES[] = {
     "ftp:", "telnet:", "gopher:", "nntp:", "dict:",
     "tftp:", "ldap:", "ldaps:", "finger:", "whois:",
-    "irc:", "ircs:", "feed:", "webcal:", "dayz:",
+    "irc:", "ircs:", "feed:", "feeds:", "webcal:", "dayz:",
     /* TLS-wrapped variants of the legacy transports — ftp/nntp over
      * TLS are the same cleartext-era handler class; ldaps: was
      * already listed while its ftp/nntp siblings fell through    */
@@ -1752,6 +1752,7 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     "ms-settings:", "ms-people:", "ms-calculator:",
     "ms-appinstaller:", "ms-appinstaller-https:", "ms-windows-store:",
     "itms-services:", "itms:", "itmss:", "itpc:", "itunes:", "play:",
+    "office:",
     "vscode:", "vscode-insiders:", "atom:",
     /* conferencing/messenger/app deep-links — a click hands the URI
      * to the client app (join meeting, open chat, run integration);
@@ -1767,7 +1768,7 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     "notion:", "figma:", "linear:", "raycast:",
     "fb:", "fb-messenger:", "instagram:", "twitter:",
     "comgooglemaps:", "geo:", "maps:",
-    "rtsp:", "rtmp:", "mms:",
+    "rtsp:", "rtspu:", "rtmp:", "mms:",
     /* Windows resource/shell URI handlers — res:// loads a resource
      * out of a named DLL/EXE (in-page code exec in IE contexts),
      * shell: opens shell namespace folders, expect: hands a string
@@ -1935,6 +1936,7 @@ check_url(const char *raw_url) {
                      || strncmp(raw_url, "callto:", 7) == 0
                      || strncmp(raw_url, "wtai:", 5) == 0
                      || strncmp(raw_url, "sip:", 4) == 0
+                     || strncmp(raw_url, "sips:", 5) == 0
                      || strncmp(raw_url, "im:", 3) == 0
                      || strncmp(raw_url, "xmpp:", 5) == 0
                      || strncmp(raw_url, "skype:", 6) == 0
@@ -2672,6 +2674,7 @@ hlse_scan(const char *input) {
         strncmp(input, "callto:", 7) == 0 ||
         strncmp(input, "wtai:", 5) == 0 ||
         strncmp(input, "sip:", 4) == 0 ||
+        strncmp(input, "sips:", 5) == 0 ||
         strncmp(input, "im:", 3) == 0 ||
         strncmp(input, "xmpp:", 5) == 0 ||
         strncmp(input, "skype:", 6) == 0 ||
