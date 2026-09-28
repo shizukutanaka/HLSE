@@ -30,6 +30,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Loyalty-points + debt-relief scam vocab** (`hlse_text.c`):
+  "loyalty/reward points · points are expiring · redeem your points ·
+  airline miles · frequent flyer miles · claim your points" (points/
+  miles expiry phishing), plus "settle your debt · debt relief ·
+  debt consolidation · eliminate/reduce your debt · fix your credit ·
+  credit repair · credit score has dropped · guaranteed credit
+  approval · bad credit approved" (debt-relief / credit-repair
+  advance-fee fraud).
+- **Media playlist/redirector carriers** (`hlse_file.c`): `.wvx`,
+  `.wax`, `.m3u`, `.m3u8`, `.pls`, `.vlc` — playlists that dereference
+  remote streams (documented malspam redirector class).
 - **P2P-payment + marketplace-scam vocab** (`hlse_text.c`):
   "zelle/venmo/cashapp transfer|payment · pay through/via zelle ·
   interested in your item · item on marketplace · marketplace

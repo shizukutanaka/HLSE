@@ -441,6 +441,11 @@ static const char *EXECUTABLE_EXTS[] = {
      * carrier); .sparsebundle — macOS disk-image bundle, same risk
      * class as .dmg                                                */
     ".ipsw", ".sparsebundle",
+    /* Media playlist/redirector carriers — a playlist that references
+     * a remote stream is a documented malspam redirector (.wvx is a
+     * Windows Media metafile; .m3u/.m3u8/.pls/.vlc can carry remote
+     * URLs a media player will dereference)                         */
+    ".wvx", ".wax", ".m3u", ".m3u8", ".pls", ".vlc",
     NULL
 };
 

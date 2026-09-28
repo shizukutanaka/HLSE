@@ -342,6 +342,18 @@ static const char *BAIT_WORDS[] = {
     "deposit to hold", "hold the item", "send the deposit",
     "shipping fee for the item", "courier will pick up",
     "pick up the item", "is it still available",
+    /* Loyalty-points / miles phishing and debt-relief / credit-repair
+     * scams — 'your points are expiring' lures and 'settle your debt'
+     * / 'fix your credit' advance-fee fraud                        */
+    "loyalty points", "reward points", "rewards points",
+    "points are expiring", "points expire", "points are about to expire",
+    "airline miles", "frequent flyer miles", "redeem your points",
+    "redeem points", "claim your points", "points balance",
+    "settle your debt", "debt relief", "debt consolidation",
+    "debt forgiveness", "eliminate your debt", "reduce your debt",
+    "fix your credit", "credit repair", "credit score has dropped",
+    "improve your credit score", "boost your credit score",
+    "guaranteed credit approval", "bad credit approved",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

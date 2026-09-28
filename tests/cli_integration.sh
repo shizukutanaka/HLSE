@@ -10992,6 +10992,23 @@ for f in "$XDIR138/t.ipsw" "$XDIR138/t.sparsebundle"; do
 done
 rm -rf "$XDIR138"
 
+# ── cycle-139: loyalty/debt scams + media-redirector carriers ──
+check_text_hit 'your loyalty points are expiring redeem your points now' 'LOG' "text: points-expiry flagged"
+check_text_hit 'debt relief program approved eliminate your debt' 'BLOCK' "text: debt-relief flagged"
+check_text_hit 'fix your credit score fast guaranteed credit approval' 'LOG' "text: credit-repair flagged"
+check_text_hit 'the loyalty points earned from my trip' 'OK' "text: benign points clean"
+check_text_hit 'we offer credit repair services' 'OK' "text: benign credit clean"
+XDIR139=$(mktemp -d /tmp/hlse139.XXXXXX)
+printf 'x\n' > "$XDIR139/t.wvx"
+printf 'x\n' > "$XDIR139/t.m3u8"
+printf 'x\n' > "$XDIR139/t.pls"
+for f in "$XDIR139/t.wvx" "$XDIR139/t.m3u8" "$XDIR139/t.pls"; do
+    ./hlse_core file "$f" 2>&1 | grep -q "LOG" \
+        && check "file: $(basename "$f") flagged" "0" "0" \
+        || check "file: $(basename "$f") flagged" "0" "1"
+done
+rm -rf "$XDIR139"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
