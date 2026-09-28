@@ -10542,6 +10542,22 @@ for e in hwp hwpx; do
 done
 rm -rf "$XDIR107"
 
+# ── cycle-108: app-package/VM carriers + payment tokens ──
+XDIR108=$(mktemp -d /tmp/hlse108.XXXXXX)
+for e in appx appxbundle msix msixbundle ova ovf wim; do
+    printf 'x\n' > "$XDIR108/t.$e"
+    ./hlse_core file "$XDIR108/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+rm -rf "$XDIR108"
+AD="AQEy"; AD="${AD}8qAbCdEfGhIjKlMnOpQrStUvWxYz12345678ab"
+check_secret_hit "$AD" 'Adyen API Key' "secret: adyen api key flagged"
+MO="live_"; MO="${MO}8qAbCdEfGhIjKlMnOpQrStUvWxYz12345678"
+check_secret_hit "$MO" 'Mollie Live Key' "secret: mollie live key flagged"
+check_secret_hit 'the live_show started at eight' 'OK' "secret: live_ word benign clean"
+check_secret_hit 'my test_results came back normal' 'OK' "secret: test_ word benign clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

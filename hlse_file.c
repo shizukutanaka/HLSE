@@ -347,6 +347,13 @@ static const char *EXECUTABLE_EXTS[] = {
     /* Hangul Word Processor — OLE/BAT-embedded script carrier used
      * heavily in KR-targeted lure documents (.hwp/.hwpx)           */
     ".hwp", ".hwpx",
+    /* Windows app packages — MSIX/AppX sideload an installed app
+     * (AppX signature-spoof chain, CVE-2021-43890; Emotet/BazarLoader
+     * used .appx as the installer carrier)                        */
+    ".appx", ".appxbundle", ".msix", ".msixbundle",
+    /* VM appliance / disk-image carriers — mounting one runs a full
+     * machine/image payload; same class as .vhd/.iso/.dmg          */
+    ".ova", ".ovf", ".wim",
     NULL
 };
 

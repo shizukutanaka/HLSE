@@ -15,6 +15,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **App-package / VM-image carriers** (`hlse_file.c`): `.appx`/
+  `.appxbundle`/`.msix`/`.msixbundle` (MSIX/AppX sideload — the
+  CVE-2021-43890 AppX signature-spoof chain used by Emotet/
+  BazarLoader installers) and `.ova`/`.ovf`/`.wim` (VM appliance /
+  disk-image carriers, same mount-and-run class as .vhd/.iso).
+- **Payment token formats** (`hlse_secrets.c`): `AQEx`/`AQEy` Adyen
+  API keys and bare `live_`/`test_` Mollie keys (30+ suffix keeps
+  `live_show`/`test_results` prose clean).
 - **ClickFix/ConsoleFix imperative forms** (`hlse_text.c`
   CLICKFIX_WORDS): "paste the command", "copy this/the command",
   "copy and paste this/the command", "paste into/in the console",

@@ -369,6 +369,13 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "sq0atp-",       7,  22, is_alnum_or_dash,   "Square Access Token",   85 },
     { "sq0idp-",       7,  22, is_alnum_or_dash,   "Square OAuth Token",    85 },
 
+    /* Adyen API keys start AQEx/AQEy (EU payment processor) */
+    { "AQEx",          4,  38, is_alnum_or_dash,   "Adyen API Key",        85 },
+    { "AQEy",          4,  38, is_alnum_or_dash,   "Adyen API Key",        85 },
+    /* Mollie live/test API keys — bare live_/test_ prefixes */
+    { "live_",         5,  30, is_alnum_or_dash,   "Mollie Live Key",      75 },
+    { "test_",         5,  30, is_alnum_or_dash,   "Mollie Test Key",      40 },
+
     /* Braintree / PayPal Checkout access tokens carry literal '$'
      * separators: access_token$production$<16>$<64>               */
     { "access_token$production$", 24, 16, is_alnum_or_dash,
