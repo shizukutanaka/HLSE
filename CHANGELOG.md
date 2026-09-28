@@ -30,6 +30,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Unclaimed-property + credit-freeze vocab** (`hlse_text.c`):
+  "unclaimed property/money/funds/deposit · abandoned property ·
+  escheatment · money owed to you" (escheat scams) plus "credit
+  freeze · security freeze · fraud alert · credit monitoring ·
+  identity theft protection · credit file" (fake fraud-alert
+  notifications).
 - **Shopify token family** (`hlse_secrets.c`): `shpat_` (Admin API),
   `shppa_` (app token), `shpss_` (shared secret), `shpca_` (client
   credential) — 32-hex suffix, store admin/customer-data access.

@@ -389,6 +389,15 @@ static const char *BAIT_WORDS[] = {
     "employment screening", "verify your identity for employment",
     "dental coverage", "vision insurance", "dental plan",
     "vision plan", "insurance plan update",
+    /* Unclaimed-property (escheat) scams + credit-freeze lures —
+     * 'money owed to you' bait that harvests identity data, and
+     * fake fraud-alert / credit-freeze notifications               */
+    "unclaimed property", "unclaimed money", "unclaimed funds",
+    "unclaimed deposit", "unclaimed insurance", "unclaimed tax",
+    "abandoned property", "escheatment", "money owed to you",
+    "funds owed to you", "credit freeze", "security freeze",
+    "fraud alert", "credit monitoring", "identity theft protection",
+    "freeze on your", "credit file", "your credit report flagged",
     /* Student-aid + veterans-benefits lures — fake FAFSA/grant
      * notifications and VA-claim/disability benefit phishing that
      * harvest SSN and banking data                                  */

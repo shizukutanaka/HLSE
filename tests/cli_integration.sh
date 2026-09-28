@@ -11116,6 +11116,13 @@ printf 'x\n' > "$XDIR146/t.maq"
     || check "file: .maq access-query flagged" "0" "1"
 rm -rf "$XDIR146"
 
+# ── cycle-147: unclaimed-property + credit-freeze lures ─────────────────
+check_text_hit 'unclaimed property in your name claim your share' 'LOG' "text: unclaimed-property flagged"
+check_text_hit 'escheatment notice unclaimed deposit funds owed to you' 'LOG' "text: escheatment flagged"
+check_text_hit 'security freeze on your credit file fraud alert' 'LOG' "text: credit-freeze flagged"
+check_text_hit 'i placed a fraud alert on my credit' 'OK' "text: benign fraud-alert clean"
+check_text_hit 'unclaimed property seminar registration' 'OK' "text: benign unclaimed clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
