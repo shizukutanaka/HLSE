@@ -15,9 +15,9 @@ Target version: 0.9.x.
 | Invariant | Requirement |
 |-----------|-------------|
 | Language | C99, portable (Linux + macOS). libc + libm only. |
-| Network | **Zero network calls**, ever (CI privacy-tripwire enforced). |
+| Network | **Zero network calls**, ever. Enforced by `make test` via `tests/privacy_check.sh`, which runs all 13 verdict-producing subcommands under `strace -e trace=network` and fails on any `socket`/`connect`/`bind`/`getaddrinfo`/`sendto`/`recvfrom`/`sendmsg`. Skips (never fails) where `strace` or `ptrace` is unavailable. |
 | Allocation | Allocation-light; bounded stack/static buffers; no unbounded input. |
-| Determinism | Same input → same verdict. No time/random dependence in scoring. |
+| Determinism | **Pure-analysis functions** (URL, text, secret, file, package, paste, clipboard, email) are total functions of their argument: same input → same verdict, forever, with no time, random, locale or environment dependence. Verified: those modules contain zero calls to `time()`/`rand()`/`clock()`. **Host-state functions** (`protect`, `audit`, `network`, `esp`, `scan`) observe a system that changes, so determinism means same *observed state* → same verdict. One deliberate temporal dependence exists and is documented at its site: the SMB canary check (`hlse_protect.c`, S4) scores a canary file accessed within the last 300 s, which cannot be expressed without a clock. |
 | Memory safety | Clean under ASan + UBSan; strict `-Wall -Wextra -Wpedantic -Wshadow -Wconversion`; cppcheck error-gate clean. |
 | File I/O | Read-only. **Untrusted paths** (directory-scan entries, ransomware-scan files): `O_NOFOLLOW` + `O_NONBLOCK` + `fstat`/`S_ISREG` — never follow attacker-controlled symlinks, never block on a planted FIFO, only read regular files. **Fixed trusted system paths** (`/etc/hosts`, `/etc/resolv.conf`, `/proc/net/arp`, `sshd_config`): `O_NONBLOCK` + `S_ISREG` via `hlse_open_system_file()`; symlinks ARE followed because these are root-owned and legitimately symlinked (e.g. `/etc/resolv.conf` on systemd). |
 | Thread-safety | Pure analysis functions (URL/text/secret/file/package) read only static const tables and are reentrant. Filesystem/host functions (protect/audit/network) are process-level. |
@@ -88,7 +88,7 @@ in `print_usage()` and the man page (`hlse.1`).
 | Text scam / BEC | `hlse_text.c` | text | urgency, financial bait, authority, ransom, BEC amplifiers; evasion-normalised | `text` |
 | Ransomware | `hlse_protect.c` | dir | entropy spike (+magic exclusion), ransom notes, ext mutation, shadow delete | `protect` |
 | Boot integrity | `hlse_protect.c` | device / ESP | MBR signature/strings/entropy; ESP ransom/bootkit strings | `protect --mbr`, `esp` |
-| Credential leak | `hlse_secrets.c` | text/dir | 55 token patterns: AWS(+STS)/GitHub/GitLab/Google(+OAuth GOCSPX-)/npm/OpenAI/Anthropic/Groq/Perplexity/xAI/Stripe/Shopify/HuggingFace/PyPI/Postman/Square/Doppler/Grafana/Linear/NewRelic/Databricks/Slack+Discord webhooks/SSH/.env + 7 structural checks (GCP SA JSON, Azure SAS, Azure AccountKey, AWS creds-file secret, JWT, Telegram bot token, URI-embedded credentials), placeholder exclusion | `scan`, `secret` |
+| Credential leak | `hlse_secrets.c` | text/dir | 61 token patterns: AWS(+STS)/GitHub/GitLab/Google(+OAuth GOCSPX-)/npm/OpenAI/Anthropic/Groq/Perplexity/xAI/Stripe/Shopify/HuggingFace/PyPI/Postman/Square/Doppler/Grafana/Linear/NewRelic/Databricks/Slack+Discord webhooks/SSH/.env + 7 structural checks (GCP SA JSON, Azure SAS, Azure AccountKey, AWS creds-file secret, JWT, Telegram bot token, URI-embedded credentials), placeholder exclusion | `scan`, `secret` |
 | Email forensics | `hlse_secrets.c` | headers | SPF/DKIM fail (+all-none missing-auth), Reply-To mismatch, display-name spoof (+brand-domain ownership guard), BEC | `email` |
 | Clipboard swap | `hlse_secrets.c` | copied,pasted | same-type address swap + vanity look-alike, 16 chains (BTC/ETH/XMR/SOL/USDT-TRC20/LTC/DOGE/XRP/DASH/XLM/ADA/BCH/ATOM/XTZ/DOT/ALGO) | `clipboard` |
 | Supply chain | `hlse_supply.c` | pkg / paste / — | typosquat, pastejacking, network safety (N1 ARP / N2 routing injection / N3 DNS / N4 hosts pharming) | `package`, `paste`, `network` |
@@ -128,14 +128,35 @@ Every object carries a `"kind"` discriminator, an integer `"score"`, and an
 consumer never has to re-derive the band. Additional fields vary by kind:
 - `url`: `target` (the scanned URL), `reasons:[...]`
 - `text`: `target` (the scanned string), `reasons:[...]`
-- `protect`: `target` (the scanned path), `reasons:[...]`
-- `network`/`esp`/`email`: `reasons:[...]`
+- `protect`: `target` (the scanned path), `reasons:[...]`, `target_scanned`
+  (false when the target could not be opened, meaning a score of 0 covers
+  nothing that was actually examined), `modules_unchecked:[id,...]` naming any
+  module whose evidence existed but was unreadable (`ransomware`,
+  `network_drive`, `smb`, `mbr`) — emitted only when non-empty
+- `network`/`esp`/`email`: `reasons:[...]`; `esp` also carries
+  `target_scanned` (false when no `.efi` binary was examined — absent,
+  unreadable, or empty ESP — so a score of 0 covers nothing)
+- `network` additionally: `sources_unavailable:[path,...]` — emitted only
+  when one of the four evidence sources (`/proc/net/arp`, `/proc/net/route`,
+  `/etc/resolv.conf`, `/etc/hosts`) could not be opened. A `score` of 0 with
+  a non-empty `sources_unavailable` means "nothing was found in what could
+  be read", not "nothing is wrong".
 - `paste`: `signals` (integer count of fired pastejacking signals), `reasons:[...]`
 - `package`: `name`, `matches:[{name,registry,distance}]`
-- `audit`: `hardening_index`, `hardening_band`, `findings:[{severity,description}]`
+- `audit`: `hardening_index`, `hardening_band`, `checks_run`, `checks_skipped`,
+  `findings:[{severity,description}]`. `hardening_band` is `partial` whenever
+  `checks_skipped > 0`: the index is `100 - score` and a check that could not
+  read its evidence contributes 0, so the index is inflated rather than wrong
+  and the reassuring band word is withheld. Checks that could not run emit an
+  `AUDIT_INFO` finding naming the unreadable path; they never emit `AUDIT_PASS`.
 - `secret`: `findings:[{type,description}]`
 - `clipboard`: `is_swap`, `original`, `swapped`, `reason`
-- `file`: `path`, `reasons:[...]`
+- `file`: `path`, `reasons:[...]`, `content_inspected` (false when the bytes
+  were not read, so the magic-byte checks did not run and the verdict rests
+  on the filename alone), plus `coverage` naming the reason
+- `scan` summary: `dirs_unreadable` counts directories that existed but could
+  not be opened during the walk; emitted only when non-zero. A summary with
+  `threats: 0` and a non-zero `dirs_unreadable` does not cover the whole tree.
 - streaming `scan` records add `path`/`line`/`url` as applicable (record
   kinds are `url`, `file`, and `secret`).
 - `scan` emits a final `kind=scan_summary` terminator:
@@ -210,7 +231,7 @@ A fifth audit, of README numeric claims vs measured reality, found:
 
 - **GAP-H — stale README numbers**: "Structured tests: 237" and "Binary size:
   53 KB (dynamic), 932 KB (static)" no longer matched reality (≈328 checks;
-  ≈140 KB dynamic / ≈1.0 MB static-pie after the feature and hardening work).
+  ≈464 KB dynamic / ≈1.5 MB static-pie after the feature and hardening work).
   The detection/evasion example claims, F1, and 0% FP all verified accurate.
   → update the counts to a non-drifting `320+` and the sizes to measured
   approximate values; drop the brittle exact "237" from the `make test`

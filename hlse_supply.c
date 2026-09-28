@@ -319,6 +319,9 @@ hlse_check_package(const char *pkg_name, const char *ecosystem) {
     }
 
     if (v.score > 100) v.score = 100;
+    /* Neutralize terminal control bytes: reason text embeds attacker-controlled
+     * package names (from a manifest) that are printed to a terminal (CWE-150). */
+    hlse_sanitize_terminal(v.reason);
     return v;
 }
 
@@ -390,7 +393,24 @@ hlse_check_paste(const char *text) {
                           strstr(text, "|bash") != NULL ||
                           strstr(text, "| sudo") != NULL ||
                           strstr(text, "| /bin/sh") != NULL ||
-                          strstr(text, "| /bin/bash") != NULL);
+                          strstr(text, "| /bin/bash") != NULL ||
+                          strstr(text, "| zsh") != NULL ||
+                          strstr(text, "|zsh") != NULL ||
+                          strstr(text, "| dash") != NULL ||
+                          strstr(text, "| ksh") != NULL);
+        /* The same remote-code-execution shape written without a pipe:
+         *   bash -c "$(curl ...)"   eval "$(curl ...)"   zsh <(curl ...)
+         * The download is substituted into an interpreter's argument or
+         * stdin instead of piped, so the pipe-only test above scored these
+         * 0 while `curl ... | sh` scored 40. Same risk, same score. */
+        if (!has_pipe_sh &&
+            (strstr(text, "$(curl") || strstr(text, "$(wget") ||
+             strstr(text, "`curl") || strstr(text, "`wget") ||
+             strstr(text, "<(curl") || strstr(text, "<(wget")) &&
+            (strstr(text, "bash") || strstr(text, "sh -c") ||
+             strstr(text, "eval") || strstr(text, "zsh") ||
+             strstr(text, "source ") || strstr(text, ". <(")))
+            has_pipe_sh = 1;
         if (has_curl && has_pipe_sh) {
             v.signals |= PASTE_CURL_PIPE_SH;
             v.score += 40;
@@ -458,6 +478,26 @@ hlse_check_paste(const char *text) {
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
             snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
                 "P5: Encoded/interpreted payload — obfuscated command");
+    }
+
+    /* P5b: decode-and-execute. P5 scores any decoder at 30, so `base64 -d`
+     * on its own and `base64 -d | zsh` were indistinguishable, yet only the
+     * second runs what it decoded. Piping a decoder into an interpreter is the
+     * actual obfuscated-execution shape and gets its own, additive signal. */
+    if ((v.signals & PASTE_ENCODED_PAYLOAD) &&
+        (strstr(text, "base64 -d") || strstr(text, "base64 --decode") ||
+         strstr(text, "| base64")) &&
+        (strstr(text, "| sh") || strstr(text, "|sh") ||
+         strstr(text, "| bash") || strstr(text, "|bash") ||
+         strstr(text, "| zsh") || strstr(text, "|zsh") ||
+         strstr(text, "| dash") || strstr(text, "| ksh") ||
+         strstr(text, "| python") || strstr(text, "| perl") ||
+         strstr(text, "| sudo"))) {
+        v.score += 25;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P5b: Decoded output piped into an interpreter — "
+                "decode-and-execute");
     }
 
     /* P6: History evasion — starts with space */
@@ -565,6 +605,21 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "http") || ci_contains(text, "\\\\")) &&
                    ci_contains(text, "-f:")) {
             what = "expand.exe remote file download (LOLBin)";
+        } else if ((ci_contains(text, "nslookup") || ci_contains(text, "resolve-dnsname")) &&
+                   (ci_contains(text, "| cmd") || ci_contains(text, "|cmd") ||
+                    ci_contains(text, "| powershell") || ci_contains(text, "|powershell") ||
+                    ci_contains(text, "| iex") || ci_contains(text, "|iex") ||
+                    ci_contains(text, "| sh") || ci_contains(text, "| bash"))) {
+            /* DNS-based ClickFix (Feb 2026): the second stage is fetched as a
+             * DNS TXT/Name answer and executed by piping it into an interpreter. */
+            what = "DNS lookup output piped into an interpreter (DNS-staged ClickFix)";
+        } else if (ci_contains(text, "finger") && ci_contains(text, "@") &&
+                   (ci_contains(text, "| cmd") || ci_contains(text, "|cmd") ||
+                    ci_contains(text, "| powershell") || ci_contains(text, "| iex") ||
+                    ci_contains(text, "| sh") || ci_contains(text, "| bash"))) {
+            /* CrashFix (Microsoft, Feb 2026): finger.exe fetches a script from a
+             * remote host and the answer is piped straight into a shell. */
+            what = "finger output piped into an interpreter (CrashFix)";
         } else if (ci_contains(text, "curl") &&
                    (ci_contains(text, "-o ") || ci_contains(text, "--output ")) &&
                    (ci_contains(text, ".exe") || ci_contains(text, ".ps1") ||
@@ -664,6 +719,9 @@ hlse_check_paste(const char *text) {
     }
 
     if (v.score > 100) v.score = 100;
+    /* Neutralize terminal control bytes in every reason before it can reach a
+     * terminal — the paste command / network data may be attacker-controlled. */
+    { int si; for (si = 0; si < v.n_reasons; si++) hlse_sanitize_terminal(v.reasons[si]); }
     return v;
 }
 
@@ -687,6 +745,7 @@ hlse_check_network(void) {
     {
         FILE *fp = hlse_open_system_file("/proc/net/arp");
         if (fp) {
+            v.sources_read |= HLSE_NET_SRC_ARP;
             char line[256];
             char ips[64][16];     /* up to 64 ARP entries */
             char macs[64][18];
@@ -734,6 +793,7 @@ hlse_check_network(void) {
     {
         FILE *fp = hlse_open_system_file("/proc/net/route");
         if (fp) {
+            v.sources_read |= HLSE_NET_SRC_ROUTE;
             char line[256];
             unsigned long gw_hex[8];
             int gw_metric[8];
@@ -806,6 +866,7 @@ hlse_check_network(void) {
     {
         FILE *fp = hlse_open_system_file("/etc/resolv.conf");
         if (fp) {
+            v.sources_read |= HLSE_NET_SRC_RESOLV;
             char line[256];
             int ns_count = 0;
 
@@ -873,6 +934,7 @@ hlse_check_network(void) {
     {
         FILE *fp = hlse_open_system_file("/etc/hosts");
         if (fp) {
+            v.sources_read |= HLSE_NET_SRC_HOSTS;
             char line[512];
             const char *sensitive_domains[] = {
                 /* US banks */
@@ -928,5 +990,8 @@ hlse_check_network(void) {
     }
 
     if (v.score > 100) v.score = 100;
+    /* Neutralize terminal control bytes in every reason before it can reach a
+     * terminal — the paste command / network data may be attacker-controlled. */
+    { int si; for (si = 0; si < v.n_reasons; si++) hlse_sanitize_terminal(v.reasons[si]); }
     return v;
 }

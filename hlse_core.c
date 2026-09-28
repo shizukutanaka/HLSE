@@ -620,6 +620,40 @@ add_reason(Verdict *v, int delta, const char *fmt, ...) {
     v->n_reasons++;
 }
 
+/* Readers for the reason format that add_brand_canonical() writes below.
+ *
+ * Three call sites used to parse "Legitimate '<brand>': <domain>" by hand —
+ * two pulling the domain, one the brand — each re-deriving the delimiters and
+ * the magic offset past the prefix. That is the format's structure known in
+ * four places, so changing the wording meant finding all four. The writer and
+ * its readers now sit together. */
+#define LEGIT_PREFIX "Legitimate '"
+
+/* Domain half: pointer to <domain>, or NULL if `reason` is not that format. */
+static const char *
+legit_domain_of(const char *reason) {
+    const char *brand = strstr(reason, LEGIT_PREFIX);
+    const char *colon = brand ? strstr(brand, "': ") : NULL;
+    return colon ? colon + 3 : NULL;
+}
+
+/* Brand half: copies <brand> into `out`. Returns 1 on success, 0 otherwise. */
+static int
+legit_brand_of(const char *reason, char *out, size_t outsz) {
+    const char *start = strstr(reason, LEGIT_PREFIX);
+    const char *end;
+    size_t len;
+    if (!start) return 0;
+    start += sizeof(LEGIT_PREFIX) - 1;
+    end = strchr(start, '\'');
+    if (!end) return 0;
+    len = (size_t)(end - start);
+    if (len == 0 || len >= outsz) return 0;
+    memcpy(out, start, len);
+    out[len] = '\0';
+    return 1;
+}
+
 /* Append the canonical-domain "Legitimate '<brand>': <domain>" reason for a
  * detected brand impersonation — but only once per verdict. Multiple brand
  * detectors can fire on the same URL (subdomain-spoof AND free-hosting, say);
@@ -3224,14 +3258,9 @@ hlse_safe_destination(const Verdict *v, char *out, size_t outsz) {
     if (!v || !out || outsz < 10) return 0;
     for (i = 0; i < v->n_reasons; i++) {
         const char *r     = v->reasons[i];
-        const char *brand = strstr(r, "Legitimate '");
-        const char *colon;
-        if (!brand) continue;
-        colon = strstr(brand, "': ");
-        if (!colon) continue;
-        /* colon+3 points at the canonical domain, which runs to end-of-reason
-         * (the reason is built as "Legitimate '<brand>': <domain>"). */
-        snprintf(out, outsz, "https://%s", colon + 3);
+        const char *dom = legit_domain_of(r);
+        if (!dom) continue;
+        snprintf(out, outsz, "https://%s", dom);
         return 1;
     }
     return 0;
@@ -3267,16 +3296,12 @@ hlse_safe_destinations(const Verdict *v, char *out, size_t outsz) {
 
     for (i = 0; i < v->n_reasons && n_found < 2; i++) {
         const char *r     = v->reasons[i];
-        const char *brand = strstr(r, "Legitimate '");
-        const char *colon;
-        if (!brand) continue;
-        colon = strstr(brand, "': ");
-        if (!colon) continue;
-        /* colon+3 is the canonical domain (to end of reason string) */
+        const char *dom = legit_domain_of(r);
+        if (!dom) continue;
         if (n_found == 0)
-            snprintf(url1, sizeof(url1), "https://%s", colon + 3);
+            snprintf(url1, sizeof(url1), "https://%s", dom);
         else
-            snprintf(url2, sizeof(url2), "https://%s", colon + 3);
+            snprintf(url2, sizeof(url2), "https://%s", dom);
         n_found++;
     }
 
@@ -3416,18 +3441,8 @@ hlse_attacker_objective(const Verdict *v) {
     if (!v) return NULL;
     for (i = 0; i < v->n_reasons; i++) {
         const char *r     = v->reasons[i];
-        const char *start = strstr(r, "Legitimate '");
-        const char *end;
         char brand[64];
-        size_t len;
-        if (!start) continue;
-        start += 12;                 /* skip past "Legitimate '" */
-        end = strchr(start, '\'');
-        if (!end) continue;
-        len = (size_t)(end - start);
-        if (len == 0 || len >= sizeof(brand)) continue;
-        memcpy(brand, start, len);
-        brand[len] = '\0';
+        if (!legit_brand_of(r, brand, sizeof(brand))) continue;
         return brand_objective(brand);
     }
     return NULL;
@@ -3465,19 +3480,11 @@ hlse_compound_objective(const Verdict *v, char *out, size_t outsz) {
     out[0] = '\0';
 
     for (i = 0; i < v->n_reasons && n_found < 2; i++) {
-        const char *r     = v->reasons[i];
-        const char *start = strstr(r, "Legitimate '");
-        const char *end;
+        const char *r = v->reasons[i];
         char brand[64];
         size_t len;
-        if (!start) continue;
-        start += 12;
-        end = strchr(start, '\'');
-        if (!end) continue;
-        len = (size_t)(end - start);
-        if (len == 0 || len >= sizeof(brand)) continue;
-        memcpy(brand, start, len);
-        brand[len] = '\0';
+        if (!legit_brand_of(r, brand, sizeof(brand))) continue;
+        len = strlen(brand);
         if (n_found == 0) {
             memcpy(brand1, brand, len + 1);
             obj1   = brand_objective(brand1);
@@ -3960,19 +3967,11 @@ hlse_compound_triage(const Verdict *v, char *out, size_t outsz) {
     out[0] = '\0';
 
     for (i = 0; i < v->n_reasons && n_found < 2; i++) {
-        const char *r     = v->reasons[i];
-        const char *start = strstr(r, "Legitimate '");
-        const char *end;
+        const char *r = v->reasons[i];
         char brand[64];
         size_t len;
-        if (!start) continue;
-        start += 12;
-        end = strchr(start, '\'');
-        if (!end) continue;
-        len = (size_t)(end - start);
-        if (len == 0 || len >= sizeof(brand)) continue;
-        memcpy(brand, start, len);
-        brand[len] = '\0';
+        if (!legit_brand_of(r, brand, sizeof(brand))) continue;
+        len = strlen(brand);
         if (n_found == 0) {
             memcpy(brand1, brand, len + 1);
             class1 = brand_objective_class(brand1);
@@ -6249,6 +6248,36 @@ clipboard_cascade_text(void) {
            "transacting again";
 }
 
+/* Build a TextVerdict from a ScanResult.
+ *
+ * Six identical copies of this lived inline, each restating the clamp
+ * `sr->n_reasons < CAP ? sr->n_reasons : CAP`. That bound has to be right
+ * every time; here it is written once. */
+static void
+text_verdict_from_scan(TextVerdict *tv, const ScanResult *sr) {
+    const int cap = (int)(sizeof(tv->reasons) / sizeof(tv->reasons[0]));
+    int i;
+    memset(tv, 0, sizeof(*tv));
+    tv->score = sr->score;
+    tv->n_reasons = sr->n_reasons < cap ? sr->n_reasons : cap;
+    for (i = 0; i < tv->n_reasons; i++)
+        snprintf(tv->reasons[i], sizeof(tv->reasons[0]), "%s", sr->reasons[i]);
+}
+
+/* Emit  ,"name":"<escaped value>"  — or nothing at all when value is NULL.
+ *
+ * This existed inline at ~93 sites, each declaring its own char esc_x[512],
+ * calling hlse_json_escape(), then printf-ing. Beyond the repetition, that
+ * made escaping a property every call site had to remember: one that forgot
+ * would emit malformed or injectable JSON. Here it cannot be forgotten. */
+static void
+json_field(const char *name, const char *value) {
+    char esc[512];
+    if (!value) return;
+    hlse_json_escape(value, esc, sizeof(esc));
+    printf(",\"%s\":\"%s\"", name, esc);
+}
+
 static void
 print_json_url(const char *url, const Verdict *v) {
     char escaped_url[MAX_URL * 2];
@@ -6306,11 +6335,7 @@ print_json_url(const char *url, const Verdict *v) {
          * positively confirmed against the brand registry — the generic
          * "pixel-perfect clone" blind spot contradicts a canonical confirm. */
         const char *bs = hlse_blindspot_for(has_canon ? "url_canonical" : "url");
-        if (bs) {
-            char esc_bs[512];
-            hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-            printf(",\"blind_spot\":\"%s\"", esc_bs);
-        }
+        json_field("blind_spot", bs);
     }
     if (pat)        printf(",\"pattern\":\"%s\"", esc_pat);
     if (pid)        printf(",\"pattern_id\":\"%s\"", pid); /* stable SIEM token */
@@ -6332,9 +6357,7 @@ print_json_url(const char *url, const Verdict *v) {
         {
             const char *ch_rsn = channel_reason(g_from_channel);
             if (ch_rsn) {
-                char esc_ch[512];
-                hlse_json_escape(ch_rsn, esc_ch, sizeof(esc_ch));
-                printf(",\"channel_reason\":\"%s\"", esc_ch);
+                json_field("channel_reason", ch_rsn);
             }
         }
     }
@@ -6394,11 +6417,7 @@ print_json_text(const char *text, const TextVerdict *v) {
                             sig_cnt, esc_cf);
     if (v->score == 0) {
         const char *bs = hlse_blindspot_for("text");
-        if (bs) {
-            char esc_bs[512];
-            hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-            printf(",\"blind_spot\":\"%s\"", esc_bs);
-        }
+        json_field("blind_spot", bs);
     }
     if (pat)  printf(",\"pattern\":\"%s\"",     esc_pat);
     if (pid)  printf(",\"pattern_id\":\"%s\"", pid);   /* stable SIEM token */
@@ -6417,9 +6436,7 @@ print_json_text(const char *text, const TextVerdict *v) {
         {
             const char *ch_rsn = channel_reason(g_from_channel);
             if (ch_rsn) {
-                char esc_ch[512];
-                hlse_json_escape(ch_rsn, esc_ch, sizeof(esc_ch));
-                printf(",\"channel_reason\":\"%s\"", esc_ch);
+                json_field("channel_reason", ch_rsn);
             }
         }
     }
@@ -6495,6 +6512,114 @@ print_url_advisories(const char *url, const Verdict *uv) {
  * those depend on caller-local state (channel reason) and are emitted by each
  * caller after this returns. Each line is conditional, so a low-score verdict
  * prints only the lenses that apply.                                         */
+/* Print a file verdict in human form: header, reasons, then the advisory
+ * ladder. `display` is the path or name to show.
+ *
+ * This body existed twice — once in the `scan <dir>` walker and once in the
+ * standalone `file` subcommand — and the copy in the walker carries a comment
+ * explaining that the advisory wording is shared "so plaintext and JSON never
+ * again describe the same verdict with different wording". The wording was
+ * indeed shared with JSON, and then duplicated within plaintext. One printer
+ * now, so the two entry points cannot drift from each other either. */
+static void
+print_file_verdict_plain(const FileVerdict *fv, const char *display) {
+    int i;
+    printf("%-7s [%d]  %s\n",
+           hlse_action_for_score(fv->score), fv->score, display);
+    for (i = 0; i < fv->n_reasons; i++)
+        printf("  \xc2\xb7 %s\n", fv->reasons[i]);
+    if (fv->score >= 40) {
+        printf("  \xe2\x96\xb8 Pattern: %s\n", file_classify_pattern(fv));
+        printf("  \xe2\x97\x89 Attacker's goal: %s\n", file_masquerade_objective());
+        printf("  \xe2\x9c\x93 Verify first: %s\n", file_masquerade_verify());
+    }
+    if (fv->score >= 60) {
+        printf("  \xe2\x9a\x91 If you acted: if already opened, disconnect "
+               "from the network; run antivirus; change credentials for "
+               "any active session\n");
+        printf("  \xe2\x8a\x95 Also change: all credentials and session "
+               "tokens active when the file was opened \xe2\x80\x94 check "
+               "for persistence (startup items, scheduled tasks, new "
+               "browser extensions)\n");
+    }
+    if (fv->score > 0 && fv->score < 60) {
+        const char *ex = hlse_exoneration_for("file", fv->score);
+        if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
+    }
+}
+
+/* The secret-verdict advisory ladder: caveat, then pattern / goal / verify /
+ * immediate action / also-change once the score is actionable, then the
+ * benign-explanation line below that.
+ *
+ * Duplicated between the `scan <dir>` walker and the `secret` subcommand. The
+ * headers around it legitimately differ (the walker prints path:line, the
+ * subcommand prints the finding type and a confidence note), but the advice
+ * itself must not — a leaked credential does not become less urgent because
+ * of which entry point found it. */
+/* The JSON counterpart of print_secret_advisories(): caveat, the actionable
+ * pattern / objective / verify / triage / cascade fields, and the
+ * benign-explanation field. Duplicated between the `scan <dir>` walker and the
+ * `secret` subcommand, exactly as the plain-text ladder was. */
+static void
+json_secret_advisories(const SecretVerdict *sv) {
+    if (sv->n_findings > 0) {
+        /* Unconditional on score: a Stripe publishable key is public by
+         * design at any score, not a probabilistic false-positive hedge. */
+        json_field("caveat", secret_finding_caveat(sv->findings[0].type));
+    }
+    if (sv->score >= 60 && sv->n_findings > 0) {
+        const char *ftype = sv->findings[0].type;
+        char epat[128];
+        secret_pattern_label(ftype, epat, sizeof(epat));
+        json_field("pattern", epat);
+        json_field("pattern_id", secret_pattern_id(ftype));
+        json_field("objective", secret_objective_for(ftype));
+        json_field("verify", secret_verify_text());
+        json_field("triage", secret_triage_text());
+        json_field("cascade_risk", secret_cascade_text());
+    }
+    if (sv->score > 0 && sv->score < 60)
+        json_field("exoneration", hlse_exoneration_for("secret", sv->score));
+}
+
+static void
+print_secret_advisories(const SecretVerdict *sv) {
+    if (sv->n_findings > 0) {
+        const char *cav = secret_finding_caveat(sv->findings[0].type);
+        if (cav) printf("  \xe2\x9a\xa0 Caveat: %s\n", cav);
+    }
+    if (sv->score >= 60 && sv->n_findings > 0) {
+        const char *ftype = sv->findings[0].type;
+        const char *sobj  = secret_objective_for(ftype);
+        char epat[128];
+        secret_pattern_label(ftype, epat, sizeof(epat));
+        printf("  \xe2\x96\xb8 Pattern: %s\n", epat);
+        if (sobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", sobj);
+        printf("  \xe2\x9c\x93 Verify first: %s\n", secret_verify_text());
+        printf("  \xe2\x9a\x91 Immediate action: %s\n", secret_triage_text());
+        printf("  \xe2\x8a\x95 Also change: %s\n", secret_cascade_text());
+    }
+    if (sv->score > 0 && sv->score < 60) {
+        const char *ex = hlse_exoneration_for("secret", sv->score);
+        if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
+    }
+}
+
+/* Build a one-reason TextVerdict so a non-text verdict can borrow the text
+ * classifier's pattern / objective / verify / triage / cascade wording.
+ *
+ * Five sites hand-rolled this — the email/BEC path and the paste path — each
+ * repeating the memset, the score copy, n_reasons = 1, and the snprintf into
+ * slot zero. It is one idea, so it is one function. */
+static void
+text_verdict_synth(TextVerdict *tv, int score, const char *reason) {
+    memset(tv, 0, sizeof(*tv));
+    tv->score = score;
+    tv->n_reasons = 1;
+    snprintf(tv->reasons[0], sizeof(tv->reasons[0]), "%s", reason);
+}
+
 static void
 print_text_advisories(const TextVerdict *tv) {
     const char *tpat = hlse_classify_text_attack(tv);
@@ -6539,14 +6664,7 @@ stdin_mode(int json_out) {
                 print_json_url(line, &uv);
             } else {
                 TextVerdict tv;
-                int ti;
-                memset(&tv, 0, sizeof(tv));
-                tv.score = sr.score;
-                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
-                               ? sr.n_reasons : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
-                for (ti = 0; ti < tv.n_reasons; ti++)
-                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
-                             "%s", sr.reasons[ti]);
+                text_verdict_from_scan(&tv, &sr);
                 print_json_text(line, &tv);
             }
         } else if (sr.score == 0) {
@@ -6594,15 +6712,7 @@ stdin_mode(int json_out) {
             } else {
                 TextVerdict tv;
                 const char *tex;
-                int ti;
-                memset(&tv, 0, sizeof(tv));
-                tv.score = sr.score;
-                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
-                               ? sr.n_reasons
-                               : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
-                for (ti = 0; ti < tv.n_reasons; ti++)
-                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
-                             "%s", sr.reasons[ti]);
+                text_verdict_from_scan(&tv, &sr);
                 tex  = hlse_text_exoneration(&tv);
                 print_text_advisories(&tv);
                 if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
@@ -6970,6 +7080,2016 @@ argv_remove(char **argv, int *argc, int *argc_flags, int i, int n) {
 }
 
 
+/* The CLI flags every subcommand handler needs. Passing three ints beats
+ * either global state or a long parameter list, and makes it explicit
+ * which handlers actually care about output format. */
+typedef struct { int json_out, sarif_out, quiet; } CliOpts;
+
+/* `scan` subcommand, extracted verbatim from main(). */
+static int
+cmd_scan(int argc, char **argv, int idx, const CliOpts *o) {
+    if (argc < idx + 2) {
+        fprintf(stderr, "Usage: %s scan <directory> [--git-history]\n",
+                argv[0]);
+        return 2;
+    }
+    /* --git-history (Perspective 111 / P0-2): scan every commit in the
+     * repo's history for secrets, not just the working tree. Entirely
+     * different algorithm (git subprocess stream vs. directory walk),
+     * so it branches out before the normal walker below. */
+    if (g_git_history) {
+        return scan_git_history(argv[idx + 1], o->json_out, o->sarif_out);
+    }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+    {
+        const char *root = argv[idx + 1];
+        int threats = 0, files_scanned = 0, max_depth = 20;
+        /* Directories that exist but could not be opened. The walker skips
+         * them silently, so a run over a tree it has no permission to read
+         * reported "0 files scanned, 0 threats" and exited 0 — a CI gate on
+         * an unreadable checkout goes green having inspected nothing. */
+        int dirs_unreadable = 0;
+        int gate_hits = 0;  /* findings at/above g_fail_threshold (exit gate) */
+        int max_score = 0;  /* highest score seen — for max_severity in summary */
+        unsigned asset_mask = 0;  /* blast-radius: classes seen across scan */
+        struct stat root_st;
+
+        /* Verify directory exists and is accessible */
+        if (stat(root, &root_st) != 0) {
+            fprintf(stderr, "Error: cannot access '%s': %s\n",
+                    root, strerror(errno));
+            return 2;
+        }
+        if (!S_ISDIR(root_st.st_mode)) {
+            fprintf(stderr, "Error: '%s' is not a directory\n", root);
+            return 2;
+        }
+
+        /* Simple iterative directory walker using a stack.
+         * Avoids unbounded recursion for deeply nested trees.     */
+        struct { char path[4096]; int depth; } stack[512];
+        int sp = 0;
+
+        /* cppcheck-suppress legacyUninitvar  ; snprintf writes stack[0].path, it is not read uninitialized */
+        snprintf(stack[0].path, sizeof(stack[0].path), "%s", root);
+        stack[0].depth = 0;
+        sp = 1;
+
+        while (sp > 0) {
+            char cur_path[4096];
+            int depth;
+            DIR *d;
+            struct dirent *ent;
+
+            sp--;
+            snprintf(cur_path, sizeof(cur_path), "%s", stack[sp].path);
+            depth = stack[sp].depth;
+            errno = 0;
+            d = opendir(cur_path);
+            if (!d) {
+                /* ENOENT means it vanished between readdir and here (a real
+                 * answer); anything else means we were not allowed to look. */
+                if (errno != ENOENT) dirs_unreadable++;
+                continue;
+            }
+
+            while ((ent = readdir(d)) != NULL) {
+                char fullpath[8192];
+                struct stat st;
+                /* Skip only the '.' and '..' entries — NOT all dotfiles.
+                 * A blanket dot-skip would silently ignore .env, .npmrc,
+                 * .pypirc, .git-credentials, .aws/credentials … which are
+                 * the single highest-value secret-bearing files. Dot-named
+                 * directories (.git, .svn) are filtered by SKIP_DIRS below. */
+                if (ent->d_name[0] == '.' &&
+                    (ent->d_name[1] == '\0' ||
+                     (ent->d_name[1] == '.' && ent->d_name[2] == '\0')))
+                    continue;
+
+                if (strlen(cur_path) + strlen(ent->d_name) + 2 >= sizeof(fullpath))
+                    continue;  /* path too long — skip */
+                snprintf(fullpath, sizeof(fullpath), "%s/%s",
+                         cur_path, ent->d_name);
+
+                /* Compute path relative to scan root for SARIF URIs.
+                 * GitHub code scanning requires relative URIs so it can
+                 * map findings back to repo files.                       */
+                const char *sarif_path = fullpath;
+                {
+                    size_t rlen = strlen(root);
+                    while (rlen > 1 && root[rlen - 1] == '/') rlen--;
+                    if (strncmp(fullpath, root, rlen) == 0 &&
+                        fullpath[rlen] == '/')
+                        sarif_path = fullpath + rlen + 1;
+                }
+
+                /* lstat (not stat): a symlink is classified as S_ISLNK,
+                 * so it is neither recursed into (a symlinked dir would
+                 * let the scan escape the target tree or loop) nor read
+                 * (a symlinked file like x.env -> /etc/shadow would leak
+                 * a file outside the tree). Per SPECIFICATION.md §1.   */
+                if (lstat(fullpath, &st) != 0) continue;
+
+                if (S_ISDIR(st.st_mode)) {
+                    /* Skip vendor/build directories that produce
+                     * false positives and slow down scans.
+                     * Same list as eslint/ruff/semgrep defaults. */
+                    static const char *SKIP_DIRS[] = {
+                        "node_modules", "__pycache__", ".venv",
+                        "venv", "env", "vendor", "build", "dist",
+                        "target", ".tox", ".mypy_cache", ".pytest_cache",
+                        ".cargo", ".npm", "coverage", ".next",
+                        /* VCS metadata dirs — large, binary, no secrets to
+                         * surface; previously skipped by the blanket dot
+                         * filter, now skipped explicitly.                  */
+                        ".git", ".svn", ".hg",
+                        NULL
+                    };
+                    int skip = 0;
+                    { int k;
+                      for (k = 0; SKIP_DIRS[k]; k++) {
+                          if (strcmp(ent->d_name, SKIP_DIRS[k]) == 0) {
+                              skip = 1; break;
+                          }
+                      }
+                    }
+                    if (skip) continue;
+
+                    if (depth < max_depth && sp < 510) {
+                        snprintf(stack[sp].path, sizeof(stack[sp].path),
+                                 "%s", fullpath);
+                        stack[sp].depth = depth + 1;
+                        sp++;
+                    }
+                    continue;
+                }
+
+                if (!S_ISREG(st.st_mode)) continue;
+                files_scanned++;
+
+                /* Check 1: file masquerade */
+                FileVerdict fv = hlse_check_file(fullpath);
+                if (fv.score >= 40) {
+                    /* P0-1: baseline/allowlist suppression. Whole-file
+                     * finding — no inline-allow line context. */
+                    int sup = hlse_scan_suppress(sarif_path,
+                                  file_verdict_pattern_id(&fv), NULL, NULL);
+                    if (sup) goto after_file_check;
+                    threats++;
+                    if (fv.score > max_score) max_score = fv.score;
+                    if (fv.score >= g_fail_threshold) gate_hits++;
+                    if (o->sarif_out) {
+                        char msg[512] = {0};
+                        int i;
+                        for (i = 0; i < fv.n_reasons; i++) {
+                            size_t l = strlen(msg);
+                            snprintf(msg + l, sizeof(msg) - l, "%s%s",
+                                     i ? "; " : "", fv.reasons[i]);
+                        }
+                        sarif_add(sarif_path, 1, "file-masquerade",
+                                  file_verdict_pattern_id(&fv),
+                                  msg[0] ? msg : "file masquerade", fv.score);
+                    } else if (o->json_out) {
+                        int i;
+                        char esc[512];
+                        hlse_json_escape(fullpath, esc, sizeof(esc));
+                        printf("{\"kind\":\"file\",\"hlse_version\":\"" HLSE_VERSION "\","
+                               "\"path\":\"%s\","
+                               "\"score\":%d,\"action\":\"%s\","
+                               "\"severity\":%d,\"reasons\":[",
+                               esc, fv.score, hlse_action_for_score(fv.score),
+                               hlse_severity_for_score(fv.score));
+                        for (i = 0; i < fv.n_reasons; i++) {
+                            hlse_json_escape(fv.reasons[i], esc, sizeof(esc));
+                            printf("%s\"%s\"", i ? "," : "", esc);
+                        }
+                        printf("]");
+                        if (fv.score >= 40) {
+                            /* Perspective 98: matches the standalone
+                             * `file` JSON path — pattern/objective/verify
+                             * fire from the ALERT floor (40); triage/
+                             * cascade_risk stay BLOCK+-only (60).
+                             * Perspective 101: classification and the two
+                             * advisory lines now come from the shared
+                             * file_classify_pattern()/file_masquerade_*()
+                             * accessors instead of an inline copy. */
+                            const char *fpat = file_classify_pattern(&fv);
+                            json_field("pattern", fpat);
+                            printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
+                            json_field("objective", file_masquerade_objective());
+                            json_field("verify", file_masquerade_verify());
+                        }
+                        if (fv.score >= 60) {
+                            static const char sf_tri[] =
+                                "if already opened: disconnect from the network "
+                                "immediately; run a full antivirus scan; change "
+                                "credentials for any service you were logged into at "
+                                "the time; consider a full OS reinstall for high-score "
+                                "detections";
+                            static const char sf_cas[] =
+                                "all credentials and session tokens active when the file "
+                                "was opened \xe2\x80\x94 malware runs with your session "
+                                "context; also check for persistence (startup items, "
+                                "scheduled tasks, browser extensions added)";
+                            json_field("triage", sf_tri);
+                            json_field("cascade_risk", sf_cas);
+                        }
+                        if (fv.score > 0 && fv.score < 60) {
+                            const char *ex = hlse_exoneration_for("file", fv.score);
+                            if (ex) {
+                                json_field("exoneration", ex);
+                            }
+                        }
+                        printf("}\n");
+                    } else {
+                        print_file_verdict_plain(&fv, fullpath);
+                    }
+                }
+                after_file_check: ;  /* P0-1 suppression jump target */
+
+                /* Check 2: secrets in text files. Large files are NOT
+                 * skipped outright (a 2 MB log or DB dump routinely
+                 * contains leaked credentials) — instead we scan up to a
+                 * byte budget so work stays bounded on huge files.       */
+                if (st.st_size > 0) {
+                    /* Re-open with O_NOFOLLOW + S_ISREG (defends the
+                     * lstat→open TOCTOU window); never follow a symlink
+                     * swapped in after classification. */
+                    FILE *fp = NULL;
+                    int sfd = open(fullpath, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
+                    if (sfd >= 0) {
+                        struct stat sst;
+                        if (fstat(sfd, &sst) == 0 && S_ISREG(sst.st_mode))
+                            fp = fdopen(sfd, "r");
+                        if (!fp) close(sfd);
+                    }
+                    if (fp) {
+                        char line[4096];
+                        int lineno = 0;
+                        /* Bound the bytes inspected per file (8 MB) so a
+                         * giant file cannot stall the scan, while still
+                         * covering far more than the old 1 MB hard skip. */
+                        size_t scanned_bytes = 0;
+                        const size_t SCAN_BUDGET = 8u * 1024u * 1024u;
+                        while (scanned_bytes < SCAN_BUDGET &&
+                               fgets(line, sizeof(line), fp)) {
+                            lineno++;
+                            scanned_bytes += strlen(line);
+                            /* Indirect prompt injection: an agent reading
+                             * a repo consumes these files directly, so the
+                             * poisoned-document/skill-file path runs
+                             * through `scan`, not just `text`. Checked on
+                             * the raw line — the carriers are invisible,
+                             * so nothing else here would notice them. */
+                            {
+                                char inv_r[512];
+                                int inv = hlse_check_invisible_carriers(
+                                    line, inv_r, sizeof(inv_r));
+                                if (inv > 0 &&
+                                    !hlse_scan_suppress(sarif_path,
+                                        "HLSE-TEXT-INVISIBLE", inv_r, line))
+                                {
+                                    threats++;
+                                    if (inv > max_score) max_score = inv;
+                                    if (inv >= g_fail_threshold) gate_hits++;
+                                    if (!o->quiet && !o->json_out && !o->sarif_out) {
+                                        /* Sanitize a DISPLAY copy of the
+                                         * path: the real path is still
+                                         * needed for file I/O, but an
+                                         * attacker-named file must not
+                                         * inject ANSI into the terminal
+                                         * (CWE-150). */
+                                        char dp[4096];
+                                        snprintf(dp, sizeof dp, "%s", sarif_path);
+                                        hlse_sanitize_terminal(dp);
+                                        printf("  %s:%d: %s\n",
+                                               dp, lineno, inv_r);
+                                    }
+                                }
+                            }
+                            SecretVerdict sv = hlse_scan_secrets(line);
+                            if (sv.score >= 40) {
+                                int ai;
+                                /* P0-1: baseline/allowlist + inline
+                                 * hlse:allow suppression. Distinguisher =
+                                 * the redacted finding description (stable
+                                 * per distinct secret, line-independent). */
+                                const char *spid = sv.n_findings > 0
+                                    ? secret_pattern_id(sv.findings[0].type)
+                                    : "HLSE-SECRET-GENERIC";
+                                const char *sdesc = sv.n_findings > 0
+                                    ? sv.findings[0].description : "";
+                                if (hlse_scan_suppress(sarif_path, spid, sdesc, line))
+                                    continue;
+                                threats++;
+                                if (sv.score > max_score) max_score = sv.score;
+                                if (sv.score >= g_fail_threshold) gate_hits++;
+                                for (ai = 0; ai < sv.n_findings; ai++)
+                                    asset_mask |=
+                                        asset_class_of(sv.findings[ai].type);
+                                if (o->sarif_out) {
+                                    char msg[512] = {0};
+                                    int i;
+                                    for (i = 0; i < sv.n_findings; i++) {
+                                        size_t l = strlen(msg);
+                                        snprintf(msg + l, sizeof(msg) - l, "%s%s",
+                                                 i ? "; " : "",
+                                                 sv.findings[i].description);
+                                    }
+                                    sarif_add(sarif_path, lineno, "secret",
+                                              sv.n_findings > 0
+                                                ? secret_pattern_id(sv.findings[0].type)
+                                                : "HLSE-SECRET-GENERIC",
+                                              msg[0] ? msg : "secret", sv.score);
+                                } else if (o->json_out) {
+                                    int i;
+                                    char esc_p[512], et[64], ed[512];
+                                    hlse_json_escape(fullpath, esc_p, sizeof(esc_p));
+                                    /* Emit findings:[{type,description}] per spec §5.2
+                                     * (same schema as the standalone secret subcommand). */
+                                    printf("{\"kind\":\"secret\","
+                                           "\"hlse_version\":\"" HLSE_VERSION "\","
+                                           "\"path\":\"%s\","
+                                           "\"line\":%d,\"score\":%d,"
+                                           "\"action\":\"%s\",\"severity\":%d,"
+                                           "\"findings\":[",
+                                           esc_p, lineno, sv.score,
+                                           hlse_action_for_score(sv.score),
+                                           hlse_severity_for_score(sv.score));
+                                    for (i = 0; i < sv.n_findings; i++) {
+                                        hlse_json_escape(sv.findings[i].type, et, sizeof(et));
+                                        hlse_json_escape(sv.findings[i].description, ed, sizeof(ed));
+                                        printf("%s{\"type\":\"%s\",\"description\":\"%s\"}",
+                                               i ? "," : "", et, ed);
+                                    }
+                                    printf("]");
+                                    {
+                                        const char *conf = hlse_secret_confidence(&sv);
+                                        if (conf) {
+                                            json_field("confidence", conf);
+                                        }
+                                    }
+                                    {
+                                        const char *rem = hlse_remediation_for("secret", sv.score);
+                                        if (rem) {
+                                            json_field("remediation", rem);
+                                        }
+                                    }
+                                    json_secret_advisories(&sv);
+                                    printf("}\n");
+                                } else {
+                                    int i;
+                                    /* Display copy only: fullpath is still
+                                     * used for I/O; the terminal must not
+                                     * see raw control bytes from an
+                                     * attacker-chosen filename (CWE-150). */
+                                    char dp[4096];
+                                    snprintf(dp, sizeof dp, "%s", fullpath);
+                                    hlse_sanitize_terminal(dp);
+                                    printf("%-7s [%d]  %s:%d\n",
+                                           hlse_action_for_score(sv.score),
+                                           sv.score, dp, lineno);
+                                    for (i = 0; i < sv.n_findings; i++)
+                                        printf("  \xc2\xb7 %s\n",
+                                               sv.findings[i].description);
+                                    print_secret_advisories(&sv);
+                                }
+                            }
+
+                            /* Check 3: phishing URLs embedded in text */
+                            {
+                                const char *p = line;
+                                while ((p = strstr(p, "http")) != NULL) {
+                                    if (strncmp(p, "http://", 7) != 0 &&
+                                        strncmp(p, "https://", 8) != 0) {
+                                        p += 4; continue;
+                                    }
+                                    char url_buf[2048];
+                                    int ui = 0;
+                                    while (p[ui] && p[ui] != ' ' && p[ui] != '\t'
+                                           && p[ui] != '\n' && p[ui] != '"'
+                                           && p[ui] != '\'' && p[ui] != '>'
+                                           && p[ui] != ')' && ui < 2047) {
+                                        url_buf[ui] = p[ui]; ui++;
+                                    }
+                                    url_buf[ui] = '\0';
+                                    {
+                                        Verdict uv = check_url(url_buf);
+                                        if (uv.score >= 40) {
+                                            /* P0-1: baseline/allowlist +
+                                             * inline hlse:allow. Use the
+                                             * relative path + url as the
+                                             * distinguisher; on suppression
+                                             * fall through to p += ui. */
+                                            if (hlse_scan_suppress(sarif_path,
+                                                    hlse_url_pattern_id(&uv),
+                                                    url_buf, line))
+                                                goto url_advance;
+                                            threats++;
+                                            if (uv.score > max_score) max_score = uv.score;
+                                            if (uv.score >= g_fail_threshold)
+                                                gate_hits++;
+                                            if (o->sarif_out) {
+                                                char msg[512] = {0};
+                                                int k;
+                                                size_t l0 = strlen(url_buf) < 200 ?
+                                                            strlen(url_buf) : 200;
+                                                snprintf(msg, sizeof(msg),
+                                                         "Phishing URL: %.*s — ",
+                                                         (int)l0, url_buf);
+                                                for (k = 0; k < uv.n_reasons; k++) {
+                                                    size_t l = strlen(msg);
+                                                    snprintf(msg + l, sizeof(msg) - l,
+                                                             "%s%s", k ? "; " : "",
+                                                             uv.reasons[k]);
+                                                }
+                                                sarif_add(sarif_path, lineno,
+                                                          "phishing-url",
+                                                          hlse_url_pattern_id(&uv),
+                                                          msg, uv.score);
+                                            } else if (o->json_out) {
+                                                char eu[2048];
+                                                hlse_json_escape(url_buf, eu, sizeof(eu));
+                                                printf("{\"kind\":\"url\",\"path\":\"%s\","
+                                                       "\"line\":%d,\"url\":\"%s\","
+                                                       "\"score\":%d,\"action\":\"%s\","
+                                                       "\"reasons\":[",
+                                                       fullpath, lineno, eu, uv.score,
+                                                       hlse_action_for_score(uv.score));
+                                                { int kr;
+                                                  for (kr = 0; kr < uv.n_reasons; kr++) {
+                                                      char er[256];
+                                                      hlse_json_escape(uv.reasons[kr], er, sizeof(er));
+                                                      printf("%s\"%s\"", kr>0?",":"", er);
+                                                  }
+                                                }
+                                                printf("]");
+                                                {
+                                                    char ucf_buf[160];
+                                                    int u_sig = hlse_confidence_for(&uv, ucf_buf, sizeof(ucf_buf));
+                                                    if (u_sig > 0) {
+                                                        hlse_json_escape(ucf_buf, eu, sizeof(eu));
+                                                        printf(",\"signal_count\":%d,\"confidence\":\"%s\"", u_sig, eu);
+                                                    }
+                                                }
+                                                if (uv.score >= 40) {
+                                                    /* Perspective 95: pattern/pattern_id/objective/safe_url/verify
+                                                     * now fire from the ALERT floor (40), matching the standalone
+                                                     * URL JSON path — an embedded URL scored ALERT used to emit
+                                                     * only raw reasons + exoneration while the same URL scanned
+                                                     * standalone got the full advisory. triage/cascade_risk stay
+                                                     * BLOCK+-only (60): post-incident guidance presumes the user
+                                                     * already acted, which only high confidence warrants. */
+                                                    const char *upat = hlse_classify_url_attack(&uv);
+                                                    const char *uvrf = hlse_verification_for(&uv);
+                                                    char uobj_buf[320], usafe[384];
+                                                    int has_obj  = hlse_compound_objective(&uv, uobj_buf, sizeof(uobj_buf));
+                                                    int has_safe = hlse_safe_destinations(&uv, usafe, sizeof(usafe));
+                                                    if (upat)     { json_field("pattern", upat); }
+                                                    if (upat)     { const char *upid = hlse_url_pattern_id(&uv); json_field("pattern_id", upid); }
+                                                    if (has_obj)  { json_field("objective", uobj_buf); }
+                                                    if (has_safe) { json_field("safe_url", usafe); }
+                                                    if (uvrf)     { json_field("verify", uvrf); }
+                                                }
+                                                if (uv.score >= 60) {
+                                                    const char *ucas = hlse_cascade_risk(&uv);
+                                                    char utri_buf[512];
+                                                    int has_tri  = hlse_compound_triage(&uv, utri_buf, sizeof(utri_buf));
+                                                    if (has_tri)  { json_field("triage", utri_buf); }
+                                                    if (ucas)     { json_field("cascade_risk", ucas); }
+                                                }
+                                                if (uv.score >= 40 && uv.score < 60) {
+                                                    const char *uexon = hlse_url_exoneration(&uv);
+                                                    if (uexon) {
+                                                        json_field("exoneration", uexon);
+                                                    }
+                                                }
+                                                printf("}\n");
+                                            } else {
+                                                int k;
+                                                printf("%-7s [%d]  %s:%d  %s\n",
+                                                       hlse_action_for_score(uv.score),
+                                                       uv.score, fullpath, lineno, url_buf);
+                                                for (k = 0; k < uv.n_reasons; k++)
+                                                    printf("  \xc2\xb7 %s\n", uv.reasons[k]);
+                                                print_url_advisories(url_buf, &uv);
+                                                if (uv.score >= 40 && uv.score < 60) {
+                                                    const char *uexon = hlse_url_exoneration(&uv);
+                                                    if (uexon)
+                                                        printf("  \xe2\x86\xba Could be benign: %s\n", uexon);
+                                                }
+                                            }
+                                        }
+                                    }
+                                    url_advance:            /* P0-1 target */
+                                    p += ui;
+                                }
+                            }
+                        }
+                        fclose(fp);
+                    }
+                }
+            }
+            closedir(d);
+        }
+
+        /* --fingerprints mode emits only the per-finding fingerprint lines
+         * (for baseline generation); skip the summary and never fail the
+         * gate — generating a baseline must exit 0. */
+        if (g_emit_fingerprints) {
+            return 0;
+        }
+        if (o->sarif_out) {
+            sarif_emit(HLSE_VERSION);
+        } else if (!o->json_out) {
+            if (threats == 0) {
+                const char *bs = hlse_blindspot_for("scan");
+                printf("OK    %s (%d files scanned, 0 threats)\n",
+                       root, files_scanned);
+                if (dirs_unreadable > 0)
+                    printf("  \xe2\x9a\xa0 %d director%s could not be read and "
+                           "%s skipped \xe2\x80\x94 this result does not cover "
+                           "%s.\n", dirs_unreadable,
+                           dirs_unreadable == 1 ? "y" : "ies",
+                           dirs_unreadable == 1 ? "was" : "were",
+                           dirs_unreadable == 1 ? "it" : "them");
+                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+            } else {
+                char classes[256];
+                int nclasses = asset_mask_describe(asset_mask, classes,
+                                                   sizeof(classes));
+                printf("\n%d threat(s) in %d files under %s\n",
+                       threats, files_scanned, root);
+                if (gate_hits > 0 && g_fail_threshold != 60)
+                    printf("  %d finding(s) exceeded the --fail-on threshold (%d)\n",
+                           gate_hits, g_fail_threshold);
+                /* Immediate action: one-sentence triage keyed to the
+                 * most severe asset class (or file/URL threats). */
+                printf("\xe2\x86\x92 Immediate action: %s\n",
+                       scan_immediate_action((unsigned)asset_mask, nclasses));
+                /* Blast radius: credentials spanning 2+ asset classes let
+                 * an attacker pivot across systems — worse than the count
+                 * alone suggests. */
+                if (nclasses >= 2)
+                    printf("\xe2\x9a\xa0  BLAST RADIUS: leaked credentials "
+                           "span %d asset classes (%s) — an attacker can "
+                           "pivot across these systems. Rotate ALL of them "
+                           "and assume lateral movement.\n",
+                           nclasses, classes);
+            }
+        } else {
+            /* NDJSON: final summary line for CI tooling */
+            char esc_root[4096], classes[256];
+            int nclasses = asset_mask_describe(asset_mask, classes,
+                                               sizeof(classes));
+            hlse_json_escape(root, esc_root, sizeof(esc_root));
+            printf("{\"kind\":\"scan_summary\",\"hlse_version\":\"" HLSE_VERSION "\","
+                   "\"target\":\"%s\","
+                   "\"files_scanned\":%d,\"threats\":%d,"
+                   "\"max_severity\":%d,"
+                   "\"gate_hits\":%d,\"fail_threshold\":%d,"
+                   "\"asset_classes\":%d,\"blast_radius\":\"%s\"",
+                   esc_root, files_scanned, threats,
+                   hlse_severity_for_score(max_score),
+                   gate_hits, g_fail_threshold,
+                   nclasses, classes);
+            if (dirs_unreadable > 0)
+                printf(",\"dirs_unreadable\":%d", dirs_unreadable);
+            if (threats == 0) {
+                const char *bs = hlse_blindspot_for("scan");
+                json_field("blind_spot", bs);
+            } else {
+                const char *ia = scan_immediate_action((unsigned)asset_mask, nclasses);
+                json_field("immediate_action", ia);
+            }
+            printf("}\n");
+        }
+        return gate_hits > 0 ? 1 : 0;
+    }
+#pragma GCC diagnostic pop
+}
+
+/* `package` subcommand, extracted verbatim from main(). */
+static int
+cmd_package(int argc, char **argv, int idx, const CliOpts *o) {
+    if (argc < idx + 2) {
+        fprintf(stderr, "Usage: %s package <name> [pip|npm|cargo|go]\n"
+                "       %s package --manifest <file> [pip|npm|cargo|go|gem]\n",
+                argv[0], argv[0]);
+        return 2;
+    }
+    /* --manifest <file>: scan every dependency in a manifest (P1-8). */
+    if (strcmp(argv[idx + 1], "--manifest") == 0) {
+        const char *mpath, *eco;
+        FILE *mf;
+        char line[4096];
+        int in_deps = 0, checked = 0, threats = 0, gate_hits = 0;
+        int max_score = 0, lineno = 0;
+        if (argc < idx + 3) {
+            fprintf(stderr, "Usage: %s package --manifest <file> [eco]\n",
+                    argv[0]);
+            return 2;
+        }
+        mpath = argv[idx + 2];
+        eco = (argc > idx + 3) ? argv[idx + 3] : manifest_ecosystem(mpath);
+        if (!eco) {
+            fprintf(stderr, "Error: cannot infer ecosystem from '%s' \xe2\x80\x94 "
+                    "pass one explicitly (pip|npm|cargo|go|gem)\n", mpath);
+            return 2;
+        }
+        mf = fopen(mpath, "r");
+        if (!mf) {
+            fprintf(stderr, "Error: cannot read manifest '%s': %s\n",
+                    mpath, strerror(errno));
+            return 2;
+        }
+        while (fgets(line, sizeof(line), mf)) {
+            char name[128];
+            const char *cursor = line;
+            int is_npm = (strcmp(eco, "npm") == 0);
+            lineno++;
+            /* npm: a line may hold several "name":"ver" pairs (compact
+             * object form), so drain the cursor. pip: one name per line. */
+            for (;;) {
+                int got;
+                if (is_npm)
+                    got = manifest_name_npm(&cursor, &in_deps, name, sizeof(name));
+                else
+                    got = manifest_name_pip(line, name, sizeof(name));
+                if (!got || name[0] == '\0') break;
+            {
+                PackageVerdict pv = hlse_check_package(name, eco);
+                checked++;
+                if (pv.score >= 40) {
+                    threats++;
+                    if (pv.score > max_score) max_score = pv.score;
+                    if (pv.score >= g_fail_threshold) gate_hits++;
+                    if (o->sarif_out) {
+                        char msg[512];
+                        snprintf(msg, sizeof(msg), "%s",
+                                 pv.reason[0] ? pv.reason
+                                 : "dependency typosquat");
+                        sarif_add(mpath, lineno, "package-typosquat",
+                                  "HLSE-PKG-TYPOSQUAT", msg, pv.score);
+                    } else if (o->json_out) {
+                        char en[128];
+                        int i;
+                        hlse_json_escape(name, en, sizeof(en));
+                        printf("{\"kind\":\"package\",\"hlse_version\":\""
+                               HLSE_VERSION "\",\"name\":\"%s\","
+                               "\"ecosystem\":\"%s\",\"score\":%d,"
+                               "\"action\":\"%s\",\"severity\":%d,"
+                               "\"pattern_id\":\"HLSE-PKG-TYPOSQUAT\","
+                               "\"matches\":[",
+                               en, eco, pv.score,
+                               hlse_action_for_score(pv.score),
+                               hlse_severity_for_score(pv.score));
+                        for (i = 0; i < pv.n_matches; i++)
+                            printf("%s{\"name\":\"%s\",\"registry\":\"%s\","
+                                   "\"distance\":%d}", i ? "," : "",
+                                   pv.matches[i].legit_name,
+                                   pv.matches[i].registry,
+                                   pv.matches[i].distance);
+                        printf("]}\n");
+                    } else {
+                        printf("%-7s [%d]  %s (%s)\n",
+                               hlse_action_for_score(pv.score), pv.score,
+                               name, eco);
+                        if (pv.reason[0])
+                            printf("  \xc2\xb7 %s\n", pv.reason);
+                    }
+                }
+            }
+                if (!is_npm) break;   /* pip: one name per line */
+            }  /* for(;;) drain-line */
+        }
+        fclose(mf);
+        if (o->sarif_out) {
+            sarif_emit(HLSE_VERSION);
+        } else if (o->json_out) {
+            char ep[4096];
+            hlse_json_escape(mpath, ep, sizeof(ep));
+            printf("{\"kind\":\"manifest_summary\",\"hlse_version\":\""
+                   HLSE_VERSION "\",\"manifest\":\"%s\",\"ecosystem\":\"%s\","
+                   "\"packages_checked\":%d,\"threats\":%d,"
+                   "\"max_severity\":%d,\"gate_hits\":%d}\n",
+                   ep, eco, checked, threats,
+                   hlse_severity_for_score(max_score), gate_hits);
+        } else if (threats == 0) {
+            printf("OK    %s (%d packages checked, 0 typosquat risks)\n",
+                   mpath, checked);
+        } else {
+            printf("\n%d suspicious package(s) of %d checked in %s\n",
+                   threats, checked, mpath);
+        }
+        return gate_hits > 0 ? 1 : 0;
+    }
+    {
+        const char *eco = (argc > idx + 2) ? argv[idx + 2] : NULL;
+        PackageVerdict pv = hlse_check_package(argv[idx + 1], eco);
+        /* Sanitized display copy of the package name for plain-text echoes
+         * (CWE-150); the raw name already drove the check. */
+        char pdisp[256];
+        snprintf(pdisp, sizeof pdisp, "%s", argv[idx + 1]);
+        hlse_sanitize_terminal(pdisp);
+        {
+            const char *aar[1]; int aqn = 0;
+            if (pv.reason[0]) { aar[0] = pv.reason; aqn = 1; }
+            hlse_alert_emit("package", pv.score,
+                hlse_severity_for_score(pv.score), argv[idx + 1], aar, aqn);
+        }
+        if (o->json_out) {
+            printf("{\"kind\":\"package\",\"hlse_version\":\"" HLSE_VERSION "\","
+                   "\"name\":\"%s\",\"score\":%d,"
+                   "\"action\":\"%s\",\"severity\":%d",
+                   argv[idx + 1], pv.score, hlse_action_for_score(pv.score),
+                   hlse_severity_for_score(pv.score));
+            if (pv.n_matches > 0) {
+                int i;
+                printf(",\"matches\":[");
+                for (i = 0; i < pv.n_matches; i++) {
+                    printf("%s{\"name\":\"%s\",\"registry\":\"%s\","
+                           "\"distance\":%d}",
+                           i > 0 ? "," : "",
+                           pv.matches[i].legit_name,
+                           pv.matches[i].registry,
+                           pv.matches[i].distance);
+                }
+                printf("]");
+            }
+            if (pv.score == 0) {
+                /* reason non-empty => exact match to a known package;
+                 * empty => unknown name, which we cannot verify offline. */
+                const char *bs = hlse_blindspot_for(
+                    pv.reason[0] ? "package" : "package_unverified");
+                json_field("blind_spot", bs);
+            }
+            if (pv.score > 0) {
+                int ns = pv.n_matches > 0 ? pv.n_matches : 1;
+                const char *conf = ns >= 3 ? "high confidence" :
+                                   ns >= 2 ? "corroborated" : "single signal";
+                printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
+            }
+            if (pv.score >= 40) {
+                /* Perspective 97: a name matching 2+ registries at once
+                 * (e.g. "reqests" ~ pip "requests" dist-1 AND cargo
+                 * "reqwest" dist-2, when no ecosystem is given) lands at
+                 * score 50 alone — the n_matches==1 amplifier to 70 never
+                 * fires — but pattern/objective/verify used to require
+                 * >= 60, the same gap P95/P96 closed elsewhere.
+                 * Perspective 103: text now shared with the plaintext
+                 * path below via package_*_text() accessors. */
+                json_field("pattern", package_pattern_text());
+                printf(",\"pattern_id\":\"HLSE-PKG-TYPOSQUAT\"");
+                json_field("objective", package_objective_text());
+                json_field("verify", package_verify_text());
+            }
+            if (pv.score >= 60) {
+                json_field("triage", package_triage_text());
+                json_field("cascade_risk", package_cascade_text());
+            }
+            if (pv.score > 0 && pv.score < 60) {
+                const char *ex = hlse_exoneration_for("package", pv.score);
+                if (ex) {
+                    json_field("exoneration", ex);
+                }
+            }
+            printf("}\n");
+        } else if (pv.score == 0) {
+            const char *bs = hlse_blindspot_for(
+                pv.reason[0] ? "package" : "package_unverified");
+            printf("OK    %s\n", pdisp);
+            /* Mirror the URL canonical-confirmation line: say explicitly
+             * when the name IS recognised, so "OK" is not ambiguous
+             * between "known good" and "never heard of it". */
+            if (pv.reason[0]) printf("  \xe2\x9c\x94 %s\n", pv.reason);
+            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+        } else {
+            printf("%-7s [%d]  %s\n",
+                   hlse_action_for_score(pv.score), pv.score,
+                   pdisp);
+            if (pv.reason[0])
+                printf("  \xc2\xb7 %s\n", pv.reason);
+            if (pv.score >= 40) {
+                printf("  \xe2\x96\xb8 Pattern: %s\n", package_pattern_text());
+                printf("  \xe2\x97\x89 Attacker's goal: %s\n", package_objective_text());
+                printf("  \xe2\x9c\x93 Verify first: %s\n", package_verify_text());
+            }
+            if (pv.score >= 60) {
+                printf("  \xe2\x9a\x91 If you acted: %s\n", package_triage_text());
+                printf("  \xe2\x8a\x95 Also change: %s\n", package_cascade_text());
+            }
+            if (pv.score < 60) {
+                const char *ex = hlse_exoneration_for("package", pv.score);
+                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
+            }
+        }
+        return pv.score >= g_fail_threshold ? 1 : 0;
+    }
+}
+
+/* `email` subcommand, extracted verbatim from main(). */
+static int
+cmd_email(int argc, char **argv, int idx, const CliOpts *o) {
+    static char stdin_buf[1u << 20];  /* 1 MiB, BSS (P1-2) */
+    const char *headers;
+    /* Perspective 106 (P2-3): --from sets a delivery-channel prior that
+     * boosts URL/text scores, but email headers are BY DEFINITION
+     * received over email — the channel is intrinsic and fixed, so a
+     * --from override (especially a non-email one like sms) is
+     * meaningless here. The flag was silently ignored, which reads like a
+     * bug; make it explicit with a one-line stderr note instead. */
+    if (g_from_channel) {
+        fprintf(stderr,
+                "hlse: note: --from is ignored for the email subcommand "
+                "\xe2\x80\x94 email headers are intrinsically the email "
+                "channel; the channel prior is not applied\n");
+    }
+    if (argc < idx + 2) {
+        fprintf(stderr, "Usage: %s email \"<headers>\" | %s email --stdin\n",
+                argv[0], argv[0]);
+        return 2;
+    } else if (strcmp(argv[idx + 1], "--stdin") == 0) {
+        read_stdin_all(stdin_buf, sizeof(stdin_buf));
+        headers = stdin_buf;
+    } else {
+        headers = argv[idx + 1];
+    }
+    {
+        EmailVerdict ev = hlse_check_email_headers(headers);
+        {
+            const char *aar[16]; int aq, aqn = ev.n_reasons;
+            if (aqn > 16) aqn = 16;
+            for (aq = 0; aq < aqn; aq++) aar[aq] = ev.reasons[aq];
+            hlse_alert_emit("email", ev.score,
+                hlse_severity_for_score(ev.score), "(email headers)", aar, aqn);
+        }
+        const char *rem = hlse_remediation_for("email", ev.score);
+        /* Header forensics (SPF/DKIM/Reply-To/Received) is blind to the
+         * message BODY's social engineering. Run text analysis on the same
+         * input and surface the attack-pattern lens as ADVISORY only — the
+         * email score is unchanged (preserves F1), but a BEC/urgency body
+         * that header checks alone would miss is now named. */
+        TextVerdict bodytv = hlse_check_text(headers);
+        const char *body_pat = hlse_classify_text_attack(&bodytv);
+        if (o->json_out) {
+            int i;
+            printf("{\"kind\":\"email\",\"hlse_version\":\"" HLSE_VERSION "\","
+                   "\"score\":%d,\"action\":\"%s\","
+                   "\"severity\":%d,\"reasons\":[",
+                   ev.score, hlse_action_for_score(ev.score),
+                   hlse_severity_for_score(ev.score));
+            for (i = 0; i < ev.n_reasons; i++) {
+                char esc[512];
+                hlse_json_escape(ev.reasons[i], esc, sizeof(esc));
+                printf("%s\"%s\"", i > 0 ? "," : "", esc);
+            }
+            printf("]");
+            if (ev.score == 0 && !body_pat) {
+                const char *bs = hlse_blindspot_for("email");
+                json_field("blind_spot", bs);
+            }
+            if (body_pat) {
+                char epat[256];
+                hlse_json_escape(body_pat, epat, sizeof(epat));
+                printf(",\"body_pattern\":\"%s\",\"body_score\":%d",
+                       epat, bodytv.score);
+                /* Emit pattern and pattern_id from body analysis, plus signal count/confidence */
+                printf(",\"signal_count\":2,\"confidence\":\"two independent signals — header authentication + body text both analyzed\"");
+                TextVerdict btv_hi = bodytv;
+                char e[512];
+                const char *bpat, *bobj, *bvrf, *btri, *bcas, *bex;
+                btv_hi.score = ev.score > bodytv.score ? ev.score : bodytv.score;
+                bpat = hlse_classify_text_attack(&btv_hi);
+                bobj = hlse_text_objective(&btv_hi);
+                bex  = hlse_text_exoneration(&btv_hi);
+                bvrf = hlse_text_verify(&btv_hi);
+                btri = hlse_text_triage(&btv_hi);
+                bcas = hlse_text_cascade(&btv_hi);
+                json_field("pattern", bpat);
+                if (bpat) {
+                    const char *bid = hlse_text_pattern_id(&btv_hi);
+                    json_field("pattern_id", bid);
+                }
+                if (bex && btv_hi.score >= 15 && btv_hi.score < 60) {
+                    hlse_json_escape(bex,e,sizeof(e)); printf(",\"exoneration\":\"%s\"",e);
+                }
+                /* Perspective 95: verify now fires from the ALERT floor
+                 * (btv_hi.score >= 40, the combined header/body score) —
+                 * objective/triage/cascade_risk stay gated on ev.score
+                 * >= 60 (header-confidence threshold, unchanged). */
+                if (bvrf && btv_hi.score >= 40) {
+                    json_field("verify", bvrf);
+                }
+                if (ev.score >= 60) {
+                    json_field("objective", bobj);
+                    json_field("triage", btri);
+                    json_field("cascade_risk", bcas);
+                }
+            } else if (ev.score >= 60) {
+                /* Header-only BLOCK: synthesise BEC advisory lenses */
+                TextVerdict etv;
+                const char *epat2, *eobj, *evrf, *etri, *ecas;
+                text_verdict_synth(&etv, ev.score,
+                                   "BEC: email header authentication failure "
+                                   "(SPF/DKIM/Reply-To spoofing)");
+                epat2 = hlse_classify_text_attack(&etv);
+                eobj  = hlse_text_objective(&etv);
+                evrf  = hlse_text_verify(&etv);
+                etri  = hlse_text_triage(&etv);
+                ecas  = hlse_text_cascade(&etv);
+                printf(",\"signal_count\":1,\"confidence\":\"single signal — email header authentication anomalies detected\"");
+                json_field("pattern", epat2);
+                if (epat2) { const char *pid = hlse_text_pattern_id(&etv); json_field("pattern_id", pid); }
+                json_field("objective", eobj);
+                json_field("verify", evrf);
+                json_field("triage", etri);
+                json_field("cascade_risk", ecas);
+            } else if (ev.score > 0) {
+                /* Borderline header score (1-59): emit signal_count, confidence, and exoneration */
+                printf(",\"signal_count\":1");
+                TextVerdict etv;
+                const char *econn = hlse_exoneration_for("email", ev.score);
+                if (econn) {
+                    json_field("exoneration", econn);
+                }
+                memset(&etv, 0, sizeof(etv));
+                etv.score = ev.score;
+                printf(",\"confidence\":\"partial signal — some email header concerns but not conclusive spoofing\"");
+            }
+            if (rem) {
+                json_field("remediation", rem);
+            }
+            printf("}\n");
+        } else if (ev.score == 0 && !body_pat) {
+            const char *bs = hlse_blindspot_for("email");
+            printf("OK    (email \xe2\x80\x94 no spoofing signals)\n");
+            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+        } else {
+            int i;
+            const char *ex = hlse_exoneration_for("email", ev.score);
+            if (ev.score == 0)
+                printf("OK    [0]  (email forensics) "
+                       "\xe2\x80\x94 headers clean, but body flagged below\n");
+            else
+                printf("%-7s [%d]  (email forensics)\n",
+                       hlse_action_for_score(ev.score), ev.score);
+            for (i = 0; i < ev.n_reasons; i++)
+                printf("  \xc2\xb7 %s\n", ev.reasons[i]);
+            if (body_pat) {
+                /* Use email header score for advisory threshold */
+                TextVerdict btv_hi = bodytv;
+                const char *bobj, *bvrf, *btri, *bcas;
+                if (ev.score >= 60) btv_hi.score = ev.score;
+                bobj = hlse_text_objective(&btv_hi);
+                bvrf = hlse_text_verify(&btv_hi);
+                btri = hlse_text_triage(&btv_hi);
+                bcas = hlse_text_cascade(&btv_hi);
+                printf("  \xe2\x96\xb8 Body pattern: %s (body score %d)\n",
+                       body_pat, bodytv.score);
+                if (bobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", bobj);
+                /* Perspective 95: verify fires from the ALERT floor
+                 * (btv_hi.score >= 40); triage/cascade stay BLOCK+-only. */
+                if (bvrf && btv_hi.score >= 40)
+                    printf("  \xe2\x9c\x93 Verify first: %s\n", bvrf);
+                if (ev.score >= 60) {
+                    if (btri) printf("  \xe2\x9a\x91 If you acted: %s\n", btri);
+                    if (bcas) printf("  \xe2\x8a\x95 Also change: %s\n", bcas);
+                }
+            } else if (ev.score >= 60) {
+                /* Header-only BLOCK: synthesise BEC advisory lenses */
+                TextVerdict etv;
+                const char *epat2, *eobj, *evrf, *etri, *ecas;
+                text_verdict_synth(&etv, ev.score,
+                                   "BEC: email header authentication failure "
+                                   "(SPF/DKIM/Reply-To spoofing)");
+                epat2 = hlse_classify_text_attack(&etv);
+                eobj  = hlse_text_objective(&etv);
+                evrf  = hlse_text_verify(&etv);
+                etri  = hlse_text_triage(&etv);
+                ecas  = hlse_text_cascade(&etv);
+                if (epat2) printf("  \xe2\x96\xb8 Pattern: %s\n", epat2);
+                if (eobj)  printf("  \xe2\x97\x89 Attacker's goal: %s\n", eobj);
+                if (evrf)  printf("  \xe2\x9c\x93 Verify first: %s\n", evrf);
+                if (etri)  printf("  \xe2\x9a\x91 If you acted: %s\n", etri);
+                if (ecas)  printf("  \xe2\x8a\x95 Also change: %s\n", ecas);
+            }
+            if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
+            if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
+        }
+        return ev.score >= g_fail_threshold ? 1 : 0;
+    }
+}
+
+/* Human labels and JSON ids for the protect modules, used by both output
+ * paths below. Nothing outside this file needs the mapping. */
+static const struct {
+    int flag; const char *id; const char *label; const char *hint;
+} PROTECT_MODULES[] = {
+    { HLSE_PROTECT_RANSOMWARE,    "ransomware",
+      "ransomware indicators",    "the target directory could not be opened" },
+    { HLSE_PROTECT_NETWORK_DRIVE, "network_drive",
+      "network-drive mounts",     "/proc/mounts could not be read" },
+    { HLSE_PROTECT_SMB,           "smb",
+      "SMB canary files",         "the share could not be stat'ed" },
+    { HLSE_PROTECT_MBR,           "mbr",
+      "MBR boot sector",
+      "the device could not be read \xe2\x80\x94 re-run as root" }
+};
+
+/* One line per module that scored 0 because it could not read its evidence.
+ * Without this the merge in hlse_protect_scan() silently dropped the module's
+ * own diagnostic and the run looked complete. */
+static void
+print_protect_unchecked(const ProtectionVerdict *pv) {
+    size_t mi;
+    if (!pv->modules_unchecked) return;
+    for (mi = 0; mi < sizeof(PROTECT_MODULES) / sizeof(PROTECT_MODULES[0]); mi++)
+        if (pv->modules_unchecked & PROTECT_MODULES[mi].flag)
+            printf("  \xe2\x9a\xa0 Not checked: %s \xe2\x80\x94 %s\n",
+                   PROTECT_MODULES[mi].label, PROTECT_MODULES[mi].hint);
+}
+
+/* `protect` subcommand, extracted verbatim from main(). */
+static int
+cmd_protect(int argc, char **argv, int idx, const CliOpts *o) {
+    if (argc < idx + 2) {
+        fprintf(stderr, "Usage: %s protect <path> [--ransomware|--smb|--mbr|--net]\n", argv[0]);
+        return 2;
+    }
+    {
+        const char *path = argv[idx + 1];
+        int modules = 0;
+
+        /* Verify path exists */
+        if (access(path, F_OK) != 0) {
+            fprintf(stderr, "Error: cannot access '%s': %s\n",
+                    path, strerror(errno));
+            return 2;
+        }
+        int ai;
+
+        /* Parse module flags */
+        for (ai = idx + 2; ai < argc; ai++) {
+            if (strcmp(argv[ai], "--ransomware") == 0) modules |= HLSE_PROTECT_RANSOMWARE;
+            else if (strcmp(argv[ai], "--smb") == 0)   modules |= HLSE_PROTECT_SMB;
+            else if (strcmp(argv[ai], "--mbr") == 0)   modules |= HLSE_PROTECT_MBR;
+            else if (strcmp(argv[ai], "--net") == 0)    modules |= HLSE_PROTECT_NETWORK_DRIVE;
+        }
+        if (modules == 0) {
+            /* Auto-detect: if path starts with /dev/, use MBR; else file-based */
+            if (strncmp(path, "/dev/", 5) == 0) {
+                modules = HLSE_PROTECT_MBR;
+            } else {
+                modules = HLSE_PROTECT_RANSOMWARE | HLSE_PROTECT_SMB | HLSE_PROTECT_NETWORK_DRIVE;
+            }
+        }
+
+        ProtectionVerdict pv = hlse_protect_scan(path, modules);
+        {
+            const char *aar[16]; int aq, aqn = pv.n_reasons;
+            if (aqn > 16) aqn = 16;
+            for (aq = 0; aq < aqn; aq++) aar[aq] = pv.reasons[aq];
+            hlse_alert_emit("protect", pv.score,
+                hlse_severity_for_score(pv.score), path, aar, aqn);
+        }
+
+        if (o->json_out) {
+            /* JSON output for protect.
+             * Perspective 100: this was the only verdict kind still
+             * missing hlse_version and severity — every other kind
+             * (url/text/file/secret/email/network/esp/package/paste/
+             * clipboard) has carried both since P84/P85; protect was
+             * never brought in line. */
+            char esc_path[4096];
+            hlse_json_escape(path, esc_path, sizeof(esc_path));
+            printf("{\"kind\":\"protect\",\"hlse_version\":\"" HLSE_VERSION "\","
+                   "\"target\":\"%s\",\"score\":%d,"
+                   "\"action\":\"%s\",\"severity\":%d,\"reasons\":[",
+                   esc_path, pv.score,
+                   hlse_action_for_score(pv.score),
+                   hlse_severity_for_score(pv.score));
+            {
+                int i;
+                for (i = 0; i < pv.n_reasons; i++) {
+                    char esc[512];
+                    hlse_json_escape(pv.reasons[i], esc, sizeof(esc));
+                    printf("%s\"%s\"", i > 0 ? "," : "", esc);
+                }
+            }
+            printf("]");
+            printf(",\"target_scanned\":%s",
+                   pv.target_unreadable ? "false" : "true");
+            if (pv.modules_unchecked) {
+                size_t mi; int first = 1;
+                printf(",\"modules_unchecked\":[");
+                for (mi = 0; mi < sizeof(PROTECT_MODULES) /
+                                  sizeof(PROTECT_MODULES[0]); mi++)
+                    if (pv.modules_unchecked & PROTECT_MODULES[mi].flag) {
+                        printf("%s\"%s\"", first ? "" : ",",
+                               PROTECT_MODULES[mi].id);
+                        first = 0;
+                    }
+                printf("]");
+            }
+            if (pv.score == 0) {
+                const char *bs = hlse_blindspot_for("protect");
+                json_field("blind_spot", bs);
+            }
+            if (pv.score > 0) {
+                int ns = pv.n_reasons;
+                const char *conf = ns >= 3 ? "high confidence" :
+                                   ns >= 2 ? "corroborated" : "single signal";
+                printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
+            }
+            if (pv.score >= 40) {
+                /* Perspective 100: a single SMB canary-file access (+40)
+                 * or mass-rename detection (+40) lands the protect
+                 * verdict in ALERT (40-59) alone — the same gap P95-98
+                 * closed for other kinds. pattern/objective/verify now
+                 * fire from the ALERT floor; triage/cascade_risk
+                 * (disconnect-network incident response) stay
+                 * BLOCK+-only (>= 60).
+                 * Perspective 103: text now shared with the plaintext
+                 * path below via protect_*_text() accessors. */
+                json_field("pattern", protect_pattern_text());
+                printf(",\"pattern_id\":\"HLSE-PROTECT-RANSOM\"");
+                json_field("objective", protect_objective_text());
+                json_field("verify", protect_verify_text());
+            }
+            if (pv.score >= 60) {
+                json_field("triage", protect_triage_text());
+                json_field("cascade_risk", protect_cascade_text());
+            }
+            if (pv.score > 0 && pv.score < 60) {
+                const char *ex = hlse_exoneration_for("protect", pv.score);
+                if (ex) {
+                    json_field("exoneration", ex);
+                }
+            }
+            printf("}\n");
+        } else if (pv.score == 0) {
+            const char *bs = hlse_blindspot_for("protect");
+            if (pv.target_unreadable) {
+                /* Nothing in the target was examined, so a score of 0 is the
+                 * absence of evidence, not evidence of absence. The per-module
+                 * lines printed just below say which checks that cost us, so
+                 * this only has to mark the headline. */
+                printf("OK    %s (NOT scanned \xe2\x80\x94 target could not be "
+                       "opened)\n", path);
+            } else {
+                printf("OK    %s\n", path);
+            }
+            print_protect_unchecked(&pv);
+            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+        } else {
+            int i;
+            printf("%-7s [%d]  %s\n",
+                   hlse_action_for_score(pv.score), pv.score, path);
+            for (i = 0; i < pv.n_reasons; i++) {
+                printf("  \xc2\xb7 %s\n", pv.reasons[i]);
+            }
+            /* Also on a scored verdict: a partial result must not read as a
+             * complete one just because something else did fire. */
+            print_protect_unchecked(&pv);
+            if (pv.score >= 40) {
+                printf("  \xe2\x96\xb8 Pattern: %s\n", protect_pattern_text());
+                printf("  \xe2\x97\x89 Attacker's goal: %s\n", protect_objective_text());
+                printf("  \xe2\x9c\x93 Verify first: %s\n", protect_verify_text());
+            }
+            if (pv.score >= 60) {
+                printf("  \xe2\x9a\x91 Immediate action: %s\n", protect_triage_text());
+                printf("  \xe2\x8a\x95 Also change: %s\n", protect_cascade_text());
+            }
+            if (pv.score < 60) {
+                const char *ex = hlse_exoneration_for("protect", pv.score);
+                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
+            }
+        }
+        return pv.score >= g_fail_threshold ? 1 : 0;
+    }
+}
+
+/* `paste` subcommand, extracted verbatim from main(). */
+static int
+cmd_paste(int argc, char **argv, int idx, const CliOpts *o) {
+    if (argc < idx + 2) {
+        fprintf(stderr, "Usage: %s paste \"<command text>\"\n", argv[0]);
+        return 2;
+    }
+    {
+        PasteVerdict pv = hlse_check_paste(argv[idx + 1]);
+        {
+            const char *aar[16]; int aq, aqn = pv.n_reasons;
+            if (aqn > 16) aqn = 16;
+            for (aq = 0; aq < aqn; aq++) aar[aq] = pv.reasons[aq];
+            hlse_alert_emit("paste", pv.score,
+                hlse_severity_for_score(pv.score), argv[idx + 1], aar, aqn);
+        }
+        if (o->json_out) {
+            int i;
+            printf("{\"kind\":\"paste\",\"hlse_version\":\"" HLSE_VERSION "\","
+                   "\"score\":%d,\"action\":\"%s\","
+                   "\"severity\":%d,\"signals\":%d",
+                   pv.score, hlse_action_for_score(pv.score),
+                   hlse_severity_for_score(pv.score), pv.signals);
+            if (pv.score == 0) {
+                const char *bs = hlse_blindspot_for("paste");
+                json_field("blind_spot", bs);
+            }
+            if (pv.score > 0) {
+                /* Count distinct PASTE_* signal families from the bitmask —
+                 * the epistemic complement to the score: how many independent
+                 * detectors corroborate this paste threat. */
+                int ns = 0, bits = pv.signals;
+                while (bits) { ns += bits & 1; bits >>= 1; }
+                if (ns == 0) ns = pv.n_reasons;  /* fallback if bitmask empty */
+                {
+                    const char *conf = ns >= 3 ? "high confidence" :
+                                       ns >= 2 ? "corroborated" : "single signal";
+                    printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
+                }
+            }
+            if (pv.score >= 40) {
+                /* Build a minimal TextVerdict so the existing advisory
+                 * machinery fires: "Shell-pipe" triggers ClickFix
+                 * classification in hlse_classify_text_attack().
+                 * Perspective 95: pattern/objective/verify now fire from
+                 * the ALERT floor (40); triage/cascade_risk stay
+                 * BLOCK+-only (60) since post-incident guidance presumes
+                 * the user already acted. */
+                TextVerdict ptv;
+                const char *ppat, *pobj, *pvrf;
+                text_verdict_synth(&ptv, pv.score,
+                                   "Shell-pipe: paste-and-run pastejacking");
+                ppat = hlse_classify_text_attack(&ptv);
+                pobj = hlse_text_objective(&ptv);
+                pvrf = hlse_text_verify(&ptv);
+                json_field("pattern", ppat);
+                if (ppat) { const char *pid = hlse_text_pattern_id(&ptv); json_field("pattern_id", pid); }
+                json_field("objective", pobj);
+                json_field("verify", pvrf);
+                if (pv.score >= 60) {
+                    const char *ptri, *pcas;
+                    ptri = hlse_text_triage(&ptv);
+                    pcas = hlse_text_cascade(&ptv);
+                    json_field("triage", ptri);
+                    json_field("cascade_risk", pcas);
+                }
+            }
+            if (pv.score > 0 && pv.score < 60) {
+                const char *ex = hlse_exoneration_for("paste", pv.score);
+                if (ex) {
+                    json_field("exoneration", ex);
+                }
+            }
+            printf(",\"reasons\":[");
+            for (i = 0; i < pv.n_reasons; i++) {
+                char esc[512];
+                hlse_json_escape(pv.reasons[i], esc, sizeof(esc));
+                printf("%s\"%s\"", i > 0 ? "," : "", esc);
+            }
+            printf("]}\n");
+        } else if (pv.score == 0) {
+            const char *bs = hlse_blindspot_for("paste");
+            printf("OK    (paste)\n");
+            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+        } else {
+            int i;
+            printf("%-7s [%d]  (paste)\n",
+                   hlse_action_for_score(pv.score), pv.score);
+            for (i = 0; i < pv.n_reasons; i++)
+                printf("  \xc2\xb7 %s\n", pv.reasons[i]);
+            if (pv.score >= 40) {
+                /* Advisory lenses: every paste ALERT+ is ClickFix/pastejacking.
+                 * print_text_advisories internally gates verify at >=40 and
+                 * triage/cascade_risk at >=60 (Perspective 95). */
+                TextVerdict ptv;
+                text_verdict_synth(&ptv, pv.score,
+                                   "Shell-pipe: paste-and-run pastejacking");
+                print_text_advisories(&ptv);
+            }
+            if (pv.score > 0 && pv.score < 60) {
+                const char *ex = hlse_exoneration_for("paste", pv.score);
+                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
+            }
+        }
+        return pv.score >= g_fail_threshold ? 1 : 0;
+    }
+}
+
+/* `audit` subcommand, extracted verbatim from main(). */
+static int
+cmd_audit(int argc, char **argv, int idx, const CliOpts *o) {
+    (void)argc; (void)argv; (void)idx;
+    AuditVerdict av = hlse_audit_all();
+    int hi = hlse_audit_hardening_index(&av);
+    /* The index is 100 - score, so a check that could not read its evidence
+     * contributes 0 and silently inflates it. Reporting "100/100 (hardened)"
+     * for a host whose /etc/sudoers we were never allowed to open is the one
+     * output that could actively mislead someone into standing down, so the
+     * reassuring word is withheld whenever coverage is incomplete. The number
+     * itself is not adjusted: inventing a penalty would be a different claim,
+     * equally unfounded. */
+    int total = av.checks_run + av.checks_skipped;
+    int partial = (av.checks_skipped > 0);
+    const char *band = partial ? "partial"
+                     : hi >= 90 ? "hardened"
+                     : hi >= 70 ? "good"
+                     : hi >= 50 ? "fair" : "weak";
+    char band_disp[96];
+    if (partial)
+        snprintf(band_disp, sizeof(band_disp),
+                 "coverage incomplete \xe2\x80\x94 %d of %d checks ran",
+                 av.checks_run, total);
+    else
+        snprintf(band_disp, sizeof(band_disp), "%s", band);
+    /* Pre-compute severity counts for next_steps guidance */
+    int crit_count = 0, high_count = 0;
+    { int ci;
+      for (ci = 0; ci < av.n_findings; ci++) {
+          if (av.findings[ci].severity >= 5) crit_count++;
+          else if (av.findings[ci].severity == 4) high_count++;
+      }
+    }
+    if (o->json_out) {
+        int i;
+        printf("{\"kind\":\"audit\",\"hlse_version\":\"" HLSE_VERSION "\","
+               "\"score\":%d,\"action\":\"%s\","
+               "\"severity\":%d,"
+               "\"hardening_index\":%d,\"hardening_band\":\"%s\","
+               "\"checks_run\":%d,\"checks_skipped\":%d,"
+               "\"crit_count\":%d,\"high_count\":%d,"
+               "\"findings\":[",
+               av.score, hlse_action_for_score(av.score),
+               hlse_severity_for_score(av.score), hi, band,
+               av.checks_run, av.checks_skipped,
+               crit_count, high_count);
+        for (i = 0; i < av.n_findings; i++) {
+            char esc[512];
+            const char *fix = (av.findings[i].severity >= 4)
+                ? audit_remediation_for(av.findings[i].description)
+                : NULL;
+            hlse_json_escape(av.findings[i].description, esc, sizeof(esc));
+            printf("%s{\"severity\":%d,\"description\":\"%s\"",
+                   i > 0 ? "," : "",
+                   av.findings[i].severity, esc);
+            if (fix) {
+                json_field("fix", fix);
+            }
+            printf("}");
+        }
+        printf("]");
+        if (av.score == 0) {
+            const char *bs = hlse_blindspot_for("audit");
+            json_field("blind_spot", bs);
+        } else {
+            char ns[256];
+            if (crit_count > 0)
+                snprintf(ns, sizeof(ns),
+                         "fix the %d critical finding(s) first \xe2\x80\x94 "
+                         "CRITICAL items are actively exploitable",
+                         crit_count);
+            else if (high_count > 0)
+                snprintf(ns, sizeof(ns),
+                         "fix the %d HIGH finding(s) to reach the next "
+                         "hardening band (currently: %s)",
+                         high_count, band);
+            else
+                snprintf(ns, sizeof(ns),
+                         "address remaining LOW/MED findings to improve "
+                         "the hardening index (currently: %s)",
+                         band);
+            json_field("next_steps", ns);
+        }
+        printf("}\n");
+    } else if (av.score == 0) {
+        const char *bs = hlse_blindspot_for("audit");
+        int i;
+        printf("OK    (audit \xe2\x80\x94 no issues found)  "
+               "Hardening index: %d/100 (%s)\n", hi, band_disp);
+        /* A clean verdict used to print nothing but this line, discarding the
+         * INFO findings that say which checks could not read their evidence.
+         * Those are exactly the caveats a reader needs when the headline says
+         * everything is fine, so they are shown here. PASS rows stay hidden:
+         * they would be noise on every clean run. */
+        for (i = 0; i < av.n_findings; i++)
+            if (av.findings[i].severity == AUDIT_INFO)
+                printf("  [INFO] %s\n", av.findings[i].description);
+        if (partial)
+            printf("  \xe2\x9a\xa0 %d of %d checks could not read their evidence "
+                   "\xe2\x80\x94 this is not a clean bill of health for those "
+                   "checks; re-run as root for full coverage.\n",
+                   av.checks_skipped, total);
+        if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+    } else {
+        int i;
+        printf("%-7s [%d]  (system audit)  Hardening index: %d/100 (%s)\n",
+               hlse_action_for_score(av.score), av.score, hi, band_disp);
+        for (i = 0; i < av.n_findings; i++) {
+            const char *sev_str[] = {
+                "PASS", "INFO", "LOW", "MED", "HIGH", "CRIT"
+            };
+            int s = av.findings[i].severity;
+            if (s < 0 || s > 5) s = 0;
+            printf("  [%4s] %s\n", sev_str[s],
+                   av.findings[i].description);
+            if (s >= 4) {
+                const char *fix = audit_remediation_for(
+                    av.findings[i].description);
+                if (fix)
+                    printf("  \xe2\x9a\x92 Fix: %s\n", fix);
+            }
+        }
+        if (crit_count > 0)
+            printf("\xe2\x86\x92 Next step: fix the %d CRITICAL finding(s) first "
+                   "\xe2\x80\x94 these are actively exploitable\n", crit_count);
+        else if (high_count > 0)
+            printf("\xe2\x86\x92 Next step: fix the %d HIGH finding(s) to improve "
+                   "from '%s' toward the next hardening band\n",
+                   high_count, band_disp);
+        else
+            printf("\xe2\x86\x92 Next step: address remaining findings to improve "
+                   "the hardening index (currently %s: %d/100)\n",
+                   band_disp, hi);
+    }
+    return av.score >= g_fail_threshold ? 1 : 0;
+}
+
+/* `file` subcommand, extracted verbatim from main(). */
+static int
+cmd_file(int argc, char **argv, int idx, const CliOpts *o) {
+    if (argc < idx + 2) {
+        fprintf(stderr, "Usage: %s file <filepath>\n", argv[0]);
+        return 2;
+    }
+    {
+        FileVerdict fv;
+        /* Display copy of the (attacker-controllable) filename: the raw
+         * argv value is still used for I/O and analysis, but the plain-text
+         * echo below must not carry ANSI/control bytes to the terminal
+         * (CWE-150). JSON output escapes separately via json_escape. */
+        char fdisp[4096];
+        snprintf(fdisp, sizeof fdisp, "%s", argv[idx + 1]);
+        hlse_sanitize_terminal(fdisp);
+        /* If the file exists on disk, do full magic-byte + filename
+         * analysis. If not, still check the NAME for disguise tricks
+         * (RLO, double extension, lure words) — these are dangerous
+         * regardless of whether the file is present locally.        */
+        const char *name_only = NULL;
+        if (access(argv[idx + 1], F_OK) == 0) {
+            fv = hlse_check_file(argv[idx + 1]);
+            /* The file is there but its bytes were not read (permissions, or
+             * not a regular file), so F2/F3 magic-byte analysis never ran and
+             * the verdict rests on the name alone. Silence here would present
+             * a name-only guess as a full inspection. */
+            if (!fv.content_read)
+                name_only = "the file could not be read (permissions, or not "
+                            "a regular file)";
+        } else {
+            const char *base = strrchr(argv[idx + 1], '/');
+            base = base ? base + 1 : argv[idx + 1];
+            fv = hlse_check_filename(base);
+            name_only = "no such file here";
+        }
+        {
+            const char *aar[16]; int aq, aqn = fv.n_reasons;
+            if (aqn > 16) aqn = 16;
+            for (aq = 0; aq < aqn; aq++) aar[aq] = fv.reasons[aq];
+            hlse_alert_emit("file", fv.score,
+                hlse_severity_for_score(fv.score), argv[idx + 1], aar, aqn);
+        }
+        if (o->json_out) {
+            int i;
+            char esc[512];
+            hlse_json_escape(argv[idx + 1], esc, sizeof(esc));
+            printf("{\"kind\":\"file\",\"hlse_version\":\"" HLSE_VERSION "\","
+                   "\"path\":\"%s\",\"score\":%d,"
+                   "\"action\":\"%s\",\"severity\":%d,\"reasons\":[",
+                   esc, fv.score, hlse_action_for_score(fv.score),
+                   hlse_severity_for_score(fv.score));
+            for (i = 0; i < fv.n_reasons; i++) {
+                hlse_json_escape(fv.reasons[i], esc, sizeof(esc));
+                printf("%s\"%s\"", i > 0 ? "," : "", esc);
+            }
+            printf("]");
+            printf(",\"content_inspected\":%s", fv.content_read ? "true" : "false");
+            if (name_only) {
+                json_field("coverage", name_only);
+            }
+            if (fv.score == 0) {
+                const char *bs = hlse_blindspot_for("file");
+                json_field("blind_spot", bs);
+            }
+            if (fv.score >= 40) {
+                /* Perspective 98: a single medium-confidence heuristic
+                 * (e.g. Cabinet-magic/wrong-extension, +40) lands the
+                 * file verdict in ALERT (40-59) alone, but this used to
+                 * require score >= 60 for ANY advisory content at all —
+                 * not even exoneration existed for "file" until this
+                 * perspective. pattern/objective/verify now fire from
+                 * the ALERT floor; triage/cascade_risk (post-open
+                 * incident response) stay BLOCK+-only.
+                 * Perspective 101: classification and advisory text now
+                 * come from the shared accessors (see file_classify_
+                 * pattern/file_masquerade_objective/file_masquerade_verify
+                 * above) instead of a fourth independent copy. */
+                const char *fpat = file_classify_pattern(&fv);
+                json_field("pattern", fpat);
+                printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
+                json_field("objective", file_masquerade_objective());
+                json_field("verify", file_masquerade_verify());
+            }
+            if (fv.score >= 60) {
+                static const char file_tri[] =
+                    "if already opened: disconnect from the network "
+                    "immediately; run a full antivirus scan; change "
+                    "credentials for any service you were logged into at "
+                    "the time; consider a full OS reinstall for high-score "
+                    "detections";
+                static const char file_cas[] =
+                    "all credentials and session tokens active when the file "
+                    "was opened \xe2\x80\x94 malware runs with your session "
+                    "context; also check for persistence (startup items, "
+                    "scheduled tasks, browser extensions added)";
+                json_field("triage", file_tri);
+                json_field("cascade_risk", file_cas);
+            }
+            if (fv.score > 0 && fv.score < 60) {
+                const char *ex = hlse_exoneration_for("file", fv.score);
+                if (ex) {
+                    json_field("exoneration", ex);
+                }
+            }
+            printf("}\n");
+        } else if (fv.score == 0) {
+            const char *bs = hlse_blindspot_for("file");
+            if (name_only) {
+                printf("OK    %s (name only \xe2\x80\x94 contents NOT "
+                       "inspected)\n", fdisp);
+                printf("  \xe2\x9a\xa0 %s, so the magic-byte checks did not "
+                       "run: this clears the filename, not the file.\n",
+                       name_only);
+            } else {
+                printf("OK    %s\n", fdisp);
+            }
+            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+        } else {
+            print_file_verdict_plain(&fv, fdisp);
+        }
+        return fv.score >= g_fail_threshold ? 1 : 0;
+    }
+}
+
+/* `text` subcommand, extracted verbatim from main(). */
+static int
+cmd_text(int argc, char **argv, int idx, const CliOpts *o) {
+    if (argc < idx + 2) {
+        fprintf(stderr, "Usage: %s text \"<message>\"\n", argv[0]);
+        return 2;
+    }
+    {
+        /* Use unified scan — it runs text detection AND extracts
+         * embedded URLs. This catches "Click here: https://g00gle.com" */
+        ScanResult sr = hlse_scan(argv[idx + 1]);
+        if (o->json_out) {
+            /* Build TextVerdict from the unified ScanResult so the JSON
+             * path honours embedded URL extraction (same as human path). */
+            TextVerdict tv;
+            text_verdict_from_scan(&tv, &sr);
+            print_json_text(argv[idx + 1], &tv);
+        } else if (sr.score == 0) {
+            /* Channel-only risk: content scored 0 but delivery channel adds prior */
+            if (g_from_channel) {
+                int d = channel_delta(g_from_channel);
+                if (d > 0) {
+                    const char *ch_rsn = channel_reason(g_from_channel);
+                    const char *bs2 = hlse_blindspot_for("text");
+                    printf("%-7s [%d]  (text) %.60s%s\n",
+                           hlse_action_for_score(d), d, argv[idx + 1],
+                           strlen(argv[idx + 1]) > 60 ? "..." : "");
+                    if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
+                    if (bs2) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs2);
+                    return d >= g_fail_threshold ? 1 : 0;
+                }
+            }
+            {
+                char canon_brand[64];
+                int has_c = sr.is_url &&
+                            hlse_canonical_confirm(argv[idx + 1],
+                                                   canon_brand, sizeof(canon_brand));
+                const char *bs = hlse_blindspot_for(
+                    has_c ? "url_canonical" : (sr.is_url ? "url" : "text"));
+                printf("OK    (text)\n");
+                if (has_c)
+                    printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
+                           "(HLSE brand registry)\n", canon_brand);
+                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+            }
+        } else {
+            int i;
+            int eff = sr.score;
+            const char *ch_rsn = NULL;
+            const char *ex;
+            if (g_from_channel) {
+                int d = channel_delta(g_from_channel);
+                eff += d; if (eff > 100) eff = 100;
+                ch_rsn = channel_reason(g_from_channel);
+            }
+            printf("%-7s [%d]  (text) %.60s%s\n",
+                   hlse_action_for_score(eff),
+                   eff, argv[idx + 1],
+                   strlen(argv[idx + 1]) > 60 ? "..." : "");
+            for (i = 0; i < sr.n_reasons; i++) {
+                if (strncmp(sr.reasons[i], "Amplifier:", 10) == 0) continue;
+                printf("  \xc2\xb7 %s\n", sr.reasons[i]);
+            }
+            if (sr.is_url) {
+                Verdict uv = check_url(argv[idx + 1]);
+                print_url_advisories(argv[idx + 1], &uv);
+                ex = hlse_url_exoneration(&uv);
+            } else {
+                TextVerdict tv;
+                text_verdict_from_scan(&tv, &sr);
+                print_text_advisories(&tv);
+                ex = hlse_text_exoneration(&tv);
+            }
+            if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
+            if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
+        }
+        {
+            int eff_gate = sr.score;
+            if (g_from_channel) {
+                int d = channel_delta(g_from_channel);
+                eff_gate += d; if (eff_gate > 100) eff_gate = 100;
+            }
+            return eff_gate >= g_fail_threshold ? 1 : 0;
+        }
+    }
+}
+
+/* `secret` subcommand, extracted verbatim from main(). */
+static int
+cmd_secret(int argc, char **argv, int idx, const CliOpts *o) {
+    /* 1 MiB, BSS-allocated (static) not stack — matches the shipped
+     * pre-commit hook's 1 MB file-size guard so no in-scope file is
+     * silently truncated (Perspective 105 / P1-2). */
+    static char stdin_buf[1u << 20];
+    const char *text;
+    if (argc < idx + 2) {
+        fprintf(stderr, "Usage: %s secret \"<text>\" | %s secret --stdin\n",
+                argv[0], argv[0]);
+        return 2;
+    } else if (strcmp(argv[idx + 1], "--stdin") == 0) {
+        read_stdin_all(stdin_buf, sizeof(stdin_buf));
+        text = stdin_buf;
+    } else {
+        text = argv[idx + 1];
+    }
+    {
+        SecretVerdict sv = hlse_scan_secrets(text);
+        {
+            const char *aar[16]; char rb[16][300];
+            int aq, aqn = sv.n_findings;
+            if (aqn > 16) aqn = 16;
+            for (aq = 0; aq < aqn; aq++) {
+                snprintf(rb[aq], sizeof(rb[aq]), "%s: %s",
+                         sv.findings[aq].type, sv.findings[aq].description);
+                aar[aq] = rb[aq];
+            }
+            hlse_alert_emit("secret", sv.score,
+                hlse_severity_for_score(sv.score), "(secret scan)", aar, aqn);
+        }
+        if (o->json_out) {
+            int i;
+            printf("{\"kind\":\"secret\",\"hlse_version\":\"" HLSE_VERSION "\","
+                   "\"score\":%d,\"action\":\"%s\","
+                   "\"severity\":%d,\"findings\":[",
+                   sv.score, hlse_action_for_score(sv.score),
+                   hlse_severity_for_score(sv.score));
+            for (i = 0; i < sv.n_findings; i++) {
+                char et[64], ed[512];
+                hlse_json_escape(sv.findings[i].type, et, sizeof(et));
+                hlse_json_escape(sv.findings[i].description, ed, sizeof(ed));
+                printf("%s{\"type\":\"%s\",\"description\":\"%s\"}",
+                       i > 0 ? "," : "", et, ed);
+            }
+            printf("]");
+            printf(",\"confidence\":\"%s\"", hlse_secret_confidence(&sv));
+            {
+                const char *rem = hlse_remediation_for("secret", sv.score);
+                if (rem) {
+                    json_field("remediation", rem);
+                }
+            }
+            if (sv.score == 0) {
+                const char *bs = hlse_blindspot_for("secret");
+                json_field("blind_spot", bs);
+            }
+            json_secret_advisories(&sv);
+            printf("}\n");
+        } else if (sv.score == 0) {
+            const char *bs = hlse_blindspot_for("secret");
+            printf("OK    (secret \xe2\x80\x94 no credentials found)\n");
+            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+        } else {
+            int i;
+            const char *rem = hlse_remediation_for("secret", sv.score);
+            const char *conf = hlse_secret_confidence(&sv);
+            printf("%-7s [%d]  (secret scan — confidence: %s)\n",
+                   hlse_action_for_score(sv.score), sv.score, conf);
+            for (i = 0; i < sv.n_findings; i++)
+                printf("  \xc2\xb7 [%s] %s\n",
+                       sv.findings[i].type, sv.findings[i].description);
+            if (strcmp(conf, "heuristic") == 0)
+                printf("  \xe2\x86\x92 Confidence: heuristic — this is a "
+                       "pattern guess (generic VAR=value / high-entropy "
+                       "string); confirm it is a live credential.\n");
+            print_secret_advisories(&sv);
+            if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
+        }
+        return sv.score >= g_fail_threshold ? 1 : 0;
+    }
+}
+
+/* Names the evidence sources hlse_check_network() could not open, newest
+ * concern first. Returns the count and fills `out` with static path strings.
+ *
+ * Each of N1..N4 is guarded by `if (fp)` and degrades silently, so on a host
+ * without /proc (a minimal container, a non-Linux system) the check looks at
+ * nothing and still returns score 0. Printed as "no anomalies detected" that
+ * is indistinguishable from a real all-clear, which is the same failure the
+ * package_unverified blind spot already calls out: nothing detected is not
+ * nothing confirmed. Naming the missing sources is what makes the difference
+ * visible to the reader.                                                  */
+static int
+network_unread_sources(const NetworkVerdict *v, const char *out[4]) {
+    static const struct { int flag; const char *path; } SRC[] = {
+        { HLSE_NET_SRC_ARP,    "/proc/net/arp"    },
+        { HLSE_NET_SRC_ROUTE,  "/proc/net/route"  },
+        { HLSE_NET_SRC_RESOLV, "/etc/resolv.conf" },
+        { HLSE_NET_SRC_HOSTS,  "/etc/hosts"       }
+    };
+    int i, n = 0;
+    for (i = 0; i < 4; i++)
+        if (!(v->sources_read & SRC[i].flag)) out[n++] = SRC[i].path;
+    return n;
+}
+
+/* `network` subcommand, extracted verbatim from main(). */
+static int
+cmd_network(int argc, char **argv, int idx, const CliOpts *o) {
+    (void)argc; (void)argv; (void)idx;
+    NetworkVerdict nv = hlse_check_network();
+    const char *unread[4];
+    int n_unread = network_unread_sources(&nv, unread);
+    {
+        const char *aar[16]; int aq, aqn = nv.n_reasons;
+        if (aqn > 16) aqn = 16;
+        for (aq = 0; aq < aqn; aq++) aar[aq] = nv.reasons[aq];
+        hlse_alert_emit("network", nv.score,
+            hlse_severity_for_score(nv.score), "(network)", aar, aqn);
+    }
+    if (o->json_out) {
+        int i;
+        printf("{\"kind\":\"network\",\"hlse_version\":\"" HLSE_VERSION "\","
+               "\"score\":%d,\"action\":\"%s\","
+               "\"severity\":%d,\"reasons\":[",
+               nv.score, hlse_action_for_score(nv.score),
+               hlse_severity_for_score(nv.score));
+        for (i = 0; i < nv.n_reasons; i++) {
+            char esc[512];
+            hlse_json_escape(nv.reasons[i], esc, sizeof(esc));
+            printf("%s\"%s\"", i > 0 ? "," : "", esc);
+        }
+        printf("]");
+        if (n_unread > 0) {
+            int u;
+            printf(",\"sources_unavailable\":[");
+            for (u = 0; u < n_unread; u++)
+                printf("%s\"%s\"", u > 0 ? "," : "", unread[u]);
+            printf("]");
+        }
+        if (nv.score == 0) {
+            const char *bs = hlse_blindspot_for("network");
+            json_field("blind_spot", bs);
+        }
+        if (nv.score > 0) {
+            int ns = nv.n_reasons;
+            const char *conf = ns >= 3 ? "high confidence" :
+                               ns >= 2 ? "corroborated" : "single signal";
+            printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
+        }
+        if (nv.score >= 40) {
+            /* Perspective 96: a single N2 (routing injection, +55) or N4
+             * (hosts-file pharming, +50) finding lands in ALERT (40-59)
+             * alone, but used to get no pattern/objective/verify — only
+             * BLOCK+ (60) did, the same gap P95 closed for URL/text/
+             * paste/scan. verify now fires from the ALERT floor;
+             * triage/cascade_risk (post-incident, presumes the user
+             * already acted) stay BLOCK+-only.
+             * Perspective 103: text now shared with the plaintext path
+             * below via network_*_text() accessors. */
+            json_field("pattern", net_pattern_text());
+            printf(",\"pattern_id\":\"HLSE-NET-C2\"");
+            json_field("objective", network_objective_text());
+            json_field("verify", network_verify_text());
+        }
+        if (nv.score >= 60) {
+            json_field("triage", network_triage_text());
+            json_field("cascade_risk", network_cascade_text());
+        }
+        if (nv.score > 0 && nv.score < 60) {
+            const char *ex = hlse_exoneration_for("network", nv.score);
+            if (ex) {
+                json_field("exoneration", ex);
+            }
+        }
+        printf("}\n");
+    } else if (nv.score == 0) {
+        const char *bs = hlse_blindspot_for("network");
+        if (nv.sources_read == 0) {
+            /* Nothing was read, so "no anomalies detected" would be a claim
+             * about evidence that was never seen. Say what actually happened. */
+            printf("OK    (network \xe2\x80\x94 nothing could be checked: none of "
+                   "/proc/net or /etc was readable)\n");
+        } else {
+            printf("OK    (network \xe2\x80\x94 no anomalies detected)\n");
+        }
+        if (n_unread > 0) {
+            int u;
+            printf("  \xe2\x9a\xa0 Not checked (unreadable): ");
+            for (u = 0; u < n_unread; u++)
+                printf("%s%s", u > 0 ? ", " : "", unread[u]);
+            printf("\n");
+        }
+        if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+    } else {
+        int i;
+        printf("%-7s [%d]  (network)\n",
+               hlse_action_for_score(nv.score), nv.score);
+        for (i = 0; i < nv.n_reasons; i++)
+            printf("  \xc2\xb7 %s\n", nv.reasons[i]);
+        if (nv.score >= 40) {
+            printf("  \xe2\x96\xb8 Pattern: %s\n", net_pattern_text());
+            printf("  \xe2\x97\x89 Attacker's goal: %s\n", network_objective_text());
+            printf("  \xe2\x9c\x93 Verify first: %s\n", network_verify_text());
+        }
+        if (nv.score >= 60) {
+            printf("  \xe2\x9a\x91 Immediate action: %s\n", network_triage_text());
+            printf("  \xe2\x8a\x95 Also change: %s\n", network_cascade_text());
+        }
+        if (nv.score < 60) {
+            const char *ex = hlse_exoneration_for("network", nv.score);
+            if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
+        }
+    }
+    return nv.score >= g_fail_threshold ? 1 : 0;
+}
+
+/* `esp` subcommand, extracted verbatim from main(). */
+static int
+cmd_esp(int argc, char **argv, int idx, const CliOpts *o) {
+    /* EFI System Partition integrity (UEFI bootkit indicators). */
+    const char *path = (argc > idx + 1) ? argv[idx + 1] : NULL;
+    ProtectionVerdict pv = hlse_esp_verify(path);
+    if (o->json_out) {
+        int i;
+        printf("{\"kind\":\"esp\",\"hlse_version\":\"" HLSE_VERSION "\","
+               "\"score\":%d,\"action\":\"%s\","
+               "\"severity\":%d,\"reasons\":[",
+               pv.score, hlse_action_for_score(pv.score),
+               hlse_severity_for_score(pv.score));
+        for (i = 0; i < pv.n_reasons; i++) {
+            char esc[512];
+            hlse_json_escape(pv.reasons[i], esc, sizeof(esc));
+            printf("%s\"%s\"", i > 0 ? "," : "", esc);
+        }
+        printf("]");
+        printf(",\"target_scanned\":%s",
+               pv.target_unreadable ? "false" : "true");
+        {
+            const char *bs = hlse_blindspot_for("esp");
+            if (pv.score == 0 && bs) json_field("blind_spot", bs);
+        }
+        if (pv.score > 0) {
+            int ns = pv.n_reasons;
+            const char *conf = ns >= 3 ? "high confidence" :
+                               ns >= 2 ? "corroborated" : "single signal";
+            printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
+        }
+        if (pv.score >= 60) {
+            json_field("pattern", esp_pattern_text());
+            printf(",\"pattern_id\":\"HLSE-ESP-BOOTKIT\"");
+            json_field("objective", esp_objective_text());
+            json_field("verify", esp_verify_text());
+            json_field("triage", esp_triage_text());
+            json_field("cascade_risk", esp_cascade_text());
+        }
+        if (pv.score > 0 && pv.score < 60) {
+            const char *ex = hlse_exoneration_for("esp", pv.score);
+            if (ex) {
+                json_field("exoneration", ex);
+            }
+        }
+        printf("}\n");
+    } else if (pv.score == 0) {
+        const char *bs = hlse_blindspot_for("esp");
+        printf("OK    (esp)%s%s\n",
+               pv.n_reasons ? " \xe2\x80\x94 " : "",
+               pv.n_reasons ? pv.reasons[0] : "");
+        if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+    } else {
+        int i;
+        printf("%-7s [%d]  (esp)\n",
+               hlse_action_for_score(pv.score), pv.score);
+        for (i = 0; i < pv.n_reasons; i++)
+            printf("  \xc2\xb7 %s\n", pv.reasons[i]);
+        if (pv.score >= 60) {
+            printf("  \xe2\x96\xb8 Pattern: %s\n", esp_pattern_text());
+            printf("  \xe2\x97\x89 Attacker's goal: %s\n", esp_objective_text());
+            printf("  \xe2\x9c\x93 Verify first: %s\n", esp_verify_text());
+            printf("  \xe2\x9a\x91 Immediate action: %s\n", esp_triage_text());
+            printf("  \xe2\x8a\x95 Also change: %s\n", esp_cascade_text());
+        } else {
+            const char *ex = hlse_exoneration_for("esp", pv.score);
+            if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
+        }
+    }
+    return pv.score >= g_fail_threshold ? 1 : 0;
+}
+
+/* `clipboard` subcommand, extracted verbatim from main(). */
+static int
+cmd_clipboard(int argc, char **argv, int idx, const CliOpts *o) {
+    if (argc < idx + 3) {
+        fprintf(stderr,
+                "Usage: %s clipboard \"<copied addr>\" \"<pasted addr>\"\n",
+                argv[0]);
+        return 2;
+    }
+    {
+        CryptoSwapVerdict cv =
+            hlse_check_crypto_swap(argv[idx + 1], argv[idx + 2]);
+        {
+            const char *aar[1]; int aqn = 0;
+            if (cv.reason[0]) { aar[0] = cv.reason; aqn = 1; }
+            hlse_alert_emit("clipboard", cv.score,
+                hlse_severity_for_score(cv.score),
+                cv.swapped[0] ? cv.swapped : "(clipboard)", aar, aqn);
+        }
+        const char *rem = hlse_remediation_for("clipboard", cv.score);
+        if (o->json_out) {
+            char eo[256], es[256], er[512], erm[512];
+            hlse_json_escape(cv.original, eo, sizeof(eo));
+            hlse_json_escape(cv.swapped, es, sizeof(es));
+            hlse_json_escape(cv.reason, er, sizeof(er));
+            hlse_json_escape(rem ? rem : "", erm, sizeof(erm));
+            printf("{\"kind\":\"clipboard\",\"hlse_version\":\"" HLSE_VERSION "\","
+                   "\"score\":%d,\"action\":\"%s\","
+                   "\"severity\":%d,"
+                   "\"is_swap\":%d,"
+                   "\"original\":\"%s\",\"swapped\":\"%s\",\"reason\":\"%s\","
+                   "\"remediation\":\"%s\"",
+                   cv.score, hlse_action_for_score(cv.score),
+                   hlse_severity_for_score(cv.score),
+                   cv.is_swap, eo, es, er, erm);
+            if (cv.score == 0) {
+                const char *bs = hlse_blindspot_for("clipboard");
+                json_field("blind_spot", bs);
+            }
+            if (cv.score >= 60) {
+                json_field("pattern", clipboard_pattern_text());
+                printf(",\"pattern_id\":\"HLSE-CLIP-HIJACK\"");
+                json_field("objective", clipboard_objective_text());
+                json_field("verify", clipboard_verify_text());
+                json_field("triage", clipboard_triage_text());
+                json_field("cascade_risk", clipboard_cascade_text());
+            }
+            printf("}\n");
+        } else if (cv.score == 0) {
+            const char *bs = hlse_blindspot_for("clipboard");
+            printf("OK    (clipboard \xe2\x80\x94 no address swap detected)\n");
+            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
+        } else {
+            printf("%-7s [%d]  (clipboard)\n",
+                   hlse_action_for_score(cv.score), cv.score);
+            if (cv.reason[0]) printf("  \xc2\xb7 %s\n", cv.reason);
+            if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
+            if (cv.score >= 60) {
+                printf("  \xe2\x96\xb8 Pattern: %s\n", clipboard_pattern_text());
+                printf("  \xe2\x97\x89 Attacker's goal: %s\n", clipboard_objective_text());
+                printf("  \xe2\x9c\x93 Verify first: %s\n", clipboard_verify_text());
+                printf("  \xe2\x9a\x91 If you acted: %s\n", clipboard_triage_text());
+                printf("  \xe2\x8a\x95 Also change: %s\n", clipboard_cascade_text());
+            }
+        }
+        return cv.score >= g_fail_threshold ? 1 : 0;
+    }
+}
+
+
 int
 main(int argc, char **argv) {
     int json_out = 0;
@@ -6978,6 +9098,7 @@ main(int argc, char **argv) {
     int opt_syslog = 0;
     const char *opt_log_file = NULL;
     int argc_flags;   /* argv index where "--" ends option scanning */
+    CliOpts opts;
     int idx = 1;
 
     if (argc < 2) {
@@ -7240,2046 +9361,37 @@ main(int argc, char **argv) {
      * Designed for CI/CD pipelines:
      *   ./hlse_core scan /path/to/project
      *   exit 0 = clean, exit 1 = threats found                        */
-    if (strcmp(argv[idx], "scan") == 0) {
-        if (argc < idx + 2) {
-            fprintf(stderr, "Usage: %s scan <directory> [--git-history]\n",
-                    argv[0]);
-            return 2;
-        }
-        /* --git-history (Perspective 111 / P0-2): scan every commit in the
-         * repo's history for secrets, not just the working tree. Entirely
-         * different algorithm (git subprocess stream vs. directory walk),
-         * so it branches out before the normal walker below. */
-        if (g_git_history) {
-            return scan_git_history(argv[idx + 1], json_out, sarif_out);
-        }
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-truncation"
-        {
-            const char *root = argv[idx + 1];
-            int threats = 0, files_scanned = 0, max_depth = 20;
-            int gate_hits = 0;  /* findings at/above g_fail_threshold (exit gate) */
-            int max_score = 0;  /* highest score seen — for max_severity in summary */
-            unsigned asset_mask = 0;  /* blast-radius: classes seen across scan */
-            struct stat root_st;
+    /* Flags are fully parsed by here; freeze them for the handlers. */
+    opts.json_out  = json_out;
+    opts.sarif_out = sarif_out;
+    opts.quiet     = quiet;
 
-            /* Verify directory exists and is accessible */
-            if (stat(root, &root_st) != 0) {
-                fprintf(stderr, "Error: cannot access '%s': %s\n",
-                        root, strerror(errno));
-                return 2;
-            }
-            if (!S_ISDIR(root_st.st_mode)) {
-                fprintf(stderr, "Error: '%s' is not a directory\n", root);
-                return 2;
-            }
-
-            /* Simple iterative directory walker using a stack.
-             * Avoids unbounded recursion for deeply nested trees.     */
-            struct { char path[4096]; int depth; } stack[512];
-            int sp = 0;
-
-            /* cppcheck-suppress legacyUninitvar  ; snprintf writes stack[0].path, it is not read uninitialized */
-            snprintf(stack[0].path, sizeof(stack[0].path), "%s", root);
-            stack[0].depth = 0;
-            sp = 1;
-
-            while (sp > 0) {
-                char cur_path[4096];
-                int depth;
-                DIR *d;
-                struct dirent *ent;
-
-                sp--;
-                snprintf(cur_path, sizeof(cur_path), "%s", stack[sp].path);
-                depth = stack[sp].depth;
-                d = opendir(cur_path);
-                if (!d) continue;
-
-                while ((ent = readdir(d)) != NULL) {
-                    char fullpath[8192];
-                    struct stat st;
-                    /* Skip only the '.' and '..' entries — NOT all dotfiles.
-                     * A blanket dot-skip would silently ignore .env, .npmrc,
-                     * .pypirc, .git-credentials, .aws/credentials … which are
-                     * the single highest-value secret-bearing files. Dot-named
-                     * directories (.git, .svn) are filtered by SKIP_DIRS below. */
-                    if (ent->d_name[0] == '.' &&
-                        (ent->d_name[1] == '\0' ||
-                         (ent->d_name[1] == '.' && ent->d_name[2] == '\0')))
-                        continue;
-
-                    if (strlen(cur_path) + strlen(ent->d_name) + 2 >= sizeof(fullpath))
-                        continue;  /* path too long — skip */
-                    snprintf(fullpath, sizeof(fullpath), "%s/%s",
-                             cur_path, ent->d_name);
-
-                    /* Compute path relative to scan root for SARIF URIs.
-                     * GitHub code scanning requires relative URIs so it can
-                     * map findings back to repo files.                       */
-                    const char *sarif_path = fullpath;
-                    {
-                        size_t rlen = strlen(root);
-                        while (rlen > 1 && root[rlen - 1] == '/') rlen--;
-                        if (strncmp(fullpath, root, rlen) == 0 &&
-                            fullpath[rlen] == '/')
-                            sarif_path = fullpath + rlen + 1;
-                    }
-
-                    /* lstat (not stat): a symlink is classified as S_ISLNK,
-                     * so it is neither recursed into (a symlinked dir would
-                     * let the scan escape the target tree or loop) nor read
-                     * (a symlinked file like x.env -> /etc/shadow would leak
-                     * a file outside the tree). Per SPECIFICATION.md §1.   */
-                    if (lstat(fullpath, &st) != 0) continue;
-
-                    if (S_ISDIR(st.st_mode)) {
-                        /* Skip vendor/build directories that produce
-                         * false positives and slow down scans.
-                         * Same list as eslint/ruff/semgrep defaults. */
-                        static const char *SKIP_DIRS[] = {
-                            "node_modules", "__pycache__", ".venv",
-                            "venv", "env", "vendor", "build", "dist",
-                            "target", ".tox", ".mypy_cache", ".pytest_cache",
-                            ".cargo", ".npm", "coverage", ".next",
-                            /* VCS metadata dirs — large, binary, no secrets to
-                             * surface; previously skipped by the blanket dot
-                             * filter, now skipped explicitly.                  */
-                            ".git", ".svn", ".hg",
-                            NULL
-                        };
-                        int skip = 0;
-                        { int k;
-                          for (k = 0; SKIP_DIRS[k]; k++) {
-                              if (strcmp(ent->d_name, SKIP_DIRS[k]) == 0) {
-                                  skip = 1; break;
-                              }
-                          }
-                        }
-                        if (skip) continue;
-
-                        if (depth < max_depth && sp < 510) {
-                            snprintf(stack[sp].path, sizeof(stack[sp].path),
-                                     "%s", fullpath);
-                            stack[sp].depth = depth + 1;
-                            sp++;
-                        }
-                        continue;
-                    }
-
-                    if (!S_ISREG(st.st_mode)) continue;
-                    files_scanned++;
-
-                    /* Check 1: file masquerade */
-                    FileVerdict fv = hlse_check_file(fullpath);
-                    if (fv.score >= 40) {
-                        /* P0-1: baseline/allowlist suppression. Whole-file
-                         * finding — no inline-allow line context. */
-                        int sup = hlse_scan_suppress(sarif_path,
-                                      file_verdict_pattern_id(&fv), NULL, NULL);
-                        if (sup) goto after_file_check;
-                        threats++;
-                        if (fv.score > max_score) max_score = fv.score;
-                        if (fv.score >= g_fail_threshold) gate_hits++;
-                        if (sarif_out) {
-                            char msg[512] = {0};
-                            int i;
-                            for (i = 0; i < fv.n_reasons; i++) {
-                                size_t l = strlen(msg);
-                                snprintf(msg + l, sizeof(msg) - l, "%s%s",
-                                         i ? "; " : "", fv.reasons[i]);
-                            }
-                            sarif_add(sarif_path, 1, "file-masquerade",
-                                      file_verdict_pattern_id(&fv),
-                                      msg[0] ? msg : "file masquerade", fv.score);
-                        } else if (json_out) {
-                            int i;
-                            char esc[512];
-                            hlse_json_escape(fullpath, esc, sizeof(esc));
-                            printf("{\"kind\":\"file\",\"hlse_version\":\"" HLSE_VERSION "\","
-                                   "\"path\":\"%s\","
-                                   "\"score\":%d,\"action\":\"%s\","
-                                   "\"severity\":%d,\"reasons\":[",
-                                   esc, fv.score, hlse_action_for_score(fv.score),
-                                   hlse_severity_for_score(fv.score));
-                            for (i = 0; i < fv.n_reasons; i++) {
-                                hlse_json_escape(fv.reasons[i], esc, sizeof(esc));
-                                printf("%s\"%s\"", i ? "," : "", esc);
-                            }
-                            printf("]");
-                            if (fv.score >= 40) {
-                                /* Perspective 98: matches the standalone
-                                 * `file` JSON path — pattern/objective/verify
-                                 * fire from the ALERT floor (40); triage/
-                                 * cascade_risk stay BLOCK+-only (60).
-                                 * Perspective 101: classification and the two
-                                 * advisory lines now come from the shared
-                                 * file_classify_pattern()/file_masquerade_*()
-                                 * accessors instead of an inline copy. */
-                                const char *fpat = file_classify_pattern(&fv);
-                                hlse_json_escape(fpat, esc, sizeof(esc)); printf(",\"pattern\":\"%s\"",      esc);
-                                printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
-                                hlse_json_escape(file_masquerade_objective(), esc, sizeof(esc)); printf(",\"objective\":\"%s\"", esc);
-                                hlse_json_escape(file_masquerade_verify(),    esc, sizeof(esc)); printf(",\"verify\":\"%s\"",    esc);
-                            }
-                            if (fv.score >= 60) {
-                                static const char sf_tri[] =
-                                    "if already opened: disconnect from the network "
-                                    "immediately; run a full antivirus scan; change "
-                                    "credentials for any service you were logged into at "
-                                    "the time; consider a full OS reinstall for high-score "
-                                    "detections";
-                                static const char sf_cas[] =
-                                    "all credentials and session tokens active when the file "
-                                    "was opened \xe2\x80\x94 malware runs with your session "
-                                    "context; also check for persistence (startup items, "
-                                    "scheduled tasks, browser extensions added)";
-                                hlse_json_escape(sf_tri, esc, sizeof(esc)); printf(",\"triage\":\"%s\"",       esc);
-                                hlse_json_escape(sf_cas, esc, sizeof(esc)); printf(",\"cascade_risk\":\"%s\"", esc);
-                            }
-                            if (fv.score > 0 && fv.score < 60) {
-                                const char *ex = hlse_exoneration_for("file", fv.score);
-                                if (ex) {
-                                    hlse_json_escape(ex, esc, sizeof(esc));
-                                    printf(",\"exoneration\":\"%s\"", esc);
-                                }
-                            }
-                            printf("}\n");
-                        } else {
-                            int i;
-                            printf("%-7s [%d]  %s\n",
-                                   hlse_action_for_score(fv.score),
-                                   fv.score, fullpath);
-                            for (i = 0; i < fv.n_reasons; i++)
-                                printf("  \xc2\xb7 %s\n", fv.reasons[i]);
-                            if (fv.score >= 40) {
-                                /* Perspective 101: shared with the JSON path
-                                 * above (and both standalone `file` sites)
-                                 * so plaintext and JSON never again describe
-                                 * the same verdict with different wording. */
-                                printf("  \xe2\x96\xb8 Pattern: %s\n", file_classify_pattern(&fv));
-                                printf("  \xe2\x97\x89 Attacker's goal: %s\n", file_masquerade_objective());
-                                printf("  \xe2\x9c\x93 Verify first: %s\n", file_masquerade_verify());
-                            }
-                            if (fv.score >= 60) {
-                                printf("  \xe2\x9a\x91 If you acted: if already opened, disconnect "
-                                       "from the network; run antivirus; change credentials for "
-                                       "any active session\n");
-                                printf("  \xe2\x8a\x95 Also change: all credentials and session "
-                                       "tokens active when the file was opened \xe2\x80\x94 check "
-                                       "for persistence (startup items, scheduled tasks, new "
-                                       "browser extensions)\n");
-                            }
-                            if (fv.score > 0 && fv.score < 60) {
-                                const char *ex = hlse_exoneration_for("file", fv.score);
-                                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-                            }
-                        }
-                    }
-                    after_file_check: ;  /* P0-1 suppression jump target */
-
-                    /* Check 2: secrets in text files. Large files are NOT
-                     * skipped outright (a 2 MB log or DB dump routinely
-                     * contains leaked credentials) — instead we scan up to a
-                     * byte budget so work stays bounded on huge files.       */
-                    if (st.st_size > 0) {
-                        /* Re-open with O_NOFOLLOW + S_ISREG (defends the
-                         * lstat→open TOCTOU window); never follow a symlink
-                         * swapped in after classification. */
-                        FILE *fp = NULL;
-                        int sfd = open(fullpath, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
-                        if (sfd >= 0) {
-                            struct stat sst;
-                            if (fstat(sfd, &sst) == 0 && S_ISREG(sst.st_mode))
-                                fp = fdopen(sfd, "r");
-                            if (!fp) close(sfd);
-                        }
-                        if (fp) {
-                            char line[4096];
-                            int lineno = 0;
-                            /* Bound the bytes inspected per file (8 MB) so a
-                             * giant file cannot stall the scan, while still
-                             * covering far more than the old 1 MB hard skip. */
-                            size_t scanned_bytes = 0;
-                            const size_t SCAN_BUDGET = 8u * 1024u * 1024u;
-                            while (scanned_bytes < SCAN_BUDGET &&
-                                   fgets(line, sizeof(line), fp)) {
-                                lineno++;
-                                scanned_bytes += strlen(line);
-                                /* Indirect prompt injection: an agent reading
-                                 * a repo consumes these files directly, so the
-                                 * poisoned-document/skill-file path runs
-                                 * through `scan`, not just `text`. Checked on
-                                 * the raw line — the carriers are invisible,
-                                 * so nothing else here would notice them. */
-                                {
-                                    char inv_r[512];
-                                    int inv = hlse_check_invisible_carriers(
-                                        line, inv_r, sizeof(inv_r));
-                                    if (inv > 0 &&
-                                        !hlse_scan_suppress(sarif_path,
-                                            "HLSE-TEXT-INVISIBLE", inv_r, line))
-                                    {
-                                        threats++;
-                                        if (inv > max_score) max_score = inv;
-                                        if (inv >= g_fail_threshold) gate_hits++;
-                                        if (!quiet && !json_out && !sarif_out)
-                                            printf("  %s:%d: %s\n",
-                                                   sarif_path, lineno, inv_r);
-                                    }
-                                }
-                                SecretVerdict sv = hlse_scan_secrets(line);
-                                if (sv.score >= 40) {
-                                    int ai;
-                                    /* P0-1: baseline/allowlist + inline
-                                     * hlse:allow suppression. Distinguisher =
-                                     * the redacted finding description (stable
-                                     * per distinct secret, line-independent). */
-                                    const char *spid = sv.n_findings > 0
-                                        ? secret_pattern_id(sv.findings[0].type)
-                                        : "HLSE-SECRET-GENERIC";
-                                    const char *sdesc = sv.n_findings > 0
-                                        ? sv.findings[0].description : "";
-                                    if (hlse_scan_suppress(sarif_path, spid, sdesc, line))
-                                        continue;
-                                    threats++;
-                                    if (sv.score > max_score) max_score = sv.score;
-                                    if (sv.score >= g_fail_threshold) gate_hits++;
-                                    for (ai = 0; ai < sv.n_findings; ai++)
-                                        asset_mask |=
-                                            asset_class_of(sv.findings[ai].type);
-                                    if (sarif_out) {
-                                        char msg[512] = {0};
-                                        int i;
-                                        for (i = 0; i < sv.n_findings; i++) {
-                                            size_t l = strlen(msg);
-                                            snprintf(msg + l, sizeof(msg) - l, "%s%s",
-                                                     i ? "; " : "",
-                                                     sv.findings[i].description);
-                                        }
-                                        sarif_add(sarif_path, lineno, "secret",
-                                                  sv.n_findings > 0
-                                                    ? secret_pattern_id(sv.findings[0].type)
-                                                    : "HLSE-SECRET-GENERIC",
-                                                  msg[0] ? msg : "secret", sv.score);
-                                    } else if (json_out) {
-                                        int i;
-                                        char esc_p[512], et[64], ed[512];
-                                        hlse_json_escape(fullpath, esc_p, sizeof(esc_p));
-                                        /* Emit findings:[{type,description}] per spec §5.2
-                                         * (same schema as the standalone secret subcommand). */
-                                        printf("{\"kind\":\"secret\","
-                                               "\"hlse_version\":\"" HLSE_VERSION "\","
-                                               "\"path\":\"%s\","
-                                               "\"line\":%d,\"score\":%d,"
-                                               "\"action\":\"%s\",\"severity\":%d,"
-                                               "\"findings\":[",
-                                               esc_p, lineno, sv.score,
-                                               hlse_action_for_score(sv.score),
-                                               hlse_severity_for_score(sv.score));
-                                        for (i = 0; i < sv.n_findings; i++) {
-                                            hlse_json_escape(sv.findings[i].type, et, sizeof(et));
-                                            hlse_json_escape(sv.findings[i].description, ed, sizeof(ed));
-                                            printf("%s{\"type\":\"%s\",\"description\":\"%s\"}",
-                                                   i ? "," : "", et, ed);
-                                        }
-                                        printf("]");
-                                        {
-                                            const char *conf = hlse_secret_confidence(&sv);
-                                            if (conf) {
-                                                hlse_json_escape(conf, ed, sizeof(ed));
-                                                printf(",\"confidence\":\"%s\"", ed);
-                                            }
-                                        }
-                                        {
-                                            const char *rem = hlse_remediation_for("secret", sv.score);
-                                            if (rem) {
-                                                hlse_json_escape(rem, ed, sizeof(ed));
-                                                printf(",\"remediation\":\"%s\"", ed);
-                                            }
-                                        }
-                                        if (sv.n_findings > 0) {
-                                            const char *cav = secret_finding_caveat(sv.findings[0].type);
-                                            if (cav) {
-                                                hlse_json_escape(cav, ed, sizeof(ed));
-                                                printf(",\"caveat\":\"%s\"", ed);
-                                            }
-                                        }
-                                        if (sv.score >= 60 && sv.n_findings > 0) {
-                                            const char *ftype = sv.findings[0].type;
-                                            const char *sobj  = secret_objective_for(ftype);
-                                            secret_pattern_label(ftype, esc_p, sizeof(esc_p));
-                                            hlse_json_escape(esc_p, ed, sizeof(ed));
-                                            printf(",\"pattern\":\"%s\"", ed);
-                                            printf(",\"pattern_id\":\"%s\"", secret_pattern_id(ftype));
-                                            if (sobj) {
-                                                hlse_json_escape(sobj, ed, sizeof(ed));
-                                                printf(",\"objective\":\"%s\"", ed);
-                                            }
-                                            hlse_json_escape(secret_verify_text(),  ed, sizeof(ed)); printf(",\"verify\":\"%s\"",       ed);
-                                            hlse_json_escape(secret_triage_text(),  ed, sizeof(ed)); printf(",\"triage\":\"%s\"",       ed);
-                                            hlse_json_escape(secret_cascade_text(), ed, sizeof(ed)); printf(",\"cascade_risk\":\"%s\"", ed);
-                                        }
-                                        if (sv.score > 0 && sv.score < 60) {
-                                            const char *ex = hlse_exoneration_for("secret", sv.score);
-                                            if (ex) {
-                                                hlse_json_escape(ex, ed, sizeof(ed));
-                                                printf(",\"exoneration\":\"%s\"", ed);
-                                            }
-                                        }
-                                        printf("}\n");
-                                    } else {
-                                        int i;
-                                        printf("%-7s [%d]  %s:%d\n",
-                                               hlse_action_for_score(sv.score),
-                                               sv.score, fullpath, lineno);
-                                        for (i = 0; i < sv.n_findings; i++)
-                                            printf("  \xc2\xb7 %s\n",
-                                                   sv.findings[i].description);
-                                        if (sv.n_findings > 0) {
-                                            const char *cav = secret_finding_caveat(sv.findings[0].type);
-                                            if (cav) printf("  \xe2\x9a\xa0 Caveat: %s\n", cav);
-                                        }
-                                        if (sv.score >= 60 && sv.n_findings > 0) {
-                                            const char *ftype = sv.findings[0].type;
-                                            const char *sobj  = secret_objective_for(ftype);
-                                            char epat[128];
-                                            secret_pattern_label(ftype, epat, sizeof(epat));
-                                            printf("  \xe2\x96\xb8 Pattern: %s\n", epat);
-                                            if (sobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", sobj);
-                                            printf("  \xe2\x9c\x93 Verify first: %s\n", secret_verify_text());
-                                            printf("  \xe2\x9a\x91 Immediate action: %s\n", secret_triage_text());
-                                            printf("  \xe2\x8a\x95 Also change: %s\n", secret_cascade_text());
-                                        }
-                                        if (sv.score > 0 && sv.score < 60) {
-                                            const char *ex = hlse_exoneration_for("secret", sv.score);
-                                            if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-                                        }
-                                    }
-                                }
-
-                                /* Check 3: phishing URLs embedded in text */
-                                {
-                                    const char *p = line;
-                                    while ((p = strstr(p, "http")) != NULL) {
-                                        if (strncmp(p, "http://", 7) != 0 &&
-                                            strncmp(p, "https://", 8) != 0) {
-                                            p += 4; continue;
-                                        }
-                                        char url_buf[2048];
-                                        int ui = 0;
-                                        while (p[ui] && p[ui] != ' ' && p[ui] != '\t'
-                                               && p[ui] != '\n' && p[ui] != '"'
-                                               && p[ui] != '\'' && p[ui] != '>'
-                                               && p[ui] != ')' && ui < 2047) {
-                                            url_buf[ui] = p[ui]; ui++;
-                                        }
-                                        url_buf[ui] = '\0';
-                                        {
-                                            Verdict uv = check_url(url_buf);
-                                            if (uv.score >= 40) {
-                                                /* P0-1: baseline/allowlist +
-                                                 * inline hlse:allow. Use the
-                                                 * relative path + url as the
-                                                 * distinguisher; on suppression
-                                                 * fall through to p += ui. */
-                                                if (hlse_scan_suppress(sarif_path,
-                                                        hlse_url_pattern_id(&uv),
-                                                        url_buf, line))
-                                                    goto url_advance;
-                                                threats++;
-                                                if (uv.score > max_score) max_score = uv.score;
-                                                if (uv.score >= g_fail_threshold)
-                                                    gate_hits++;
-                                                if (sarif_out) {
-                                                    char msg[512] = {0};
-                                                    int k;
-                                                    size_t l0 = strlen(url_buf) < 200 ?
-                                                                strlen(url_buf) : 200;
-                                                    snprintf(msg, sizeof(msg),
-                                                             "Phishing URL: %.*s — ",
-                                                             (int)l0, url_buf);
-                                                    for (k = 0; k < uv.n_reasons; k++) {
-                                                        size_t l = strlen(msg);
-                                                        snprintf(msg + l, sizeof(msg) - l,
-                                                                 "%s%s", k ? "; " : "",
-                                                                 uv.reasons[k]);
-                                                    }
-                                                    sarif_add(sarif_path, lineno,
-                                                              "phishing-url",
-                                                              hlse_url_pattern_id(&uv),
-                                                              msg, uv.score);
-                                                } else if (json_out) {
-                                                    char eu[2048];
-                                                    hlse_json_escape(url_buf, eu, sizeof(eu));
-                                                    printf("{\"kind\":\"url\",\"path\":\"%s\","
-                                                           "\"line\":%d,\"url\":\"%s\","
-                                                           "\"score\":%d,\"action\":\"%s\","
-                                                           "\"reasons\":[",
-                                                           fullpath, lineno, eu, uv.score,
-                                                           hlse_action_for_score(uv.score));
-                                                    { int kr;
-                                                      for (kr = 0; kr < uv.n_reasons; kr++) {
-                                                          char er[256];
-                                                          hlse_json_escape(uv.reasons[kr], er, sizeof(er));
-                                                          printf("%s\"%s\"", kr>0?",":"", er);
-                                                      }
-                                                    }
-                                                    printf("]");
-                                                    {
-                                                        char ucf_buf[160];
-                                                        int u_sig = hlse_confidence_for(&uv, ucf_buf, sizeof(ucf_buf));
-                                                        if (u_sig > 0) {
-                                                            hlse_json_escape(ucf_buf, eu, sizeof(eu));
-                                                            printf(",\"signal_count\":%d,\"confidence\":\"%s\"", u_sig, eu);
-                                                        }
-                                                    }
-                                                    if (uv.score >= 40) {
-                                                        /* Perspective 95: pattern/pattern_id/objective/safe_url/verify
-                                                         * now fire from the ALERT floor (40), matching the standalone
-                                                         * URL JSON path — an embedded URL scored ALERT used to emit
-                                                         * only raw reasons + exoneration while the same URL scanned
-                                                         * standalone got the full advisory. triage/cascade_risk stay
-                                                         * BLOCK+-only (60): post-incident guidance presumes the user
-                                                         * already acted, which only high confidence warrants. */
-                                                        const char *upat = hlse_classify_url_attack(&uv);
-                                                        const char *uvrf = hlse_verification_for(&uv);
-                                                        char uobj_buf[320], usafe[384];
-                                                        int has_obj  = hlse_compound_objective(&uv, uobj_buf, sizeof(uobj_buf));
-                                                        int has_safe = hlse_safe_destinations(&uv, usafe, sizeof(usafe));
-                                                        if (upat)     { hlse_json_escape(upat,     eu, sizeof(eu)); printf(",\"pattern\":\"%s\"",      eu); }
-                                                        if (upat)     { const char *upid = hlse_url_pattern_id(&uv); if (upid) printf(",\"pattern_id\":\"%s\"", upid); }
-                                                        if (has_obj)  { hlse_json_escape(uobj_buf, eu, sizeof(eu)); printf(",\"objective\":\"%s\"",    eu); }
-                                                        if (has_safe) { hlse_json_escape(usafe,    eu, sizeof(eu)); printf(",\"safe_url\":\"%s\"",     eu); }
-                                                        if (uvrf)     { hlse_json_escape(uvrf,     eu, sizeof(eu)); printf(",\"verify\":\"%s\"",       eu); }
-                                                    }
-                                                    if (uv.score >= 60) {
-                                                        const char *ucas = hlse_cascade_risk(&uv);
-                                                        char utri_buf[512];
-                                                        int has_tri  = hlse_compound_triage(&uv, utri_buf, sizeof(utri_buf));
-                                                        if (has_tri)  { hlse_json_escape(utri_buf, eu, sizeof(eu)); printf(",\"triage\":\"%s\"",       eu); }
-                                                        if (ucas)     { hlse_json_escape(ucas,     eu, sizeof(eu)); printf(",\"cascade_risk\":\"%s\"", eu); }
-                                                    }
-                                                    if (uv.score >= 40 && uv.score < 60) {
-                                                        const char *uexon = hlse_url_exoneration(&uv);
-                                                        if (uexon) {
-                                                            hlse_json_escape(uexon, eu, sizeof(eu));
-                                                            printf(",\"exoneration\":\"%s\"", eu);
-                                                        }
-                                                    }
-                                                    printf("}\n");
-                                                } else {
-                                                    int k;
-                                                    printf("%-7s [%d]  %s:%d  %s\n",
-                                                           hlse_action_for_score(uv.score),
-                                                           uv.score, fullpath, lineno, url_buf);
-                                                    for (k = 0; k < uv.n_reasons; k++)
-                                                        printf("  \xc2\xb7 %s\n", uv.reasons[k]);
-                                                    print_url_advisories(url_buf, &uv);
-                                                    if (uv.score >= 40 && uv.score < 60) {
-                                                        const char *uexon = hlse_url_exoneration(&uv);
-                                                        if (uexon)
-                                                            printf("  \xe2\x86\xba Could be benign: %s\n", uexon);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        url_advance:            /* P0-1 target */
-                                        p += ui;
-                                    }
-                                }
-                            }
-                            fclose(fp);
-                        }
-                    }
-                }
-                closedir(d);
-            }
-
-            /* --fingerprints mode emits only the per-finding fingerprint lines
-             * (for baseline generation); skip the summary and never fail the
-             * gate — generating a baseline must exit 0. */
-            if (g_emit_fingerprints) {
-                return 0;
-            }
-            if (sarif_out) {
-                sarif_emit(HLSE_VERSION);
-            } else if (!json_out) {
-                if (threats == 0) {
-                    const char *bs = hlse_blindspot_for("scan");
-                    printf("OK    %s (%d files scanned, 0 threats)\n",
-                           root, files_scanned);
-                    if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-                } else {
-                    char classes[256];
-                    int nclasses = asset_mask_describe(asset_mask, classes,
-                                                       sizeof(classes));
-                    printf("\n%d threat(s) in %d files under %s\n",
-                           threats, files_scanned, root);
-                    if (gate_hits > 0 && g_fail_threshold != 60)
-                        printf("  %d finding(s) exceeded the --fail-on threshold (%d)\n",
-                               gate_hits, g_fail_threshold);
-                    /* Immediate action: one-sentence triage keyed to the
-                     * most severe asset class (or file/URL threats). */
-                    printf("\xe2\x86\x92 Immediate action: %s\n",
-                           scan_immediate_action((unsigned)asset_mask, nclasses));
-                    /* Blast radius: credentials spanning 2+ asset classes let
-                     * an attacker pivot across systems — worse than the count
-                     * alone suggests. */
-                    if (nclasses >= 2)
-                        printf("\xe2\x9a\xa0  BLAST RADIUS: leaked credentials "
-                               "span %d asset classes (%s) — an attacker can "
-                               "pivot across these systems. Rotate ALL of them "
-                               "and assume lateral movement.\n",
-                               nclasses, classes);
-                }
-            } else {
-                /* NDJSON: final summary line for CI tooling */
-                char esc_root[4096], classes[256];
-                int nclasses = asset_mask_describe(asset_mask, classes,
-                                                   sizeof(classes));
-                hlse_json_escape(root, esc_root, sizeof(esc_root));
-                printf("{\"kind\":\"scan_summary\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"target\":\"%s\","
-                       "\"files_scanned\":%d,\"threats\":%d,"
-                       "\"max_severity\":%d,"
-                       "\"gate_hits\":%d,\"fail_threshold\":%d,"
-                       "\"asset_classes\":%d,\"blast_radius\":\"%s\"",
-                       esc_root, files_scanned, threats,
-                       hlse_severity_for_score(max_score),
-                       gate_hits, g_fail_threshold,
-                       nclasses, classes);
-                if (threats == 0) {
-                    const char *bs = hlse_blindspot_for("scan");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
-                } else {
-                    const char *ia = scan_immediate_action((unsigned)asset_mask, nclasses);
-                    char esc_ia[512];
-                    hlse_json_escape(ia, esc_ia, sizeof(esc_ia));
-                    printf(",\"immediate_action\":\"%s\"", esc_ia);
-                }
-                printf("}\n");
-            }
-            return gate_hits > 0 ? 1 : 0;
-        }
-#pragma GCC diagnostic pop
+    /* Subcommand dispatch. This was twelve near-identical strcmp/return pairs;
+     * a table makes adding one a data change and keeps the list readable as a
+     * list. The order is preserved from the chain it replaces — it does not
+     * matter semantically, since the names are distinct, but keeping it makes
+     * the diff reviewable.
+     *
+     * `protect` takes optional module flags (--ransomware|--smb|--mbr|--net);
+     * without them it runs every module applicable to the path. */
+    {
+        static const struct {
+            const char *name;
+            int (*fn)(int argc, char **argv, int idx, const CliOpts *o);
+        } COMMANDS[] = {
+            { "scan",      cmd_scan      }, { "protect",   cmd_protect   },
+            { "esp",       cmd_esp       }, { "package",   cmd_package   },
+            { "paste",     cmd_paste     }, { "network",   cmd_network   },
+            { "secret",    cmd_secret    }, { "email",     cmd_email     },
+            { "clipboard", cmd_clipboard }, { "file",      cmd_file      },
+            { "audit",     cmd_audit     }, { "text",      cmd_text      },
+        };
+        size_t ci;
+        for (ci = 0; ci < sizeof(COMMANDS) / sizeof(COMMANDS[0]); ci++)
+            if (strcmp(argv[idx], COMMANDS[ci].name) == 0)
+                return COMMANDS[ci].fn(argc, argv, idx, &opts);
     }
 
-    /* ── protect subcommand ──────────────────────────────────────────
-     * Usage: hlse_core protect <path> [--ransomware|--smb|--mbr|--net]
-     * Without flags: runs all modules applicable to the path.        */
-    if (strcmp(argv[idx], "protect") == 0) {
-        if (argc < idx + 2) {
-            fprintf(stderr, "Usage: %s protect <path> [--ransomware|--smb|--mbr|--net]\n", argv[0]);
-            return 2;
-        }
-        {
-            const char *path = argv[idx + 1];
-            int modules = 0;
-
-            /* Verify path exists */
-            if (access(path, F_OK) != 0) {
-                fprintf(stderr, "Error: cannot access '%s': %s\n",
-                        path, strerror(errno));
-                return 2;
-            }
-            int ai;
-
-            /* Parse module flags */
-            for (ai = idx + 2; ai < argc; ai++) {
-                if (strcmp(argv[ai], "--ransomware") == 0) modules |= HLSE_PROTECT_RANSOMWARE;
-                else if (strcmp(argv[ai], "--smb") == 0)   modules |= HLSE_PROTECT_SMB;
-                else if (strcmp(argv[ai], "--mbr") == 0)   modules |= HLSE_PROTECT_MBR;
-                else if (strcmp(argv[ai], "--net") == 0)    modules |= HLSE_PROTECT_NETWORK_DRIVE;
-            }
-            if (modules == 0) {
-                /* Auto-detect: if path starts with /dev/, use MBR; else file-based */
-                if (strncmp(path, "/dev/", 5) == 0) {
-                    modules = HLSE_PROTECT_MBR;
-                } else {
-                    modules = HLSE_PROTECT_RANSOMWARE | HLSE_PROTECT_SMB | HLSE_PROTECT_NETWORK_DRIVE;
-                }
-            }
-
-            ProtectionVerdict pv = hlse_protect_scan(path, modules);
-            {
-                const char *aar[16]; int aq, aqn = pv.n_reasons;
-                if (aqn > 16) aqn = 16;
-                for (aq = 0; aq < aqn; aq++) aar[aq] = pv.reasons[aq];
-                hlse_alert_emit("protect", pv.score,
-                    hlse_severity_for_score(pv.score), path, aar, aqn);
-            }
-
-            if (json_out) {
-                /* JSON output for protect.
-                 * Perspective 100: this was the only verdict kind still
-                 * missing hlse_version and severity — every other kind
-                 * (url/text/file/secret/email/network/esp/package/paste/
-                 * clipboard) has carried both since P84/P85; protect was
-                 * never brought in line. */
-                char esc_path[4096];
-                hlse_json_escape(path, esc_path, sizeof(esc_path));
-                printf("{\"kind\":\"protect\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"target\":\"%s\",\"score\":%d,"
-                       "\"action\":\"%s\",\"severity\":%d,\"reasons\":[",
-                       esc_path, pv.score,
-                       hlse_action_for_score(pv.score),
-                       hlse_severity_for_score(pv.score));
-                {
-                    int i;
-                    for (i = 0; i < pv.n_reasons; i++) {
-                        char esc[512];
-                        hlse_json_escape(pv.reasons[i], esc, sizeof(esc));
-                        printf("%s\"%s\"", i > 0 ? "," : "", esc);
-                    }
-                }
-                printf("]");
-                if (pv.score == 0) {
-                    const char *bs = hlse_blindspot_for("protect");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
-                }
-                if (pv.score > 0) {
-                    int ns = pv.n_reasons;
-                    const char *conf = ns >= 3 ? "high confidence" :
-                                       ns >= 2 ? "corroborated" : "single signal";
-                    printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
-                }
-                if (pv.score >= 40) {
-                    /* Perspective 100: a single SMB canary-file access (+40)
-                     * or mass-rename detection (+40) lands the protect
-                     * verdict in ALERT (40-59) alone — the same gap P95-98
-                     * closed for other kinds. pattern/objective/verify now
-                     * fire from the ALERT floor; triage/cascade_risk
-                     * (disconnect-network incident response) stay
-                     * BLOCK+-only (>= 60).
-                     * Perspective 103: text now shared with the plaintext
-                     * path below via protect_*_text() accessors. */
-                    char e[512];
-                    hlse_json_escape(protect_pattern_text(), e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
-                    printf(",\"pattern_id\":\"HLSE-PROTECT-RANSOM\"");
-                    hlse_json_escape(protect_objective_text(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                    hlse_json_escape(protect_verify_text(),    e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
-                }
-                if (pv.score >= 60) {
-                    char e[512];
-                    hlse_json_escape(protect_triage_text(),  e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(protect_cascade_text(), e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
-                }
-                if (pv.score > 0 && pv.score < 60) {
-                    const char *ex = hlse_exoneration_for("protect", pv.score);
-                    if (ex) {
-                        char e[512];
-                        hlse_json_escape(ex, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
-                    }
-                }
-                printf("}\n");
-            } else if (pv.score == 0) {
-                const char *bs = hlse_blindspot_for("protect");
-                printf("OK    %s\n", path);
-                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-            } else {
-                int i;
-                printf("%-7s [%d]  %s\n",
-                       hlse_action_for_score(pv.score), pv.score, path);
-                for (i = 0; i < pv.n_reasons; i++) {
-                    printf("  \xc2\xb7 %s\n", pv.reasons[i]);
-                }
-                if (pv.score >= 40) {
-                    printf("  \xe2\x96\xb8 Pattern: %s\n", protect_pattern_text());
-                    printf("  \xe2\x97\x89 Attacker's goal: %s\n", protect_objective_text());
-                    printf("  \xe2\x9c\x93 Verify first: %s\n", protect_verify_text());
-                }
-                if (pv.score >= 60) {
-                    printf("  \xe2\x9a\x91 Immediate action: %s\n", protect_triage_text());
-                    printf("  \xe2\x8a\x95 Also change: %s\n", protect_cascade_text());
-                }
-                if (pv.score < 60) {
-                    const char *ex = hlse_exoneration_for("protect", pv.score);
-                    if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-                }
-            }
-            return pv.score >= g_fail_threshold ? 1 : 0;
-        }
-    }
-
-    if (strcmp(argv[idx], "esp") == 0) {
-        /* EFI System Partition integrity (UEFI bootkit indicators). */
-        const char *path = (argc > idx + 1) ? argv[idx + 1] : NULL;
-        ProtectionVerdict pv = hlse_esp_verify(path);
-        if (json_out) {
-            int i;
-            printf("{\"kind\":\"esp\",\"hlse_version\":\"" HLSE_VERSION "\","
-                   "\"score\":%d,\"action\":\"%s\","
-                   "\"severity\":%d,\"reasons\":[",
-                   pv.score, hlse_action_for_score(pv.score),
-                   hlse_severity_for_score(pv.score));
-            for (i = 0; i < pv.n_reasons; i++) {
-                char esc[512];
-                hlse_json_escape(pv.reasons[i], esc, sizeof(esc));
-                printf("%s\"%s\"", i > 0 ? "," : "", esc);
-            }
-            printf("]");
-            {
-                const char *bs = hlse_blindspot_for("esp");
-                if (pv.score == 0 && bs) {
-                    char esc_bs[512];
-                    hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                    printf(",\"blind_spot\":\"%s\"", esc_bs);
-                }
-            }
-            if (pv.score > 0) {
-                int ns = pv.n_reasons;
-                const char *conf = ns >= 3 ? "high confidence" :
-                                   ns >= 2 ? "corroborated" : "single signal";
-                printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
-            }
-            if (pv.score >= 60) {
-                char e[512];
-                hlse_json_escape(esp_pattern_text(),   e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
-                printf(",\"pattern_id\":\"HLSE-ESP-BOOTKIT\"");
-                hlse_json_escape(esp_objective_text(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                hlse_json_escape(esp_verify_text(),     e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
-                hlse_json_escape(esp_triage_text(),     e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                hlse_json_escape(esp_cascade_text(),    e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
-            }
-            if (pv.score > 0 && pv.score < 60) {
-                const char *ex = hlse_exoneration_for("esp", pv.score);
-                if (ex) {
-                    char e[512];
-                    hlse_json_escape(ex, e, sizeof(e));
-                    printf(",\"exoneration\":\"%s\"", e);
-                }
-            }
-            printf("}\n");
-        } else if (pv.score == 0) {
-            const char *bs = hlse_blindspot_for("esp");
-            printf("OK    (esp)%s%s\n",
-                   pv.n_reasons ? " \xe2\x80\x94 " : "",
-                   pv.n_reasons ? pv.reasons[0] : "");
-            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-        } else {
-            int i;
-            printf("%-7s [%d]  (esp)\n",
-                   hlse_action_for_score(pv.score), pv.score);
-            for (i = 0; i < pv.n_reasons; i++)
-                printf("  \xc2\xb7 %s\n", pv.reasons[i]);
-            if (pv.score >= 60) {
-                printf("  \xe2\x96\xb8 Pattern: %s\n", esp_pattern_text());
-                printf("  \xe2\x97\x89 Attacker's goal: %s\n", esp_objective_text());
-                printf("  \xe2\x9c\x93 Verify first: %s\n", esp_verify_text());
-                printf("  \xe2\x9a\x91 Immediate action: %s\n", esp_triage_text());
-                printf("  \xe2\x8a\x95 Also change: %s\n", esp_cascade_text());
-            } else {
-                const char *ex = hlse_exoneration_for("esp", pv.score);
-                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-            }
-        }
-        return pv.score >= g_fail_threshold ? 1 : 0;
-    }
-
-    /* ── Supply Chain Defense subcommands ───────────────────────────── */
-
-    if (strcmp(argv[idx], "package") == 0) {
-        if (argc < idx + 2) {
-            fprintf(stderr, "Usage: %s package <name> [pip|npm|cargo|go]\n"
-                    "       %s package --manifest <file> [pip|npm|cargo|go|gem]\n",
-                    argv[0], argv[0]);
-            return 2;
-        }
-        /* --manifest <file>: scan every dependency in a manifest (P1-8). */
-        if (strcmp(argv[idx + 1], "--manifest") == 0) {
-            const char *mpath, *eco;
-            FILE *mf;
-            char line[4096];
-            int in_deps = 0, checked = 0, threats = 0, gate_hits = 0;
-            int max_score = 0, lineno = 0;
-            if (argc < idx + 3) {
-                fprintf(stderr, "Usage: %s package --manifest <file> [eco]\n",
-                        argv[0]);
-                return 2;
-            }
-            mpath = argv[idx + 2];
-            eco = (argc > idx + 3) ? argv[idx + 3] : manifest_ecosystem(mpath);
-            if (!eco) {
-                fprintf(stderr, "Error: cannot infer ecosystem from '%s' \xe2\x80\x94 "
-                        "pass one explicitly (pip|npm|cargo|go|gem)\n", mpath);
-                return 2;
-            }
-            mf = fopen(mpath, "r");
-            if (!mf) {
-                fprintf(stderr, "Error: cannot read manifest '%s': %s\n",
-                        mpath, strerror(errno));
-                return 2;
-            }
-            while (fgets(line, sizeof(line), mf)) {
-                char name[128];
-                const char *cursor = line;
-                int is_npm = (strcmp(eco, "npm") == 0);
-                lineno++;
-                /* npm: a line may hold several "name":"ver" pairs (compact
-                 * object form), so drain the cursor. pip: one name per line. */
-                for (;;) {
-                    int got;
-                    if (is_npm)
-                        got = manifest_name_npm(&cursor, &in_deps, name, sizeof(name));
-                    else
-                        got = manifest_name_pip(line, name, sizeof(name));
-                    if (!got || name[0] == '\0') break;
-                {
-                    PackageVerdict pv = hlse_check_package(name, eco);
-                    checked++;
-                    if (pv.score >= 40) {
-                        threats++;
-                        if (pv.score > max_score) max_score = pv.score;
-                        if (pv.score >= g_fail_threshold) gate_hits++;
-                        if (sarif_out) {
-                            char msg[512];
-                            snprintf(msg, sizeof(msg), "%s",
-                                     pv.reason[0] ? pv.reason
-                                     : "dependency typosquat");
-                            sarif_add(mpath, lineno, "package-typosquat",
-                                      "HLSE-PKG-TYPOSQUAT", msg, pv.score);
-                        } else if (json_out) {
-                            char en[128];
-                            int i;
-                            hlse_json_escape(name, en, sizeof(en));
-                            printf("{\"kind\":\"package\",\"hlse_version\":\""
-                                   HLSE_VERSION "\",\"name\":\"%s\","
-                                   "\"ecosystem\":\"%s\",\"score\":%d,"
-                                   "\"action\":\"%s\",\"severity\":%d,"
-                                   "\"pattern_id\":\"HLSE-PKG-TYPOSQUAT\","
-                                   "\"matches\":[",
-                                   en, eco, pv.score,
-                                   hlse_action_for_score(pv.score),
-                                   hlse_severity_for_score(pv.score));
-                            for (i = 0; i < pv.n_matches; i++)
-                                printf("%s{\"name\":\"%s\",\"registry\":\"%s\","
-                                       "\"distance\":%d}", i ? "," : "",
-                                       pv.matches[i].legit_name,
-                                       pv.matches[i].registry,
-                                       pv.matches[i].distance);
-                            printf("]}\n");
-                        } else {
-                            printf("%-7s [%d]  %s (%s)\n",
-                                   hlse_action_for_score(pv.score), pv.score,
-                                   name, eco);
-                            if (pv.reason[0])
-                                printf("  \xc2\xb7 %s\n", pv.reason);
-                        }
-                    }
-                }
-                    if (!is_npm) break;   /* pip: one name per line */
-                }  /* for(;;) drain-line */
-            }
-            fclose(mf);
-            if (sarif_out) {
-                sarif_emit(HLSE_VERSION);
-            } else if (json_out) {
-                char ep[4096];
-                hlse_json_escape(mpath, ep, sizeof(ep));
-                printf("{\"kind\":\"manifest_summary\",\"hlse_version\":\""
-                       HLSE_VERSION "\",\"manifest\":\"%s\",\"ecosystem\":\"%s\","
-                       "\"packages_checked\":%d,\"threats\":%d,"
-                       "\"max_severity\":%d,\"gate_hits\":%d}\n",
-                       ep, eco, checked, threats,
-                       hlse_severity_for_score(max_score), gate_hits);
-            } else if (threats == 0) {
-                printf("OK    %s (%d packages checked, 0 typosquat risks)\n",
-                       mpath, checked);
-            } else {
-                printf("\n%d suspicious package(s) of %d checked in %s\n",
-                       threats, checked, mpath);
-            }
-            return gate_hits > 0 ? 1 : 0;
-        }
-        {
-            const char *eco = (argc > idx + 2) ? argv[idx + 2] : NULL;
-            PackageVerdict pv = hlse_check_package(argv[idx + 1], eco);
-            {
-                const char *aar[1]; int aqn = 0;
-                if (pv.reason[0]) { aar[0] = pv.reason; aqn = 1; }
-                hlse_alert_emit("package", pv.score,
-                    hlse_severity_for_score(pv.score), argv[idx + 1], aar, aqn);
-            }
-            if (json_out) {
-                printf("{\"kind\":\"package\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"name\":\"%s\",\"score\":%d,"
-                       "\"action\":\"%s\",\"severity\":%d",
-                       argv[idx + 1], pv.score, hlse_action_for_score(pv.score),
-                       hlse_severity_for_score(pv.score));
-                if (pv.n_matches > 0) {
-                    int i;
-                    printf(",\"matches\":[");
-                    for (i = 0; i < pv.n_matches; i++) {
-                        printf("%s{\"name\":\"%s\",\"registry\":\"%s\","
-                               "\"distance\":%d}",
-                               i > 0 ? "," : "",
-                               pv.matches[i].legit_name,
-                               pv.matches[i].registry,
-                               pv.matches[i].distance);
-                    }
-                    printf("]");
-                }
-                if (pv.score == 0) {
-                    /* reason non-empty => exact match to a known package;
-                     * empty => unknown name, which we cannot verify offline. */
-                    const char *bs = hlse_blindspot_for(
-                        pv.reason[0] ? "package" : "package_unverified");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
-                }
-                if (pv.score > 0) {
-                    int ns = pv.n_matches > 0 ? pv.n_matches : 1;
-                    const char *conf = ns >= 3 ? "high confidence" :
-                                       ns >= 2 ? "corroborated" : "single signal";
-                    printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
-                }
-                if (pv.score >= 40) {
-                    /* Perspective 97: a name matching 2+ registries at once
-                     * (e.g. "reqests" ~ pip "requests" dist-1 AND cargo
-                     * "reqwest" dist-2, when no ecosystem is given) lands at
-                     * score 50 alone — the n_matches==1 amplifier to 70 never
-                     * fires — but pattern/objective/verify used to require
-                     * >= 60, the same gap P95/P96 closed elsewhere.
-                     * Perspective 103: text now shared with the plaintext
-                     * path below via package_*_text() accessors. */
-                    char e[512];
-                    hlse_json_escape(package_pattern_text(), e, sizeof(e));
-                    printf(",\"pattern\":\"%s\"", e);
-                    printf(",\"pattern_id\":\"HLSE-PKG-TYPOSQUAT\"");
-                    hlse_json_escape(package_objective_text(), e, sizeof(e));
-                    printf(",\"objective\":\"%s\"", e);
-                    hlse_json_escape(package_verify_text(), e, sizeof(e));
-                    printf(",\"verify\":\"%s\"", e);
-                }
-                if (pv.score >= 60) {
-                    char e[512];
-                    hlse_json_escape(package_triage_text(), e, sizeof(e));
-                    printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(package_cascade_text(), e, sizeof(e));
-                    printf(",\"cascade_risk\":\"%s\"", e);
-                }
-                if (pv.score > 0 && pv.score < 60) {
-                    const char *ex = hlse_exoneration_for("package", pv.score);
-                    if (ex) {
-                        char e[512];
-                        hlse_json_escape(ex, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
-                    }
-                }
-                printf("}\n");
-            } else if (pv.score == 0) {
-                const char *bs = hlse_blindspot_for(
-                    pv.reason[0] ? "package" : "package_unverified");
-                printf("OK    %s\n", argv[idx + 1]);
-                /* Mirror the URL canonical-confirmation line: say explicitly
-                 * when the name IS recognised, so "OK" is not ambiguous
-                 * between "known good" and "never heard of it". */
-                if (pv.reason[0]) printf("  \xe2\x9c\x94 %s\n", pv.reason);
-                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-            } else {
-                printf("%-7s [%d]  %s\n",
-                       hlse_action_for_score(pv.score), pv.score,
-                       argv[idx + 1]);
-                if (pv.reason[0])
-                    printf("  \xc2\xb7 %s\n", pv.reason);
-                if (pv.score >= 40) {
-                    printf("  \xe2\x96\xb8 Pattern: %s\n", package_pattern_text());
-                    printf("  \xe2\x97\x89 Attacker's goal: %s\n", package_objective_text());
-                    printf("  \xe2\x9c\x93 Verify first: %s\n", package_verify_text());
-                }
-                if (pv.score >= 60) {
-                    printf("  \xe2\x9a\x91 If you acted: %s\n", package_triage_text());
-                    printf("  \xe2\x8a\x95 Also change: %s\n", package_cascade_text());
-                }
-                if (pv.score < 60) {
-                    const char *ex = hlse_exoneration_for("package", pv.score);
-                    if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-                }
-            }
-            return pv.score >= g_fail_threshold ? 1 : 0;
-        }
-    }
-
-    if (strcmp(argv[idx], "paste") == 0) {
-        if (argc < idx + 2) {
-            fprintf(stderr, "Usage: %s paste \"<command text>\"\n", argv[0]);
-            return 2;
-        }
-        {
-            PasteVerdict pv = hlse_check_paste(argv[idx + 1]);
-            {
-                const char *aar[16]; int aq, aqn = pv.n_reasons;
-                if (aqn > 16) aqn = 16;
-                for (aq = 0; aq < aqn; aq++) aar[aq] = pv.reasons[aq];
-                hlse_alert_emit("paste", pv.score,
-                    hlse_severity_for_score(pv.score), argv[idx + 1], aar, aqn);
-            }
-            if (json_out) {
-                int i;
-                printf("{\"kind\":\"paste\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"score\":%d,\"action\":\"%s\","
-                       "\"severity\":%d,\"signals\":%d",
-                       pv.score, hlse_action_for_score(pv.score),
-                       hlse_severity_for_score(pv.score), pv.signals);
-                if (pv.score == 0) {
-                    const char *bs = hlse_blindspot_for("paste");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
-                }
-                if (pv.score > 0) {
-                    /* Count distinct PASTE_* signal families from the bitmask —
-                     * the epistemic complement to the score: how many independent
-                     * detectors corroborate this paste threat. */
-                    int ns = 0, bits = pv.signals;
-                    while (bits) { ns += bits & 1; bits >>= 1; }
-                    if (ns == 0) ns = pv.n_reasons;  /* fallback if bitmask empty */
-                    {
-                        const char *conf = ns >= 3 ? "high confidence" :
-                                           ns >= 2 ? "corroborated" : "single signal";
-                        printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
-                    }
-                }
-                if (pv.score >= 40) {
-                    /* Build a minimal TextVerdict so the existing advisory
-                     * machinery fires: "Shell-pipe" triggers ClickFix
-                     * classification in hlse_classify_text_attack().
-                     * Perspective 95: pattern/objective/verify now fire from
-                     * the ALERT floor (40); triage/cascade_risk stay
-                     * BLOCK+-only (60) since post-incident guidance presumes
-                     * the user already acted. */
-                    TextVerdict ptv;
-                    const char *ppat, *pobj, *pvrf;
-                    memset(&ptv, 0, sizeof(ptv));
-                    ptv.score = pv.score;
-                    ptv.n_reasons = 1;
-                    snprintf(ptv.reasons[0], sizeof(ptv.reasons[0]),
-                             "Shell-pipe: paste-and-run pastejacking");
-                    ppat = hlse_classify_text_attack(&ptv);
-                    pobj = hlse_text_objective(&ptv);
-                    pvrf = hlse_text_verify(&ptv);
-                    if (ppat) { char e[512]; hlse_json_escape(ppat,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
-                    if (ppat) { const char *pid = hlse_text_pattern_id(&ptv); if (pid) printf(",\"pattern_id\":\"%s\"",pid); }
-                    if (pobj) { char e[512]; hlse_json_escape(pobj,e,sizeof(e)); printf(",\"objective\":\"%s\"",e); }
-                    if (pvrf) { char e[512]; hlse_json_escape(pvrf,e,sizeof(e)); printf(",\"verify\":\"%s\"",e); }
-                    if (pv.score >= 60) {
-                        const char *ptri, *pcas;
-                        ptri = hlse_text_triage(&ptv);
-                        pcas = hlse_text_cascade(&ptv);
-                        if (ptri) { char e[512]; hlse_json_escape(ptri,e,sizeof(e)); printf(",\"triage\":\"%s\"",e); }
-                        if (pcas) { char e[512]; hlse_json_escape(pcas,e,sizeof(e)); printf(",\"cascade_risk\":\"%s\"",e); }
-                    }
-                }
-                if (pv.score > 0 && pv.score < 60) {
-                    const char *ex = hlse_exoneration_for("paste", pv.score);
-                    if (ex) {
-                        char e[512];
-                        hlse_json_escape(ex, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
-                    }
-                }
-                printf(",\"reasons\":[");
-                for (i = 0; i < pv.n_reasons; i++) {
-                    char esc[512];
-                    hlse_json_escape(pv.reasons[i], esc, sizeof(esc));
-                    printf("%s\"%s\"", i > 0 ? "," : "", esc);
-                }
-                printf("]}\n");
-            } else if (pv.score == 0) {
-                const char *bs = hlse_blindspot_for("paste");
-                printf("OK    (paste)\n");
-                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-            } else {
-                int i;
-                printf("%-7s [%d]  (paste)\n",
-                       hlse_action_for_score(pv.score), pv.score);
-                for (i = 0; i < pv.n_reasons; i++)
-                    printf("  \xc2\xb7 %s\n", pv.reasons[i]);
-                if (pv.score >= 40) {
-                    /* Advisory lenses: every paste ALERT+ is ClickFix/pastejacking.
-                     * print_text_advisories internally gates verify at >=40 and
-                     * triage/cascade_risk at >=60 (Perspective 95). */
-                    TextVerdict ptv;
-                    memset(&ptv, 0, sizeof(ptv));
-                    ptv.score = pv.score;
-                    ptv.n_reasons = 1;
-                    snprintf(ptv.reasons[0], sizeof(ptv.reasons[0]),
-                             "Shell-pipe: paste-and-run pastejacking");
-                    print_text_advisories(&ptv);
-                }
-                if (pv.score > 0 && pv.score < 60) {
-                    const char *ex = hlse_exoneration_for("paste", pv.score);
-                    if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-                }
-            }
-            return pv.score >= g_fail_threshold ? 1 : 0;
-        }
-    }
-
-    if (strcmp(argv[idx], "network") == 0) {
-        NetworkVerdict nv = hlse_check_network();
-        {
-            const char *aar[16]; int aq, aqn = nv.n_reasons;
-            if (aqn > 16) aqn = 16;
-            for (aq = 0; aq < aqn; aq++) aar[aq] = nv.reasons[aq];
-            hlse_alert_emit("network", nv.score,
-                hlse_severity_for_score(nv.score), "(network)", aar, aqn);
-        }
-        if (json_out) {
-            int i;
-            printf("{\"kind\":\"network\",\"hlse_version\":\"" HLSE_VERSION "\","
-                   "\"score\":%d,\"action\":\"%s\","
-                   "\"severity\":%d,\"reasons\":[",
-                   nv.score, hlse_action_for_score(nv.score),
-                   hlse_severity_for_score(nv.score));
-            for (i = 0; i < nv.n_reasons; i++) {
-                char esc[512];
-                hlse_json_escape(nv.reasons[i], esc, sizeof(esc));
-                printf("%s\"%s\"", i > 0 ? "," : "", esc);
-            }
-            printf("]");
-            if (nv.score == 0) {
-                const char *bs = hlse_blindspot_for("network");
-                if (bs) {
-                    char esc_bs[512];
-                    hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                    printf(",\"blind_spot\":\"%s\"", esc_bs);
-                }
-            }
-            if (nv.score > 0) {
-                int ns = nv.n_reasons;
-                const char *conf = ns >= 3 ? "high confidence" :
-                                   ns >= 2 ? "corroborated" : "single signal";
-                printf(",\"signal_count\":%d,\"confidence\":\"%s\"", ns, conf);
-            }
-            if (nv.score >= 40) {
-                /* Perspective 96: a single N2 (routing injection, +55) or N4
-                 * (hosts-file pharming, +50) finding lands in ALERT (40-59)
-                 * alone, but used to get no pattern/objective/verify — only
-                 * BLOCK+ (60) did, the same gap P95 closed for URL/text/
-                 * paste/scan. verify now fires from the ALERT floor;
-                 * triage/cascade_risk (post-incident, presumes the user
-                 * already acted) stay BLOCK+-only.
-                 * Perspective 103: text now shared with the plaintext path
-                 * below via network_*_text() accessors. */
-                char e[512];
-                hlse_json_escape(net_pattern_text(), e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
-                printf(",\"pattern_id\":\"HLSE-NET-C2\"");
-                hlse_json_escape(network_objective_text(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                hlse_json_escape(network_verify_text(),    e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
-            }
-            if (nv.score >= 60) {
-                char e[512];
-                hlse_json_escape(network_triage_text(),  e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                hlse_json_escape(network_cascade_text(), e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
-            }
-            if (nv.score > 0 && nv.score < 60) {
-                const char *ex = hlse_exoneration_for("network", nv.score);
-                if (ex) {
-                    char e[512];
-                    hlse_json_escape(ex, e, sizeof(e));
-                    printf(",\"exoneration\":\"%s\"", e);
-                }
-            }
-            printf("}\n");
-        } else if (nv.score == 0) {
-            const char *bs = hlse_blindspot_for("network");
-            printf("OK    (network \xe2\x80\x94 no anomalies detected)\n");
-            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-        } else {
-            int i;
-            printf("%-7s [%d]  (network)\n",
-                   hlse_action_for_score(nv.score), nv.score);
-            for (i = 0; i < nv.n_reasons; i++)
-                printf("  \xc2\xb7 %s\n", nv.reasons[i]);
-            if (nv.score >= 40) {
-                printf("  \xe2\x96\xb8 Pattern: %s\n", net_pattern_text());
-                printf("  \xe2\x97\x89 Attacker's goal: %s\n", network_objective_text());
-                printf("  \xe2\x9c\x93 Verify first: %s\n", network_verify_text());
-            }
-            if (nv.score >= 60) {
-                printf("  \xe2\x9a\x91 Immediate action: %s\n", network_triage_text());
-                printf("  \xe2\x8a\x95 Also change: %s\n", network_cascade_text());
-            }
-            if (nv.score < 60) {
-                const char *ex = hlse_exoneration_for("network", nv.score);
-                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-            }
-        }
-        return nv.score >= g_fail_threshold ? 1 : 0;
-    }
-
-    if (strcmp(argv[idx], "secret") == 0) {
-        /* 1 MiB, BSS-allocated (static) not stack — matches the shipped
-         * pre-commit hook's 1 MB file-size guard so no in-scope file is
-         * silently truncated (Perspective 105 / P1-2). */
-        static char stdin_buf[1u << 20];
-        const char *text;
-        if (argc < idx + 2) {
-            fprintf(stderr, "Usage: %s secret \"<text>\" | %s secret --stdin\n",
-                    argv[0], argv[0]);
-            return 2;
-        } else if (strcmp(argv[idx + 1], "--stdin") == 0) {
-            read_stdin_all(stdin_buf, sizeof(stdin_buf));
-            text = stdin_buf;
-        } else {
-            text = argv[idx + 1];
-        }
-        {
-            SecretVerdict sv = hlse_scan_secrets(text);
-            {
-                const char *aar[16]; char rb[16][300];
-                int aq, aqn = sv.n_findings;
-                if (aqn > 16) aqn = 16;
-                for (aq = 0; aq < aqn; aq++) {
-                    snprintf(rb[aq], sizeof(rb[aq]), "%s: %s",
-                             sv.findings[aq].type, sv.findings[aq].description);
-                    aar[aq] = rb[aq];
-                }
-                hlse_alert_emit("secret", sv.score,
-                    hlse_severity_for_score(sv.score), "(secret scan)", aar, aqn);
-            }
-            if (json_out) {
-                int i;
-                printf("{\"kind\":\"secret\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"score\":%d,\"action\":\"%s\","
-                       "\"severity\":%d,\"findings\":[",
-                       sv.score, hlse_action_for_score(sv.score),
-                       hlse_severity_for_score(sv.score));
-                for (i = 0; i < sv.n_findings; i++) {
-                    char et[64], ed[512];
-                    hlse_json_escape(sv.findings[i].type, et, sizeof(et));
-                    hlse_json_escape(sv.findings[i].description, ed, sizeof(ed));
-                    printf("%s{\"type\":\"%s\",\"description\":\"%s\"}",
-                           i > 0 ? "," : "", et, ed);
-                }
-                printf("]");
-                printf(",\"confidence\":\"%s\"", hlse_secret_confidence(&sv));
-                {
-                    const char *rem = hlse_remediation_for("secret", sv.score);
-                    if (rem) {
-                        char erm[512];
-                        hlse_json_escape(rem, erm, sizeof(erm));
-                        printf(",\"remediation\":\"%s\"", erm);
-                    }
-                }
-                if (sv.score == 0) {
-                    const char *bs = hlse_blindspot_for("secret");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
-                }
-                if (sv.n_findings > 0) {
-                    /* Perspective 99: unconditional on score — a Stripe
-                     * publishable key is public-by-design at any score,
-                     * not just a probabilistic false-positive hedge. */
-                    const char *cav = secret_finding_caveat(sv.findings[0].type);
-                    if (cav) {
-                        char e[768];
-                        hlse_json_escape(cav, e, sizeof(e));
-                        printf(",\"caveat\":\"%s\"", e);
-                    }
-                }
-                if (sv.score >= 60 && sv.n_findings > 0) {
-                    const char *ftype = sv.findings[0].type;
-                    const char *sobj  = secret_objective_for(ftype);
-                    char e[512], epat[128];
-                    secret_pattern_label(ftype, epat, sizeof(epat));
-                    hlse_json_escape(epat, e, sizeof(e));
-                    printf(",\"pattern\":\"%s\"", e);
-                    printf(",\"pattern_id\":\"%s\"", secret_pattern_id(ftype));
-                    if (sobj) { hlse_json_escape(sobj, e, sizeof(e)); printf(",\"objective\":\"%s\"", e); }
-                    hlse_json_escape(secret_verify_text(),  e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
-                    hlse_json_escape(secret_triage_text(),  e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(secret_cascade_text(), e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
-                }
-                if (sv.score > 0 && sv.score < 60) {
-                    const char *ex = hlse_exoneration_for("secret", sv.score);
-                    if (ex) {
-                        char e[512];
-                        hlse_json_escape(ex, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
-                    }
-                }
-                printf("}\n");
-            } else if (sv.score == 0) {
-                const char *bs = hlse_blindspot_for("secret");
-                printf("OK    (secret \xe2\x80\x94 no credentials found)\n");
-                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-            } else {
-                int i;
-                const char *rem = hlse_remediation_for("secret", sv.score);
-                const char *conf = hlse_secret_confidence(&sv);
-                printf("%-7s [%d]  (secret scan — confidence: %s)\n",
-                       hlse_action_for_score(sv.score), sv.score, conf);
-                for (i = 0; i < sv.n_findings; i++)
-                    printf("  \xc2\xb7 [%s] %s\n",
-                           sv.findings[i].type, sv.findings[i].description);
-                if (strcmp(conf, "heuristic") == 0)
-                    printf("  \xe2\x86\x92 Confidence: heuristic — this is a "
-                           "pattern guess (generic VAR=value / high-entropy "
-                           "string); confirm it is a live credential.\n");
-                if (sv.n_findings > 0) {
-                    const char *cav = secret_finding_caveat(sv.findings[0].type);
-                    if (cav) printf("  \xe2\x9a\xa0 Caveat: %s\n", cav);
-                }
-                if (sv.score >= 60 && sv.n_findings > 0) {
-                    const char *ftype = sv.findings[0].type;
-                    const char *sobj  = secret_objective_for(ftype);
-                    char epat[128];
-                    secret_pattern_label(ftype, epat, sizeof(epat));
-                    printf("  \xe2\x96\xb8 Pattern: %s\n", epat);
-                    if (sobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", sobj);
-                    printf("  \xe2\x9c\x93 Verify first: %s\n", secret_verify_text());
-                    printf("  \xe2\x9a\x91 Immediate action: %s\n", secret_triage_text());
-                    printf("  \xe2\x8a\x95 Also change: %s\n", secret_cascade_text());
-                }
-                if (sv.score > 0 && sv.score < 60) {
-                    const char *ex = hlse_exoneration_for("secret", sv.score);
-                    if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-                }
-                if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
-            }
-            return sv.score >= g_fail_threshold ? 1 : 0;
-        }
-    }
-
-    if (strcmp(argv[idx], "email") == 0) {
-        static char stdin_buf[1u << 20];  /* 1 MiB, BSS (P1-2) */
-        const char *headers;
-        /* Perspective 106 (P2-3): --from sets a delivery-channel prior that
-         * boosts URL/text scores, but email headers are BY DEFINITION
-         * received over email — the channel is intrinsic and fixed, so a
-         * --from override (especially a non-email one like sms) is
-         * meaningless here. The flag was silently ignored, which reads like a
-         * bug; make it explicit with a one-line stderr note instead. */
-        if (g_from_channel) {
-            fprintf(stderr,
-                    "hlse: note: --from is ignored for the email subcommand "
-                    "\xe2\x80\x94 email headers are intrinsically the email "
-                    "channel; the channel prior is not applied\n");
-        }
-        if (argc < idx + 2) {
-            fprintf(stderr, "Usage: %s email \"<headers>\" | %s email --stdin\n",
-                    argv[0], argv[0]);
-            return 2;
-        } else if (strcmp(argv[idx + 1], "--stdin") == 0) {
-            read_stdin_all(stdin_buf, sizeof(stdin_buf));
-            headers = stdin_buf;
-        } else {
-            headers = argv[idx + 1];
-        }
-        {
-            EmailVerdict ev = hlse_check_email_headers(headers);
-            {
-                const char *aar[16]; int aq, aqn = ev.n_reasons;
-                if (aqn > 16) aqn = 16;
-                for (aq = 0; aq < aqn; aq++) aar[aq] = ev.reasons[aq];
-                hlse_alert_emit("email", ev.score,
-                    hlse_severity_for_score(ev.score), "(email headers)", aar, aqn);
-            }
-            const char *rem = hlse_remediation_for("email", ev.score);
-            /* Header forensics (SPF/DKIM/Reply-To/Received) is blind to the
-             * message BODY's social engineering. Run text analysis on the same
-             * input and surface the attack-pattern lens as ADVISORY only — the
-             * email score is unchanged (preserves F1), but a BEC/urgency body
-             * that header checks alone would miss is now named. */
-            TextVerdict bodytv = hlse_check_text(headers);
-            const char *body_pat = hlse_classify_text_attack(&bodytv);
-            if (json_out) {
-                int i;
-                printf("{\"kind\":\"email\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"score\":%d,\"action\":\"%s\","
-                       "\"severity\":%d,\"reasons\":[",
-                       ev.score, hlse_action_for_score(ev.score),
-                       hlse_severity_for_score(ev.score));
-                for (i = 0; i < ev.n_reasons; i++) {
-                    char esc[512];
-                    hlse_json_escape(ev.reasons[i], esc, sizeof(esc));
-                    printf("%s\"%s\"", i > 0 ? "," : "", esc);
-                }
-                printf("]");
-                if (ev.score == 0 && !body_pat) {
-                    const char *bs = hlse_blindspot_for("email");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
-                }
-                if (body_pat) {
-                    char epat[256];
-                    hlse_json_escape(body_pat, epat, sizeof(epat));
-                    printf(",\"body_pattern\":\"%s\",\"body_score\":%d",
-                           epat, bodytv.score);
-                    /* Emit pattern and pattern_id from body analysis, plus signal count/confidence */
-                    printf(",\"signal_count\":2,\"confidence\":\"two independent signals — header authentication + body text both analyzed\"");
-                    TextVerdict btv_hi = bodytv;
-                    char e[512];
-                    const char *bpat, *bobj, *bvrf, *btri, *bcas, *bex;
-                    btv_hi.score = ev.score > bodytv.score ? ev.score : bodytv.score;
-                    bpat = hlse_classify_text_attack(&btv_hi);
-                    bobj = hlse_text_objective(&btv_hi);
-                    bex  = hlse_text_exoneration(&btv_hi);
-                    bvrf = hlse_text_verify(&btv_hi);
-                    btri = hlse_text_triage(&btv_hi);
-                    bcas = hlse_text_cascade(&btv_hi);
-                    if (bpat) { hlse_json_escape(bpat,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
-                    if (bpat) {
-                        const char *bid = hlse_text_pattern_id(&btv_hi);
-                        if (bid) printf(",\"pattern_id\":\"%s\"", bid);
-                    }
-                    if (bex && btv_hi.score >= 15 && btv_hi.score < 60) {
-                        hlse_json_escape(bex,e,sizeof(e)); printf(",\"exoneration\":\"%s\"",e);
-                    }
-                    /* Perspective 95: verify now fires from the ALERT floor
-                     * (btv_hi.score >= 40, the combined header/body score) —
-                     * objective/triage/cascade_risk stay gated on ev.score
-                     * >= 60 (header-confidence threshold, unchanged). */
-                    if (bvrf && btv_hi.score >= 40) {
-                        hlse_json_escape(bvrf,e,sizeof(e)); printf(",\"verify\":\"%s\"",e);
-                    }
-                    if (ev.score >= 60) {
-                        if (bobj) { hlse_json_escape(bobj,e,sizeof(e)); printf(",\"objective\":\"%s\"",e); }
-                        if (btri) { hlse_json_escape(btri,e,sizeof(e)); printf(",\"triage\":\"%s\"",e); }
-                        if (bcas) { hlse_json_escape(bcas,e,sizeof(e)); printf(",\"cascade_risk\":\"%s\"",e); }
-                    }
-                } else if (ev.score >= 60) {
-                    /* Header-only BLOCK: synthesise BEC advisory lenses */
-                    TextVerdict etv;
-                    char e[512];
-                    const char *epat2, *eobj, *evrf, *etri, *ecas;
-                    memset(&etv, 0, sizeof(etv));
-                    etv.score = ev.score;
-                    etv.n_reasons = 1;
-                    snprintf(etv.reasons[0], sizeof(etv.reasons[0]),
-                             "BEC: email header authentication failure "
-                             "(SPF/DKIM/Reply-To spoofing)");
-                    epat2 = hlse_classify_text_attack(&etv);
-                    eobj  = hlse_text_objective(&etv);
-                    evrf  = hlse_text_verify(&etv);
-                    etri  = hlse_text_triage(&etv);
-                    ecas  = hlse_text_cascade(&etv);
-                    printf(",\"signal_count\":1,\"confidence\":\"single signal — email header authentication anomalies detected\"");
-                    if (epat2) { hlse_json_escape(epat2,e,sizeof(e)); printf(",\"pattern\":\"%s\"",e); }
-                    if (epat2) { const char *pid = hlse_text_pattern_id(&etv); if (pid) printf(",\"pattern_id\":\"%s\"",pid); }
-                    if (eobj)  { hlse_json_escape(eobj,e,sizeof(e));  printf(",\"objective\":\"%s\"",e); }
-                    if (evrf)  { hlse_json_escape(evrf,e,sizeof(e));  printf(",\"verify\":\"%s\"",e); }
-                    if (etri)  { hlse_json_escape(etri,e,sizeof(e));  printf(",\"triage\":\"%s\"",e); }
-                    if (ecas)  { hlse_json_escape(ecas,e,sizeof(e));  printf(",\"cascade_risk\":\"%s\"",e); }
-                } else if (ev.score > 0) {
-                    /* Borderline header score (1-59): emit signal_count, confidence, and exoneration */
-                    printf(",\"signal_count\":1");
-                    TextVerdict etv;
-                    const char *econn = hlse_exoneration_for("email", ev.score);
-                    if (econn) {
-                        char e[512];
-                        hlse_json_escape(econn, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
-                    }
-                    memset(&etv, 0, sizeof(etv));
-                    etv.score = ev.score;
-                    printf(",\"confidence\":\"partial signal — some email header concerns but not conclusive spoofing\"");
-                }
-                if (rem) {
-                    char erm[512];
-                    hlse_json_escape(rem, erm, sizeof(erm));
-                    printf(",\"remediation\":\"%s\"", erm);
-                }
-                printf("}\n");
-            } else if (ev.score == 0 && !body_pat) {
-                const char *bs = hlse_blindspot_for("email");
-                printf("OK    (email \xe2\x80\x94 no spoofing signals)\n");
-                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-            } else {
-                int i;
-                const char *ex = hlse_exoneration_for("email", ev.score);
-                if (ev.score == 0)
-                    printf("OK    [0]  (email forensics) "
-                           "\xe2\x80\x94 headers clean, but body flagged below\n");
-                else
-                    printf("%-7s [%d]  (email forensics)\n",
-                           hlse_action_for_score(ev.score), ev.score);
-                for (i = 0; i < ev.n_reasons; i++)
-                    printf("  \xc2\xb7 %s\n", ev.reasons[i]);
-                if (body_pat) {
-                    /* Use email header score for advisory threshold */
-                    TextVerdict btv_hi = bodytv;
-                    const char *bobj, *bvrf, *btri, *bcas;
-                    if (ev.score >= 60) btv_hi.score = ev.score;
-                    bobj = hlse_text_objective(&btv_hi);
-                    bvrf = hlse_text_verify(&btv_hi);
-                    btri = hlse_text_triage(&btv_hi);
-                    bcas = hlse_text_cascade(&btv_hi);
-                    printf("  \xe2\x96\xb8 Body pattern: %s (body score %d)\n",
-                           body_pat, bodytv.score);
-                    if (bobj) printf("  \xe2\x97\x89 Attacker's goal: %s\n", bobj);
-                    /* Perspective 95: verify fires from the ALERT floor
-                     * (btv_hi.score >= 40); triage/cascade stay BLOCK+-only. */
-                    if (bvrf && btv_hi.score >= 40)
-                        printf("  \xe2\x9c\x93 Verify first: %s\n", bvrf);
-                    if (ev.score >= 60) {
-                        if (btri) printf("  \xe2\x9a\x91 If you acted: %s\n", btri);
-                        if (bcas) printf("  \xe2\x8a\x95 Also change: %s\n", bcas);
-                    }
-                } else if (ev.score >= 60) {
-                    /* Header-only BLOCK: synthesise BEC advisory lenses */
-                    TextVerdict etv;
-                    const char *epat2, *eobj, *evrf, *etri, *ecas;
-                    memset(&etv, 0, sizeof(etv));
-                    etv.score = ev.score;
-                    etv.n_reasons = 1;
-                    snprintf(etv.reasons[0], sizeof(etv.reasons[0]),
-                             "BEC: email header authentication failure "
-                             "(SPF/DKIM/Reply-To spoofing)");
-                    epat2 = hlse_classify_text_attack(&etv);
-                    eobj  = hlse_text_objective(&etv);
-                    evrf  = hlse_text_verify(&etv);
-                    etri  = hlse_text_triage(&etv);
-                    ecas  = hlse_text_cascade(&etv);
-                    if (epat2) printf("  \xe2\x96\xb8 Pattern: %s\n", epat2);
-                    if (eobj)  printf("  \xe2\x97\x89 Attacker's goal: %s\n", eobj);
-                    if (evrf)  printf("  \xe2\x9c\x93 Verify first: %s\n", evrf);
-                    if (etri)  printf("  \xe2\x9a\x91 If you acted: %s\n", etri);
-                    if (ecas)  printf("  \xe2\x8a\x95 Also change: %s\n", ecas);
-                }
-                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-                if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
-            }
-            return ev.score >= g_fail_threshold ? 1 : 0;
-        }
-    }
-
-    if (strcmp(argv[idx], "clipboard") == 0) {
-        if (argc < idx + 3) {
-            fprintf(stderr,
-                    "Usage: %s clipboard \"<copied addr>\" \"<pasted addr>\"\n",
-                    argv[0]);
-            return 2;
-        }
-        {
-            CryptoSwapVerdict cv =
-                hlse_check_crypto_swap(argv[idx + 1], argv[idx + 2]);
-            {
-                const char *aar[1]; int aqn = 0;
-                if (cv.reason[0]) { aar[0] = cv.reason; aqn = 1; }
-                hlse_alert_emit("clipboard", cv.score,
-                    hlse_severity_for_score(cv.score),
-                    cv.swapped[0] ? cv.swapped : "(clipboard)", aar, aqn);
-            }
-            const char *rem = hlse_remediation_for("clipboard", cv.score);
-            if (json_out) {
-                char eo[256], es[256], er[512], erm[512];
-                hlse_json_escape(cv.original, eo, sizeof(eo));
-                hlse_json_escape(cv.swapped, es, sizeof(es));
-                hlse_json_escape(cv.reason, er, sizeof(er));
-                hlse_json_escape(rem ? rem : "", erm, sizeof(erm));
-                printf("{\"kind\":\"clipboard\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"score\":%d,\"action\":\"%s\","
-                       "\"severity\":%d,"
-                       "\"is_swap\":%d,"
-                       "\"original\":\"%s\",\"swapped\":\"%s\",\"reason\":\"%s\","
-                       "\"remediation\":\"%s\"",
-                       cv.score, hlse_action_for_score(cv.score),
-                       hlse_severity_for_score(cv.score),
-                       cv.is_swap, eo, es, er, erm);
-                if (cv.score == 0) {
-                    const char *bs = hlse_blindspot_for("clipboard");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
-                }
-                if (cv.score >= 60) {
-                    char e[512];
-                    hlse_json_escape(clipboard_pattern_text(), e, sizeof(e));
-                    printf(",\"pattern\":\"%s\"", e);
-                    printf(",\"pattern_id\":\"HLSE-CLIP-HIJACK\"");
-                    hlse_json_escape(clipboard_objective_text(), e, sizeof(e));
-                    printf(",\"objective\":\"%s\"", e);
-                    hlse_json_escape(clipboard_verify_text(), e, sizeof(e));
-                    printf(",\"verify\":\"%s\"", e);
-                    hlse_json_escape(clipboard_triage_text(), e, sizeof(e));
-                    printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(clipboard_cascade_text(), e, sizeof(e));
-                    printf(",\"cascade_risk\":\"%s\"", e);
-                }
-                printf("}\n");
-            } else if (cv.score == 0) {
-                const char *bs = hlse_blindspot_for("clipboard");
-                printf("OK    (clipboard \xe2\x80\x94 no address swap detected)\n");
-                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-            } else {
-                printf("%-7s [%d]  (clipboard)\n",
-                       hlse_action_for_score(cv.score), cv.score);
-                if (cv.reason[0]) printf("  \xc2\xb7 %s\n", cv.reason);
-                if (rem) printf("  \xe2\x86\x92 Action: %s\n", rem);
-                if (cv.score >= 60) {
-                    printf("  \xe2\x96\xb8 Pattern: %s\n", clipboard_pattern_text());
-                    printf("  \xe2\x97\x89 Attacker's goal: %s\n", clipboard_objective_text());
-                    printf("  \xe2\x9c\x93 Verify first: %s\n", clipboard_verify_text());
-                    printf("  \xe2\x9a\x91 If you acted: %s\n", clipboard_triage_text());
-                    printf("  \xe2\x8a\x95 Also change: %s\n", clipboard_cascade_text());
-                }
-            }
-            return cv.score >= g_fail_threshold ? 1 : 0;
-        }
-    }
-
-    if (strcmp(argv[idx], "file") == 0) {
-        if (argc < idx + 2) {
-            fprintf(stderr, "Usage: %s file <filepath>\n", argv[0]);
-            return 2;
-        }
-        {
-            FileVerdict fv;
-            /* If the file exists on disk, do full magic-byte + filename
-             * analysis. If not, still check the NAME for disguise tricks
-             * (RLO, double extension, lure words) — these are dangerous
-             * regardless of whether the file is present locally.        */
-            if (access(argv[idx + 1], F_OK) == 0) {
-                fv = hlse_check_file(argv[idx + 1]);
-            } else {
-                const char *base = strrchr(argv[idx + 1], '/');
-                base = base ? base + 1 : argv[idx + 1];
-                fv = hlse_check_filename(base);
-            }
-            {
-                const char *aar[16]; int aq, aqn = fv.n_reasons;
-                if (aqn > 16) aqn = 16;
-                for (aq = 0; aq < aqn; aq++) aar[aq] = fv.reasons[aq];
-                hlse_alert_emit("file", fv.score,
-                    hlse_severity_for_score(fv.score), argv[idx + 1], aar, aqn);
-            }
-            if (json_out) {
-                int i;
-                char esc[512];
-                hlse_json_escape(argv[idx + 1], esc, sizeof(esc));
-                printf("{\"kind\":\"file\",\"hlse_version\":\"" HLSE_VERSION "\","
-                       "\"path\":\"%s\",\"score\":%d,"
-                       "\"action\":\"%s\",\"severity\":%d,\"reasons\":[",
-                       esc, fv.score, hlse_action_for_score(fv.score),
-                       hlse_severity_for_score(fv.score));
-                for (i = 0; i < fv.n_reasons; i++) {
-                    hlse_json_escape(fv.reasons[i], esc, sizeof(esc));
-                    printf("%s\"%s\"", i > 0 ? "," : "", esc);
-                }
-                printf("]");
-                if (fv.score == 0) {
-                    const char *bs = hlse_blindspot_for("file");
-                    if (bs) {
-                        char esc_bs[512];
-                        hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                        printf(",\"blind_spot\":\"%s\"", esc_bs);
-                    }
-                }
-                if (fv.score >= 40) {
-                    /* Perspective 98: a single medium-confidence heuristic
-                     * (e.g. Cabinet-magic/wrong-extension, +40) lands the
-                     * file verdict in ALERT (40-59) alone, but this used to
-                     * require score >= 60 for ANY advisory content at all —
-                     * not even exoneration existed for "file" until this
-                     * perspective. pattern/objective/verify now fire from
-                     * the ALERT floor; triage/cascade_risk (post-open
-                     * incident response) stay BLOCK+-only.
-                     * Perspective 101: classification and advisory text now
-                     * come from the shared accessors (see file_classify_
-                     * pattern/file_masquerade_objective/file_masquerade_verify
-                     * above) instead of a fourth independent copy. */
-                    const char *fpat = file_classify_pattern(&fv);
-                    char e[512];
-                    hlse_json_escape(fpat, e, sizeof(e)); printf(",\"pattern\":\"%s\"", e);
-                    printf(",\"pattern_id\":\"%s\"", file_pattern_id(fpat));
-                    hlse_json_escape(file_masquerade_objective(), e, sizeof(e)); printf(",\"objective\":\"%s\"", e);
-                    hlse_json_escape(file_masquerade_verify(),    e, sizeof(e)); printf(",\"verify\":\"%s\"", e);
-                }
-                if (fv.score >= 60) {
-                    static const char file_tri[] =
-                        "if already opened: disconnect from the network "
-                        "immediately; run a full antivirus scan; change "
-                        "credentials for any service you were logged into at "
-                        "the time; consider a full OS reinstall for high-score "
-                        "detections";
-                    static const char file_cas[] =
-                        "all credentials and session tokens active when the file "
-                        "was opened \xe2\x80\x94 malware runs with your session "
-                        "context; also check for persistence (startup items, "
-                        "scheduled tasks, browser extensions added)";
-                    char e[512];
-                    hlse_json_escape(file_tri, e, sizeof(e)); printf(",\"triage\":\"%s\"", e);
-                    hlse_json_escape(file_cas, e, sizeof(e)); printf(",\"cascade_risk\":\"%s\"", e);
-                }
-                if (fv.score > 0 && fv.score < 60) {
-                    const char *ex = hlse_exoneration_for("file", fv.score);
-                    if (ex) {
-                        char e[512];
-                        hlse_json_escape(ex, e, sizeof(e));
-                        printf(",\"exoneration\":\"%s\"", e);
-                    }
-                }
-                printf("}\n");
-            } else if (fv.score == 0) {
-                const char *bs = hlse_blindspot_for("file");
-                printf("OK    %s\n", argv[idx + 1]);
-                if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-            } else {
-                int i;
-                printf("%-7s [%d]  %s\n",
-                       hlse_action_for_score(fv.score), fv.score,
-                       argv[idx + 1]);
-                for (i = 0; i < fv.n_reasons; i++)
-                    printf("  \xc2\xb7 %s\n", fv.reasons[i]);
-                if (fv.score >= 40) {
-                    printf("  \xe2\x96\xb8 Pattern: %s\n", file_classify_pattern(&fv));
-                    printf("  \xe2\x97\x89 Attacker's goal: %s\n", file_masquerade_objective());
-                    printf("  \xe2\x9c\x93 Verify first: %s\n", file_masquerade_verify());
-                }
-                if (fv.score >= 60) {
-                    printf("  \xe2\x9a\x91 If you acted: if already opened, disconnect "
-                           "from the network; run antivirus; change credentials for "
-                           "any active session\n");
-                    printf("  \xe2\x8a\x95 Also change: all credentials and session "
-                           "tokens active when the file was opened \xe2\x80\x94 check "
-                           "for persistence (startup items, scheduled tasks, new "
-                           "browser extensions)\n");
-                }
-                if (fv.score < 60) {
-                    const char *ex = hlse_exoneration_for("file", fv.score);
-                    if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-                }
-            }
-            return fv.score >= g_fail_threshold ? 1 : 0;
-        }
-    }
-
-    if (strcmp(argv[idx], "audit") == 0) {
-        AuditVerdict av = hlse_audit_all();
-        int hi = hlse_audit_hardening_index(&av);
-        const char *band = hi >= 90 ? "hardened"
-                         : hi >= 70 ? "good"
-                         : hi >= 50 ? "fair" : "weak";
-        /* Pre-compute severity counts for next_steps guidance */
-        int crit_count = 0, high_count = 0;
-        { int ci;
-          for (ci = 0; ci < av.n_findings; ci++) {
-              if (av.findings[ci].severity >= 5) crit_count++;
-              else if (av.findings[ci].severity == 4) high_count++;
-          }
-        }
-        if (json_out) {
-            int i;
-            printf("{\"kind\":\"audit\",\"hlse_version\":\"" HLSE_VERSION "\","
-                   "\"score\":%d,\"action\":\"%s\","
-                   "\"severity\":%d,"
-                   "\"hardening_index\":%d,\"hardening_band\":\"%s\","
-                   "\"crit_count\":%d,\"high_count\":%d,"
-                   "\"findings\":[",
-                   av.score, hlse_action_for_score(av.score),
-                   hlse_severity_for_score(av.score), hi, band,
-                   crit_count, high_count);
-            for (i = 0; i < av.n_findings; i++) {
-                char esc[512];
-                const char *fix = (av.findings[i].severity >= 4)
-                    ? audit_remediation_for(av.findings[i].description)
-                    : NULL;
-                hlse_json_escape(av.findings[i].description, esc, sizeof(esc));
-                printf("%s{\"severity\":%d,\"description\":\"%s\"",
-                       i > 0 ? "," : "",
-                       av.findings[i].severity, esc);
-                if (fix) {
-                    char efix[512];
-                    hlse_json_escape(fix, efix, sizeof(efix));
-                    printf(",\"fix\":\"%s\"", efix);
-                }
-                printf("}");
-            }
-            printf("]");
-            if (av.score == 0) {
-                const char *bs = hlse_blindspot_for("audit");
-                if (bs) {
-                    char esc_bs[512];
-                    hlse_json_escape(bs, esc_bs, sizeof(esc_bs));
-                    printf(",\"blind_spot\":\"%s\"", esc_bs);
-                }
-            } else {
-                char ns[256];
-                if (crit_count > 0)
-                    snprintf(ns, sizeof(ns),
-                             "fix the %d critical finding(s) first \xe2\x80\x94 "
-                             "CRITICAL items are actively exploitable",
-                             crit_count);
-                else if (high_count > 0)
-                    snprintf(ns, sizeof(ns),
-                             "fix the %d HIGH finding(s) to reach the next "
-                             "hardening band (currently: %s)",
-                             high_count, band);
-                else
-                    snprintf(ns, sizeof(ns),
-                             "address remaining LOW/MED findings to improve "
-                             "the hardening index (currently: %s)",
-                             band);
-                { char ens[256];
-                  hlse_json_escape(ns, ens, sizeof(ens));
-                  printf(",\"next_steps\":\"%s\"", ens);
-                }
-            }
-            printf("}\n");
-        } else if (av.score == 0) {
-            const char *bs = hlse_blindspot_for("audit");
-            printf("OK    (audit \xe2\x80\x94 no issues found)  "
-                   "Hardening index: %d/100 (%s)\n", hi, band);
-            if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-        } else {
-            int i;
-            printf("%-7s [%d]  (system audit)  Hardening index: %d/100 (%s)\n",
-                   hlse_action_for_score(av.score), av.score, hi, band);
-            for (i = 0; i < av.n_findings; i++) {
-                const char *sev_str[] = {
-                    "PASS", "INFO", "LOW", "MED", "HIGH", "CRIT"
-                };
-                int s = av.findings[i].severity;
-                if (s < 0 || s > 5) s = 0;
-                printf("  [%4s] %s\n", sev_str[s],
-                       av.findings[i].description);
-                if (s >= 4) {
-                    const char *fix = audit_remediation_for(
-                        av.findings[i].description);
-                    if (fix)
-                        printf("  \xe2\x9a\x92 Fix: %s\n", fix);
-                }
-            }
-            if (crit_count > 0)
-                printf("\xe2\x86\x92 Next step: fix the %d CRITICAL finding(s) first "
-                       "\xe2\x80\x94 these are actively exploitable\n", crit_count);
-            else if (high_count > 0)
-                printf("\xe2\x86\x92 Next step: fix the %d HIGH finding(s) to improve "
-                       "from '%s' toward the next hardening band\n",
-                       high_count, band);
-            else
-                printf("\xe2\x86\x92 Next step: address remaining findings to improve "
-                       "the hardening index (currently %s: %d/100)\n",
-                       band, hi);
-        }
-        return av.score >= g_fail_threshold ? 1 : 0;
-    }
-
-    if (strcmp(argv[idx], "text") == 0) {
-        if (argc < idx + 2) {
-            fprintf(stderr, "Usage: %s text \"<message>\"\n", argv[0]);
-            return 2;
-        }
-        {
-            /* Use unified scan — it runs text detection AND extracts
-             * embedded URLs. This catches "Click here: https://g00gle.com" */
-            ScanResult sr = hlse_scan(argv[idx + 1]);
-            if (json_out) {
-                /* Build TextVerdict from the unified ScanResult so the JSON
-                 * path honours embedded URL extraction (same as human path). */
-                TextVerdict tv;
-                int ti;
-                memset(&tv, 0, sizeof(tv));
-                tv.score = sr.score;
-                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
-                               ? sr.n_reasons : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
-                for (ti = 0; ti < tv.n_reasons; ti++)
-                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
-                             "%s", sr.reasons[ti]);
-                print_json_text(argv[idx + 1], &tv);
-            } else if (sr.score == 0) {
-                /* Channel-only risk: content scored 0 but delivery channel adds prior */
-                if (g_from_channel) {
-                    int d = channel_delta(g_from_channel);
-                    if (d > 0) {
-                        const char *ch_rsn = channel_reason(g_from_channel);
-                        const char *bs2 = hlse_blindspot_for("text");
-                        printf("%-7s [%d]  (text) %.60s%s\n",
-                               hlse_action_for_score(d), d, argv[idx + 1],
-                               strlen(argv[idx + 1]) > 60 ? "..." : "");
-                        if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
-                        if (bs2) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs2);
-                        return d >= g_fail_threshold ? 1 : 0;
-                    }
-                }
-                {
-                    char canon_brand[64];
-                    int has_c = sr.is_url &&
-                                hlse_canonical_confirm(argv[idx + 1],
-                                                       canon_brand, sizeof(canon_brand));
-                    const char *bs = hlse_blindspot_for(
-                        has_c ? "url_canonical" : (sr.is_url ? "url" : "text"));
-                    printf("OK    (text)\n");
-                    if (has_c)
-                        printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
-                               "(HLSE brand registry)\n", canon_brand);
-                    if (bs) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs);
-                }
-            } else {
-                int i;
-                int eff = sr.score;
-                const char *ch_rsn = NULL;
-                const char *ex;
-                if (g_from_channel) {
-                    int d = channel_delta(g_from_channel);
-                    eff += d; if (eff > 100) eff = 100;
-                    ch_rsn = channel_reason(g_from_channel);
-                }
-                printf("%-7s [%d]  (text) %.60s%s\n",
-                       hlse_action_for_score(eff),
-                       eff, argv[idx + 1],
-                       strlen(argv[idx + 1]) > 60 ? "..." : "");
-                for (i = 0; i < sr.n_reasons; i++) {
-                    if (strncmp(sr.reasons[i], "Amplifier:", 10) == 0) continue;
-                    printf("  \xc2\xb7 %s\n", sr.reasons[i]);
-                }
-                if (sr.is_url) {
-                    Verdict uv = check_url(argv[idx + 1]);
-                    print_url_advisories(argv[idx + 1], &uv);
-                    ex = hlse_url_exoneration(&uv);
-                } else {
-                    TextVerdict tv;
-                    int ti;
-                    memset(&tv, 0, sizeof(tv));
-                    tv.score = sr.score;
-                    tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
-                                   ? sr.n_reasons
-                                   : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
-                    for (ti = 0; ti < tv.n_reasons; ti++)
-                        snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
-                                 "%s", sr.reasons[ti]);
-                    print_text_advisories(&tv);
-                    ex = hlse_text_exoneration(&tv);
-                }
-                if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
-                if (ex) printf("  \xe2\x86\xba Could be benign: %s\n", ex);
-            }
-            {
-                int eff_gate = sr.score;
-                if (g_from_channel) {
-                    int d = channel_delta(g_from_channel);
-                    eff_gate += d; if (eff_gate > 100) eff_gate = 100;
-                }
-                return eff_gate >= g_fail_threshold ? 1 : 0;
-            }
-        }
-    }
     /* Default: use unified scan (auto-detects URL vs text) */
     {
         const char *input = argv[idx];
@@ -9289,6 +9401,15 @@ main(int argc, char **argv) {
             fprintf(stderr, "Nothing to scan. Pass a URL or message.\n");
             return 2;
         }
+
+        /* Sanitized display copy of the input for the plain-text echoes below.
+         * The raw `input` still drives detection; only the terminal echo must
+         * not carry attacker-supplied ANSI/control bytes (CWE-150). JSON uses
+         * json_escape separately. Bounded to the max URL/host the scanner
+         * handles; longer inputs are display-truncated, not scanned short. */
+        char idisp[MAX_HOST + MAX_PATH + 16];
+        snprintf(idisp, sizeof idisp, "%s", input);
+        hlse_sanitize_terminal(idisp);
 
         /* Use unified scan API */
         ScanResult sr = hlse_scan(input);
@@ -9311,14 +9432,7 @@ main(int argc, char **argv) {
                 print_json_url(input, &uv);
             } else {
                 TextVerdict tv;
-                int ti;
-                memset(&tv, 0, sizeof(tv));
-                tv.score = sr.score;
-                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
-                               ? sr.n_reasons : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
-                for (ti = 0; ti < tv.n_reasons; ti++)
-                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
-                             "%s", sr.reasons[ti]);
+                text_verdict_from_scan(&tv, &sr);
                 print_json_text(input, &tv);
             }
         } else if (sr.score == 0) {
@@ -9328,7 +9442,7 @@ main(int argc, char **argv) {
                 if (d > 0) {
                     const char *ch_rsn = channel_reason(g_from_channel);
                     const char *bs2 = hlse_blindspot_for(sr.is_url ? "url" : "text");
-                    printf("%-7s [%d]  %s\n", hlse_action_for_score(d), d, input);
+                    printf("%-7s [%d]  %s\n", hlse_action_for_score(d), d, idisp);
                     if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);
                     if (bs2) printf("  \xe2\x84\xb9 Blind spot: %s\n", bs2);
                     {
@@ -9343,7 +9457,7 @@ main(int argc, char **argv) {
                             hlse_canonical_confirm(input, canon_brand, sizeof(canon_brand));
                 const char *bs = hlse_blindspot_for(
                     has_c ? "url_canonical" : (sr.is_url ? "url" : "text"));
-                printf("OK    %s\n", input);
+                printf("OK    %s\n", idisp);
                 if (has_c)
                     printf("  \xe2\x9c\x94 Canonical: confirmed authentic %s domain "
                            "(HLSE brand registry)\n", canon_brand);
@@ -9359,7 +9473,7 @@ main(int argc, char **argv) {
                 ch_rsn = channel_reason(g_from_channel);
             }
             printf("%-7s [%d]  %s\n",
-                   hlse_action_for_score(eff), eff, input);
+                   hlse_action_for_score(eff), eff, idisp);
             for (i = 0; i < sr.n_reasons; i++) {
                 if (strncmp(sr.reasons[i], "Amplifier:", 10) == 0) continue;
                 printf("  \xc2\xb7 %s\n", sr.reasons[i]);
@@ -9375,15 +9489,7 @@ main(int argc, char **argv) {
             } else {
                 TextVerdict tv;
                 const char *ex;
-                int ti;
-                memset(&tv, 0, sizeof(tv));
-                tv.score = sr.score;
-                tv.n_reasons = sr.n_reasons < (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]))
-                               ? sr.n_reasons
-                               : (int)(sizeof(tv.reasons)/sizeof(tv.reasons[0]));
-                for (ti = 0; ti < tv.n_reasons; ti++)
-                    snprintf(tv.reasons[ti], sizeof(tv.reasons[0]),
-                             "%s", sr.reasons[ti]);
+                text_verdict_from_scan(&tv, &sr);
                 ex   = hlse_text_exoneration(&tv);
                 print_text_advisories(&tv);
                 if (ch_rsn) printf("  \xc2\xb7 %s\n", ch_rsn);

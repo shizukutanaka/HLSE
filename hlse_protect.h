@@ -34,6 +34,22 @@ typedef struct {
     int  module;         /* which module produced this (bitmask) */
     int  n_reasons;
     char reasons[HLSE_PROTECT_MAX_REASONS][256];
+    /* Nonzero when the scan target itself could not be opened, so nothing in
+     * it was examined. hlse_protect_scan() merges a module's reasons only
+     * when its score is > 0, which means the score-0 "Cannot open directory"
+     * diagnostic never reached a caller: `protect` on a mode-000 directory
+     * printed a bare OK. This flag survives the merge so the CLI can say that
+     * a clean score covers nothing.                                       */
+    int  target_unreadable;
+    /* Bitmask of HLSE_PROTECT_* modules whose evidence existed but could not
+     * be read, so they contributed nothing. hlse_protect_scan() merges a
+     * module's reasons only when its score is > 0, which means every score-0
+     * "Cannot read device ... (need root?)" diagnostic was discarded before a
+     * caller could see it: `protect <disk> --mbr` as a normal user printed a
+     * bare OK after reading zero bytes. This field survives that merge.
+     * A source that is merely ABSENT (no Samba, no canary file) is not
+     * counted — absence is an answer, denial is not.                      */
+    int  modules_unchecked;
 } ProtectionVerdict;
 
 /* ── Module 1: Ransomware ─────────────────────────────────────────────

@@ -31,6 +31,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <pwd.h>
+#include <errno.h>
 
 #include "hlse_audit.h"
 #include "hlse_util.h"
@@ -48,8 +49,46 @@ av_add(AuditVerdict *v, int delta, AuditSeverity sev,
     va_start(ap, fmt);
     vsnprintf(v->findings[v->n_findings].description,
               sizeof(v->findings[0].description), fmt, ap);
+    hlse_sanitize_terminal(v->findings[v->n_findings].description);
     va_end(ap);
     v->n_findings++;
+}
+
+/* Record whether a check reached its evidence.
+ *
+ * "I read the file and found nothing wrong" and "I could not open the file"
+ * are different claims, and only the first one clears anything. Collapsing
+ * them is what let `audit` report 100/100 "hardened" on a host with
+ * passwordless root sudo when run as a normal user: /etc/sudoers is 0440
+ * root:root, so the check read nothing and then asserted a PASS anyway.
+ *
+ * Each hlse_audit_*() calls this exactly once, on every return path, with
+ * `denied` nonzero when any of its sources existed but could not be opened.
+ *
+ * Denial, not reach, is the right predicate: /etc/sudoers.d is world-listable
+ * while /etc/sudoers is 0440, so "opened at least one source" would still have
+ * cleared A7 for an unprivileged caller that never saw the file that matters.
+ * A source that is legitimately ABSENT (no SSH server, no user unit dir) is
+ * not a denial — absence is itself a finding; unreadability is not.       */
+static void
+av_coverage(AuditVerdict *v, int denied) {
+    if (denied) v->checks_skipped = 1;
+    else        v->checks_run = 1;
+}
+
+/* Advance past leading blanks in a config line; return NULL when the line
+ * carries no content (comment, blank, or bare newline).
+ *
+ * Eight loops open-coded this. They had drifted apart: five treated a line
+ * that is only whitespace ('\0' after the skip) as empty, three did not, so
+ * the same file could be read two ways depending on which check happened to
+ * be nearby. One definition means one behaviour. */
+static char *
+config_line_content(char *line) {
+    char *p = line;
+    while (*p == ' ' || *p == '\t') p++;
+    if (*p == '#' || *p == '\n' || *p == '\r' || *p == '\0') return NULL;
+    return p;
 }
 
 static int
@@ -72,15 +111,27 @@ AuditVerdict
 hlse_audit_ssh(void) {
     AuditVerdict v;
     const char *sshd_conf = "/etc/ssh/sshd_config";
+    int denied = 0;
 
     memset(&v, 0, sizeof(v));
 
     /* Check sshd_config */
     {
-        FILE *fp = hlse_open_system_file(sshd_conf);
+        FILE *fp;
+        errno = 0;
+        fp = hlse_open_system_file(sshd_conf);
         if (!fp) {
-            av_add(&v, 0, AUDIT_INFO, "A1: Cannot read %s (no SSH server?)",
-                   sshd_conf);
+            /* Absent means there is no SSH server to misconfigure — a real
+             * determination. Present-but-unreadable means we learned nothing. */
+            if (errno == ENOENT) {
+                av_add(&v, 0, AUDIT_INFO, "A1: Cannot read %s (no SSH server?)",
+                       sshd_conf);
+            } else {
+                denied = 1;
+                av_add(&v, 0, AUDIT_INFO,
+                       "A1: Cannot read %s (%s) — SSH hardening was NOT "
+                       "checked", sshd_conf, strerror(errno));
+            }
         } else {
             char line[1024];
             int root_login_found = 0;
@@ -88,9 +139,8 @@ hlse_audit_ssh(void) {
 
             while (fgets(line, sizeof(line), fp)) {
                 /* Skip comments */
-                char *p = line;
-                while (*p == ' ' || *p == '\t') p++;
-                if (*p == '#' || *p == '\n') continue;
+                char *p = config_line_content(line);
+                if (!p) continue;
 
                 if (strstr(p, "PermitRootLogin")) {
                     root_login_found = 1;
@@ -165,6 +215,8 @@ hlse_audit_ssh(void) {
         }
     }
 
+    av_coverage(&v, denied);
+
     /* Check ~/.ssh/authorized_keys permissions */
     {
         const char *home = getenv("HOME");
@@ -193,6 +245,9 @@ AuditVerdict
 hlse_audit_permissions(void) {
     AuditVerdict v;
     memset(&v, 0, sizeof(v));
+    /* stat() on a fixed /etc path needs only directory search permission, so
+     * this check always reaches its evidence for any caller that can run. */
+    av_coverage(&v, 0);
 
     /* Check common secret files for world-readable permissions */
     {
@@ -320,15 +375,18 @@ hlse_audit_dns(void) {
 
     fp = hlse_open_system_file("/etc/hosts");
     if (!fp) {
-        av_add(&v, 0, AUDIT_INFO, "A3: Cannot read /etc/hosts");
+        av_coverage(&v, 1);
+        av_add(&v, 0, AUDIT_INFO,
+               "A3: Cannot read /etc/hosts — hosts-file redirects were "
+               "NOT checked");
         return v;
     }
+    av_coverage(&v, 0);
 
     while (fgets(line, sizeof(line), fp)) {
         /* Skip comments and blank lines */
-        char *p = line;
-        while (*p == ' ' || *p == '\t') p++;
-        if (*p == '#' || *p == '\n' || *p == '\0') continue;
+        char *p = config_line_content(line);
+        if (!p) continue;
 
         /* Skip localhost entries */
         if (strstr(p, "127.0.0.1") && strstr(p, "localhost")) continue;
@@ -410,6 +468,7 @@ static const char *SUSPICIOUS_CRON_PATTERNS[] = {
 AuditVerdict
 hlse_audit_cron(void) {
     AuditVerdict v;
+    const char *denied_src = NULL;
     memset(&v, 0, sizeof(v));
 
     /* Check user's crontab */
@@ -421,8 +480,16 @@ hlse_audit_cron(void) {
         };
         int pi;
         for (pi = 0; cron_paths[pi]; pi++) {
-            DIR *d = opendir(cron_paths[pi]);
-            if (!d) continue;
+            DIR *d;
+            errno = 0;
+            d = opendir(cron_paths[pi]);
+            /* A spool dir that does not exist is a real answer (this distro
+             * keeps crontabs elsewhere); one that exists but is 0730
+             * root:crontab means an unprivileged run learned nothing.      */
+            if (!d) {
+                if (errno != ENOENT) denied_src = cron_paths[pi];
+                continue;
+            }
             {
                 struct dirent *ent;
                 while ((ent = readdir(d)) != NULL) {
@@ -451,9 +518,8 @@ hlse_audit_cron(void) {
 
                     while (fgets(line, sizeof(line), fp)) {
                         int i;
-                        char *p = line;
-                        while (*p == ' ' || *p == '\t') p++;
-                        if (*p == '#' || *p == '\n') continue;
+                        char *p = config_line_content(line);
+                        if (!p) continue;
 
                         for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
                             if (strstr(p, SUSPICIOUS_CRON_PATTERNS[i])) {
@@ -484,8 +550,13 @@ hlse_audit_cron(void) {
         };
         int ci;
         for (ci = 0; cron_dirs[ci]; ci++) {
-            DIR *d = opendir(cron_dirs[ci]);
-            if (!d) continue;
+            DIR *d;
+            errno = 0;
+            d = opendir(cron_dirs[ci]);
+            if (!d) {
+                if (errno != ENOENT) denied_src = cron_dirs[ci];
+                continue;
+            }
             {
                 struct dirent *ent;
                 while ((ent = readdir(d)) != NULL) {
@@ -512,14 +583,16 @@ hlse_audit_cron(void) {
 
     /* Check /etc/crontab (system-wide crontab, includes username field) */
     {
-        FILE *fp = hlse_open_system_file("/etc/crontab");
+        FILE *fp;
+        errno = 0;
+        fp = hlse_open_system_file("/etc/crontab");
+        if (!fp && errno != ENOENT) denied_src = "/etc/crontab";
         if (fp) {
             char line[2048];
             while (fgets(line, sizeof(line), fp)) {
                 int i;
-                char *p = line;
-                while (*p == ' ' || *p == '\t') p++;
-                if (*p == '#' || *p == '\n') continue;
+                char *p = config_line_content(line);
+                if (!p) continue;
                 for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
                     if (strstr(p, SUSPICIOUS_CRON_PATTERNS[i])) {
                         av_add(&v, 40, AUDIT_HIGH,
@@ -533,6 +606,12 @@ hlse_audit_cron(void) {
         }
     }
 
+    av_coverage(&v, denied_src != NULL);
+    if (denied_src)
+        av_add(&v, 0, AUDIT_INFO,
+               "A4: Cannot read %s (cron spool dirs are typically 0730 "
+               "root:crontab) — cron persistence was NOT fully checked; "
+               "re-run as root", denied_src);
     return v;
 }
 
@@ -554,6 +633,8 @@ hlse_audit_path(void) {
     int flagged_cwd = 0;
 
     memset(&v, 0, sizeof(v));
+    /* $PATH comes from the environment: always available, never privileged. */
+    av_coverage(&v, 0);
     if (!path || !*path) {
         av_add(&v, 0, AUDIT_INFO, "A5: PATH is empty or unset");
         return v;
@@ -614,9 +695,11 @@ hlse_audit_shellrc(void) {
 
     memset(&v, 0, sizeof(v));
     if (!home) {
+        av_coverage(&v, 1);
         av_add(&v, 0, AUDIT_INFO, "A6: HOME unset — cannot check shell rc files");
         return v;
     }
+    av_coverage(&v, 0);
 
     for (fi = 0; files[fi]; fi++) {
         char path[512];
@@ -629,10 +712,10 @@ hlse_audit_shellrc(void) {
         if (!fp) continue;
 
         while (fgets(line, sizeof(line), fp)) {
-            char *p = line;
+            char *p;
             lineno++;
-            while (*p == ' ' || *p == '\t') p++;
-            if (*p == '#' || *p == '\n' || *p == '\0') continue;
+            p = config_line_content(line);
+            if (!p) continue;
 
             if (strstr(p, "/dev/tcp/") || strstr(p, "/dev/udp/")) {
                 av_add(&v, 45, AUDIT_CRITICAL,
@@ -750,10 +833,10 @@ hlse_audit_shellrc(void) {
                 if (!fp) continue;
 
                 while (fgets(line, sizeof(line), fp)) {
-                    char *p = line;
+                    char *p;
                     lineno++;
-                    while (*p == ' ' || *p == '\t') p++;
-                    if (*p == '#' || *p == '\n' || *p == '\0') continue;
+                    p = config_line_content(line);
+                    if (!p) continue;
 
                     if (strstr(p, "/dev/tcp/") || strstr(p, "/dev/udp/")) {
                         av_add(&v, 55, AUDIT_CRITICAL,
@@ -800,11 +883,17 @@ hlse_audit_shellrc(void) {
 AuditVerdict
 hlse_audit_sudoers(void) {
     AuditVerdict v;
+    const char *denied_src = NULL;
     memset(&v, 0, sizeof(v));
 
     /* Main sudoers file */
     {
-        FILE *fp = hlse_open_system_file("/etc/sudoers");
+        FILE *fp;
+        errno = 0;
+        fp = hlse_open_system_file("/etc/sudoers");
+        /* Absent = sudo not installed, a real answer. Present-but-unreadable
+         * (the 0440 root:root default) = we saw nothing.                   */
+        if (!fp && errno != ENOENT) denied_src = "/etc/sudoers";
         if (fp) {
             char line[2048];
             int lineno = 0;
@@ -812,9 +901,8 @@ hlse_audit_sudoers(void) {
                 lineno++;
                 /* Skip comments and whitespace lines */
                 {
-                    char *p = line;
-                    while (*p == ' ' || *p == '\t') p++;
-                    if (*p == '#' || *p == '\n' || *p == '\0') continue;
+                    char *p = config_line_content(line);
+                    if (!p) continue;
                 }
                 if (strstr(line, "NOPASSWD") && !strstr(line, "#")) {
                     /* Strip trailing newline for cleaner output */
@@ -831,7 +919,10 @@ hlse_audit_sudoers(void) {
 
     /* Drop-in files under /etc/sudoers.d/ */
     {
-        DIR *d = opendir("/etc/sudoers.d");
+        DIR *d;
+        errno = 0;
+        d = opendir("/etc/sudoers.d");
+        if (!d && errno != ENOENT) denied_src = "/etc/sudoers.d";
         if (d) {
             struct dirent *ent;
             while ((ent = readdir(d)) != NULL) {
@@ -849,9 +940,8 @@ hlse_audit_sudoers(void) {
                     while (fgets(line, sizeof(line), fp)) {
                         lineno++;
                         {
-                            char *p = line;
-                            while (*p == ' ' || *p == '\t') p++;
-                            if (*p == '#' || *p == '\n' || *p == '\0') continue;
+                            char *p = config_line_content(line);
+                            if (!p) continue;
                         }
                         if (strstr(line, "NOPASSWD") && !strstr(line, "#")) {
                             char *nl = strchr(line, '\n');
@@ -869,7 +959,18 @@ hlse_audit_sudoers(void) {
         }
     }
 
-    if (v.n_findings == 0)
+    /* An empty finding list is NOT a pass when nothing was read. /etc/sudoers
+     * is 0440 root:root on every mainstream distro, so an unprivileged run
+     * reaches this point having opened nothing at all; asserting "no NOPASSWD
+     * entries found" there is a claim about a file we never saw, and it is
+     * how this check awarded a clean bill to a host granting passwordless
+     * root. Say which of the two happened.                                */
+    av_coverage(&v, denied_src != NULL);
+    if (denied_src)
+        av_add(&v, 0, AUDIT_INFO,
+               "A7: Cannot read %s — passwordless sudo was NOT checked; "
+               "re-run as root", denied_src);
+    else if (v.n_findings == 0)
         av_add(&v, 0, AUDIT_PASS,
                "A7: No NOPASSWD entries found in sudoers");
     return v;
@@ -898,16 +999,29 @@ hlse_audit_systemd_user(void) {
         if (pw) home = pw->pw_dir;
     }
     if (!home || !home[0]) {
+        av_coverage(&v, 1);
         av_add(&v, 0, AUDIT_INFO, "A8: HOME unset — cannot check systemd user units");
         return v;
     }
 
     snprintf(unit_dir, sizeof(unit_dir), "%s/.config/systemd/user", home);
+    errno = 0;
     d = opendir(unit_dir);
     if (!d) {
-        av_add(&v, 0, AUDIT_PASS, "A8: No user systemd unit directory found");
+        /* Absent directory = no user units = a genuine pass. Any other errno
+         * (EACCES on a hardened home) means the check did not run.        */
+        if (errno == ENOENT) {
+            av_coverage(&v, 0);
+            av_add(&v, 0, AUDIT_PASS, "A8: No user systemd unit directory found");
+        } else {
+            av_coverage(&v, 1);
+            av_add(&v, 0, AUDIT_INFO,
+                   "A8: Cannot read %s (%s) — user-unit persistence was "
+                   "NOT checked", unit_dir, strerror(errno));
+        }
         return v;
     }
+    av_coverage(&v, 0);
 
     {
         struct dirent *ent;
@@ -1001,6 +1115,8 @@ hlse_audit_all(void) {
             combined.n_findings++;
         }
         combined.score += parts[i].score;
+        combined.checks_run     += parts[i].checks_run;
+        combined.checks_skipped += parts[i].checks_skipped;
     }
     if (combined.score > 100) combined.score = 100;
     return combined;

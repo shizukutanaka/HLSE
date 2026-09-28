@@ -29,6 +29,7 @@
 #include <unistd.h>
 
 #include "hlse_file.h"
+#include "hlse_util.h"   /* hlse_sanitize_terminal */
 
 /* ─── helpers ─────────────────────────────────────────────────────────── */
 
@@ -40,6 +41,7 @@ fv_add(FileVerdict *v, int delta, const char *fmt, ...) {
     if (v->score > 100) v->score = 100;
     va_start(ap, fmt);
     vsnprintf(v->reasons[v->n_reasons], sizeof(v->reasons[0]), fmt, ap);
+    hlse_sanitize_terminal(v->reasons[v->n_reasons]);
     va_end(ap);
     v->n_reasons++;
 }
@@ -361,6 +363,31 @@ svg_has_script(const unsigned char *head, size_t len) {
 
 /* ─── main check function ─────────────────────────────────────────────── */
 
+/* F1: double-extension masquerade.
+ *
+ * This rule lived in both hlse_check_file() and hlse_check_filename(), which
+ * differ only in whether they were handed a path or a bare name. A duplicated
+ * detection rule is the worst kind: adding an extension pairing to one and not
+ * the other makes the two entry points disagree about the same file, silently,
+ * with no test positioned to notice. */
+static void
+check_double_extension(FileVerdict *v, const char *name) {
+    char outer[32], inner[32];
+    if (!get_double_extension(name, outer, sizeof(outer),
+                              inner, sizeof(inner)))
+        return;
+    /* document or image body + executable tail = classic masquerade */
+    if (is_document_ext(inner) && is_executable_ext(outer)) {
+        fv_add(v, 80, "F1: DOUBLE EXTENSION — '%s%s' disguised as %s",
+               inner, outer, inner);
+    } else if (is_image_ext(inner) && is_executable_ext(outer)) {
+        fv_add(v, 80, "F1: DOUBLE EXTENSION — '%s%s' disguised as image",
+               inner, outer);
+    } else if (is_executable_ext(inner) && is_executable_ext(outer)) {
+        fv_add(v, 50, "F1: Double executable extension '%s%s'", inner, outer);
+    }
+}
+
 FileVerdict
 hlse_check_file(const char *filepath) {
     FileVerdict v;
@@ -398,6 +425,7 @@ hlse_check_file(const char *filepath) {
             if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
                 head_len = read(fd, head, sizeof(head));
                 if (head_len < 0) head_len = 0;
+                else v.content_read = 1;
             }
             close(fd);
         }
@@ -413,27 +441,7 @@ hlse_check_file(const char *filepath) {
 
     /* ── F1: Double extension ──────────────────────────────────────── */
     {
-        char outer[32], inner[32];
-        if (get_double_extension(basename_start, outer, sizeof(outer),
-                                 inner, sizeof(inner)))
-        {
-            /* document + executable = classic masquerade */
-            if (is_document_ext(inner) && is_executable_ext(outer)) {
-                fv_add(&v, 80,
-                    "F1: DOUBLE EXTENSION — '%s%s' disguised as %s",
-                    inner, outer, inner);
-            }
-            else if (is_image_ext(inner) && is_executable_ext(outer)) {
-                fv_add(&v, 80,
-                    "F1: DOUBLE EXTENSION — '%s%s' disguised as image",
-                    inner, outer);
-            }
-            else if (is_executable_ext(inner) && is_executable_ext(outer)) {
-                fv_add(&v, 50,
-                    "F1: Double executable extension '%s%s'",
-                    inner, outer);
-            }
-        }
+        check_double_extension(&v, basename_start);
     }
 
     /* ── F2: MIME / magic byte mismatch ────────────────────────────── */
@@ -660,26 +668,7 @@ hlse_check_filename(const char *filename) {
 
     /* F1: Double extension */
     {
-        char outer[32], inner[32];
-        if (get_double_extension(filename, outer, sizeof(outer),
-                                 inner, sizeof(inner)))
-        {
-            if (is_document_ext(inner) && is_executable_ext(outer)) {
-                fv_add(&v, 80,
-                    "F1: DOUBLE EXTENSION — '%s%s' disguised as %s",
-                    inner, outer, inner);
-            }
-            else if (is_image_ext(inner) && is_executable_ext(outer)) {
-                fv_add(&v, 80,
-                    "F1: DOUBLE EXTENSION — '%s%s' disguised as image",
-                    inner, outer);
-            }
-            else if (is_executable_ext(inner) && is_executable_ext(outer)) {
-                fv_add(&v, 50,
-                    "F1: Double executable extension '%s%s'",
-                    inner, outer);
-            }
-        }
+        check_double_extension(&v, filename);
     }
 
     /* F3: RLO */

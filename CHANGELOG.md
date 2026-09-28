@@ -5,6 +5,217 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [Unreleased]
 
 ### Added
+- **`paste`: decode-and-execute is distinguished from decode.** P5 scored every
+  decoder at 30, so `echo … | base64 -d` and `echo … | base64 -d | zsh` were
+  indistinguishable, although only the second runs what it decoded. Piping a
+  decoder into an interpreter now adds P5b (+25, total 55 ALERT); a bare decode
+  or a decode to a file stays at 30. F1 = 1.000 / 0.0% FP unchanged. +4 cases
+  (p135).
+- **`paste`: remote code execution written without a pipe.** `curl … | sh`
+  scored 40, but the same download-and-execute written as `bash -c "$(curl …)"`,
+  `eval "$(curl …)"`, `zsh <(curl …)` or `sh -c "$(wget -qO- …)"` scored 0/SAFE
+  because the check only looked for a pipe. Same risk, so now the same score.
+  Also adds `zsh`/`dash`/`ksh` to the pipe targets (macOS's default shell was
+  missing). Plain `curl -O` and `VER=$(curl …)` stay 0. F1 = 1.000 / 0.0% FP
+  unchanged. +7 cases (p134). Note: legitimate installers (e.g. Homebrew's) use
+  this form too, exactly as they use `curl | sh`; the score is an ALERT to
+  review, not a block.
+- **`paste`: DNS-staged ClickFix and CrashFix.** Found by checking 2026 threat
+  reporting (Microsoft Threat Intelligence, Feb 2026 CrashFix; the DNS-based
+  ClickFix variant) against the detector. Both fetch the second stage without
+  curl/iwr, so the download-oriented rules scored them 0/SAFE:
+  `nslookup -q=txt ... | cmd` and `finger user@host | cmd`. Now flagged (P8,
+  score 45) when a lookup tool's output is piped into an interpreter; plain
+  `nslookup`/`finger` stay 0. F1 = 1.000 / 0.0% FP unchanged. +4 cases (p133).
+
+### Security
+- **The most important invariant was the only one not enforced by the build.**
+  `docs/SPECIFICATION.md` §1 stated *"Zero network calls, ever (CI
+  privacy-tripwire enforced)"*. The tripwire existed only in
+  `examples/workflows/ci.yml`; **no workflow was tracked under `.github/` at
+  all**, so nothing enforced it. For a tool that reads source trees,
+  credentials and host configuration, "none of it leaves the machine" is the
+  promise that matters most, and it rested on a file a maintainer had to copy
+  in by hand.
+  - New `tests/privacy_check.sh`, run by `make test` and available as
+    `make privacy-check`. It traces **all 13** verdict-producing subcommands
+    under `strace -e trace=network` and fails on any `socket`/`connect`/`bind`/
+    `getaddrinfo`/`sendto`/`recvfrom`/`sendmsg`. The CI example covered four
+    and deliberately exempted `network`; that exemption was unnecessary, since
+    reading `/proc/net/arp` is a file read, so `network` is now covered too.
+  - The invariant does hold: 13 subcommands traced, 0 network syscalls. The
+    check was itself verified against a deliberately-violating binary, so it
+    is known to fail when it should.
+  - Skips (never fails) where `strace` is missing or `ptrace` is blocked.
+
+### Changed
+- **The determinism invariant was false as written, so the requirement was
+  fixed rather than the code.** §1 claimed *"Same input → same verdict. No
+  time/random dependence in scoring"* unconditionally, while the SMB canary
+  check scores +40 on `difftime(time(NULL), st.st_atime) < 300` — identical
+  filesystem state scores 40 now and 0 six minutes later. That dependence is
+  correct and irreducible: the signal *is* the recency. The invariant now
+  distinguishes pure-analysis functions (URL, text, secret, file, package,
+  paste, clipboard, email), which are total functions of their argument, from
+  host-state functions, which observe a system that changes. The one temporal
+  dependence is documented at its site instead of left for a reader to find.
+  - The strong half is now tested, not asserted: p132 checks that url, text,
+    package, file and paste verdicts are byte-identical across repeated runs
+    and across changed `LC_ALL`/`TZ`, and that the pure modules contain no
+    `time`/`rand`/`clock` call at all. Verified: they contain none.
+- **The integration suite could be silently truncated.** It runs under
+  `set -eu`, so a single unguarded `"$(./hlse_core ...)"` on an input that
+  scores a threat exits 1 and drops every check after it. This happened while
+  writing p132 and cost most of the suite without any visible failure. A
+  `MIN_CHECKS` floor now fails the run if fewer checks execute than expected,
+  which also catches quiet shrinkage from environment-dependent blocks
+  (`setpriv`, `unshare`, `strace`, `cc`) skipping themselves. Proved to fire
+  by temporarily raising it.
+- **`audit` asserted a PASS about a file it could not read, awarding
+  `100/100 (hardened)` to a host granting passwordless root.** Reproduced on
+  one machine, one instant, changing only the caller:
+
+      # as root
+      ALERT [40] (system audit)  Hardening index: 60/100 (fair)
+        [HIGH] A7: NOPASSWD in /etc/sudoers:58 — passwordless sudo: ALL=(ALL) NOPASSWD: ALL
+
+      # as an unprivileged user
+      OK    (audit — no issues found)  Hardening index: 100/100 (hardened)
+        {"severity":0,"description":"A7: No NOPASSWD entries found in sudoers"}
+
+  `hlse_audit_sudoers()` emitted `AUDIT_PASS` on `n_findings == 0`, a condition
+  equally satisfied when `/etc/sudoers` (0440 root:root on every mainstream
+  distro) was never opened. Non-root is the normal way to run the tool, so the
+  default invocation made an affirmative false claim about evidence it had
+  never seen — the failure mode the `package_unverified` blind spot already
+  names: *nothing detected is not nothing confirmed*.
+  - New `av_coverage()` in `hlse_audit.c` records, per check, whether any
+    source was **present but unreadable**. Denial rather than reach is the
+    predicate on purpose: `/etc/sudoers.d` is world-listable while
+    `/etc/sudoers` is not, so "opened at least one source" would still have
+    cleared A7 for a caller that never saw the file that matters.
+  - A source that is legitimately *absent* (no SSH server, no user unit dir)
+    still counts as checked — absence is a finding; unreadability is not. A1,
+    A4, A7 and A8 now distinguish the two via `errno == ENOENT`.
+  - A7 and A4 emit an `AUDIT_INFO` naming the unreadable path instead of a
+    PASS or silence. A8 no longer passes on an `EACCES` home directory.
+  - `AuditVerdict` gains `checks_run` / `checks_skipped`; `hardening_band`
+    becomes `partial` and the reassuring word is withheld from plain output
+    whenever coverage is incomplete. The index itself is untouched — inventing
+    a penalty would be a second unfounded claim.
+  - The clean plain-text branch printed only its headline, discarding the
+    `Cannot read` INFO findings that A1/A3 had emitted correctly all along and
+    that `--json` showed. They are now surfaced (PASS rows stay hidden), so the
+    caveats appear exactly when the headline says everything is fine.
+- **`network` reported "no anomalies detected" when it had checked nothing.**
+  All four evidence sources are guarded by a bare `if (fp)`, so on a host
+  without `/proc` the check looked at nothing and still returned score 0.
+  `NetworkVerdict` gains `sources_read` (`HLSE_NET_SRC_*` bitmask); the CLI
+  names the unreadable paths and, when nothing at all was readable, says so
+  instead of claiming an all-clear. JSON gains `sources_unavailable`, emitted
+  only when non-empty.
+- **`file` and `protect` had the same defect; `protect`'s diagnostics could
+  never reach output at all.**
+  - `hlse_core file <path>` fell back to filename-only analysis whenever the
+    bytes were unreadable — a missing file, or one it lacked permission to
+    open — so the magic-byte checks (F2/F3) silently never ran and the result
+    printed as a bare `OK`. `FileVerdict` gains `content_read`; the CLI now
+    marks such a verdict `(name only — contents NOT inspected)` and states that
+    it clears the filename, not the file. JSON gains `content_inspected`.
+  - `hlse_protect_scan()` merges a module's reasons only when its score is
+    `> 0`. Every "Cannot open directory" / "Cannot open Samba log" diagnostic
+    carries score 0, so those reasons were discarded at the merge and could not
+    appear in any output, JSON included. `protect` on a mode-000 directory
+    therefore reported a clean `OK`. `ProtectionVerdict` gains
+    `target_unreadable`, propagated across that gate, and the CLI reports
+    `(NOT scanned — target could not be opened)`. JSON gains `target_scanned`.
+  - +9 CLI-integration cases (p128), shown failing 7/9 against the pre-fix
+    binary. `scan` was checked too and is already honest: it prints
+    "0 files scanned" rather than implying it looked.
+- **`esp` reported "ESP clean" after examining zero binaries.** The absent-ESP
+  case was handled honestly ("No EFI System Partition at %s"), but an ESP
+  directory that was unreadable or held no `.efi` files still produced
+  *"ESP clean: scanned 0 .efi binaries ... no ransom/bootkit strings"* — a
+  clean bootloader verdict on content never read. It now says the bootloader
+  was NOT scanned, and `target_scanned` in the JSON answers the machine-readable
+  form of the same question for `esp` as well as `protect`. +4 cases (p129),
+  3 of 4 failing against the pre-fix binary.
+- **`protect`'s merge step was a second place the same diagnostic could die.**
+  An earlier bullet in this entry claimed the class was closed across every
+  filesystem-touching command. It was not, and the correction is worth stating
+  plainly: fixing each module in isolation is not enough when a *merge* sits
+  between the module and the caller. `hlse_protect_scan()` copies a module's
+  reasons only when its score is `> 0`, and the first fix carried only a
+  `target_unreadable` flag across that gate — so the network-drive, SMB and MBR
+  modules still had their score-0 diagnostics discarded. Reproduced:
+  `protect <disk> --mbr` printed a bare `OK` after reading zero bytes of the
+  device, swallowing *"Cannot read device ... (need root?)"*. Ten of the
+  fourteen score-0 `pv_add_reason` sites could not reach the CLI at all,
+  including two positive confirmations (*"MBR signature valid"*,
+  *"GPT header valid"*).
+  - `ProtectionVerdict` gains `modules_unchecked`, a bitmask each module sets
+    when its evidence existed but could not be read (absence still does not
+    count: a missing SMB canary is `ENOENT` and normal). The CLI names the
+    modules that did not run, on scored verdicts as well as clean ones, so a
+    partial result cannot read as a complete one. JSON gains
+    `modules_unchecked`.
+  - The four near-identical merge blocks became one `pv_merge()` helper that
+    takes coverage flags unconditionally and score/reasons only when the module
+    scored. Behaviour for every scored path is unchanged; the copy-paste is
+    gone.
+  - `hlse_netdrive_check_mounts()` was the last fixed system path still using a
+    raw `fopen()`; it now uses `hlse_open_system_file()` like every other, for
+    the `O_NONBLOCK` + `S_ISREG` guard against a planted FIFO.
+- **`scan` skipped unreadable directories silently.** The walker did
+  `d = opendir(cur_path); if (!d) continue;`, so a tree it had no permission to
+  read produced *"0 files scanned, 0 threats"* and exit 0. The count was
+  technically true, which is why an earlier pass judged this command adequate,
+  but `scan` is the CI/CD entry point: a gate over an unreadable checkout goes
+  green having inspected nothing. It now counts directories that existed but
+  could not be opened (`ENOENT` during the walk is a real answer and is not
+  counted) and says so, with `dirs_unreadable` in the JSON summary. Exit code
+  deliberately unchanged — existing CI consumers depend on it.
+- **Now closed**, verified by running every command against a mode-000 target
+  rather than by reasoning about the code: `scan`, `protect`, `esp`, `file`,
+  `audit` and `network` all state what they could not examine. The
+  pure-analysis commands (`url`, `text`, `secret`, `email`, `clipboard`,
+  `paste`, `package`) read no external evidence and cannot exhibit this
+  failure.
+- **Open improvement, not taken here:** `hlse_gpt_verify()` is public API that
+  the CLI never calls. On a GPT disk — most modern hardware — `protect --mbr`
+  runs only the MBR check, which correctly notes *"GPT-only (normal)"*. Wiring
+  GPT verification in would add `+10` on every legacy-BIOS disk, a scoring
+  change, and the module's own design note says UEFI-era boot integrity is
+  `esp`'s job. Left for the maintainer to decide.
+- Scoring, actions, severities and exit codes are unchanged throughout: an
+  `AUDIT_INFO` carries delta 0 and the network additions are disclosure only.
+  Verified byte-identical root `audit` and fully-covered `network` output
+  against the pre-fix binary; F1 stays 1.000 / 0.0% FP. +13 CLI-integration
+  cases (p127, shown failing 11/13 against the pre-fix binary), +9 (p128), +4 (p129),
+  +8 (p130), +4 (p131), +1 supply and +2 protect unit tests; CLI integration
+  806 -> 844. Aggregate coverage 69.60%,
+  unchanged (the new lines are covered, the denominator grew with them),
+  above the >= 65% gate in CONTRIBUTING.
+- **Terminal escape-injection hardening, now applied uniformly (CWE-150).** An
+  earlier fix neutralized control bytes only in `hlse_protect.c`. But `scan`,
+  `secret`, `file`, `url`, and `package` all print attacker-controllable data
+  to a terminal — a file named `x\033[2Kfake` in a scanned tree, or scanned
+  content echoed in a finding — so a crafted name/content could forge or erase
+  lines in an operator's output. Reproduced: `scan` of a dir with an ANSI-named
+  file emitted the raw ESC.
+  - New shared `hlse_sanitize_terminal()` in `hlse_util.c` (bytes < 0x20 and
+    0x7f -> `?`); protect's inline copy now calls it, so there is one
+    implementation, not two.
+  - Applied at each detector's reason choke point (text/secrets/file/audit/
+    protect single `vsnprintf`; supply's scattered builders sanitized once per
+    function before return) and at every plain-text path/target echo in the CLI
+    (`scan`, `file`, `url`, `package`) via a sanitized *display copy* — the raw
+    value still drives I/O and detection.
+  - JSON/SARIF output was already safe via `hlse_json_escape`; unchanged.
+  - Legitimate reasons and paths are printable ASCII, so nothing valid changes:
+    F1 stays 1.000 / 0.0% FP. +3 util tests, +6 CLI-integration tests (p125).
+
+### Added
 - **JWT algorithm inspection, including the `alg:none` signature bypass**
   (`hlse_util.c`, `hlse_secrets.c`). A JWT's header is base64url — encoded, not
   encrypted — so its algorithm is readable offline.

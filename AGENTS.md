@@ -22,34 +22,70 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
      No third-party libraries.
    - **Deterministic** — no time/random dependence in scoring.
    - **Allocation-light** — bounded stack/static buffers; no unbounded input.
-2. **Verify every commit, in this order — all must pass:**
+2. **Never let a check that could not read its evidence report a pass.**
+   "I read it and found nothing" and "I could not read it" are different
+   claims and only the first clears anything. This was the single worst class
+   of bug found in the product: `hlse_audit_sudoers()` asserted
+   `AUDIT_PASS "No NOPASSWD entries found"` about `/etc/sudoers` (0440
+   root:root) whenever it had not opened the file, so an unprivileged run
+   awarded `100/100 (hardened)` to a host that root correctly rated
+   `ALERT [40]` for passwordless sudo. `file`, `protect` and `network` had the
+   same shape. When you add or touch a check that reads the filesystem:
+   - Distinguish **absent** from **unreadable** via `errno == ENOENT`. Absence
+     is a finding ("no SSH server"); denial is not.
+   - Denial, not reach, is the predicate. `/etc/sudoers.d` being listable must
+     not license a claim about the unreadable `/etc/sudoers`.
+   - Report the gap in the score-0 path too — that is where a reader is most
+     likely to stand down. Several clean branches printed only their headline
+     and dropped the very findings that explained the gap.
+   - Disclosure, never a score change, unless the user approves one.
+   - **Check reachability end-to-end, not per function.** A merge step is a
+     second place a diagnostic can die: `hlse_protect_scan()` copied a module's
+     reasons only when its score was `> 0`, so ten score-0 diagnostics — every
+     "could not read" message plus two positive confirmations — could not reach
+     the CLI no matter how correct the module was. Fixing the modules one at a
+     time missed it; running the command and reading the output found it.
+   - Reproduce the before-state (`setpriv --reuid=65534 ... ./hlse_core audit`,
+     `unshare -rm sh -c 'mount -t tmpfs none /proc; ...'`) and show the new
+     tests failing against a binary built from `git show HEAD:<file>`.
+   - **A test that branches on the tool's own output asserts nothing.** Decide
+     the precondition independently (`dd` the device, `setpriv test -r` the
+     file as the unprivileged user) — three checks in this suite passed
+     vacuously before that was fixed.
+   - **`tests/cli_integration.sh` runs under `set -eu`.** An unguarded
+     `"$(./hlse_core ...)"` on input that scores a threat exits 1 and silently
+     drops every check after it. Always append `|| true` to a capture. The
+     `MIN_CHECKS` floor at the end of the file exists to catch this; do not
+     lower it to make a run pass.
+3. **Verify every commit, in this order — all must pass:**
    ```
    make && make check-warnings      # 0 warnings, CLI AND -DHLSE_CORE_AS_LIB library builds
    ./hlse_core --benchmark          # F1 = 1.000, FP = 0.0% MUST hold
    ./tests/<affected>_tests         # the suites you touched
    make asan-test                   # ASan/UBSan clean
+   make privacy-check               # zero network syscalls (the core promise)
    make fuzz                        # if you touched a parser/detector
    ```
    If anything regresses, **do not push.**
-3. **`make test` baseline is `714 passed / 14 failed`.** The 14 are pre-existing
-   and environment-dependent (JSON-schema-validation checks + a `release.yml`
-   existence check — see Weaknesses). **If the failure count rises above 14, you
-   caused a regression.** Always read the number.
-4. **Add a test for every new behavior.** Detection changes need a *pair*: a
+4. **`make test` baseline is `851 passed / 0 failed`.** The 14 formerly
+   permanent failures (JSON-schema-validation checks + a `release.yml`
+   existence check) are fixed; the suite is fully green, so **any** failure is
+   a regression you caused. Always read the number.
+5. **Add a test for every new behavior.** Detection changes need a *pair*: a
    positive case (fires) and a benign case (no false positive). Corpus F1 must
    stay 1.000.
-5. **Match the surrounding code** — its style, comment density, naming, and
+6. **Match the surrounding code** — its style, comment density, naming, and
    idioms. Reuse existing helpers before writing new ones (e.g.
    `hlse_json_escape` in `hlse_util.c`, `read_file_head`/`read_file_segment` in
    `hlse_protect.c`, `hlse_open_system_file` in `hlse_util.c`).
-6. **Git hygiene:** work on the active feature branch; `git fetch` before you
+7. **Git hygiene:** work on the active feature branch; `git fetch` before you
    start (this branch is sometimes force-pushed by parallel automation — rebase
    if it advanced). Push with `-u origin`, retry with exponential backoff on
    network errors. Do **not** open or merge a PR unless explicitly asked.
-7. **Secret-scanning:** write test tokens as **split literals**
+8. **Secret-scanning:** write test tokens as **split literals**
    (`"glpat-" + "abcd…"`), and before pushing, scan the staged diff for
    contiguous token patterns so GitHub push-protection doesn't block the push.
-8. **CI note:** the GitHub App here lacks the `workflows` permission, so
+9. **CI note:** the GitHub App here lacks the `workflows` permission, so
    `.github/workflows/*.yml` cannot be committed from an agent. Deliver CI YAML
    under `examples/` and note in the PR that the maintainer must copy it in.
 
@@ -72,47 +108,57 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 
 ## Weaknesses / risks (what to improve — cite when you touch them)
 
-- **`hlse_core.c` is ~9,200 lines** with a giant `main()` dispatching 12+
-  subcommands via flat `strcmp`. High regression surface. **JSON escaping is
-  duplicated 3 ways** (`hlse_core.c` `json_escape`, `hlse_server.c`
-  `json_escape_append`, `hlse_util.c` `hlse_json_escape`) — consolidation is
-  only partial.
-- **No hosted CI:** `.github/workflows/` is absent (only `FUNDING.yml`). The
-  "CI enforces" wording in README/CONTRIBUTING is true only of the Makefile
-  targets.
-- **14 known `make test` failures** are environment/workflow-permission
-  artifacts, not engine bugs — but "not green" is the steady state.
+- **`hlse_core.c` is still ~9,500 lines.** `main()` was cut from 2,190 to ~415
+  lines by extracting the `cmd_*` handlers behind a dispatch table, and the
+  JSON-escape idiom is one helper (`json_field`) plus `hlse_json_escape`; but
+  the file remains the largest regression surface. `hlse_server.c` keeps its
+  own append-style escaper (`json_escape_append`) for a different buffer model.
+- **No hosted CI:** `.github/workflows/` is absent (only `FUNDING.yml`; the App
+  cannot commit workflows). The build itself carries the gates that matter:
+  `make check-warnings`, `make bench`, `make asan-test`, `make test`,
+  `make coverage` and `make privacy-check` (zero network syscalls). "CI
+  enforces" wording is true of those Makefile targets, not of a hosted service.
+- **`make test` is fully green** (see guardrail 4). The former "14 known
+  failures" were fixed, not tolerated; do not reintroduce a tolerated baseline.
 - **macOS is effectively unimplemented** (FSEvents is a stub; `/proc`,
-  `/dev/sd*`, systemd checks are Linux-only). **No continuous monitoring**:
-  `inotify`/`fanotify` are comments only; the SMB canary is a single
-  `stat`+atime check; R5 shadow-delete is implemented but uncalled; R1
+  `/dev/sd*`, systemd checks are Linux-only, zero `__APPLE__` guards). Missing
+  sources now degrade *honestly* (`audit`/`network`/`file`/`protect`/`esp`/
+  `scan` say what they could not examine) rather than silently. **No continuous
+  monitoring**: `inotify`/`fanotify` are comments only; the SMB canary is a
+  single `stat`+atime check; R5 shadow-delete is implemented but uncalled; R1
   (N-files-in-T-seconds) is documented but unimplemented.
+- **`hlse_gpt_verify()` is public API the CLI never calls.** On a GPT disk
+  `protect --mbr` checks only the MBR. Wiring it in adds +10 on every
+  legacy-BIOS disk (a scoring change) and the module comment says UEFI-era
+  boot integrity is `esp`'s job — needs a maintainer decision.
 - **Contract tension for a daemon:** `SECURITY.md:42` classes cross-invocation
   persistent state as a High-severity bug — which a resident FIM baseline/dedup
   store needs. Daemon mode requires an explicit, scoped contract amendment.
 - Documentation numbers (test/fuzz counts, binary size, version stamps) drift;
-  re-derive from reality when you touch them.
+  re-derive from reality when you touch them. This file's own baseline in
+  guardrail 4 is one of them.
 
 ---
 
 ## Prioritized backlog
 
-**P0 — consistency / reliability (low risk):**
-- Sync doc numbers to measured reality (test/fuzz counts, stale "5×100K" line,
-  binary size, version stamps).
-- Triage the 14 known failures: separate the environment-dependent ones from
-  `make test`, or mark them `SKIP`, and document that no engine bug is involved.
-- Ship complete `ci.yml`/`codeql.yml`/`release.yml` under `examples/` with a
-  README pointer (maintainer copies to `.github/workflows/`).
+**Done (do not redo):** doc numbers re-derived; the 14 failures fixed; CI YAML
+shipped under `examples/`; `main()` dispatch table; JSON-escape consolidation;
+slopsquat heuristic, offline structural secret validation (GitHub CRC32/base62,
+AWS account decode, JWT `alg:none`), chi-square uniformity test; CWE-150
+terminal-injection hardening; the "could not read" honesty class across
+`audit`/`network`/`file`/`protect`/`esp`/`scan`; build-enforced zero-network;
+2026 ClickFix variants in `paste` (DNS-staged, CrashFix, substitution-form
+download-and-execute, decode-and-execute).
 
 **P1 — maintainability / detection quality:**
-- Split `hlse_core.c` (extract CLI dispatch to `hlse_cli.c`; table-drive the
-  subcommand handlers) — behavior-preserving, incremental.
-- Consolidate JSON escaping onto `hlse_util.c:hlse_json_escape`.
-- Escape attacker-controlled `.efi` filenames in the plain-text `esp` CLI output
-  (JSON output is already escaped).
-- 2026 detection gaps: slopsquat heuristic, offline structural secret validation
-  (base62+CRC32 etc.), chi-square uniformity test for intermittent encryption.
+- Continue splitting `hlse_core.c` (move the `cmd_*` handlers to `hlse_cli.c`);
+  behavior-preserving, verify with byte-identical output diffs against a
+  reference binary built from `git show HEAD:<file>`.
+- Decide `hlse_gpt_verify()` wiring (above).
+- Keep checking `paste`/`text`/`url` against current threat reporting; each
+  round has found real gaps (FileFix and `osascript` variants were checked and
+  are already covered).
 
 **P2 — resident/daemon mode (large; its own round, design-then-review-then-build):**
 - `0.4` config-file loader (`--config`: `WATCH`/`PATTERNS`/`BASELINE`/`SYSLOG`/

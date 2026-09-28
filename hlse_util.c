@@ -391,3 +391,22 @@ hlse_base64url_decode(const char *in, size_t in_len, char *out, size_t out_size)
     out[n] = '\0';
     return n;
 }
+
+/* Neutralize terminal control bytes in `s`, in place: every byte < 0x20 and
+ * 0x7f becomes '?'.
+ *
+ * HLSE prints filenames and reason text straight to a terminal, and both can
+ * carry attacker-controlled bytes — a file named "x\033[2Kfake" in a scanned
+ * tree, or a scanned line echoed back in a finding. Raw ANSI/control sequences
+ * there let an attacker forge or erase lines in an operator's output
+ * (CWE-150). Legitimate reasons and paths are printable ASCII, so folding the
+ * control bytes changes nothing valid. JSON output escapes separately via
+ * hlse_json_escape(); this is for the plain-text path. */
+void
+hlse_sanitize_terminal(char *s) {
+    if (!s) return;
+    for (; *s; s++) {
+        unsigned char c = (unsigned char)*s;
+        if (c < 0x20 || c == 0x7f) *s = '?';
+    }
+}
