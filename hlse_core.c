@@ -1732,6 +1732,10 @@ static const char *const URL_LEGACY_SCHEMES[] = {
     /* Legacy Eudora mail client handler — same remote mailto-class
      * launch surface as the dead-client schemes already listed     */
     "eudora:",
+    /* Remaining MS Office URI handlers — SharePoint Designer +
+     * the office-add-in launcher (ms-word:/ms-excel:/etc. already
+     * listed)                                                     */
+    "ms-spd:", "ms-officeapp:",
     /* TLS-wrapped variants of the legacy transports — ftp/nntp over
      * TLS are the same cleartext-era handler class; ldaps: was
      * already listed while its ftp/nntp siblings fell through    */

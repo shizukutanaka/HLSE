@@ -381,6 +381,9 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * format; older `secret_` tokens already match the generic
      * key rules)                                                  */
     { "ntn_",          4,  30, is_alnum_or_dash,   "Notion Integration Token", 80 },
+    /* Square application secret — sq0csp- sibling of the access
+     * (sq0atp-) and ID-prefixed (sq0idp-) tokens already listed   */
+    { "sq0csp-",       7,  30, is_alnum_or_dash,   "Square Application Secret", 80 },
     { "dt0c01.",       7,  30, is_alnum_or_dot,    "Dynatrace API Token", 80 },
     /* Dynatrace ingest token — dt0s01. sibling of dt0c01. */
     { "dt0s01.",       7,  30, is_alnum_or_dot,    "Dynatrace Ingest Token", 80 },

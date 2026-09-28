@@ -693,6 +693,25 @@ static const char *BAIT_WORDS[] = {
     "seller account", "seller suspension", "seller performance",
     "seller verification", "seller central", "seller metrics",
     "selling account", "your selling privileges",
+    /* Fax + copier-scan + calendar-invite + legal-notice +
+     * product-recall + device-location lures — fake fax/voicemail
+     * notifications, office-printer scan lures, calendar-invite
+     * phishing, legal-threat extortion, fake product/food recalls,
+     * and Find-My-Device location alerts                          */
+    "fax received", "view your fax",
+    "fax waiting", "fax notification",
+    "scanned document", "copier scan", "scan from office",
+    "document scanned", "scan notification", "shared scan",
+    "calendar invite", "meeting invitation", "shared calendar",
+    "teams meeting invite", "calendar invitation",
+    "meeting reschedule",
+    "demand letter", "cease and desist", "legal notice",
+    "attorney letter", "letter of intent", "legal demand",
+    "food recall", "product recall", "recall alert",
+    "salmonella recall", "food safety alert",
+    "product safety recall", "safety recall",
+    "device location", "find my device", "located your phone",
+    "find your phone", "your device was located",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

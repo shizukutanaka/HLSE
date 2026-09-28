@@ -51,6 +51,26 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Fax + copier-scan + calendar + legal + recall + device lures**
+  (`hlse_text.c`): "fax received · view your fax · fax waiting ·
+  fax notification" (fax/voicemail phishing), "scanned document ·
+  copier scan · scan from office · document scanned · scan
+  notification · shared scan" (printer-scan lures), "calendar
+  invite · meeting invitation · shared calendar · teams meeting
+  invite · calendar invitation · meeting reschedule" (calendar
+  phishing), "demand letter · cease and desist · legal notice ·
+  attorney letter · letter of intent · legal demand" (legal-threat
+  extortion), "food recall · product recall · recall alert ·
+  salmonella recall · food safety alert · product safety recall ·
+  safety recall" (recall fraud), "device location · find my device
+  · located your phone · find your phone · your device was
+  located" (Find-My-Device lures).
+- **`.ipf` InfoPath package carrier** (`hlse_file.c`) → LOG 30.
+- **Square `sq0csp-` application secret** (`hlse_secrets.c`)
+  → ISOLATE 80.
+- **`ms-spd:`/`ms-officeapp:` Office URI handlers**
+  (`hlse_core.c`) → LOG 35.
+
 - **Funeral + cruise + water/mold + alarm + seller lures**
   (`hlse_text.c`): "funeral plan · burial plot · memorial plan ·
   funeral pre-need · burial insurance · final expense insurance ·

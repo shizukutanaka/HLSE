@@ -11426,6 +11426,22 @@ printf 'x\n' > "$XDIR172/d.searchconnector-ms"; check "$XDIR172/d.searchConnecto
 rm -rf "$XDIR172"
 check 'secret: ntn_ flagged' "$(./hlse_core secret 'ntn_Ab3dEf5gH7jK9lM1nP3qR5sT7uV9wX1y' | head -1 | grep -c 'ISOLATE\|BLOCK\|ALERT\|LOG')" "1"
 
+# ── cycle-173: fax/scan/calendar/legal/recall/findmy + sq0csp ────
+check_text_hit 'fax received view your fax fax waiting notification' 'LOG' "text: fax flagged"
+check_text_hit 'scanned document copier scan scan from office' 'LOG' "text: scan flagged"
+check_text_hit 'calendar invite meeting invitation shared calendar' 'BLOCK' "text: calendar flagged"
+check_text_hit 'demand letter cease and desist legal notice' 'LOG' "text: legal flagged"
+check_text_hit 'food recall product recall recall alert salmonella' 'LOG' "text: recall flagged"
+check_text_hit 'device location find my device located your phone' 'LOG' "text: findmy flagged"
+check_text_hit 'the calendar shows all our meetings' 'OK' "text: benign calendar clean"
+check_text_hit 'i sent a fax to the clinic yesterday' 'OK' "text: benign fax clean"
+XDIR173=$(mktemp -d /tmp/hlse173.XXXXXX)
+printf 'x\n' > "$XDIR173/e.ipf"; check "$XDIR173/e.ipf flagged" "$(./hlse_core file "$XDIR173/e.ipf" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"
+rm -rf "$XDIR173"
+check 'secret: sq0csp flagged' "$(./hlse_core secret 'sq0csp-0Ab1Cd2Ef3Gh4Ij5Kl6Mn7Op8Qr9St' | head -1 | grep -c 'ISOLATE\|BLOCK\|ALERT\|LOG')" "1"
+check_url_hit 'ms-spd:evil.example/web' 'LOG' "url: ms-spd flagged"
+check_url_hit 'ms-officeapp:evil.example/x' 'LOG' "url: ms-officeapp flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
