@@ -30,6 +30,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Jury-duty / funeral / unemployment vocab** (`hlse_text.c`):
+  "jury duty · jury summons · failure to appear · bench warrant ·
+  contempt of court" (fake-summons callback scams), "funeral
+  service · funeral notice · memorial service · celebration of
+  life · obituary · condolences · funeral expenses · memorial
+  fund" (funeral-notice malspam + memorial-donation scams), and
+  "unemployment claim · unemployment insurance · filed for
+  unemployment · unemployment payment" (UI-claim phishing).
 - **Health-insurance enrollment vocab** (`hlse_text.c`): "open
   enrollment · enrollment period · health insurance/coverage ·
   coverage options · insurance marketplace · compare plans ·

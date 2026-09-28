@@ -11162,6 +11162,14 @@ check_secret_hit "${AK}zzv5c6x7y8z9a0b1c2d3e4f5" 'age Secret Key' "secrets: AGE-
 AP="AGE-PLUGIN-X25519-1"; AP="${AP}24fl6zy54klay"
 check_secret_hit "${AP}937yrnujckpak28lrdjg0e" 'age X25519' "secrets: AGE-PLUGIN flagged"
 
+# ── cycle-152: jury-duty + funeral + unemployment lures ─────────────────
+check_text_hit 'jury duty summons failure to appear warrant' 'LOG' "text: jury-duty flagged"
+check_text_hit 'funeral service memorial condolences for the family' 'LOG' "text: funeral flagged"
+check_text_hit 'your unemployment claim was filed direct deposit' 'LOG' "text: unemployment flagged"
+check_text_hit 'i have jury duty next week at the courthouse' 'OK' "text: benign jury-duty clean"
+check_text_hit 'my condolences on your loss' 'OK' "text: benign condolences clean"
+check_text_hit 'the unemployment rate dropped this quarter' 'OK' "text: benign unemployment clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

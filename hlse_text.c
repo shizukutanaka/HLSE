@@ -397,6 +397,25 @@ static const char *BAIT_WORDS[] = {
     "enroll in coverage", "enroll today", "coverage may change",
     "affordable care", "health care plan", "insurance enrollment",
     "plan renewal", "renew your coverage", "renewal of your health",
+    /* Jury-duty / court-appearance lures — fake summons that threaten
+     * an arrest warrant to coerce a call-back (warrant words are
+     * already listed; these are the jury-duty specific hooks that
+     * compound with them)                                        */
+    "jury duty", "jury summons", "jury service", "missed jury",
+    "failure to appear", "bench warrant", "contempt of court",
+    "jury questionnaire",
+    /* Funeral / memorial lures — fake funeral-notice malspam and
+     * memorial-donation scams                                    */
+    "funeral service", "funeral notice", "funeral arrangements",
+    "memorial service", "celebration of life", "obituary",
+    "condolences", "viewing will be held", "the funeral of",
+    "funeral expenses", "memorial fund", "help the family",
+    /* Unemployment-claim lures — fake UI claim/payment notices that
+     * harvest SSNs and bank details ('unemployment benefits' is
+     * already listed)                                             */
+    "unemployment claim", "unemployment insurance",
+    "filed for unemployment", "unemployment claim was",
+    "unemployment payment",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",
