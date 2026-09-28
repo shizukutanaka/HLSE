@@ -10939,6 +10939,15 @@ check_secret_hit "${DB}cdef1234567890abcdef" 'Databricks' "secrets: databricks p
 check_secret_hit 'key-8qAbCdEfGhIjKlMnOpQrStUvWxYz1234' 'OK' "secrets: key- non-hex suffix clean"
 check_secret_hit 'xpub' 'OK' "secrets: bare xpub clean"
 
+# ── cycle-135: payroll-diversion BEC + recruitment lures + fsq3 ──
+check_text_hit 'change of bank account for payroll direct deposit' 'LOG' "text: payroll-diversion flagged"
+check_text_hit 'you have been shortlisted for the position complete the assessment' 'LOG' "text: recruitment-assessment flagged"
+check_text_hit 'job offer letter attached onboarding paperwork' 'LOG' "text: job-offer lure flagged"
+check_text_hit 'the direct deposit went through on friday' 'OK' "text: benign deposit clean"
+check_text_hit 'i got a job offer last month' 'OK' "text: benign job-offer clean"
+check_secret_hit 'fsq3x9q2m7f4h1k8p3w6z5t0y9u4j7b2n5e8r1d6' 'Foursquare' "secrets: fsq3 foursquare flagged"
+check_secret_hit 'fsq3' 'OK' "secrets: bare fsq3 clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

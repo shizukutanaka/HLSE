@@ -296,6 +296,18 @@ static const char *BAIT_WORDS[] = {
     "victims of the earthquake", "flood victims", "urgent donation",
     "donation needed urgently", "fundraising campaign for",
     "disaster relief fund", "relief fund", "charity donation",
+    /* Payroll-diversion BEC (HR targeted: redirect the victim's
+     * salary) and fake-recruitment delivery — 'shortlisted for the
+     * position' → 'complete the assessment' = job-scam/malware doc   */
+    "direct deposit", "change my direct deposit",
+    "update your direct deposit", "payroll deposit",
+    "salary account", "change of bank account",
+    "bank details have changed", "update your bank details",
+    "been shortlisted", "shortlisted for the",
+    "complete the assessment", "assessment link", "skills assessment",
+    "job interview invitation", "interview assessment",
+    "pre-employment screening", "onboarding paperwork",
+    "job offer letter", "employment offer",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

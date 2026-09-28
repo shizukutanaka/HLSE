@@ -30,6 +30,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Payroll-diversion + recruitment-scam vocab** (`hlse_text.c`):
+  "direct deposit · payroll deposit · change of bank account · bank
+  details have changed · update your bank details" (HR-targeted salary
+  redirection BEC), plus "been shortlisted · complete the assessment ·
+  assessment link · skills assessment · interview assessment ·
+  pre-employment screening · onboarding paperwork · job offer letter"
+  (fake-recruitment malware delivery — a real state-actor vector).
+- **`fsq3` Foursquare Places API key** (`hlse_secrets.c`).
 - **HD-wallet + mail/lake credentials** (`hlse_secrets.c`): `xprv` /
   `xpub` Bitcoin HD-wallet extended keys (the master private key hands
   over the entire wallet; the public key exposes every derived
