@@ -340,6 +340,10 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "NRBR-",         5,  36, is_alnum_plain,     "New Relic Browser License",   80 },
     { "NRRA-",         5,  36, is_alnum_plain,     "New Relic REST Admin Key",    85 },
     { "NRDR-",         5,  36, is_alnum_plain,     "New Relic Insights Insert Key", 75 },
+    /* age encryption secret material — 'AGE-SECRET-KEY-1' + bech32
+     * (~59 chars) and 'AGE-PLUGIN-X25519-1' + plugin secrets       */
+    { "AGE-SECRET-KEY-", 15, 50, is_bech32,        "age Secret Key",               95 },
+    { "AGE-PLUGIN-X25519-1", 19, 30, is_bech32,    "age X25519 Plugin Secret",     85 },
     /* Brevo/Sendinblue SMTP+API key, Dropbox long-form token,
      * JFrog Artifactory identity key, Bitbucket app password —
      * each has a fixed vendor prefix that hands over an account */

@@ -30,6 +30,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Health-insurance enrollment vocab** (`hlse_text.c`): "open
+  enrollment · enrollment period · health insurance/coverage ·
+  coverage options · insurance marketplace · compare plans ·
+  enroll in coverage · coverage may change · plan renewal" — fake
+  ACA/marketplace enrollment notices that harvest identity data.
+- **`AGE-SECRET-KEY-` + `AGE-PLUGIN-X25519-`** (`hlse_secrets.c`):
+  age encryption secret key and X25519 plugin secrets (bech32).
 - **Incident/device/dispute vocab** (`hlse_text.c`): "security
   incident · incident report · breach notification · data incident"
   (fake breach alerts), "a new device · unfamiliar sign-in ·

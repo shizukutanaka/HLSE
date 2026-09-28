@@ -389,6 +389,14 @@ static const char *BAIT_WORDS[] = {
     "employment screening", "verify your identity for employment",
     "dental coverage", "vision insurance", "dental plan",
     "vision plan", "insurance plan update",
+    /* Health-insurance enrollment lures — fake open-enrollment /
+     * marketplace / coverage-change notices that harvest identity  */
+    "open enrollment", "enrollment period", "health insurance",
+    "health coverage", "coverage options", "insurance marketplace",
+    "compare plans", "compare insurance", "health plan",
+    "enroll in coverage", "enroll today", "coverage may change",
+    "affordable care", "health care plan", "insurance enrollment",
+    "plan renewal", "renew your coverage", "renewal of your health",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

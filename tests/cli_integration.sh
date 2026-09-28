@@ -11152,6 +11152,16 @@ check_secret_hit "${NRA}bivRiB4ApdULIzEtCu3r3" 'New Relic REST' "secrets: NRRA- 
 NRB="NRBR-"; NRB="${NRB}Cb3S1vNEuXueIjqBHG"
 check_secret_hit "${NRB}6Js5LDRUOnBmkLb4y2DTZJ" 'New Relic Browser' "secrets: NRBR- flagged"
 
+# ── cycle-151: health-insurance enrollment + age keys ───────────────────
+check_text_hit 'open enrollment period health insurance coverage options' 'LOG' "text: enrollment flagged"
+check_text_hit 'coverage may change plan renewal renew your coverage' 'LOG' "text: coverage-change flagged"
+check_text_hit 'open enrollment starts november 1 for employees' 'OK' "text: benign enrollment clean"
+check_text_hit 'our health plan options for next year' 'OK' "text: benign plan clean"
+AK="AGE-SECRET-KEY-1"; AK="${AK}5feryxhrdz9m6y09mr8wrerwzgj6f8ntxvhxyr0j0x0n0"
+check_secret_hit "${AK}zzv5c6x7y8z9a0b1c2d3e4f5" 'age Secret Key' "secrets: AGE-SECRET-KEY- flagged"
+AP="AGE-PLUGIN-X25519-1"; AP="${AP}24fl6zy54klay"
+check_secret_hit "${AP}937yrnujckpak28lrdjg0e" 'age X25519' "secrets: AGE-PLUGIN flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
