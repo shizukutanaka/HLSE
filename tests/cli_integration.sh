@@ -10704,6 +10704,25 @@ for e in cur ani; do
 done
 rm -rf "$XDIR116"
 
+# ── cycle-117: sim-swap/device lures + ichitaro + messenger schemes ──
+check_text_hit 'your number will be ported to a new sim click to cancel' 'LOG' "text: sim-port lure flagged"
+check_text_hit 'a new device signed in to your account from nigeria' 'LOG' "text: new-device lure flagged"
+check_text_hit 'your sim will be deactivated verify now' 'LOG' "text: sim-deactivate flagged"
+check_text_hit 'i ported my number last week' 'OK' "text: benign ported clean"
+check_text_hit 'the device signed in successfully' 'OK' "text: benign sign-in clean"
+check_url_hit 'line://msg/text/x' 'LOG' "url: line: flagged"
+check_url_hit 'viber://forward?text=x' 'LOG' "url: viber: flagged"
+check_url_hit 'signal://x' 'LOG' "url: signal: flagged"
+check_url_hit 'wechat://x' 'LOG' "url: wechat: flagged"
+XDIR117=$(mktemp -d /tmp/hlse117.XXXXXX)
+for e in jtd jtt; do
+    printf 'x\n' > "$XDIR117/t.$e"
+    ./hlse_core file "$XDIR117/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+rm -rf "$XDIR117"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

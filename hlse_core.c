@@ -1793,7 +1793,11 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     /* streaming / voice-server join schemes — rtmps: is the TLS
      * rtmp sibling, mumble:/ts3server: hand a server address to
      * the voice client                                            */
-    "rtmps:", "mumble:", "ts3server:", NULL
+    "rtmps:", "mumble:", "ts3server:",
+    /* remaining messenger deep-links — open a chat/forward UI in
+     * the named app (whatsapp:/skype: were already listed)        */
+    "threema:", "signal:", "line:", "kakaotalk:", "viber:",
+    "wechat:", "whatsapp:", "wtai:", NULL
 };
 /* Remote-mount schemes: clicking one attaches a remote filesystem or
  * session — smb: is the same NetNTLM-leak class as a \\ UNC path,

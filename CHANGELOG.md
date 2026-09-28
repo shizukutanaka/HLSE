@@ -15,6 +15,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **SIM-swap / device-alert lures** (`hlse_text.c`): "number will be
+  ported", "sim will be deactivated", "re-registration", "mailbox
+  is almost full", "a new device signed in … from", "unfamiliar /
+  unrecognized device" — takeover-notification phishing shapes.
+- **`.jtd` / `.jtt`** (`hlse_file.c`): Ichitaro documents — the
+  dominant JP-targeted APT carrier class.
+- **Messenger deep-links** (`hlse_core.c`): `threema:`, `signal:`,
+  `line:`, `kakaotalk:`, `viber:`, `wechat:`, `whatsapp:`, `wtai:`.
+  ODF docs (.odt/.ott/…) stay unflagged by design — macro-capable
+  but the everyday benign-doc class (same policy as .docx).
 - **Voicemail / health-scam lures** (`hlse_text.c`): "new voicemail /
   missed calls / voice message waiting / click to listen" (vishing
   delivery) plus "health insurance claim / medical alert device /

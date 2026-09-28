@@ -180,6 +180,16 @@ static const char *BAIT_WORDS[] = {
     "health insurance claim", "insurance claim was denied",
     "medical alert device", "medicare benefits", "benefits are expiring",
     "coverage is expiring", "coverage has expired",
+    /* SIM-swap / device-alert lures — 'your number will be ported'
+     * and 'a new device signed in' are the takeover-notification
+     * shape; mailbox-quota and re-registration demands follow   */
+    "will be ported", "number will be ported", "sim swap",
+    "sim will be deactivated", "sim card will be",
+    "re-registration", "sim re-registration",
+    "mailbox is almost full", "mailbox is full", "mailbox storage",
+    "a new device signed in", "new device signed in",
+    "new device sign-in", "signed in to your account from",
+    "unfamiliar device", "unrecognized device", "unknown device signed",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

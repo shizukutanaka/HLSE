@@ -386,6 +386,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * (historic ANIH exploit class, still parsed by the shell);
      * .cur is the static sibling                                  */
     ".cur", ".ani",
+    /* Ichitaro documents (.jtd/.jtt) — the dominant JP-document
+     * APT carrier class (historic Ichitaro zero-days; the format
+     * parses OLE/structured content on open)                      */
+    ".jtd", ".jtt",
     NULL
 };
 
