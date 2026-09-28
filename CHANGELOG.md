@@ -30,6 +30,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **419 proof-of-payment + fee-ladder vocab** (`hlse_text.c`):
+  "swift copy · mt103 · payment advice · payment slip attached"
+  (fake SWIFT-payment bait), "compensation fund · compensated with ·
+  un/united nations compensation" (UN-compensation boilerplate),
+  "your atm card · atm card package/worth" (ATM-card consignment
+  lure), and the fee ladder "activation fee · insurance fee ·
+  delivery fee · coverage for your consignment".
+- **`rk_test_` Stripe restricted test key** (`hlse_secrets.c`) —
+  completes the Stripe family (sk/rk/pk × live/test + whsec_).
 - **Pig-butchering + BEC-coaching vocab** (`hlse_text.c`):
   "guaranteed daily · daily returns · profit every day · withdrawal
   requires · fee to withdraw · unfreeze your account · unlock your

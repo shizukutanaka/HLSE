@@ -10880,6 +10880,16 @@ check_text_hit 'if anyone asks say it is for family' 'LOG' "text: BEC-coaching f
 check_text_hit 'we made a daily profit this quarter' 'OK' "text: benign daily-profit clean"
 check_text_hit 'the daily profits report is ready' 'OK' "text: benign profits-report clean"
 
+# ── cycle-130: 419 proof-of-payment + fee ladder ──
+check_text_hit 'please find attached the swift copy of payment' 'ALERT' "text: swift-copy bait flagged"
+check_text_hit 'united nations compensation fund for you' 'LOG' "text: compensation-fund flagged"
+check_text_hit 'your atm card has been packaged for delivery' 'LOG' "text: atm-card lure flagged"
+check_text_hit 'activation fee required for release of funds' 'LOG' "text: activation-fee flagged"
+check_text_hit 'the mt103 form is a standard banking document' 'OK' "text: benign mt103 clean"
+check_text_hit 'the delivery fee for our service is listed' 'LOG' "text: benign delivery-fee advisory"
+RT="rk_test_"; RT="${RT}x9q2m7f4h1k8p3w6z5t0y9u4j7b2n"
+check_secret_hit "$RT" 'Stripe Restricted Test Key' "secret: rk_test_ flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

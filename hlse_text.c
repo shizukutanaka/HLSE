@@ -436,6 +436,15 @@ static const char *PRIZE_WORDS[] = {
     "customs clearance fee", "insurance certificate fee",
     "dear beloved", "god fearing", "dying widow", "widow with",
     "i am a barrister", "i am a diplomat",
+    /* Proof-of-payment bait + remaining advance-fee props: a fake
+     * SWIFT MT103 'swift copy' / 'payment advice' attachment, the
+     * UN/compensation-fund boilerplate, and the fee-naming ladder
+     * (activation/insurance/delivery fee) every 419 variant climbs */
+    "swift copy", "mt103", "payment advice", "payment slip attached",
+    "compensation fund", "compensated with", "un compensation",
+    "united nations compensation", "your atm card", "atm card package",
+    "atm card worth", "activation fee", "insurance fee",
+    "delivery fee", "coverage for your consignment",
     /* Celebrity crypto giveaway / doubling scam */
     "double your bitcoin", "double your btc", "double your crypto",
     "double your ethereum", "double your eth",

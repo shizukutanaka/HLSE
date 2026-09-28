@@ -240,6 +240,7 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "rk_live_",      8,  24, is_alnum_or_dash,   "Stripe Restricted Key", 90 },
     { "pk_live_",      8,  24, is_alnum_or_dash,   "Stripe Live Publishable", 50 },
     { "sk_test_",      8,  24, is_alnum_or_dash,   "Stripe Test Key",       30 },
+    { "rk_test_",      8,  24, is_alnum_or_dash,   "Stripe Restricted Test Key", 30 },
     { "whsec_",        6,  20, is_alnum_or_dash,   "Stripe Webhook Secret", 85 },
     /* Square application secret / personal token (sq0csp-/sq0atp-) */
     { "sq0csp-",       7,  40, is_alnum_or_dash,   "Square Application Secret", 85 },
