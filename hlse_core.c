@@ -1832,6 +1832,9 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     /* joinskype: — Skype call/join deep link (conferencing-lure
      * channel switch)                                              */
     "joinskype:",
+    /* remaining VCS/secure-copy handlers — svn/hg/git already flag;
+     * bzr/fossil/cvs fetch remote repos and scp pulls remote files */
+    "bzr:", "fossil:", "cvs:", "scp:",
     /* podcast subscription schemes — a click subscribes the
      * reader to a remote feed (ongoing remote-content pull)      */
     "pcast:", "itms-pcast:", "podcast:", "castro:",

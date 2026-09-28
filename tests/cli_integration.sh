@@ -11131,6 +11131,16 @@ check_text_hit 'i read the privacy policy before signing up' 'OK' "text: benign 
 check_text_hit 'the terms of service are on our website' 'OK' "text: benign tos clean"
 check_url_hit 'joinskype://x' 'LOG' "url: joinskype flagged"
 
+# ── cycle-149: tax-document/retirement lures + VCS schemes ──────────────
+check_text_hit 'your w-2 is ready to download tax document' 'LOG' "text: w-2 lure flagged"
+check_text_hit '1099 form attached download your w' 'LOG' "text: 1099 flagged"
+check_text_hit 'pension payout approved retirement account statement' 'LOG' "text: pension flagged"
+check_text_hit 'i filed my w-2 last year' 'OK' "text: benign w-2 clean"
+check_text_hit 'the tax document was submitted on time' 'OK' "text: benign taxdoc clean"
+check_url_hit 'bzr://x' 'LOG' "url: bzr flagged"
+check_url_hit 'fossil://x' 'LOG' "url: fossil flagged"
+check_url_hit 'scp://x' 'LOG' "url: scp flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

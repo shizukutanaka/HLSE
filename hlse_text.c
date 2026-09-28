@@ -389,6 +389,14 @@ static const char *BAIT_WORDS[] = {
     "employment screening", "verify your identity for employment",
     "dental coverage", "vision insurance", "dental plan",
     "vision plan", "insurance plan update",
+    /* Tax-document + retirement-account lures — fake W-2/1099
+     * notices that harvest SSNs, and pension/annuity/401k phishing */
+    "w-2", "w2 form", "w-2 form", "w2 attached", "w-2 attached",
+    "1099 form", "1099 attached", "tax document", "tax form",
+    "your w-2", "download your w", "wage statement",
+    "pension payout", "pension payment", "retirement account",
+    "retirement statement", "401k", "403b", "ira distribution",
+    "annuity payment", "social security statement", "ssa statement",
     /* Policy-update + mailbox-deactivation lures — fake 'terms of
      * service / privacy policy updated' notices that phish
      * credentials, and mailbox-upgrade/deactivation scams         */

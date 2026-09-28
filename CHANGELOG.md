@@ -30,6 +30,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Tax-document + retirement vocab** (`hlse_text.c`): "w-2 · w2
+  form · 1099 form · tax document/form · wage statement" (SSN-
+  harvesting tax-doc lures) plus "pension payout · retirement
+  account/statement · 401k/403b · ira distribution · annuity
+  payment · social security/ssa statement" (retirement phishing).
+- **VCS/secure-copy schemes** (`hlse_core.c`): `bzr:`, `fossil:`,
+  `cvs:`, `scp:` — remote-repo fetch and remote-file pull handlers.
 - **Policy-update + mailbox-deactivation vocab** (`hlse_text.c`):
   "terms of service · updated terms · privacy policy/update ·
   changes to our terms · accept/review the new/updated terms" plus
