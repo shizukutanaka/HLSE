@@ -1829,6 +1829,9 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     /* remote-workspace client handlers — clicking launches Citrix
      * Receiver / Workspace App (enterprise remote-desktop surface) */
     "receiver:", "citrix:", "workspaces:",
+    /* joinskype: — Skype call/join deep link (conferencing-lure
+     * channel switch)                                              */
+    "joinskype:",
     /* podcast subscription schemes — a click subscribes the
      * reader to a remote feed (ongoing remote-content pull)      */
     "pcast:", "itms-pcast:", "podcast:", "castro:",

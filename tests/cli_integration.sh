@@ -11123,6 +11123,14 @@ check_text_hit 'security freeze on your credit file fraud alert' 'LOG' "text: cr
 check_text_hit 'i placed a fraud alert on my credit' 'OK' "text: benign fraud-alert clean"
 check_text_hit 'unclaimed property seminar registration' 'OK' "text: benign unclaimed clean"
 
+# ── cycle-148: policy-update + mailbox-deactivation lures ───────────────
+check_text_hit 'updated terms of service accept the new terms' 'LOG' "text: tos-update flagged"
+check_text_hit 'privacy policy update review the updated terms' 'LOG' "text: privacy-policy flagged"
+check_text_hit 'email will be deactivated upgrade your mailbox' 'LOG' "text: mailbox lure flagged"
+check_text_hit 'i read the privacy policy before signing up' 'OK' "text: benign policy clean"
+check_text_hit 'the terms of service are on our website' 'OK' "text: benign tos clean"
+check_url_hit 'joinskype://x' 'LOG' "url: joinskype flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -30,6 +30,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Policy-update + mailbox-deactivation vocab** (`hlse_text.c`):
+  "terms of service · updated terms · privacy policy/update ·
+  changes to our terms · accept/review the new/updated terms" plus
+  "your mailbox · upgrade your mailbox · email/account will be
+  deactivated · mailbox storage · re-activate your email".
+- **`joinskype:`** (`hlse_core.c`): Skype call/join deep link —
+  conferencing-lure channel switch.
 - **Unclaimed-property + credit-freeze vocab** (`hlse_text.c`):
   "unclaimed property/money/funds/deposit · abandoned property ·
   escheatment · money owed to you" (escheat scams) plus "credit

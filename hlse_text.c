@@ -389,6 +389,16 @@ static const char *BAIT_WORDS[] = {
     "employment screening", "verify your identity for employment",
     "dental coverage", "vision insurance", "dental plan",
     "vision plan", "insurance plan update",
+    /* Policy-update + mailbox-deactivation lures — fake 'terms of
+     * service / privacy policy updated' notices that phish
+     * credentials, and mailbox-upgrade/deactivation scams         */
+    "terms of service", "updated terms", "new terms of",
+    "privacy policy", "privacy update", "changes to our terms",
+    "accept the new terms", "review the updated terms",
+    "updated policy", "policy changes", "your mailbox",
+    "upgrade your mailbox", "email will be deactivated",
+    "account will be deactivated", "mailbox storage",
+    "re-activate your email", "reactivate your account",
     /* Unclaimed-property (escheat) scams + credit-freeze lures —
      * 'money owed to you' bait that harvests identity data, and
      * fake fraud-alert / credit-freeze notifications               */
