@@ -30,6 +30,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Remote-access + overcharge-refund lures** (`hlse_text.c`):
+  "our technician · technician will connect · remote access to fix ·
+  grant/allow remote access · download/install anydesk · teamviewer ·
+  quickassist" (the tech-support scam's remote-access leg) plus
+  "you have been overcharged · refund will be issued · process/claim
+  your refund · entitled to a refund" (the overcharge-refund
+  narrative that follows it).
+- **`.udl` extension flag** (`hlse_file.c`): Microsoft OLE DB Data
+  Link — double-click opens a connection-string dialog able to reach
+  remote SMB/NTLM endpoints (credential-relay lure).
 - **Renewal/refund-scam + notification-spam lures** (`hlse_text.c`):
   "subscription will renew · auto-renewed · renewal charge · antivirus
   subscription · geek squad · cancel this order · call to cancel" —

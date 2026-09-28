@@ -419,6 +419,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * ms-appinstaller straight into Installer.app from a click
      * (the CVE-2021-43890 spoof chain used by Emotet/BazarLoader) */
     ".appinstaller",
+    /* .udl — Microsoft OLE DB Data Link: double-click opens a
+     * connection-string dialog that can carry provider strings
+     * reaching remote SMB/NTLM endpoints (credential-relay lure) */
+    ".udl",
     NULL
 };
 

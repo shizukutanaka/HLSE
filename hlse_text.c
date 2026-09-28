@@ -1217,6 +1217,16 @@ static const char *FAKE_ALERT_WORDS[] = {
     "windows defender has detected", "defender security warning",
     "your computer is sending error reports",
     "allow us to remote access", "give us remote access",
+    /* remote-access-tool + overcharge-refund lures — the tech-support
+     * scam's two legs: get them on AnyDesk/TeamViewer, then the
+     * 'accidental overcharge' narrative that drains the account   */
+    "our technician", "technician will connect", "connect remotely",
+    "remote access to your computer", "remote access to fix",
+    "grant remote access", "allow remote access",
+    "download anydesk", "install anydesk", "download teamviewer",
+    "install teamviewer", "download quickassist", "run quickassist",
+    "you have been overcharged", "refund will be issued",
+    "process your refund", "claim your refund", "entitled to a refund",
     "microsoft has detected", "windows has detected",
     "apple has detected", "your icloud has been",
     /* Apple/iCloud impersonation — 'verification required' and

@@ -10515,7 +10515,7 @@ rm -rf "$XDIR105"
 # ── cycle-106: 419 consignment/refund/tech-support vocab + tokens ──
 check_text_hit 'i am a diplomat with an abandoned consignment box for you' 'LOG' "text: diplomatic consignment 419 flagged"
 check_text_hit 'pay the release fee for your diplomatic consignment' 'ALERT' "text: release-fee consignment scam flagged"
-check_text_hit 'amazon refund department process your refund now' 'LOG' "text: refund-department impersonation flagged"
+check_text_hit 'amazon refund department process your refund now' 'BLOCK' "text: refund-department impersonation flagged"
 check_text_hit 'your computer has been locked call microsoft support' 'BLOCK' "text: fake lock + call-ms tech scam flagged"
 check_text_hit 'the package is at customs awaiting clearance' 'OK' "text: benign customs notice clean"
 HF="hf_"; HF="${HF}8qAbCdEfGhIjKlMnOpQrStUvWxYz123456"
@@ -10857,6 +10857,20 @@ printf 'x\n' > "$XDIR127/t.appinstaller"
     && check "file: .appinstaller flagged" "0" "0" \
     || check "file: .appinstaller flagged" "0" "1"
 rm -rf "$XDIR127"
+
+# ── cycle-128: tech-support remote-access + .udl ──
+check_text_hit 'install anydesk so our technician can help' 'ALERT' "text: anydesk-lure flagged"
+check_text_hit 'allow remote access to fix the issue' 'ALERT' "text: remote-access-lure flagged"
+check_text_hit 'you have been overcharged a refund will be issued' 'ALERT' "text: overcharge-refund flagged"
+check_text_hit 'the technician repaired the laptop' 'OK' "text: benign technician clean"
+check_text_hit 'we offer remote access solutions' 'OK' "text: benign remote-access clean"
+check_text_hit 'a refund was issued to my card last week' 'OK' "text: benign refund clean"
+XDIR128=$(mktemp -d /tmp/hlse128.XXXXXX)
+printf 'x\n' > "$XDIR128/t.udl"
+./hlse_core file "$XDIR128/t.udl" 2>&1 | grep -q "LOG" \
+    && check "file: .udl data-link flagged" "0" "0" \
+    || check "file: .udl data-link flagged" "0" "1"
+rm -rf "$XDIR128"
 
 # ─── results ────────────────────────────────────────────────────────────
 
