@@ -11069,6 +11069,21 @@ check_secret_hit "${HVS}7dF3tV8bN5cG6hR" 'Vault Service Token' "secrets: hvs. fl
 HVB="hvb."; HVB="${HVB}AAAAAQKz9x2m7f4h"
 check_secret_hit "${HVB}1k8p3w6z5t0y9u" 'Vault Batch Token' "secrets: hvb. flagged"
 
+# ── cycle-144: real-estate closing BEC + messenger schemes + .wbk ───────
+check_text_hit 'wire instructions for your closing escrow account' 'LOG' "text: escrow-wire flagged"
+check_text_hit 'final closing instructions attached closing disclosure' 'LOG' "text: closing flagged"
+check_text_hit 'notarized document power of attorney' 'LOG' "text: notary flagged"
+check_text_hit 'the escrow closed without issues' 'OK' "text: benign escrow clean"
+check_text_hit 'closing on the house next week' 'OK' "text: benign closing clean"
+check_url_hit 'wire://x' 'LOG' "url: wire flagged"
+check_url_hit 'element://x' 'LOG' "url: element flagged"
+XDIR144=$(mktemp -d /tmp/hlse144.XXXXXX)
+printf 'x\n' > "$XDIR144/t.wbk"
+./hlse_core file "$XDIR144/t.wbk" 2>&1 | grep -q "LOG" \
+    && check "file: .wbk word-backup flagged" "0" "0" \
+    || check "file: .wbk word-backup flagged" "0" "1"
+rm -rf "$XDIR144"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

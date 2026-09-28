@@ -456,6 +456,9 @@ static const char *EXECUTABLE_EXTS[] = {
      * carrier: a shortcut binary that runs a command on drag/
      * preview)                                                     */
     ".shb",
+    /* .wbk — Word auto-backup copy (a full .doc clone that can
+     * carry macros; emailed as an innocuous-looking attachment)    */
+    ".wbk",
     NULL
 };
 

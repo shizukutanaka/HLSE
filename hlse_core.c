@@ -1822,6 +1822,10 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     /* ms-infopath: — InfoPath form handler (legacy Office scheme
      * not covered by the ms-office family above)                   */
     "ms-infopath:",
+    /* additional encrypted-messenger handlers — off-platform
+     * channel-switch lures (pig-butchering move to wire/icq/kik/
+     * element/matrix)                                              */
+    "wire:", "icq:", "kik:", "element:", "matrix:",
     /* podcast subscription schemes — a click subscribes the
      * reader to a remote feed (ongoing remote-content pull)      */
     "pcast:", "itms-pcast:", "podcast:", "castro:",

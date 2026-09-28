@@ -30,6 +30,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Real-estate closing BEC vocab** (`hlse_text.c`): "escrow ·
+  closing instructions · closing disclosure · wire instructions ·
+  earnest money · title company · settlement agent · notarized
+  document · power of attorney · deed transfer" — the single
+  highest-value wire-fraud shape (home-purchase diversion).
+- **Messenger deep-link schemes** (`hlse_core.c`): `wire:`, `icq:`,
+  `kik:`, `element:`, `matrix:` — off-platform channel-switch lures.
+- **`.wbk`** (`hlse_file.c`): Word auto-backup — a full .doc clone
+  that can carry macros as an innocuous attachment.
 - **Traffic-ticket lure vocab** (`hlse_text.c`): "parking ticket ·
   traffic citation · speed camera · red light camera · photo radar ·
   citation payment · pay your ticket · unpaid citation" — fake

@@ -389,6 +389,15 @@ static const char *BAIT_WORDS[] = {
     "employment screening", "verify your identity for employment",
     "dental coverage", "vision insurance", "dental plan",
     "vision plan", "insurance plan update",
+    /* Real-estate closing BEC — fake escrow/wire-instruction changes
+     * and notarized-document lures: the single highest-value wire
+     * fraud shape (six-figure home-purchase diversion)             */
+    "escrow", "escrow account", "closing instructions",
+    "final closing", "closing disclosure", "closing cost",
+    "wire instructions", "closing wire", "earnest money",
+    "earnest deposit", "title company", "settlement agent",
+    "notarized document", "notary public", "power of attorney",
+    "deed transfer", "property transfer",
     /* Traffic-ticket + parking-violation lures — fake citation
      * notices demanding online payment (card-harvesting forms);
      * 'toll violation' already covered separately                 */
