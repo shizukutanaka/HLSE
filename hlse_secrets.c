@@ -302,6 +302,14 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "nsec1",           5,  40, is_bech32,        "Nostr Secret Key",    80 },
     { "dp.st.",          6,  40, is_alnum_or_dash, "Doppler Service Token", 85 },
     { "dp.ct.",          6,  40, is_alnum_or_dash, "Doppler Config Token", 85 },
+    /* Bitcoin HD-wallet extended keys — xprv hands over the entire
+     * wallet (master private key); xpub exposes every address      */
+    { "xprv",          4, 100, is_alnum_plain,     "Bitcoin HD Private Key", 95 },
+    { "xpub",          4, 100, is_alnum_plain,     "Bitcoin HD Public Key",  50 },
+    /* Mailgun API key (key- + 32 hex) and Databricks PAT (dapi +
+     * 32 hex) — both gate mail/API infrastructure               */
+    { "key-",          4,  30, is_hex,             "Mailgun API Key",        80 },
+    { "dapi",          4,  30, is_hex,             "Databricks Personal Access Token", 85 },
     /* Brevo/Sendinblue SMTP+API key, Dropbox long-form token,
      * JFrog Artifactory identity key, Bitbucket app password —
      * each has a fixed vendor prefix that hands over an account */

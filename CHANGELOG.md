@@ -30,6 +30,11 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **HD-wallet + mail/lake credentials** (`hlse_secrets.c`): `xprv` /
+  `xpub` Bitcoin HD-wallet extended keys (the master private key hands
+  over the entire wallet; the public key exposes every derived
+  address), Mailgun `key-` + 32 hex API keys, and Databricks `dapi` +
+  32 hex personal access tokens.
 - **Government-benefit / pharma / charity-scam vocab** (`hlse_text.c`):
   "snap benefits · ebt card · food stamps · student loan forgiveness ·
   loan forgiveness approved · unemployment benefits · benefits direct

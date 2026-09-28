@@ -10927,6 +10927,18 @@ printf 'x\n' > "$XDIR133/t.diagcab"
     || check "file: .diagcab diagnostics cabinet flagged" "0" "1"
 rm -rf "$XDIR133"
 
+# ── cycle-134: HD-wallet keys + Mailgun + Databricks ──
+XPV="xprv"; XPV="${XPV}MASi45ub7Qe4ZE36"
+check_secret_hit "${XPV}UT5G6cU4ud8Fhhe4deS4F3cw9KTAb8dLcukC7edhDQ7cn5d4gEYkbUrMWeWQLGsCmrG6dLaYyNoVKf58ZTBqNAYT3j5" 'Bitcoin HD Private' "secrets: xprv master key flagged"
+XPB="xpub"; XPB="${XPB}qcdsyuMNmPfYetW5"
+check_secret_hit "${XPB}v6JXmj54omLidkuVKnRyjP2WPBg8Y4ErK9pGSSxY6BVScJy9uUxcJnTPkyRFA6CAFjF1YveCHK1ATbQgdM9mwZgikp4" 'Bitcoin HD Public' "secrets: xpub watch-key flagged"
+MG="key-"; MG="${MG}1a2b3c"
+check_secret_hit "${MG}4d5e6f7890abcdef1234567890" 'Mailgun' "secrets: mailgun key flagged"
+DB="dapi"; DB="${DB}1234567890ab"
+check_secret_hit "${DB}cdef1234567890abcdef" 'Databricks' "secrets: databricks pat flagged"
+check_secret_hit 'key-8qAbCdEfGhIjKlMnOpQrStUvWxYz1234' 'OK' "secrets: key- non-hex suffix clean"
+check_secret_hit 'xpub' 'OK' "secrets: bare xpub clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
