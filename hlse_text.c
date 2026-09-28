@@ -656,6 +656,24 @@ static const char *BAIT_WORDS[] = {
     "home protection plan", "warranty protection plan",
     "membership cancellation", "cancel your membership",
     "membership cancellation fee",
+    /* Estimate + appointment + employment-screening + registration +
+     * crowdfunding lures — fake contractor estimates, appointment
+     * reschedule/confirmation phishing, pre-employment screening
+     * fraud, DMV registration-renewal scams, and fake fundraisers   */
+    "contractor estimate", "job estimate", "final estimate",
+    "construction estimate", "repair estimate", "estimate attached",
+    "estimate approval",
+    "reschedule your appointment", "appointment confirmation",
+    "confirm your appointment", "appointment reminder",
+    "reschedule your visit", "confirm your visit",
+    "pre-employment check", "background screening",
+    "employment verification", "employment screening",
+    "pre-employment screening",
+    "registration renewal", "vehicle registration",
+    "renew your registration", "car registration",
+    "registration expired",
+    "gofundme", "fundraising campaign", "donate to victims",
+    "crowdfunding campaign", "victim fundraiser",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

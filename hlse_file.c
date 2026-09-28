@@ -249,6 +249,11 @@ static const char *EXECUTABLE_EXTS[] = {
      * the deck on open) and .wiz (Office wizard: OLE + VBA carrier)
      * — the .pps/.dot/.pot/.xlt siblings are already listed        */
     ".pps", ".wiz",
+    /* Excel DDE/query carriers — .slk (SYLK), .dif (Data
+     * Interchange), .oqy/.rqy (OLE-DB/database query files):
+     * the classic DDE formula-injection + remote-query delivery
+     * siblings of .iqy (already listed)                           */
+    ".slk", ".dif", ".oqy", ".rqy",
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
@@ -999,7 +1004,8 @@ is_script_ext(const char *ext) {
         ".nsi", ".nsh", ".iss", ".isl", ".wxs", ".manifest",
         ".asa", ".inc", ".plx", ".vss", ".vssx", ".vst",
         ".vstm", ".vstx", ".xlb", ".xlv", ".mda", ".mde",
-        ".mdw", ".accdr", ".pps", ".wiz",
+        ".mdw", ".accdr", ".pps", ".wiz", ".slk", ".dif",
+        ".oqy", ".rqy",
         NULL
     };
     char lower[32];

@@ -11399,6 +11399,19 @@ for e in pps wiz; do printf 'x\n' > "$XDIR170/b.$e"; check "$XDIR170/b.$e flagge
 rm -rf "$XDIR170"
 check_url_hit 'eudora://evil.example/mail' 'LOG' "url: eudora flagged"
 
+# ── cycle-171: estimate/appointment/screening/registration/fundraiser ──
+check_text_hit 'contractor estimate job estimate final estimate attached' 'LOG' "text: estimate flagged"
+check_text_hit 'reschedule your appointment appointment confirmation reminder' 'LOG' "text: appt flagged"
+check_text_hit 'pre-employment check background screening employment verification' 'LOG' "text: screen flagged"
+check_text_hit 'registration renewal vehicle registration renew your registration' 'LOG' "text: regen flagged"
+check_text_hit 'gofundme fundraising campaign donate to victims' 'LOG' "text: fund flagged"
+check_text_hit 'the contractor finished the job on time' 'OK' "text: benign contractor clean"
+check_text_hit 'i renewed my plates at the dmv office' 'OK' "text: benign regen clean"
+check_text_hit 'we ran a fundraiser for the school' 'OK' "text: benign fund clean"
+XDIR171=$(mktemp -d /tmp/hlse171.XXXXXX)
+for e in slk dif oqy rqy; do printf 'x\n' > "$XDIR171/c.$e"; check "$XDIR171/c.$e flagged" "$(./hlse_core file "$XDIR171/c.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+rm -rf "$XDIR171"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

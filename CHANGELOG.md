@@ -51,6 +51,24 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Estimate + appointment + screening + registration + fundraiser
+  lures** (`hlse_text.c`): "contractor estimate · job estimate ·
+  final estimate · construction estimate · repair estimate ·
+  estimate attached · estimate approval" (fake contractor
+  estimates), "reschedule your appointment · appointment
+  confirmation · confirm your appointment · appointment reminder ·
+  reschedule your visit · confirm your visit" (appointment
+  phishing), "pre-employment check · background screening ·
+  employment verification · employment screening · pre-employment
+  screening" (employment-screening fraud), "registration renewal ·
+  vehicle registration · renew your registration · car
+  registration · registration expired" (DMV registration scams),
+  "gofundme · fundraising campaign · donate to victims ·
+  crowdfunding campaign · victim fundraiser" (fake fundraisers).
+- **`.slk`/`.dif`/`.oqy`/`.rqy` DDE/query carriers**
+  (`hlse_file.c`) — Excel formula-injection + remote-query
+  delivery siblings of `.iqy` → LOG 30.
+
 - **Notary + moving + dark-web + bank-merger + home-warranty +
   membership lures** (`hlse_text.c`): "notary fee · notarized
   copy · document notarization · certified notary · notary service ·
