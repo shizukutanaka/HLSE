@@ -160,6 +160,10 @@ static const char *BAIT_WORDS[] = {
     "claim your airdrop", "claim your tokens", "claim airdrop",
     "bridge your assets", "sync your wallet", "migrate your wallet",
     "rectify your wallet", "validate your tokens",
+    /* Recovery / refund-agent scam — the fake 'recover lost crypto'
+     * service targets already-victimised users (advance-fee class) */
+    "recover your lost", "recover lost funds", "recover lost bitcoin",
+    "recover lost crypto", "fund recovery service", "recovery agent",
     /* Account takeover / 2FA bypass bait */
     "two-factor code", "verification code", "one-time code", "otp code",
     "phone number", "confirm identity", "verify your identity",
@@ -1245,6 +1249,10 @@ static const char *FIN_ACTION_WORDS[] = {
     "prove wallet ownership", "verify ownership of your wallet",
     /* Investment action triggers */
     "invest now", "invest today", "invest with us",
+    /* Money mule / reshipping recruitment — 'get paid to ship
+     * packages' is parcel-mule fraud, not employment              */
+    "reshipping packages", "reshipping service", "reship packages",
+    "receive and reship", "receive packages and reship",
     /* Money mule recruitment — asking to use victim's account for transfers */
     "use your account", "use your bank account",
     "transfer to your account", "transfer into your account",

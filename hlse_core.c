@@ -1781,7 +1781,11 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     "firefox:", "safari:", "safari-https:", "safari-http:",
     "googlechrome:", "googlechromes:", "comgooglechrome:",
     "comgooglechrome-x-callback:", "opera-http:", "opera-https:",
-    "microsoft-edge:", NULL
+    "microsoft-edge:",
+    /* decentralized / P2P fetch schemes — ipfs:// resolves content
+     * through a gateway (a real phishing-hosting channel: the CID
+     * hides the origin), magnet:/ed2k: pull payloads via P2P       */
+    "ipfs:", "ipns:", "magnet:", "ed2k:", NULL
 };
 /* Remote-mount schemes: clicking one attaches a remote filesystem or
  * session — smb: is the same NetNTLM-leak class as a \\ UNC path,

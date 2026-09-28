@@ -366,7 +366,10 @@ static const char *EXECUTABLE_EXTS[] = {
     ".flatpakref", ".deploy",
     /* VM appliance / disk-image carriers — mounting one runs a full
      * machine/image payload; same class as .vhd/.iso/.dmg          */
-    ".ova", ".ovf", ".wim",
+    ".ova", ".ovf", ".wim", ".vdi",
+    /* ActiveX / MSI transform — .ocx is a loadable COM code object
+     * (legacy web-embed exec), .mst applies with an MSI install    */
+    ".ocx", ".mst",
     NULL
 };
 

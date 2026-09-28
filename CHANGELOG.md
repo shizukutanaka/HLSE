@@ -15,6 +15,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Decentralized/P2P fetch schemes** (`hlse_core.c`): `ipfs:`,
+  `ipns:`, `magnet:`, `ed2k:` — gateway-resolved or P2P payload
+  fetches (ipfs:// is a real phishing-hosting channel; the CID
+  hides the origin).
+- **`.vdi` / `.ocx` / `.mst`** (`hlse_file.c`): VirtualBox disk
+  (mount-and-run class), ActiveX COM object, MSI transform.
+- **`xaai-` / `waka_` / `pd_oauth_`** (`hlse_secrets.c`): Axiom API,
+  WakaTime, PagerDuty OAuth token forms.
+- **Recovery-scam + reshipping-mule vocabulary** (`hlse_text.c`):
+  "recover your lost / lost bitcoin / lost crypto / fund recovery
+  service / recovery agent" (advance-fee recovery fraud) and
+  "reshipping packages / receive and reship" (parcel-mule
+  recruitment) in FIN_ACTION.
 - **Fake-CAPTCHA ClickFix framing** (`hlse_text.c`): the "verify you
   are human" / "not a robot" / "complete the captcha" lure wrapper
   now triggers CLICKFIX so the existing amplifiers fire —

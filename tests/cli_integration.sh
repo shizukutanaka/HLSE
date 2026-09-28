@@ -10615,6 +10615,28 @@ for e in flatpakref deploy; do
 done
 rm -rf "$XDIR111"
 
+# ── cycle-112: p2p/ipfs schemes + vm-disk/activex + recovery scams ──
+check_url_hit 'ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi' 'LOG' "url: ipfs: scheme flagged"
+check_url_hit 'magnet:?xt=urn:btih:abc' 'LOG' "url: magnet: scheme flagged"
+check_url_hit 'ed2k://|file|x.exe|1|A|/' 'LOG' "url: ed2k: scheme flagged"
+XA="xaai-"; XA="${XA}8qAbCdEfGhIjKlMnOpQrStUvWxYz123456"
+check_secret_hit "$XA" 'Axiom API Token' "secret: xaai- axiom flagged"
+WK="waka_"; WK="${WK}8qAbCdEf-GhIj-KlMn-OpQr-StUvWxYz1234"
+check_secret_hit "$WK" 'WakaTime API Key' "secret: waka_ flagged"
+PD="pd_oauth_"; PD="${PD}8qAbCdEfGhIjKlMnOpQrStUvWxYz12"
+check_secret_hit "$PD" 'PagerDuty OAuth Token' "secret: pd_oauth_ flagged"
+check_text_hit 'we help victims recover lost bitcoin funds' 'LOG' "text: recovery scam flagged"
+check_text_hit 'earn money working from home reshipping packages' 'LOG' "text: reshipping mule flagged"
+check_text_hit 'the recovery agent fixed my laptop' 'OK' "text: benign recovery clean"
+XDIR112=$(mktemp -d /tmp/hlse112.XXXXXX)
+for e in vdi ocx mst; do
+    printf 'x\n' > "$XDIR112/t.$e"
+    ./hlse_core file "$XDIR112/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+rm -rf "$XDIR112"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
