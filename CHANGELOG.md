@@ -51,6 +51,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **UTS-46 host normalization** (`hlse_core.c`): the authority
+  span now normalizes what resolvers normalize — ideographic/
+  fullwidth/halfwidth dots (。．｡) fold to `.` (+30) and
+  invisible format characters (ZWSP/ZWNJ/ZWJ, NBSP, soft hyphen,
+  ideographic space, BOM) are dropped (+35 — never legitimate
+  host bytes, present only to make the raw string differ from
+  the resolved one). Fullwidth ASCII letters are deliberately
+  NOT folded here — `detect_mixed_script` already names the
+  brand they resemble, and folding first would silence that
+  richer reason. Only the authority is normalized — path/query
+  Unicode is untouched.
+
 - **Partial %-encoded scheme + NUL-truncation evasion**
   (`hlse_core.c`): the decode-and-redispatch path only ran when
   input STARTED with '%', so `javascript%3Aalert(1)` and

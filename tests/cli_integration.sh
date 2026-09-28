@@ -11517,6 +11517,19 @@ check_url_hit 'http://evil.example%00.trusted.example/' 'ISOLATE' "url: pct-nul 
 check_url_hit 'https://example.com/a%20b' 'OK' "url: pct-benign clean"
 check_url_hit '50% off sale' 'OK' "url: pct-text clean"
 
+# ── cycle-180: UTS-46 host fold (unicode dots/fullwidth/invisible) ────
+UDOT=$(printf 'http://evil\xe3\x80\x82example/x')
+check "url: ideographic-dot flagged" "$(./hlse_core "$UDOT" | head -1 | grep -c 'LOG\|ALERT\|BLOCK\|ISOLATE')" "1"
+UDOT2=$(printf 'http://evil\xef\xbc\x8eexample/x')
+check "url: fullwidth-dot flagged" "$(./hlse_core "$UDOT2" | head -1 | grep -c 'LOG\|ALERT\|BLOCK\|ISOLATE')" "1"
+UFW=$(printf 'http://\xef\xbd\x90\xef\xbd\x81\xef\xbd\x99\xef\xbd\x90\xef\xbd\x81\xef\xbd\x8c.com.evil.com/')
+check "url: fullwidth-brand flagged" "$(./hlse_core "$UFW" | head -1 | grep -c 'BLOCK\|ISOLATE')" "1"
+UINV=$(printf 'http://pay\xe2\x80\x8bpal.com.evil.example/')
+check "url: zwsp-host flagged" "$(./hlse_core "$UINV" | head -1 | grep -c 'ISOLATE')" "1"
+UINV2=$(printf 'http://pay\xc2\xa0pal.com.evil.example/')
+check "url: nbsp-host flagged" "$(./hlse_core "$UINV2" | head -1 | grep -c 'ISOLATE')" "1"
+check "url: fullwidth-path clean" "$(./hlse_core 'http://example.com/ａdmin' | head -1 | grep -c 'OK')" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

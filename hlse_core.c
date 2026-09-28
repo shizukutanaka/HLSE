@@ -1971,6 +1971,83 @@ check_url(const char *raw_url) {
         add_reason(&v, 15, "Tab/newline embedded in URL — "
                            "WHATWG-strip evasion");
 
+    /* UTS-46 folds the ideographic dot family to ASCII inside the
+     * host — `paypal。com` resolves exactly like `paypal.com` while
+     * a byte-level matcher sees no dot. Invisible/format characters
+     * (ZWSP, ZWNJ/ZWJ, NBSP, soft hyphen, ideographic space, BOM)
+     * are never legitimate hostname bytes — resolvers drop or
+     * reject them, so they only exist to make the raw string differ
+     * from the resolved one. Fold the dot class, drop the invisible
+     * class, and flag each; spoof checks below then see the form
+     * the resolver actually navigates to. Fullwidth ASCII letters
+     * are NOT folded here — detect_mixed_script() already names the
+     * brand they resemble, and folding first would silence that
+     * richer reason.                                               */
+    char ubuf[2100];
+    int uni_dot = 0, uni_inv = 0;
+    if (raw_url && strlen(raw_url) < sizeof(ubuf)) {
+        const char *as2 = strstr(raw_url, "://");
+        if (as2) {
+            size_t L = strlen(raw_url);
+            size_t ab = (size_t)(as2 - raw_url) + 3;
+            size_t ae = ab + strcspn(raw_url + ab, "/?#");
+            size_t r3 = 0, w3 = 0;
+            int touched = 0;
+            while (raw_url[r3]) {
+                unsigned char b0 = (unsigned char)raw_url[r3];
+                int in_auth = r3 >= ab && r3 < ae;
+                if (in_auth && r3 + 2 < L &&
+                    b0 == 0xE3 && (unsigned char)raw_url[r3+1] == 0x80 &&
+                    (unsigned char)raw_url[r3+2] == 0x82) {
+                    ubuf[w3++] = '.'; r3 += 3;           /* U+3002 */
+                    uni_dot = touched = 1; continue;
+                }
+                if (in_auth && r3 + 2 < L &&
+                    b0 == 0xE3 && (unsigned char)raw_url[r3+1] == 0x80 &&
+                    (unsigned char)raw_url[r3+2] == 0x80) {
+                    r3 += 3;                             /* U+3000 */
+                    uni_inv = touched = 1; continue;
+                }
+                if (in_auth && r3 + 2 < L &&
+                    b0 == 0xEF && (unsigned char)raw_url[r3+1] == 0xBC &&
+                    (unsigned char)raw_url[r3+2] == 0x8E) {
+                    ubuf[w3++] = '.'; r3 += 3;           /* U+FF0E */
+                    uni_dot = touched = 1; continue;
+                }
+                if (in_auth && r3 + 2 < L &&
+                    b0 == 0xEF && (unsigned char)raw_url[r3+1] == 0xBD &&
+                    (unsigned char)raw_url[r3+2] == 0xA1) {
+                    ubuf[w3++] = '.'; r3 += 3;           /* U+FF61 */
+                    uni_dot = touched = 1; continue;
+                }
+                if (in_auth && r3 + 1 < L && b0 == 0xC2 &&
+                    ((unsigned char)raw_url[r3+1] == 0xA0 ||
+                     (unsigned char)raw_url[r3+1] == 0xAD)) {
+                    r3 += 2;            /* NBSP / soft hyphen */
+                    uni_inv = touched = 1; continue;
+                }
+                if (in_auth && r3 + 2 < L &&
+                    b0 == 0xE2 && (unsigned char)raw_url[r3+1] == 0x80 &&
+                    (unsigned char)raw_url[r3+2] >= 0x8B &&
+                    (unsigned char)raw_url[r3+2] <= 0x8D) {
+                    r3 += 3;          /* ZWSP / ZWNJ / ZWJ */
+                    uni_inv = touched = 1; continue;
+                }
+                if (in_auth && r3 + 2 < L &&
+                    b0 == 0xEF && (unsigned char)raw_url[r3+1] == 0xBB &&
+                    (unsigned char)raw_url[r3+2] == 0xBF) {
+                    r3 += 3;                            /* BOM/FEFF */
+                    uni_inv = touched = 1; continue;
+                }
+                ubuf[w3++] = raw_url[r3++];
+            }
+            if (touched) {
+                ubuf[w3] = '\0';
+                raw_url = ubuf;
+            }
+        }
+    }
+
     if (raw_url && strchr(raw_url, '\\') != NULL &&
         strlen(raw_url) < sizeof(nbuf) &&
         (strncmp(raw_url, "https:", 6) == 0 ||
@@ -2368,6 +2445,15 @@ check_url(const char *raw_url) {
             "Trailing DNS-root dot in host '%s.' — resolves identically "
             "but evades exact-match allowlists (evasion tell)", u.host);
     }
+
+    if (uni_dot)
+        add_reason(&v, 30, "Unicode dot equivalent in host — 。．｡ "
+                           "fold to '.' (UTS-46, evades dot-structure "
+                           "matchers)");
+    if (uni_inv)
+        add_reason(&v, 35, "Invisible/format character in URL host — "
+                           "resolvers drop it but matchers see the raw "
+                           "form (evasion tell)");
 
     /* Internal/private destination — an external-content URL pointing
      * at RFC1918, loopback, link-local, CGNAT, or a cloud metadata
