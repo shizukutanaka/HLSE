@@ -11369,6 +11369,22 @@ XDIR168=$(mktemp -d /tmp/hlse168.XXXXXX)
 for e in vss vssx vst vstm vstx xlb xlv; do printf 'x\n' > "$XDIR168/d.$e"; check "$XDIR168/d.$e flagged" "$(./hlse_core file "$XDIR168/d.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
 rm -rf "$XDIR168"
 
+# ── cycle-169: escrow/trust/rollover/deed/medical/cobra/audit lures ────
+check_text_hit 'escrow release release funds from escrow release form' 'LOG' "text: escrow flagged"
+check_text_hit 'trust disbursement attorney trust account disbursement' 'LOG' "text: trust flagged"
+check_text_hit 'rollover your 401k pension rollover retirement rollover' 'LOG' "text: rollover flagged"
+check_text_hit 'deed copy property deed title transfer fee' 'LOG' "text: deed flagged"
+check_text_hit 'medical bill collection hospital collections medical debt' 'LOG' "text: medbill flagged"
+check_text_hit 'cobra coverage continuation elect cobra election' 'LOG' "text: cobra flagged"
+check_text_hit 'license true-up software audit notice license compliance' 'LOG' "text: license flagged"
+check_text_hit 'the escrow closed on our house last week' 'OK' "text: benign escrow clean"
+check_text_hit 'i renewed my software license online' 'OK' "text: benign license clean"
+XDIR169=$(mktemp -d /tmp/hlse169.XXXXXX)
+for e in mda mde mdw accdr; do printf 'x\n' > "$XDIR169/a.$e"; check "$XDIR169/a.$e flagged" "$(./hlse_core file "$XDIR169/a.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+rm -rf "$XDIR169"
+check_url_hit 'ms-call:attacker.example' 'LOG' "url: ms-call flagged"
+check_url_hit 'wp:attacker.example/x' 'LOG' "url: wp flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

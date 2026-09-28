@@ -241,6 +241,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * macro-enabled template) + Excel toolbar (.xlb) and legacy
      * Excel-4 macro variants (.xlv) — .xlm already listed        */
     ".vss", ".vssx", ".vst", ".vstm", ".vstx", ".xlb", ".xlv",
+    /* Access residual carriers — add-in (.mda), compiled app
+     * (.mde), workgroup file (.mdw), runtime build (.accdr):
+     * all carry VBA/OLE like .mdb/.accdb (already listed)       */
+    ".mda", ".mde", ".mdw", ".accdr",
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
@@ -990,7 +994,8 @@ is_script_ext(const char *ext) {
         ".hta", ".sh", ".py", ".reg", ".au3", ".a3x", ".kix",
         ".nsi", ".nsh", ".iss", ".isl", ".wxs", ".manifest",
         ".asa", ".inc", ".plx", ".vss", ".vssx", ".vst",
-        ".vstm", ".vstx", ".xlb", ".xlv",
+        ".vstm", ".vstx", ".xlb", ".xlv", ".mda", ".mde",
+        ".mdw", ".accdr",
         NULL
     };
     char lower[32];

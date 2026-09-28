@@ -51,6 +51,28 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Escrow-release + trust + rollover + deed + medical-debt +
+  COBRA + audit lures** (`hlse_text.c`): "escrow release · release
+  funds from escrow · release the escrow · escrow release form"
+  (escrow fraud), "trust disbursement · attorney trust account ·
+  disbursement of funds · trust account distribution" (attorney-
+  trust BEC), "rollover your 401k · pension rollover · retirement
+  rollover · 401k rollover · rollover your ira · ira rollover"
+  (retirement phishing), "deed copy · property deed · title
+  transfer fee · deed processing · certified copy of your deed ·
+  copy of your deed · deed notice" (deed-copy fee scams),
+  "medical bill collection · hospital collections · pay your
+  medical debt · medical debt payment" (medical-debt fraud),
+  "cobra coverage · coverage continuation · elect cobra · cobra
+  election · continuation coverage" (COBRA lures), "license
+  true-up · software audit notice · license compliance review ·
+  software license audit · license compliance · audit your
+  licenses" (BSA-style license-audit extortion).
+- **Access residual carriers** (`hlse_file.c`): `.mda`/`.mde`/
+  `.mdw`/`.accdr` — VBA/OLE siblings of `.mdb`/`.accdb` → LOG 30.
+- **`ms-call:`/`wp:` call-launch + WAP schemes** (`hlse_core.c`)
+  → LOG 35/30.
+
 - **REAL-ID + no-show + wire-recall + vault + MFA + termination
   lures** (`hlse_text.c`): "real id · real id deadline · real id
   appointment · real id requirement · real id compliant" (DMV

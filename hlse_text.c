@@ -614,6 +614,29 @@ static const char *BAIT_WORDS[] = {
     "termination letter", "severance notice", "final paycheck",
     "employment is terminated", "severance agreement",
     "layoff notice", "termination of employment",
+    /* Escrow-release + trust-disbursement + retirement-rollover +
+     * deed-copy + medical-debt + COBRA + license-audit lures —
+     * escrow fund-release fraud, attorney-trust BEC, 401k
+     * rollover phishing, deed-copy fee scams, hospital-collection
+     * fraud, COBRA continuation lures, and software-license
+     * audit extortion                                           */
+    "escrow release", "release funds from escrow",
+    "release the escrow", "escrow release form",
+    "trust disbursement", "attorney trust account",
+    "disbursement of funds", "trust account distribution",
+    "rollover your 401k", "pension rollover", "retirement rollover",
+    "401k rollover", "rollover your ira", "ira rollover",
+    "deed copy", "property deed", "title transfer fee",
+    "deed processing", "certified copy of your deed",
+    "copy of your deed", "deed notice",
+    "medical bill collection", "hospital collections",
+    "pay your medical debt", "medical debt payment",
+    "hospital bill collections",
+    "cobra coverage", "coverage continuation", "elect cobra",
+    "cobra election", "continuation coverage",
+    "license true-up", "software audit notice",
+    "license compliance review", "software license audit",
+    "license compliance", "audit your licenses",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",
