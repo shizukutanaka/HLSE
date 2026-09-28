@@ -10797,6 +10797,23 @@ check_url_hit 'podcast://x' 'LOG' "url: podcast: flagged"
 check_url_hit 'overcast://x' 'LOG' "url: overcast: flagged"
 check_url_hit 'itms-pcast://x' 'LOG' "url: itms-pcast: flagged"
 
+# ── cycle-124: legal-pressure lures + osa/fpkg + stream variants ──
+check_text_hit 'you have been served a subpoena see attached' 'LOG' "text: subpoena lure flagged"
+check_text_hit 'legal complaint filed against you see attached' 'LOG' "text: complaint lure flagged"
+check_text_hit 'notice to appear in court attached' 'LOG' "text: appear-court flagged"
+check_text_hit 'the subpoena was issued correctly by counsel' 'OK' "text: benign subpoena clean"
+check_url_hit 'mmsh://evil.example/x' 'LOG' "url: mmsh: flagged"
+check_url_hit 'rtmpe://x' 'LOG' "url: rtmpe: flagged"
+check_url_hit 'rtmfp://x' 'LOG' "url: rtmfp: flagged"
+XDIR124=$(mktemp -d /tmp/hlse124.XXXXXX)
+for e in osa fpkg; do
+    printf 'x\n' > "$XDIR124/t.$e"
+    ./hlse_core file "$XDIR124/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+rm -rf "$XDIR124"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -1815,7 +1815,10 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     /* podcast subscription schemes — a click subscribes the
      * reader to a remote feed (ongoing remote-content pull)      */
     "pcast:", "itms-pcast:", "podcast:", "castro:",
-    "overcast:", "pktc:", NULL
+    "overcast:", "pktc:",
+    /* remaining streaming variants — mmsh: (mms-over-http) and
+     * the rtmp tunnelled/encrypted siblings                        */
+    "mmsh:", "rtmpe:", "rtmpt:", "rtmte:", "rtmfp:", NULL
 };
 /* Remote-mount schemes: clicking one attaches a remote filesystem or
  * session — smb: is the same NetNTLM-leak class as a \\ UNC path,

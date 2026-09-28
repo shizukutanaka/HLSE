@@ -21,6 +21,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Legal-pressure lures** (`hlse_text.c`): "court summons /
+  been served / subpoena / legal complaint / filed against you /
+  notice to appear / pending lawsuit" — the highest open-rate
+  malspam category.
+- **`.osa` / `.fpkg`** (`hlse_file.c`): compiled AppleScript
+  (osascript) and the macOS flat-package installer variant.
+- **Streaming scheme variants** (`hlse_core.c`): `mmsh:`
+  (mms-over-http), `rtmpe:`, `rtmpt:`, `rtmte:`, `rtmfp:`.
 - **Password-expiry phish** (`hlse_text.c`): "password will expire /
   password expires / keep your current password" — the classic
   cred-harvest frame.

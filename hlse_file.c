@@ -407,6 +407,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * the OneNote packaged carrier; .rdg hands a session list to
      * the remote-desktop manager                                   */
     ".xsn", ".xsf", ".onepkg", ".rdg",
+    /* Compiled AppleScript (.osa runs under osascript) and the
+     * macOS flat-package installer variant (.fpkg feeds the
+     * same Installer.app path as .pkg)                            */
+    ".osa", ".fpkg",
     NULL
 };
 

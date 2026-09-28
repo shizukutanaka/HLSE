@@ -242,6 +242,13 @@ static const char *BAIT_WORDS[] = {
     "password will expire", "password is expiring",
     "password expires", "password has expired",
     "keep your current password", "retain your current password",
+    /* legal-pressure lures — fake subpoena/summons/complaint
+     * attachments ('you have been served') drive the highest
+     * open-rate malspam category                                  */
+    "court summons", "been served", "subpoena",
+    "legal complaint", "complaint filed against",
+    "filed against you", "notice to appear", "appear in court",
+    "lawsuit has been filed", "pending lawsuit",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */
