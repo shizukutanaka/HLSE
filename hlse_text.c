@@ -732,6 +732,97 @@ static const char *VN_SMISH_WORDS[] = {
     NULL
 };
 
+static const char *NL_SMISH_WORDS[] = {
+    /* Dutch smishing — PostNL/DHL 'pakket bij de douane' and
+     * 'rekening geblokkeerd' bank lures are NL/BE's top SMS-phish
+     * vectors; 'betaal invoerrechten' is the customs-fee tell.      */
+    /* Pakket / douane lures */
+    "uw pakket", "uw pakketje", "pakket is vastgehouden",
+    "vastgehouden bij de douane", "bij de douane", "invoerrechten",
+    "in afwachting van levering", "levering mislukt",
+    "bezorging mislukt", "bevestig uw adres", "adres bijwerken",
+    "verzendkosten", "douanekosten", "postnl", "track en trace",
+    /* Rekening / verificatie lures */
+    "uw rekening", "rekening geblokkeerd", "is geblokkeerd",
+    "account geblokkeerd", "verifieer uw identiteit",
+    "verifieer uw gegevens", "gegevens bijwerken",
+    "ongebruikelijke activiteit", "verdachte activiteit",
+    /* Urgency / refund */
+    "klik op de link", "binnen 24 uur", "laatste waarschuwing",
+    "laatste herinnering", "betaling mislukt", "terugbetaling",
+    "belastingteruggave", "onmiddellijk",
+    NULL
+};
+
+static const char *PL_SMISH_WORDS[] = {
+    /* Polish smishing — 'paczka zatrzymana' (InPost/Poczta Polska
+     * parcel customs-hold) and 'konto zablokowane' bank lures are
+     * PL's top SMS-phish vectors; 'opłata celna' is the fee tell.   */
+    /* Paczka / cło lures */
+    "twoja paczka", "paczka została zatrzymana", "paczka zatrzymana",
+    "zatrzymana w urzędzie celnym", "w urzędzie celnym",
+    "opłata celna", "dopłata za przesyłkę", "dostawa nieudana",
+    "potwierdź adres", "zaktualizuj adres", "adres dostawy",
+    "oczekuje na dostawę", "inpost", "poczta polska",
+    /* Konto / weryfikacja lures */
+    "twoje konto", "konto zostało zablokowane", "konto zablokowane",
+    "zablokowane", "zweryfikuj swoje dane", "zweryfikuj tożsamość",
+    "zaktualizuj swoje dane", "podejrzana aktywność",
+    "podejrzane logowanie", "nieznane urządzenie",
+    /* Urgency / refund */
+    "kliknij w link", "kliknij tutaj", "w ciągu 24 godzin",
+    "ostatnie ostrzeżenie", "płatność nieudana", "zwrot środków",
+    "zwrot podatku", "zaległość podatkowa", "niezwłocznie",
+    NULL
+};
+
+static const char *ID_SMISH_WORDS[] = {
+    /* Indonesian & Malay smishing — 'paket tertahan di bea cukai /
+     * kastam' customs-hold and 'akun diblokir' bank lures are the
+     * top SMS-phish vectors in ID and MY (shared vocabulary).      */
+    /* Paket / bea cukai·kastam lures */
+    "paket anda", "paket tertahan", "paket ditahan",
+    "ditahan di bea cukai", "di bea cukai", "bea masuk",
+    "biaya masuk", "di kastam", "cukai import", "bayar biaya",
+    "gagal dikirim", "gagal dihantar", "konfirmasi alamat",
+    "perbarui alamat", "pos indonesia", "jne", "pos malaysia",
+    /* Akun / verifikasi lures */
+    "akun anda", "akun diblokir", "akun anda diblokir",
+    "akaun anda", "akaun dibekukan", "dibekukan",
+    "verifikasi identitas", "verifikasi akun", "perbarui data",
+    "aktivitas mencurigakan", "aktiviti mencurigakan",
+    "transaksi mencurigakan", "peranti tidak dikenali",
+    /* Urgency / refund / prize */
+    "klik tautan", "klik pautan", "dalam 24 jam",
+    "peringatan terakhir", "pembayaran gagal", "pengembalian dana",
+    "anda menang", "hadiah untuk anda", "uang kembali",
+    NULL
+};
+
+static const char *NORDIC_SMISH_WORDS[] = {
+    /* Nordic smishing (da/nb/sv share 'pakke/paket + told/tull +
+     * gebyr/avgift' vocabulary) — PostNord/Posten customs-fee lures
+     * and bankid-style 'konto blokeret' lures.                     */
+    /* Pakke / told lures */
+    "din pakke", "pakken er holdt", "pakken holdt i",
+    "holdt i tolden", "i tolden", "toldgebyr", "tullavgift",
+    "betal gebyret", "betala avgiften", "levering mislykket",
+    "leveransen misslyckades", "bekræft din adresse",
+    "bekreft adressen", "bekräfta din adress", "postnord", "posten",
+    /* Konto / verificering lures */
+    "din konto", "konto er blokeret", "konto er blokkert",
+    "kontot är spärrat", "konto spärrat", "bekræft din identitet",
+    "bekreft identiteten", "verifiera din identitet",
+    "opdater dine oplysninger", "uppdatera dina uppgifter",
+    "mistenkelig aktivitet", "mistanke aktivitet", "okänd enhet",
+    /* Urgency / refund */
+    "klik på linket", "klicka på länken", "indom 24 timer",
+    "innom 24 timer", "inom 24 timmar", "sidste advarsel",
+    "sista varning", "betaling mislykket", "betalningen misslyckades",
+    "återbetalning", "tilbagebetaling", "skatteåterbäring",
+    NULL
+};
+
 static const char *SECRECY_WORDS[] = {
     /* English */
     "don't tell", "do not tell", "keep this secret", "between us",
@@ -1611,6 +1702,10 @@ static const Signal SIGNALS[] = {
     { "Turkish smishing lure",      TR_SMISH_WORDS,       20, 15, 45 },
     { "Thai smishing lure",         TH_SMISH_WORDS,       20, 15, 45 },
     { "Vietnamese smishing lure",   VN_SMISH_WORDS,       20, 15, 45 },
+    { "Dutch smishing lure",        NL_SMISH_WORDS,       20, 15, 45 },
+    { "Polish smishing lure",       PL_SMISH_WORDS,       20, 15, 45 },
+    { "Indonesian/Malay smishing",  ID_SMISH_WORDS,       20, 15, 45 },
+    { "Nordic smishing lure",       NORDIC_SMISH_WORDS,   20, 15, 45 },
     { "Prompt-injection override phrase", PROMPT_OVERRIDE_WORDS, 40, 10, 55 },
     { "LLM control token in text",  LLM_CONTROL_TOKENS, 45, 10, 60 },
     { "Active HTML markup in text", HTML_INJECT_WORDS, 30, 15, 50 },

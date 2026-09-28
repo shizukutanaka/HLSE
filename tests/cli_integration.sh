@@ -10637,6 +10637,23 @@ for e in vdi ocx mst; do
 done
 rm -rf "$XDIR112"
 
+# ── cycle-113: NL/PL/ID-MS/Nordic smishing + legacy office carriers ──
+check_text_hit 'uw pakket is vastgehouden bij de douane betaal invoerrechten' 'ALERT' "text: NL customs-hold flagged"
+check_text_hit 'twoja paczka zatrzymana oplata celna wymagana' 'LOG' "text: PL customs-hold flagged"
+check_text_hit 'paket anda tertahan di bea cukai bayar biaya' 'ALERT' "text: ID customs-hold flagged"
+check_text_hit 'din pakke er holdt i tolden betal gebyret' 'ALERT' "text: Nordic customs-hold flagged"
+check_text_hit 'paket anda ditahan di kastam bayar cukai' 'LOG' "text: MY customs-hold flagged"
+check_text_hit 'paket sudah sampai terima kasih' 'OK' "text: benign ID clean"
+check_text_hit 'the urgent meeting is at noon' 'OK' "text: benign EN clean"
+XDIR113=$(mktemp -d /tmp/hlse113.XXXXXX)
+for e in xla ade adp; do
+    printf 'x\n' > "$XDIR113/t.$e"
+    ./hlse_core file "$XDIR113/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+rm -rf "$XDIR113"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

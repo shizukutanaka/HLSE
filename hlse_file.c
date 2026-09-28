@@ -370,6 +370,10 @@ static const char *EXECUTABLE_EXTS[] = {
     /* ActiveX / MSI transform — .ocx is a loadable COM code object
      * (legacy web-embed exec), .mst applies with an MSI install    */
     ".ocx", ".mst",
+    /* Legacy Office carriers — .xla is the 97-2003 Excel add-in
+     * (VBA project inside), .ade/.adp are compiled Access project
+     * files that run VBA without showing source                  */
+    ".xla", ".ade", ".adp",
     NULL
 };
 

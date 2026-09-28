@@ -15,6 +15,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **NL / PL / ID-MS / Nordic smishing signals** (`hlse_text.c`):
+  Dutch (`uw pakket`, `invoerrechten`, `douane`, `rekening
+  geblokkeerd`), Polish (`paczka zatrzymana`, `opłata celna`,
+  `konto zablokowane`), Indonesian+Malay (`paket tertahan`,
+  `bea cukai`/`kastam`, `akun diblokir`), and a shared Nordic
+  (da/nb/sv) list (`din pakke`, `tolden`/`tullen`, `konto
+  blokeret`, PostNord/Posten lures) — 16 languages covered total.
+- **Legacy Office carriers** (`hlse_file.c`): `.xla` (97-2003 Excel
+  VBA add-in), `.ade`/`.adp` (compiled Access projects).
 - **Decentralized/P2P fetch schemes** (`hlse_core.c`): `ipfs:`,
   `ipns:`, `magnet:`, `ed2k:` — gateway-resolved or P2P payload
   fetches (ipfs:// is a real phishing-hosting channel; the CID
