@@ -10498,6 +10498,20 @@ printf '[InternetShortcut]\nURL=https://legit.example.com/\n' > "$XDIR104/ok.url
     || check "file: benign .url stays LOG" "0" "1"
 rm -rf "$XDIR104"
 
+# ── cycle-105: alternate-shell + MIME-HTML carriers ──
+XDIR105=$(mktemp -d /tmp/hlse105.XXXXXX)
+for e in zsh fish nu mht mhtml; do
+    printf 'x\n' > "$XDIR105/t.$e"
+    ./hlse_core file "$XDIR105/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+printf 'hello\n' > "$XDIR105/plain.txt"
+./hlse_core file "$XDIR105/plain.txt" 2>&1 | grep -q "OK" \
+    && check "file: plain txt stays clean" "0" "0" \
+    || check "file: plain txt stays clean" "0" "1"
+rm -rf "$XDIR105"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

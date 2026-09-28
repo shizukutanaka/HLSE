@@ -15,6 +15,11 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Alternate-shell + MIME-HTML carriers** (`hlse_file.c`
+  `EXECUTABLE_EXTS`): `.zsh`/`.fish`/`.nu` (zsh/fish/nushell scripts
+  — same execute-on-open class as `.sh`/`.bash`) and
+  `.mht`/`.mhtml` (MIME-HTML saved pages — bundled scripts execute
+  in IE-mode/legacy Edge; documented mail-borne lure format).
 - **ITS/CHM help-protocol URI schemes** (`hlse_core.c`
   `URL_HANDLER_SCHEMES`): `ms-its:`/`ms-itss:`/`its:`/`itsfile:`/
   `mk:` (the `@MSITStore` moniker)/`mhtml:`/`ms-help:` — compiled-

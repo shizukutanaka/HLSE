@@ -224,6 +224,9 @@ static const char *EXECUTABLE_EXTS[] = {
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
+    /* Alternate shells — zsh/fish/nushell scripts execute on open
+     * in the same class as .sh/.bash                        */
+    ".zsh", ".fish", ".nu",
     /* awk/sed script files — awk's system()/| getline and sed's e
      * command execute arbitrary shell                     */
     ".awk", ".sed",
@@ -337,6 +340,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * as .accde/.mdb/.accdb (the .laccdb lock file is a transient
      * byproduct, not a carrier, and stays unlisted)                */
     ".accda",
+    /* MIME-HTML saved web pages (.mht/.mhtml) — bundled live web
+     * content incl. scripts; IE-mode / legacy Edge execute embedded
+     * script on open, making them documented mail-borne lures      */
+    ".mht", ".mhtml",
     NULL
 };
 
