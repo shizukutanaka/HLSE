@@ -377,6 +377,10 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * observability credentials the earlier table rows lacked */
     { "PMAK-",         5,  40, is_alnum_or_dash,   "Postman API Key",     80 },
     { "dckr_pat_",     9,  20, is_alnum_or_dash,   "Docker Hub Personal Access Token", 80 },
+    /* Notion integration token — ntn_ + base62 secret (current
+     * format; older `secret_` tokens already match the generic
+     * key rules)                                                  */
+    { "ntn_",          4,  30, is_alnum_or_dash,   "Notion Integration Token", 80 },
     { "dt0c01.",       7,  30, is_alnum_or_dot,    "Dynatrace API Token", 80 },
     /* Dynatrace ingest token — dt0s01. sibling of dt0c01. */
     { "dt0s01.",       7,  30, is_alnum_or_dot,    "Dynatrace Ingest Token", 80 },

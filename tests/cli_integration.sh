@@ -11412,6 +11412,20 @@ XDIR171=$(mktemp -d /tmp/hlse171.XXXXXX)
 for e in slk dif oqy rqy; do printf 'x\n' > "$XDIR171/c.$e"; check "$XDIR171/c.$e flagged" "$(./hlse_core file "$XDIR171/c.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
 rm -rf "$XDIR171"
 
+# ── cycle-172: funeral/cruise/watermold/alarm/seller + notion token ────
+check_text_hit 'funeral plan burial plot funeral pre-need memorial' 'LOG' "text: funeral flagged"
+check_text_hit 'free cruise cruise voucher complimentary trip' 'LOG' "text: cruise flagged"
+check_text_hit 'water test results free water test lead contamination' 'LOG' "text: water flagged"
+check_text_hit 'mold inspection mold remediation black mold removal' 'LOG' "text: mold flagged"
+check_text_hit 'security system alarm monitoring alarm monitoring service' 'LOG' "text: alarm flagged"
+check_text_hit 'seller account seller suspension your selling privileges' 'LOG' "text: seller flagged"
+check_text_hit 'the funeral was held last saturday' 'OK' "text: benign funeral clean"
+check_text_hit 'we booked a family vacation for the summer' 'OK' "text: benign cruise clean"
+XDIR172=$(mktemp -d /tmp/hlse172.XXXXXX)
+printf 'x\n' > "$XDIR172/d.searchconnector-ms"; check "$XDIR172/d.searchConnector-ms flagged" "$(./hlse_core file "$XDIR172/d.searchConnector-ms" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"
+rm -rf "$XDIR172"
+check 'secret: ntn_ flagged' "$(./hlse_core secret 'ntn_Ab3dEf5gH7jK9lM1nP3qR5sT7uV9wX1y' | head -1 | grep -c 'ISOLATE\|BLOCK\|ALERT\|LOG')" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

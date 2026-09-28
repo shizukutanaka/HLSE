@@ -51,6 +51,27 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Funeral + cruise + water/mold + alarm + seller lures**
+  (`hlse_text.c`): "funeral plan · burial plot · memorial plan ·
+  funeral pre-need · burial insurance · final expense insurance ·
+  pre-need plan · funeral cost" (pre-need funeral fraud), "free
+  cruise · cruise voucher · vacation voucher · all-inclusive
+  vacation · complimentary cruise · complimentary trip · free
+  trip" (vacation scams), "water test results · water quality
+  report · lead contamination · free water test · lead test · mold
+  inspection · mold remediation · air quality test · black mold ·
+  mold removal" (water/mold scares), "security system · alarm
+  monitoring · alarm system · free security system · alarm
+  monitoring service · home security system" (alarm telemarketing
+  fraud), "seller account · seller suspension · seller performance
+  · seller verification · seller central · seller metrics ·
+  selling account · your selling privileges" (marketplace seller
+  phishing).
+- **`.searchConnector-ms` search-connector carrier**
+  (`hlse_file.c`) — XML pointing to remote/UNC endpoints → LOG 30.
+- **Notion `ntn_` integration token** (`hlse_secrets.c`)
+  → ISOLATE 80.
+
 - **Estimate + appointment + screening + registration + fundraiser
   lures** (`hlse_text.c`): "contractor estimate · job estimate ·
   final estimate · construction estimate · repair estimate ·

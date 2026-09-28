@@ -254,6 +254,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * the classic DDE formula-injection + remote-query delivery
      * siblings of .iqy (already listed)                           */
     ".slk", ".dif", ".oqy", ".rqy",
+    /* Windows Search Connector — XML pointing to remote/network
+     * locations (UNC/REST endpoints): opens a search over an
+     * attacker share on double-click                              */
+    ".searchconnector-ms",
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
@@ -1005,7 +1009,7 @@ is_script_ext(const char *ext) {
         ".asa", ".inc", ".plx", ".vss", ".vssx", ".vst",
         ".vstm", ".vstx", ".xlb", ".xlv", ".mda", ".mde",
         ".mdw", ".accdr", ".pps", ".wiz", ".slk", ".dif",
-        ".oqy", ".rqy",
+        ".oqy", ".rqy", ".searchconnector-ms",
         NULL
     };
     char lower[32];

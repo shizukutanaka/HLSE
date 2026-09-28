@@ -667,13 +667,32 @@ static const char *BAIT_WORDS[] = {
     "confirm your appointment", "appointment reminder",
     "reschedule your visit", "confirm your visit",
     "pre-employment check", "background screening",
-    "employment verification", "employment screening",
-    "pre-employment screening",
+    "employment verification",
     "registration renewal", "vehicle registration",
     "renew your registration", "car registration",
     "registration expired",
     "gofundme", "fundraising campaign", "donate to victims",
     "crowdfunding campaign", "victim fundraiser",
+    /* Funeral + cruise/vacation + water/mold + alarm + seller lures —
+     * pre-need funeral plans, free-cruise vouchers, water-quality
+     * and mold scares, alarm-system telemarketing fraud, and fake
+     * marketplace seller-account suspensions                        */
+    "funeral plan", "burial plot", "memorial plan",
+    "funeral pre-need", "burial insurance", "final expense insurance",
+    "pre-need plan", "funeral cost",
+    "free cruise", "cruise voucher", "vacation voucher",
+    "all-inclusive vacation", "complimentary cruise",
+    "complimentary trip", "free trip",
+    "water test results", "water quality report",
+    "lead contamination", "free water test", "lead test",
+    "mold inspection", "mold remediation", "air quality test",
+    "black mold", "mold removal",
+    "security system", "alarm monitoring", "alarm system",
+    "free security system", "alarm monitoring service",
+    "home security system",
+    "seller account", "seller suspension", "seller performance",
+    "seller verification", "seller central", "seller metrics",
+    "selling account", "your selling privileges",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",
