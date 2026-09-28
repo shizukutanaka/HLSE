@@ -1797,7 +1797,10 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     /* remaining messenger deep-links — open a chat/forward UI in
      * the named app (whatsapp:/skype: were already listed)        */
     "threema:", "signal:", "line:", "kakaotalk:", "viber:",
-    "wechat:", "whatsapp:", "wtai:", NULL
+    "wechat:", "whatsapp:", "wtai:",
+    /* resource: exposes Firefox internal files (local-file
+     * disclosure via a clickable link)                             */
+    "resource:", NULL
 };
 /* Remote-mount schemes: clicking one attaches a remote filesystem or
  * session — smb: is the same NetNTLM-leak class as a \\ UNC path,

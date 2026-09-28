@@ -390,6 +390,14 @@ static const char *EXECUTABLE_EXTS[] = {
      * APT carrier class (historic Ichitaro zero-days; the format
      * parses OLE/structured content on open)                      */
     ".jtd", ".jtt",
+    /* Web-shell / server-side handler carriers — .ashx/.asmx/.svc
+     * are IIS handler+service extensions (the classic ASP.NET web
+     * shell shapes alongside .aspx); .jspf is the JSP fragment
+     * form; .war deploys servlets; .cgi/.wsgi are gateway entries;
+     * .cfm/.cfc/.cfr are ColdFusion (routinely exploited);
+     * .do/.action are Struts mappings (Struts exploit class)     */
+    ".jspf", ".ashx", ".asmx", ".svc", ".war", ".cgi",
+    ".cfm", ".cfc", ".cfr", ".do", ".action", ".wsgi",
     NULL
 };
 

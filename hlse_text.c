@@ -190,6 +190,13 @@ static const char *BAIT_WORDS[] = {
     "a new device signed in", "new device signed in",
     "new device sign-in", "signed in to your account from",
     "unfamiliar device", "unrecognized device", "unknown device signed",
+    /* exchange KYC + declined-payment lures — 'kyc verification
+     * failed' and 'payment was declined' are the dominant
+     * credential-harvest framings for exchange and card phishing  */
+    "kyc verification", "complete your kyc", "kyc check",
+    "kyc verification failed", "resubmit your documents",
+    "payment declined", "payment was declined", "card was declined",
+    "declined on your card", "update billing details",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

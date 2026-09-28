@@ -15,6 +15,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **KYC / declined-payment lures** (`hlse_text.c`): "kyc verification
+  failed / complete your kyc / resubmit your documents" (exchange
+  credential harvesting) and "payment was declined / declined on
+  your card / update billing details" (card phishing shape).
+- **Web-shell carrier extensions** (`hlse_file.c`): `.jspf .ashx
+  .asmx .svc .war .cgi .cfm .cfc .cfr .do .action .wsgi` — IIS
+  handler/service extensions (the ASP.NET web-shell shapes beside
+  .aspx), JSP fragments, Java web archives, CGI/WSGI gateway
+  entries, ColdFusion, and Struts mappings.
+- **`resource:` scheme** (`hlse_core.c`): Firefox internal-file
+  disclosure via a clickable link.
 - **SIM-swap / device-alert lures** (`hlse_text.c`): "number will be
   ported", "sim will be deactivated", "re-registration", "mailbox
   is almost full", "a new device signed in … from", "unfamiliar /

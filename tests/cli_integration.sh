@@ -10723,6 +10723,21 @@ for e in jtd jtt; do
 done
 rm -rf "$XDIR117"
 
+# ── cycle-118: KYC/declined-payment lures + web-shell carriers ──
+check_text_hit 'your payment was declined update billing details' 'LOG' "text: declined-payment flagged"
+check_text_hit 'your kyc verification failed resubmit documents' 'LOG' "text: kyc lure flagged"
+check_text_hit 'complete your kyc verification to unlock withdrawals' 'LOG' "text: kyc withdrawal flagged"
+check_text_hit 'the card was declined at the store today' 'OK' "text: benign declined clean"
+check_url_hit 'resource:///etc/passwd' 'LOG' "url: resource: flagged"
+XDIR118=$(mktemp -d /tmp/hlse118.XXXXXX)
+for e in jspf ashx asmx svc war cgi cfm cfc do action wsgi; do
+    printf 'x\n' > "$XDIR118/t.$e"
+    ./hlse_core file "$XDIR118/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e web-shell carrier flagged" "0" "0" \
+        || check "file: .$e web-shell carrier flagged" "0" "1"
+done
+rm -rf "$XDIR118"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
