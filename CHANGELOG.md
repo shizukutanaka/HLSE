@@ -15,6 +15,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Voicemail / health-scam lures** (`hlse_text.c`): "new voicemail /
+  missed calls / voice message waiting / click to listen" (vishing
+  delivery) plus "health insurance claim / medical alert device /
+  medicare benefits / coverage is expiring" (elder-targeted
+  insurance phishing).
+- **`.cur` / `.ani`** (`hlse_file.c`): cursor payloads parsed by the
+  shell on preview (historic ANIH exploit class).
+- **`SK`+32-hex Twilio API key** (`hlse_secrets.c`, hex-lower
+  predicate keeps prose "SK patterns" clean).
+- **Streaming/voice schemes** (`hlse_core.c`): `news:` (legacy
+  NNTP alias), `rtmps:` (TLS rtmp), `mumble:`, `ts3server:`.
 - **Arabic / Hindi smishing signals** (`hlse_text.c`): AR (`طردك
   محتجز في الجمارك`, `تم حظر حسابك`, `دفع الرسوم`) and HI
   (`आपका पैकेज कस्टम्स में रुका`, `खाता ब्लॉक`, `शुल्क का भुगतान`)

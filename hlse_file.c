@@ -382,6 +382,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * own links and attachments) inside an attachment; the classic
      * 'invoice.eml' phishing carrier                             */
     ".eml", ".msg",
+    /* Cursor payloads — .ani animated cursors parse on preview
+     * (historic ANIH exploit class, still parsed by the shell);
+     * .cur is the static sibling                                  */
+    ".cur", ".ani",
     NULL
 };
 

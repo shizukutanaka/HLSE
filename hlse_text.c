@@ -170,6 +170,16 @@ static const char *BAIT_WORDS[] = {
     "unclaimed grant", "federal grant", "grant you qualified",
     "qualify for a grant", "qualified for a grant",
     "processing fee to receive", "fee to release",
+    /* Voicemail / health-scam lures — 'you have a new voicemail'
+     * carries the click link (vishing delivery), and fake
+     * insurance/medical lures target elders                     */
+    "new voicemail", "you have a voicemail", "have a new voicemail",
+    "missed call", "missed calls", "voice message",
+    "voice message waiting", "click to listen", "press play to listen",
+    "listen to your voicemail", "voicemail waiting",
+    "health insurance claim", "insurance claim was denied",
+    "medical alert device", "medicare benefits", "benefits are expiring",
+    "coverage is expiring", "coverage has expired",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

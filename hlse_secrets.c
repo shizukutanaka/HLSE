@@ -399,6 +399,7 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "pd_oauth_",     9,  20, is_alnum_or_dash,   "PagerDuty OAuth Token", 80 },
     { "tvly-",         5,  30, is_alnum_or_dash,   "Tavily API Key",        80 },
     { "CFPAT-",        6,  30, is_alnum_or_dash,   "Contentful PAT",        80 },
+    { "SK",            2,  32, is_hex_c,           "Twilio API Key",        75 },
 
     /* New Relic */
     { "NRAK-",         5,  27, is_alnum_or_dash,   "New Relic API Key",     85 },

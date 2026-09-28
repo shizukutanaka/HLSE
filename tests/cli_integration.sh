@@ -10683,6 +10683,27 @@ check_url_hit 'prospero://x.example' 'LOG' "url: prospero: flagged"
 CF="CFPAT-"; CF="${CF}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234"
 check_secret_hit "$CF" 'Contentful PAT' "secret: CFPAT- flagged"
 
+# ── cycle-116: voicemail/health lures + cursor exts + twilio/news ──
+check_text_hit 'you have a new voicemail press play to listen' 'LOG' "text: voicemail lure flagged"
+check_text_hit 'you have 2 missed calls and a voicemail click to listen' 'LOG' "text: missed-call lure flagged"
+check_text_hit 'your health insurance claim was denied call now' 'LOG' "text: health lure flagged"
+check_text_hit 'the voicemail system needs maintenance' 'OK' "text: benign voicemail clean"
+check_text_hit 'i missed your call yesterday sorry' 'OK' "text: benign missed-call clean"
+TW="SK"; TW="${TW}0123456789abcdef0123456789abcdef"
+check_secret_hit "$TW" 'Twilio API Key' "secret: SK twilio flagged"
+check_secret_hit 'the codebase uses SK patterns for keys' 'OK' "secret: SK prose clean"
+check_url_hit 'news:comp.security' 'LOG' "url: news: flagged"
+check_url_hit 'rtmps://evil.example/live' 'LOG' "url: rtmps: flagged"
+check_url_hit 'mumble://evil.example' 'LOG' "url: mumble: flagged"
+XDIR116=$(mktemp -d /tmp/hlse116.XXXXXX)
+for e in cur ani; do
+    printf 'x\n' > "$XDIR116/t.$e"
+    ./hlse_core file "$XDIR116/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+rm -rf "$XDIR116"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -1725,7 +1725,7 @@ static const char *const URL_LEGACY_SCHEMES[] = {
     /* pre-web information services — a legacy-handler URL that
      * modern browsers hand to nothing but still marks the URI as
      * an off-channel fetch reference                               */
-    "wais:", "prospero:", "acap:", NULL
+    "wais:", "prospero:", "acap:", "news:", NULL
 };
 static const char *const URL_FETCH_SCHEMES[] = {
     "ssh:", "sftp:", "git:", "svn:", "hg:", "wss:", "ws:", NULL
@@ -1789,7 +1789,11 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     /* decentralized / P2P fetch schemes — ipfs:// resolves content
      * through a gateway (a real phishing-hosting channel: the CID
      * hides the origin), magnet:/ed2k: pull payloads via P2P       */
-    "ipfs:", "ipns:", "magnet:", "ed2k:", NULL
+    "ipfs:", "ipns:", "magnet:", "ed2k:",
+    /* streaming / voice-server join schemes — rtmps: is the TLS
+     * rtmp sibling, mumble:/ts3server: hand a server address to
+     * the voice client                                            */
+    "rtmps:", "mumble:", "ts3server:", NULL
 };
 /* Remote-mount schemes: clicking one attaches a remote filesystem or
  * session — smb: is the same NetNTLM-leak class as a \\ UNC path,
