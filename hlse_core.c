@@ -1768,7 +1768,13 @@ static const char *const URL_HANDLER_SCHEMES[] = {
      * out of a named DLL/EXE (in-page code exec in IE contexts),
      * shell: opens shell namespace folders, expect: hands a string
      * to the Tcl expect tool's command channel                   */
-    "res:", "shell:", "expect:", "hcp:", NULL
+    "res:", "shell:", "expect:", "hcp:",
+    /* ITS/CHM help-protocol family — ms-its:/ms-itss:/its:/itsfile:
+     * and the mk:@MSITStore moniker load compiled-help (.chm) content
+     * that carries executable script; mhtml: renders MIME-HTML (an
+     * XSS wrapper class in IE), ms-help: hands a URI to Help Viewer  */
+    "ms-its:", "ms-itss:", "its:", "itsfile:", "mk:",
+    "mhtml:", "ms-help:", NULL
 };
 /* Remote-mount schemes: clicking one attaches a remote filesystem or
  * session — smb: is the same NetNTLM-leak class as a \\ UNC path,

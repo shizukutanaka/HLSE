@@ -15,6 +15,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **ITS/CHM help-protocol URI schemes** (`hlse_core.c`
+  `URL_HANDLER_SCHEMES`): `ms-its:`/`ms-itss:`/`its:`/`itsfile:`/
+  `mk:` (the `@MSITStore` moniker)/`mhtml:`/`ms-help:` — compiled-
+  help content carries executable script and these handler forms
+  bypass host parsing entirely; `mk:` with a remote indicator scores
+  BLOCK. `hcp:`/`res:` were already covered.
+- **Shortcut script-scheme payloads** (`hlse_file.c`
+  `launcher_payload_score`): a `.url`/`webloc` whose `URL=` value is
+  `javascript:`/`vbscript:`/`jscript:`/`data:text/html`/ITS/`mhtml:`
+  is a direct execution primitive that bypassed the http(s)-only
+  link extraction — now scores 65+. A benign `https:` `.url` stays
+  LOG.
 - **IaC / CI-CD token formats** (`hlse_secrets.c`): `pul-` Pulumi
   access token (43-char suffix), `ccipat_` CircleCI personal API
   token (40-hex suffix), `pscale_tkn_`/`pscale_pw_` PlanetScale

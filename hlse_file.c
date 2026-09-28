@@ -580,6 +580,17 @@ launcher_payload_score(const unsigned char *head, size_t len) {
     } else if (strstr(low, "file://") != NULL) {
         if (best < 55) best = 55;
     }
+    if (is_shortcut) {
+        /* A shortcut's URL= value is opened verbatim by Explorer/the
+         * browser: script and MIME/ITS-help schemes are execution
+         * primitives that never pass through the http(s) link scan. */
+        if (strstr(low, "javascript:") || strstr(low, "vbscript:") ||
+            strstr(low, "jscript:")    || strstr(low, "data:text/html") ||
+            strstr(low, "ms-its")      || strstr(low, "mk:@msitstore") ||
+            strstr(low, "mhtml:")) {
+            if (best < 65) best = 65;
+        }
+    }
     if (is_desktop) {
         const char *e = strstr(low, "exec=");
         if (e) {

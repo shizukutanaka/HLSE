@@ -10481,6 +10481,23 @@ PW="pscale_pw_"; PW="${PW}8qAbCdEfGhIjKlMnOpQrStUvWxYz123456"
 check_secret_hit "$PW" 'PlanetScale Password' "secret: PlanetScale password flagged"
 check_secret_hit 'the pool was clean and calm today' 'OK' "secret: benign sentence clean"
 
+# ── cycle-104: ITS/CHM help schemes + shortcut script-scheme payloads ──
+check_url_hit() { out=$(./hlse_core "$1" | head -1); printf '%s' "$out" | grep -q "$2" && check "$3" "0" "0" || { printf '%s' "$out" | grep -q . && check "$3" "0" "1"; }; }
+check_url_hit 'ms-its:x.chm::/x.htm' 'LOG' "url: ms-its: CHM scheme flagged"
+check_url_hit 'mk:@MSITStore:C:\\x.chm::/x.html' 'BLOCK' "url: mk:@MSITStore moniker flagged"
+check_url_hit 'mhtml:file://x' 'LOG' "url: mhtml: scheme flagged"
+check_url_hit 'itsdemo' 'OK' "url: bare word starting with its clean"
+XDIR104=$(mktemp -d /tmp/hlse104.XXXXXX)
+printf '[InternetShortcut]\nURL=javascript:alert(document.domain)\n' > "$XDIR104/js.url"
+printf '[InternetShortcut]\nURL=https://legit.example.com/\n' > "$XDIR104/ok.url"
+./hlse_core file "$XDIR104/js.url" 2>&1 | grep -q "ISOLATE" \
+    && check "file: .url javascript: payload flagged" "0" "0" \
+    || check "file: .url javascript: payload flagged" "0" "1"
+./hlse_core file "$XDIR104/ok.url" 2>&1 | grep -q "LOG" \
+    && check "file: benign .url stays LOG" "0" "0" \
+    || check "file: benign .url stays LOG" "0" "1"
+rm -rf "$XDIR104"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
