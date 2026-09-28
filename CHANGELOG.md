@@ -51,6 +51,25 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Notary + moving + dark-web + bank-merger + home-warranty +
+  membership lures** (`hlse_text.c`): "notary fee · notarized
+  copy · document notarization · certified notary · notary service ·
+  notarization fee" (notarization fees), "moving deposit · movers
+  deposit · mover reservation · moving reservation · shipping
+  insurance fee" (fake movers), "identity monitoring · your data
+  was found · found on the dark web · dark web monitoring · your
+  information was found" (dark-web exposure phishing), "bank
+  merger · account migration · migrate your account · new banking
+  platform · account migration required · banking platform
+  migration" (merger migration ruses), "home warranty · home
+  warranty plan · home warranty coverage · home protection plan ·
+  warranty protection plan" (warranty-renewal fraud), "membership
+  cancellation · cancel your membership · membership cancellation
+  fee" (membership-refund scams).
+- **`.pps`/`.wiz` legacy Office carriers** (`hlse_file.c`)
+  → LOG 30.
+- **`eudora:` legacy mail-client scheme** (`hlse_core.c`) → LOG 35.
+
 - **Escrow-release + trust + rollover + deed + medical-debt +
   COBRA + audit lures** (`hlse_text.c`): "escrow release · release
   funds from escrow · release the escrow · escrow release form"

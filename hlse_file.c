@@ -245,6 +245,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * (.mde), workgroup file (.mdw), runtime build (.accdr):
      * all carry VBA/OLE like .mdb/.accdb (already listed)       */
     ".mda", ".mde", ".mdw", ".accdr",
+    /* Residual legacy Office carriers — .pps (PowerPoint show: runs
+     * the deck on open) and .wiz (Office wizard: OLE + VBA carrier)
+     * — the .pps/.dot/.pot/.xlt siblings are already listed        */
+    ".pps", ".wiz",
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
@@ -995,7 +999,7 @@ is_script_ext(const char *ext) {
         ".nsi", ".nsh", ".iss", ".isl", ".wxs", ".manifest",
         ".asa", ".inc", ".plx", ".vss", ".vssx", ".vst",
         ".vstm", ".vstx", ".xlb", ".xlv", ".mda", ".mde",
-        ".mdw", ".accdr",
+        ".mdw", ".accdr", ".pps", ".wiz",
         NULL
     };
     char lower[32];

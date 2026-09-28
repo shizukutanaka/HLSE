@@ -637,6 +637,25 @@ static const char *BAIT_WORDS[] = {
     "license true-up", "software audit notice",
     "license compliance review", "software license audit",
     "license compliance", "audit your licenses",
+    /* Notary + moving-deposit + identity-monitoring + bank-migration
+     * + home-warranty + membership lures — fake notarization fees,
+     * fake mover deposits, dark-web exposure phishing, bank-merger
+     * account-migration ruses, home-warranty renewal fraud, and
+     * membership-cancellation refund scams                          */
+    "notary fee", "notarized copy", "document notarization",
+    "certified notary", "notary service", "notarization fee",
+    "moving deposit", "movers deposit", "mover reservation",
+    "moving reservation", "shipping insurance fee",
+    "identity monitoring", "your data was found",
+    "found on the dark web", "dark web monitoring",
+    "your information was found",
+    "bank merger", "account migration", "migrate your account",
+    "new banking platform", "account migration required",
+    "banking platform migration",
+    "home warranty", "home warranty plan", "home warranty coverage",
+    "home protection plan", "warranty protection plan",
+    "membership cancellation", "cancel your membership",
+    "membership cancellation fee",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

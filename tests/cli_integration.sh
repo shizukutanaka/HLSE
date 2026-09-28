@@ -11385,6 +11385,20 @@ rm -rf "$XDIR169"
 check_url_hit 'ms-call:attacker.example' 'LOG' "url: ms-call flagged"
 check_url_hit 'wp:attacker.example/x' 'LOG' "url: wp flagged"
 
+# ── cycle-170: notary/moving/darkweb/bankmerger/warranty/membership ────
+check_text_hit 'notary fee notarized copy document notarization fee' 'LOG' "text: notary flagged"
+check_text_hit 'moving deposit mover reservation shipping insurance fee' 'BLOCK' "text: moving flagged"
+check_text_hit 'identity monitoring your data was found dark web monitoring' 'BLOCK' "text: darkweb flagged"
+check_text_hit 'bank merger account migration new banking platform' 'LOG' "text: merger flagged"
+check_text_hit 'home warranty home warranty plan home protection plan' 'LOG' "text: warranty flagged"
+check_text_hit 'membership cancellation cancel your membership cancellation fee' 'LOG' "text: membership flagged"
+check_text_hit 'the notary stamped our paperwork yesterday' 'OK' "text: benign notary clean"
+check_text_hit 'i cancelled my gym membership last month' 'OK' "text: benign membership clean"
+XDIR170=$(mktemp -d /tmp/hlse170.XXXXXX)
+for e in pps wiz; do printf 'x\n' > "$XDIR170/b.$e"; check "$XDIR170/b.$e flagged" "$(./hlse_core file "$XDIR170/b.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+rm -rf "$XDIR170"
+check_url_hit 'eudora://evil.example/mail' 'LOG' "url: eudora flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

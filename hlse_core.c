@@ -1729,6 +1729,9 @@ static const char *const URL_LEGACY_SCHEMES[] = {
     /* Call-launch + legacy mobile handlers — ms-call: opens a
      * call UI directly; wp: is the WAP protocol accessor        */
     "ms-call:", "wp:",
+    /* Legacy Eudora mail client handler — same remote mailto-class
+     * launch surface as the dead-client schemes already listed     */
+    "eudora:",
     /* TLS-wrapped variants of the legacy transports — ftp/nntp over
      * TLS are the same cleartext-era handler class; ldaps: was
      * already listed while its ftp/nntp siblings fell through    */
