@@ -108,47 +108,57 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 
 ## Weaknesses / risks (what to improve — cite when you touch them)
 
-- **`hlse_core.c` is ~9,200 lines** with a giant `main()` dispatching 12+
-  subcommands via flat `strcmp`. High regression surface. **JSON escaping is
-  duplicated 3 ways** (`hlse_core.c` `json_escape`, `hlse_server.c`
-  `json_escape_append`, `hlse_util.c` `hlse_json_escape`) — consolidation is
-  only partial.
-- **No hosted CI:** `.github/workflows/` is absent (only `FUNDING.yml`). The
-  "CI enforces" wording in README/CONTRIBUTING is true only of the Makefile
-  targets.
-- **14 known `make test` failures** are environment/workflow-permission
-  artifacts, not engine bugs — but "not green" is the steady state.
+- **`hlse_core.c` is still ~9,500 lines.** `main()` was cut from 2,190 to ~415
+  lines by extracting the `cmd_*` handlers behind a dispatch table, and the
+  JSON-escape idiom is one helper (`json_field`) plus `hlse_json_escape`; but
+  the file remains the largest regression surface. `hlse_server.c` keeps its
+  own append-style escaper (`json_escape_append`) for a different buffer model.
+- **No hosted CI:** `.github/workflows/` is absent (only `FUNDING.yml`; the App
+  cannot commit workflows). The build itself carries the gates that matter:
+  `make check-warnings`, `make bench`, `make asan-test`, `make test`,
+  `make coverage` and `make privacy-check` (zero network syscalls). "CI
+  enforces" wording is true of those Makefile targets, not of a hosted service.
+- **`make test` is fully green** (see guardrail 4). The former "14 known
+  failures" were fixed, not tolerated; do not reintroduce a tolerated baseline.
 - **macOS is effectively unimplemented** (FSEvents is a stub; `/proc`,
-  `/dev/sd*`, systemd checks are Linux-only). **No continuous monitoring**:
-  `inotify`/`fanotify` are comments only; the SMB canary is a single
-  `stat`+atime check; R5 shadow-delete is implemented but uncalled; R1
+  `/dev/sd*`, systemd checks are Linux-only, zero `__APPLE__` guards). Missing
+  sources now degrade *honestly* (`audit`/`network`/`file`/`protect`/`esp`/
+  `scan` say what they could not examine) rather than silently. **No continuous
+  monitoring**: `inotify`/`fanotify` are comments only; the SMB canary is a
+  single `stat`+atime check; R5 shadow-delete is implemented but uncalled; R1
   (N-files-in-T-seconds) is documented but unimplemented.
+- **`hlse_gpt_verify()` is public API the CLI never calls.** On a GPT disk
+  `protect --mbr` checks only the MBR. Wiring it in adds +10 on every
+  legacy-BIOS disk (a scoring change) and the module comment says UEFI-era
+  boot integrity is `esp`'s job — needs a maintainer decision.
 - **Contract tension for a daemon:** `SECURITY.md:42` classes cross-invocation
   persistent state as a High-severity bug — which a resident FIM baseline/dedup
   store needs. Daemon mode requires an explicit, scoped contract amendment.
 - Documentation numbers (test/fuzz counts, binary size, version stamps) drift;
-  re-derive from reality when you touch them.
+  re-derive from reality when you touch them. This file's own baseline in
+  guardrail 4 is one of them.
 
 ---
 
 ## Prioritized backlog
 
-**P0 — consistency / reliability (low risk):**
-- Sync doc numbers to measured reality (test/fuzz counts, stale "5×100K" line,
-  binary size, version stamps).
-- Triage the 14 known failures: separate the environment-dependent ones from
-  `make test`, or mark them `SKIP`, and document that no engine bug is involved.
-- Ship complete `ci.yml`/`codeql.yml`/`release.yml` under `examples/` with a
-  README pointer (maintainer copies to `.github/workflows/`).
+**Done (do not redo):** doc numbers re-derived; the 14 failures fixed; CI YAML
+shipped under `examples/`; `main()` dispatch table; JSON-escape consolidation;
+slopsquat heuristic, offline structural secret validation (GitHub CRC32/base62,
+AWS account decode, JWT `alg:none`), chi-square uniformity test; CWE-150
+terminal-injection hardening; the "could not read" honesty class across
+`audit`/`network`/`file`/`protect`/`esp`/`scan`; build-enforced zero-network;
+2026 ClickFix variants in `paste` (DNS-staged, CrashFix, substitution-form
+download-and-execute, decode-and-execute).
 
 **P1 — maintainability / detection quality:**
-- Split `hlse_core.c` (extract CLI dispatch to `hlse_cli.c`; table-drive the
-  subcommand handlers) — behavior-preserving, incremental.
-- Consolidate JSON escaping onto `hlse_util.c:hlse_json_escape`.
-- Escape attacker-controlled `.efi` filenames in the plain-text `esp` CLI output
-  (JSON output is already escaped).
-- 2026 detection gaps: slopsquat heuristic, offline structural secret validation
-  (base62+CRC32 etc.), chi-square uniformity test for intermittent encryption.
+- Continue splitting `hlse_core.c` (move the `cmd_*` handlers to `hlse_cli.c`);
+  behavior-preserving, verify with byte-identical output diffs against a
+  reference binary built from `git show HEAD:<file>`.
+- Decide `hlse_gpt_verify()` wiring (above).
+- Keep checking `paste`/`text`/`url` against current threat reporting; each
+  round has found real gaps (FileFix and `osascript` variants were checked and
+  are already covered).
 
 **P2 — resident/daemon mode (large; its own round, design-then-review-then-build):**
 - `0.4` config-file loader (`--config`: `WATCH`/`PATTERNS`/`BASELINE`/`SYSLOG`/
