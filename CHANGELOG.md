@@ -30,6 +30,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Relief-payment + flight-compensation lures** (`hlse_text.c`):
+  "stimulus check/payment · tariff rebate/dividend · inflation
+  relief · relief payment" (fake-payout phishing collecting
+  SSN/bank details) and "flight delay compensation · airline
+  compensation · compensation claim · employee discount
+  program" (EU261/benefit lures).
+- **Slack token variants** (`hlse_secrets.c`): `xoxe-`
+  single-segment rotation token → ISOLATE 85, `xoxa-` app
+  token → ISOLATE 80.
+- **Script extension coverage** (`hlse_file.c`): `.mjs`/`.cjs`
+  (Node module extensions — same carrier class as `.js`),
+  `.ksh` (Korn shell), `.pssc`/`.psrc` (PowerShell session
+  config + JEA resource files) → LOG 30.
+
 - **Shopper / NFT-drainer / mortgage-relief lures** (`hlse_text.c`):
   "secret shopper · shopper assignment/evaluation" (check-cashing
   advance-fee), "nft mint · free mint · whitelist spot · mint your

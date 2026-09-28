@@ -457,6 +457,14 @@ static const char *BAIT_WORDS[] = {
     "claim your airdrop", "airdrop claim", "mortgage relief",
     "loan modification", "vehicle purchase protection",
     "car escrow", "auto escrow",
+    /* Relief-payment / flight-compensation lures — tariff-rebate,
+     * stimulus-check, inflation-relief and EU261 compensation
+     * phishing (collecting SSN/bank details via fake payouts)   */
+    "stimulus check", "stimulus payment", "tariff rebate",
+    "tariff dividend", "inflation relief", "relief payment",
+    "flight delay compensation", "airline compensation",
+    "compensation claim", "claim your compensation",
+    "employee discount program",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

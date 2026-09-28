@@ -265,6 +265,10 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* Slack */
     { "xapp-",        5,  20, is_alnum_or_dash,   "Slack App-level Token", 85 },
     { "xoxe.",         5,  20, is_alnum_or_dash,   "Slack Config/Rotation Token", 85 },
+    /* xoxe- single-segment rotation token and xoxa- app token —
+     * remaining Slack credential variants                        */
+    { "xoxe-",         5,  10, is_alnum_or_dash,   "Slack Rotation Token",  85 },
+    { "xoxa-",         5,  10, is_alnum_or_dash,   "Slack App Token",       80 },
     { "xoxb-",        5,  10, is_alnum_or_dash,   "Slack Bot Token",       80 },
     { "xoxp-",         5,  10, is_alnum_or_dash,   "Slack User Token",      85 },
     { "xoxs-",         5,  10, is_alnum_or_dash,   "Slack Session Token",   85 },

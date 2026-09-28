@@ -219,8 +219,9 @@ looks_like_html(const unsigned char *head, size_t len) {
 
 static const char *EXECUTABLE_EXTS[] = {
     ".exe", ".scr", ".com", ".bat", ".cmd", ".ps1", ".psm1",
-    ".psd1", ".vbs",
-    ".vbe", ".js",  ".jse", ".wsf", ".wsh", ".ws",  ".msi", ".msp",
+    ".psd1", ".pssc", ".psrc", ".vbs",
+    ".vbe", ".js",  ".jse", ".mjs", ".cjs", ".ksh",
+    ".wsf", ".wsh", ".ws",  ".msi", ".msp",
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
@@ -949,8 +950,10 @@ credential_form_score(const unsigned char *head, size_t len) {
 static int
 is_script_ext(const char *ext) {
     static const char *const S[] = {
-        ".ps1", ".psm1", ".bat", ".cmd", ".vbs", ".vbe", ".js",
-        ".jse", ".wsf", ".wsh", ".ws",  ".hta", ".sh", ".py", ".reg",
+        ".ps1", ".psm1", ".psd1", ".ps1xml", ".pssc", ".psrc",
+        ".bat", ".cmd", ".vbs", ".vbe", ".js",
+        ".jse", ".mjs", ".cjs", ".ksh", ".wsf", ".wsh", ".ws",
+        ".hta", ".sh", ".py", ".reg",
         NULL
     };
     char lower[32];

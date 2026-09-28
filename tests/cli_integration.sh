@@ -11214,6 +11214,20 @@ XDIR156=$(mktemp -d /tmp/hlse156.XXXXXX)
 for e in esd ffu; do printf 'x\n' > "$XDIR156/drop.$e"; check "$XDIR156/drop.$e flagged" "$(./hlse_core file "$XDIR156/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
 rm -rf "$XDIR156"
 
+# ── cycle-157: relief/compensation lures + slack variants + script exts ─
+check_text_hit 'stimulus check approved relief payment direct deposit' 'LOG' "text: stimulus flagged"
+check_text_hit 'flight delay compensation claim eu261 up to 600 euros' 'LOG' "text: eu261 flagged"
+check_text_hit 'tariff dividend inflation relief payment check mail' 'LOG' "text: tariff flagged"
+check_text_hit 'i filed a mileage reimbursement form at work' 'OK' "text: benign mileage clean"
+check_text_hit 'the flight delay was announced at the gate' 'OK' "text: benign flight clean"
+XS="xoxa-1-"; XS="${XS}abcdefghij1234"
+check_secret_hit "$XS" 'Slack App Token' "secret: xoxa flagged"
+XS2="xoxe-1-"; XS2="${XS2}abcdefghij1234"
+check_secret_hit "$XS2" 'Slack Rotation Token' "secret: xoxe-single flagged"
+XDIR157=$(mktemp -d /tmp/hlse157.XXXXXX)
+for e in mjs cjs ksh pssc psrc; do printf 'x\n' > "$XDIR157/drop.$e"; check "$XDIR157/drop.$e flagged" "$(./hlse_core file "$XDIR157/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+rm -rf "$XDIR157"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
