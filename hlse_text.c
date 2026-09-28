@@ -389,6 +389,14 @@ static const char *BAIT_WORDS[] = {
     "employment screening", "verify your identity for employment",
     "dental coverage", "vision insurance", "dental plan",
     "vision plan", "insurance plan update",
+    /* Student-aid + veterans-benefits lures — fake FAFSA/grant
+     * notifications and VA-claim/disability benefit phishing that
+     * harvest SSN and banking data                                  */
+    "fafsa", "student aid", "student loan", "pell grant",
+    "financial aid package", "aid report", "student grant",
+    "va claim", "veterans benefits", "va benefits", "va disability",
+    "disability benefits", "gi bill", "military records",
+    "veteran benefits", "va compensation", "disability claim",
     /* Real-estate closing BEC — fake escrow/wire-instruction changes
      * and notarized-document lures: the single highest-value wire
      * fraud shape (six-figure home-purchase diversion)             */

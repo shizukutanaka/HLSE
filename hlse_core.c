@@ -1826,6 +1826,9 @@ static const char *const URL_HANDLER_SCHEMES[] = {
      * channel-switch lures (pig-butchering move to wire/icq/kik/
      * element/matrix)                                              */
     "wire:", "icq:", "kik:", "element:", "matrix:",
+    /* remote-workspace client handlers — clicking launches Citrix
+     * Receiver / Workspace App (enterprise remote-desktop surface) */
+    "receiver:", "citrix:", "workspaces:",
     /* podcast subscription schemes — a click subscribes the
      * reader to a remote feed (ongoing remote-content pull)      */
     "pcast:", "itms-pcast:", "podcast:", "castro:",

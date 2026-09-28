@@ -11084,6 +11084,22 @@ printf 'x\n' > "$XDIR144/t.wbk"
     || check "file: .wbk word-backup flagged" "0" "1"
 rm -rf "$XDIR144"
 
+# ── cycle-145: student-aid/va lures + workspace schemes + ODF templates ──
+check_text_hit 'fafsa verification required student aid report' 'LOG' "text: fafsa lure flagged"
+check_text_hit 'va claim status update disability benefits approved' 'LOG' "text: va-claim flagged"
+check_text_hit 'i filed my fafsa application last month' 'OK' "text: benign fafsa clean"
+check_text_hit 'my va claim was approved years ago' 'OK' "text: benign va clean"
+check_url_hit 'receiver://x' 'LOG' "url: receiver flagged"
+check_url_hit 'citrix://x' 'LOG' "url: citrix flagged"
+XDIR145=$(mktemp -d /tmp/hlse145.XXXXXX)
+printf 'x\n' > "$XDIR145/t.ots"
+./hlse_core file "$XDIR145/t.ots" 2>&1 | grep -q "LOG" \
+    && check "file: .ots odf-template flagged" "0" "0" \
+    || check "file: .ots odf-template flagged" "0" "1"
+rm -rf "$XDIR145"
+CK="ck_"; CK="${CK}a1b2c3d4e5f6071829"
+check_secret_hit "${CK}3a4b5c6d7e8f90a1b2c3d4" 'WooCommerce' "secrets: ck_ flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

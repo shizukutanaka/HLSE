@@ -30,6 +30,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Student-aid + veterans-benefits vocab** (`hlse_text.c`): "fafsa ·
+  student aid · student loan · pell grant · financial aid package ·
+  student grant" plus "va claim · veterans benefits · va disability ·
+  disability benefits · gi bill · military records · disability
+  claim" — benefit phishing that harvests SSN and banking data.
+- **Remote-workspace client schemes** (`hlse_core.c`): `receiver:`,
+  `citrix:`, `workspaces:` — Citrix Receiver / Workspace App handlers.
+- **`.ots`/`.ott`/`.otg`/`.stw`** (`hlse_file.c`): OpenDocument and
+  legacy StarOffice templates — macro-capable attachment carriers.
+- **`ck_` + `cs_`** (`hlse_secrets.c`): WooCommerce REST consumer
+  key/secret (40-hex) — full read/write over store orders and
+  customer data.
 - **Real-estate closing BEC vocab** (`hlse_text.c`): "escrow ·
   closing instructions · closing disclosure · wire instructions ·
   earnest money · title company · settlement agent · notarized

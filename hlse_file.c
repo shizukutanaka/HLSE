@@ -459,6 +459,9 @@ static const char *EXECUTABLE_EXTS[] = {
     /* .wbk — Word auto-backup copy (a full .doc clone that can
      * carry macros; emailed as an innocuous-looking attachment)    */
     ".wbk",
+    /* OpenDocument / legacy StarOffice templates — .ots/.ott/.otg/
+     * .stw are macro-capable templates delivered as attachments    */
+    ".ots", ".ott", ".otg", ".stw",
     NULL
 };
 

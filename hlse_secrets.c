@@ -324,6 +324,10 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * token — full root/admin capability for the secrets engine    */
     { "hvs.",          4,  24, is_base64,          "HashiCorp Vault Service Token", 95 },
     { "hvb.",          4,  24, is_base64,          "HashiCorp Vault Batch Token",   90 },
+    /* WooCommerce REST consumer key/secret: 'ck_'/'cs_' + 40 hex —
+     * full read/write over the store's orders and customer data    */
+    { "ck_",           3,  40, is_hex,             "WooCommerce Consumer Key",    80 },
+    { "cs_",           3,  40, is_hex,             "WooCommerce Consumer Secret", 80 },
     /* Brevo/Sendinblue SMTP+API key, Dropbox long-form token,
      * JFrog Artifactory identity key, Bitbucket app password —
      * each has a fixed vendor prefix that hands over an account */
