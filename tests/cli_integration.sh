@@ -11058,6 +11058,17 @@ check_secret_hit "${IGT}t0y9u4j7b2n5e8r1d6g3c0v2l4a8s6d" 'Instagram Graph' "secr
 HB="hbp_"; HB="${HB}x9q2m7f4h1k8p3"
 check_secret_hit "${HB}w6z5t0y9u4j7b2n5e8r1d6" 'Honeybadger' "secrets: hbp_ honeybadger flagged"
 
+# ── cycle-143: traffic-ticket lures + vault tokens + ms-infopath ─────────
+check_text_hit 'parking ticket payment due pay your ticket' 'LOG' "text: parking-ticket lure flagged"
+check_text_hit 'speed camera violation notice citation payment' 'LOG' "text: speed-camera flagged"
+check_text_hit 'the parking ticket was dismissed' 'OK' "text: benign ticket clean"
+check_text_hit 'i got a speeding ticket last year' 'OK' "text: benign speeding clean"
+check_url_hit 'ms-infopath:form.xsn' 'LOG' "url: ms-infopath flagged"
+HVS="hvs."; HVS="${HVS}CAESIJzQ2x9kLm4pW"
+check_secret_hit "${HVS}7dF3tV8bN5cG6hR" 'Vault Service Token' "secrets: hvs. flagged"
+HVB="hvb."; HVB="${HVB}AAAAAQKz9x2m7f4h"
+check_secret_hit "${HVB}1k8p3w6z5t0y9u" 'Vault Batch Token' "secrets: hvb. flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

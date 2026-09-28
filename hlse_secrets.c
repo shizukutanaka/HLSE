@@ -320,6 +320,10 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * Honeybadger project API key                                  */
     { "IGQWR",         5,  40, is_base64,          "Instagram Graph Token", 85 },
     { "hbp_",          4,  24, is_base64,          "Honeybadger API Key",  75 },
+    /* HashiCorp Vault tokens: 'hvs.' service token and 'hvb.' batch
+     * token — full root/admin capability for the secrets engine    */
+    { "hvs.",          4,  24, is_base64,          "HashiCorp Vault Service Token", 95 },
+    { "hvb.",          4,  24, is_base64,          "HashiCorp Vault Batch Token",   90 },
     /* Brevo/Sendinblue SMTP+API key, Dropbox long-form token,
      * JFrog Artifactory identity key, Bitbucket app password —
      * each has a fixed vendor prefix that hands over an account */

@@ -1819,6 +1819,9 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     /* remote-access tool handlers — clicking launches the named
      * remote-desktop client (tech-support scam delivery vector)    */
     "teamviewer:", "anydesk:", "rustdesk:", "airdroid:",
+    /* ms-infopath: — InfoPath form handler (legacy Office scheme
+     * not covered by the ms-office family above)                   */
+    "ms-infopath:",
     /* podcast subscription schemes — a click subscribes the
      * reader to a remote feed (ongoing remote-content pull)      */
     "pcast:", "itms-pcast:", "podcast:", "castro:",

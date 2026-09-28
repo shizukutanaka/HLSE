@@ -30,6 +30,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Traffic-ticket lure vocab** (`hlse_text.c`): "parking ticket ·
+  traffic citation · speed camera · red light camera · photo radar ·
+  citation payment · pay your ticket · unpaid citation" — fake
+  citation notices demanding online payment (card-harvesting).
+- **`ms-infopath:`** (`hlse_core.c`): legacy InfoPath form handler.
+- **`hvs.` + `hvb.`** (`hlse_secrets.c`): HashiCorp Vault service
+  and batch tokens (root/admin capability for the secrets engine).
 - **Travel/eviction/employment-screening vocab** (`hlse_text.c`):
   "flight check-in · check in online · boarding pass" (airline
   check-in phishing), "eviction notice/proceedings · vacate the

@@ -389,6 +389,15 @@ static const char *BAIT_WORDS[] = {
     "employment screening", "verify your identity for employment",
     "dental coverage", "vision insurance", "dental plan",
     "vision plan", "insurance plan update",
+    /* Traffic-ticket + parking-violation lures — fake citation
+     * notices demanding online payment (card-harvesting forms);
+     * 'toll violation' already covered separately                 */
+    "parking ticket", "parking violation", "traffic ticket",
+    "traffic citation", "speed camera", "red light camera",
+    "photo radar", "moving violation", "citation payment",
+    "ticket payment", "pay the ticket", "pay your ticket",
+    "resolve your ticket", "resolve the citation",
+    "unpaid citation", "outstanding ticket",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */
