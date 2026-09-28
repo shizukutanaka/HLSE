@@ -389,6 +389,16 @@ static const char *BAIT_WORDS[] = {
     "employment screening", "verify your identity for employment",
     "dental coverage", "vision insurance", "dental plan",
     "vision plan", "insurance plan update",
+    /* Security-incident + device-signin + dispute lures — fake
+     * breach alerts and marketplace dispute notifications          */
+    "security incident", "incident report", "incident detected",
+    "we detected unusual", "breach notification", "data incident",
+    "a new device", "new device sign", "unfamiliar device",
+    "unfamiliar sign-in", "unrecognized device", "new sign-in",
+    "signed in from", "log in from a new", "chargeback",
+    "dispute opened", "opened a dispute", "payment dispute",
+    "dispute was filed", "dispute filed", "transaction dispute",
+    "case was opened", "a case has been opened",
     /* Tax-document + retirement-account lures — fake W-2/1099
      * notices that harvest SSNs, and pension/annuity/401k phishing */
     "w-2", "w2 form", "w-2 form", "w2 attached", "w-2 attached",

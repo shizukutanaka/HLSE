@@ -30,6 +30,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Incident/device/dispute vocab** (`hlse_text.c`): "security
+  incident · incident report · breach notification · data incident"
+  (fake breach alerts), "a new device · unfamiliar sign-in ·
+  unrecognized device · new sign-in · signed in from" (device
+  alerts), "chargeback · dispute opened · payment dispute ·
+  transaction dispute · case was opened" (marketplace disputes).
+- **`NRBR-`/`NRRA-`/`NRDR-`** (`hlse_secrets.c`): New Relic browser
+  license, REST admin, and legacy insights-insert keys.
 - **Tax-document + retirement vocab** (`hlse_text.c`): "w-2 · w2
   form · 1099 form · tax document/form · wage statement" (SSN-
   harvesting tax-doc lures) plus "pension payout · retirement

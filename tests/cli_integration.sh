@@ -11141,6 +11141,17 @@ check_url_hit 'bzr://x' 'LOG' "url: bzr flagged"
 check_url_hit 'fossil://x' 'LOG' "url: fossil flagged"
 check_url_hit 'scp://x' 'LOG' "url: scp flagged"
 
+# ── cycle-150: incident/device/dispute lures + New Relic keys ───────────
+check_text_hit 'security incident incident report breach notification' 'LOG' "text: breach-alert flagged"
+check_text_hit 'unfamiliar sign-in new device signed in from' 'LOG' "text: device-signin flagged"
+check_text_hit 'chargeback filed dispute opened payment dispute' 'LOG' "text: dispute flagged"
+check_text_hit 'the security incident was resolved internally' 'OK' "text: benign incident clean"
+check_text_hit 'the dispute was resolved in my favor' 'OK' "text: benign dispute clean"
+NRA="NRRA-"; NRA="${NRA}GqFaBqqf3ZOBFIEd8uZ"
+check_secret_hit "${NRA}bivRiB4ApdULIzEtCu3r3" 'New Relic REST' "secrets: NRRA- flagged"
+NRB="NRBR-"; NRB="${NRB}Cb3S1vNEuXueIjqBHG"
+check_secret_hit "${NRB}6Js5LDRUOnBmkLb4y2DTZJ" 'New Relic Browser' "secrets: NRBR- flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

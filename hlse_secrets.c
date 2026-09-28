@@ -334,6 +334,12 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "shppa_",        6,  30, is_hex,             "Shopify App Token",            85 },
     { "shpss_",        6,  30, is_hex,             "Shopify Shared Secret",        80 },
     { "shpca_",        6,  30, is_hex,             "Shopify Client Credential",    80 },
+    /* Remaining New Relic key types — NRAI-/NRAK- already covered;
+     * NRBR- (browser license), NRRA- (REST admin), NRDR- (legacy
+     * insights insert)                                            */
+    { "NRBR-",         5,  36, is_alnum_plain,     "New Relic Browser License",   80 },
+    { "NRRA-",         5,  36, is_alnum_plain,     "New Relic REST Admin Key",    85 },
+    { "NRDR-",         5,  36, is_alnum_plain,     "New Relic Insights Insert Key", 75 },
     /* Brevo/Sendinblue SMTP+API key, Dropbox long-form token,
      * JFrog Artifactory identity key, Bitbucket app password —
      * each has a fixed vendor prefix that hands over an account */
