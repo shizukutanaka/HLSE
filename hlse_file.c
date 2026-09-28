@@ -411,6 +411,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * macOS flat-package installer variant (.fpkg feeds the
      * same Installer.app path as .pkg)                            */
     ".osa", ".fpkg",
+    /* Font carriers — raster/bitmap/PostScript fonts parse inside
+     * font engines and the X server (historic font-parsing
+     * exploit class; .ttf/.otf stay out as everyday formats)     */
+    ".fon", ".fnt", ".pfa", ".pfb", ".bdf", ".pcf", ".snf",
     NULL
 };
 

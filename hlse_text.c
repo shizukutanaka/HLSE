@@ -262,6 +262,17 @@ static const char *BAIT_WORDS[] = {
     "affected by the data breach", "data breach affecting",
     "unusual activity on your account",
     "unusual activity detected", "suspicious activity on your",
+    /* quarantine-release + unsolicited-code lures — 'review your
+     * quarantined emails' is the top O365 cred phish shape;
+     * 'did not request this code' baits panic sign-ins          */
+    "quarantined messages", "held in quarantine",
+    "quarantined emails", "your quarantine", "quarantine review",
+    "messages in quarantine", "emails in quarantine",
+    "quarantine digest", "quarantine summary", "from quarantine",
+    "release the message", "release these messages",
+    "review quarantined", "did not request this code",
+    "login code was requested", "code was requested",
+    "ignore if not you", "ignore if this wasn't you",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

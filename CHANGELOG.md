@@ -18,9 +18,30 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   aborted silently. The capture now tolerates the verdict exit
   code, and the stale 'objective absent for text' fixture uses
   genuinely-benign text.
+- **secrets: `api_org_` (Hugging Face org token) never fired on real
+  tokens** — the row used `is_alpha`, which rejects any suffix containing
+  a digit, so a genuine key scored OK. Now `is_alnum_or_dash`.
+- **secrets: duplicate pattern rows** accumulated across cycles —
+  `dop_v1_`/`dp.pt.`/`PMAK-`/`dt0c01.`/`glsa_`/`sbp_`/`rnd_`/`SK`/`figd_`/
+  `pscale_tkn_`/`CFPAT-` each existed twice with divergent specs (the
+  mislabelled `dop_v1_` "Doppler" row shadowed the correct DigitalOcean
+  one; `sbp_` had both a wrong "service role" label and the real
+  personal-access-token row). Deduplicated to the real-format row.
 
 ### Added
 
+- **Quarantine-release + unsolicited-code lures** (`hlse_text.c`):
+  "quarantined messages/emails · messages in quarantine · quarantine
+  digest · release the message · review quarantined" — the top O365
+  credential-phish frame — plus "did not request this code · login code
+  was requested · ignore if not you" (panic-sign-in bait).
+- **Font-file carriers** (`hlse_file.c`): `.fon` `.fnt` `.pfa` `.pfb`
+  `.bdf` `.pcf` `.snf` — parse-on-preview Windows bitmap/Type-1/X11
+  bitmap fonts in the same family as the existing `.cur`/`.ani` cursor
+  payloads.
+- **`NRAI-` / `NRAL-` secret prefixes** (`hlse_secrets.c`): New Relic
+  Insights query key and license key (uppercase; the lowercase `nrai-`/
+  `nrak-` forms are not real formats).
 - **Travel-disruption + breach-notification lures**
   (`hlse_text.c`): "flight has been cancelled / rebook" (card
   harvest) and "involved in a data breach / unusual activity on

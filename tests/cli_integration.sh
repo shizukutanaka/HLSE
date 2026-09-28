@@ -886,7 +886,7 @@ rm -rf "$MR_DIR"
 ./hlse_core secret 'k: AGE-SECRET-KEY-1QQPQFGF86W6UJD9KXVDXVYDP3TTV2GT8Q6YPKAKYZFR7WSPQ6QMPKXQF0HXL8' 2>&1 | grep -q "Age Secret Key" \
     && check "secret: AGE-SECRET-KEY flagged" "0" "0" \
     || check "secret: AGE-SECRET-KEY flagged" "0" "1"
-./hlse_core secret 'k: dop_v1_abcdef1234567890abcdef1234567890abcdef1234567890' 2>&1 | grep -q "Doppler" \
+./hlse_core secret 'k: dop_v1_fa8294c1e7d6053b9a2f841c5d86e9b03c47a1f2d5e689b4c3a7f01e9d2c5b84a6' 2>&1 | grep -q "DigitalOcean PAT" \
     && check "secret: dop_v1_ flagged" "0" "0" \
     || check "secret: dop_v1_ flagged" "0" "1"
 ./hlse_core secret 'version: 1.2.3 age restriction none' 2>&1 | grep -q "no credentials" \
@@ -10399,9 +10399,9 @@ MB="pk.eyJ"; MB="${MB}1IjoidGVzdCIsImEiOiJja3d4OTAwMDAxMDAyIn0.abc123"
 check_secret_hit "$MB" "ALERT" "secret: Mapbox public token flagged"
 GL="glsa_"; GL="${GL}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234"
 check_secret_hit "$GL" "ISOLATE" "secret: Grafana service account flagged"
-SB="sbp_"; SB="${SB}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234"
-check_secret_hit "$SB" "ISOLATE" "secret: Supabase service role flagged"
-RN="rnd_"; RN="${RN}8qAbCdEfGhIjKlMnOpQrStUvWxYz12"
+SB="sbp_"; SB="${SB}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234567890ab"
+check_secret_hit "$SB" "ISOLATE" "secret: Supabase PAT flagged"
+RN="rnd_"; RN="${RN}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234567890ab"
 check_secret_hit "$RN" "ISOLATE" "secret: Render API key flagged"
 OK="xoa."; OK="${OK}b8qAbCdEfGhIjKlMnOpQrStUvWxYz1"
 check_secret_hit "$OK" "ISOLATE" "secret: Okta OAuth token flagged"
@@ -10584,7 +10584,7 @@ check_url_hit 'safari-https://evil.example' 'LOG' "url: safari-https: handler fl
 check_url_hit 'comgooglechrome://evil' 'LOG' "url: comgooglechrome: handler flagged"
 check_url_hit 'microsoft-edge:https://evil.example' 'BLOCK' "url: microsoft-edge: flagged"
 FG="figd_"; FG="${FG}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234567890xQ"
-check_secret_hit "$FG" 'Figma Access Token' "secret: figd_ figma flagged"
+check_secret_hit "$FG" 'Figma Personal Access Token' "secret: figd_ figma flagged"
 LO="lin_oauth_"; LO="${LO}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234"
 check_secret_hit "$LO" 'Linear OAuth Token' "secret: lin_oauth_ flagged"
 XDIR110=$(mktemp -d /tmp/hlse110.XXXXXX)
@@ -10680,7 +10680,7 @@ check_text_hit 'google drive storage almost full buy more storage' 'LOG' "text: 
 check_text_hit 'my storage is full of photos' 'OK' "text: benign storage clean"
 check_url_hit 'wais://x.example/db' 'LOG' "url: wais: flagged"
 check_url_hit 'prospero://x.example' 'LOG' "url: prospero: flagged"
-CF="CFPAT-"; CF="${CF}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234"
+CF="CFPAT-"; CF="${CF}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234567890abcdefg"
 check_secret_hit "$CF" 'Contentful PAT' "secret: CFPAT- flagged"
 
 # ── cycle-116: voicemail/health lures + cursor exts + twilio/news ──
@@ -10821,6 +10821,26 @@ check_text_hit 'unusual activity on your account verify your identity now' 'LOG'
 check_text_hit 'the flight was cancelled due to weather' 'OK' "text: benign flight clean"
 check_text_hit 'please rebook the meeting room' 'OK' "text: benign rebook clean"
 check_text_hit 'the data breach was disclosed last year' 'OK' "text: benign breach clean"
+
+# ── cycle-126: quarantine lures + fonts + NR keys + dedup ──
+check_text_hit 'review your quarantined emails sign in to release' 'LOG' "text: quarantine lure flagged"
+check_text_hit 'you have 5 messages in quarantine review now' 'LOG' "text: quarantine-count flagged"
+check_text_hit 'if you did not request this code someone else has your password click' 'LOG' "text: unsolicited-code flagged"
+check_text_hit 'the quarantine folder was cleaned up' 'OK' "text: benign quarantine clean"
+check_text_hit 'the code was requested by the app' 'OK' "text: benign code clean"
+check_secret_hit 'NRAI-8qAbCdEfGhIjKlMnOpQrStUvWx12' 'New Relic Insights Key' "secret: NRAI- flagged"
+check_secret_hit 'NRAL-0123456789abcdef0123456789abcdef012345' 'New Relic License Key' "secret: NRAL- flagged"
+check_secret_hit 'api_org_8qAbCdEfGhIjKlMnOpQrStUvWxYz1234' 'Hugging Face Org Token' "secret: api_org_ digits flagged"
+check_secret_hit 'dop_v1_fa8294c1e7d6053b9a2f841c5d86e9b03c47a1f2d5e689b4c3a7f01e9d2c5b84a6' 'DigitalOcean PAT' "secret: dop_v1_ digitalocean flagged"
+check_secret_hit 'dp.pt.8qAbCdEfGhIjKlMnOpQrStUvWxYz1234567890123456789ab' 'Doppler Personal Token' "secret: dp.pt. doppler flagged"
+XDIR126=$(mktemp -d /tmp/hlse126.XXXXXX)
+for e in fon fnt pfa pfb bdf pcf snf; do
+    printf 'x\n' > "$XDIR126/t.$e"
+    ./hlse_core file "$XDIR126/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e font carrier flagged" "0" "0" \
+        || check "file: .$e font carrier flagged" "0" "1"
+done
+rm -rf "$XDIR126"
 
 # ─── results ────────────────────────────────────────────────────────────
 

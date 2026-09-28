@@ -294,13 +294,12 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* age encryption secret key — fixed "AGE-SECRET-KEY-1" prefix,
      * bech32-style lowercase body (~58 chars) */
     { "AGE-SECRET-KEY-1", 16, 40, is_alnum_plain,  "Age Secret Key",       90 },
-    /* Doppler — dop_v1_ service token / dp.st. / dp.pt. */
-    { "dop_v1_",         7,  40, is_alnum_or_dash, "Doppler Service Token", 85 },
+    /* Doppler — dp.st. / dp.pt. (dop_v1_ is DigitalOcean's PAT,
+     * kept with its own row later in this table) */
     /* Nostr secret key — bech32 `nsec1` + payload; nsec is the account
      * itself (posting + DM history + zap wallet) */
     { "nsec1",           5,  40, is_bech32,        "Nostr Secret Key",    80 },
     { "dp.st.",          6,  40, is_alnum_or_dash, "Doppler Service Token", 85 },
-    { "dp.pt.",          6,  40, is_alnum_or_dash, "Doppler Personal Token",85 },
     { "dp.ct.",          6,  40, is_alnum_or_dash, "Doppler Config Token", 85 },
     /* Brevo/Sendinblue SMTP+API key, Dropbox long-form token,
      * JFrog Artifactory identity key, Bitbucket app password —
@@ -330,9 +329,6 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * scored OK on a live credential                            */
     { "sk.eyJ",        6,  30, is_alnum_dash_dot,  "Mapbox Secret Token",   85 },
     { "pk.eyJ",        6,  30, is_alnum_dash_dot,  "Mapbox Public Token",   45 },
-    { "glsa_",         5,  30, is_alnum_or_dash,   "Grafana Service Account Token", 80 },
-    { "sbp_",          4,  30, is_alnum_or_dash,   "Supabase Service Role Key", 85 },
-    { "rnd_",          4,  30, is_alnum_or_dash,   "Render API Key",        80 },
     { "xoa.",          4,  30, is_alnum_or_dash,   "Okta OAuth Token",      80 },
 
     /* OpenAI / Anthropic (distinctive dash-prefixed LLM provider keys) */
@@ -347,7 +343,7 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "pplx-",         5,  20, is_alnum_or_dash,   "Perplexity API Key",    85 },
     { "xai-",          4,  20, is_alnum_or_dash,   "xAI (Grok) API Key",    85 },
     { "r8_",           3,  30, is_alnum_or_dash,   "Replicate API Token",   85 },
-    { "api_org_",      8,  30, is_alpha,           "Hugging Face Org Token", 80 },
+    { "api_org_",      8,  30, is_alnum_or_dash,   "Hugging Face Org Token", 80 },
 
     /* Shopify (32-hex body — very low false-positive prefix) */
     { "shpat_",        6,  32, is_hex,             "Shopify Access Token",  85 },
@@ -361,9 +357,6 @@ static const SecretPattern SECRET_PATTERNS[] = {
 
     /* PyPI (fixed 20-char marker prefix — essentially zero false positives) */
     { "pypi-AgEIcHlwaS5vcmc", 20, 20, is_alnum_or_dash, "PyPI Upload Token", 90 },
-
-    /* Postman */
-    { "PMAK-",         5,  24, is_hex,             "Postman API Key",       85 },
 
     /* Square */
     { "sq0atp-",       7,  22, is_alnum_or_dash,   "Square Access Token",   85 },
@@ -392,23 +385,21 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* Linear */
     { "lin_api_",      8,  40, is_alnum_or_dash,   "Linear API Key",        85 },
     { "lin_oauth_",   10,  30, is_alnum_or_dash,   "Linear OAuth Token",    85 },
-    { "figd_",         5,  40, is_alnum_or_dash,   "Figma Access Token",    85 },
     { "re_",           3,  32, is_alnum_or_dash,   "Resend API Key",        80 },
     { "xaai-",         5,  30, is_alnum_or_dash,   "Axiom API Token",       80 },
     { "waka_",         5,  32, is_alnum_or_dash,   "WakaTime API Key",      80 },
     { "pd_oauth_",     9,  20, is_alnum_or_dash,   "PagerDuty OAuth Token", 80 },
     { "tvly-",         5,  30, is_alnum_or_dash,   "Tavily API Key",        80 },
-    { "CFPAT-",        6,  30, is_alnum_or_dash,   "Contentful PAT",        80 },
-    { "SK",            2,  32, is_hex_c,           "Twilio API Key",        75 },
 
-    /* New Relic */
+    /* New Relic — NRAK- admin key exists below at the 2026 batch;
+     * NRAI- (Insights insert) and NRAL- (license, 40-hex) complete
+     * the family                                                  */
+    { "NRAI-",         5,  27, is_alnum_or_dash,   "New Relic Insights Key", 85 },
+    { "NRAL-",         5,  38, is_hex_c,           "New Relic License Key",  85 },
     { "NRAK-",         5,  27, is_alnum_or_dash,   "New Relic API Key",     85 },
 
     /* Databricks */
     { "dapi",          4,  32, is_hex,             "Databricks Access Token", 80 },
-
-    /* PlanetScale (highly distinctive 11-char prefix) */
-    { "pscale_tkn_",   11, 40, is_alnum_or_dash, "PlanetScale Service Token", 85 },
 
     /* HashiCorp Vault service token v2 (hvs. prefix, long body) */
     { "hvs.",           4, 50, is_alnum_or_dash, "HashiCorp Vault Token",     80 },
@@ -432,6 +423,8 @@ static const SecretPattern SECRET_PATTERNS[] = {
 
     /* Fly.io API token (fo1_) */
     { "fo1_",          4,  30, is_alnum_or_dash, "Fly.io API Token",  80 },
+    /* Render (cloud PaaS) */
+    { "rnd_",            4, 36, is_alnum_or_dash,   "Render API Key",        80 },
 
     /* Terraform Cloud / Atlas (atlasv1.) */
     { "atlasv1.",      8,  30, is_alnum_or_dash, "Terraform Cloud Token", 80 },
@@ -442,9 +435,6 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "pscale_tkn_",  11,  30, is_alnum_or_dash, "PlanetScale Token",    85 },
     { "pscale_pw_",   11,  30, is_alnum_or_dash, "PlanetScale Password", 85 },
 
-    /* Dynatrace API v2 token (dt0c01.<24>.<64>) */
-    { "dt0c01.",       7,  24, is_alnum_or_dash, "Dynatrace API Token", 80 },
-
     /* Webhook URLs (URL-anchored — essentially zero false positives) */
     { "hooks.slack.com/services/T", 27, 5, is_alnum_or_dash,
                                             "Slack Webhook URL",     70 },
@@ -452,9 +442,6 @@ static const SecretPattern SECRET_PATTERNS[] = {
                                             "Discord Webhook URL",   75 },
     { "discordapp.com/api/webhooks/",  28, 17, is_digit_c,
                                             "Discord Webhook URL",   75 },
-
-    /* Render (cloud PaaS) */
-    { "rnd_",            4, 36, is_alnum_or_dash,   "Render API Key",        80 },
 
     /* Fly.io — distinctive 5-char prefix before long base64 body */
     { "FlyV1",           5, 30, is_alnum_or_dash,   "Fly.io API Token",      85 },
@@ -475,7 +462,8 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* Vercel deploy hook / automation token */
     { "vercel_token_",  13, 20, is_alnum_or_dash,   "Vercel Token",          80 },
 
-    /* DigitalOcean Personal Access Token */
+    /* DigitalOcean Personal Access Token (dop_v1_ — the earlier
+     * 'Doppler Service Token' row was a mislabel of this format)  */
     { "dop_v1_",         7, 64, is_alnum_or_dash, "DigitalOcean PAT",        85 },
 
     /* Atlassian / Jira / Confluence API token (fixed prefix added in 2024) */
@@ -500,6 +488,7 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * (sb_secret_). The publishable key (sb_publishable_) is client-side by
      * design and intentionally omitted to avoid flagging non-secrets. */
     { "sbp_",           4, 40, is_alnum_or_dash, "Supabase Personal Access Token", 85 },
+    /* glsa_/rnd_ sibling rows exist earlier in this table         */
     { "sb_secret_",    10, 20, is_alnum_or_dash, "Supabase Secret Key",           90 },
 
     /* Figma personal access token (figd_) */
