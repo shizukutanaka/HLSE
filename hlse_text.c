@@ -164,6 +164,12 @@ static const char *BAIT_WORDS[] = {
      * service targets already-victimised users (advance-fee class) */
     "recover your lost", "recover lost funds", "recover lost bitcoin",
     "recover lost crypto", "fund recovery service", "recovery agent",
+    /* Government-grant / free-money scam — advance-fee lure that
+     * promises an unearned grant (fee demanded to 'release' it)    */
+    "government grant", "free government grant", "free grant money",
+    "unclaimed grant", "federal grant", "grant you qualified",
+    "qualify for a grant", "qualified for a grant",
+    "processing fee to receive", "fee to release",
     /* Account takeover / 2FA bypass bait */
     "two-factor code", "verification code", "one-time code", "otp code",
     "phone number", "confirm identity", "verify your identity",

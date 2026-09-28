@@ -374,6 +374,14 @@ static const char *EXECUTABLE_EXTS[] = {
      * (VBA project inside), .ade/.adp are compiled Access project
      * files that run VBA without showing source                  */
     ".xla", ".ade", ".adp",
+    /* 97-2003 macro-bearing Office forms: .xlm = Excel 4.0 macro
+     * sheet (macro-malware classic), .ppa = PowerPoint add-in,
+     * .dot/.xlt/.pot = legacy templates that can carry VBA       */
+    ".xlm", ".ppa", ".dot", ".xlt", ".pot",
+    /* Message containers — .eml/.msg ship a full email (with its
+     * own links and attachments) inside an attachment; the classic
+     * 'invoice.eml' phishing carrier                             */
+    ".eml", ".msg",
     NULL
 };
 

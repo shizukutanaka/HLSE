@@ -15,6 +15,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **97-2003 macro carriers + message containers** (`hlse_file.c`):
+  `.xlm` (Excel 4.0 macro sheet — the classic macro-malware form),
+  `.ppa`, `.dot`/`.xlt`/`.pot` (legacy VBA-capable templates), and
+  `.eml`/`.msg` (mail-in-an-attachment carriers — the 'invoice.eml'
+  phish shape).
+- **Grant-scam vocabulary** (`hlse_text.c`): "government/federal
+  grant", "free grant money", "processing fee to receive", "fee to
+  release" — advance-fee free-money lure.
+- **`tvly-` Tavily API key** (`hlse_secrets.c`).
 - **NL / PL / ID-MS / Nordic smishing signals** (`hlse_text.c`):
   Dutch (`uw pakket`, `invoerrechten`, `douane`, `rekening
   geblokkeerd`), Polish (`paczka zatrzymana`, `opłata celna`,

@@ -10654,6 +10654,22 @@ for e in xla ade adp; do
 done
 rm -rf "$XDIR113"
 
+# ── cycle-114: macro-template/eml carriers + grant scam + tvly- ──
+check_text_hit 'pay the processing fee to receive your federal grant' 'BLOCK' "text: grant advance-fee flagged"
+check_text_hit 'you have qualified for a free government grant of 5000' 'LOG' "text: grant lure flagged"
+check_text_hit 'the government grant program helped our lab' 'OK' "text: benign grant clean"
+check_text_hit 'apply for a research grant' 'OK' "text: benign apply clean"
+TV="tvly-"; TV="${TV}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234"
+check_secret_hit "$TV" 'Tavily API Key' "secret: tvly- flagged"
+XDIR114=$(mktemp -d /tmp/hlse114.XXXXXX)
+for e in xlm ppa dot xlt pot eml msg; do
+    printf 'x\n' > "$XDIR114/t.$e"
+    ./hlse_core file "$XDIR114/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+rm -rf "$XDIR114"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
