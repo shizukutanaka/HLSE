@@ -497,6 +497,14 @@ static const char *BAIT_WORDS[] = {
     "inactive account", "dormant account", "account reactivation",
     "reactivation fee", "payroll correction", "payroll error",
     "salary adjustment", "paycheck correction", "payroll discrepancy",
+    /* Points-expiry variants + visa-appointment lures — 'points
+     * expiring' phrasing (existing 'points expire' misses the
+     * -ing form) and fake visa/interview slot-booking fees       */
+    "points expiring", "miles expiring", "miles expire",
+    "redeem them", "cash out your points", "points balance due",
+    "visa appointment", "appointment slot", "visa slot",
+    "booking fee", "expedite your visa", "priority appointment",
+    "interview slot", "booking fee required",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

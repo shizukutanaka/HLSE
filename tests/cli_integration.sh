@@ -11284,6 +11284,13 @@ XDIR161=$(mktemp -d /tmp/hlse161.XXXXXX)
 for e in p7m p7s; do printf 'x\n' > "$XDIR161/drop.$e"; check "$XDIR161/drop.$e flagged" "$(./hlse_core file "$XDIR161/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
 rm -rf "$XDIR161"
 
+# ── cycle-162: points-expiry variants + visa-appointment lures ──────────
+check_text_hit 'points expiring miles expiring cash out your points' 'LOG' "text: points-expiry flagged"
+check_text_hit 'visa appointment slot booking fee expedite your visa' 'LOG' "text: visa-slot flagged"
+check_text_hit 'priority appointment interview slot confirmed fee' 'LOG' "text: interview-slot flagged"
+check_text_hit 'the visa appointment was confirmed at the embassy' 'OK' "text: benign embassy clean"
+check_text_hit 'i used my points on groceries this week' 'OK' "text: benign points clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

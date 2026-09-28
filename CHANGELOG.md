@@ -30,6 +30,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Points-expiry variants + visa-appointment lures**
+  (`hlse_text.c`): "points expiring · miles expiring/expire ·
+  redeem them · cash out your points" (the -ing forms missed by
+  'points expire') and "visa appointment · appointment slot ·
+  visa slot · booking fee · expedite your visa · priority
+  appointment · interview slot · booking fee required" (fake
+  consulate/interview slot-booking fees).
+
 - **Bail-bond + dormant-account + payroll lures** (`hlse_text.c`):
   "bail money · post bail · bond payment · bail bond" (grandparent
   scams), "inactive/dormant account · account reactivation ·
