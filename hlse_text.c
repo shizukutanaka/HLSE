@@ -319,6 +319,19 @@ static const char *BAIT_WORDS[] = {
     "vulnerability assessment", "penetration test report",
     "video identification", "video verification", "video call verification",
     "verify via video", "verify yourself on video",
+    /* Rebate scams (utility/energy/tax/stimulus rebate phishing —
+     * claim-your-rebate refund bait) and romance-scam openings
+     * (profile-connection lures + the channel-move to WhatsApp/
+     * Telegram that precedes pig-butchering)                       */
+    "energy rebate", "utility rebate", "tax rebate", "stimulus rebate",
+    "rebate check", "claim your rebate", "rebate has been approved",
+    "rebate program", "claim the rebate", "rebate offer",
+    "felt a connection", "found your profile", "saw your profile",
+    "your profile caught", "looking for love", "lonely widow",
+    "lonely widower", "god fearing", "meant to be together",
+    "distance means nothing", "move to whatsapp", "move to telegram",
+    "chat on whatsapp", "chat on telegram", "talk on whatsapp",
+    "continue on whatsapp", "continue on telegram",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

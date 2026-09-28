@@ -10967,6 +10967,15 @@ rm -rf "$XDIR136"
 check_url_hit 'wyciwyg://evil.example/x' 'LOG' "url: wyciwyg flagged"
 check_url_hit 'local:///etc/passwd' 'LOG' "url: local flagged"
 
+# ── cycle-137: rebate scams + romance openings + channel-move ──
+check_text_hit 'claim your energy rebate today' 'LOG' "text: energy-rebate flagged"
+check_text_hit 'tax rebate check waiting claim your rebate' 'LOG' "text: tax-rebate flagged"
+check_text_hit 'i found your profile and felt a connection move to whatsapp' 'BLOCK' "text: romance channel-move flagged"
+check_text_hit 'lets chat on telegram about the investment' 'ALERT' "text: telegram-move flagged"
+check_text_hit 'the rebate offer expired last month' 'OK' "text: benign rebate clean"
+check_text_hit 'we met on whatsapp already' 'OK' "text: benign whatsapp clean"
+check_text_hit 'i saw your profile on linkedin' 'OK' "text: benign profile clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

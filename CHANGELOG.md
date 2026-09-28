@@ -30,6 +30,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Rebate + romance-scam vocab** (`hlse_text.c`): "energy rebate ·
+  utility rebate · tax rebate · stimulus rebate · rebate check ·
+  claim your rebate · rebate program" (utility/tax rebate phishing —
+  a major consumer-fraud category), plus romance-scam openings and
+  the pig-butchering channel-move: "felt a connection · found/saw
+  your profile · looking for love · lonely widow/er · god fearing ·
+  distance means nothing · move to / chat on / talk on / continue on
+  whatsapp|telegram".
 - **Emergency-money + audit/KYC scam vocab** (`hlse_text.c`):
   "i am in trouble · need money urgently · send money now · emergency
   cash · wire me money · stuck abroad · lost my wallet abroad" (the
