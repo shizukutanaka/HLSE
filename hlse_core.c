@@ -2704,47 +2704,79 @@ hlse_scan(const char *input) {
      * never reaches the scheme gate: browsers reject an encoded
      * scheme, but anything that percent-decodes first (redirect
      * parameters, markdown sanitizers, log viewers) resolves it —
-     * and every URL extractor in between sees plain text. Decode a
-     * bounded copy and re-dispatch when a scheme emerges.          */
-    if (input[0] == '%') {
+     * and every URL extractor in between sees plain text. The same
+     * applies to PARTIALLY encoded input ("javascript%3Aalert(1)",
+     * "jav%61script:") whose dangerous scheme is hidden from the
+     * prefix gate, and to "%00" in a host, which truncates the
+     * decoded string at the NUL and launders the real destination.
+     * Decode a bounded copy and re-dispatch when a scheme emerges
+     * — for partial encodings only dangerous/handler schemes count,
+     * since a decoded plain http(s) URL is just an ordinary link. */
+    if (strchr(input, '%')) {
         char dec[2100];
         size_t i = 0, j = 0;
+        int dec_nul = 0;
         while (input[i] && j + 1 < sizeof(dec)) {
             if (input[i] == '%' && input[i+1] && input[i+2] &&
                 isxdigit((unsigned char)input[i+1]) &&
                 isxdigit((unsigned char)input[i+2])) {
-                dec[j++] = (char)((input[i+1] <= '9' ?
+                char ch = (char)((input[i+1] <= '9' ?
                     input[i+1] - '0' :
                     (input[i+1] | 32) - 'a' + 10) * 16 +
                     (input[i+2] <= '9' ? input[i+2] - '0' :
                      (input[i+2] | 32) - 'a' + 10));
+                if (ch == '\0') dec_nul = 1;
+                /* A pipeline that decodes then parses strips
+                 * tab/LF/CR a second time — skip them here so the
+                 * scheme check sees what the second stage sees    */
+                if (ch != '\t' && ch != '\n' && ch != '\r')
+                    dec[j++] = ch;
                 i += 3;
             } else {
                 dec[j++] = input[i++];
             }
         }
         dec[j] = '\0';
-        if (j > 0 && (strncmp(dec, "http://", 7) == 0 ||
-            strncmp(dec, "https://", 8) == 0 ||
-            strncmp(dec, "ftp://", 6) == 0 ||
-            strncmp(dec, "javascript:", 11) == 0 ||
-            strncmp(dec, "vbscript:", 9) == 0 ||
-            strncmp(dec, "data:", 5) == 0 ||
-            url_has_scheme(dec, URL_HANDLER_SCHEMES) ||
-            url_has_scheme(dec, URL_NETMNT_SCHEMES))) {
-            Verdict uv = check_url(dec);
-            add_reason(&uv, 25,
-                "Entire URL is percent-encoded — nothing sees the link "
-                "until a decoder resolves it (extraction/log evasion)");
-            r.score = uv.score;
-            r.is_url = 1;
-            r.n_reasons = uv.n_reasons;
-            { int k; const int cap =
-                (int)(sizeof(uv.reasons) / sizeof(uv.reasons[0]));
-              for (k = 0; k < uv.n_reasons && k < cap; k++)
-                memcpy(r.reasons[k], uv.reasons[k],
-                       sizeof(uv.reasons[k])); }
-            return r;
+        if (j > 0) {
+            int plain = strncmp(dec, "http://", 7) == 0 ||
+                        strncmp(dec, "https://", 8) == 0 ||
+                        strncmp(dec, "ftp://", 6) == 0;
+            int danger = strncmp(dec, "javascript:", 11) == 0 ||
+                         strncmp(dec, "vbscript:", 9) == 0 ||
+                         strncmp(dec, "data:", 5) == 0 ||
+                         url_has_scheme(dec, URL_HANDLER_SCHEMES) ||
+                         url_has_scheme(dec, URL_NETMNT_SCHEMES) ||
+                         url_has_scheme(dec, URL_LEGACY_SCHEMES) ||
+                         url_has_scheme(dec, URL_DEVICE_SCHEMES);
+            if ((input[0] == '%' && (plain || danger)) ||
+                (input[0] != '%' && danger) ||
+                (dec_nul && (plain || danger))) {
+                Verdict uv = check_url(dec);
+                if (input[0] == '%')
+                    add_reason(&uv, 25,
+                        "Entire URL is percent-encoded — nothing sees "
+                        "the link until a decoder resolves it "
+                        "(extraction/log evasion)");
+                else
+                    add_reason(&uv, 40,
+                        "Percent-encoded dangerous scheme — decoders "
+                        "resolve what raw matchers can't see "
+                        "(extraction evasion)");
+                if (dec_nul)
+                    add_reason(&uv, 40,
+                        "Embedded NUL in %-encoded URL — decoders "
+                        "truncate at the byte and hide the real "
+                        "destination");
+                r.score = uv.score;
+                r.is_url = 1;
+                r.n_reasons = uv.n_reasons;
+                { int k; const int cap =
+                    (int)(sizeof(uv.reasons) / sizeof(uv.reasons[0]));
+                  for (k = 0; k < uv.n_reasons && k < cap; k++)
+                    memcpy(r.reasons[k], uv.reasons[k],
+                           sizeof(uv.reasons[k])); }
+                return r;
+            }
         }
     }
     /* Detect URL by prefix */

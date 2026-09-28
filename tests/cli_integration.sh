@@ -11508,6 +11508,15 @@ check "url: tab-in-authority flagged" "$(./hlse_core "$WSHTTP" | head -1 | grep 
 WSNL=$(printf 'plain text with\na newline')
 check "text: benign-newline clean" "$(./hlse_core "$WSNL" | head -1 | grep -c 'OK')" "1"
 
+# ── cycle-179: partial %-encode scheme + %00 truncation evasion ────
+check_url_hit 'javascript%3Aalert(1)' 'ISOLATE' "url: pct-js flagged"
+check_url_hit 'jav%61script:alert(1)' 'ISOLATE' "url: pct-jav flagged"
+check_url_hit 'java%09script:alert(1)' 'ISOLATE' "url: pct-tab-js flagged"
+check_url_hit 'javascript%3aalert%281%29' 'ISOLATE' "url: pct-full-js flagged"
+check_url_hit 'http://evil.example%00.trusted.example/' 'ISOLATE' "url: pct-nul flagged"
+check_url_hit 'https://example.com/a%20b' 'OK' "url: pct-benign clean"
+check_url_hit '50% off sale' 'OK' "url: pct-text clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

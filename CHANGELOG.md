@@ -51,6 +51,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Partial %-encoded scheme + NUL-truncation evasion**
+  (`hlse_core.c`): the decode-and-redispatch path only ran when
+  input STARTED with '%', so `javascript%3Aalert(1)` and
+  `jav%61script:` passed the scheme gate raw while any
+  decode-first consumer resolved them. Decode now runs whenever
+  '%' is present; partial encodings dispatch only on
+  dangerous/handler schemes (a decoded plain http(s) URL is an
+  ordinary link). `%00` in a host truncates the decoded string at
+  the NUL — flagged +40 as a destination-laundering tell, and
+  decoded tab/LF/CR are dropped during decode for the
+  decode-then-parse pipeline case (+40 "percent-encoded
+  dangerous scheme").
+
 - **Control-char-embedded scheme evasion** (`hlse_core.c`):
   WHATWG strips ASCII tab/LF/CR anywhere in a URL before
   parsing, so `java\tscript:alert(1)` executes exactly like
