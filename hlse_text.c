@@ -505,6 +505,16 @@ static const char *BAIT_WORDS[] = {
     "visa appointment", "appointment slot", "visa slot",
     "booking fee", "expedite your visa", "priority appointment",
     "interview slot", "booking fee required",
+    /* Tax-assessment + HOA + license-suspension + military-leave
+     * lures — fake county-assessor notices, HOA violation fees,
+     * DMV suspension scares, and military-romance leave
+     * application fees                                          */
+    "tax assessment", "tax reassessment", "assessment appeal",
+    "property tax bill", "hoa violation", "homeowners association",
+    "association fee", "license suspension", "driving privileges",
+    "suspended license", "license reinstatement",
+    "military leave", "leave request form", "leave application",
+    "deployment extension", "fiancee form", "leave processing fee",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

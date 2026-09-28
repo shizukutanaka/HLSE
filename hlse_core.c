@@ -1718,6 +1718,9 @@ static const char *const URL_LEGACY_SCHEMES[] = {
     "ftp:", "telnet:", "gopher:", "nntp:", "dict:",
     "tftp:", "ldap:", "ldaps:", "finger:", "whois:",
     "irc:", "ircs:", "feed:", "feeds:", "webcal:", "dayz:",
+    /* web+ custom protocol-registration schemes — handed to a
+     * site-registered handler (off-channel launch surface)      */
+    "web+mail:", "web+cal:", "web+login:",
     /* TLS-wrapped variants of the legacy transports — ftp/nntp over
      * TLS are the same cleartext-era handler class; ldaps: was
      * already listed while its ftp/nntp siblings fell through    */

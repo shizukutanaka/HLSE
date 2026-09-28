@@ -30,6 +30,22 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Tax-assessment + HOA + military-leave lures** (`hlse_text.c`):
+  "tax assessment · tax reassessment · assessment appeal · property
+  tax bill" (fake county assessor), "hoa violation · homeowners
+  association · association fee" (HOA fee scams), "license
+  suspension · driving privileges · suspended license · license
+  reinstatement" (DMV scares), "military leave · leave request
+  form · leave application · deployment extension · fiancee form ·
+  leave processing fee" (military-romance leave-fee fraud).
+- **AutoIt + VB6 script carriers** (`hlse_file.c`): `.au3`/`.a3x`
+  (AutoIt — classic dropper language), `.kix` (KiXtart logon
+  script), `.frm`/`.bas`/`.cls`/`.vbp` (VB6-era code carriers)
+  → LOG 30.
+- **`web+` protocol-registration schemes** (`hlse_core.c`):
+  `web+mail:`/`web+cal:`/`web+login:` — site-registered handler
+  launch surface → LOG 30.
+
 - **Points-expiry variants + visa-appointment lures**
   (`hlse_text.c`): "points expiring · miles expiring/expire ·
   redeem them · cash out your points" (the -ing forms missed by

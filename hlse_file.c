@@ -222,6 +222,10 @@ static const char *EXECUTABLE_EXTS[] = {
     ".psd1", ".pssc", ".psrc", ".vbs",
     ".vbe", ".js",  ".jse", ".mjs", ".cjs", ".ksh",
     ".wsf", ".wsh", ".ws",  ".msi", ".msp",
+    /* AutoIt + VB6-era script carriers — .au3 is a classic dropper
+     * language, .a3x its compiled form, .kix a KiXtart logon
+     * script; .frm/.bas/.cls/.vbp carry executable VB6 code      */
+    ".au3", ".a3x", ".kix", ".frm", ".bas", ".cls", ".vbp",
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
@@ -968,7 +972,7 @@ is_script_ext(const char *ext) {
         ".ps1", ".psm1", ".psd1", ".ps1xml", ".pssc", ".psrc",
         ".bat", ".cmd", ".vbs", ".vbe", ".js",
         ".jse", ".mjs", ".cjs", ".ksh", ".wsf", ".wsh", ".ws",
-        ".hta", ".sh", ".py", ".reg",
+        ".hta", ".sh", ".py", ".reg", ".au3", ".a3x", ".kix",
         NULL
     };
     char lower[32];

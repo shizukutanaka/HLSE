@@ -11291,6 +11291,18 @@ check_text_hit 'priority appointment interview slot confirmed fee' 'LOG' "text: 
 check_text_hit 'the visa appointment was confirmed at the embassy' 'OK' "text: benign embassy clean"
 check_text_hit 'i used my points on groceries this week' 'OK' "text: benign points clean"
 
+# ── cycle-163: tax/hoa/military lures + autoit/vb6 + web+ schemes ──────
+check_text_hit 'property tax assessment appeal tax reassessment fee' 'LOG' "text: tax-assessment flagged"
+check_text_hit 'hoa violation homeowners association association fee' 'LOG' "text: hoa flagged"
+check_text_hit 'license suspension driving privileges suspended license' 'ALERT' "text: license-susp flagged"
+check_text_hit 'military leave leave application deployment extension fee' 'LOG' "text: mil-leave flagged"
+check_text_hit 'the property tax bill arrived on schedule' 'OK' "text: benign tax clean"
+check_text_hit 'he filed for military leave last month' 'OK' "text: benign leave clean"
+check_url_hit 'web+mail:evil.example/x' 'LOG' "url: web-plus flagged"
+XDIR163=$(mktemp -d /tmp/hlse163.XXXXXX)
+for e in au3 a3x kix frm bas cls vbp; do printf 'x\n' > "$XDIR163/drop.$e"; check "$XDIR163/drop.$e flagged" "$(./hlse_core file "$XDIR163/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+rm -rf "$XDIR163"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
