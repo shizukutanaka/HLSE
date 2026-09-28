@@ -12,6 +12,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   (e.g. 電 = `E9 9B BB`, 購 = `E8 B3 BC`) hit "Terminal control
   sequence" and scored BLOCK. A UTF-8 lead byte now consumes its whole
   multibyte sequence before the byte is considered.
+- **cli_integration early abort** (test harness): the `--stdin`
+  collection ran under `set -e` — once 'URGENT wire money'
+  legitimately crossed the BLOCK gate (exit 1) the whole suite
+  aborted silently. The capture now tolerates the verdict exit
+  code, and the stale 'objective absent for text' fixture uses
+  genuinely-benign text.
 
 ### Added
 
@@ -25,13 +31,6 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   `.xsf` form templates (script + external data connections),
   `.onepkg` packaged OneNote, `.rdg` remote-desktop session lists.
 
-### Fixed
-
-- **cli_integration early abort**: the `--stdin` collection ran
-  under `set -e` — once 'URGENT wire money' legitimately crossed
-  the BLOCK gate (exit 1) the whole suite aborted silently. The
-  capture now tolerates the verdict exit code, and the stale
-  'objective absent for text' fixture uses genuinely-benign text.
 - **Shared-document / e-sign / fax lures** (`hlse_text.c`): "shared
   a document with you" (the dominant OneDrive/Docs/Dropbox share
   bait), "docusign envelope / ready for signature / review and
