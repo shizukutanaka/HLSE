@@ -378,6 +378,17 @@ static const char *BAIT_WORDS[] = {
     "work permit", "permanent residency", "immigration services",
     "visa lottery", "diversity visa", "immigration fee",
     "work permit fee", "visa fee", "application approved",
+    /* Travel check-in + eviction + background-check lures — fake
+     * airline check-in notices, eviction proceedings, and job
+     * background-check forms that harvest SSN/identity data        */
+    "flight check-in", "check in for your flight", "check-in is now open",
+    "check in online", "online check-in", "boarding pass link",
+    "eviction notice", "eviction proceedings", "eviction order",
+    "notice of eviction", "vacate the premises", "eviction filed",
+    "background check", "complete your background check",
+    "employment screening", "verify your identity for employment",
+    "dental coverage", "vision insurance", "dental plan",
+    "vision plan", "insurance plan update",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

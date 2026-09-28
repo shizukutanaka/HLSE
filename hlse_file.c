@@ -452,6 +452,10 @@ static const char *EXECUTABLE_EXTS[] = {
     /* .zipx — WinZip extended archive (same archive-carrier class
      * as .zip/.rar/7z already flagged)                              */
     ".zipx",
+    /* .shb — Windows ShellScrap object file (a documented malware
+     * carrier: a shortcut binary that runs a command on drag/
+     * preview)                                                     */
+    ".shb",
     NULL
 };
 

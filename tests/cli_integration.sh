@@ -11039,6 +11039,25 @@ printf 'x\n' > "$XDIR141/t.zipx"
     || check "file: .zipx winzip archive flagged" "0" "1"
 rm -rf "$XDIR141"
 
+# ── cycle-142: check-in/eviction/background-check + remote-access schemes ──
+check_text_hit 'your flight check-in is now open check in online' 'LOG' "text: check-in lure flagged"
+check_text_hit 'eviction notice has been posted vacate the premises' 'LOG' "text: eviction flagged"
+check_text_hit 'complete your background check employment screening required' 'LOG' "text: bgcheck flagged"
+check_text_hit 'i checked in for my flight yesterday' 'OK' "text: benign checkin clean"
+check_text_hit 'the eviction was overturned in court' 'OK' "text: benign eviction clean"
+check_url_hit 'teamviewer://session/x' 'LOG' "url: teamviewer flagged"
+check_url_hit 'anydesk://x' 'LOG' "url: anydesk flagged"
+XDIR142=$(mktemp -d /tmp/hlse142.XXXXXX)
+printf 'x\n' > "$XDIR142/t.shb"
+./hlse_core file "$XDIR142/t.shb" 2>&1 | grep -q "LOG" \
+    && check "file: .shb shellscrap flagged" "0" "0" \
+    || check "file: .shb shellscrap flagged" "0" "1"
+rm -rf "$XDIR142"
+IGT="IGQWR"; IGT="${IGT}x9q2m7f4h1k8p3w6z5"
+check_secret_hit "${IGT}t0y9u4j7b2n5e8r1d6g3c0v2l4a8s6d" 'Instagram Graph' "secrets: IGQWR instagram flagged"
+HB="hbp_"; HB="${HB}x9q2m7f4h1k8p3"
+check_secret_hit "${HB}w6z5t0y9u4j7b2n5e8r1d6" 'Honeybadger' "secrets: hbp_ honeybadger flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

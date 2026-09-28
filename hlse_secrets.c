@@ -316,6 +316,10 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* PostHog project API key ('phc_' + base64-flavoured) — product-
      * analytics ingest key                                         */
     { "phc_",          4,  30, is_base64,          "PostHog Project API Key", 80 },
+    /* Instagram Graph API token ('IGQWR' + base64-flavoured) and
+     * Honeybadger project API key                                  */
+    { "IGQWR",         5,  40, is_base64,          "Instagram Graph Token", 85 },
+    { "hbp_",          4,  24, is_base64,          "Honeybadger API Key",  75 },
     /* Brevo/Sendinblue SMTP+API key, Dropbox long-form token,
      * JFrog Artifactory identity key, Bitbucket app password —
      * each has a fixed vendor prefix that hands over an account */

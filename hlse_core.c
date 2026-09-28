@@ -1816,6 +1816,9 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     /* wyciwyg: = Firefox what-you-cache (origin bypass); local://
      * references local files                                       */
     "wyciwyg:", "local:",
+    /* remote-access tool handlers — clicking launches the named
+     * remote-desktop client (tech-support scam delivery vector)    */
+    "teamviewer:", "anydesk:", "rustdesk:", "airdroid:",
     /* podcast subscription schemes — a click subscribes the
      * reader to a remote feed (ongoing remote-content pull)      */
     "pcast:", "itms-pcast:", "podcast:", "castro:",

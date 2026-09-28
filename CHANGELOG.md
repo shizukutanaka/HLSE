@@ -30,6 +30,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Travel/eviction/employment-screening vocab** (`hlse_text.c`):
+  "flight check-in · check in online · boarding pass" (airline
+  check-in phishing), "eviction notice/proceedings · vacate the
+  premises" (eviction lures), "background check · employment
+  screening · verify your identity for employment" (SSN-harvesting
+  job screens), "dental coverage · vision insurance/plan" (benefit
+  update phishing).
+- **Remote-access tool URL schemes** (`hlse_core.c`): `teamviewer:`,
+  `anydesk:`, `rustdesk:`, `airdroid:` — clicking launches the named
+  remote-desktop client (tech-support scam delivery).
+- **`.shb`** (`hlse_file.c`): Windows ShellScrap object file — a
+  documented shortcut-binary malware carrier.
+- **`IGQWR` + `hbp_`** (`hlse_secrets.c`): Instagram Graph API token
+  and Honeybadger project API key.
 - **Settlement-claim + immigration-scam vocab** (`hlse_text.c`):
   "settlement claim · claim your share · class action settlement ·
   data breach settlement · settlement payment · eligible for the
