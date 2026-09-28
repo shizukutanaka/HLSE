@@ -217,6 +217,17 @@ static const char *BAIT_WORDS[] = {
     "unsubscribe click", "unsubscribe now", "stop these emails",
     "final warning", "last warning", "last notice",
     "before suspension", "before your account is",
+    /* shared-document / e-sign / fax lures — 'has shared a
+     * document with you' (OneDrive/Docs/Dropbox share bait),
+     * 'docusign envelope' and 'incoming fax' are the dominant
+     * credential-harvest carrier shapes                          */
+    "shared a document with you", "shared a file with you",
+    "has shared a document", "document has been shared",
+    "shared with you via", "view the shared",
+    "ready for signature", "review and sign", "sign the document",
+    "docusign envelope", "envelope is ready", "signing request",
+    "new fax", "incoming fax", "fax transmission", "fax document",
+    "efax", "fax message",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

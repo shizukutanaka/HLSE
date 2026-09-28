@@ -15,6 +15,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Shared-document / e-sign / fax lures** (`hlse_text.c`): "shared
+  a document with you" (the dominant OneDrive/Docs/Dropbox share
+  bait), "docusign envelope / ready for signature / review and
+  sign", and "incoming fax / fax transmission / efax".
+- **App-store + editor deep-links** (`hlse_core.c`): `itms-apps:`,
+  `itms-appss:`, `macappstore:`, `zoomphonecall:`, `confinstall:`,
+  `subl:`, `mvim:`, `txmt:`, `fork:`, `sourcetree:`.
 - **Unsubscribe-bait + final-warning lures** (`hlse_text.c`):
   "click to unsubscribe / stop these emails" (the click is the
   attack) plus "final warning / last warning / last notice /

@@ -10763,6 +10763,17 @@ for e in contact group desklink msu; do
 done
 rm -rf "$XDIR120"
 
+# ── cycle-121: shared-doc/e-sign/fax lures + app deep-link schemes ──
+check_text_hit 'you have received a new fax document click to view' 'LOG' "text: fax lure flagged"
+check_text_hit 'has shared a document with you view now' 'LOG' "text: shared-doc flagged"
+check_text_hit 'your docusign envelope is ready review and sign' 'LOG' "text: docusign lure flagged"
+check_text_hit 'we faxed the report this morning' 'OK' "text: benign fax clean"
+check_text_hit 'the document was signed by both parties' 'OK' "text: benign signed clean"
+check_url_hit 'itms-apps://x' 'LOG' "url: itms-apps: flagged"
+check_url_hit 'macappstore://x' 'LOG' "url: macappstore: flagged"
+check_url_hit 'subl://open?url=x' 'LOG' "url: subl: flagged"
+check_url_hit 'confinstall://x' 'LOG' "url: confinstall: flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
