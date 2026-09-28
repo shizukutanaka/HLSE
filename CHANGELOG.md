@@ -15,6 +15,23 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **BEC payment-diversion wording** (`hlse_text.c`): "wire
+  transfer / wire instructions / ach transfer / payment
+  instructions / new account number / bank account has changed /
+  remit payment / divert or redirect the payment / urgent wire" —
+  supplier-impersonation payout redirect shapes. ('URGENT wire
+  transfer now' now triggers the full BEC advisory.)
+- **InfoPath / OneNote / RDM carriers** (`hlse_file.c`): `.xsn`/
+  `.xsf` form templates (script + external data connections),
+  `.onepkg` packaged OneNote, `.rdg` remote-desktop session lists.
+
+### Fixed
+
+- **cli_integration early abort**: the `--stdin` collection ran
+  under `set -e` — once 'URGENT wire money' legitimately crossed
+  the BLOCK gate (exit 1) the whole suite aborted silently. The
+  capture now tolerates the verdict exit code, and the stale
+  'objective absent for text' fixture uses genuinely-benign text.
 - **Shared-document / e-sign / fax lures** (`hlse_text.c`): "shared
   a document with you" (the dominant OneDrive/Docs/Dropbox share
   bait), "docusign envelope / ready for signature / review and

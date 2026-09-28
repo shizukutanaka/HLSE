@@ -86,7 +86,7 @@ assert data["score"] >= 30
 # Mixed stdin input
 STDIN_OUT=$(printf '%s\n' "https://g00gle.com" "https://github.com" \
             "URGENT wire money" "Meeting tomorrow" \
-            | ./hlse_core --stdin)
+            | ./hlse_core --stdin || true)
 
 echo "$STDIN_OUT" | grep -q "ALERT.*g00gle" \
     && check "stdin: detects malicious URL" "0" "0" \
@@ -1989,8 +1989,8 @@ echo "$OBJ_CLEAN" | grep -q "Attacker's goal" \
     && check "objective: absent for clean URL" "0" "1" \
     || check "objective: absent for clean URL" "0" "0"
 
-# Text input → no objective line
-OBJ_TXT=$(./hlse_core text "URGENT wire transfer now" 2>/dev/null) || true
+# Text input → no objective line (benign, below advisory bands)
+OBJ_TXT=$(./hlse_core text "Meeting moved to tomorrow" 2>/dev/null) || true
 echo "$OBJ_TXT" | grep -q "Attacker's goal" \
     && check "objective: absent for text input" "0" "1" \
     || check "objective: absent for text input" "0" "0"
@@ -10773,6 +10773,20 @@ check_url_hit 'itms-apps://x' 'LOG' "url: itms-apps: flagged"
 check_url_hit 'macappstore://x' 'LOG' "url: macappstore: flagged"
 check_url_hit 'subl://open?url=x' 'LOG' "url: subl: flagged"
 check_url_hit 'confinstall://x' 'LOG' "url: confinstall: flagged"
+
+# ── cycle-122: BEC payment-diversion + InfoPath/RDM carriers ──
+check_text_hit 'please update the wire transfer instructions attached' 'LOG' "text: wire-instructions flagged"
+check_text_hit 'send the payment to our new account number' 'LOG' "text: account-number flagged"
+check_text_hit 'kindly process the invoice when free' 'OK' "text: benign invoice clean"
+check_text_hit 'remit to the address on file' 'OK' "text: benign remit clean"
+XDIR122=$(mktemp -d /tmp/hlse122.XXXXXX)
+for e in xsn xsf onepkg rdg; do
+    printf 'x\n' > "$XDIR122/t.$e"
+    ./hlse_core file "$XDIR122/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+rm -rf "$XDIR122"
 
 # ─── results ────────────────────────────────────────────────────────────
 

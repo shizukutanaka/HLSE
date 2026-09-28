@@ -402,6 +402,11 @@ static const char *EXECUTABLE_EXTS[] = {
      * UNC (credential-leak class); .desklink is the send-to
      * launcher sibling. .msu runs wusa.exe package installs     */
     ".contact", ".group", ".desklink", ".msu",
+    /* InfoPath + OneNote package + RDM — .xsn/.xsf form templates
+     * carry script code and external data connections; .onepkg is
+     * the OneNote packaged carrier; .rdg hands a session list to
+     * the remote-desktop manager                                   */
+    ".xsn", ".xsf", ".onepkg", ".rdg",
     NULL
 };
 

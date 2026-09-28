@@ -228,6 +228,15 @@ static const char *BAIT_WORDS[] = {
     "docusign envelope", "envelope is ready", "signing request",
     "new fax", "incoming fax", "fax transmission", "fax document",
     "efax", "fax message",
+    /* BEC payment-diversion shapes — 'wire transfer instructions'
+     * / 'new account number' / 'remit payment' are the payout-
+     * redirect wording behind supplier impersonation losses       */
+    "wire transfer", "wire instructions", "ach transfer",
+    "payment instructions", "new account number",
+    "account number has changed", "bank account has changed",
+    "remit payment", "remit the payment", "remit to",
+    "divert the payment", "redirect the payment",
+    "process the payment", "urgent wire",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */
