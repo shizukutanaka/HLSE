@@ -515,6 +515,19 @@ static const char *BAIT_WORDS[] = {
     "suspended license", "license reinstatement",
     "military leave", "leave request form", "leave application",
     "deployment extension", "fiancee form", "leave processing fee",
+    /* Court-appearance + lab-results + voter-registration +
+     * financial-aid lures — fake court dates, medical-result
+     * phishing, election-registration scams, and FAFSA/aid
+     * disbursement hooks                                       */
+    "court date", "court appearance", "court hearing",
+    "arraignment", "court summons", "missed court",
+    "lab results", "test results", "pathology report",
+    "lab report", "medical records", "radiology report",
+    "voter registration", "register to vote", "voter id",
+    "absentee ballot", "voter information", "polling place",
+    /* fafsa/student aid/pell grant already covered above — these
+     * catch the notification/disbursement framing                */
+    "financial aid", "aid package", "aid disbursement",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

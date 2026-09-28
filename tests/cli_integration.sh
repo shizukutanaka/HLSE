@@ -11303,6 +11303,17 @@ XDIR163=$(mktemp -d /tmp/hlse163.XXXXXX)
 for e in au3 a3x kix frm bas cls vbp; do printf 'x\n' > "$XDIR163/drop.$e"; check "$XDIR163/drop.$e flagged" "$(./hlse_core file "$XDIR163/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
 rm -rf "$XDIR163"
 
+# ── cycle-164: court/lab/voter/aid lures + installer-script exts ───────
+check_text_hit 'court date court appearance court hearing notice' 'LOG' "text: court-date flagged"
+check_text_hit 'lab results test results pathology report online' 'LOG' "text: lab-results flagged"
+check_text_hit 'voter registration register to vote absentee ballot' 'LOG' "text: voter flagged"
+check_text_hit 'financial aid student aid pell grant disbursement' 'LOG' "text: aid flagged"
+check_text_hit 'the court date was rescheduled by my lawyer' 'OK' "text: benign court clean"
+check_text_hit 'my lab results came back normal' 'OK' "text: benign lab clean"
+XDIR164=$(mktemp -d /tmp/hlse164.XXXXXX)
+for e in nsi nsh iss isl wxs; do printf 'x\n' > "$XDIR164/setup.$e"; check "$XDIR164/setup.$e flagged" "$(./hlse_core file "$XDIR164/setup.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+rm -rf "$XDIR164"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

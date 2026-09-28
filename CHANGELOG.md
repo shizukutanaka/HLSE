@@ -30,6 +30,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Court-appearance + lab-results + voter + aid lures**
+  (`hlse_text.c`): "court date · court appearance · court hearing ·
+  arraignment · court summons · missed court" (fake court
+  notifications), "lab results · test results · pathology report ·
+  lab report · medical records · radiology report" (health-lure
+  phishing), "voter registration · register to vote · voter id ·
+  absentee ballot · voter information · polling place" (election
+  scams), "financial aid · aid package · aid disbursement"
+  (FAFSA/aid fraud — the core fafsa/student-aid/pell-grant words
+  were already covered).
+- **Installer-script carriers** (`hlse_file.c`): `.nsi`/`.nsh`
+  (NSIS), `.iss`/`.isl` (Inno Setup), `.wxs` (WiX) — installer
+  scripts embed executable sections abused as droppers → LOG 30.
+
 - **Tax-assessment + HOA + military-leave lures** (`hlse_text.c`):
   "tax assessment · tax reassessment · assessment appeal · property
   tax bill" (fake county assessor), "hoa violation · homeowners

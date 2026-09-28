@@ -226,6 +226,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * language, .a3x its compiled form, .kix a KiXtart logon
      * script; .frm/.bas/.cls/.vbp carry executable VB6 code      */
     ".au3", ".a3x", ".kix", ".frm", ".bas", ".cls", ".vbp",
+    /* Installer script carriers — NSIS (.nsi/.nsh), Inno Setup
+     * (.iss/.isl), WiX (.wxs): all embed executable sections that
+     * run on install and are abused as dropper delivery         */
+    ".nsi", ".nsh", ".iss", ".isl", ".wxs",
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
@@ -973,6 +977,7 @@ is_script_ext(const char *ext) {
         ".bat", ".cmd", ".vbs", ".vbe", ".js",
         ".jse", ".mjs", ".cjs", ".ksh", ".wsf", ".wsh", ".ws",
         ".hta", ".sh", ".py", ".reg", ".au3", ".a3x", ".kix",
+        ".nsi", ".nsh", ".iss", ".isl", ".wxs",
         NULL
     };
     char lower[32];
