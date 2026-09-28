@@ -1256,9 +1256,12 @@ static const char *FAKE_ALERT_WORDS[] = {
      * family: 'your domain is expiring' SEO-renewal scam and the
      * 'mailbox full, verify storage' credential harvester          */
     "domain name is expiring", "domain is expiring",
+    "domain name will expire", "domain name expires",
     "domain expiration", "domain has expired",
     "renew your domain", "renew the domain",
     "domain will be deleted", "domain will be suspended",
+    "search engine registration", "domain listing",
+    "website will be taken down", "site will be suspended",
     "mailbox is full", "mailbox quota", "mailbox storage",
     "mail quota exceeded", "storage quota exceeded",
     "upgrade your storage", "verify your mailbox",
@@ -1551,6 +1554,12 @@ static const char *FIN_ACTION_WORDS[] = {
      * 'deposit this check and send back the difference'          */
     "unpaid invoice", "invoice attached", "invoice is attached",
     "invoice enclosed", "outstanding invoice", "overdue invoice",
+    /* Procurement bait — 'PO attached' / RFQ malspam is the
+     * highest-volume business-malspam shape after fake invoices  */
+    "purchase order attached", "purchase order is attached",
+    "po attached", "new order attached", "order attached",
+    "request for quotation", "rfq attached", "quotation attached",
+    "proforma invoice", "pro forma invoice", "signed po",
     "remit payment", "remit the payment", "payment is due upon",
     "pay the attached invoice", "settle the invoice",
     "deposit this check", "deposit the check", "cash this check",

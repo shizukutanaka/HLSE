@@ -10890,6 +10890,14 @@ check_text_hit 'the delivery fee for our service is listed' 'LOG' "text: benign 
 RT="rk_test_"; RT="${RT}x9q2m7f4h1k8p3w6z5t0y9u4j7b2n"
 check_secret_hit "$RT" 'Stripe Restricted Test Key' "secret: rk_test_ flagged"
 
+# ── cycle-131: domain-expiry inflections + procurement bait ──
+check_text_hit 'your domain name will expire in 24 hours' 'LOG' "text: domain-expiry flagged"
+check_text_hit 'new purchase order attached review' 'LOG' "text: purchase-order bait flagged"
+check_text_hit 'request for quotation attached' 'LOG' "text: rfq bait flagged"
+check_text_hit 'search engine registration required' 'LOG' "text: seo-registration flagged"
+check_text_hit 'we will send a quotation tomorrow' 'OK' "text: benign quotation clean"
+check_text_hit 'the po attached is for our regular supplies' 'LOG' "text: benign po advisory"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

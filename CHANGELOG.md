@@ -30,6 +30,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Domain-expiry inflections + procurement bait** (`hlse_text.c`):
+  "domain name will expire / domain name expires / search engine
+  registration / domain listing" (SEO-renewal scam variants of the
+  existing domain-expiry list) plus "purchase order attached · po
+  attached · new order attached · request for quotation · rfq
+  attached · quotation attached · proforma invoice · signed po" —
+  the highest-volume business-malspam shape after fake invoices.
 - **419 proof-of-payment + fee-ladder vocab** (`hlse_text.c`):
   "swift copy · mt103 · payment advice · payment slip attached"
   (fake SWIFT-payment bait), "compensation fund · compensated with ·
