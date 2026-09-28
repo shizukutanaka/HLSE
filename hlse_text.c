@@ -490,6 +490,13 @@ static const char *BAIT_WORDS[] = {
     "convert to gold", "gold purchase", "gold delivery",
     "child tax credit", "tax credit advance", "tax credit payment",
     "hospital bill forgiveness", "medical bill forgiveness",
+    /* Bail-bond + dormant-account + payroll lures — grandparent
+     * bail scams, inactive-account closure fees, and fake payroll
+     * corrections that collect bank details                     */
+    "bail money", "post bail", "bond payment", "bail bond",
+    "inactive account", "dormant account", "account reactivation",
+    "reactivation fee", "payroll correction", "payroll error",
+    "salary adjustment", "paycheck correction", "payroll discrepancy",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

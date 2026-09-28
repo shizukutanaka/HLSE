@@ -30,6 +30,23 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Bail-bond + dormant-account + payroll lures** (`hlse_text.c`):
+  "bail money · post bail · bond payment · bail bond" (grandparent
+  scams), "inactive/dormant account · account reactivation ·
+  reactivation fee" (closure-fee phishing), "payroll correction/
+  error · salary adjustment · paycheck correction · payroll
+  discrepancy" (BEC payroll-diversion).
+- **HD-wallet key variants** (`hlse_secrets.c`): `ypub`/`zpub`/
+  `tpub` (segwit + testnet public keys → LOG/ALERT 40-50) and
+  `yprv`/`zprv`/`tprv` (segwit + testnet master keys → ISOLATE
+  90-95), siblings of `xprv`/`xpub`.
+- **`ipp:`/`ipps:`/`lpd:` URI handlers** (`hlse_core.c`):
+  network-print protocols — remote-printer install is a
+  driver/PPD payload channel → LOG 30.
+- **S/MIME carriers** (`hlse_file.c`): `.p7m` (enveloped message
+  with full attachments) + `.p7s` (detached signature veneer)
+  → LOG 30.
+
 - **Gold-bar courier + benefit-credit lures** (`hlse_text.c`):
   "gold bar(s) · precious metals · courier will collect · hand it
   to our · our agent will pick up · liquidate your assets ·

@@ -312,6 +312,15 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * wallet (master private key); xpub exposes every address      */
     { "xprv",          4, 100, is_alnum_plain,     "Bitcoin HD Private Key", 95 },
     { "xpub",          4, 100, is_alnum_plain,     "Bitcoin HD Public Key",  50 },
+    /* HD-wallet key variants — segwit (ypub/zpub) and testnet
+     * (tpub/tprv/yprv/zprv) extended keys; same wallet exposure
+     * as xprv/xpub                                                */
+    { "ypub",          4, 100, is_alnum_plain,     "Bitcoin HD Public Key (segwit)", 50 },
+    { "zpub",          4, 100, is_alnum_plain,     "Bitcoin HD Public Key (native segwit)", 50 },
+    { "tpub",          4, 100, is_alnum_plain,     "Bitcoin HD Public Key (testnet)", 40 },
+    { "yprv",          4, 100, is_alnum_plain,     "Bitcoin HD Private Key (segwit)", 95 },
+    { "zprv",          4, 100, is_alnum_plain,     "Bitcoin HD Private Key (native segwit)", 95 },
+    { "tprv",          4, 100, is_alnum_plain,     "Bitcoin HD Private Key (testnet)", 90 },
     /* Mailgun API key (key- + 32 hex) and Databricks PAT (dapi +
      * 32 hex) — both gate mail/API infrastructure               */
     { "key-",          4,  30, is_hex,             "Mailgun API Key",        80 },

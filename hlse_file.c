@@ -396,6 +396,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * template, .oft a custom form with script handlers, .nws the
      * OE news-message sibling of .eml                              */
     ".otm", ".oft", ".nws",
+    /* S/MIME message carriers — .p7m is an enveloped (encrypted)
+     * message with full attachments inside, .p7s a detached
+     * signature that gives a lure a 'signed' veneer              */
+    ".p7m", ".p7s",
     /* Cursor payloads — .ani animated cursors parse on preview
      * (historic ANIH exploit class, still parsed by the shell);
      * .cur is the static sibling                                  */

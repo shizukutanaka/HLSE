@@ -1722,6 +1722,9 @@ static const char *const URL_LEGACY_SCHEMES[] = {
      * TLS are the same cleartext-era handler class; ldaps: was
      * already listed while its ftp/nntp siblings fell through    */
     "ftps:", "snews:", "nntps:",
+    /* network-print protocols — ipp:// installs a remote printer
+     * (driver/PPD payload channel), lpd: the classic unix queue   */
+    "ipp:", "ipps:", "lpd:",
     /* pre-web information services — a legacy-handler URL that
      * modern browsers hand to nothing but still marks the URI as
      * an off-channel fetch reference                               */

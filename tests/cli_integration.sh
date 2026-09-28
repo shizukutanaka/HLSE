@@ -11269,6 +11269,21 @@ XDIR160=$(mktemp -d /tmp/hlse160.XXXXXX)
 for e in otm oft nws; do printf 'x\n' > "$XDIR160/drop.$e"; check "$XDIR160/drop.$e flagged" "$(./hlse_core file "$XDIR160/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
 rm -rf "$XDIR160"
 
+# ── cycle-161: bail/dormant/payroll lures + HD keys + p7m/ipp ──────────
+check_text_hit 'bail money post bail bond payment send it before court' 'BLOCK' "text: bail flagged"
+check_text_hit 'inactive account dormant account reactivation fee' 'BLOCK' "text: dormant flagged"
+check_text_hit 'payroll correction payroll error salary adjustment' 'LOG' "text: payroll flagged"
+check_text_hit 'the bond payment cleared at the bank' 'OK' "text: benign bond clean"
+check_text_hit 'the payroll correction was processed last cycle' 'OK' "text: benign payroll clean"
+ZP="zpub"; ZP="${ZP}bxgwZyZxZ8ePHFuCG4vMe2VnQ4LwkLxCTaN7nWMcFtV8hPsKGJbKKzYz1VCL1VDoJrVbVcpJckHzmfUypaP3EUEYjqFLFbKiSW2JfFZMx1v5R"
+check_secret_hit "$ZP" 'Bitcoin HD Public Key (native segwit)' "secret: zpub flagged"
+YV="yprv"; YV="${YV}bxgwZyZxZ8ePHFuCG4vMe2VnQ4LwkLxCTaN7nWMcFtV8hPsKGJbKKzYz1VCL1VDoJrVbVcpJckHzmfUypaP3EUEYjqFLFbKiSW2JfFZMx1v5R"
+check_secret_hit "$YV" 'Bitcoin HD Private Key (segwit)' "secret: yprv flagged"
+check_url_hit 'ipp://evil.com/printer' 'LOG' "url: ipp flagged"
+XDIR161=$(mktemp -d /tmp/hlse161.XXXXXX)
+for e in p7m p7s; do printf 'x\n' > "$XDIR161/drop.$e"; check "$XDIR161/drop.$e flagged" "$(./hlse_core file "$XDIR161/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+rm -rf "$XDIR161"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
