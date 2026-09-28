@@ -446,6 +446,9 @@ static const char *EXECUTABLE_EXTS[] = {
      * Windows Media metafile; .m3u/.m3u8/.pls/.vlc can carry remote
      * URLs a media player will dereference)                         */
     ".wvx", ".wax", ".m3u", ".m3u8", ".pls", ".vlc",
+    /* Linux app-installer bundles — .flatpak/.snap carry arbitrary
+     * executables (same delivery class as .appx/.msi on Windows)   */
+    ".flatpak", ".snap",
     NULL
 };
 

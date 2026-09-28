@@ -354,6 +354,20 @@ static const char *BAIT_WORDS[] = {
     "fix your credit", "credit repair", "credit score has dropped",
     "improve your credit score", "boost your credit score",
     "guaranteed credit approval", "bad credit approved",
+    /* IoT-notification + booking + billing-failure lures — fake
+     * Ring/Nest motion alerts, hotel/Airbnb reservation malspam,
+     * 'payment failed' card-update phishing, ISP outage lures       */
+    "motion detected", "camera detected", "doorbell camera",
+    "security camera", "detected activity",
+    "someone is at your door", "person detected",
+    "booking confirmation", "reservation confirmed",
+    "booking requires", "reservation requires", "verify your booking",
+    "verify your reservation", "confirm your booking",
+    "subscription could not be charged", "payment failed",
+    "payment was declined", "unable to process your payment",
+    "update your payment method", "billing information",
+    "internet service will be interrupted", "service will be interrupted",
+    "service will be disconnected", "service outage",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

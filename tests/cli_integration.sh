@@ -11009,6 +11009,22 @@ for f in "$XDIR139/t.wvx" "$XDIR139/t.m3u8" "$XDIR139/t.pls"; do
 done
 rm -rf "$XDIR139"
 
+# ── cycle-140: IoT/booking/billing lures + Linux installers ──
+check_text_hit 'motion detected on your camera someone is at your door' 'LOG' "text: iot-alert flagged"
+check_text_hit 'your subscription could not be charged update your payment method' 'LOG' "text: billing-failure flagged"
+check_text_hit 'internet service will be interrupted service outage' 'LOG' "text: isp-outage flagged"
+check_text_hit 'the camera detected my dog in the yard' 'OK' "text: benign camera clean"
+check_text_hit 'payment failed please retry' 'OK' "text: benign payment clean"
+XDIR140=$(mktemp -d /tmp/hlse140.XXXXXX)
+printf 'x\n' > "$XDIR140/t.flatpak"
+printf 'x\n' > "$XDIR140/t.snap"
+for f in "$XDIR140/t.flatpak" "$XDIR140/t.snap"; do
+    ./hlse_core file "$f" 2>&1 | grep -q "LOG" \
+        && check "file: $(basename "$f") flagged" "0" "0" \
+        || check "file: $(basename "$f") flagged" "0" "1"
+done
+rm -rf "$XDIR140"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

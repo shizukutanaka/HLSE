@@ -30,6 +30,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **IoT-notification + booking + billing-failure vocab**
+  (`hlse_text.c`): "motion detected · camera detected · doorbell
+  camera · security camera · someone is at your door · person
+  detected" (fake Ring/Nest-style camera alerts), "booking
+  confirmation · reservation confirmed · verify your booking/
+  reservation" (travel-booking malspam), "subscription could not be
+  charged · payment failed · unable to process your payment ·
+  update your payment method · billing information" (payment-failure
+  card phishing), and "service will be interrupted / disconnected ·
+  service outage" (ISP outage lures).
+- **`.flatpak` + `.snap`** (`hlse_file.c`): Linux app-installer
+  bundles carrying arbitrary executables (same delivery class as
+  `.appx`/`.msi` on Windows).
 - **Loyalty-points + debt-relief scam vocab** (`hlse_text.c`):
   "loyalty/reward points · points are expiring · redeem your points ·
   airline miles · frequent flyer miles · claim your points" (points/
