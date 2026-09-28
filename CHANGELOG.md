@@ -5,6 +5,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [Unreleased]
 
 ### Added
+- **`paste`: remote code execution written without a pipe.** `curl … | sh`
+  scored 40, but the same download-and-execute written as `bash -c "$(curl …)"`,
+  `eval "$(curl …)"`, `zsh <(curl …)` or `sh -c "$(wget -qO- …)"` scored 0/SAFE
+  because the check only looked for a pipe. Same risk, so now the same score.
+  Also adds `zsh`/`dash`/`ksh` to the pipe targets (macOS's default shell was
+  missing). Plain `curl -O` and `VER=$(curl …)` stay 0. F1 = 1.000 / 0.0% FP
+  unchanged. +7 cases (p134). Note: legitimate installers (e.g. Homebrew's) use
+  this form too, exactly as they use `curl | sh`; the score is an ALERT to
+  review, not a block.
 - **`paste`: DNS-staged ClickFix and CrashFix.** Found by checking 2026 threat
   reporting (Microsoft Threat Intelligence, Feb 2026 CrashFix; the DNS-based
   ClickFix variant) against the detector. Both fetch the second stage without

