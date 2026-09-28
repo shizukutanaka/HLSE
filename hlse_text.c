@@ -237,6 +237,11 @@ static const char *BAIT_WORDS[] = {
     "remit payment", "remit the payment", "remit to",
     "divert the payment", "redirect the payment",
     "process the payment", "urgent wire",
+    /* password-expiry phish — 'your password will expire today
+     * keep current password' is the classic cred-harvest frame   */
+    "password will expire", "password is expiring",
+    "password expires", "password has expired",
+    "keep your current password", "retain your current password",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

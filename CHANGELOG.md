@@ -21,6 +21,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Password-expiry phish** (`hlse_text.c`): "password will expire /
+  password expires / keep your current password" — the classic
+  cred-harvest frame.
+- **Podcast subscription schemes** (`hlse_core.c`): `pcast:`,
+  `itms-pcast:`, `podcast:`, `castro:`, `overcast:`, `pktc:` — a
+  click subscribes the reader to a remote feed (ongoing
+  remote-content pull).
 - **BEC payment-diversion wording** (`hlse_text.c`): "wire
   transfer / wire instructions / ach transfer / payment
   instructions / new account number / bank account has changed /

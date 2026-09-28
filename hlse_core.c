@@ -1811,7 +1811,11 @@ static const char *const URL_HANDLER_SCHEMES[] = {
      * actions to the named app (vscode: was already listed)      */
     "itms-apps:", "itms-appss:", "macappstore:",
     "zoomphonecall:", "confinstall:", "subl:", "mvim:",
-    "txmt:", "fork:", "sourcetree:", NULL
+    "txmt:", "fork:", "sourcetree:",
+    /* podcast subscription schemes — a click subscribes the
+     * reader to a remote feed (ongoing remote-content pull)      */
+    "pcast:", "itms-pcast:", "podcast:", "castro:",
+    "overcast:", "pktc:", NULL
 };
 /* Remote-mount schemes: clicking one attaches a remote filesystem or
  * session — smb: is the same NetNTLM-leak class as a \\ UNC path,

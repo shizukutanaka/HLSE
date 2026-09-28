@@ -10788,6 +10788,15 @@ for e in xsn xsf onepkg rdg; do
 done
 rm -rf "$XDIR122"
 
+# ── cycle-123: password-expiry lure + podcast-feed schemes ──
+check_text_hit 'your password will expire in 24 hours confirm now' 'LOG' "text: pw-expire flagged"
+check_text_hit 'your password expires today keep your current password' 'ALERT' "text: keep-pw flagged"
+check_text_hit 'the expiry date printed on the card' 'OK' "text: benign expiry clean"
+check_url_hit 'pcast://feeds.evil.example/x' 'LOG' "url: pcast: flagged"
+check_url_hit 'podcast://x' 'LOG' "url: podcast: flagged"
+check_url_hit 'overcast://x' 'LOG' "url: overcast: flagged"
+check_url_hit 'itms-pcast://x' 'LOG' "url: itms-pcast: flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
