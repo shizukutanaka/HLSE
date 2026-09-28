@@ -269,6 +269,7 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * remaining Slack credential variants                        */
     { "xoxe-",         5,  10, is_alnum_or_dash,   "Slack Rotation Token",  85 },
     { "xoxa-",         5,  10, is_alnum_or_dash,   "Slack App Token",       80 },
+    { "xoxo-",         5,  10, is_alnum_or_dash,   "Slack OAuth Token",    85 },
     { "xoxb-",        5,  10, is_alnum_or_dash,   "Slack Bot Token",       80 },
     { "xoxp-",         5,  10, is_alnum_or_dash,   "Slack User Token",      85 },
     { "xoxs-",         5,  10, is_alnum_or_dash,   "Slack Session Token",   85 },
@@ -387,6 +388,8 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "sk-or-v1-",     9,  60, is_hex,             "OpenRouter API Key",    85 },
     /* MailerSend API token — 'mlsn.' + long alnum/dot suffix        */
     { "mlsn.",         5,  32, is_alnum_dash_dot,  "MailerSend API Key",    80 },
+    /* Dropbox OAuth access token — 'sl.' + ~140-char base64url tail */
+    { "sl.",           3,  60, is_alnum_dash_dot,  "Dropbox Access Token", 85 },
     /* Newer LLM providers with distinctive prefixes (~zero FP):
      * Groq gsk_<52>, Perplexity pplx-<48>, xAI/Grok xai-<80>, Replicate
      * r8_<36>, Hugging Face org api_org_<34>.                          */

@@ -11239,6 +11239,22 @@ XDIR158=$(mktemp -d /tmp/hlse158.XXXXXX)
 for e in sxc sxi sdd sxw sxm; do printf 'x\n' > "$XDIR158/drop.$e"; check "$XDIR158/drop.$e flagged" "$(./hlse_core file "$XDIR158/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
 rm -rf "$XDIR158"
 
+# ── cycle-159: digital-arrest/audit/doc lures + dropbox + ODF formats ───
+check_text_hit 'you are under digital arrest stay on the video call' 'LOG' "text: digital-arrest flagged"
+check_text_hit 'free energy audit home energy check schedule today' 'LOG' "text: energy-audit flagged"
+check_text_hit 'irs transcript tax transcript download your records' 'LOG' "text: transcript flagged"
+check_text_hit 'dmv appointment license renewal online before expiry' 'LOG' "text: dmv flagged"
+check_text_hit 'the tax transcript arrived in the mail' 'OK' "text: benign transcript clean"
+check_text_hit 'we did an energy audit at the office last year' 'OK' "text: benign audit clean"
+DP="sl."; DP="${DP}BQKx2mV8nQpR4sT6uW7yZ0aBcDeFgH1iJk2L3mN4oP5qR6sT7uV8w9X0yZaBcDeFgH"
+check_secret_hit "$DP" 'Dropbox Access Token' "secret: dropbox flagged"
+XO="xoxo-"; XO="${XO}abcdefghij12345678"
+check_secret_hit "$XO" 'Slack OAuth Token' "secret: xoxo flagged"
+check_url_hit 'play://app/com.evil' 'LOG' "url: play flagged"
+XDIR159=$(mktemp -d /tmp/hlse159.XXXXXX)
+for e in odg odb odf; do printf 'x\n' > "$XDIR159/drop.$e"; check "$XDIR159/drop.$e flagged" "$(./hlse_core file "$XDIR159/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+rm -rf "$XDIR159"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

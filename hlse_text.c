@@ -472,6 +472,14 @@ static const char *BAIT_WORDS[] = {
     "government solar", "account review", "periodic review",
     "annual account review", "kyc refresh", "customer due diligence",
     "smart meter", "meter upgrade", "meter replacement",
+    /* Digital-arrest + energy-audit + government-document lures —
+     * fake police video-call detention, free-audit lead-gen fraud,
+     * IRS transcript + DMV renewal phishing                       */
+    "digital arrest", "stay on the video call",
+    "video call verification", "you are under arrest",
+    "free energy audit", "energy audit", "home energy check",
+    "irs transcript", "tax transcript", "dmv appointment",
+    "license renewal online", "online license renewal",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

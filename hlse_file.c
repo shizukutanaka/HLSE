@@ -475,6 +475,10 @@ static const char *EXECUTABLE_EXTS[] = {
     /* StarOffice/OpenOffice 1.x legacy formats — pre-ODF siblings of
      * .ods/.odt that carry macros + OLE objects the same way       */
     ".sxc", ".sxi", ".sdd", ".sxw", ".sxm",
+    /* Niche ODF carriers — .odg/.odb/.odf (draw/database/formula)
+     * are macro-capable and rare enough to flag; .odt/.ods/.odp
+     * stay on the safe list alongside .docx/.xlsx/.pptx          */
+    ".odg", ".odb", ".odf",
     /* MS Access project/macro carriers — .mad/.maf/.mam/.maq/.mat/
      * .maw are Access containers that can carry VBA (same carrier
      * class as .mdb/.accdb already flagged)                        */

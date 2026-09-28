@@ -30,6 +30,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Digital-arrest + energy-audit + document lures** (`hlse_text.c`):
+  "digital arrest · stay on the video call · video call
+  verification · you are under arrest" (video-call detention scam),
+  "free energy audit · energy audit · home energy check", and
+  "irs/tax transcript · dmv appointment · license renewal online"
+  (government-document phishing).
+- **`sl.` Dropbox OAuth token + `xoxo-` Slack OAuth token**
+  (`hlse_secrets.c`) → ISOLATE 85.
+- **`play:` URI-handler flagging** (`hlse_core.c`): Play-store
+  deep-link sibling of `market:` → LOG 35.
+- **Niche ODF carriers** (`hlse_file.c`): `.odg`/`.odb`/`.odf` —
+  macro-capable LibreOffice draw/database formats → LOG 30
+  (`.odt`/`.ods`/`.odp` stay safe-listed with `.docx`/`.xlsx`).
+
 - **Solar-rebate + KYC-refresh + smart-meter lures** (`hlse_text.c`):
   "free solar · solar rebate/program · government solar" (subsidy
   fraud), "account review · periodic/annual review · kyc refresh ·
