@@ -237,6 +237,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * application events, .inc is a script-include that executes
      * inline, .plx is a Perl executable script                  */
     ".asa", ".inc", ".plx",
+    /* SSI/XHTML web-code carriers — .shtm/.shtml/.stm execute
+     * server-side includes (<!--#exec cmd= --> is a web-shell
+     * primitive) and .xhtml runs script in XML mode            */
+    ".shtm", ".shtml", ".stm", ".xhtml",
     /* Visio stencil/template carriers (OLE objects; .vstm is the
      * macro-enabled template) + Excel toolbar (.xlb) and legacy
      * Excel-4 macro variants (.xlv) — .xlm already listed        */
@@ -577,7 +581,7 @@ is_document_ext(const char *ext) {
 
 static const char *IMAGE_EXTS[] = {
     ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp",
-    ".tiff", ".ico",
+    ".tiff", ".ico", ".svgz",
     NULL
 };
 
@@ -655,6 +659,22 @@ svg_has_script(const unsigned char *head, size_t len) {
             strstr(low, "<foreignobject") != NULL ||
             strstr(low, "javascript:")    != NULL ||
             strstr(low, ";base64,")       != NULL);
+}
+
+/* SSI server-side-include exec primitive: <!--#exec cmd|cgi="...">
+ * runs a shell command / CGI under the web server user whenever the
+ * file lands on an SSI-enabled server — a classic web-shell delivery
+ * (upload as .shtml/.stm or slip into an uploaded template). The
+ * directive has no benign purpose in a shipped file, so the marker is
+ * extension-independent like the SVG-script one.                */
+static int
+ssi_has_exec(const unsigned char *head, size_t len) {
+    char low[4097];
+    size_t n = 0, i;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    return strstr(low, "<!--#exec") != NULL;
 }
 
 /* ICS calendar-invite phishing: a VCALENDAR payload carrying malicious
@@ -1024,6 +1044,7 @@ is_script_ext(const char *ext) {
         ".vstm", ".vstx", ".xlb", ".xlv", ".mda", ".mde",
         ".mdw", ".accdr", ".pps", ".wiz", ".slk", ".dif",
         ".oqy", ".rqy", ".searchconnector-ms", ".ipf", ".swf",
+        ".shtm", ".shtml", ".stm", ".xhtml",
         ".z", ".lz", ".lzo", ".tz", ".taz", ".txz", ".tlz",
         ".tbz", ".tb2", ".pax", ".cpio", ".afsplit",
         NULL
@@ -4584,6 +4605,14 @@ hlse_check_file(const char *filepath) {
         fv_add(&v, 55,
             "F5: SCRIPTED SVG — image contains executable script "
             "(<script>/event handler/foreignObject) — SVG-smuggling phish");
+    }
+
+    /* ── F5b: SSI exec primitive — <!--#exec --> runs a command under
+     * the web server on any SSI-enabled host.                    */
+    if (head_len > 0 && ssi_has_exec(head, (size_t)head_len)) {
+        fv_add(&v, 55,
+            "F5: SSI EXEC — file contains <!--#exec --> server-side "
+            "command primitive (web-shell delivery / template hijack)");
     }
 
     /* ── F3: Executable disguise ───────────────────────────────────── */

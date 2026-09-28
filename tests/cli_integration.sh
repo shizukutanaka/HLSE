@@ -11530,6 +11530,16 @@ UINV2=$(printf 'http://pay\xc2\xa0pal.com.evil.example/')
 check "url: nbsp-host flagged" "$(./hlse_core "$UINV2" | head -1 | grep -c 'ISOLATE')" "1"
 check "url: fullwidth-path clean" "$(./hlse_core 'http://example.com/ａdmin' | head -1 | grep -c 'OK')" "1"
 
+# ── cycle-181: ssi/xhtml web-code carriers + svgz image + ssi #exec ──
+XDIR181="/tmp/hlse-x181.$$"; mkdir -p "$XDIR181"
+for e in shtm shtml stm xhtml; do printf 'x\n' > "$XDIR181/h.$e"; check "$XDIR181/h.$e flagged" "$(./hlse_core file "$XDIR181/h.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+printf '<!--#exec cmd="id" -->\n' > "$XDIR181/i.shtml"; check "$XDIR181/i.shtml exec flagged" "$(./hlse_core file "$XDIR181/i.shtml" | head -1 | grep -c 'ISOLATE')" "1"
+printf '<!--#exec cmd="id" -->\n' > "$XDIR181/j.txt"; check "$XDIR181/j.txt exec flagged" "$(./hlse_core file "$XDIR181/j.txt" | head -1 | grep -c 'ALERT\|BLOCK\|ISOLATE')" "1"
+printf '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>\n' > "$XDIR181/k.svgz"; check "$XDIR181/k.svgz flagged" "$(./hlse_core file "$XDIR181/k.svgz" | head -1 | grep -c 'BLOCK\|ISOLATE')" "1"
+printf 'x\n' > "$XDIR181/l.svgz"; check "$XDIR181/l.svgz clean" "$(./hlse_core file "$XDIR181/l.svgz" | head -1 | grep -c 'OK')" "1"
+printf '<html><body>index</body></html>\n' > "$XDIR181/m.shtml"; check "$XDIR181/m.shtml ext-only" "$(./hlse_core file "$XDIR181/m.shtml" | head -1 | grep -c 'LOG')" "1"
+rm -rf "$XDIR181"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

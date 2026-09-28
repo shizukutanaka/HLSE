@@ -51,6 +51,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **SSI/XHTML web-code carriers + `<!--#exec` content rule**
+  (`hlse_file.c`): `.shtm`/`.shtml`/`.stm`/`.xhtml` join the
+  server-side code-carrier set (F3, +30) — SSI files execute
+  `<!--#exec cmd= -->` under the web server user (classic
+  web-shell delivery), `.xhtml` runs script in XML mode. A new
+  extension-independent content check (F5b, +55) flags the
+  `<!--#exec` primitive in ANY file — the directive has no
+  benign purpose in shipped content. `.svgz` joins the image
+  extension set so scripted/polyglot SVG gzip streams hit the
+  same F2/F5 rules as `.svg`.
+
 - **UTS-46 host normalization** (`hlse_core.c`): the authority
   span now normalizes what resolvers normalize — ideographic/
   fullwidth/halfwidth dots (。．｡) fold to `.` (+30) and
