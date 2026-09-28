@@ -155,6 +155,11 @@ static const char *BAIT_WORDS[] = {
     "import your wallet", "reactivate your wallet",
     "wallet verification", "wallet validation",
     "enter your phrase", "enter the phrase",
+    /* Web3 drainer claim/sync lures — the bait half; the decisive
+     * signature verbs live in FIN_ACTION_WORDS                  */
+    "claim your airdrop", "claim your tokens", "claim airdrop",
+    "bridge your assets", "sync your wallet", "migrate your wallet",
+    "rectify your wallet", "validate your tokens",
     /* Account takeover / 2FA bypass bait */
     "two-factor code", "verification code", "one-time code", "otp code",
     "phone number", "confirm identity", "verify your identity",
@@ -1223,6 +1228,15 @@ static const char *FIN_ACTION_WORDS[] = {
     "send bitcoin", "send crypto", "send eth",
     "cash app", "cashapp", "venmo", "apple pay", "paypal me",
     "can you paypal", "send via paypal", "pay via paypal",
+    /* Web3 drainer signature verbs — 'setApprovalForAll' /
+     * 'approve unlimited' / 'sign to verify' is the drain call
+     * itself disguised as a verification step                   */
+    "set approval for all", "approve unlimited",
+    "increase allowance", "unlimited allowance",
+    "sign this message to verify", "sign the message to verify",
+    "sign the transaction", "sign this transaction",
+    "verify wallet ownership", "verify your wallet ownership",
+    "prove wallet ownership", "verify ownership of your wallet",
     /* Investment action triggers */
     "invest now", "invest today", "invest with us",
     /* Money mule recruitment — asking to use victim's account for transfers */

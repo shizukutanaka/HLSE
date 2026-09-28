@@ -10558,6 +10558,22 @@ check_secret_hit "$MO" 'Mollie Live Key' "secret: mollie live key flagged"
 check_secret_hit 'the live_show started at eight' 'OK' "secret: live_ word benign clean"
 check_secret_hit 'my test_results came back normal' 'OK' "secret: test_ word benign clean"
 
+# ── cycle-109: web3 drainer verbs + android bundle carriers ──
+check_text_hit 'set approval for all to receive your tokens' 'LOG' "text: setApprovalForAll drainer flagged"
+check_text_hit 'approve unlimited access for the contract' 'ALERT' "text: approve-unlimited drainer flagged"
+check_text_hit 'sign the transaction to verify wallet ownership' 'LOG' "text: sign-to-verify drainer flagged"
+check_text_hit 'claim your airdrop before it expires' 'BLOCK' "text: airdrop claim drainer flagged"
+check_text_hit 'approve the contract deployment' 'OK' "text: benign approve clean"
+check_text_hit 'claim your boarding pass' 'OK' "text: benign claim clean"
+XDIR109=$(mktemp -d /tmp/hlse109.XXXXXX)
+for e in xapk apks apkm; do
+    printf 'x\n' > "$XDIR109/t.$e"
+    ./hlse_core file "$XDIR109/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+rm -rf "$XDIR109"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -15,6 +15,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Web3 drainer signature verbs** (`hlse_text.c`): FIN_ACTION gains
+  the decisive drain calls ("set approval for all", "approve
+  unlimited", "increase/unlimited allowance", "sign this/the
+  transaction", "sign this/the message to verify", "verify/prove
+  wallet ownership"); BAIT gains the lure half ("claim your
+  airdrop/tokens", "bridge/sync/migrate/rectify your wallet"). The
+  signature verbs score at LOG alone and ALERT when compounded.
+- **Android bundle carriers** (`hlse_file.c`): `.xapk`/`.apks`/
+  `.apkm` — split-APK package sets in the same sideload class as
+  `.apk` (already 35).
 - **App-package / VM-image carriers** (`hlse_file.c`): `.appx`/
   `.appxbundle`/`.msix`/`.msixbundle` (MSIX/AppX sideload — the
   CVE-2021-43890 AppX signature-spoof chain used by Emotet/

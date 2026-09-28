@@ -351,6 +351,9 @@ static const char *EXECUTABLE_EXTS[] = {
      * (AppX signature-spoof chain, CVE-2021-43890; Emotet/BazarLoader
      * used .appx as the installer carrier)                        */
     ".appx", ".appxbundle", ".msix", ".msixbundle",
+    /* Android split/bundle packages — same sideload class as .apk
+     * (bundled APK sets sideload additional code)                  */
+    ".xapk", ".apks", ".apkm",
     /* VM appliance / disk-image carriers — mounting one runs a full
      * machine/image payload; same class as .vhd/.iso/.dmg          */
     ".ova", ".ovf", ".wim",
