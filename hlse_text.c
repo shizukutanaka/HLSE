@@ -359,6 +359,12 @@ static const char *AUTHORITY_WORDS[] = {
     "department of social services",
     "medicare", "medicaid", "department of justice",
     "microsoft support", "apple support", "google security",
+    /* UK/AU/CA tax & welfare impersonation — HMRC/ATO/CRA smishing
+     * and NI-number suspension (same shape as the SSN scams)      */
+    "hmrc", "hm revenue", "the ato", "ato refund", "ato tax",
+    "the cra", "cra has", "unpaid taxes", "tax arrears",
+    "council tax", "tax return is under review",
+    "national insurance number", "insurance number has been suspended", 
     "amazon security", "paypal security",
     "under investigation", "criminal charges", "warrant for your arrest",
     "federal agent", "federal officer", "law enforcement officer",

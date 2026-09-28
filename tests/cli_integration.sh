@@ -10574,6 +10574,28 @@ for e in xapk apks apkm; do
 done
 rm -rf "$XDIR109"
 
+# ── cycle-110: agency impersonation + browser-launch schemes + tokens ──
+check_text_hit 'the cra has detected unpaid taxes on your account' 'LOG' "text: CRA impersonation flagged"
+check_text_hit 'your ato tax return is under review pay the penalty' 'LOG' "text: ATO impersonation flagged"
+check_text_hit 'hm revenue customs refund of 400 pounds' 'ALERT' "text: HMRC refund scam flagged"
+check_text_hit 'i paid the ato installment on time' 'LOG' "text: benign ato mention bounded"
+check_url_hit 'firefox://open-url?url=https://evil.example' 'BLOCK' "url: firefox: handler flagged"
+check_url_hit 'safari-https://evil.example' 'LOG' "url: safari-https: handler flagged"
+check_url_hit 'comgooglechrome://evil' 'LOG' "url: comgooglechrome: handler flagged"
+check_url_hit 'microsoft-edge:https://evil.example' 'BLOCK' "url: microsoft-edge: flagged"
+FG="figd_"; FG="${FG}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234567890xQ"
+check_secret_hit "$FG" 'Figma Access Token' "secret: figd_ figma flagged"
+LO="lin_oauth_"; LO="${LO}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234"
+check_secret_hit "$LO" 'Linear OAuth Token' "secret: lin_oauth_ flagged"
+XDIR110=$(mktemp -d /tmp/hlse110.XXXXXX)
+for e in provisioningprofile; do
+    printf 'x\n' > "$XDIR110/t.$e"
+    ./hlse_core file "$XDIR110/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+rm -rf "$XDIR110"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

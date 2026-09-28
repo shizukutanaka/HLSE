@@ -15,6 +15,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **UK/AU/CA agency impersonation** (`hlse_text.c`): AUTHORITY gains
+  HMRC / "the ato" / "the cra" / council-tax / unpaid-taxes /
+  national-insurance-number phrasing — the English-speaking tax-scam
+  trio beyond US IRS/SSN (HMRC refund + CRA/ATO audit smishing).
+- **Browser-launch URI schemes** (`hlse_core.c`): `firefox:`,
+  `safari:`, `safari-http(s):`, `googlechrome(s):`,
+  `comgooglechrome:`(+x-callback), `opera-http(s):`,
+  `microsoft-edge:` — a click hands the URI to another browser's URL
+  handler verbatim (app-link/callback class).
+- **Design-tool / OAuth token forms** (`hlse_secrets.c`): `figd_`
+  (Figma PAT) and `lin_oauth_` (Linear OAuth).
+- **`.provisioningprofile`** (`hlse_file.c`): Apple enterprise/ad-hoc
+  sideload signing carrier (.mobileconfig stays content-gated —
+  wifi profiles benign, root-CA/vpn payloads flag).
 - **Web3 drainer signature verbs** (`hlse_text.c`): FIN_ACTION gains
   the decisive drain calls ("set approval for all", "approve
   unlimited", "increase/unlimited allowance", "sign this/the

@@ -354,6 +354,11 @@ static const char *EXECUTABLE_EXTS[] = {
     /* Android split/bundle packages — same sideload class as .apk
      * (bundled APK sets sideload additional code)                  */
     ".xapk", ".apks", ".apkm",
+    /* Apple signing carrier — .provisioningprofile is the
+     * enterprise-sideload signing artifact (ad-hoc app install);
+     * .mobileconfig stays content-gated in the MOBILECONFIG rule
+     * (wifi profiles are benign, root-CA/vpn payloads flag)        */
+    ".provisioningprofile",
     /* VM appliance / disk-image carriers — mounting one runs a full
      * machine/image payload; same class as .vhd/.iso/.dmg          */
     ".ova", ".ovf", ".wim",

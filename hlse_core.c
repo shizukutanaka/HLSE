@@ -1774,7 +1774,14 @@ static const char *const URL_HANDLER_SCHEMES[] = {
      * that carries executable script; mhtml: renders MIME-HTML (an
      * XSS wrapper class in IE), ms-help: hands a URI to Help Viewer  */
     "ms-its:", "ms-itss:", "its:", "itsfile:", "mk:",
-    "mhtml:", "ms-help:", NULL
+    "mhtml:", "ms-help:",
+    /* browser-launch schemes — open a URL in another browser or its
+     * app-link handler (iOS/Windows scheme registrations); the URI
+     * is handed to the app's URL handler verbatim                 */
+    "firefox:", "safari:", "safari-https:", "safari-http:",
+    "googlechrome:", "googlechromes:", "comgooglechrome:",
+    "comgooglechrome-x-callback:", "opera-http:", "opera-https:",
+    "microsoft-edge:", NULL
 };
 /* Remote-mount schemes: clicking one attaches a remote filesystem or
  * session — smb: is the same NetNTLM-leak class as a \\ UNC path,
