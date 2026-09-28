@@ -308,6 +308,17 @@ static const char *BAIT_WORDS[] = {
     "job interview invitation", "interview assessment",
     "pre-employment screening", "onboarding paperwork",
     "job offer letter", "employment offer",
+    /* Grandparent/emergency-money scam + fake-audit bait + deepfake
+     * KYC video-verification lures — 'i am in trouble, send money'
+     * is the classic bail-money family variant                     */
+    "i am in trouble", "i'm in trouble", "need money urgently",
+    "need money right now", "send money urgently", "send money now",
+    "send money right away", "emergency cash", "wire me money",
+    "help me please urgently", "stuck abroad", "lost my wallet abroad",
+    "compliance audit", "audit required", "audit findings",
+    "vulnerability assessment", "penetration test report",
+    "video identification", "video verification", "video call verification",
+    "verify via video", "verify yourself on video",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

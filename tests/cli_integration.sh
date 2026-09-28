@@ -10948,6 +10948,25 @@ check_text_hit 'i got a job offer last month' 'OK' "text: benign job-offer clean
 check_secret_hit 'fsq3x9q2m7f4h1k8p3w6z5t0y9u4j7b2n5e8r1d6' 'Foursquare' "secrets: fsq3 foursquare flagged"
 check_secret_hit 'fsq3' 'OK' "secrets: bare fsq3 clean"
 
+# ── cycle-136: grandparent scam + audit/KYC lures + carriers ──
+check_text_hit 'i am in trouble need money urgently send money now' 'ALERT' "text: emergency-money flagged"
+check_text_hit 'stuck abroad lost my wallet abroad help me please urgently' 'ISOLATE' "text: stranded-abroad flagged"
+check_text_hit 'compliance audit required vulnerability assessment found issues' 'LOG' "text: fake-audit flagged"
+check_text_hit 'i was in trouble last week but it resolved' 'OK' "text: benign trouble clean"
+check_text_hit 'the audit found compliance gaps' 'OK' "text: benign audit clean"
+XDIR136=$(mktemp -d /tmp/hlse136.XXXXXX)
+printf 'x\n' > "$XDIR136/t.jnlp"
+printf 'x\n' > "$XDIR136/t.diagpkg"
+printf 'x\n' > "$XDIR136/t.xaml"
+for f in "$XDIR136/t.jnlp" "$XDIR136/t.diagpkg" "$XDIR136/t.xaml"; do
+    ./hlse_core file "$f" 2>&1 | grep -q "LOG" \
+        && check "file: $(basename "$f") flagged" "0" "0" \
+        || check "file: $(basename "$f") flagged" "0" "1"
+done
+rm -rf "$XDIR136"
+check_url_hit 'wyciwyg://evil.example/x' 'LOG' "url: wyciwyg flagged"
+check_url_hit 'local:///etc/passwd' 'LOG' "url: local flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

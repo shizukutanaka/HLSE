@@ -1813,6 +1813,9 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     "zoomphonecall:", "confinstall:", "subl:", "mvim:",
     "windowsdefender:",
     "txmt:", "fork:", "sourcetree:",
+    /* wyciwyg: = Firefox what-you-cache (origin bypass); local://
+     * references local files                                       */
+    "wyciwyg:", "local:",
     /* podcast subscription schemes — a click subscribes the
      * reader to a remote feed (ongoing remote-content pull)      */
     "pcast:", "itms-pcast:", "podcast:", "castro:",

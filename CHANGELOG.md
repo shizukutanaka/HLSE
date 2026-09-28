@@ -30,6 +30,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Emergency-money + audit/KYC scam vocab** (`hlse_text.c`):
+  "i am in trouble · need money urgently · send money now · emergency
+  cash · wire me money · stuck abroad · lost my wallet abroad" (the
+  grandparent/bail-money scam family), plus "compliance audit · audit
+  findings · vulnerability assessment · penetration test report"
+  (fake security-vendor bait) and "video identification · video
+  verification · verify via video" (deepfake-KYC lures).
+- **`.diagpkg`, `.jnlp`, `.xaml`** (`hlse_file.c`): diagnostics
+  package sibling of `.diagcab`, Java Web Start remote-jar launch
+  descriptor, and XAML markup carrying ObjectDataProvider code
+  execution.
+- **`wyciwyg:` + `local:` URL schemes** (`hlse_core.c`): Firefox
+  what-you-cache origin bypass and local-file references.
 - **Payroll-diversion + recruitment-scam vocab** (`hlse_text.c`):
   "direct deposit · payroll deposit · change of bank account · bank
   details have changed · update your bank details" (HR-targeted salary

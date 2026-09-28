@@ -431,6 +431,12 @@ static const char *EXECUTABLE_EXTS[] = {
      * troubleshooters that can stage arbitrary executables (a real
      * malspam carrier; distinct from the plain .cab archive)      */
     ".diagcab",
+    /* .diagpkg — same diagnostics-package family (msdiag.exe);
+     * .jnlp — Java Web Start descriptor: references a remote jar and
+     * hands javaws an arbitrary download+launch instruction;
+     * .xaml — WPF/workflow markup whose ObjectDataProvider can run
+     * arbitrary methods (markup-embedded code execution)          */
+    ".diagpkg", ".jnlp", ".xaml",
     NULL
 };
 
