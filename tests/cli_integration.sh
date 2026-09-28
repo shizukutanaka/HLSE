@@ -11473,6 +11473,20 @@ check_text_hit 'i redeemed my store credit at checkout' 'OK' "text: benign vouch
 check_url_hit 'acct:user@evil.example' 'LOG' "url: acct flagged"
 check_url_hit 'doi:10.1000/evil' 'LOG' "url: doi flagged"
 
+# ── cycle-176: cashback/review/pensionrelease/domain/rebate + archives ──
+check_text_hit 'cash back portal shopping cashback earn cashback' 'LOG' "text: cashback flagged"
+check_text_hit 'leave a review review incentive write a review gift' 'LOG' "text: review flagged"
+check_text_hit 'unlock your pension early pension access pension release' 'LOG' "text: penrelease flagged"
+check_text_hit 'domain broker premium domain for sale premium domain' 'LOG' "text: domain flagged"
+check_text_hit 'insurance rebate policy rebate premium rebate' 'LOG' "text: rebate flagged"
+check_text_hit 'i left a review on the product page' 'OK' "text: benign review clean"
+check_text_hit 'we offer cashback on all purchases' 'OK' "text: benign cashback clean"
+XDIR176=$(mktemp -d /tmp/hlse176.XXXXXX)
+for e in z lz lzo tz taz txz tlz tbz tb2 pax cpio afsplit; do printf 'x\n' > "$XDIR176/g.$e"; check "$XDIR176/g.$e flagged" "$(./hlse_core file "$XDIR176/g.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+rm -rf "$XDIR176"
+check_url_hit 'webdav://evil.example/share' 'LOG' "url: webdav flagged"
+check_url_hit 'webdavs://evil.example/share' 'LOG' "url: webdavs flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -266,6 +266,12 @@ static const char *EXECUTABLE_EXTS[] = {
      * a historically enormous RCE surface delivered as an
      * attachment                                                              */
     ".swf",
+    /* Residual archive carriers — compress (.z), LZ4/lzip/lzo,
+     * tar+compress variants (.tz/.taz/.tlz/.txz/.tbz/.tb2), POSIX
+     * cpio/pax archives, and Apple FileSystem split archives:
+     * all carry arbitrary payloads through the archive surface    */
+    ".z", ".lz", ".lzo", ".tz", ".taz", ".txz", ".tlz",
+    ".tbz", ".tb2", ".pax", ".cpio", ".afsplit",
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
@@ -1018,6 +1024,8 @@ is_script_ext(const char *ext) {
         ".vstm", ".vstx", ".xlb", ".xlv", ".mda", ".mde",
         ".mdw", ".accdr", ".pps", ".wiz", ".slk", ".dif",
         ".oqy", ".rqy", ".searchconnector-ms", ".ipf", ".swf",
+        ".z", ".lz", ".lzo", ".tz", ".taz", ".txz", ".tlz",
+        ".tbz", ".tb2", ".pax", ".cpio", ".afsplit",
         NULL
     };
     char lower[32];

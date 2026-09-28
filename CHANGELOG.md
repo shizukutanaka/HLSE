@@ -51,6 +51,26 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Cashback + review + pension-release + domain + rebate lures**
+  (`hlse_text.c`): "cash back portal · shopping cashback · earn
+  cashback · cashback portal · cash back rewards · cashback site"
+  (cashback scams), "leave a review · review incentive · write a
+  review · gift for review · free product in exchange · review
+  for a gift · honest review · leave us a review" (review
+  solicitation), "unlock your pension · early pension access ·
+  pension release · early pension · pension unlocking · access
+  your pension early · pension liberation" (pension-release
+  fraud), "domain broker · premium domain for sale · domain for
+  sale · premium domain · buy this domain" (domain cons),
+  "insurance rebate · policy rebate · premium rebate · insurance
+  refund · premium refund" (insurance-rebate fraud).
+- **Residual archive carriers** (`hlse_file.c`): `.z`/`.lz`/
+  `.lzo`/`.tz`/`.taz`/`.txz`/`.tlz`/`.tbz`/`.tb2`/`.pax`/`.cpio`/
+  `.afsplit` — compress, LZ4/lzip/lzo, tar variants, cpio/pax,
+  and Apple FileSystem splits → LOG 30.
+- **`webdav:`/`webdavs:` remote-mount schemes** (`hlse_core.c`)
+  → LOG 35.
+
 - **Certificate + ambassador + modeling + unban + voucher +
   audition + DNA lures** (`hlse_text.c`): "ielts certificate ·
   toefl score · language certificate · ielts score report ·

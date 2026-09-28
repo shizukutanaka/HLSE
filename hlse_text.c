@@ -756,6 +756,22 @@ static const char *BAIT_WORDS[] = {
     "audition spot", "talent showcase", "modeling audition",
     "dna test results", "ancestry results", "genetic test",
     "dna results", "ancestry report", "genetic testing kit",
+    /* Cashback + review-incentive + pension-release + domain-broker
+     * + insurance-rebate lures — cashback-portal work scams, free-
+     * products-for-reviews fraud, pension-release exploitation,
+     * domain-broker cons, and fake insurance/premium rebates      */
+    "cash back portal", "shopping cashback", "earn cashback",
+    "cashback portal", "cash back rewards", "cashback site",
+    "leave a review", "review incentive", "write a review",
+    "gift for review", "free product in exchange",
+    "review for a gift", "honest review", "leave us a review",
+    "unlock your pension", "early pension access",
+    "pension release", "early pension", "pension unlocking",
+    "access your pension early", "pension liberation",
+    "domain broker", "premium domain for sale",
+    "domain for sale", "premium domain", "buy this domain",
+    "insurance rebate", "policy rebate", "premium rebate",
+    "insurance refund", "premium refund",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",
