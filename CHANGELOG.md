@@ -28,7 +28,39 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   one; `sbp_` had both a wrong "service role" label and the real
   personal-access-token row). Deduplicated to the real-format row.
 
+### Fixed
+
+- **Duplicate keyword entries double-counted hits** (`hlse_text.c`):
+  16 phrases appeared twice inside `BAIT_WORDS` and 6 more inside
+  `AUTHORITY`/`GROOMING`/`FAKE_ALERT`/`CALLBACK_PHISH`, so one
+  matching phrase scored as two hits (e.g. 'wire transfer' counted
+  twice pushed benign-adjacent text past the LOG threshold).
+  Removed the later copies (kept the first, thematic placement);
+  `subscription has been renewed`/`call to cancel` now live only
+  in `CALLBACK_PHISH_WORDS`, where they belong semantically.
+  `wire transfer instructions` added explicitly to keep the BEC
+  payout-redirect phrase flagging after its accidental second hit
+  was removed.
+- **Bare 'medicare'/'medicaid' over-triggered AUTHORITY**
+  (`hlse_text.c`): any casual mention of medicare scored the
+  25-point authority base on its own — the same over-breadth the
+  file already rejects for 'cra'/'ato'. Replaced with qualified
+  forms ('medicare office/enrollment/hotline', 'medicaid
+  office/enrollment') that keep the impersonation surface while
+  leaving ordinary speech clean.
+
 ### Added
+
+- **Pharmacy + credit-limit + Medicare + settlement lures**
+  (`hlse_text.c`): "prescription refill · medication recall ·
+  pharmacy order · rx order · your prescription · prescription
+  ready" (pharmacy phishing), "credit limit increase · credit line
+  increase · higher credit limit · credit increase · increase your
+  limit" (fake credit offers), "medicare advantage · medicare plan ·
+  switch your coverage · medicaid renewal · medicare card"
+  (Medicare Advantage enrollment fraud), "claim settlement ·
+  settlement offer · insurance payout · settlement amount · payout
+  approved" (fake claim-settlement lures).
 
 - **Court-appearance + lab-results + voter + aid lures**
   (`hlse_text.c`): "court date · court appearance · court hearing ·

@@ -11314,6 +11314,15 @@ XDIR164=$(mktemp -d /tmp/hlse164.XXXXXX)
 for e in nsi nsh iss isl wxs; do printf 'x\n' > "$XDIR164/setup.$e"; check "$XDIR164/setup.$e flagged" "$(./hlse_core file "$XDIR164/setup.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
 rm -rf "$XDIR164"
 
+# ── cycle-165: pharmacy/credit/medicare/settlement lures + kw dedup ────
+check_text_hit 'prescription refill medication recall pharmacy order' 'LOG' "text: pharmacy flagged"
+check_text_hit 'credit limit increase credit line increase higher limit' 'LOG' "text: credit-limit flagged"
+check_text_hit 'medicare advantage medicare plan switch your coverage' 'LOG' "text: medicare flagged"
+check_text_hit 'claim settlement offer insurance payout approved' 'LOG' "text: settlement flagged"
+check_text_hit 'i picked up my prescription at the pharmacy' 'OK' "text: benign rx clean"
+check_text_hit 'my subscription has been renewed thank you' 'LOG' "text: dedup renewal single-signal"
+check_text_hit 'the claim settlement arrived by mail' 'OK' "text: benign claim clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

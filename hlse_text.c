@@ -231,7 +231,8 @@ static const char *BAIT_WORDS[] = {
     /* BEC payment-diversion shapes — 'wire transfer instructions'
      * / 'new account number' / 'remit payment' are the payout-
      * redirect wording behind supplier impersonation losses       */
-    "wire transfer", "wire instructions", "ach transfer",
+    /* 'wire transfer' already listed above (line ~132) */
+    "wire instructions", "wire transfer instructions", "ach transfer",
     "payment instructions", "new account number",
     "account number has changed", "bank account has changed",
     "remit payment", "remit the payment", "remit to",
@@ -276,11 +277,15 @@ static const char *BAIT_WORDS[] = {
     /* renewal/refund scams — fake antivirus/geek-squad invoices that
      * bait a 'cancel' call to a scam line, and browser-notification
      * spam lures disguised as bot checks                        */
-    "subscription will renew", "subscription has been renewed",
+    /* 'subscription has been renewed' lives in CALLBACK_PHISH_WORDS
+     * (the renewal-call scam it defines) — kept out of BAIT to
+     * avoid double-counting a single phrase across signals      */
+    "subscription will renew",
     "auto-renewed", "auto-renewal", "renewal charge",
     "renewal order", "antivirus subscription", "geek squad",
     "if you did not authorize", "cancel this purchase",
-    "cancel this order", "call to cancel", "click allow",
+    /* 'call to cancel' lives in CALLBACK_PHISH_WORDS (same reason) */
+    "cancel this order", "click allow",
     "click 'allow' to confirm", "tap allow to confirm",
     /* Government-benefit / pharma / charity scams — SNAP/EBT lock
      * lures, student-loan forgiveness, unemployment deposits,
@@ -364,8 +369,9 @@ static const char *BAIT_WORDS[] = {
     "booking requires", "reservation requires", "verify your booking",
     "verify your reservation", "confirm your booking",
     "subscription could not be charged", "payment failed",
-    "payment was declined", "unable to process your payment",
-    "update your payment method", "billing information",
+    /* 'payment was declined'/'update your payment method'/'billing
+     * information' already listed above                         */
+    "unable to process your payment",
     "internet service will be interrupted", "service will be interrupted",
     "service will be disconnected", "service outage",
     /* Settlement-claim + immigration scams — fake class-action /
@@ -454,7 +460,8 @@ static const char *BAIT_WORDS[] = {
      * fake loan-modification offers                               */
     "secret shopper", "shopper assignment", "shopper evaluation",
     "nft mint", "free mint", "whitelist spot", "mint your free",
-    "claim your airdrop", "airdrop claim", "mortgage relief",
+    /* 'claim your airdrop' already listed above */
+    "airdrop claim", "mortgage relief",
     "loan modification", "vehicle purchase protection",
     "car escrow", "auto escrow",
     /* Relief-payment / flight-compensation lures — tariff-rebate,
@@ -476,7 +483,8 @@ static const char *BAIT_WORDS[] = {
      * fake police video-call detention, free-audit lead-gen fraud,
      * IRS transcript + DMV renewal phishing                       */
     "digital arrest", "stay on the video call",
-    "video call verification", "you are under arrest",
+    /* 'video call verification' already listed above */
+    "you are under arrest",
     "free energy audit", "energy audit", "home energy check",
     "irs transcript", "tax transcript", "dmv appointment",
     "license renewal online", "online license renewal",
@@ -520,7 +528,8 @@ static const char *BAIT_WORDS[] = {
      * phishing, election-registration scams, and FAFSA/aid
      * disbursement hooks                                       */
     "court date", "court appearance", "court hearing",
-    "arraignment", "court summons", "missed court",
+    /* 'court summons' already listed above */
+    "arraignment", "missed court",
     "lab results", "test results", "pathology report",
     "lab report", "medical records", "radiology report",
     "voter registration", "register to vote", "voter id",
@@ -528,12 +537,26 @@ static const char *BAIT_WORDS[] = {
     /* fafsa/student aid/pell grant already covered above — these
      * catch the notification/disbursement framing                */
     "financial aid", "aid package", "aid disbursement",
+    /* Pharmacy + credit-limit + Medicare + settlement lures —
+     * prescription-refill/recall phishing, credit-increase
+     * offers, Medicare Advantage open-enrollment fraud, and
+     * fake insurance-claim settlement offers                   */
+    "prescription refill", "medication recall", "pharmacy order",
+    "rx order", "your prescription", "prescription ready",
+    "credit limit increase", "credit line increase",
+    "higher credit limit", "credit increase", "increase your limit",
+    /* 'medicare benefits' already listed above */
+    "medicare advantage", "medicare plan",
+    "switch your coverage", "medicaid renewal", "medicare card",
+    "claim settlement", "settlement offer", "insurance payout",
+    "settlement amount", "payout approved",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",
     "we detected unusual", "breach notification", "data incident",
-    "a new device", "new device sign", "unfamiliar device",
-    "unfamiliar sign-in", "unrecognized device", "new sign-in",
+    /* 'unfamiliar device'/'unrecognized device' already listed above */
+    "a new device", "new device sign",
+    "unfamiliar sign-in", "new sign-in",
     "signed in from", "log in from a new", "chargeback",
     "dispute opened", "opened a dispute", "payment dispute",
     "dispute was filed", "dispute filed", "transaction dispute",
@@ -554,7 +577,8 @@ static const char *BAIT_WORDS[] = {
     "accept the new terms", "review the updated terms",
     "updated policy", "policy changes", "your mailbox",
     "upgrade your mailbox", "email will be deactivated",
-    "account will be deactivated", "mailbox storage",
+    /* 'account will be deactivated'/'mailbox storage' already
+     * listed above                                              */
     "re-activate your email", "reactivate your account",
     /* Unclaimed-property (escheat) scams + credit-freeze lures —
      * 'money owed to you' bait that harvests identity data, and
@@ -578,7 +602,8 @@ static const char *BAIT_WORDS[] = {
      * fraud shape (six-figure home-purchase diversion)             */
     "escrow", "escrow account", "closing instructions",
     "final closing", "closing disclosure", "closing cost",
-    "wire instructions", "closing wire", "earnest money",
+    /* 'wire instructions' already listed above */
+    "closing wire", "earnest money",
     "earnest deposit", "title company", "settlement agent",
     "notarized document", "notary public", "power of attorney",
     "deed transfer", "property transfer",
@@ -605,9 +630,11 @@ static const char *BAIT_WORDS[] = {
     "confirm your identity", "confirm your account",
     "confirm your details", "verify your details",
     "restore access", "regain access",
-    "update billing", "update your billing", "billing information",
+    /* 'billing information'/'update your payment method' already
+     * listed above                                              */
+    "update billing", "update your billing",
     "payment method expired", "update payment",
-    "update your payment method", "update your payment details",
+    "update your payment details",
     "update payment details", "payment information required",
     "update your payment information", "verify your payment information",
     "confirm your payment information", "payment information on file",
@@ -624,7 +651,8 @@ static const char *BAIT_WORDS[] = {
     "provide your ssn", "tax form required before starting",
     "advance fee for equipment", "purchase gift cards for onboarding",
     "bank details", "bank account details",
-    "bank details have changed", "banking details have changed",
+    /* 'bank details have changed' already listed above */
+    "banking details have changed",
     "new bank account", "new payment account",
     "change of bank details", "change bank details",
     "updated bank details", "updated payment details",
@@ -646,7 +674,8 @@ static const char *BAIT_WORDS[] = {
     "send the remainder", "wire the overpayment", "wire the difference back",
     "deposit the check and send", "send back the excess",
     /* Rental / housing scam deposit demand */
-    "send deposit via", "wire the deposit", "deposit to hold",
+    /* 'deposit to hold' already listed above */
+    "send deposit via", "wire the deposit",
     "pay deposit to secure", "pay a deposit to reserve",
     "security deposit via", "send security deposit",
     "security deposit by wire", "security deposit by bank",
@@ -655,7 +684,8 @@ static const char *BAIT_WORDS[] = {
      * only contributes when a second scam signal co-occurs.               */
     "unlock the funds", "release the money", "before the funds can be",
     /* Tax authority phishing — HMRC / IRS / CRA / ATO impersonation */
-    "tax refund", "tax rebate", "unclaimed tax refund", "tax return is ready",
+    /* 'tax rebate' already listed above */
+    "tax refund", "unclaimed tax refund", "tax return is ready",
     "tax refund is pending", "your refund is ready", "claim your tax",
     "tax overpayment", "overdue tax", "outstanding tax",
     /* 419 / deceased-estate fraud — "estate of the late" is almost
@@ -804,7 +834,11 @@ static const char *AUTHORITY_WORDS[] = {
     "social security number has been suspended", "ssn has been suspended",
     "social security benefits suspended", "your benefits have been suspended",
     "department of social services",
-    "medicare", "medicaid", "department of justice",
+    /* bare 'medicare'/'medicaid' removed — too common in legitimate
+     * speech (same rule that omits 'cra'/'ato'); qualified forms
+     * keep the impersonation surface                             */
+    "medicare office", "medicare enrollment", "medicare hotline",
+    "medicaid office", "medicaid enrollment", "department of justice",
     "microsoft support", "apple support", "google security",
     /* UK/AU/CA tax & welfare impersonation — HMRC/ATO/CRA smishing
      * and NI-number suspension (same shape as the SSN scams)      */
@@ -864,7 +898,8 @@ static const char *AUTHORITY_WORDS[] = {
      * are among the highest-volume smishing categories globally.
      * Short acronyms ("cra", "ato") are omitted — too common as substrings;
      * multi-word phrases and "hmrc" (unique, no common English substring) used. */
-    "hmrc", "inland revenue",
+    /* 'hmrc' already listed above */
+    "inland revenue",
     "canada revenue agency", "from the canada revenue",
     "australian taxation office", "australian tax office",
     "from the tax office", "from revenue",
@@ -1378,7 +1413,8 @@ static const char *GROOMING_WORDS[] = {
     "arbitrage opportunity", "yield farming opportunity",
     "my portfolio grew", "monthly passive income", "monthly returns",
     /* Investment-guarantee language — legally prohibited for real advisors */
-    "with no risk", "risk free", "zero risk",
+    /* 'zero risk' already listed above */
+    "with no risk", "risk free",
     "capital is fully protected", "capital is protected",
     "principal is guaranteed", "investment is guaranteed",
     "usdt income", "usdt profit", "tether income",
@@ -1397,7 +1433,8 @@ static const char *GROOMING_WORDS[] = {
     "mystery shopper", "brand ambassador position",
     "crypto trader apprentice", "per day from home",
     "per week working from home", "per week from home",
-    "earn per week", "weekly income from home",
+    /* 'earn per week' already listed above */
+    "weekly income from home",
     /* Package reshipping mule recruitment — victim receives stolen goods and
      * reships to attacker; often described as "international shipping agent" */
     "receive packages and reship", "receive and reship",
@@ -1611,7 +1648,8 @@ static const char *FAKE_ALERT_WORDS[] = {
     "your ip has been flagged", "ip address flagged",
     "ip address has been flagged", "ip address has been banned",
     "ip address banned", "error code 0x",
-    "windows defender has detected", "your firewall has detected",
+    /* 'windows defender has detected' already listed above */
+    "your firewall has detected",
     "tech support", "technical support number",
     /* ISP/internet impersonation */
     "your internet will be disconnected", "internet service will be suspended",
@@ -2025,9 +2063,11 @@ static const char *CALLBACK_PHISH_WORDS[] = {
      * the #1 BazarCall variant — victim told to call to cancel renewal.     */
     "subscription is up for renewal", "subscription renewal notice",
     "up for renewal", "renewal has been processed",
-    "subscription has been renewed", "annual subscription renewal",
+    /* 'subscription has been renewed'/'call to cancel' already
+     * listed above                                              */
+    "annual subscription renewal",
     "auto-renewed", "membership renewal",
-    "call to cancel", "call us to cancel", "call before", "call to dispute",
+    "call us to cancel", "call before", "call to dispute",
     "to unsubscribe call", "to opt out call", "call to stop",
     "call to avoid", "call to prevent charges",
     /* Toll-road smishing — top-volume FBI IC3 campaign 2024-2025
