@@ -10670,6 +10670,19 @@ for e in xlm ppa dot xlt pot eml msg; do
 done
 rm -rf "$XDIR114"
 
+# ── cycle-115: AR/HI smishing + storage-quota scam + legacy schemes ──
+check_text_hit 'طردك محتجز في الجمارك يرجى دفع الرسوم' 'ALERT' "text: AR customs-hold flagged"
+check_text_hit 'تم حظر حسابك يرجى التحقق من الهوية' 'LOG' "text: AR account-block flagged"
+check_text_hit 'आपका पैकेज कस्टम्स में रुका है शुल्क का भुगतान करें' 'ALERT' "text: HI customs-hold flagged"
+check_text_hit 'आपका पैकेज पहुंच गया है' 'LOG' "text: benign HI bounded"
+check_text_hit 'الطرد تم تسليمه بنجاح شكرا' 'OK' "text: benign AR clean"
+check_text_hit 'google drive storage almost full buy more storage' 'LOG' "text: storage-quota scam flagged"
+check_text_hit 'my storage is full of photos' 'OK' "text: benign storage clean"
+check_url_hit 'wais://x.example/db' 'LOG' "url: wais: flagged"
+check_url_hit 'prospero://x.example' 'LOG' "url: prospero: flagged"
+CF="CFPAT-"; CF="${CF}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234"
+check_secret_hit "$CF" 'Contentful PAT' "secret: CFPAT- flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

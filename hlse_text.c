@@ -170,6 +170,13 @@ static const char *BAIT_WORDS[] = {
     "unclaimed grant", "federal grant", "grant you qualified",
     "qualify for a grant", "qualified for a grant",
     "processing fee to receive", "fee to release",
+    /* Storage-quota scam — fake 'iCloud/Google storage full'
+     * upgrade prompts that harvest card details (card-on-file
+     * phishing) — payload is the storage-capacity claim itself    */
+    "storage is full", "storage almost full", "storage is nearly full",
+    "storage quota exceeded", "running out of storage",
+    "buy more storage", "upgrade your storage", "out of storage space",
+    "icloud storage", "google drive storage", "drive storage is",
     /* Account takeover / 2FA bypass bait */
     "two-factor code", "verification code", "one-time code", "otp code",
     "phone number", "confirm identity", "verify your identity",
@@ -826,6 +833,37 @@ static const char *NORDIC_SMISH_WORDS[] = {
     "innom 24 timer", "inom 24 timmar", "sidste advarsel",
     "sista varning", "betaling mislykket", "betalningen misslyckades",
     "återbetalning", "tilbagebetaling", "skatteåterbäring",
+    NULL
+};
+
+static const char *AR_SMISH_WORDS[] = {
+    /* Arabic smishing — 'طردك محتجز في الجمارك' (parcel held in
+     * customs) and 'تم حظر حسابك' (account blocked) kits are the
+     * top SMS-phish vectors across MENA (Aramex/SMSA/dhl kits)   */
+    "طردك", "طردك محتجز", "محتجز في الجمارك", "في الجمارك",
+    "دفع الرسوم", "الرسوم الجمركية", "تعقب الشحنة",
+    "عنوان التسليم", "تحديث عنوانك", "فشل التسليم",
+    "تم حظر حسابك", "حسابك محظور", "تم تعليق حسابك",
+    "تعليق حسابك", "التحقق من هويتك", "تحقق من هويتك",
+    "التحقق من الهوية", "تحديث بياناتك", "تحديث معلوماتك",
+    "نشاط مشبوه", "عملية مشبوهة", "انقر على الرابط",
+    "اضغط على الرابط", "خلال 24 ساعة", "تحذير أخير",
+    "فشل الدفع", "استرداد الأموال", "لقد ربحت",
+    NULL
+};
+
+static const char *HI_SMISH_WORDS[] = {
+    /* Hindi smishing — 'आपका पैकेज कस्टम्स में रुका' (parcel held
+     * in customs) and 'खाता ब्लॉक' bank lures are IN's top SMS-
+     * phish vectors; India Post/Delhivery kits dominate.         */
+    "आपका पैकेज", "पैकेज रुका", "कस्टम्स में रुका", "कस्टम्स में",
+    "शुल्क का भुगतान", "शुल्क चुकाएं", "सीमा शुल्क", "डिलीवरी विफल",
+    "डिलीवरी असफल", "पता सत्यापित", "अपना पता",
+    "आपका खाता", "खाता ब्लॉक", "खाता निलंबित", "खाते को ब्लॉक",
+    "अपनी पहचान सत्यापित", "पहचान सत्यापित", "जानकारी अपडेट",
+    "संदिग्ध गतिविधि", "संदिग्ध लेनदेन", "लिंक पर क्लिक",
+    "24 घंटे के भीतर", "अंतिम चेतावनी", "भुगतान विफल",
+    "रिफंड", "आप जीत चुके", "पुरस्कार", "इनाम",
     NULL
 };
 
@@ -1712,6 +1750,8 @@ static const Signal SIGNALS[] = {
     { "Polish smishing lure",       PL_SMISH_WORDS,       20, 15, 45 },
     { "Indonesian/Malay smishing",  ID_SMISH_WORDS,       20, 15, 45 },
     { "Nordic smishing lure",       NORDIC_SMISH_WORDS,   20, 15, 45 },
+    { "Arabic smishing lure",       AR_SMISH_WORDS,       20, 15, 45 },
+    { "Hindi smishing lure",        HI_SMISH_WORDS,       20, 15, 45 },
     { "Prompt-injection override phrase", PROMPT_OVERRIDE_WORDS, 40, 10, 55 },
     { "LLM control token in text",  LLM_CONTROL_TOKENS, 45, 10, 60 },
     { "Active HTML markup in text", HTML_INJECT_WORDS, 30, 15, 50 },

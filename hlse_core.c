@@ -1721,7 +1721,11 @@ static const char *const URL_LEGACY_SCHEMES[] = {
     /* TLS-wrapped variants of the legacy transports — ftp/nntp over
      * TLS are the same cleartext-era handler class; ldaps: was
      * already listed while its ftp/nntp siblings fell through    */
-    "ftps:", "snews:", "nntps:", NULL
+    "ftps:", "snews:", "nntps:",
+    /* pre-web information services — a legacy-handler URL that
+     * modern browsers hand to nothing but still marks the URI as
+     * an off-channel fetch reference                               */
+    "wais:", "prospero:", "acap:", NULL
 };
 static const char *const URL_FETCH_SCHEMES[] = {
     "ssh:", "sftp:", "git:", "svn:", "hg:", "wss:", "ws:", NULL

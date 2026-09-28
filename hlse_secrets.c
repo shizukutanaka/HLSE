@@ -398,6 +398,7 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "waka_",         5,  32, is_alnum_or_dash,   "WakaTime API Key",      80 },
     { "pd_oauth_",     9,  20, is_alnum_or_dash,   "PagerDuty OAuth Token", 80 },
     { "tvly-",         5,  30, is_alnum_or_dash,   "Tavily API Key",        80 },
+    { "CFPAT-",        6,  30, is_alnum_or_dash,   "Contentful PAT",        80 },
 
     /* New Relic */
     { "NRAK-",         5,  27, is_alnum_or_dash,   "New Relic API Key",     85 },

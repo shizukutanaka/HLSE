@@ -15,6 +15,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Arabic / Hindi smishing signals** (`hlse_text.c`): AR (`طردك
+  محتجز في الجمارك`, `تم حظر حسابك`, `دفع الرسوم`) and HI
+  (`आपका पैकेज कस्टम्स में रुका`, `खाता ब्लॉक`, `शुल्क का भुगतान`)
+  — MENA + India parcel/customs and bank-lock kits; 18 languages
+  covered total.
+- **Storage-quota scam vocabulary** (`hlse_text.c`): "storage is
+  full / almost full / nearly full", "storage quota exceeded",
+  "buy more storage", "icloud/google drive storage" — the fake
+  capacity-upgrade prompt that harvests card-on-file details.
+- **Pre-web legacy schemes** (`hlse_core.c`): `wais:`,
+  `prospero:`, `acap:`.
+- **`CFPAT-` Contentful PAT** (`hlse_secrets.c`).
 - **97-2003 macro carriers + message containers** (`hlse_file.c`):
   `.xlm` (Excel 4.0 macro sheet — the classic macro-malware form),
   `.ppa`, `.dot`/`.xlt`/`.pot` (legacy VBA-capable templates), and
