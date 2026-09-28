@@ -51,6 +51,11 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Residual private-key formats** (`hlse_secrets.c`): Tectia
+  `-----BEGIN SSH2 ENCRYPTED PRIVATE KEY-----`, PEM-wrapped
+  `-----BEGIN PKCS12-----` bundles, and PuTTY `.ppk` headers
+  `PuTTY-User-Key-File-2:`/`PuTTY-User-Key-File-3:` → ISOLATE 95.
+
 - **Cashback + review + pension-release + domain + rebate lures**
   (`hlse_text.c`): "cash back portal · shopping cashback · earn
   cashback · cashback portal · cash back rewards · cashback site"

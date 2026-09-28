@@ -739,6 +739,16 @@ check_ssh_key(const char *text, SecretVerdict *v) {
         "-----BEGIN PGP PRIVATE KEY BLOCK-----",
         "-----BEGIN ENCRYPTED PRIVATE KEY-----",
         "-----BEGIN PKCS8 PRIVATE KEY-----",
+        /* Tectia/SSH2 encrypted private key (legacy commercial
+         * ssh.com format still produced by some tooling)          */
+        "-----BEGIN SSH2 ENCRYPTED PRIVATE KEY-----",
+        /* PEM-wrapped PKCS#12 bundle — carries a private key +
+         * certificate chain                                       */
+        "-----BEGIN PKCS12-----",
+        /* PuTTY .ppk private key files — the ppk header line is
+         * the key material marker itself                          */
+        "PuTTY-User-Key-File-2:",
+        "PuTTY-User-Key-File-3:",
         NULL
     };
     int found = 0;

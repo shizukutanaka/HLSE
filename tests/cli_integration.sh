@@ -11487,6 +11487,13 @@ rm -rf "$XDIR176"
 check_url_hit 'webdav://evil.example/share' 'LOG' "url: webdav flagged"
 check_url_hit 'webdavs://evil.example/share' 'LOG' "url: webdavs flagged"
 
+# ── cycle-177: ssh2-encrypted/pkcs12/putty-ppk private key formats ────
+check "secret: ssh2-enc flagged" "$(./hlse_core secret -- '-----BEGIN SSH2 ENCRYPTED PRIVATE KEY-----' | head -1 | grep -c 'ISOLATE')" "1"
+check "secret: pkcs12 flagged" "$(./hlse_core secret -- '-----BEGIN PKCS12-----' | head -1 | grep -c 'ISOLATE')" "1"
+check "secret: putty-ppk2 flagged" "$(./hlse_core secret -- 'PuTTY-User-Key-File-2: ssh-rsa' | head -1 | grep -c 'ISOLATE')" "1"
+check "secret: putty-ppk3 flagged" "$(./hlse_core secret -- 'PuTTY-User-Key-File-3: ssh-ed25519' | head -1 | grep -c 'ISOLATE')" "1"
+check "secret: benign cert clean" "$(./hlse_core secret -- '-----BEGIN CERTIFICATE-----' | head -1 | grep -c 'OK')" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
