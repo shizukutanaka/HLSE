@@ -368,6 +368,16 @@ static const char *BAIT_WORDS[] = {
     "update your payment method", "billing information",
     "internet service will be interrupted", "service will be interrupted",
     "service will be disconnected", "service outage",
+    /* Settlement-claim + immigration scams — fake class-action /
+     * data-breach settlement claim forms (Equifax-style payout bait)
+     * and visa/green-card/work-permit fee fraud                     */
+    "settlement claim", "claim your share", "class action settlement",
+    "data breach settlement", "settlement payment", "eligible for the settlement",
+    "settlement fund", "claim form", "file a claim",
+    "visa application", "immigration status", "green card",
+    "work permit", "permanent residency", "immigration services",
+    "visa lottery", "diversity visa", "immigration fee",
+    "work permit fee", "visa fee", "application approved",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

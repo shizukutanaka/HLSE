@@ -449,6 +449,9 @@ static const char *EXECUTABLE_EXTS[] = {
     /* Linux app-installer bundles — .flatpak/.snap carry arbitrary
      * executables (same delivery class as .appx/.msi on Windows)   */
     ".flatpak", ".snap",
+    /* .zipx — WinZip extended archive (same archive-carrier class
+     * as .zip/.rar/7z already flagged)                              */
+    ".zipx",
     NULL
 };
 

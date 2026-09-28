@@ -11025,6 +11025,20 @@ for f in "$XDIR140/t.flatpak" "$XDIR140/t.snap"; do
 done
 rm -rf "$XDIR140"
 
+# ── cycle-141: settlement/immigration scams + phc_ + .zipx ──
+check_text_hit 'class action settlement claim form settlement payment' 'LOG' "text: settlement-claim flagged"
+check_text_hit 'green card application approved visa fee' 'LOG' "text: immigration-fee flagged"
+check_text_hit 'the settlement was reached in court' 'OK' "text: benign settlement clean"
+check_text_hit 'i applied for a visa last month' 'OK' "text: benign visa clean"
+check_secret_hit 'phc_x9q2m7f4h1k8p3w6z5t0y9u4j7b2n5e8r1d6g3c0v2l4a8s6' 'PostHog' "secrets: phc_ posthog flagged"
+check_secret_hit 'phc_' 'OK' "secrets: bare phc_ clean"
+XDIR141=$(mktemp -d /tmp/hlse141.XXXXXX)
+printf 'x\n' > "$XDIR141/t.zipx"
+./hlse_core file "$XDIR141/t.zipx" 2>&1 | grep -q "LOG" \
+    && check "file: .zipx winzip archive flagged" "0" "0" \
+    || check "file: .zipx winzip archive flagged" "0" "1"
+rm -rf "$XDIR141"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

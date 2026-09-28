@@ -30,6 +30,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Settlement-claim + immigration-scam vocab** (`hlse_text.c`):
+  "settlement claim · claim your share · class action settlement ·
+  data breach settlement · settlement payment · eligible for the
+  settlement · claim form · file a claim" (Equifax-style fake payout
+  bait), plus "visa application · immigration status · green card ·
+  work permit · visa lottery · diversity visa · immigration/visa fee"
+  (immigration advance-fee fraud).
+- **`phc_` PostHog project API key** (`hlse_secrets.c`).
+- **`.zipx`** (`hlse_file.c`): WinZip extended archive — same
+  carrier class as `.zip`/`.rar`/`.7z`.
 - **IoT-notification + booking + billing-failure vocab**
   (`hlse_text.c`): "motion detected · camera detected · doorbell
   camera · security camera · someone is at your door · person

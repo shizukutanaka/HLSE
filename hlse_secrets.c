@@ -313,6 +313,9 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* Foursquare Places API key — 'fsq3' + base64-flavoured token;
      * controls the venue/location-data API surface                  */
     { "fsq3",          4,  24, is_base64,          "Foursquare API Key",    80 },
+    /* PostHog project API key ('phc_' + base64-flavoured) — product-
+     * analytics ingest key                                         */
+    { "phc_",          4,  30, is_base64,          "PostHog Project API Key", 80 },
     /* Brevo/Sendinblue SMTP+API key, Dropbox long-form token,
      * JFrog Artifactory identity key, Bitbucket app password —
      * each has a fixed vendor prefix that hands over an account */
