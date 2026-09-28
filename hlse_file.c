@@ -359,6 +359,11 @@ static const char *EXECUTABLE_EXTS[] = {
      * .mobileconfig stays content-gated in the MOBILECONFIG rule
      * (wifi profiles are benign, root-CA/vpn payloads flag)        */
     ".provisioningprofile",
+    /* Linux package-install reference / ClickOnce manifest pointer
+     * — flatpakref resolves to a remote repo+app install (sandbox
+     * escapes notwithstanding), .deploy is the ClickOnce deployment
+     * manifest sibling of .application                             */
+    ".flatpakref", ".deploy",
     /* VM appliance / disk-image carriers — mounting one runs a full
      * machine/image payload; same class as .vhd/.iso/.dmg          */
     ".ova", ".ovf", ".wim",

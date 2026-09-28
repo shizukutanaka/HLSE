@@ -1344,6 +1344,20 @@ static const char *CLICKFIX_WORDS[] = {
     "paste the file path into file explorer",
     "file explorer address bar and press",
     "explorer address bar and press",
+    /* Fake-CAPTCHA / human-verification framing — the lure wrapper
+     * that makes the paste-and-run instruction plausible.  Alone it
+     * is a weak signal (legit checks say "not a robot"), so it sits
+     * here as the CLICKFIX trigger the amplifier needs; combined
+     * with a run-dialog/paste instruction it reaches ALERT+       */
+    "verify you are human", "verify you're human",
+    "verify that you are human", "are you a human",
+    "prove you are human", "prove you're not a robot",
+    "prove you are not a robot", "prove that you are human",
+    "i am not a robot", "i'm not a robot", "not a robot check",
+    "confirm you are not a robot", "human verification",
+    "complete the captcha", "complete the verification",
+    "click verify to", "tick the box to verify",
+    "check the box to verify",
     NULL
 };
 
@@ -2459,6 +2473,7 @@ hlse_check_text(const char *raw_text) {
                          || str_contains(lower, "win + r")
                          || str_contains(lower, "win+r")
                          || str_contains(lower, "windows key + r")
+                         || str_contains(lower, "windows key")
                          || str_contains(lower, "run dialog")
                          || str_contains(lower, "the run window");
         int has_human_check = str_contains(lower, "verify you are human")

@@ -10596,6 +10596,25 @@ for e in provisioningprofile; do
 done
 rm -rf "$XDIR110"
 
+# ── cycle-111: fake-CAPTCHA ClickFix framing + flatpak/clickonce + re_ ──
+check_text_hit 'check the box then press windows+r to verify you are human' 'ISOLATE' "text: captcha clickfix flagged"
+check_text_hit 'to prove you are not a robot press windows key then paste' 'ISOLATE' "text: not-a-robot clickfix flagged"
+check_text_hit 'verify you are human before continuing' 'ALERT' "text: bare captcha lure flagged"
+check_text_hit 'complete the captcha on our website' 'ALERT' "text: captcha mention bounded"
+check_text_hit 'press win+r to run diagnostics' 'OK' "text: bare win+r dual-use clean"
+check_text_hit 'the installer requires windows key input' 'OK' "text: benign windows-key clean"
+RE="re_"; RE="${RE}8qAbCdEfGhIjKlMnOpQrStUvWxYz12345678"
+check_secret_hit "$RE" 'Resend API Key' "secret: re_ resend flagged"
+check_secret_hit 'please re_enable the setting now' 'OK' "secret: re_ prose benign clean"
+XDIR111=$(mktemp -d /tmp/hlse111.XXXXXX)
+for e in flatpakref deploy; do
+    printf 'x\n' > "$XDIR111/t.$e"
+    ./hlse_core file "$XDIR111/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+rm -rf "$XDIR111"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

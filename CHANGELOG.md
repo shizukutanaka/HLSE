@@ -15,6 +15,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Fake-CAPTCHA ClickFix framing** (`hlse_text.c`): the "verify you
+  are human" / "not a robot" / "complete the captcha" lure wrapper
+  now triggers CLICKFIX so the existing amplifiers fire —
+  captcha-frame + run-dialog ("windows key" added as a rundialog
+  marker) reaches ISOLATE; bare Win+R stays clean (dual-use).
+- **`.flatpakref` / `.deploy`** (`hlse_file.c`): Flatpak install
+  reference and ClickOnce `.deploy` manifest pointer.
+- **`re_` Resend API key** (`hlse_secrets.c`).
 - **UK/AU/CA agency impersonation** (`hlse_text.c`): AUTHORITY gains
   HMRC / "the ato" / "the cra" / council-tax / unpaid-taxes /
   national-insurance-number phrasing — the English-speaking tax-scam

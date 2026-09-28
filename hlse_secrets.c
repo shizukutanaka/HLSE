@@ -393,6 +393,7 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "lin_api_",      8,  40, is_alnum_or_dash,   "Linear API Key",        85 },
     { "lin_oauth_",   10,  30, is_alnum_or_dash,   "Linear OAuth Token",    85 },
     { "figd_",         5,  40, is_alnum_or_dash,   "Figma Access Token",    85 },
+    { "re_",           3,  32, is_alnum_or_dash,   "Resend API Key",        80 },
 
     /* New Relic */
     { "NRAK-",         5,  27, is_alnum_or_dash,   "New Relic API Key",     85 },
