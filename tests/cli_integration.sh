@@ -7023,6 +7023,19 @@ for cmd in 'curl -O http://x.io/file.tar.gz' \
     check "p134: benign not flagged: $cmd" "0" "$rc"
 done
 
+# ─── p135: decoding is not the same as executing what was decoded ───────────
+# P5 scored every decoder at 30, so `base64 -d` alone and `base64 -d | zsh`
+# were indistinguishable even though only one runs the decoded bytes.
+p135() { ./hlse_core --json paste "$1" 2>/dev/null || true; }
+p135 'echo Y3VybCB4LmlvL2E= | base64 -d | zsh' | grep -q '"score":[5-9][0-9]' && rc=0 || rc=1
+check "p135: base64 -d | zsh is raised above the bare-decoder score" "0" "$rc"
+p135 'echo Y3VybCB4LmlvL2E= | base64 --decode | sh' | grep -q '"score":[5-9][0-9]' && rc=0 || rc=1
+check "p135: base64 --decode | sh is raised above the bare-decoder score" "0" "$rc"
+p135 'echo aGVsbG8= | base64 -d' | grep -q '"score":30' && rc=0 || rc=1
+check "p135: a bare decode stays at the decoder score" "0" "$rc"
+p135 'base64 -d < payload.b64 > out.bin' | grep -q '"score":30' && rc=0 || rc=1
+check "p135: decode to a file stays at the decoder score" "0" "$rc"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

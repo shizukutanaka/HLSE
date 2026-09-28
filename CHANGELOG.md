@@ -5,6 +5,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [Unreleased]
 
 ### Added
+- **`paste`: decode-and-execute is distinguished from decode.** P5 scored every
+  decoder at 30, so `echo … | base64 -d` and `echo … | base64 -d | zsh` were
+  indistinguishable, although only the second runs what it decoded. Piping a
+  decoder into an interpreter now adds P5b (+25, total 55 ALERT); a bare decode
+  or a decode to a file stays at 30. F1 = 1.000 / 0.0% FP unchanged. +4 cases
+  (p135).
 - **`paste`: remote code execution written without a pipe.** `curl … | sh`
   scored 40, but the same download-and-execute written as `bash -c "$(curl …)"`,
   `eval "$(curl …)"`, `zsh <(curl …)` or `sh -c "$(wget -qO- …)"` scored 0/SAFE

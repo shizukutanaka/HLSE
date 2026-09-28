@@ -480,6 +480,26 @@ hlse_check_paste(const char *text) {
                 "P5: Encoded/interpreted payload — obfuscated command");
     }
 
+    /* P5b: decode-and-execute. P5 scores any decoder at 30, so `base64 -d`
+     * on its own and `base64 -d | zsh` were indistinguishable, yet only the
+     * second runs what it decoded. Piping a decoder into an interpreter is the
+     * actual obfuscated-execution shape and gets its own, additive signal. */
+    if ((v.signals & PASTE_ENCODED_PAYLOAD) &&
+        (strstr(text, "base64 -d") || strstr(text, "base64 --decode") ||
+         strstr(text, "| base64")) &&
+        (strstr(text, "| sh") || strstr(text, "|sh") ||
+         strstr(text, "| bash") || strstr(text, "|bash") ||
+         strstr(text, "| zsh") || strstr(text, "|zsh") ||
+         strstr(text, "| dash") || strstr(text, "| ksh") ||
+         strstr(text, "| python") || strstr(text, "| perl") ||
+         strstr(text, "| sudo"))) {
+        v.score += 25;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P5b: Decoded output piped into an interpreter — "
+                "decode-and-execute");
+    }
+
     /* P6: History evasion — starts with space */
     if (text[0] == ' ' && len > 3) {
         v.signals |= PASTE_HISTORY_EVASION;
