@@ -10526,6 +10526,22 @@ DT="dt0s01."; DT="${DT}8qAbCdEfGhIjKlMnOpQrStUvWxYz1234"
 check_secret_hit "$DT" 'Dynatrace Ingest Token' "secret: dynatrace ingest token flagged"
 check_secret_hit 'the pool was clean and calm today' 'OK' "secret: benign sentence still clean"
 
+# ── cycle-107: ClickFix imperative forms + .hwp carrier ──
+check_text_hit 'press win+r then paste the command' 'ALERT' "text: win+r paste lure flagged"
+check_text_hit 'copy this command and run it in terminal' 'LOG' "text: copy-command imperative flagged"
+check_text_hit 'right click and paste into the console' 'LOG' "text: consolefix self-xss flagged"
+check_text_hit 'open a terminal and paste this' 'LOG' "text: terminal-paste imperative flagged"
+check_text_hit 'open your terminal app' 'OK' "text: benign terminal mention clean"
+check_text_hit 'type cmd to open it' 'OK' "text: benign cmd mention clean"
+XDIR107=$(mktemp -d /tmp/hlse107.XXXXXX)
+for e in hwp hwpx; do
+    printf 'x\n' > "$XDIR107/t.$e"
+    ./hlse_core file "$XDIR107/t.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+rm -rf "$XDIR107"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

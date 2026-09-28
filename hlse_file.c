@@ -344,6 +344,9 @@ static const char *EXECUTABLE_EXTS[] = {
      * content incl. scripts; IE-mode / legacy Edge execute embedded
      * script on open, making them documented mail-borne lures      */
     ".mht", ".mhtml",
+    /* Hangul Word Processor — OLE/BAT-embedded script carrier used
+     * heavily in KR-targeted lure documents (.hwp/.hwpx)           */
+    ".hwp", ".hwpx",
     NULL
 };
 

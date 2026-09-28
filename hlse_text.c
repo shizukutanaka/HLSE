@@ -1295,6 +1295,19 @@ static const char *CLICKFIX_WORDS[] = {
     "paste it and press enter", "paste and press enter",
     "press ctrl + v then enter", "ctrl+v and press enter",
     "paste the verification code and press enter",
+    /* Paste/copy imperative forms around commands and consoles —
+     * 'copy this command', 'paste it into the console' are ClickFix /
+     * ConsoleFix (self-XSS) imperatives; bare Win+R stays excluded as
+     * dual-use (the amplifier owns that combination)             */
+    "paste the command", "copy this command", "copy the command",
+    "copy and paste this", "copy and paste the command",
+    "paste into the console", "paste in the console",
+    "paste into your browser console",
+    "paste this into", "paste it into",
+    "run this command", "run the following command",
+    "run this in your terminal", "run it in the terminal",
+    "open a terminal and paste", "open terminal and paste",
+    "open powershell and", "powershell window and paste",
     /* Living-off-the-land execution payload markers (high specificity) */
     "powershell -enc", "powershell -e ", "powershell -nop",
     "powershell -w hidden", "powershell -windowstyle hidden",

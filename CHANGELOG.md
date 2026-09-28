@@ -15,6 +15,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **ClickFix/ConsoleFix imperative forms** (`hlse_text.c`
+  CLICKFIX_WORDS): "paste the command", "copy this/the command",
+  "copy and paste this/the command", "paste into/in the console",
+  "paste into your browser console", "paste this/it into", "run
+  this/the following command", "run this in your terminal", "open
+  a terminal and paste", "open powershell and" — the
+  paste-into-Run/paste-into-console imperative chain that drives
+  ClickFix and self-XSS lures. Bare Win+R stays excluded as
+  dual-use.
+- **Hangul Word Processor carriers** (`hlse_file.c`): `.hwp`/`.hwpx`
+  — OLE/BAT-embedded script format used heavily in KR-targeted
+  lure documents.
 - **419 consignment/refund/tech-support vocab** (`hlse_text.c`):
   PRIZE gains the diplomatic-pouch family ("consignment box",
   "trunk box", "diplomatic consignment/courier/agent", "abandoned
