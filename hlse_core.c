@@ -1832,6 +1832,9 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     /* joinskype: — Skype call/join deep link (conferencing-lure
      * channel switch)                                              */
     "joinskype:",
+    /* applescript: — macOS AppleScript URI handler; a click hands
+     * script text to Script Editor's run path                     */
+    "applescript:",
     /* remaining VCS/secure-copy handlers — svn/hg/git already flag;
      * bzr/fossil/cvs fetch remote repos and scp pulls remote files */
     "bzr:", "fossil:", "cvs:", "scp:",

@@ -444,6 +444,11 @@ static const char *BAIT_WORDS[] = {
      * are already listed)                                       */
     "donate now", "disaster relief", "victims fund", "relief effort",
     "emergency appeal", "charity appeal", "donation appeal",
+    /* Timeshare-exit advance-fee scams — 'get out of your
+     * timeshare' upfront-fee fraud                          */
+    "timeshare exit", "exit your timeshare", "get out of your timeshare",
+    "timeshare cancellation", "cancel your timeshare",
+    "timeshare relief", "timeshare resale", "timeshare contract",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",
@@ -885,6 +890,8 @@ static const char *EMERGENCY_SCAM_WORDS[] = {
     "service will be disconnected in", "service will be cut off",
     "avoid service disconnection", "avoid disconnection",
     "pay to avoid disconnection", "pay to restore service",
+    "power disconnection", "utility shutoff",
+    "electricity disconnection", "water disconnection",
     /* Japanese emergency scam (ore ore fraud / 振り込め詐欺) */
     "俺だよ俺", "息子だよ", "事故を起こした", "警察に捕まった",
     "今すぐ送金して", "誰にも言わないで", "弁護士から電話",

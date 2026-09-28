@@ -325,6 +325,11 @@ static const char *EXECUTABLE_EXTS[] = {
     /* ClickOnce application reference — used in the SolarWinds-era
      * loader chain to bootstrap remote payloads                        */
     ".appref-ms",
+    /* PostScript / Windows metafile carriers — .ps/.eps are a full
+     * programming language whose renderer (Ghostscript/macOS Preview)
+     * has a rich RCE history; .wmf/.emf metafiles carry executable
+     * Escape records (MS05-053 class)                                */
+    ".ps", ".eps", ".wmf", ".emf",
     /* Legacy help/archive containers — .hlp is WinHelp (winhlp32 exploit
      * surface, executables embedded in help topics); .cab is a Windows
      * install/extraction container; .ace/.arj/.lha/.lzh/.zoo are obsolete

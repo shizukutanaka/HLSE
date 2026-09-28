@@ -11191,6 +11191,16 @@ printf 'x\n' > "$XDIR154/drop.ws"
 check "$XDIR154/drop.ws is flagged" "$(./hlse_core file "$XDIR154/drop.ws" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"
 rm -rf "$XDIR154"
 
+# ── cycle-155: timeshare + metafile carriers + applescript: ─────────────
+check_text_hit 'timeshare exit get out of your timeshare contract' 'LOG' "text: timeshare flagged"
+check_text_hit 'power disconnection notice utility shutoff today' 'LOG' "text: shutoff-variant flagged"
+check_text_hit 'we sold our timeshare years ago' 'OK' "text: benign timeshare clean"
+check_text_hit 'the eps file rendered correctly' 'OK' "text: benign eps clean"
+check_url_hit 'applescript:do shell script "x"' 'LOG' "url: applescript flagged"
+XDIR155=$(mktemp -d /tmp/hlse155.XXXXXX)
+for e in eps ps wmf emf; do printf 'x\n' > "$XDIR155/drop.$e"; check "$XDIR155/drop.$e flagged" "$(./hlse_core file "$XDIR155/drop.$e" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"; done
+rm -rf "$XDIR155"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

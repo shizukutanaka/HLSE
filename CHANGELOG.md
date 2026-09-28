@@ -30,6 +30,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Timeshare-exit + utility-shutoff variants** (`hlse_text.c`):
+  "timeshare exit · exit your timeshare · timeshare cancellation ·
+  cancel your timeshare · timeshare relief/resale/contract"
+  (timeshare-exit advance-fee fraud) and "power/utility/electricity/
+  water disconnection · utility shutoff" (shutoff-scam variants).
+- **PostScript + metafile extensions** (`hlse_file.c`): `.ps`/`.eps`
+  (full scripting language rendered by Ghostscript/Preview — rich
+  RCE history) and `.wmf`/`.emf` (executable Escape records —
+  MS05-053 class) → LOG 30.
+- **`applescript:` URI-handler flagging** (`hlse_core.c`): macOS
+  AppleScript URI hands script text to the Script Editor run path
+  → LOG 35.
 - **Domain-registration / trademark / charity vocab**
   (`hlse_text.c`): "domain registration · renew your domain ·
   domain renewal · lose your domain · domain transfer · trademark
