@@ -10912,6 +10912,21 @@ printf 'x\n' > "$XDIR132/t.prf"
     || check "file: .prf outlook-profile flagged" "0" "1"
 rm -rf "$XDIR132"
 
+# ── cycle-133: benefits/pharma/charity scams + .diagcab ──
+check_text_hit 'your ebt card has been locked verify now' 'LOG' "text: ebt-lock lure flagged"
+check_text_hit 'no prescription needed cheap medications online' 'LOG' "text: pharma-spam flagged"
+check_text_hit 'student loan forgiveness approved claim your benefits' 'BLOCK' "text: benefits-compound flagged"
+check_text_hit 'donate now to help the victims of the disaster' 'LOG' "text: disaster-charity flagged"
+check_text_hit 'the charity donation was processed' 'OK' "text: benign charity clean"
+check_text_hit 'i take medications daily' 'OK' "text: benign medication clean"
+check_text_hit 'flood victims were rescued yesterday' 'OK' "text: benign victims clean"
+XDIR133=$(mktemp -d /tmp/hlse133.XXXXXX)
+printf 'x\n' > "$XDIR133/t.diagcab"
+./hlse_core file "$XDIR133/t.diagcab" 2>&1 | grep -q "LOG" \
+    && check "file: .diagcab diagnostics cabinet flagged" "0" "0" \
+    || check "file: .diagcab diagnostics cabinet flagged" "0" "1"
+rm -rf "$XDIR133"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

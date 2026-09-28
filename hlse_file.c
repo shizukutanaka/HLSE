@@ -427,6 +427,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * attacker-controlled mail accounts/servers (credential +
      * persistence channel)                                          */
     ".prf",
+    /* .diagcab — Windows diagnostics cabinet: launches msdiag.exe
+     * troubleshooters that can stage arbitrary executables (a real
+     * malspam carrier; distinct from the plain .cab archive)      */
+    ".diagcab",
     NULL
 };
 

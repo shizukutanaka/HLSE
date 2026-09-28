@@ -30,6 +30,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Government-benefit / pharma / charity-scam vocab** (`hlse_text.c`):
+  "snap benefits · ebt card · food stamps · student loan forgiveness ·
+  loan forgiveness approved · unemployment benefits · benefits direct
+  deposit · claim your benefits · benefit payment" (benefit-lock and
+  forgiveness lures), "no prescription needed/required · cheap
+  medications · discount pharmacy · online pharmacy · order
+  medications" (pharma spam), and "donate now to help · donate to /
+  help the victims · disaster relief fund · urgent donation" (fake
+  disaster-relief appeals).
+- **`.diagcab` extension flag** (`hlse_file.c`): Windows diagnostics
+  cabinet — launches msdiag.exe troubleshooters that can stage
+  arbitrary executables (real malspam carrier).
 - **Sextortion phrase variants + mule-recruitment vocab**
   (`hlse_text.c`): "i have a recording of you · recording of you ·
   private video of you · your private video · watching adult sites ·

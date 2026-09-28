@@ -282,6 +282,20 @@ static const char *BAIT_WORDS[] = {
     "if you did not authorize", "cancel this purchase",
     "cancel this order", "call to cancel", "click allow",
     "click 'allow' to confirm", "tap allow to confirm",
+    /* Government-benefit / pharma / charity scams — SNAP/EBT lock
+     * lures, student-loan forgiveness, unemployment deposits,
+     * no-prescription pharma spam, disaster-relief donation bait */
+    "snap benefits", "ebt card", "food stamps",
+    "student loan forgiveness", "loan forgiveness approved",
+    "unemployment benefits", "benefits direct deposit",
+    "claim your benefits", "benefit payment", "benefits have been",
+    "no prescription needed", "no prescription required",
+    "cheap medications", "discount pharmacy", "online pharmacy",
+    "order medications", "donate now to help", "donate to the victims",
+    "help the victims", "victims of the", "disaster victims",
+    "victims of the earthquake", "flood victims", "urgent donation",
+    "donation needed urgently", "fundraising campaign for",
+    "disaster relief fund", "relief fund", "charity donation",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */
