@@ -1800,7 +1800,11 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     "wechat:", "whatsapp:", "wtai:",
     /* resource: exposes Firefox internal files (local-file
      * disclosure via a clickable link)                             */
-    "resource:", NULL
+    "resource:",
+    /* package-install handlers — apt:/deb: open the system
+     * package manager with an install offer; wbx: is the WebEx
+     * alias for webex:                                              */
+    "apt:", "deb:", "wbx:", NULL
 };
 /* Remote-mount schemes: clicking one attaches a remote filesystem or
  * session — smb: is the same NetNTLM-leak class as a \\ UNC path,

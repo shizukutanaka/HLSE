@@ -10738,6 +10738,16 @@ for e in jspf ashx asmx svc war cgi cfm cfc do action wsgi; do
 done
 rm -rf "$XDIR118"
 
+# ── cycle-119: account-limit/invoice lures + package-handler schemes ──
+check_text_hit 'your account has been limited update now' 'LOG' "text: account-limit flagged"
+check_text_hit 'please find attached invoice for your recent payment' 'LOG' "text: attached-invoice flagged"
+check_text_hit 'your receipt for payment of 499.99 is attached' 'LOG' "text: fake-receipt flagged"
+check_text_hit 'please find attached the meeting notes' 'OK' "text: benign attach clean"
+check_text_hit 'your receipt from yesterday lunch' 'OK' "text: benign receipt clean"
+check_url_hit 'wbx://x' 'LOG' "url: wbx: flagged"
+check_url_hit 'apt://evil' 'LOG' "url: apt: flagged"
+check_url_hit 'deb://evil' 'LOG' "url: deb: flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -197,6 +197,18 @@ static const char *BAIT_WORDS[] = {
     "kyc verification failed", "resubmit your documents",
     "payment declined", "payment was declined", "card was declined",
     "declined on your card", "update billing details",
+    /* account-limit + fake-invoice shapes — 'account has been
+     * limited' and 'attached invoice' / 'receipt for payment'
+     * are the dominant malspam + billing-bait framings; single
+     * hits stay in the OK band so legit 'find attached' mail is
+     * preserved                                                     */
+    "account will be deactivated", "account has been limited",
+    "account is limited", "account has been restricted",
+    "account is restricted", "attached invoice", "invoice attached",
+    "invoice is attached", "find attached", "find the attached",
+    "receipt for your payment", "receipt for payment",
+    "your receipt", "unpaid invoice", "outstanding invoice",
+    "overdue invoice", "your invoice",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

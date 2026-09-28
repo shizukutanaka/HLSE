@@ -15,6 +15,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Account-limit + fake-invoice lures** (`hlse_text.c`): "account
+  has been limited / deactivated / restricted" and "attached
+  invoice / receipt for payment / unpaid, outstanding or overdue
+  invoice" — the dominant malspam and billing-bait framings;
+  single hits stay in OK so 'please find attached' mail is clean.
+- **Package-install + meeting schemes** (`hlse_core.c`): `apt:`,
+  `deb:` (open the system package manager with an install offer),
+  `wbx:` (WebEx alias).
 - **KYC / declined-payment lures** (`hlse_text.c`): "kyc verification
   failed / complete your kyc / resubmit your documents" (exchange
   credential harvesting) and "payment was declined / declined on
