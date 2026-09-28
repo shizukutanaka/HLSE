@@ -568,6 +568,21 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "http") || ci_contains(text, "\\\\")) &&
                    ci_contains(text, "-f:")) {
             what = "expand.exe remote file download (LOLBin)";
+        } else if ((ci_contains(text, "nslookup") || ci_contains(text, "resolve-dnsname")) &&
+                   (ci_contains(text, "| cmd") || ci_contains(text, "|cmd") ||
+                    ci_contains(text, "| powershell") || ci_contains(text, "|powershell") ||
+                    ci_contains(text, "| iex") || ci_contains(text, "|iex") ||
+                    ci_contains(text, "| sh") || ci_contains(text, "| bash"))) {
+            /* DNS-based ClickFix (Feb 2026): the second stage is fetched as a
+             * DNS TXT/Name answer and executed by piping it into an interpreter. */
+            what = "DNS lookup output piped into an interpreter (DNS-staged ClickFix)";
+        } else if (ci_contains(text, "finger") && ci_contains(text, "@") &&
+                   (ci_contains(text, "| cmd") || ci_contains(text, "|cmd") ||
+                    ci_contains(text, "| powershell") || ci_contains(text, "| iex") ||
+                    ci_contains(text, "| sh") || ci_contains(text, "| bash"))) {
+            /* CrashFix (Microsoft, Feb 2026): finger.exe fetches a script from a
+             * remote host and the answer is piped straight into a shell. */
+            what = "finger output piped into an interpreter (CrashFix)";
         } else if (ci_contains(text, "curl") &&
                    (ci_contains(text, "-o ") || ci_contains(text, "--output ")) &&
                    (ci_contains(text, ".exe") || ci_contains(text, ".ps1") ||

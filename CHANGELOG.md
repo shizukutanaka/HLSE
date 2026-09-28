@@ -4,6 +4,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added
+- **`paste`: DNS-staged ClickFix and CrashFix.** Found by checking 2026 threat
+  reporting (Microsoft Threat Intelligence, Feb 2026 CrashFix; the DNS-based
+  ClickFix variant) against the detector. Both fetch the second stage without
+  curl/iwr, so the download-oriented rules scored them 0/SAFE:
+  `nslookup -q=txt ... | cmd` and `finger user@host | cmd`. Now flagged (P8,
+  score 45) when a lookup tool's output is piped into an interpreter; plain
+  `nslookup`/`finger` stay 0. F1 = 1.000 / 0.0% FP unchanged. +4 cases (p133).
+
 ### Security
 - **The most important invariant was the only one not enforced by the build.**
   `docs/SPECIFICATION.md` §1 stated *"Zero network calls, ever (CI
