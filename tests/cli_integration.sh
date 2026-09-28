@@ -11170,6 +11170,16 @@ check_text_hit 'i have jury duty next week at the courthouse' 'OK' "text: benign
 check_text_hit 'my condolences on your loss' 'OK' "text: benign condolences clean"
 check_text_hit 'the unemployment rate dropped this quarter' 'OK' "text: benign unemployment clean"
 
+# ── cycle-153: page-removal + account-recovery + OpenRouter + WebDAV ────
+check_text_hit 'your page is scheduled for removal submit appeal' 'LOG' "text: page-removal flagged"
+check_text_hit 'was this you secure your account now' 'LOG' "text: recovery-hook flagged"
+check_text_hit 'we filed an appeal with the court last year' 'OK' "text: benign appeal clean"
+check_text_hit 'the removal request was processed last year' 'OK' "text: benign removal clean"
+check_url_hit 'dav://evil.com/share' 'ALERT' "url: dav flagged"
+check_url_hit 'davs://evil.com/share' 'ALERT' "url: davs flagged"
+SO="sk-or-v1-"; SO="${SO}9209dcb468e07e032fdc7ebfa9f2a1b934d6f2a8b1c4e5f"
+check_secret_hit "${SO}6a7b8c9d0e1f2a3b" 'OpenRouter' "secrets: sk-or-v1- flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

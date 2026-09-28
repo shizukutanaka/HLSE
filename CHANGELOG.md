@@ -30,6 +30,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Page-removal + account-recovery vocab** (`hlse_text.c`):
+  "scheduled for removal · page removal · will be unpublished ·
+  content removal notice · copyright removal · submit/file an
+  appeal · respond to this notice" (fake Meta/Instagram
+  copyright-takedown phishing) plus "was this you · wasn't/was not
+  you · did you request · secure your account · recognize this
+  activity · if this wasn't/was not you" (sign-in-notification
+  recovery hooks).
+- **`dav:`/`davs:` URI-handler flagging** (`hlse_core.c`): WebDAV
+  remote-mount schemes — used with search-ms to host stageless
+  payloads and leak NetNTLM (same class as smb:/afp:/nfs:) →
+  ALERT 40.
+- **`sk-or-v1-`** (`hlse_secrets.c`): OpenRouter API key
+  (64-hex suffix) → ISOLATE 85.
 - **Jury-duty / funeral / unemployment vocab** (`hlse_text.c`):
   "jury duty · jury summons · failure to appear · bench warrant ·
   contempt of court" (fake-summons callback scams), "funeral

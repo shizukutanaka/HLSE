@@ -1847,7 +1847,9 @@ static const char *const URL_HANDLER_SCHEMES[] = {
  * session — smb: is the same NetNTLM-leak class as a \\ UNC path,
  * nfs:/afp: mount attacker shares, vnc:/rdp: open a remote console. */
 static const char *const URL_NETMNT_SCHEMES[] = {
-    "smb:", "nfs:", "afp:", "vnc:", "rdp:", NULL
+    /* dav:/davs: — WebDAV remote filesystem; used with search-ms to
+     * host stageless payloads and leak NetNTLM (same mount class)   */
+    "smb:", "nfs:", "afp:", "vnc:", "rdp:", "dav:", "davs:", NULL
 };
 /* Payment schemes hand a pre-filled transfer to a wallet/banking app —
  * the destination is attacker-chosen, so a QR or link is a completed

@@ -416,6 +416,20 @@ static const char *BAIT_WORDS[] = {
     "unemployment claim", "unemployment insurance",
     "filed for unemployment", "unemployment claim was",
     "unemployment payment",
+    /* Page-removal / copyright-takedown lures — fake Meta/Instagram
+     * 'page will be unpublished' notices that steal logins          */
+    "scheduled for removal", "page removal", "will be unpublished",
+    "page will be removed", "page is being removed",
+    "content removal notice", "copyright removal", "removal request",
+    "submit an appeal", "submit your appeal", "file an appeal",
+    "submit appeal", "appeal the removal", "appeal this decision",
+    "respond to this notice",
+    /* Account-recovery hooks — 'was this you? secure your account'
+     * sign-in-notification phishing (the 'did not request this code'
+     * OTP form is already listed; these are the recovery forms)    */
+    "was this you", "wasn't you", "was not you", "did you request",
+    "secure your account", "recognize this activity",
+    "if this wasn't you", "if this was not you",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

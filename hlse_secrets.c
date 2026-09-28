@@ -379,6 +379,8 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "sk-svcacct-",  11,  20, is_alnum_or_dash,   "OpenAI Service Account Key", 90 },
     { "sk-admin-",     9,  20, is_alnum_or_dash,   "OpenAI Admin Key",      90 },
     { "sk-ant-",       7,  20, is_alnum_or_dash,   "Anthropic API Key",     90 },
+    /* OpenRouter API key — 'sk-or-v1-' + 64-hex suffix              */
+    { "sk-or-v1-",     9,  60, is_hex,             "OpenRouter API Key",    85 },
     /* Newer LLM providers with distinctive prefixes (~zero FP):
      * Groq gsk_<52>, Perplexity pplx-<48>, xAI/Grok xai-<80>, Replicate
      * r8_<36>, Hugging Face org api_org_<34>.                          */
