@@ -30,6 +30,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Domain-registration / trademark / charity vocab**
+  (`hlse_text.c`): "domain registration · renew your domain ·
+  domain renewal · lose your domain · domain transfer · trademark
+  registration/notice/violation/infringement · uspto · google
+  business profile · business listing · listing verification"
+  (fake renewal + USPTO + Google-Business notices) and "donate
+  now · disaster relief · victims fund · relief effort ·
+  emergency appeal · charity appeal · donation appeal"
+  (disaster-relief donation bait).
+- **`.ws` extension** (`hlse_file.c`): Windows Script file —
+  a real WSH executable extension alongside .wsf/.wsh → LOG 30.
 - **Page-removal + account-recovery vocab** (`hlse_text.c`):
   "scheduled for removal · page removal · will be unpublished ·
   content removal notice · copyright removal · submit/file an

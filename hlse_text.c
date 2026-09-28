@@ -430,6 +430,20 @@ static const char *BAIT_WORDS[] = {
     "was this you", "wasn't you", "was not you", "did you request",
     "secure your account", "recognize this activity",
     "if this wasn't you", "if this was not you",
+    /* Domain-registration / trademark / business-listing lures —
+     * fake renewal + USPTO + Google-Business notices (the
+     * 'domain will expire' family is already listed; these are
+     * the registration/trademark/listing forms)                 */
+    "domain registration", "renew your domain", "domain renewal",
+    "lose your domain", "domain transfer", "trademark registration",
+    "trademark notice", "trademark violation", "trademark infringement",
+    "uspto", "google business profile", "business profile",
+    "business listing", "listing verification", "verify your business",
+    /* Charity / disaster-relief donation bait — donate-now and
+     * victims-fund forms ('donate now to help'/'disaster relief fund'
+     * are already listed)                                       */
+    "donate now", "disaster relief", "victims fund", "relief effort",
+    "emergency appeal", "charity appeal", "donation appeal",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

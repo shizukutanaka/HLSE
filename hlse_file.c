@@ -220,7 +220,7 @@ looks_like_html(const unsigned char *head, size_t len) {
 static const char *EXECUTABLE_EXTS[] = {
     ".exe", ".scr", ".com", ".bat", ".cmd", ".ps1", ".psm1",
     ".psd1", ".vbs",
-    ".vbe", ".js",  ".jse", ".wsf", ".wsh", ".msi", ".msp",
+    ".vbe", ".js",  ".jse", ".wsf", ".wsh", ".ws",  ".msi", ".msp",
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
@@ -941,7 +941,7 @@ static int
 is_script_ext(const char *ext) {
     static const char *const S[] = {
         ".ps1", ".psm1", ".bat", ".cmd", ".vbs", ".vbe", ".js",
-        ".jse", ".wsf", ".wsh", ".hta", ".sh", ".py", ".reg",
+        ".jse", ".wsf", ".wsh", ".ws",  ".hta", ".sh", ".py", ".reg",
         NULL
     };
     char lower[32];

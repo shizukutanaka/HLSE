@@ -11180,6 +11180,17 @@ check_url_hit 'davs://evil.com/share' 'ALERT' "url: davs flagged"
 SO="sk-or-v1-"; SO="${SO}9209dcb468e07e032fdc7ebfa9f2a1b934d6f2a8b1c4e5f"
 check_secret_hit "${SO}6a7b8c9d0e1f2a3b" 'OpenRouter' "secrets: sk-or-v1- flagged"
 
+# ── cycle-154: domain/trademark/charity lures + .ws ─────────────────────
+check_text_hit 'domain registration expiring renew your domain now' 'ALERT' "text: domain-renewal flagged"
+check_text_hit 'trademark registration notice infringement uspto' 'LOG' "text: trademark flagged"
+check_text_hit 'donate now disaster relief victims fund emergency appeal' 'LOG' "text: charity-bait flagged"
+check_text_hit 'the domain registration was completed last year' 'OK' "text: benign domain clean"
+check_text_hit 'we verify every business on the platform annually' 'OK' "text: benign business clean"
+XDIR154=$(mktemp -d /tmp/hlse154.XXXXXX)
+printf 'x\n' > "$XDIR154/drop.ws"
+check "$XDIR154/drop.ws is flagged" "$(./hlse_core file "$XDIR154/drop.ws" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"
+rm -rf "$XDIR154"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
