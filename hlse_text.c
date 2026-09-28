@@ -712,6 +712,26 @@ static const char *BAIT_WORDS[] = {
     "product safety recall", "safety recall",
     "device location", "find my device", "located your phone",
     "find your phone", "your device was located",
+    /* Childcare + veterans + disability + settlement + survey +
+     * telecom + reverse-mortgage lures — fake childcare subsidies,
+     * VA/PACT-Act and SSDI benefit fraud, structured-settlement
+     * buyout scams, paid-survey work scams, fake ISP/loyalty
+     * discounts, and reverse-mortgage elder fraud                 */
+    "childcare subsidy", "child care subsidy", "daycare assistance",
+    "child care benefit", "child care credit",
+    "disability rating", "rating increase",
+    "veteran claim", "pact act",
+    "ssdi application", "disability application",
+    "ssdi benefits", "disability payment",
+    "structured settlement", "annuity payout", "pension buyout",
+    "cash out your pension", "cash out your annuity",
+    "sell your annuity", "pension advance",
+    "census survey", "survey incentive", "paid survey",
+    "earn rewards", "survey rewards", "paid to take surveys",
+    "internet plan upgrade", "cable bill discount", "speed upgrade",
+    "upgrade your internet", "loyalty discount", "your internet plan",
+    "reverse mortgage", "hecm loan", "equity release",
+    "home equity conversion", "unlock your equity",
     /* Security-incident + device-signin + dispute lures — fake
      * breach alerts and marketplace dispute notifications          */
     "security incident", "incident report", "incident detected",

@@ -261,6 +261,11 @@ static const char *EXECUTABLE_EXTS[] = {
     /* InfoPath packaged form — code-bearing, data submits to
      * remote endpoints; .xsn/.xsf templates already listed        */
     ".ipf",
+    /* Adobe Flash SWF — browsers removed Flash but standalone
+     * projectors and legacy enterprise viewers still execute it;
+     * a historically enormous RCE surface delivered as an
+     * attachment                                                              */
+    ".swf",
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
@@ -1012,7 +1017,7 @@ is_script_ext(const char *ext) {
         ".asa", ".inc", ".plx", ".vss", ".vssx", ".vst",
         ".vstm", ".vstx", ".xlb", ".xlv", ".mda", ".mde",
         ".mdw", ".accdr", ".pps", ".wiz", ".slk", ".dif",
-        ".oqy", ".rqy", ".searchconnector-ms", ".ipf",
+        ".oqy", ".rqy", ".searchconnector-ms", ".ipf", ".swf",
         NULL
     };
     char lower[32];

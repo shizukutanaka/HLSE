@@ -11442,6 +11442,24 @@ check 'secret: sq0csp flagged' "$(./hlse_core secret 'sq0csp-0Ab1Cd2Ef3Gh4Ij5Kl6
 check_url_hit 'ms-spd:evil.example/web' 'LOG' "url: ms-spd flagged"
 check_url_hit 'ms-officeapp:evil.example/x' 'LOG' "url: ms-officeapp flagged"
 
+# ── cycle-174: childcare/veterans/disability/settlement/survey/telecom ──
+check_text_hit 'childcare subsidy child care subsidy daycare assistance' 'LOG' "text: childcare flagged"
+check_text_hit 'va claim disability rating rating increase pact act' 'LOG' "text: veterans flagged"
+check_text_hit 'ssdi application disability application disability payment' 'LOG' "text: disability flagged"
+check_text_hit 'structured settlement annuity payout pension buyout' 'LOG' "text: settlement flagged"
+check_text_hit 'census survey survey incentive paid survey earn rewards' 'LOG' "text: survey flagged"
+check_text_hit 'internet plan upgrade cable bill discount speed upgrade' 'LOG' "text: telecom flagged"
+check_text_hit 'reverse mortgage hecm loan equity release' 'LOG' "text: revmtg flagged"
+check_text_hit 'my child goes to daycare twice a week' 'OK' "text: benign daycare clean"
+check_text_hit 'i took a survey about my shopping trip' 'OK' "text: benign survey clean"
+XDIR174=$(mktemp -d /tmp/hlse174.XXXXXX)
+printf 'x\n' > "$XDIR174/f.swf"; check "$XDIR174/f.swf flagged" "$(./hlse_core file "$XDIR174/f.swf" | head -1 | grep -c 'LOG\|ALERT\|BLOCK')" "1"
+rm -rf "$XDIR174"
+check_url_hit 'coap://evil.example/res' 'LOG' "url: coap flagged"
+check_url_hit 'mqtt://evil.example/topic' 'LOG' "url: mqtt flagged"
+check_url_hit 'obex://evil.example/push' 'LOG' "url: obex flagged"
+check_url_hit 'snmp://evil.example/get' 'LOG' "url: snmp flagged"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

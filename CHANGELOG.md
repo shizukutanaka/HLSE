@@ -51,6 +51,26 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Childcare + veterans + disability + settlement + survey +
+  telecom + reverse-mortgage lures** (`hlse_text.c`): "childcare
+  subsidy · child care subsidy · daycare assistance · child care
+  benefit · child care credit" (childcare fraud), "disability
+  rating · rating increase · veteran claim · pact act" (VA/PACT
+  fraud), "ssdi application · disability application · ssdi
+  benefits · disability payment" (SSDI scams), "structured
+  settlement · annuity payout · pension buyout · cash out your
+  pension · cash out your annuity · sell your annuity · pension
+  advance" (settlement buyouts), "census survey · survey incentive
+  · paid survey · earn rewards · survey rewards · paid to take
+  surveys" (paid-survey scams), "internet plan upgrade · cable
+  bill discount · speed upgrade · upgrade your internet · loyalty
+  discount · your internet plan" (ISP telemarketing), "reverse
+  mortgage · hecm loan · equity release · home equity conversion ·
+  unlock your equity" (reverse-mortgage elder fraud).
+- **`.swf` Flash carrier** (`hlse_file.c`) → LOG 30.
+- **`coap:`/`coaps:`/`mqtt:`/`obex:`/`snmp:` IoT/device schemes**
+  (`hlse_core.c`) → LOG 35.
+
 - **Fax + copier-scan + calendar + legal + recall + device lures**
   (`hlse_text.c`): "fax received · view your fax · fax waiting ·
   fax notification" (fax/voicemail phishing), "scanned document ·
