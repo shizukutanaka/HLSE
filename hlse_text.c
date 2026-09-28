@@ -249,6 +249,19 @@ static const char *BAIT_WORDS[] = {
     "legal complaint", "complaint filed against",
     "filed against you", "notice to appear", "appear in court",
     "lawsuit has been filed", "pending lawsuit",
+    /* travel-disruption + fake breach-notification lures —
+     * 'flight has been cancelled rebook' harvests payment cards;
+     * 'your data was involved in a breach' funnels into cred-
+     * reset phishing; 'unusual activity on your account' is the
+     * sign-in-review bait shape                                    */
+    "flight has been cancelled", "flight was cancelled",
+    "flight has been canceled", "flight was canceled",
+    "booking has been cancelled", "reservation was cancelled",
+    "rebook", "reschedule your flight",
+    "involved in a data breach", "affected by the breach",
+    "affected by the data breach", "data breach affecting",
+    "unusual activity on your account",
+    "unusual activity detected", "suspicious activity on your",
     /* Storage-quota scam — fake 'iCloud/Google storage full'
      * upgrade prompts that harvest card details (card-on-file
      * phishing) — payload is the storage-capacity claim itself    */

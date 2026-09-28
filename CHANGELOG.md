@@ -21,6 +21,10 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Travel-disruption + breach-notification lures**
+  (`hlse_text.c`): "flight has been cancelled / rebook" (card
+  harvest) and "involved in a data breach / unusual activity on
+  your account / suspicious activity" (cred-reset funnels).
 - **Legal-pressure lures** (`hlse_text.c`): "court summons /
   been served / subpoena / legal complaint / filed against you /
   notice to appear / pending lawsuit" — the highest open-rate

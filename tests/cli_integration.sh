@@ -10814,6 +10814,14 @@ for e in osa fpkg; do
 done
 rm -rf "$XDIR124"
 
+# ── cycle-125: travel-cancel/breach-activity lures ──
+check_text_hit 'your flight has been cancelled rebook here immediately' 'LOG' "text: flight-cancel flagged"
+check_text_hit 'unusual activity detected on your account confirm identity' 'ALERT' "text: unusual-activity flagged"
+check_text_hit 'unusual activity on your account verify your identity now' 'LOG' "text: account-activity flagged"
+check_text_hit 'the flight was cancelled due to weather' 'OK' "text: benign flight clean"
+check_text_hit 'please rebook the meeting room' 'OK' "text: benign rebook clean"
+check_text_hit 'the data breach was disclosed last year' 'OK' "text: benign breach clean"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
