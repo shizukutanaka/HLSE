@@ -702,6 +702,15 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "control.exe") &&
                    ci_contains(text, ".cpl")) {
             what = "control.exe CPL payload load";
+        } else if (ci_contains(text, "esentutl") &&
+                   ci_contains(text, "/y")) {
+            what = "esentutl copy LOLBin (locked-file/ADS exfil)";
+        } else if (ci_contains(text, "desktopimgdownldr") &&
+                   ci_contains(text, "/lockscreenurl:")) {
+            what = "desktopimgdownldr remote download (LOLBIN)";
+        } else if (ci_contains(text, "syncappvpublishingserver") &&
+                   ci_contains(text, "\";")) {
+            what = "syncappvpublishingserver command injection (LOLBin)";
         } else if (ci_contains(text, "ms-appinstaller:") ||
                    (ci_contains(text, "appinstaller") &&
                     ci_contains(text, "http"))) {

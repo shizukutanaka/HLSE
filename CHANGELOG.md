@@ -70,6 +70,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Paste LOLBin coverage — esentutl/desktopimgdownldr/syncappv**
+  (`hlse_supply.c` P8): `esentutl /y` (copy primitive — locked-file
+  and alternate-data-stream exfiltration), `desktopimgdownldr`
+  with `/lockscreenurl:` (LOLBAS download primitive that fetches a
+  remote file through the lockscreen handler), and
+  `syncappvpublishingserver` with a `";` injection argument (App-V
+  publish LOLBin whose trailing payload executes). Benign forms
+  (`esentutl /r`, `syncappvpublishingserver "v"`) stay clean.
+
 - **`SSWS` Okta legacy API token** (`hlse_secrets.c`): the
   `SSWS <43>` auth-scheme header form — a leaked one is
   full-tenant admin (+90).
