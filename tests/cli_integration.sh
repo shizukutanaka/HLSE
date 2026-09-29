@@ -11594,6 +11594,14 @@ check "text: mdlink-word clean" "$(./hlse_core text 'read [docs](https://github.
 check "text: unc-localhost clean" "$(./hlse_core text 'use \\localhost\c$ path' | head -1 | grep -c 'OK')" "1"
 check "text: mdlink-samehost clean" "$(./hlse_core text 'see [example.com](https://example.com/page)' | head -1 | grep -c 'OK')" "1"
 
+# ── cycle-188: HTML link mismatch + defanged indicators ──────────
+check "text: htmllink-mismatch flagged" "$(./hlse_core text '<a href="http://evil.example">paypal.com</a>' | head -1 | grep -c 'ALERT')" "1"
+check "text: hxxp-scheme flagged" "$(./hlse_core text 'click hxxp://evil.example/x' | head -1 | grep -c 'LOG')" "1"
+check "text: bracket-dot flagged" "$(./hlse_core text 'visit evil[.]example' | head -1 | grep -c 'LOG')" "1"
+check "text: bracket-dotword flagged" "$(./hlse_core text 'visit evil[dot]example' | head -1 | grep -c 'LOG')" "1"
+check "text: lone-paren-dot clean" "$(./hlse_core text 'the item (.) is optional' | head -1 | grep -c 'OK')" "1"
+check "text: bracket-word clean" "$(./hlse_core text 'read a [docs] file (.) carefully' | head -1 | grep -c 'OK')" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

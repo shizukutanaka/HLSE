@@ -3340,6 +3340,122 @@ check_link_and_unc_lures(const char *text, TextVerdict *v) {
                 }
             }
         }
+        /* --- HTML anchor: '<a href="target">disp</a>' --- */
+        if ((p[0] == '<' && (p[1] == 'a' || p[1] == 'A') &&
+             (p[2] == ' ' || p[2] == '\t'))) {
+            const char *hr = strstr(p, "href"), *gt, *dd = NULL;
+            char disp[256], host[256];
+            size_t dl = 0, hl = 0;
+            if (hr && (size_t)(hr - p) < 128) {
+                hr = strchr(hr, '=');
+                if (hr) {
+                    hr++;
+                    while (*hr == ' ' || *hr == '\t') hr++;
+                    if (*hr == '"' || *hr == '\'') {
+                        const char *ue = strchr(hr + 1, *hr);
+                        if (ue) {
+                            const char *t = strstr(hr, "://");
+                            if (t && t < ue && (size_t)(t - hr - 1) <= 8) {
+                                const char *hs = t + 3, *he2 = hs;
+                                while (he2 < ue && *he2 != '/' &&
+                                       *he2 != '?' && *he2 != ':' &&
+                                       *he2 != '@')
+                                    he2++;
+                                hl = (size_t)(he2 - hs);
+                                if (hl > 0 && hl < sizeof(host)) {
+                                    size_t k;
+                                    memcpy(host, hs, hl);
+                                    host[hl] = '\0';
+                                    for (k = 0; k < hl; k++)
+                                        if (host[k] >= 'A' &&
+                                            host[k] <= 'Z')
+                                            host[k] = (char)(host[k] -
+                                                             'A' + 'a');
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (hl > 0) {
+                gt = strchr(p, '>');
+                if (gt) {
+                    dd = strstr(gt + 1, "</a");
+                    if (!dd) dd = strstr(gt + 1, "</A");
+                    if (dd && (size_t)(dd - gt - 1) > 0 &&
+                        (size_t)(dd - gt - 1) < sizeof(disp)) {
+                        memcpy(disp, gt + 1, (size_t)(dd - gt - 1));
+                        disp[dd - gt - 1] = '\0';
+                        dl = strlen(disp);
+                    }
+                }
+            }
+            if (hl > 0 && dl > 0 && looks_like_domain(disp, dl) &&
+                strcmp(disp, host) != 0 &&
+                !(hl > dl && host[hl - dl - 1] == '.' &&
+                  strcmp(host + hl - dl, disp) == 0) &&
+                !(dl > hl && disp[dl - hl - 1] == '.' &&
+                  strcmp(disp + dl - hl, host) == 0)) {
+                add_text_reason(v, 45,
+                    "Link displays '%.80s' but targets '%.80s' — "
+                    "rendered text points elsewhere", disp, host);
+                return;
+            }
+        }
+        p++;
+    }
+}
+
+/* Defanged indicators in message text: 'hxxp://', 'evil[.]com',
+ * 'evil[dot]com'. Refanging these is exactly how an IOC shared in
+ * a report becomes a click — the defang markers exist only to make
+ * a live destination out of a dead string, so their presence is a
+ * finding regardless of payload. Bracket forms require a domain
+ * character on both sides, keeping prose like '(.)' alone clean. */
+static int
+is_domain_ch(int c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+           (c >= '0' && c <= '9') || c == '-';
+}
+
+static void
+check_defanged_lures(const char *text, TextVerdict *v) {
+    const char *p = text;
+    static const char *const marks[] = {
+        "[.]", "(.)", "{.}", "[dot]", "(dot)", "{dot}", NULL
+    };
+    while (*p) {
+        /* hxxp[s]:// — the refanged scheme of choice; the && chain
+         * short-circuits so lookaheads never cross the NUL        */
+        if ((p[0] == 'h' || p[0] == 'H') &&
+            (p[1] == 'x' || p[1] == 'X') &&
+            (p[2] == 'x' || p[2] == 'X') &&
+            (p[3] == 'p' || p[3] == 'P')) {
+            const char *q = p + 4;
+            int has_s = (*q == 's' || *q == 'S');
+            if (has_s) q++;
+            if (q[0] == ':' && q[1] == '/' && q[2] == '/') {
+                add_text_reason(v, 35,
+                    "Defanged scheme 'hxxp%s://' — re-fanging it "
+                    "restores a live link", has_s ? "s" : "");
+                return;
+            }
+        }
+        /* bracket-dot markers between domain characters */
+        {
+            int m;
+            for (m = 0; marks[m]; m++) {
+                size_t ml = strlen(marks[m]);
+                if (strncasecmp(p, marks[m], ml) == 0 &&
+                    p > text && is_domain_ch(p[-1]) &&
+                    is_domain_ch(p[ml])) {
+                    add_text_reason(v, 30,
+                        "Defanged domain marker '%.6s' — re-fanging "
+                        "restores a live destination", marks[m]);
+                    return;
+                }
+            }
+        }
         p++;
     }
 }
@@ -3378,6 +3494,7 @@ hlse_check_text(const char *raw_text) {
      * fold in the pipeline below would erase the evidence.        */
     check_mixedscript_domains(raw_text, &v);
     check_link_and_unc_lures(raw_text, &v);
+    check_defanged_lures(raw_text, &v);
 
     normalize_whitespace(raw_text, normalized, sizeof(normalized));
 

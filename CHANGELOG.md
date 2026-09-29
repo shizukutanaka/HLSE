@@ -51,6 +51,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **HTML anchor mismatch + defanged indicators in text**
+  (`hlse_text.c`): `<a href="http://evil.example">paypal.com</a>`
+  gets the same display/target comparison as Markdown links (+45).
+  `hxxp://`/`hxxps://` schemes (+35) and bracket-dot domain
+  markers — `[.]`, `(.)`, `{.}`, `[dot]`, `(dot)`, `{dot}` —
+  (+30) are defang conventions whose only purpose is to make a
+  live destination out of a dead string; bracket markers fire
+  only between domain characters, so prose like `(.)` alone
+  stays clean.
+
 - **Markdown link display/target mismatch + UNC path lures in
   text** (`hlse_text.c`): `[paypal.com](http://evil.example)` — the
   rendered text claims one domain while the link goes elsewhere —
