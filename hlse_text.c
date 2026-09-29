@@ -1960,6 +1960,13 @@ static const char *FAKE_ALERT_WORDS[] = {
     "approve in microsoft authenticator", "approve in the authenticator app",
     "will keep receiving requests until you approve",
     "requests will stop when you approve",
+    "tap approve", "approve this request",
+    /* IVR callback-scam hook — 'press N to speak/authorize/cancel'
+     * is the robocall/vishing script opener; legitimate IVR flows
+     * don't arrive as message text asking you to call back      */
+    "press 1 to speak", "press one to speak",
+    "press 1 to authorize", "press one to authorize",
+    "press 1 to cancel", "press one to cancel",
     /* OTP relay / reverse-OTP scam: attacker asks victim to read them the
      * code that was actually triggered by the attacker's login attempt.   */
     "read me the code", "read the code to me",

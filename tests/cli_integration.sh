@@ -11671,6 +11671,14 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-210: MFA 'tap approve' + IVR callback vocab ─────────────
+check_text_hit 'tap approve on the prompt to continue' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: tap-approve flagged"
+check_text_hit 'approve this request to keep access' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: approve-request flagged"
+check_text_hit 'press 1 to speak with an agent' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: press-1-speak flagged"
+check_text_hit 'press one to authorize this charge' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: press-1-authorize flagged"
+check_text_hit 'press 1 to confirm your appointment' 'OK' "text FP guard: press-1-confirm clean"
+check_text_hit 'i approve this message' 'OK' "text FP guard: i-approve clean"
+
 # ── cycle-209: pscale_oauth_ + AVNS_ ──────────────────────────────
 ./hlse_core secret 'k: pscale_oauth_'"a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6" 2>&1 | grep -q "PlanetScale" \
     && check "secret: pscale_oauth flagged" "0" "0" \

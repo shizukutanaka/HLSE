@@ -77,6 +77,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **MFA-fatigue residual + IVR callback-scam vocabulary**
+  (`hlse_text.c`): `tap approve`, `approve this request`, and
+  the vishing hook `press 1/one to speak|authorize|cancel` —
+  `press 1 to confirm your appointment` (legit reminder) stays
+  clean.
+
 - **`pscale_oauth_` + `AVNS_` secrets** (`hlse_secrets.c`):
   PlanetScale OAuth token (the `tkn_`/`pw_` siblings were
   covered) and Aiven access token — both +85.
