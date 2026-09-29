@@ -1898,6 +1898,9 @@ static const char *const URL_HANDLER_SCHEMES[] = {
      * experience surface); ms-contact-support: hands the URI to
      * the Get Help / support assistant                            */
     "ms-cxh", "ms-contact-support:",
+    /* cap: — Calendar Access Protocol (RFC 4324): hands the URI to
+     * the calendar client (calendar-invite lure channel)          */
+    "cap:",
     /* remaining VCS/secure-copy handlers — svn/hg/git already flag;
      * bzr/fossil/cvs fetch remote repos and scp pulls remote files */
     "bzr:", "fossil:", "cvs:", "scp:",

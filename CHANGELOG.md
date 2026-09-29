@@ -70,6 +70,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **`.ppkg` carrier + `cap:` handler** (`hlse_file.c`,
+  `hlse_core.c`): Windows provisioning packages (`.ppkg`) install
+  certs/Wi-Fi/MDM enrollment — the Windows twin of `.mobileconfig`
+  lures (+30 LOG); `cap:` is the RFC 4324 Calendar Access
+  handler (+35 LOG).
+
 - **IRS/legal-threat impersonation vocabulary** (`hlse_text.c`):
   `badge number` (impostor script opener — legitimate callers
   never announce one), `case against your name`, `legal case

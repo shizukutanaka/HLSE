@@ -271,6 +271,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * credential-harvest lures: .kdbx (KeePass), .agilekeychain/
      * .opvault (1Password), .keychain (macOS), .wallet (Multibit)  */
     ".kdbx", ".agilekeychain", ".opvault", ".keychain", ".wallet",
+    /* .ppkg — Windows provisioning package (WCD): installs certs,
+     * Wi-Fi profiles, MDM enrollment, and provisioning commands —
+     * the Windows-side twin of .mobileconfig lures               */
+    ".ppkg",
     /* InfoPath packaged form — code-bearing, data submits to
      * remote endpoints; .xsn/.xsf templates already listed        */
     ".ipf",

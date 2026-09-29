@@ -11671,6 +11671,17 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-204: .ppkg carrier + cap: handler ──────────────────────
+XDIR204=$(mktemp -d /tmp/hlse204.XXXXXX)
+touch "$XDIR204/x.ppkg"
+./hlse_core file "$XDIR204/x.ppkg" 2>&1 | grep -q "LOG" \
+    && check "file: .ppkg flagged" "0" "0" \
+    || check "file: .ppkg flagged" "0" "1"
+rm -rf "$XDIR204"
+./hlse_core 'cap://evil.example/x' 2>&1 | grep -q "LOG" \
+    && check "url: cap flagged" "0" "0" \
+    || check "url: cap flagged" "0" "1"
+
 # ── cycle-203: IRS/legal-threat impersonation vocab ──────────────
 check_text_hit 'this is officer badge number 4521' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: badge-number flagged"
 check_text_hit 'there is a legal case filed against your name' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: legal-case flagged"
