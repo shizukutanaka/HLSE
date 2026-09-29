@@ -419,6 +419,14 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "xai-",          4,  20, is_alnum_or_dash,   "xAI (Grok) API Key",    85 },
     { "r8_",           3,  30, is_alnum_or_dash,   "Replicate API Token",   85 },
     { "api_org_",      8,  30, is_alnum_or_dash,   "Hugging Face Org Token", 80 },
+    /* Dynatrace API tokens — 'dt0c01.' (v1 public token) and
+     * 'dt0s16.' carry a '<id24|16>.<secret64>' dotted tail         */
+    { "dt0c01.",       7,  80, is_alnum_dash_dot,  "Dynatrace API Token",  85 },
+    { "dt0s16.",       7,  80, is_alnum_dash_dot,  "Dynatrace API Token",  85 },
+    /* Samsara API token — 'sams_' + ~40-char tail                 */
+    { "sams_",         5,  36, is_alnum_or_dash,   "Samsara API Token",    85 },
+    /* Gitea access token — 'gitea_' + 40-hex                      */
+    { "gitea_",        6,  36, is_hex,             "Gitea Access Token",   85 },
 
     /* Alibaba Cloud AccessKey ID (LTAI + ~20) and Tencent Cloud
      * SecretId (AKID + 32 alnum) — the two largest Chinese cloud

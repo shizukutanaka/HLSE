@@ -51,6 +51,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Apple media/store handlers + `cydia:`** (`hlse_core.c`):
+  `itms-books:`, `applestore:`, `ibooks:`, `music:`, `videos:` —
+  the remaining Apple app deep-link family beside
+  `itms-apps:`/`macappstore:`; `cydia:` hands a package spec to a
+  jailbreak store client (+35 each).
+- **Secret pattern residuals** (`hlse_secrets.c`): Dynatrace
+  `dt0c01.`/`dt0s16.` (`<id>.<secret>` dotted API tokens),
+  Samsara `sams_`, and Gitea `gitea_` + hex — all previously
+  scored OK on a live credential format (85 each).
+
 - **`web+`/`fediverse:`/`nostr:`/`ventrilo:` handlers**
   (`hlse_core.c`): the `web+` prefix catches every
   registerProtocolHandler custom scheme (a click hands the URL to

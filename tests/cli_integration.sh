@@ -11638,6 +11638,25 @@ check "url: udp flagged" "$(./hlse_core 'udp://evil:5060' | head -1 | grep -c 'L
 check "url: sctp flagged" "$(./hlse_core 'sctp://evil:9' | head -1 | grep -c 'LOG')" "1"
 check "url: https clean" "$(./hlse_core 'https://www.example.com' | head -1 | grep -c 'OK')" "1"
 
+# ── cycle-193: apple media/store handlers + secrets residuals ─────
+check "url: itms-books flagged" "$(./hlse_core 'itms-books://evil' | head -1 | grep -c 'LOG')" "1"
+check "url: applestore flagged" "$(./hlse_core 'applestore://evil' | head -1 | grep -c 'LOG')" "1"
+check "url: ibooks flagged" "$(./hlse_core 'ibooks://evil' | head -1 | grep -c 'LOG')" "1"
+check "url: music flagged" "$(./hlse_core 'music://evil' | head -1 | grep -c 'LOG')" "1"
+check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LOG')" "1"
+./hlse_core secret 'k: dt0c01.abcdefghijklmnopqrstuvwx.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' 2>&1 | grep -q "Dynatrace" \
+    && check "secret: dt0c01. flagged" "0" "0" \
+    || check "secret: dt0c01. flagged" "0" "1"
+./hlse_core secret 'k: sams_abcdefghijklmnopqrstuvwxyz0123456789abcdef' 2>&1 | grep -q "Samsara" \
+    && check "secret: sams_ flagged" "0" "0" \
+    || check "secret: sams_ flagged" "0" "1"
+./hlse_core secret 'k: gitea_0123456789abcdef0123456789abcdef01234567' 2>&1 | grep -q "Gitea" \
+    && check "secret: gitea_ flagged" "0" "0" \
+    || check "secret: gitea_ flagged" "0" "1"
+./hlse_core secret 'version: sams_club membership card' 2>&1 | grep -q "no credentials" \
+    && check "secret FP guard: sams prose clean" "0" "0" \
+    || check "secret FP guard: sams prose clean" "0" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

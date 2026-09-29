@@ -1851,6 +1851,12 @@ static const char *const URL_HANDLER_SCHEMES[] = {
      * sourcetree:/zoomphonecall:/confinstall: hand paths or
      * actions to the named app (vscode: was already listed)      */
     "itms-apps:", "itms-appss:", "macappstore:",
+    /* remaining Apple store/media handlers — itms-books:/ibooks:
+     * open the bookstore, applestore: the retail app, music:/
+     * videos: the media players; cydia: hands a package spec to a
+     * jailbreak store client (install-lure class)                */
+    "itms-books:", "applestore:", "ibooks:", "music:", "videos:",
+    "cydia:",
     "zoomphonecall:", "confinstall:", "subl:", "mvim:",
     "windowsdefender:",
     "txmt:", "fork:", "sourcetree:",
