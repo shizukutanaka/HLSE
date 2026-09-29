@@ -11579,6 +11579,13 @@ check "text: greek-domain flagged" "$(./hlse_core text "$MST2" | head -1 | grep 
 check "text: idn-word clean" "$(./hlse_core text 'meet at münchen.de' | head -1 | grep -c 'OK')" "1"
 check "text: cyrillic-word clean" "$(./hlse_core text 'my привет friend' | head -1 | grep -c 'OK')" "1"
 
+# ── cycle-186: decorated-alphabet domain lookalikes in text ──────────
+check "text: mathalpha-domain flagged" "$(./hlse_core text '𝖕𝖆𝖞𝖕𝖆𝖑.com' | head -1 | grep -c 'ALERT')" "1"
+check "text: circled-domain flagged" "$(./hlse_core text 'ⓟⓐⓨⓟⓐⓛ.com' | head -1 | grep -c 'ALERT')" "1"
+check "text: smallcaps-domain flagged" "$(./hlse_core text 'ᴘᴀʏᴘᴀʟ.com' | head -1 | grep -c 'ALERT')" "1"
+check "text: paren-domain flagged" "$(./hlse_core text '⒫⒜⒴⒫⒜⒧.com' | head -1 | grep -c 'ALERT')" "1"
+check "text: paren-digits clean" "$(./hlse_core text 'see list ⑴-⒇' | head -1 | grep -c 'OK')" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

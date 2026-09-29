@@ -3080,14 +3080,115 @@ normalize_homoglyphs(char *buf, size_t len) {
     return w;
 }
 
+/* Fold decorated-alphabet Unicode letters/digits to ASCII in-place.
+ * Covers the classes used to pretty-print brand names in scam text:
+ *   - Mathematical Alphanumeric Symbols  U+1D400–U+1D7FF (𝖕𝖆𝖞𝖕𝖆𝖑, 𝐩𝐚𝐲𝐩𝐚𝐥)
+ *   - Circled letters                    U+24B6–U+24E9 (ⓟⓐⓨⓟⓐⓛ)
+ *   - Parenthesized small letters        U+249C–U+24B5 (⒜–⒵)
+ *   - Latin small caps + letterlikes     ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘꞯʀꜱᴛᴜᴠᴡʏᴢ
+ * Returns new length; untouched bytes pass through.               */
+static size_t
+normalize_decorated(char *buf, size_t len) {
+    size_t r = 0, w = 0;
+    while (r < len) {
+        unsigned char b0 = (unsigned char)buf[r];
+        /* 4-byte: Mathematical Alphanumeric Symbols (F0 9D xx xx) */
+        if (b0 == 0xF0 && r + 3 < len &&
+            (unsigned char)buf[r + 1] == 0x9D) {
+            unsigned cp = (unsigned)(
+                          (((unsigned char)buf[r + 1] & 0x3F) << 12) |
+                          (((unsigned char)buf[r + 2] & 0x3F) << 6)  |
+                          ((unsigned char)buf[r + 3] & 0x3F));
+            if (cp >= 0x1D400 && cp <= 0x1D7FF) {
+                if (cp >= 0x1D7CE)                    /* styled digits */
+                    buf[w++] = (char)('0' + (cp - 0x1D7CE) % 10);
+                else
+                    buf[w++] = (char)('a' + (cp - 0x1D400) % 26);
+                r += 4;
+                continue;
+            }
+        }
+        /* 3-byte: circled U+24B6..24E9 and parenthesized U+2474..2487 */
+        if (b0 == 0xE2 && r + 2 < len &&
+            ((unsigned char)buf[r + 1] == 0x92 ||
+             (unsigned char)buf[r + 1] == 0x93)) {
+            unsigned cp = (unsigned)(
+                          ((b0 & 0x0F) << 12) |
+                          (((unsigned char)buf[r + 1] & 0x3F) << 6) |
+                          ((unsigned char)buf[r + 2] & 0x3F));
+            if (cp >= 0x24B6 && cp <= 0x24E9) {
+                buf[w++] = (char)('a' + (cp - 0x24B6) % 26);
+                r += 3;
+                continue;
+            }
+            if (cp >= 0x249C && cp <= 0x24B5) {
+                buf[w++] = (char)('a' + (cp - 0x249C));
+                r += 3;
+                continue;
+            }
+        }
+        /* 3-byte small caps E1 B4 xx (U+1D00 block) + E1 9C B0/B1 */
+        if (b0 == 0xE1 && r + 2 < len) {
+            unsigned cp = (unsigned)(
+                          ((b0 & 0x0F) << 12) |
+                          (((unsigned char)buf[r + 1] & 0x3F) << 6) |
+                          ((unsigned char)buf[r + 2] & 0x3F));
+            char repl = 0;
+            switch (cp) {
+            case 0x1D00: repl = 'a'; break;   /* ᴀ */
+            case 0x1D04: repl = 'c'; break;   /* ᴄ */
+            case 0x1D05: repl = 'd'; break;   /* ᴅ */
+            case 0x1D07: repl = 'e'; break;   /* ᴇ */
+            case 0xA730: repl = 'f'; break;   /* ꜰ */
+            case 0x1D0A: repl = 'j'; break;   /* ᴊ */
+            case 0x1D0B: repl = 'k'; break;   /* ᴋ */
+            case 0x1D0D: repl = 'm'; break;   /* ᴍ */
+            case 0x1D0F: repl = 'o'; break;   /* ᴏ */
+            case 0x1D18: repl = 'p'; break;   /* ᴘ */
+            case 0xA7AF: repl = 'q'; break;   /* ꞯ */
+            case 0xA731: repl = 's'; break;   /* ꜱ */
+            case 0x1D1B: repl = 't'; break;   /* ᴛ */
+            case 0x1D1C: repl = 'u'; break;   /* ᴜ */
+            case 0x1D20: repl = 'v'; break;   /* ᴠ */
+            case 0x1D21: repl = 'w'; break;   /* ᴡ */
+            case 0x1D22: repl = 'z'; break;   /* ᴢ */
+            default: break;
+            }
+            if (repl) { buf[w++] = repl; r += 3; continue; }
+        }
+        /* 2-byte letterlikes (IPA block): ʙʜɢɪʟɴʀʏ */
+        if (r + 1 < len) {
+            unsigned cp = (unsigned)(
+                          ((b0 & 0x1F) << 6) |
+                          ((unsigned char)buf[r + 1] & 0x3F));
+            char repl = 0;
+            switch (cp) {
+            case 0x0299: repl = 'b'; break;   /* ʙ */
+            case 0x029C: repl = 'h'; break;   /* ʜ */
+            case 0x0262: repl = 'g'; break;   /* ɢ */
+            case 0x026A: repl = 'i'; break;   /* ɪ */
+            case 0x029F: repl = 'l'; break;   /* ʟ */
+            case 0x0274: repl = 'n'; break;   /* ɴ */
+            case 0x0280: repl = 'r'; break;   /* ʀ */
+            case 0x028F: repl = 'y'; break;   /* ʏ */
+            default: break;
+            }
+            if (repl) { buf[w++] = repl; r += 2; continue; }
+        }
+        buf[w++] = buf[r++];
+    }
+    buf[w] = '\0';
+    return w;
+}
+
 /* Mixed-script domain lookalike embedded in message text — the URL
  * engine catches 'http://рaypal.com', but a bare 'рaypal.com' in a
  * message body never reaches it. Walk whitespace-separated tokens:
- * if a token carries Cyrillic/Greek confusable bytes (D0–D2, CE, CF)
- * AND homoglyph-normalizes to a domain-shaped ASCII string that
- * differs from the raw token, it exists only to look like a Latin
- * domain — fire. Genuine IDN text (münchen.de, café.fr) carries no
- * Cyrillic/Greek confusable bytes, so it stays clean.            */
+ * if a token carries non-ASCII bytes AND the confusable/decorated
+ * folds produce a domain-shaped ASCII string that differs from the
+ * raw token, it exists only to look like a Latin domain — fire.
+ * Genuine IDN text (münchen.de, café.fr) survives the folds
+ * unchanged and stays clean.                                   */
 static void
 check_mixedscript_domains(const char *text, TextVerdict *v) {
     const char *p = text;
@@ -3095,7 +3196,7 @@ check_mixedscript_domains(const char *text, TextVerdict *v) {
         const char *start;
         char tok[256], norm[256];
         size_t tl = 0, i;
-        int has_confus = 0, has_dot = 0, ok = 1;
+        int has_high = 0, has_dot = 0, ok = 1;
         while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r' ||
                *p == '"'  || *p == '\'' || *p == '<'  || *p == '>'  ||
                *p == '('  || *p == ')'  || *p == '['  || *p == ']')
@@ -3111,15 +3212,13 @@ check_mixedscript_domains(const char *text, TextVerdict *v) {
         memcpy(tok, start, tl);
         tok[tl] = '\0';
         for (i = 0; i < tl; i++) {
-            unsigned char b = (unsigned char)tok[i];
-            if (b == 0xD0 || b == 0xD1 || b == 0xD2 ||
-                b == 0xCE || b == 0xCF) { has_confus = 1; break; }
+            if ((unsigned char)tok[i] >= 0x80) { has_high = 1; break; }
         }
-        if (!has_confus) continue;
+        if (!has_high) continue;
         memcpy(norm, tok, tl + 1);
         {
             size_t nl = normalize_homoglyphs(norm, tl);
-            normalize_leet(norm);   /* no-op on already-ASCII, kept for parity */
+            nl = normalize_decorated(norm, nl);
             (void)nl;
         }
         /* domain shape: [a-z0-9.-] only, contains '.', a label of >=2
@@ -3136,8 +3235,9 @@ check_mixedscript_domains(const char *text, TextVerdict *v) {
             if (ok && has_dot && nl - last - 1 >= 2 &&
                 strcmp(norm, tok) != 0) {
                 add_text_reason(v, 40,
-                    "Mixed-script domain lookalike '%.60s' — homoglyph "
-                    "characters make it read as '%.60s'", tok, norm);
+                    "Mixed-script domain lookalike '%.60s' — decorated/"
+                    "homoglyph characters make it read as '%.60s'",
+                    tok, norm);
                 return;
             }
         }

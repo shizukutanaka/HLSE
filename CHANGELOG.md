@@ -56,11 +56,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   engine, but a bare `рaypal.com` inside a message body never
   reached it — the text pipeline's own homoglyph fold erased
   the evidence before keyword matching. A new pre-normalization
-  pass walks whitespace-separated tokens: Cyrillic/Greek
-  confusable bytes (D0–D2, CE, CF) + domain-shaped ASCII after
-  the fold + raw≠normalized → +40. Genuine IDN wording
-  (`münchen.de`, `café.fr`, plain Cyrillic words) carries no
-  confusable bytes and stays clean.
+  pass walks whitespace-separated tokens: non-ASCII bytes +
+  domain-shaped ASCII after the confusable/decorated fold +
+  raw≠normalized → +40. The decorated fold covers Mathematical
+  Alphanumeric Symbols (𝖕𝖆𝖞𝖕𝖆𝖑/𝐩𝐚𝐲𝐩𝐚𝐥), circled (ⓟⓐⓨⓟⓐⓛ),
+  parenthesized (⒫⒜⒴), and small-caps/letterlikes (ᴘᴀʏᴘᴀʟ).
+  Genuine IDN wording (`münchen.de`, `café.fr`, plain Cyrillic
+  words) survives the folds unchanged and stays clean.
 
 - **E6: From-domain typosquat detection** (`hlse_secrets.c`,
   `email` forensics): E1 covered brands claimed in the display
