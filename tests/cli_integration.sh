@@ -11557,6 +11557,20 @@ check "paste: chisel flagged" "$(./hlse_core paste 'chisel client x:8080 R:1080:
 check "paste: curl-download clean" "$(./hlse_core paste 'curl -o file.txt http://site/readme' | head -1 | grep -c 'OK')" "1"
 check "paste: installutil-legit clean" "$(./hlse_core paste 'installutil valid.dll' | head -1 | grep -c 'OK')" "1"
 
+# ── cycle-184: E6 from-domain typosquat (leet + distance-1) ──────────
+check "email: amaz0n squat flagged" "$(./hlse_core email 'From: billing@amaz0n.example
+To: v@x.com' | head -1 | grep -c 'BLOCK')" "1"
+check "email: microsft squat flagged" "$(./hlse_core email 'From: a@mail.microsft.example
+To: v@x.com' | head -1 | grep -c 'BLOCK')" "1"
+check "email: paypa1 squat flagged" "$(./hlse_core email 'From: a@paypa1.example
+To: v@x.com' | head -1 | grep -c 'BLOCK')" "1"
+check "email: legit-domain clean" "$(./hlse_core email 'From: a@mail.example.com
+To: v@x.com' | grep -c 'E6')" "0"
+check "email: finance-word clean" "$(./hlse_core email 'From: a@finance.example
+To: v@x.com' | grep -c 'E6')" "0"
+check "email: brand-owned clean" "$(./hlse_core email 'From: a@amazon.com
+To: v@x.com' | grep -c 'E6')" "0"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -51,6 +51,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **E6: From-domain typosquat detection** (`hlse_secrets.c`,
+  `email` forensics): E1 covered brands claimed in the display
+  name; the sender DOMAIN itself is now checked for lookalikes —
+  `billing@amaz0n.example`, `mail.microsft.example`, `paypa1.*`.
+  Two squat classes only (+45): leet/digit substitution that
+  normalizes to a brand (0→o 1→l 3→e 5→s 7→t $→s @→a) and
+  Damerau distance 1. Exact-match labels are skipped
+  (`support.x.com` is wording, not a lookalike) and the brand
+  table excludes distance-1 collisions with ordinary words
+  (`gmail`~mail, `binance`~finance, `chase`~phase, `usps`~ups).
+
 - **Paste/LOLBin residual coverage** (`hlse_supply.c`, P8 +45):
   `msfvenom` (payload generation — no benign paste context),
   `installutil /u` (the uninstall path executes the same .NET

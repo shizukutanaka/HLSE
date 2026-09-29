@@ -1886,6 +1886,79 @@ hlse_check_email_headers(const char *raw_headers) {
         }
     }
 
+    /* E6: Brand typosquat inside the From domain itself — the classic
+     * BEC sender "billing@amaz0n.example" / "mail.microsft.example".
+     * E1 covers a brand claimed in the DISPLAY NAME; this covers a
+     * brand mimicked inside the sender address. Two squats only:
+     *   (a) leet/digit substitution — normalize 0→o 1→l 3→e 5→s
+     *       7→t $→s @→a and the label equals a brand while the raw
+     *       label differs ('amaz0n' → 'amazon')
+     *   (b) Damerau distance 1 — 'microsft', 'paypai', 'arnazon'
+     * Exact-match labels are skipped on purpose: 'support.x.com' is
+     * ordinary wording, not a lookalike. The brand table stays to
+     * high-value senders — generic role words are excluded so
+     * 'accounts.example.com' stays clean.                              */
+    if (from_domain[0] && v.n_reasons < HLSE_EMAIL_MAX_REASONS) {
+        /* short/generic-brand exclusions: 'gmail' collides with 'mail',
+         * 'binance' with 'finance'/'balance', 'chase' with 'phase',
+         * 'usps' with 'ups' — all edit distance 1 from ordinary words */
+        static const char *const SQUAT_BRANDS[] = {
+            "amazon", "paypal", "microsoft", "apple", "google",
+            "netflix", "facebook", "instagram", "linkedin", "twitter",
+            "ebay", "wellsfargo", "citibank", "hmrc", "irs",
+            "dhl", "fedex", "ups", "docusign", "stripe", "shopify",
+            "github", "zoom", "coinbase", "outlook",
+            "office365", "yahoo", "aol", "protonmail",
+            NULL
+        };
+        char lab[96];
+        size_t li, di, bi;
+        const char *p;
+        for (p = from_domain; *p; p++) {
+            /* walk dot-separated labels */
+            li = 0;
+            while (p[li] && p[li] != '.' && li < sizeof(lab) - 1) {
+                lab[li] = (char)tolower((unsigned char)p[li]);
+                li++;
+            }
+            lab[li] = '\0';
+            p += li;
+            if (!*p) p--;
+            if (li < 4 || li > 20) { if (!*p) break; continue; }
+            /* leet-normalized copy */
+            {
+                char norm[96];
+                memcpy(norm, lab, li + 1);
+                for (di = 0; di < li; di++) {
+                    if (norm[di] == '0') norm[di] = 'o';
+                    else if (norm[di] == '1') norm[di] = 'l';
+                    else if (norm[di] == '3') norm[di] = 'e';
+                    else if (norm[di] == '5' || norm[di] == '$')
+                        norm[di] = 's';
+                    else if (norm[di] == '7') norm[di] = 't';
+                    else if (norm[di] == '@') norm[di] = 'a';
+                }
+                for (bi = 0; SQUAT_BRANDS[bi]; bi++) {
+                    const char *b = SQUAT_BRANDS[bi];
+                    if ((strcmp(norm, b) == 0 && strcmp(lab, b) != 0) ||
+                        (strcmp(lab, b) != 0 &&
+                         hlse_edit_distance(lab, b) == 1)) {
+                        if (brand_owns_domain(b, from_domain)) break;
+                        v.score += 45;
+                        snprintf(v.reasons[v.n_reasons++],
+                            sizeof(v.reasons[0]),
+                            "E6: From domain '%.80s' contains brand lookalike "
+                            "'%.32s' resembling '%.40s' (typosquat sender)",
+                            from_domain, lab, b);
+                        goto e6_done;
+                    }
+                }
+            }
+            if (!*p) break;
+        }
+e6_done:;
+    }
+
     /* E2: Reply-To domain mismatch */
     if (reply_to_val) {
         extract_domain(reply_to_val, reply_domain, sizeof(reply_domain));
