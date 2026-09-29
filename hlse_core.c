@@ -1870,6 +1870,10 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     /* joinskype: — Skype call/join deep link (conferencing-lure
      * channel switch)                                              */
     "joinskype:",
+    /* vsls: — VS Live Share session deep link: clicking joins an
+     * attacker-hosted collaborative session (code-share lure);
+     * ms-callto: — prefixed callto: alias the table missed       */
+    "vsls:", "ms-callto:",
     /* applescript: — macOS AppleScript URI handler; a click hands
      * script text to Script Editor's run path                     */
     "applescript:",

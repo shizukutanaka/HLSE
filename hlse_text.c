@@ -160,6 +160,14 @@ static const char *BAIT_WORDS[] = {
     "claim your airdrop", "claim your tokens", "claim airdrop",
     "bridge your assets", "sync your wallet", "migrate your wallet",
     "rectify your wallet", "validate your tokens",
+    /* drainer-site vocabulary residuals — 'rectify/synchronize
+     * wallet', dApps connect and token-bridge lures are the
+     * wording of fake wallet-validation pages; kept phrase-level
+     * so 'WalletConnect' / 'rectify an error' prose stays clean */
+    "rectify wallet", "synchronize your wallet",
+    "wallet synchronization", "connect dapps", "dapps connect",
+    "bridge your tokens", "validate wallet", "sync your tokens",
+    "restore wallet access", "claim tokens",
     /* Recovery / refund-agent scam — the fake 'recover lost crypto'
      * service targets already-victimised users (advance-fee class) */
     "recover your lost", "recover lost funds", "recover lost bitcoin",

@@ -11620,6 +11620,14 @@ check "paste: npm-registry flagged" "$(./hlse_core paste 'npm install pkg --regi
 check "paste: pip-normal clean" "$(./hlse_core paste 'pip install requests' | head -1 | grep -c 'OK')" "1"
 check "paste: elixir-iex clean" "$(./hlse_core paste 'iex -S mix' | head -1 | grep -c 'OK')" "1"
 
+# ── cycle-191: vsls/ms-callto schemes + drainer vocab residuals ───
+check "url: vsls flagged" "$(./hlse_core 'vsls://evil.example/x' | head -1 | grep -c 'LOG')" "1"
+check "url: ms-callto flagged" "$(./hlse_core 'ms-callto:evil' | head -1 | grep -c 'LOG')" "1"
+check "text: rectify-wallet compound flagged" "$(./hlse_core text 'urgent: rectify wallet to restore wallet access immediately' | head -1 | grep -c 'ALERT')" "1"
+check "text: validate-claim compound flagged" "$(./hlse_core text 'validate wallet and claim tokens' | head -1 | grep -c 'LOG')" "1"
+check "text: rectify-wallet single clean" "$(./hlse_core text 'rectify wallet errors now' | head -1 | grep -c 'OK')" "1"
+check "text: rectify-error clean" "$(./hlse_core text 'please rectify the error' | head -1 | grep -c 'OK')" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

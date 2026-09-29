@@ -51,6 +51,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **`vsls:`/`ms-callto:` scheme handlers** (`hlse_core.c`):
+  VS Live Share deep links join an attacker-hosted collaborative
+  session on click (code-share lure); `ms-callto:` is the prefixed
+  `callto:` alias the comms table missed (+35 each).
+- **Drainer vocabulary residuals** (`hlse_text.c`, BAIT):
+  `rectify wallet`, `synchronize your wallet`,
+  `wallet synchronization`, `connect dapps`, `dapps connect`,
+  `bridge your tokens`, `validate wallet`, `sync your tokens`,
+  `restore wallet access`, `claim tokens` — fake
+  wallet-validation/drain-site wording. Phrase-level entries, so
+  'WalletConnect' and 'rectify an error' stay clean; a lone hit
+  keeps OK while compounding with urgency/claim signals.
+
 - **Paste cradle residuals** (`hlse_supply.c`): `iwr|iex`,
   `irm|iex`, and `iex(iwr ...)` — the PowerShell download-execute
   cradle — fired only when the literal word "powershell" appeared
