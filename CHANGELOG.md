@@ -51,6 +51,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Markdown link display/target mismatch + UNC path lures in
+  text** (`hlse_text.c`): `[paypal.com](http://evil.example)` — the
+  rendered text claims one domain while the link goes elsewhere —
+  fires +45 when the display text is itself domain-shaped and its
+  domain neither equals nor is a parent of the target host
+  (subdomains and same-host links stay clean, as does non-domain
+  display text like `[docs](...)`). A UNC path `\\host\share` in a
+  message body fires +40 — opening it leaks the reader's NTLM hash
+  and can deliver hostile `.lnk` payloads; device namespaces
+  (`\\.`, `\\?`, `\\localhost`, `\\127.*`) are excluded.
+
 - **Mixed-script domain lookalikes in message text**
   (`hlse_text.c`): `http://рaypal.com` was caught by the URL
   engine, but a bare `рaypal.com` inside a message body never

@@ -11586,6 +11586,14 @@ check "text: smallcaps-domain flagged" "$(./hlse_core text 'ᴘᴀʏᴘᴀʟ.com
 check "text: paren-domain flagged" "$(./hlse_core text '⒫⒜⒴⒫⒜⒧.com' | head -1 | grep -c 'ALERT')" "1"
 check "text: paren-digits clean" "$(./hlse_core text 'see list ⑴-⒇' | head -1 | grep -c 'OK')" "1"
 
+# ── cycle-187: markdown link mismatch + UNC lure ──────────────────
+check "text: mdlink-mismatch flagged" "$(./hlse_core text 'click [paypal.com](http://evil.example/login)' | head -1 | grep -c 'BLOCK')" "1"
+check "text: unc-lure flagged" "$(./hlse_core text 'open \\evil.example\share\file.lnk' | head -1 | grep -c 'ALERT')" "1"
+check "text: mdlink-subdomain clean" "$(./hlse_core text 'visit [paypal.com](https://login.paypal.com/x)' | head -1 | grep -c 'OK')" "1"
+check "text: mdlink-word clean" "$(./hlse_core text 'read [docs](https://github.com/org/wiki)' | head -1 | grep -c 'OK')" "1"
+check "text: unc-localhost clean" "$(./hlse_core text 'use \\localhost\c$ path' | head -1 | grep -c 'OK')" "1"
+check "text: mdlink-samehost clean" "$(./hlse_core text 'see [example.com](https://example.com/page)' | head -1 | grep -c 'OK')" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

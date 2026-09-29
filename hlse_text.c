@@ -3181,6 +3181,24 @@ normalize_decorated(char *buf, size_t len) {
     return w;
 }
 
+/* Domain shape: ASCII letters/digits/'-'/'.', at least one '.', and a
+ * last label of >= 2 chars. Used as the shared gate for lookalike and
+ * link-mismatch checks.                                          */
+static int
+looks_like_domain(const char *s, size_t nl) {
+    size_t i, last = nl;
+    int    has_dot = 0;
+    if (nl == 0) return 0;
+    for (i = 0; i < nl; i++) {
+        char c = s[i];
+        if (!(c >= 'a' && c <= 'z') && !(c >= '0' && c <= '9') &&
+            c != '.' && c != '-')
+            return 0;
+        if (c == '.') { has_dot = 1; last = i; }
+    }
+    return has_dot && nl - last - 1 >= 2;
+}
+
 /* Mixed-script domain lookalike embedded in message text — the URL
  * engine catches 'http://рaypal.com', but a bare 'рaypal.com' in a
  * message body never reaches it. Walk whitespace-separated tokens:
@@ -3196,7 +3214,7 @@ check_mixedscript_domains(const char *text, TextVerdict *v) {
         const char *start;
         char tok[256], norm[256];
         size_t tl = 0, i;
-        int has_high = 0, has_dot = 0, ok = 1;
+        int has_high = 0;
         while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r' ||
                *p == '"'  || *p == '\'' || *p == '<'  || *p == '>'  ||
                *p == '('  || *p == ')'  || *p == '['  || *p == ']')
@@ -3223,24 +3241,106 @@ check_mixedscript_domains(const char *text, TextVerdict *v) {
         }
         /* domain shape: [a-z0-9.-] only, contains '.', a label of >=2
          * after the last dot, normalized form differs from raw     */
-        {
-            size_t nl = strlen(norm), last = nl;
-            for (i = 0; i < nl; i++) {
-                char c = norm[i];
-                if (!(c >= 'a' && c <= 'z') && !(c >= '0' && c <= '9') &&
-                    c != '.' && c != '-')
-                    { ok = 0; break; }
-                if (c == '.') { has_dot = 1; last = i; }
-            }
-            if (ok && has_dot && nl - last - 1 >= 2 &&
-                strcmp(norm, tok) != 0) {
-                add_text_reason(v, 40,
-                    "Mixed-script domain lookalike '%.60s' — decorated/"
-                    "homoglyph characters make it read as '%.60s'",
-                    tok, norm);
-                return;
+        if (looks_like_domain(norm, strlen(norm)) &&
+            strcmp(norm, tok) != 0) {
+            add_text_reason(v, 40,
+                "Mixed-script domain lookalike '%.60s' — decorated/"
+                "homoglyph characters make it read as '%.60s'",
+                tok, norm);
+            return;
+        }
+    }
+}
+
+/* Two structural lures that need no keywords at all:
+ *  - a UNC path (\\host\share) in a message body sends the reader to a
+ *    remote share — NTLM hash leak plus hostile .lnk/.sc payload
+ *    delivery — yet no URL scheme reaches the URL engine
+ *  - a Markdown-style link whose display text is itself a domain that
+ *    does not match the target host: '[paypal.com](http://evil.x)' —
+ *    the rendered text claims one destination while the link goes
+ *    elsewhere (the classic phish-mail primitive). Display text that
+ *    is not domain-shaped ('click here', 'read the docs') carries no
+ *    destination claim, so it is skipped.                             */
+static void
+check_link_and_unc_lures(const char *text, TextVerdict *v) {
+    const char *p = text;
+    while (*p) {
+        /* --- UNC reference: '\\<host>\' with a remote host --- */
+        if (p[0] == '\\' && p[1] == '\\') {
+            const char *h = p + 2, *he = h;
+            char host[256];
+            size_t hl;
+            while (*he && ((he[0] >= 'a' && he[0] <= 'z') ||
+                           (he[0] >= 'A' && he[0] <= 'Z') ||
+                           (he[0] >= '0' && he[0] <= '9') ||
+                           *he == '.' || *he == '-'))
+                he++;
+            hl = (size_t)(he - h);
+            if (*he == '\\' && hl >= 2 && hl < sizeof(host)) {
+                memcpy(host, h, hl);
+                host[hl] = '\0';
+                /* skip local/device namespaces */
+                if (strcmp(host, ".") != 0 &&
+                    strcmp(host, "?") != 0 &&
+                    strncmp(host, "127.", 4) != 0 &&
+                    strcasecmp(host, "localhost") != 0) {
+                    add_text_reason(v, 40,
+                        "UNC path to remote host '\\\\%.80s\\' — opening it "
+                        "leaks the account's NTLM hash and can deliver "
+                        "hostile files", host);
+                    return;
+                }
             }
         }
+        /* --- markdown link: '[disp](target)' with domain-shaped disp --- */
+        if (p[0] == ']' && p[1] == '(') {
+            const char *lb = p, *te = p + 2;
+            char disp[256], host[256];
+            size_t dl = 0, hl = 0;
+            /* walk back to the matching '[' (bounded) */
+            while (lb > text && *lb != '[' &&
+                   (size_t)(p - lb) < sizeof(disp) - 1)
+                lb--;
+            if (*lb == '[' && p - lb - 1 > 0 &&
+                (size_t)(p - lb - 1) < sizeof(disp)) {
+                memcpy(disp, lb + 1, (size_t)(p - lb - 1));
+                disp[p - lb - 1] = '\0';
+                dl = strlen(disp);
+                /* extract target: require :// then host up to / ) ? : */
+                {
+                    const char *t = strstr(te, "://");
+                    if (t && (size_t)(t - te) <= 8) {
+                        const char *hs = t + 3, *he2 = hs;
+                        while (*he2 && *he2 != '/' && *he2 != ')' &&
+                               *he2 != '?' && *he2 != ':' && *he2 != '@')
+                            he2++;
+                        hl = (size_t)(he2 - hs);
+                        if (hl > 0 && hl < sizeof(host)) {
+                            size_t k;
+                            memcpy(host, hs, hl);
+                            host[hl] = '\0';
+                            for (k = 0; k < hl; k++)
+                                if (host[k] >= 'A' && host[k] <= 'Z')
+                                    host[k] = (char)(host[k] - 'A' + 'a');
+                            if (looks_like_domain(disp, dl) &&
+                                strcmp(disp, host) != 0 &&
+                                !(hl > dl && host[hl - dl - 1] == '.' &&
+                                  strcmp(host + hl - dl, disp) == 0) &&
+                                !(dl > hl && disp[dl - hl - 1] == '.' &&
+                                  strcmp(disp + dl - hl, host) == 0)) {
+                                add_text_reason(v, 45,
+                                    "Link displays '%.80s' but targets "
+                                    "'%.80s' — rendered text points "
+                                    "elsewhere", disp, host);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        p++;
     }
 }
 
@@ -3277,6 +3377,7 @@ hlse_check_text(const char *raw_text) {
      * reasoning as the invisible-carrier check above: the homoglyph
      * fold in the pipeline below would erase the evidence.        */
     check_mixedscript_domains(raw_text, &v);
+    check_link_and_unc_lures(raw_text, &v);
 
     normalize_whitespace(raw_text, normalized, sizeof(normalized));
 
