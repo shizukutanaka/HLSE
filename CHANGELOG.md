@@ -77,6 +77,11 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **`ms-teams:`/`evernote:`/`miro:` app handlers**
+  (`hlse_core.c`): +35 — `ms-teams:` is the dashed sibling of
+  `msteams:` (IANA-registered, meeting-link lures); Evernote and
+  Miro join the app deep-link family.
+
 - **`sntryu_` Sentry user auth token** (`hlse_secrets.c`): +85 —
   the `sntrys_` org-token sibling was covered but `u` (user
   auth) slipped the `s` prefix.

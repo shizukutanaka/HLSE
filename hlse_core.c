@@ -1801,11 +1801,11 @@ static const char *const URL_HANDLER_SCHEMES[] = {
      * server-side contexts — remote args still bump to 60           */
     "steam:", "php:", "phar:",
     "discord:", "slack:", "tg:", "zoommtg:", "zoomus:",
-    "msteams:", "teams:", "lync:", "webex:", "webexteams:",
+    "msteams:", "ms-teams:", "teams:", "lync:", "webex:", "webexteams:",
     "gotomeeting:", "gotowebinar:", "ringcentral:",
     "bluejeans:", "spark:", "meet:",
     "android-app:", "spotify:", "obsidian:", "zotero:",
-    "notion:", "figma:", "linear:", "raycast:",
+    "notion:", "figma:", "linear:", "raycast:", "evernote:", "miro:",
     "fb:", "fb-messenger:", "instagram:", "twitter:",
     "comgooglemaps:", "geo:", "maps:",
     "rtsp:", "rtspu:", "rtmp:", "mms:",

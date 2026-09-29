@@ -11671,6 +11671,12 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-208: ms-teams:/evernote:/miro: app handlers ────────────
+check_url_hit 'ms-teams://teams.microsoft.com/l/meetup-join/x' 'LOG\|ALERT\|BLOCK\|ISOLATE' "url: ms-teams flagged"
+check_url_hit 'evernote://view/x' 'LOG\|ALERT\|BLOCK\|ISOLATE' "url: evernote flagged"
+check_url_hit 'miro://app/board/x' 'LOG\|ALERT\|BLOCK\|ISOLATE' "url: miro flagged"
+check_url_hit 'https://teams.microsoft.com/l/meetup' 'OK' "url FP guard: https teams clean"
+
 # ── cycle-207: sntryu_ Sentry user token + dying-widow vocab ─────
 ./hlse_core secret 'k: sntryu_'"a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2" 2>&1 | grep -q "Sentry" \
     && check "secret: sntryu flagged" "0" "0" \
