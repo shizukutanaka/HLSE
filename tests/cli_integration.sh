@@ -11602,6 +11602,15 @@ check "text: bracket-dotword flagged" "$(./hlse_core text 'visit evil[dot]exampl
 check "text: lone-paren-dot clean" "$(./hlse_core text 'the item (.) is optional' | head -1 | grep -c 'OK')" "1"
 check "text: bracket-word clean" "$(./hlse_core text 'read a [docs] file (.) carefully' | head -1 | grep -c 'OK')" "1"
 
+# ── cycle-189: remote icon reference in shell-shortcut content ──────
+XDIR189=$(mktemp -d /tmp/hlse189.XXXXXX)
+printf '[InternetShortcut]\nURL=http://x.example\nIconFile=http://evil.example/i.ico\n' > "$XDIR189/a.txt"
+check "$XDIR189/a.txt remote-icon flagged" "$(./hlse_core file "$XDIR189/a.txt" | grep -c 'REMOTE ICON')" "1"
+printf '[InternetShortcut]\nURL=http://x.example\nIconFile=C:\\Windows\\ico.dll\n' > "$XDIR189/b.txt"
+check "$XDIR189/b.txt local-icon clean" "$(./hlse_core file "$XDIR189/b.txt" | grep -c 'REMOTE ICON')" "0"
+printf '[shell]\nIconResource=http://evil.example/i.dll\n' > "$XDIR189/c.txt"
+check "$XDIR189/c.txt iconresource flagged" "$(./hlse_core file "$XDIR189/c.txt" | grep -c 'REMOTE ICON')" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

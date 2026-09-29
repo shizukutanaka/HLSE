@@ -677,6 +677,42 @@ ssi_has_exec(const unsigned char *head, size_t len) {
     return strstr(low, "<!--#exec") != NULL;
 }
 
+/* Remote icon reference inside a Windows shell-shortcut payload
+ * ([InternetShortcut]/.scf style): `IconFile=` / `IconResource=`
+ * pointing at http(s)/ftp/file:/UNC makes the shell fetch the icon
+ * on VIEW — no click needed — leaking the reader's NTLM hash and
+ * fetching attacker content. The key names only exist in this
+ * format, so detection is extension-independent like F5/F5b:
+ * the same payload renamed to .txt still carries the primitive. */
+static int
+head_has_remote_icon(const unsigned char *head, size_t len) {
+    static const char *const keys[] = {
+        "iconfile=", "iconresource=", NULL
+    };
+    static const char *const remote[] = {
+        "http:", "https:", "ftp:", "file:", "\\\\", NULL
+    };
+    char low[4097];
+    size_t n = 0, i;
+    const char *p;
+    int k, r;
+    if (len > sizeof(low) - 1) len = sizeof(low) - 1;
+    for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
+    low[n] = '\0';
+    for (k = 0; keys[k]; k++) {
+        for (p = low; (p = strstr(p, keys[k])) != NULL; p++) {
+            const char *v2 = p + strlen(keys[k]);
+            while (*v2 == ' ' || *v2 == '\t' || *v2 == '"' ||
+                   *v2 == '\'')
+                v2++;
+            for (r = 0; remote[r]; r++)
+                if (strncmp(v2, remote[r], strlen(remote[r])) == 0)
+                    return 1;
+        }
+    }
+    return 0;
+}
+
 /* ICS calendar-invite phishing: a VCALENDAR payload carrying malicious
  * links in URL/LOCATION/DESCRIPTION/ATTACH fields. Email clients auto-add
  * such invites to the victim's calendar, giving the payload a second
@@ -4613,6 +4649,15 @@ hlse_check_file(const char *filepath) {
         fv_add(&v, 55,
             "F5: SSI EXEC — file contains <!--#exec --> server-side "
             "command primitive (web-shell delivery / template hijack)");
+    }
+
+    /* ── F5c: Remote icon reference in shell-shortcut content ────
+     * IconFile=/IconResource= pointing at a remote fetch makes the
+     * shell resolve it on VIEW — NTLM hash leak with no click.    */
+    if (head_len > 0 && head_has_remote_icon(head, (size_t)head_len)) {
+        fv_add(&v, 50,
+            "F5: REMOTE ICON — IconFile=/IconResource= fetches a remote "
+            "resource on view (NTLM credential leak, no click needed)");
     }
 
     /* ── F3: Executable disguise ───────────────────────────────────── */

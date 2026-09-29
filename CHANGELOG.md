@@ -51,6 +51,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **F5c: remote icon reference in shell-shortcut content**
+  (`hlse_file.c`): `IconFile=`/`IconResource=` pointing at
+  http(s)/ftp/file:/UNC makes the shell fetch the icon on VIEW —
+  the NTLM credential-leak primitive needs no click. The key
+  names exist only in this payload format, so detection is
+  extension-independent (+50): a `.txt` carrying the same
+  `[InternetShortcut]` body still fires. Local paths
+  (`IconFile=C:\Windows\...`) and non-icon keys stay clean.
+
 - **HTML anchor mismatch + defanged indicators in text**
   (`hlse_text.c`): `<a href="http://evil.example">paypal.com</a>`
   gets the same display/target comparison as Markdown links (+45).
