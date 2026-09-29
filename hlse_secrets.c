@@ -306,6 +306,18 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "glft-",         5,  20, is_alnum_or_dash,   "GitLab Feed Token",    75 },
     { "glimt-",        6,  20, is_alnum_or_dash,   "GitLab Incoming Mail Token", 75 },
     { "gloas-",        6,  20, is_alnum_or_dash,   "GitLab OAuth App Secret", 85 },
+    /* glffct- — GitLab feature-flag client token (the remaining
+     * real gl* prefix; glit-/glt- are not documented forms)       */
+    { "glffct-",       7,  16, is_alnum_or_dash,   "GitLab Feature Flag Client Token", 75 },
+    /* SonarQube/SonarCloud token family — sqa_ analysis token,
+     * sqp_ project token, squ_ user token (leak = scanner auth)   */
+    { "sqa_",          4,  36, is_alnum_or_dash,   "SonarQube Analysis Token", 80 },
+    { "sqp_",          4,  36, is_alnum_or_dash,   "SonarQube Project Token",  80 },
+    { "squ_",          4,  36, is_alnum_or_dash,   "SonarQube User Token",     80 },
+    /* LaunchDarkly client keys — sdk- (server-side SDK key) and
+     * mob- (mobile key); public-facing but still auth material    */
+    { "sdk-",          4,  40, is_alnum_or_dash,   "LaunchDarkly SDK Key",     70 },
+    { "mob-",          4,  40, is_alnum_or_dash,   "LaunchDarkly Mobile Key",  70 },
 
     /* age encryption secret key — fixed "AGE-SECRET-KEY-1" prefix,
      * bech32-style lowercase body (~58 chars) */

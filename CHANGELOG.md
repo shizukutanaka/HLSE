@@ -70,6 +70,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **SonarQube/LaunchDarkly/GitLab token formats + password-store
+  carriers** (`hlse_secrets.c`, `hlse_file.c`): `sqa_`/`sqp_`/`squ_`
+  SonarQube token family (+80), LaunchDarkly `sdk-`/`mob-` client
+  keys (+70), and `glffct-` GitLab feature-flag client token (+75)
+  join the prefix table. `.kdbx` (KeePass), `.agilekeychain`/
+  `.opvault` (1Password), `.keychain` (macOS) and `.wallet`
+  (Multibit) are credential-store artifacts — exfiltration targets
+  and harvest lures — now flagged +30 LOG.
+
 - **Pig-butchering tax/certificate demand vocabulary**
   (`hlse_text.c`): `tax to withdraw`/`tax on your withdrawal`
   close the exit-scam phrasing gap next to `tax fee to withdraw`,

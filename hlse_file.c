@@ -267,6 +267,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * enterprise-signed sideload install (rarely legitimately sent
      * as a bare file — normally embedded inside the .ipa)         */
     ".mobileprovision",
+    /* Password-store artifacts — exfiltration targets and
+     * credential-harvest lures: .kdbx (KeePass), .agilekeychain/
+     * .opvault (1Password), .keychain (macOS), .wallet (Multibit)  */
+    ".kdbx", ".agilekeychain", ".opvault", ".keychain", ".wallet",
     /* InfoPath packaged form — code-bearing, data submits to
      * remote endpoints; .xsn/.xsf templates already listed        */
     ".ipf",

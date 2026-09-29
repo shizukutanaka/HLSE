@@ -11671,6 +11671,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-202: SonarQube/LaunchDarkly/glffct + password-store carriers ─
+for p in 'sqa_' 'sqp_' 'squ_' 'glffct-'; do
+    ./hlse_core secret "k: ${p}a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0" 2>&1 | grep -qE "SonarQube|GitLab" \
+        && check "secret: $p flagged" "0" "0" \
+        || check "secret: $p flagged" "0" "1"
+done
+for p in 'sdk-' 'mob-'; do
+    ./hlse_core secret "k: ${p}a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1" 2>&1 | grep -q "LaunchDarkly" \
+        && check "secret: $p flagged" "0" "0" \
+        || check "secret: $p flagged" "0" "1"
+done
+./hlse_core secret 'use the sdk- prefix in code' 2>&1 | grep -q "no credentials" \
+    && check "secret FP guard: sdk- prose clean" "0" "0" \
+    || check "secret FP guard: sdk- prose clean" "0" "1"
+XDIR202=$(mktemp -d /tmp/hlse202.XXXXXX)
+for e in kdbx agilekeychain opvault keychain wallet; do
+    touch "$XDIR202/x.$e"
+    ./hlse_core file "$XDIR202/x.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+rm -rf "$XDIR202"
+
 # ── cycle-201: pig-butchering fee/cert vocab ─────────────────────
 check_text_hit 'pay a 5% tax to withdraw your profit' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: tax-to-withdraw flagged"
 check_text_hit 'you owe tax on your withdrawal' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: tax-on-withdrawal flagged"
