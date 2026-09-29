@@ -1152,6 +1152,8 @@ static const char *AUTHORITY_WORDS[] = {
     "legal action", "legal action will be taken",
     "lawsuit has been filed", "lawsuit against you",
     "court summons", "you will be arrested", "going to jail",
+    "badge number", "case against your name", "to arrest you",
+    "avoid prosecution", "from the tax department", "legal case filed",
     "wage garnishment", "asset seizure", "your assets will be",
     /* Japanese */
     "警察", "税務署", "国税庁", "総務省", "裁判所", "検察", "警視庁",

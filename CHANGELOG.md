@@ -70,6 +70,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **IRS/legal-threat impersonation vocabulary** (`hlse_text.c`):
+  `badge number` (impostor script opener — legitimate callers
+  never announce one), `case against your name`, `legal case
+  filed`, `to arrest you`, `avoid prosecution`, and `from the tax
+  department` join the legal-threat impersonation set; the tax-
+  department form is the "calling from" context only, so ordinary
+  mentions stay clean.
+
 - **SonarQube/LaunchDarkly/GitLab token formats + password-store
   carriers** (`hlse_secrets.c`, `hlse_file.c`): `sqa_`/`sqp_`/`squ_`
   SonarQube token family (+80), LaunchDarkly `sdk-`/`mob-` client

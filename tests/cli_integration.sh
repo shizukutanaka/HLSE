@@ -11671,6 +11671,15 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-203: IRS/legal-threat impersonation vocab ──────────────
+check_text_hit 'this is officer badge number 4521' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: badge-number flagged"
+check_text_hit 'there is a legal case filed against your name' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: legal-case flagged"
+check_text_hit 'the sheriff will come to arrest you' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: arrest-you flagged"
+check_text_hit 'immediate action required to avoid prosecution' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: avoid-prosecution flagged"
+check_text_hit 'we are calling from the tax department' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: tax-department flagged"
+check_text_hit 'the tax department processes refunds' 'OK' "text: legit tax dept clean"
+check_text_hit 'prosecution of the case was fair' 'OK' "text: legit prosecution clean"
+
 # ── cycle-202: SonarQube/LaunchDarkly/glffct + password-store carriers ─
 for p in 'sqa_' 'sqp_' 'squ_' 'glffct-'; do
     ./hlse_core secret "k: ${p}a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0" 2>&1 | grep -qE "SonarQube|GitLab" \
