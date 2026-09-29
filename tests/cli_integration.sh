@@ -11671,6 +11671,20 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-206: shp* dedup + ls__ LangSmith legacy ────────────────
+./hlse_core secret 'k: ls__a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6' 2>&1 | grep -q "LangSmith" \
+    && check "secret: ls__ flagged" "0" "0" \
+    || check "secret: ls__ flagged" "0" "1"
+./hlse_core secret 'k: shpat_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5' 2>&1 | grep -q "Shopify" \
+    && check "secret: shpat still flagged" "0" "0" \
+    || check "secret: shpat still flagged" "0" "1"
+./hlse_core secret 'k: shpca_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5' 2>&1 | grep -q "Shopify" \
+    && check "secret: shpca still flagged" "0" "0" \
+    || check "secret: shpca still flagged" "0" "1"
+./hlse_core secret 'the shppa_ prefix is short' 2>&1 | grep -q "no credentials" \
+    && check "secret FP guard: shppa prose clean" "0" "0" \
+    || check "secret FP guard: shppa prose clean" "0" "1"
+
 # ── cycle-205: sextortion capability-claim vocab + LOLBins ───────
 check_text_hit 'your password was captured by my malware' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: pw-captured flagged"
 check_text_hit 'i infected you with a spyware rat' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: infected-you flagged"

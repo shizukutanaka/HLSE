@@ -68,7 +68,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   the duplicate `sl.`/`dt0c01.` rows introduced in the previous
   cycle were collapsed onto them.
 
+### Fixed
+
+- **Unreachable duplicate `shp*` secret rows** (`hlse_secrets.c`):
+  a second Shopify block (min_suffix 32) sat under the
+  min_suffix-30 rows — first match wins, so the later rows were
+  dead weight; collapsed into a note. Detection unchanged.
+
 ### Added
+
+- **`ls__` LangSmith legacy token** (`hlse_secrets.c`): +80,
+  joins the `lsv2_pt_`/`lsv2_sk_` family.
 
 - **Sextortion capability-claim vocabulary + LOLBins**
   (`hlse_text.c`, `hlse_supply.c` P8): the attacker's own

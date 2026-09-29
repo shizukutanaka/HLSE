@@ -460,11 +460,10 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "LTAI",          4,  20, is_alnum_or_dash,   "Alibaba Cloud AccessKey ID", 85 },
     { "AKID",          4,  30, is_alnum_or_dash,   "Tencent Cloud SecretId", 85 },
 
-    /* Shopify (32-hex body — very low false-positive prefix) */
-    { "shpat_",        6,  32, is_hex,             "Shopify Access Token",  85 },
-    { "shpca_",        6,  32, is_hex,             "Shopify Custom App Token", 85 },
-    { "shpss_",        6,  32, is_hex,             "Shopify Shared Secret", 85 },
-    { "shppa_",        6,  32, is_hex,             "Shopify Private App Token", 85 },
+    /* Shopify 32-hex tokens live above at min_suffix 30 — the
+     * first matching row wins, so a second shp* block here was
+     * unreachable dead weight (removed).                        */
+    { "ls__",          4,  30, is_alnum_or_dash,   "LangSmith Legacy API Key", 80 },
 
     /* Hugging Face — hf_ + 34 alphanumeric (real tokens carry digits;
      * is_alpha silently dropped any digit-bearing token)           */
