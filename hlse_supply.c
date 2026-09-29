@@ -711,6 +711,19 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "syncappvpublishingserver") &&
                    ci_contains(text, "\";")) {
             what = "syncappvpublishingserver command injection (LOLBin)";
+        } else if (ci_contains(text, "hh.exe") &&
+                   (ci_contains(text, "http") || ci_contains(text, ".chm"))) {
+            what = "hh.exe remote CHM execution (LOLBin)";
+        } else if (ci_contains(text, "cmstp") && ci_contains(text, "/s")) {
+            what = "cmstp INF-profile execution (LOLBin/UAC bypass)";
+        } else if (ci_contains(text, "xwizard") ||
+                   (ci_contains(text, "appvlp") &&
+                    ci_contains(text, "http"))) {
+            what = "xwizard/appvlp proxy execution (LOLBin)";
+        } else if ((ci_contains(text, "cscript") ||
+                    ci_contains(text, "wscript")) &&
+                   ci_contains(text, "//e:")) {
+            what = "script-engine extension bypass (//e: exec)";
         } else if (ci_contains(text, "ms-appinstaller:") ||
                    (ci_contains(text, "appinstaller") &&
                     ci_contains(text, "http"))) {

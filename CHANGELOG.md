@@ -70,6 +70,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Sextortion capability-claim vocabulary + LOLBins**
+  (`hlse_text.c`, `hlse_supply.c` P8): the attacker's own
+  ownership claims in extortion scripts — `password was
+  captured`, `infected you with`, `your contacts will receive`,
+  `device was compromised`, `i know what you visited`. LOLBin
+  additions: `hh.exe` with a remote/CHM target (HTML Help exec),
+  `cmstp /s` (INF profile exec / UAC bypass), `xwizard` and
+  `appvlp`+URL (proxy execution), and `cscript`/`wscript`
+  `//e:` (script-engine extension bypass — runs .txt payloads
+  as JScript/VBScript).
+
 - **`.ppkg` carrier + `cap:` handler** (`hlse_file.c`,
   `hlse_core.c`): Windows provisioning packages (`.ppkg`) install
   certs/Wi-Fi/MDM enrollment — the Windows twin of `.mobileconfig`

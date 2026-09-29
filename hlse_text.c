@@ -2063,6 +2063,11 @@ static const char *RANSOM_WORDS[] = {
     "send it to your family", "to all your friends",
     "will share this with", "share this video with",
     "share it with your", "send the video to",
+    /* Attacker's own capability claims — the "I already own you"
+     * setup half of sextortion scripts                            */
+    "password was captured", "infected you with",
+    "your contacts will receive", "device was compromised",
+    "i know what you visited",
     /* Passive-voice distribution threat — 'browsing history will be
      * sent to all your contacts' (the same lure in passive form)   */
     "sent to all your contacts", "be sent to your contacts",

