@@ -77,6 +77,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **`sntryu_` Sentry user auth token** (`hlse_secrets.c`): +85 —
+  the `sntrys_` org-token sibling was covered but `u` (user
+  auth) slipped the `s` prefix.
+
+- **Dying-widow inheritance vocabulary** (`hlse_text.c`):
+  `donate my inheritance`, `bequeath my estate` — first-person
+  bequest phrasing unique to the charity-scam script; third-
+  person legal use (`bequeath the estate to the heirs`) stays
+  clean.
+
 - **`ls__` LangSmith legacy token** (`hlse_secrets.c`): +80,
   joins the `lsv2_pt_`/`lsv2_sk_` family.
 

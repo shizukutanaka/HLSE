@@ -528,8 +528,10 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* Tailscale auth/client/api keys (tskey-auth-/tskey-client-/…) */
     { "tskey-",        6,  16, is_alnum_or_dash, "Tailscale Auth Key", 80 },
 
-    /* Sentry org auth token (sntrys_ + base64url JSON payload) */
+    /* Sentry org auth token (sntrys_ + base64url JSON payload);
+     * sntryu_ is the user-auth-token sibling (64-hex body).     */
     { "sntrys_",       7,  30, is_alnum_or_dash, "Sentry Auth Token", 85 },
+    { "sntryu_",       7,  60, is_hex,           "Sentry User Auth Token", 85 },
 
     /* Grafana Cloud access-policy token (glc_) — distinct from glsa_
      * service-account keys already covered */

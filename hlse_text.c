@@ -1009,6 +1009,7 @@ static const char *PRIZE_WORDS[] = {
     "customs clearance fee", "insurance certificate fee",
     "dear beloved", "god fearing", "dying widow", "widow with",
     "i am a barrister", "i am a diplomat",
+    "donate my inheritance", "bequeath my estate",
     /* impersonation greetings + 'kindly' scam tell — impersonal
      * salutations ('dear beneficiary/account holder/valued
      * customer') are the mass-phish address form, and 'kindly'

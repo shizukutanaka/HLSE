@@ -11671,6 +11671,18 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-207: sntryu_ Sentry user token + dying-widow vocab ─────
+./hlse_core secret 'k: sntryu_'"a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2" 2>&1 | grep -q "Sentry" \
+    && check "secret: sntryu flagged" "0" "0" \
+    || check "secret: sntryu flagged" "0" "1"
+./hlse_core secret 'the sentry_ var is fine' 2>&1 | grep -q "no credentials" \
+    && check "secret FP guard: sentry prose clean" "0" "0" \
+    || check "secret FP guard: sentry prose clean" "0" "1"
+check_text_hit 'i wish to donate my inheritance to charity through you' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: donate-inheritance flagged"
+check_text_hit 'a dying widow wants to bequeath my estate to you' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: bequeath-estate flagged"
+check_text_hit 'she left me an inheritance last year' 'OK' "text FP guard: ordinary inheritance clean"
+check_text_hit 'bequeath the estate to the heirs' 'OK' "text FP guard: legal bequeath clean"
+
 # ── cycle-206: shp* dedup + ls__ LangSmith legacy ────────────────
 ./hlse_core secret 'k: ls__a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6' 2>&1 | grep -q "LangSmith" \
     && check "secret: ls__ flagged" "0" "0" \
