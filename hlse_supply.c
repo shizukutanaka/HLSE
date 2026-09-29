@@ -695,6 +695,13 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "odbcconf") &&
                    (ci_contains(text, "regsvr") || ci_contains(text, "/a "))) {
             what = "odbcconf REGSVR execution (LOLBin)";
+        } else if (ci_contains(text, "pcalua") &&
+                   (ci_contains(text, "-a ") || ci_contains(text, "http") ||
+                    ci_contains(text, "\\\\"))) {
+            what = "pcalua program-launch LOLBin";
+        } else if (ci_contains(text, "control.exe") &&
+                   ci_contains(text, ".cpl")) {
+            what = "control.exe CPL payload load";
         } else if (ci_contains(text, "ms-appinstaller:") ||
                    (ci_contains(text, "appinstaller") &&
                     ci_contains(text, "http"))) {

@@ -51,6 +51,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Certificate-store carriers** (`hlse_file.c`): `.sst`
+  (serialized certificate store), `.spc` (Authenticode software
+  publisher certificate), `.crl` (revocation list) join the
+  CERTS family — installing one is the MITM primitive (+30).
+- **LOLBin residuals** (`hlse_supply.c`, paste): `pcalua`
+  program-launch and `control.exe <name>.cpl` CPL payload loads —
+  bare `control userpasswords2` and plain `pcalua <app>` stay
+  clean (+45).
+
 - **Apple media/store handlers + `cydia:`** (`hlse_core.c`):
   `itms-books:`, `applestore:`, `ibooks:`, `music:`, `videos:` —
   the remaining Apple app deep-link family beside

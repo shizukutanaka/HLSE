@@ -2242,6 +2242,10 @@ install_carrier_score(const char *ext) {
     };
     static const char *const CERTS[] = {
         ".cer", ".crt", ".der", ".p12", ".pfx", ".p7b", ".p7r",
+        /* .sst serialized cert store / .spc Authenticode software
+         * publisher cert — installing one is the MITM primitive;
+         * .crl revocation lists ride the same carrier family     */
+        ".sst", ".spc", ".crl",
         NULL
     };
     int i;

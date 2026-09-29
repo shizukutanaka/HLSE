@@ -11657,6 +11657,17 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: sams prose clean" "0" "0" \
     || check "secret FP guard: sams prose clean" "0" "1"
 
+# ── cycle-194: cert-store carriers + pcalua/control LOLBins ──────
+XDIR194=$(mktemp -d /tmp/hlse194.XXXXXX)
+touch "$XDIR194/t.sst" "$XDIR194/t.spc" "$XDIR194/t.crl" "$XDIR194/t.pem"
+check "file: sst flagged" "$(./hlse_core file "$XDIR194/t.sst" | head -1 | grep -c 'LOG')" "1"
+check "file: spc flagged" "$(./hlse_core file "$XDIR194/t.spc" | head -1 | grep -c 'LOG')" "1"
+check "file: crl flagged" "$(./hlse_core file "$XDIR194/t.crl" | head -1 | grep -c 'LOG')" "1"
+check "paste: pcalua flagged" "$(./hlse_core paste 'pcalua -a calc' | head -1 | grep -c 'ALERT')" "1"
+check "paste: control-cpl flagged" "$(./hlse_core paste 'control.exe evil.cpl' | head -1 | grep -c 'ALERT')" "1"
+check "paste: control-panel clean" "$(./hlse_core paste 'control userpasswords2' | head -1 | grep -c 'OK')" "1"
+check "paste: pcalua-plain clean" "$(./hlse_core paste 'pcalua valid-app' | head -1 | grep -c 'OK')" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
