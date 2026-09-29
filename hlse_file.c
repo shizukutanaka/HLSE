@@ -263,6 +263,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * attacker share on double-click; .osdx is the OpenSearch
      * description the connector installs from (same lure class)  */
     ".searchconnector-ms", ".osdx",
+    /* .mobileprovision — provisioning profile: delivers an
+     * enterprise-signed sideload install (rarely legitimately sent
+     * as a bare file — normally embedded inside the .ipa)         */
+    ".mobileprovision",
     /* InfoPath packaged form — code-bearing, data submits to
      * remote endpoints; .xsn/.xsf templates already listed        */
     ".ipf",
@@ -1198,7 +1202,7 @@ static int
 pdf_action_score(const unsigned char *head, size_t len) {
     char low[4097];
     size_t n = 0, i;
-    int act = 0, payload = 0;
+    int act = 0, payload = 0, uri = 0;
     if (len > sizeof(low) - 1) len = sizeof(low) - 1;
     if (len < 5 || memcmp(head, "%PDF-", 5) != 0) return 0;
     for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
@@ -1211,7 +1215,12 @@ pdf_action_score(const unsigned char *head, size_t len) {
         payload++;
     if (strstr(low, "/js") || strstr(low, "/javascript"))
         payload++;
-    if (act && payload) return 65;
+    /* /URI under /OpenAction or /AA = auto-navigation to a remote
+     * URL on open — the no-JS phishing tripwire. Counted only with
+     * act: a bare /URI is an ordinary link annotation, everywhere. */
+    if (strstr(low, "/uri"))
+        uri++;
+    if (act && (payload || uri)) return 65;
     if (payload >= 2) return 60;   /* embedded file + JS, no open hook */
     if (payload == 1) return 40;   /* latent capability, no trigger */
     return 0;

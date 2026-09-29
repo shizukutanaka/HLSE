@@ -11671,6 +11671,27 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-200: PDF /URI auto-nav + Apple profile/wallet carriers ─
+XDIR200=$(mktemp -d /tmp/hlse200.XXXXXX)
+printf '%%PDF-1.4\n<< /AA << /O << /S /URI /URI (http://evil.example) >> >>' > "$XDIR200/aa.pdf"
+printf '%%PDF-1.4\n<< /OpenAction << /S /URI /URI (http://evil.example) >> >>' > "$XDIR200/oa.pdf"
+printf '%%PDF-1.4\n<< /Annots [<< /Subtype /Link /A << /S /URI /URI (http://docs.example) >> >>]' > "$XDIR200/link.pdf"
+for f in aa oa; do
+    ./hlse_core file "$XDIR200/$f.pdf" 2>&1 | grep -q "BLOCK" \
+        && check "file: $f.pdf auto-nav flagged" "0" "0" \
+        || check "file: $f.pdf auto-nav flagged" "0" "1"
+done
+./hlse_core file "$XDIR200/link.pdf" 2>&1 | head -1 | grep -q "OK" \
+    && check "file FP guard: bare link.pdf clean" "0" "0" \
+    || check "file FP guard: bare link.pdf clean" "0" "1"
+for e in mobileprovision; do
+    touch "$XDIR200/x.$e"
+    ./hlse_core file "$XDIR200/x.$e" 2>&1 | grep -q "LOG" \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+rm -rf "$XDIR200"
+
 # ── cycle-199: ms-cxh/ms-contact-support handlers + .osdx ────────
 for u in 'ms-cxh://x' 'ms-cxh-full://0' 'ms-contact-support://x'; do
     ./hlse_core "$u" 2>&1 | grep -q "LOG" \

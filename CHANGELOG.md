@@ -70,6 +70,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **PDF `/URI` auto-navigation + Apple profile/Wallet carriers**
+  (`hlse_file.c` F16): `/OpenAction` or `/AA` combined with a
+  `/URI` action is auto-navigation to a remote URL on open — the
+  no-JavaScript PDF phishing tripwire — now scored 65 (a bare
+  `/URI` link annotation stays clean). `.mobileprovision` joins the
+  flagged carrier set (+30 LOG): a bare provisioning profile is an
+  enterprise-sideload install lure — legitimate distribution embeds
+  it inside the `.ipa`. (`.mobileconfig` deliberately stays
+  extension-clean: the F36 content rule already flags root-CA
+  profiles while managed-WiFi profiles stay OK; `.pkpass` is a
+  high-volume legitimate carrier.)
+
 - **`ms-cxh`/`ms-contact-support:` handlers + `.osdx` carrier**
   (`hlse_core.c` handler table, `hlse_file.c`): `ms-cxh` (bare
   prefix — covers `ms-cxh:` and `ms-cxh-full:`) is the Cloud
