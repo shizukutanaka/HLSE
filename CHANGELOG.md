@@ -51,6 +51,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **`web+`/`fediverse:`/`nostr:`/`ventrilo:` handlers**
+  (`hlse_core.c`): the `web+` prefix catches every
+  registerProtocolHandler custom scheme (a click hands the URL to
+  the registering origin); `fediverse:`/`nostr:` are ActivityPub
+  and Nostr entity deep links; `ventrilo:` is the
+  `mumble:`/`ts3server:` voice-connect sibling (+35 each).
+- **Raw transport references** (`hlse_core.c`): `tcp:`, `udp:`,
+  and `sctp:` mark non-HTTP fetch destinations, same class as the
+  `ws:`/`daytime:`/`chargen:` entries (+30 each).
+
 - **`vsls:`/`ms-callto:` scheme handlers** (`hlse_core.c`):
   VS Live Share deep links join an attacker-hosted collaborative
   session on click (code-share lure); `ms-callto:` is the prefixed

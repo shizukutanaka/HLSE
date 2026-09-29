@@ -11628,6 +11628,16 @@ check "text: validate-claim compound flagged" "$(./hlse_core text 'validate wall
 check "text: rectify-wallet single clean" "$(./hlse_core text 'rectify wallet errors now' | head -1 | grep -c 'OK')" "1"
 check "text: rectify-error clean" "$(./hlse_core text 'please rectify the error' | head -1 | grep -c 'OK')" "1"
 
+# ── cycle-192: web+/fediverse/nostr/ventrilo handlers + raw transports ───
+check "url: web+ flagged" "$(./hlse_core 'web+wallet:connect' | head -1 | grep -c 'LOG')" "1"
+check "url: fediverse flagged" "$(./hlse_core 'fediverse:u@evil.example' | head -1 | grep -c 'LOG')" "1"
+check "url: nostr flagged" "$(./hlse_core 'nostr:npub1x' | head -1 | grep -c 'LOG')" "1"
+check "url: ventrilo flagged" "$(./hlse_core 'ventrilo://evil' | head -1 | grep -c 'LOG')" "1"
+check "url: tcp flagged" "$(./hlse_core 'tcp://evil:443' | head -1 | grep -c 'LOG')" "1"
+check "url: udp flagged" "$(./hlse_core 'udp://evil:5060' | head -1 | grep -c 'LOG')" "1"
+check "url: sctp flagged" "$(./hlse_core 'sctp://evil:9' | head -1 | grep -c 'LOG')" "1"
+check "url: https clean" "$(./hlse_core 'https://www.example.com' | head -1 | grep -c 'OK')" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -1718,9 +1718,8 @@ static const char *const URL_LEGACY_SCHEMES[] = {
     "ftp:", "telnet:", "gopher:", "nntp:", "dict:",
     "tftp:", "ldap:", "ldaps:", "finger:", "whois:",
     "irc:", "ircs:", "feed:", "feeds:", "webcal:", "dayz:",
-    /* web+ custom protocol-registration schemes — handed to a
-     * site-registered handler (off-channel launch surface)      */
-    "web+mail:", "web+cal:", "web+login:",
+    /* web+ custom protocol schemes live in the handler table —
+     * the 'web+' prefix there covers every member              */
     /* IMPP presence scheme — sibling of im: (already flagged)    */
     "pres:",
     /* Z39.50 library-retrieval protocol — legacy remote-fetch
@@ -1762,7 +1761,11 @@ static const char *const URL_LEGACY_SCHEMES[] = {
     /* legacy UDP echo/query services — daytime:/chargen: are the
      * RFC 867/864 diagnostic ports, abused for reflection and as
      * obscure registered-handler fetch references               */
-    "daytime:", "chargen:", NULL
+    "daytime:", "chargen:",
+    /* generic transport references — tcp:/udp:/sctp: name raw
+     * transport endpoints; like ws: they mark a non-HTTP fetch
+     * destination even though nothing dispatches them            */
+    "tcp:", "udp:", "sctp:", NULL
 };
 static const char *const URL_FETCH_SCHEMES[] = {
     "ssh:", "sftp:", "git:", "svn:", "hg:", "wss:", "ws:", NULL
@@ -1877,6 +1880,13 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     /* applescript: — macOS AppleScript URI handler; a click hands
      * script text to Script Editor's run path                     */
     "applescript:",
+    /* web+ — registerProtocolHandler custom-scheme family: a site
+     * registers web+<name>:// and any click hands the full URL to
+     * that registering origin (prefix match catches all members);
+     * fediverse:/nostr: — ActivityPub/Nostr entity deep links that
+     * open attacker-chosen profiles in a client app; ventrilo: is
+     * the mumble:/ts3server: voice-connect sibling                */
+    "web+", "fediverse:", "nostr:", "ventrilo:",
     /* remaining VCS/secure-copy handlers — svn/hg/git already flag;
      * bzr/fossil/cvs fetch remote repos and scp pulls remote files */
     "bzr:", "fossil:", "cvs:", "scp:",
