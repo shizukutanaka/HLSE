@@ -77,6 +77,10 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **`pscale_oauth_` + `AVNS_` secrets** (`hlse_secrets.c`):
+  PlanetScale OAuth token (the `tkn_`/`pw_` siblings were
+  covered) and Aiven access token — both +85.
+
 - **`ms-teams:`/`evernote:`/`miro:` app handlers**
   (`hlse_core.c`): +35 — `ms-teams:` is the dashed sibling of
   `msteams:` (IANA-registered, meeting-link lures); Evernote and

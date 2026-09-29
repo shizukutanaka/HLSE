@@ -550,6 +550,9 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "ccipat_",       7,  40, is_hex_c,         "CircleCI Personal API Token", 80 },
     { "pscale_tkn_",  11,  30, is_alnum_or_dash, "PlanetScale Token",    85 },
     { "pscale_pw_",   11,  30, is_alnum_or_dash, "PlanetScale Password", 85 },
+    { "pscale_oauth_",13,  30, is_alnum_or_dash, "PlanetScale OAuth Token", 85 },
+    /* Aiven access token (AVNS_ + base32-ish body) */
+    { "AVNS_",         5,  24, is_alnum_or_dash, "Aiven Access Token",   85 },
 
     /* Webhook URLs (URL-anchored — essentially zero false positives) */
     { "hooks.slack.com/services/T", 27, 5, is_alnum_or_dash,

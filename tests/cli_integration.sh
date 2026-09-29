@@ -11671,6 +11671,17 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-209: pscale_oauth_ + AVNS_ ──────────────────────────────
+./hlse_core secret 'k: pscale_oauth_'"a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6" 2>&1 | grep -q "PlanetScale" \
+    && check "secret: pscale_oauth flagged" "0" "0" \
+    || check "secret: pscale_oauth flagged" "0" "1"
+./hlse_core secret 'k: AVNS_'"a1b2c3d4e5f6g7h8i9j0k1l2m3" 2>&1 | grep -q "Aiven" \
+    && check "secret: AVNS flagged" "0" "0" \
+    || check "secret: AVNS flagged" "0" "1"
+./hlse_core secret 'the avns_ column is short' 2>&1 | grep -q "no credentials" \
+    && check "secret FP guard: avns prose clean" "0" "0" \
+    || check "secret FP guard: avns prose clean" "0" "1"
+
 # ── cycle-208: ms-teams:/evernote:/miro: app handlers ────────────
 check_url_hit 'ms-teams://teams.microsoft.com/l/meetup-join/x' 'LOG\|ALERT\|BLOCK\|ISOLATE' "url: ms-teams flagged"
 check_url_hit 'evernote://view/x' 'LOG\|ALERT\|BLOCK\|ISOLATE' "url: evernote flagged"
