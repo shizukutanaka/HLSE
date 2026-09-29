@@ -702,8 +702,22 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, ".exe"))) {
             what = "regasm.exe .NET assembly execution (LOLBin)";
         } else if (ci_contains(text, "installutil") &&
-                   ci_contains(text, "http")) {
+                   (ci_contains(text, "http") || ci_contains(text, "/u ") ||
+                    ci_contains(text, "/u\t"))) {
             what = "installutil.exe .NET AppDomain execution (LOLBin)";
+        } else if (ci_contains(text, "msfvenom")) {
+            what = "msfvenom payload generation (Metasploit)";
+        } else if (ci_contains(text, "dnscmd") &&
+                   ci_contains(text, "serverlevelplugindll")) {
+            what = "dnscmd server-level plugin DLL load (DNS persistence)";
+        } else if (ci_contains(text, "curl") &&
+                   (ci_contains(text, "-t ") || ci_contains(text, "-t\t") ||
+                    ci_contains(text, "--upload"))) {
+            what = "curl file upload (data exfiltration channel)";
+        } else if (ci_contains(text, "chisel") &&
+                   (ci_contains(text, " client") ||
+                    ci_contains(text, " server"))) {
+            what = "chisel reverse tunnel (covert channel / LOLBin)";
         } else if (ci_contains(text, "msiexec") &&
                    (ci_contains(text, "/q") || ci_contains(text, "/quiet")) &&
                    ci_contains(text, "http")) {

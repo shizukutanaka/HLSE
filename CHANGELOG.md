@@ -51,6 +51,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Paste/LOLBin residual coverage** (`hlse_supply.c`, P8 +45):
+  `msfvenom` (payload generation — no benign paste context),
+  `installutil /u` (the uninstall path executes the same .NET
+  AppDomain code as install), `dnscmd /serverlevelplugindll`
+  (DNS-server DLL load persistence), `curl -T/--upload-*`
+  (data exfiltration channel — download-side `-o` was already
+  covered), and `chisel client|server` (reverse tunnel / covert
+  channel).
+
 - **`cifs:`/`x11:` mount-class + `daytime:`/`chargen:` legacy
   schemes** (`hlse_core.c`): `cifs:` joins `smb:` in the
   remote-mount set at +55 — it IS the SMB alias, so the

