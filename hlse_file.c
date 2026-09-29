@@ -260,8 +260,9 @@ static const char *EXECUTABLE_EXTS[] = {
     ".slk", ".dif", ".oqy", ".rqy",
     /* Windows Search Connector — XML pointing to remote/network
      * locations (UNC/REST endpoints): opens a search over an
-     * attacker share on double-click                              */
-    ".searchconnector-ms",
+     * attacker share on double-click; .osdx is the OpenSearch
+     * description the connector installs from (same lure class)  */
+    ".searchconnector-ms", ".osdx",
     /* InfoPath packaged form — code-bearing, data submits to
      * remote endpoints; .xsn/.xsf templates already listed        */
     ".ipf",
@@ -1079,7 +1080,7 @@ is_script_ext(const char *ext) {
         ".asa", ".inc", ".plx", ".vss", ".vssx", ".vst",
         ".vstm", ".vstx", ".xlb", ".xlv", ".mda", ".mde",
         ".mdw", ".accdr", ".pps", ".wiz", ".slk", ".dif",
-        ".oqy", ".rqy", ".searchconnector-ms", ".ipf", ".swf",
+        ".oqy", ".rqy", ".searchconnector-ms", ".osdx", ".ipf", ".swf",
         ".shtm", ".shtml", ".stm", ".xhtml",
         ".z", ".lz", ".lzo", ".tz", ".taz", ".txz", ".tlz",
         ".tbz", ".tb2", ".pax", ".cpio", ".afsplit",

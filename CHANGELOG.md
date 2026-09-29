@@ -70,6 +70,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **`ms-cxh`/`ms-contact-support:` handlers + `.osdx` carrier**
+  (`hlse_core.c` handler table, `hlse_file.c`): `ms-cxh` (bare
+  prefix — covers `ms-cxh:` and `ms-cxh-full:`) is the Cloud
+  eXperience Hub / OOBE handler abused through provisioning
+  paths, `ms-contact-support:` hands the URI to the support
+  assistant, and `.osdx` (OpenSearch description) is the file
+  a `.searchconnector-ms` lure installs from (+35/+30 LOG).
+
 - **Paste LOLBin coverage — esentutl/desktopimgdownldr/syncappv**
   (`hlse_supply.c` P8): `esentutl /y` (copy primitive — locked-file
   and alternate-data-stream exfiltration), `desktopimgdownldr`
