@@ -11361,7 +11361,7 @@ check_text_hit 'real id deadline real id appointment requirement' 'ALERT' "text:
 check_text_hit 'missed appointment fee no-show fee charge' 'LOG' "text: noshow flagged"
 check_text_hit 'wire recall wire transfer recall payment recall' 'LOG' "text: wirerecall flagged"
 check_text_hit 'password manager vault compromised master password reset' 'LOG' "text: vault flagged"
-check_text_hit 'sign-in attempt blocked deny the sign-in deny this attempt' 'ALERT' "text: mfa flagged"
+check_text_hit 'sign-in attempt blocked deny the sign-in deny this attempt' "ALERT\|BLOCK\|ISOLATE" "text: mfa flagged"
 check_text_hit 'termination letter severance notice employment is terminated' 'LOG' "text: termin flagged"
 check_text_hit 'i have a real id drivers license' 'OK' "text: benign realid clean"
 check_text_hit 'the password manager stores my logins' 'OK' "text: benign vault clean"
@@ -11667,6 +11667,15 @@ check "paste: pcalua flagged" "$(./hlse_core paste 'pcalua -a calc' | head -1 | 
 check "paste: control-cpl flagged" "$(./hlse_core paste 'control.exe evil.cpl' | head -1 | grep -c 'ALERT')" "1"
 check "paste: control-panel clean" "$(./hlse_core paste 'control userpasswords2' | head -1 | grep -c 'OK')" "1"
 check "paste: pcalua-plain clean" "$(./hlse_core paste 'pcalua valid-app' | head -1 | grep -c 'OK')" "1"
+
+# ── cycle-195: impersonation greetings + sign-in alert + attachment lures ───
+check "text: dear-beneficiary flagged" "$(./hlse_core text 'dear beneficiary' | head -1 | grep -c 'LOG')" "1"
+check "text: kindly-confirm compound" "$(./hlse_core text 'attention account holder, kindly confirm your details' | head -1 | grep -c 'BLOCK')" "1"
+check "text: signin-alert flagged" "$(./hlse_core text 'unusual sign-in attempt detected' | head -1 | grep -c 'ALERT')" "1"
+check "text: attached-payment compound" "$(./hlse_core text 'see attached payment.zip for your refund' | head -1 | grep -c 'LOG')" "1"
+check "text: see-attached-report clean" "$(./hlse_core text 'see attached report for review' | head -1 | grep -c 'OK')" "1"
+check "text: new-device clean" "$(./hlse_core text 'a brand new device arrived' | head -1 | grep -c 'OK')" "1"
+check "text: kindly-note clean" "$(./hlse_core text 'kindly note the meeting time' | head -1 | grep -c 'OK')" "1"
 
 # ─── results ────────────────────────────────────────────────────────────
 

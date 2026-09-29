@@ -213,6 +213,10 @@ static const char *BAIT_WORDS[] = {
     "account will be deactivated", "account has been limited",
     "account is limited", "account has been restricted",
     "account is restricted", "attached invoice", "invoice attached",
+    /* payload-naming attachment lures — invoice/payment/receipt
+     * are the finance-doc names that carry the real file; 'open
+     * the attachment' is the imperative click-lure form         */
+    "attached payment", "attached receipt", "open the attachment",
     "invoice is attached", "find attached", "find the attached",
     "receipt for your payment", "receipt for payment",
     "your receipt", "unpaid invoice", "outstanding invoice",
@@ -1005,6 +1009,15 @@ static const char *PRIZE_WORDS[] = {
     "customs clearance fee", "insurance certificate fee",
     "dear beloved", "god fearing", "dying widow", "widow with",
     "i am a barrister", "i am a diplomat",
+    /* impersonation greetings + 'kindly' scam tell — impersonal
+     * salutations ('dear beneficiary/account holder/valued
+     * customer') are the mass-phish address form, and 'kindly'
+     * is a near-signature scam register word; kept phrase-level
+     * so 'kindly note' business prose stays clean              */
+    "dear beneficiary", "dear account holder",
+    "dear valued customer", "attention account holder",
+    "kindly confirm", "kindly update", "kindly verify",
+    "kindly provide",
     /* Proof-of-payment bait + remaining advance-fee props: a fake
      * SWIFT MT103 'swift copy' / 'payment advice' attachment, the
      * UN/compensation-fund boilerplate, and the fee-naming ladder
@@ -1789,6 +1802,10 @@ static const char *FAKE_ALERT_WORDS[] = {
     "unusual login activity", "suspicious login activity",
     "sign-in activity detected", "new sign-in detected",
     "sign-in attempt detected", "login attempt detected",
+    /* bare alert forms — the detected-suffix variants above miss
+     * the unsolicited 'unusual sign-in' / 'sign-in attempt'
+     * panic line itself                                        */
+    "unusual sign-in", "sign-in attempt",
     "your microsoft account", "your google account has been",
     "account compromised", "your account has been compromised",
     "call us immediately", "call this number immediately",

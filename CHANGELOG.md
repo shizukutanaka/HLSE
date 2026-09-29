@@ -51,6 +51,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Impersonation greetings + sign-in alert lures**
+  (`hlse_text.c`, vocab): `dear beneficiary`,
+  `dear account holder`, `dear valued customer`,
+  `attention account holder` (mass-phish address forms),
+  `kindly confirm/update/verify/provide` (the 'kindly' scam
+  register — 'kindly note' stays clean), `unusual sign-in`,
+  `sign-in attempt` (fake account-alert lures), and
+  `attached payment`, `attached receipt`, `open the attachment`
+  (payload-naming click lures; 'see attached report' stays
+  clean). Single hits keep the LOG band and compound with
+  urgency/verify signals.
+
 - **Certificate-store carriers** (`hlse_file.c`): `.sst`
   (serialized certificate store), `.spc` (Authenticode software
   publisher certificate), `.crl` (revocation list) join the
