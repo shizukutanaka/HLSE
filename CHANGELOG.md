@@ -51,6 +51,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Paste cradle residuals** (`hlse_supply.c`): `iwr|iex`,
+  `irm|iex`, and `iex(iwr ...)` — the PowerShell download-execute
+  cradle — fired only when the literal word "powershell" appeared
+  in the paste, which real ClickFix payloads omit (+45).
+  `curl|wget` piped to `python`/`perl`/`node`/`ruby`/`php`/
+  `pwsh`/`powershell`/`zsh`/`fish`/`dash`/`ksh` joins the
+  pipe-to-shell class (+40). Package installs repointed at an
+  alternate index — `--index-url`, `--extra-index-url`,
+  `--registry`, `--source` on pip/pip3/pipx/npm/pnpm/yarn/gem —
+  flag +45 as the dependency-confusion delivery channel.
+  Plain `pip install` and the Elixir `iex` shell stay clean.
+
 - **F5c: remote icon reference in shell-shortcut content**
   (`hlse_file.c`): `IconFile=`/`IconResource=` pointing at
   http(s)/ftp/file:/UNC makes the shell fetch the icon on VIEW —

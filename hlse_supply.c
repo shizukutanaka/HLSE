@@ -434,7 +434,20 @@ hlse_check_paste(const char *text) {
                           strstr(text, "|bash") != NULL ||
                           strstr(text, "| sudo") != NULL ||
                           strstr(text, "| /bin/sh") != NULL ||
-                          strstr(text, "| /bin/bash") != NULL);
+                          strstr(text, "| /bin/bash") != NULL ||
+                          /* interpreter cradles — same RCE class */
+                          strstr(text, "| python") != NULL ||
+                          strstr(text, "| perl") != NULL ||
+                          strstr(text, "| node") != NULL ||
+                          strstr(text, "| ruby") != NULL ||
+                          strstr(text, "| php") != NULL ||
+                          strstr(text, "|pwsh") != NULL ||
+                          strstr(text, "| pwsh") != NULL ||
+                          strstr(text, "| powershell") != NULL ||
+                          strstr(text, "| zsh") != NULL ||
+                          strstr(text, "| fish") != NULL ||
+                          strstr(text, "| dash") != NULL ||
+                          strstr(text, "| ksh") != NULL);
         if (has_curl && has_pipe_sh) {
             v.signals |= PASTE_CURL_PIPE_SH;
             v.score += 40;
@@ -735,6 +748,26 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, ".exe") || ci_contains(text, ".ps1") ||
                     ci_contains(text, ".dll") || ci_contains(text, ".bat"))) {
             what = "download of executable via wget/iwr";
+        } else if ((ci_contains(text, "iwr ") || ci_contains(text, "irm ") ||
+                    ci_contains(text, "iwr\t") || ci_contains(text, "irm\t") ||
+                    ci_contains(text, "invoke-webrequest") ||
+                    ci_contains(text, "invoke-restmethod")) &&
+                   (ci_contains(text, "iex") ||
+                    ci_contains(text, "invoke-expression") ||
+                    ci_contains(text, "| iex"))) {
+            what = "PowerShell download-execute cradle (iwr|iex)";
+        } else if ((ci_contains(text, "pip install") ||
+                    ci_contains(text, "pip3 install") ||
+                    ci_contains(text, "pipx install") ||
+                    ci_contains(text, "npm install") ||
+                    ci_contains(text, "pnpm add") ||
+                    ci_contains(text, "yarn add") ||
+                    ci_contains(text, "gem install")) &&
+                   (ci_contains(text, "--index-url") ||
+                    ci_contains(text, "--extra-index-url") ||
+                    ci_contains(text, "--registry") ||
+                    ci_contains(text, "--source "))) {
+            what = "alt-index package install (dependency-confusion channel)";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
