@@ -336,14 +336,16 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "dapi",          4,  30, is_hex,             "Databricks Personal Access Token", 85 },
     /* Foursquare Places API key — 'fsq3' + base64-flavoured token;
      * controls the venue/location-data API surface                  */
-    { "fsq3",          4,  24, is_base64,          "Foursquare API Key",    80 },
+    { "fsq3",          4,  24, is_b64url,          "Foursquare API Key",    80 },
     /* PostHog project API key ('phc_' + base64-flavoured) — product-
      * analytics ingest key                                         */
-    { "phc_",          4,  30, is_base64,          "PostHog Project API Key", 80 },
+    { "phc_",          4,  30, is_b64url,          "PostHog Project API Key", 80 },
     /* Instagram Graph API token ('IGQWR' + base64-flavoured) and
      * Honeybadger project API key                                  */
-    { "IGQWR",         5,  40, is_base64,          "Instagram Graph Token", 85 },
-    { "hbp_",          4,  24, is_base64,          "Honeybadger API Key",  75 },
+    /* IGQVJ is the real Instagram Basic-Display/Graph prefix —
+     * the 'IGQWR' row here matched nothing in the wild          */
+    { "IGQVJ",         5,  40, is_b64url,          "Instagram Graph Token", 85 },
+    { "hbp_",          4,  24, is_b64url,          "Honeybadger API Key",  75 },
     /* HashiCorp Vault tokens: 'hvs.' service token and 'hvb.' batch
      * token — full root/admin capability for the secrets engine    */
     /* HashiCorp tokens are base64url — '-'/'_' bodies, so

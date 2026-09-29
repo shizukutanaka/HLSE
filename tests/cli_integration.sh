@@ -11053,8 +11053,8 @@ printf 'x\n' > "$XDIR142/t.shb"
     && check "file: .shb shellscrap flagged" "0" "0" \
     || check "file: .shb shellscrap flagged" "0" "1"
 rm -rf "$XDIR142"
-IGT="IGQWR"; IGT="${IGT}x9q2m7f4h1k8p3w6z5"
-check_secret_hit "${IGT}t0y9u4j7b2n5e8r1d6g3c0v2l4a8s6d" 'Instagram Graph' "secrets: IGQWR instagram flagged"
+IGT="IGQVJ"; IGT="${IGT}x9q2m7f4h1k8p3w6z5"
+check_secret_hit "${IGT}t0y9u4j7b2n5e8r1d6g3c0v2l4a8s6d" 'Instagram Graph' "secrets: IGQVJ instagram flagged"
 HB="hbp_"; HB="${HB}x9q2m7f4h1k8p3"
 check_secret_hit "${HB}w6z5t0y9u4j7b2n5e8r1d6" 'Honeybadger' "secrets: hbp_ honeybadger flagged"
 
@@ -11670,6 +11670,20 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 ./hlse_core secret 'my ssws id is short' 2>&1 | grep -q "no credentials" \
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
+
+# ── cycle-197: b64url audit sweep — IGQVJ prefix fix ─────────────
+./hlse_core secret 'k: IGQVJa1_b2-c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2' 2>&1 | grep -q "Instagram" \
+    && check "secret: IGQVJ flagged" "0" "0" \
+    || check "secret: IGQVJ flagged" "0" "1"
+./hlse_core secret 'k: fsq3a1_b2-c3d4e5f6g7h8i9j0k1l2m3n4' 2>&1 | grep -q "Foursquare" \
+    && check "secret: fsq3 b64url flagged" "0" "0" \
+    || check "secret: fsq3 b64url flagged" "0" "1"
+./hlse_core secret 'k: phc_a1_b2-c3d4e5f6g7h8i9j0k1l2m3n4' 2>&1 | grep -q "PostHog" \
+    && check "secret: phc b64url flagged" "0" "0" \
+    || check "secret: phc b64url flagged" "0" "1"
+./hlse_core secret 'k: hbp_a1_b2-c3d4e5f6g7h8i9j0k1l2m3' 2>&1 | grep -q "Honeybadger" \
+    && check "secret: hbp b64url flagged" "0" "0" \
+    || check "secret: hbp b64url flagged" "0" "1"
 
 # ── cycle-194: cert-store carriers + pcalua/control LOLBins ──────
 XDIR194=$(mktemp -d /tmp/hlse194.XXXXXX)

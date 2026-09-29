@@ -51,6 +51,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Fixed
 
+- **base64url audit sweep + wrong Instagram prefix**
+  (`hlse_secrets.c`): the remaining `is_base64` (`+`/`/`) rows —
+  `fsq3`, `phc_`, `hbp_` — moved to `is_b64url` so `-`/`_` bodies
+  match; and the `IGQWR` Instagram row never existed in the
+  wild — real Basic-Display/Graph tokens start `IGQVJ`, so the
+  prefix was corrected and moved to `is_b64url` (40-char body).
+
 - **base64url charset misses** (`hlse_secrets.c`): the
   SendGrid `SG.<22>.<43>` entry used the alnum-dash set (the
   real format's inner `.` and `-`/`_` body never matched), and
