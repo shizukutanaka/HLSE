@@ -3080,6 +3080,70 @@ normalize_homoglyphs(char *buf, size_t len) {
     return w;
 }
 
+/* Mixed-script domain lookalike embedded in message text — the URL
+ * engine catches 'http://рaypal.com', but a bare 'рaypal.com' in a
+ * message body never reaches it. Walk whitespace-separated tokens:
+ * if a token carries Cyrillic/Greek confusable bytes (D0–D2, CE, CF)
+ * AND homoglyph-normalizes to a domain-shaped ASCII string that
+ * differs from the raw token, it exists only to look like a Latin
+ * domain — fire. Genuine IDN text (münchen.de, café.fr) carries no
+ * Cyrillic/Greek confusable bytes, so it stays clean.            */
+static void
+check_mixedscript_domains(const char *text, TextVerdict *v) {
+    const char *p = text;
+    while (*p) {
+        const char *start;
+        char tok[256], norm[256];
+        size_t tl = 0, i;
+        int has_confus = 0, has_dot = 0, ok = 1;
+        while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r' ||
+               *p == '"'  || *p == '\'' || *p == '<'  || *p == '>'  ||
+               *p == '('  || *p == ')'  || *p == '['  || *p == ']')
+            p++;
+        if (!*p) break;
+        start = p;
+        while (*p && *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r' &&
+               *p != '"' && *p != '\'' && *p != '<' && *p != '>' &&
+               *p != '(' && *p != ')' && *p != '[' && *p != ']')
+            p++;
+        tl = (size_t)(p - start);
+        if (tl == 0 || tl >= sizeof(tok)) continue;
+        memcpy(tok, start, tl);
+        tok[tl] = '\0';
+        for (i = 0; i < tl; i++) {
+            unsigned char b = (unsigned char)tok[i];
+            if (b == 0xD0 || b == 0xD1 || b == 0xD2 ||
+                b == 0xCE || b == 0xCF) { has_confus = 1; break; }
+        }
+        if (!has_confus) continue;
+        memcpy(norm, tok, tl + 1);
+        {
+            size_t nl = normalize_homoglyphs(norm, tl);
+            normalize_leet(norm);   /* no-op on already-ASCII, kept for parity */
+            (void)nl;
+        }
+        /* domain shape: [a-z0-9.-] only, contains '.', a label of >=2
+         * after the last dot, normalized form differs from raw     */
+        {
+            size_t nl = strlen(norm), last = nl;
+            for (i = 0; i < nl; i++) {
+                char c = norm[i];
+                if (!(c >= 'a' && c <= 'z') && !(c >= '0' && c <= '9') &&
+                    c != '.' && c != '-')
+                    { ok = 0; break; }
+                if (c == '.') { has_dot = 1; last = i; }
+            }
+            if (ok && has_dot && nl - last - 1 >= 2 &&
+                strcmp(norm, tok) != 0) {
+                add_text_reason(v, 40,
+                    "Mixed-script domain lookalike '%.60s' — homoglyph "
+                    "characters make it read as '%.60s'", tok, norm);
+                return;
+            }
+        }
+    }
+}
+
 /* ─────────────── analysis ─────────────── */
 
 TextVerdict
@@ -3108,6 +3172,11 @@ hlse_check_text(const char *raw_text) {
                                                 sizeof(inv_reason));
         if (inv > 0) add_text_reason(&v, inv, "%s", inv_reason);
     }
+
+    /* Mixed-script domain tokens — same run-before-normalization
+     * reasoning as the invisible-carrier check above: the homoglyph
+     * fold in the pipeline below would erase the evidence.        */
+    check_mixedscript_domains(raw_text, &v);
 
     normalize_whitespace(raw_text, normalized, sizeof(normalized));
 

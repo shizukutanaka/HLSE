@@ -11571,6 +11571,14 @@ To: v@x.com' | grep -c 'E6')" "0"
 check "email: brand-owned clean" "$(./hlse_core email 'From: a@amazon.com
 To: v@x.com' | grep -c 'E6')" "0"
 
+# ── cycle-185: mixed-script domain lookalike in text body ────────────
+MST=$(printf 'visit \xd1\x80aypal.com to login')
+check "text: cyrillic-domain flagged" "$(./hlse_core text "$MST" | head -1 | grep -c 'ALERT')" "1"
+MST2=$(printf '\xce\xb1rple.com')
+check "text: greek-domain flagged" "$(./hlse_core text "$MST2" | head -1 | grep -c 'ALERT')" "1"
+check "text: idn-word clean" "$(./hlse_core text 'meet at münchen.de' | head -1 | grep -c 'OK')" "1"
+check "text: cyrillic-word clean" "$(./hlse_core text 'my привет friend' | head -1 | grep -c 'OK')" "1"
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
