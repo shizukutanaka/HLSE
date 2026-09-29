@@ -109,6 +109,21 @@ is_alnum_or_dash(char c) {
            (c >= '0' && c <= '9') || c == '-' || c == '_';
 }
 
+/* base64url charset — token formats documented as url-safe base64
+ * (RFC 4648 §5: '-'/'_' not '+'/'/'); is_base64 would drop them   */
+static int
+is_b64url(char c) {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+           (c >= '0' && c <= '9') || c == '-' || c == '_' || c == '=';
+}
+
+/* base64url with the embedded separator dots several vendors use
+ * (SendGrid SG.<22>.<43>, MailerSend, Dropbox sl.)               */
+static int
+is_b64url_dot(char c) {
+    return is_b64url(c) || c == '.';
+}
+
 static int
 is_alnum_plain(char c) {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
@@ -196,19 +211,9 @@ static int is_alpha(char c) {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 }
 
-/* Dynatrace `dt0c01.XXXXXX.<64>` tokens carry a '.' separator inside
- * the body — alnum+dot. */
-static int is_alnum_or_dot(char c) {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-           (c >= '0' && c <= '9') || c == '.';
-}
-
-/* Mapbox `sk.eyJ<base64>.<sig>` tokens carry '.' separators AND base64url
- * '-'/'_' inside the body. */
-static int is_alnum_dash_dot(char c) {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-           (c >= '0' && c <= '9') || c == '.' || c == '-' || c == '_';
-}
+/* The alnum-dot charsets these helpers served were subsumed by
+ * is_b64url_dot — dot-carrying tokens are base64url bodies, so the
+ * narrower sets structurally missed '_'/'-' runs.               */
 
 /* otpauth:// URIs carry the 2FA seed in a `secret=` query parameter —
  * the suffix is a URI tail, not a bare token charset.              */
@@ -341,8 +346,10 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "hbp_",          4,  24, is_base64,          "Honeybadger API Key",  75 },
     /* HashiCorp Vault tokens: 'hvs.' service token and 'hvb.' batch
      * token — full root/admin capability for the secrets engine    */
-    { "hvs.",          4,  24, is_base64,          "HashiCorp Vault Service Token", 95 },
-    { "hvb.",          4,  24, is_base64,          "HashiCorp Vault Batch Token",   90 },
+    /* HashiCorp tokens are base64url — '-'/'_' bodies, so
+     * is_base64 ('+'/'/') structurally missed live keys         */
+    { "hvs.",          4,  24, is_b64url,          "HashiCorp Vault Service Token", 95 },
+    { "hvb.",          4,  24, is_b64url,          "HashiCorp Vault Batch Token",   90 },
     /* WooCommerce REST consumer key/secret: 'ck_'/'cs_' + 40 hex —
      * full read/write over the store's orders and customer data    */
     { "ck_",           3,  40, is_hex,             "WooCommerce Consumer Key",    80 },
@@ -367,7 +374,9 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * JFrog Artifactory identity key, Bitbucket app password —
      * each has a fixed vendor prefix that hands over an account */
     { "xkeysib-",        9,  40, is_alnum_or_dash, "Brevo (Sendinblue) API Key", 80 },
-    { "sl.",             3,  60, is_alnum_or_dash, "Dropbox Access Token", 80 },
+    /* Dropbox sl. lives below with the base64url-dot charset —
+     * this copy used the plain alnum-dash set, which missed
+     * '_'/'.' bodies and duplicated scoring with the 85 row     */
     { "AKCp",            4,  30, is_alnum_or_dash, "JFrog Artifactory API Key", 80 },
     { "ATCTT",           5,  20, is_alnum_or_dash, "Bitbucket App Password", 80 },
     { "ATBB",            4,  20, is_alnum_or_dash, "Bitbucket App Password", 80 },
@@ -384,9 +393,9 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* Square application secret — sq0csp- sibling of the access
      * (sq0atp-) and ID-prefixed (sq0idp-) tokens already listed   */
     { "sq0csp-",       7,  30, is_alnum_or_dash,   "Square Application Secret", 80 },
-    { "dt0c01.",       7,  30, is_alnum_or_dot,    "Dynatrace API Token", 80 },
-    /* Dynatrace ingest token — dt0s01. sibling of dt0c01. */
-    { "dt0s01.",       7,  30, is_alnum_or_dot,    "Dynatrace Ingest Token", 80 },
+    /* Dynatrace ingest token — dt0s01.; the dt0c01./dt0s16.
+     * API-token rows below carry the b64url-dot charset          */
+    { "dt0s01.",       7,  30, is_b64url_dot,     "Dynatrace Ingest Token", 80 },
 
     /* npm */
     { "npm_",          4,  36, is_alnum_or_dash,   "npm Access Token",      85 },
@@ -396,9 +405,12 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * `glsa_`, Supabase service-role `sbp_` (bypasses all RLS — full
      * DB access), Render `rnd_`, Okta OAuth `xoa.` — each previously
      * scored OK on a live credential                            */
-    { "sk.eyJ",        6,  30, is_alnum_dash_dot,  "Mapbox Secret Token",   85 },
-    { "pk.eyJ",        6,  30, is_alnum_dash_dot,  "Mapbox Public Token",   45 },
+    { "sk.eyJ",        6,  30, is_b64url_dot,      "Mapbox Secret Token",   85 },
+    { "pk.eyJ",        6,  30, is_b64url_dot,      "Mapbox Public Token",   45 },
     { "xoa.",          4,  30, is_alnum_or_dash,   "Okta OAuth Token",      80 },
+    /* Okta legacy API token — 'SSWS <43>' is the auth-scheme
+     * header form; a leaked one is full-tenant admin            */
+    { "SSWS ",         5,  40, is_alnum_or_dash,   "Okta SSWS API Token",  90 },
 
     /* OpenAI / Anthropic (distinctive dash-prefixed LLM provider keys) */
     { "sk-proj-",      8,  20, is_alnum_or_dash,   "OpenAI Project Key",    90 },
@@ -408,9 +420,9 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* OpenRouter API key — 'sk-or-v1-' + 64-hex suffix              */
     { "sk-or-v1-",     9,  60, is_hex,             "OpenRouter API Key",    85 },
     /* MailerSend API token — 'mlsn.' + long alnum/dot suffix        */
-    { "mlsn.",         5,  32, is_alnum_dash_dot,  "MailerSend API Key",    80 },
+    { "mlsn.",         5,  32, is_b64url_dot,      "MailerSend API Key",    80 },
     /* Dropbox OAuth access token — 'sl.' + ~140-char base64url tail */
-    { "sl.",           3,  60, is_alnum_dash_dot,  "Dropbox Access Token", 85 },
+    { "sl.",           3,  60, is_b64url_dot,      "Dropbox Access Token", 85 },
     /* Newer LLM providers with distinctive prefixes (~zero FP):
      * Groq gsk_<52>, Perplexity pplx-<48>, xAI/Grok xai-<80>, Replicate
      * r8_<36>, Hugging Face org api_org_<34>.                          */
@@ -421,8 +433,8 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "api_org_",      8,  30, is_alnum_or_dash,   "Hugging Face Org Token", 80 },
     /* Dynatrace API tokens — 'dt0c01.' (v1 public token) and
      * 'dt0s16.' carry a '<id24|16>.<secret64>' dotted tail         */
-    { "dt0c01.",       7,  80, is_alnum_dash_dot,  "Dynatrace API Token",  85 },
-    { "dt0s16.",       7,  80, is_alnum_dash_dot,  "Dynatrace API Token",  85 },
+    { "dt0c01.",       7,  80, is_b64url_dot,      "Dynatrace API Token",  85 },
+    { "dt0s16.",       7,  80, is_b64url_dot,      "Dynatrace API Token",  85 },
     /* Samsara API token — 'sams_' + ~40-char tail                 */
     { "sams_",         5,  36, is_alnum_or_dash,   "Samsara API Token",    85 },
     /* Gitea access token — 'gitea_' + 40-hex                      */
@@ -542,7 +554,7 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "CFPAT-",          6, 43, is_alnum_or_dash,   "Contentful PAT",        85 },
 
     /* SendGrid API Key — SG. + 22+ base64url chars (format: SG.<22>.<43>) */
-    { "SG.",             3, 22, is_alnum_or_dash,   "SendGrid API Key",      85 },
+    { "SG.",             3, 22, is_b64url_dot,     "SendGrid API Key",      85 },
 
     /* HashiCorp Vault batch and recovery tokens */
     { "hvb.",            4, 50, is_alnum_or_dash,   "HashiCorp Vault Batch Token",    80 },

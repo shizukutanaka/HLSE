@@ -11657,6 +11657,20 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: sams prose clean" "0" "0" \
     || check "secret FP guard: sams prose clean" "0" "1"
 
+# ── cycle-196: SSWS + base64url charset fixes ─────────────────────
+./hlse_core secret 'k: SSWS 0a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0' 2>&1 | grep -q "Okta SSWS" \
+    && check "secret: SSWS flagged" "0" "0" \
+    || check "secret: SSWS flagged" "0" "1"
+./hlse_core secret 'k: SG.a1b2c3d4e5f6g7h8i9j0k1.z9_y8-x7w6v5u4t3s2r1q0p9o8n7m6l5k4j3i2h1g0f9e8d7c' 2>&1 | grep -q "SendGrid" \
+    && check "secret: SG b64url flagged" "0" "0" \
+    || check "secret: SG b64url flagged" "0" "1"
+./hlse_core secret 'k: hvs.a1_b2-c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9' 2>&1 | grep -q "HashiCorp" \
+    && check "secret: hvs b64url flagged" "0" "0" \
+    || check "secret: hvs b64url flagged" "0" "1"
+./hlse_core secret 'my ssws id is short' 2>&1 | grep -q "no credentials" \
+    && check "secret FP guard: ssws prose clean" "0" "0" \
+    || check "secret FP guard: ssws prose clean" "0" "1"
+
 # ── cycle-194: cert-store carriers + pcalua/control LOLBins ──────
 XDIR194=$(mktemp -d /tmp/hlse194.XXXXXX)
 touch "$XDIR194/t.sst" "$XDIR194/t.spc" "$XDIR194/t.crl" "$XDIR194/t.pem"

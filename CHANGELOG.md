@@ -49,7 +49,23 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   office/enrollment') that keep the impersonation surface while
   leaving ordinary speech clean.
 
+### Fixed
+
+- **base64url charset misses** (`hlse_secrets.c`): the
+  SendGrid `SG.<22>.<43>` entry used the alnum-dash set (the
+  real format's inner `.` and `-`/`_` body never matched), and
+  `hvs.`/`hvb.` used `is_base64` (`+`/`/`) while HashiCorp
+  tokens are base64url (`-`/`_`) — all structurally missed live
+  keys. New `is_b64url`/`is_b64url_dot` charsets applied to
+  SG./mlsn./sl./sk.eyJ/pk.eyJ/dt0c01./dt0s16./dt0s01./hvs./hvb.;
+  the duplicate `sl.`/`dt0c01.` rows introduced in the previous
+  cycle were collapsed onto them.
+
 ### Added
+
+- **`SSWS` Okta legacy API token** (`hlse_secrets.c`): the
+  `SSWS <43>` auth-scheme header form — a leaked one is
+  full-tenant admin (+90).
 
 - **Impersonation greetings + sign-in alert lures**
   (`hlse_text.c`, vocab): `dear beneficiary`,
