@@ -70,6 +70,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Pig-butchering tax/certificate demand vocabulary**
+  (`hlse_text.c`): `tax to withdraw`/`tax on your withdrawal`
+  close the exit-scam phrasing gap next to `tax fee to withdraw`,
+  and the fake-certificate demands (`anti-terrorism certificate`,
+  `anti-money laundering certificate`, `aml certificate`) —
+  classic advance-fee extraction asks with no legitimate consumer
+  use. Ordinary tax speech stays clean.
+
 - **PDF `/URI` auto-navigation + Apple profile/Wallet carriers**
   (`hlse_file.c` F16): `/OpenAction` or `/AA` combined with a
   `/URI` action is auto-navigation to a remote URL on open — the

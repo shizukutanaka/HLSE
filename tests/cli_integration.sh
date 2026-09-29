@@ -11671,6 +11671,14 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-201: pig-butchering fee/cert vocab ─────────────────────
+check_text_hit 'pay a 5% tax to withdraw your profit' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: tax-to-withdraw flagged"
+check_text_hit 'you owe tax on your withdrawal' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: tax-on-withdrawal flagged"
+check_text_hit 'send $200 for an anti-terrorism certificate' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: atf-cert flagged"
+check_text_hit 'an aml certificate is required' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: aml-cert flagged"
+check_text_hit 'the local sales tax applies to all orders' 'OK' "text: legit sales tax clean"
+check_text_hit 'withdrawal takes 2 business days' 'OK' "text: legit withdrawal clean"
+
 # ── cycle-200: PDF /URI auto-nav + Apple profile/wallet carriers ─
 XDIR200=$(mktemp -d /tmp/hlse200.XXXXXX)
 printf '%%PDF-1.4\n<< /AA << /O << /S /URI /URI (http://evil.example) >> >>' > "$XDIR200/aa.pdf"
