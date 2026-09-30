@@ -77,6 +77,23 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Credential-store filenames + ntdsutil LOLBin wave + robocall
+  vocab** (`hlse_file.c`, `hlse_supply.c`, `hlse_text.c`):
+  `.git-credentials`/`.my.cnf`/`.s3cfg`/`id_rsa`/`id_dsa`/
+  `id_ecdsa`/`id_ed25519`/`authorized_keys` join the +45
+  basename rule — names that ARE the credential store by
+  definition (files that only may hold creds — .netrc/.pgpass/
+  .ovpn — stay content-gated by the existing F56 family); paste
+  adds `ntdsutil`+snapshot|ifm|ac-i-ntds (ntds.dit domain
+  credential dump — the highest-value Windows LOLBin),
+  `pubprn`/`printui` remote proxy exec, `verclsid`+/s CLSID
+  exec, `runonce`+alternateshellstartup, `settingsynchost`+
+  -load*, `sc create|config`+binpath|obj service persistence,
+  `control`+.cpl applet load, `findstr`+"" whole-file read; text
+  gains `cardholder services` (FTC's #1 robocall signature),
+  `settle your debt`, `repair your credit`, `credit score
+  dropped` (debt-relief/credit-repair families).
+
 - **JNDI remote-lookup schemes + ransomware-prep LOLBin wave**
   (`hlse_core.c`, `hlse_supply.c`): `jndi:`/`rmi:`/`iiop:`/
   `corba:`/`corbaloc:`/`corbaname:`/`dns:`/`nis:`/`nds:`/`nio:`/

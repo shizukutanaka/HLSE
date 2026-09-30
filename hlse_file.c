@@ -3451,6 +3451,18 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         strstr(bn, ".pst") || strstr(bn, ".ost") ||
         strstr(bn, ".dbx") || strstr(bn, ".mbox"))
         return 45;
+    /* Files whose NAME IS the credential store: .git-credentials and
+     * .my.cnf/.s3cfg hold plaintext logins by definition, the id_…
+     * key files are SSH private keys by convention, authorized_keys
+     * is the SSH trust list (a dropped one is a backdoor). Files
+     * that only MAY hold creds (.netrc/.pgpass/.ovpn/…) are already
+     * content-gated by the F56 family — name-flagging them broke
+     * the benign-content tests                                   */
+    if (strstr(bn, ".git-credentials") || strstr(bn, ".my.cnf") ||
+        strstr(bn, ".s3cfg") || strstr(bn, "id_rsa") ||
+        strstr(bn, "id_dsa") || strstr(bn, "id_ecdsa") ||
+        strstr(bn, "id_ed25519") || strstr(bn, "authorized_keys"))
+        return 45;
     /* .pem/.key/.p8 — public cert material is LOG; the PRIVATE block
      * above already returns 80 for key material */
     if (strstr(bn, ".pem") || strstr(bn, ".p8") ||

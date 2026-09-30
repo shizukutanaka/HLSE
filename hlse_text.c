@@ -1870,6 +1870,12 @@ static const char *FAKE_ALERT_WORDS[] = {
      * own offers 'tax relief'); 'cash flip'/'migrate your wallet'
      * are the Instagram money-flip and drainer-migration lures   */
     "advance fee", "irs tax relief", "cash flip", "migrate your wallet",
+    /* robocall scam signatures — 'cardholder services' is the
+     * FTC-documented Rachel-from-Cardholder-Services opener;
+     * 'settle your debt(s)'/'repair your credit'/'credit score
+     * dropped' are the debt-relief and credit-repair families  */
+    "cardholder services", "settle your debt", "repair your credit",
+    "credit score dropped",
     "process your refund", "claim your refund", "entitled to a refund",
     "microsoft has detected", "windows has detected",
     "apple has detected", "your icloud has been",

@@ -920,6 +920,51 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "/ru") || ci_contains(text, "/rl") ||
                     ci_contains(text, "/xml"))) {
             what = "schtasks privileged task creation (persistence)";
+        /* ntdsutil snapshot/ifm extracts ntds.dit — the domain
+         * controller credential dump (the single highest-value
+         * Windows LOLBin); pubprn/printui proxy-execute remote
+         * scriptlets/driver DLLs, verclsid runs an arbitrary COM
+         * CLSID, runonce /alternateshellstartup swaps the shell,
+         * settingsynchost -load* embeds an executable payload   */
+        } else if (ci_contains(text, "ntdsutil") &&
+                   (ci_contains(text, "snapshot") || ci_contains(text, "ifm") ||
+                    ci_contains(text, "create full") ||
+                    ci_contains(text, "install from media") ||
+                    ci_contains(text, "ac i ntds"))) {
+            what = "ntdsutil ntds.dit extraction (credential dump)";
+        } else if (ci_contains(text, "pubprn") &&
+                   (ci_contains(text, "script:") || ci_contains(text, "http") ||
+                    ci_contains(text, "\\\\"))) {
+            what = "pubprn remote-script proxy execution (LOLBin)";
+        } else if (ci_contains(text, "printui") &&
+                   (ci_contains(text, "\\\\") || ci_contains(text, "http") ||
+                    ci_contains(text, "/u"))) {
+            what = "printui remote-driver DLL load (LOLBin)";
+        } else if (ci_contains(text, "verclsid") &&
+                   ci_contains(text, "/s")) {
+            what = "verclsid arbitrary CLSID execution (LOLBin)";
+        } else if (ci_contains(text, "runonce") &&
+                   ci_contains(text, "alternateshellstartup")) {
+            what = "runonce alternate-shell substitution (persistence)";
+        } else if (ci_contains(text, "settingsynchost") &&
+                   ci_contains(text, "-load")) {
+            what = "settingsynchost embedded payload load (LOLBin)";
+        /* sc create/config with binpath is the canonical service
+         * persistence form; control + .cpl loads an arbitrary
+         * Control Panel applet; findstr /v "" prints every line —
+         * a whole-file read primitive hidden inside a grep      */
+        } else if (ci_contains(text, "sc create") &&
+                   (ci_contains(text, "binpath") || ci_contains(text, "obj"))) {
+            what = "sc service creation (persistence primitive)";
+        } else if (ci_contains(text, "sc config") &&
+                   (ci_contains(text, "binpath") || ci_contains(text, "obj"))) {
+            what = "sc service reconfig (persistence primitive)";
+        } else if (ci_contains(text, "control") &&
+                   ci_contains(text, ".cpl")) {
+            what = "control applet load (.cpl payload)";
+        } else if (ci_contains(text, "findstr") &&
+                   ci_contains(text, "\"\"")) {
+            what = "findstr whole-file read primitive (LOLBin)";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
