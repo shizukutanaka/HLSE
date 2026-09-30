@@ -1708,7 +1708,7 @@ detect_idn_homograph(const ParsedUrl *u, Verdict *v) {
 static const char *const URL_WRAPPER_SCHEMES[] = {
     "jar:", "blob:", "view-source:", "filesystem:",
     "ms-appx:", "ms-appx-web:", "chrome:", "about:",
-    "moz-extension:", "chrome-extension:",
+    "moz-extension:", "chrome-extension:", "safari-extension:",
     /* Chromium-derived browser-internal schemes — same class as
      * chrome:/about: (internal page / extension surface); previously
      * chrome: alone flagged while its siblings fell through to OK   */
@@ -1950,7 +1950,7 @@ static const char *const URL_PAYMENT_SCHEMES[] = {
      * walletconnect: hand a WalletConnect session URI to a wallet
      * app — the literal drainer pairing primitive               */
     "solana:", "bitcoincash:", "ripple:", "xrpl:", "stellar:",
-    "cardano:", "dash:", "zcash:", "eip681:",
+    "cardano:", "dash:", "zcash:", "eip681:", "samsungpay:",
     "wc:", "walletconnect:", NULL
 };
 
@@ -2963,6 +2963,7 @@ hlse_scan(const char *input) {
         strncmp(input, "about:", 6) == 0 ||
         strncmp(input, "moz-extension:", 14) == 0 ||
         strncmp(input, "chrome-extension:", 17) == 0 ||
+        strncmp(input, "safari-extension:", 17) == 0 ||
         strncmp(input, "edge:", 5) == 0 ||
         strncmp(input, "opera:", 6) == 0 ||
         strncmp(input, "brave:", 6) == 0 ||

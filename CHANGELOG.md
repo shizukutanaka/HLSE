@@ -77,6 +77,12 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **`safari-extension:` + `samsungpay:`** (`hlse_core.c`): the
+  extension-resource sibling joined the wrapper table AND the
+  is-url-like predicate (the table alone wasn't consulted for
+  `x://y` operands — both sites must carry new schemes);
+  `samsungpay:` joins the payment table (+40).
+
 - **DB/broker connection-string schemes** (`hlse_core.c`): +30
   fetch class (BLOCK 70 with embedded `user:pass@`) — postgres/
   postgresql/postgres+SQLAlchemy, mysql, mariadb, mongodb(+srv),

@@ -11671,6 +11671,12 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-214: safari-extension + samsungpay ──────────────────────
+check_url_hit 'safari-extension://abc/x' 'LOG\|ALERT\|BLOCK\|ISOLATE' "url: safari-extension flagged"
+check_url_hit 'safari-extension://abc/https://evil.example/x' 'ALERT\|BLOCK\|ISOLATE' "url: safari-extension inner URL flagged"
+check_url_hit 'samsungpay://x' 'ALERT\|BLOCK\|ISOLATE' "url: samsungpay flagged"
+check_url_hit 'https://samsung.com' 'OK' "url FP guard: https samsung clean"
+
 # ── cycle-213: DB/broker connection-string schemes ────────────────
 for u in 'postgres://u:p@x' 'postgresql://u:p@x' 'postgres+psycopg2://u:p@x' 'mysql://u:p@x' 'mongodb+srv://u:p@x' 'redis://u:p@x' 'amqp://u:p@x' 'kafka://x' 'grpc://x' 'smtp://x'; do
     check_url_hit "$u" 'LOG\|ALERT\|BLOCK\|ISOLATE' "url: $u flagged"
