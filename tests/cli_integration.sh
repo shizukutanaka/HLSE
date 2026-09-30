@@ -11671,6 +11671,13 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-213: DB/broker connection-string schemes ────────────────
+for u in 'postgres://u:p@x' 'postgresql://u:p@x' 'postgres+psycopg2://u:p@x' 'mysql://u:p@x' 'mongodb+srv://u:p@x' 'redis://u:p@x' 'amqp://u:p@x' 'kafka://x' 'grpc://x' 'smtp://x'; do
+    check_url_hit "$u" 'LOG\|ALERT\|BLOCK\|ISOLATE' "url: $u flagged"
+done
+check_url_hit 'postgres://u:p@x' 'BLOCK' "url: credentialed postgres is BLOCK"
+check_url_hit 'postgres.evil.com/x' 'OK' "url FP guard: postgres domain clean"
+
 # ── cycle-212: crypto payment + wallet deep-link schemes ──────────
 for u in 'solana:abc?amount=1' 'bitcoincash:qp2q' 'eip681:0xabc?value=1' 'wc:abc@2?relay-protocol=x' 'metamask://wc' 'phantom://x'; do
     check_url_hit "$u" 'LOG\|ALERT\|BLOCK\|ISOLATE' "url: $u flagged"

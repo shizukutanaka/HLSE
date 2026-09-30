@@ -77,6 +77,14 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **DB/broker connection-string schemes** (`hlse_core.c`): +30
+  fetch class (BLOCK 70 with embedded `user:pass@`) — postgres/
+  postgresql/postgres+SQLAlchemy, mysql, mariadb, mongodb(+srv),
+  redis/rediss, amqp/amqps, couchdb, cassandra, neo4j, bolt,
+  influxdb, clickhouse, elasticsearch, opensearch, etcd,
+  zookeeper/zk, kafka, nats, grpc(s), smtp. These URIs routinely
+  embed credentials — the leak channel was uncovered.
+
 - **Crypto payment + wallet deep-link schemes** (`hlse_core.c`):
   payment table (+40) gains `solana:`, `bitcoincash:`, `ripple:`,
   `xrpl:`, `stellar:`, `cardano:`, `dash:`, `zcash:`, `eip681:`,

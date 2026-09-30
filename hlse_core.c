@@ -1739,6 +1739,16 @@ static const char *const URL_LEGACY_SCHEMES[] = {
      * are real IoT fetch/messaging protocols; obex: is Bluetooth
      * object push; snmp: launches a network-management handler    */
     "coap:", "coaps:", "mqtt:", "obex:", "snmp:",
+    /* DB/broker connection-string schemes — these URIs routinely
+     * embed user:pass credentials; a leaked or pasted one is both
+     * a credential exposure and a remote-endpoint hand-off.
+     * 'postgres+'/'mongodb+' catch the SQLAlchemy dialect forms    */
+    "postgres:", "postgresql:", "postgres+", "mysql:", "mariadb:",
+    "mongodb:", "mongodb+",
+    "redis:", "rediss:", "amqp:", "amqps:", "couchdb:",
+    "cassandra:", "neo4j:", "bolt:", "influxdb:", "clickhouse:",
+    "elasticsearch:", "opensearch:", "etcd:", "zookeeper:", "zk:",
+    "kafka:", "nats:", "grpc:", "grpcs:", "smtp:",
     /* Identifier-resolution handlers — acct: (RFC 7565 account
      * lookups) and doi: (resolver fetch) can launch external
      * resolution clients                                       */
