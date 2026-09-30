@@ -11671,6 +11671,19 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-215: ms-* handler launchers + .ica + JP delivery phrasing ─
+for s in 'ms-onenote:x' 'ms-outlook:x' 'mso-offcrypto:x' 'ms-remotedesktop:x' 'ms-rd:x' 'ms-remotedesktop-launchrcc:x'; do
+    check_url_hit "$s" 'LOG\|ALERT\|BLOCK\|ISOLATE' "url: $s flagged"
+done
+check_url_hit 'ms-onenote:http://evil.example/x' 'ALERT\|BLOCK\|ISOLATE' "url: ms-onenote inner URL flagged"
+check_url_hit 'https://outlook.office.com' 'OK' "url FP guard: https outlook clean"
+check "file: .ica carrier flagged" "$(printf 'bad' > /tmp/hlse215.ica && ./hlse_core file /tmp/hlse215.ica 2>&1 | grep -cE 'LOG|ALERT|BLOCK|ISOLATE')" "1"
+check_text_hit 'お届けにあがりましたがご不在' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: JP missed-delivery phrasing flagged"
+check_text_hit 'ご不在のためお届けできませんでした' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: JP delivery-failed phrasing flagged"
+./hlse_core text '寿司の持ち帰りを予約します' 2>&1 | grep -q '^OK' \
+    && check "text FP guard: takeout mochikaeri clean" "0" "0" \
+    || check "text FP guard: takeout mochikaeri clean" "0" "1"
+
 # ── cycle-214: safari-extension + samsungpay ──────────────────────
 check_url_hit 'safari-extension://abc/x' 'LOG\|ALERT\|BLOCK\|ISOLATE' "url: safari-extension flagged"
 check_url_hit 'safari-extension://abc/https://evil.example/x' 'ALERT\|BLOCK\|ISOLATE' "url: safari-extension inner URL flagged"

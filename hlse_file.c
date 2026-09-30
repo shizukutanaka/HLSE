@@ -352,6 +352,9 @@ static const char *EXECUTABLE_EXTS[] = {
     ".sct", ".wsc",
     /* Remote Desktop connection file — can auto-connect to attacker RDP */
     ".rdp",
+    /* Citrix ICA connection file — .rdp's sibling; launches a remote
+     * session to an attacker-controlled published app/desktop       */
+    ".ica",
     /* Windows Task Scheduler job (XML form: .job used in older style) */
     ".job",
     /* OneNote embedded-attachment execution (top phishing vector 2022-2023) */

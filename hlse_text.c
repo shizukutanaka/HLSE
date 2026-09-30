@@ -2359,6 +2359,9 @@ static const char *CALLBACK_PHISH_WORDS[] = {
      * Post smishing families) */
     "不在配達", "配送料", "配送料金", "配達に失敗", "お荷物をお届け",
     "荷物の再配達", "配達先の確認", "住所を確認", "不在連絡票",
+    /* courier-exclusive missed-delivery phrasing — canonical smishing
+     * opening lines (a real courier notice never demands a link)    */
+    "お届けにあがり", "ご不在のためお届け",
     /* Japanese smishing lures documented by the National Police Agency /
      * Anti-Phishing Council: ETC toll impersonation (the top-volume JP
      * smishing family), My Number card expiry, e-Tax refund bait, and

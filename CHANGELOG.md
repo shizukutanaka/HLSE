@@ -77,6 +77,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **ms-* launcher schemes + `.ica` + JP delivery phrasing**
+  (`hlse_core.c`, `hlse_file.c`, `hlse_text.c`): `ms-onenote:` (the
+  OneNote lure family's dedicated launcher), `ms-outlook:`,
+  `mso-offcrypto:` and the `ms-remotedesktop:`/`ms-rd:`/
+  `ms-remotedesktop-launchrcc:` RDP-client family join the handler
+  table (+35); `.ica` (Citrix connection file — `.rdp`'s sibling)
+  extension-flagged +30; `お届けにあがり`/`ご不在のためお届け`
+  courier-exclusive missed-delivery phrasing joins the JP smishing
+  array (持ち帰り takeout prose stays OK).
+
 - **`safari-extension:` + `samsungpay:`** (`hlse_core.c`): the
   extension-resource sibling joined the wrapper table AND the
   is-url-like predicate (the table alone wasn't consulted for
