@@ -1852,6 +1852,18 @@ static const char *FAKE_ALERT_WORDS[] = {
     /* refund-scam script signature: 'we accidentally refunded too
      * much — send back the difference' (fake-bank-screen con)     */
     "accidentally refunded",
+    /* Medicare impersonation — 'new medicare card'/'verify your
+     * medicare number' harvests SSN-adjacent identifiers from
+     * US seniors (documented robocall + mail family)             */
+    "new medicare card", "medicare number",
+    /* recovery-scam services — 'recover your losses' / 'funds
+     * recovery' is the follow-on con after any crypto or
+     * investment loss                                             */
+    "funds recovery", "recover your losses",
+    /* student-loan forgiveness — the 'application/processing'
+     * sibling of the already-flagged approval lures (post-2021
+     * scam family, NPA/FTC documented)                            */
+    "forgiveness application", "forgiveness processing fee",
     "process your refund", "claim your refund", "entitled to a refund",
     "microsoft has detected", "windows has detected",
     "apple has detected", "your icloud has been",

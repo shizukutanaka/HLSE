@@ -77,6 +77,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **DevOps-secret formats + TNEF/emlx carriers + medicare/recovery
+  vocab** (`hlse_secrets.c`, `hlse_file.c`, `hlse_text.c`): `st.`
+  (Infisical service token — `st.<uuid>.<key>`), `MC5.` (Prismic),
+  `FlyV1 fm2_` (Fly.io), `cu_` (Checkly), `aio_` (Adafruit IO),
+  `motherduck_`, `dsp_` (DeepSource); `.emlx` (Apple Mail sibling
+  of `.eml`) and `.tnef`/`winmail.dat` (TNEF blobs embed whole
+  attachments, executables included, opaque to gateway scanners)
+  message carriers +30; text gains Medicare impersonation
+  (`new medicare card`, `medicare number`), recovery-scam services
+  (`funds recovery`, `recover your losses`) and
+  student-loan `forgiveness application`/`forgiveness processing
+  fee` vocab — benign medicare/recovery prose stays OK.
+
 - **Data-platform secrets + credential/mail/systemd stores**
   (`hlse_secrets.c`, `hlse_file.c`): `pcsk_` (Pinecone), `xau_`
   (Xata), `esecret_` (Anyscale), `xaat-` (Axiom), `AQVN` (Yandex

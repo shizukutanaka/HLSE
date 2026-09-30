@@ -11671,6 +11671,45 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-218: devops secrets + TNEF/emlx carriers + medicare/recovery ─
+./hlse_core secret -- 'k: st.'"12345678-1234-1234-1234-1234567890ab.1234567890abcdef1234567890abcdef12345678"'' 2>&1 | grep -q 'Infisical' \
+    && check "secret: st. Infisical flagged" "0" "0" \
+    || check "secret: st. Infisical flagged" "0" "1"
+./hlse_core secret -- 'k: MC5.'"abcdefghijklmnopqrstuvwxyz1234567890"'' 2>&1 | grep -q 'Prismic' \
+    && check "secret: MC5. Prismic flagged" "0" "0" \
+    || check "secret: MC5. Prismic flagged" "0" "1"
+./hlse_core secret -- 'k: cu_'"1234567890abcdef1234567890abcdef12345678"'' 2>&1 | grep -q 'Checkly' \
+    && check "secret: cu_ Checkly flagged" "0" "0" \
+    || check "secret: cu_ Checkly flagged" "0" "1"
+./hlse_core secret -- 'k: aio_'"1234567890abcdefghijklmnopqrstuvwxyzABCD"'' 2>&1 | grep -q 'Adafruit' \
+    && check "secret: aio_ Adafruit flagged" "0" "0" \
+    || check "secret: aio_ Adafruit flagged" "0" "1"
+./hlse_core secret -- 'k: motherduck_'"abcdefghijklmnopqrstuvwxyz1234567890abcdefgh"'' 2>&1 | grep -q 'MotherDuck' \
+    && check "secret: motherduck_ flagged" "0" "0" \
+    || check "secret: motherduck_ flagged" "0" "1"
+./hlse_core secret 'the st. prefix alone' 2>&1 | grep -q "no credentials" \
+    && check "secret FP guard: st. prose clean" "0" "0" \
+    || check "secret FP guard: st. prose clean" "0" "1"
+for e in emlx tnef; do
+    printf 'bad' > /tmp/hlse218.$e
+    ./hlse_core file /tmp/hlse218.$e 2>&1 | grep -qE 'LOG|ALERT|BLOCK|ISOLATE' \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+printf 'x' > /tmp/winmail.dat
+./hlse_core file /tmp/winmail.dat 2>&1 | grep -qE 'LOG|ALERT|BLOCK|ISOLATE' \
+    && check "file: winmail.dat flagged" "0" "0" \
+    || check "file: winmail.dat flagged" "0" "1"
+check_text_hit 'verify your medicare number today' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: medicare number flagged"
+check_text_hit 'funds recovery service llc' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: funds recovery flagged"
+check_text_hit 'we can recover your losses' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: recover your losses flagged"
+./hlse_core text 'recovery room after surgery' 2>&1 | grep -q '^OK' \
+    && check "text FP guard: recovery room clean" "0" "0" \
+    || check "text FP guard: recovery room clean" "0" "1"
+./hlse_core text 'regular medicare appointment' 2>&1 | grep -q '^OK' \
+    && check "text FP guard: medicare appointment clean" "0" "0" \
+    || check "text FP guard: medicare appointment clean" "0" "1"
+
 # ── cycle-217: data-platform secrets + credential/mail/systemd stores ─
 ./hlse_core secret -- 'k: pcsk_'"abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQR"'' 2>&1 | grep -q 'Pinecone' \
     && check "secret: pcsk_ Pinecone flagged" "0" "0" \

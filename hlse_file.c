@@ -480,6 +480,10 @@ static const char *EXECUTABLE_EXTS[] = {
      * template, .oft a custom form with script handlers, .nws the
      * OE news-message sibling of .eml                              */
     ".otm", ".oft", ".nws",
+    /* .emlx (Apple Mail message — .eml's sibling) and .tnef
+     * (Transport Neutral Encapsulation — winmail.dat embeds whole
+     * attachments, executables included, inside a single blob)   */
+    ".emlx", ".tnef",
     /* S/MIME message carriers — .p7m is an enveloped (encrypted)
      * message with full attachments inside, .p7s a detached
      * signature that gives a lure a 'signed' veneer              */
@@ -3451,6 +3455,10 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * above already returns 80 for key material */
     if (strstr(bn, ".pem") || strstr(bn, ".p8") ||
         strstr(bn, ".key"))
+        return 30;
+    /* winmail.dat — TNEF attachment wrapper ships embedded files
+     * (incl. executables) opaque to gateway scanners           */
+    if (strcmp(bn, "winmail.dat") == 0)
         return 30;
     if (strcmp(bn, "cookies.txt") == 0 || strcmp(bn, ".mozilla") == 0) {
         if (strstr(low, "true") || strstr(low, "false") ||

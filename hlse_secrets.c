@@ -457,6 +457,17 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "AQVN",          4,  36, is_alnum_or_dash,   "Yandex OAuth Token",    80 },
     { "pdl_live_",     9,  30, is_alnum_or_dash,   "Paddle API Key (live)", 85 },
     { "pdl_sbox_",     9,  30, is_alnum_or_dash,   "Paddle API Key (sandbox)", 80 },
+    /* Infisical service token — st.<uuid>.<key> (b64url-dot tail) */
+    { "st.",           3,  60, is_b64url_dot,      "Infisical Service Token", 85 },
+    /* Prismic permanent access token — MC5.<b64url> */
+    { "MC5.",          4,  30, is_b64url_dot,      "Prismic Access Token",  80 },
+    /* Fly.io token — literal 'FlyV1 fm2_' header form */
+    { "FlyV1 fm2_",   10,  40, is_b64url,          "Fly.io Deploy Token",   80 },
+    /* Checkly / Adafruit IO / MotherDuck / DeepSource */
+    { "cu_",           3,  36, is_hex_c,           "Checkly API Key",       80 },
+    { "aio_",          4,  30, is_alnum_or_dash,   "Adafruit IO Key",       80 },
+    { "motherduck_",  11,  40, is_alnum_or_dash,   "MotherDuck Token",      80 },
+    { "dsp_",          4,  36, is_alnum_or_dash,   "DeepSource API Token",  80 },
     { "api_org_",      8,  30, is_alnum_or_dash,   "Hugging Face Org Token", 80 },
     /* Dynatrace API tokens — 'dt0c01.' (v1 public token) and
      * 'dt0s16.' carry a '<id24|16>.<secret64>' dotted tail         */
