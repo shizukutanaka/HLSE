@@ -60,7 +60,11 @@ MANDIR  := $(DESTDIR)$(PREFIX)/share/man/man1
 DATADIR := $(DESTDIR)$(PREFIX)/share/hlse
 
 # Source files
+# CORE_SRC is the library/engine set (libhlse.so, hlse-server, unit tests, fuzzers).
+# CLI_SRC is the command-line front end and is linked into the hlse_core
+# executables ONLY, so the library carries no CLI code and needs no guard.
 CORE_SRC  := hlse_core.c hlse_text.c hlse_protect.c hlse_secrets.c hlse_supply.c hlse_file.c hlse_audit.c hlse_util.c hlse_alert.c
+CLI_SRC   := hlse_cli.c hlse_selftest.c
 TEST_SRC  := tests/hlse_property_tests.c
 
 # Outputs
@@ -118,11 +122,11 @@ all: $(BINARY) $(SHARED) $(SERVER_BIN)
 cli: $(BINARY)         ## build CLI binary only
 lib: $(SHARED)         ## build shared library only
 
-$(BINARY): $(CORE_SRC) hlse_text.h hlse_core.h hlse_protect.h
-	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE -o $@ $(CORE_SRC) $(PIE_LDFLAGS) -I. -lm
+$(BINARY): $(CORE_SRC) $(CLI_SRC) hlse_core_internal.h hlse_cli.h hlse_text.h hlse_core.h hlse_protect.h
+	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE -o $@ $(CORE_SRC) $(CLI_SRC) $(PIE_LDFLAGS) -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
-$(SHARED): $(CORE_SRC) hlse_text.h hlse_core.h hlse_protect.h
+$(SHARED): $(CORE_SRC) hlse_core_internal.h hlse_text.h hlse_core.h hlse_protect.h
 	$(CC) $(CFLAGS) -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -fPIC -shared \
 		-o $@ $(CORE_SRC) -I. -lm
 	@printf '  %-20s %s\n' "CC (shared)" "$@"
@@ -261,7 +265,7 @@ $(EXT_BIN): tests/hlse_corpus_extended.c hlse_core.c hlse_text.c hlse_text.h
 coverage:
 	@rm -f *.gcda *.gcno *.gcov
 	$(CC) -O0 -g --coverage -Wall -Wextra -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE \
-		-o hlse_core_cov $(CORE_SRC) -I. -lm
+		-o hlse_core_cov $(CORE_SRC) $(CLI_SRC) -I. -lm
 	@echo "Running comprehensive coverage exercises..."
 	@# Core CLI paths
 	@./hlse_core_cov                 > /dev/null 2>&1 || true
@@ -348,7 +352,7 @@ coverage:
 	@gcov hlse_core_cov-hlse_core hlse_core_cov-hlse_text \
 		hlse_core_cov-hlse_protect hlse_core_cov-hlse_secrets \
 		hlse_core_cov-hlse_supply hlse_core_cov-hlse_file \
-		hlse_core_cov-hlse_audit 2>&1 \
+		hlse_core_cov-hlse_audit hlse_core_cov-hlse_cli hlse_core_cov-hlse_selftest 2>&1 \
 		| grep -E "File|Lines executed"
 	@echo "── coverage including unit-test exercise of internal functions ──"
 	@gcov hlse_cov_secrets-hlse_secrets hlse_cov_protect-hlse_protect \
@@ -394,7 +398,7 @@ fuzz-asan: $(FUZZ_ASAN) $(FUZZ_SECRETS_ASAN) $(FUZZ_SUPPLY_ASAN) $(FUZZ_FILE_ASA
 # This is the gate that keeps -Wpedantic -Wshadow -Wconversion clean.
 check-warnings:
 	@echo "Checking strict warnings (-Wpedantic -Wshadow -Wconversion)..."
-	@fail=0; for f in $(CORE_SRC); do \
+	@fail=0; for f in $(CORE_SRC) $(CLI_SRC); do \
 		w=$$($(CC) $(CFLAGS_STRICT) -c $$f -I. -o /dev/null 2>&1 | grep -c "warning:"); \
 		if [ "$$w" -ne 0 ]; then \
 			echo "  FAIL: $$f has $$w warning(s)"; \
@@ -426,7 +430,7 @@ asan-test:
 	@echo "Building with AddressSanitizer + UBSan..."
 	$(CC) -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer \
 		-D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE \
-		-o hlse_core_asan $(CORE_SRC) -I. -lm
+		-o hlse_core_asan $(CORE_SRC) $(CLI_SRC) -I. -lm
 	@echo "Running self-test under sanitizers..."
 	@./hlse_core_asan --self-test
 	@./hlse_core_asan --benchmark > /dev/null
@@ -514,8 +518,8 @@ privacy-check: $(BINARY)   ## prove zero network calls (needs strace)
 
 static: hlse_core_static
 
-hlse_core_static: $(CORE_SRC) hlse_text.h hlse_core.h hlse_protect.h
-	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE $(STATIC_LDFLAGS) -o $@ $(CORE_SRC) -I. -lm
+hlse_core_static: $(CORE_SRC) $(CLI_SRC) hlse_core_internal.h hlse_text.h hlse_core.h hlse_protect.h
+	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE $(STATIC_LDFLAGS) -o $@ $(CORE_SRC) $(CLI_SRC) -I. -lm
 	strip $@
 	@printf '  %-20s %s (%s bytes)\n' "CC (static)" "$@" "$$(wc -c < $@)"
 

@@ -613,6 +613,15 @@ static const char *GROOMING_WORDS[] = {
     "投資してあげる", "必ず儲かる", "絶対に儲かる",
     "取引プラットフォーム", "出金手数料",
     "VIP投資グループ", "裁定取引",
+    /* SNS型投資詐欺 / ロマンス詐欺 (National Police Agency's fastest-growing
+     * fraud category): a "teacher" recommends stocks inside an invite-only
+     * LINE group and promises guaranteed returns. Phrases are chosen to be
+     * specific to the pitch; "元本保証" and "登録料" are deliberately NOT here
+     * because they occur in ordinary bank and service text. */
+    "必ず儲かります", "絶対に儲かります", "確実に儲かります",
+    "必ず儲かる銘柄", "先生の推奨", "投資グループに",
+    "LINEグループに無料", "無料でご招待", "限定グループ",
+    "月利20%", "月利30%", "月利50%", "月利100%",
     NULL
 };
 
