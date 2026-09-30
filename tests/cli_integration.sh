@@ -11671,6 +11671,38 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-220: JNDI lookup schemes + ransomware-prep LOLBin wave ─────
+for sch in jndi rmi iiop corba dns nis nds nio t3 t3s; do
+    ./hlse_core "$sch://evil.example/x" 2>&1 | grep -q 'Cleartext/legacy' \
+        && check "url: $sch:// JNDI-class flagged" "0" "0" \
+        || check "url: $sch:// JNDI-class flagged" "0" "1"
+done
+check_url_hit 'corbaloc::evil.example/x' 'LOG\|ALERT\|BLOCK\|ISOLATE' "url: corbaloc flagged"
+check_url_hit 'corbaname::evil.example/x' 'LOG\|ALERT\|BLOCK\|ISOLATE' "url: corbaname flagged"
+for c in \
+    'icacls c:\data /deny everyone:(f)' \
+    'takeown /f c:\data /r /d y' \
+    'cipher /w:c:\temp' \
+    'fsutil usn deletejournal /n c:' \
+    'manage-bde -off c:' \
+    'diskpart /s remove.txt' \
+    'secedit /configure /db x' \
+    'rasphone -d vpnentry' \
+    'schtasks /create /tn x /ru system /tr y /sc minute' \
+    'schtasks /create /xml task.xml'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'icacls c:\data /grant everyone:f' 'takeown /f file.txt' \
+         'cipher /e secret.txt' 'fsutil file createnew x 1' \
+         'manage-bde -status' 'diskpart list disk' 'secedit /analyze' \
+         'schtasks /create /tn "system report" /tr y /sc daily'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-219: ransomware-prep LOLBins + 419/flip/drainer vocab ──────
 for c in \
     'bcdedit /set {default} recoveryenabled no' \

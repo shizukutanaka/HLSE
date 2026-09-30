@@ -882,6 +882,44 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "certoc") &&
                    ci_contains(text, "-")) {
             what = "certoc certificate-store DLL loading (LOLBin)";
+        /* Ransomware pre-encryption prep — icacls /deny locks admins
+         * out before encryption, takeown /r takes recursive ownership,
+         * cipher /w wipes free space, fsutil usn deletejournal and
+         * wevtutil destroy the forensic record, manage-bde -off kills
+         * BitLocker, diskpart /s runs scripted volume ops          */
+        } else if (ci_contains(text, "icacls") &&
+                   ci_contains(text, "/deny")) {
+            what = "icacls deny-ACL lockout (ransomware prep)";
+        } else if (ci_contains(text, "takeown") &&
+                   (ci_contains(text, "/r") || ci_contains(text, " /d"))) {
+            what = "takeown recursive ownership grab (ransomware prep)";
+        } else if (ci_contains(text, "cipher") &&
+                   ci_contains(text, "/w")) {
+            what = "cipher free-space secure wipe (anti-forensics)";
+        } else if (ci_contains(text, "fsutil") &&
+                   ci_contains(text, "usn")) {
+            what = "fsutil USN journal wipe (anti-forensics)";
+        } else if (ci_contains(text, "manage-bde") &&
+                   (ci_contains(text, "-off") || ci_contains(text, "-disable") ||
+                    ci_contains(text, "-autounlock"))) {
+            what = "manage-bde BitLocker disable (ransomware prep)";
+        } else if (ci_contains(text, "diskpart") &&
+                   ci_contains(text, "/s")) {
+            what = "diskpart scripted volume operation (wiper class)";
+        } else if (ci_contains(text, "secedit") &&
+                   (ci_contains(text, "/configure") || ci_contains(text, "/import"))) {
+            what = "secedit policy import (host-policy weakening)";
+        } else if (ci_contains(text, "rasphone") &&
+                   (ci_contains(text, "-d") || ci_contains(text, ".pbk"))) {
+            what = "rasphone phonebook dial-out (LOLBin)";
+        /* schtasks /create is ubiquitous legitimate admin — only the
+         * privilege-escalated forms (/ru SYSTEM, /rl HIGHEST, /xml
+         * import) are the documented attacker-persistence shape   */
+        } else if (ci_contains(text, "schtasks") &&
+                   ci_contains(text, "/create") &&
+                   (ci_contains(text, "/ru") || ci_contains(text, "/rl") ||
+                    ci_contains(text, "/xml"))) {
+            what = "schtasks privileged task creation (persistence)";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

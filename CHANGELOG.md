@@ -77,6 +77,21 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **JNDI remote-lookup schemes + ransomware-prep LOLBin wave**
+  (`hlse_core.c`, `hlse_supply.c`): `jndi:`/`rmi:`/`iiop:`/
+  `corba:`/`corbaloc:`/`corbaname:`/`dns:`/`nis:`/`nds:`/`nio:`/
+  `t3:`/`t3s:` join the legacy-transport table (+30) — the lookup
+  channels a `${jndi:X://attacker}` Log4Shell payload resolves;
+  the text-level `${jndi:…}` form was already BLOCKed, the bare
+  URI operand now flags too. Paste adds +45 arg-gated entries for
+  the ransomware pre-encryption set: `icacls /deny` (admin
+  lockout), `takeown`+/r|/d, `cipher /w` (free-space wipe),
+  `fsutil`+usn (USN journal wipe), `manage-bde`+-off|-disable
+  (BitLocker kill), `diskpart`+/s (scripted volume ops, wiper
+  class), `secedit`+/configure|/import, `rasphone`+-d|.pbk, and
+  `schtasks`+/create only when /ru|/rl|/xml is present (bare
+  task creation stays OK).
+
 - **Ransomware-prep LOLBins + 419/flip/drainer vocab**
   (`hlse_supply.c`, `hlse_text.c`): `bcdedit` (/set, safeboot,
   recoveryenabled — boot/recovery tampering), `wevtutil cl`/

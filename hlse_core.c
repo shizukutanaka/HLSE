@@ -1775,7 +1775,15 @@ static const char *const URL_LEGACY_SCHEMES[] = {
     /* generic transport references — tcp:/udp:/sctp: name raw
      * transport endpoints; like ws: they mark a non-HTTP fetch
      * destination even though nothing dispatches them            */
-    "tcp:", "udp:", "sctp:", NULL
+    "tcp:", "udp:", "sctp:",
+    /* JNDI remote-lookup protocol set — jndi:/rmi:/iiop:/corba:/
+     * corbaloc:/corbaname:/dns:/nis:/nds: are the lookup channels
+     * a Log4Shell-style ${jndi:X://attacker} payload resolves;
+     * t3:/t3s: is WebLogic RMI (T3), nio: the nio provider. The
+     * text-level ${jndi:…} payload is already BLOCKed; these flag
+     * the bare URI operand itself                             */
+    "jndi:", "rmi:", "iiop:", "corba:", "corbaloc:", "corbaname:",
+    "dns:", "nis:", "nds:", "t3:", "t3s:", "nio:", NULL
 };
 static const char *const URL_FETCH_SCHEMES[] = {
     "ssh:", "sftp:", "git:", "svn:", "hg:", "wss:", "ws:", NULL
