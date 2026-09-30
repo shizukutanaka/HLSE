@@ -444,6 +444,11 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "pplx-",         5,  20, is_alnum_or_dash,   "Perplexity API Key",    85 },
     { "xai-",          4,  20, is_alnum_or_dash,   "xAI (Grok) API Key",    85 },
     { "r8_",           3,  30, is_alnum_or_dash,   "Replicate API Token",   85 },
+    /* CI/CD + experiment-tracking keys */
+    { "bkua_",         5,  40, is_alnum_or_dash,   "Buildkite User API Token", 85 },
+    { "wandb_v1_",     9,  30, is_alnum_or_dash,   "Weights & Biases API Key", 80 },
+    /* OpenShift OAuth access token — sha256~<43> */
+    { "sha256~",       7,  40, is_alnum_or_dash,   "OpenShift OAuth Token", 80 },
     { "api_org_",      8,  30, is_alnum_or_dash,   "Hugging Face Org Token", 80 },
     /* Dynatrace API tokens — 'dt0c01.' (v1 public token) and
      * 'dt0s16.' carry a '<id24|16>.<secret64>' dotted tail         */

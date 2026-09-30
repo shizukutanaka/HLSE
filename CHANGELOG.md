@@ -77,6 +77,19 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **CI/CD-secret formats + paste LOLBin wave-2 + refund/Quick Assist
+  vocab** (`hlse_secrets.c`, `hlse_supply.c`, `hlse_text.c`):
+  `bkua_` (Buildkite user token), `wandb_v1_` (Weights & Biases),
+  `sha256~` (OpenShift OAuth token); LOLBin detections for
+  `mpcmdrun -DownloadFile`, `odbcconf /f|.rsp`, `ie4uinit -`/
+  `-BaseSettings`, `ieadvpack /r`, `rasautou -f`, `mavinject`+dll,
+  `expand`/`extrac32`/`diantz`/`extexport`+remote, `SyncAppvPublishingServer`,
+  `wbadmin`+UNC, `finger`+`@`, `regini`+`.ini` — all arg-gated
+  (bare invocations and prose mentions stay OK); text gains
+  `quick assist code`/`open quick assist`/`use quick assist`
+  (Microsoft's spaced product name — top 2024-25 tech-support lure)
+  and `accidentally refunded` (overpayment-refund script signature).
+
 - **ms-* launcher schemes + `.ica` + JP delivery phrasing**
   (`hlse_core.c`, `hlse_file.c`, `hlse_text.c`): `ms-onenote:` (the
   OneNote lure family's dedicated launcher), `ms-outlook:`,

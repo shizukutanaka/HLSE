@@ -801,6 +801,48 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "--registry") ||
                     ci_contains(text, "--source "))) {
             what = "alt-index package install (dependency-confusion channel)";
+        } else if (ci_contains(text, "mpcmdrun") &&
+                   (ci_contains(text, "-downloadfile") ||
+                    ci_contains(text, "-url"))) {
+            what = "mpcmdrun.exe file download (Defender LOLBin)";
+        } else if (ci_contains(text, "odbcconf") &&
+                   (ci_contains(text, "/f") || ci_contains(text, ".rsp") ||
+                    ci_contains(text, "regsvr"))) {
+            what = "odbcconf config-file DLL execution (LOLBin)";
+        } else if (ci_contains(text, "ie4uinit") &&
+                   (ci_contains(text, "-") || ci_contains(text, ".inf") ||
+                    ci_contains(text, "basesettings"))) {
+            what = "ie4uinit INF/settings execution (LOLBin)";
+        } else if (ci_contains(text, "ieadvpack") &&
+                   ci_contains(text, "/r")) {
+            what = "ieadvpack INF execution (LOLBin)";
+        } else if (ci_contains(text, "rasautou") &&
+                   (ci_contains(text, "-f") || ci_contains(text, ".dll"))) {
+            what = "rasautou RAS-dialer execution (LOLBin)";
+        } else if (ci_contains(text, "mavinject") &&
+                   (ci_contains(text, "injectrunning") ||
+                    ci_contains(text, ".dll"))) {
+            what = "mavinject.exe DLL injection (LOLBin)";
+        } else if ((ci_contains(text, "expand") ||
+                    ci_contains(text, "extrac32") ||
+                    ci_contains(text, "diantz") ||
+                    ci_contains(text, "extexport")) &&
+                   (ci_contains(text, "http") || ci_contains(text, "\\\\"))) {
+            what = "cabinet/extexport remote file pull (LOLBin)";
+        } else if (ci_contains(text, "syncappvpublishingserver") &&
+                   (ci_contains(text, "n;") || ci_contains(text, ";") ||
+                    ci_contains(text, "cmd") || ci_contains(text, "powershell"))) {
+            what = "SyncAppvPublishingServer sync-command execution (LOLBin)";
+        } else if (ci_contains(text, "wbadmin") &&
+                   (ci_contains(text, "-backuptarget:") ||
+                    ci_contains(text, "\\\\"))) {
+            what = "wbadmin backup exfiltration to remote share (LOLBin)";
+        } else if (ci_contains(text, "finger") &&
+                   ci_contains(text, "@")) {
+            what = "finger remote data fetch (LOLBin channel)";
+        } else if (ci_contains(text, "regini") &&
+                   (ci_contains(text, ".ini") || ci_contains(text, "http"))) {
+            what = "regini registry-script import (LOLBin)";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

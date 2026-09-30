@@ -1844,7 +1844,14 @@ static const char *FAKE_ALERT_WORDS[] = {
     "grant remote access", "allow remote access",
     "download anydesk", "install anydesk", "download teamviewer",
     "install teamviewer", "download quickassist", "run quickassist",
+    /* Microsoft's actual product name carries a space — the scam
+     * script asks the victim to open Quick Assist and read back a
+     * code (top tech-support lure 2024-25)                        */
+    "quick assist code", "open quick assist", "use quick assist",
     "you have been overcharged", "refund will be issued",
+    /* refund-scam script signature: 'we accidentally refunded too
+     * much — send back the difference' (fake-bank-screen con)     */
+    "accidentally refunded",
     "process your refund", "claim your refund", "entitled to a refund",
     "microsoft has detected", "windows has detected",
     "apple has detected", "your icloud has been",

