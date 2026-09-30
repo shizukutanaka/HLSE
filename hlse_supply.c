@@ -965,6 +965,59 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "findstr") &&
                    ci_contains(text, "\"\"")) {
             what = "findstr whole-file read primitive (LOLBin)";
+        /* LSASS memory dump — procdump/procdump64 and the
+         * comsvcs.dll MiniDump rundll32 form are THE credential-
+         * theft primitives (documented in nearly every intrusion) */
+        } else if (ci_contains(text, "procdump") &&
+                   (ci_contains(text, "lsass") || ci_contains(text, "-ma"))) {
+            what = "procdump LSASS memory dump (credential theft)";
+        } else if (ci_contains(text, "comsvcs") &&
+                   ci_contains(text, "minidump")) {
+            what = "comsvcs.dll MiniDump (LSASS credential theft)";
+        /* tsecimp -f imports a TAPI XML that launches commands;
+         * Microsoft.Workflow.Compiler compiles/executes XOML
+         * workflow payloads (both LOLBAS-listed)                 */
+        } else if (ci_contains(text, "tsecimp") &&
+                   (ci_contains(text, "-f") || ci_contains(text, ".xml"))) {
+            what = "tsecimp TAPI-XML payload execution (LOLBin)";
+        } else if (ci_contains(text, "workflow.compiler") &&
+                   (ci_contains(text, ".xoml") || ci_contains(text, ".cs") ||
+                    ci_contains(text, ".xml"))) {
+            what = "Workflow.Compiler XOML payload (LOLBin)";
+        /* pnputil -i -a installs a driver package — the BYOVD
+         * (bring-your-own-vulnerable-driver) primitive           */
+        } else if (ci_contains(text, "pnputil") &&
+                   (ci_contains(text, "-i") || ci_contains(text, "-a") ||
+                    ci_contains(text, ".inf"))) {
+            what = "pnputil driver install (BYOVD primitive)";
+        /* net user/localgroup /add plants accounts, net share x=
+         * exposes a drive, net use \\ leaks credentials to the
+         * attacker share — the persistence/lateral account set   */
+        } else if (ci_contains(text, "net user") &&
+                   ci_contains(text, "/add")) {
+            what = "net user account creation (backdoor primitive)";
+        } else if (ci_contains(text, "net localgroup") &&
+                   ci_contains(text, "/add")) {
+            what = "net localgroup admin grant (backdoor primitive)";
+        } else if (ci_contains(text, "net share") &&
+                   ci_contains(text, "=")) {
+            what = "net share drive exposure (exfil/lateral)";
+        } else if (ci_contains(text, "net use") &&
+                   ci_contains(text, "\\\\")) {
+            what = "net use remote-share mount (credential send)";
+        /* ftp -s:script executes the embedded ! commands; iexpress
+         * builds a self-extracting installer; robocopy to a UNC
+         * destination is the classic bulk-exfil channel          */
+        } else if (ci_contains(text, "ftp") &&
+                   ci_contains(text, "-s:")) {
+            what = "ftp script execution (LOLBin)";
+        } else if (ci_contains(text, "iexpress") &&
+                   (ci_contains(text, "-") || ci_contains(text, "/n") ||
+                    ci_contains(text, ".sed"))) {
+            what = "iexpress self-installer build (LOLBin)";
+        } else if (ci_contains(text, "robocopy") &&
+                   ci_contains(text, "\\\\")) {
+            what = "robocopy exfiltration to remote share (LOLBin)";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

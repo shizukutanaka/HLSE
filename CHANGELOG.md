@@ -77,6 +77,16 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **LSASS-dump + account/exfil LOLBin wave** (`hlse_supply.c`):
+  `procdump`/`procdump64`+lsass|-ma and `comsvcs`+minidump (the
+  LSASS credential-dump primitives), `tsecimp`+-f (TAPI XML
+  exec), `microsoft.workflow.compiler`+xoml|cs|xml, `pnputil`+
+  -i|-a|.inf (BYOVD driver install), `net user`/`net localgroup`
+  +/add and `net share`+= and `net use`+\\ (account/lateral set),
+  `ftp`+-s: script exec, `iexpress` self-installer build, and
+  `robocopy`+\\ remote-share exfil — all +45, arg-gated so bare
+  help/query forms stay OK.
+
 - **Credential-store filenames + ntdsutil LOLBin wave + robocall
   vocab** (`hlse_file.c`, `hlse_supply.c`, `hlse_text.c`):
   `.git-credentials`/`.my.cnf`/`.s3cfg`/`id_rsa`/`id_dsa`/

