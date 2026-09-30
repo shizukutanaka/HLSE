@@ -108,11 +108,15 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 
 ## Weaknesses / risks (what to improve — cite when you touch them)
 
-- **`hlse_core.c` is still ~9,500 lines.** `main()` was cut from 2,190 to ~415
-  lines by extracting the `cmd_*` handlers behind a dispatch table, and the
-  JSON-escape idiom is one helper (`json_field`) plus `hlse_json_escape`; but
-  the file remains the largest regression surface. `hlse_server.c` keeps its
-  own append-style escaper (`json_escape_append`) for a different buffer model.
+- **The CLI is now its own file.** `hlse_core.c` (~4,700 lines) is the detection
+  engine and public API; `hlse_cli.c` (~4,800 lines) holds `main()`, the twelve
+  `cmd_*` handlers, SARIF/baseline/`--fail-on` state and the CLI-only helpers,
+  and is linked into the `hlse_core` executables only (`CLI_SRC` in the
+  Makefile), never into `libhlse.so`, the server, unit tests or fuzzers.
+  `hlse_core_internal.h` is the only bridge (`check_url`, hidden-visibility so
+  the library's 87 exports are unchanged, plus `MAX_URL/HOST/PATH`). Both files
+  are still large; splitting the handlers further is the next step.
+  `hlse_server.c` keeps its own append-style escaper for a different buffer model.
 - **No hosted CI:** `.github/workflows/` is absent (only `FUNDING.yml`; the App
   cannot commit workflows). The build itself carries the gates that matter:
   `make check-warnings`, `make bench`, `make asan-test`, `make test`,
@@ -143,7 +147,7 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 ## Prioritized backlog
 
 **Done (do not redo):** doc numbers re-derived; the 14 failures fixed; CI YAML
-shipped under `examples/`; `main()` dispatch table; JSON-escape consolidation;
+shipped under `examples/`; `main()` dispatch table; CLI/engine file split; JSON-escape consolidation;
 slopsquat heuristic, offline structural secret validation (GitHub CRC32/base62,
 AWS account decode, JWT `alg:none`), chi-square uniformity test; CWE-150
 terminal-injection hardening; the "could not read" honesty class across
@@ -152,9 +156,9 @@ terminal-injection hardening; the "could not read" honesty class across
 download-and-execute, decode-and-execute).
 
 **P1 — maintainability / detection quality:**
-- Continue splitting `hlse_core.c` (move the `cmd_*` handlers to `hlse_cli.c`);
-  behavior-preserving, verify with byte-identical output diffs against a
-  reference binary built from `git show HEAD:<file>`.
+- Split `hlse_cli.c` further (one file per handler group); behavior-preserving,
+  verify with byte-identical output diffs against a reference binary built from
+  `git show HEAD:<file>`, run under the same `argv[0]` name.
 - Decide `hlse_gpt_verify()` wiring (above).
 - Keep checking `paste`/`text`/`url` against current threat reporting; each
   round has found real gaps (FileFix and `osascript` variants were checked and

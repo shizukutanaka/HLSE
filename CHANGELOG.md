@@ -4,6 +4,28 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Changed
+- **The CLI moved out of the engine file.** `hlse_core.c` was 9,510 lines, half
+  of it inside an `#ifndef HLSE_CORE_AS_LIB` block. That block is now
+  `hlse_cli.c` (`main()`, the twelve `cmd_*` handlers, SARIF/baseline/`--fail-on`
+  state) and `hlse_core.c` is the ~4,700-line engine. Nothing changed
+  behaviourally:
+  - every subcommand's plain, `--json` and `--sarif` output and exit code is
+    byte-identical to a reference binary built from the previous commit (run
+    under the same `argv[0]`, since `--help` prints it), including `--self-test`,
+    `--benchmark`, the flags and the error paths;
+  - `libhlse.so` exports exactly the same 87 symbols; the one engine helper the
+    CLI needs (`check_url`) is declared `visibility("hidden")` in the new
+    internal header, so it does not become public API. An earlier build of this
+    change did leak it, caught by diffing `nm -D`;
+  - the CLI-only asset/blast-radius helpers moved with it, which also removes
+    their `__attribute__((unused))` workaround for the library build;
+  - `CLI_SRC` is linked into the executables only, so the library, server, unit
+    tests and fuzzers are unchanged and no empty-translation-unit guard is
+    needed. Also corrects a stale `gcc ... hlse_core.c` build line in the header.
+  Aggregate coverage is 69.44% (the denominator now includes `hlse_cli.c`),
+  above the 65% gate.
+
 ### Added
 - **`paste`: decode-and-execute is distinguished from decode.** P5 scored every
   decoder at 30, so `echo … | base64 -d` and `echo … | base64 -d | zsh` were
