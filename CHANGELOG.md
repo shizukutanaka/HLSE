@@ -77,6 +77,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Ransomware-prep LOLBins + 419/flip/drainer vocab**
+  (`hlse_supply.c`, `hlse_text.c`): `bcdedit` (/set, safeboot,
+  recoveryenabled — boot/recovery tampering), `wevtutil cl`/
+  `clear-log` (anti-forensic event-log wipe), `wusa`+.msu (Fin7
+  package-install vector), `netsh`+portproxy (C2 tunnel),
+  `cmdkey`+/add|/list (stored-credential planting/enumeration),
+  `dnscmd`+plugin|/config (serverlevelplugindll / WPAD),
+  `wsl`+(-e|-c|.sh|bash) (WSL EDR-evasion execution), `certoc`+arg
+  (cert-store DLL loading) — all +45, arg-gated so bare
+  enumeration/prose stays OK; text gains `advance fee` (canonical
+  419 name), `irs tax relief` (third-party relief scammers on the
+  IRS brand), `cash flip` (Instagram/Zelle money-flip), `migrate
+  your wallet` (drainer migration lure).
+
 - **DevOps-secret formats + TNEF/emlx carriers + medicare/recovery
   vocab** (`hlse_secrets.c`, `hlse_file.c`, `hlse_text.c`): `st.`
   (Infisical service token — `st.<uuid>.<key>`), `MC5.` (Prismic),

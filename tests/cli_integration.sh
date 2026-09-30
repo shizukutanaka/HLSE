@@ -11671,6 +11671,39 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-219: ransomware-prep LOLBins + 419/flip/drainer vocab ──────
+for c in \
+    'bcdedit /set {default} recoveryenabled no' \
+    'bcdedit /set safeboot network' \
+    'wevtutil cl security' \
+    'wusa x.msu /quiet' \
+    'netsh interface portproxy add v4tov4 listenport=4444' \
+    'cmdkey /add:server /user:x /pass:y' \
+    'dnscmd /config /enableglobalqueryblocklist' \
+    'wsl.exe -e bash -c id' \
+    'certoc -getcac'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'bcdedit /enum' 'wevtutil qe security' \
+         'netsh wlan show profiles' 'cmdkey /delete:t1' \
+         'dnscmd /enumzones' 'wsl --install'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+check_text_hit 'pay the advance fee first' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: advance fee flagged"
+check_text_hit 'call the irs tax relief line' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: irs tax relief flagged"
+check_text_hit 'dm me for cash flip' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: cash flip flagged"
+check_text_hit 'migrate your wallet here' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: wallet migration flagged"
+./hlse_core text 'the advance payment terms' 2>&1 | grep -q '^OK' \
+    && check "text FP guard: advance payment clean" "0" "0" \
+    || check "text FP guard: advance payment clean" "0" "1"
+./hlse_core text 'cash back reward' 2>&1 | grep -q '^OK' \
+    && check "text FP guard: cash back clean" "0" "0" \
+    || check "text FP guard: cash back clean" "0" "1"
+
 # ── cycle-218: devops secrets + TNEF/emlx carriers + medicare/recovery ─
 ./hlse_core secret -- 'k: st.'"12345678-1234-1234-1234-1234567890ab.1234567890abcdef1234567890abcdef12345678"'' 2>&1 | grep -q 'Infisical' \
     && check "secret: st. Infisical flagged" "0" "0" \

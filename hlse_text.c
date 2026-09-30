@@ -1864,6 +1864,12 @@ static const char *FAKE_ALERT_WORDS[] = {
      * sibling of the already-flagged approval lures (post-2021
      * scam family, NPA/FTC documented)                            */
     "forgiveness application", "forgiveness processing fee",
+    /* advance-fee fraud — the canonical name of the 419 family is
+     * the phrase itself; 'irs tax relief' is third-party relief
+     * scammers borrowing the IRS brand (the IRS never calls its
+     * own offers 'tax relief'); 'cash flip'/'migrate your wallet'
+     * are the Instagram money-flip and drainer-migration lures   */
+    "advance fee", "irs tax relief", "cash flip", "migrate your wallet",
     "process your refund", "claim your refund", "entitled to a refund",
     "microsoft has detected", "windows has detected",
     "apple has detected", "your icloud has been",

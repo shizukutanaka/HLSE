@@ -843,6 +843,45 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "regini") &&
                    (ci_contains(text, ".ini") || ci_contains(text, "http"))) {
             what = "regini registry-script import (LOLBin)";
+        /* Ransomware preparation classics — bcdedit disables recovery /
+         * forces safeboot, wevtutil wipes the event logs, wusa installs
+         * attacker .msu packages (documented Fin7 vector)              */
+        } else if (ci_contains(text, "bcdedit") &&
+                   (ci_contains(text, "/set") || ci_contains(text, "safeboot") ||
+                    ci_contains(text, "recoveryenabled") ||
+                    ci_contains(text, "bootstatuspolicy"))) {
+            what = "bcdedit boot/recovery tampering (LOLBin)";
+        } else if (ci_contains(text, "wevtutil") &&
+                   (ci_contains(text, " cl ") || ci_contains(text, "clear-log") ||
+                    ci_contains(text, " cl"))) {
+            what = "wevtutil event-log clearing (anti-forensics)";
+        } else if (ci_contains(text, "wusa") &&
+                   ci_contains(text, ".msu")) {
+            what = "wusa .msu package install (LOLBin)";
+        /* netsh portproxy tunnels C2 through the host's own network
+         * stack; cmdkey /add plants stored credentials for lateral
+         * movement, /list enumerates them                            */
+        } else if (ci_contains(text, "netsh") &&
+                   ci_contains(text, "portproxy")) {
+            what = "netsh portproxy tunnel (LOLBin)";
+        } else if (ci_contains(text, "cmdkey") &&
+                   (ci_contains(text, "/add") || ci_contains(text, "/list"))) {
+            what = "cmdkey stored-credential planting/enumeration";
+        /* dnscmd /serverlevelplugindll loads an arbitrary DLL into the
+         * DNS service (documented persistence); /config disables WPAD
+         * protections                                                  */
+        } else if (ci_contains(text, "dnscmd") &&
+                   (ci_contains(text, "plugin") || ci_contains(text, "/config"))) {
+            what = "dnscmd server plugin/config abuse (LOLBin)";
+        /* wsl -e/-c and bash -c execute payloads inside the WSL
+         * subsystem where host EDR sees only a loader                */
+        } else if (ci_contains(text, "wsl") &&
+                   (ci_contains(text, "-e") || ci_contains(text, "-c") ||
+                    ci_contains(text, ".sh") || ci_contains(text, "bash"))) {
+            what = "wsl subsystem payload execution (LOLBin)";
+        } else if (ci_contains(text, "certoc") &&
+                   ci_contains(text, "-")) {
+            what = "certoc certificate-store DLL loading (LOLBin)";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
