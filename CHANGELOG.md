@@ -77,6 +77,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Task-scam vocabulary + regsvcs/ncat primitives**
+  (`hlse_text.c`, `hlse_supply.c`): `like videos to earn`,
+  `rate apps to earn`, `daily task quota` (narrowed from
+  `task quota` — quarterly quotas are legit corporate prose),
+  `merchant task`, `earn per click`. P8 gains `regsvcs.exe`
+  (regasm sibling, +45 on .dll/.exe/http args) and the
+  `ncat --exec`/`--sh-exec` reverse-shell forms (+60) that
+  slipped the ` -e `-only matcher.
+
 - **MFA-fatigue residual + IVR callback-scam vocabulary**
   (`hlse_text.c`): `tap approve`, `approve this request`, and
   the vishing hook `press 1/one to speak|authorize|cancel` —

@@ -1938,6 +1938,8 @@ static const char *FAKE_ALERT_WORDS[] = {
     "like posts and earn", "like posts for money", "boost sales",
     "boost merchant", "merchant sales tasks", "help merchants",
     "improve their ranking", "boost product ranking",
+    "like videos to earn", "rate apps to earn", "daily task quota",
+    "merchant task", "earn per click",
     /* Unauthorized order / account fraud impersonation */
     "order you did not authorize", "purchase you did not make",
     "unauthorized purchase on your account", "did not make this purchase",

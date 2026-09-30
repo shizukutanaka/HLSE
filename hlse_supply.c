@@ -747,6 +747,10 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "http") || ci_contains(text, "/u ") ||
                     ci_contains(text, "/u\t"))) {
             what = "installutil.exe .NET AppDomain execution (LOLBin)";
+        } else if (ci_contains(text, "regsvcs") &&
+                   (ci_contains(text, "http") || ci_contains(text, ".dll") ||
+                    ci_contains(text, ".exe"))) {
+            what = "regsvcs.exe .NET assembly execution (LOLBin)";
         } else if (ci_contains(text, "msfvenom")) {
             what = "msfvenom payload generation (Metasploit)";
         } else if (ci_contains(text, "dnscmd") &&
@@ -817,7 +821,8 @@ hlse_check_paste(const char *text) {
         if (!is_revshell &&
             (strstr(text, "nc ") || strstr(text, "ncat ") ||
              strstr(text, "netcat ")) &&
-            (strstr(text, " -e ") || strstr(text, "mkfifo")))
+            (strstr(text, " -e ") || strstr(text, "--exec") ||
+             strstr(text, "--sh-exec") || strstr(text, "mkfifo")))
             is_revshell = 1;
         /* Python socket reverse shell */
         if (!is_revshell &&
