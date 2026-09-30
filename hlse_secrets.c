@@ -449,6 +449,14 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "wandb_v1_",     9,  30, is_alnum_or_dash,   "Weights & Biases API Key", 80 },
     /* OpenShift OAuth access token — sha256~<43> */
     { "sha256~",       7,  40, is_alnum_or_dash,   "OpenShift OAuth Token", 80 },
+    /* Vector DB / data-platform + payments keys */
+    { "pcsk_",         5,  50, is_alnum_or_dash,   "Pinecone API Key",      85 },
+    { "xau_",          4,  40, is_alnum_or_dash,   "Xata API Key",          80 },
+    { "esecret_",      8,  30, is_alnum_or_dash,   "Anyscale Credential",   80 },
+    { "xaat-",         5,  30, is_alnum_or_dash,   "Axiom API Token",       80 },
+    { "AQVN",          4,  36, is_alnum_or_dash,   "Yandex OAuth Token",    80 },
+    { "pdl_live_",     9,  30, is_alnum_or_dash,   "Paddle API Key (live)", 85 },
+    { "pdl_sbox_",     9,  30, is_alnum_or_dash,   "Paddle API Key (sandbox)", 80 },
     { "api_org_",      8,  30, is_alnum_or_dash,   "Hugging Face Org Token", 80 },
     /* Dynatrace API tokens — 'dt0c01.' (v1 public token) and
      * 'dt0s16.' carry a '<id24|16>.<secret64>' dotted tail         */

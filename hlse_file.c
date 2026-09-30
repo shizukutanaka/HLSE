@@ -271,6 +271,17 @@ static const char *EXECUTABLE_EXTS[] = {
      * credential-harvest lures: .kdbx (KeePass), .agilekeychain/
      * .opvault (1Password), .keychain (macOS), .wallet (Multibit)  */
     ".kdbx", ".agilekeychain", ".opvault", ".keychain", ".wallet",
+    /* more credential stores: .psafe3 (Password Safe), .enpass
+     * (Enpass vault), .1pif (1Password interchange — plaintext
+     * export), .skr (GnuPG secret keyring)                       */
+    ".psafe3", ".enpass", ".1pif", ".skr",
+    /* mailbox stores — the whole mailbox in one file: .pst/.ost
+     * (Outlook), .dbx (Outlook Express), .mbox (Unix/Thunderbird);
+     * credential-and-content exfil targets                       */
+    ".pst", ".ost", ".dbx", ".mbox",
+    /* systemd unit files — ExecStart/ExecStartPre run arbitrary
+     * commands; a dropped unit is a persistence primitive        */
+    ".service", ".timer", ".socket",
     /* .ppkg — Windows provisioning package (WCD): installs certs,
      * Wi-Fi profiles, MDM enrollment, and provisioning commands —
      * the Windows-side twin of .mobileconfig lures               */
@@ -341,6 +352,9 @@ static const char *EXECUTABLE_EXTS[] = {
     ".ps1xml", ".cdxml",
     /* Internet Shortcut (can embed URLs that auto-execute) */
     ".url",
+    /* Automator calendar action — runs an AppleScript/action when
+     * a calendar event fires (macOS persistence + execution)     */
+    ".caction",
     /* Linux/macOS launcher files — Exec=/URL payload carriers
      * (APT36 .desktop dropper campaign, Aug 2025) */
     ".desktop", ".webloc",
@@ -3427,7 +3441,11 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         strstr(bn, ".kdbx") || strstr(bn, ".kdb") ||
         strstr(bn, ".keychain") || strstr(bn, ".agilekeychain") ||
         strstr(bn, ".opvault") || strstr(bn, ".keystore") ||
-        strstr(bn, ".jks") || strstr(bn, ".ppk"))
+        strstr(bn, ".jks") || strstr(bn, ".ppk") ||
+        strstr(bn, ".skr") || strstr(bn, ".psafe3") ||
+        strstr(bn, ".enpass") || strstr(bn, ".1pif") ||
+        strstr(bn, ".pst") || strstr(bn, ".ost") ||
+        strstr(bn, ".dbx") || strstr(bn, ".mbox"))
         return 45;
     /* .pem/.key/.p8 — public cert material is LOG; the PRIVATE block
      * above already returns 80 for key material */

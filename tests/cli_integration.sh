@@ -11671,6 +11671,36 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-217: data-platform secrets + credential/mail/systemd stores ─
+./hlse_core secret -- 'k: pcsk_'"abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQR"'' 2>&1 | grep -q 'Pinecone' \
+    && check "secret: pcsk_ Pinecone flagged" "0" "0" \
+    || check "secret: pcsk_ Pinecone flagged" "0" "1"
+./hlse_core secret -- 'k: xau_'"abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJ"'' 2>&1 | grep -q 'Xata' \
+    && check "secret: xau_ Xata flagged" "0" "0" \
+    || check "secret: xau_ Xata flagged" "0" "1"
+./hlse_core secret -- 'k: pdl_live_'"abcdefghijklmnopqrstuvwxyz123456"'' 2>&1 | grep -q 'Paddle' \
+    && check "secret: pdl_live_ Paddle flagged" "0" "0" \
+    || check "secret: pdl_live_ Paddle flagged" "0" "1"
+./hlse_core secret 'the pcsk_ key format' 2>&1 | grep -q "no credentials" \
+    && check "secret FP guard: pcsk_ prose clean" "0" "0" \
+    || check "secret FP guard: pcsk_ prose clean" "0" "1"
+for e in psafe3 enpass 1pif skr pst ost dbx mbox; do
+    printf 'bad' > /tmp/hlse217.$e
+    ./hlse_core file /tmp/hlse217.$e 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "file: .$e store flagged" "0" "0" \
+        || check "file: .$e store flagged" "0" "1"
+done
+for e in service timer socket caction; do
+    printf 'bad' > /tmp/hlse217.$e
+    ./hlse_core file /tmp/hlse217.$e 2>&1 | grep -qE 'LOG|ALERT|BLOCK|ISOLATE' \
+        && check "file: .$e carrier flagged" "0" "0" \
+        || check "file: .$e carrier flagged" "0" "1"
+done
+printf 'x' > /tmp/hlse217.txt
+./hlse_core file /tmp/hlse217.txt 2>&1 | grep -q '^OK' \
+    && check "file FP guard: .txt benign" "0" "0" \
+    || check "file FP guard: .txt benign" "0" "1"
+
 # ── cycle-216: CI/CD-secrets + paste LOLBin wave-2 + refund/quick-assist ─
 ./hlse_core secret -- 'k: bkua_'"abcdefghijklmnopqrstuvwxyz1234567890abcd"'' 2>&1 | grep -q 'Buildkite' \
     && check "secret: bkua_ Buildkite flagged" "0" "0" \

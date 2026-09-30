@@ -77,6 +77,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Data-platform secrets + credential/mail/systemd stores**
+  (`hlse_secrets.c`, `hlse_file.c`): `pcsk_` (Pinecone), `xau_`
+  (Xata), `esecret_` (Anyscale), `xaat-` (Axiom), `AQVN` (Yandex
+  OAuth), `pdl_live_`/`pdl_sbox_` (Paddle); credential stores
+  `.psafe3` (Password Safe), `.enpass` (Enpass), `.1pif` (1Password
+  plaintext interchange export), `.skr` (GnuPG secret keyring) and
+  mailbox stores `.pst`/`.ost`/`.dbx`/`.mbox` join the
+  secret-container rules (ext + basename → 75); systemd units
+  `.service`/`.timer`/`.socket` (ExecStart persistence primitive)
+  and `.caction` (Automator calendar action — fires on calendar
+  events) extension-flagged +30.
+
 - **CI/CD-secret formats + paste LOLBin wave-2 + refund/Quick Assist
   vocab** (`hlse_secrets.c`, `hlse_supply.c`, `hlse_text.c`):
   `bkua_` (Buildkite user token), `wandb_v1_` (Weights & Biases),
