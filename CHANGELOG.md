@@ -77,6 +77,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Crypto payment + wallet deep-link schemes** (`hlse_core.c`):
+  payment table (+40) gains `solana:`, `bitcoincash:`, `ripple:`,
+  `xrpl:`, `stellar:`, `cardano:`, `dash:`, `zcash:`, `eip681:`,
+  and `wc:`/`walletconnect:` — the WalletConnect pairing URI is
+  the literal drainer session primitive. Handler table (+35)
+  gains wallet-app openers `metamask:`, `trust:`, `phantom:`,
+  `rainbow:`, `coinbase:`, `binance:`, `exodus:`, `atomic:`,
+  `ledgerlive:`.
+
 - **Task-scam vocabulary + regsvcs/ncat primitives**
   (`hlse_text.c`, `hlse_supply.c`): `like videos to earn`,
   `rate apps to earn`, `daily task quota` (narrowed from

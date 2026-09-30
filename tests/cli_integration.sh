@@ -11671,6 +11671,12 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-212: crypto payment + wallet deep-link schemes ──────────
+for u in 'solana:abc?amount=1' 'bitcoincash:qp2q' 'eip681:0xabc?value=1' 'wc:abc@2?relay-protocol=x' 'metamask://wc' 'phantom://x'; do
+    check_url_hit "$u" 'LOG\|ALERT\|BLOCK\|ISOLATE' "url: $u flagged"
+done
+check_url_hit 'https://walletconnect.com/' 'OK' "url FP guard: https walletconnect clean"
+
 # ── cycle-211: task-scam vocab + regsvcs/ncat --exec ──────────────
 check_text_hit 'like videos to earn money from home' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: like-videos-earn flagged"
 check_text_hit 'finish your daily task quota to unlock pay' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: daily-task-quota flagged"

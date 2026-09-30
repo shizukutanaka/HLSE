@@ -1898,6 +1898,12 @@ static const char *const URL_HANDLER_SCHEMES[] = {
      * experience surface); ms-contact-support: hands the URI to
      * the Get Help / support assistant                            */
     "ms-cxh", "ms-contact-support:",
+    /* wallet-app deep links — open a wallet client (often straight
+     * into a dApp/wc pairing flow): the app-open half of the
+     * drainer channel; wc:/walletconnect: itself is a payment
+     * scheme (the pairing URI) and lives there                  */
+    "metamask:", "trust:", "phantom:", "rainbow:", "coinbase:",
+    "binance:", "exodus:", "atomic:", "ledgerlive:",
     /* cap: — Calendar Access Protocol (RFC 4324): hands the URI to
      * the calendar client (calendar-invite lure channel)          */
     "cap:",
@@ -1928,7 +1934,14 @@ static const char *const URL_NETMNT_SCHEMES[] = {
  * payment lure (drainer/BEC). payto: is RFC 8905.                  */
 static const char *const URL_PAYMENT_SCHEMES[] = {
     "bitcoin:", "ethereum:", "monero:", "litecoin:", "dogecoin:",
-    "tron:", "tether:", "payto:", "alipay:", "weixin:", "upi:", NULL
+    "tron:", "tether:", "payto:", "alipay:", "weixin:", "upi:",
+    /* remaining BIP-21-style payment URIs and the wallet-pairing
+     * channel: eip681: is the Ethereum payment-request ERC; wc:/
+     * walletconnect: hand a WalletConnect session URI to a wallet
+     * app — the literal drainer pairing primitive               */
+    "solana:", "bitcoincash:", "ripple:", "xrpl:", "stellar:",
+    "cardano:", "dash:", "zcash:", "eip681:",
+    "wc:", "walletconnect:", NULL
 };
 
 static int
