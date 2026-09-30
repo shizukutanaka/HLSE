@@ -7036,6 +7036,23 @@ check "p135: a bare decode stays at the decoder score" "0" "$rc"
 p135 'base64 -d < payload.b64 > out.bin' | grep -q '"score":30' && rc=0 || rc=1
 check "p135: decode to a file stays at the decoder score" "0" "$rc"
 
+# ─── p136: SNS型投資詐欺 (invite-only LINE group + guaranteed returns) ────────
+# The Japanese investment-fraud vocabulary was seven phrases and the canonical
+# pitch scored 0/SAFE. Benign controls matter as much: "元本保証" and "登録料"
+# appear in ordinary bank/service text and must not fire.
+p136() { ./hlse_core --json text "$1" 2>/dev/null || true; }
+p136 '株式投資で月利30%。LINEグループに無料招待します。先生の推奨銘柄で必ず儲かります' | grep -q '"score":[4-9][0-9]' && rc=0 || rc=1
+check "p136: SNS investment-fraud pitch is flagged" "0" "$rc"
+p136 '先生の推奨銘柄で必ず儲かります。VIP投資グループにご招待します' | grep -q '"score":[4-9][0-9]' && rc=0 || rc=1
+check "p136: teacher-recommended guaranteed-profit pitch is flagged" "0" "$rc"
+for msg in '定期預金は元本保証です。詳しくは窓口へ' \
+           '新規登録料は無料です。ご登録はこちら' \
+           '推奨銘柄は決算後に見直します（社内メモ）' \
+           '家族のLINEグループに写真を共有しました'; do
+    p136 "$msg" | grep -q '"score":0' && rc=0 || rc=1
+    check "p136: benign not flagged: $msg" "0" "$rc"
+done
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

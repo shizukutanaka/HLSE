@@ -27,6 +27,17 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   above the 65% gate.
 
 ### Added
+- **`text`: SNS型投資詐欺 (invite-only investment groups with guaranteed
+  returns).** Probing the Japanese scam themes found the canonical pitch
+  (*月利30%… LINEグループに無料招待… 先生の推奨銘柄で必ず儲かります*) scoring
+  0/SAFE; the Japanese investment-fraud vocabulary was seven phrases. Added
+  pitch-specific phrases (guaranteed-profit claims, "先生の推奨", invite-only
+  group wording, 月利20/30/50/100%): 0 -> 40 ALERT. Deliberately **not** added:
+  "元本保証", "登録料" and a bare "推奨銘柄", which occur in ordinary bank,
+  service and internal-memo text (the last one scored 20 on a benign memo in
+  the first attempt and was removed). Re-probed: 再配達, カード会社, ETC,
+  国税庁, マイナポイント and Amazon lures were already caught. F1 = 1.000 /
+  0.0% FP unchanged. +6 cases (p136).
 - **`paste`: decode-and-execute is distinguished from decode.** P5 scored every
   decoder at 30, so `echo … | base64 -d` and `echo … | base64 -d | zsh` were
   indistinguishable, although only the second runs what it decoded. Piping a
