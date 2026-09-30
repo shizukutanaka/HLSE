@@ -64,7 +64,7 @@ DATADIR := $(DESTDIR)$(PREFIX)/share/hlse
 # CLI_SRC is the command-line front end and is linked into the hlse_core
 # executables ONLY, so the library carries no CLI code and needs no guard.
 CORE_SRC  := hlse_core.c hlse_text.c hlse_protect.c hlse_secrets.c hlse_supply.c hlse_file.c hlse_audit.c hlse_util.c hlse_alert.c
-CLI_SRC   := hlse_cli.c
+CLI_SRC   := hlse_cli.c hlse_selftest.c
 TEST_SRC  := tests/hlse_property_tests.c
 
 # Outputs
@@ -122,7 +122,7 @@ all: $(BINARY) $(SHARED) $(SERVER_BIN)
 cli: $(BINARY)         ## build CLI binary only
 lib: $(SHARED)         ## build shared library only
 
-$(BINARY): $(CORE_SRC) $(CLI_SRC) hlse_core_internal.h hlse_text.h hlse_core.h hlse_protect.h
+$(BINARY): $(CORE_SRC) $(CLI_SRC) hlse_core_internal.h hlse_cli.h hlse_text.h hlse_core.h hlse_protect.h
 	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE -o $@ $(CORE_SRC) $(CLI_SRC) $(PIE_LDFLAGS) -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
@@ -352,7 +352,7 @@ coverage:
 	@gcov hlse_core_cov-hlse_core hlse_core_cov-hlse_text \
 		hlse_core_cov-hlse_protect hlse_core_cov-hlse_secrets \
 		hlse_core_cov-hlse_supply hlse_core_cov-hlse_file \
-		hlse_core_cov-hlse_audit hlse_core_cov-hlse_cli 2>&1 \
+		hlse_core_cov-hlse_audit hlse_core_cov-hlse_cli hlse_core_cov-hlse_selftest 2>&1 \
 		| grep -E "File|Lines executed"
 	@echo "── coverage including unit-test exercise of internal functions ──"
 	@gcov hlse_cov_secrets-hlse_secrets hlse_cov_protect-hlse_protect \

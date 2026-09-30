@@ -109,9 +109,10 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 ## Weaknesses / risks (what to improve — cite when you touch them)
 
 - **The CLI is now its own file.** `hlse_core.c` (~4,700 lines) is the detection
-  engine and public API; `hlse_cli.c` (~4,800 lines) holds `main()`, the twelve
-  `cmd_*` handlers, SARIF/baseline/`--fail-on` state and the CLI-only helpers,
-  and is linked into the `hlse_core` executables only (`CLI_SRC` in the
+  engine and public API; `hlse_cli.c` (~4,600 lines) holds `main()`, the twelve
+  `cmd_*` handlers, SARIF/baseline/`--fail-on` state and the CLI-only helpers;
+  `hlse_selftest.c` holds `--self-test`/`--benchmark` (the first clean cut: it
+  shares no state with the handlers; entry points in `hlse_cli.h`). Both are linked into the `hlse_core` executables only (`CLI_SRC` in the
   Makefile), never into `libhlse.so`, the server, unit tests or fuzzers.
   `hlse_core_internal.h` is the only bridge (`check_url`, hidden-visibility so
   the library's 87 exports are unchanged, plus `MAX_URL/HOST/PATH`). Both files
@@ -156,7 +157,9 @@ terminal-injection hardening; the "could not read" honesty class across
 download-and-execute, decode-and-execute).
 
 **P1 — maintainability / detection quality:**
-- Split `hlse_cli.c` further (one file per handler group); behavior-preserving,
+- Split `hlse_cli.c` further (`cmd_scan` alone is 581 lines and drags the SARIF/
+  baseline globals with it, so it needs those moved first; `stdin_mode`,
+  `scan_git_history` and the pattern registry are the next low-coupling cuts); behavior-preserving,
   verify with byte-identical output diffs against a reference binary built from
   `git show HEAD:<file>`, run under the same `argv[0]` name.
 - Decide `hlse_gpt_verify()` wiring (above).

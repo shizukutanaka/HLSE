@@ -23,6 +23,10 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
   - `CLI_SRC` is linked into the executables only, so the library, server, unit
     tests and fuzzers are unchanged and no empty-translation-unit guard is
     needed. Also corrects a stale `gcc ... hlse_core.c` build line in the header.
+  - A second cut followed: `--self-test` and `--benchmark` (~235 lines that share
+    no state with the handlers) now live in `hlse_selftest.c`, reached through
+    `hlse_cli.h`. 23 invocations byte-identical to a reference built from the
+    previous commit; library exports still the same 87 symbols.
   Aggregate coverage is 69.44% (the denominator now includes `hlse_cli.c`),
   above the 65% gate.
 
