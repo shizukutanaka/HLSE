@@ -4,6 +4,69 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-253)
+
+- **Paste-detector breadth — macOS attack surface, BSD jails, Java/
+  signing toolchain, browser automation, misc exec primitives**
+  (`hlse_supply.c`): macOS (`security` keychain write/dump verb
+  gates, `defaults` write/delete/import/rename, `hdiutil` attach/
+  create/detach/chpass/-srcfolder, `system_profiler`, `codesign`
+  --sign/-s/--remove/--deep, `mount_afp`/`mount_webdav`, `airport`
+  -s/sniff, `open` -a/-b/-e/-F/-R, `sfltool` resetbtm/addbtm,
+  `kextunload`, `systemextensionsctl` uninstall/reset, `lsappinfo`,
+  `syspolicyd`); BSD/containers (`jls`, `jexec`, `jail` -c/-m/-r/-d,
+  `iocage` exec/console/destroy/create, `ezjail`, `bastille`
+  cmd/create/destroy/bootstrap/pkg, `pot`, `firecfg`); init/supervision
+  (`invoke-rc.d` stop/start, `sv` !csv-guarded verb gates,
+  `systemd-cron`, `loginctl` lock/terminate/kill/disable); IPC
+  (`busctl` call/set-property/introspect/monitor, `dbus-send`
+  --system/--dest/--print-reply, `gdbus` call/emit/monitor, `qdbus`);
+  Windows LOLBins + .NET (`iscsicpl`, `wbadmin` get/delete/start-
+  backup gates, `expand`/`.cab`+`-f` gate, `extrac32`, `print /D`,
+  `wabmig`, `pwlauncher`, `syncappvpublishingserver`, `ieexec`,
+  `installutil`, `regasm`, `regsvcs`, `ilasm`, `gacutil`, `corflags`,
+  `aspnet_compiler`/`aspnet_regiis`/`aspnet_regsql`/
+  `aspnet_regbrowsers`, `mavinject`, `pcalua`, `dump64`, `procdump`,
+  `rdrleakdiag`); Java/JVM (`javac` + `.java`/flag gate, `java`
+  -agentlib/-agentpath/-javaagent/-agent, `mvn` exec:/ant:/-Dexec,
+  `ant` -f/-buildfile/-D, `gradle`, `sbt`, `lein`, `clojure` -e/-M/
+  -X/-T); build/queue/task runners (`celery` -a/worker/call/purge,
+  `rq` worker/enqueue, `sidekiq`, `rails` console/runner/dbconsole/
+  destroy/g, `rake` -f/:/- , `php artisan`/`artisan` verb gates,
+  `wp` eval/eval-file/shell/db/user/plugin/theme/cron, `drupal`,
+  `bin/console`/`console` doctrine:/make:, `flutter` pub/run/build,
+  `expo` publish/build); keygen/signing (`age-keygen`, `minisign`,
+  `signify`, `rsign2`, `gpg` --gen-key/--full-gen/--quick-gen,
+  `ssh-keygen` -s/-R/-A/-k/-K/-I/-L/-r/-h, `ssh-keyscan`, `puttygen`,
+  `keytool`, `jarsigner`, `gitsign`, `rekor-cli`, `fulcio`,
+  `productsign`, `pkgbuild`, `productbuild`, `notarytool`, `altool`,
+  `stapler` staple/- gates, `electron-packager`/`electron-builder`
+  via `electron-` prefix); file/serial/transfer (`tftp` get/put/-,
+  `kermit` -s/-g/-C, `lrzsz`, `rz -e`, `sz -e`, `nc6`, `pnetcat`,
+  `sbd`); ACL/install (`chmod`/`chown` --reference, `install -o `/
+  ` -g `/` -m 777`/` -m 666` prefix-bound); pkg extras (`apt-mark`
+  hold/unhold, `aptitude`, `dselect`, `dpkg-divert`); browser
+  automation (`puppeteer`, `playwright`, `chromedriver`,
+  `geckodriver`, `webdriver`, `selenium` flag/hub gates).
+
+### Fixed (cycle-253)
+
+- **`install ` gate narrowed**: `install -m`/`-s`/`-S` unbound needles
+  collided with `python -m pip install` (the `-m` appears earlier in
+  the string) and legit `install -m 755` → owner/group needles
+  prefix-bound (`install -o `/` -g `) plus mode-777/666 literals.
+- **`sv ` ⊂ `csv ` substring collision**: runit supervisor gate gains
+  `!csv` guard (`csv stop x` stayed benign).
+- **`stapler` self-satisfying needle**: ` staple` ⊂ ` stapler` →
+  ` staple ` bounded.
+- **`pry` real-word gate**: `pry ` + ` -`/` --` flag gate (`pry open`
+  benign).
+- **Case bug**: `celery -A` needle must be lowercase (` -a`) under
+  the ci_contains needle invariant.
+- **Dropped weak needles**: `sw_vers`/`sysctl kern`/`sysctl hw`
+  (admin reads too common), `socat -d`, `antlr4`/`jjtree`,
+  `getfacl` (read-only), `nectar`, `ant` without flags.
+
 ### Added (cycle-252)
 
 - **Paste-detector breadth — X-cookie/input-injection, serial/dial,

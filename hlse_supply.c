@@ -9161,6 +9161,226 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "traptoemail")) {
         what = "xcan/android/router/build/routing/mgmt/destructive primitive";
         }
+        else if (ci_contains(text, "iscsicpl") ||
+             (ci_contains(text, "wbadmin") &&
+              (ci_contains(text, " get") || ci_contains(text, " delete") ||
+               ci_contains(text, " stop") || ci_contains(text, " disable") ||
+               ci_contains(text, " start backup") ||
+               ci_contains(text, " delete catalog"))) ||
+             (ci_contains(text, "javac") &&
+              (ci_contains(text, ".java") || ci_contains(text, " -"))) ||
+             (ci_contains(text, "java ") &&
+              (ci_contains(text, " -agentlib") || ci_contains(text, " -agentpath") ||
+               ci_contains(text, " -javaagent") || ci_contains(text, " -Xrunhprof") ||
+               ci_contains(text, " -agent"))) ||
+             (ci_contains(text, "mvn ") &&
+              (ci_contains(text, " exec:") || ci_contains(text, " ant:") ||
+               ci_contains(text, " -Dexec"))) ||
+             (ci_contains(text, "ant ") &&
+              (ci_contains(text, " -f") || ci_contains(text, " -buildfile") ||
+               ci_contains(text, " -D") || ci_contains(text, " -find"))) ||
+             (ci_contains(text, "gradle") &&
+              (ci_contains(text, " -") || ci_contains(text, " init") ||
+               ci_contains(text, " build") || ci_contains(text, " clean"))) ||
+             (ci_contains(text, "sbt") &&
+              (ci_contains(text, " -") || ci_contains(text, " compile") ||
+               ci_contains(text, " run") || ci_contains(text, " clean"))) ||
+             (ci_contains(text, "lein") &&
+              (ci_contains(text, " run") || ci_contains(text, " repl") ||
+               ci_contains(text, " uberjar") || ci_contains(text, " -"))) ||
+             (ci_contains(text, "clojure") &&
+              (ci_contains(text, " -e") || ci_contains(text, " -M") ||
+               ci_contains(text, " -X") || ci_contains(text, " -T"))) ||
+             (ci_contains(text, "celery") &&
+              (ci_contains(text, " -a") || ci_contains(text, " worker") ||
+               ci_contains(text, " call") || ci_contains(text, " purge") ||
+               ci_contains(text, " -b"))) ||
+             (ci_contains(text, "rq ") &&
+              (ci_contains(text, " worker") || ci_contains(text, " enqueue") ||
+               ci_contains(text, " -u"))) ||
+             ci_contains(text, "sidekiq") ||
+             (ci_contains(text, "rails ") &&
+              (ci_contains(text, " console") || ci_contains(text, " runner") ||
+               ci_contains(text, " dbconsole") || ci_contains(text, " destroy") ||
+               ci_contains(text, " db:migrate") || ci_contains(text, " g "))) ||
+             (ci_contains(text, "rake ") &&
+              (ci_contains(text, " -f") || ci_contains(text, ":") ||
+               ci_contains(text, " -"))) ||
+             (ci_contains(text, "pry ") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             (ci_contains(text, "php artisan") ||
+              (ci_contains(text, "artisan ") &&
+              (ci_contains(text, " tinker") || ci_contains(text, " serve") ||
+               ci_contains(text, " migrate") || ci_contains(text, " make:") ||
+               ci_contains(text, " db:") || ci_contains(text, " config:") ||
+               ci_contains(text, " down") || ci_contains(text, " optimize")))) ||
+             (ci_contains(text, "wp ") &&
+              (ci_contains(text, " eval") || ci_contains(text, " eval-file") ||
+               ci_contains(text, " shell") || ci_contains(text, " db ") ||
+               ci_contains(text, " user ") || ci_contains(text, " plugin") ||
+               ci_contains(text, " theme") || ci_contains(text, " cron"))) ||
+             (ci_contains(text, "drupal") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             (ci_contains(text, "console") &&
+              (ci_contains(text, " doctrine:") || ci_contains(text, " make:") ||
+               ci_contains(text, "bin/console"))) ||
+             (ci_contains(text, "flutter") &&
+              (ci_contains(text, " pub") || ci_contains(text, " run") ||
+               ci_contains(text, " build") || ci_contains(text, " channel"))) ||
+             (ci_contains(text, "expo") &&
+              (ci_contains(text, " publish") || ci_contains(text, " build") ||
+               ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             ci_contains(text, "age-keygen") || ci_contains(text, "minisign") ||
+             ci_contains(text, "signify") || ci_contains(text, "rsign2") ||
+             (ci_contains(text, "gpg") &&
+              (ci_contains(text, " --gen-key") ||
+               ci_contains(text, " --full-gen") ||
+               ci_contains(text, " --quick-gen"))) ||
+             (ci_contains(text, "ssh-keygen") &&
+              (ci_contains(text, " -s") || ci_contains(text, " -R") ||
+               ci_contains(text, " -A") || ci_contains(text, " -k") ||
+               ci_contains(text, " -K") || ci_contains(text, " -I") ||
+               ci_contains(text, " -L") || ci_contains(text, " -r") ||
+               ci_contains(text, " -h"))) ||
+             ci_contains(text, "ssh-keyscan") || ci_contains(text, "puttygen") ||
+             (ci_contains(text, "tftp") &&
+              (ci_contains(text, " get") || ci_contains(text, " put") ||
+               ci_contains(text, " -"))) ||
+             (ci_contains(text, "kermit") &&
+              (ci_contains(text, " -s") || ci_contains(text, " -g") ||
+               ci_contains(text, " -C"))) ||
+             ci_contains(text, "lrzsz") || ci_contains(text, "rz -e") ||
+             ci_contains(text, "sz -e") || ci_contains(text, "nc6") ||
+             ci_contains(text, "pnetcat") || ci_contains(text, "sbd") ||
+             ci_contains(text, "expand.exe") ||
+             (ci_contains(text, "expand") &&
+              (ci_contains(text, ".cab") || ci_contains(text, " -f"))) ||
+             ci_contains(text, "extrac32") || ci_contains(text, "print /d") ||
+             ci_contains(text, "wabmig") || ci_contains(text, "pwlauncher") ||
+             ci_contains(text, "syncappvpublishingserver") ||
+             ci_contains(text, "ieexec") || ci_contains(text, "installutil") ||
+             ci_contains(text, "regasm") || ci_contains(text, "regsvcs") ||
+             ci_contains(text, "ilasm") || ci_contains(text, "gacutil") ||
+             ci_contains(text, "corflags") || ci_contains(text, "aspnet_compiler") ||
+             ci_contains(text, "aspnet_regiis") || ci_contains(text, "aspnet_regsql") ||
+             ci_contains(text, "aspnet_regbrowsers") ||
+             ci_contains(text, "mavinject") || ci_contains(text, "pcalua") ||
+             ci_contains(text, "dump64") || ci_contains(text, "procdump") ||
+             ci_contains(text, "rdrleakdiag") ||
+             ((ci_contains(text, "chmod") || ci_contains(text, "chown")) &&
+              ci_contains(text, " --reference")) ||
+             (ci_contains(text, "install -o ") ||
+              ci_contains(text, "install -g ") ||
+              ci_contains(text, "install -m 777") ||
+              ci_contains(text, "install -m 666")) ||
+             (ci_contains(text, "apt-mark") &&
+              (ci_contains(text, " hold") || ci_contains(text, " unhold"))) ||
+             (ci_contains(text, "aptitude") &&
+              (ci_contains(text, " install") || ci_contains(text, " remove") ||
+               ci_contains(text, " purge") || ci_contains(text, " -y"))) ||
+             ci_contains(text, "dselect") || ci_contains(text, "dpkg-divert") ||
+             (ci_contains(text, "invoke-rc.d") &&
+              (ci_contains(text, " stop") || ci_contains(text, " start") ||
+               ci_contains(text, " restart"))) ||
+             (ci_contains(text, "sv ") &&
+              !ci_contains(text, "csv") &&
+              (ci_contains(text, " stop") || ci_contains(text, " start") ||
+               ci_contains(text, " -d") || ci_contains(text, " -u") ||
+               ci_contains(text, " force") || ci_contains(text, " kill") ||
+               ci_contains(text, " exit") || ci_contains(text, " term") ||
+               ci_contains(text, " restart"))) ||
+             ci_contains(text, "systemd-cron") ||
+             (ci_contains(text, "loginctl") &&
+              (ci_contains(text, " lock") || ci_contains(text, " terminate") ||
+               ci_contains(text, " kill") || ci_contains(text, " disable"))) ||
+             (ci_contains(text, "busctl") &&
+              (ci_contains(text, " call") || ci_contains(text, " set-property") ||
+               ci_contains(text, " introspect") || ci_contains(text, " monitor"))) ||
+             (ci_contains(text, "dbus-send") &&
+              (ci_contains(text, " --system") || ci_contains(text, " --dest") ||
+               ci_contains(text, " --print-reply"))) ||
+             (ci_contains(text, "gdbus") &&
+              (ci_contains(text, " call") || ci_contains(text, " emit") ||
+               ci_contains(text, " monitor"))) ||
+             ci_contains(text, "qdbus") ||
+             (ci_contains(text, "jls") || ci_contains(text, "jexec") ||
+              ci_contains(text, "jailcmd")) ||
+             (ci_contains(text, "jail") &&
+              (ci_contains(text, " -c") || ci_contains(text, " -m") ||
+               ci_contains(text, " -r") || ci_contains(text, " -d") ||
+               ci_contains(text, " -v"))) ||
+             (ci_contains(text, "iocage") &&
+              (ci_contains(text, " exec") || ci_contains(text, " console") ||
+               ci_contains(text, " set") || ci_contains(text, " destroy") ||
+               ci_contains(text, " create") || ci_contains(text, " jail"))) ||
+             (ci_contains(text, "ezjail") &&
+              (ci_contains(text, " console") || ci_contains(text, " create") ||
+               ci_contains(text, " delete") || ci_contains(text, " archive") ||
+               ci_contains(text, " -"))) ||
+             (ci_contains(text, "bastille") &&
+              (ci_contains(text, " cmd") || ci_contains(text, " create") ||
+               ci_contains(text, " destroy") || ci_contains(text, " console") ||
+               ci_contains(text, " bootstrap") || ci_contains(text, " export") ||
+               ci_contains(text, " pkg"))) ||
+             (ci_contains(text, "pot") &&
+              (ci_contains(text, " exec") || ci_contains(text, " run") ||
+               ci_contains(text, " create") || ci_contains(text, " start") ||
+               ci_contains(text, " -"))) ||
+             ci_contains(text, "firecfg") ||
+             (ci_contains(text, "puppeteer") || ci_contains(text, "playwright") ||
+              ci_contains(text, "chromedriver") || ci_contains(text, "geckodriver") ||
+              ci_contains(text, "webdriver")) ||
+             (ci_contains(text, "selenium") &&
+              (ci_contains(text, " -") || ci_contains(text, " --") ||
+               ci_contains(text, " hub") || ci_contains(text, " standalone") ||
+               ci_contains(text, " node"))) ||
+             ci_contains(text, "keytool") || ci_contains(text, "jarsigner") ||
+             ci_contains(text, "gitsign") || ci_contains(text, "rekor-cli") ||
+             ci_contains(text, "fulcio") || ci_contains(text, "productsign") ||
+             ci_contains(text, "pkgbuild") || ci_contains(text, "productbuild") ||
+             ci_contains(text, "notarytool") || ci_contains(text, "altool") ||
+             (ci_contains(text, "stapler") &&
+              (ci_contains(text, " staple ") || ci_contains(text, " -"))) ||
+             (ci_contains(text, "electron-") &&
+              (ci_contains(text, "packager") || ci_contains(text, "builder"))) ||
+             (ci_contains(text, "security") &&
+              (ci_contains(text, " add-") || ci_contains(text, " import") ||
+               ci_contains(text, " delete-") || ci_contains(text, " find-") ||
+               ci_contains(text, " set-") || ci_contains(text, " export") ||
+               ci_contains(text, " cms") || ci_contains(text, " create-") ||
+               ci_contains(text, " unlock") || ci_contains(text, " authoriz"))) ||
+             (ci_contains(text, "defaults") &&
+              (ci_contains(text, " write") || ci_contains(text, " delete") ||
+               ci_contains(text, " import") || ci_contains(text, " export") ||
+               ci_contains(text, " rename"))) ||
+             (ci_contains(text, "hdiutil") &&
+              (ci_contains(text, " attach") || ci_contains(text, " create") ||
+               ci_contains(text, " detach") || ci_contains(text, " burn") ||
+               ci_contains(text, " compact") || ci_contains(text, " convert") ||
+               ci_contains(text, " chpass") || ci_contains(text, " resize") ||
+               ci_contains(text, " -srcfolder") || ci_contains(text, " mount"))) ||
+             ci_contains(text, "system_profiler") ||
+             (ci_contains(text, "codesign") &&
+              (ci_contains(text, " --sign") || ci_contains(text, " -s") ||
+               ci_contains(text, " --remove") || ci_contains(text, " --deep") ||
+               ci_contains(text, " --entitlements"))) ||
+             ci_contains(text, "mount_afp") || ci_contains(text, "mount_webdav") ||
+             (ci_contains(text, "airport") &&
+              (ci_contains(text, " -s") || ci_contains(text, " sniff") ||
+               ci_contains(text, " --"))) ||
+             (ci_contains(text, "open ") &&
+              (ci_contains(text, " -a") || ci_contains(text, " -b") ||
+               ci_contains(text, " -e") || ci_contains(text, " -F") ||
+               ci_contains(text, " -R"))) ||
+             (ci_contains(text, "sfltool") &&
+              (ci_contains(text, " resetbtm") || ci_contains(text, " addbtm") ||
+               ci_contains(text, " -"))) ||
+             ci_contains(text, "kextunload") ||
+             (ci_contains(text, "systemextensionsctl") &&
+              (ci_contains(text, " uninstall") || ci_contains(text, " reset"))) ||
+             ci_contains(text, "lsappinfo") || ci_contains(text, "syspolicyd")) {
+        what = "macos/jail/build/signing/java/misc-exec primitive";
+        }
         
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
