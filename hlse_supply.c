@@ -1106,6 +1106,57 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "replace") &&
                    (ci_contains(text, "system32") || ci_contains(text, "syswow64"))) {
             what = "replace.exe write-into-system (LOLBin)";
+        /* .NET compiler chain — csc/vbc/jsc/ilasm/resgen build
+         * payloads on the host, certreq mints certs, diaghub
+         * loads unsigned DLLs, desktopimgdownldr/wlrmdr fetch
+         * and schedule exec (all LOLBAS)                          */
+        } else if ((ci_contains(text, "csc ") || ci_contains(text, "csc.exe")) &&
+                   (ci_contains(text, ".cs") || ci_contains(text, "/out") ||
+                    ci_contains(text, "/t:") || ci_contains(text, "/target"))) {
+            what = "csc on-host compile (LOLBin)";
+        } else if ((ci_contains(text, "vbc ") || ci_contains(text, "vbc.exe")) &&
+                   (ci_contains(text, ".vb") || ci_contains(text, "/out") ||
+                    ci_contains(text, "/target"))) {
+            what = "vbc on-host compile (LOLBin)";
+        } else if ((ci_contains(text, "jsc ") || ci_contains(text, "jsc.exe")) &&
+                   (ci_contains(text, ".js") || ci_contains(text, "/out"))) {
+            what = "jsc on-host compile (LOLBin)";
+        } else if (ci_contains(text, "ilasm") &&
+                   (ci_contains(text, ".il") || ci_contains(text, "/exe") ||
+                    ci_contains(text, "/dll") || ci_contains(text, "/output"))) {
+            what = "ilasm assembly build (LOLBin)";
+        } else if (ci_contains(text, "resgen") &&
+                   (ci_contains(text, ".txt") || ci_contains(text, ".resx") ||
+                    ci_contains(text, ".resources"))) {
+            what = "resgen resource build (LOLBin)";
+        } else if (ci_contains(text, "aspnet_compiler") &&
+                   (ci_contains(text, "/") || ci_contains(text, "-v") ||
+                    ci_contains(text, "-p"))) {
+            what = "aspnet_compiler build (LOLBin)";
+        } else if (ci_contains(text, "certreq") &&
+                   (ci_contains(text, "-new") || ci_contains(text, ".inf") ||
+                    ci_contains(text, ".csr"))) {
+            what = "certreq certificate mint (LOLBin)";
+        } else if (ci_contains(text, "diaghub") &&
+                   (ci_contains(text, "/") || ci_contains(text, ".dll"))) {
+            what = "diaghub unsigned-DLL load (LOLBin)";
+        } else if (ci_contains(text, "desktopimgdownldr") &&
+                   (ci_contains(text, "/") || ci_contains(text, "http"))) {
+            what = "desktopimgdownldr fetch (LOLBin)";
+        } else if (ci_contains(text, "wlrmdr") &&
+                   (ci_contains(text, "-o") || ci_contains(text, "-f") ||
+                    ci_contains(text, ".exe"))) {
+            what = "wlrmdr scheduled-exec (LOLBin)";
+        /* rundll32 DLL targets — url.dll FileProtocolHandler runs a
+         * local file, zipfldr RouteTheCall opens the payload,
+         * shell32 ShellExec/OpenAs_RunDLL launches the binary,
+         * advpack LaunchINFSection runs an INF section            */
+        } else if (ci_contains(text, "fileprotocolhandler") ||
+                   ci_contains(text, "routethecall") ||
+                   ci_contains(text, "shellexec_rundll") ||
+                   ci_contains(text, "openas_rundll") ||
+                   ci_contains(text, "launchinfsection")) {
+            what = "rundll32 proxy-exec DLL target (LOLBin)";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

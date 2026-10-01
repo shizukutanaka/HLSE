@@ -77,6 +77,25 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **.NET compile chain + rundll32 DLL targets + scam vocab**
+  (`hlse_supply.c`, `hlse_text.c`): paste adds the on-host build
+  primitives — `csc`/`vbc`/`jsc`+src|/out|/target (compile
+  payload to exe/dll), `ilasm`+.il|/exe|/dll|/output, `resgen`+
+  txt|resx|resources, `aspnet_compiler`+args, `certreq`+-new|
+  .inf|.csr (cert mint for C2 signing), `diaghub`+/|.dll
+  (unsigned-DLL load), `desktopimgdownldr`+/|http,
+  `wlrmdr`+-o|-f|.exe — all +45 arg-gated, bare names OK.
+  rundll32 proxy-exec DLL targets now flag by exported-function
+  name: `FileProtocolHandler`, `RouteTheCall`,
+  `ShellExec_RunDLL`, `OpenAs_RunDLL`, `LaunchINFSection`
+  (url.dll OpenURL was already caught by the http gate). Text
+  gains +30 FAKE_ALERT vocab — `bitcoin/btc/crypto atm` (the
+  FTC-documented cash-to-crypto payment channel),
+  `voice clone`/`voice cloning`/`voice has been cloned`/
+  `cloned your|my voice` (AI voice-clone vishing),
+  `whatsapp|telegram`+`investment|trading` (pig-butchering
+  funnel), `cash app flip`/`cashapp flip`.
+
 - **net1 evasion + UAC-bypass/TAEF LOLBAS wave + secrets wave-7**
   (`hlse_supply.c`, `hlse_secrets.c`): the four net-* rules now
   also match `net1`/ `net.exe` — the documented aliases attackers

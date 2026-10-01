@@ -2063,6 +2063,20 @@ static const char *FAKE_ALERT_WORDS[] = {
     "copyrighted content", "copyright claim", "takedown notice",
     "intellectual property violation", "intellectual property rights",
     "dmca notice", "dmca takedown", "dmca complaint", "violates dmca",
+    /* Cash-to-crypto scam channel — directing the victim to a
+     * Bitcoin/crypto ATM is the FTC-documented payment-method
+     * signature of romance/government-imposter scams             */
+    "bitcoin atm", "btc atm", "crypto atm",
+    /* AI voice-clone vishing — 'your voice has been cloned' /
+     * cloned-voice lures driving emergency wire demands           */
+    "voice clone", "voice cloning", "voice has been cloned",
+    "cloned your voice", "cloned my voice",
+    /* Pig-butchering channel — pairing the chat-app funnel with
+     * the trading lure ('whatsapp/telegram' + 'investment/trading') */
+    "whatsapp investment", "whatsapp trading", "telegram investment",
+    "telegram trading",
+    /* Cash App flip — the send-small-get-big return con           */
+    "cash app flip", "cashapp flip",
     NULL
 };
 
