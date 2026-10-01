@@ -700,7 +700,26 @@ hlse_check_paste(const char *text) {
           strstr(text, "config.fish") || strstr(text, ".netrc") ||
           strstr(text, ".rhosts") || strstr(text, "hosts.equiv") ||
           strstr(text, ".npmrc") || strstr(text, ".curlrc") ||
-          strstr(text, ".gitconfig"))) ||
+          strstr(text, ".gitconfig") || strstr(text, ".xsession") ||
+          strstr(text, ".bash_logout") || strstr(text, ".zlogout") ||
+          strstr(text, "ssh_config") || strstr(text, ".gtkrc") ||
+          strstr(text, ".Xresources") || strstr(text, ".xmodmaprc") ||
+          strstr(text, ".inputrc") || strstr(text, ".screenrc") ||
+          strstr(text, ".muttrc") || strstr(text, ".mailrc") ||
+          strstr(text, ".procmailrc") || strstr(text, ".pinerc") ||
+          strstr(text, ".lynxrc") || strstr(text, ".wgetrc") ||
+          strstr(text, ".git-crypt") || strstr(text, ".config/git") ||
+          strstr(text, ".gnomerc") || strstr(text, ".kderc") ||
+          strstr(text, "kdeglobals") || strstr(text, "kglobalshortcutsrc") ||
+          strstr(text, "kwinrc") || strstr(text, ".config/pulse") ||
+          strstr(text, ".config/systemd") ||
+          strstr(text, ".local/share/applications") ||
+          strstr(text, "environment.d") || strstr(text, ".ssh/environment") ||
+          strstr(text, ".ssh/sshrc") ||
+          strstr(text, "native-messaging-hosts") ||
+          strstr(text, "NativeMessagingHosts") ||
+          strstr(text, ".vscode/extensions") || strstr(text, ".config/Code") ||
+          strstr(text, ".gcloud"))) ||
         ((strstr(text, "cp ") || strstr(text, "mv ") ||
           strstr(text, "install ")) &&
          (strstr(text, "cron.d") || strstr(text, "spool/cron") ||
@@ -1466,7 +1485,7 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "setenforce") && ci_contains(text, " 0")) {
             what = "setenforce 0 (SELinux off)";
         } else if (ci_contains(text, "auditctl") &&
-                   (ci_contains(text, "-d") || ci_contains(text, "-D"))) {
+                   (ci_contains(text, "-d") || ci_contains(text, "-d"))) {
             what = "auditctl rules wipe";
         } else if ((ci_contains(text, "systemctl") || ci_contains(text, "service") ||
                     ci_contains(text, "killall") || ci_contains(text, "pkill")) &&
@@ -1967,7 +1986,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, ".deb")) {
             what = "dpkg bundle install";
         } else if (((ci_contains(text, "rpm") &&
-                    (ci_contains(text, " -i") || ci_contains(text, " -U"))) ||
+                    (ci_contains(text, " -i") || ci_contains(text, " -u"))) ||
                    (ci_contains(text, "dnf") && ci_contains(text, " install ")) ||
                    (ci_contains(text, "yum") && ci_contains(text, " install ")) ||
                    (ci_contains(text, "zypper") && ci_contains(text, " install ")) ||
@@ -2382,18 +2401,18 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, "poweroff") || ci_contains(text, "halt") ||
                      ci_contains(text, "reboot"))) ||
                    ci_contains(text, "init 1") || ci_contains(text, "init s") ||
-                   ci_contains(text, "init S") || ci_contains(text, "telinit 1") ||
-                   ci_contains(text, "telinit s") || ci_contains(text, "telinit S") ||
+                   ci_contains(text, "init s") || ci_contains(text, "telinit 1") ||
+                   ci_contains(text, "telinit s") || ci_contains(text, "telinit s") ||
                    ci_contains(text, "reboot -") || ci_contains(text, "reboot now") ||
                    ci_contains(text, "poweroff -") || ci_contains(text, "halt -") ||
                    (ci_contains(text, "shutdown") &&
-                    (ci_contains(text, " -h") || ci_contains(text, " -H") ||
-                     ci_contains(text, " -P") || ci_contains(text, " -r")))) {
+                    (ci_contains(text, " -h") || ci_contains(text, " -h") ||
+                     ci_contains(text, " -p") || ci_contains(text, " -r")))) {
             what = "service/runlevel/power primitive";
         } else if (ci_contains(text, "userdel ") || ci_contains(text, "groupdel ") ||
                    (ci_contains(text, "gpasswd") &&
                     (ci_contains(text, " -a") || ci_contains(text, " -d") ||
-                     ci_contains(text, " -A") || ci_contains(text, " -M"))) ||
+                     ci_contains(text, " -a") || ci_contains(text, " -m"))) ||
                    (ci_contains(text, "usermod") &&
                     (ci_contains(text, " -p") || ci_contains(text, " -l") ||
                      ci_contains(text, " -u") || ci_contains(text, " -s"))) ||
@@ -2466,7 +2485,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " -i "))) ||
                    (ci_contains(text, "efibootmgr") &&
                     (ci_contains(text, " -c") || ci_contains(text, " -b") ||
-                     ci_contains(text, " -d") || ci_contains(text, " -B"))) ||
+                     ci_contains(text, " -d") || ci_contains(text, " -b"))) ||
                    (ci_contains(text, "efivar") && ci_contains(text, " -w")) ||
                    (ci_contains(text, "update-alternatives") &&
                     ci_contains(text, "--install"))) {
@@ -2697,7 +2716,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, "remove") ||
                      ci_contains(text, "authrestart"))) ||
                    (ci_contains(text, "profiles") &&
-                    (ci_contains(text, " -i") || ci_contains(text, " -I") ||
+                    (ci_contains(text, " -i") || ci_contains(text, " -i") ||
                      ci_contains(text, "install") ||
                      ci_contains(text, "remove"))) ||
                    (ci_contains(text, "launchctl") &&
@@ -2846,7 +2865,7 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "auditctl") &&
                     (ci_contains(text, " -e 0") || ci_contains(text, " -e0") ||
                      ci_contains(text, " -e 2") || ci_contains(text, " -e2") ||
-                     ci_contains(text, " -D"))) ||
+                     ci_contains(text, " -d"))) ||
                    (ci_contains(text, "ip xfrm") &&
                     (ci_contains(text, "add") || ci_contains(text, "update") ||
                      ci_contains(text, "delete") || ci_contains(text, "flush"))) ||
@@ -4777,7 +4796,7 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "htpasswd") &&
                     (ci_contains(text, " -c") ||
                      ci_contains(text, " -b") ||
-                     ci_contains(text, " -B") ||
+                     ci_contains(text, " -b") ||
                      ci_contains(text, " -d") ||
                      ci_contains(text, " -v"))) ||
                    (ci_contains(text, "amtool") &&
@@ -5209,7 +5228,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " source-file"))) ||
                    (ci_contains(text, "screen") &&
                     (ci_contains(text, " -dm") ||
-                     ci_contains(text, " -dmS") ||
+                     ci_contains(text, " -dms") ||
                      ci_contains(text, " -d -m"))) ||
                    (ci_contains(text, "inotifywait") &&
                     (ci_contains(text, " -m") ||
@@ -7840,6 +7859,224 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "mount_smbfs") || ci_contains(text, "mount_nfs")
         ) {
             what = "repl/escape/rmm/miner/storage/exec primitive";
+        } else if (
+            /* storage teardown extras + fs destruction */
+            ci_contains(text, "fstrim") ||
+            ci_contains(text, "mkswap") || ci_contains(text, "resize2fs") ||
+            ci_contains(text, "e2label") ||
+            (ci_contains(text, "tune2fs") &&
+             (ci_contains(text, " -u") || ci_contains(text, " -c") ||
+              ci_contains(text, " -i") || ci_contains(text, " -o") ||
+              ci_contains(text, " -m") || ci_contains(text, " -j") ||
+              ci_contains(text, " -e") || ci_contains(text, " -r") ||
+              ci_contains(text, " -s"))) ||
+            ci_contains(text, "xfs_admin") || ci_contains(text, "xfs_io") ||
+            ci_contains(text, "xfs_bmap") || ci_contains(text, "xfs_estimate") ||
+            ci_contains(text, "xfs_freeze") || ci_contains(text, "xfs_growfs") ||
+            ci_contains(text, "xfs_metadump") || ci_contains(text, "xfs_repair") ||
+            ci_contains(text, "btrfstune") || ci_contains(text, "bcache") ||
+            (ci_contains(text, "btrfs") &&
+             (ci_contains(text, " send") || ci_contains(text, " receive") ||
+              ci_contains(text, " balance") || ci_contains(text, " rescue") ||
+              ci_contains(text, " restore") || ci_contains(text, " scrub") ||
+              ci_contains(text, " check") || ci_contains(text, " property") ||
+              ci_contains(text, " quota") || ci_contains(text, " qgroup") ||
+              ci_contains(text, " inspect") || ci_contains(text, " dump"))) ||
+            (ci_contains(text, "mdadm") &&
+             (ci_contains(text, " --create") || ci_contains(text, " --build") ||
+              ci_contains(text, " --grow") || ci_contains(text, " --assemble") ||
+              ci_contains(text, " --misc") || ci_contains(text, " --monitor") ||
+              ci_contains(text, " --incremental"))) ||
+            (ci_contains(text, "dmsetup") &&
+             (ci_contains(text, " clear") || ci_contains(text, " wipe") ||
+              ci_contains(text, " suspend") || ci_contains(text, " create") ||
+              ci_contains(text, " reload") || ci_contains(text, " rename") ||
+              ci_contains(text, " resume") || ci_contains(text, " table"))) ||
+            ci_contains(text, "zdb") || ci_contains(text, "ztest") ||
+            ci_contains(text, "zstreamdump") || ci_contains(text, "zinject") ||
+            ci_contains(text, "zvol_wait") || ci_contains(text, "zfs_ids_to_path") ||
+            (ci_contains(text, "zpool") &&
+             (ci_contains(text, " create") || ci_contains(text, " scrub") ||
+              ci_contains(text, " initialize") || ci_contains(text, " resilver") ||
+              ci_contains(text, " import"))) ||
+            (ci_contains(text, "zfs") &&
+             (ci_contains(text, " snapshot") || ci_contains(text, " clone") ||
+              ci_contains(text, " share") || ci_contains(text, " mount ") ||
+              ci_contains(text, " upgrade") || ci_contains(text, " set ") ||
+              ci_contains(text, " project"))) ||
+            /* screenshot / audio / input-injection / keylogger */
+            (ci_contains(text, "grim") &&
+             (ci_contains(text, " -") || ci_contains(text, ".png") ||
+              ci_contains(text, ".jpg") || ci_contains(text, " /"))) ||
+            (ci_contains(text, "slurp") && ci_contains(text, " -")) ||
+            (ci_contains(text, "maim") &&
+             (ci_contains(text, " -") || ci_contains(text, ".png") ||
+              ci_contains(text, ".jpg"))) ||
+            ci_contains(text, "hyprshot") || ci_contains(text, "grimblast") ||
+            ci_contains(text, "xfce4-screenshooter") ||
+            ci_contains(text, "pw-record") || ci_contains(text, "avconv") ||
+            (ci_contains(text, "sox") &&
+             (ci_contains(text, " rec ") || ci_contains(text, " -d ") ||
+              ci_contains(text, " -t "))) ||
+            ci_contains(text, "motioneye") || ci_contains(text, "zoneminder") ||
+            ci_contains(text, "zmeventnotification") ||
+            (ci_contains(text, "motion") &&
+             (ci_contains(text, " -c") || ci_contains(text, " -b") ||
+              ci_contains(text, " -d") || ci_contains(text, " -n"))) ||
+            ci_contains(text, "xte ") || ci_contains(text, "xvkbd") ||
+            ci_contains(text, "xdo ") || ci_contains(text, "input-recorder") ||
+            (ci_contains(text, "keyd") &&
+             (ci_contains(text, " send-keys") || ci_contains(text, " monitor") ||
+              ci_contains(text, " applymap") || ci_contains(text, " -m"))) ||
+            ci_contains(text, "keysniffer") ||
+            /* miner / C2 / RAT / stealer vocabulary extras */
+            ci_contains(text, "tnn-miner") || ci_contains(text, "cryptonight") ||
+            ci_contains(text, "randomx") || ci_contains(text, "silenttrinity") ||
+            ci_contains(text, "dcrat") || ci_contains(text, "vidar") ||
+            ci_contains(text, "meduza") ||
+            (ci_contains(text, "sliver") &&
+             (ci_contains(text, " beacon") || ci_contains(text, " mtls") ||
+              ci_contains(text, " http") || ci_contains(text, " wg") ||
+              ci_contains(text, " implant") || ci_contains(text, " c2"))) ||
+            (ci_contains(text, "quasar") &&
+             (ci_contains(text, " c2") || ci_contains(text, " rat"))) ||
+            (ci_contains(text, "warzone") &&
+             (ci_contains(text, " rat") || ci_contains(text, " c2"))) ||
+            (ci_contains(text, "raccoon") &&
+             (ci_contains(text, " stealer") || ci_contains(text, " c2"))) ||
+            (ci_contains(text, "ares") && ci_contains(text, " c2")) ||
+            (ci_contains(text, "orion") && ci_contains(text, " c2")) ||
+            (ci_contains(text, "villager") && ci_contains(text, " c2")) ||
+            (ci_contains(text, "merlin") &&
+             (ci_contains(text, " c2") || ci_contains(text, " beacon"))) ||
+            (ci_contains(text, "octopus") &&
+             (ci_contains(text, " c2") || ci_contains(text, " agent"))) ||
+            /* LOLBin / exec-helper residuals */
+            (ci_contains(text, "esentutl") &&
+             (ci_contains(text, " /p") || ci_contains(text, " /o") ||
+              ci_contains(text, " /r") || ci_contains(text, " /g") ||
+              ci_contains(text, " /m"))) ||
+            (ci_contains(text, "forfiles") &&
+             (ci_contains(text, " /c") || ci_contains(text, " /s") ||
+              ci_contains(text, " /p"))) ||
+            (ci_contains(text, "mmc") &&
+             (ci_contains(text, " /") || ci_contains(text, "msc"))) ||
+            (ci_contains(text, "wmic") &&
+             (ci_contains(text, " /node") || ci_contains(text, " /namespace") ||
+              ci_contains(text, " process list") ||
+              ci_contains(text, " process get") ||
+              ci_contains(text, " bios get") ||
+              ci_contains(text, " computersystem get") ||
+              ci_contains(text, " os get") || ci_contains(text, " baseboard get") ||
+              ci_contains(text, " cpu get") || ci_contains(text, " diskdrive get") ||
+              ci_contains(text, " nicconfig") || ci_contains(text, " startup list") ||
+              ci_contains(text, " service list") || ci_contains(text, " qfe") ||
+              ci_contains(text, " product get") || ci_contains(text, " share list") ||
+              ci_contains(text, " sysaccount") || ci_contains(text, " group list") ||
+              ci_contains(text, " useraccount") || ci_contains(text, " netlogin") ||
+              ci_contains(text, " rdtoggle") || ci_contains(text, " recoveros"))) ||
+            (ci_contains(text, "manage-bde") &&
+             (ci_contains(text, " -protectors") ||
+              ci_contains(text, " -backupkey") ||
+              ci_contains(text, " -changepassword") ||
+              ci_contains(text, " -changepin") ||
+              ci_contains(text, " -changekey") ||
+              ci_contains(text, " -forcerecovery") ||
+              ci_contains(text, " -getpackage"))) ||
+            (ci_contains(text, "ncat") && ci_contains(text, " --lua-exec")) ||
+            (ci_contains(text, "socat") && ci_contains(text, " system:")) ||
+            (ci_contains(text, "parallel") &&
+             (ci_contains(text, " ::") || ci_contains(text, " --pipe"))) ||
+            ((ci_contains(text, "gawk") || ci_contains(text, "mawk")) &&
+             (ci_contains(text, "system(") || ci_contains(text, "begin") ||
+              ci_contains(text, " getline"))) ||
+            (ci_contains(text, "tar") && ci_contains(text, " --to-command")) ||
+            /* DNS TXT/ANY exfil + tunnel helpers */
+            (ci_contains(text, "dig") &&
+             (ci_contains(text, " txt") ||
+              ci_contains(text, " -t txt") || ci_contains(text, " -t any") ||
+              ci_contains(text, " -x"))) ||
+            (ci_contains(text, "nslookup") &&
+             (ci_contains(text, " -type=txt") || ci_contains(text, " -qt=txt") ||
+              ci_contains(text, " -type=any") || ci_contains(text, " -qt=any"))) ||
+            (ci_contains(text, "host") &&
+             (ci_contains(text, " -t txt") || ci_contains(text, " -t any") ||
+              ci_contains(text, " -ax"))) ||
+            (ci_contains(text, "drill") &&
+             (ci_contains(text, " txt") || ci_contains(text, " any") ||
+              ci_contains(text, " -x"))) ||
+            ci_contains(text, "doggo") || ci_contains(text, "kdig") ||
+            /* external-IP recon endpoints */
+            ((ci_contains(text, "curl") || ci_contains(text, "wget")) &&
+             (ci_contains(text, "ifconfig.me") || ci_contains(text, "ident.me") ||
+              ci_contains(text, "icanhazip") || ci_contains(text, "ipify") ||
+              ci_contains(text, "checkip") || ci_contains(text, "wtfismyip") ||
+              ci_contains(text, "ipinfo") || ci_contains(text, "ipapi") ||
+              ci_contains(text, "ipecho") || ci_contains(text, "ifconfig.co"))) ||
+            /* xdg / desktop launcher with remote payload */
+            ((ci_contains(text, "xdg-open") || ci_contains(text, "gio ") ||
+              ci_contains(text, "kde-open") || ci_contains(text, "sensible-browser") ||
+              ci_contains(text, "x-www-browser") || ci_contains(text, "gnome-open") ||
+              ci_contains(text, "exo-open") || ci_contains(text, "open ")) &&
+             ci_contains(text, " http")) ||
+            /* systemd / package-manager / loader tamper */
+            ci_contains(text, "systemd-dissect") ||
+            ci_contains(text, "systemd-volatile-root") ||
+            (ci_contains(text, "machinectl") &&
+             (ci_contains(text, " bind") || ci_contains(text, " copy-") ||
+              ci_contains(text, " import-") || ci_contains(text, " export-") ||
+              ci_contains(text, " image-"))) ||
+            (ci_contains(text, "alternatives") &&
+             (ci_contains(text, " --set") || ci_contains(text, " --install") ||
+              ci_contains(text, " --config") || ci_contains(text, " --remove") ||
+              ci_contains(text, " --auto") || ci_contains(text, " --slave") ||
+              ci_contains(text, " --master") || ci_contains(text, " --altdir") ||
+              ci_contains(text, " --admindir"))) ||
+            ci_contains(text, "dpkg-divert") ||
+            ci_contains(text, "dpkg-statoverride") ||
+            (ci_contains(text, "rpm") &&
+             (ci_contains(text, " --initdb") || ci_contains(text, " --rebuilddb") ||
+              ci_contains(text, " -e") || ci_contains(text, " --erase"))) ||
+            ci_contains(text, "rpm2cpio") || ci_contains(text, "mkinitcpio") ||
+            ci_contains(text, "mkinitfs") ||
+            (ci_contains(text, "ldconfig") &&
+             (ci_contains(text, " -l") || ci_contains(text, " -r") ||
+              ci_contains(text, " -f"))) ||
+            (ci_contains(text, "setfacl") &&
+             (ci_contains(text, " -m") || ci_contains(text, " -b") ||
+              ci_contains(text, " -x") || ci_contains(text, " -r") ||
+              ci_contains(text, " -k") || ci_contains(text, " -s") ||
+              ci_contains(text, " -d") || ci_contains(text, " --set") ||
+              ci_contains(text, " --remove") || ci_contains(text, " --mask") ||
+              ci_contains(text, " --default") || ci_contains(text, " --restore"))) ||
+            ci_contains(text, "luksmeta") ||
+            (ci_contains(text, "keyctl") &&
+             (ci_contains(text, " list") || ci_contains(text, " add") ||
+              ci_contains(text, " read") || ci_contains(text, " print") ||
+              ci_contains(text, " update") || ci_contains(text, " revoke") ||
+              ci_contains(text, " purge") || ci_contains(text, " clear") ||
+              ci_contains(text, " new_") || ci_contains(text, " instantiate") ||
+              ci_contains(text, " pupdate") || ci_contains(text, " restrict"))) ||
+            /* firmware / hardware inventory recon */
+            ci_contains(text, "dmidecode") || ci_contains(text, "smbios") ||
+            ci_contains(text, "biosdecode") || ci_contains(text, "vpddecode") ||
+            ci_contains(text, "lshw") || ci_contains(text, "hwinfo") ||
+            ci_contains(text, "inxi") ||
+            /* environment-variable exec/poisoning keys */
+            strstr(text, "ENV=/") || strstr(text, "LESSOPEN=|") ||
+            strstr(text, "LESSOPEN=/") || strstr(text, "LESSCLOSE=|") ||
+            strstr(text, "LESSCLOSE=/") || strstr(text, "PAGER=/") ||
+            strstr(text, "PAGER=sh") || strstr(text, "PS4=$") ||
+            strstr(text, "BASH_XTRACEFD=/") || strstr(text, "BASH_XTRACEFD=") ||
+            strstr(text, "IFS=/") || strstr(text, "IFS=:") ||
+            strstr(text, "SHELLOPTS=") || strstr(text, "GLOBIGNORE=") ||
+            strstr(text, "MALLOC_TRACE=/") || strstr(text, "NLSPATH=/") ||
+            strstr(text, "NLSPATH=%") || strstr(text, "LD_ORIGIN_PATH=/") ||
+            strstr(text, "GCC_EXEC_PREFIX=/") || strstr(text, "CPATH=/") ||
+            strstr(text, "CPATH=:") || strstr(text, "XDG_DATA_DIRS=/") ||
+            strstr(text, "XDG_DATA_DIRS=:") || strstr(text, "MAILCAP=/")
+        ) {
+            what = "storage/input/stealer/env/exec primitive";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

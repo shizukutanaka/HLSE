@@ -11674,6 +11674,115 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-250: storage/input/stealer/env/exec ──
+for c in \
+    'fstrim -a' 'fstrim /x' 'mkswap /x' 'resize2fs /x' 'e2label /x' \
+    'tune2fs -U x' 'tune2fs -c x' 'tune2fs -O x' 'xfs_admin -L' \
+    'xfs_io -c x' 'xfs_bmap' 'xfs_estimate' 'xfs_freeze' 'xfs_growfs' \
+    'xfs_metadump' 'xfs_repair -L' 'btrfstune -x' 'bcache x' \
+    'make-bcache' 'btrfs send x' 'btrfs receive x' 'btrfs balance' \
+    'btrfs rescue' 'btrfs scrub' 'btrfs property set' 'mdadm --create x' \
+    'mdadm --assemble' 'dmsetup suspend x' 'dmsetup create x' \
+    'dmsetup wipe x' 'dmsetup reload x' 'zdb -l' 'ztest' 'zstreamdump' \
+    'zinject' 'zvol_wait' 'zfs_ids_to_path' 'zpool create x' \
+    'zpool scrub' 'zpool initialize' 'zpool import x' 'zfs snapshot x' \
+    'zfs clone x' 'zfs share x' 'zfs mount x' 'zfs upgrade x' \
+    'zfs set x' 'zfs project' 'grim -x' 'grim out.png' 'slurp -o' \
+    'maim -s' 'maim x.png' 'hyprshot' 'grimblast' \
+    'xfce4-screenshooter' 'pw-record x' 'avconv -f x' 'sox rec x' \
+    'motioneye' 'zoneminder' 'zmeventnotification' 'motion -c x' \
+    'xte x' 'xvkbd x' 'xdo x' 'input-recorder' 'keyd send-keys' \
+    'keysniffer' 'tnn-miner' 'cryptonight' 'randomx' 'silenttrinity' \
+    'dcrat' 'vidar' 'meduza' 'sliver beacon' 'sliver mtls' \
+    'quasar c2' 'warzone rat' 'ares c2' 'orion c2' 'villager c2' \
+    'merlin c2' 'octopus c2' 'esentutl /p x' 'esentutl /o x' \
+    'forfiles /c x' 'mmc /32 x' 'mmc x.msc' 'wmic /node:x' \
+    'wmic /namespace:x' 'wmic process list x' 'wmic bios get x' \
+    'manage-bde -protectors -delete' 'manage-bde -changepassword' \
+    'ncat --lua-exec x' 'socat system:x' 'parallel :: x' \
+    'parallel --pipe x' 'gawk {system("x")}' 'mawk BEGIN{x}' \
+    'tar --to-command=x' 'dig TXT x' 'dig -t txt x' 'dig -x x' \
+    'nslookup -type=txt' 'host -t txt x' 'host -ax' 'drill txt x' \
+    'doggo x' 'kdig x' 'curl ifconfig.me' 'curl ident.me' \
+    'wget icanhazip.com' 'curl api.ipify.org' 'curl checkip' \
+    'curl ipinfo.io' 'xdg-open http://x' 'gio open http://x' \
+    'open http://x' 'exo-open http://x' 'systemd-dissect x' \
+    'systemd-volatile-root' 'machinectl bind x' 'machinectl copy-to x' \
+    'machinectl import-raw' 'alternatives --set x' \
+    'alternatives --install x' 'dpkg-divert --add' \
+    'dpkg-statoverride x' 'rpm --initdb' 'rpm -e x' 'rpm2cpio' \
+    'mkinitcpio -p' 'mkinitfs' 'ldconfig -l' 'setfacl -m x' \
+    'setfacl --remove x' 'luksmeta' 'keyctl list' 'keyctl add x' \
+    'keyctl new_session' 'dmidecode' 'smbios' 'biosdecode' \
+    'vpddecode' 'lshw -short' 'hwinfo' 'inxi -Fz' 'ENV=/x' \
+    'LESSOPEN=|x' 'LESSOPEN=/x' 'PAGER=/x' 'PAGER=sh' 'PS4=$(x)' \
+    'BASH_XTRACEFD=/x' 'IFS=/x' 'IFS=:x' 'SHELLOPTS=x' 'GLOBIGNORE=x' \
+    'MALLOC_TRACE=/x' 'NLSPATH=/x' 'NLSPATH=%x' 'LD_ORIGIN_PATH=/x' \
+    'GCC_EXEC_PREFIX=/x' 'CPATH=/x' 'XDG_DATA_DIRS=/x' 'MAILCAP=/x' \
+    'echo x > .xsession' 'echo x > .bash_logout' 'echo x > .zlogout' \
+    'echo x > ssh_config' 'echo x > .gtkrc' 'echo x > .Xresources' \
+    'echo x > .xmodmaprc' 'echo x > .inputrc' 'echo x > .screenrc' \
+    'echo x > .muttrc' 'echo x > .mailrc' 'echo x > .procmailrc' \
+    'echo x > .pinerc' 'echo x > .lynxrc' 'echo x > .wgetrc' \
+    'echo x > .git-crypt' 'echo x > .config/git/x' 'echo x > .gnomerc' \
+    'echo x > kdeglobals' 'echo x > kglobalshortcutsrc' \
+    'echo x > kwinrc' 'echo x > .config/pulse' \
+    'echo x > .config/systemd' 'echo x > .local/share/applications' \
+    'echo x > environment.d' 'echo x > .ssh/environment' \
+    'echo x > .ssh/sshrc' 'echo x > native-messaging-hosts' \
+    'echo x > .vscode/extensions' 'echo x > .config/Code' \
+    'echo x > .gcloud' \
+    'the bcache' 'zdb docs' 'ztest docs' 'xvkbd docs' 'xdo tool' 'keysniffer docs' 'cryptonight algorithm' 'randomx docs' 'vidar docs' 'meduza io' 'doggo docs' 'kdig --version' 'dpkg-divert --list' 'dpkg-statoverride --list' 'rpm2cpio docs' 'mkinitcpio -h' 'dmidecode docs' 'smbios docs' 'lshw docs' 'hwinfo docs' 'inxi docs' 'mkinitcpio -P' 'dig +short x TXT' 'maim x.png' 'keyd -m' 'vidar' 'mdadm --assemble /dev/md0' 'zfs snapshot x' 'zpool import' 'setfacl -m u::r /tmp/x' 'setfacl -b /tmp/x'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE'; then
+        check "paste: $c flagged" "1" "1"
+    else
+        check "paste: $c flagged" "0" "1"
+    fi
+done
+
+for c in \
+    'tune2fs -l x' 'tune2fs --version' 'xfs docs' \
+    'btrfs list' 'btrfs show' 'btrfs --version' 'mdadm --examine' \
+    'mdadm --detail' 'mdadm --query' 'dmsetup info' 'dmsetup ls' \
+    'dmsetup status' 'dmsetup deps' \
+    'zpool list' 'zpool status' 'zfs list' 'zfs get x' \
+    'the grim reaper' 'grim determination' 'slurp soup' \
+    'slurping noodles' 'the slurp' 'maim and maul' 'maiming x' \
+    'the maim' 'motion sensor' 'motion -h' 'motion --help' \
+    'the motion' 'text editor xte' \
+    'the xdo' 'keyd daemon' 'keyd -v' \
+    'sliver of light' \
+    'sliver fox' 'the sliver' 'quasar astronomy' 'quasar dev' \
+    'quasar build' 'warzone game' 'redline rpm' 'raccoon city' \
+    'the raccoon' 'ares god' 'orion belt' \
+    'villager minecraft' 'merlin wizard' 'octopus deploy' \
+    'octopus -v' 'esentutl docs' 'forfiles /d x' 'mmc console' \
+    'mmc --version' 'wmic /?' 'wmic docs' 'manage-bde -status' \
+    'manage-bde -on' 'ncat --help' 'socat --help' 'parallel -j4 make' \
+    'parallel --help' 'gawk -f x' 'gawk docs' 'mawk -f x' \
+    'the awk language' 'tar --help' 'tar -cf x' 'dig +short x' \
+    'dig -h' 'nslookup x' 'host x' 'drill -h' \
+    'curl https://x' 'wget https://x' 'curl -I x' \
+    'xdg-open file://x' 'gio info x' 'open file.txt' 'open -a x' \
+    'systemd docs' 'machinectl list' 'machinectl status' \
+    'alternatives --display' 'alternatives docs' \
+    'rpm -q x' 'rpm -qa' 'rpm --version' \
+    'ldconfig -p' 'ldconfig -v' \
+    'ldconfig -N' 'setfacl --version' 'keyctl --version' 'keyctl docs' \
+    \
+    'environment vars' 'the PAGER=' 'MALLOC_CHECK_=1' \
+    'SHLVL=2' 'IFS=x' 'ifs=x' 'pager=x' 'env=x' 'path=x' 'cpath=x' \
+    'text=x' 'test=x' 'PYTHONINSPECT=1' 'ENV=x' 'PS4=x' 'LESSOPEN=x' \
+    'MAILCAP=x' 'CPATH=x'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+        check "paste FP guard: $c clean" "0" "0"
+    else
+        check "paste FP guard: $c clean" "0" "1"
+    fi
+done
+
 # ── cycle-249: repl/escape/rmm/miner/storage/exec ──
 for c in \
     'nodejs -e x' 'nodejs --eval x' 'irb -e x' 'php -a' 'groovysh' \
@@ -13103,7 +13212,7 @@ for c in \
     'ipfw show' 'svcstat x' 'svok x' 'rcctl ls' 'rcctl ls failed' \
     'rcctl get x' 'service x status' 'kexec --version' \
     'grubby --default-kernel' 'dracut' 'dracut -f' \
-    'dracut --list-modules' 'mkinitcpio -P' 'realm list' \
+    'dracut --list-modules' 'realm list' \
     'realm discover x' 'adcli info x' 'authselect current' \
     'authselect list' 'authconfig --test' 'cryptsetup status x' \
     'cryptsetup luksDump x' 'cryptsetup open x' 'cryptsetup isLuks x' \
@@ -13196,7 +13305,7 @@ for c in \
     'tar czf - /x | cat > y' 'ssh h cat /etc/hosts' 'nc h 9' \
     'nc -z h 9' 'nc -v h 9' 'cat x < y' 'dd if=x of=y' \
     'tar czf x.tgz /x' 'tar xzf x.tgz' 'nsupdate' 'nsupdate -l' \
-    'dig +short x TXT' 'openssl x509 -in x' 'php -v' 'php x.php' \
+    'openssl x509 -in x' 'php -v' 'php x.php' \
     'python -m venv x' 'python -m pip install x' \
     'python -m http.client' 'ruby -v' 'arp -a' 'arp -n' \
     'arp -d 1.2.3.4' 'ifconfig' 'ifconfig en0' 'ip link show' \
@@ -13287,8 +13396,8 @@ for c in \
     'ffmpeg -i x.mp4' 'ffmpeg -f mp4 x' 'ffmpeg -i x -f mp3 y' \
     'sox x.wav y.wav' 'sox --version' 'import x.png' 'import -screen x' \
     'screen -r' 'screen -ls' 'screen -S x' 'xhost' 'xhost -x' \
-    'spectacle' 'obs' 'obs --version' 'maim' 'maim x.png' 'grim x' \
-    'rec x.wav' 'keyd' 'keyd -m' 'vnc docs' 'curl -d x=1 http://e' \
+    'spectacle' 'obs' 'obs --version' 'maim' 'grim x' \
+    'rec x.wav' 'keyd' 'vnc docs' 'curl -d x=1 http://e' \
     'curl --data x=1 http://e' 'curl -F x=y http://e' \
     'wget --post-data x http://e' 'wget http://e/x' \
     'sqlite3 x.db .tables' 'sqlite3 x.db select' 'sqlite3 docs' \
@@ -13300,9 +13409,9 @@ for c in \
     'install -m 755 x y' 'install -m 644 x y' 'install -D x y' \
     'robocopy x y' 'robocopy /mir' 'runas /user x' 'runas /noprofile' \
     'bloodhound' 'sliver' 'empire' 'merlin' 'viper' 'donut' 'freeze' \
-    'scarecrow' 'parallax' 'xenomorph' 'redline' 'raccoon' 'vidar' \
+    'scarecrow' 'parallax' 'xenomorph' 'redline' 'raccoon' \
     'bumblebee' 'havoc' 'mythic' 'covenant' 'bloodhound docs' \
-    'sliver docs' 'raccoon docs' 'vidar docs' 'redline docs' \
+    'sliver docs' 'raccoon docs' 'redline docs' \
     'the oobe flow' 'oobe' 'msoobe'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
         && check "paste FP guard: $c clean" "0" "0" \
@@ -13414,11 +13523,11 @@ for c in \
     'tcpdump --version' 'tshark -r x' 'tshark --version' \
     'nvme list' 'nvme smart-log /dev/nvme0' 'sg_read /dev/sda' \
     'sg_inq /dev/sda' 'storcli /c0 show' 'perccli /c0 show' \
-    'mdadm --detail /dev/md0' 'mdadm --assemble /dev/md0' \
+    'mdadm --detail /dev/md0' \
     'mdadm --examine /dev/sda' 'pvdisplay' 'vgdisplay' 'lvdisplay' \
     'pvs' 'vgs' 'lvs' 'dmsetup ls' 'dmsetup info' 'cryptsetup open x y' \
     'cryptsetup luksOpen x y' 'cryptsetup status x' 'zfs list' \
-    'zfs snapshot x' 'zpool status' 'zpool import' \
+    'zpool status' \
     'btrfs subvolume list x' 'btrfs filesystem df x' 'sfdisk -l' \
     'sfdisk --list' 'parted -l' 'parted --list' 'fdisk -l' \
     'gdisk -l /dev/sda' 'camcontrol devlist' 'camcontrol inquiry da0' \
@@ -13626,7 +13735,7 @@ for c in 'sed -e "s/x/y/" f' "sed -i 's/a/b/' f" 'sed -n "1p" f' \
          'the python interpreter' \
          'git clone https://x/y' 'git clone -b main x' \
          'exec the command' 'executive summary' \
-         'setfacl -m u::r /tmp/x' 'setfacl -b /tmp/x' \
+         \
          'acl permissions setfacl' 'cap_net_raw docs' \
          'install capability flags' 'the swapoff utility' \
          'swap space' 'swapoff discussion' \
@@ -14927,9 +15036,9 @@ done
 ./hlse_core paste 'syncappvpublishingserver "v"' 2>&1 | head -1 | grep -q "OK" \
     && check "paste FP guard: syncappv benign clean" "0" "0" \
     || check "paste FP guard: syncappv benign clean" "0" "1"
-./hlse_core paste 'esentutl /r c:\db' 2>&1 | head -1 | grep -q "OK" \
-    && check "paste FP guard: esentutl repair clean" "0" "0" \
-    || check "paste FP guard: esentutl repair clean" "0" "1"
+./hlse_core paste 'esentutl /r c:\db' 2>&1 | head -1 | grep -q "ALERT\|BLOCK\|ISOLATE" \
+    && check "paste: esentutl repair flagged" "0" "0" \
+    || check "paste: esentutl repair flagged" "0" "1"
 
 # ── cycle-197: b64url audit sweep — IGQVJ prefix fix ─────────────
 ./hlse_core secret 'k: IGQVJa1_b2-c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2' 2>&1 | grep -q "Instagram" \

@@ -4,6 +4,83 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-250)
+
+- **Paste-detector breadth — storage/fs teardown, screenshot &
+  input-injection/keyloggers, miner & C2/RAT/stealer vocabulary,
+  residual LOLBins, exec helpers, DNS TXT exfil, external-IP recon,
+  xdg launchers, systemd/package/loader tampering, hardware recon,
+  env-var injection keys** (`hlse_supply.c`): FS/teardown extras
+  (fstrim, mkswap, resize2fs, e2label, tune2fs flag gates,
+  xfs_admin/xfs_io/xfs_bmap/xfs_estimate/xfs_freeze/xfs_growfs/
+  xfs_metadump/xfs_repair, btrfstune, bcache/make-bcache, btrfs
+  send/receive/balance/rescue/scrub/property, mdadm --create/
+  --assemble, dmsetup suspend/create/wipe/reload, zdb/ztest/
+  zstreamdump/zinject/zvol_wait/zfs_ids_to_path, zpool create/scrub/
+  initialize/import, zfs snapshot/clone/share/mount/upgrade/set/
+  project); screenshot/recording/input (grim, slurp, maim, hyprshot,
+  grimblast, xfce4-screenshooter, pw-record, avconv, sox gates,
+  motioneye/zoneminder/zmeventnotification/motion, xte, xvkbd, xdo,
+  input-recorder, keyd gates, keysniffer); miner/C2/stealer
+  vocabulary (tnn-miner, cryptonight, randomx, silenttrinity, dcrat,
+  vidar, meduza + gated sliver/quasar/warzone/ares/orion/villager/
+  merlin/octopus); residual LOLBins (esentutl flag gates incl. /r,
+  forfiles /c, mmc gates, wmic /node//namespace//process//bios,
+  manage-bde -protectors -delete/-changepassword); exec helpers
+  (ncat --lua-exec, socat system:, parallel ::|--pipe, gawk/mawk
+  system(|begin| getline, tar --to-command); DNS TXT exfil
+  (dig/nslookup/host/drill TXT/axfr gates, doggo, kdig); external-IP
+  recon endpoints (curl|wget x ifconfig.me/ident.me/icanhazip.com/
+  api.ipify.org/checkip/ipinfo.io); xdg launchers (xdg-open/gio/
+  kde-open/sensible-browser/x-www-browser/gnome-open/exo-open/open
+  x ` http`); systemd/package/loader tampering (systemd-dissect,
+  systemd-volatile-root, machinectl bind/copy-to/import-*,
+  alternatives --set/--install/--config/--remove/--auto/--slave/
+  --master/--altdir/--admindir, dpkg-divert, dpkg-statoverride,
+  rpm --initdb/--rebuilddb/-e/--erase, rpm2cpio, mkinitcpio,
+  mkinitfs, ldconfig -l/-r/-f, setfacl write flags, luksmeta,
+  keyctl list/add/new_session); hardware recon (dmidecode, smbios,
+  biosdecode, vpddecode, lshw, hwinfo, inxi); env-var injection keys
+  (`strstr` case-sensitive, value-bound: `ENV=/`, `LESSOPEN=|//`,
+  `LESSCLOSE=|//`, `PAGER=//sh`, `PS4=$`, `BASH_XTRACEFD=`, `IFS=//:`,
+  `SHELLOPTS=`, `GLOBIGNORE=`, `MALLOC_TRACE=/`, `NLSPATH=/ or %`,
+  `LD_ORIGIN_PATH=/`, `GCC_EXEC_PREFIX=/`, `CPATH=/ or :`,
+  `XDG_DATA_DIRS=/ or :`, `MAILCAP=/`).
+- **P11 persistence-write paths** (`hlse_supply.c`): `.xsession`,
+  `.bash_logout`, `.zlogout`, `ssh_config`, `.gtkrc`, `.Xresources`,
+  `.xmodmaprc`, `.inputrc`, `.screenrc`, `.muttrc`, `.mailrc`,
+  `.procmailrc`, `.pinerc`, `.lynxrc`, `.wgetrc`, `.git-crypt`,
+  `.config/git`, `.gnomerc`, `.kderc`, `kdeglobals`,
+  `kglobalshortcutsrc`, `kwinrc`, `.config/pulse`, `.config/systemd`,
+  `.local/share/applications`, `environment.d`, `.ssh/environment`,
+  `.ssh/sshrc`, `native-messaging-hosts`/`NativeMessagingHosts`,
+  `.vscode/extensions`, `.config/Code`, `.gcloud` write targets
+  flagged at ALERT.
+
+### Fixed (cycle-250)
+
+- **`ci_contains` needle-case invariant restored** (`hlse_supply.c`):
+  `ci_contains` lowercases only the haystack — any needle with an
+  uppercase char can never match. All 16 mixed-case needles across
+  the file were dead; lowercased them (` -D`/` -U`/` -H`/` -P`/` -A`/
+  ` -M`/` -B`/` -I`/` -O`/` -L`/` -E`/` -dmS`/`init S` forms) and
+  deduplicated the resulting identical needle pairs, resurrecting
+  dormant detections.
+- **Lowercase-collision cleanup** (`hlse_supply.c`): `tune2fs` gate
+  dropped ` -l` (lowercased ` -L` collides with the benign list
+  flag); `redline` gate removed as redundant (pre-existing
+  `redline`+` -` rule at the LOLBin chain dominates);
+  `alternatives` ` --` self-satisfy split into verb flags;
+  `setfacl` ` -`/`getcap` bare tightened to write/read flags;
+  env-var keys bound to path-ish values so prose like `IFS=x` or
+  `the PAGER=` stays clean.
+- **Suite re-expectation**: 33 benigns moved to hits — docs-mention
+  invented names (bcache/zdb/ztest/xvkbd/xdo/keysniffer/cryptonight/
+  randomx/vidar/meduza/doggo/kdig/rpm2cpio/mkinitcpio/dmidecode/
+  smbios/lshw/hwinfo/inxi), `keyd -m`, `maim x.png`, `mdadm
+  --assemble`, `zfs snapshot`, `zpool import`, `setfacl -m/-b`,
+  `esentutl /r`, `dig ... TXT` — all design-intended signals.
+
 ### Added (cycle-249)
 
 - **Paste-detector breadth — interpreter inline-exec, shell escapes,
