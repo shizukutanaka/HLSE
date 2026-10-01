@@ -11671,6 +11671,116 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-241: windows audit/ACL/AD/defense + unix mount/SELinux/
+#   audit/xfrm/ebtables/bridge/monitor + session-record + BSD +
+#   DNS/infra/cloud destructive forms
+for c in \
+    'wevtutil sl x /e:true' 'logman create trace x' 'logman delete x' \
+    'pktmon start' 'pktmon filter add x' \
+    'netsh advfirewall firewall add rule x' \
+    'netsh advfirewall firewall delete x' 'cmdkey /generic:x /u:y' \
+    'net group admins x /add /domain' 'sc failure x command= y' \
+    'sc sdset x y' 'icacls x /deny y' \
+    'cacls x /g y:f' 'subinacl /file x /grant y' \
+    'subinacl /file x /deny y' 'wbadmin stop job' 'dsquery user' \
+    'dsadd user x' 'dsmod user x' 'dsrm x' 'csvde -f x' 'ldifde -f x' \
+    'netdom add x' 'netdom join x' 'netdom remove x' 'nltest x' \
+    'nltest /dsgetdc:x' 'w32tm /config x' 'route delete x' \
+    'reg save hklm\sam x' 'reg export hklm\security x' 'msiexec /x x' \
+    'schtasks /delete /tn x' 'rwinsta x' 'tskill x' 'tsshutdn' \
+    'dsacls x /g y' 'pnputil /add-driver x' 'pnputil /delete-driver x' \
+    'mount --bind /x /y' 'mount --rbind /x /y' 'mount -o remount,rw /' \
+    'setenforce permissive' 'semodule -i x' 'semodule -r x' \
+    'setsebool x on' 'setsebool -P x on' 'semanage permissive -a x' \
+    'semanage fcontext -a x' 'aa-disable x' 'aa-teardown' \
+    'auditctl -e 0' 'auditctl -e 2' 'auditctl -D' \
+    'ip xfrm state add x' 'ip xfrm policy flush' 'ebtables -A x' \
+    'ebtables -P x' 'ebtables -t nat -A x' 'brctl addbr x' \
+    'brctl addif x y' 'brctl delif x y' 'iw dev x set type monitor' \
+    'iwconfig x mode monitor' 'airmon-ng start x' 'airmon-ng' 'ltrace x' \
+    'strace -f x' 'strace -e trace=x y' 'script -q x /tmp/l' \
+    'ttyrec x' 'asciinema rec' 'sysdig x' 'falco x' 'kldload x' \
+    'kldunload x' 'ipfw add x' 'ipfw flush' 'ipfw pipe x' \
+    'svc -d x' 'rcctl stop x' 'rcctl disable x' 'rcctl restart x' \
+    'kexec -l x' 'kexec -e' 'grubby --args x' 'grub2-set-default x' \
+    'grub-set-default x' 'dracut --add x' 'dracut --install x' \
+    'realm join x' 'realm leave x' 'adcli join x' 'adcli delete x' \
+    'adcli create x' 'authselect select x' 'authselect apply x' \
+    'authconfig --update' 'authconfig --enable x' \
+    'cryptsetup luksRemoveKey x' 'cryptsetup luksKillSlot x' \
+    'cryptsetup remove x' 'cryptsetup reencrypt x' \
+    'cryptsetup luksHeaderBackup x' 'resolvectl dns x' \
+    'resolvectl nta x' 'rndc flush' 'rndc addzone x' 'rndc delzone x' \
+    'rndc halt' 'rndc stop' 'rndc reload' 'unbound-control reload' \
+    'unbound-control flush x' 'unbound-control forward_add x' \
+    'knotc reload' 'knotc x' 'pdns_control notify x' \
+    'terraform destroy' 'pulumi destroy' 'tofu destroy' \
+    'kubectl delete --all x' 'kubectl delete --all --all-namespaces' \
+    'vault kv get x' 'vault kv put x' 'vault secrets enable x' \
+    'vault policy write x' 'vault token create x' 'consul kv put x' \
+    'consul kv get x' 'consul exec x' 'etcdctl put x y' \
+    'etcdctl del x' 'etcdctl txn' 'nomad exec x' 'nomad stop x' \
+    'nomad alloc x' 'aws s3 rb s3://x --force' \
+    'aws s3api delete-bucket x' 'gsutil rm -r gs://x' \
+    'gsutil rb gs://x' 'az storage container delete x' \
+    'az storage blob remove x' 'aria2c http://x' \
+    'httpie get http://x' 'transmission-remote -a x' \
+    'nmcli con mod x' 'nmcli con down x' 'nmcli con delete x'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "1" "1" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in \
+    'auditctl -e 1' 'auditctl -s' 'auditctl -l' 'auditctl -w x' \
+    'wevtutil qe System' 'wevtutil el' 'logman query' 'logman -ets' \
+    'cmdkey' 'net group' 'net group admins' 'sc query x' \
+    'sc sdshow x' 'icacls x' 'icacls x /reset' 'icacls x /save y' \
+    'icacls x /restore y' 'cacls x' 'takeown /?' 'subinacl /help' \
+    'wbadmin get items' 'wbadmin get versions' \
+    'wbadmin start systemstatebackup' 'ntdsutil' 'w32tm /query' \
+    'w32tm /tz' 'route print' 'route -4 print' 'reg query x' \
+    'reg add x' 'reg import x' 'reg load x' 'reg restore x' \
+    'reg unload x' 'msiexec /i x' 'msiexec /qn /i x' \
+    'schtasks /create /tn x' 'schtasks /query' 'schtasks /run' \
+    'tasklist' 'quser' 'qwinsta' 'logoff' 'msg x y' 'dsacls' \
+    'dsacls x' 'pnputil /enum-drivers' 'pnputil /?' \
+    'mount /dev/x /y' 'mount -o ro /x /y' 'mount -a' 'umount x' \
+    'findmnt' 'setenforce' 'getenforce' 'setenforce 1' \
+    'semodule -l' 'setsebool' 'getsebool x' 'semanage -l' \
+    'sestatus' 'apparmor_status' 'aa-status' 'ausearch' 'aureport' \
+    'ip xfrm state' 'ip xfrm state list' 'ip xfrm monitor' \
+    'ebtables -L' 'ebtables -t filter -L' 'brctl show' \
+    'brctl showmacs' 'iw list' 'iw dev' 'iwconfig' 'iwconfig x' \
+    'the airmon suite' 'strace x' 'strace -o x y' \
+    'strace -c x' 'script x' 'script -a x' 'scriptreplay' 'ttyplay' \
+    'asciinema play' 'asciinema cat' 'kldstat' 'ipfw list' \
+    'ipfw show' 'svcstat x' 'svok x' 'rcctl ls' 'rcctl ls failed' \
+    'rcctl get x' 'service x status' 'kexec --version' \
+    'grubby --default-kernel' 'grub2-mkconfig' 'dracut' 'dracut -f' \
+    'dracut --list-modules' 'mkinitcpio -P' 'realm list' \
+    'realm discover x' 'adcli info x' 'authselect current' \
+    'authselect list' 'authconfig --test' 'cryptsetup status x' \
+    'cryptsetup luksDump x' 'cryptsetup open x' 'cryptsetup isLuks x' \
+    'resolvectl status' 'resolvectl query x' 'resolvectl flush-caches' \
+    'rndc status' 'rndc -s x' 'unbound-control status' \
+    'unbound-control -c x' 'terraform plan' 'terraform apply' \
+    'terraform init' 'terraform output' 'pulumi up' 'pulumi preview' \
+    'tofu plan' 'kubectl delete pod x' 'kubectl delete ns x' \
+    'kubectl delete -f x' 'kubectl get pods' 'vault list' \
+    'vault read x' 'vault status' 'consul members' 'consul catalog' \
+    'etcdctl get x' 'etcdctl member list' 'nomad status' \
+    'nomad job x' 'tsh ls' 'tsh login' 'tsh ssh x' 'aws s3 ls' \
+    'aws ec2 describe-instances' 'aws s3api list-buckets' 'gsutil ls' \
+    'az storage list' 'az storage blob list' \
+    'az account list' 'aria2' 'http http://x' 'xh http://x' \
+    'transmission-remote -l' 'nmcli dev status' 'nmcli con show' \
+    'nmcli -g x' 'nmcli general' 'nmcli connection' 'nmcli radio' \
+    'netstat -r' 'traceroute x' 'ping x'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-240: macOS defense-off/exec/account + memory/core scrape +
 #   namespace/dbus exec + stream-upload exfil + serve-host/MITM +
 #   macOS/tape/firmware wipe (P9 +60)

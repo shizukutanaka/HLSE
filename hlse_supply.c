@@ -2717,6 +2717,220 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "automator") &&
                     ci_contains(text, " -i"))) {
             what = "macOS defense-off/exec/account primitive";
+        /* c241: Windows audit/ACL/AD/defense primitives + Unix
+         * mount/SELinux/audit-off/xfrm/ebtables/bridge/monitor +
+         * session-record + BSD + DNS/infra destructive forms ── */
+        } else if ((ci_contains(text, "wevtutil") &&
+                    ci_contains(text, " sl")) ||
+                   (ci_contains(text, "logman") &&
+                    (ci_contains(text, " create") ||
+                     ci_contains(text, " delete") ||
+                     ci_contains(text, " update") ||
+                     ci_contains(text, " stop"))) ||
+                   ci_contains(text, "pktmon") ||
+                   (ci_contains(text, "netsh") &&
+                    ci_contains(text, "advfirewall") &&
+                    (ci_contains(text, " add ") ||
+                     ci_contains(text, " delete ") ||
+                     ci_contains(text, " set "))) ||
+                   (ci_contains(text, "cmdkey") &&
+                    ci_contains(text, " /generic")) ||
+                   (ci_contains(text, "net group") &&
+                    ci_contains(text, " /add")) ||
+                   (ci_contains(text, "sc ") &&
+                    (ci_contains(text, " failure") ||
+                     ci_contains(text, " sdset"))) ||
+                   (ci_contains(text, "icacls") &&
+                    ci_contains(text, " /deny")) ||
+                   (ci_contains(text, "cacls") &&
+                    ci_contains(text, " /g") &&
+                    !ci_contains(text, "icacls")) ||
+                   (ci_contains(text, "subinacl") &&
+                    (ci_contains(text, " /grant") ||
+                     ci_contains(text, " /deny"))) ||
+                   (ci_contains(text, "wbadmin") &&
+                    ci_contains(text, "stop job")) ||
+                   ci_contains(text, "dsquery") || ci_contains(text, "dsadd") ||
+                   ci_contains(text, "dsmod") || ci_contains(text, "dsrm") ||
+                   (ci_contains(text, "csvde") &&
+                    ci_contains(text, " -f")) ||
+                   (ci_contains(text, "ldifde") &&
+                    ci_contains(text, " -f")) ||
+                   (ci_contains(text, "netdom") &&
+                    (ci_contains(text, " add") ||
+                     ci_contains(text, " remove") ||
+                     ci_contains(text, " join"))) ||
+                   ci_contains(text, "nltest") ||
+                   (ci_contains(text, "w32tm") &&
+                    ci_contains(text, " /config")) ||
+                   (ci_contains(text, "route ") &&
+                    ci_contains(text, " delete")) ||
+                   (ci_contains(text, "reg ") &&
+                    (ci_contains(text, " save") ||
+                     ci_contains(text, " export")) &&
+                    (ci_contains(text, "sam") ||
+                     ci_contains(text, "security") ||
+                     ci_contains(text, "system") ||
+                     ci_contains(text, "ntds"))) ||
+                   (ci_contains(text, "msiexec") &&
+                    ci_contains(text, " /x")) ||
+                   (ci_contains(text, "schtasks") &&
+                    ci_contains(text, " /delete")) ||
+                   ci_contains(text, "rwinsta") ||
+                   ci_contains(text, "tskill") || ci_contains(text, "tsshutdn") ||
+                   (ci_contains(text, "dsacls") &&
+                    ci_contains(text, " /g")) ||
+                   (ci_contains(text, "pnputil") &&
+                    (ci_contains(text, "/add-driver") ||
+                     ci_contains(text, "/delete-driver")))) {
+            what = "windows audit/ACL/AD/defense primitive";
+        } else if ((ci_contains(text, "mount") &&
+                    (ci_contains(text, "--bind") ||
+                     ci_contains(text, "--rbind") ||
+                     ci_contains(text, "remount"))) ||
+                   (ci_contains(text, "setenforce") &&
+                    ci_contains(text, "permissive")) ||
+                   (ci_contains(text, "semodule") &&
+                    (ci_contains(text, " -i") || ci_contains(text, " -r") ||
+                     ci_contains(text, " -e") || ci_contains(text, " -d") ||
+                     ci_contains(text, "--install") ||
+                     ci_contains(text, "--remove"))) ||
+                   (ci_contains(text, "setsebool") &&
+                    (ci_contains(text, " -") || ci_contains(text, " on") ||
+                     ci_contains(text, " off"))) ||
+                   (ci_contains(text, "semanage") &&
+                    (ci_contains(text, " -a") || ci_contains(text, " -m") ||
+                     ci_contains(text, " -d") || ci_contains(text, " -r") ||
+                     ci_contains(text, "--add") || ci_contains(text, "--modify") ||
+                     ci_contains(text, "--delete") ||
+                     ci_contains(text, "permissive"))) ||
+                   ci_contains(text, "aa-disable") ||
+                   ci_contains(text, "aa-teardown") ||
+                   (ci_contains(text, "auditctl") &&
+                    (ci_contains(text, " -e 0") || ci_contains(text, " -e0") ||
+                     ci_contains(text, " -e 2") || ci_contains(text, " -e2") ||
+                     ci_contains(text, " -D"))) ||
+                   (ci_contains(text, "ip xfrm") &&
+                    (ci_contains(text, "add") || ci_contains(text, "update") ||
+                     ci_contains(text, "delete") || ci_contains(text, "flush"))) ||
+                   (ci_contains(text, "ebtables") &&
+                    (ci_contains(text, " -a") || ci_contains(text, " -i") ||
+                     ci_contains(text, " -p") || ci_contains(text, " -f") ||
+                     ci_contains(text, "--policy"))) ||
+                   (ci_contains(text, "brctl") &&
+                    (ci_contains(text, "addbr") || ci_contains(text, "addif") ||
+                     ci_contains(text, "delbr") || ci_contains(text, "delif"))) ||
+                   ((ci_contains(text, "iw ") ||
+                     ci_contains(text, "iwconfig")) &&
+                    ci_contains(text, "monitor")) ||
+                   ci_contains(text, "airmon-ng") ||
+                   ci_contains(text, "ltrace") ||
+                   (ci_contains(text, "strace") &&
+                    (ci_contains(text, " -f") || ci_contains(text, " -e"))) ||
+                   (ci_contains(text, "script ") &&
+                    ci_contains(text, " -q")) ||
+                   ci_contains(text, "ttyrec") ||
+                   (ci_contains(text, "asciinema") &&
+                    ci_contains(text, " rec")) ||
+                   ci_contains(text, "sysdig") || ci_contains(text, "falco ") ||
+                   ci_contains(text, "kldload") || ci_contains(text, "kldunload") ||
+                   (ci_contains(text, "ipfw") &&
+                    (ci_contains(text, "add") || ci_contains(text, "flush") ||
+                     ci_contains(text, "delete") || ci_contains(text, "pipe") ||
+                     ci_contains(text, "queue"))) ||
+                   (ci_contains(text, "svc ") &&
+                    ci_contains(text, " -d")) ||
+                   (ci_contains(text, "rcctl") &&
+                    (ci_contains(text, "stop") || ci_contains(text, "disable") ||
+                     ci_contains(text, "restart"))) ||
+                   (ci_contains(text, "kexec") &&
+                    (ci_contains(text, " -l") || ci_contains(text, " -e"))) ||
+                   (ci_contains(text, "grubby") &&
+                    ci_contains(text, "--args")) ||
+                   ci_contains(text, "grub2-set-default") ||
+                   ci_contains(text, "grub-set-default") ||
+                   (ci_contains(text, "dracut") &&
+                    (ci_contains(text, "--add") ||
+                     ci_contains(text, "--install") ||
+                     ci_contains(text, "--add-drivers") ||
+                     ci_contains(text, "--kernel-image"))) ||
+                   (ci_contains(text, "realm") &&
+                    (ci_contains(text, " join") ||
+                     ci_contains(text, " leave"))) ||
+                   (ci_contains(text, "adcli") &&
+                    (ci_contains(text, " join") ||
+                     ci_contains(text, " delete") ||
+                     ci_contains(text, " create"))) ||
+                   (ci_contains(text, "authselect") &&
+                    (ci_contains(text, " select") ||
+                     ci_contains(text, " apply") ||
+                     ci_contains(text, " enable") ||
+                     ci_contains(text, " disable"))) ||
+                   (ci_contains(text, "authconfig") &&
+                    (ci_contains(text, "--update") ||
+                     ci_contains(text, "--enable") ||
+                     ci_contains(text, "--disable"))) ||
+                   (ci_contains(text, "cryptsetup") &&
+                    (ci_contains(text, "luksremovekey") ||
+                     ci_contains(text, "lukskillslot") ||
+                     ci_contains(text, "reencrypt") ||
+                     ci_contains(text, "luksheaderbackup") ||
+                     ci_contains(text, " remove"))) ||
+                   (ci_contains(text, "resolvectl") &&
+                    (ci_contains(text, " dns ") ||
+                     ci_contains(text, " nta")))) {
+            what = "unix mount/selinux/audit/l2/session-record primitive";
+        } else if ((ci_contains(text, "rndc") &&
+                    (ci_contains(text, "flush") || ci_contains(text, "reload") ||
+                     ci_contains(text, "addzone") || ci_contains(text, "delzone") ||
+                     ci_contains(text, "modzone") || ci_contains(text, "signing") ||
+                     ci_contains(text, "halt") || ci_contains(text, "stop"))) ||
+                   (ci_contains(text, "unbound-control") &&
+                    (ci_contains(text, "reload") || ci_contains(text, "load") ||
+                     ci_contains(text, "flush") || ci_contains(text, "stub") ||
+                     ci_contains(text, "forward"))) ||
+                   ci_contains(text, "knotc") ||
+                   ci_contains(text, "pdns_control") ||
+                   (ci_contains(text, "terraform") &&
+                    ci_contains(text, " destroy")) ||
+                   (ci_contains(text, "pulumi") &&
+                    ci_contains(text, " destroy")) ||
+                   (ci_contains(text, "tofu") &&
+                    ci_contains(text, " destroy")) ||
+                   (ci_contains(text, "kubectl") &&
+                    ci_contains(text, " delete") &&
+                    ci_contains(text, "--all")) ||
+                   (ci_contains(text, "vault") &&
+                    (ci_contains(text, " kv") ||
+                     ci_contains(text, " secrets") ||
+                     ci_contains(text, " policy") ||
+                     ci_contains(text, " token"))) ||
+                   (ci_contains(text, "consul") &&
+                    (ci_contains(text, " kv") ||
+                     ci_contains(text, " exec"))) ||
+                   (ci_contains(text, "etcdctl") &&
+                    (ci_contains(text, " put") || ci_contains(text, " del") ||
+                     ci_contains(text, " txn"))) ||
+                   (ci_contains(text, "nomad") &&
+                    (ci_contains(text, " exec") ||
+                     ci_contains(text, " alloc") ||
+                     ci_contains(text, " stop"))) ||
+                   (ci_contains(text, "aws") &&
+                    (ci_contains(text, "s3 rb") ||
+                     ci_contains(text, "s3api delete"))) ||
+                   (ci_contains(text, "gsutil") &&
+                    (ci_contains(text, " rm") || ci_contains(text, " rb"))) ||
+                   (ci_contains(text, "az storage") &&
+                    (ci_contains(text, " delete") ||
+                     ci_contains(text, " remove"))) ||
+                   ci_contains(text, "aria2c") || ci_contains(text, "httpie") ||
+                   (ci_contains(text, "transmission-remote") &&
+                    ci_contains(text, " -a")) ||
+                   (ci_contains(text, "nmcli") &&
+                    (ci_contains(text, " mod") ||
+                     ci_contains(text, " down") ||
+                     ci_contains(text, " delete")))) {
+            what = "dns-control/infra-destruct/cloud-wipe primitive";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

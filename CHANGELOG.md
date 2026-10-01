@@ -77,6 +77,33 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Windows audit/ACL/AD/defense primitives + Unix mount/SELinux/
+  audit/L2/session-record + DNS-control/infra-destruct/cloud-wipe
+  (cycle-241)**: `wevtutil sl`, `logman` write ops, `pktmon`,
+  `netsh advfirewall` rule add/delete, `cmdkey /generic`,
+  `net group /add`, `sc failure|sdset`, `icacls /deny`, `cacls /g`,
+  `subinacl` grants, `wbadmin stop job`, AD recon/write (dsquery,
+  dsadd, dsmod, dsrm, csvde -f, ldifde -f, netdom, nltest, dsacls
+  /g), `w32tm /config`, `route delete`, `reg save|export` gated on
+  sam/security/system/ntds hives, `msiexec /x`, `schtasks /delete`,
+  `rwinsta`/`tskill`/`tsshutdn`, `pnputil` driver add/delete;
+  `mount --bind|--rbind|remount`, `setenforce permissive`,
+  `semodule`/`setsebool`/`semanage` writes, `aa-disable`/`aa-teardown`,
+  `auditctl -e 0|2|-D`, `ip xfrm`, `ebtables`, `brctl`, `iw`/
+  `iwconfig` monitor, `airmon-ng`, `ltrace`, `strace -f|-e`,
+  `script -q`, `ttyrec`, `asciinema rec`, `sysdig`, `falco`,
+  `kldload`/`kldunload`, `ipfw`, `svc -d`, `rcctl`, `kexec -l|-e`,
+  `grubby --args`, `grub-set-default`, `dracut --add|--install`,
+  `realm`/`adcli` join, `authselect`/`authconfig` writes,
+  `cryptsetup` key-removal/reencrypt/header-backup,
+  `resolvectl dns|nta`; `rndc` control ops, `unbound-control`,
+  `knotc`, `pdns_control`, `terraform|pulumi|tofu destroy`,
+  `kubectl delete --all`, `vault` kv/secrets/policy/token,
+  `consul kv|exec`, `etcdctl` writes, `nomad` exec/alloc/stop,
+  `aws s3 rb|s3api delete`, `gsutil rm|rb`, `az storage` delete/
+  remove, `aria2c`, `httpie`, `transmission-remote -a`, `nmcli`
+  mod/down/delete — all → `PASTE_WINDOWS_LOLBIN` +45
+
 - **macOS defense-off/exec/account + memory/core scrape +
   namespace/dbus exec + stream-upload exfil + serve-host/MITM +
   diskutil/tape/firmware wipe**: spctl --global-disable|--add,
