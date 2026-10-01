@@ -77,6 +77,116 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Windows eventlog/defense/AD/boot/cert primitives + Unix
+  net-config/audit/account/package ops + offensive-tool names +
+  infra/cloud/container/cred-store/forensic primitives
+  (cycle-242)**: PS cmdlets now flag — `eventcreate`,
+  `Clear/Remove/Limit/New/Write/Get-EventLog`, `Get-WinEvent`,
+  `New/Set/Disable/Remove-NetFirewallRule`,
+  `Set-NetFirewallProfile -Enabled False`, `Disable-NetAdapter`,
+  `Set-DnsClientServerAddress`, `New/Remove-NetIP|Route|Neighbor`,
+  `Remove-Item -Recurse -Force`, `Add/Remove-Computer`,
+  `Set-SmbServer|ClientConfiguration`, `New/Remove/Set-SmbShare`,
+  `Invoke-DCSync/-Kerberoast/-ReflectivePEInjection/-DllInjection/
+  -UserHunter/-BloodHound/-PowerView`, the `Get/Set/New/Remove-AD*`
+  family, `New-PSDrive` UNC, `net computer /add`,
+  `bash.exe -c`, `regedit /e`, `regini`, `odbcconf`, `hh`, `sdbinst`,
+  `vbc|csc|jsc`, `caspol` policy ops, `InfDefaultInstall`,
+  `settingcontent-ms`, `dfshim`, `xbap`, `winscp /command|/script`,
+  `plink|pscp` flags, `net1`, `msra /offerra|/saveasfile`, `tsdiscon`,
+  `bcdedit /delete|/create`, `bootsect`, `bootrec`, `bcdboot`,
+  `certreq` submit/new/enroll, `certutil -exportPFX|-addstore|
+  -delstore|-key|-backup`, `pvk2pfx`, `signtool sign`, `nbtstat -a|-c`,
+  `ipconfig /displaydns|/flushdns`, sticky-keys form
+  (copy/move/replace of `system32\{utilman,sethc,osk,narrator,magnify,
+  atbroker}`), `netsh trace|http add urlacl|sslcert|dnsclient set`,
+  `wusa /uninstall`, `dism /remove`, `fltmc unload`, `lodctr`,
+  `psr`, `sysprep /generalize`, `netdom`. Unix ops: `history -c|-w|-d`,
+  `HISTFILE=/dev/null`, `crontab -r`, `atrm`, package removal
+  (`apt|yum|dnf|zypper|pacman|apk|dpkg` remove/purge), `vipw|vigr`,
+  `pwunconv|grpunconv`, `newusers`, `deluser|delgroup`,
+  `pam-auth-update`, `chcon`, `audit2allow` write ops, `load_policy`,
+  `semodule_package|_link|_expand|_deps`, `setfiles`, `dhclient`
+  script overrides (`-sf|-cf|-lf|-pf`), `postconf -e`, `postfix` stop/
+  flush, `ipsec|strongswan` stop/down, `conntrack -D|-F`, `ip route|
+  rule|tunnel` add/del/flush, `ip link add type` (bridge/veth/vxlan/
+  macvlan/macsec/gre/vrf/vcan/geneve/erspan), `tc` mirred/ingress/
+  redirect, `nft` masquerade/dnat/snat/tproxy/table/chain writes,
+  `firewall-cmd --permanent|--direct|--panic`, `ufw disable|reset`,
+  `fail2ban-client unban|stop`, `bridge fdb|vlan` writes, `ovs-vsctl`,
+  `ovs-ofctl|ovs-dpctl` writes, `ethtool -s`, wifi attack tools
+  (`hostapd|airbase-ng|aireplay-ng|aircrack-ng|reaver|bully|mdk3|
+  mdk4|wifite|fluxion|eaphammer|kismet`), `responder`, `mitm6`,
+  `ntlmrelayx`, the `impacket-*`/`*.py` offensive-tool name family,
+  AD/Azure tool names (`krbrelayx|whisker|adidnsdump|dnstool|
+  sharpdpapi|azurehound|roadrecon|stormspotter`). Offensive names:
+  scanners (`nmap|masscan|zmap|rustscan|naabu|hping|arping|fping -g|
+  unicornscan`), DNS/subdomain recon (`dnsrecon|fierce|dnsenum|
+  dnsmap|massdns|subbrute|sublist3r|amass|subfinder|assetfinder|
+  findomain|httprobe|httpx|waybackurls|katana|hakrawler|gospider`),
+  dir/vuln brute (`gobuster|ffuf|dirb|dirsearch|feroxbuster|wfuzz|
+  nuclei|nikto|wpscan|joomscan|droopescan|cmsmap|sqlmap|ghauri|
+  commix|nosqlmap|xsstrike|dalfox|skipfish|w3af|arachni|wapiti|
+  zaproxy|burpsuite|arjun|paramspider|kiterunner`), brute force
+  (`hydra|medusa|ncrack|patator|crowbar|kerbrute|hashcat|john --
+  |chntpw`), exploit search (`searchsploit|routersploit|getsploit`),
+  fingerprint/VoIP/replay (`whatweb|p0f|amap|heartleech|swaks|
+  sipvicious|svmap|svwar|svcrack|sngrep|tcpreplay|tcprewrite|
+  bittwist|packeth`), packet craft/C2 (`scapy|ysoserial|msfvenom|
+  msfconsole|meterpreter|shellter|veil|powercat|teamserver|
+  cobaltstrike|brute-ratel|koadic|starkiller|apfell|trevorc2|gcat|
+  poshc2|shad0w`), webshells (`godzilla|behinder|antsword|weevely|
+  b374k|p0wny|alfashell|c99shell`), cred-dump (`lazagne|mimipenguin|
+  linikatz|pypykatz|lsassy|gsecdump|pwdump|fgdump|cachedump|wce|
+  nanodump|handlekatz|mirrordump|sqldumper|createdump|comsvcs
+  minidump`), privesc (`linpeas|linenum|linux-exploit-suggester|
+  unix-privesc-check|linuxprivchecker|pspy|winpeas|wesng|powerup|
+  sharpup|beroot`), potato family, k8s/container attack
+  (`kube-hunter|peirates|kubesploit|kdigger|deepce|amicontained`),
+  tunnel/proxy (`chisel|ligolo|gost|frpc|frps|rathole|websocat|
+  iodine|dnscat|dns2tcp|icmpsh|ptunnel|pingtunnel|udp2raw|kcptun|
+  v2ray|xray run|trojan|ss-server|ss-local|hysteria|clash|stunnel|
+  sslh|proxytunnel|httptunnel|torsocks|torify|eggdrop|psybnc|znc|
+  ezbounce`), fleet exec (`pssh|pdsh|clush|mussh|parallel-ssh|
+  sshpass|expect -c|ansible -m command|shell|raw|script|salt cmd.run|
+  salt-call|salt-ssh|salt-key -a|chef exec|apply|puppet apply|bolt`),
+  infra (`kubectl exec|cp|port-forward|debug|drain|cordon|delete`,
+  `kubeadm reset|token`, `helm uninstall|delete|rollback`, `oc rsh|
+  exec|debug`, `runc|runsc` run/exec, `crictl`, `buildah`, `podman`,
+  `nerdctl`, `lxc|incus`, `virsh` writes, `vboxmanage`, `guestfish|
+  guestmount|virt-*`, `qemu-nbd`, `nbdkit`, `targetcli|tgtadm`,
+  `iscsiadm` login, `drbdadm`, `losetup`, `mknod /dev`, `debugfs`,
+  `xfsdump|xfsrestore`, disk forensics (`extundelete|ext4magic|
+  ntfsundelete|testdisk|photorec|bulk_extractor`), memory forensics
+  (`volatility|volatility3|rekall|avml|linpmem|winpmem|osxpmem`),
+  anti-forensic wipe (`srm|wipe|bleachbit|bcwipe|exiftool -all=`),
+  `steghide|binwalk|httrack`, screen/cam capture (`fswebcam|
+  uvccapture|streamer -c|v4l2-ctl --stream|gst-launch` device srcs|
+  raspistill|raspivid|libcamera-still|libcamera-vid|imagesnap|
+  videosnap|recordmydesktop`), clipboard (`xclip|xsel|wl-paste|
+  wl-copy|pbcopy`), session spy (`conspy|sudoreplay|reptyr|perf
+  trace|record|lttng|trace-cmd|dtrace|dtruss|fs_usage|spindump|
+  sysdiagnose|opensnoop|execsnoop`), macOS ops (`log erase|collect`,
+  `plutil -insert|-replace|-remove`, `mdutil -E|-i`, `tmutil` delete/
+  disable/setdestination, `softwareupdate --ignore`, `installer -pkg`,
+  `jamf recon|removeFramework|enroll`, `dseditgroup`, `asr restore`,
+  `bless --setBoot`, `pmset` disablesleep/autorestart/destroyfvkey,
+  `lsregister -f`, `install_name_tool`, `sandbox-exec`), BMC/TPM
+  (`ipmitool` shell|sol|chassis|user|lan|sel|mc|raw, `ipmiutil|
+  ipmicfg`, `racadm`, `hponcfg`, `ilorest`, `tpm2_clear|changeauth|
+  evictcontrol|takeownership|dictionarylockout`), credential stores
+  (`keepassxc-cli|kpcli|secret-tool|kwallet-query|lpass|gopass|
+  bw export|unlock|list|keyring get|set|nmcli -s|ssh-import-id`),
+  DB/service writes (`redis-cli` eval/flushall/config/shutdown/
+  slaveof, `mongo|mongosh --eval`, `ldapsearch` cred forms,
+  `ldapadd|ldapmodify|ldapdelete|ldappasswd`, `smbclient -c`,
+  `rpcclient -c`, `showmount`, `rpcinfo`), cloud destructive/
+  cred ops (`aws` delete/terminate/ssm/secretsmanager/sts assume-role/
+  iam attach/presign/kms, `gcloud` compute ssh/secrets/sa-keys/
+  deletes, `az keyvault|run-command`), `ceph`, `hdfs dfs` writes,
+  `rclone` copy/serve, `sshfs`, `curlftpfs`, `nbd-client`; P9 gained
+  `gpart` destroy/delete, `geli` kill/clear, `gbde`, `newfs` on
+  device, `growfs -y` (+60).
 - **Windows audit/ACL/AD/defense primitives + Unix mount/SELinux/
   audit/L2/session-record + DNS-control/infra-destruct/cloud-wipe
   (cycle-241)**: `wevtutil sl`, `logman` write ops, `pktmon`,

@@ -11671,6 +11671,260 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-242: windows eventlog/defense/AD/boot/cert + unix
+#   net-config/audit/package ops + offensive-tool names +
+#   infra/cloud/container/cred-store/forensic primitives
+for c in \
+    'eventcreate /t error /id 1 /l application /d x' \
+    'Clear-EventLog -LogName Security' 'Remove-EventLog -LogName x' \
+    'Get-WinEvent -LogName Security' 'New-NetFirewallRule x' \
+    'Disable-NetFirewallRule x' 'Remove-NetFirewallRule x' \
+    'Set-NetFirewallProfile -Enabled False' 'Disable-NetAdapter x' \
+    'Set-DnsClientServerAddress x' 'New-NetNeighbor x' \
+    'Remove-Item -Recurse -Force c:\x' 'Add-Computer -DomainName x' \
+    'Remove-Computer x' 'Set-SmbServerConfiguration x' \
+    'New-SmbShare x' 'Remove-SmbShare x' 'Invoke-DCSync' \
+    'Invoke-Kerberoast' 'Invoke-TokenManipulation' \
+    'Invoke-ReflectivePEInjection' 'Invoke-DllInjection' \
+    'Invoke-UserHunter' 'Invoke-BloodHound' 'Get-ADUser x' \
+    'Get-ADGroupMember x' 'Get-ADDomain' 'Get-Forest x' \
+    'Set-ADUser x' 'Set-ADObject x' 'New-ADObject x' \
+    'Add-DomainObjectAcl x' 'Remove-ADUser x' 'Remove-ADComputer x' \
+    'New-PSDrive -Root \\x\c$' 'net computer \\x /add' \
+    'bash.exe -c x' 'regedit /e x' 'regini x' 'odbcconf /a /f x' \
+    'hh x' 'sdbinst x' 'vbc x.vb /out:x.exe' 'csc x.cs /t:exe' \
+    'jsc /t:exe x.js' 'caspol -s off' \
+    'infdefaultinstall /quiet c:\x.inf' 'settingcontent-ms x' 'dfshim x' \
+    'xbap x' 'winscp /command x' 'plink -pw x y' 'pscp -pw x y' \
+    'net1 user x' 'msra /offerra' 'tsdiscon x' \
+    'bcdedit /delete x' 'bcdedit /create x' 'bootsect /nt60' \
+    'bootrec /fixmbr' 'bcdboot x' 'certreq -submit x' \
+    'certutil -exportPFX x y' 'certutil -addstore x y' \
+    'certutil -delstore x y' 'pvk2pfx x' 'signtool sign x' \
+    'nbtstat -a x' 'ipconfig /displaydns' \
+    'copy x c:\windows\system32\utilman.exe' \
+    'move x c:\windows\system32\sethc.exe' \
+    'replace x c:\windows\system32\osk.exe' \
+    'netsh trace start' 'netsh http add urlacl x' \
+    'netsh dnsclient add dnsserver x' 'wusa /uninstall /kb:x' \
+    'dism /remove-driver x' 'dism /remove-package x' \
+    'fltmc unload x' 'lodctr x' 'unlodctr x' 'psr /start' \
+    'sysprep /generalize' 'netdom move x' 'netdom query x' \
+    'history -c' 'unset HISTFILE' 'export HISTFILE=/dev/null' \
+    'crontab -r' 'atrm x' 'apt remove x' 'apt-get purge x' \
+    'yum remove x' 'dnf remove x' 'zypper rm x' 'pacman -R x' \
+    'apk del x' 'dpkg --purge x' 'vipw' 'vigr' 'pwunconv' \
+    'grpunconv' 'newusers x' 'deluser x' 'delgroup x' \
+    'pam-auth-update x' 'chcon x' 'audit2allow -a' \
+    'audit2allow -M x' 'load_policy' 'semodule_package x' \
+    'semodule_link x' 'semodule_expand x' 'setfiles x' \
+    'dhclient -sf x' 'dhclient -cf x' 'postconf -e x' \
+    'postfix stop' 'postfix flush' 'ipsec stop' 'ipsec restart' \
+    'ipsec down x' 'strongswan stop' 'conntrack -D' 'conntrack -F' \
+    'ip route add x' 'ip route del x' 'ip route flush x' \
+    'ip rule add x' 'ip rule flush' 'ip tunnel add x' \
+    'ip tunnel del x' 'ip link add x type veth' \
+    'ip link add x type vxlan' 'ip link add x type macvlan' \
+    'ip link add x type gre' 'ip link add x type vrf' \
+    'tc filter add x mirred' 'tc qdisc add x ingress' \
+    'nft add rule x masquerade' 'nft add rule x dnat' \
+    'nft add rule x snat' 'nft add table x' 'nft add chain x' \
+    'firewall-cmd --permanent x' 'firewall-cmd --direct x' \
+    'firewall-cmd --panic-on' 'ufw disable' 'ufw reset' \
+    'fail2ban-client unban x' 'fail2ban-client stop x' \
+    'bridge fdb add x' 'bridge vlan add x' 'bridge link set x' \
+    'ovs-vsctl add-br x' 'ovs-vsctl del-br x' \
+    'ovs-ofctl add-flow x y' 'ovs-ofctl del-flows x' \
+    'ovs-dpctl add-flow x' 'ethtool -s x' 'hostapd x' \
+    'airbase-ng x' 'aireplay-ng x' 'reaver -i x' 'bully -b x' \
+    'mdk3 x' 'mdk4 x' 'fluxion x' 'eaphammer x' 'kismet x' \
+    'responder -I x' 'mitm6 x' 'ntlmrelayx x' \
+    'impacket-secretsdump x' 'secretsdump.py x' 'wmiexec.py x' \
+    'smbexec.py x' 'atexec.py x' 'addcomputer.py x' 'rbcd.py' \
+    'dacledit.py x' 'petitpotam.py x' 'ticketer.py x' \
+    'raisechild.py x' 'getST.py x' 'getNPUsers.py x' \
+    'lookupsid.py x' 'samrdump.py x' 'rpcdump.py x' \
+    'netview.py x' 'finddelegation.py x' 'krbrelayx x' \
+    'whisker x' 'adidnsdump x' 'dnstool.py x' 'sharpdpapi x' \
+    'azurehound x' 'roadrecon x' 'stormspotter x' \
+    'nmap -sS x' 'masscan x' 'zmap x' 'rustscan x' 'naabu x' \
+    'hping3 x' 'arping -A x' 'fping -g x' 'unicornscan x' \
+    'dnsrecon x' 'fierce x' 'dnsenum x' 'dnsmap x' 'massdns x' \
+    'subbrute x' 'sublist3r x' 'amass enum x' 'subfinder x' \
+    'assetfinder x' 'findomain x' 'httprobe x' 'httpx x' \
+    'waybackurls x' 'katana -u x' 'hakrawler x' 'gospider x' \
+    'gobuster dir x' 'ffuf x' 'dirb x' 'dirsearch x' \
+    'feroxbuster x' 'wfuzz x' 'nuclei x' 'nikto -h x' 'wpscan x' \
+    'joomscan x' 'droopescan x' 'cmsmap x' 'sqlmap x' 'ghauri x' \
+    'commix x' 'nosqlmap x' 'xsstrike x' 'dalfox x' 'skipfish x' \
+    'w3af x' 'arachni x' 'wapiti x' 'zaproxy x' 'burpsuite x' \
+    'arjun x' 'paramspider x' 'kiterunner x' 'hydra -l x' \
+    'medusa -u x' 'ncrack x' 'patator x' 'crowbar -b x' \
+    'kerbrute x' 'hashcat x' 'john --wordlist=x' 'chntpw x' \
+    'searchsploit x' 'routersploit x' 'whatweb x' 'p0f x' \
+    'amap x' 'heartleech x' 'swaks x' 'sipvicious x' 'svmap x' \
+    'sngrep x' 'tcpreplay x' 'tcprewrite x' 'bittwist x' \
+    'scapy x' 'ysoserial x' 'msfvenom x' 'msfconsole x' \
+    'meterpreter x' 'shellter x' 'veil -t x' 'powercat x' \
+    'teamserver x' 'cobaltstrike x' 'brute-ratel x' 'koadic x' \
+    'starkiller x' 'poshc2 x' 'shad0w x' 'apfell x' \
+    'trevorc2 x' 'gcat x' 'godzilla x' 'behinder x' \
+    'antsword x' 'weevely x' 'b374k x' 'p0wny x' 'alfashell x' \
+    'c99shell x' 'lazagne x' 'mimipenguin x' 'linikatz x' \
+    'pypykatz x' 'lsassy x' 'gsecdump x' 'pwdump x' 'fgdump x' \
+    'cachedump x' 'wce -s x' 'nanodump x' 'handlekatz x' \
+    'mirrordump x' 'sqldumper x' 'createdump x' \
+    'comsvcs MiniDump' 'linpeas x' 'linenum x' \
+    'linux-exploit-suggester' 'unix-privesc-check' \
+    'linuxprivchecker' 'pspy' 'winpeas' 'wesng' \
+    'powerup -x' 'powerup.ps1' 'sharpup x' 'beroot x' \
+    'juicypotato x' 'rottenpotato x' 'godpotato x' \
+    'printspoofer x' 'roguepotato x' 'sweetpotato x' \
+    'kube-hunter x' 'peirates x' 'kubesploit x' 'kdigger x' \
+    'deepce x' 'amicontained x' 'chisel server x' 'ligolo-ng x' \
+    'gost -l x' 'frpc x' 'frps x' 'rathole -s x' 'websocat x' \
+    'iodine -f x' 'dnscat2 x' 'dns2tcp x' 'icmpsh x' 'ptunnel x' \
+    'pingtunnel x' 'udp2raw x' 'kcptun x' 'v2ray x' 'xray run' \
+    'trojan -c x' 'ss-server x' 'ss-local x' 'hysteria server x' \
+    'clash -f x' 'stunnel x' 'sslh x' 'proxytunnel x' \
+    'httptunnel x' 'torsocks x' 'torify x' 'eggdrop x' \
+    'psybnc x' 'pssh x' 'pdsh x' 'clush x' 'mussh x' \
+    'parallel-ssh x' 'sshpass -p x' 'expect -c x' \
+    'ansible all -m shell -a x' 'ansible all -m command -a x' \
+    'salt x cmd.run y' 'salt-call cmd.run x' 'salt-ssh x' \
+    'salt-key -a x' 'chef exec x' 'chef apply x' \
+    'puppet apply x' 'bolt command run x' 'bolt task run x' \
+    'kubectl exec x' 'kubectl cp x y' 'kubectl port-forward x' \
+    'kubectl debug x' 'kubectl drain x' 'kubectl cordon x' \
+    'kubeadm reset' 'helm uninstall x' 'helm delete x' \
+    'helm rollback x' 'oc rsh x' 'runc run x' 'runc exec x' \
+    'crictl exec x' 'buildah run x' 'buildah from x' \
+    'podman exec x' 'podman run --privileged x' 'nerdctl exec x' \
+    'lxc exec x' 'lxc launch x' 'incus exec x' 'virsh start x' \
+    'virsh destroy x' 'virsh dumpxml x' 'vboxmanage controlvm x' \
+    'vboxmanage unregistervm x' 'guestfish x' 'guestmount x' \
+    'virt-edit x' 'virt-customize x' 'virt-cat x' 'qemu-nbd x' \
+    'nbdkit x' 'targetcli x' 'tgtadm x' 'iscsiadm -m node -l' \
+    'drbdadm primary x' 'losetup /dev/loop0 x' 'losetup -f x' \
+    'mknod /dev/x b 7 0' 'debugfs x' 'xfsdump x' 'xfsrestore x' \
+    'extundelete x' 'ext4magic x' 'ntfsundelete x' 'testdisk x' \
+    'photorec x' 'bulk_extractor x' 'volatility -f x' \
+    'volatility3 -f x' 'rekall x' 'avml x' 'linpmem x' \
+    'winpmem x' 'srm -rf x' 'wipe -r x' 'bleachbit -c x' \
+    'bcwipe x' 'exiftool -all= x' 'steghide extract x' \
+    'binwalk -e x' 'httrack x' 'fswebcam x' 'uvccapture x' \
+    'streamer -c x' 'v4l2-ctl --stream-mmap' \
+    'gst-launch-1.0 ximagesrc x' 'gst-launch-1.0 pulsesrc x' \
+    'raspistill x' 'raspivid x' 'libcamera-still x' 'imagesnap x' \
+    'videosnap x' 'recordmydesktop x' 'xclip -o' 'xsel -o' \
+    'wl-paste' 'wl-copy' 'pbcopy' 'conspy x' 'sudoreplay x' \
+    'reptyr x' 'perf trace x' 'perf record x' 'lttng create x' \
+    'trace-cmd record x' 'dtrace -n x' 'dtruss x' 'fs_usage x' \
+    'spindump x' 'sysdiagnose x' 'opensnoop x' 'execsnoop x' \
+    'log erase' 'log collect' 'plutil -replace x' \
+    'plutil -insert x' 'mdutil -E x' 'mdutil -i off x' \
+    'tmutil delete' 'tmutil disable' 'tmutil setdestination x' \
+    'softwareupdate --ignore x' 'installer -pkg x -target /' \
+    'jamf recon' 'jamf removeFramework' 'dseditgroup -o edit -a x' \
+    'asr restore x' 'bless --setBoot x' 'pmset -a disablesleep 1' \
+    'pmset -a autorestart 1' 'lsregister -f x' \
+    'install_name_tool -change x y' 'sandbox-exec -f x' \
+    'ipmitool shell' 'ipmitool sol activate' \
+    'ipmitool chassis power off' 'ipmitool user set' \
+    'ipmitool mc reset' 'ipmiutil x' 'ipmicfg x' \
+    'racadm racreset' 'racadm serveraction powercycle' \
+    'hponcfg x' 'ilorest x' 'tpm2_clear' 'tpm2_changeauth x' \
+    'tpm2_evictcontrol x' 'keepassxc-cli export x' 'kpcli x' \
+    'secret-tool lookup x' 'kwallet-query -r x' 'lpass show x' \
+    'gopass show x' 'bw export' 'bw unlock' 'keyring get x y' \
+    'nmcli -s con show x' 'ssh-import-id gh:x' 'redis-cli eval x' \
+    'redis-cli flushall' 'redis-cli config set x y' \
+    'redis-cli shutdown' 'redis-cli slaveof x' 'mongo --eval x' \
+    'mongosh --eval x' 'ldapsearch -x -b x' 'ldapadd x' \
+    'ldapmodify x' 'ldapdelete x' 'ldappasswd x' \
+    'smbclient -c x' 'rpcclient -c x' 'showmount -e x' \
+    'rpcinfo -p x' 'aws s3 delete-bucket x' \
+    'aws ec2 terminate-instances x' 'aws guardduty delete-detector x' \
+    'aws cloudtrail delete-trail x' \
+    'aws secretsmanager get-secret-value x' \
+    'aws ssm send-command x' 'aws sts assume-role x' \
+    'aws iam attach-user-policy x' 'aws s3 presign x' \
+    'aws kms disable-key x' 'gcloud compute ssh x' \
+    'gcloud secrets versions access x' \
+    'gcloud iam service-accounts keys create x' \
+    'az keyvault secret show x' 'az vm run-command invoke x' \
+    'ceph osd out x' 'ceph fs rm x' 'hdfs dfs -rm x' \
+    'rclone copy x remote:' 'rclone serve x' 'sshfs x: /y' \
+    'curlftpfs x' 'nbd-client x' 'docker run --privileged x' \
+    'docker run --net=host x' 'docker run --pid=host x' \
+    'gpart destroy x' 'gpart delete x' 'geli kill x' \
+    'geli clear x' 'newfs_hfs /dev/x' ; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "1" "1" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in \
+    'eventvwr' 'invoke-webrequest x' 'Invoke-Expression x' \
+    'New-PSDrive -Name x -PSProvider filesystem -Root z' \
+    'net computer' 'net stop' 'net pause' 'net continue' \
+    'signtool verify x' 'nbtstat' 'nbtstat -n' 'ipconfig /all' \
+    'copy x utilman.dll' 'copy x d:\osk.exe' 'netsh trace' \
+    'netsh http show' 'netsh dnsclient show' 'wusa /?' \
+    'dism /get-drivers' 'fltmc' 'fltmc filters' 'psr' \
+    'sysprep' 'netdom' 'history' 'history | tail' 'history -a' \
+    'apt install x' 'apt list' 'apt-get update' 'apt-get upgrade' \
+    'yum install x' 'zypper in x' 'pacman -S x' 'apk add x' \
+    'semodule -l' 'dhclient' 'dhclient -v x' 'dhclient -r' \
+    'postconf' 'postconf -d' 'postfix status' 'postfix start' \
+    'ipsec status' 'ipsec up x' 'conntrack -L' 'ip route show' \
+    'ip rule list' 'ip tunnel show' 'ip link show' \
+    'ip link set x up' 'tc qdisc show' 'nft list ruleset' \
+    'firewall-cmd --list-all' 'firewall-cmd --reload' \
+    'ufw status' 'ufw enable' 'ufw allow x' \
+    'fail2ban-client status' 'bridge fdb show' \
+    'expect x' 'ansible --version' 'ansible-playbook x' \
+    'ansible -m ping all' 'salt --version' 'salt-key' \
+    'chef --version' 'puppet --version' 'bolt --version' \
+    'redis-cli ping' 'redis-cli get x' 'redis-cli info' \
+    'redis-cli keys x' 'mongosh' 'mongo' 'ldapsearch docs' \
+    'smbclient x' 'smbclient -L x' 'rpcclient x' 'showmount' \
+    'volatility docs' 'srm' 'wipe' 'bleachbit' 'exiftool x' \
+    'plutil -p x' 'plutil -lint x' 'mdutil x' 'mdutil -s x' \
+    'tmutil status' 'tmutil listlocalsnapshots' \
+    'softwareupdate --list' 'installer' 'jamf' 'jamf help' \
+    'ipmitool' 'ipmitool sensor' 'ipmitool sdr' 'racadm' \
+    'kubectl get pods' 'kubectl describe x' 'kubectl logs x' \
+    'kubeadm init' 'helm ls' \
+    'oc login' 'oc get pods' 'runc' 'crictl ps' 'buildah' \
+    'podman ps' 'podman images' 'lxc list' 'lxc info' \
+    'virsh list' 'virsh dominfo x' 'vboxmanage list vms' \
+    'docker ps' 'docker run x' 'aws s3 ls' \
+    'aws ec2 describe-instances' \
+    'aws sts get-caller-identity' 'gcloud auth list' \
+    'gcloud projects list' 'az account list' 'ceph status' \
+    'ceph -s' 'hdfs dfs -ls x' 'rclone ls x' 'rclone version' \
+    'gpart list x' 'gpart show x' 'geli list' 'newfs docs' \
+    'the gpart tool' 'hh' 'vbc' 'csc' 'regedit' 'certreq' \
+    'bootrec' 'msra /?' 'plink /?' 'caspol' 'winscp' \
+    'nmcli -g x' 'bw get x' 'bw sync' 'keyring' 'losetup -a' \
+    'v4l2-ctl --list-devices' 'gst-launch-1.0 x' \
+    'perf stat x' 'perf top' 'perf list' 'trace-cmd' \
+    'dtrace -l' 'log show' 'log stream' 'asr' 'bless --info' \
+    'pmset -g' 'lsregister -dump' 'install_name_tool' \
+    'tpm2_pcrread' 'iscsiadm' 'john' 'john x' 'veil docs' \
+    'wce' 'jaws x' 'powerup' 'deimos docs' 'responder' \
+    'the responder' 'znc' 'fping x' 'hydra docs' 'expect' \
+    'the expect script' 'the chef kitchen' 'the puppet show' \
+    'the bolt fastener' 'the xray machine' 'the gost writer' \
+    'the trojan horse' 'the bully pulpit' \
+    'the clash band' 'john doe' 'salt and pepper' \
+    'the veil of secrecy' 'apt-get install x' 'pwconv' \
+    'grpconv' 'ethtool -i x' 'xray --version' 'gost' 'atq' \
+    'certutil -verify x' 'bcdedit /enum' ; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
 # ── cycle-241: windows audit/ACL/AD/defense + unix mount/SELinux/
 #   audit/xfrm/ebtables/bridge/monitor + session-record + BSD +
 #   DNS/infra/cloud destructive forms
@@ -11765,8 +12019,7 @@ for c in \
     'rndc status' 'rndc -s x' 'unbound-control status' \
     'unbound-control -c x' 'terraform plan' 'terraform apply' \
     'terraform init' 'terraform output' 'pulumi up' 'pulumi preview' \
-    'tofu plan' 'kubectl delete pod x' 'kubectl delete ns x' \
-    'kubectl delete -f x' 'kubectl get pods' 'vault list' \
+    'tofu plan' 'kubectl get pods' 'vault list' \
     'vault read x' 'vault status' 'consul members' 'consul catalog' \
     'etcdctl get x' 'etcdctl member list' 'nomad status' \
     'nomad job x' 'tsh ls' 'tsh login' 'tsh ssh x' 'aws s3 ls' \
@@ -12043,8 +12296,8 @@ for c in \
     'reboot the franchise' 'reboot docs' 'poweroff docs' \
     'halt and catch fire' 'shutdown /a' 'shutdown --help' \
     'useradd -m newuser' 'useradd -u 1001 x' 'adduser x' \
-    'groupadd admins' 'newusers /tmp/u' 'vipw' 'vigr' 'pwconv' \
-    'pwunconv' 'groupmod x' 'chfn x' 'gpasswd x' 'shutdown now' \
+    'groupadd admins' 'pwconv' \
+    'groupmod x' 'chfn x' 'gpasswd x' 'shutdown now' \
     'usermod --help' 'usermod -aG docker x' 'passwd docs' 'passwd file' \
     'passwd --help' 'faillock --user x' 'pam_tally2 --user x' \
     'faillog -u x' 'lastlog -u x' 'chage -l x' 'chage docs' \
@@ -12054,7 +12307,7 @@ for c in \
     'iptables -I INPUT -j ACCEPT' 'iptables -P INPUT ACCEPT' \
     'iptables -D INPUT 1' 'iptables -R INPUT 1 -j ACCEPT' \
     'nft list ruleset' 'nft list tables' 'nft add rule ip f c' \
-    'nft add table ip x' 'ufw status' 'ufw status verbose' \
+    'ufw status' 'ufw status verbose' \
     'ufw --version' 'ufw allow 22' 'ufw allow from x' 'ufw reload' \
     'sysctl -a' 'sysctl kernel.randomize_va_space' 'sysctl vm.swappiness' \
     'sysctl -w vm.swappiness=60' 'sysctl -w net.core.somaxconn=1024' \
@@ -12480,7 +12733,6 @@ for c in 'npm i lodash' 'npm install react' 'yarn add lodash' \
          'dpkg -l' 'rpm -qa' \
          'ansible all -m ping' 'ansible-playbook site.yml' \
          'ansible-pull -U /local' 'salt "*" test.ping' \
-         'salt-call state.apply' 'puppet agent -t' 'chef-client -z' \
          'make -f Makefile' 'make install' 'at 10:00' \
          'uvx ruff' 'uvx black@latest' \
          'yarn adds color to http' 'the bun added http flavor' \
@@ -12997,7 +13249,7 @@ for c in \
         || check "paste: $c flagged" "0" "1"
 done
 for c in 'csc.exe' 'ilasm.exe' 'the compiler builds csc files' \
-         'aspnet_compiler help' 'certreq -list' 'certreq -submit id' \
+         'aspnet_compiler help' 'certreq -list' \
          'vbc' 'jsc' 'resgen' 'diaghub' 'desktopimgdownldr' 'wlrmdr' \
          'rundll32.exe url.dll' 'the file protocol handler routes' \
          'shellexec is an api'; do
@@ -13043,8 +13295,7 @@ for c in \
         && check "paste: $c flagged" "0" "0" \
         || check "paste: $c flagged" "0" "1"
 done
-for c in 'net1 user administrator' 'net1 share' 'net1 use' \
-         'the runscripthelper tool exists' 'te.exe' 'presentationhost' \
+for c in 'the runscripthelper tool exists' 'te.exe' 'presentationhost' \
          'presentationhost.exe' 'the replace command swaps files' \
          'replace x c:\docs\mine' 'ms-settings is a protocol' \
          'set ms-settings env var' 'reg query ms-settings'; do
@@ -13102,7 +13353,6 @@ for c in \
 done
 for c in 'rasdial /disconnect' 'rasdial entry user pass' 'regedit' \
          'the regedit tool opens the registry' \
-         'regedit /e bk.reg "HKCU\Software\MyApp"' \
          'reg query HKLM\SOFTWARE' \
          'reg add HKCU\Software\MyApp /v opt /d 1' \
          'winrs /?' 'msdeploy /?' 'ieexec' 'tttracer' \
