@@ -11671,6 +11671,72 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-230b: attack-tool names + cloud/k8s/db primitives ──
+for c in \
+    'mimikatz' 'lazagne all' 'pwdump' 'fgdump' 'bloodhound-python' \
+    'sharphound' 'rubeus.exe' 'rubeus -h' 'msfconsole' 'meterpreter' \
+    'msfvenom -p x' 'impacket-secretsdump' 'ntlmrelayx -t x' \
+    'secretsdump x' 'getuserspns x' 'getnpusers x' 'psexec \\x' \
+    'psexesvc' 'smbexec x' 'wmiexec x' 'atexec x' 'dcomexec x' \
+    'crackmapexec smb x' 'netexec smb x' 'nxc smb x' \
+    'hashcat -m 0 h w' 'john --wordlist=w h' 'hydra -l x -P p ssh://h' \
+    'aircrack-ng x.cap' 'airodump-ng wlan0' 'aireplay-ng -0 wlan0' \
+    'wifite' 'reaver -i wlan0' 'fluxion -i wlan0' \
+    'sqlmap -u x' 'nikto -h x' 'nmap -sS x' 'masscan x' \
+    'nuclei -u x' 'gobuster dir -u x' 'ffuf -u x' 'wpscan --url x' \
+    'enum4linux x' 'smbmap -H x' 'arp-scan -l' 'hping3 -S x' \
+    'tcpreplay -i x p' 'dirb http://x' 'feroxbuster -u x' 'dalfox url x' \
+    'ettercap -T x' 'bettercap' 'dsniff' 'mitmproxy' 'sslstrip' \
+    'sslsplit' 'responder.py -i x' 'mitm6' \
+    'ngrok http 80' 'cloudflared tunnel' 'frpc -c x' 'frps -c x' \
+    'ligolo-ng' 'gost -L x' 'rathole -s x' 'rathole x.toml' 'zrok share' \
+    'sshuttle -r x' 'iodine -f dns.x.com' 'iodined' 'dnscat' 'dnscat2' \
+    'dns2tcp' 'ptunnel' 'icmpsh' 'proxychains nmap x' 'torsocks curl x' \
+    'tshd' 'chisel server --reverse' 'chisel client x' \
+    'linpeas' 'winpeas' 'linenum' 'mimipenguin' 'pspy' \
+    'linux-exploit-suggester' 'dirtyc0w' 'dirtycow' 'pwnkit' 'ysoserial' \
+    'rclone copy /data remote:' 'rclone sync /d r:' 'rclone move x r:' \
+    'aws s3 cp /data s3://b' 'aws s3 sync /d s3://b' 'aws s3 mv x s3://b' \
+    'aws ssm send-command x' 'aws ssm start-session --target i-x' \
+    'gsutil cp /d gs://b' 'gsutil rsync /d gs://b' \
+    'azcopy copy /d http://x' 'az storage blob upload -f x' \
+    'az vm run-command invoke -g x' \
+    'gcloud compute ssh x' 'gcloud compute scp x' \
+    'kubectl exec -it x -- sh' 'kubectl cp x y' \
+    'kubectl port-forward x 8080' 'kubectl apply -f http://x' \
+    'kubectl run x' 'kubectl attach x' \
+    'helm install x y' 'helm upgrade x y' \
+    'docker exec -it x sh' 'docker cp x y:/' \
+    'podman exec x sh' 'nerdctl exec x sh' 'crictl exec -it x sh' \
+    'mysql -e "select 1"' 'psql -c "select 1"' \
+    'redis-cli config set dir /tmp' 'redis-cli eval x 0' \
+    'redis-cli slaveof x' 'redis-cli replicaof x' \
+    'redis-cli module load x.so' \
+    'mongo --eval x' 'mongosh --eval x'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'john smith went home' 'a bloodhound is a dog' \
+         'reaver class in dnd' 'rubeus hagrid' 'hydra constellation' \
+         'the gost writer' 'rathole inn' 'iodine supplement' \
+         'iodine -v' 'chisel the wood' 'flux capacitor' \
+         'nmap is a scanner' 'route 66' 'meter reading' \
+         'aws s3 ls' 'aws sts get-caller-identity' \
+         'az account show' 'gcloud config list' \
+         'rclone listremotes' 'rclone version' 'gsutil version' \
+         'azcopy --version' 'kubectl get pods' 'kubectl describe x' \
+         'kubectl logs x' 'helm list' 'helm status x' \
+         'docker ps' 'docker images' 'podman ps' 'crictl ps' \
+         'mysql -u root -p' 'mysql -h db' 'psql -l' 'psql -U x' \
+         'redis-cli get key' 'redis-cli ping' \
+         'mongo --version' 'mongosh --version' \
+         'env VAR=x' 'john ran fast' 'nikto said hello'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-230a: GTFOBins exec + destructive + pivot primitives ──
 for c in \
     'tar --checkpoint-action=exec=sh' \

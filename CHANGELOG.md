@@ -77,6 +77,34 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Attack-tool names + cloud/k8s/db primitives**
+  (`hlse_supply.c`): paste adds name-gated attack tooling — the
+  tool IS the signal: credential/lateral (mimikatz, lazagne,
+  pwdump, fgdump, bloodhound[.py|-python|flag], sharphound,
+  rubeus.exe|-, msfconsole, meterpreter, msfvenom, impacket,
+  ntlmrelayx, secretsdump, getuserspns, getnpusers, psexec|svc,
+  smbexec, wmiexec, atexec, dcomexec, crackmapexec, netexec,
+  nxc), password/wireless (hashcat, john --, hydra +flag,
+  aircrack/airodump/aireplay, wifite, reaver|fluxion +flag),
+  recon (sqlmap, nikto/nmap +flag, masscan, nuclei, gobuster,
+  ffuf, wpscan, enum4linux, smbmap, arp-scan, hping, tcpreplay,
+  dirb, dirsearch, feroxbuster, dalfox), MitM (ettercap,
+  bettercap, dsniff, mitmproxy, sslstrip, sslsplit, responder.py,
+  mitm6), tunneling/C2 (ngrok, cloudflared, frpc/frps, ligolo,
+  gost|chisel|rathole|iodine arg-gated, zrok, sshuttle, dnscat
+  [2], dns2tcp, ptunnel, icmpsh/icmptunnel, iodined, proxychains,
+  torsocks, tshd), privesc/exploit (linpeas, winpeas, linenum,
+  mimipenguin, pspy, linux-exploit, dirtyc0w/dirtycow, pwnkit,
+  ysoserial) — plus cloud exfil/exec (rclone copy|move|sync|lsd,
+  aws s3 cp|sync|mv|rm, aws ssm send-command|start-session,
+  gsutil cp|rsync|mv, azcopy copy|sync, az storage upload|
+  download|copy + az run-command, gcloud compute ssh|scp), k8s/
+  container exec (kubectl exec|cp|port-forward|apply|attach|run,
+  helm install|upgrade, docker|podman|nerdctl exec|cp, crictl
+  exec), and db/redis abuse (mysql -e, psql -c, redis-cli
+  config|eval|slaveof|replicaof|module load, mongo|mongosh
+  --eval) — all +45.
+
 - **GTFOBins exec + destructive + pivot primitives**
   (`hlse_supply.c`): paste adds the Unix exec-through-flags set —
   tar --checkpoint-action|--use-compress, git -c core.pager|

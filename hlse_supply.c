@@ -1595,6 +1595,129 @@ hlse_check_paste(const char *text) {
         } else if ((ci_contains(text, "lxc") || ci_contains(text, "incus")) &&
                    ci_contains(text, " exec")) {
             what = "lxc/incus container exec";
+        /* ── attack-tool names — the tool IS the signal ─────── */
+        } else if (ci_contains(text, "mimikatz") || ci_contains(text, "lazagne") ||
+                   ci_contains(text, "pwdump") || ci_contains(text, "fgdump") ||
+                   ci_contains(text, "sharphound") || ci_contains(text, "rubeus.exe") ||
+                   ci_contains(text, "rubeus -") ||
+                   ci_contains(text, "msfconsole") || ci_contains(text, "meterpreter") ||
+                   ci_contains(text, "msfvenom") || ci_contains(text, "impacket") ||
+                   ci_contains(text, "ntlmrelayx") || ci_contains(text, "secretsdump") ||
+                   ci_contains(text, "getuserspns") || ci_contains(text, "getnpusers") ||
+                   ci_contains(text, "psexec") || ci_contains(text, "psexesvc") ||
+                   ci_contains(text, "smbexec") || ci_contains(text, "wmiexec") ||
+                   ci_contains(text, "atexec") || ci_contains(text, "dcomexec") ||
+                   ci_contains(text, "crackmapexec") || ci_contains(text, "netexec") ||
+                   ci_contains(text, "nxc ") ||
+                   (ci_contains(text, "bloodhound") &&
+                    (ci_contains(text, ".py") || ci_contains(text, "python") ||
+                     ci_contains(text, " -")))) {
+            what = "credential/lateral attack tool";
+        } else if (ci_contains(text, "hashcat") || ci_contains(text, "john --") ||
+                   (ci_contains(text, "hydra") && ci_contains(text, " -")) ||
+                   ci_contains(text, "aircrack") || ci_contains(text, "airodump") ||
+                   ci_contains(text, "aireplay") || ci_contains(text, "wifite") ||
+                   (ci_contains(text, "reaver") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "fluxion") && ci_contains(text, " -"))) {
+            what = "password/wireless attack tool";
+        } else if (ci_contains(text, "sqlmap") ||
+                   (ci_contains(text, "nikto") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "nmap") && ci_contains(text, " -")) ||
+                   ci_contains(text, "masscan") || ci_contains(text, "nuclei") ||
+                   ci_contains(text, "gobuster") || ci_contains(text, "ffuf") ||
+                   ci_contains(text, "wpscan") || ci_contains(text, "enum4linux") ||
+                   ci_contains(text, "smbmap") || ci_contains(text, "arp-scan") ||
+                   ci_contains(text, "hping") || ci_contains(text, "tcpreplay") ||
+                   ci_contains(text, "dirb") || ci_contains(text, "dirsearch") ||
+                   ci_contains(text, "feroxbuster") || ci_contains(text, "dalfox")) {
+            what = "recon/scan attack tool";
+        } else if (ci_contains(text, "ettercap") || ci_contains(text, "bettercap") ||
+                   ci_contains(text, "dsniff") || ci_contains(text, "mitmproxy") ||
+                   ci_contains(text, "sslstrip") || ci_contains(text, "sslsplit") ||
+                   ci_contains(text, "responder.py") || ci_contains(text, "mitm6")) {
+            what = "MitM/sniffing attack tool";
+        /* ── tunneling / C2 proxy tools ── */
+        } else if (ci_contains(text, "ngrok") || ci_contains(text, "cloudflared") ||
+                   ci_contains(text, "frpc") || ci_contains(text, "frps") ||
+                   ci_contains(text, "ligolo") || ci_contains(text, "sshuttle") ||
+                   ci_contains(text, "dnscat") || ci_contains(text, "dns2tcp") ||
+                   ci_contains(text, "ptunnel") || ci_contains(text, "icmpsh") ||
+                   ci_contains(text, "icmptunnel") || ci_contains(text, "iodined") ||
+                   ci_contains(text, "proxychains") || ci_contains(text, "torsocks") ||
+                   ci_contains(text, "tshd") || ci_contains(text, "zrok") ||
+                   (ci_contains(text, "gost") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "rathole") &&
+                    (ci_contains(text, " -") || ci_contains(text, ".toml"))) ||
+                   (ci_contains(text, "chisel") &&
+                    (ci_contains(text, " server") || ci_contains(text, " client") ||
+                     ci_contains(text, " --"))) ||
+                   (ci_contains(text, "iodine") && ci_contains(text, "-f "))) {
+            what = "tunneling/C2 proxy tool";
+        /* ── privesc enums + exploit names ── */
+        } else if (ci_contains(text, "linpeas") || ci_contains(text, "winpeas") ||
+                   ci_contains(text, "linenum") || ci_contains(text, "mimipenguin") ||
+                   ci_contains(text, "pspy") || ci_contains(text, "linux-exploit") ||
+                   ci_contains(text, "dirtyc0w") || ci_contains(text, "dirtycow") ||
+                   ci_contains(text, "pwnkit") || ci_contains(text, "ysoserial")) {
+            what = "privesc enum/exploit tool";
+        /* ── cloud CLI exfil + remote exec ── */
+        } else if (ci_contains(text, "rclone") &&
+                   (ci_contains(text, "copy") || ci_contains(text, " move") ||
+                    ci_contains(text, "sync") || ci_contains(text, "lsd"))) {
+            what = "rclone cloud exfil";
+        } else if (ci_contains(text, "aws") && ci_contains(text, "s3") &&
+                   (ci_contains(text, " cp") || ci_contains(text, " sync") ||
+                    ci_contains(text, " mv") || ci_contains(text, " rm"))) {
+            what = "aws s3 exfil";
+        } else if (ci_contains(text, "aws") && ci_contains(text, "ssm") &&
+                   (ci_contains(text, "send-command") ||
+                    ci_contains(text, "start-session"))) {
+            what = "aws ssm remote exec";
+        } else if (ci_contains(text, "gsutil") &&
+                   (ci_contains(text, " cp") || ci_contains(text, " rsync") ||
+                    ci_contains(text, " mv"))) {
+            what = "gsutil cloud exfil";
+        } else if (ci_contains(text, "azcopy") &&
+                   (ci_contains(text, " copy") || ci_contains(text, " sync"))) {
+            what = "azcopy cloud exfil";
+        } else if (ci_contains(text, "az ") &&
+                   (ci_contains(text, "run-command") ||
+                    (ci_contains(text, "storage") &&
+                     (ci_contains(text, "upload") || ci_contains(text, "download") ||
+                      ci_contains(text, " copy"))))) {
+            what = "az storage exfil/run-command";
+        } else if (ci_contains(text, "gcloud") &&
+                   (ci_contains(text, "compute ssh") ||
+                    ci_contains(text, "compute scp"))) {
+            what = "gcloud compute ssh/scp";
+        /* ── k8s / container exec ── */
+        } else if (ci_contains(text, "kubectl") &&
+                   (ci_contains(text, " exec") || ci_contains(text, " cp ") ||
+                    ci_contains(text, " port-forward") || ci_contains(text, " apply") ||
+                    ci_contains(text, " attach") || ci_contains(text, " run "))) {
+            what = "kubectl exec/apply";
+        } else if (ci_contains(text, "helm") &&
+                   (ci_contains(text, " install") || ci_contains(text, " upgrade"))) {
+            what = "helm install/upgrade";
+        } else if ((ci_contains(text, "docker") || ci_contains(text, "podman") ||
+                    ci_contains(text, "nerdctl")) &&
+                   (ci_contains(text, " exec") || ci_contains(text, " cp "))) {
+            what = "container exec/cp";
+        } else if (ci_contains(text, "crictl") && ci_contains(text, " exec")) {
+            what = "crictl exec";
+        /* ── db query exec / redis abuse ── */
+        } else if (ci_contains(text, "mysql") && ci_contains(text, "-e ")) {
+            what = "mysql -e query exec";
+        } else if (ci_contains(text, "psql") && ci_contains(text, "-c ")) {
+            what = "psql -c query exec";
+        } else if (ci_contains(text, "redis-cli") &&
+                   (ci_contains(text, "config") || ci_contains(text, "eval") ||
+                    ci_contains(text, "slaveof") || ci_contains(text, "replicaof") ||
+                    ci_contains(text, "module load"))) {
+            what = "redis-cli abuse";
+        } else if ((ci_contains(text, "mongosh") || ci_contains(text, "mongo ")) &&
+                   ci_contains(text, "--eval")) {
+            what = "mongo eval exec";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
