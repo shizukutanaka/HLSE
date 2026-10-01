@@ -4,6 +4,83 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-246)
+
+- **Paste-detector breadth — management & attack surface closure**
+  (`hlse_supply.c`): ~700 new `paste` primitives at ALERT 45 covering
+  JDK attach/exec (`javaws`/`jshell`/`jmap`/`jstack`/`jcmd`/`jps`),
+  interpreter exec surfaces (groovy/dart/zig/crystal/sbcl/gforth/ghc/
+  luajit/mruby/ponyc/janet/fennel/hy/babashka/matlab/scilab), the
+  Sysinternals recon suite (pssuspend/psping/psloggedon/listdlls/
+  procexp/procmon/tcpview/rammap/vmmap/winobj/livekd/du64/efsdump/
+  adexplorer/sysmon/sigcheck/junction), SMB/AD/LDAP write+enum
+  (samba-tool/sss_*/ldb*/tdb*/smbcacls/pdbedit), Kerberos material
+  (k5srvutil/kprop/kdb5_util/krb5kdc/kvno/ksu/ktab/gssproxy), TPM/HSM
+  (softhsm2/pcscd/scdaemon/tcsd/swtpm/tpm2_*), CA/cert forgery
+  (cfssl/certstrap/minica/mkcert/easyrsa/certtool/step), routing
+  daemons for BGP/session hijack (bird/vtysh/bgpd/ospfd/zebra/babeld/
+  cjdns/yggdrasil/exabgp/quagga), IDS/AV/log-pipeline kill+recon
+  (snort/suricata/zeek/clamav/rkhunter/unhide/telegraf/node_exporter/
+  winlogbeat/nxlog), audit/SELinux read tools (ausearch/aureport/
+  aulast/seinfo/findcon/getpcaps/setfattr), supervisor/daemon mgmt
+  (start-stop-daemon/svscan/s6-*/svccfg/circusctl/dtach/run0/toybox/
+  busybox inetd/debootstrap/nsjail/pk*/dbus-*), fake-BTS + SDR +
+  hardware-flash (yate/osmo-*/srs*/open5gs/limesdr/bladerf/soapysdr/
+  gnuradio/jlink/stlink/stm32*/teensyloader/espefuse/picotool/yosys/
+  urjtag/buspirate/odin/spflashtool/miflash/rkdeveloptool/nanddump/
+  flash_*/ubi*/mtd*/jffs2*), BLE/BT attack set (gattacker/bluebug*/
+  carwhisperer/hidattack/nrf-sniffer/hackzwave), firmware/PE/PDF/
+  Office-doc extraction (mitmf/cabextract/unsquashfs/emba/firmadyne/
+  pev/peframe/pe-bear/zsteg/pdf-parser/peepdf/oletools/olevba/
+  pcodedmp), iOS jailbreak + Android root/pinning bypass (unc0ver/
+  taurine/dopamine/checkra1n-era loaders/cydia/sileo/trollstore/
+  sideloadly/cycript/kernelsu/zygisk/lsposed/sslunpinning/vysor),
+  anonymity/covert transports + proxy servers (obfs4proxy/dnstt/
+  snowflake/gnunet/freenet/i2p/zeronet/lyrebird/stegotorus/n2n/
+  freelan/openziti/wg-write/graftcp/badvpn/sockd/pproxy/privoxy/
+  polipo/tinyproxy/mitmweb), phishing kits + OSINT/attack surfaces
+  (darkphish/sn1per/osmedeus/reconftw/maltego/dmitry/fofa/shodan-like
+  services/malware-repos/subdomain-tooling), eBPF offensive tooling
+  (tracee/ebpfkit/triplecross/bpfkexec/pamspy), ELF patch +
+  assembler/linker (patchelf/chrpath/execstack/paxctl/checksec/
+  objcopy/nasm/fasm/yasm/ml64/sdcc/tcc), secret-fetch CLIs
+  (envconsul/credstash/vals/dotenvx/aws-vault/saml2aws/oauth2l/
+  fly auth token/heroku auth:token/az get-access-token/gcloud
+  print-access-token/kubectl config view/terraform output),
+  VCS + pkg-helper write ops (sfdx/sf/tea/p4/svn/hg/fossil/
+  git-annex/git-filter-repo/bfg/jj/yay/paru/pamac/guix/xbps/urpmi/
+  aptitude/dpkg/alien), file watchers + utmp/wtmp session-spy
+  (watchexec/entr/fswatch/inotify*/fsmon/watchman/viddy/utmpdump/
+  wtmpdump/lastb/dump-acct/lastcomm/acctcom/lslogins/getent passwd),
+  Windows misc (winword/excel exec flags/mspub/odbcad32/mobsync/
+  diantz/printbrm/winsat/cdb/ntsd/dbgshell/editor tunnels/faketime),
+  sync/exfil upload CLIs (megatools/dbxcli/gdrive/odrive/nextcloudcmd/
+  owncloudcmd/seaf-cli), remote-desktop/SSH clients + log pipeline
+  (winbox/mremoteng/xfreerdp/rdesktop/remmina/rdpwrap/mobaxterm/
+  xshell/securecrt/bitvise/termius/psftp/pageant/kitty/putty/tftp/
+  rsyslogd/syslog-ng), and clipboard/wayland/X11 control + KVM-share
+  (cliphist/copyq/gpaste/sunshine/waypipe/x2x/input-leap/deskflow/
+  neatvnc/wl-screenrec/dotool/kmonad/kanata/xev/xprop/weston/dwl/
+  wayfire/labwc/qtile/herbstluftwm/bspwm/wmctrl/swayidle/swaylock/
+  wlfreerdp).
+
+### Fixed
+
+- **Word-internal substring traps in the new verbs** (`hlse_supply.c`):
+  `stem`/`pen`/`rshell`/`grim`/`cage`/`river`/`fact`/`guile`/`racket`
+  matched inside `system`/`filesystem`/`systemd-*`, `open`/`openssl`/
+  `openvpn`/`openocd`, `powershell`, `pilgrim`, `birdcage`, `driver`,
+  `artifact`, `beguile`, `bracket` — dropped or re-gated; `odin`/`wcl`/
+  `die`/`sniffle`/`entr`/`gazer`/`contig`/`attr`/`meek`/`hans`/`gp`/
+  `gap`/`foca`/`escript`/`jdb`/`zed`/`devolutions`/`hitch`/`stud`/
+  `balance`/`yate`/`cero` got a trailing-space boundary so
+  `iodine`/`hwclock`/`studied`/`sniffles`/`entry`/`stargazer`/
+  `contiguous`/`attribute`/`meekly`/`hansel`/`gpg`/`gaps`/`focaccia`/
+  `description`/`jdbc`/`analyzed`/`hitchhike`/`study`/`counterbalance`/
+  `yates`/`traceroute` stay clean; `p4` verb-gate lost the bare ` -`
+  alternative (`.mp4` file args) and ` change` (plural `changes`
+  enumeration stays benign).
+
 ### Fixed
 
 - **CJK false positive in terminal-escape detection** (`hlse_text.c`):

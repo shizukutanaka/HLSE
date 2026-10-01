@@ -11674,6 +11674,204 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-246: jdk/sysinternals/ad/kerberos/routing/ids/gsm/flash/jailbreak/proxy/exec primitives ──
+for c in \
+    'javaws http://x/a.jnlp' 'jshell x.jsh' 'jjs x.js' 'jmap -dump x' 'jhat x' \
+    'jstack 1' 'jinfo 1' 'jconsole' 'jvisualvm' 'jmc' 'jsadebugd' 'jdb -attach x' \
+    'jcmd 1' 'jps -l' 'jstatd' \
+    'escript x' 'groovy -e x' 'dart run x' 'zig run x' 'crystal run x' \
+    'sbcl --eval x' 'newlisp -e x' 'factor -run x' \
+    'gforth x' 'ghc -e x' 'luajit x' 'mruby -e x' 'ponyc' 'janet x.janet' \
+    'fennel x.fnl' 'hy x.hy' 'bb -e x' 'babashka -e x' 'nbb -e x' 'joker -x' \
+    'matlab -batch x' 'scilab -e x' 'gp -q x' 'gap -q x' \
+    'pssuspend x' 'psping x' 'psloggedon' 'psgetsid' 'psfile' 'psloglist' \
+    'pspasswd x y' 'listdlls' 'procexp' 'procmon' 'tcpview' 'rammap' 'vmmap' \
+    'winobj' 'livekd' 'du64' 'efsdump' 'adexplorer' 'adinsight' 'adrestore' \
+    'coreinfo' 'pendmoves' 'movefile x y' 'sigcheck' 'diskview' 'ldmdump' \
+    'ntfsinfo' 'shareenum' 'shellrunas x' 'bginfo' 'desktops -n' 'hex2dec' \
+    'notmyfault' 'portmon' 'regdelnull' 'regjump' 'volumeid' 'debugview' \
+    'sysmon -i' 'clockres' 'contig -a x' 'findlinks' 'junction -s c:\\x' \
+    'rpcenum x' 'nbtscan x' 'smbget smb://x' 'smbtar -s x' 'smbtree' \
+    'samba-tool user add x' 'smbcacls //x y z' 'smbcquotas //x' 'pdbedit -a x' \
+    'smbpasswd x' 'sssctl domain-status' 'sss_cache -E' 'sss_obfuscate' \
+    'sss_seed' 'sss_override user-add x' 'ldbedit' 'ldbsearch' 'ldbadd' 'ldbdel' \
+    'tdbdump x' 'tdbtool x' 'exportfs -o x' 'cadaver http://x' 'printerbug x y' \
+    'k5srvutil' 'kprop -f x' 'kdb5_util dump x' 'krb5kdc' 'kswitch' 'kpasswd' \
+    'kvno x' 'ksu' 'ktab' 'gssproxy' 'cifscreds add x' 'request-key create' \
+    'softhsm2-util x' 'pcscd' 'scdaemon' 'tcsd' 'swtpm' 'tpm2_create' \
+    'tpm2_load' 'tpm2_sign' 'tpm2_unseal' 'tpm2_nvread' \
+    'tpm2_nvwrite' 'tpm2_flushcontext' 'tpm2_pcrread' \
+    'cfssl gencert x' 'cfssljson' 'certstrap' 'minica x' 'mkcert x' 'easyrsa x' \
+    'certtool' 'acme-client x' 'uacme x' 'acme.sh x' 'step ca init' \
+    'step certificate sign x' 'genkey' \
+    'bird -c x' 'birdc show' 'bird6' 'frr x' 'vtysh -c x' 'bgpd' 'ospfd' 'ripd' \
+    'isisd' 'ldpd' 'nhrpd' 'pimd' 'pbrd' 'staticd' 'zebra -d' 'babeld' 'batctl x' \
+    'olsrd' 'bmx6' 'cjdns' 'yggdrasil' 'gobgp' 'gobgpd' 'exabgp' 'quagga' \
+    'watchquagga' \
+    'denyhosts' 'sshguard' 'crowdsec' 'psad' 'fwsnort' 'snort -c x' 'suricata' \
+    'zeek -i x' 'clamav' 'clamd' 'freshclam' 'maldet' 'lynis' 'rkhunter --check' \
+    'chkrootkit' 'unhide proc' 'telegraf' 'collectd' 'statsd' 'zabbix' 'nagios' \
+    'icinga' 'checkmk -v' 'node_exporter' 'pushgateway' 'alertmanager' \
+    'logstash' 'fluentd' 'fluent-bit' 'filebeat' 'metricbeat' 'auditbeat' \
+    'winlogbeat' 'nxlog' \
+    'ausearch -x' 'aureport' 'aulast' 'aulastlog' 'auvirt' 'autrace x' 'secon x' \
+    'sesearch x' 'seinfo' 'findcon' 'apol' 'sedta' 'sechecker' 'setrans x' \
+    'getpcaps x' 'filecap' 'pscap' 'setfattr -n x' 'attr -s x' \
+    'start-stop-daemon -S x' 'svscan' 'svstat x' 's6-svscan' 's6-svscanctl' \
+    's6-rc x' 'svccfg' 'daemon -x' 'circusctl stop x' 'dtach -A x' 'abduco -A x' \
+    'run0 id' 'toybox sh' 'busybox tcpsvd x' 'busybox inetd' 'debootstrap x y' \
+    'mmdebstrap x' 'firejail --noprofile x' 'nsjail -Mo x' 'autoexpect x' \
+    'empty -f x' 'pkttyagent' 'pkaction' 'pkcheck' 'systemd-ask-password x' \
+    'systemd-tty-ask-password-agent' 'systemd-stdio-bridge x' \
+    'systemd-socket-activate x' 'systemd-notify x' 'dbus-monitor --system' \
+    'qdbus x' 'd-feet' 'dbus-launch' 'dbus-daemon --system' \
+    'yate -c x' 'yatebts' 'openbts' 'openbsc' 'osmo-bts' 'osmo-bsc' 'osmo-hlr' \
+    'srsenb' 'srsue' 'srsepc' 'srsgnb' 'srsran' 'lteenb' 'ltemme' 'open5gs' \
+    'free5gc' 'nextepc' 'openepc' 'limesdr' 'bladerf' 'usrp' \
+    'uhd_find_devices' 'soapysdr' 'airspy' 'sdrplay' 'plutosdr' 'gnuradio' \
+    'gqrx' 'sdrpp' 'sdrangel' 'urh' 'inspectrum' \
+    'jlink' 'stlink' 'st-flash x' 'st-info' 'stm32flash x' 'stm32prog' \
+    'dfu-programmer x' 'dfu-prefix' 'teensyloader' 'espefuse x' 'espsecure x' \
+    'esp_rfc2217' 'ampy x' 'mpremote' 'nodemcu' 'pyboard' 'picotool' \
+    'picoprobe' 'yosys' 'nextpnr' 'openfpgaloader' 'xc3sprog' 'urjtag' \
+    'jtagulator' 'hydrabus' 'buspirate' 'sigrok-cli' 'saleae' 'ser2net' \
+    'picocom x' 'odin -x' 'spflashtool' 'qfil' 'miflash' 'sahara -x' \
+    'firehose -x' 'qdload' 'rkdeveloptool' 'rkflashtool' 'upgrade_tool' \
+    'phoenixsuit' 'livesuit' 'nanddump' 'flash_erase /dev/x' \
+    'flash_eraseall /dev/x' 'ubidetach' 'ubimkvol' 'ubirmvol' 'ubiupdatevol' \
+    'flashcp x y' 'flash_unlock' 'flash_lock' 'flash_otp_dump' 'ubinize' \
+    'ubiblock' 'ubirename' 'ubidump' 'mtdinfo' 'nftldump' 'nftl_format' \
+    'rfddump' 'rfdformat' 'sumtool' 'jffs2dump' 'serve_image' 'recv_image' \
+    'btcrack' 'btcrawler' 'bluelight' 'blueborn' 'gattacker' 'btdump' \
+    'bluebug' 'bluebugger' 'bluepot' 'bluescan' 'bluesniff' 'bluestumbler' \
+    'btinput' 'carwhisperer' 'hidattack' 'keysnatch' 'obexapp' 'psm-scan' \
+    'rfcomm x' 'ubics' 'btle' 'nrf-sniffer' 'nrfconnect' 'hackzwave' 'wpanctl' \
+    'mitmf' 'cabextract x' 'unshield x' 'innoextract x' 'unsquashfs x' \
+    'sasquatch x' 'jefferson x' 'ubi_reader' 'ubireader' 'fwanalyzer' 'emba' \
+    'firmadyne' 'firmwalker' 'fmk' 'pev x' 'pecheck' 'peframe' \
+    'pedump' 'pescan' 'portex' 'pe-bear' 'diec' 'exeinfo' 'trid x' 'wxhex' \
+    'imhex' 'zsteg x' 'pngcheck x' 'mediainfo x' 'ffprobe x' 'pdfinfo x' \
+    'pdf-parser' 'pdfid' 'peepdf' 'pdfxray' 'pdfcpu' 'oletools' 'olevba x' \
+    'oledump x' 'mraptor' 'pcodedmp' 'extract_msg' 'foca -x' 'powermeta' \
+    'unc0ver' 'taurine' 'dopamine' 'roothide' 'nathanlr' 'xina' 'fugu' \
+    'limera1n' 'blackra1n' 'purplera1n' 'redsn0w' 'greenpois0n' 'pangu x' \
+    'taig x' 'phoenix jb' 'h3lix' 'etason' 'yalu x' 'mach_portal' 'sileo' \
+    'cydia' 'appmanager' 'altserver' 'sideloadly' 'altstore' 'trollstore' \
+    'filza' 'newterm' 'mtac' 'oslog' 'class-dump' 'machoview' 'cycript' \
+    'bfinject' 'ipainstaller' 'appinst' \
+    'kernelsu' 'apatch' 'shamiko' 'zygisk' 'riru' 'lsposed' 'edxposed' \
+    'sslunpinning' 'justtrustme' 'vysor' 'airdroid' \
+    'obfs4proxy' 'dnstt-client' 'snowflake-client' 'speederv2' 'tinyfecvpn' \
+    'udpspeeder' 'gnunet' 'freenet' 'i2p' 'zeronet' 'nyx' 'lyrebird' \
+    'stegotorus' 'scramblesuit' 'tapdance' 'n2n' 'freelan' 'vtun' 'openziti' \
+    'ziti edge login' 'wg set x' 'spiped' 'graftcp x' 'badvpn' 'sockd' 'ss5' \
+    'pproxy' 'privoxy' 'polipo' 'tinyproxy' 'paros' 'mitmweb' \
+    'darkphish' 'phishx' 'websploit' 'sn1per' 'jaeles' 'reconftw' \
+    'rengine' 'lazyrecon' 'osmedeus' 'osrframework' 'maltego' 'casefile' 'dmitry' \
+    'eagleeye' 'userrecon' 'social-analyzer' 'fofa x' 'zoomeye' 'binaryedge' \
+    'netlas' 'onyphe' 'dnsdb' 'passivetotal' 'riskiq' 'threatcrowd' \
+    'threatminer' 'otx x' 'anyrun' 'intezer' 'malwr' 'malshare' 'virusshare' \
+    'vxvault' 'maltrieve' 'thezoo' 'vxcube' 'altdns' 'ctfr' 'cero x' 'dnsgen' \
+    'goaltdns' 'gotator' 'alterx' 'puredns' 'shuffledns' 'dnsx' 'bluto' \
+    'dnscan' 'subscan' 'tracee x' 'inspektor-gadget' 'ebpfkit' 'triplecross' \
+    'bpfkexec' 'badbpf' 'bpfdos' 'pamspy' \
+    'patchelf x' 'chrpath x' 'elfedit x' 'scanelf' 'execstack x' 'paxctl x' \
+    'prelink x' 'checksec x' 'pahole' 'dwdebug' 'eu-strip' 'objcopy x' \
+    'nasm -f elf64 x' 'fasm x' 'yasm x' 'ml64 x' 'wcl -x' 'wcc -x' 'wlink -x' \
+    'sdcc x' 'sstrip x' 'tcc -o x' \
+    'envconsul x' 'vaultenv x' 'credstash get x' 'vals eval' 'dotenvx' \
+    'envkey' 'aws-vault exec x' 'awsume x' 'saml2aws login' 'gimme-aws-creds' \
+    'oauth2l' 'oauth2c' 'flyctl auth token' 'fly auth token' 'heroku auth:token' \
+    'az account get-access-token' 'gcloud auth print-access-token' \
+    'kubectl config view' 'kubectl config use-context x' \
+    'terraform output' 'terraform state pull' 'terraform state rm x' \
+    'terraform taint x' \
+    'sfdx force' 'sf org login' 'tea login' 'p4 sync' 'svn export x' \
+    'hg clone x' 'fossil -x' 'git-annex get' 'git-filter-repo' 'bfg x' \
+    'git-hound' 'sapling -x' 'jj git clone' 'yay -S x' 'paru -S x' 'yaourt x' \
+    'trizen -S x' 'pikaur -S x' 'aurman -S x' 'pamac install x' \
+    'guix install x' 'sbopkg -i x' 'pkgtool' 'installpkg x' 'slpkg -i x' \
+    'xbps-install x' 'xbps-remove x' 'urpmi x' 'aptitude install x' \
+    'dpkg -i x' 'alien -i x' \
+    'watchexec x' 'entr -r x' 'fswatch' 'inotifywait x' 'inotifywatch x' \
+    'fanotify' 'fsmon' 'watchman -j x' 'viddy x' 'reflex -r' 'gazer -x' \
+    'utmpdump x' 'wtmpdump x' 'lastb' 'dump-acct' 'dump-utmp' 'lastcomm' \
+    'acctcom' 'lslogins' 'getent passwd' \
+    'winword /q' 'excel http://x' 'mspub x' 'msaccess x' 'odbcad32' 'mobsync' \
+    'diantz x' 'printbrm -b' 'winsat formal' 'dxcap' 'cdb -c x' 'ntsd -c x' \
+    'kd -c x' 'dbgshell' 'code tunnel user login' 'cursor tunnel' 'zed -x' \
+    'faketime' 'datefudge' 'libfaketime' \
+    'megatools x' 'megacopy' 'megaget' 'megaput' 'megarm' 'megadl' 'dbxcli' \
+    'gdrive upload' 'odrive' 'nextcloudcmd' 'owncloudcmd' 'seaf-cli' \
+    'drive push' \
+    'winbox' 'mremoteng' 'devolutions -x' 'xfreerdp x' 'wfreerdp' 'rdesktop x' \
+    'remmina' 'rdpwrap' 'mobaxterm' 'smartty' 'xshell' 'securecrt' 'bitvise' \
+    'superputty' 'termius' 'terminus -x' 'termscp' 'psftp x' 'pageant -x' \
+    'kitty @ x' 'putty -l x' 'tftp -i x' 'axel -x' \
+    'rsyslogd' 'syslog-ng' \
+    'cliphist list' 'clipmenu' 'clipcat' 'copyq' 'greenclip' 'gpaste' \
+    'parcellite' 'clipit' 'diodon' 'sunshine -x' 'waypipe x' 'x2x x' \
+    'barrier -x' 'input-leap' 'deskflow' 'lan-mouse' 'rkvm' 'neatvnc' \
+    'wlvncc' 'krfvnc' 'grimshot x' 'wayshot' 'shotman' 'slurp -x' \
+    'wl-screenrec' 'dotool' 'kmonad x' 'kanata x' 'xev' 'xprop' 'xwininfo' \
+    'xdpyinfo' 'weston -x' 'cagebreak' 'dwl' 'wayfire' \
+    'labwc' 'swayfx' 'qtile' 'herbstluftwm' 'bspwm' 'bspc' 'wmctrl -l' \
+    'swayidle' 'swaylock' 'synergy -x' 'wlfreerdp' 'sdl-freerdp'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE'; then
+        check "paste: $c flagged" "1" "1"
+    else
+        check "paste: $c flagged" "0" "1"
+    fi
+done
+
+for c in \
+    'the bird sings at dawn' 'zebra crossing the road' 'synergy between teams' \
+    'the river flows north' 'grim news today' 'slurp the soup' 'cage the bird' \
+    'a barrier to entry' 'sunshine all day' 'weston park meetup' \
+    'summon the guard' 'chamber music recital' 'the teller window' \
+    'odyssey journey begins' 'chimera legend' 'electra complex' \
+    'meridian line' 'absinthe green bottle' 'evasion tactics book' \
+    'clutch bag store' 'substrate layer growth' 'a creepy story' \
+    'bazaar market day' 'valhalla awaits' 'loki norse god' 'thor hammer' \
+    'cuckoo clock chime' 'dart throw game' 'zig zag pattern' 'crystal ball' \
+    'racket noise court' 'guile and cunning' 'factor analysis' \
+    'janet jackson song' 'fennel seeds tea' 'bb gun pellet' 'joker card' \
+    'gap year travel' 'step by step guide' 'the step carefully' 'step back' \
+    'the attr library' 'empty promise' 'the toybox lid' 'yay team wins' \
+    'fossil record age' 'the sapling grows' 'tea time snack' \
+    'the watchman duty' 'reflex action test' 'gazer beam light' \
+    'die hard film' 'fact check this' 'sniffle cold season' 'odin mythology' \
+    'sahara desert trek' 'the firehose spray' 'bmx bike race' 'yate row' \
+    'okta verify app' 'svn repository mirror' 'hg wells novel' \
+    'aptitude test prep' 'the alien movie' 'hybrid analysis done' \
+    'terminus station' 'the pageant queen' 'charles dickens novel' \
+    'the fiddler crab' 'dante alighieri' 'snort with laughter' \
+    'zeek who asked' 'unhide files now' 'the daemon tools lite' \
+    'meek response was' 'stem the tide' 'hans zimmer score' 'stud finder' \
+    'pen and paper' 'balance sheet audit' 'the snowflake pattern' \
+    'ziti pasta dish' 'wg confusion cleared' 'drive safely home' \
+    'the kitty cat' 'putty knife work' 'axel foley cop' 'ftp file transfer' \
+    'groovy music track' 'the newlisp feature' 'matlab license file' \
+    'scilab suite docs' 'nasm assembler docs' 'wcl compiler notes' \
+    'jdbc connection url' 'the code tunnel idea' 'request key pair' \
+    'junction box cover' 'contig assembly done' 'desktops everywhere' \
+    'the move files task' 'getent services list' 'terraform version' \
+    'kubectl config get-contexts' 'kubectl config current-context' \
+    'svn info repository' 'hg status clean' 'p4 changes list' \
+    'jj status clean' 'sf state machine' 'tea ceremony' 'fossil dig site' \
+    'dart sdk docs' 'zig build system' 'crystal clear water' \
+    'the poetry adds links' 'installs the package' 'deletes temp files' \
+    'excel spreadsheet data' 'winword document' 'the charles river' \
+    'a pet project' 'meeting the quota' 'print server queue'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+        check "paste FP guard: $c clean" "0" "0"
+    else
+        check "paste FP guard: $c clean" "0" "1"
+    fi
+done
+
 # ── cycle-245: db exfil/backup + rmm/remote access + proxy/tunnel +
 #   BYOVD/packers + cloud-attack/spray/phish + miners + bcc/forensics +
 #   wifi/bt/nfc/can/scada + remaining win/unix primitives
@@ -11923,11 +12121,11 @@ for c in \
     'duplicity --version' 'kopia --version' 'nohup' \
     'disowned by family' 'newgrp' 'sg docs' 'getcap' 'capsh' \
     'chronyc tracking' 'tmux ls' 'tmux -V' 'tmux attach' 'tmux kill-session' \
-    'screen -ls' 'screen -r' 'inotifywait --version' 'watch' \
+    'screen -ls' 'screen -r' 'watch' \
     'watch --version' 'the newt lizard' 'a newt species' \
     'notify-send test' 'redir --help' 'nginx -t' 'nginx -v' \
-    'haproxy -v' 'caddy version' 'tinyproxy' 'squid -v' \
-    'squid --version' 'polipo' 'openvpn --version' 'julia --version' \
+    'haproxy -v' 'caddy version' 'squid -v' \
+    'squid --version' 'openvpn --version' 'julia --version' \
     'a julia set' 'octave --version' 'an octave higher' \
     'maxima --version' 'ghci --version' 'fish --version' 'a fish tank' \
     'zsh --version' 'ksh --version' 'dash of salt' 'a dash cam' \
@@ -11941,13 +12139,13 @@ for c in \
     'kbld' 'stern face' 'the stern lecture' 'sg group x' \
     'an opus work' 'the op forum' 'go fmt x' 'consul docs' \
     'linkerd' 'kapp list' 'atlantis --version' 'watch -g' \
-    'inotifywait --help' 'logger x' 'hwclock --show' 'hwclock' \
+    'logger x' 'hwclock --show' 'hwclock' \
     'chronyc -v' 'busctl tree' 'busctl list' \
     'sftp x' 'rsync -a x y' 'rsync --version' 'restic snapshots' \
     'screen --version' 'newt' 'a newt' \
     'tracker.exe docs' 'slmgr' \
     'op --version' 'nix develop' \
-    'nix build x' 'nix-shell x' 'guix install x' \
+    'nix build x' 'nix-shell x' \
     'go get x' 'watch ls'; do \
   ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
       && check "paste FP guard: $c clean" "0" "0" \
@@ -12232,7 +12430,7 @@ for c in \
     'sops --version' 'flink list' 'oozie --version' 'airflow version' \
     'huggingface-cli download x' 'lftp --version' 'osint docs' \
     'db2 ' 'presto --version' 'trino --version' 'moby dick' \
-    'oberon moon' 'osmedeus' 'the seeker missile' \
+    'oberon moon' 'the seeker missile' \
     'influx version' 'bq version' 'mbimcli --version' \
     'impala-shell --version' 'vagrant global-status'; do \
   ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
@@ -12478,7 +12676,7 @@ for c in \
     'perf stat x' 'perf top' 'perf list' 'trace-cmd' \
     'dtrace -l' 'log show' 'log stream' 'asr' 'bless --info' \
     'pmset -g' 'lsregister -dump' 'install_name_tool' \
-    'tpm2_pcrread' 'iscsiadm' 'john' 'john x' 'veil docs' \
+    'iscsiadm' 'john' 'john x' 'veil docs' \
     'wce' 'jaws x' 'powerup' 'deimos docs' 'responder' \
     'the responder' 'znc' 'fping x' 'hydra docs' 'expect' \
     'the expect script' 'the chef kitchen' 'the puppet show' \
@@ -12568,7 +12766,7 @@ for c in \
     'mount /dev/x /y' 'mount -o ro /x /y' 'mount -a' 'umount x' \
     'findmnt' 'setenforce' 'getenforce' 'setenforce 1' \
     'semodule -l' 'setsebool' 'getsebool x' 'semanage -l' \
-    'sestatus' 'apparmor_status' 'aa-status' 'ausearch' 'aureport' \
+    'sestatus' 'apparmor_status' 'aa-status' 'ausearch' \
     'ip xfrm state' 'ip xfrm state list' 'ip xfrm monitor' \
     'ebtables -L' 'ebtables -t filter -L' 'brctl show' \
     'brctl showmacs' 'iw list' 'iw dev' 'iwconfig' 'iwconfig x' \
@@ -12585,7 +12783,7 @@ for c in \
     'resolvectl status' 'resolvectl query x' 'resolvectl flush-caches' \
     'rndc status' 'rndc -s x' 'unbound-control status' \
     'unbound-control -c x' 'terraform plan' 'terraform apply' \
-    'terraform init' 'terraform output' 'pulumi up' 'pulumi preview' \
+    'terraform init' 'pulumi up' 'pulumi preview' \
     'tofu plan' 'kubectl get pods' 'vault list' \
     'vault read x' 'vault status' 'consul members' 'consul catalog' \
     'etcdctl get x' 'etcdctl member list' 'nomad status' \
@@ -13348,7 +13546,7 @@ for c in 'cat <(curl x)' 'diff <(curl a) <(curl b)' \
          'curl http://x && echo done' 'wget file && cat file' \
          'curl -L x && mv x y' 'fetch the file' \
          'scp file host:' 'scp file host: && echo ok' \
-         'sftp host' 'tftp -i h get s'; do
+         'sftp host' ; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
         && check "paste FP guard: $c clean" "0" "0" \
         || check "paste FP guard: $c clean" "0" "1"
