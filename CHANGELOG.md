@@ -77,6 +77,26 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **GTFOBins exec + destructive + pivot primitives**
+  (`hlse_supply.c`): paste adds the Unix exec-through-flags set —
+  tar --checkpoint-action|--use-compress, git -c core.pager|
+  fsmonitor|sshCommand|hooksPath + ext:: transport, ssh -o
+  ProxyCommand|LocalCommand, find -exec|-execdir, vi|vim|ex -c,
+  man -P pager, expect spawn, tcpdump -z postrotate, split
+  --filter, watch -x, emacs --eval, script -qc|-c (pty wrap),
+  capsh --shell|--, tcc -run, jrunscript -e|-f, lua os.execute|
+  io.popen, busybox applet exec/fetch, setsid detached exec —
+  plus privilege/destructive primitives: pkexec, runuser -u,
+  chroot +path, chsh -s, passwd -l|-d, chpasswd, journalctl
+  --vacuum + dmesg -c (journal wipe), mknod, insmod, rmmod|
+  modprobe -r of iptable|nf_|apparmor|selinux (security module
+  unload), kill -9 -1, init|telinit 0|6, printenv (env dump) —
+  and network pivot: ip_forward=1, ip route|route add|replace,
+  iptables -t nat|masquerade|dnat (added to the flush gate),
+  date -s|--set, timedatectl set-time|set-ntp, mount -t
+  cifs|nfs|smb + mount.cifs + sshfs, ncat --listen (added to
+  P13), lxc|incus exec — all +45 arg-gated.
+
 - **macOS post-compromise primitives** (`hlse_supply.c`): paste
   adds the Darwin-side attack set that was completely open —
   launchctl persistence (bootstrap|submit|kickstart|load|

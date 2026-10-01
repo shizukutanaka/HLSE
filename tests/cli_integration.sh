@@ -11671,6 +11671,95 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-230a: GTFOBins exec + destructive + pivot primitives ──
+for c in \
+    'tar --checkpoint-action=exec=sh' \
+    'tar --use-compress-program=sh -cf x.tar y' \
+    'git -c core.pager=sh diff' \
+    'git -c core.fsmonitor=x status' \
+    'git -c core.sshCommand=sh clone x' \
+    'git clone "ext::sh -c x"' \
+    'ssh -o ProxyCommand="sh -c x" host' \
+    'ssh -o LocalCommand="sh -c x" host' \
+    'find / -name x -exec sh \;' \
+    'find / -execdir sh {} \;' \
+    'vim -c "!sh"' \
+    'vi -c "!sh"' \
+    'ex -c "!sh"' \
+    'man -P "sh" x' \
+    'expect -c "spawn sh"' \
+    'tcpdump -z sh -i eth0' \
+    'split --filter="sh -c x" f' \
+    'watch -x sh -c x' \
+    'emacs -Q -nw --eval x' \
+    'script -qc sh /dev/null' \
+    'capsh --shell' \
+    'capsh -- -c sh' \
+    'tcc -run x.c' \
+    'jrunscript -e x' \
+    'lua -e "os.execute()" ' \
+    'lua -e x' \
+    'busybox sh' \
+    'busybox wget http://x' \
+    'setsid sh' \
+    'setsid /bin/bash' \
+    'chroot / sh' \
+    'pkexec /bin/sh' \
+    'runuser -u root -- sh' \
+    'chsh -s /bin/sh' \
+    'passwd -l x' \
+    'chpasswd < f' \
+    'journalctl --vacuum-size=1' \
+    'journalctl --vacuum-time=1s' \
+    'dmesg -c' \
+    'mknod /tmp/x p' \
+    'insmod /tmp/x.ko' \
+    'rmmod iptable_filter' \
+    'modprobe -r nf_conntrack' \
+    'kill -9 -1' \
+    'init 0' \
+    'init 6' \
+    'telinit 0' \
+    'printenv' \
+    'sysctl -w net.ipv4.ip_forward=1' \
+    'echo 1 > /proc/sys/net/ipv4/ip_forward' \
+    'ip route add default via 1.2.3.4' \
+    'route add default gw 1.2.3.4' \
+    'iptables -t nat -A POSTROUTING -j MASQUERADE' \
+    'date -s "2020-01-01"' \
+    'timedatectl set-time x' \
+    'timedatectl set-ntp false' \
+    'mount -t cifs //evil/x /mnt' \
+    'mount -t nfs evil:/x /mnt' \
+    'mount.cifs //x /m' \
+    'sshfs evil@x:/ /mnt' \
+    'ncat --listen' \
+    'lxc exec x -- sh' \
+    'incus exec x -- sh'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'tar xzf x.tar.gz' 'tar -cf x.tar y' \
+         'git status' 'git -c color.ui=auto diff' 'git log --oneline' \
+         'ssh -o BatchMode=yes host' 'ssh -o StrictHostKeyChecking=no x' \
+         'find . -name x' 'find . -type f' \
+         'vim x.txt' 'man ls' 'man 2 open' \
+         'expect -v' 'tcpdump -i eth0' 'tcpdump -c 10' \
+         'split -l 100 x' 'watch -n 1 x' 'emacs -nw x' \
+         'script x.log' 'capsh --print' 'tcc -v' 'lua -v' \
+         'busybox' 'setsid' 'chroot' \
+         'passwd x' 'passwd -S x' 'journalctl -u x' \
+         'dmesg | tail' 'dmesg -w' 'modprobe veth' 'modprobe nf_conntrack' \
+         'kill -9 1234' 'kill -TERM 1' 'init --help' 'env' \
+         'ip route show' 'route -n' 'date' 'date +%s' \
+         'timedatectl status' 'mount' 'mount /dev/sda1 /mnt' \
+         'sshfs --help' 'lxc list' 'kubectl get pods'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-229: macOS post-compromise primitives ─────────────
 for c in \
     'launchctl bootstrap gui/501 /tmp/x.plist' \

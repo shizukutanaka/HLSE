@@ -611,7 +611,7 @@ hlse_check_paste(const char *text) {
      * needs `nc -l` or `chmod +s` in pasted content.            */
     if (strstr(text, "nc -l") || strstr(text, "ncat -l") ||
         strstr(text, "netcat -l") || strstr(text, " -lv") ||
-        strstr(text, "nc -p ")) {
+        strstr(text, "ncat --listen") || strstr(text, "nc -p ")) {
         v.signals |= PASTE_LISTENER_PRIV;
         v.score += 45;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -1282,8 +1282,10 @@ hlse_check_paste(const char *text) {
          * firewall-cmd --add-port punch                          */
         } else if ((ci_contains(text, "iptables") || ci_contains(text, "ip6tables")) &&
                    (ci_contains(text, "-f") || ci_contains(text, "-x") ||
-                    ci_contains(text, "flush") || ci_contains(text, "-z"))) {
-            what = "iptables rules flush";
+                    ci_contains(text, "flush") || ci_contains(text, "-z") ||
+                    ci_contains(text, "-t nat") || ci_contains(text, "masquerade") ||
+                    ci_contains(text, "dnat"))) {
+            what = "iptables flush/NAT pivot";
         } else if (ci_contains(text, "nft") && ci_contains(text, "flush")) {
             what = "nft ruleset flush";
         } else if (ci_contains(text, "ufw") && ci_contains(text, "disable")) {
@@ -1471,6 +1473,128 @@ hlse_check_paste(const char *text) {
         /* JXA payload — osascript -l JavaScript                 */
         } else if (ci_contains(text, "osascript") && ci_contains(text, "javascript")) {
             what = "osascript JXA payload";
+        /* ── GTFOBins exec primitives — a flag on a benign tool
+         * that runs arbitrary code (the binary stays signed)   */
+        } else if (ci_contains(text, "tar") &&
+                   (ci_contains(text, "--checkpoint-action") ||
+                    ci_contains(text, "--use-compress"))) {
+            what = "tar checkpoint/compress exec";
+        } else if (ci_contains(text, "git") &&
+                   (ci_contains(text, "-c core.pager") ||
+                    ci_contains(text, "-c core.fsmonitor") ||
+                    ci_contains(text, "-c core.sshcommand") ||
+                    ci_contains(text, "-c core.hookspath") ||
+                    ci_contains(text, "ext::"))) {
+            what = "git config/ext-transport exec";
+        } else if (ci_contains(text, "ssh") &&
+                   (ci_contains(text, "proxycommand") ||
+                    ci_contains(text, "localcommand") ||
+                    ci_contains(text, "permitlocalcommand"))) {
+            what = "ssh ProxyCommand/LocalCommand exec";
+        } else if (ci_contains(text, "find") &&
+                   (ci_contains(text, "-exec ") || ci_contains(text, "-execdir"))) {
+            what = "find -exec command run";
+        } else if ((ci_contains(text, "vim") || ci_contains(text, " vi ") ||
+                    ci_contains(text, " ex ") || ci_contains(text, "vi -c") ||
+                    ci_contains(text, "ex -c")) &&
+                   (ci_contains(text, "-c ") || ci_contains(text, "--cmd"))) {
+            what = "vi/ex -c command exec";
+        } else if (ci_contains(text, "man ") && ci_contains(text, "-p ")) {
+            what = "man -P pager exec";
+        } else if (ci_contains(text, "expect") && ci_contains(text, "spawn")) {
+            what = "expect spawn exec";
+        } else if (ci_contains(text, "tcpdump") && ci_contains(text, "-z ")) {
+            what = "tcpdump -z postrotate exec";
+        } else if (ci_contains(text, "split") && ci_contains(text, "--filter")) {
+            what = "split --filter exec";
+        } else if (ci_contains(text, "watch") &&
+                   (ci_contains(text, "-x ") || ci_contains(text, "--exec"))) {
+            what = "watch -x exec";
+        } else if (ci_contains(text, "emacs") && ci_contains(text, "--eval")) {
+            what = "emacs --eval exec";
+        } else if (ci_contains(text, "script") &&
+                   (ci_contains(text, "-qc") || ci_contains(text, "-c ") ||
+                    ci_contains(text, "-qec"))) {
+            what = "script -c pty exec";
+        } else if (ci_contains(text, "capsh") &&
+                   (ci_contains(text, "--shell") || ci_contains(text, " -- ") ||
+                    ci_contains(text, "--addamb"))) {
+            what = "capsh capability exec";
+        } else if (ci_contains(text, "tcc") && ci_contains(text, "-run")) {
+            what = "tcc -run C exec";
+        } else if (ci_contains(text, "jrunscript") &&
+                   (ci_contains(text, "-e ") || ci_contains(text, "-f "))) {
+            what = "jrunscript Nashorn exec";
+        } else if (ci_contains(text, "lua") &&
+                   (ci_contains(text, "os.execute") || ci_contains(text, "io.popen") ||
+                    ci_contains(text, " -e "))) {
+            what = "lua os.execute exec";
+        } else if (ci_contains(text, "busybox") &&
+                   (ci_contains(text, " sh") || ci_contains(text, " wget") ||
+                    ci_contains(text, " httpd") || ci_contains(text, " telnet"))) {
+            what = "busybox applet exec/fetch";
+        } else if (ci_contains(text, "setsid") &&
+                   (ci_contains(text, " sh") || ci_contains(text, " bash") ||
+                    ci_contains(text, " nc") || ci_contains(text, "/bin/") ||
+                    ci_contains(text, "python") || ci_contains(text, "perl"))) {
+            what = "setsid detached exec";
+        /* ── privilege / account / destructive primitives ── */
+        } else if (ci_contains(text, "pkexec") ||
+                   ci_contains(text, "runuser -u") ||
+                   (ci_contains(text, "chroot") &&
+                    (ci_contains(text, " /") || ci_contains(text, " -")))) {
+            what = "root-exec primitive (chroot/pkexec/runuser)";
+        } else if (ci_contains(text, "chsh") && ci_contains(text, "-s")) {
+            what = "chsh login-shell change";
+        } else if (ci_contains(text, "passwd") &&
+                   (ci_contains(text, "-l ") || ci_contains(text, "-d "))) {
+            what = "passwd lock/delete";
+        } else if (ci_contains(text, "chpasswd")) {
+            what = "chpasswd batch password set";
+        } else if (ci_contains(text, "journalctl") &&
+                   ci_contains(text, "--vacuum")) {
+            what = "journalctl journal wipe";
+        } else if (ci_contains(text, "dmesg") && ci_contains(text, "-c")) {
+            what = "dmesg ring clear";
+        } else if (ci_contains(text, "mknod")) {
+            what = "mknod device create";
+        } else if (ci_contains(text, "insmod")) {
+            what = "insmod kernel module load";
+        } else if ((ci_contains(text, "rmmod") ||
+                    (ci_contains(text, "modprobe") && ci_contains(text, "-r"))) &&
+                   (ci_contains(text, "iptable") || ci_contains(text, "nf_") ||
+                    ci_contains(text, "apparmor") || ci_contains(text, "selinux"))) {
+            what = "security module unload";
+        } else if (ci_contains(text, "kill") && ci_contains(text, "-9 -1")) {
+            what = "kill-all (-9 -1) DoS";
+        } else if (ci_contains(text, "init 0") || ci_contains(text, "init 6") ||
+                   ci_contains(text, "telinit 0") || ci_contains(text, "telinit 6")) {
+            what = "runlevel halt/reboot";
+        } else if (ci_contains(text, "printenv")) {
+            what = "printenv env/secrets dump";
+        /* ── network pivot / clock tamper / remote mounts ── */
+        } else if (ci_contains(text, "ip_forward") &&
+                   (ci_contains(text, "=1") || ci_contains(text, " 1") ||
+                    ci_contains(text, ">"))) {
+            what = "ip_forward pivot enable";
+        } else if ((ci_contains(text, "ip route") || ci_contains(text, "route ")) &&
+                   (ci_contains(text, " add") || ci_contains(text, " replace"))) {
+            what = "route add pivot";
+        } else if (ci_contains(text, "date") &&
+                   (ci_contains(text, " -s") || ci_contains(text, "--set"))) {
+            what = "date clock set";
+        } else if (ci_contains(text, "timedatectl") &&
+                   (ci_contains(text, "set-time") || ci_contains(text, "set-ntp"))) {
+            what = "timedatectl clock tamper";
+        } else if (ci_contains(text, "mount") &&
+                   (ci_contains(text, "-t cifs") || ci_contains(text, "-t nfs") ||
+                    ci_contains(text, "-t smb") || ci_contains(text, "cifs"))) {
+            what = "remote filesystem mount";
+        } else if (ci_contains(text, "sshfs") && ci_contains(text, ":")) {
+            what = "sshfs remote mount";
+        } else if ((ci_contains(text, "lxc") || ci_contains(text, "incus")) &&
+                   ci_contains(text, " exec")) {
+            what = "lxc/incus container exec";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
