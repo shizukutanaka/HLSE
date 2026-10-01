@@ -77,6 +77,43 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Systemctl/service/runlevel control + account mgmt + firewall
+  rule-add + sysctl security keys + kernel-module load + boot/store
+  config + sniff/spoof tools**: systemctl × stop|disable|mask|kill|
+  halt|poweroff|reboot|kexec|suspend|hibernate|emergency|rescue|
+  isolate|restart +45. service × stop|start|restart|disable,
+  loginctl × poweroff|reboot|suspend|hibernate|halt|kill|terminate,
+  busybox power/halt/reboot, init|telinit 1|s|S, reboot|poweroff|
+  halt -, shutdown -h|now +45. useradd|adduser|groupadd|newusers|
+  gpasswd|userdel|groupdel|groupmod|vipw|vigr|pwconv|grpconv|
+  pwunconv, usermod -p|-l|-u|-s, passwd -d|-u|-e, faillock --reset|
+  pam_tally2 --reset|faillog -r|lastlog clear|chage -m|-e|-i 0|-1
+  (lockout-reset/expiry-removal) +45. iptables|ip6tables ×
+  -I|-A|-P|-D|-R|--append|--insert|--policy|--replace|--delete
+  (rule-add open-port), nft add, ufw allow|default +45. sysctl
+  -w|= × ~25 security keys (randomize_va_space|core_pattern|
+  suid_dumpable|kptr_restrict|dmesg_restrict|yama|modules_disabled|
+  kexec_load|unprivileged_bpf|unprivileged_userns|uselib|
+  perf_event_paranoid|accept_redirects|accept_source_route|
+  send_redirects|rp_filter|tcp_syncookies|icmp_echo_ignore|
+  log_martians|mmap_min_addr|protected_*|kernel.sysrq) +45.
+  modprobe (query flags excluded)|dkms install|add +45. ldconfig
+  /path|-n (loader-cache poison), ssh-copy-id|ssh-add path|-d,
+  apt-key add, rpm --import +45. mokutil --disable|--import,
+  efibootmgr -c|-b|-d|-B, efivar -w, update-alternatives --install
+  +45. tcpdump|tshark -w (pcap capture), dumpcap|ngrep|tcpflow|
+  arpspoof|dnsspoof|macof|yersinia|slowloris|nping, ostinato+flag
+  +45. iptables NAT pivot now excludes -L/--list listing.
+- **Storage/volume/RAID destruction (P9 +60)**: nvme format|
+  sanitize, sg_sanitize|sg_format|sg_write_buffer, hdparm
+  --security-erase|--security-disable, storcli|perccli|megacli|
+  arcconf|hpssacli|omconfig delete, mdadm --stop|--zero-superblock|
+  --fail|--remove, pvremove|vgremove|lvremove|lvreduce, dmsetup
+  remove, cryptsetup erase|luksFormat, zfs destroy|zpool destroy|
+  labelclear, btrfs subvolume|device delete, sfdisk --delete|/dev,
+  parted rm|mklabel, fdisk|gdisk|cgdisk /dev, camcontrol format|
+  sanitize, vdo remove|delete|stop, stratis destroy +60.
+
 - **PowerShell cmdlet family / audit wipe / destructive Windows /
   cred+key material**: Add-Type|Assembly]::Load|Assembly.Load|
   LoadWithPartialName|LoadFrom|LoadFile (in-memory .NET load)

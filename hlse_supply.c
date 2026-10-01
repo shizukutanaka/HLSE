@@ -555,7 +555,45 @@ hlse_check_paste(const char *text) {
         strstr(text, "if=/dev/sd") || strstr(text, "if=/dev/nvme") ||
         strstr(text, "blkdiscard /") || strstr(text, "blkdiscard -") ||
         strstr(text, "shred ") || strstr(text, "> /dev/sd") ||
-        strstr(text, "chmod -R 777") || strstr(text, "chmod -R 777 /")) {
+        strstr(text, "chmod -R 777") || strstr(text, "chmod -R 777 /") ||
+        /* c238: storage/volume/RAID destruction */
+        strstr(text, "nvme format") || strstr(text, "nvme sanitize") ||
+        strstr(text, "sg_sanitize") || strstr(text, "sg_format") ||
+        strstr(text, "sg_write_buffer") ||
+        (strstr(text, "hdparm") &&
+         (strstr(text, "--security-erase") ||
+          strstr(text, "--security-disable"))) ||
+        (strstr(text, "storcli") && strstr(text, "delete")) ||
+        (strstr(text, "perccli") && strstr(text, "delete")) ||
+        (strstr(text, "megacli") &&
+         (strstr(text, "-CfgLdDel") || strstr(text, "-CfgClr"))) ||
+        (strstr(text, "arcconf") && strstr(text, "delete")) ||
+        (strstr(text, "hpssacli") && strstr(text, "delete")) ||
+        (strstr(text, "omconfig") && strstr(text, "action=delete")) ||
+        (strstr(text, "mdadm") &&
+         (strstr(text, "--stop") || strstr(text, "--zero-superblock") ||
+          strstr(text, "--fail") || strstr(text, "--remove"))) ||
+        strstr(text, "pvremove ") || strstr(text, "vgremove ") ||
+        strstr(text, "lvremove ") || strstr(text, "lvreduce ") ||
+        strstr(text, "dmsetup remove") ||
+        (ci_contains(text, "cryptsetup") &&
+         (ci_contains(text, "erase") || ci_contains(text, "luksformat"))) ||
+        strstr(text, "zfs destroy") || strstr(text, "zpool destroy") ||
+        strstr(text, "zpool labelclear") ||
+        (strstr(text, "btrfs") &&
+         (strstr(text, "subvolume delete") ||
+          strstr(text, "device delete"))) ||
+        strstr(text, "sfdisk --delete") || strstr(text, "sfdisk /") ||
+        (strstr(text, "parted") &&
+         (strstr(text, " rm ") || strstr(text, "mklabel"))) ||
+        strstr(text, "fdisk /") || strstr(text, "gdisk /") ||
+        strstr(text, "cgdisk /") ||
+        (strstr(text, "camcontrol") &&
+         (strstr(text, "format") || strstr(text, "sanitize"))) ||
+        (strstr(text, "vdo ") &&
+         (strstr(text, "remove") || strstr(text, "delete") ||
+          strstr(text, "stop"))) ||
+        (strstr(text, "stratis") && strstr(text, "destroy"))) {
         v.signals |= PASTE_DESTRUCTIVE;
         v.score += 60;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -1397,8 +1435,9 @@ hlse_check_paste(const char *text) {
         } else if ((ci_contains(text, "iptables") || ci_contains(text, "ip6tables")) &&
                    (ci_contains(text, "-f") || ci_contains(text, "-x") ||
                     ci_contains(text, "flush") || ci_contains(text, "-z") ||
-                    ci_contains(text, "-t nat") || ci_contains(text, "masquerade") ||
-                    ci_contains(text, "dnat"))) {
+                    ((ci_contains(text, "-t nat") || ci_contains(text, "masquerade") ||
+                      ci_contains(text, "dnat")) &&
+                     !ci_contains(text, " -l") && !ci_contains(text, "--list")))) {
             what = "iptables flush/NAT pivot";
         } else if (ci_contains(text, "nft") && ci_contains(text, "flush")) {
             what = "nft ruleset flush";
@@ -2264,6 +2303,128 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "http")) ||
                    ci_contains(text, "at -f ")) {
             what = "remote recipe/makefile exec";
+        /* ── c238: systemctl/service/runlevel control + account mgmt +
+         * firewall rule-add + sysctl security keys + kernel-module
+         * load + boot/store-config + sniff/spoof tools ── */
+        } else if (ci_contains(text, "systemctl") &&
+                   (ci_contains(text, " stop") || ci_contains(text, " disable") ||
+                    ci_contains(text, " mask") || ci_contains(text, " kill") ||
+                    ci_contains(text, " halt") || ci_contains(text, " poweroff") ||
+                    ci_contains(text, " reboot") || ci_contains(text, " kexec") ||
+                    ci_contains(text, " suspend") || ci_contains(text, " hibernate") ||
+                    ci_contains(text, " emergency") || ci_contains(text, " rescue") ||
+                    ci_contains(text, " isolate") || ci_contains(text, " restart"))) {
+            what = "systemctl stop/mask/shutdown verb";
+        } else if ((ci_contains(text, "service ") &&
+                    (ci_contains(text, " stop") || ci_contains(text, " start") ||
+                     ci_contains(text, " restart") || ci_contains(text, " disable"))) ||
+                   (ci_contains(text, "loginctl") &&
+                    (ci_contains(text, "poweroff") || ci_contains(text, "reboot") ||
+                     ci_contains(text, "suspend") || ci_contains(text, "hibernate") ||
+                     ci_contains(text, "halt") || ci_contains(text, "kill") ||
+                     ci_contains(text, "terminate"))) ||
+                   (ci_contains(text, "busybox") &&
+                    (ci_contains(text, "poweroff") || ci_contains(text, "halt") ||
+                     ci_contains(text, "reboot"))) ||
+                   ci_contains(text, "init 1") || ci_contains(text, "init s") ||
+                   ci_contains(text, "init S") || ci_contains(text, "telinit 1") ||
+                   ci_contains(text, "telinit s") || ci_contains(text, "telinit S") ||
+                   ci_contains(text, "reboot -") || ci_contains(text, "reboot now") ||
+                   ci_contains(text, "poweroff -") || ci_contains(text, "halt -") ||
+                   (ci_contains(text, "shutdown") &&
+                    (ci_contains(text, " -h") || ci_contains(text, " -H") ||
+                     ci_contains(text, " -P") || ci_contains(text, " -r")))) {
+            what = "service/runlevel/power primitive";
+        } else if (ci_contains(text, "userdel ") || ci_contains(text, "groupdel ") ||
+                   (ci_contains(text, "gpasswd") &&
+                    (ci_contains(text, " -a") || ci_contains(text, " -d") ||
+                     ci_contains(text, " -A") || ci_contains(text, " -M"))) ||
+                   (ci_contains(text, "usermod") &&
+                    (ci_contains(text, " -p") || ci_contains(text, " -l") ||
+                     ci_contains(text, " -u") || ci_contains(text, " -s"))) ||
+                   (ci_contains(text, "passwd") &&
+                    (ci_contains(text, " -d") || ci_contains(text, " -u") ||
+                     ci_contains(text, " -e"))) ||
+                   (ci_contains(text, "faillock") &&
+                    ci_contains(text, "--reset")) ||
+                   (ci_contains(text, "pam_tally2") &&
+                    (ci_contains(text, "--reset") || ci_contains(text, " -r"))) ||
+                   (ci_contains(text, "faillog") && ci_contains(text, " -r")) ||
+                   (ci_contains(text, "lastlog") &&
+                    (ci_contains(text, "clear") || ci_contains(text, " -r"))) ||
+                   (ci_contains(text, "chage") &&
+                    (ci_contains(text, "-m -1") || ci_contains(text, "-m 0") ||
+                     ci_contains(text, "-e -1") || ci_contains(text, "-e 0") ||
+                     ci_contains(text, "-i -1") || ci_contains(text, "-i 0")))) {
+            what = "account-create/password/lockout-reset";
+        } else if (((ci_contains(text, "iptables") ||
+                     ci_contains(text, "ip6tables")) &&
+                    ci_contains(text, "--policy")) ||
+                   (ci_contains(text, "ufw") &&
+                    ci_contains(text, "default allow"))) {
+            what = "firewall default-policy neutralize";
+        } else if (ci_contains(text, "sysctl") &&
+                   (ci_contains(text, " -w") || ci_contains(text, "=")) &&
+                   (ci_contains(text, "randomize_va_space") ||
+                    ci_contains(text, "core_pattern") ||
+                    ci_contains(text, "suid_dumpable") ||
+                    ci_contains(text, "kptr_restrict") ||
+                    ci_contains(text, "dmesg_restrict") ||
+                    ci_contains(text, "yama") ||
+                    ci_contains(text, "modules_disabled") ||
+                    ci_contains(text, "kexec_load") ||
+                    ci_contains(text, "unprivileged_bpf") ||
+                    ci_contains(text, "unprivileged_userns") ||
+                    ci_contains(text, "uselib") ||
+                    ci_contains(text, "perf_event_paranoid") ||
+                    ci_contains(text, "accept_redirects") ||
+                    ci_contains(text, "accept_source_route") ||
+                    ci_contains(text, "send_redirects") ||
+                    ci_contains(text, "rp_filter") ||
+                    ci_contains(text, "tcp_syncookies") ||
+                    ci_contains(text, "icmp_echo_ignore") ||
+                    ci_contains(text, "log_martians") ||
+                    ci_contains(text, "mmap_min_addr") ||
+                    ci_contains(text, "protected_hardlinks") ||
+                    ci_contains(text, "protected_symlinks") ||
+                    ci_contains(text, "protected_fifos") ||
+                    ci_contains(text, "protected_regular") ||
+                    ci_contains(text, "kernel.sysrq"))) {
+            what = "sysctl security-parameter write";
+        } else if ((ci_contains(text, "modprobe") &&
+                    (ci_contains(text, " /") || ci_contains(text, "--force") ||
+                     ci_contains(text, " -f "))) ||
+                   (ci_contains(text, "dkms") &&
+                    (ci_contains(text, "install") || ci_contains(text, "add")))) {
+            what = "kernel-module load (modprobe/dkms)";
+        } else if ((ci_contains(text, "ldconfig") &&
+                    (ci_contains(text, " /") || ci_contains(text, " -n "))) ||
+                   ci_contains(text, "ssh-copy-id") ||
+                   (ci_contains(text, "ssh-add") &&
+                    (ci_contains(text, " /") || ci_contains(text, "~/") ||
+                     ci_contains(text, " -d"))) ||
+                   (ci_contains(text, "apt-key") && ci_contains(text, "add")) ||
+                   (ci_contains(text, "rpm") && ci_contains(text, "--import"))) {
+            what = "ldconfig/ssh-key/trust-store primitive";
+        } else if ((ci_contains(text, "mokutil") &&
+                    (ci_contains(text, "--disable") || ci_contains(text, "--import") ||
+                     ci_contains(text, " -i "))) ||
+                   (ci_contains(text, "efibootmgr") &&
+                    (ci_contains(text, " -c") || ci_contains(text, " -b") ||
+                     ci_contains(text, " -d") || ci_contains(text, " -B"))) ||
+                   (ci_contains(text, "efivar") && ci_contains(text, " -w")) ||
+                   (ci_contains(text, "update-alternatives") &&
+                    ci_contains(text, "--install"))) {
+            what = "secure-boot/boot-entry/alternatives primitive";
+        } else if ((ci_contains(text, "tcpdump") && ci_contains(text, " -w")) ||
+                   (ci_contains(text, "tshark") && ci_contains(text, " -w")) ||
+                   ci_contains(text, "dumpcap") || ci_contains(text, "ngrep") ||
+                   ci_contains(text, "tcpflow") || ci_contains(text, "arpspoof") ||
+                   ci_contains(text, "dnsspoof") || ci_contains(text, "macof") ||
+                   ci_contains(text, "yersinia") || ci_contains(text, "slowloris") ||
+                   ci_contains(text, "nping") ||
+                   (ci_contains(text, "ostinato") && ci_contains(text, " -"))) {
+            what = "sniff/spoof/DoS tool primitive";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

@@ -11671,6 +11671,127 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-238: systemctl/service/runlevel control, account mgmt,
+#   firewall rule-add, sysctl security keys, kernel-module load,
+#   ldconfig/ssh-key/trust, secure-boot/boot/alternatives, sniff/spoof
+#   tools + storage/RAID/LVM/ZFS wipe (P9 +60)
+for c in \
+    'systemctl stop avp' 'systemctl disable avp' 'systemctl mask avp' \
+    'systemctl kill avp' 'systemctl halt' 'systemctl poweroff' \
+    'systemctl reboot' 'systemctl kexec' 'systemctl suspend' \
+    'systemctl hibernate' 'systemctl emergency' 'systemctl isolate x' \
+    'systemctl restart avp' 'service avp stop' 'service ufw stop' \
+    'service x start' 'loginctl poweroff' 'loginctl reboot' \
+    'loginctl suspend' 'loginctl kill-user x' 'loginctl terminate-session x' \
+    'busybox poweroff' 'busybox reboot' 'init 1' 'init s' 'init S' \
+    'telinit 1' 'telinit s' 'reboot -f' 'reboot now' 'poweroff -f' \
+    'halt -f' 'shutdown -h now' 'shutdown -r now' \
+    'gpasswd -a x sudo' 'gpasswd -A x sudo' 'userdel x' 'groupdel x' \
+    'usermod -p h x' 'usermod -L x' 'usermod -U x' 'usermod -s /bin/bash x' \
+    'passwd -d x' 'passwd -u x' 'passwd -e x' 'faillock --reset' \
+    'pam_tally2 --reset' 'faillog -r' 'lastlog clear' 'chage -M -1 x' \
+    'chage -E -1 x' 'chage -m 0 x' \
+    'iptables --policy INPUT ACCEPT' 'ip6tables --policy INPUT DROP' \
+    'ufw default allow' 'ufw default allow incoming' \
+    'sysctl -w kernel.randomize_va_space=0' \
+    'sysctl kernel.randomize_va_space=0' \
+    'sysctl -w kernel.core_pattern=|/x' 'sysctl -w fs.suid_dumpable=1' \
+    'sysctl -w kernel.yama.ptrace_scope=0' \
+    'sysctl -w kernel.unprivileged_userns_clone=1' \
+    'sysctl -w kernel.modules_disabled=0' \
+    'sysctl -w kernel.kexec_load_disabled=0' \
+    'sysctl -w kernel.dmesg_restrict=0' 'sysctl -w kernel.sysrq=1' \
+    'sysctl -w net.ipv4.conf.all.rp_filter=0' \
+    'sysctl -w net.ipv4.conf.all.accept_redirects=1' \
+    'sysctl -w vm.mmap_min_addr=0' 'modprobe /tmp/m.ko' \
+    'modprobe --force x' 'modprobe -f x' 'dkms install x' 'dkms add x' \
+    'ldconfig /tmp/evil' 'ldconfig -n /tmp' 'ssh-copy-id u@h' \
+    'ssh-copy-id -i k u@h' 'ssh-add /tmp/k' 'ssh-add ~/k' 'ssh-add -d k' \
+    'apt-key add x' 'rpm --import x' 'mokutil --disable-validation' \
+    'mokutil --import x' 'efibootmgr -c' 'efibootmgr -b 0001 -B' \
+    'efibootmgr -d 0001' 'efivar -w x' \
+    'update-alternatives --install /usr/bin/x x /e 1' \
+    'tcpdump -i any -w x.pcap' 'tshark -i any -w x' 'dumpcap -w x' \
+    'ngrep -q x' 'tcpflow -i any' 'arpspoof -i eth0' 'dnsspoof -i eth0' \
+    'macof -i eth0' 'yersinia -G' 'slowloris x' 'nping x' 'ostinato -d x'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "1" "1" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in \
+    'nvme format /dev/nvme0' 'nvme sanitize /dev/nvme0' \
+    'sg_sanitize /dev/sda' 'sg_format /dev/sda' 'sg_write_buffer /dev/sda' \
+    'hdparm --security-erase x /dev/sda' 'hdparm --security-disable x' \
+    'storcli /c0 delete' 'storcli /c0/eall/sall delete' 'perccli /c0 delete' \
+    'megacli -CfgLdDel -aAll' 'arcconf delete 1' \
+    'hpssacli ctrl slot=0 ld 1 delete' \
+    'omconfig storage vdisk action=delete' \
+    'mdadm --stop /dev/md0' 'mdadm --zero-superblock /dev/sda' \
+    'mdadm --fail /dev/md0 /dev/sda' 'mdadm --remove /dev/sda' \
+    'pvremove /dev/sda' 'vgremove x' 'lvremove x' 'lvreduce x' \
+    'dmsetup remove x' 'dmsetup remove_all' 'cryptsetup erase x' \
+    'cryptsetup luksErase x' 'cryptsetup luksFormat x' \
+    'zfs destroy pool/x' 'zfs destroy -r x' 'zpool destroy x' \
+    'zpool labelclear' 'btrfs subvolume delete x' \
+    'btrfs device delete /dev/sda' 'sfdisk --delete /dev/sda' \
+    'sfdisk /dev/sda' 'parted /dev/sda rm 1' 'parted /dev/sda mklabel gpt' \
+    'fdisk /dev/sda' 'gdisk /dev/sda' 'cgdisk /dev/sda' \
+    'camcontrol format da0' 'camcontrol sanitize da0' \
+    'vdo remove --name x' 'vdo delete --name x' 'stratis pool destroy x'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'BLOCK|ISOLATE' \
+        && check "paste BLOCK: $c" "1" "1" \
+        || check "paste BLOCK: $c" "0" "1"
+done
+for c in \
+    'systemctl status x' 'systemctl list-units' 'systemctl daemon-reload' \
+    'systemctl --version' 'systemctl cat x' 'service --status-all' \
+    'service x status' 'loginctl list-sessions' 'loginctl show-user x' \
+    'loginctl lock-session' 'init --version' 'initctl list' \
+    'reboot the franchise' 'reboot docs' 'poweroff docs' \
+    'halt and catch fire' 'shutdown /a' 'shutdown --help' \
+    'useradd -m newuser' 'useradd -u 1001 x' 'adduser x' \
+    'groupadd admins' 'newusers /tmp/u' 'vipw' 'vigr' 'pwconv' \
+    'pwunconv' 'groupmod x' 'chfn x' 'gpasswd x' 'shutdown now' \
+    'usermod --help' 'usermod -aG docker x' 'passwd docs' 'passwd file' \
+    'passwd --help' 'faillock --user x' 'pam_tally2 --user x' \
+    'faillog -u x' 'lastlog -u x' 'chage -l x' 'chage docs' \
+    'iptables -L' 'iptables -L -v -n' 'iptables-save' 'iptables-restore' \
+    'ip6tables -L' 'iptables -t nat -L' 'iptables -S' \
+    'iptables -A INPUT -p tcp --dport 22 -j ACCEPT' \
+    'iptables -I INPUT -j ACCEPT' 'iptables -P INPUT ACCEPT' \
+    'iptables -D INPUT 1' 'iptables -R INPUT 1 -j ACCEPT' \
+    'nft list ruleset' 'nft list tables' 'nft add rule ip f c' \
+    'nft add table ip x' 'ufw status' 'ufw status verbose' \
+    'ufw --version' 'ufw allow 22' 'ufw allow from x' 'ufw reload' \
+    'sysctl -a' 'sysctl kernel.randomize_va_space' 'sysctl vm.swappiness' \
+    'sysctl -w vm.swappiness=60' 'sysctl -w net.core.somaxconn=1024' \
+    'sysctl --system' 'modprobe veth' 'modprobe nf_conntrack' \
+    'modprobe -r x' 'modprobe --list' 'modprobe -n x' 'modprobe -i x' \
+    'modprobe --show-config' 'modprobe.d/x.conf' 'depmod -a' 'depmod -h' \
+    'dkms status' 'dkms --version' 'ldconfig' 'ldconfig -v' 'ldconfig -p' \
+    'ssh-agent bash' 'ssh-add -l' 'ssh-add --help' 'apt-key list' \
+    'rpm -qa' 'rpm -qi x' 'mokutil --sb-state' 'mokutil --list-enrolled' \
+    'efibootmgr -v' 'efibootmgr --help' 'efivar -l' \
+    'update-alternatives --list x' 'tcpdump -i eth0' 'tcpdump -r x.pcap' \
+    'tcpdump --version' 'tshark -r x' 'tshark --version' 'ostinato' \
+    'nvme list' 'nvme smart-log /dev/nvme0' 'sg_read /dev/sda' \
+    'sg_inq /dev/sda' 'storcli /c0 show' 'perccli /c0 show' \
+    'mdadm --detail /dev/md0' 'mdadm --assemble /dev/md0' \
+    'mdadm --examine /dev/sda' 'pvdisplay' 'vgdisplay' 'lvdisplay' \
+    'pvs' 'vgs' 'lvs' 'dmsetup ls' 'dmsetup info' 'cryptsetup open x y' \
+    'cryptsetup luksOpen x y' 'cryptsetup status x' 'zfs list' \
+    'zfs snapshot x' 'zpool status' 'zpool import' \
+    'btrfs subvolume list x' 'btrfs filesystem df x' 'sfdisk -l' \
+    'sfdisk --list' 'parted -l' 'parted --list' 'fdisk -l' \
+    'gdisk -l /dev/sda' 'camcontrol devlist' 'camcontrol inquiry da0' \
+    'vdo status' 'stratis pool list' 'hdparm -I /dev/sda' \
+    'omconfig system summary' 'megacli -AdpAllInfo' 'arcconf getconfig 1' \
+    'hpssacli ctrl all show'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-237: PowerShell cmdlets (load/persistence/accounts/remoting/
 #   policy/MOTW), audit wipe, destructive Windows, cred+key cmdlets
 for c in \
