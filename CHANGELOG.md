@@ -77,6 +77,30 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **PowerShell cmdlet family / audit wipe / destructive Windows /
+  cred+key material**: Add-Type|Assembly]::Load|Assembly.Load|
+  LoadWithPartialName|LoadFrom|LoadFile (in-memory .NET load)
+  +45. New-Service -BinaryPathName, Register/New/Set-ScheduledTask,
+  New-ItemProperty|Set-ItemProperty|New-Item × \Run|RunOnce|IFEO|
+  Winlogon|ImageFile|shell (PS persistence) +45. Set-ExecutionPolicy
+  Bypass|Unrestricted +45. Unblock-File, Zone.Identifier
+  remove|del|clear (MOTW strip) +45. New-LocalUser|Add-
+  LocalGroupMember|Enable-LocalUser|Set-LocalUser -Password|
+  New-ADUser|Add-ADGroupMember|Set-ADAccountPassword +45.
+  Enable-PSRemoting|Enable-WSManCredSSP|Install-Module|
+  Install-Package|Install-Script +45; Add-WindowsCapability|
+  Enable-WindowsOptionalFeature × telnet|smb1|snmp|tftp +45.
+  auditpol /clear|/remove|/set|/backup (audit wipe) +45.
+  shutdown /s|/r|/m|/p|-s|-r +45. format [cd e f]:|/q|/y,
+  format.com, del /s|/f /s, rmdir /s, rd /s +45. attrib +h|+s|
+  -h|-s (hide/system) +45. net config /hidden, netsh -r|-f +45.
+  klist purge|get, sudoedit, sudo -e, net time /set +45.
+  Get-Credential|ConvertFrom/To-SecureString|Export/Import-CliXml
+  +45. gpg --export-secret*, openssl pkcs12 -export, ssh-keygen
+  -y, keytool -exportcert|-genkey, makecert,
+  New-SelfSignedCertificate, aws iam create-access-key, aws
+  configure set access|secret +45.
+
 - **Env-var injection / lateral movement / Defender exclusions /
   cred-store enum / explorer+runas / fsutil+diskpart**: env
   hijack family +45 — LD_PRELOAD|LD_LIBRARY_PATH|

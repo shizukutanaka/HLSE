@@ -11671,6 +11671,87 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-237: PowerShell cmdlets (load/persistence/accounts/remoting/
+#   policy/MOTW), audit wipe, destructive Windows, cred+key cmdlets
+for c in \
+    'Add-Type -Path x.dll' 'Add-Type -TypeDefinition "c"' \
+    'Add-Type -AssemblyName x' \
+    '[Reflection.Assembly]::LoadFile("x")' \
+    '[Reflection.Assembly]::LoadFrom("x")' \
+    '[System.Reflection.Assembly]::Load([byte[]]x)' \
+    'Assembly.Load(x)' 'Assembly]::Load(x)' \
+    'New-Service -BinaryPathName "x"' \
+    'Register-ScheduledTask x' 'New-ScheduledTask -Action x' \
+    'Set-ScheduledTask x' \
+    'New-ItemProperty -Path "HKLM:\Run" -Name x' \
+    'New-Item -Path "HKCU:\Run" -Name x' \
+    'Set-ItemProperty -Path "HKLM:\RunOnce\x" -Name y' \
+    'New-ItemProperty -Path x -Name Winlogon' \
+    'Set-ExecutionPolicy Bypass' 'Set-ExecutionPolicy Unrestricted' \
+    'Set-ExecutionPolicy -ExecutionPolicy Bypass' \
+    'Unblock-File x.exe' 'Unblock-File -Path x' \
+    'Remove-Item -Stream Zone.Identifier' \
+    'New-LocalUser x' 'New-LocalUser -Name x -Password y' \
+    'Add-LocalGroupMember Administrators x' \
+    'Enable-LocalUser Guest' 'Set-LocalUser -Password x' \
+    'New-ADUser x' 'Add-ADGroupMember x' 'Set-ADAccountPassword x' \
+    'Enable-PSRemoting' 'Enable-PSRemoting -Force' \
+    'Enable-WSManCredSSP' \
+    'Install-Module x' 'Install-Package x' 'Install-Script x' \
+    'Add-WindowsCapability -Name TelnetClient' \
+    'Enable-WindowsOptionalFeature -FeatureName SMB1Protocol' \
+    'auditpol /clear /y' 'auditpol /set /category:* /success:disable' \
+    'auditpol /remove x' \
+    'shutdown /s /m \\h' 'shutdown /r /m \\h' \
+    'shutdown /s /t 0' 'shutdown /r /t 0' 'shutdown -s -t 0' \
+    'shutdown /p' \
+    'format c:' 'format d: /q' 'format.com c:' 'format x: /y' \
+    'del /s /q c:\x' 'del /f /s /q c:\' 'rmdir /s /q c:\x' \
+    'rd /s /q x' \
+    'attrib +h +s x.exe' 'attrib +h x' 'attrib -h -s x' \
+    'net config server /hidden:yes' 'net config server /hidden' \
+    'netsh -r host' 'netsh -r x firewall' 'netsh -f x.txt' \
+    'klist purge' 'klist get x' \
+    'sudoedit /etc/x' 'sudo -e /etc/x' 'net time /set' \
+    'Get-Credential' 'Export-CliXml x' 'Import-CliXml x' \
+    'ConvertFrom-SecureString x' 'ConvertTo-SecureString x' \
+    'gpg --export-secret-keys' 'gpg --export-secret-subkeys' \
+    'ssh-keygen -y -f x' 'openssl pkcs12 -export -in x' \
+    'keytool -exportcert' 'keytool -genkey' 'makecert x' \
+    'New-SelfSignedCertificate x' \
+    'aws iam create-access-key' \
+    'aws configure set aws_access_key_id x' \
+    'aws configure set aws_secret_access_key x'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'add type documentation' 'new service docs' \
+         'register a scheduled task' 'create a new item' \
+         'execution policy docs' 'unblock the file' \
+         'new local user account' 'add a local group member' \
+         'enable the user' 'enable remoting docs' \
+         'install a module' 'install the package' \
+         'the auditpol tool' 'audit policy settings' \
+         'shutdown the computer' 'shutdown /l' 'shutdown now' \
+         'format the document' 'format spec' 'format c code' \
+         'delete the file' 'del command docs' 'remove directory' \
+         'attribute +h' 'attrib file.txt' 'the attrib command' \
+         'net config server' 'netsh interface' 'netsh firewall' \
+         'klist tickets' 'klist docs' 'klist' \
+         'net time \\x' 'get the credential' \
+         'export clixml docs' 'gpg --export x' \
+         'openssl pkcs12 -in x' 'ssh-keygen docs' 'keytool -list' \
+         'self signed cert' 'aws iam list-users' \
+         'aws configure list' 'aws sts get-caller-identity' \
+         'set ad account' 'new ad domain' 'add group member' \
+         'pwsh command' 'runas /user x' 'date' 'time' \
+         'new service' 'attrib docs'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-236: env-var injection, lateral movement, Defender exclusions,
 #   cred-store enumeration, explorer/runas, fsutil/diskpart
 for c in \
@@ -12473,7 +12554,7 @@ for c in 'netsh winsock reset' 'netsh interface show' 'certmgr -list' \
          'wbadmin get versions' 'wbadmin start backup' \
          'reagentc /enable' 'reagentc /info' 'ocsetup' 'arp -a' \
          'arp -d 1.2.3.4' 'sc sdshow w' 'sc stop w32time' \
-         'net stop spooler' 'shutdown /r /f' 'route print'; do
+         'net stop spooler' 'shutdown /a' 'route print'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
         && check "paste FP guard: $c clean" "0" "0" \
         || check "paste FP guard: $c clean" "0" "1"

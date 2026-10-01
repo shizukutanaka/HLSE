@@ -2156,6 +2156,105 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "clean") || ci_contains(text, "create") ||
                     ci_contains(text, "format") || ci_contains(text, "select disk"))) {
             what = "diskpart partition destructive op";
+        /* ── c237: PowerShell cmdlets (in-memory load, persistence,
+         * accounts, remoting, install, policy-bypass, MOTW strip) +
+         * audit/anti-forensics + destructive Windows + sudo/key ops ── */
+        } else if (ci_contains(text, "add-type") ||
+                   ci_contains(text, "assembly]::load") ||
+                   ci_contains(text, "assembly.load") ||
+                   ci_contains(text, "loadwithpartialname") ||
+                   ci_contains(text, "assembly]::loadfrom") ||
+                   ci_contains(text, "assembly]::loadfile")) {
+            what = "PowerShell/.NET in-memory assembly load";
+        } else if ((ci_contains(text, "new-service") &&
+                    ci_contains(text, "-binarypathname")) ||
+                   ci_contains(text, "register-scheduledtask") ||
+                   ci_contains(text, "new-scheduledtask") ||
+                   ci_contains(text, "set-scheduledtask") ||
+                   ((ci_contains(text, "new-itemproperty") ||
+                     ci_contains(text, "set-itemproperty") ||
+                     ci_contains(text, "new-item")) &&
+                    (ci_contains(text, "\\run") || ci_contains(text, "runonce") ||
+                     ci_contains(text, "\\ifeo") || ci_contains(text, "winlogon") ||
+                     ci_contains(text, "image file") || ci_contains(text, "shell\\")))) {
+            what = "PowerShell persistence install (service/task/runkey)";
+        } else if (ci_contains(text, "set-executionpolicy") &&
+                   (ci_contains(text, "bypass") || ci_contains(text, "unrestricted"))) {
+            what = "execution-policy bypass (cmdlet form)";
+        } else if (ci_contains(text, "unblock-file") ||
+                   (ci_contains(text, "zone.identifier") &&
+                    (ci_contains(text, "remove") || ci_contains(text, "del") ||
+                     ci_contains(text, "clear")))) {
+            what = "MOTW strip (Unblock-File/Zone.Identifier removal)";
+        } else if (ci_contains(text, "new-localuser") ||
+                   ci_contains(text, "add-localgroupmember") ||
+                   ci_contains(text, "enable-localuser") ||
+                   (ci_contains(text, "set-localuser") &&
+                    ci_contains(text, "-password")) ||
+                   ci_contains(text, "new-aduser") ||
+                   ci_contains(text, "add-adgroupmember") ||
+                   ci_contains(text, "set-adaccountpassword")) {
+            what = "account creation/group grant (PowerShell)";
+        } else if (ci_contains(text, "enable-psremoting") ||
+                   ci_contains(text, "enable-wsmancredssp") ||
+                   ci_contains(text, "install-module") ||
+                   ci_contains(text, "install-package") ||
+                   ci_contains(text, "install-script") ||
+                   ((ci_contains(text, "add-windowscapability") ||
+                     ci_contains(text, "enable-windowsoptionalfeature")) &&
+                    (ci_contains(text, "telnet") || ci_contains(text, "smb1") ||
+                     ci_contains(text, "snmp") || ci_contains(text, "tftp")))) {
+            what = "PS remoting/gallery-install/legacy-feature enable";
+        } else if (ci_contains(text, "auditpol") &&
+                   (ci_contains(text, "/clear") || ci_contains(text, "/remove") ||
+                    ci_contains(text, "/set") || ci_contains(text, "/backup"))) {
+            what = "audit-policy wipe (auditpol)";
+        } else if (ci_contains(text, "shutdown") &&
+                   (ci_contains(text, " /s") || ci_contains(text, " /r") ||
+                    ci_contains(text, " /m") || ci_contains(text, " /p") ||
+                    ci_contains(text, " -s") || ci_contains(text, " -r"))) {
+            what = "shutdown/reboot (local or remote)";
+        } else if ((ci_contains(text, "format") &&
+                    (ci_contains(text, " c:") || ci_contains(text, " d:") ||
+                     ci_contains(text, " e:") || ci_contains(text, " f:") ||
+                     ci_contains(text, " /q") || ci_contains(text, " /y"))) ||
+                   ci_contains(text, "format.com") ||
+                   ci_contains(text, "del /s") || ci_contains(text, "del /f /s") ||
+                   ci_contains(text, "rmdir /s") || ci_contains(text, "rd /s")) {
+            what = "format/recursive-delete (Windows destructive)";
+        } else if (ci_contains(text, "attrib ") &&
+                   (ci_contains(text, "+h") || ci_contains(text, "+s") ||
+                    ci_contains(text, " -h") || ci_contains(text, " -s"))) {
+            what = "attrib hidden/system flag (evasion)";
+        } else if ((ci_contains(text, "net config") &&
+                    ci_contains(text, "/hidden")) ||
+                   (ci_contains(text, "netsh") &&
+                    (ci_contains(text, " -r ") || ci_contains(text, " -f ")))) {
+            what = "hidden-server flag / remote or scripted netsh";
+        } else if ((ci_contains(text, "klist") &&
+                    (ci_contains(text, "purge") || ci_contains(text, "get"))) ||
+                   ci_contains(text, "sudoedit") ||
+                   ci_contains(text, "sudo -e") ||
+                   (ci_contains(text, "net time") &&
+                    ci_contains(text, "/set"))) {
+            what = "ticket/sudo-edit/time-set primitive";
+        } else if (ci_contains(text, "get-credential") ||
+                   ci_contains(text, "convertfrom-securestring") ||
+                   ci_contains(text, "convertto-securestring") ||
+                   ci_contains(text, "export-clixml") ||
+                   ci_contains(text, "import-clixml")) {
+            what = "credential materialization (PS cred cmdlets)";
+        } else if (ci_contains(text, "gpg --export-secret") ||
+                   (ci_contains(text, "pkcs12") && ci_contains(text, "-export")) ||
+                   ci_contains(text, "ssh-keygen -y") ||
+                   ci_contains(text, "keytool -exportcert") ||
+                   ci_contains(text, "keytool -genkey") ||
+                   ci_contains(text, "makecert") ||
+                   ci_contains(text, "new-selfsignedcertificate") ||
+                   ci_contains(text, "iam create-access-key") ||
+                   (ci_contains(text, "aws configure set") &&
+                    (ci_contains(text, "access") || ci_contains(text, "secret")))) {
+            what = "key-material export/creation";
         } else if ((ci_contains(text, "puppet") && ci_contains(text, " apply ") &&
                     ci_contains(text, "http")) ||
                    ((ci_contains(text, "chef-client") ||
