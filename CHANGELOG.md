@@ -77,6 +77,28 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Unix post-compromise primitives** (`hlse_supply.c`): paste
+  adds the Linux/macOS-side attack set that was completely open —
+  uid-0 account grant (`useradd`/`adduser`/`usermod` + `-u 0`|
+  `--uid 0`|`-ou`|`-aG sudo|wheel`), SELinux/audit kill
+  (`setenforce 0`, `auditctl -d|-D`, auditd stop/disable/kill),
+  shell-history wipe (`history -c`, `unset HISTFILE`,
+  `HISTFILE=/dev/null`, rm|truncate|shred .bash_history),
+  firewall flush (`iptables`/`ip6tables` -f|-x|flush, `nft
+  flush`, `ufw disable`, `pfctl -d`, `firewall-cmd` add-port|
+  add-service|direct|panic), ssh tunneling (`ssh`/`autossh` +
+  `-r `|` -d `|`-nf`|`-fn` — reverse tunnel / dynamic SOCKS /
+  background no-command; `-L` stays unflagged since ci cannot
+  split it from `-l` login), sudoers append (`sudoers` +
+  nopasswd|>>|tee), namespace/container escape (`systemd-run`
+  exec flags, `nsenter` -t|-m|-p|-n, `unshare` userns/net/pid,
+  `docker` --privileged|-v /:|host-net-pid), decoder+exec
+  (`xxd -r`), attribute tamper (`chattr -i|+i`), `wipefs`,
+  priv-esc recon (`find -perm`+4000|2000|u=s, `getcap -r`),
+  ptrace attach (`gdb|strace|ltrace`+-p), TLS/decrypt channel
+  (`openssl s_client`|`enc -d`), `awk system()`, `xclip -o`
+  — all +45 arg-gated.
+
 - **Installer carriers + IDE/Shortcuts schemes + gift-card/LE
   scam vocab** (`hlse_file.c`, `hlse_core.c`, `hlse_text.c`):
   EXECUTABLE_EXTS gains the exec-capable installer set that was
