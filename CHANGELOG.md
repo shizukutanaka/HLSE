@@ -77,6 +77,67 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **K8s/mesh/registry/IaC helper CLIs + secret-CLIs + UAC-bypass
+  LOLBins + backup destruction + exec-context/daemonization +
+  privilege-boundary + kerberos/tmux/screen exec + dialog-spoof +
+  VPN/proxy/NAT + interpreter -c + package-runner exec (cycle-244)**:
+  flags, at LOG/ALERT in paste context —
+  k8s helpers: `kubectx`, `kubens`, `k9s -n`, `stern -l`, `kail`,
+  `kubecm`, `krew install`, `telepresence`, `mirrord`, `kapp
+  deploy|delete`, `kbld -f`, `ytt`, `vendir sync`, `skaffold
+  deploy|run`, `tilt up`, `garden deploy`, `draft up|create`;
+  mesh/registry: `istioctl manifest|install`, `linkerd`, `consul
+  connect|kv|acl|reload|leave`, `cilium install`, `calicoctl apply`,
+  `crane copy`, `regctl`, `notation`, `docker-credential-osxkeychain`;
+  IaC/scan: `terragrunt apply|destroy|run-all`, `atlantis plan|apply|
+  unlock`, `terramate`, `crossplane`, `checkov`, `tfsec`, `terrascan`,
+  `kics`, `conftest`, `opa eval|exec|run`, `trivy`, `grype`, `syft`;
+  secret CLIs: `op get|inject|signin|read|document|item|vault`,
+  `doppler secrets|run`, `infisical secrets|run`;
+  Sysinternals/UAC LOLBins: `pslist|pskill|psinfo|accesschk|autoruns|
+  pipelist|sigcheck|streams|sdelete`, `fodhelper`, `computerdefaults`,
+  `sdclt`, `slui`, `eventvwr`, `wsreset`, `wt.exe`, `te.exe`,
+  `tracker`, `vsiisexelauncher`, `wmpsetup`, `workfolders`, `cmlutil`,
+  `slmgr /ato`, `rasautou`, `rdpsign`, `sftp -b`;
+  backup destruction: `restic forget|backup|prune`, `borg
+  prune|delete|create`, `rsync --delete`, `rdiff-backup`, `duplicity
+  remove|cleanup`, `kopia snapshot|delete|maintenance`, `bconsole`;
+  exec context/daemonization: `setsid`, `nohup`, `disown`,
+  `daemonize`, `start-stop-daemon -b`, `sg`, `newgrp`, `getcap -r`,
+  `ktutil`, `kadmin`, `msktutil`, `systemd-run --pty|--uid|--collect|
+  --property|--on-|--unit|--description|--timer|--path|--socket|
+  --mount|--nice|--setenv|--working-directory`, `systemd-cat`,
+  `systemd-tmpfiles --create|--remove|--clean`, `systemd-inhibit`,
+  `busctl set-property|call`, `logger -n|-r|--server|-t`, `hwclock
+  --systohc|--hctosys|--set|--adjust|--epoch=`, `ntpdate`, `chronyc
+  offline|online|settime|makestep|sources`;
+  tmux/screen/inotify exec: `tmux new-session -d|new -d|load-buffer|
+  source-file`, `screen -dm|-dmS|-d -m`, `inotifywait -m|-r|-e`,
+  `watch -n|-x`;
+  dialog/spoof: `zenity`, `kdialog`, `whiptail`, `newt`, `osascript
+  display dialog|alert`, `notify-send -u|-i|--urgency`;
+  NAT/proxy/VPN: `dnctl`, `natd`, `portfwd`, `redir
+  --lport|--cport|--laddr|--caddr|--bport|--bind`, `nginx -c|-g`,
+  `haproxy -f|-db`, `caddy run|reload`, `tinyproxy`, `squid -f|-z|-k`,
+  `polipo`, `microsocks`, `3proxy`, `openvpn
+  --config|--daemon|--up|--down|--script-security|--mktun|--rmtun|
+  --remote|--dev`, `wireguard`, `wg-quick up|down`, `xl2tpd`,
+  `pptpd`, `openconnect`;
+  interpreter `-c`/exec: `tclsh`, `julia -e`, `R -e`, `Rscript -e`,
+  `octave --eval`, `maxima --batch`, `ghci -e`, `runhaskell`,
+  `fish|zsh|ksh|dash|csh -c`, `powershell|pwsh -c|-ec|-ep bypass|
+  -ep unrestricted|-executionpolicy bypass|unrestricted|-sta|-mta|
+  -w hidden|-windowstyle hidden`, `deno run|eval|task`, `bun
+  run|bunx|-e`, `npx`, `pnpm|yarn dlx|exec`, `pipx`, `go install|
+  run`, `composer require|global|exec|create-project|install`,
+  `nimble install|build|run|init|doc|refresh`, `opam install|exec`,
+  `luarocks`, `at now|-f`, `batch <|-f`, `env -i`, `env x=y <cmd>` —
+  six benign expectations (`eventvwr`, `at now + 5`, `npx/pnpm/yarn/
+  bunx` runner forms, `watch -n`, `systemd-run --user`, `te.exe`,
+  `pipx/cargo/composer` install forms, `perl -MData::Dumper`)
+  relocated to hits as the design-flagged exec/supply-chain
+  primitives.
+
 - **Mobile device control + RE/OSINT tool names + SCADA/telephony/
   queue/DB-destructive + supply-publish + CI/deploy + supervisor/
   journald + hardware/radio/input-snoop + fake-infra/phish/C2

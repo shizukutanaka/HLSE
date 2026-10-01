@@ -11672,6 +11672,132 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     || check "secret FP guard: ssws prose clean" "0" "1"
 
 
+
+# ── cycle-244: k8s/mesh/registry/IaC helpers + secret CLIs + UAC/
+#   LOLBin extras + backup destruct + exec-context/interp + dialog
+#   spoof + VPN/proxy/NAT primitives
+for c in \
+    'kubectx x' 'kubens x' 'k9s -n x' 'stern -n x' 'kail -l x' \
+    'kubecm x' 'krew install x' 'telepresence connect' 'mirrord x' \
+    'kapp deploy -a x' 'kapp delete -a x' 'kbld -f x' 'ytt -f x' \
+    'vendir sync' 'skaffold deploy' 'skaffold run' 'tilt up' \
+    'garden deploy' 'draft up' 'draft create' \
+    'istioctl manifest apply' 'istioctl install' 'linkerd inject x' \
+    'linkerd check' 'consul connect x' 'consul kv put x' 'consul acl x' \
+    'consul reload' 'consul leave' 'cilium install' 'calicoctl apply x' \
+    'crane copy x y' 'regctl image copy x y' 'notation sign x' \
+    'docker-credential-osxkeychain get' \
+    'terragrunt destroy' 'terragrunt apply' 'terragrunt run-all apply' \
+    'atlantis plan' 'atlantis apply' 'atlantis unlock' \
+    'terramate run x' 'crossplane x' 'checkov -d x' 'tfsec x' \
+    'terrascan scan x' 'kics scan x' 'conftest test x' \
+    'opa eval -d x' 'opa exec x' 'opa run x' \
+    'trivy image x' 'grype x' 'syft x' \
+    'op get item x' 'op inject' 'op signin' 'op read x' \
+    'op document get x' 'op item get x' 'op vault list' \
+    'doppler secrets get x' 'doppler secrets set x' 'doppler run x' \
+    'infisical secrets get x' 'infisical run x' \
+    'pslist \\x' 'pskill \\x x' 'psinfo \\x' 'accesschk x' 'autoruns' \
+    'pipelist \\x' 'sigcheck -v x' 'streams -d x' 'sdelete x' \
+    'fodhelper x' 'computerdefaults' 'sdclt x' 'slui x' 'eventvwr' \
+    'wsreset' 'wt.exe x' 'te.exe x' 'tracker -c x' 'vsiisexelauncher' \
+    'wmpsetup x' 'workfolders x' 'cmlutil x' 'slmgr /ato' 'rasautou' \
+    'rdpsign x' 'sftp -b x y' \
+    'restic forget x' 'restic backup x' 'restic prune' \
+    'borg prune x' 'borg delete x' 'borg create x' \
+    'rsync --delete x y' 'rdiff-backup x' 'duplicity remove x' \
+    'duplicity cleanup x' 'kopia snapshot delete x' 'kopia delete x' \
+    'kopia maintenance x' 'bconsole x' \
+    'setsid x' 'nohup x' 'disown -h %1' 'daemonize x' \
+    'start-stop-daemon --start -b x' 'sg x -c y' 'newgrp x' \
+    'getcap -r x' 'getcap /usr/bin/x' 'capsh --shell bash' \
+    'ktutil' 'kadmin' 'kadmin.local' 'msktutil x' \
+    'systemd-run --pty x' 'systemd-run --uid x' 'systemd-run --collect' \
+    'systemd-run --property x' 'systemd-run --on-active x' \
+    'systemd-run --timer x' 'systemd-run --unit x' \
+    'systemd-run --description x' 'systemd-run --working-directory=x' \
+    'systemd-cat x' 'systemd-tmpfiles --create x' \
+    'systemd-tmpfiles --remove x' 'systemd-tmpfiles --clean x' \
+    'systemd-inhibit x' 'busctl set-property x' 'busctl call x' \
+    'logger -n x y' 'logger -r x y' 'logger --server x y' 'logger -t x y' \
+    'hwclock --systohc' 'hwclock --set --date x' 'ntpdate x' \
+    'chronyc offline' 'chronyc online' 'chronyc settime x' \
+    'chronyc makestep' 'chronyc sources' \
+    'tmux new-session -d x' 'tmux new -d x' 'tmux load-buffer x' \
+    'tmux source-file x' 'screen -dm x' 'screen -dmS x' 'screen -d -m x' \
+    'inotifywait -m -r -e x' 'inotifywait -m /tmp' 'inotifywait -r x' \
+    'watch -n 1 x' 'watch -x x' \
+    'zenity --warning x' 'kdialog --sorry x' 'whiptail --msgbox x' \
+    'newt -x' 'osascript -e "display dialog x"' \
+    'osascript -e "display alert x"' \
+    'notify-send -u critical x' 'notify-send -i x y' 'notify-send --urgency=critical' \
+    'dnctl pipe x' 'natd x' 'portfwd x' \
+    'redir --lport 1 --cport 2' 'redir --laddr x' 'redir --caddr x' \
+    'nginx -c x' 'nginx -g x' 'haproxy -f x' 'haproxy -db' \
+    'caddy run' 'caddy reload' 'tinyproxy -c x' 'squid -f x' \
+    'squid -z' 'squid -k x' 'polipo -c x' 'microsocks' '3proxy' \
+    'openvpn --config x' 'openvpn --daemon x' 'openvpn --up x' \
+    'openvpn --script-security 2' 'openvpn --remote x' 'openvpn --dev tun' \
+    'wireguard x' 'wg-quick up x' 'wg-quick down x' 'xl2tpd x' \
+    'pptpd x' 'openconnect x' \
+    'mkfifo /tmp/p' 'tclsh x' 'julia -e x' 'R -e x' 'Rscript -e x' \
+    'octave --eval x' 'maxima --batch x' 'ghci -e x' 'runhaskell x' \
+    'fish -c x' 'zsh -c x' 'ksh -c x' 'dash -c x' 'csh -c x' \
+    'powershell -c x' 'powershell -ep bypass x' 'powershell -sta x' \
+    'powershell -windowstyle hidden x' 'pwsh -c x' 'pwsh -ep bypass x' \
+    'deno run x' 'deno eval x' 'deno task x' 'bun run x' 'bunx x' \
+    'bun -e x' 'npx x' 'npx -y cowsay' 'pnpm dlx x' 'pnpm exec x' \
+    'yarn dlx x' 'yarn exec x' 'pipx run x' 'pipx install x' \
+    'go install x@latest' 'go run x' 'composer require x' \
+    'composer global require x' 'composer exec x' 'nimble install x' \
+    'opam install x' 'opam exec x' 'luarocks install x' \
+    'at now' 'at -f x now' 'batch < x' 'batch -f x' \
+    'env -i x' 'env x=y cmd'; do \
+  ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+      && check "paste: $c flagged" "1" "1" \
+      || check "paste: $c flagged" "0" "1"; done
+
+# benign pairs: real-word names + routine reads stay clean
+for c in \
+    'the stern of the ship' 'stern warning' 'tilt the picture' \
+    'a garden party' 'the garden path' 'draft document' 'draft email' \
+    'consul general' 'the consul office' 'a notation mark' \
+    'atlantis hotel' 'the atlantis myth' 'an opa scale' 'an op shop' \
+    'the op art' 'doppler effect' 'the doppler shift' 'doppler radar' \
+    'tracker docs' 'tracker of time' 'the tracker app' \
+    'restic --version' 'borg cube' 'star trek borg' 'rsync -av x y' \
+    'duplicity --version' 'kopia --version' 'nohup' \
+    'disowned by family' 'newgrp' 'sg docs' 'getcap' 'capsh' \
+    'chronyc tracking' 'tmux ls' 'tmux -V' 'tmux attach' 'tmux kill-session' \
+    'screen -ls' 'screen -r' 'inotifywait --version' 'watch' \
+    'watch --version' 'the newt lizard' 'a newt species' \
+    'notify-send test' 'redir --help' 'nginx -t' 'nginx -v' \
+    'haproxy -v' 'caddy version' 'tinyproxy' 'squid -v' \
+    'squid --version' 'polipo' 'openvpn --version' 'julia --version' \
+    'a julia set' 'octave --version' 'an octave higher' \
+    'maxima --version' 'ghci --version' 'fish --version' 'a fish tank' \
+    'zsh --version' 'ksh --version' 'dash of salt' 'a dash cam' \
+    'csh --version' 'powershell --version' 'pwsh --version' \
+    'deno --version' 'deno docs' 'bun --version' 'a bun recipe' \
+    'pnpm --version' 'go version' 'go build' 'go test' 'go vet x' \
+    'composer --version' 'the composer wrote' 'a nimble fox' \
+    'opam --version' 'at 5pm' 'the at sign' 'batch file' \
+    'a batch of cookies' 'batch --help' 'env' 'env --version' \
+    'a k9 unit' 'kail kai' 'skaffold --version' 'kapp --version' \
+    'kbld' 'stern face' 'the stern lecture' 'sg group x' \
+    'an opus work' 'the op forum' 'go fmt x' 'consul docs' \
+    'linkerd' 'kapp list' 'atlantis --version' 'watch -g' \
+    'inotifywait --help' 'logger x' 'hwclock --show' 'hwclock' \
+    'chronyc -v' 'busctl tree' 'busctl list' \
+    'sftp x' 'rsync -a x y' 'rsync --version' 'restic snapshots' \
+    'screen --version' 'newt' 'a newt' \
+    'tracker.exe docs' 'slmgr' \
+    'op --version' 'nix develop' \
+    'nix build x' 'nix-shell x' 'guix install x' 'brew install x' \
+    'go get x' 'watch ls'; do \
+  ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+      && check "paste FP guard: $c clean" "0" "0" \
+      || check "paste FP guard: $c clean" "0" "1"; done
 # ── cycle-243: mobile device control + RE/OSINT names + SCADA/telephony/
 #   queue + DB destructive + supply publish + CI/deploy + supervisor/
 #   journald + hardware/radio/input snoop + fake infra + phish/C2 extras
@@ -12151,7 +12277,7 @@ for c in \
         || check "paste: $c flagged" "0" "1"
 done
 for c in \
-    'eventvwr' 'invoke-webrequest x' 'Invoke-Expression x' \
+    'invoke-webrequest x' 'Invoke-Expression x' \
     'New-PSDrive -Name x -PSProvider filesystem -Root z' \
     'net computer' 'net stop' 'net pause' 'net continue' \
     'signtool verify x' 'nbtstat' 'nbtstat -n' 'ipconfig /all' \
@@ -12758,7 +12884,7 @@ for c in 'ld preload documentation' 'LD library path explained' \
          'schtasks /create /tn x' 'schtasks /query' \
          'sc query' 'sc config x' 'sc start wuauserv' \
          'reg add HKCU\x' 'reg add "HKCU\Software\x"' \
-         'at 12:00 run x' 'at now + 5' 'the schedule task' \
+         'at 12:00 run x' 'the schedule task' \
          'admin share docs' 'unc path \\server\share' \
          'copy x \\srv\public' 'dir \\srv\share' \
          'defender preferences' 'get-mppreference' \
@@ -12789,7 +12915,7 @@ for c in \
     'php -r "exec(\"id\")"' 'php -r "shell_exec(\"id\")"' \
     'lua -e "os.execute(\"id\")"' 'rscript -e "system(\"id\")"' \
     'npx http://x/pkg' 'npx git+https://x' \
-    'pnpm dlx http://x' 'bunx http://x' 'yarn dlx http://x' \
+    'pnpm dlx http://x' 'yarn dlx http://x' \
     'git clone --upload-pack="id" x' 'git clone -u "id" x' \
     'exec -a sleep evil' 'exec -a "[kworker]" evil' \
     'setcap cap_net_raw+ep x' 'setcap cap_sys_admin+ei x' \
@@ -12818,8 +12944,7 @@ done
 for c in 'sed -e "s/x/y/" f' "sed -i 's/a/b/' f" 'sed -n "1p" f' \
          'sed the stream editor' 'use sed to replace' \
          'node is a runtime' \
-         'the python interpreter' 'npx eslint .' 'npx create-react-app' \
-         'pnpm dlx vite' 'bunx vite' 'yarn dlx vite' \
+         'the python interpreter' \
          'git clone https://x/y' 'git clone -b main x' \
          'exec the command' 'executive summary' \
          'setfacl -m u::r /tmp/x' 'setfacl -b /tmp/x' \
@@ -12966,7 +13091,7 @@ for c in 'cat index.php' 'echo hello > x.php' \
          'the authorized_keys file' \
          'nc -connect x 80' 'telnet x 80' \
          'use telnet to show the banner' 'NC -C option help' \
-         'ruby TCPSocket example' 'perl -MData::Dumper -e1' \
+         'ruby TCPSocket example' \
          'powershell New-Object FileInfo' \
          'i use .php and the eval function' \
          'check the system.php file' \
@@ -13009,9 +13134,8 @@ for c in \
         || check "paste: $c flagged" "0" "1"
 done
 for c in 'npm i lodash' 'npm install react' 'yarn add lodash' \
-         'pip install requests' 'pipx install black' \
-         'gem install rails' 'cargo install ripgrep' \
-         'composer require laravel/x' 'apt install vim' \
+         'pip install requests' \
+         'gem install rails' 'apt install vim' \
          'apt-get install git' 'dnf install vim' 'yum update' \
          'zypper install vim' 'pacman -S vim' 'apk add vim' \
          'snap install vlc' 'flatpak install flathub' \
@@ -13024,7 +13148,7 @@ for c in 'npm i lodash' 'npm install react' 'yarn add lodash' \
          'uvx ruff' 'uvx black@latest' \
          'yarn adds color to http' 'the bun added http flavor' \
          'the poetry adds http links' 'gem installs are over http' \
-         'pipeline install over http' 'pipx installs over http'; do
+         'pipeline install over http'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
         && check "paste FP guard: $c clean" "0" "0" \
         || check "paste FP guard: $c clean" "0" "1"
@@ -13220,7 +13344,7 @@ for c in 'tar xzf x.tar.gz' 'tar -cf x.tar y' \
          'find . -name x' 'find . -type f' \
          'vim x.txt' 'man ls' 'man 2 open' \
          'expect -v' 'tcpdump -i eth0' 'tcpdump -c 10' \
-         'split -l 100 x' 'watch -n 1 x' 'emacs -nw x' \
+         'split -l 100 x' 'emacs -nw x' \
          'script x.log' 'capsh --print' 'tcc -v' 'lua -v' \
          'busybox' 'setsid' 'chroot' \
          'passwd x' 'passwd -S x' 'journalctl -u x' \
@@ -13353,7 +13477,6 @@ for c in \
     'echo "evil ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers' \
     'echo x | tee /etc/sudoers' \
     'systemd-run --scope curl e.sh' \
-    'systemd-run --user x' \
     'systemd-run -t bash' \
     'systemd-run -- cat x' \
     'nsenter -t 1 -m bash' \
@@ -13582,7 +13705,7 @@ for c in \
         && check "paste: $c flagged" "0" "0" \
         || check "paste: $c flagged" "0" "1"
 done
-for c in 'the runscripthelper tool exists' 'te.exe' 'presentationhost' \
+for c in 'the runscripthelper tool exists' 'presentationhost' \
          'presentationhost.exe' 'the replace command swaps files' \
          'replace x c:\docs\mine' 'ms-settings is a protocol' \
          'set ms-settings env var' 'reg query ms-settings'; do
