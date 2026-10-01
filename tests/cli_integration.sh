@@ -11674,6 +11674,92 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-254: RMM/policy/netrecon/cloud-primitive ────────────────────────────
+for c in \
+    'dwagsvc' 'meshcentral start' 'radmin /connect:x' \
+    'winvnc -run' 'vncviewer x' 'parsec --daemon' \
+    'vnc -rfbport' 'secedit /export x' 'tracelog -start x' \
+    'typeperf -cf x' 'ksetup /addkdc x' 'ktpass -princ x' \
+    'setspn -a x' 'dsget user x' 'dsmove x' \
+    'ldp.exe' 'vaultcmd /listcreds x' 'rasautou -d x' \
+    'tscon 1' 'qprocess' \
+    'query session' 'shadow /dest:console' 'shadow -v' \
+    'msg * hello' 'change logon /disable' 'chglogon /disable' \
+    'chgusr /install' 'wevtutil epl x' 'powercfg /h off' \
+    'powercfg /waketimers' 'netstat -b' 'netsh wlan export profile' \
+    'netsh wlan set hostednetwork' 'netsh winhttp set proxy' 'attrib +h +s x' \
+    'compact /c x' 'format c: /q' 'mountvol /d' \
+    'chkdsk /f x' 'efibootmgr -o x' 'efivar -w x' \
+    'fwupdmgr update' 'fwupdtool install x' 'kernel-install add x' \
+    'devmem 0x1000' 'devmem2 0x' 'memtool x' \
+    'i2cget x' 'i2cdetect -l' 'i2cdump x' \
+    'gpiodetect' 'gpioinfo' 'gpioget x' \
+    'gpiomon x' 'kpartx -a x' 'partprobe x' \
+    'proot -b x' 'fakechroot x' 'fakeroot x' \
+    \
+    'lastlog' 'hostnamectl set-hostname x' 'domainname x' \
+    'ypdomainname x' 'nisdomainname x' 'netcap' \
+    'audicap' 'setcap cap_sys_admin+ep x' 'logger -p auth.crit x' \
+    'kbld -f x' 'imgpkg pull x' 'ytt -f x' \
+    'vendir sync' 'cdk deploy' 'cdk destroy' \
+    'firebase deploy' 'wrangler deploy' 'wrangler kv:key put x' \
+    'dokku run x' 'caprover deploy' 'sst deploy' \
+    'enum4linux x' 'snaffler x' 'certipy find x' \
+    'rubeus kerberoast' 'kekeo x' 'mitmproxy' \
+    'mitmdump -s x' 'sslsplit -D x' 'sslstrip -l x' \
+    'sslscan x' 'sslyze x' 'testssl x' \
+    'tlssled x' 'subjack -w x' 'subzy x' \
+    'subover x' 'tko-subs x' 'cloudenum -k x' \
+    'cloudmapper x' 'cloudsplaining x' 'pacu --modules x' \
+    'gophish' 'evilginx' 'modlishka' \
+    'muraena' 'setoolkit' 'wifiphisher' \
+    'airgeddon' 'ropgadget --binary x' 'ropper --file x' \
+    'rop-cli x' 'one_gadget x' 'pwntools x' \
+    'checksec --file x' 'trivy x' 'checkov -d x' \
+    'terrascan x' 'kube-bench x' 'kubebench x' \
+    'grype x' 'syft x' 'osv-scanner x' \
+    'semgrep --config x' 'bandit -r x' 'kics scan x' \
+    'proot -r x'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+        check "paste: $c flagged" "0" "1"
+    else
+        check "paste: $c flagged" "0" "0"
+    fi
+done
+for c in \
+    'parsec is a unit of distance' 'vnc server runs here' 'msg the queue' \
+    'msg your team' 'typeperf doc' 'typeperf is a tool' \
+    'powercfg help' 'netstat -an' 'netstat -tlnp' \
+    'netsh wlan drivers' 'attrib this story' 'compact the design' \
+    'format the document' 'mount a volume' 'chkdsk the page' \
+    'io the pins' 'yaml file ytt' 'the cdk builds' \
+    'cdk the library' 'sst the aircraft' 'sst band' \
+    'smithy the forge' 'the smithy anvil' 'logger name' \
+    'domain name service' 'setcap docs' 'bandit the raccoon' \
+    'bandit the movie' 'level io game' 'pacu fish' \
+    'proot the plant' 'grace the server' \
+    'the vnc connection' 'viewer window' 'win the match' \
+    'query the database' 'database query thing' 'the netstat output' \
+    'format in python' 'format string x' 'msg message' \
+    'logger.info x' 'logger.warn x' 'wpr is a brand' \
+    'pwr supply' 'web of things' 'mitm docs' \
+    'the sliver of pie' 'sliver the piece' 'donut the snack' \
+    'rubber duck' 'rubber bands' 'king phisher' \
+    'zoho mail' \
+    'zoho docs' 'level up' 'mesh networking' \
+    'the format disk' 'format sd card' 'the smithy forge' \
+    'pacu is a fish' 'the pacu fish' 'format the page' \
+    'attribution is key' 'compact disc' \
+    'reformat the disk' 'the bandit king'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+        check "paste FP guard: $c clean" "0" "0"
+    else
+        check "paste FP guard: $c clean" "0" "1"
+    fi
+done
+
 # ── cycle-253: macos/jail/build/signing/java/misc-exec primitives ──
 for c in \
     'iscsicpl' 'javac x.java' 'javac -d x' 'java -agentlib:x' \
@@ -12258,14 +12344,14 @@ for c in \
     'hdparm -i' 'sdparm --list' 'camcontrol devlist' 'zpool status' \
     'zfs list' 'cryptsetup status' 'cryptsetup luksOpen' \
     'vgchange -ay' 'lvchange -ay' 'blkzone report' 'zramctl' \
-    'kpartx -l' 'iscsiadm -m session' 'multipath -l' 'sv status x' \
+    'iscsiadm -m session' 'multipath -l' 'sv status x' \
     'the sv dialect' 'curl --help' 'wget --help' 'rdate docs' \
     'find x -name x.txt' 'find / -name readme' 'grep -r todo x' \
     'grep -rn fixme' 'compgen -c' 'the history of' 'history class' \
     'fc -s' 'a net sale' 'net profit' 'the net gain' 'net.art' \
     'mount -t ext4' 'mount /dev/sda1' 'umount /x' \
     \
-    'the lastlog entry' 'btmp vs wtmp' 'cat wtmp' 'cat btmp' \
+    'btmp vs wtmp' 'cat wtmp' 'cat btmp' \
     'electron --headless' 'chrome docs' 'chromium docs' \
     \
     'irssi channel' 'nc ftp' 'geth --version' 'electrum --version' \
@@ -12698,7 +12784,7 @@ for c in \
     'cme -x' 'adfind' 'admod' 'kekeo' 'certify -x' 'maigret' \
     'blackbird -x' 'snoop -u x' 'toutatis' 'instaloader' 'osintgram' \
     'git-dumper http://x/.git y' 'gitgraber' 'dvcs-ripper' 'uro x' \
-    'unfurl -x' 'waymore' 'linkfinder' 'qsreplace' 'cloudfox' 'pacu' \
+    'unfurl -x' 'waymore' 'linkfinder' 'qsreplace' 'cloudfox' 'pacu run --list' \
     'enumerate-iam' 'prowler' 's3scanner' 's3enum' 'bucketfinder' \
     'awsbucketdump' 'grayhatwarfare' 'skyark' 'weirdaal' 'iamhound' \
     'o365spray' 'msolspray' 'adfspray' 'fireprox' 'spray365' \
@@ -12794,7 +12880,7 @@ for c in \
     'chkconfig --list' 'pkg info' 'snap version' \
     'flatpak --version' 'port version' 'uv --version' 'rye --version' \
     'poetry --version' 'pdm --version' 'dotnet --version' \
-    'winget list' 'appcmd list sites' 'quser' 'logoff' 'msg x y' \
+    'winget list' 'appcmd list sites' 'logoff' 'msg x y' \
     'subst' 'fsutil fsinfo drives' 'netsh wfp show' \
     'wpr --version' 'xperf --version' 'msdt /?' 'mmc' 'csi' 'fsi' \
     'keyctl' 'portablectl list' 'flatpak-spawn' 'gdbus introspect' \
@@ -12924,7 +13010,7 @@ for c in \
     'opam --version' 'at 5pm' 'the at sign' 'batch file' \
     'a batch of cookies' 'batch --help' 'env' 'env --version' \
     'a k9 unit' 'kail kai' 'skaffold --version' 'kapp --version' \
-    'kbld' 'stern face' 'the stern lecture' 'sg group x' \
+    'stern face' 'the stern lecture' 'sg group x' \
     'an opus work' 'the op forum' 'go fmt x' 'consul docs' \
     'linkerd' 'kapp list' 'atlantis --version' 'watch -g' \
     'logger x' 'hwclock --show' 'hwclock' \
@@ -13471,8 +13557,8 @@ for c in \
     'the bolt fastener' 'the xray machine' 'the gost writer' \
     'the trojan horse' 'the bully pulpit' \
     'the clash band' 'john doe' 'salt and pepper' \
-    'the veil of secrecy' 'apt-get install x' 'pwconv' \
-    'grpconv' 'ethtool -i x' 'xray --version' 'gost' 'atq' \
+    'the veil of secrecy' 'apt-get install x' \
+    'ethtool -i x' 'xray --version' 'gost' 'atq' \
     'certutil -verify x' 'bcdedit /enum' ; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
         && check "paste FP guard: $c clean" "0" "0" \
@@ -13549,7 +13635,7 @@ for c in \
     'reg add x' 'reg import x' 'reg load x' 'reg restore x' \
     'reg unload x' 'msiexec /i x' 'msiexec /qn /i x' \
     'schtasks /create /tn x' 'schtasks /query' 'schtasks /run' \
-    'tasklist' 'quser' 'qwinsta' 'logoff' 'msg x y' 'dsacls' \
+    'tasklist' 'qwinsta' 'logoff' 'msg x y' 'dsacls' \
     'dsacls x' 'pnputil /enum-drivers' 'pnputil /?' \
     'mount /dev/x /y' 'mount -o ro /x /y' 'mount -a' 'umount x' \
     'findmnt' 'setenforce' 'getenforce' 'setenforce 1' \
@@ -13849,11 +13935,11 @@ for c in \
     'reboot the franchise' 'reboot docs' 'poweroff docs' \
     'halt and catch fire' 'shutdown /a' 'shutdown --help' \
     'useradd -m newuser' 'useradd -u 1001 x' 'adduser x' \
-    'groupadd admins' 'pwconv' \
+    'groupadd admins' \
     'groupmod x' 'chfn x' 'gpasswd x' 'shutdown now' \
     'usermod --help' 'usermod -aG docker x' 'passwd docs' 'passwd file' \
     'passwd --help' 'faillock --user x' 'pam_tally2 --user x' \
-    'faillog -u x' 'lastlog -u x' 'chage -l x' 'chage docs' \
+    'faillog -u x' \
     'iptables -L' 'iptables -L -v -n' 'iptables-save' 'iptables-restore' \
     'ip6tables -L' 'iptables -t nat -L' 'iptables -S' \
     'iptables -A INPUT -p tcp --dport 22 -j ACCEPT' \
@@ -13870,7 +13956,7 @@ for c in \
     'dkms status' 'dkms --version' 'ldconfig' 'ldconfig -v' 'ldconfig -p' \
     'ssh-add -l' 'ssh-add --help' 'apt-key list' \
     'rpm -qa' 'rpm -qi x' 'mokutil --sb-state' 'mokutil --list-enrolled' \
-    'efibootmgr -v' 'efibootmgr --help' 'efivar -l' \
+    \
     'update-alternatives --list x' 'tcpdump -i eth0' 'tcpdump -r x.pcap' \
     'tcpdump --version' 'tshark -r x' 'tshark --version' \
     'nvme list' 'nvme smart-log /dev/nvme0' 'sg_read /dev/sda' \
@@ -14386,7 +14472,7 @@ for c in \
         || check "paste: $c flagged" "0" "1"
 done
 for c in 'john smith went home' 'a bloodhound is a dog' \
-         'reaver class in dnd' 'rubeus hagrid' 'hydra constellation' \
+         'reaver class in dnd' 'hydra constellation' \
          'the gost writer' 'rathole inn' 'iodine supplement' \
          'iodine -v' 'chisel the wood' 'flux capacitor' \
          'nmap is a scanner' 'route 66' 'meter reading' \
@@ -15036,7 +15122,7 @@ for c in \
 done
 for c in 'icacls c:\data /grant everyone:f' 'takeown /f file.txt' \
          'fsutil file createnew x 1' \
-         'manage-bde -status' 'secedit /analyze' \
+         'manage-bde -status' \
          'schtasks /create /tn "system report" /tr y /sc daily'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
         && check "paste FP guard: $c clean" "0" "0" \

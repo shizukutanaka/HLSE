@@ -5746,7 +5746,10 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "linkfinder") ||
             ci_contains(text, "qsreplace") ||
             ci_contains(text, "cloudfox") ||
-            ci_contains(text, "pacu") ||
+            (ci_contains(text, "pacu") &&
+              (ci_contains(text, " -") || ci_contains(text, " --") ||
+               ci_contains(text, " run ") || ci_contains(text, " module") ||
+               ci_contains(text, " exec") || ci_contains(text, " session"))) ||
             ci_contains(text, "enumerate-iam") ||
             ci_contains(text, "prowler") ||
             ci_contains(text, "s3scanner") ||
@@ -9380,6 +9383,144 @@ hlse_check_paste(const char *text) {
               (ci_contains(text, " uninstall") || ci_contains(text, " reset"))) ||
              ci_contains(text, "lsappinfo") || ci_contains(text, "syspolicyd")) {
         what = "macos/jail/build/signing/java/misc-exec primitive";
+        }
+        else if (ci_contains(text, "dwagsvc") || ci_contains(text, "meshcentral") ||
+             ci_contains(text, "meshagent") || ci_contains(text, "level.io") ||
+             ci_contains(text, "radmin") || ci_contains(text, "intelliadmin") ||
+             ci_contains(text, "remcom") || ci_contains(text, "winexesvc") ||
+             ci_contains(text, "zohoassist") || ci_contains(text, "winvnc") ||
+             ci_contains(text, "tvnserver") || ci_contains(text, "vncviewer") ||
+             ci_contains(text, "tightvnc") || ci_contains(text, "ultravnc") ||
+             ci_contains(text, "realvnc") || ci_contains(text, "anyvnc") ||
+             (ci_contains(text, "parsec") &&
+              (ci_contains(text, " -") || ci_contains(text, " --") ||
+               ci_contains(text, " daemon") || ci_contains(text, " host"))) ||
+             (ci_contains(text, "vnc") &&
+              (ci_contains(text, " -") || ci_contains(text, " --") ||
+               ci_contains(text, " :"))) ||
+             ci_contains(text, "secedit") || ci_contains(text, "tracelog") ||
+             (ci_contains(text, "typeperf") &&
+              (ci_contains(text, " -") || ci_contains(text, " /"))) || (ci_contains(text, "ksetup") && !ci_contains(text, "networksetup")) ||
+             ci_contains(text, "ktpass") || ci_contains(text, "setspn") ||
+             ci_contains(text, "dsget") || ci_contains(text, "dsmove") ||
+             ci_contains(text, "ldp.exe") || ci_contains(text, "vaultcmd") ||
+             ci_contains(text, "rasautou") || ci_contains(text, "tscon") ||
+             ci_contains(text, "quser") || ci_contains(text, "qprocess") ||
+             ci_contains(text, "query session") || ci_contains(text, "query user") ||
+             (ci_contains(text, "shadow ") &&
+              (ci_contains(text, " /dest") || ci_contains(text, " -") ||
+               ci_contains(text, " /"))) ||
+             (ci_contains(text, "msg") &&
+              (ci_contains(text, " *") || ci_contains(text, " /server") ||
+               ci_contains(text, " /v"))) ||
+             ci_contains(text, "change logon") || ci_contains(text, "chglogon") ||
+             ci_contains(text, "chgusr") ||
+             (ci_contains(text, "wevtutil") &&
+              (ci_contains(text, " epl") || ci_contains(text, " export"))) ||
+             (ci_contains(text, "powercfg") &&
+              (ci_contains(text, " /h") || ci_contains(text, " /waketimers") ||
+               ci_contains(text, " /battery") || ci_contains(text, " /energy") ||
+               ci_contains(text, " -"))) ||
+             (ci_contains(text, "netstat") &&
+              (ci_contains(text, " -b") || ci_contains(text, " -f"))) ||
+             (ci_contains(text, "netsh wlan") &&
+              (ci_contains(text, " export") || ci_contains(text, " add ") ||
+               ci_contains(text, " delete") || ci_contains(text, " set ") ||
+               ci_contains(text, " disconnect") ||
+               ci_contains(text, " hostednetwork"))) ||
+             ci_contains(text, "netsh winhttp") ||
+             (ci_contains(text, "attrib ") &&
+              (ci_contains(text, " +") || ci_contains(text, " -") ||
+               ci_contains(text, " /"))) ||
+             (ci_contains(text, "compact") &&
+              (ci_contains(text, " /c") || ci_contains(text, " /u") ||
+               ci_contains(text, " /i"))) ||
+             (ci_contains(text, "format") &&
+              (ci_contains(text, " c:") || ci_contains(text, " d:") ||
+               ci_contains(text, " /q") || ci_contains(text, " /fs") ||
+               ci_contains(text, " /v"))) ||
+             (ci_contains(text, "mountvol") &&
+              (ci_contains(text, " /d") || ci_contains(text, " /r") ||
+               ci_contains(text, " -"))) ||
+             (ci_contains(text, "chkdsk") &&
+              (ci_contains(text, " /") || ci_contains(text, " -") ||
+               ci_contains(text, " c:") || ci_contains(text, " d:"))) ||
+             ci_contains(text, "efibootmgr") ||
+             ci_contains(text, "efivar") || ci_contains(text, "fwupdmgr") ||
+             ci_contains(text, "fwupdtool") || ci_contains(text, "fwupd") ||
+             ci_contains(text, "kernel-install") || ci_contains(text, "devmem") ||
+             ci_contains(text, "memtool") || ci_contains(text, "i2cget") ||
+             ci_contains(text, "i2cdetect") || ci_contains(text, "i2cdump") ||
+             ci_contains(text, "gpiodetect") || ci_contains(text, "gpioinfo") ||
+             ci_contains(text, "gpioget") || ci_contains(text, "gpiomon") ||
+             ci_contains(text, "kpartx") || ci_contains(text, "partprobe") ||
+             ci_contains(text, "fakechroot") ||
+             ci_contains(text, "fakeroot") || ci_contains(text, "pwconv") ||
+             ci_contains(text, "grpconv") || ci_contains(text, "chage") ||
+             ci_contains(text, "lastlog") || ci_contains(text, "hostnamectl") ||
+             ci_contains(text, "domainname") || ci_contains(text, "ypdomainname") ||
+             ci_contains(text, "nisdomainname") || ci_contains(text, "netcap") ||
+             ci_contains(text, "audicap") ||
+             (ci_contains(text, "setcap") &&
+              (ci_contains(text, " cap") || ci_contains(text, " -"))) ||
+             (ci_contains(text, "logger") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             ci_contains(text, "kbld") || ci_contains(text, "imgpkg") ||
+             (ci_contains(text, "ytt") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             ci_contains(text, "vendir") ||
+             (ci_contains(text, "cdk") &&
+              (ci_contains(text, " deploy") || ci_contains(text, " destroy") ||
+               ci_contains(text, " synth") || ci_contains(text, " bootstrap"))) ||
+             (ci_contains(text, "firebase") &&
+              (ci_contains(text, " deploy") || ci_contains(text, " functions:") ||
+               ci_contains(text, " database:") || ci_contains(text, " firestore:") ||
+               ci_contains(text, " auth:") || ci_contains(text, " hosting") ||
+               ci_contains(text, " -"))) ||
+             (ci_contains(text, "wrangler") &&
+              (ci_contains(text, " deploy") || ci_contains(text, " kv") ||
+               ci_contains(text, " r2") || ci_contains(text, " d1") ||
+               ci_contains(text, " pages") || ci_contains(text, " publish") ||
+               ci_contains(text, " -"))) ||
+             ci_contains(text, "dokku") || ci_contains(text, "caprover") ||
+             (ci_contains(text, "sst") &&
+              (ci_contains(text, " deploy") || ci_contains(text, " remove") ||
+               ci_contains(text, " dev") || ci_contains(text, " console"))) ||
+             (ci_contains(text, "smithy") &&
+              (ci_contains(text, " build") || ci_contains(text, " codegen") ||
+               ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             ci_contains(text, "enum4linux") || ci_contains(text, "snaffler") ||
+             ci_contains(text, "certipy") || ci_contains(text, "rubeus") ||
+             ci_contains(text, "kekeo") || ci_contains(text, "mitmproxy") ||
+             ci_contains(text, "mitmdump") || ci_contains(text, "mitmweb") ||
+             ci_contains(text, "sslsplit") || ci_contains(text, "sslstrip") ||
+             ci_contains(text, "sslscan") || ci_contains(text, "sslyze") ||
+             ci_contains(text, "testssl") || ci_contains(text, "tlssled") ||
+             ci_contains(text, "subjack") || ci_contains(text, "subzy") ||
+             ci_contains(text, "subover") || ci_contains(text, "tko-subs") ||
+             ci_contains(text, "cloudenum") || ci_contains(text, "cloudmapper") ||
+             ci_contains(text, "cloudsplaining") ||
+             ci_contains(text, "gophish") || ci_contains(text, "evilginx") ||
+             ci_contains(text, "modlishka") || ci_contains(text, "muraena") ||
+             ci_contains(text, "setoolkit") || ci_contains(text, "wifiphisher") ||
+             ci_contains(text, "airgeddon") || ci_contains(text, "ropgadget") ||
+             ci_contains(text, "ropper") || ci_contains(text, "rop-cli") ||
+             ci_contains(text, "one_gadget") || ci_contains(text, "pwntools") ||
+             ci_contains(text, "checksec") || ci_contains(text, "trivy") ||
+             ci_contains(text, "checkov") || ci_contains(text, "terrascan") ||
+             ci_contains(text, "kube-bench") ||
+             ci_contains(text, "kubebench") || ci_contains(text, "grype") || ci_contains(text, "syft") ||
+             ci_contains(text, "osv-scanner") || ci_contains(text, "semgrep") ||
+             (ci_contains(text, "bandit") &&
+              (ci_contains(text, " -") || ci_contains(text, " --") ||
+               ci_contains(text, ".py"))) ||
+             (ci_contains(text, "kics") &&
+              (ci_contains(text, " scan") || ci_contains(text, " -") ||
+               ci_contains(text, " --"))) ||
+             (ci_contains(text, "proot") &&
+              (ci_contains(text, " -") || ci_contains(text, " /root") ||
+               ci_contains(text, " .") || ci_contains(text, " -b")))) {
+        what = "rmm/policy/netrecon/cloud-primitive";
         }
         
         if (what) {

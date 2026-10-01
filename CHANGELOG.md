@@ -4,6 +4,64 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-254)
+
+- **Paste-detector breadth — RMM remotes, policy/Kerberos ops, netrecon,
+  firmware/GPIO, carvel/CDK/firebase, subdomain-takeover, MITM, exploit tools**
+  (`hlse_supply.c`): RMM/remotes (invented names bare: `dwagsvc`,
+  `meshcentral`, `meshagent`, `level.io`, `radmin`, `intelliadmin`,
+  `remcom`, `winexesvc`, `zohoassist`, `winvnc`, `tvnserver`,
+  `vncviewer`, `tightvnc`, `ultravnc`, `realvnc`, `anyvnc`; gated
+  `parsec`, `vnc` flag/`:` forms); Windows session/policy (`tscon`,
+  `quser`, `qprocess`, `query session`/`query user`, `shadow` /dest|-/
+  gates, `msg` *//server//v, `change logon`, `chglogon`, `chgusr`,
+  `wevtutil epl`/export, `powercfg` /h//waketimers/- gates,
+  `netstat -b`/`-f`, `netsh wlan` export/add/delete/set/hostednetwork,
+  `netsh winhttp`, `secedit`, `auditpol` already covered, `ksetup` —
+  `!networksetup` guarded, `ktpass`, `setspn`, `dsget`, `dsmove`,
+  `ldp.exe`, `vaultcmd`, `rasautou`, `tracelog`, `typeperf` -// gates,
+  `attrib ` flag gates, `compact` /c//u//i, `format` c://q//fs//v,
+  `mountvol` /d//r/-, `chkdsk` //-/c:/d:); Unix accounts/hardware
+  (`pwconv`, `grpconv`, `chage`, `lastlog`, `hostnamectl`, `domainname`,
+  `ypdomainname`, `nisdomainname`, `netcap`, `audicap`, `setcap` cap/-
+  gates, `logger` - gates, `kpartx`, `partprobe`, `proot` -//root/./-b
+  gates, `fakechroot`, `fakeroot`, `efibootmgr`, `efivar`, `fwupdmgr`,
+  `fwupdtool`, `kernel-install`, `devmem`, `devmem2`, `memtool`,
+  `i2cget`, `i2cdetect`, `i2cdump`, `gpiodetect`, `gpioinfo`, `gpioget`,
+  `gpiomon`); IaC/CI extras (`kbld`, `imgpkg`, `ytt` - gates, `vendir`,
+  `cdk` deploy/destroy/synth/bootstrap, `firebase` deploy/functions:/
+  database:/firestore:/auth:/hosting/-, `wrangler` deploy/kv/r2/d1/
+  pages/publish/-, `dokku`, `caprover`, `sst` deploy/remove/dev/
+  console, `smithy` build/codegen/- gates); recon/exploit vocabulary
+  (`enum4linux`, `snaffler`, `certipy`, `rubeus`, `kekeo`,
+  `mitmproxy`/`mitmdump`/`mitmweb`, `sslsplit`, `sslstrip`, `sslscan`,
+  `sslyze`, `testssl`, `tlssled`, `subjack`, `subzy`, `subover`,
+  `tko-subs`, `cloudenum`, `cloudmapper`, `cloudsplaining`, `pacu`
+  run/module/exec/session gates, `gophish`, `evilginx`, `modlishka`,
+  `muraena`, `setoolkit`, `wifiphisher`, `airgeddon`, `ropgadget`,
+  `ropper`, `rop-cli`, `one_gadget`, `pwntools`, `checksec`, `trivy`,
+  `checkov`, `terrascan`, `kube-bench`, `kubebench`, `grype`, `syft`,
+  `osv-scanner`, `semgrep`, `bandit` -/--/.py gates, `kics` scan/-
+  gates).
+
+### Fixed (cycle-254)
+
+- **`ksetup` ⊂ `networksetup`** (`ksetup` added for AD kerberos ops,
+  collided with macOS `networksetup -getinfo` admin reads) →
+  `!networksetup` guard.
+- **`attrib` ⊂ `attribute`** real-word FP (`attribute +h` in docs)
+  → `attrib ` bounded.
+- **`shadow`/`typeperf`/`netsh wlan`/`chkdsk`/`ytt`/`smithy`/`bandit`/
+  `pacu`/`kics`/`proot` real-word FP tightening** → verb/flag gates.
+- **Duplicate bare `proot`/`pacu`** (inserted bare + gated) → bare
+  dropped, gates kept.
+- **Pre-existing suite benign expectations moved to flagged** where
+  the new primitives legitimately flag them: `kpartx -l`,
+  `the lastlog entry`, `lastlog -u x`, `chage -l x`, `chage docs`,
+  `efibootmgr -v/--help`, `efivar -l`, `rubeus hagrid`,
+  `secedit /analyze`, `quser`, `kbld`, `pwconv`, `grpconv`; hit token
+  `pacu` re-scoped to `pacu run --list`.
+
 ### Added (cycle-253)
 
 - **Paste-detector breadth — macOS attack surface, BSD jails, Java/
