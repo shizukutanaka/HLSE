@@ -575,15 +575,40 @@ hlse_check_paste(const char *text) {
     }
 
     /* P11: Persistence writes — appending to rc/config/ssh/crontab
-     * installs the payload to run on every login */
-    if ((strstr(text, ">>") || strstr(text, "echo ") ||
-         strstr(text, "crontab") || strstr(text, "at now") ||
-         strstr(text, "systemctl enable") || strstr(text, "launchctl load")) &&
-        (strstr(text, ".bashrc") || strstr(text, ".zshrc") ||
-         strstr(text, ".profile") || strstr(text, "authorized_keys") ||
-         strstr(text, "crontab") || strstr(text, "systemctl enable") ||
-         strstr(text, "launchctl") || strstr(text, "rc.local") ||
-         strstr(text, ".xinitrc") || strstr(text, ".zshenv"))) {
+     * installs the payload to run on every login. Copy/move/install
+     * verbs only fire on system-level targets (routine home-dir
+     * backups must stay clean).                                 */
+    if (((strstr(text, ">>") || strstr(text, "echo ") ||
+          strstr(text, "crontab") || strstr(text, "at now") ||
+          strstr(text, "systemctl enable") || strstr(text, "launchctl load") ||
+          strstr(text, "tee /") || strstr(text, "tee .") ||
+          strstr(text, "tee ~") || strstr(text, "tee -") ||
+          strstr(text, "curl ") ||
+          strstr(text, "wget ")) &&
+         (strstr(text, ".bashrc") || strstr(text, ".zshrc") ||
+          strstr(text, ".profile") || strstr(text, "authorized_keys") ||
+          strstr(text, "crontab") || strstr(text, "systemctl enable") ||
+          strstr(text, "launchctl") || strstr(text, "rc.local") ||
+          strstr(text, ".xinitrc") || strstr(text, ".zshenv") ||
+          strstr(text, ".bash_profile") || strstr(text, ".bash_login") ||
+          strstr(text, ".zprofile") || strstr(text, ".zlogin") ||
+          strstr(text, ".xprofile") || strstr(text, ".pam_environment") ||
+          strstr(text, "ld.so.preload") || strstr(text, "cron.d") ||
+          strstr(text, "spool/cron") || strstr(text, "autostart") ||
+          strstr(text, "systemd/system") || strstr(text, "inetd") ||
+          strstr(text, "xinetd") || strstr(text, "/etc/profile") ||
+          strstr(text, "profile.d") || strstr(text, "init.d") ||
+          strstr(text, ".forward") || strstr(text, ".ssh/config") ||
+          strstr(text, "/etc/zshrc") || strstr(text, "/etc/zprofile") ||
+          strstr(text, "/etc/zshenv"))) ||
+        ((strstr(text, "cp ") || strstr(text, "mv ") ||
+          strstr(text, "install ")) &&
+         (strstr(text, "cron.d") || strstr(text, "spool/cron") ||
+          strstr(text, "systemd/system") || strstr(text, "inetd") ||
+          strstr(text, "xinetd") || strstr(text, "init.d") ||
+          strstr(text, "/etc/profile") || strstr(text, "profile.d") ||
+          strstr(text, "ld.so") || strstr(text, "rc.local") ||
+          strstr(text, "autostart") || strstr(text, "authorized_keys")))) {
         v.signals |= PASTE_PERSIST_WRITE;
         v.score += 45;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -615,12 +640,13 @@ hlse_check_paste(const char *text) {
     if ((strstr(text, "curl ") || strstr(text, "wget ") ||
          strstr(text, "fetch ") || strstr(text, "lynx ") ||
          strstr(text, "scp ") || strstr(text, "sftp ") ||
-         strstr(text, "tftp ")) &&
+         strstr(text, "rsync ") || strstr(text, "tftp ")) &&
         (strstr(text, "&& bash") || strstr(text, "&& sh") ||
          strstr(text, "&& chmod") || strstr(text, "&& sudo") ||
-         strstr(text, "&& ./") ||
+         strstr(text, "&& ./") || strstr(text, "&& /") ||
          strstr(text, "; bash") || strstr(text, "; sh") ||
-         strstr(text, "; chmod") || strstr(text, "; sudo"))) {
+         strstr(text, "; chmod") || strstr(text, "; sudo") ||
+         strstr(text, "; /"))) {
         v.signals |= PASTE_EVAL_FETCH;
         v.score += 45;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -665,6 +691,57 @@ hlse_check_paste(const char *text) {
             snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
                 "P13: Ad-hoc HTTP server — staged payload hosting / "
                 "loot-exfil listener");
+    }
+
+    /* P14: Webshell write — a script tag or web extension plus a request
+     * superglobal plus an exec verb is unambiguous webshell vocabulary;
+     * nobody pastes that benignly.                                   */
+    if (((strstr(text, "<?php") || strstr(text, "<?=") ||
+          strstr(text, "<%") || strstr(text, ".php") ||
+          strstr(text, ".asp") || strstr(text, ".jsp") ||
+          strstr(text, ".cgi") || strstr(text, ".war")) &&
+         (strstr(text, "$_GET") || strstr(text, "$_POST") ||
+          strstr(text, "$_REQUEST") || strstr(text, "$_COOKIE") ||
+          strstr(text, "$_FILES") || strstr(text, "getParameter")) &&
+         (strstr(text, "system(") || strstr(text, "eval(") ||
+          strstr(text, "exec(") || strstr(text, "shell_exec(") ||
+          strstr(text, "passthru(") || strstr(text, "assert(") ||
+          strstr(text, "popen(") || strstr(text, "proc_open(") ||
+          strstr(text, "getRuntime"))) ||
+        ((strstr(text, "<%") || strstr(text, ".asp") ||
+          strstr(text, ".aspx")) &&
+         (strstr(text, "eval") || strstr(text, "exec")) &&
+         strstr(text, "request")) ||
+        (strstr(text, "getRuntime().exec") && strstr(text, ".jsp")) ||
+        ci_contains(text, "<%eval") || ci_contains(text, "<% eval") ||
+        ci_contains(text, "<%execute") || ci_contains(text, "<% execute") ||
+        ci_contains(text, "<%createobject") || ci_contains(text, "<% createobject") ||
+        ci_contains(text, "<%wscript") || ci_contains(text, "<% wscript")) {
+        v.signals |= PASTE_EVAL_FETCH;
+        v.score += 50;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P14: Webshell write — script tag/web ext + request "
+                "input + exec verb (dropped web shell)");
+    }
+
+    /* P15: decode-then-pipe — `base64 -d | sh` / `openssl enc -d | sh`;
+     * the decoder replaces the download side of the cradle (P2 needs a
+     * fetch verb and P12 needs eval/source).                        */
+    if ((strstr(text, "base64 -d") || strstr(text, "base64 -D") ||
+         strstr(text, "base64 --decode") || strstr(text, "enc -d") ||
+         strstr(text, "openssl enc")) &&
+        (strstr(text, "| sh") || strstr(text, "|sh") ||
+         strstr(text, "| bash") || strstr(text, "|bash") ||
+         strstr(text, "| python") || strstr(text, "|python") ||
+         strstr(text, "| perl") || strstr(text, "| node") ||
+         strstr(text, "| pwsh") || strstr(text, "| powershell"))) {
+        v.signals |= PASTE_EVAL_FETCH;
+        v.score += 45;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P15: Decode-then-pipe — base64/openssl decode piped "
+                "to an interpreter");
     }
 
     /* P8: Windows "ClickFix" / LOLBin remote execution. ClickFix lures (fake
@@ -1851,12 +1928,30 @@ hlse_check_paste(const char *text) {
         /* bash /dev/tcp redirect: bash -i >& /dev/tcp/IP/PORT 0>&1 */
         if (strstr(text, "/dev/tcp/") || strstr(text, "/dev/udp/"))
             is_revshell = 1;
-        /* nc / ncat / netcat reverse shell: nc -e or mkfifo pipe */
+        /* nc / ncat / netcat reverse shell: nc -e / -c or mkfifo pipe */
         if (!is_revshell &&
             (strstr(text, "nc ") || strstr(text, "ncat ") ||
              strstr(text, "netcat ")) &&
-            (strstr(text, " -e ") || strstr(text, "--exec") ||
+            (strstr(text, " -e ") || strstr(text, " -c ") ||
+             strstr(text, "--exec") ||
              strstr(text, "--sh-exec") || strstr(text, "mkfifo")))
+            is_revshell = 1;
+        /* telnet | sh — the double-telnet data-exfil shell */
+        if (!is_revshell && ci_contains(text, "telnet") &&
+            (strstr(text, "|sh") || strstr(text, "| sh") ||
+             strstr(text, "/bin/sh") || strstr(text, "sh -i")))
+            is_revshell = 1;
+        /* ruby TCPSocket / perl -M module-load socket shells */
+        if (!is_revshell && strstr(text, "TCPSocket") &&
+            (strstr(text, "popen") || strstr(text, "exec") ||
+             strstr(text, "system(") || strstr(text, "dup2")))
+            is_revshell = 1;
+        if (!is_revshell && strstr(text, "perl -M") &&
+            strstr(text, "IO::Socket"))
+            is_revshell = 1;
+        /* powershell socket object: New-Object *Sockets* */
+        if (!is_revshell && strstr(text, "New-Object") &&
+            strstr(text, "Sockets"))
             is_revshell = 1;
         /* Python socket reverse shell */
         if (!is_revshell &&

@@ -77,6 +77,32 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Webshell writes + revshell residuals + persistence-write
+  expansion** (`hlse_supply.c`): P14 — script tag/web extension
+  (<?php|<%=|<%|.php|.asp|.jsp|.cgi|.war) + request superglobal
+  ($_GET|$_POST|$_REQUEST|$_COOKIE|$_FILES|getParameter) + exec
+  verb (system(|eval(|exec(|shell_exec(|passthru(|assert(|popen(|
+  proc_open(|getRuntime) fires +50 as a dropped-web-shell write;
+  <%eval|<%execute|<%CreateObject|<%WScript contiguous forms and
+  getRuntime().exec + .jsp also fire. P9 revshell adds ` -c ` to
+  the nc/ncat/netcat flag set (OpenBSD/busybox exec variant),
+  telnet + sh-pipe (the double-telnet exfil shell), ruby
+  TCPSocket + popen|exec|system(|dup2, perl -M + IO::Socket, and
+  PowerShell New-Object + Sockets socket objects (+60 all).
+  P15 — decode-then-pipe: base64 -d|-D|--decode or openssl enc
+  piped to an interpreter (+45). P11 persistence writes now cover
+  the whole autostart space: targets add .bash_profile/.bash_login/
+  .zprofile/.zlogin/.xprofile/.pam_environment/ld.so.preload/
+  cron.d/spool/cron/autostart/systemd/system/inetd/xinetd/
+  /etc/profile/profile.d/init.d/.forward/.ssh/config//etc/zshrc/
+  /etc/zprofile//etc/zshenv; write verbs add tee (path-gated),
+  curl and wget (download-to-persistence-path); cp/mv/install
+  fire only on system-level targets (cron.d, spool/cron,
+  systemd/system, inetd, xinetd, init.d, /etc/profile, profile.d,
+  ld.so, rc.local, autostart, authorized_keys) so home-dir
+  backups stay clean. P12b chain side adds `; /`/`&& /`
+  exec-by-absolute-path and rsync to the fetch set.
+
 - **Package-manager remote installs + config mgmt + scheme/ext
   residuals**: paste adds the remote-install surface — installing
   from a non-registry source (URL/git+/local bundle) is exec of

