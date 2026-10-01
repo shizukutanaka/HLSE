@@ -77,6 +77,30 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **macOS post-compromise primitives** (`hlse_supply.c`): paste
+  adds the Darwin-side attack set that was completely open —
+  launchctl persistence (bootstrap|submit|kickstart|load|
+  enable), Gatekeeper off (spctl --master-disable|--add|
+  --disable), quarantine strip (xattr +quarantine|-rc|-c),
+  keychain credential access (security find-generic|find-
+  internet-password|export|unlock|dump-keychain), directory-
+  service account writes (dscl -create|-append, pwpolicy
+  -setpassword, dseditgroup -o edit|-a), package install
+  (installer -pkg, pkgutil --expand|--forget|--install),
+  persistence plist writes (defaults write +loginitems|
+  autolaunched|launchagents|launchdaemons), SIP off (csrutil
+  disable|--without), traffic redirect (networksetup
+  -set*proxy|-setdnsservers), pf enable/ruleset load (pfctl
+  -e|-f), remote access enable (systemsetup remotelogin|
+  remoteappleevents|wakeonnetworkaccess +on), TCC reset
+  (tccutil reset), signature strip/adhoc sign (codesign
+  --remove-signature|--sign -|-s -), kext load (kextload,
+  kmutil load), mobileconfig install (profiles install),
+  log erase, qlmanage -p (Quick Look plugin exec), tmutil
+  delete, plutil -replace|-insert, nvram boot-args,
+  sysdiagnose -f, xcrun swift|swiftc, osascript JavaScript
+  (JXA payloads) — all +45 arg-gated.
+
 - **Unix post-compromise primitives** (`hlse_supply.c`): paste
   adds the Linux/macOS-side attack set that was completely open —
   uid-0 account grant (`useradd`/`adduser`/`usermod` + `-u 0`|
