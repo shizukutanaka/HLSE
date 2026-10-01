@@ -4,6 +4,115 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-249)
+
+- **Paste-detector breadth — interpreter inline-exec, shell escapes,
+  RMM remote-access fleet, miners/wallets, storage teardown, exec
+  primitives** (`hlse_supply.c`): interpreter/REPL inline execution
+  (`nodejs -e`, `irb -e`, `php -a`, `groovysh`, `nashorn`, `scala`/
+  `clj`/`iex`/`erl` flag gates, `pwsh -e`, `perl -pi/-pe`, `vim`/
+  `nvim` `+!`/`+:`, `less`/`more`/`man` ` !` escapes, `zip -tt`,
+  `bash -c`, ` sh ` + ` -c`, `enable -f` + `.so`/slash loader),
+  terminal-emulator spawns (`xterm`/`urxvt`/`rxvt`/`alacritty`/
+  `kitty`/` st `/`konsole`/`gnome-terminal`/`xfce4-terminal`/
+  `lxterminal`/`mate-terminal`/`tilix`/`terminator`/`sakura`/`termite`/
+  `foot`/`wezterm` exec flags, `xinit`, `tmux` new/send-keys/
+  run-shell/respawn/source/bind/set-hook, `screen` detached/exec),
+  exec-wrapper × payload-target gates (`flock`/`nice`/`timeout`/
+  `stdbuf`/`ionice`/`taskset`/`chrt`/`schedtool`/`env`/`chroot`/
+  `unshare`/`setpriv`/`ssh-agent` crossed with shell/interpreter/
+  `/bin` targets), `capsh --`/`--decode`, ` su ` + flag, `gdb -ex`,
+  `lldb` flags, `strace` output/expression forms, package-manager
+  exec hooks (`npm`/`gem`/`bundle exec`, `cpan -e`, `go tool`/
+  `generate`, `dotnet run`/`exec`/`fsi`, `cargo-script`), IRC/C2
+  (`ircd`, `ngircd`, `irssi`/`weechat`/`hexchat` flag gates, `ftp`
+  flag forms, `lftp`, `ncftp`), RMM remote-access fleet
+  (`connectwise`, `gotomypc`, `dameware`, `dwrcs`, `bomgar`,
+  `beyondtrust`, `ninjaone`, `kaseya`, `n-able`, `meshcommander`,
+  `uvnc`, `krdc`, `ssvnc`, `vinagre`, plus gated `parsec`/`moonlight`/
+  `sunshine`/`supremo`/`tactical`, `zoho assist`, `fixme.it`,
+  `showmypc`), crypto miners and wallet CLIs (`claymore`/`t-rex`/
+  `trex`/`geth`/`parity`/`electrum` verb gates, `monerod`,
+  `monero-wallet-cli`, `bitcoin-cli`/`bitcoin-qt`/`bitcoind`,
+  `litecoin-cli`, `dogecoind`, `dash-cli`, `zcash-cli`, `p2pool`,
+  `kinsing`, `kdevtmpfsi`), backup destroy/exfil (`duplicity` remove,
+  `rsnapshot`, `bacula`, `bareos`, `amanda`, `bup`, `kopia`,
+  `tarsnap`, `timeshift --delete`), SQL/LDAP/IPA clients (`osql`,
+  `isql`, `tsql`, `sqsh`, `dsql` flag gates, `slapcat`/`slapadd`/
+  `slapindex`, `ipa` verb gate, `ipa-client-install`, `realmd`),
+  AD/Windows infrastructure recon (`ntdsutil`, `repadmin`, `dnscmd`,
+  `dfsutil`, `dfsradmin`, `mountvol`, `wmic ntdomain`), storage/NVMe
+  teardown (`nvme` reset/ns-delete/subsystem-reset/disconnect/
+  attach-ns, `sgdisk -Z`/`--clear`/`-o`, `parted` rm/mkpart/set,
+  `hdparm` sleep/dco/read-sector, `sdparm` command/clear/set/reset,
+  `sg_start` stop/eject, `sg_prevent -a`/`--allow`, `camcontrol`
+  stop/format/sanitize, `zpool` export/offline/detach/clear-class
+  verbs, `zfs` send/rollback/promote/rename/redact/jail/key ops,
+  `cryptsetup` luksClose/lukssuspend/token/luksKill/reencrypt/convert/
+  config/remove, `vgchange`/`lvchange` deactivate/permission flags,
+  `blkdiscard`, `blkzone reset`, `zramctl --reset`, `kpartx` delete
+  forms, `dmraid` flags, `multipath` flush/delete, `multipathd -k`,
+  `iscsiadm` delete, `modprobe`/`rmmod`/`depmod`, ` sv ` verb gate),
+  SNMP/NSM/SCADA (`snmptable`, `snmpnetstat`, `snmpusm`, `snmpvacm`,
+  `snmptranslate`, `snmpinform`, `snmpd`, `snmptrapd`, `zeekctl`,
+  `broctl`, `argus`, `ntopng`, `ntop -`, `ostinato`, `etterfilter`,
+  `sshow`, `opcua`, `bacnet`, `mbusd`, `profinet`, `s7comm`,
+  `modbus`), PowerShell remoting/WMI persistence (`enter-pssession`,
+  `new-pssession`, `invoke-command`, `invoke-expression`, gated
+  `iex` ` (`/` new-` forms, `invoke-wmicommand`, `invoke-cimmethod`,
+  `commandlineeventconsumer`, `__eventfilter`,
+  `activescripteventconsumer`, `paexec`, `set-mpcomputerstatus`,
+  `remove-mppreference`, `mpcmdrun` flags), headless browsers and
+  webshot (`chromium`/`chrome`/`msedge`/`firefox --headless`,
+  `wkhtmltoimage`, `wkhtmltopdf`, `cutycapt`, `phantomjs`, `casperjs`,
+  `slimerjs`, `trurl`, gated `playwright`/`puppeteer`), curl/wget
+  extras (`curl --resolve`/`--connect-to`/`--cert`/`--key`/`--config`/
+  `--crlfile`/`--pinnedpubkey`, `wget --method`/`--body-*`/`--header`/
+  `--user`/`--password`/`--ftp-*`/`--http-*`, `chronyc` write verbs,
+  `rdate -`), and credential/history/log recon (`find -name` ×
+  cred patterns, `grep -r` × private/password/secret/begin/credential/
+  passwd, `getent netgroup`, `compgen` user/group/all gates,
+  `history -a`/`-r`/`-p`/`-s`, `fc -l`, ` net ` verb gate,
+  `mongoexport`/`mongodump`/`mongorestore`, `mount -t cifs`/`nfs`/
+  `smbfs`/`davfs`/`sshfs`, `mount_smbfs`, `mount_nfs`) — all at
+  ALERT 45.
+- **P10 credential-file list extended**: `.pgpass`, `.my.cnf`,
+  `.pypirc`, `.s3cfg`, `.boto`, `.env`, `master.passwd`,
+  `/etc/security`, `/etc/group`, `/etc/sudoers`, `sudoers.d`,
+  `/etc/login.defs`, `config/gcloud`, `.azure`, shell/history files
+  (`_history`, `.viminfo`, `.lesshst`, `.wget-hsts`), and log files
+  (`auth.log`, `/var/log/secure`/`btmp`/`wtmp`/`lastlog`/`faillog`)
+  — ALERT 40.
+
+### Fixed
+
+- `n-able` word-internal collision closed: the `nable` needle matched
+  `enable`/`sustainable` — now `n-able` hyphenated form.
+- `sv` word-internal collision closed: `sv ` matched `csv ` — now
+  ` sv ` boundary form.
+- `ipa` gate ` -` catch-all removed (matched `multipath` via
+  word-internal `ipa`) — verb-list only.
+- `oc` gate boundary fix: `oc` matched inside `docs` — now `oc `.
+- `iex` gate ` -`/`-s` forms removed (Elixir `iex -S mix` benign) —
+  ` (`/` new-` only.
+- `capsh` gate ` --` self-satisfied on `--print` benign — now
+  ` -- ` exec form plus `--decode`.
+- `tmux` gate ` new` hit `new-session` benign — now ` new `.
+- `go tool` gate tightened to ` tool ` (`go tools` docs benign).
+- `geth`/`electrum` ` -` catch-alls self-satisfied on `--version` —
+  verb-list gates only.
+- P10 log needles scoped to `/var/log/` paths (`wtmp`/`btmp`/
+  `lastlog`/`faillog` prose benigns closed).
+- Design-scope updates: `modprobe`/`depmod`/`ntdsutil`/`dnscmd`/
+  `invoke-*`/`new-pssession`/`lldb`/`strace`/`gdb`/`ssh-agent`/
+  `unshare` exec forms, `history -a`, `cat` on `.bash_history`/
+  `/etc/sudoers`/`.env`-family files, `vinagre`/`krdc`/`ssvnc`/
+  `ostinato`/`blkdiscard`/`kopia`/`n-able` docs mentions, and
+  `net`-family recon moved from benign tests to hit tests — kernel
+  module ops, AD recon, PS remoting, debug/exec primitives, cred
+  file reads, and inventory probes are paste-context primitives by
+  design.
+
 ### Added (cycle-248)
 
 - **Paste-detector breadth — legacy remote access, mail/sync daemons,

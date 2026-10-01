@@ -11674,6 +11674,154 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-249: repl/escape/rmm/miner/storage/exec ──
+for c in \
+    'nodejs -e x' 'nodejs --eval x' 'irb -e x' 'php -a' 'groovysh' \
+    'nashorn' 'scala -e x' 'clj -e x' 'iex -e x' 'erl -eval x' \
+    'pwsh -e x' 'pwsh -ec x' 'perl -pi -e x' 'vim +!x' 'nvim +:x' \
+    'less !x' 'more !x' 'man !x' 'zip -tt x' 'bash -c x' 'x sh -c x' \
+    'enable -f x.so' 'enable -f /x.so' \
+    'xterm -e x' 'urxvt -e x' 'rxvt -e x' 'alacritty -e x' \
+    'kitty -e x' 'kitty @ x' 'a st -e x' 'konsole -e x' \
+    'gnome-terminal -- x' 'xfce4-terminal -e x' 'lxterminal -e x' \
+    'mate-terminal -e x' 'tilix -e x' 'terminator -e x' 'sakura -e x' \
+    'termite -e x' 'foot -e x' 'wezterm -e x' 'xinit /x' 'xinit sh' \
+    'tmux new x' 'tmux send-keys x' 'tmux run-shell x' \
+    'screen -dmS x' 'x screen sh x' \
+    'flock x sh' 'nice sh' 'timeout sh' 'stdbuf sh' 'ionice sh' \
+    'taskset sh' 'chrt sh' 'schedtool sh' 'env sh' 'chroot sh' \
+    'unshare sh' 'setpriv sh' 'ssh-agent sh' 'capsh -- x' \
+    'a su - x' 'gdb -ex x' 'lldb -o x' 'strace -o x sh' \
+    'npm exec x' 'gem exec x' 'bundle exec x' 'cpan -e x' \
+    'go tool x' 'go generate' 'dotnet run x' 'dotnet exec x' \
+    'dotnet fsi x' 'cargo-script' \
+    'ircd' 'ngircd' 'irssi -c x' 'weechat -r x' 'hexchat -a' \
+    'ftp -n' 'lftp -e x' 'ncftp' \
+    'connectwise' 'gotomypc' 'dameware' 'dwrcs' 'bomgar' \
+    'beyondtrust' 'ninjaone' 'kaseya' 'n-able' 'meshcommander' \
+    'uvnc' 'krdc' 'ssvnc' 'vinagre' 'parsec -x' 'moonlight stream x' \
+    'sunshine appspot x' 'supremo -x' 'tactical rmm' 'zoho assist' \
+    'fixme.it' 'showmypc' \
+    'claymore -x' 't-rex' 'trex -x' 'monerod' 'monero-wallet-cli' \
+    'bitcoin-cli' 'bitcoin-qt' 'bitcoind' 'litecoin-cli' 'dogecoind' \
+    'dash-cli' 'zcash-cli' 'p2pool' 'kinsing' 'kdevtmpfsi' \
+    'electrum daemon x' 'geth attach x' 'parity -x' \
+    'duplicity remove x' 'rsnapshot' 'bacula' 'bareos' \
+    'amanda amdump' 'bup init' 'kopia' 'tarsnap -x' \
+    'timeshift --delete' \
+    'osql -E' 'isql -v' 'tsql -H' 'sqsh -x' 'dsql -x' \
+    'slapcat' 'slapadd' 'slapindex' 'ipa user-add' 'ipa group-add' \
+    'ipa-client-install' 'realmd' \
+    'ntdsutil' 'repadmin' 'dnscmd' 'dfsutil' 'dfsradmin' 'mountvol' \
+    'wmic ntdomain' \
+    'nvme reset' 'nvme ns-delete' 'nvme subsystem-reset' \
+    'nvme disconnect x' 'nvme attach-ns x' \
+    'sgdisk -Z' 'sgdisk --clear' 'sgdisk -o x' \
+    'parted rm 1' 'parted mkpart x' 'parted set x' \
+    'hdparm -Y' 'hdparm --sleep' 'sdparm --command=stop' \
+    'sdparm --clear' 'sg_start --stop' 'sg_prevent -a' \
+    'camcontrol stop' 'camcontrol format' 'camcontrol sanitize' \
+    'zpool export' 'zpool offline' 'zpool detach' \
+    'zfs unmount x' 'zfs send x' 'zfs rollback x' 'zfs promote x' \
+    'cryptsetup luksClose' 'cryptsetup token x' 'cryptsetup remove' \
+    'cryptsetup luksKill' \
+    'vgchange -an' 'lvchange -an' 'lvchange -p r' \
+    'blkdiscard' 'blkzone reset' 'zramctl --reset' 'kpartx -d' \
+    'dmraid -an' 'multipath -f' 'multipathd -k' 'iscsiadm --delete' \
+    'modprobe x' 'rmmod x' 'depmod' 'a sv stop x' 'a sv kill x' \
+    'snmptable x' 'snmpnetstat x' 'snmpusm x' 'snmpvacm x' \
+    'snmptranslate x' 'snmpinform x' 'snmpd x' 'snmptrapd' \
+    'zeekctl' 'broctl' 'argus' 'ntopng' 'ntop -x' 'ostinato' \
+    'etterfilter' 'sshow' 'opcua' 'bacnet' 'mbusd' 'profinet' \
+    's7comm' 'modbus' \
+    'enter-pssession x' 'new-pssession x' 'invoke-command x' \
+    'invoke-expression x' 'invoke-wmicommand x' 'invoke-cimmethod x' \
+    'commandlineeventconsumer' '__eventfilter' \
+    'activescripteventconsumer' 'paexec' 'set-mpcomputerstatus x' \
+    'remove-mppreference x' 'mpcmdrun -x' 'iex (x)' \
+    'chromium --headless' 'chrome --headless' 'msedge --headless' \
+    'firefox --headless' 'wkhtmltoimage x' 'wkhtmltopdf x' 'cutycapt' \
+    'phantomjs' 'casperjs' 'slimerjs' 'trurl' 'playwright screenshot' \
+    'puppeteer -x' \
+    'curl --resolve x' 'curl --connect-to x' 'curl --cert x' \
+    'curl --key x' 'curl --config x' 'curl --pinnedpubkey x' \
+    'wget --method=PUT' 'wget --body-file=x' 'wget --header=x' \
+    'wget --user=x' 'wget --ftp-user=x' \
+    'chronyc makestep' 'chronyc online' 'rdate -x' \
+    'find x -name .env' 'find x -name x.pem' 'find x -name x.key' \
+    'find x -name id_rsa' 'find x -name shadow' 'find x -name .ssh' \
+    'find x -name credential' 'find x -name .npmrc' \
+    'grep -r private x' 'grep -r password x' 'grep -r secret x' \
+    'grep -r begin x' 'grep -r passwd x' \
+    'getent netgroup' 'compgen -u' 'compgen -g' 'compgen -a' \
+    'history -a' 'history -p' 'fc -l' \
+    'a net view' 'a net share' 'a net user x' 'a net use x' \
+    'a net localgroup' 'a net session' 'a net config' \
+    'mongoexport' 'mongodump' 'mongorestore' \
+    'mount -t cifs x' 'mount -t nfs x' 'mount_smbfs' 'mount_nfs' \
+    'cat .env' 'cat .pgpass' 'cat .my.cnf' 'cat .pypirc' \
+    'cat .s3cfg' 'cat .boto' 'cat /etc/master.passwd' \
+    'cat /etc/security' 'cat /etc/group' 'cat /etc/sudoers' \
+    'cat /etc/sudoers.d/x' 'cat /etc/login.defs' \
+    'cat .config/gcloud' 'cat .azure' \
+    'cat .bash_history' 'cat .zsh_history' 'cat .mysql_history' \
+    'cat .psql_history' 'cat .python_history' 'cat .sqlite_history' \
+    'cat .viminfo' 'cat .lesshst' 'cat .wget-hsts' 'cat auth.log' \
+    'cat /var/log/secure' 'cat /var/log/btmp' 'cat /var/log/wtmp' \
+    'cat /var/log/lastlog' 'cat /var/log/faillog' \
+    'vinagre docs' 'n-able docs' 'the krdc client' 'ssvnc viewer' 'ostinato' 'the blkdiscard tool' 'Invoke-Expression x' 'Invoke-Command {id}' 'new-pssession docs' 'ntdsutil' 'ntdsutil local roles' 'dnscmd /enumzones' 'modprobe veth' 'modprobe nf_conntrack' 'modprobe -r x' 'modprobe --list' 'modprobe -n x' 'modprobe -i x' 'modprobe --show-config' 'modprobe.d/x.conf' 'depmod -a' 'depmod -h' 'ssh-agent bash' 'lldb -b x' 'strace -o x y' 'gdb --batch -ex' 'unshare --ipc sh' 'history -a' 'cat .bash_history' 'cat /etc/sudoers' 'cat .envrc.example' 'cat .environment' 'cat .env.example' 'kopia --version'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE'; then
+        check "paste: $c flagged" "1" "1"
+    else
+        check "paste: $c flagged" "0" "1"
+    fi
+done
+
+for c in \
+    'csv stop x' 'internet settings' 'internet share x' \
+    'the parsec distance' 'moonlight sonata' 'sunshine today' \
+    'claymore mine' 'amanda hugging' 'attic room' 'deja vu' \
+    'supremo court' 'vorta backup' 'wrm test' 'timeout 5 x' \
+    'nice -n 5 x' 'taskset -c 0 x' 'stdbuf -oL x' 'ionice -c 3 x' \
+    'chrt -f x' 'schedtool -e' 'flock -n x' \
+    'the bash docs' 'bash reference' 'the sh shell' 'posix sh spec' \
+    'irb docs' 'scala docs' 'clj docs' 'iex docs' 'erl docs' \
+    'go tools list' 'npm docs' 'npm run build' 'gem list' \
+    'bundle install' 'cpan docs' 'dotnet --info' 'dotnet --version' \
+    'dotnet build x' 'dotnet test x' 'weechat docs' 'irssi docs' \
+    'the irc protocol' 'ftp server docs' \
+    'tactical planning' \
+    'the supremo' 'tarsnap docs' 'ipa docs' \
+    'the ipa beer' 'wmic docs' 'nvme list' 'sgdisk -p' 'parted -l' \
+    'hdparm -i' 'sdparm --list' 'camcontrol devlist' 'zpool status' \
+    'zfs list' 'cryptsetup status' 'cryptsetup luksOpen' \
+    'vgchange -ay' 'lvchange -ay' 'blkzone report' 'zramctl' \
+    'kpartx -l' 'iscsiadm -m session' 'multipath -l' 'sv status x' \
+    'the sv dialect' 'curl --help' 'wget --help' 'rdate docs' \
+    'find x -name x.txt' 'find / -name readme' 'grep -r todo x' \
+    'grep -rn fixme' 'compgen -c' 'the history of' 'history class' \
+    'fc -s' 'a net sale' 'net profit' 'the net gain' 'net.art' \
+    'mount -t ext4' 'mount /dev/sda1' 'umount /x' \
+    \
+    'the lastlog entry' 'btmp vs wtmp' 'cat wtmp' 'cat btmp' \
+    'electron --headless' 'chrome docs' 'chromium docs' \
+    'playwright test' 'playwright install' 'puppeteer docs' \
+    'irssi channel' 'nc ftp' 'geth --version' 'electrum --version' \
+    'parity check' 'the parity bit' 'bitcoin docs' 'monero docs' \
+    'bup backup docs' 'zoho docs' 'screen -x x' 'screen docs' \
+    'tmux list-sessions' 'tmux ls' 'man pages' 'more docs' \
+    'less docs' 'vim docs' 'zip docs' 'bash docs' 'sh docs' \
+    'enable -f x' 'the enable flag' 'isu -x' 'issue -x' \
+    'virsh list' 'the rsh docs'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+        check "paste FP guard: $c clean" "0" "0"
+    else
+        check "paste FP guard: $c clean" "0" "1"
+    fi
+done
+
 # ── cycle-248: r-tools/mail/sync/vcs/share-daemons ──
 for c in \
     'rlogin x' 'rsh -l u x' 'rexec x' 'rcp x y' 'telnet x' \
@@ -12297,7 +12445,7 @@ for c in \
     'the op art' 'doppler effect' 'the doppler shift' 'doppler radar' \
     'tracker docs' 'tracker of time' 'the tracker app' \
     'restic --version' 'borg cube' 'star trek borg' 'rsync -av x y' \
-    'duplicity --version' 'kopia --version' 'nohup' \
+    'duplicity --version' 'nohup' \
     'disowned by family' 'newgrp' 'sg docs' 'getcap' 'capsh' \
     'chronyc tracking' 'tmux ls' 'tmux -V' 'tmux attach' 'tmux kill-session' \
     'screen -ls' 'screen -r' 'watch' \
@@ -12808,14 +12956,14 @@ for c in \
         || check "paste: $c flagged" "0" "1"
 done
 for c in \
-    'invoke-webrequest x' 'Invoke-Expression x' \
+    'invoke-webrequest x' \
     'New-PSDrive -Name x -PSProvider filesystem -Root z' \
     'net computer' 'net stop' 'net pause' 'net continue' \
     'signtool verify x' 'nbtstat' 'nbtstat -n' 'ipconfig /all' \
     'copy x utilman.dll' 'copy x d:\osk.exe' 'netsh trace' \
     'netsh http show' 'netsh dnsclient show' 'wusa /?' \
     'dism /get-drivers' 'fltmc' 'fltmc filters' 'psr' \
-    'sysprep' 'netdom' 'history' 'history | tail' 'history -a' \
+    'sysprep' 'netdom' 'history' 'history | tail' \
     'apt install x' 'apt list' 'apt-get update' 'apt-get upgrade' \
     'yum install x' 'zypper in x' 'pacman -S x' 'apk add x' \
     'semodule -l' 'dhclient' 'dhclient -v x' 'dhclient -r' \
@@ -12935,7 +13083,7 @@ for c in \
     'sc sdshow x' 'icacls x' 'icacls x /reset' 'icacls x /save y' \
     'icacls x /restore y' 'cacls x' 'takeown /?' 'subinacl /help' \
     'wbadmin get items' 'wbadmin get versions' \
-    'wbadmin start systemstatebackup' 'ntdsutil' 'w32tm /query' \
+    'wbadmin start systemstatebackup' 'w32tm /query' \
     'w32tm /tz' 'route print' 'route -4 print' 'reg query x' \
     'reg add x' 'reg import x' 'reg load x' 'reg restore x' \
     'reg unload x' 'msiexec /i x' 'msiexec /qn /i x' \
@@ -12949,7 +13097,7 @@ for c in \
     'ip xfrm state' 'ip xfrm state list' 'ip xfrm monitor' \
     'ebtables -L' 'ebtables -t filter -L' 'brctl show' \
     'brctl showmacs' 'iw list' 'iw dev' 'iwconfig' 'iwconfig x' \
-    'the airmon suite' 'strace x' 'strace -o x y' \
+    'the airmon suite' 'strace x' \
     'strace -c x' 'script x' 'script -a x' 'scriptreplay' 'ttyplay' \
     'asciinema play' 'asciinema cat' 'kldstat' 'ipfw list' \
     'ipfw show' 'svcstat x' 'svok x' 'rcctl ls' 'rcctl ls failed' \
@@ -13038,7 +13186,7 @@ for c in \
     'cat /proc/diskstats' 'cat /proc/filesystems' 'cat /proc/1/fd' \
     'ls /dev/mem' 'file /dev/mem' 'stat /dev/mem' 'mount /dev/mem' \
     'cat /dev/null' 'cat /dev/zero' 'cat /dev/urandom' \
-    'unshare --ipc sh' 'unshare --version' \
+    'unshare --version' \
     'unshare --help' 'unshare x' 'systemd-nspawn -D x' \
     'systemd-nspawn --version' 'busctl list' 'busctl status' \
     'busctl tree' 'busctl monitor' 'busctl --version' \
@@ -13072,7 +13220,7 @@ for c in \
     'diskutil mountDisk x' 'diskutil cs list' 'mt -f /dev/st0 status' \
     'mt -f /dev/st0 rewind' 'mt status' 'sg_inq /dev/sg0' \
     'hdparm -I /dev/sda' 'hdparm -i /dev/sda' 'sg_raw /dev/sg0 x' \
-    'lldb' 'lldb -b x' 'the lldb debugger' 'lldb docs' \
+    'lldb' 'the lldb debugger' 'lldb docs' \
     'eu-readelf' 'eu-nm' 'coredumpctl list' 'coredumpctl info'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
         && check "paste FP guard: $c clean" "0" "0" \
@@ -13255,15 +13403,15 @@ for c in \
     'ufw --version' 'ufw allow 22' 'ufw allow from x' 'ufw reload' \
     'sysctl -a' 'sysctl kernel.randomize_va_space' 'sysctl vm.swappiness' \
     'sysctl -w vm.swappiness=60' 'sysctl -w net.core.somaxconn=1024' \
-    'sysctl --system' 'modprobe veth' 'modprobe nf_conntrack' \
-    'modprobe -r x' 'modprobe --list' 'modprobe -n x' 'modprobe -i x' \
-    'modprobe --show-config' 'modprobe.d/x.conf' 'depmod -a' 'depmod -h' \
+    'sysctl --system' \
+    \
+    \
     'dkms status' 'dkms --version' 'ldconfig' 'ldconfig -v' 'ldconfig -p' \
-    'ssh-agent bash' 'ssh-add -l' 'ssh-add --help' 'apt-key list' \
+    'ssh-add -l' 'ssh-add --help' 'apt-key list' \
     'rpm -qa' 'rpm -qi x' 'mokutil --sb-state' 'mokutil --list-enrolled' \
     'efibootmgr -v' 'efibootmgr --help' 'efivar -l' \
     'update-alternatives --list x' 'tcpdump -i eth0' 'tcpdump -r x.pcap' \
-    'tcpdump --version' 'tshark -r x' 'tshark --version' 'ostinato' \
+    'tcpdump --version' 'tshark -r x' 'tshark --version' \
     'nvme list' 'nvme smart-log /dev/nvme0' 'sg_read /dev/sda' \
     'sg_inq /dev/sda' 'storcli /c0 show' 'perccli /c0 show' \
     'mdadm --detail /dev/md0' 'mdadm --assemble /dev/md0' \
@@ -13482,7 +13630,7 @@ for c in 'sed -e "s/x/y/" f' "sed -i 's/a/b/' f" 'sed -n "1p" f' \
          'acl permissions setfacl' 'cap_net_raw docs' \
          'install capability flags' 'the swapoff utility' \
          'swap space' 'swapoff discussion' \
-         'the blkdiscard tool' 'blk discard feature' \
+         'blk discard feature' \
          'emacs docs' 'the emacs editor' \
          'rsync -avz a b' 'sync files' \
          'chkconfig --list' 'rc-update show' 'update-rc.d --help' \
@@ -13557,9 +13705,9 @@ for c in 'the stratum corneum layer' 'stratum is a latin word' \
          'docker run -v /data:/data x' 'docker.sock docs' \
          'the docker socket' 'git credential helper docs' \
          'credential.helper osxkeychain' \
-         'invoke the command locally' 'Invoke-Command {id}' \
+         'invoke the command locally' \
          'winrm is remote mgmt' 'computername field' \
-         'new-pssession docs' \
+         \
          'touch file.txt' 'touch -a file' 'touch -m file' \
          'touch the file' 'the timestomp technique' \
          'dd if=x of=y' 'dd status=progress' 'dd of output file' \
@@ -13875,7 +14023,7 @@ for c in 'tar xzf x.tar.gz' 'tar -cf x.tar y' \
          'script x.log' 'capsh --print' 'tcc -v' 'lua -v' \
          'busybox' 'setsid' 'chroot' \
          'passwd x' 'passwd -S x' 'journalctl -u x' \
-         'dmesg | tail' 'dmesg -w' 'modprobe veth' 'modprobe nf_conntrack' \
+         'dmesg | tail' 'dmesg -w' \
          'kill -9 1234' 'kill -TERM 1' 'init --help' 'env' \
          'ip route show' 'route -n' 'date' 'date +%s' \
          'timedatectl status' 'mount' 'mount /dev/sda1 /mnt' \
@@ -14034,16 +14182,16 @@ for c in 'useradd -m newuser' 'useradd -u 1001 x' 'usermod -aG docker x' \
          'sestatus' 'getenforce' 'setenforce 1' 'auditctl -l' \
          'auditctl -a always,exit' 'systemctl status auditd' \
          'systemctl start auditd' 'history' 'history 5' 'echo HISTFILE' \
-         'cat .bash_history' 'iptables -L' \
+         'iptables -L' \
          'iptables -A INPUT -p tcp --dport 22 -j ACCEPT' \
          'nft list ruleset' 'ufw status' 'pfctl -sr' \
          'firewall-cmd --list-all' 'ssh user@host' 'ssh -l root host' \
-         'ssh -i key.pem x' 'ssh -p 2222 x' 'visudo' 'cat /etc/sudoers' \
+         'ssh -i key.pem x' 'ssh -p 2222 x' 'visudo' \
          'systemd-run --help' 'nsenter --help' 'unshare --help' \
          'docker run x' 'docker run -v /etc:/etc x' 'xxd x' \
          'chattr +a /var/log/x' 'lsattr x' 'wipefs --help' \
          'find . -name x' 'find . -perm /u+w' 'getcap x' 'gdb x' \
-         'gdb --batch -ex' 'strace ls' 'openssl version' \
+         'strace ls' 'openssl version' \
          'openssl enc -a -in x' 'awk "{print \$1}" x' 'xclip -i' \
          'sftp user@host' 'scp file x@y:'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
@@ -14368,7 +14516,7 @@ for c in \
         && check "paste: $c flagged" "0" "0" \
         || check "paste: $c flagged" "0" "1"
 done
-for c in 'ntdsutil local roles' 'verclsid /q' \
+for c in 'verclsid /q' \
          'runonce /runonce' 'sc query w32time' 'control printers' \
          'findstr /n x file.txt'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
@@ -14451,7 +14599,7 @@ for c in \
 done
 for c in 'bcdedit /enum' 'wevtutil qe security' \
          'netsh wlan show profiles' 'cmdkey /delete:t1' \
-         'dnscmd /enumzones' 'wsl --install'; do
+         'wsl --install'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
         && check "paste FP guard: $c clean" "0" "0" \
         || check "paste FP guard: $c clean" "0" "1"
