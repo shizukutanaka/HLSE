@@ -77,6 +77,32 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Miner exec / terminal injection / agent kill / env exfil /
+  WinRM / timestomp / device-arg dd+mkfs**: cryptominer names
+  (xmrig, minerd, cpuminer, xmr-stak, ethminer, bzminer, lolminer,
+  phoenixminer, nanominer, gminer, teamredminer, nbminer, cgminer,
+  sgminer, bfgminer, claymore -o/.exe, trex miner) + stratum+/:
+  and donate-level flag + pool domains (nicehash, nanopool,
+  supportxmr, minergate, f2pool, antpool, viabtc, 2miners,
+  flypool, herominers, unmineable, miningpool) +45; stratum:/
+  stratum+tcp:/stratum+ssl:/stratum2: URI schemes +30. Terminal
+  injection: tmux send-keys, send-keys, screen -X stuff +45.
+  Unix agent kill: pkill|killall|kill -9 × osquery/filebeat/
+  datadog-agent/fluentd/fluent-bit/splunk/newrelic/telegraf/
+  wazuh/auditbeat/metricbeat/packetbeat/qualys/rapid7/
+  insight-agent/sysmon/velociraptor/falcon/sentinel/elastic-agent
+  +45. env exfil: env |/env|/printenv/env >/printenv > × nc|
+  curl|wget|socat/curl -F|-d/wget --post +45. sudo/su: | sudo -S,
+  | su -, su -c stdin-password pipes +45. docker.sock mount /
+  docker --socket +45. credential.helper store|get|! +45. WinRM:
+  Enter-PSSession|New-PSSession|Invoke-Command|Invoke-WmiMethod|
+  Invoke-CimMethod × -ComputerName|-Computer|-cn, winrm
+  quickconfig +45. timestomp: touch -r|-t|-d|--reference +45.
+  batch (at-family) -f/|batch +45. P9 destructive: mkfs /, mkfs -,
+  mke2fs /, dd of=/dev/{sd,nvme,hd,vd,mmc,xvd}, dd if=/dev/
+  {mem,kmem,sd,nvme} (raw-device read) — replaces over-broad
+  `mkfs `/`dd if=` needles that fired on any dd copy / mkfs prose.
+
 - **Webshell writes + revshell residuals + persistence-write
   expansion** (`hlse_supply.c`): P14 — script tag/web extension
   (<?php|<%=|<%|.php|.asp|.jsp|.cgi|.war) + request superglobal
