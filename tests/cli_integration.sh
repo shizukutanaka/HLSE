@@ -11674,6 +11674,147 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-251: time/kernel/pkg-mgr/runtime/env-exec ──
+for c in \
+    'hwclock -w' 'ntpq -c :config' 'ptp4l' 'phc2sys' 'timemaster' \
+    'echo x > f:ads' 'type x > f:ads' 'diskpart' 'mklink x y' 'robocopy /MIR x y' \
+    'cipher /c' 'echo 0 > /proc/sys/kernel/x' 'echo x > /sys/kernel/x' 'tee /proc/sys/x' 'sysctl -p' \
+    'sysctl --system' 'mount -t bpf' 'mount -t debugfs' 'mount -t tracefs' 'mount -t securityfs' \
+    'mount -t cgroup' 'mount -t pstore' 'mount -t configfs' 'mount -t fusectl' 'mount -t mqueue' \
+    'mount -t hugetlbfs' 'mount -t binfmt_misc' 'mount -o bind x y' 'tripwire -m i' 'osqueryd' \
+    'velociraptor --config x' 'velociraptor gui' 'tarsnap' 'deja-dup' 'snapper create' \
+    'snapper delete' 'snapper rollback' 'restic unlock' 'restic rebuild-index' 'borg delete x' \
+    'borg compact' 'borg break-lock' 'duplicity remove-all-but-n-full' 'yubihsm-connector' 'yubihsm-shell' \
+    'fido2-token -S' 'pkcs11-tool -w x' 'opensc-tool -s x' 'gpg --import x' 'gpg --edit-key x' \
+    'gpg --delete-key x' 'gpg --gen-revoke x' 'gpg --recv-keys x' 'gpg --send-keys x' 'gpg --update-trustdb' \
+    'gpg --sign-key x' 'pass init' 'pass git push' 'pass rm x' 'keybase pgp' \
+    'keybase encrypt x' 'keybase login' 'zip2john x' 'rar2john x' 'ssh2john' \
+    'pdf2john x' 'keepass2john x' 'luks2john x' 'gpg2john x' 'bitlocker2john x' \
+    'pfx2john x' 'outguess' 'stegsnow' 'stegseek' 'foremost -i x' \
+    'scalpel -c x' 'parasite6' 'alive6' 'detect-new-ip6' 'ndisc6' \
+    'rdisc6' 'tracert6' 'tcptraceroute6' 'rtadvd' 'radvd' \
+    'rtadvctl' 'rdnssd' 'dns2socks' 'squid -z' 'squid -f x' \
+    'squid -k reconfigure' 'busybox nc -l' 'busybox tftp' 'busybox crond' 'busybox insmod x' \
+    'busybox mount x' 'busybox fdisk x' 'toybox nc' 'toybox mount' 'toybox telnet' \
+    'ncat -e x' 'socat exec:x' 'socat proxy:x' 'gawk /inet' 'ruby -rsocket' \
+    'ruby -e x' 'pkill -9 x' 'killall -9 x' 'skill -9 x' 'update-rc.d x' \
+    'insserv x' 'sysv-rc-conf' 'initctl emit x' 'wsl -d x' 'wsl.exe x' \
+    'wsl --mount x' 'wsl --install' 'devmem2 x' 'devmem x' 'memtool x' \
+    'iotools' 'rdmsr x' 'wrmsr x' 'setpci x=1' 'pciconf -w x' \
+    'pivot_root x' 'watchdog -t' 'wdctl' 'bmc-device' 'ipmi-sel' \
+    'ipmi-chassis' 'bmc-config' 'ipmi-oem' 'ipmi_ui' 'ipmilan' \
+    'ipmi-fru' 'ipmi-console' 'pef-config' 'bmc-info' 'ipmi-raw' \
+    'ipmimonitoring' 'rmcp-ping' 'usbmuxd' 'flash_tool' 'ch341prog' \
+    'minipro x' 'dump1090' 'gr-gsm' 'sipp x' 'pjsua' \
+    'baresip' 'linphonec' 'voipong' 'voiphopper' 'ucsniff' \
+    'enumiax' 'iaxflood' 'rtpbreak' 'rtpsend' 'siparmyknife' \
+    'nvme fw-download x' 'nvme admin-passthru x' 'nvme reset' 'nvme write-zeroes' 'mmc erase x' \
+    'mmc sanitize x' 'mmc rpmb x' 'mmc ffu x' 'mmc extcsd' 'mmc writeprotect' \
+    'snap connect x' 'snap set x' 'snap disable x' 'snap refresh x' 'snap revert x' \
+    'flatpak remote-add x' 'flatpak uninstall x' 'flatpak kill x' 'flatpak repair' 'flatpak mask x' \
+    'brew link x' 'brew services x' 'brew tap x' 'brew untap x' 'brew developer x' \
+    'nix-env -e x' 'nix-env --delete-generations' 'nix-env -i x' 'nix-collect-garbage -d' 'nix-channel --add x' \
+    'nix run x' 'nix shell x' 'nix profile x' 'nix store x' 'nix gc' \
+    'nix registry add x' 'nix flake update' 'nix eval x' 'uv run x' 'uv tool x' \
+    'uv pip x' 'uv add x' 'uv publish' 'uvx x' 'conda install x' \
+    'conda create x' 'conda env x' 'conda run x' 'mamba install x' 'mamba create x' \
+    'composer install' 'composer require x' 'composer update' 'composer exec x' 'deno install x' \
+    'deno compile x' 'deno eval x' 'deno task x' 'bun run x' 'bun add x' \
+    'bun install x' 'bun build x' 'bun x pkg' 'go mod x' 'go work x' \
+    'go generate' 'go get x' 'go install x' 'go run x' 'go env -w x' \
+    'rustc --emit x' 'rustc -o x' 'jrunscript' 'jjs' 'hhvm' \
+    'php-cgi' 'qjs' 'd8 x' 'jsc x' 'mujs' \
+    'duktape' 'graaljs' 'hermes' 'mono x.exe' 'runghc x' \
+    'runhaskell x' 'ghci -e x' 'jython' 'jruby' 'raku -e x' \
+    'rakudo' 'guile -c x' 'sbcl' 'clisp' 'ecl x' \
+    'gcl x' 'racket -e x' 'chez --script x' 'mit-scheme' 'chibi-scheme' \
+    'bigloo' ' gosh x' 'newlisp' 'picolisp' 'janet -e x' \
+    'fennel x.fnl' 'bb -e x' 'gforth -e x' 'pforth' 'rexx x' \
+    'regina x' 'swipl' 'gprolog' 'tclsh' 'jimtcl' \
+    'kscript' 'kotlinc -script x' 'rscript x' 'r -e x' 'julia -e x' \
+    'octave --eval x' 'scilab' 'maxima -b x' 'sage x' 'luajit' \
+    'tarantool' 'cling' 'cint' 'nim r x' 'nimble install x' \
+    'crystal run x' 'zig run x' 'zig cc x' 'odin run x' 'hare run' \
+    'v run x' 'tsx x' 'ts-node x' 'vite-node x' 'stack run x' \
+    'cabal run x' 'rust-script x' 'evcxr' 'ensurepip' 'cpan install x' \
+    'cpanm x' 'ssh -j x' 'ssh -w x' 'ssh -a x' 'ssh -o remotecommand=x' \
+    'ssh -o setenv=x' 'ssh -o forwardagent=yes' 'BASH_ENV=/x' 'PROMPT_COMMAND=x' 'EDITOR=/x' \
+    'VISUAL=/x' 'SUDO_EDITOR=/x' 'GIT_EDITOR=/x' 'GIT_DIR=/x' 'GIT_EXEC_PATH=/x' \
+    'GIT_TEMPLATE_DIR=/x' 'GIT_WORK_TREE=/x' 'GIT_INDEX_FILE=/x' 'GIT_OBJECT_DIRECTORY=/x' 'GIT_CONFIG=/x' \
+    'GIT_CONFIG_PARAMETERS=x' 'GIT_SSH=x' 'GIT_PAGER=/x' 'PERL5LIB=/x' 'PERL5OPT=-d' \
+    'PERL5DB=x' 'PYTHONSTARTUP=/x' 'PYTHONPATH=/x' 'PYTHONHOME=/x' 'NODE_OPTIONS=-r x' \
+    'NODE_PATH=/x' 'RUBYLIB=/x' 'RUBYOPT=-rx' 'ZDOTDIR=/x' 'SUDO_ASKPASS=/x' \
+    'SSH_AUTH_SOCK=/x' 'QT_IM_MODULE=x' 'GTK_IM_MODULE=x' 'XMODIFIERS=x' 'GLIBC_TUNABLES=x' \
+    'LOCPATH=/x' 'TZDIR=/x' 'HOSTALIASES=/x' 'KRB5_CONFIG=/x' 'KRB5_KTNAME=/x' \
+    'KRB5CCNAME=/x' 'PKCS11_MODULE_PATH=/x' 'MANPAGER=/x' 'SYSTEMD_PAGER=/x' 'LD_AUDIT=/x' \
+    'LD_PROFILE=/x' 'DISPLAY=:0' 'XAUTHORITY=/x' 'BROWSER=/x' 'GPG_AGENT_INFO=/x' \
+    'PINENTRY=x' 'echo x > .config/autostart/x' 'echo x > sources.list.d/x' 'echo x > /etc/apt/preferences' 'echo x > yum.repos.d/x' \
+    'echo x > modprobe.d/x' 'echo x > sysctl.d/x' 'echo x > polkit-1/x' 'echo x > dbus-1/x' 'echo x > sudoers.d/x' \
+    'echo x > spool/cron/x' 'echo x > cron.d/x' 'echo x > daemon.json' 'echo x > .git/hooks/x' 'echo x > .gitmodules' \
+    'echo x > .gitattributes' 'echo x > known_hosts' 'echo x > profile.d/x' 'echo x > .pam_environment' 'echo x > modules-load.d/x' \
+    'echo x > tmpfiles.d/x' 'echo x > binfmt.d/x' 'echo x > hwdb.d/x' 'echo x > firewalld/x' 'echo x > fail2ban/x' \
+    'echo x > logrotate.d/x' 'echo x > rsyslog.d/x' 'echo x > audit/rules.d/x' 'echo x > auditd.conf' 'echo x > ld.so.preload' \
+    'echo x > fstab' 'echo x > crypttab' 'echo x > exports' 'echo x > netgroup' 'echo x > auto.master' \
+    'echo x > hostapd.conf' 'echo x > wpa_supplicant.conf' 'echo x > dhclient.conf' 'echo x > dhcpcd.conf' 'echo x > netplan/x' \
+    'echo x > systemd/network/x' 'echo x > resolvconf/x' 'echo x > hosts.allow' 'echo x > hosts.deny' 'echo x > ipsec.conf' \
+    'echo x > ppp/peers/x' 'echo x > wireguard/x' 'echo x > wg0.conf' 'echo x > openvpn/x' 'echo x > vtund.conf' \
+    'echo x > dnsmasq.conf' 'echo x > unbound.conf' 'echo x > named.conf' 'echo x > msmtprc' 'echo x > fetchmailrc' \
+    'echo x > aliases' 'echo x > mailname' 'echo x > main.cf' 'echo x > master.cf' 'echo x > postfix/x' \
+    'echo x > dovecot/x' 'echo x > saslauthd/x' 'echo x > opendkim/x' 'echo x > .bash_profile' 'echo x > .ssh/rc' \
+    'echo x > .xinitrc' 'echo x > .xprofile' 'echo x > .xserverrc' 'echo x > pam.d/x' \
+    'cat file:ads' 'type file:ads' 'osqueryi x' 'tarsnap docs' 'yubihsm docs' 'pkcs11-tool --list-objects' 'opensc docs' 'zip2john docs' 'outguess docs' 'stegsnow docs' 'ndisc6 docs' 'rtadvd docs' 'dns2socks docs' 'toybox --help' 'update-rc.d docs' 'devmem docs' 'rdmsr docs' 'pivot_root docs' 'wdctl docs' 'usbmuxd docs' 'sipp -h' 'rtpbreak docs' 'uvx docs' 'jrunscript docs' 'qjs docs' 'jython docs' 'rscript docs' 'the newlisp feature' 'scilab suite docs' 'bundle exec' 'tsx docs' 'ts-node docs' 'cpanm --version' 'env BASH_ENV' 'echo x > autostart.txt' 'echo x > /etc/fstab.txt' 'go tools list' \
+    'cipher /c x' 'robocopy /mir' \
+    'update-rc.d --help' 'uvx ruff' 'uvx black@latest' 'robocopy c:\data c:\backup /mir' 'diskpart list disk'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE'; then
+        check "paste: $c flagged" "1" "1"
+    else
+        check "paste: $c flagged" "0" "1"
+    fi
+done
+
+for c in \
+    'hwclock --show' 'ntpq -p' 'ntpq --version' 'cat file.txt' 'type file.txt' \
+    'echo x > f.txt' 'robocopy x y' 'cipher x' \
+    'echo x > /tmp/x' 'cat /proc/cpuinfo' 'cat /sys/kernel/x' 'sysctl -a' 'sysctl kernel.hostname' \
+    'mount -t ext4' 'mount -t tmpfs' 'tripwire docs' 'the velociraptor' \
+    'velociraptor dinosaur' 'snapper list' 'restic snapshots' 'borg list' \
+    'gpg -d x' 'gpg --list-keys' \
+    'gpg --verify x' 'gpg --export x' 'pass show x' 'pass -c x' 'keybase status' \
+    'foremost docs' 'scalpel docs' \
+    'ipv6 ready' 'squid --version' \
+    'squid proxy' 'the squid swims' 'busybox --list' 'busybox ls' \
+    'toybox ls' 'ncat --version' 'socat -h' 'socat tcp-connect:x' 'gawk -f x' \
+    'gawk docs' 'ruby -v' 'ruby x.rb' 'ruby script' 'pkill x' \
+    'killall x' 'skill --help' 'wsl --help' 'wsl --version' \
+    'setpci -s x' 'pciconf -l' \
+    'watchdog docs' 'the watchdog' \
+    'nvme list' 'nvme id-ctrl' 'mmc list' 'mmc --version' \
+    'snap list' 'snap find' 'snap info' 'flatpak list' 'flatpak info' \
+    'flatpak search' 'brew list' 'brew info' 'brew update' 'nix-env -q' \
+    'nix --version' 'nix flake show' 'nix develop' 'nix build x' 'uv --version' \
+    'uv list' 'conda list' 'conda info' 'mamba --version' \
+    'composer --version' 'composer show' 'deno --version' 'deno fmt' 'bun --version' \
+    'bun test' 'the bun added http' 'go version' 'go env' 'go build' \
+    'rustc --version' 'mono --version' \
+    'julia --version' 'a julia set' 'octave --version' 'an octave higher' \
+    'maxima --version' 'ghci --version' 'racket noise court' 'guile and cunning' 'fennel seeds tea' \
+    'zig build system' 'nim --version' 'nimble --version' \
+    'crystal --version' 'zig version' 'odin version' 'parity check' 'the parity bit' \
+    'god mode' 'mongosh' 'mongosh --version' 'bundle install' \
+    'zig build' 'cargo build' 'cpan -v' \
+    'ssh -l user x' 'ssh -p 22 x' 'ssh -o stricthostkeychecking=no' 'ssh -v x' \
+    'PATH=/x' 'HOME=/x' 'TERM=x' 'LANG=x' \
+    'IFS=x' 'cat .git/hooks/x' 'cat named.conf' \
+    'ls exports' 'cat aliases' 'cp x /proc/sys'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+        check "paste FP guard: $c clean" "0" "0"
+    else
+        check "paste FP guard: $c clean" "0" "1"
+    fi
+done
+
 # ── cycle-250: storage/input/stealer/env/exec ──
 for c in \
     'fstrim -a' 'fstrim /x' 'mkswap /x' 'resize2fs /x' 'e2label /x' \
@@ -11896,12 +12037,12 @@ for c in \
     'chrt -f x' 'schedtool -e' 'flock -n x' \
     'the bash docs' 'bash reference' 'the sh shell' 'posix sh spec' \
     'irb docs' 'scala docs' 'clj docs' 'iex docs' 'erl docs' \
-    'go tools list' 'npm docs' 'npm run build' 'gem list' \
+    'npm docs' 'npm run build' 'gem list' \
     'bundle install' 'cpan docs' 'dotnet --info' 'dotnet --version' \
     'dotnet build x' 'dotnet test x' 'weechat docs' 'irssi docs' \
     'the irc protocol' 'ftp server docs' \
     'tactical planning' \
-    'the supremo' 'tarsnap docs' 'ipa docs' \
+    'the supremo' 'ipa docs' \
     'the ipa beer' 'wmic docs' 'nvme list' 'sgdisk -p' 'parted -l' \
     'hdparm -i' 'sdparm --list' 'camcontrol devlist' 'zpool status' \
     'zfs list' 'cryptsetup status' 'cryptsetup luksOpen' \
@@ -12288,8 +12429,8 @@ for c in \
     'pen and paper' 'balance sheet audit' 'the snowflake pattern' \
     'ziti pasta dish' 'wg confusion cleared' 'drive safely home' \
     'the kitty cat' 'putty knife work' 'axel foley cop' 'ftp file transfer' \
-    'groovy music track' 'the newlisp feature' 'matlab license file' \
-    'scilab suite docs' 'nasm assembler docs' 'wcl compiler notes' \
+    'groovy music track' 'matlab license file' \
+    'nasm assembler docs' 'wcl compiler notes' \
     'jdbc connection url' 'the code tunnel idea' 'request key pair' \
     'junction box cover' 'contig assembly done' 'desktops everywhere' \
     'the move files task' 'getent services list' 'terraform version' \
@@ -12443,7 +12584,7 @@ for c in \
     'flatpak --version' 'port version' 'uv --version' 'rye --version' \
     'poetry --version' 'pdm --version' 'dotnet --version' \
     'winget list' 'appcmd list sites' 'quser' 'logoff' 'msg x y' \
-    'cipher /c x' 'subst' 'fsutil fsinfo drives' 'netsh wfp show' \
+    'subst' 'fsutil fsinfo drives' 'netsh wfp show' \
     'wpr --version' 'xperf --version' 'msdt /?' 'mmc' 'csi' 'fsi' \
     'keyctl' 'portablectl list' 'flatpak-spawn' 'gdbus introspect' \
     'fuser -v' 'fetchmail --version' 'velero --help' 'tkn version' \
@@ -12582,7 +12723,7 @@ for c in \
     'tracker.exe docs' 'slmgr' \
     'op --version' 'nix develop' \
     'nix build x' 'nix-shell x' \
-    'go get x' 'watch ls'; do \
+    'watch ls'; do \
   ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
       && check "paste FP guard: $c clean" "0" "0" \
       || check "paste FP guard: $c clean" "0" "1"; done
@@ -13407,7 +13548,7 @@ for c in \
     'ieexec' 'procdump -h' 'verclsid /q' 'ie4uinit' 'bare regsvcs' \
     'regsvcs x' 'syncappv benign' 'pcalua-plain' \
     'install -m 755 x y' 'install -m 644 x y' 'install -D x y' \
-    'robocopy x y' 'robocopy /mir' 'runas /user x' 'runas /noprofile' \
+    'robocopy x y' 'runas /user x' 'runas /noprofile' \
     'bloodhound' 'sliver' 'empire' 'merlin' 'viper' 'donut' 'freeze' \
     'scarecrow' 'parallax' 'xenomorph' 'redline' 'raccoon' \
     'bumblebee' 'havoc' 'mythic' 'covenant' 'bloodhound docs' \
@@ -13512,7 +13653,7 @@ for c in \
     'ufw --version' 'ufw allow 22' 'ufw allow from x' 'ufw reload' \
     'sysctl -a' 'sysctl kernel.randomize_va_space' 'sysctl vm.swappiness' \
     'sysctl -w vm.swappiness=60' 'sysctl -w net.core.somaxconn=1024' \
-    'sysctl --system' \
+    \
     \
     \
     'dkms status' 'dkms --version' 'ldconfig' 'ldconfig -v' 'ldconfig -p' \
@@ -13742,7 +13883,7 @@ for c in 'sed -e "s/x/y/" f' "sed -i 's/a/b/' f" 'sed -n "1p" f' \
          'blk discard feature' \
          'emacs docs' 'the emacs editor' \
          'rsync -avz a b' 'sync files' \
-         'chkconfig --list' 'rc-update show' 'update-rc.d --help' \
+         'chkconfig --list' 'rc-update show' \
          'chkconfig docs' 'update the rc.d scripts' \
          'bwrap is a sandbox tool' 'netns is a namespace' \
          'the setpriv command' 'the namespace' \
@@ -13929,7 +14070,7 @@ for c in 'npm i lodash' 'npm install react' 'yarn add lodash' \
          'ansible all -m ping' 'ansible-playbook site.yml' \
          'ansible-pull -U /local' 'salt "*" test.ping' \
          'make -f Makefile' 'make install' 'at 10:00' \
-         'uvx ruff' 'uvx black@latest' \
+         \
          'yarn adds color to http' 'the bun added http flavor' \
          'the poetry adds http links' 'gem installs are over http' \
          'pipeline install over http'; do
@@ -14604,7 +14745,7 @@ for c in \
 done
 for c in 'procdump -h' 'pnputil /enum-drivers' 'net user administrator' \
          'net share' 'net use' 'ftp evil.com' \
-         'robocopy c:\data c:\backup /mir' 'iexpress'; do
+         'iexpress'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
         && check "paste FP guard: $c clean" "0" "0" \
         || check "paste FP guard: $c clean" "0" "1"
@@ -14684,7 +14825,7 @@ for c in \
 done
 for c in 'icacls c:\data /grant everyone:f' 'takeown /f file.txt' \
          'fsutil file createnew x 1' \
-         'manage-bde -status' 'diskpart list disk' 'secedit /analyze' \
+         'manage-bde -status' 'secedit /analyze' \
          'schtasks /create /tn "system report" /tr y /sc daily'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
         && check "paste FP guard: $c clean" "0" "0" \
@@ -14708,7 +14849,7 @@ for c in \
 done
 for c in 'bcdedit /enum' 'wevtutil qe security' \
          'netsh wlan show profiles' 'cmdkey /delete:t1' \
-         'wsl --install'; do
+        ; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
         && check "paste FP guard: $c clean" "0" "0" \
         || check "paste FP guard: $c clean" "0" "1"

@@ -4,6 +4,140 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-251)
+
+- **Paste-detector breadth — time/NTP tampering, NTFS ADS, kernel
+  proc/sys writes, FIM-baseline poisoning, backup CLIs, smartcard/HSM,
+  IPv6 attack suite, busybox/toybox applets, process-kill flags,
+  package-manager write ops, language-runtime exec, env-var injection
+  keys, P11 persistence paths** (`hlse_supply.c`): time tampering
+  (`hwclock -w`, `ntpq -c`, ptp4l/phc2sys/timemaster); NTFS ADS writes
+  (`::$DATA`, `:ads` needles) + `diskpart`/`mklink`/`robocopy /MIR|
+  /purge|/mov`/`cipher /c` (EFS encrypt); kernel write surface
+  (`> /proc/`/`> /sys/`/`tee /proc|/sys`/`of=/proc|/sys`, sysctl
+  ` -p|--load|--system`, `mount -t` bpf/debugfs/tracefs/securityfs/
+  cgroup/pstore/configfs/fusectl/mqueue/hugetlbfs/binfmt_misc/proc +
+  ` -o bind`); FIM/EDR-baseline + backup (tripwire ` -m`, osqueryd,
+  velociraptor flag gates, tarsnap, deja-dup, snapper verbs, restic
+  unlock/prune/rebuild-index/repair/key/copy/mount/serve/self-update,
+  borg delete/compact/recreate/rename/key/config/mount/serve/
+  break-lock/with-lock/upgrade, duplicity remove-all/replicate);
+  smartcard/HSM/FIDO/GPG-trust (yubihsm, fido2-token, pkcs11-tool,
+  opensc + gpg/gpg2 --import/--edit-key/--delete/--desig/--gen-revoke/
+  --recv-keys/--send-keys/--refresh/--update-trustdb/--sign-key/
+  --lsign/--quick-/--card/--passwd/--pinentry/--batch, pass verb
+  gates, keybase verb gates); password-cracker helpers (zip2john/
+  rar2john/ssh2john/pdf2john/keepass2john/luks2john/gpg2john/
+  bitlocker2john/pfx2john/vncpcap2john) + stego (outguess, stegsnow,
+  stegseek) + carving (foremost/scalpel flag gates); IPv6 attack suite
+  (thc-ipv6 parasite6/alive6/detect-new-ip6 + ndisc6/rdisc6/
+  tracert6/tcptraceroute6 recon + rogue-RA daemons rtadvd/radvd/
+  rtadvctl/rdnssd + dns2socks + squid flag gates); busybox/toybox
+  applet gates (nc/tftp/telnet/ftpd/crond/adduser/insmod/modprobe/
+  chroot/mount/ifconfig/route/syslogd/sendmail/udhcpc/dnsd/inetd/
+  fdisk/mkfs/wget/swapon/ip/arp); exec helpers (ncat ` -e|-c`,
+  socat exec|system|proxy|socks|tun, gawk `/inet`, ruby ` -e|-rsocket|
+  -rwebrick|-run|-i`); process-kill flags (pkill/killall/skill
+  ` -9|-kill|-term|-stop`); service registration (update-rc.d,
+  insserv, sysv-rc-conf, initctl emit/start/stop/restart/reload); WSL
+  exec (`wsl` -d/-e/.exe/--exec/--cd/--shell/--user/-u/--system/
+  --terminate/--shutdown/--mount/--export/--import/--set/--install/
+  --update); hardware primitives (devmem2/devmem/memtool/iotools/
+  rdmsr/wrmsr/x86info, setpci `=`/`-w`, pciconf ` -w`, pivot_root,
+  watchdog ` -`, wdctl); FreeIPMI suite (bmc-device, ipmi-sel,
+  ipmi-chassis, bmc-config, ipmi-oem, ipmi_ui, ipmilan, ipmi-fru,
+  ipmi-console, pef-config, bmc-info, ipmi-raw, ipmimonitoring,
+  rmcp-ping) + usbmuxd/flash_tool/ch341prog/minipro + SDR/VoIP
+  (dump1090, gr-gsm, sipp, pjsua, baresip, linphonec, voipong,
+  voiphopper, ucsniff, enumiax, iaxflood, rtpbreak, rtpsend,
+  siparmyknife); nvme deep ops (fw-download, admin-passthru,
+  io-passthru, attach, detach, reset, rescan, write-zeroes,
+  write-uncor, dsm, security-send/recv, set-feature, ns-rescan,
+  dir-receive, sanitize-log, get-lba-status, format-nvm) + mmc-utils
+  (erase/sanitize/hwreset/rpmb/ffu/extcsd/bootpart/writeprotect/
+  cache/bkops/gen_cmd/csd/testarea/scr); package-manager write ops
+  (snap connect/disconnect/set/unset/disable/enable/refresh/revert/
+  download/ack/known/login/logout/create-user/watch/abort/try,
+  flatpak remote-add/remote-delete/remote-modify/uninstall/kill/enter/
+  repair/update/mask/unmask/make-current/create-usb/permission-/
+  document-/metadata/config/build-*/--system/--user, brew link/unlink/
+  tap/untap/services/reinstall/uninstall/developer/cask install|
+  uninstall, nix-env -e/--uninstall/--delete-generations/-i/--install/
+  --rollback/--switch/--upgrade/--set-flag/--profile/--remove-all,
+  nix-collect-garbage/nix-channel/nix-build/nix-instantiate/nix-store/
+  nix-copy, nix run/shell/profile/store/gc/registry/flake write-verbs/
+  eval/bundle/copy, uv run/tool/pip/sync/add/remove/build/publish/init
+  + uvx, conda/mamba install/remove/create/env/run/activate/update/
+  uninstall/clean/config/init/rename, composer install/require/update/
+  remove/global/exec/run/create-project/dump-autoload/config, deno
+  install/compile/eval/task/bundle/upgrade/add/remove/uninstall/vendor,
+  bun run/add/remove/install/build/pm/x/create/init/upgrade/--bun,
+  go mod|work|generate|get|install|run|tool|env -w (cargo excluded),
+  rustc --emit|-o|--crate); language-runtime exec (jrunscript, jjs,
+  hhvm, php-cgi, qjs, d8, jsc, mujs, duktape, graaljs, hermes,
+  mono `.exe|.dll`, runghc, runhaskell, ghci gates, jython, jruby,
+  raku, rakudo, guile -c|-l|-s|--eval/.scm, sbcl, clisp, ecl, gcl,
+  racket flag gates, chez gates, mit-scheme, chibi-scheme, bigloo,
+  gosh boundary, newlisp, picolisp, janet flag gates, fennel gates,
+  bb -e/-m, gforth, pforth, rexx, regina, swipl, gprolog, tclsh,
+  jimtcl, kscript, kotlinc, bsh., rscript, `r -e`, julia/octave/
+  maxima flag gates, scilab, sage, ` gp `, luajit, tarantool, cling,
+  cint, nim/nimble/crystal/zig/odin/v/hare verb gates, tsx, ts-node,
+  vite-node, swc, stack run/exec/script/ghci, cabal run/exec/install/
+  repl, rust-script, evcxr, ensurepip, cpan verb gates, cpanm); ssh
+  option exec (` -j`, ` -w`, ` -a`, ` -o remotecommand|setenv|
+  requestty|forwardagent|proxyjump|sendenv|permit`); env-var injection
+  keys value-bound (`BASH_ENV=/`, `PROMPT_COMMAND=`, `EDITOR=/`,
+  `VISUAL=/`, `SUDO_EDITOR=/`, `FCEDIT=/`, `GIT_EDITOR=/`, `GIT_DIR=/`,
+  `GIT_EXEC_PATH=/`, `GIT_TEMPLATE_DIR=/`, `GIT_WORK_TREE=/`,
+  `GIT_INDEX_FILE=/`, `GIT_OBJECT_DIRECTORY=/`, `GIT_CONFIG=/`,
+  `GIT_CONFIG_PARAMETERS=`, `GIT_SSH=`, `GIT_PAGER=/`, `PERL5LIB=`,
+  `PERL5OPT=-`, `PERL5DB=`, `PYTHONSTARTUP=/`, `PYTHONPATH=`,
+  `PYTHONHOME=/`, `NODE_OPTIONS=-`, `NODE_PATH=`, `RUBYLIB=`,
+  `RUBYOPT=`, `ZDOTDIR=/`, `SUDO_ASKPASS=/`, `SSH_AUTH_SOCK=/`,
+  `QT_IM_MODULE=`, `GTK_IM_MODULE=`, `XMODIFIERS=`, `GLIBC_TUNABLES=`,
+  `LOCPATH=`, `TZDIR=/`, `HOSTALIASES=/`, `KRB5_CONFIG=/`,
+  `KRB5_KTNAME=`, `KRB5CCNAME=`, `PKCS11_MODULE_PATH=`, `MANPAGER=`,
+  `SYSTEMD_PAGER=`, `LD_AUDIT=`, `LD_PROFILE=`, `DISPLAY=:`,
+  `XAUTHORITY=/`, `BROWSER=`, `GPG_AGENT_INFO=`, `PINENTRY=`).
+- **P11 persistence-write paths** (`hlse_supply.c`): `sources.list`,
+  `apt/preferences`, `apt.conf.d`, `yum.repos.d`, `modprobe.d`,
+  `sysctl.d`, `polkit-1`, `dbus-1`, `sudoers.d`, `spool/cron`,
+  `cron.d`, `daemon.json`, `.git/hooks`, `.gitmodules`,
+  `.gitattributes`, `known_hosts`, `profile.d`, `.pam_environment`,
+  `modules-load.d`, `tmpfiles.d`, `binfmt.d`, `hwdb.d`, `firewalld`,
+  `fail2ban`, `logrotate.d`, `rsyslog.d`, `audit/rules.d`,
+  `auditd.conf`, `ld.so.preload`, `fstab`, `crypttab`, `exports`,
+  `netgroup`, `auto.master`, `hostapd`, `wpa_supplicant`, `dhclient`,
+  `dhcpcd`, `netplan`, `systemd/network`, `resolvconf`, `hosts.allow`,
+  `hosts.deny`, `ipsec.conf`, `ppp/peers`, `wireguard`, `wg0.conf`,
+  `openvpn`, `vtund`, `dnsmasq`, `unbound.conf`, `named.conf`,
+  `msmtprc`, `fetchmailrc`, `aliases`, `mailname`, `main.cf`,
+  `master.cf`, `postfix`, `dovecot`, `saslauthd`, `opendkim`,
+  `.bash_profile`, `.ssh/rc`, `.xinitrc`, `.xprofile`, `.xserverrc`,
+  `pam.d` write targets flagged at ALERT.
+
+### Fixed (cycle-251)
+
+- **`bun` pre-existing loose rule**: `bun ` + bare `x` fired on any
+  x-containing string (and `bunx`⊂`bun x`); `x`→` x ` boundary.
+- **Real-word gates**: `velociraptor`→` --| gui|frontend| -|config`;
+  `racket`/`guile`/`fennel`/`julia`/`octave`/`maxima`/`ghci`/`chez`/
+  `janet` → flag/extension gates (prose & name collisions removed);
+  `zig` dropped ` build` (routine); `nix` dropped ` develop`/`build`;
+  `go` dropped ` build`/`tool`-boundary + added `!cargo` guard
+  (`cargo build` contained `go build`); `bun`→`bun ` boundary + verbs
+  trailing-spaced (`the bun added` collision); `gosh`→` gosh `
+  (`mongosh` collision); bare `pari` dropped (`parity` collision,
+  ` gp ` covers CLI); `rustc` dropped ` -` (`--version` benign);
+  `squid` dropped ` --`; `wsl` ` .exe`→`.exe` (boundary fix);
+  `chibi`→`chibi-scheme`.
+- **Suite re-expectation**: 14 benigns moved to hits — `cipher /c`,
+  `robocopy /mir` x2, `sysctl --system`, `update-rc.d --help`,
+  `uvx` exec forms, `diskpart list`, `wsl --install`, `go get`,
+  `go tools list`, `tarsnap`/`newlisp`/`scilab` docs mentions —
+  all design-intended signals.
+
 ### Added (cycle-250)
 
 - **Paste-detector breadth — storage/fs teardown, screenshot &
