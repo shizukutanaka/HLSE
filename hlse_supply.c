@@ -993,16 +993,26 @@ hlse_check_paste(const char *text) {
         /* net user/localgroup /add plants accounts, net share x=
          * exposes a drive, net use \\ leaks credentials to the
          * attacker share — the persistence/lateral account set   */
-        } else if (ci_contains(text, "net user") &&
+        /* net1.exe is the documented 'net' alias attackers run to
+         * dodge 'net ' command monitoring — same primitives       */
+        } else if ((ci_contains(text, "net user") ||
+                    ci_contains(text, "net1 user") ||
+                    ci_contains(text, "net.exe user")) &&
                    ci_contains(text, "/add")) {
             what = "net user account creation (backdoor primitive)";
-        } else if (ci_contains(text, "net localgroup") &&
+        } else if ((ci_contains(text, "net localgroup") ||
+                    ci_contains(text, "net1 localgroup") ||
+                    ci_contains(text, "net.exe localgroup")) &&
                    ci_contains(text, "/add")) {
             what = "net localgroup admin grant (backdoor primitive)";
-        } else if (ci_contains(text, "net share") &&
+        } else if ((ci_contains(text, "net share") ||
+                    ci_contains(text, "net1 share") ||
+                    ci_contains(text, "net.exe share")) &&
                    ci_contains(text, "=")) {
             what = "net share drive exposure (exfil/lateral)";
-        } else if (ci_contains(text, "net use") &&
+        } else if ((ci_contains(text, "net use") ||
+                    ci_contains(text, "net1 use") ||
+                    ci_contains(text, "net.exe use")) &&
                    ci_contains(text, "\\\\")) {
             what = "net use remote-share mount (credential send)";
         /* ftp -s:script executes the embedded ! commands; iexpress
@@ -1058,6 +1068,7 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "currentversion\\run") ||
                     ci_contains(text, "image file execution") ||
                     ci_contains(text, "silentprocessexit") ||
+                    ci_contains(text, "ms-settings") ||
                     (ci_contains(text, "winlogon") &&
                      (ci_contains(text, "shell") || ci_contains(text, "userinit"))))) {
             what = "reg add autostart/IFEO write (persistence primitive)";
@@ -1074,6 +1085,27 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "/dll") || ci_contains(text, ".dll") ||
                     ci_contains(text, "/commandline"))) {
             what = "ttdinject TTD DLL injection (LOLBin)";
+        /* runscripthelper runs the WSUS postinstall script; te.exe
+         * is the TAEF test-harness executor; presentationhost
+         * fetches and runs a remote .xbap (all LOLBAS)            */
+        } else if (ci_contains(text, "runscripthelper") &&
+                   (ci_contains(text, "\\\\") || ci_contains(text, ".exe") ||
+                    ci_contains(text, ".bat") || ci_contains(text, ".dll") ||
+                    ci_contains(text, ".ps1"))) {
+            what = "runscripthelper postinstall exec (LOLBin)";
+        } else if (ci_contains(text, "te.exe") &&
+                   (ci_contains(text, ".dll") || ci_contains(text, ".wsc") ||
+                    ci_contains(text, ".xap"))) {
+            what = "te.exe TAEF payload exec (LOLBin)";
+        } else if (ci_contains(text, "presentationhost") &&
+                   (ci_contains(text, "http") || ci_contains(text, ".xbap") ||
+                    ci_contains(text, "\\\\"))) {
+            what = "presentationhost remote .xbap exec (LOLBin)";
+        /* replace.exe x c:\windows\... writes attacker files into
+         * system dirs — the write-into-system primitive           */
+        } else if (ci_contains(text, "replace") &&
+                   (ci_contains(text, "system32") || ci_contains(text, "syswow64"))) {
+            what = "replace.exe write-into-system (LOLBin)";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

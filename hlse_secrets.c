@@ -693,6 +693,31 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "access_token$sandbox$", 21, 12, is_alnum_or_dash, "Braintree Sandbox Token", 70 },
     { "sk-",           3, 32, is_alnum_or_dash,  "Generic sk- Secret Key",        80 },
 
+    /* More platform keys: Segment 'sgp_', Resend 're_', dbt Cloud
+     * 'dbtc.', Trigger.dev env-scoped 'tr_dev_/tr_stg_/tr_prod_',
+     * Hex.pm 'hex_', Akamai EdgeGrid 'akab-'                     */
+    { "sgp_",          4, 30, is_alnum_or_dash,  "Segment API Key",               80 },
+    { "re_",           3, 30, is_alnum_or_dash,  "Resend API Key",                80 },
+    { "dbtc.",         5, 30, is_b64url,         "dbt Cloud Service Token",       80 },
+    { "tr_dev_",       7, 20, is_alnum_or_dash,  "Trigger.dev API Key (dev)",     70 },
+    { "tr_stg_",       7, 20, is_alnum_or_dash,  "Trigger.dev API Key (staging)", 70 },
+    { "tr_prod_",      8, 20, is_alnum_or_dash,  "Trigger.dev API Key (prod)",    80 },
+    { "hex_",          4, 24, is_alnum_or_dash,  "Hex.pm API Key",                80 },
+    { "akab-",         5, 36, is_b64url,         "Akamai EdgeGrid Token",         80 },
+
+    /* PubNub keyset — pub-c-/sub-c- publish+subscribe keys and the
+     * sec-c- secret key (low scores for the client-embedded pair)  */
+    { "pub-c-",        6, 30, is_alnum_or_dash,  "PubNub Publish Key",            50 },
+    { "sub-c-",        6, 30, is_alnum_or_dash,  "PubNub Subscribe Key",          50 },
+    { "sec-c-",        6, 30, is_alnum_or_dash,  "PubNub Secret Key",             85 },
+
+    /* Vault 'hvl.' login token (hvs./hvb./hvr. already covered);
+     * Honeycomb ingest 'hcaik_' and config 'hcxik_'/'hcxmk_' keys  */
+    { "hvl.",          4, 24, is_b64url,         "HashiCorp Vault Login Token",   80 },
+    { "hcaik_",        6, 28, is_alnum_or_dash,  "Honeycomb Ingest API Key",      80 },
+    { "hcxik_",        6, 28, is_alnum_or_dash,  "Honeycomb Config API Key",      80 },
+    { "hcxmk_",        6, 28, is_alnum_or_dash,  "Honeycomb Config API Key",      80 },
+
     { NULL, 0, 0, NULL, NULL, 0 }
 };
 

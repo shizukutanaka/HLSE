@@ -77,6 +77,24 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **net1 evasion + UAC-bypass/TAEF LOLBAS wave + secrets wave-7**
+  (`hlse_supply.c`, `hlse_secrets.c`): the four net-* rules now
+  also match `net1`/ `net.exe` — the documented aliases attackers
+  run to dodge 'net ' command monitoring (same arg gates:
+  user|localgroup+/add, share+=, use+\\); `reg add`+`ms-settings`
+  joins the persistence-write set (the fodhelper/class
+  UAC-bypass registry trick); new +45 arg-gated entries —
+  `runscripthelper`+UNC|exe|bat|dll|ps1 (WSUS postinstall exec),
+  `te.exe`+dll|wsc|xap (TAEF harness exec),
+  `presentationhost`+http|.xbap|UNC (remote .xbap fetch+run),
+  `replace`+system32|syswow64 (write-into-system primitive) —
+  bare names stay OK. Secrets gains `sgp_` (Segment), `re_`
+  (Resend), `dbtc.` (dbt Cloud), `tr_dev_`/`tr_stg_`/`tr_prod_`
+  (Trigger.dev env-scoped), `hex_` (Hex.pm), `akab-` (Akamai
+  EdgeGrid), `pub-c-`/`sub-c-`/`sec-c-` (PubNub keyset),
+  `hvl.` (Vault login token — completes the hvs./hvb./hvr.
+  family), `hcaik_`/`hcxik_`/`hcxmk_` (Honeycomb).
+
 - **Registry-persistence + LOLBAS wave-7 + secrets wave-6**
   (`hlse_supply.c`, `hlse_secrets.c`): paste adds +45 arg-gated
   entries — `ieexec`+http|.exe|.dll (remote .NET exec),

