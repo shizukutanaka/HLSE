@@ -77,6 +77,29 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Registry-persistence + LOLBAS wave-7 + secrets wave-6**
+  (`hlse_supply.c`, `hlse_secrets.c`): paste adds +45 arg-gated
+  entries — `ieexec`+http|.exe|.dll (remote .NET exec),
+  `infdefaultinstall`+.inf ([DefaultInstall] payload),
+  `msdeploy`+-verb:|-source:|-dest: (Web Deploy command run),
+  `rasdial`+.pbk|/phonebook (attacker phonebook dial),
+  `regedit`+(/s|.reg) registry import, `regedit /e`+SAM|
+  SECURITY|SYSTEM hive export (credential theft — '/e ' is
+  excluded from the import gate so benign HKCU exports stay
+  OK), `reg add`/`reg.exe add`+currentversion\run|image file
+  execution|silentprocessexit|winlogon+shell|userinit (the
+  classic autostart/IFEO persistence write), `winrs`+-r:
+  (remote shell), `tttracer`+-out|-dump|.exe|.dll and
+  `ttdinject`+/dll|.dll|/commandline (TTD trace/inject
+  primitives) — bare help/query/name forms stay OK. Secrets
+  gains `rubygems_`, `nvapi-`, `pnu_`, `apify_api_`, `pul-`,
+  `pat-na`/`pat-eu` (HubSpot private-app PAT), `cqt_`/`ckey_`,
+  AWS STS session prefixes `FQoGZXIvYXdz`/`FwoGZXIvYXdz`/
+  `AQoDYXdz`, Amazon LWA `Atza|`, Webex `Y2lzY29zcGFyazovL`,
+  Braintree `access_token$production$`/`$sandbox$` (the '$'
+  breaks the tail charset, so env-qualified prefixes gate),
+  and generic `sk-`+32 (DeepSeek / legacy OpenAI-class).
+
 - **LSASS-dump + account/exfil LOLBin wave** (`hlse_supply.c`):
   `procdump`/`procdump64`+lsass|-ma and `comsvcs`+minidump (the
   LSASS credential-dump primitives), `tsecimp`+-f (TAPI XML

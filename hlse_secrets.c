@@ -659,6 +659,40 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * itself is the shared secret for every future OTP. */
     { "otpauth://",    10, 14, is_uri_tail,      "TOTP/2FA Seed URI",             85 },
 
+    /* Dev-tooling / data-platform keys: RubyGems 'rubygems_' + 48 hex,
+     * NVIDIA NGC 'nvapi-', Prefect 'pnu_', Apify 'apify_api_',
+     * Pulumi 'pul-' + 40-hex */
+    { "rubygems_",     9, 40, is_hex,            "RubyGems API Key",              85 },
+    { "nvapi-",        6, 36, is_alnum_or_dash,  "NVIDIA NGC API Key",            80 },
+    { "pnu_",          4, 30, is_alnum_or_dash,  "Prefect Cloud API Key",         80 },
+    { "apify_api_",   10, 30, is_alnum_or_dash,  "Apify API Token",               80 },
+    { "pul-",          4, 28, is_hex,            "Pulumi Access Token",           80 },
+
+    /* HubSpot private-app PATs — 'pat-na1-'/'pat-eu1-' + UUID tail;
+     * Covalent 'cqt_'/'ckey_' blockchain-data keys */
+    { "pat-na",        6, 36, is_alnum_or_dash,  "HubSpot Private App Token",     80 },
+    { "pat-eu",        6, 36, is_alnum_or_dash,  "HubSpot Private App Token (EU)", 80 },
+    { "cqt_",          4, 30, is_alnum_or_dash,  "Covalent API Key",              80 },
+    { "ckey_",         5, 30, is_alnum_or_dash,  "Covalent Legacy API Key",       80 },
+
+    /* AWS STS session tokens carry fixed STS prefixes
+     * (FQoG/FwoG/AQoD + 'YXdz'); Amazon LWA 'Atza|'; Webex bots use
+     * the base64 'ciscospark://' header tag */
+    { "FQoGZXIvYXdz", 12, 30, is_base64,         "AWS STS Session Token",         80 },
+    { "FwoGZXIvYXdz", 12, 30, is_base64,         "AWS STS Session Token",         80 },
+    { "AQoDYXdz",      8, 30, is_base64,         "AWS STS Session Token",         80 },
+    { "Atza|",         5, 30, is_base64,         "Amazon LWA Access Token",       80 },
+    { "Y2lzY29zcGFyazovL", 17, 24, is_base64,    "Webex/Cisco Spark Bot Token",   80 },
+
+    /* Generic 'sk-' + 32 (DeepSeek / legacy OpenAI-class) — a
+     * generic-looking prefix gated by a long tail; Braintree tokens
+     * carry 'access_token$<env>$' — the '$' breaks the tail charset,
+     * so the env-qualified prefixes gate instead. (Mailgun 'key-' is
+     * covered above with a hex gate — documented keys are 32-hex.) */
+    { "access_token$production$", 24, 12, is_alnum_or_dash, "Braintree Access Token", 80 },
+    { "access_token$sandbox$", 21, 12, is_alnum_or_dash, "Braintree Sandbox Token", 70 },
+    { "sk-",           3, 32, is_alnum_or_dash,  "Generic sk- Secret Key",        80 },
+
     { NULL, 0, 0, NULL, NULL, 0 }
 };
 

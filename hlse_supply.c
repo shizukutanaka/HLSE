@@ -1018,6 +1018,62 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "robocopy") &&
                    ci_contains(text, "\\\\")) {
             what = "robocopy exfiltration to remote share (LOLBin)";
+        /* LOLBAS wave: ieexec fetches and runs a remote .NET app,
+         * infdefaultinstall runs an .inf [DefaultInstall] payload,
+         * msdeploy syncs attacker packages / runs commands        */
+        } else if (ci_contains(text, "ieexec") &&
+                   (ci_contains(text, "http") || ci_contains(text, ".exe") ||
+                    ci_contains(text, ".dll"))) {
+            what = "ieexec remote .NET execution (LOLBin)";
+        } else if (ci_contains(text, "infdefaultinstall") &&
+                   ci_contains(text, ".inf")) {
+            what = "infdefaultinstall .inf payload (LOLBin)";
+        } else if (ci_contains(text, "msdeploy") &&
+                   (ci_contains(text, "-verb:") || ci_contains(text, "-source:") ||
+                    ci_contains(text, "-dest:"))) {
+            what = "msdeploy package/command execution (LOLBin)";
+        /* rasdial /phonebook dials an attacker-supplied .pbk whose
+         * entry can carry dial-up scripts (LOLBin)                */
+        } else if (ci_contains(text, "rasdial") &&
+                   (ci_contains(text, ".pbk") || ci_contains(text, "/phonebook"))) {
+            what = "rasdial attacker phonebook dial (LOLBin)";
+        /* regedit imports .reg (install primitive); '/e ' exports
+         * instead, and exporting SAM/SECURITY/SYSTEM hives is
+         * credential theft                                        */
+        } else if (ci_contains(text, "regedit") &&
+                   (ci_contains(text, "/s") ||
+                    (ci_contains(text, ".reg") &&
+                     !ci_contains(text, "/e ")))) {
+            what = "regedit registry import (install primitive)";
+        } else if (ci_contains(text, "regedit") &&
+                   ci_contains(text, "/e") &&
+                   (ci_contains(text, "\\sam") || ci_contains(text, "\\security") ||
+                    ci_contains(text, "\\system"))) {
+            what = "regedit SAM/SYSTEM hive export (credential theft)";
+        /* reg add into autostart keys (Run/RunOnce/IFEO/
+         * SilentProcessExit/Winlogon shell) is the classic
+         * registry-persistence write                             */
+        } else if ((ci_contains(text, "reg add") ||
+                    ci_contains(text, "reg.exe add")) &&
+                   (ci_contains(text, "currentversion\\run") ||
+                    ci_contains(text, "image file execution") ||
+                    ci_contains(text, "silentprocessexit") ||
+                    (ci_contains(text, "winlogon") &&
+                     (ci_contains(text, "shell") || ci_contains(text, "userinit"))))) {
+            what = "reg add autostart/IFEO write (persistence primitive)";
+        /* winrs -r runs a remote shell; tttracer/ttdinject trace
+         * and inject DLLs via Time Travel Debugging (LOLBAS)      */
+        } else if (ci_contains(text, "winrs") &&
+                   ci_contains(text, "-r:")) {
+            what = "winrs remote shell (LOLBin)";
+        } else if (ci_contains(text, "tttracer") &&
+                   (ci_contains(text, "-out") || ci_contains(text, "-dump") ||
+                    ci_contains(text, ".exe") || ci_contains(text, ".dll"))) {
+            what = "tttracer TTD trace/load (LOLBin)";
+        } else if (ci_contains(text, "ttdinject") &&
+                   (ci_contains(text, "/dll") || ci_contains(text, ".dll") ||
+                    ci_contains(text, "/commandline"))) {
+            what = "ttdinject TTD DLL injection (LOLBin)";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
