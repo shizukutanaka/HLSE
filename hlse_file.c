@@ -448,6 +448,26 @@ static const char *EXECUTABLE_EXTS[] = {
     /* Android split/bundle packages — same sideload class as .apk
      * (bundled APK sets sideload additional code)                  */
     ".xapk", ".apks", ".apkm",
+    /* Mobile/installer carriers — .apk/.aab sideload Android
+     * packages (the .xapk/.apks/.apkm bundles above are its own
+     * splits; the base .apk was the missing sibling), .ipa the
+     * iOS sideload package (its signing artifacts are already
+     * listed), .deb/.rpm system package installers whose
+     * maintainer scripts run as root, .AppImage a self-extracting
+     * executable                                                  */
+    ".apk", ".aab", ".ipa", ".deb", ".rpm", ".appimage",
+    /* Browser/editor extension packages — installing one runs the
+     * extension's code under the host app's trust (.vsix VS Code,
+     * .crx Chrome, .xpi Firefox, .oex Opera)                       */
+    ".vsix", ".crx", ".xpi", ".oex",
+    /* Remaining installer/execution carriers — .xap Silverlight
+     * package (managed-code container), .clickonce manifest (the
+     * .appref-ms/.deploy/.application siblings are listed), .air
+     * AIR installer, .ins IE connection-settings (proxy/script
+     * config), .shar self-extracting shell archive (runs shell on
+     * open), .ear Java enterprise archive (deployable code —
+     * .war/.jar are already listed)                                */
+    ".xap", ".clickonce", ".air", ".ins", ".shar", ".ear",
     /* Apple signing carrier — .provisioningprofile is the
      * enterprise-sideload signing artifact (ad-hoc app install);
      * .mobileconfig stays content-gated in the MOBILECONFIG rule

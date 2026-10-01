@@ -2077,6 +2077,37 @@ static const char *FAKE_ALERT_WORDS[] = {
     "telegram trading",
     /* Cash App flip — the send-small-get-big return con           */
     "cash app flip", "cashapp flip",
+    /* Gift-card payment channel — the FTC-documented signature:
+     * 'buy the card and read me the numbers'. Only the
+     * purchase/code/read-back phrasings are listed — bare
+     * store-card names are legitimate gift talk                 */
+    "google play card code", "itunes card code", "steam card code",
+    "apple gift card code", "gift card code", "gift card numbers",
+    "scratch the card", "scratch off the card",
+    "read me the numbers", "read off the numbers",
+    "numbers on the back", "numbers on the card",
+    "pay with gift cards", "payment by gift card",
+    "gift card to pay",
+    "buy a google play card", "buy google play card",
+    "buy an itunes card", "buy a steam card",
+    "buy an apple gift card", "buy a walmart gift card",
+    "prepaid card numbers", "vanilla card", "green dot card",
+    "moneypak",
+    /* Remittance channel — 'send/transfer via western union or
+     * moneygram' is the classic advance-fee payment rail         */
+    "western union transfer", "moneygram transfer",
+    "western union payment", "moneygram payment",
+    "pay via western union", "pay via moneygram",
+    "send via western union", "send via moneygram",
+    /* Law-enforcement impersonation — badge-number credentialing
+     * and arrest-warrant threat are the robocall script's own
+     * vocabulary (real agencies never demand payment by phone)   */
+    "dea agent", "dea officer", "dea special agent",
+    "irs agent", "irs officer",
+    "badge number", "badge id", "arrest has been",
+    "warrant for your arrest", "warrant issued for your arrest",
+    "warrant has been issued", "issued for your arrest",
+    "sheriff department",
     NULL
 };
 

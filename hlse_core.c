@@ -1885,6 +1885,17 @@ static const char *const URL_HANDLER_SCHEMES[] = {
     "zoomphonecall:", "confinstall:", "subl:", "mvim:",
     "windowsdefender:",
     "txmt:", "fork:", "sourcetree:",
+    /* editor/IDE deep-links — the vscode://file/ sibling handlers:
+     * cursor:/windsurf: are VS Code forks (same file-open
+     * primitive), zed:/jetbrains:/visualstudio:/xcode: open paths
+     * or actions in the named IDE                                */
+    "cursor:", "windsurf:", "zed:", "jetbrains:",
+    "visualstudio:", "xcode:",
+    /* Apple media + automation handlers — tv: opens the TV app
+     * (music:/videos: siblings); shortcuts:/workflow: run a named
+     * iOS Shortcut (run-shortcut?name= executes an installed
+     * automation — action-exec primitive, not just an app open)  */
+    "tv:", "shortcuts:", "workflow:",
     /* wyciwyg: = Firefox what-you-cache (origin bypass); local://
      * references local files                                       */
     "wyciwyg:", "local:",

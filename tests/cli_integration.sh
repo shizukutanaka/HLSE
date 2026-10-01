@@ -11671,6 +11671,59 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-227: installer carriers + IDE/Shortcuts schemes + scam vocab ─
+for f in 'x.apk' 'x.aab' 'x.ipa' 'x.deb' 'x.rpm' 'x.AppImage' \
+         'x.vsix' 'x.crx' 'x.xpi' 'x.oex' 'x.xap' 'x.clickonce' \
+         'x.air' 'x.ins' 'x.shar' 'x.ear'; do
+    ./hlse_core file "$f" 2>&1 | grep -qE 'SAFE.*5|LOG|ALERT|BLOCK|ISOLATE' \
+        && check "file: $f flagged" "0" "0" \
+        || check "file: $f flagged" "0" "1"
+done
+for f in 'x.zip' 'x.rar' 'x.nupkg' 'x.gem' 'a.txt' 'a.pdf'; do
+    ./hlse_core file "$f" 2>&1 | grep -q '^OK' \
+        && check "file FP guard: $f clean" "0" "0" \
+        || check "file FP guard: $f clean" "0" "1"
+done
+for s in 'tv://x' 'shortcuts://run-shortcut?name=x' \
+         'workflow://run-workflow?name=x' 'cursor://file/x' \
+         'windsurf://file/x' 'zed://file/x' 'jetbrains://idea/x' \
+         'visualstudio://x' 'xcode://x'; do
+    ./hlse_core "$s" 2>&1 | grep -qE 'LOG|ALERT|BLOCK|ISOLATE' \
+        && check "scheme: $s flagged" "0" "0" \
+        || check "scheme: $s flagged" "0" "1"
+done
+
+for t in 'go to walmart and buy a google play card' \
+         'buy an itunes card worth 500' \
+         'read me the numbers on the card' \
+         'scratch off the card and read the code' \
+         'steam card code required for verification' \
+         'pay with gift cards' 'payment by gift card' \
+         'pay via moneygram transfer' \
+         'western union transfer to release' \
+         'send via moneygram' 'moneygram payment' \
+         'this is dea agent smith' 'dea special agent' \
+         'irs officer badge id 112233' 'irs agent on the line' \
+         'my badge number is 4521' 'badge id 99887' \
+         'a warrant has been issued for your arrest' \
+         'warrant issued for your arrest pay now' \
+         'the sheriff department will contact you'; do
+    ./hlse_core text "$t" 2>&1 | grep -qE 'LOG|ALERT|BLOCK|ISOLATE' \
+        && check "text: ${t:0:44} flagged" "0" "0" \
+        || check "text: ${t:0:44} flagged" "0" "1"
+done
+for t in 'i got an itunes card for christmas' \
+         'she gave me a google play card' \
+         'gift cards on sale at the store' \
+         'badge of honor' 'the arrest of the suspect' \
+         'western union stock price' 'pay with a credit card' \
+         'id badge required' 'the sheriff election results' \
+         'dea schedule i drug' 'the drug enforcement policy'; do
+    ./hlse_core text "$t" 2>&1 | grep -q '^OK' \
+        && check "text FP guard: ${t:0:44} clean" "0" "0" \
+        || check "text FP guard: ${t:0:44} clean" "0" "1"
+done
+
 # ── cycle-226: EP bypass + reg save hive + AV kill + pkg/cert primitives ─
 for c in \
     'netsh add helper x.dll' \

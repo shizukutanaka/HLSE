@@ -77,6 +77,28 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Installer carriers + IDE/Shortcuts schemes + gift-card/LE
+  scam vocab** (`hlse_file.c`, `hlse_core.c`, `hlse_text.c`):
+  EXECUTABLE_EXTS gains the exec-capable installer set that was
+  missing — `.apk`/`.aab`/`.ipa` (mobile sideload; the
+  .xapk/.apks/.apkm splits were already listed but the base
+  .apk was not), `.deb`/`.rpm` (system installers: maintainer
+  scripts run as root), `.AppImage`, `.vsix`/`.crx`/`.xpi`/`.oex`
+  (browser/editor extension packages — code runs under the host
+  app's trust), `.xap`/`.clickonce`/`.air`/`.ins`/`.shar`/`.ear`
+  (Silverlight, ClickOnce manifest, AIR installer, IE
+  connection-settings, self-extracting shell archive, Java EAR).
+  Schemes gain `cursor:`/`windsurf:`/`zed:`/`jetbrains:`/
+  `visualstudio:`/`xcode:` (IDE deep-links — the
+  vscode://file/ siblings), `tv:`, and `shortcuts:`/`workflow:`
+  (run-shortcut?name= executes an installed iOS automation —
+  action-exec, not just app-open). Text FAKE_ALERT vocab gains
+  the gift-card payment channel (code/scratch/read-back
+  phrasings — bare store-card names stay unflagged: they are
+  legitimate gift talk), western-union/moneygram transfer rails,
+  and law-enforcement impersonation (dea/irs agent|officer,
+  badge number|id, warrant-for-arrest, sheriff department).
+
 - **EP-bypass + reg-save hive dump + AV/EDR kill + install
   primitives** (`hlse_supply.c`): paste adds —
   `powershell`/`pwsh` + `-ep|-ex|-exec|-executionpolicy` +
