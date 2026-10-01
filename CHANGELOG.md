@@ -77,6 +77,94 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Mobile device control + RE/OSINT tool names + SCADA/telephony/
+  queue/DB-destructive + supply-publish + CI/deploy + supervisor/
+  journald + hardware/radio/input-snoop + fake-infra/phish/C2
+  primitives (cycle-243)**: flags, at LOG/ALERT in paste context —
+  mobile: `adb shell|install|push|root|reboot|sideload|remount|
+  disable-verity|unroot`, `fastboot flash|oem|erase|reboot|unlock|
+  format|set_active`, `heimdall flash`, `mtkclient`, `edl`,
+  `scrcpy`/`sndcpy`, `idevice*` family, `ios-deploy`/`ifuse`/`iproxy`,
+  `checkra1n`/`palera1n`/`magisk`, `frida*`/`objection`/`apktool`/
+  `jadx`/`apksigner sign`/`d2j-dex2jar`/`baksmali`/`quark-engine`/
+  `drozer`/`mobsf`; RE/debug: `radare2`/`rabin2`/`rasm2`/`radiff2`/
+  `rizin`/`idat64`/`ghidra`/`analyzeHeadless`/`retdec`/`x64dbg`/
+  `pwndbg`/`gef`/`peda`/`binlex` + flag-gated `cutter`/`hopper`/`edb`/
+  `windbg`/`capa`/`floss`/`yara`; OSINT/secret-scan: `theharvester`/
+  `recon-ng`/`spiderfoot`/`holehe`/`ghunt`/`phoneinfoga`/`metagoofil`/
+  `dnstwist`/`trufflehog`/`gitleaks`/`shhgit`/`gitrob`/
+  `detect-secrets` + gated `sherlock`/`shodan`/`censys`; SCADA/
+  telephony/queue: `mbpoll`/`modpoll`/`snap7`/`pymodbus`,
+  `asterisk -r`, `fs_cli`, `kamcmd`/`kamctl`, `opensips-cli`, `mmcli`/
+  `qmicli`/`mbimcli`, `mosquitto_pub/sub`, `emqx` ctl verbs,
+  `rabbitmqctl`/`rabbitmqadmin`, `kafka-*` producer/consumer/topics/
+  acls/delete-records, `pulsar-admin`/`pulsar-client`, `nats-*`,
+  `zkcli`, `flush_all`; DB destructive: `sqlcmd`/`cqlsh`/`beeline`/
+  `clickhouse-client`/`impala-shell`/`presto`/`trino`/`db2`/`snowsql`/
+  `influx`/`bq`/`arangosh`/`cypher-shell` + drop/truncate/delete;
+  supply publish: `npm publish|unpublish|deprecate|access`, `yarn
+  publish|unpublish` + `application -kill`, `twine upload`, `cargo
+  publish|yank`, `gem push`, `conan upload|remove`, `nuget`/`dotnet
+  nuget` push/delete, `oras push`, `jfrog rt`, `mvn deploy|release`,
+  `gradle`/`poetry`/`pnpm publish`; CI/CD control: `gh` workflow/
+  secret/variable/api/release/repo/auth/key/run verbs, `glab` ci/
+  variable/release/auth/repo, `fly` set-pipeline/hijack/trigger,
+  `flyctl` destroy/deploy/scale/secrets/ssh, `jenkins-cli`, `gitlab-
+  runner register|unregister|exec`, `circleci`/`travis`/`drone`/
+  `buildkite-agent` verbs; deploy/destroy: `sls`/`serverless`/`sam`
+  deploy/remove/invoke, `railway`/`vercel`/`netlify` rm/delete/env/
+  deploy, `heroku` apps:destroy/addons:destroy/config:set/pg:kill/
+  pg:reset/ps:scale/maintenance/drains/certs, `vagrant destroy|
+  package`; supervisors: `pm2` all verbs, `supervisorctl` stop/
+  shutdown/update/signal/remove/add, `monit`, `god`, `bluepill`,
+  `svcadm`; `journalctl --rotate|--flush|--sync|--relinquish|--
+  header`, sysrq-trigger write; hardware/firmware: `flashrom -w|-e|
+  --erase|-p`, `dfu-util` write, `avrdude -u|-e|-c`, `esptool`
+  write/erase/read/verify/dump/merge/run, `usbreset /dev`,
+  `usb_modeswitch`, `openocd -f|-c`, `gpioset`/`i2cset`/`spidev`,
+  `nandwrite`/`nandtest`/`nanddump`/`ubiformat`/`mtd_debug`; radio/
+  BLE/NFC/GPS: `hackrf_*`, `rtl_sdr`/`rtl_fm`, `airprobe`/`kalibrate`,
+  `ubertooth`, `btmon`/`btproxy`/`bleah`/`crackle`, `hcitool` scan/
+  lescan/cc, `gatttool`, `bluetoothctl` pair/connect/discoverable/
+  agent/power, `proxmark3`/`pm3`/`mfoc`/`mfcuk`/`nfc-list`, `killerbee`/
+  `zb*` replay/flood/sniff, `gps-sdr-sim`/`gpsfaker`/`fakegps`/`gnss-
+  sdr`; input snoop/GUI exec: `evtest`, `libinput debug|record`,
+  `showkey`, `dumpkeys`, `wev`, `wshowkeys`, `xinput` test/set/
+  float/disable, `hyprctl`/`swaymsg`/`i3-msg` exec; fake infra:
+  `fakedns`/`fakenet`/`inetsim`/`apatedns`/`remnux`; phish extras:
+  `hiddeneye`/`seeker`/`socialfish`/`nexphisher`/`camphish`/`sayhello`/
+  `stormbreaker`/`pyphisher`/`madphish`/`mrphish`/`evilurl`; C2 extras:
+  `evil-winrm`, `villain`/`mythic`/`covenant`/`havoc` (gated),
+  `darkcomet`/`poisonivy`/`gh0st`/`backdoor-factory`/`bdfproxy`/
+  `nimcrypt`/`nimplant`, `unicorn`+`.py`, `scarecrow`, `upx` packed;
+  print/spool: `printui /ga|/gd|/ge|/dd`/`printuientry`, `verifier`
+  driver-verify, `lpadmin` -x/-p/-v/-e, `cancel -a`, `lpmove`,
+  `cupsdisable`/`cupsreject`; boot regen: `update-initramfs`,
+  `mkinitrd`, `update-grub`, `grub*-mkconfig`, `grub-install`;
+  `ssh-keygen -s` CA-sign; mail exfil: `mutt`/`mailx`/`sendmail`/
+  `s-nail`/`mpack` send forms; webhook exfil: `curl|wget|httpie|xh`
+  + data flag → `api.telegram.org`/`hooks.slack.com`/`discord webhooks`/
+  `webhook.site`/`pipedream`/`requestbin`/`beeceptor`/`smee.io`;
+  systemd/user: `systemd-cryptenroll --`, `homectl` create/remove/
+  passwd/update, `bootctl` install/remove/set-default, `udevadm`
+  trigger/test/control; crypto store: `clevis`, `fscrypt`, `tomb`,
+  `gocryptfs`, `encfs`, `cryfs`, `veracrypt`, `ecryptfs`, `htpasswd`
+  -c/-b/-B/-d; `amtool`/`mimirtool`/`grafana-cli` admin; hypervisor/
+  cloud: `onevm`/`onehost`, `pvesh`, `qm`/`pct` destroy/stop/exec,
+  `openstack`/`nova` delete, `doctl`/`hcloud`/`scw` delete, `oci`
+  terminate, `govc`/`vim-cmd`/`esxcli` VM kill, `virtctl`, `rancher`/
+  `rke`, `k3d`/`kind`/`minikube`/`colima` delete, `docker swarm`
+  leave/join, `ctr exec`, `umoci`/`skopeo`/`cosign`, `helmfile`,
+  `argocd` app delete/sync, `flux` delete/uninstall, `certbot`
+  delete/revoke, `kubeseal`, `sops -d` decrypt; big-data:
+  `spark-submit`, `flink` run/cancel, `oozie`, `airflow`, `sqoop`,
+  `distcp`, `huggingface-cli` upload; pcap/replay: `driftnet`/
+  `xplico`/`text2pcap`/`mergecap`/`editcap`/`trafgen`/`mausezahn`/
+  `nemesis`/`parprouted`/`zarp`, `lftp`/`ncftpput`/`ncftpget`,
+  `autorunsc`/`handle64`/`logonsessions`; browser remote-debug:
+  `chromium`/`chrome`/`firefox`/`msedge`/`brave`/`electron`
+  --remote-debugging-*.
+
 - **Windows eventlog/defense/AD/boot/cert primitives + Unix
   net-config/audit/account/package ops + offensive-tool names +
   infra/cloud/container/cred-store/forensic primitives

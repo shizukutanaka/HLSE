@@ -4032,6 +4032,939 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "nmap") &&
                     ci_contains(text, " -"))) {
             what = "infra/cloud/container/cred-store/mac/forensic primitive";
+        /* c243: mobile device control + RE/OSINT names + SCADA/
+         * telephony/queue + DB destructive + supply publish + CI/
+         * deploy + supervisor/journald + hardware/radio/input snoop +
+         * fake infra + phish/C2 extras ── */
+        } else if ((ci_contains(text, "adb") &&
+                    (ci_contains(text, " shell") ||
+                     ci_contains(text, " install") ||
+                     ci_contains(text, " push") ||
+                     ci_contains(text, " root") ||
+                     ci_contains(text, " reboot") ||
+                     ci_contains(text, " sideload") ||
+                     ci_contains(text, " remount") ||
+                     ci_contains(text, " disable-verity") ||
+                     ci_contains(text, " unroot"))) ||
+                   (ci_contains(text, "fastboot") &&
+                    (ci_contains(text, " flash") ||
+                     ci_contains(text, " oem") ||
+                     ci_contains(text, " erase") ||
+                     ci_contains(text, " reboot") ||
+                     ci_contains(text, " unlock") ||
+                     ci_contains(text, " format") ||
+                     ci_contains(text, " set_active"))) ||
+                   (ci_contains(text, "heimdall") &&
+                    ci_contains(text, " flash")) ||
+                   ci_contains(text, "mtkclient") ||
+                   (ci_contains(text, "edl") &&
+                    (ci_contains(text, "flash") ||
+                     ci_contains(text, "qfil"))) ||
+                   ci_contains(text, "scrcpy") ||
+                   ci_contains(text, "sndcpy") ||
+                   ci_contains(text, "ideviceinstaller") ||
+                   ci_contains(text, "idevicebackup") ||
+                   ci_contains(text, "idevicediagnostics") ||
+                   ci_contains(text, "ideviceinfo") ||
+                   ci_contains(text, "idevicerestore") ||
+                   ci_contains(text, "idevicepair") ||
+                   ci_contains(text, "idevicerestore") ||
+                   ci_contains(text, "ios-deploy") ||
+                   ci_contains(text, "ifuse") ||
+                   ci_contains(text, "iproxy") ||
+                   ci_contains(text, "idevicedebug") ||
+                   ci_contains(text, "checkra1n") ||
+                   ci_contains(text, "palera1n") ||
+                   ci_contains(text, "magisk") ||
+                   (ci_contains(text, "frida") &&
+                    ci_contains(text, " -")) ||
+                   ci_contains(text, "frida-trace") ||
+                   ci_contains(text, "frida-ps") ||
+                   ci_contains(text, "objection") ||
+                   ci_contains(text, "apktool") ||
+                   ci_contains(text, "jadx") ||
+                   (ci_contains(text, "apksigner") &&
+                    (ci_contains(text, "sign") ||
+                     ci_contains(text, "rotate"))) ||
+                   ci_contains(text, "d2j-dex2jar") ||
+                   ci_contains(text, "baksmali") ||
+                   ci_contains(text, "quark-engine") ||
+                   ci_contains(text, "drozer") ||
+                   ci_contains(text, "mobsf") ||
+                   ci_contains(text, "radare2") ||
+                   ci_contains(text, "rabin2") ||
+                   ci_contains(text, "rasm2") ||
+                   ci_contains(text, "radiff2") ||
+                   ci_contains(text, "rizin") ||
+                   ci_contains(text, "idat64") ||
+                   ci_contains(text, "idat32") ||
+                   ci_contains(text, "ghidra") ||
+                   ci_contains(text, "analyzeheadless") ||
+                   ci_contains(text, "retdec") ||
+                   (ci_contains(text, "cutter") &&
+                    ci_contains(text, " -")) ||
+                   (ci_contains(text, "binaryninja") ||
+                    ci_contains(text, "bndb")) ||
+                   (ci_contains(text, "hopper") &&
+                    ci_contains(text, " -")) ||
+                   (ci_contains(text, "edb") &&
+                    ci_contains(text, " -")) ||
+                   ci_contains(text, "x64dbg") ||
+                   ci_contains(text, "x32dbg") ||
+                   (ci_contains(text, "windbg") &&
+                    ci_contains(text, " -")) ||
+                   ci_contains(text, "immunitydebugger") ||
+                   ci_contains(text, "pwndbg") ||
+                   ci_contains(text, "gef") ||
+                   ci_contains(text, "peda") ||
+                   (ci_contains(text, "capa") &&
+                    ci_contains(text, " -")) ||
+                   (ci_contains(text, "floss") &&
+                    ci_contains(text, " -")) ||
+                   ci_contains(text, "binlex") ||
+                   (ci_contains(text, "yara") &&
+                    (ci_contains(text, ".yar") ||
+                     ci_contains(text, " -r") ||
+                     ci_contains(text, " -f") ||
+                     ci_contains(text, " -p") ||
+                     ci_contains(text, " -s") ||
+                     ci_contains(text, " -w") ||
+                     ci_contains(text, " -n") ||
+                     ci_contains(text, " -m"))) ||
+                   ci_contains(text, "theharvester") ||
+                   ci_contains(text, "recon-ng") ||
+                   ci_contains(text, "spiderfoot") ||
+                   (ci_contains(text, "sherlock") &&
+                    ci_contains(text, " -")) ||
+                   ci_contains(text, "holehe") ||
+                   ci_contains(text, "ghunt") ||
+                   ci_contains(text, "phoneinfoga") ||
+                   ci_contains(text, "metagoofil") ||
+                   (ci_contains(text, "shodan") &&
+                    (ci_contains(text, " search") ||
+                     ci_contains(text, " host") ||
+                     ci_contains(text, " count") ||
+                     ci_contains(text, " download") ||
+                     ci_contains(text, " scan") ||
+                     ci_contains(text, " parse") ||
+                     ci_contains(text, " alert") ||
+                     ci_contains(text, " domain") ||
+                     ci_contains(text, " honeyscore") ||
+                     ci_contains(text, " init") ||
+                     ci_contains(text, " org"))) ||
+                   (ci_contains(text, "censys") &&
+                    ci_contains(text, " -")) ||
+                   ci_contains(text, "dnstwist") ||
+                   ci_contains(text, "trufflehog") ||
+                   ci_contains(text, "gitleaks") ||
+                   ci_contains(text, "shhgit") ||
+                   ci_contains(text, "gitrob") ||
+                   ci_contains(text, "detect-secrets") ||
+                   ci_contains(text, "mbpoll") ||
+                   ci_contains(text, "modpoll") ||
+                   ci_contains(text, "snap7") ||
+                   ci_contains(text, "pymodbus") ||
+                   (ci_contains(text, "asterisk") &&
+                    (ci_contains(text, " -r") ||
+                     ci_contains(text, " -x"))) ||
+                   (ci_contains(text, "fs_cli") &&
+                    ci_contains(text, " -")) ||
+                   ci_contains(text, "kamcmd") ||
+                   ci_contains(text, "kamctl") ||
+                   ci_contains(text, "opensips-cli") ||
+                   (ci_contains(text, "mmcli") &&
+                    (ci_contains(text, " -m") ||
+                     ci_contains(text, " --"))) ||
+                   (ci_contains(text, "qmicli") &&
+                    ci_contains(text, " -")) ||
+                   (ci_contains(text, "mbimcli") &&
+                    (ci_contains(text, " -d") ||
+                     ci_contains(text, " -p") ||
+                     ci_contains(text, "--query") ||
+                     ci_contains(text, "--set") ||
+                     ci_contains(text, "--connect") ||
+                     ci_contains(text, "--disconnect"))) ||
+                   ci_contains(text, "mosquitto_pub") ||
+                   ci_contains(text, "mosquitto_sub") ||
+                   (ci_contains(text, "emqx") &&
+                    (ci_contains(text, " ctl") ||
+                     ci_contains(text, " eval") ||
+                     ci_contains(text, " stop") ||
+                     ci_contains(text, " kill"))) ||
+                   ci_contains(text, "rabbitmqctl") ||
+                   ci_contains(text, "rabbitmqadmin") ||
+                   ci_contains(text, "kafka-topics") ||
+                   ci_contains(text, "kafka-console-") ||
+                   ci_contains(text, "kafka-acls") ||
+                   ci_contains(text, "kafka-configs") ||
+                   ci_contains(text, "kafka-producer") ||
+                   ci_contains(text, "kafka-consumer-") ||
+                   ci_contains(text, "kafka-delete-records") ||
+                   ci_contains(text, "pulsar-admin") ||
+                   ci_contains(text, "pulsar-client") ||
+                   (ci_contains(text, "nats-") &&
+                    ci_contains(text, " -")) ||
+                   ci_contains(text, "zkcli") ||
+                   ci_contains(text, "flush_all") ||
+                   (ci_contains(text, "psql") &&
+                    (ci_contains(text, " drop ") ||
+                     ci_contains(text, " truncate") ||
+                     ci_contains(text, " delete "))) ||
+                   (ci_contains(text, "mysql") &&
+                    (ci_contains(text, " drop ") ||
+                     ci_contains(text, " truncate") ||
+                     ci_contains(text, " delete "))) ||
+                   (ci_contains(text, "sqlcmd") &&
+                    (ci_contains(text, "drop table") ||
+                     ci_contains(text, "drop database") ||
+                     ci_contains(text, "truncate table") ||
+                     ci_contains(text, "delete from"))) ||
+                   (ci_contains(text, "cqlsh") &&
+                    (ci_contains(text, "drop table") ||
+                     ci_contains(text, "drop keyspace") ||
+                     ci_contains(text, "truncate"))) ||
+                   (ci_contains(text, "beeline") &&
+                    (ci_contains(text, "drop table") ||
+                     ci_contains(text, "drop database") ||
+                     ci_contains(text, "truncate table") ||
+                     ci_contains(text, "delete from"))) ||
+                   (ci_contains(text, "clickhouse-client") &&
+                    (ci_contains(text, "drop table") ||
+                     ci_contains(text, "drop database") ||
+                     ci_contains(text, "truncate table") ||
+                     ci_contains(text, "delete from") ||
+                     ci_contains(text, "detach"))) ||
+                   (ci_contains(text, "influx") &&
+                    (ci_contains(text, " delete") ||
+                     ci_contains(text, " drop"))) ||
+                   (ci_contains(text, "bq ") &&
+                    (ci_contains(text, " rm") ||
+                     ci_contains(text, " delete") ||
+                     ci_contains(text, " rm -rf"))) ||
+                   (ci_contains(text, "snowsql") &&
+                    (ci_contains(text, "drop ") ||
+                     ci_contains(text, "delete "))) ||
+                   (ci_contains(text, "arangosh") &&
+                    ci_contains(text, " -")) ||
+                   (ci_contains(text, "cypher-shell") &&
+                    ci_contains(text, " -")) ||
+                   (ci_contains(text, "db2") &&
+                    (ci_contains(text, " drop ") ||
+                     ci_contains(text, " deactivate"))) ||
+                   (ci_contains(text, "impala-shell") &&
+                    (ci_contains(text, " drop ") ||
+                     ci_contains(text, " -q") ||
+                     ci_contains(text, " -f") ||
+                     ci_contains(text, " --impalad"))) ||
+                   (ci_contains(text, "presto") &&
+                    (ci_contains(text, " drop ") ||
+                     ci_contains(text, " --execute"))) ||
+                   (ci_contains(text, "trino") &&
+                    (ci_contains(text, " drop ") ||
+                     ci_contains(text, " delete") ||
+                     ci_contains(text, " --execute"))) ||
+                   (ci_contains(text, "npm") &&
+                    (ci_contains(text, " publish") ||
+                     ci_contains(text, " unpublish") ||
+                     ci_contains(text, " deprecate") ||
+                     ci_contains(text, " unstar") ||
+                     ci_contains(text, " access"))) ||
+                   (ci_contains(text, "yarn") &&
+                    (ci_contains(text, " publish") ||
+                     ci_contains(text, " unpublish") ||
+                     ci_contains(text, " application -kill") ||
+                     ci_contains(text, " -kill"))) ||
+                   (ci_contains(text, "twine") &&
+                    ci_contains(text, " upload")) ||
+                   (ci_contains(text, "cargo") &&
+                    (ci_contains(text, " publish") ||
+                     ci_contains(text, " yank"))) ||
+                   (ci_contains(text, "gem") &&
+                    ci_contains(text, " push")) ||
+                   (ci_contains(text, "conan") &&
+                    (ci_contains(text, " upload") ||
+                     ci_contains(text, " remove"))) ||
+                   (ci_contains(text, "nuget") &&
+                    (ci_contains(text, " push") ||
+                     ci_contains(text, " delete"))) ||
+                   (ci_contains(text, "dotnet nuget") &&
+                    (ci_contains(text, " push") ||
+                     ci_contains(text, " delete"))) ||
+                   (ci_contains(text, "oras") &&
+                    ci_contains(text, " push")) ||
+                   (ci_contains(text, "jfrog") &&
+                    (ci_contains(text, " rt u") ||
+                     ci_contains(text, " rt upload") ||
+                     ci_contains(text, " rt del") ||
+                     ci_contains(text, " rt delete"))) ||
+                   (ci_contains(text, "mvn") &&
+                    (ci_contains(text, " deploy") ||
+                     ci_contains(text, " release"))) ||
+                   (ci_contains(text, "gradle") &&
+                    ci_contains(text, " publish")) ||
+                   (ci_contains(text, "poetry") &&
+                    ci_contains(text, " publish")) ||
+                   (ci_contains(text, "pnpm") &&
+                    ci_contains(text, " publish")) ||
+                   (ci_contains(text, "gh ") &&
+                    (ci_contains(text, "workflow run") ||
+                     ci_contains(text, "secret ") ||
+                     ci_contains(text, "variable ") ||
+                     ci_contains(text, " api") ||
+                     ci_contains(text, " release delete") ||
+                     ci_contains(text, " release upload") ||
+                     ci_contains(text, " repo delete") ||
+                     ci_contains(text, " auth ") ||
+                     ci_contains(text, " gpg-key") ||
+                     ci_contains(text, " ssh-key") ||
+                     ci_contains(text, " run watch") ||
+                     ci_contains(text, " workflow disable") ||
+                     ci_contains(text, " workflow enable"))) ||
+                   (ci_contains(text, "glab") &&
+                    (ci_contains(text, " ci ") ||
+                     ci_contains(text, " variable") ||
+                     ci_contains(text, " release") ||
+                     ci_contains(text, " auth") ||
+                     ci_contains(text, " repo delete"))) ||
+                   (ci_contains(text, "fly ") &&
+                    (ci_contains(text, "set-pipeline") ||
+                     ci_contains(text, "destroy-pipeline") ||
+                     ci_contains(text, " hijack") ||
+                     ci_contains(text, " unpause") ||
+                     ci_contains(text, "pause") ||
+                     ci_contains(text, "trigger-job") ||
+                     ci_contains(text, "validate-pipeline"))) ||
+                   (ci_contains(text, "flyctl") &&
+                    (ci_contains(text, " destroy") ||
+                     ci_contains(text, " deploy") ||
+                     ci_contains(text, " scale") ||
+                     ci_contains(text, " secrets") ||
+                     ci_contains(text, " ssh"))) ||
+                   (ci_contains(text, "jenkins-cli") ||
+                    ci_contains(text, "jenkins-cli.jar")) ||
+                   (ci_contains(text, "gitlab-runner") &&
+                    (ci_contains(text, " register") ||
+                     ci_contains(text, " unregister") ||
+                     ci_contains(text, " exec"))) ||
+                   (ci_contains(text, "circleci") &&
+                    (ci_contains(text, " run") ||
+                     ci_contains(text, " build") ||
+                     ci_contains(text, " orb") ||
+                     ci_contains(text, " setup") ||
+                     ci_contains(text, " execute") ||
+                     ci_contains(text, " process") ||
+                     ci_contains(text, " follow"))) ||
+                   (ci_contains(text, "travis") &&
+                    (ci_contains(text, " init") ||
+                     ci_contains(text, " encrypt") ||
+                     ci_contains(text, " ssh") ||
+                     ci_contains(text, " token") ||
+                     ci_contains(text, " env") ||
+                     ci_contains(text, " enable") ||
+                     ci_contains(text, " disable") ||
+                     ci_contains(text, " sync") ||
+                     ci_contains(text, " run"))) ||
+                   (ci_contains(text, "drone") &&
+                    (ci_contains(text, " build") ||
+                     ci_contains(text, " exec") ||
+                     ci_contains(text, " secret") ||
+                     ci_contains(text, " sign") ||
+                     ci_contains(text, " server") ||
+                     ci_contains(text, " agent") ||
+                     ci_contains(text, " promote") ||
+                     ci_contains(text, " deploy") ||
+                     ci_contains(text, " rollback") ||
+                     ci_contains(text, " repo"))) ||
+                   (ci_contains(text, "buildkite-agent") &&
+                    (ci_contains(text, " -") ||
+                     ci_contains(text, " start") ||
+                     ci_contains(text, " agent"))) ||
+                   (ci_contains(text, "sls") &&
+                    (ci_contains(text, " deploy") ||
+                     ci_contains(text, " remove") ||
+                     ci_contains(text, " rollback") ||
+                     ci_contains(text, " invoke"))) ||
+                   (ci_contains(text, "serverless") &&
+                    (ci_contains(text, " deploy") ||
+                     ci_contains(text, " remove") ||
+                     ci_contains(text, " invoke"))) ||
+                   (ci_contains(text, "sam") &&
+                    (ci_contains(text, " deploy") ||
+                     ci_contains(text, " delete"))) ||
+                   (ci_contains(text, "railway") &&
+                    (ci_contains(text, " delete") ||
+                     ci_contains(text, " up") ||
+                     ci_contains(text, " down") ||
+                     ci_contains(text, " run"))) ||
+                   (ci_contains(text, "vercel") &&
+                    (ci_contains(text, " rm") ||
+                     ci_contains(text, " env") ||
+                     ci_contains(text, " delete") ||
+                     ci_contains(text, " redeploy"))) ||
+                   (ci_contains(text, "netlify") &&
+                    (ci_contains(text, " unlink") ||
+                     ci_contains(text, " delete") ||
+                     ci_contains(text, " deploy") ||
+                     ci_contains(text, " env"))) ||
+                   (ci_contains(text, "heroku") &&
+                    (ci_contains(text, "apps:destroy") ||
+                     ci_contains(text, "addons:destroy") ||
+                     ci_contains(text, "config:set") ||
+                     ci_contains(text, "config:unset") ||
+                     ci_contains(text, "ps:scale") ||
+                     ci_contains(text, "maintenance:") ||
+                     ci_contains(text, "releases") ||
+                     ci_contains(text, "drains") ||
+                     ci_contains(text, "access:") ||
+                     ci_contains(text, "certs") ||
+                     ci_contains(text, "pg:kill") ||
+                     ci_contains(text, "pg:reset") ||
+                     ci_contains(text, "pg:backups"))) ||
+                   (ci_contains(text, "vagrant") &&
+                    (ci_contains(text, " destroy") ||
+                     ci_contains(text, " package"))) ||
+                   (ci_contains(text, "pm2") &&
+                    (ci_contains(text, " delete") ||
+                     ci_contains(text, " kill") ||
+                     ci_contains(text, " stop") ||
+                     ci_contains(text, " startup") ||
+                     ci_contains(text, " save") ||
+                     ci_contains(text, " resurrect") ||
+                     ci_contains(text, " reload") ||
+                     ci_contains(text, " restart") ||
+                     ci_contains(text, " unstartup"))) ||
+                   (ci_contains(text, "supervisorctl") &&
+                    (ci_contains(text, " stop") ||
+                     ci_contains(text, " shutdown") ||
+                     ci_contains(text, " update") ||
+                     ci_contains(text, " restart") ||
+                     ci_contains(text, " signal") ||
+                     ci_contains(text, " remove") ||
+                     ci_contains(text, " add"))) ||
+                   (ci_contains(text, "monit ") &&
+                    (ci_contains(text, " unmonitor") ||
+                     ci_contains(text, " stop") ||
+                     ci_contains(text, " quit") ||
+                     ci_contains(text, " reload") ||
+                     ci_contains(text, " restart") ||
+                     ci_contains(text, " monitor") ||
+                     ci_contains(text, " start"))) ||
+                   (ci_contains(text, "god") &&
+                    (ci_contains(text, " stop") ||
+                     ci_contains(text, " terminate") ||
+                     ci_contains(text, " restart") ||
+                     ci_contains(text, " unmonitor"))) ||
+                   (ci_contains(text, "bluepill") &&
+                    (ci_contains(text, " stop") ||
+                     ci_contains(text, " quit") ||
+                     ci_contains(text, " restart") ||
+                     ci_contains(text, " load"))) ||
+                   (ci_contains(text, "svcadm") &&
+                    (ci_contains(text, " disable") ||
+                     ci_contains(text, " delete") ||
+                     ci_contains(text, " clear") ||
+                     ci_contains(text, " mark") ||
+                     ci_contains(text, " restart") ||
+                     ci_contains(text, " refresh") ||
+                     ci_contains(text, " enable"))) ||
+                   (ci_contains(text, "journalctl") &&
+                    (ci_contains(text, "--vacuum") ||
+                     ci_contains(text, " --rotate") ||
+                     ci_contains(text, " --flush") ||
+                     ci_contains(text, " --sync") ||
+                     ci_contains(text, " --relinquish") ||
+                     ci_contains(text, " --header"))) ||
+                   (ci_contains(text, "sysrq-trigger") &&
+                    ci_contains(text, " >")) ||
+                   (ci_contains(text, "flashrom") &&
+                    (ci_contains(text, " -w") ||
+                     ci_contains(text, " -e") ||
+                     ci_contains(text, "--erase") ||
+                     ci_contains(text, "-programmer") ||
+                     ci_contains(text, " -p"))) ||
+                   (ci_contains(text, "dfu-util") &&
+                    (ci_contains(text, " -d") ||
+                     ci_contains(text, " -a") ||
+                     ci_contains(text, " -e") ||
+                     ci_contains(text, " -w"))) ||
+                   (ci_contains(text, "avrdude") &&
+                    (ci_contains(text, " -u") ||
+                     ci_contains(text, " -e") ||
+                     ci_contains(text, " -c"))) ||
+                   (ci_contains(text, "esptool") &&
+                    (ci_contains(text, "write_flash") ||
+                     ci_contains(text, "erase_flash") ||
+                     ci_contains(text, "flash_id") ||
+                     ci_contains(text, "read_flash") ||
+                     ci_contains(text, "verify_flash") ||
+                     ci_contains(text, "dump_mem") ||
+                     ci_contains(text, "load_ram") ||
+                     ci_contains(text, "write_mem") ||
+                     ci_contains(text, "merge_bin") ||
+                     ci_contains(text, "elf2image") ||
+                     ci_contains(text, "run"))) ||
+                   (ci_contains(text, "usbreset") &&
+                    ci_contains(text, " /dev")) ||
+                   (ci_contains(text, "usb_modeswitch") &&
+                    ci_contains(text, " -")) ||
+                   (ci_contains(text, "openocd") &&
+                    (ci_contains(text, " -f") ||
+                     ci_contains(text, " -c"))) ||
+                   ci_contains(text, "gpioset") ||
+                   ci_contains(text, "i2cset") ||
+                   ci_contains(text, "spidev") ||
+                   ci_contains(text, "nandwrite") ||
+                   ci_contains(text, "nandtest") ||
+                   ci_contains(text, "ubiformat") ||
+                   ci_contains(text, "mtd_debug") ||
+                   (ci_contains(text, "nanddump") &&
+                    ci_contains(text, " -")) ||
+                   ci_contains(text, "hackrf_transfer") ||
+                   ci_contains(text, "hackrf_sweep") ||
+                   ci_contains(text, "hackrf_specan") ||
+                   ci_contains(text, "rtl_sdr") ||
+                   ci_contains(text, "rtl_fm") ||
+                   ci_contains(text, "airprobe") ||
+                   ci_contains(text, "kalibrate") ||
+                   ci_contains(text, "ubertooth") ||
+                   ci_contains(text, "btmon") ||
+                   ci_contains(text, "btproxy") ||
+                   ci_contains(text, "bleah") ||
+                   (ci_contains(text, "crackle") &&
+                    ci_contains(text, " -")) ||
+                   (ci_contains(text, "hcitool") &&
+                    (ci_contains(text, " -") ||
+                     ci_contains(text, "scan") ||
+                     ci_contains(text, " le"))) ||
+                   (ci_contains(text, "gatttool") &&
+                    ci_contains(text, " -")) ||
+                   (ci_contains(text, "bluetoothctl") &&
+                    (ci_contains(text, " pair") ||
+                     ci_contains(text, " connect") ||
+                     ci_contains(text, "connectable") ||
+                     ci_contains(text, "discoverable") ||
+                     ci_contains(text, " agent") ||
+                     ci_contains(text, " power"))) ||
+                   ci_contains(text, "proxmark3") ||
+                   ci_contains(text, "pm3") ||
+                   ci_contains(text, "mfoc") ||
+                   ci_contains(text, "mfcuk") ||
+                   ci_contains(text, "nfc-list") ||
+                   ci_contains(text, "killerbee") ||
+                   ci_contains(text, "zbwd") ||
+                   ci_contains(text, "zbgoodfind") ||
+                   ci_contains(text, "zbreplay") ||
+                   ci_contains(text, "zbstumbler") ||
+                   ci_contains(text, "zbdump") ||
+                   ci_contains(text, "zbsniff") ||
+                   ci_contains(text, "zbassocflood") ||
+                   ci_contains(text, "gps-sdr-sim") ||
+                   ci_contains(text, "gpsfaker") ||
+                   ci_contains(text, "fakegps") ||
+                   ci_contains(text, "gnss-sdr") ||
+                   ci_contains(text, "evtest") ||
+                   (ci_contains(text, "libinput") &&
+                    (ci_contains(text, " debug") ||
+                     ci_contains(text, " record"))) ||
+                   ci_contains(text, "showkey") ||
+                   ci_contains(text, "dumpkeys") ||
+                   (ci_contains(text, "wev") &&
+                    !ci_contains(text, "wevtutil")) ||
+                   ci_contains(text, "wshowkeys") ||
+                   (ci_contains(text, "xinput") &&
+                    (ci_contains(text, " test") ||
+                     ci_contains(text, " set") ||
+                     ci_contains(text, " map") ||
+                     ci_contains(text, " float") ||
+                     ci_contains(text, " reattach") ||
+                     ci_contains(text, " disable") ||
+                     ci_contains(text, " enable"))) ||
+                   (ci_contains(text, "hyprctl") &&
+                    (ci_contains(text, " dispatch") ||
+                     ci_contains(text, " keyword") ||
+                     ci_contains(text, " reload") ||
+                     ci_contains(text, " exec"))) ||
+                   (ci_contains(text, "swaymsg") &&
+                    (ci_contains(text, " exec") ||
+                     ci_contains(text, " -m"))) ||
+                   (ci_contains(text, "i3-msg") &&
+                    (ci_contains(text, " exec") ||
+                     ci_contains(text, " -m"))) ||
+                   ci_contains(text, "fakedns") ||
+                   ci_contains(text, "fakenet") ||
+                   ci_contains(text, "inetsim") ||
+                   ci_contains(text, "apatedns") ||
+                   ci_contains(text, "remnux") ||
+                   ci_contains(text, "hiddeneye") ||
+                   ci_contains(text, "hidden-eye") ||
+                   (ci_contains(text, "seeker") &&
+                    ci_contains(text, " -")) ||
+                   ci_contains(text, "socialfish") ||
+                   ci_contains(text, "social-phish") ||
+                   ci_contains(text, "nexphisher") ||
+                   ci_contains(text, "camphish") ||
+                   ci_contains(text, "sayhello") ||
+                   ci_contains(text, "stormbreaker") ||
+                   ci_contains(text, "pyphisher") ||
+                   ci_contains(text, "madphish") ||
+                   ci_contains(text, "mrphish") ||
+                   ci_contains(text, "evilurl") ||
+                   ci_contains(text, "evil-winrm") ||
+                   (ci_contains(text, "villain") &&
+                    ci_contains(text, " -")) ||
+                   (ci_contains(text, "mythic") &&
+                    ci_contains(text, " -")) ||
+                   (ci_contains(text, "covenant") &&
+                    ci_contains(text, " -")) ||
+                   (ci_contains(text, "havoc") &&
+                    ci_contains(text, " -")) ||
+                   ci_contains(text, "darkcomet") ||
+                   ci_contains(text, "poisonivy") ||
+                   ci_contains(text, "poison-ivy") ||
+                   ci_contains(text, "gh0st") ||
+                   ci_contains(text, "backdoor-factory") ||
+                   ci_contains(text, "bdfproxy") ||
+                   (ci_contains(text, "unicorn") &&
+                    (ci_contains(text, ".py") ||
+                     ci_contains(text, " -"))) ||
+                   (ci_contains(text, "scarecrow") &&
+                    ci_contains(text, " -")) ||
+                   ci_contains(text, "nimcrypt") ||
+                   ci_contains(text, "nimplant") ||
+                   (ci_contains(text, "upx") &&
+                    ci_contains(text, " -")) ||
+                   (ci_contains(text, "printui") &&
+                    (ci_contains(text, "/ga") ||
+                     ci_contains(text, "/gd") ||
+                     ci_contains(text, "/ge") ||
+                     ci_contains(text, "/dd") ||
+                     ci_contains(text, "printuientry"))) ||
+                   (ci_contains(text, "verifier") &&
+                    (ci_contains(text, " /standard") ||
+                     ci_contains(text, " /all") ||
+                     ci_contains(text, " /volatile") ||
+                     ci_contains(text, " /boot") ||
+                     ci_contains(text, " /faults"))) ||
+                   (ci_contains(text, "lpadmin") &&
+                    (ci_contains(text, " -x") ||
+                     ci_contains(text, " -p") ||
+                     ci_contains(text, " -v") ||
+                     ci_contains(text, " -e"))) ||
+                   (ci_contains(text, "cancel") &&
+                    ci_contains(text, " -a")) ||
+                   (ci_contains(text, "lpmove") &&
+                    ci_contains(text, " ")) ||
+                   ci_contains(text, "cupsdisable") ||
+                   ci_contains(text, "cupsreject") ||
+                   (ci_contains(text, "update-initramfs") &&
+                    (ci_contains(text, " -u") ||
+                     ci_contains(text, " -c") ||
+                     ci_contains(text, " -d"))) ||
+                   (ci_contains(text, "mkinitrd") &&
+                    (ci_contains(text, " -o") ||
+                     ci_contains(text, " -f"))) ||
+                   ci_contains(text, "update-grub") ||
+                   (ci_contains(text, "grub2-mkconfig") ||
+                    ci_contains(text, "grub-mkconfig")) ||
+                   (ci_contains(text, "grub-install") &&
+                    (ci_contains(text, " /") ||
+                     ci_contains(text, " --"))) ||
+                   (ci_contains(text, "ssh-keygen") &&
+                    (ci_contains(text, " -s ") ||
+                     ci_contains(text, " -z ") ||
+                     ci_contains(text, " -i "))) ||
+                   (ci_contains(text, "mutt") &&
+                    (ci_contains(text, " -a") ||
+                     ci_contains(text, " -s") ||
+                     ci_contains(text, " @"))) ||
+                   (ci_contains(text, "mailx") &&
+                    (ci_contains(text, " -a") ||
+                     ci_contains(text, " @"))) ||
+                   (ci_contains(text, "sendmail") &&
+                    (ci_contains(text, " <") ||
+                     ci_contains(text, " -t") ||
+                     ci_contains(text, " -f"))) ||
+                   (ci_contains(text, "s-nail") &&
+                    ci_contains(text, " -")) ||
+                   (ci_contains(text, "mpack") &&
+                    ci_contains(text, " ")) ||
+                   ((ci_contains(text, "curl") ||
+                     ci_contains(text, "wget") ||
+                     ci_contains(text, "httpie") ||
+                     ci_contains(text, "xh ")) &&
+                    (ci_contains(text, " -d") ||
+                     ci_contains(text, " -f") ||
+                     ci_contains(text, " -t ") ||
+                     ci_contains(text, "--data") ||
+                     ci_contains(text, "--form") ||
+                     ci_contains(text, "--upload") ||
+                     ci_contains(text, "-post")) &&
+                    (ci_contains(text, "api.telegram.org") ||
+                     ci_contains(text, "/api/webhooks") ||
+                     ci_contains(text, "hooks.slack.com") ||
+                     ci_contains(text, "outlook.office.com/webhook") ||
+                     ci_contains(text, "webhook.site") ||
+                     ci_contains(text, "pipedream") ||
+                     ci_contains(text, "requestbin") ||
+                     ci_contains(text, "hookbin") ||
+                     ci_contains(text, "beeceptor") ||
+                     ci_contains(text, "smee.io"))) ||
+                   (ci_contains(text, "systemd-cryptenroll") &&
+                    ci_contains(text, " --")) ||
+                   (ci_contains(text, "homectl") &&
+                    (ci_contains(text, " create") ||
+                     ci_contains(text, " remove") ||
+                     ci_contains(text, " passwd") ||
+                     ci_contains(text, " update") ||
+                     ci_contains(text, " rename") ||
+                     ci_contains(text, " deactivate"))) ||
+                   (ci_contains(text, "bootctl") &&
+                    (ci_contains(text, " install") ||
+                     ci_contains(text, " remove") ||
+                     ci_contains(text, " update") ||
+                     ci_contains(text, " set-") ||
+                     ci_contains(text, " write"))) ||
+                   (ci_contains(text, "udevadm") &&
+                    (ci_contains(text, " trigger") ||
+                     ci_contains(text, " test") ||
+                     ci_contains(text, " control") ||
+                     ci_contains(text, " --"))) ||
+                   (ci_contains(text, "clevis") &&
+                    ci_contains(text, " ")) ||
+                   (ci_contains(text, "fscrypt") &&
+                    (ci_contains(text, " encrypt") ||
+                     ci_contains(text, " purge") ||
+                     ci_contains(text, " destroy") ||
+                     ci_contains(text, " lock") ||
+                     ci_contains(text, " unlock"))) ||
+                   (ci_contains(text, "tomb") &&
+                    (ci_contains(text, " -") ||
+                     ci_contains(text, " dig"))) ||
+                   (ci_contains(text, "gocryptfs") &&
+                    ci_contains(text, " ")) ||
+                   (ci_contains(text, "encfs") &&
+                    ci_contains(text, " -")) ||
+                   (ci_contains(text, "cryfs") &&
+                    ci_contains(text, " ")) ||
+                   (ci_contains(text, "veracrypt") &&
+                    (ci_contains(text, " -") ||
+                     ci_contains(text, " /"))) ||
+                   ci_contains(text, "ecryptfs") ||
+                   (ci_contains(text, "htpasswd") &&
+                    (ci_contains(text, " -c") ||
+                     ci_contains(text, " -b") ||
+                     ci_contains(text, " -B") ||
+                     ci_contains(text, " -d") ||
+                     ci_contains(text, " -v"))) ||
+                   (ci_contains(text, "amtool") &&
+                    (ci_contains(text, " silence") ||
+                     ci_contains(text, " alert") ||
+                     ci_contains(text, " expire"))) ||
+                   ci_contains(text, "mimirtool") ||
+                   (ci_contains(text, "grafana-cli") &&
+                    (ci_contains(text, " admin") ||
+                     ci_contains(text, " plugins") ||
+                     ci_contains(text, " --"))) ||
+                   (ci_contains(text, "onevm") &&
+                    ci_contains(text, " ")) ||
+                   (ci_contains(text, "onehost") &&
+                    ci_contains(text, " ")) ||
+                   (ci_contains(text, "pvesh") &&
+                    (ci_contains(text, " delete") ||
+                     ci_contains(text, " set") ||
+                     ci_contains(text, " create"))) ||
+                   (ci_contains(text, "qm ") &&
+                    (ci_contains(text, " destroy") ||
+                     ci_contains(text, " del") ||
+                     ci_contains(text, " stop") ||
+                     ci_contains(text, " shutdown") ||
+                     ci_contains(text, " migrate") ||
+                     ci_contains(text, " template") ||
+                     ci_contains(text, " clone") ||
+                     ci_contains(text, " set"))) ||
+                   (ci_contains(text, "pct ") &&
+                    (ci_contains(text, " destroy") ||
+                     ci_contains(text, " del") ||
+                     ci_contains(text, " stop") ||
+                     ci_contains(text, " shutdown") ||
+                     ci_contains(text, " exec"))) ||
+                   (ci_contains(text, "openstack") &&
+                    (ci_contains(text, " delete") ||
+                     ci_contains(text, " remove") ||
+                     ci_contains(text, " stop") ||
+                     ci_contains(text, " shutoff") ||
+                     ci_contains(text, " hard"))) ||
+                   (ci_contains(text, "nova ") &&
+                    (ci_contains(text, " delete") ||
+                     ci_contains(text, " stop") ||
+                     ci_contains(text, " force"))) ||
+                   (ci_contains(text, "doctl") &&
+                    ci_contains(text, " delete")) ||
+                   (ci_contains(text, "hcloud") &&
+                    (ci_contains(text, " delete") ||
+                     ci_contains(text, " poweroff") ||
+                     ci_contains(text, " rebuild") ||
+                     ci_contains(text, " shutdown"))) ||
+                   (ci_contains(text, "scw") &&
+                    (ci_contains(text, " delete") ||
+                     ci_contains(text, " stop"))) ||
+                   (ci_contains(text, "oci") &&
+                    (ci_contains(text, " terminate") ||
+                     ci_contains(text, " delete"))) ||
+                   (ci_contains(text, "govc") &&
+                    (ci_contains(text, "vm.destroy") ||
+                     ci_contains(text, "vm.power") ||
+                     ci_contains(text, "vm.delete") ||
+                     ci_contains(text, "datastore") ||
+                     ci_contains(text, "host."))) ||
+                   (ci_contains(text, "vim-cmd") &&
+                    (ci_contains(text, "power.") ||
+                     ci_contains(text, "destroy") ||
+                     ci_contains(text, "unreg"))) ||
+                   (ci_contains(text, "esxcli") &&
+                    (ci_contains(text, " kill") ||
+                     ci_contains(text, " set") ||
+                     ci_contains(text, " unload") ||
+                     ci_contains(text, " network") ||
+                     ci_contains(text, " firewall") ||
+                     ci_contains(text, " storage") ||
+                     ci_contains(text, " system"))) ||
+                   (ci_contains(text, "virtctl") &&
+                    (ci_contains(text, " stop") ||
+                     ci_contains(text, " delete") ||
+                     ci_contains(text, " pause") ||
+                     ci_contains(text, " migrate") ||
+                     ci_contains(text, " start") ||
+                     ci_contains(text, " console"))) ||
+                   (ci_contains(text, "rancher") &&
+                    (ci_contains(text, " app") ||
+                     ci_contains(text, " login") ||
+                     ci_contains(text, " cluster") ||
+                     ci_contains(text, " server") ||
+                     ci_contains(text, " delete") ||
+                     ci_contains(text, " context"))) ||
+                   (ci_contains(text, "rke ") &&
+                    (ci_contains(text, " remove") ||
+                     ci_contains(text, " up") ||
+                     ci_contains(text, " etcd"))) ||
+                   (ci_contains(text, "k3d") &&
+                    (ci_contains(text, " delete") ||
+                     ci_contains(text, " create"))) ||
+                   (ci_contains(text, "kind") &&
+                    (ci_contains(text, " delete") ||
+                     ci_contains(text, " create") ||
+                     ci_contains(text, " load"))) ||
+                   (ci_contains(text, "minikube") &&
+                    (ci_contains(text, " delete") ||
+                     ci_contains(text, " stop"))) ||
+                   (ci_contains(text, "colima") &&
+                    (ci_contains(text, " delete") ||
+                     ci_contains(text, " stop") ||
+                     ci_contains(text, " start"))) ||
+                   (ci_contains(text, "docker swarm") &&
+                    (ci_contains(text, " leave") ||
+                     ci_contains(text, " join") ||
+                     ci_contains(text, " update") ||
+                     ci_contains(text, " init"))) ||
+                   (ci_contains(text, "ctr ") &&
+                    (ci_contains(text, " exec") ||
+                     ci_contains(text, " rm") ||
+                     ci_contains(text, " kill"))) ||
+                   (ci_contains(text, "umoci") &&
+                    ci_contains(text, " ")) ||
+                   (ci_contains(text, "skopeo") &&
+                    ci_contains(text, " ")) ||
+                   (ci_contains(text, "cosign") &&
+                    (ci_contains(text, " sign") ||
+                     ci_contains(text, " attest") ||
+                     ci_contains(text, " upload"))) ||
+                   (ci_contains(text, "helmfile") &&
+                    (ci_contains(text, " apply") ||
+                     ci_contains(text, " sync") ||
+                     ci_contains(text, " destroy") ||
+                     ci_contains(text, " delete"))) ||
+                   (ci_contains(text, "argocd") &&
+                    (ci_contains(text, " app delete") ||
+                     ci_contains(text, " app sync") ||
+                     ci_contains(text, " cluster") ||
+                     ci_contains(text, " repo") ||
+                     ci_contains(text, " app set"))) ||
+                   (ci_contains(text, "flux") &&
+                    (ci_contains(text, " delete") ||
+                     ci_contains(text, " suspend") ||
+                     ci_contains(text, " uninstall") ||
+                     ci_contains(text, " reconcile"))) ||
+                   (ci_contains(text, "certbot") &&
+                    (ci_contains(text, " delete") ||
+                     ci_contains(text, " revoke") ||
+                     ci_contains(text, " unregister") ||
+                     ci_contains(text, " --cert-name"))) ||
+                   (ci_contains(text, "kubeseal") &&
+                    ci_contains(text, " ")) ||
+                   (ci_contains(text, "sops") &&
+                    (ci_contains(text, " -d") ||
+                     ci_contains(text, "--decrypt") ||
+                     ci_contains(text, " updatekeys") ||
+                     ci_contains(text, " rotate"))) ||
+                   (ci_contains(text, "spark-submit") &&
+                    ci_contains(text, " ")) ||
+                   (ci_contains(text, "flink") &&
+                    (ci_contains(text, " run") ||
+                     ci_contains(text, " cancel") ||
+                     ci_contains(text, " stop") ||
+                     ci_contains(text, " savepoint"))) ||
+                   (ci_contains(text, "oozie") &&
+                    (ci_contains(text, " job") ||
+                     ci_contains(text, " -oozie") ||
+                     ci_contains(text, " -dryrun") ||
+                     ci_contains(text, " sla") ||
+                     ci_contains(text, " bundle") ||
+                     ci_contains(text, " validate") ||
+                     ci_contains(text, " submit"))) ||
+                   (ci_contains(text, "airflow") &&
+                    (ci_contains(text, " dags") ||
+                     ci_contains(text, " db") ||
+                     ci_contains(text, " scheduler") ||
+                     ci_contains(text, " webserver") ||
+                     ci_contains(text, " celery") ||
+                     ci_contains(text, " users") ||
+                     ci_contains(text, " connections") ||
+                     ci_contains(text, " variables") ||
+                     ci_contains(text, " delete") ||
+                     ci_contains(text, " reset"))) ||
+                   ci_contains(text, "sqoop") ||
+                   ci_contains(text, "distcp") ||
+                   (ci_contains(text, "huggingface-cli") &&
+                    (ci_contains(text, " upload") ||
+                     ci_contains(text, " delete"))) ||
+                   ci_contains(text, "driftnet") ||
+                   ci_contains(text, "xplico") ||
+                   ci_contains(text, "text2pcap") ||
+                   ci_contains(text, "mergecap") ||
+                   ci_contains(text, "editcap") ||
+                   ci_contains(text, "trafgen") ||
+                   ci_contains(text, "mausezahn") ||
+                   ci_contains(text, "mz -") ||
+                   ci_contains(text, "nemesis") ||
+                   ci_contains(text, "parprouted") ||
+                   ci_contains(text, "zarp") ||
+                   (ci_contains(text, "lftp") &&
+                    (ci_contains(text, " -c") ||
+                     ci_contains(text, " mirror"))) ||
+                   (ci_contains(text, "ncftpput") ||
+                    ci_contains(text, "ncftpget")) ||
+                   ci_contains(text, "autorunsc") ||
+                   ci_contains(text, "handle64") ||
+                   ci_contains(text, "logonsessions") ||
+
+                   ci_contains(text, "chromium --remote-debugging") ||
+                   ci_contains(text, "chrome --remote-debugging") ||
+                   ci_contains(text, "firefox --remote-debugging") ||
+                   ci_contains(text, "msedge --remote-debugging") ||
+                   ci_contains(text, "brave --remote-debugging") ||
+                   ci_contains(text, "--remote-debugging-port") ||
+                   ci_contains(text, "--remote-debugging-pipe")) {
+            what = "mobile/re/osint/infra-ctl/destructive primitive";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
