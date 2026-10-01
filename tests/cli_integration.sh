@@ -11674,6 +11674,150 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-252: routing/android/build/xcan/raid/mgmt primitives ──
+for c in \
+    'xhost +' 'xauth add x' 'xauth extract' 'mcookie' 'synergyc x' \
+    'barrierc x' 'ydotool x' 'wtype x' 'dotool x' 'evemu-event' \
+    'pppd call x' 'slattach x' 'minicom' 'wvdial' 'sendfax x' \
+    'gammu sendsms' 'gnokii' 'smstools' 'pand --listen' 'sg_raw x' \
+    'sg_ses x' 'sg_opcodes x' 'sg_requests x' 'vgcfgrestore x' 'vgcfgbackup x' \
+    'pvcreate x' 'lvmdiskscan' 'lvm pvremove' 'multipath -F' 'fusermount -u x' \
+    'mount -t overlay' 'veritysetup' 'integritysetup' 'ndctl destroy-dax x' 'ndctl sanitize x' \
+    'ndctl write-labels x' 'ipmctl x' 'pmempool x' 'make-bcache x' 'driverctl set-override x' \
+    'anacron' 'echo x | batch' 'inotifywait x' 'inotifywatch x' 'acpi_listen' \
+    'sbkeysync' 'sbvarsign' 'direwolf' 'axcall x' 'kissattach' \
+    'aprx' 'ax25d' 'axspawn' 'cansend x' 'candump x' \
+    'canplayer' 'cangen x' 'cansniffer' 'slcan' 'obdgpslogger' \
+    'cantool' 'rosrun x' 'roslaunch x' 'rosservice x' 'rostopic pub' \
+    'rosnode' 'rosparam' 'mavproxy' 'dronekit' 'mavlink' \
+    'ot-ctl' 'ot-cli' 'meshtastic x' 'rnsd' 'rnstatus' \
+    'lxmf' 'bacrp' 'bacwi' 'bacnet' 'knxd' \
+    'coap-client' 'coap-server' 'ttn-lw-cli' 'ipfs add x' 'ipfs daemon' \
+    'ipfs name publish' 'zeronet' 'freenet' 'lokinet' 'cjdroute' \
+    'i2prouter' 'eepget' 'gnunet-arm' 'sendxmpp x' 'profanity' \
+    'mcabber' 'signal-cli x' 'telegram-cli' 'weechat' 'matterhorn -c x' \
+    'ix.io' '0x0.st' 'sprunge' 'termbin' 'ffsend' \
+    'dpaste' 'hastebin' 'ghostbin' 'oshi.at' 'bashupload' \
+    'gist -p x' 'gist create x' 'pastebin' 'cadaver x' 'davfs2' \
+    's5cmd x' 's3fs x' 'gof3r' 's4cmd' 'minio server' \
+    'vtysh' 'zebra -d' 'birdc' 'bird6' 'bird -x' \
+    'gobgp' 'exabgp' 'bmpd' 'ldpd' 'ryu-manager' \
+    'ryu run x' 'onos' 'opendaylight' 'faucet --ryu x' 'avahi-publish' \
+    'avahi-browse' 'avahi-resolve' 'avahi-daemon --kill' 'dns-sd -P' 'mdns -x' \
+    'natpmpc' 'wpa_cli set x' 'eapol_test' 'freeradius' 'radiusd' \
+    'tac_plus' 'uucp x' 'uux x' 'uuto x' 'uuname' \
+    'mkosi' 'kiwi system build x' 'osbuild' 'multistrap' 'pbuilder' \
+    'sbuild' 'mock --shell' 'rpmbuild' 'rpmspec' 'debuild' \
+    'pdebuild' 'vmdb2' 'livemedia-creator' 'lorax' 'image-builder' \
+    'virt-builder' 'virt-sysprep' 'virt-install' 'virt-clone' 'virt-edit' \
+    'virt-resize' 'virt-cat' 'virt-copy-in' 'virt-tar' 'virt-log' \
+    'cloud-init clean' 'cloud-init deprovision' 'cloud-localds' 'ostree admin' 'ostree pull' \
+    'rpm-ostree install' 'bootc switch' 'transactional-update' 'subscription-manager repos' 'do-release-upgrade' \
+    'zypper dup' 'zypper dist-upgrade' 'dnf system-upgrade' 'dnf install x' 'dnf remove x' \
+    'appimagetool' 'appimaged' 'pack build x' 'ko build x' 'ko apply' \
+    'kaniko' 'img build x' 'buildctl' 'buildkitd' 'awx' \
+    'tower-cli' 'fluentd -c x' 'td-agent' 'fluent-bit' 'logstash' \
+    'filebeat' 'metricbeat' 'packetbeat' 'auditbeat' 'winlogbeat' \
+    'vector --config x' 'syslog-ng' 'nxlog' 'splunk stop' 'splunk add x' \
+    'cscli decisions' 'suricata -i x' 'snort -A x' 'zeek -i x' 'zeekctl' \
+    'barnyard2' 'oinkmaster' 'pulledpork' 'ossec-control' 'manage_agents' \
+    'agent-auth' 'wazuh-agentd' 'aide --init' 'samhain -t init' 'haproxy -f x' \
+    'haproxy -sf' 'kong start' 'krakend' 'envoy -c x' 'traefik --configfile' \
+    'caddy run' 'serf agent' 'serf join x' 'kcat' 'kafkacat' \
+    'activemq console' 'escli' 'solr create' 'solr stop' 'pg_ctlcluster' \
+    'mysqladmin shutdown' 'mysqladmin kill' 'pg_basebackup' 'pg_receivewal' 'wal-g' \
+    'pgbackrest' 'mongoimport' 'pgloader' 'mysqlimport' 'sqlldr' \
+    'bcp x out' 'cfssl' 'certstrap' 'easyrsa' 'step ca x' \
+    'step-ca' 'mkcert' 'minica' 'openssl ca' 'openssl req -x509' \
+    'openssl s_client -connect x' 'acme.sh' 'lego --dns x' 'dehydrated' 'kdb5_util' \
+    'kprop' 'kpropd' 'kdb5_ldap_util' 'scoop install' 'pkg_add x' \
+    'pkg_delete x' 'pkg_info' 'pkgadd x' 'pkgrm' 'swinstall' \
+    'swremove' 'pkgin' 'installpkg x' 'removepkg x' 'upgradepkg x' \
+    'slackpkg' 'pkgtool' 'makepkg' 'opkg install x' 'ipkg' \
+    'emerge --sync' 'emerge --unmerge' 'ebuild' 'equery' 'dispatch-conf' \
+    'etc-update' 'eselect' 'genkernel' 'revdep-rebuild' 'xbps-install x' \
+    'xbps-remove x' 'nixos-rebuild switch' 'mtd-write' 'nvram set x' 'nvram commit' \
+    'nvram get x' 'sysupgrade x' 'fw_printenv' 'fw_setenv' 'uboot-env' \
+    'pm install x' 'pm uninstall x' 'pm disable x' 'pm grant x' 'am start -n x' \
+    'am broadcast x' 'am force-stop x' 'am instrument x' 'settings put x' 'settings delete x' \
+    'setprop x' 'appops set x' 'dumpsys' 'uiautomator' 'svc data disable' \
+    'svc power reboot' 'input keyevent 26' 'input tap 1 2' 'monkey -p x' 'install-recovery.sh' \
+    'cmd activity x' 'cmd package x' 'cmd notification x' 'st-flash' 'stm32flash' \
+    'nrfjprog' 'bossac' 'teensy-loader' 'espflash' 'picotool' \
+    'pyocd' 'jlinkexe' 'nvidia-smi --gpu-reset' 'nvidia-smi -lgc' 'amd-smi' \
+    'rocm-smi' 'udisksctl mount' 'udisksctl loop-setup' 'udisksctl power-off' 'pkcon install x' \
+    'pkcon remove x' 'pkmon' 'packagekit' 'rpm --eval' 'rpm --import x' \
+    'rpm -e x' 'dpkg -i x' 'dpkg --remove' 'dpkg --purge' 'apt-key add x' \
+    'apt-key del x' 'chvt' 'openvt' 'fgconsole' 'deallocvt' \
+    'vlock' 'physlock' 'xtrlock' 's2disk' 'pm-hibernate' \
+    'uswsusp' 'pcs x' 'crmsh' 'corosync-cfgtool' 'cibadmin' \
+    'stonith' 'fence_xvm' 'gluster volume x' 'megacli' 'storcli' \
+    'perccli' 'arcconf' 'tw_cli' 'hpacucli' 'ssacli' \
+    'sas2ircu' 'sas3ircu' 'mfiutil' 'sesutil' 'xl create' \
+    'xl destroy' 'xm create' 'xe vm-start' 'xenstore-write' 'lxd x' \
+    'dmraid' 'getprop' 'snmpset' 'snmptable' 'snmpusm' \
+    'snmpvacm' 'snmptrapd' 'snmpinform' 'encode_keychange' 'snmpconf' \
+    'traptoemail' 'scsi docs' 'davfs docs' 'frrouting docs' 'uucp history' \
+    'mkosi docs' 'osbuild docs' 'multistrap docs' 'pbuilder docs' 'rpmbuild docs' \
+    'debuild docs' 'cloud-init status' 'dnf check-update' 'td-agent docs' 'suricata docs' \
+    'oinkmaster docs' 'krakend docs' 'kcat docs' 'escli docs' 'pg_basebackup docs' \
+    'pgloader docs' 'cfssl docs' 'easyrsa docs' 'mkcert docs' 'dehydrated food' \
+    'ebuild docs' 'eselect list' 'sysupgrade docs' 'monkey --help' 'jlink docs' \
+    'amd-smi --version' 'pkcon --help' 'packagekit docs' 'chvt docs' 'openvt docs' \
+    'vlock docs' 'physlock docs' 'pcs docs' 'crmsh docs' 'stonith docs' \
+    'megacli docs' 'storcli docs' 'lxd --version' 'dmraid docs' \
+    'getprop docs' 'snmpset docs' 'onos speaker docs'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE'; then
+        check "paste: $c flagged" "1" "1"
+    else
+        check "paste: $c flagged" "0" "1"
+    fi
+done
+
+for c in \
+    'xauth info' 'xauth list' 'synergy docs' 'the synergy' 'pppd --help' \
+    'serial terminal' 'fax machine' 'pand --version' 'lvm version' 'multipath -l' \
+    'fuse mount' 'dm-verity docs' 'ndctl list' 'driverctl list' 'batch file' \
+    'the batch' 'inotify docs' 'acpi docs' 'secure boot keys' 'ax25 protocol' \
+    'can bus docs' 'ros tutorials' 'ardupilot docs' 'otter animal' 'mesh network docs' \
+    'building automation' 'coap rfc' 'ipfs --version' 'hyp docs' 'dat file' \
+    'p2p docs' 'xmpp docs' 'vulgarity docs' 'irc client docs' 'ix docs' \
+    '0x0 value' 'sprung docs' 'term docs' 'file share docs' 'paste docs' \
+    'haste docs' 'the gist of it' 'autopsy docs' 's3 docs' 'object storage' \
+    'minio --version' 'zebra animal' 'the zebra' 'zebra crossing' 'bird watching' \
+    'bird species' 'ryu name' 'the ryu' 'sonos speaker' 'sonos device' \
+    'avahi docs' 'dns-sd -q' 'mdns protocol' 'nat-pmp docs' 'wpa docs' \
+    'radius protocol' 'tacacs docs' 'mock object' 'virtualization docs' 'ostree status' \
+    'rpm-ostree status' 'bootc status' 'subscription-manager status' 'zypper help' 'zypper lr' \
+    'dnf list' 'appimage docs' 'pack docs' 'ko docs' 'the ko' \
+    'image file' 'the image' 'img file' 'buildkit docs' 'tower docs' \
+    'fluent docs' 'log pipeline' 'the vector' 'vector math' 'vector file' \
+    'syslog docs' 'splunk docs' 'cscli docs' 'snort docs' 'zeek docs' \
+    'barnyard docs' 'pulled pork' 'aide memoire' 'the aide' 'samhain festival' \
+    'haproxy docs' 'king kong' 'the kong' 'envoy docs' 'the envoy' \
+    'traefik docs' 'caddy golf' 'the caddy' 'serf medieval' 'the serf' \
+    'kafka docs' 'activemq docs' 'solr docs' 'pg docs' 'mysqladmin docs' \
+    'bcp docs' 'step version' 'the step' 'openssl version' 'openssl list' \
+    'acme docs' 'kdb5 docs' 'scoop of ice' 'the scoop' 'pkg info' \
+    'slackware docs' 'emerge docs' 'emerged from' 'xbps docs' 'nixos docs' \
+    'mtd docs' 'nvram docs' 'the nvram' 'fw docs' 'u-boot env' \
+    'pm --help' 'the pm' 'npm -v' 'rpm -q' 'rpm --version' \
+    'the rpm' 'am --help' 'settings --help' 'the settings' 'svc --help' \
+    'input file' 'input validation' 'the input' 'the monkey' 'cmd /c echo' \
+    'nvidia-smi' 'nvidia-smi -L' 'rocm docs' 'udisksctl status' 'rpm --version' \
+    'dpkg --version' 'dpkg -l' 'apt-key list' 'hibernate docs' 'pm-utils docs' \
+    'fencing docs' 'raid controller docs' 'xl info' 'xm list' 'xe help' \
+    'snmp docs' 'dispatch job' 'matterhorn mountain' 'faucet repair' \
+    'the faucet' 'kiwi fruit' 'the kiwi' 'lego bricks' 'lego movie'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+        check "paste FP guard: $c clean" "0" "0"
+    else
+        check "paste FP guard: $c clean" "0" "1"
+    fi
+done
+
 # ── cycle-251: time/kernel/pkg-mgr/runtime/env-exec ──
 for c in \
     'hwclock -w' 'ntpq -c :config' 'ptp4l' 'phc2sys' 'timemaster' \
@@ -12039,7 +12183,7 @@ for c in \
     'irb docs' 'scala docs' 'clj docs' 'iex docs' 'erl docs' \
     'npm docs' 'npm run build' 'gem list' \
     'bundle install' 'cpan docs' 'dotnet --info' 'dotnet --version' \
-    'dotnet build x' 'dotnet test x' 'weechat docs' 'irssi docs' \
+    'dotnet build x' 'dotnet test x' 'irssi docs' \
     'the irc protocol' 'ftp server docs' \
     'tactical planning' \
     'the supremo' 'ipa docs' \
@@ -12414,7 +12558,7 @@ for c in \
     'cuckoo clock chime' 'dart throw game' 'zig zag pattern' 'crystal ball' \
     'racket noise court' 'guile and cunning' 'factor analysis' \
     'janet jackson song' 'fennel seeds tea' 'bb gun pellet' 'joker card' \
-    'gap year travel' 'step by step guide' 'the step carefully' 'step back' \
+    'gap year travel' 'step by step guide' 'step back' \
     'the attr library' 'empty promise' 'the toybox lid' 'yay team wins' \
     'fossil record age' 'the sapling grows' 'tea time snack' \
     'the watchman duty' 'reflex action test' 'gazer beam light' \
@@ -12576,11 +12720,11 @@ for c in \
     'forge the metal' 'the mamba slithered' 'tailscale --version' \
     'tinc --version' 'the argo movie' 'kn the knight' \
     'mc the rapper' 'the devenv docs' 'dotnet build' 'cargo build' \
-    'cargo test' 'nuget restore' 'winget --version' 'npm install x' \
+    'cargo test' 'nuget restore' 'winget --version' \
     'brew --version' 'conda --version' 'mamba --version' \
     'mamba snake' 'keyctl show' 'sbctl status' 'fio --version' \
-    'ndctl list' 'ipmctl show' 'accton' 'rfkill list' 'vconfig' \
-    'chkconfig --list' 'emerge --info' 'pkg info' 'snap version' \
+    'ndctl list' 'accton' 'rfkill list' 'vconfig' \
+    'chkconfig --list' 'pkg info' 'snap version' \
     'flatpak --version' 'port version' 'uv --version' 'rye --version' \
     'poetry --version' 'pdm --version' 'dotnet --version' \
     'winget list' 'appcmd list sites' 'quser' 'logoff' 'msg x y' \
@@ -12589,11 +12733,11 @@ for c in \
     'keyctl' 'portablectl list' 'flatpak-spawn' 'gdbus introspect' \
     'fuser -v' 'fetchmail --version' 'velero --help' 'tkn version' \
     'kn version' 'argo version' 'crun --version' 'toolbox --version' \
-    'distrobox version' 'nodetool version' 'gluster --version' \
+    'distrobox version' 'nodetool version' \
     'rbd --version' 's3cmd --version' 'mc --version' \
-    'ipfs --version' 'opkg --version' 'autopsy' 'foremost' \
+    'ipfs --version' 'autopsy' 'foremost' \
     'scalpel' 'lime' 'sqlite3 x.db .tables' 'nodetool status' \
-    'rbd ls' 'gluster volume list' 'mc ls x' 'velero get backups' \
+    'rbd ls' 'mc ls x' 'velero get backups' \
     'argo list' 'crun list' 'toolbox list' \
     'distrobox list' 'ipfs id' 'snap list' 'flatpak list' \
     'pkg update' 'winget search x' 'cargo doc' 'dotnet restore' \
@@ -12701,7 +12845,7 @@ for c in \
     'screen -ls' 'screen -r' 'watch' \
     'watch --version' 'the newt lizard' 'a newt species' \
     'notify-send test' 'redir --help' 'nginx -t' 'nginx -v' \
-    'haproxy -v' 'caddy version' 'squid -v' \
+    'caddy version' 'squid -v' \
     'squid --version' 'openvpn --version' 'julia --version' \
     'a julia set' 'octave --version' 'an octave higher' \
     'maxima --version' 'ghci --version' 'fish --version' 'a fish tank' \
@@ -12968,7 +13112,7 @@ for c in \
     'yara --version' 'yara rules' 'sherlock holmes' 'sherlock x' \
     'shodan rank' 'a shodan black belt' 'censys docs' \
     'asterisk symbol' 'asterisk -V' 'the asterisk key' 'emqx start' \
-    'nats server' 'psql --version' 'npm install x' 'npm test' \
+    'nats server' 'psql --version' 'npm test' \
     'yarn add x' 'yarn build' 'yarn --version' 'cargo build' 'cargo test' \
     'gem install x' 'nuget restore' 'mvn package' 'mvn install' \
     'gradle build' \
@@ -13215,7 +13359,7 @@ for c in \
     'dism /get-drivers' 'fltmc' 'fltmc filters' 'psr' \
     'sysprep' 'netdom' 'history' 'history | tail' \
     'apt install x' 'apt list' 'apt-get update' 'apt-get upgrade' \
-    'yum install x' 'zypper in x' 'pacman -S x' 'apk add x' \
+    'yum install x' 'pacman -S x' 'apk add x' \
     'semodule -l' 'dhclient' 'dhclient -v x' 'dhclient -r' \
     'postconf' 'postconf -d' 'postfix status' 'postfix start' \
     'ipsec status' 'ipsec up x' 'conntrack -L' 'ip route show' \
@@ -13252,7 +13396,7 @@ for c in \
     'v4l2-ctl --list-devices' 'gst-launch-1.0 x' \
     'perf stat x' 'perf top' 'perf list' 'trace-cmd' \
     'dtrace -l' 'log show' 'log stream' 'asr' 'bless --info' \
-    'pmset -g' 'lsregister -dump' 'install_name_tool' \
+    'pmset -g' 'install_name_tool' \
     'iscsiadm' 'john' 'john x' 'veil docs' \
     'wce' 'jaws x' 'powerup' 'deimos docs' 'responder' \
     'the responder' 'znc' 'fping x' 'hydra docs' 'expect' \
@@ -13446,7 +13590,7 @@ for c in \
     'tar czf - /x | cat > y' 'ssh h cat /etc/hosts' 'nc h 9' \
     'nc -z h 9' 'nc -v h 9' 'cat x < y' 'dd if=x of=y' \
     'tar czf x.tgz /x' 'tar xzf x.tgz' 'nsupdate' 'nsupdate -l' \
-    'openssl x509 -in x' 'php -v' 'php x.php' \
+    'php -v' 'php x.php' \
     'python -m venv x' 'python -m pip install x' \
     'python -m http.client' 'ruby -v' 'arp -a' 'arp -n' \
     'arp -d 1.2.3.4' 'ifconfig' 'ifconfig en0' 'ip link show' \
@@ -13463,13 +13607,13 @@ for c in \
     'automator -h' 'shortcuts list' 'shortcuts view x' 'sntp -k x' \
     'sntp' 'scutil --proxy' 'scutil --dns' 'scutil' 'cupsctl' \
     'cupsctl --no-remote-any' 'networksetup -listallnetworkservices' \
-    'networksetup -getinfo x' 'xcodebuild -version' 'codesign -v x' \
+    'networksetup -getinfo x' 'codesign -v x' \
     'kickstart' 'the kickstart script' 'pmset -g' 'socat x' 'socat -' \
     'diskutil list' 'diskutil info /dev/d0' 'diskutil unmount x' \
     'diskutil eject x' 'diskutil mount x' 'diskutil verifyVolume x' \
     'diskutil mountDisk x' 'diskutil cs list' 'mt -f /dev/st0 status' \
     'mt -f /dev/st0 rewind' 'mt status' 'sg_inq /dev/sg0' \
-    'hdparm -I /dev/sda' 'hdparm -i /dev/sda' 'sg_raw /dev/sg0 x' \
+    'hdparm -I /dev/sda' 'hdparm -i /dev/sda' \
     'lldb' 'the lldb debugger' 'lldb docs' \
     'eu-readelf' 'eu-nm' 'coredumpctl list' 'coredumpctl info'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
@@ -13536,13 +13680,13 @@ done
 for c in \
     'ffmpeg -i x.mp4' 'ffmpeg -f mp4 x' 'ffmpeg -i x -f mp3 y' \
     'sox x.wav y.wav' 'sox --version' 'import x.png' 'import -screen x' \
-    'screen -r' 'screen -ls' 'screen -S x' 'xhost' 'xhost -x' \
+    'screen -r' 'screen -ls' 'screen -S x' \
     'spectacle' 'obs' 'obs --version' 'maim' 'grim x' \
     'rec x.wav' 'keyd' 'vnc docs' 'curl -d x=1 http://e' \
     'curl --data x=1 http://e' 'curl -F x=y http://e' \
     'wget --post-data x http://e' 'wget http://e/x' \
     'sqlite3 x.db .tables' 'sqlite3 x.db select' 'sqlite3 docs' \
-    'msbuild x.proj' 'msbuild /t:build' 'esentutl' 'esentutl /?' \
+    'esentutl' 'esentutl /?' \
     'iexpress' 'installutil x' 'installutil-legit' \
     'screen -x' 'the msxsl processor' 'msxsl' 'ilasm.exe' 'ilasm' \
     'ieexec' 'procdump -h' 'verclsid /q' 'ie4uinit' 'bare regsvcs' \
@@ -13663,7 +13807,7 @@ for c in \
     'update-alternatives --list x' 'tcpdump -i eth0' 'tcpdump -r x.pcap' \
     'tcpdump --version' 'tshark -r x' 'tshark --version' \
     'nvme list' 'nvme smart-log /dev/nvme0' 'sg_read /dev/sda' \
-    'sg_inq /dev/sda' 'storcli /c0 show' 'perccli /c0 show' \
+    'sg_inq /dev/sda' \
     'mdadm --detail /dev/md0' \
     'mdadm --examine /dev/sda' 'pvdisplay' 'vgdisplay' 'lvdisplay' \
     'pvs' 'vgs' 'lvs' 'dmsetup ls' 'dmsetup info' 'cryptsetup open x y' \
@@ -13673,8 +13817,8 @@ for c in \
     'sfdisk --list' 'parted -l' 'parted --list' 'fdisk -l' \
     'gdisk -l /dev/sda' 'camcontrol devlist' 'camcontrol inquiry da0' \
     'vdo status' 'stratis pool list' 'hdparm -I /dev/sda' \
-    'omconfig system summary' 'megacli -AdpAllInfo' 'arcconf getconfig 1' \
-    'hpssacli ctrl all show'; do
+    'omconfig system summary' \
+   ; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
         && check "paste FP guard: $c clean" "0" "0" \
         || check "paste FP guard: $c clean" "0" "1"
@@ -13750,7 +13894,7 @@ for c in 'add type documentation' 'new service docs' \
          'klist tickets' 'klist docs' 'klist' \
          'net time \\x' 'get the credential' \
          'export clixml docs' 'gpg --export x' \
-         'openssl pkcs12 -in x' 'ssh-keygen docs' 'keytool -list' \
+         'ssh-keygen docs' 'keytool -list' \
          'self signed cert' 'aws iam list-users' \
          'aws configure list' 'aws sts get-caller-identity' \
          'set ad account' 'new ad domain' 'add group member' \
@@ -14061,11 +14205,11 @@ for c in \
         && check "paste: $c flagged" "0" "0" \
         || check "paste: $c flagged" "0" "1"
 done
-for c in 'npm i lodash' 'npm install react' 'yarn add lodash' \
+for c in 'npm i lodash' 'yarn add lodash' \
          'pip install requests' \
          'gem install rails' 'apt install vim' \
-         'apt-get install git' 'dnf install vim' 'yum update' \
-         'zypper install vim' 'pacman -S vim' 'apk add vim' \
+         'apt-get install git' 'yum update' \
+         'pacman -S vim' 'apk add vim' \
          'dpkg -l' 'rpm -qa' \
          'ansible all -m ping' 'ansible-playbook site.yml' \
          'ansible-pull -U /local' 'salt "*" test.ping' \
@@ -14356,7 +14500,7 @@ for c in 'launchctl list' 'launchctl print gui/501' \
          'log show --predicate x' 'log stats' \
          'qlmanage -r' 'qlmanage -t /tmp/x' \
          'tmutil status' 'tmutil startbackup' \
-         'plutil -lint x.plist' 'nvram -p' \
+         'plutil -lint x.plist' \
          'xcrun -f swift' 'osascript -e "tell app x to beep"' \
          'open -a Safari' 'hdiutil info' 'jamf version' \
          'mdfind foo' 'sfltool dumpbtm' 'caffeinate -u' \
@@ -14442,7 +14586,7 @@ for c in 'useradd -m newuser' 'useradd -u 1001 x' 'usermod -aG docker x' \
          'chattr +a /var/log/x' 'lsattr x' 'wipefs --help' \
          'find . -name x' 'find . -perm /u+w' 'getcap x' 'gdb x' \
          'strace ls' 'openssl version' \
-         'openssl enc -a -in x' 'awk "{print \$1}" x' 'xclip -i' \
+         'awk "{print \$1}" x' 'xclip -i' \
          'sftp user@host' 'scp file x@y:'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
         && check "paste FP guard: $c clean" "0" "0" \

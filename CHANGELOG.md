@@ -4,6 +4,93 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-252)
+
+- **Paste-detector breadth — X-cookie/input-injection, serial/dial,
+  SCSI passthrough + LVM + RAID CLIs, dm-verity/NVDIMM/hibernation,
+  console-VT/lockout, CAN-bus + ROS/drone + OpenThread/Reticulum +
+  BACnet/CoAP, P2P/anon nets, XMPP/Signal/Telegram CLIs, paste/exfil
+  hosts, WebDAV/object stores, BGP/routing + SDN + mDNS/UPnP + WPA +
+  RADIUS/TACACS + UUCP, image/package build systems, distro+BSD pkg
+  managers, Android device-side suite, MCU flashers, GPU control,
+  udisks/PackageKit, HA cluster + Gluster, Xen, DB extras, CA/cert
+  forgers, log pipelines + IDS + proxies** (`hlse_supply.c`): X/wayland
+  input (xhost bare, xauth, mcookie, synergy/barrierc, ydotool/wtype/
+  dotool); serial/dial (pppd call, slattach, minicom, wvdial, sendfax,
+  gammu, gnokii, smstools, pand); storage (sg_* SCSI passthrough, lvm
+  verb gates, multipath, fusermount, ` -t overlay`, veritysetup,
+  integritysetup, ndctl/ipmctl/pmempool, make-bcache, driverctl);
+  scheduling + console (anacron, `| batch`, inotifywait, sbkeysync,
+  chvt, openvt, fgconsole, deallocvt, vlock, physlock, xtrlock,
+  s2disk, pm-hibernate); radio/industrial (direwolf, ax25, kissattach,
+  aprx, cansend/candump/canplayer/cangen/cansniffer/slcan,
+  obdgpslogger, rosrun/roslaunch/rosservice/rostopic/rosnode,
+  mavproxy, dronekit, mavlink, ot-ctl, meshtastic, rnsd/rnstatus/lxmf,
+  bacnet verbs, knxd, coap-client/server); P2P/anon (ipfs verb gates,
+  zeronet, freenet, lokinet, cjdroute, i2prouter, gnunet-arm);
+  messaging/exfil (sendxmpp, profanity, mcabber, signal-cli,
+  telegram-cli, weechat, matterhorn flag gate, ix.io, 0x0.st, sprunge,
+  termbin, ffsend, dpaste, hastebin, ghostbin, oshi.at, bashupload,
+  gist flag gates, pastebin); storage-front ends (cadaver, davfs2,
+  s5cmd, s3fs, gof3r, s4cmd, minio); routing/SDN (vtysh, zebra flag
+  gate, birdc/bird6/bird, gobgp, exabgp, bmpd, ldpd, ryu verb gates,
+  onos !sonos-guarded, opendaylight, faucet flag gate);
+  mdns/discovery (avahi-* family, dns-sd verb gates, mdns flag gate,
+  natpmpc); wireless/auth (wpa_cli, eapol_test, freeradius, radiusd,
+  tac_plus); UUCP (uucp/uux/uuto/uuname); build/image (mkosi, kiwi
+  verb gates, osbuild, multistrap, pbuilder, sbuild, mock, rpmbuild,
+  rpmspec, debuild, pdebuild, vmdb2, livemedia-creator, lorax,
+  image-builder, virt-* suite, cloud-init verb gates, cloud-localds,
+  ostree verb gates, rpm-ostree, bootc, transactional-update,
+  subscription-manager verb gates, do-release-upgrade, zypper verb
+  gates, dnf verb gates, appimagetool/appimaged, pack/ko/kaniko/img/
+  buildctl/buildkitd, awx/tower-cli); observability/IDS (fluentd,
+  td-agent, fluent-bit, logstash, *beat family, vector flag gates,
+  syslog-ng, nxlog, splunk verbs, cscli, suricata, snort, zeek,
+  zeekctl, barnyard2, oinkmaster, pulledpork, ossec/manage_agents/
+  agent-auth/wazuh, aide, samhain); proxies (haproxy flag gates, kong
+  verbs, krakend, envoy, traefik, caddy, serf verbs); infra extras
+  (kcat/kafkacat, activemq, escli, solr verbs, pg_ctlcluster,
+  mysqladmin verbs, pg_basebackup, pg_receivewal, wal-g, pgbackrest,
+  mongoimport, pgloader, mysqlimport, sqlldr, bcp); CA/cert (cfssl,
+  certstrap, easyrsa, step ca/step-ca, mkcert, minica, `openssl ca`
+  unbounded + verb gates, acme.sh, lego flag gate, dehydrated,
+  kdb5_util, kprop/kpropd, kdb5_ldap_util); pkg managers (scoop,
+  pkg_add/pkg_delete/pkg_info/pkgadd/pkgrm/swinstall/swremove/pkgin,
+  slackware set, opkg/ipkg, emerge verb gates, ebuild/equery/
+  dispatch-conf/etc-update/eselect/genkernel/revdep-rebuild,
+  xbps-install/xbps-remove, nixos-rebuild); firmware/env (mtd-write,
+  nvram verb gates, sysupgrade, fw_printenv/fw_setenv, uboot-env);
+  Android device-side (`pm ` !rpm-guarded verb gates, `am ` !prog/
+  !telegram-guarded verb gates, settings setprop/appops/dumpsys/
+  uiautomator/svc/input/monkey/install-recovery/cmd verb gates);
+  MCU/GPU (st-flash, stm32flash, nrfjprog, bossac, teensy-loader,
+  espflash, picotool, pyocd, jlinkexe, nvidia-smi reset flags,
+  amd-smi, rocm-smi); polkit/pkg (udisksctl verb gates, pkcon/pkmon,
+  packagekit, rpm/dpkg/apt-key write gates); HA/RAID/virt (pcs,
+  crmsh, corosync-cfgtool, cibadmin, stonith, fence_xvm, gluster,
+  megacli, storcli, perccli, arcconf, tw_cli, hpacucli, ssacli,
+  sas2ircu/sas3ircu, mfiutil, sesutil, xl/xm/xe/xenstore, lxd bare,
+  dmraid); SNMP extras (getprop, snmpset, snmptable, snmpusm,
+  snmpvacm, snmptrapd, snmpinform, encode_keychange, snmpconf,
+  traptoemail).
+
+### Fixed (cycle-252)
+
+- **`am `/`pm `/`lxd` boundary misses**: `pm ` ⊂ `rpm `/`npm `,
+  `am ` ⊂ `program `/`telegram ` → `!rpm`/`!prog`/`!telegram`/
+  `!ham `/`!yam` guards; ` lxd ` bounded needle misses at pos 0 →
+  bare `lxd` (invented name).
+- **Real-word FP gates**: `onos` ⊂ `sonos` → `!sonos` guard; kiwi /
+  matterhorn / faucet / lego (real words) → verb/flag gates; anacron
+  ⊂ anacrontab → `!anacrontab` guard; ` ca` ⊂ ` ca`refully →
+  ` ca ` bounded.
+- **Weak/dropped candidates**: ` dat `/` hyp `/` toot ` word-boundary
+  needles that cannot fire at position 0 and collide with real words
+  removed; `0x0` hex-literal collision avoided via `0x0.st` host;
+  `dispatch` (real word) and `sniffer` (real word) not added.
+- `mount -t overlay` added to the overlay/escape mount list.
+
 ### Added (cycle-251)
 
 - **Paste-detector breadth — time/NTP tampering, NTFS ADS, kernel

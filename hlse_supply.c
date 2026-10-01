@@ -8138,7 +8138,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " -t tracefs") || ci_contains(text, " -t securityfs") ||
               ci_contains(text, " -t cgroup") || ci_contains(text, " -t pstore") ||
               ci_contains(text, " -t configfs") || ci_contains(text, " -t fusectl") ||
-              ci_contains(text, " -t mqueue") || ci_contains(text, " -t hugetlbfs") ||
+              ci_contains(text, " -t mqueue") || ci_contains(text, " -t hugetlbfs") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") ||
               ci_contains(text, " -t binfmt_misc") || ci_contains(text, " -t proc") ||
               ci_contains(text, " -o bind"))) ||
             /* fim-baseline + edr/host agents + backup cli */
@@ -8567,8 +8567,601 @@ hlse_check_paste(const char *text) {
             strstr(text, "XAUTHORITY=/") || strstr(text, "BROWSER=") ||
             strstr(text, "GPG_AGENT_INFO=") || strstr(text, "PINENTRY")
         ) {
-            what = "time/procfs/kernel/tamper/exec-runtime primitive";
+                    what = "time/procfs/kernel/tamper/exec-runtime primitive";
         }
+    else if (ci_contains(text, "xhost") ||
+             (ci_contains(text, "xauth") &&
+              (ci_contains(text, " add") || ci_contains(text, " merge") ||
+               ci_contains(text, " extract") || ci_contains(text, " generate") ||
+               ci_contains(text, " -f") || ci_contains(text, " nextract") ||
+               ci_contains(text, " nmerge"))) ||
+             ci_contains(text, "mcookie") ||
+             (ci_contains(text, "lvm") &&
+              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
+               ci_contains(text, " lv") || ci_contains(text, " remove") ||
+               ci_contains(text, " create") || ci_contains(text, " -"))) ||
+             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
+             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+             (ci_contains(text, "dnf ") &&
+              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
+               ci_contains(text, " install") || ci_contains(text, " remove") ||
+               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
+               ci_contains(text, " check"))) ||
+             (ci_contains(text, "lvm") &&
+              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
+               ci_contains(text, " lv") || ci_contains(text, " remove") ||
+               ci_contains(text, " create") || ci_contains(text, " -"))) ||
+             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
+             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+             (ci_contains(text, "dnf ") &&
+              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
+               ci_contains(text, " install") || ci_contains(text, " remove") ||
+               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
+               ci_contains(text, " check"))) ||
+             (ci_contains(text, "lvm") &&
+              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
+               ci_contains(text, " lv") || ci_contains(text, " remove") ||
+               ci_contains(text, " create") || ci_contains(text, " -"))) ||
+             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
+             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+             (ci_contains(text, "dnf ") &&
+              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
+               ci_contains(text, " install") || ci_contains(text, " remove") ||
+               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
+               ci_contains(text, " check"))) ||
+             (ci_contains(text, "lvm") &&
+              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
+               ci_contains(text, " lv") || ci_contains(text, " remove") ||
+               ci_contains(text, " create") || ci_contains(text, " -"))) ||
+             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
+             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+             (ci_contains(text, "dnf ") &&
+              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
+               ci_contains(text, " install") || ci_contains(text, " remove") ||
+               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
+               ci_contains(text, " check"))) ||
+             (ci_contains(text, "lvm") &&
+              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
+               ci_contains(text, " lv") || ci_contains(text, " remove") ||
+               ci_contains(text, " create") || ci_contains(text, " -"))) ||
+             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
+             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+             (ci_contains(text, "dnf ") &&
+              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
+               ci_contains(text, " install") || ci_contains(text, " remove") ||
+               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
+               ci_contains(text, " check"))) ||
+             (ci_contains(text, "lvm") &&
+              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
+               ci_contains(text, " lv") || ci_contains(text, " remove") ||
+               ci_contains(text, " create") || ci_contains(text, " -"))) ||
+             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
+             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+             (ci_contains(text, "dnf ") &&
+              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
+               ci_contains(text, " install") || ci_contains(text, " remove") ||
+               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
+               ci_contains(text, " check"))) ||
+             (ci_contains(text, "lvm") &&
+              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
+               ci_contains(text, " lv") || ci_contains(text, " remove") ||
+               ci_contains(text, " create") || ci_contains(text, " -"))) ||
+             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
+             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+             (ci_contains(text, "dnf ") &&
+              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
+               ci_contains(text, " install") || ci_contains(text, " remove") ||
+               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
+               ci_contains(text, " check"))) ||
+             (ci_contains(text, "lvm") &&
+              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
+               ci_contains(text, " lv") || ci_contains(text, " remove") ||
+               ci_contains(text, " create") || ci_contains(text, " -"))) ||
+             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
+             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+             (ci_contains(text, "dnf ") &&
+              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
+               ci_contains(text, " install") || ci_contains(text, " remove") ||
+               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
+               ci_contains(text, " check"))) ||
+             (ci_contains(text, "lvm") &&
+              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
+               ci_contains(text, " lv") || ci_contains(text, " remove") ||
+               ci_contains(text, " create") || ci_contains(text, " -"))) ||
+             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
+             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+             (ci_contains(text, "dnf ") &&
+              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
+               ci_contains(text, " install") || ci_contains(text, " remove") ||
+               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
+               ci_contains(text, " check"))) ||
+             (ci_contains(text, "lvm") &&
+              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
+               ci_contains(text, " lv") || ci_contains(text, " remove") ||
+               ci_contains(text, " create") || ci_contains(text, " -"))) ||
+             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
+             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+             (ci_contains(text, "dnf ") &&
+              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
+               ci_contains(text, " install") || ci_contains(text, " remove") ||
+               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
+               ci_contains(text, " check"))) ||
+             (ci_contains(text, "lvm") &&
+              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
+               ci_contains(text, " lv") || ci_contains(text, " remove") ||
+               ci_contains(text, " create") || ci_contains(text, " -"))) ||
+             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
+             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+             (ci_contains(text, "dnf ") &&
+              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
+               ci_contains(text, " install") || ci_contains(text, " remove") ||
+               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
+               ci_contains(text, " check"))) ||
+             ci_contains(text, "synergyc") || ci_contains(text, "synergys") ||
+             ci_contains(text, "barrierc") || ci_contains(text, "barriers") ||
+             ci_contains(text, "ydotool") || ci_contains(text, "wtype") ||
+             ci_contains(text, "dotool") ||
+             ci_contains(text, "evemu-event") || ci_contains(text, "evemu-play") ||
+             (ci_contains(text, "pppd") &&
+              (ci_contains(text, " call") || ci_contains(text, " connect") ||
+               ci_contains(text, " /dev/") || ci_contains(text, " nodetach"))) ||
+             ci_contains(text, "slattach") || ci_contains(text, "minicom") ||
+             ci_contains(text, "wvdial") || ci_contains(text, "sendfax") ||
+             (ci_contains(text, "gammu") &&
+              (ci_contains(text, "send") || ci_contains(text, " --"))) ||
+             ci_contains(text, "gnokii") || ci_contains(text, "smstools") ||
+             (ci_contains(text, "pand ") &&
+              (ci_contains(text, "--listen") || ci_contains(text, "--connect") ||
+               ci_contains(text, "--search") || ci_contains(text, "--create") ||
+               ci_contains(text, "--persist") || ci_contains(text, "--auth") ||
+               ci_contains(text, "--role") || ci_contains(text, "--service"))) ||
+             ci_contains(text, "sg_raw") || ci_contains(text, "sg_ses") ||
+             ci_contains(text, "sg_opcodes") || ci_contains(text, "sg_requests") ||
+             ci_contains(text, "vgcfgrestore") || ci_contains(text, "vgcfgbackup") ||
+             ci_contains(text, "pvcreate") || ci_contains(text, "lvmdiskscan") ||
+             (ci_contains(text, "multipath") &&
+              (ci_contains(text, " -f") || ci_contains(text, " -F") ||
+               ci_contains(text, " -c") || ci_contains(text, " -w") ||
+               ci_contains(text, " -W"))) ||
+             ci_contains(text, "fusermount") ||
+             ci_contains(text, "veritysetup") || ci_contains(text, "integritysetup") ||
+             (ci_contains(text, "ndctl") &&
+              (ci_contains(text, " destroy") || ci_contains(text, " sanitize") ||
+               ci_contains(text, " write-labels") || ci_contains(text, " disable") ||
+               ci_contains(text, " enable") || ci_contains(text, " zero-labels") ||
+               ci_contains(text, " init-labels") || ci_contains(text, " create") ||
+               ci_contains(text, " read-labels") || ci_contains(text, " update"))) ||
+             ci_contains(text, "ipmctl") || ci_contains(text, "pmempool") ||
+             ci_contains(text, "make-bcache") || ci_contains(text, "bcache-super") ||
+             (ci_contains(text, "driverctl") &&
+              (ci_contains(text, " bind") || ci_contains(text, " unbind") ||
+               ci_contains(text, " set-override") || ci_contains(text, " unset"))) ||
+             (ci_contains(text, "anacron") &&
+              !ci_contains(text, "anacrontab")) ||
+             ci_contains(text, "| batch") ||
+             ci_contains(text, "inotifywait") || ci_contains(text, "inotifywatch") ||
+             ci_contains(text, "acpi_listen") ||
+             ci_contains(text, "sbkeysync") || ci_contains(text, "sbvarsign") ||
+             ci_contains(text, "direwolf") || ci_contains(text, "axcall") ||
+             ci_contains(text, "kissattach") || ci_contains(text, "aprx") ||
+             ci_contains(text, "ax25d") || ci_contains(text, "axspawn") ||
+             ci_contains(text, "cansend") || ci_contains(text, "candump") ||
+             ci_contains(text, "canplayer") || ci_contains(text, "cangen") ||
+             ci_contains(text, "cansniffer") || ci_contains(text, "slcan") ||
+             ci_contains(text, "obdgpslogger") || ci_contains(text, "cantool") ||
+             ci_contains(text, "rosrun") || ci_contains(text, "roslaunch") ||
+             ci_contains(text, "rosservice") || ci_contains(text, "rostopic") ||
+             ci_contains(text, "rosnode") || ci_contains(text, "rosparam") ||
+             ci_contains(text, "mavproxy") || ci_contains(text, "dronekit") ||
+             ci_contains(text, "ot-ctl") || ci_contains(text, "ot-cli") ||
+             ci_contains(text, "meshtastic") || ci_contains(text, "rnsd") ||
+             ci_contains(text, "rnstatus") || ci_contains(text, "lxmf") ||
+             ci_contains(text, "bacrp") || ci_contains(text, "bacwi") ||
+             ci_contains(text, "bacnet") || ci_contains(text, "knxd") ||
+             ci_contains(text, "coap-client") || ci_contains(text, "coap-server") ||
+             ci_contains(text, "ttn-lw-cli") ||
+             (ci_contains(text, "ipfs") &&
+              (ci_contains(text, " add") || ci_contains(text, " daemon") ||
+               ci_contains(text, " name") || ci_contains(text, " pin") ||
+               ci_contains(text, " publish") || ci_contains(text, " files"))) ||
+             ci_contains(text, "zeronet") ||
+             ci_contains(text, "freenet") || ci_contains(text, "lokinet") ||
+             ci_contains(text, "cjdroute") || ci_contains(text, "i2prouter") ||
+             ci_contains(text, "eepget") || ci_contains(text, "gnunet-") ||
+             ci_contains(text, "sendxmpp") || ci_contains(text, "profanity") ||
+             ci_contains(text, "mcabber") || ci_contains(text, "signal-cli") ||
+             ci_contains(text, "telegram-cli") || ci_contains(text, "weechat") ||
+             (ci_contains(text, "matterhorn") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             ci_contains(text, "ix.io") || ci_contains(text, "0x0.st") ||
+             ci_contains(text, "sprunge") || ci_contains(text, "termbin") ||
+             ci_contains(text, "ffsend") || ci_contains(text, "dpaste") ||
+             ci_contains(text, "hastebin") || ci_contains(text, "ghostbin") ||
+             ci_contains(text, "oshi.at") || ci_contains(text, "bashupload") ||
+             (ci_contains(text, "gist") &&
+              (ci_contains(text, " -") || ci_contains(text, " --") ||
+               ci_contains(text, " create") || ci_contains(text, ".md") ||
+               ci_contains(text, ".sh") || ci_contains(text, ".txt"))) ||
+             ci_contains(text, "cadaver") || ci_contains(text, "davfs2") ||
+             ci_contains(text, "s5cmd") || ci_contains(text, "s3fs") ||
+             ci_contains(text, "gof3r") || ci_contains(text, "s4cmd") ||
+             (ci_contains(text, "minio") &&
+              (ci_contains(text, " server") || ci_contains(text, " admin") ||
+               ci_contains(text, " gateway"))) ||
+             ci_contains(text, "vtysh") ||
+             (ci_contains(text, "zebra") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             ci_contains(text, "birdc") || ci_contains(text, "bird6") ||
+             (ci_contains(text, "bird ") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             ci_contains(text, "gobgp") || ci_contains(text, "exabgp") ||
+             ci_contains(text, "bmpd") || ci_contains(text, "ldpd") ||
+             ci_contains(text, "ryu-manager") ||
+             (ci_contains(text, "ryu") &&
+              (ci_contains(text, " run") || ci_contains(text, " manager") ||
+               ci_contains(text, " --"))) ||
+             (ci_contains(text, "onos") &&
+              !ci_contains(text, "sonos") && !ci_contains(text, "smonos")) ||
+             ci_contains(text, "opendaylight") ||
+             (ci_contains(text, "faucet") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             ci_contains(text, "avahi-publish") || ci_contains(text, "avahi-browse") ||
+             ci_contains(text, "avahi-resolve") ||
+             (ci_contains(text, "avahi-daemon") &&
+              (ci_contains(text, " --kill") || ci_contains(text, " -k") ||
+               ci_contains(text, " --no-drop") || ci_contains(text, " -"))) ||
+             (ci_contains(text, "dns-sd") &&
+              (ci_contains(text, " -p") || ci_contains(text, " -r") ||
+               ci_contains(text, " -b") || ci_contains(text, " -e") ||
+               ci_contains(text, " -l") || ci_contains(text, " -g"))) ||
+             (ci_contains(text, "mdns") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             ci_contains(text, "natpmpc") ||
+             (ci_contains(text, "wpa_cli") &&
+              (ci_contains(text, " add_network") || ci_contains(text, " set") ||
+               ci_contains(text, " reconfigure") || ci_contains(text, " save") ||
+               ci_contains(text, " remove") || ci_contains(text, " -"))) ||
+             ci_contains(text, "eapol_test") ||
+             ci_contains(text, "freeradius") || ci_contains(text, "radiusd") ||
+             ci_contains(text, "tac_plus") ||
+             ci_contains(text, "uucp") || ci_contains(text, "uux") ||
+             ci_contains(text, "uuto") || ci_contains(text, "uuname") ||
+             ci_contains(text, "mkosi") ||
+             (ci_contains(text, "kiwi") &&
+              (ci_contains(text, " system") || ci_contains(text, " build") ||
+               ci_contains(text, " --") || ci_contains(text, " -") ||
+               ci_contains(text, "kiwi-ng"))) ||
+             ci_contains(text, "osbuild") || ci_contains(text, "multistrap") ||
+             ci_contains(text, "pbuilder") || ci_contains(text, "sbuild") ||
+             (ci_contains(text, "mock") &&
+              (ci_contains(text, " --") || ci_contains(text, " -r") ||
+               ci_contains(text, " build") || ci_contains(text, " shell"))) ||
+             ci_contains(text, "rpmbuild") || ci_contains(text, "rpmspec") ||
+             ci_contains(text, "debuild") || ci_contains(text, "pdebuild") ||
+             ci_contains(text, "vmdb2") || ci_contains(text, "livemedia-creator") ||
+             ci_contains(text, "lorax") || ci_contains(text, "image-builder") ||
+             ci_contains(text, "virt-builder") || ci_contains(text, "virt-sysprep") ||
+             ci_contains(text, "virt-install") || ci_contains(text, "virt-clone") ||
+             ci_contains(text, "virt-edit") || ci_contains(text, "virt-resize") ||
+             ci_contains(text, "virt-cat") || ci_contains(text, "virt-copy") ||
+             ci_contains(text, "virt-tar") || ci_contains(text, "virt-log") ||
+             (ci_contains(text, "cloud-init") &&
+              (ci_contains(text, " clean") || ci_contains(text, " init") ||
+               ci_contains(text, " deprovision") || ci_contains(text, " collect") ||
+               ci_contains(text, " modules") || ci_contains(text, " single") ||
+               ci_contains(text, " schema"))) ||
+             ci_contains(text, "cloud-localds") ||
+             (ci_contains(text, "ostree") &&
+              (ci_contains(text, " admin") || ci_contains(text, " refs") ||
+               ci_contains(text, " remote") || ci_contains(text, " pull") ||
+               ci_contains(text, " commit") || ci_contains(text, " reset") ||
+               ci_contains(text, " static-delta"))) ||
+             (ci_contains(text, "rpm-ostree") &&
+              (ci_contains(text, " install") || ci_contains(text, " uninstall") ||
+               ci_contains(text, " override") || ci_contains(text, " rebase") ||
+               ci_contains(text, " rollback") || ci_contains(text, " initramfs") ||
+               ci_contains(text, " deploy") || ci_contains(text, " upgrade") ||
+               ci_contains(text, " ex ") || ci_contains(text, " refresh") ||
+               ci_contains(text, " compose"))) ||
+             (ci_contains(text, "bootc") &&
+              (ci_contains(text, " switch") || ci_contains(text, " upgrade") ||
+               ci_contains(text, " install") || ci_contains(text, " update") ||
+               ci_contains(text, " edit") || ci_contains(text, " -"))) ||
+             ci_contains(text, "transactional-update") ||
+             (ci_contains(text, "subscription-manager") &&
+              (ci_contains(text, " register") || ci_contains(text, " unregister") ||
+               ci_contains(text, " repos") || ci_contains(text, " attach") ||
+               ci_contains(text, " release") || ci_contains(text, " refresh") ||
+               ci_contains(text, " import") || ci_contains(text, " -"))) ||
+             ci_contains(text, "do-release-upgrade") ||
+             (ci_contains(text, "zypper") &&
+              (ci_contains(text, " dup") || ci_contains(text, " dist-upgrade") ||
+               ci_contains(text, " in ") || ci_contains(text, " rm ") ||
+               ci_contains(text, " install") || ci_contains(text, " remove") ||
+               ci_contains(text, " ar ") || ci_contains(text, " rr ") ||
+               ci_contains(text, " mr ") || ci_contains(text, " up") ||
+               ci_contains(text, " update"))) ||
+             ci_contains(text, "appimagetool") || ci_contains(text, "appimaged") ||
+             (ci_contains(text, "pack ") &&
+              (ci_contains(text, " build") || ci_contains(text, " --"))) ||
+             (ci_contains(text, "ko ") &&
+              (ci_contains(text, " build") || ci_contains(text, " apply") ||
+               ci_contains(text, " resolve") || ci_contains(text, " publish") ||
+               ci_contains(text, " create") || ci_contains(text, " delete"))) ||
+             ci_contains(text, "kaniko") ||
+             (ci_contains(text, "img ") &&
+              (ci_contains(text, " build") || ci_contains(text, " tag") ||
+               ci_contains(text, " push") || ci_contains(text, " pull") ||
+               ci_contains(text, " save") || ci_contains(text, " load"))) ||
+             ci_contains(text, "buildctl") || ci_contains(text, "buildkitd") ||
+             ci_contains(text, "awx") || ci_contains(text, "tower-cli") ||
+             (ci_contains(text, "fluentd") &&
+              (ci_contains(text, " -c") || ci_contains(text, " --") ||
+               ci_contains(text, " -s"))) ||
+             ci_contains(text, "td-agent") || ci_contains(text, "fluent-bit") ||
+             ci_contains(text, "logstash") || ci_contains(text, "filebeat") ||
+             ci_contains(text, "metricbeat") || ci_contains(text, "packetbeat") ||
+             ci_contains(text, "auditbeat") || ci_contains(text, "winlogbeat") ||
+             (ci_contains(text, "vector") &&
+              (ci_contains(text, " --") || ci_contains(text, " -c") ||
+               ci_contains(text, " validate"))) ||
+             ci_contains(text, "syslog-ng") || ci_contains(text, "nxlog") ||
+             (ci_contains(text, "splunk") &&
+              (ci_contains(text, " add") || ci_contains(text, " remove") ||
+               ci_contains(text, " stop") || ci_contains(text, " start") ||
+               ci_contains(text, " restart") || ci_contains(text, " disable") ||
+               ci_contains(text, " enable") || ci_contains(text, " edit") ||
+               ci_contains(text, " delete") || ci_contains(text, " clean") ||
+               ci_contains(text, " fsck") || ci_contains(text, " diag") ||
+               ci_contains(text, " btool") || ci_contains(text, " -"))) ||
+             (ci_contains(text, "cscli") &&
+              (ci_contains(text, " decisions") || ci_contains(text, " alerts") ||
+               ci_contains(text, " bouncers") || ci_contains(text, " hub") ||
+               ci_contains(text, " delete") || ci_contains(text, " -"))) ||
+             (ci_contains(text, "suricata") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             (ci_contains(text, "snort") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             (ci_contains(text, "zeek") &&
+              (ci_contains(text, " -") || ci_contains(text, "ctl") ||
+               ci_contains(text, "cut"))) ||
+             ci_contains(text, "barnyard2") || ci_contains(text, "oinkmaster") ||
+             ci_contains(text, "pulledpork") ||
+             ci_contains(text, "ossec-") || ci_contains(text, "manage_agents") ||
+             ci_contains(text, "agent-auth") || ci_contains(text, "wazuh-") ||
+             (ci_contains(text, "aide") &&
+              (ci_contains(text, " -i") || ci_contains(text, " --init") ||
+               ci_contains(text, " --update") || ci_contains(text, " -"))) ||
+             (ci_contains(text, "samhain") &&
+              (ci_contains(text, " -t init") || ci_contains(text, " -t update") ||
+               ci_contains(text, " -"))) ||
+             (ci_contains(text, "haproxy") &&
+              (ci_contains(text, " -sf") || ci_contains(text, " -st") ||
+               ci_contains(text, " -f") || ci_contains(text, " -c") ||
+               ci_contains(text, " -"))) ||
+             (ci_contains(text, "kong") &&
+              (ci_contains(text, " start") || ci_contains(text, " stop") ||
+               ci_contains(text, " reload") || ci_contains(text, " restart") ||
+               ci_contains(text, " migrations") || ci_contains(text, " -"))) ||
+             ci_contains(text, "krakend") ||
+             (ci_contains(text, "envoy") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             (ci_contains(text, "traefik") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             (ci_contains(text, "caddy") &&
+              (ci_contains(text, " run") || ci_contains(text, " start") ||
+               ci_contains(text, " stop") || ci_contains(text, " reload") ||
+               ci_contains(text, " adapt") || ci_contains(text, " -"))) ||
+             (ci_contains(text, "serf") &&
+              (ci_contains(text, " agent") || ci_contains(text, " join") ||
+               ci_contains(text, " members") || ci_contains(text, " event") ||
+               ci_contains(text, " query") || ci_contains(text, " -"))) ||
+             ci_contains(text, "kcat") || ci_contains(text, "kafkacat") ||
+             (ci_contains(text, "activemq") &&
+              (ci_contains(text, " stop") || ci_contains(text, " console") ||
+               ci_contains(text, " start") || ci_contains(text, " -"))) ||
+             ci_contains(text, "escli") ||
+             (ci_contains(text, "solr") &&
+              (ci_contains(text, " create") || ci_contains(text, " delete") ||
+               ci_contains(text, " stop") || ci_contains(text, " start") ||
+               ci_contains(text, " -"))) ||
+             ci_contains(text, "pg_ctlcluster") ||
+             (ci_contains(text, "mysqladmin") &&
+              (ci_contains(text, " shutdown") || ci_contains(text, " processlist") ||
+               ci_contains(text, " kill") || ci_contains(text, " variables") ||
+               ci_contains(text, " password") || ci_contains(text, " create") ||
+               ci_contains(text, " drop") || ci_contains(text, " flush") ||
+               ci_contains(text, " reload") || ci_contains(text, " refresh") ||
+               ci_contains(text, " status") || ci_contains(text, " -"))) ||
+             ci_contains(text, "pg_basebackup") || ci_contains(text, "pg_receivewal") ||
+             ci_contains(text, "wal-g") || ci_contains(text, "pgbackrest") ||
+             ci_contains(text, "mongoimport") || ci_contains(text, "pgloader") ||
+             ci_contains(text, "mysqlimport") || ci_contains(text, "sqlldr") ||
+             (ci_contains(text, "bcp ") &&
+              (ci_contains(text, " in") || ci_contains(text, " out") ||
+               ci_contains(text, " queryout") || ci_contains(text, " format"))) ||
+             ci_contains(text, "cfssl") || ci_contains(text, "certstrap") ||
+             ci_contains(text, "easyrsa") ||
+             (ci_contains(text, "step ") &&
+              (ci_contains(text, " ca ") || ci_contains(text, " certificate") ||
+               ci_contains(text, " sign") || ci_contains(text, " ssh") ||
+               ci_contains(text, " -"))) ||
+             ci_contains(text, "step-ca") || ci_contains(text, "mkcert") ||
+             ci_contains(text, "minica") ||
+             (ci_contains(text, "openssl") &&
+              (ci_contains(text, " ca ") || ci_contains(text, " req") ||
+               ci_contains(text, " x509") || ci_contains(text, " pkcs12") ||
+               ci_contains(text, " cms") || ci_contains(text, " smime") ||
+               ci_contains(text, " enc ") || ci_contains(text, " dgst") ||
+               ci_contains(text, " pkey") || ci_contains(text, " genpkey") ||
+               ci_contains(text, " rsautl") || ci_contains(text, " pkeyutl") ||
+               ci_contains(text, " s_server") || ci_contains(text, " s_client") ||
+               ci_contains(text, " srp") || ci_contains(text, " passwd") ||
+               ci_contains(text, " crl") || ci_contains(text, " ocsp") ||
+               ci_contains(text, " pkcs"))) ||
+             ci_contains(text, "acme.sh") ||
+             (ci_contains(text, "lego") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             ci_contains(text, "dehydrated") || ci_contains(text, "kdb5_util") ||
+             ci_contains(text, "kprop") || ci_contains(text, "kpropd") ||
+             ci_contains(text, "kdb5_ldap_util") ||
+             (ci_contains(text, "scoop") &&
+              (ci_contains(text, " install") || ci_contains(text, " uninstall") ||
+               ci_contains(text, " add") || ci_contains(text, " bucket") ||
+               ci_contains(text, " shim") || ci_contains(text, " -"))) ||
+             ci_contains(text, "pkg_add") || ci_contains(text, "pkg_delete") ||
+             ci_contains(text, "pkg_info") || ci_contains(text, "pkgadd") ||
+             ci_contains(text, "pkgrm") || ci_contains(text, "swinstall") ||
+             ci_contains(text, "swremove") || ci_contains(text, "pkgin") ||
+             ci_contains(text, "installpkg") || ci_contains(text, "removepkg") ||
+             ci_contains(text, "upgradepkg") || ci_contains(text, "slackpkg") ||
+             ci_contains(text, "pkgtool") || ci_contains(text, "makepkg") ||
+             ci_contains(text, "opkg") || ci_contains(text, "ipkg") ||
+             (ci_contains(text, "emerge") &&
+              (ci_contains(text, " --") || ci_contains(text, " -") ||
+               ci_contains(text, " unmerge") || ci_contains(text, " sync"))) ||
+             ci_contains(text, "ebuild") || ci_contains(text, "equery") ||
+             ci_contains(text, "dispatch-conf") || ci_contains(text, "etc-update") ||
+             ci_contains(text, "eselect") || ci_contains(text, "genkernel") ||
+             ci_contains(text, "revdep-rebuild") ||
+             ci_contains(text, "xbps-") ||
+             (ci_contains(text, "nixos-rebuild") &&
+              (ci_contains(text, " switch") || ci_contains(text, " boot") ||
+               ci_contains(text, " test") || ci_contains(text, " build") ||
+               ci_contains(text, " -"))) ||
+             ci_contains(text, "mtd-write") ||
+             (ci_contains(text, "nvram") &&
+              (ci_contains(text, " set") || ci_contains(text, " commit") ||
+               ci_contains(text, " unset") || ci_contains(text, " erase") ||
+               ci_contains(text, " show") || ci_contains(text, " get") ||
+               ci_contains(text, " -"))) ||
+             ci_contains(text, "sysupgrade") || ci_contains(text, "fw_printenv") ||
+             ci_contains(text, "fw_setenv") || ci_contains(text, "uboot-env") ||
+             (ci_contains(text, "pm ") &&
+              !ci_contains(text, "rpm") &&
+              (ci_contains(text, " install") || ci_contains(text, " uninstall") ||
+               ci_contains(text, " disable") || ci_contains(text, " enable") ||
+               ci_contains(text, " grant") || ci_contains(text, " revoke") ||
+               ci_contains(text, " clear") || ci_contains(text, " set-") ||
+               ci_contains(text, " move") || ci_contains(text, " wipe") ||
+               ci_contains(text, " suspend") || ci_contains(text, " hide") ||
+               ci_contains(text, " unhide") || ci_contains(text, " trim") ||
+               ci_contains(text, " create-user") || ci_contains(text, " remove-user") ||
+               ci_contains(text, " path") || ci_contains(text, " dump"))) ||
+             (ci_contains(text, "am ") &&
+              !ci_contains(text, "prog") && !ci_contains(text, "telegram") &&
+              !ci_contains(text, "ham ") && !ci_contains(text, "yam") &&
+              (ci_contains(text, " start -") || ci_contains(text, " broadcast") ||
+               ci_contains(text, " instrument") || ci_contains(text, " force-stop") ||
+               ci_contains(text, " profile") || ci_contains(text, " kill") ||
+               ci_contains(text, " task") || ci_contains(text, " monitor"))) ||
+             (ci_contains(text, "settings ") &&
+              (ci_contains(text, " put") || ci_contains(text, " delete") ||
+               ci_contains(text, " get") || ci_contains(text, " list"))) ||
+             ci_contains(text, "setprop") || ci_contains(text, "appops") ||
+             ci_contains(text, "dumpsys") || ci_contains(text, "uiautomator") ||
+             (ci_contains(text, "svc ") &&
+              (ci_contains(text, " data") || ci_contains(text, " wifi") ||
+               ci_contains(text, " bluetooth") || ci_contains(text, " nfc") ||
+               ci_contains(text, " power") || ci_contains(text, " usb"))) ||
+             (ci_contains(text, "input ") &&
+              (ci_contains(text, " keyevent") || ci_contains(text, " text") ||
+               ci_contains(text, " tap") || ci_contains(text, " swipe") ||
+               ci_contains(text, " draganddrop") || ci_contains(text, " press") ||
+               ci_contains(text, " roll") || ci_contains(text, " source"))) ||
+             (ci_contains(text, "monkey") &&
+              (ci_contains(text, " -p") || ci_contains(text, " --"))) ||
+             ci_contains(text, "install-recovery.sh") ||
+             (ci_contains(text, "cmd ") &&
+              (ci_contains(text, " activity") || ci_contains(text, " package") ||
+               ci_contains(text, " notification") || ci_contains(text, " power") ||
+               ci_contains(text, " statusbar") || ci_contains(text, " alarm") ||
+               ci_contains(text, " appops") || ci_contains(text, " connectivity"))) ||
+             ci_contains(text, "st-flash") || ci_contains(text, "stm32flash") ||
+             ci_contains(text, "nrfjprog") || ci_contains(text, "bossac") ||
+             ci_contains(text, "teensy-loader") || ci_contains(text, "espflash") ||
+             ci_contains(text, "picotool") || ci_contains(text, "pyocd") ||
+             ci_contains(text, "jlinkexe") || ci_contains(text, "j-link") ||
+             (ci_contains(text, "nvidia-smi") &&
+              (ci_contains(text, " --gpu-reset") || ci_contains(text, " -r") ||
+               ci_contains(text, " -lgc") || ci_contains(text, " -lgm") ||
+               ci_contains(text, " -lm") || ci_contains(text, " -ac") ||
+               ci_contains(text, " -gom") || ci_contains(text, " -e") ||
+               ci_contains(text, " -pm") || ci_contains(text, " -ecc") ||
+               ci_contains(text, " -fdm") || ci_contains(text, " --persistence") ||
+               ci_contains(text, " --pci") || ci_contains(text, " drain") ||
+               ci_contains(text, " conf-compute") || ci_contains(text, " mig"))) ||
+             ci_contains(text, "amd-smi") || ci_contains(text, "rocm-smi") ||
+             (ci_contains(text, "udisksctl") &&
+              (ci_contains(text, " mount") || ci_contains(text, " unmount") ||
+               ci_contains(text, " loop-setup") || ci_contains(text, " loop-delete") ||
+               ci_contains(text, " power-off") || ci_contains(text, " lock") ||
+               ci_contains(text, " unlock") || ci_contains(text, " smart-simulate") ||
+               ci_contains(text, " -"))) ||
+             (ci_contains(text, "pkcon") &&
+              (ci_contains(text, " install") || ci_contains(text, " remove") ||
+               ci_contains(text, " update") || ci_contains(text, " refresh") ||
+               ci_contains(text, " -"))) ||
+             ci_contains(text, "pkmon") ||
+             (ci_contains(text, "rpm ") &&
+              (ci_contains(text, " --eval") || ci_contains(text, " --define") ||
+               ci_contains(text, " --setperms") || ci_contains(text, " --setugids") ||
+               ci_contains(text, " --import") || ci_contains(text, " --rebuilddb") ||
+               ci_contains(text, " --initdb") || ci_contains(text, " --erase") ||
+               ci_contains(text, " -e") || ci_contains(text, " -i") ||
+               ci_contains(text, " -u") || ci_contains(text, " --delete") ||
+               ci_contains(text, " --force"))) ||
+             (ci_contains(text, "dpkg") &&
+              (ci_contains(text, " -i") || ci_contains(text, " --install") ||
+               ci_contains(text, " --unpack") || ci_contains(text, " --configure") ||
+               ci_contains(text, " --remove") || ci_contains(text, " --purge") ||
+               ci_contains(text, " -r") || ci_contains(text, " -p") ||
+               ci_contains(text, " --force") || ci_contains(text, " --set-selections"))) ||
+             (ci_contains(text, "apt-key") &&
+              (ci_contains(text, " add") || ci_contains(text, " del") ||
+               ci_contains(text, " update") || ci_contains(text, " net-update") ||
+               ci_contains(text, " adv") || ci_contains(text, " -"))) ||
+             ci_contains(text, "chvt") || ci_contains(text, "openvt") ||
+             ci_contains(text, "fgconsole") || ci_contains(text, "deallocvt") ||
+             ci_contains(text, "vlock") || ci_contains(text, "physlock") ||
+             ci_contains(text, "xtrlock") ||
+             ci_contains(text, "s2disk") || ci_contains(text, "pm-hibernate") ||
+             ci_contains(text, "uswsusp") ||
+             ci_contains(text, "pcs ") || ci_contains(text, "crmsh") ||
+             ci_contains(text, "corosync-cfgtool") || ci_contains(text, "cibadmin") ||
+             ci_contains(text, "stonith") || ci_contains(text, "fence_") ||
+             (ci_contains(text, "gluster") &&
+              (ci_contains(text, " volume") || ci_contains(text, " peer") ||
+               ci_contains(text, " -"))) ||
+             ci_contains(text, "megacli") || ci_contains(text, "storcli") ||
+             ci_contains(text, "perccli") || ci_contains(text, "arcconf") ||
+             ci_contains(text, "tw_cli") || ci_contains(text, "hpacucli") ||
+             ci_contains(text, "ssacli") || ci_contains(text, "sas2ircu") ||
+             ci_contains(text, "sas3ircu") || ci_contains(text, "mfiutil") ||
+             ci_contains(text, "sesutil") ||
+             (ci_contains(text, "xl ") &&
+              (ci_contains(text, " create") || ci_contains(text, " destroy") ||
+               ci_contains(text, " pause") || ci_contains(text, " shutdown") ||
+               ci_contains(text, " reboot") || ci_contains(text, " migrate") ||
+               ci_contains(text, " -"))) ||
+             (ci_contains(text, "xm ") &&
+              (ci_contains(text, " create") || ci_contains(text, " destroy") ||
+               ci_contains(text, " pause") || ci_contains(text, " shutdown") ||
+               ci_contains(text, " -"))) ||
+             (ci_contains(text, "xe ") &&
+              (ci_contains(text, " vm-") || ci_contains(text, " host") ||
+               ci_contains(text, " pool") || ci_contains(text, " sr-") ||
+               ci_contains(text, " -"))) ||
+             ci_contains(text, "xenstore-") || ci_contains(text, "lxd") ||
+             ci_contains(text, "dmraid") || ci_contains(text, "getprop") ||
+             ci_contains(text, "snmpset") || ci_contains(text, "snmptable") ||
+             ci_contains(text, "snmpusm") || ci_contains(text, "snmpvacm") ||
+             ci_contains(text, "snmptrapd") || ci_contains(text, "snmpinform") ||
+             ci_contains(text, "encode_keychange") || ci_contains(text, "snmpconf") ||
+             ci_contains(text, "traptoemail")) {
+        what = "xcan/android/router/build/routing/mgmt/destructive primitive";
+        }
+        
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
         }
