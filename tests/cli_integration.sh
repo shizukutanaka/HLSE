@@ -11673,6 +11673,160 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+
+# ── cycle-245: db exfil/backup + rmm/remote access + proxy/tunnel +
+#   BYOVD/packers + cloud-attack/spray/phish + miners + bcc/forensics +
+#   wifi/bt/nfc/can/scada + remaining win/unix primitives
+for c in \
+    'pg_dump db' 'pg_dumpall' 'mysqldump db' 'mariadb-dump db' \
+    'mongodump' 'mongoexport' 'elasticdump' 'sqlite3 x.db .dump' \
+    'redis-cli --rdb /tmp/x' 'bcp db out x' 'expdp x' 'sqlldr x' \
+    'wal-g backup-push x' 'pgbackrest backup' 'xtrabackup --backup' \
+    'mariabackup --backup' 'nodetool drain' 'gluster volume delete x' \
+    'rbd rm x' 'fetchmail -k x' 'offlineimap' 'mbsync -a' \
+    'ipfs add x' 's3cmd put x s3://b' 'mc cp x m/y' \
+    'velero backup delete x' 'tkn pipelinerun delete x' \
+    'kn service delete x' 'argo delete x' 'buildctl build' \
+    'crun exec x' 'jexec 1 sh' 'toolbox enter' 'distrobox enter' \
+    'teamviewer' 'anydesk' 'rustdesk' 'screenconnect' 'meshagent' \
+    'ninjarmm' 'atera' 'datto' 'syncro' 'splashtop' 'realvnc' \
+    'tightvnc' 'ultravnc' 'nomachine' 'dwagent' 'dwservice' \
+    'parsec -x' 'moonlight -x' 'hamachi' 'logmein' 'tacticalrmm' \
+    'simplehelp' 'supremo -x' 'aeroadmin' 'ammyy' 'impero' 'sshx' \
+    'upterm' 'xrdp' 'remotepc' 'litemanager' 'mikogo' 'goverlan' \
+    'optitune' 'addigy' 'quickassist' 'islonline' 'netop' 'gocket' \
+    'beanywhere' 'sing-box' 'mihomo' 'hiddify' 'naiveproxy' \
+    'brook -x' 'tuic' 'juicity' 'snell -x' 'v2fly' 'ocserv' 'tincd' \
+    'tailscale up' 'tailscale login' 'zerotier-cli join x' \
+    'netbird up' 'nebula -config x' 'headscale' 'innernet' 'netmaker' \
+    'nps' 'npc' 'suo5' 'venom -x' 'stowaway -x' 'iox' 'rakshasa' \
+    'regory' 'ssf' 'pystinger' 'lcx -listen x y' 'htran' 'rinetd' \
+    'redsocks' 'tun2socks' 'mosh-server' 'localtunnel' 'expose -x' \
+    'pagekite' 'bore -x' 'inlets -x' 'packetriot' 'localxpose' \
+    'ztncui' 'tinc -c x' 'kdmapper x.sys' 'capcom.sys' 'gdrv.sys' \
+    'dbutil_2_3.sys' 'rtcore64' 'iqvw64e.sys' 'asrdrv' 'vboxdrv' \
+    'hevd' 'runpe' 'themida' 'vmprotect' 'obsidium' 'molebox' \
+    'mpress' 'aspack' 'petite -x' 'kkrunchy' 'sgn -x' 'pe2sh' \
+    'amber -x' 'inceptor' 'pecloak' 't-rex -a x' 'claymore -x' \
+    'srbminer' 'cryptotab' 'ccminer' 'wildrig' 'excavator -x' \
+    'cme -x' 'adfind' 'admod' 'kekeo' 'certify -x' 'maigret' \
+    'blackbird -x' 'snoop -u x' 'toutatis' 'instaloader' 'osintgram' \
+    'git-dumper http://x/.git y' 'gitgraber' 'dvcs-ripper' 'uro x' \
+    'unfurl -x' 'waymore' 'linkfinder' 'qsreplace' 'cloudfox' 'pacu' \
+    'enumerate-iam' 'prowler' 's3scanner' 's3enum' 'bucketfinder' \
+    'awsbucketdump' 'grayhatwarfare' 'skyark' 'weirdaal' 'iamhound' \
+    'o365spray' 'msolspray' 'adfspray' 'fireprox' 'spray365' \
+    'trevorspray' 'credmaster' 'go365' 'ruler -x' 'evilnovnc' \
+    'cred-sniper' 'merlin -x' 'pupy' 'chaos -x' 'wsc2' 'doctrack' \
+    'chopper -x' 'tinyshell' 'webhandler' 'kubestriker' 'kubelite' \
+    'sslsniff' 'bashreadline' 'tcpconnect' 'tcpaccept' 'statsnoop' \
+    'capable' 'funclatency' 'argdist' 'funccount' 'tsk_recover x' \
+    'fls -x' 'icat x' 'mmls' 'autopsy -x' 'sleuthkit' 'dcfldd' 'dc3dd' \
+    'ddrescue' 'safecopy' 'foremost -x' 'scalpel -x' 'magicrescue' \
+    'lime -x' 'fmem' 'memdump' 'mdd' 'makedumpfile' 'vmss2core' \
+    'osqueryi' 'velociraptor -x' 'ossec' 'samhain -x' 'aide --init' \
+    'tripwire --check' 'wazuh' 'afick' 'integrit' 'mitmdump' \
+    'urlsnarf' 'filesnarf' 'mailsnarf' 'msgsnarf' 'sshmitm' \
+    'webmitm' 'webspy' 'tcpkill' 'tcpnice' 'slowhttptest' \
+    'goldeneye -x' 'hulk -x' 'rudy -x' 'torshammer' 'pyloris' \
+    'ufonet' 'xerxes' 'thc-ipv6' 'atk6-x' 'denial6' 'dos-new-ip6' \
+    'flood_router6 x' 'fake_router6 x' 'kill_router6' 'ndpexhaust' \
+    'thcping6' 'smurf6' 'toobig6' 'trace6 x' 'fuzz_ip6' \
+    'inject_alive6' 'passive_discovery6' 'dnsdict6' 'dnsrevenum6' \
+    'dump_router6' 'exploit6' 'sendpees' 'node_query6' 'randicmp6' \
+    'redir6' 'onesixtyone' 'snmpwalk' 'snmpget' 'snmpset' \
+    'snmpcheck' 'ike-scan' 'psk-crack' 'vpnc' 'swanctl' 'racoon' \
+    'fcrackzip' 'pdfcrack' 'rarcrack' 'pkcrack' 'bkcrack' 'rcrack' \
+    'ophcrack' 'cowpatty' 'asleap' 'pyrit' 'eapeak' 'hcxdumptool' \
+    'hcxpcapngtool' 'besside-ng' 'airdecap-ng' 'tkiptun-ng' \
+    'wesside-ng' 'packetforge-ng' 'airolib-ng' 'easside-ng' \
+    'airserv-ng' 'ivstools' 'makeivs-ng' 'buddy-ng' 'create_ap' \
+    'fern-wifi' 'linset' 'wpa_cli' 'spooftooph' 'redfang' \
+    'bluesnarfer' 'bluelog' 'btscanner' 'l2ping' 'sdptool' \
+    'obexftp' 'ussp-push' 'chameleon mini' 'rfidiot' 'ykman' \
+    'pkcs11-tool' 'pkcs15' 'opensc-tool' 'pcsc_scan' \
+    'yubico-piv-tool' 'cardpeek' 'mifare' 'cansend' 'candump' \
+    'canplayer' 'cansniffer' 'isotpsend' 'slcand' 'plcscan' \
+    's7scan' 'mbtget' 'diagslave' 'opcua-client' 'iec104' 'dnp3' \
+    'enip' 's7comm' 'plcinjector' 'melsec' 'codesys' \
+    'mofcomp x.mof' 'wbemtest' 'msdt /id x' 'sdiageng' 'mmc x.msc' \
+    'winhelp x' 'setx /m x y' 'cipher /e x' 'fsutil volume dismount c:' \
+    'fsutil hardlink create x y' 'fsutil reparsepoint create x y' \
+    'mountvol c: /p' 'subst x: c:\y' 'wecutil qc' \
+    'netsh wfp capture start' 'netsh winhttp set proxy x' \
+    'wpr -start x' 'xperf -on x' 'tracerpt x' 'relog x' \
+    'imagex /capture x y' 'appcmd add site x' 'aspnet_regiis -i' \
+    'gacutil /u x' 'ngen uninstall x' 'devenv /command x' 'csi x' \
+    'fsi x' 'scriptcs x' 'dotnet-script x' 'usoclient startscan' \
+    'wuauclt /updatenow' 'keyctl dump 1' 'keyctl print 1' \
+    'sbctl enroll-keys' 'sbsign x' 'fio --name=x --filename=/dev/sda' \
+    'badblocks -w /dev/sda' 'sg_persist --out --register /dev/sda' \
+    'ndctl destroy-namespace x' 'ipmctl delete -dimm' \
+    'echo x > /proc/sys/fs/binfmt_misc/register' 'systemd-sysusers x.conf' \
+    'systemd-firstboot --root-password=x' 'portablectl attach x' \
+    '/lib64/ld-linux-x86-64.so.2 ./x' 'ld-linux.so.2 ./x' \
+    'flatpak-spawn --host sh' 'gdbus call --system -d x' \
+    'killall5 -9' 'fuser -k /x' 'accton off' 'vconfig add eth0 10' \
+    'rfkill block all' 'update-rc.d x remove' 'chkconfig x off' \
+    'opkg remove x' 'emerge --unmerge x' 'pkg delete x' \
+    'snap install x' 'snap remove x' 'flatpak install x' \
+    'brew install x' 'port install x' 'uv pip install x' 'rye add x' \
+    'mamba install x' 'conda install x' 'poetry add x' 'pdm add x' \
+    'dotnet tool install -g x' 'cargo add x' 'nuget install x' \
+    'choco install x' 'scoop install x' 'winget install x' \
+    'Add-AppxPackage x' 'Remove-AppxPackage x' 'msix x'; do \
+  ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+      && check "paste: $c flagged" "1" "1" \
+      || check "paste: $c flagged" "0" "1"; done
+
+# benign pairs: real-word names + routine reads stay clean
+for c in \
+    'a parsec is distance' 'moonlight sonata' 'a venom snake' \
+    'stowaway story' 'bore the audience' 'exposed roots' \
+    'the inlets shore' 'brook the fish' 'a snell tie' \
+    'the petite woman' 'amber alert' 'claymore mine' \
+    'the excavator dug' 'merlin the wizard' 'a chaos in city' \
+    'chopper bike' 'ruler straight edge' 'blackbird singing' \
+    'snoop dogg' 'unfurl the flag' 'an autopsy report' \
+    'foremost expert' 'scalpel edge' 'lime juice' 'samhain festival' \
+    'velociraptor dinosaur' 'tripwire alarm' 'aide memoire' \
+    'goldeneye duck' 'the hulk smash' 'rudy the dog' \
+    'the chaos theory' 'snell window' 'capcom games' 'sgn function' \
+    'the amber light' 'a petite frame' 'hulk hogan' \
+    'the supremo court' 'a nebula cloud' 'the nebula award' \
+    'venom movie' 'hulk' 'chaos' 'blackbird' 'snoop' 'amber' \
+    'petite' 'sgn' 'bore' 'expose' 'inlets' 'brook' 'parsec' \
+    'moonlight' 'stowaway' 'tinc' 'snell' 'ruler' 'claymore' \
+    'excavator' 'merlin' 'chopper' 'rudy' 'goldeneye' \
+    'forge the metal' 'the mamba slithered' 'tailscale --version' \
+    'tinc --version' 'the argo movie' 'kn the knight' \
+    'mc the rapper' 'the devenv docs' 'dotnet build' 'cargo build' \
+    'cargo test' 'nuget restore' 'winget --version' 'npm install x' \
+    'brew --version' 'conda --version' 'mamba --version' \
+    'mamba snake' 'keyctl show' 'sbctl status' 'fio --version' \
+    'ndctl list' 'ipmctl show' 'accton' 'rfkill list' 'vconfig' \
+    'chkconfig --list' 'emerge --info' 'pkg info' 'snap version' \
+    'flatpak --version' 'port version' 'uv --version' 'rye --version' \
+    'poetry --version' 'pdm --version' 'dotnet --version' \
+    'winget list' 'appcmd list sites' 'quser' 'logoff' 'msg x y' \
+    'cipher /c x' 'subst' 'fsutil fsinfo drives' 'netsh wfp show' \
+    'wpr --version' 'xperf --version' 'msdt /?' 'mmc' 'csi' 'fsi' \
+    'keyctl' 'portablectl list' 'flatpak-spawn' 'gdbus introspect' \
+    'fuser -v' 'fetchmail --version' 'velero --help' 'tkn version' \
+    'kn version' 'argo version' 'crun --version' 'toolbox --version' \
+    'distrobox version' 'nodetool version' 'gluster --version' \
+    'rbd --version' 's3cmd --version' 'mc --version' \
+    'ipfs --version' 'opkg --version' 'autopsy' 'foremost' \
+    'scalpel' 'lime' 'sqlite3 x.db .tables' 'nodetool status' \
+    'rbd ls' 'gluster volume list' 'mc ls x' 'velero get backups' \
+    'argo list' 'crun list' 'toolbox list' \
+    'distrobox list' 'ipfs id' 'snap list' 'flatpak list' \
+    'pkg update' 'winget search x' 'cargo doc' 'dotnet restore' \
+    'nuget help' 'appcmd list apppools' 'msdt' 'wpr' 'xperf' \
+    'netsh wfp' 'fsutil fsinfo' 'cipher x' 'subst x:'; do \
+  ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+      && check "paste FP guard: $c clean" "0" "0" \
+      || check "paste FP guard: $c clean" "0" "1"; done
 # ── cycle-244: k8s/mesh/registry/IaC helpers + secret CLIs + UAC/
 #   LOLBin extras + backup destruct + exec-context/interp + dialog
 #   spoof + VPN/proxy/NAT primitives
@@ -11793,7 +11947,7 @@ for c in \
     'screen --version' 'newt' 'a newt' \
     'tracker.exe docs' 'slmgr' \
     'op --version' 'nix develop' \
-    'nix build x' 'nix-shell x' 'guix install x' 'brew install x' \
+    'nix build x' 'nix-shell x' 'guix install x' \
     'go get x' 'watch ls'; do \
   ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
       && check "paste FP guard: $c clean" "0" "0" \
@@ -12042,7 +12196,7 @@ for c in \
     'nats server' 'psql --version' 'npm install x' 'npm test' \
     'yarn add x' 'yarn build' 'yarn --version' 'cargo build' 'cargo test' \
     'gem install x' 'nuget restore' 'mvn package' 'mvn install' \
-    'gradle build' 'poetry install' 'poetry add x' \
+    'gradle build' \
     'gh pr list' 'gh pr view x' 'gh repo view' 'glab mr list' \
     'fly status' 'fly logs' 'circleci --help' 'travis --help' \
     'the drone flew' 'drone video' 'sls --version' 'serverless --version' \
@@ -13138,9 +13292,6 @@ for c in 'npm i lodash' 'npm install react' 'yarn add lodash' \
          'gem install rails' 'apt install vim' \
          'apt-get install git' 'dnf install vim' 'yum update' \
          'zypper install vim' 'pacman -S vim' 'apk add vim' \
-         'snap install vlc' 'flatpak install flathub' \
-         'brew install wget' 'winget install git' \
-         'choco install 7zip' 'scoop install git' \
          'dpkg -l' 'rpm -qa' \
          'ansible all -m ping' 'ansible-playbook site.yml' \
          'ansible-pull -U /local' 'salt "*" test.ping' \
@@ -13899,7 +14050,7 @@ for c in \
         || check "paste: $c flagged" "0" "1"
 done
 for c in 'icacls c:\data /grant everyone:f' 'takeown /f file.txt' \
-         'cipher /e secret.txt' 'fsutil file createnew x 1' \
+         'fsutil file createnew x 1' \
          'manage-bde -status' 'diskpart list disk' 'secedit /analyze' \
          'schtasks /create /tn "system report" /tr y /sc daily'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \

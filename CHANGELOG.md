@@ -77,6 +77,95 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **DB dump/exfil + mail-sync + object-store/backup + RMM/remote-access
+  names + modern proxy/tunnel transports + BYOVD drivers/packers +
+  cloud-attack/spray/phish kits + miners + BCC eBPF snoopers +
+  forensic/FIM/EDR names + dsniff/DoS/THC-IPv6 + SNMP/IKE/crackers +
+  wifi/BT/NFC/CAN/SCADA tooling + remaining Windows mgmt
+  (msdt/mmc/setx/cipher/fsutil/netsh wfp|winhttp/wpr/xperf/appcmd/
+  aspnet_regiis/gacutil/ngen/devenv/csi/fsi/usoclient) + remaining
+  Unix mgmt (keyctl/sbctl/binfmt/systemd-*/ld-linux/flatpak-spawn/
+  gdbus/killall5/fuser/accton/vconfig/rfkill/update-rc.d/chkconfig/
+  pkg/snap/flatpak/brew/uv/rye/mamba/conda/poetry/pdm/dotnet/cargo/
+  nuget/choco/scoop/winget/appx) primitives (cycle-245)**:
+  flags, at LOG/ALERT in paste context —
+  pg_dump/mysqldump/mariadb(-dump|-backup)/mongodump/mongoexport/
+  elasticdump/sqlite3 .dump/redis-cli --rdb/bcp out/expdp/sqlldr/
+  wal-g/pgbackrest/(maria|xtra)backup/nodetool drain etc. and
+  fetchmail/offlineimap/mbsync mailbox pull-down; ipfs/s3cmd/mc/
+  velero/tkn/kn/argo/buildctl/crun/jexec/toolbox/distrobox object-store
+  and runtime exec forms; ~45 RMM/remote-access names (teamviewer/
+  anydesk/rustdesk/screenconnect/meshagent/ninjarmm/atera/datto/
+  splashtop/×vnc/nomachine/dwagent/hamachi/logmein/tacticalrmm/
+  simplehelp/aeroadmin/ammyy/impero/sshx/upterm/xrdp/remotepc/
+  litemanager/mikogo/goverlan/optitune/addigy/quickassist/islonline/
+  netop/gocket/beanywhere, real-word parsec/moonlight/supremo
+  flag-gated); modern proxy/C2 transports (sing-box/mihomo/hiddify/
+  naiveproxy/brook/tuic/juicity/snell/v2fly/ocserv/tincd/tailscale/
+  zerotier/netbird/nebula/headscale/innernet/netmaker/nps/npc/suo5/
+  venom/stowaway/iox/rakshasa/regory/ssf/pystinger/lcx/htran/rinetd/
+  redsocks/tun2socks/mosh-server/localtunnel/expose/pagekite/bore/
+  inlets/packetriot/localxpose/ztncui/tinc — real words flag-gated);
+  BYOVD driver + packer/protector names (kdmapper/capcom/gdrv/dbutil/
+  rtcore64/iqvw64e/asrdrv/vboxdrv/hevd/runpe/themida/vmprotect/
+  obsidium/molebox/mpress/aspack/petite/kkrunchy/sgn/pe2sh/amber/
+  inceptor/pecloak) and miner names (t-rex/claymore/srbminer/
+  cryptotab/ccminer/wildrig/excavator); AD/recon/OSINT/cloud-attack +
+  spray names (cme/adfind/admod/kekeo/certify/maigret/blackbird/
+  snoop/toutatis/instaloader/osintgram/git-dumper/gitgraber/
+  dvcs-ripper/uro/unfurl/waymore/linkfinder/qsreplace/cloudfox/pacu/
+  enumerate-iam/prowler/s3scanner/s3enum/bucketfinder/awsbucketdump/
+  grayhatwarfare/skyark/weirdaal/iamhound/o365spray/msolspray/
+  adfspray/fireprox/spray365/trevorspray/credmaster/go365/ruler);
+  phish/C2/webshell extras (evilnovnc/cred-sniper/merlin/pupy/chaos/
+  wsc2/doctrack/chopper/tinyshell/webhandler/kubestriker/kubelite);
+  BCC eBPF tools (sslsniff/bashreadline/tcpconnect/tcpaccept/
+  statsnoop/capable/funclatency/argdist/funccount); forensic +
+  memory-acquisition (tsk_*/fls/icat/mmls/autopsy/sleuthkit/dcfldd/
+  dc3dd/ddrescue/safecopy/foremost/scalpel/magicrescue/lime/fmem/
+  memdump/mdd/makedumpfile/vmss2core); FIM/EDR names (osqueryi/
+  velociraptor/ossec/samhain/aide/tripwire/wazuh/afick/integrit);
+  dsniff suite + DoS + THC-IPv6 (mitmdump/urlsnarf/filesnarf/
+  mailsnarf/msgsnarf/sshmitm/webmitm/webspy/tcpkill/tcpnice/
+  slowhttptest/goldeneye/hulk/rudy/torshammer/pyloris/ufonet/xerxes/
+  thc-ipv6/atk6-*/denial6/dos-new-ip6/flood_*/fake_*6/kill_router6/
+  ndpexhaust/thcping6/thcsyn6/smurf6/rsmurf6/toobig6/trace6/fuzz_ip6/
+  inject_alive6/passive_discovery6/dnsdict6/dnsrevenum6/dump_router6/
+  exploit6/sendpees/node_query6/randicmp6/redir6); SNMP/IKE/password
+  crackers (onesixtyone/snmpwalk/snmpget/snmpset/snmpcheck/ike-scan/
+  psk-crack/vpnc/swanctl/racoon/fcrackzip/pdfcrack/rarcrack/pkcrack/
+  bkcrack/rcrack/ophcrack/cowpatty/asleap/pyrit/eapeak); aircrack-ng
+  family (hcx*/besside/airdecap/tkiptun/wesside/packetforge/airolib/
+  easside/airserv/ivstools/makeivs/buddy-ng/create_ap/fern-wifi/
+  linset/wpa_cli); BT/NFC/CAN/SCADA (spooftooph/redfang/bluesnarfer/
+  bluelog/btscanner/l2ping/sdptool/obexftp/ussp-push/chameleon-mini/
+  rfidiot/ykman/pkcs11-tool/pkcs15/opensc-tool/pcsc_scan/
+  yubico-piv-tool/cardpeek/mifare/cansend/candump/canplayer/
+  cansniffer/isotpsend/slcand/plcscan/s7scan/mbtget/diagslave/
+  opcua-client/iec104/dnp3/enip/s7comm/plcinjector/melsec/codesys);
+  Windows (mofcomp/wbemtest/msdt/sdiageng/mmc .msc/winhelp/setx /m/
+  cipher /e|/d|/w/fsutil volume-dismount|hardlink|reparsepoint/
+  mountvol /p|/d/subst drive-map/wecutil/netsh wfp capture|winhttp
+  set/wpr/xperf/tracerpt/relog/imagex/appcmd/aspnet_regiis/gacutil/
+  ngen/devenv /command/csi/fsi/scriptcs/dotnet-script/usoclient/
+  wuauclt); Unix (keyctl dump/print/pipe/search/update/revoke/
+  negate/purge, sbctl enroll|sign, sbsign, fio /dev, badblocks -w,
+  sg_persist, ndctl destroy|sanitize, ipmctl delete|format, binfmt_misc
+  register, systemd-sysusers, systemd-firstboot, portablectl attach,
+  ld-linux/ld-musl/ld.so.2 loader-exec, flatpak-spawn --host, gdbus
+  call|emit|monitor, killall5, fuser -k, accton off, vconfig add|rem,
+  rfkill block|unblock, update-rc.d defaults|remove|enable|disable,
+  chkconfig --add|--del|on|off, opkg install|remove|upgrade, emerge
+  --unmerge|--depclean|--sync, pkg/snap/flatpak/brew/port install|
+  uninstall|remove, uv pip|tool|publish|uvx, rye|mamba|conda|poetry|
+  pdm add|remove|install|publish|sync, dotnet tool|add, cargo add|
+  owner|yank, nuget install|push|delete, choco/scoop/winget install|
+  uninstall|push|import, Add/Remove-AppxPackage, msix). All bare
+  invented names flag on mention (mimikatz convention); every
+  real-word name is flag/verb gated. Trailing-space verb gates
+  prevent 'installs/adds' prose prefix-matches; icat gated 'icat ' to
+  stop certif-icat-e/pred-icat-e word-internal hits.
+
 - **K8s/mesh/registry/IaC helper CLIs + secret-CLIs + UAC-bypass
   LOLBins + backup destruction + exec-context/daemonization +
   privilege-boundary + kerberos/tmux/screen exec + dialog-spoof +
