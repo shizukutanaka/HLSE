@@ -2058,6 +2058,104 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, " defaults") || ci_contains(text, " on") ||
                     ci_contains(text, " add") || ci_contains(text, " enable"))) {
             what = "sysvinit service enable";
+        /* ── c236: env-var injection (loader/interpreter/vcs/shell/proxy/
+         * path hijack) + lateral movement (remote schtasks/sc/reg/at,
+         * admin shares) + Defender exclusions + cred-enumeration ── */
+        } else if (ci_contains(text, "ld_preload=") ||
+                   ci_contains(text, "ld_library_path=") ||
+                   ci_contains(text, "dyld_insert_libraries=") ||
+                   ci_contains(text, "dyld_fallback") ||
+                   ci_contains(text, "ld_audit=") ||
+                   ci_contains(text, "ld_profile=") ||
+                   ci_contains(text, "gconv_path=") ||
+                   ci_contains(text, "glibc_tunables=") ||
+                   ci_contains(text, "node_options=") ||
+                   ci_contains(text, "pythonpath=") ||
+                   ci_contains(text, "pythonhome=") ||
+                   ci_contains(text, "pythonstartup=") ||
+                   ci_contains(text, "rubylib=") ||
+                   ci_contains(text, "rubyopt=") ||
+                   ci_contains(text, "perl5opt=") ||
+                   ci_contains(text, "perl5lib=") ||
+                   ci_contains(text, "perl5db=") ||
+                   ci_contains(text, "java_tool_options=") ||
+                   ci_contains(text, "_java_options=") ||
+                   ci_contains(text, "jdk_java_options=") ||
+                   ci_contains(text, "phprc=") ||
+                   ci_contains(text, "php_ini_scan_dir=") ||
+                   ci_contains(text, "gem_home=") ||
+                   ci_contains(text, "gem_path=") ||
+                   ci_contains(text, "git_ssh_command=") ||
+                   ci_contains(text, "git_ssh=") ||
+                   ci_contains(text, "git_proxy_command=") ||
+                   ci_contains(text, "git_external_diff=") ||
+                   ci_contains(text, "git_askpass=") ||
+                   ci_contains(text, "ssh_askpass=") ||
+                   ci_contains(text, "svn_ssh=") ||
+                   ci_contains(text, "cvs_rsh=") ||
+                   ci_contains(text, "prompt_command=") ||
+                   ci_contains(text, "bash_env=") ||
+                   ci_contains(text, "zdotdir=") ||
+                   ci_contains(text, "inputrc=") ||
+                   ci_contains(text, "http_proxy=") ||
+                   ci_contains(text, "https_proxy=") ||
+                   ci_contains(text, "all_proxy=") ||
+                   ci_contains(text, "ftp_proxy=") ||
+                   ci_contains(text, "rsync_proxy=") ||
+                   ci_contains(text, "path=/tmp") ||
+                   ci_contains(text, "path=/dev/shm") ||
+                   ci_contains(text, "path=/var/tmp") ||
+                   ci_contains(text, "path=.") ||
+                   ci_contains(text, "path=/usr/tmp")) {
+            what = "env-var injection (loader/interpreter/proxy/path hijack)";
+        } else if ((ci_contains(text, "schtasks") &&
+                    (ci_contains(text, " /s ") || ci_contains(text, " /s\\"))) ||
+                   ci_contains(text, "sc \\") || ci_contains(text, "sc.exe \\") ||
+                   ci_contains(text, "reg add \\") ||
+                   ci_contains(text, "at \\")) {
+            what = "remote admin primitive (schtasks/sc/reg/at \\host)";
+        } else if (strstr(text, "\\\\") &&
+                   (strstr(text, "\\c$") || strstr(text, "\\d$") ||
+                    strstr(text, "\\admin$") || strstr(text, "\\ipc$") ||
+                    strstr(text, "\\print$"))) {
+            what = "admin-share path (\\\\host\\c$/admin$/ipc$)";
+        } else if (ci_contains(text, "add-mppreference") ||
+                   ci_contains(text, "set-mppreference") ||
+                   ci_contains(text, "-exclusionpath") ||
+                   ci_contains(text, "-exclusionprocess") ||
+                   ci_contains(text, "-exclusionextension") ||
+                   ci_contains(text, "-disablerealtimemonitoring") ||
+                   ci_contains(text, "-disableioavprotection") ||
+                   ci_contains(text, "-disablebehaviormonitoring") ||
+                   ci_contains(text, "-disablescriptscanning") ||
+                   ci_contains(text, "-disableblockatfirstseen") ||
+                   ci_contains(text, "-disabletamperprotection") ||
+                   ci_contains(text, "-disablearchive") ||
+                   ci_contains(text, "-disableemailscanning") ||
+                   ci_contains(text, "-disablenetworkprotection")) {
+            what = "Defender exclusion/disable (AV weakening)";
+        } else if (ci_contains(text, "vaultcmd") ||
+                   ci_contains(text, "keymgr") ||
+                   (ci_contains(text, "netsh wlan") &&
+                    (ci_contains(text, "key") || ci_contains(text, "export")))) {
+            what = "credential-store enumeration";
+        } else if (ci_contains(text, "explorer") &&
+                   (ci_contains(text, "http") || ci_contains(text, "shell:") ||
+                    strstr(text, "\\\\"))) {
+            what = "explorer remote-open (URL/shell:/UNC)";
+        } else if ((ci_contains(text, "start-process") &&
+                    ci_contains(text, "-verb runas")) ||
+                   ci_contains(text, "runas /netonly")) {
+            what = "runas/elevation attempt";
+        } else if (ci_contains(text, "fsutil") &&
+                   (ci_contains(text, "setzerodata") ||
+                    ci_contains(text, "setvaliddata") ||
+                    ci_contains(text, "behavior set"))) {
+            what = "fsutil data-wipe/behavior change";
+        } else if (ci_contains(text, "diskpart") &&
+                   (ci_contains(text, "clean") || ci_contains(text, "create") ||
+                    ci_contains(text, "format") || ci_contains(text, "select disk"))) {
+            what = "diskpart partition destructive op";
         } else if ((ci_contains(text, "puppet") && ci_contains(text, " apply ") &&
                     ci_contains(text, "http")) ||
                    ((ci_contains(text, "chef-client") ||

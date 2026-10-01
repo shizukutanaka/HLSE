@@ -11671,6 +11671,77 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-236: env-var injection, lateral movement, Defender exclusions,
+#   cred-store enumeration, explorer/runas, fsutil/diskpart
+for c in \
+    'export LD_PRELOAD=/tmp/x.so' 'LD_PRELOAD=x id' \
+    'export LD_LIBRARY_PATH=/x' 'DYLD_INSERT_LIBRARIES=/x id' \
+    'LD_AUDIT=/x.so id' 'export GCONV_PATH=/x' \
+    'export NODE_OPTIONS="--require /tmp/x"' \
+    'NODE_OPTIONS=--require=x node app' \
+    'export PYTHONPATH=/tmp/e' 'export PYTHONSTARTUP=/x' \
+    'export RUBYLIB=/x' 'export PERL5OPT=-Me' 'export PERL5LIB=/x' \
+    'JAVA_TOOL_OPTIONS=-agentlib:x' 'export _JAVA_OPTIONS=x' \
+    'export PHP_INI_SCAN_DIR=/x' 'export GEM_HOME=/x' \
+    'export GIT_SSH_COMMAND="id"' 'export GIT_SSH="x"' \
+    'export GIT_PROXY_COMMAND=x' 'export GIT_ASKPASS=x' \
+    'export SSH_ASKPASS=x' 'export SVN_SSH="x"' \
+    'export PROMPT_COMMAND="id"' 'export BASH_ENV=/x' \
+    'export ZDOTDIR=/x' 'export INPUTRC=/x' \
+    'export PATH=/tmp:$PATH' 'export PATH=.:/bin' \
+    'export PATH=/dev/shm:$PATH' \
+    'export http_proxy=http://e' 'export https_proxy=x' \
+    'export all_proxy=socks://x' 'export ftp_proxy=x' \
+    'schtasks /create /s host /tn x /tr e' 'schtasks /s h /run' \
+    'sc \\h create x' 'sc \h stop x' 'sc.exe \\h config x' \
+    'reg add \\h\HKLM\x' 'at \\h 1:00 e' \
+    'copy x \\h\c$\t' 'xcopy x \\h\c$' 'dir \\h\admin$' \
+    'type \\h\ipc$\x' 'del \\h\c$\x' \
+    'Add-MpPreference -ExclusionPath C:\x' \
+    'Set-MpPreference -DisableRealtimeMonitoring $true' \
+    'Set-MpPreference -DisableTamperProtection 1' \
+    'Add-MpPreference -ExclusionProcess x' \
+    'Set-MpPreference -DisableBehaviorMonitoring 1' \
+    'vaultcmd /list' 'vaultcmd /listcreds' 'keymgr' \
+    'netsh wlan show profile key=clear' \
+    'netsh wlan export profile' \
+    'explorer http://x' 'explorer "shell:startup"' \
+    'explorer \\h\c$' 'explorer.exe http://x' \
+    'Start-Process -Verb runas x' 'runas /netonly /user:x cmd' \
+    'fsutil file setzerodata x' 'fsutil behavior set disable8dot3 1' \
+    'diskpart clean' 'diskpart select disk 0'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'ld preload documentation' 'LD library path explained' \
+         'node options flag docs' 'python path setup' \
+         'pythonpath variable' 'proxy settings' 'export http_proxy' \
+         'the proxy config' 'path=/usr/local/bin' \
+         'export PATH=/usr/bin:/bin' 'set PATH var' \
+         'classpath=lib/x.jar' 'the classpath' \
+         'schtasks /create /tn x' 'schtasks /query' \
+         'sc query' 'sc config x' 'sc start wuauserv' \
+         'reg add HKCU\x' 'reg add "HKCU\Software\x"' \
+         'at 12:00 run x' 'at now + 5' 'the schedule task' \
+         'admin share docs' 'unc path \\server\share' \
+         'copy x \\srv\public' 'dir \\srv\share' \
+         'defender preferences' 'get-mppreference' \
+         'MpPreference docs' 'vault cmd docs' 'key manager' \
+         'netsh wlan show profiles' 'netsh wlan show interfaces' \
+         'explorer the file manager' 'windows explorer' \
+         'explorer.exe' 'start a process' 'run as admin' \
+         'runas /user:x cmd' 'fsutil file query' \
+         'fsutil dirty query' 'disk partition' 'disk cleanup' \
+         'perl5 docs' 'ruby lib dir' 'gem install path' \
+         'bash environment' 'bash env vars' \
+         'prompt the command' 'inputrc file' 'z dot dir' \
+         'path with /tmp in it' 'no_proxy=*' 'env var docs'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-235: interpreter -e exec, npx-URL, git upload-pack, exec -a,
 #   setcap/setfacl, blkdiscard/swapoff, netns/setpriv, misc exec vectors
 for c in \

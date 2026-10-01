@@ -77,6 +77,32 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Env-var injection / lateral movement / Defender exclusions /
+  cred-store enum / explorer+runas / fsutil+diskpart**: env
+  hijack family +45 — LD_PRELOAD|LD_LIBRARY_PATH|
+  DYLD_INSERT_LIBRARIES|LD_AUDIT|LD_PROFILE|GCONV_PATH|
+  GLIBC_TUNABLES (loader), NODE_OPTIONS|PYTHONPATH|PYTHONHOME|
+  PYTHONSTARTUP|RUBYLIB|RUBYOPT|PERL5OPT|PERL5LIB|PERL5DB|
+  JAVA_TOOL_OPTIONS|_JAVA_OPTIONS|JDK_JAVA_OPTIONS|PHPRC|
+  PHP_INI_SCAN_DIR|GEM_HOME|GEM_PATH (interpreter), GIT_SSH|
+  GIT_SSH_COMMAND|GIT_PROXY_COMMAND|GIT_EXTERNAL_DIFF|GIT_ASKPASS|
+  SSH_ASKPASS|SVN_SSH|CVS_RSH (vcs exec), PROMPT_COMMAND|BASH_ENV|
+  ZDOTDIR|INPUTRC (shell startup), http|https|all|ftp|rsync
+  _proxy= (traffic redirect), PATH=/tmp|/dev/shm|/var/tmp|.|
+  /usr/tmp (PATH poison). Lateral: schtasks /s, sc|sc.exe \,
+  reg add \, at \ (remote host ops) +45; \\host\c$|d$|admin$|
+  ipc$|print$ admin-share paths +45. Defender: Add-MpPreference|
+  Set-MpPreference + -ExclusionPath|-ExclusionProcess|
+  -ExclusionExtension|-DisableRealtimeMonitoring|-DisableIOAV|
+  -DisableBehaviorMonitoring|-DisableScriptScanning|
+  -DisableBlockAtFirstSeen|-DisableTamperProtection|
+  -DisableArchive|-DisableEmailScanning|-DisableNetworkProtection
+  +45. Cred enum: vaultcmd, keymgr, netsh wlan key|export +45.
+  explorer http|shell:|\\ (URL/startup-folder/UNC open) +45.
+  Start-Process -Verb runas, runas /netonly +45. fsutil
+  setzerodata|setvaliddata|behavior set +45; diskpart clean|
+  create|format|select disk +45.
+
 - **Interpreter -e exec / npx-URL / git upload-pack / exec -a /
   setcap+setfacl / netns+setpriv / misc exec vectors**: node|
   python|python3|perl|ruby|php|lua|luajit|gawk|rscript|pwsh ×
