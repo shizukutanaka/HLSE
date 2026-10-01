@@ -77,6 +77,29 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **EP-bypass + reg-save hive dump + AV/EDR kill + install
+  primitives** (`hlse_supply.c`): paste adds —
+  `powershell`/`pwsh` + `-ep|-ex|-exec|-executionpolicy` +
+  `bypass|unrestricted` (the signature ExecutionPolicy bypass the
+  -enc/-w-hidden gates did not cover; `-ep remotesigned` stays
+  clean — that is the default safe policy); `reg save` +
+  `\\sam|\\security|\\system` (SeBackupPrivilege hive dump —
+  regedit /e was already caught, the CLI form was not);
+  AV/EDR kill — `sc|net|net1|taskkill|tskill` + stop|delete|
+  config|/f|/im|start=dis + 20 product names (windefend,
+  msmpeng, wdnissvc, wscsvc, securityhealthservice, avast,
+  malwarebytes, sentinelagent, sophos, savservice, mcshield,
+  ekrn, csfalcon, csagent, crowdstrike, elastic-endpoint,
+  sharedaccess, ...); `netsh` + advfirewall|firewall +
+  state off|opmode disable|allowedprogram|portopening and
+  `netsh add helper` (helper-DLL load); `reagentc /disable`
+  (kills Windows RE — ransomware recovery-prep); `wbadmin` +
+  `delete` (backup/catalog destruction); `dism add-package`,
+  `pkgmgr /iu`, `ocsetup`+arg, `certmgr -add` (cert-store
+  install), `msxsl`+xsl|xml (script-let exec), `makecab`+payload
+  ext, `tscon`+/dest (session hijack), `arp -s` (static-ARP
+  poison), `sc sdset`+`D:` (SDDL tamper) — all +45 arg-gated.
+
 - **.NET compile chain + rundll32 DLL targets + scam vocab**
   (`hlse_supply.c`, `hlse_text.c`): paste adds the on-host build
   primitives — `csc`/`vbc`/`jsc`+src|/out|/target (compile

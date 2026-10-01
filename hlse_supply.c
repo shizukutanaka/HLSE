@@ -1157,6 +1157,93 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "openas_rundll") ||
                    ci_contains(text, "launchinfsection")) {
             what = "rundll32 proxy-exec DLL target (LOLBin)";
+        /* powershell -ep bypass / -ex bypass / -executionpolicy
+         * bypass|unrestricted — the signature ExecutionPolicy
+         * bypass that -enc/-w-hidden gates alone do not cover   */
+        } else if ((ci_contains(text, "powershell") || ci_contains(text, "pwsh")) &&
+                   (ci_contains(text, "-ep ") || ci_contains(text, "-ex ") ||
+                    ci_contains(text, "-exec") ||
+                    ci_contains(text, "-executionpolicy")) &&
+                   (ci_contains(text, "bypass") ||
+                    ci_contains(text, "unrestricted"))) {
+            what = "powershell ExecutionPolicy bypass (LOLBin)";
+        /* reg save hklm\sam|security|system — SeBackupPrivilege
+         * hive dump, the CLI-native credential-theft primitive
+         * (regedit /e was already covered)                        */
+        } else if ((ci_contains(text, "reg ") || ci_contains(text, "reg.exe")) &&
+                   ci_contains(text, "save") &&
+                   (ci_contains(text, "\\sam") ||
+                    ci_contains(text, "\\security") ||
+                    ci_contains(text, "\\system"))) {
+            what = "reg save SAM/SECURITY/SYSTEM hive dump";
+        /* AV/EDR service kill — sc/net/taskkill targeting security
+         * products by service or process name                    */
+        } else if ((ci_contains(text, "sc ") || ci_contains(text, "sc.exe") ||
+                    ci_contains(text, "net ") || ci_contains(text, "net1 ") ||
+                    ci_contains(text, "taskkill") || ci_contains(text, "tskill")) &&
+                   (ci_contains(text, "stop") || ci_contains(text, "delete") ||
+                    ci_contains(text, "config") || ci_contains(text, "/f") ||
+                    ci_contains(text, "start=dis") || ci_contains(text, "/im") ||
+                    ci_contains(text, "tskill")) &&
+                   (ci_contains(text, "windefend") || ci_contains(text, "msmpeng") ||
+                    ci_contains(text, "wdnissvc") || ci_contains(text, "wscsvc") ||
+                    ci_contains(text, "securityhealthservice") ||
+                    ci_contains(text, "windows defender") ||
+                    ci_contains(text, "avast") || ci_contains(text, "avguard") ||
+                    ci_contains(text, "malwarebytes") || ci_contains(text, "mbamservice") ||
+                    ci_contains(text, "sentinelagent") || ci_contains(text, "sophos") ||
+                    ci_contains(text, "savservice") || ci_contains(text, "mcshield") ||
+                    ci_contains(text, "ekrn") || ci_contains(text, "csfalcon") ||
+                    ci_contains(text, "csagent") || ci_contains(text, "crowdstrike") ||
+                    ci_contains(text, "elastic-endpoint") || ci_contains(text, "sharedaccess"))) {
+            what = "AV/EDR service or process kill";
+        /* netsh firewall/advfirewall off/disable/allowedprogram —
+         * firewall kill or punch-through                          */
+        } else if (ci_contains(text, "netsh") &&
+                   (ci_contains(text, "advfirewall") || ci_contains(text, "firewall")) &&
+                   (ci_contains(text, "state off") || ci_contains(text, "opmode disable") ||
+                    ci_contains(text, "allowedprogram") || ci_contains(text, "portopening") ||
+                    ci_contains(text, "add helper"))) {
+            what = "netsh firewall disable/punch (LOLBin)";
+        } else if (ci_contains(text, "netsh") &&
+                   ci_contains(text, "add helper")) {
+            what = "netsh helper-DLL load (LOLBin)";
+        /* reagentc /disable — kills Windows Recovery Environment
+         * (ransomware recovery-prep, same class as bcdedit)       */
+        } else if (ci_contains(text, "reagentc") &&
+                   ci_contains(text, "/disable")) {
+            what = "reagentc recovery-disable (LOLBin)";
+        /* wbadmin delete backup|catalog|systemstatebackup —
+         * backup destruction (ransomware prep)                    */
+        } else if (ci_contains(text, "wbadmin") && ci_contains(text, "delete")) {
+            what = "wbadmin backup destruction (LOLBin)";
+        /* package/cert/payload install primitives — dism
+         * add-package, pkgmgr /iu, ocsetup, certmgr -add,
+         * msxsl script-let, makecab payload pack, tscon session
+         * hijack, arp -s static-ARP poison                        */
+        } else if (ci_contains(text, "dism") && ci_contains(text, "add-package")) {
+            what = "dism package install (LOLBin)";
+        } else if (ci_contains(text, "pkgmgr") && ci_contains(text, "/iu")) {
+            what = "pkgmgr package install (LOLBin)";
+        } else if (ci_contains(text, "ocsetup") && ci_contains(text, " ")) {
+            what = "ocsetup component install (LOLBin)";
+        } else if (ci_contains(text, "certmgr") && ci_contains(text, "-add")) {
+            what = "certmgr cert-store install (LOLBin)";
+        } else if (ci_contains(text, "msxsl") &&
+                   (ci_contains(text, ".xsl") || ci_contains(text, ".xml"))) {
+            what = "msxsl script-let exec (LOLBin)";
+        } else if (ci_contains(text, "makecab") &&
+                   (ci_contains(text, ".exe") || ci_contains(text, ".dll") ||
+                    ci_contains(text, ".ps1") || ci_contains(text, ".bat") ||
+                    ci_contains(text, ".js") || ci_contains(text, ".ddf"))) {
+            what = "makecab payload pack (LOLBin)";
+        } else if (ci_contains(text, "tscon") && ci_contains(text, "/dest")) {
+            what = "tscon session hijack (LOLBin)";
+        } else if (ci_contains(text, "arp ") && ci_contains(text, "-s ")) {
+            what = "arp static-poison entry (LOLBin)";
+        } else if (ci_contains(text, "sc ") && ci_contains(text, "sdset") &&
+                   ci_contains(text, "d:")) {
+            what = "sc sdset SDDL tamper (LOLBin)";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

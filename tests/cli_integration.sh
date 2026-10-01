@@ -11671,6 +11671,65 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-226: EP bypass + reg save hive + AV kill + pkg/cert primitives ─
+for c in \
+    'netsh add helper x.dll' \
+    'certmgr -add x.cer -s Root' \
+    'dism /online /add-package /packagepath:x.cab' \
+    'pkgmgr /iu:x.cab' \
+    'ocsetup x.cab' \
+    'powershell -ep bypass -f x.ps1' \
+    'powershell -ex bypass -c x' \
+    'powershell -executionpolicy bypass -f x.ps1' \
+    'powershell -eP ByPaSs x' \
+    'pwsh -ep bypass x' \
+    'msxsl x.xml x.xsl' \
+    'makecab x.exe' \
+    'reagentc /disable' \
+    'reg save hklm\sam c:\sam' \
+    'reg save "HKLM\SECURITY" s.hiv' \
+    'sc stop MsMpEng' \
+    'sc stop WinDefend' \
+    'net stop WinDefend' \
+    'net1 stop WinDefend' \
+    'net stop "Windows Defender"' \
+    'sc delete MsMpEng' \
+    'sc config WinDefend start=disabled' \
+    'taskkill /f /im MsMpEng.exe' \
+    'taskkill /im WinDefend.exe /f' \
+    'tskill windefend' \
+    'net stop wscsvc' \
+    'net stop sharedaccess' \
+    'sc sdset w D:(A;;CCLCSWRPWPDTLOCRRC;;;SY)' \
+    'netsh firewall set opmode disable' \
+    'netsh advfirewall set allprofiles state off' \
+    'netsh firewall add allowedprogram' \
+    'wbadmin delete backup' \
+    'wbadmin delete catalog -quiet' \
+    'tscon 1 /dest:console' \
+    'arp -s 1.2.3.4 aa-bb-cc'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'netsh winsock reset' 'netsh interface show' 'certmgr -list' \
+         'certmgr.msc' 'dism /online /get-packages' 'dism /cleanup-image' \
+         'pkgmgr /n:x' 'powershell -ep remotesigned -f setup.ps1' \
+         'powershell bypass the firewall rules' 'the msxsl processor' \
+         'makecab' 'expand x.cab -f:* c:\' 'reg save hklm\software x' \
+         'sc query windefend' 'sc description windefend' \
+         'net start windefend' 'tasklist' 'taskkill /im notepad.exe' \
+         'taskkill windefend' 'sc config x start=auto' \
+         'netsh firewall show' 'netsh advfirewall show allprofiles' \
+         'wbadmin get versions' 'wbadmin start backup' \
+         'reagentc /enable' 'reagentc /info' 'ocsetup' 'arp -a' \
+         'arp -d 1.2.3.4' 'sc sdshow w' 'sc stop w32time' \
+         'net stop spooler' 'shutdown /r /f' 'route print'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-225: .NET compile chain + rundll32 DLL targets + scam vocab ─
 for c in \
     'csc.exe /out:e.exe e.cs' \
