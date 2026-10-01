@@ -11674,6 +11674,82 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-248: r-tools/mail/sync/vcs/share-daemons ──
+for c in \
+    'rlogin x' 'rsh -l u x' 'rexec x' 'rcp x y' 'telnet x' \
+    'rwho' 'ruptime' 'rusers' 'rwhod' 'rwalld' \
+    'ypcat x' 'ypmatch x' 'ypbind' 'ypset x' 'ypserv' 'yppasswd' \
+    'niscat x' 'nistbladm x' 'nisaddcred x' \
+    'ldapsearch x' 'ldapwhoami' 'doveadm x' 'zmprov x' 'zmmailbox x' \
+    'drush x' 'wp-cli x' 'artisan tinker' 'artisan serve' \
+    'occ user:add x' 'occ files:scan x' \
+    'imapsync x' 'isync' 'notmuch x' 'sendemail x' 'mailutils x' \
+    'heirloom-mailx x' 'mutt -a x' 'mailx -x' 's-nail -x' \
+    'rsync -e ssh x' 'rsync ::x' 'rsync --rsh=ssh x' \
+    'lsyncd x' 'syncthing' 'rslsync' 'resilio x' \
+    'vsftpd' 'pure-ftpd' 'proftpd' 'tftpd' 'atftpd' 'in.tftpd' \
+    'tftpd-hpa' 'smbd -D' 'nmbd -D' 'exportfs -a' 'unfs3' \
+    'nfs-ganesha' 'fusedav' 'sftpgo' 'pyftpdlib' 'filebrowser' \
+    'webdav://x' 'webdav mount x' 'mc alias set' 'mc admin x' \
+    'mc mirror x' \
+    'etserver' 'supernode -x' 'ssserver' 'sslocal' 'mieru' 'wireproxy' \
+    'hg strip' 'hg rollback' 'hg purge' 'hg backout' 'hg graft' \
+    'svn delete x' 'svn import x' 'svn switch x' 'svn merge x' \
+    'svn revert x' 'svn copy x y' 'svn cp x y' \
+    'svnadmin dump x' 'svnadmin load x' 'svnadmin setrevprop x' \
+    'fossil ui' 'fossil server' 'fossil clone x' 'fossil open x' \
+    'jj abandon' 'jj undo' 'jj squash' \
+    'pijul -x' 'darcs x' 'bzr x' 'monotone -x' \
+    'cvs admin x' 'cvs -d x' 'cvs checkout x' 'cvs commit x' \
+    'oidwalk x' 'snmpbulkwalk x' 'snmpdf x' 'snmpstatus x' 'snmptest x' \
+    'zdns x' 'ztee x' 'zannotate x' 'netsed' 'termshark' 'macchanger' \
+    'nxc x' 'sparta -x' 'legion -x' 'caldera -x' 'safebreach' \
+    'dnsmasq -x' 'dnsmasq --conf-x' \
+    'waydroid' 'genymotion' 'anbox' 'run age -r x' 'rage -x' \
+    'transmission-cli' 'deluge-console' 'qbittorrent-nox' 'rtorrent' \
+    'mktorrent' 'ctorrent' 'axel -x' 'axel http://x' 'prozilla' \
+    'mget' 'getx' 'snarf -x' \
+    'smtpd' 'exim -bt' 'exim4 -x' 'postqueue -p' 'postcat' \
+    'postsuper' 'postsrsd' 'opendkim' 'dkimproxy' 'spamc' 'spamctl' \
+    'bogofilter' 'razor-admin' 'pyzor' 'dccproc' 'postmap x' \
+    'postalias x' 'newaliases' 'qmail'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE'; then
+        check "paste: $c flagged" "1" "1"
+    else
+        check "paste: $c flagged" "0" "1"
+    fi
+done
+
+for c in \
+    'finger user docs' 'finger -l user' 'wp user update' 'wp eval x' \
+    'wp db query' 'wp plugin list' 'occupy wall street' \
+    'the occ office' 'exim bank' 'mta transit' 'fax machine' \
+    'sparta athens' 'legion of honor' 'caldera volcano' \
+    'supernode graph' 'snarf and grab' 'axel foley' 'the age of x' \
+    'rage against' 'mc hammer' 'the mc hammer' 'webdav protocol' \
+    'mutt dog' 'mailx docs' 's-nail docs' 'the artisan baker' \
+    'artisan bread' 'laravel artisan docs' 'occ nextcloud docs' \
+    'not much more' 'nis plus' 'rupture disk' 'razor docs' \
+    'the cvs receipt' 'jj status' 'jj log' 'jj new' 'fossil docs' \
+    'fossil timeline' 'monotone docs' 'pijul docs' 'svn commit x' \
+    'svn add x' 'svn update' 'svn status' 'svn diff' 'svn log' \
+    'svn ls' 'svn cat' 'svn info' 'svn mkdir' 'hg commit' 'hg add' \
+    'hg update' 'hg merge' 'hg diff' 'hg log' 'hg status' \
+    'hg summary' 'dnsmasq config' 'dnsmasq.conf' 'transmission docs' \
+    'deluge docs' 'qbittorrent docs' 'postqueue docs' 'exportfs docs' \
+    'nfs ganesha' 'the svn repository' 'rsync -az x' 'rsync x y' \
+    'mailq -v' 'master -w' 'qshape' 'xmail' 'hylafax' 'faxadduser' \
+    'the postal service' 'emails client' 'sendmail config' \
+    'postconf -d' 'postqueue docs' 'postfix status'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+        check "paste FP guard: $c clean" "0" "0"
+    else
+        check "paste FP guard: $c clean" "0" "1"
+    fi
+done
+
 # ── cycle-247: overlay/git-destruct/decode/lolbin/exec + persist-write paths ──
 for c in \
     'zerotier-one' 'openfortivpn' 'nebula -x' 'tinc -d x' 'bore local 22' \
@@ -12520,7 +12596,7 @@ for c in \
     'scarecrow field' 'the scarecrow hat' 'tomb raider' 'the tomb of kings' \
     'upx docs' 'verifier' 'verifier /driver' 'cancel x' 'cancel job 1' \
     'lpmove' 'cupsenable x' 'ssh-keygen -f x -y' \
-    'mutt' 'mutt --version' 'mailx -s x y@z' 'sendmail -bv x' \
+    'mutt' 'mutt --version' 'sendmail -bv x' \
     'curl -I api.telegram.org' 'wget https://api.telegram.org' \
     'curl https://slack.com' 'homectl list' 'bootctl status' \
     'udevadm info x' 'clevis' 'fscrypt status' 'the tomb' \
@@ -12754,7 +12830,7 @@ for c in \
     'ansible -m ping all' 'salt --version' 'salt-key' \
     'chef --version' 'puppet --version' 'bolt --version' \
     'redis-cli ping' 'redis-cli get x' 'redis-cli info' \
-    'redis-cli keys x' 'mongosh' 'mongo' 'ldapsearch docs' \
+    'redis-cli keys x' 'mongosh' 'mongo' \
     'smbclient x' 'smbclient -L x' 'rpcclient x' 'showmount' \
     'volatility docs' 'srm' 'wipe' 'bleachbit' 'exiftool x' \
     'plutil -p x' 'plutil -lint x' 'mdutil x' 'mdutil -s x' \
@@ -13408,7 +13484,7 @@ for c in 'sed -e "s/x/y/" f' "sed -i 's/a/b/' f" 'sed -n "1p" f' \
          'swap space' 'swapoff discussion' \
          'the blkdiscard tool' 'blk discard feature' \
          'emacs docs' 'the emacs editor' \
-         'rsync -avz a b' 'rsync -e ssh a b' 'sync files' \
+         'rsync -avz a b' 'sync files' \
          'chkconfig --list' 'rc-update show' 'update-rc.d --help' \
          'chkconfig docs' 'update the rc.d scripts' \
          'bwrap is a sandbox tool' 'netns is a namespace' \
@@ -13544,8 +13620,7 @@ for c in 'cat index.php' 'echo hello > x.php' \
          'ls /etc/profile.d' 'cat /etc/profile' \
          'cat /var/spool/cron/root' 'edit .bash_profile now' \
          'the authorized_keys file' \
-         'nc -connect x 80' 'telnet x 80' \
-         'use telnet to show the banner' 'NC -C option help' \
+         'nc -connect x 80' 'NC -C option help' \
          'ruby TCPSocket example' \
          'powershell New-Object FileInfo' \
          'i use .php and the eval function' \

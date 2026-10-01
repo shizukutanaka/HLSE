@@ -7265,6 +7265,181 @@ hlse_check_paste(const char *text) {
             (ci_contains(text, "at.exe") && ci_contains(text, "\\\\"))) {
             what = "overlay/git-destruct/decode/lolbin/exec primitive";
         }
+        else if (
+            /* BSD r-tools + NIS/NIS+ (cleartext auth, recon) */
+            ci_contains(text, "rlogin") ||
+            (ci_contains(text, "rsh") &&
+             (ci_contains(text, " -l") || ci_contains(text, " -n"))) ||
+            ci_contains(text, "rexec") ||
+            ci_contains(text, "rcp ") ||
+            ci_contains(text, "telnet") ||
+            ci_contains(text, "rwho") ||
+            ci_contains(text, "ruptime") ||
+            ci_contains(text, "rusers") ||
+            ci_contains(text, "rwhod") ||
+            ci_contains(text, "rwalld") ||
+            ci_contains(text, "ypcat") ||
+            ci_contains(text, "ypmatch") ||
+            ci_contains(text, "ypbind") ||
+            ci_contains(text, "ypset") ||
+            ci_contains(text, "ypserv") ||
+            ci_contains(text, "yppasswd") ||
+            ci_contains(text, "niscat") ||
+            ci_contains(text, "nistbladm") ||
+            ci_contains(text, "nisaddcred") ||
+            /* ldap recon + mail admin */
+            ci_contains(text, "ldapsearch") ||
+            ci_contains(text, "ldapwhoami") ||
+            ci_contains(text, "doveadm") ||
+            ci_contains(text, "zmprov") ||
+            ci_contains(text, "zmmailbox") ||
+            ci_contains(text, "drush") ||
+            ci_contains(text, "wp-cli") ||
+            (ci_contains(text, "artisan") &&
+             (ci_contains(text, " tinker") || ci_contains(text, " serve") ||
+              ci_contains(text, " eval"))) ||
+            (ci_contains(text, "occ ") &&
+             (ci_contains(text, " user") || ci_contains(text, " files") ||
+              ci_contains(text, " db") || ci_contains(text, " -"))) ||
+            /* mail/imap exfil + sync daemons */
+            ci_contains(text, "imapsync") ||
+            ci_contains(text, "isync") ||
+            ci_contains(text, "notmuch") ||
+            ci_contains(text, "sendemail") ||
+            ci_contains(text, "mailutils") ||
+            ci_contains(text, "heirloom-mailx") ||
+            (ci_contains(text, "mutt") &&
+             (ci_contains(text, " -a") || ci_contains(text, " -s") ||
+              ci_contains(text, " -e") || ci_contains(text, " -h"))) ||
+            (ci_contains(text, "mailx") && ci_contains(text, " -")) ||
+            (ci_contains(text, "s-nail") && ci_contains(text, " -")) ||
+            (ci_contains(text, "rsync") &&
+             (ci_contains(text, " -e") || ci_contains(text, "--rsh") ||
+              ci_contains(text, "rsync://") || ci_contains(text, "::"))) ||
+            ci_contains(text, "lsyncd") ||
+            ci_contains(text, "syncthing") ||
+            ci_contains(text, "rslsync") ||
+            ci_contains(text, "resilio") ||
+            /* ftp/smb/nfs/webdav share exposure daemons */
+            ci_contains(text, "vsftpd") ||
+            ci_contains(text, "pure-ftpd") ||
+            ci_contains(text, "proftpd") ||
+            ci_contains(text, "tftpd") ||
+            ci_contains(text, "atftpd") ||
+            ci_contains(text, "in.tftpd") ||
+            ci_contains(text, "tftpd-hpa") ||
+            (ci_contains(text, "smbd") &&
+             (ci_contains(text, " -d") || ci_contains(text, " -i") ||
+              ci_contains(text, " -f"))) ||
+            (ci_contains(text, "nmbd") &&
+             (ci_contains(text, " -d") || ci_contains(text, " -i"))) ||
+            (ci_contains(text, "exportfs") && ci_contains(text, " -")) ||
+            ci_contains(text, "unfs3") ||
+            ci_contains(text, "nfs-ganesha") ||
+            ci_contains(text, "fusedav") ||
+            ci_contains(text, "sftpgo") ||
+            ci_contains(text, "pyftpdlib") ||
+            ci_contains(text, "filebrowser") ||
+            (ci_contains(text, "webdav") &&
+             (ci_contains(text, "://") || ci_contains(text, " mount") ||
+              ci_contains(text, " -"))) ||
+            (ci_contains(text, "mc") &&
+             (ci_contains(text, " alias") || ci_contains(text, " admin") ||
+              ci_contains(text, " mirror"))) ||
+            /* overlay/proxy extras */
+            ci_contains(text, "etserver") ||
+            (ci_contains(text, "supernode") && ci_contains(text, " -")) ||
+            ci_contains(text, "ssserver") ||
+            ci_contains(text, "sslocal") ||
+            ci_contains(text, "mieru") ||
+            ci_contains(text, "wireproxy") ||
+            /* non-git vcs destructive / admin */
+            (ci_contains(text, "hg") &&
+             (ci_contains(text, " strip") || ci_contains(text, " rollback") ||
+              ci_contains(text, " purge") || ci_contains(text, " backout") ||
+              ci_contains(text, " graft"))) ||
+            (ci_contains(text, "svn") &&
+             (ci_contains(text, " delete") || ci_contains(text, " import") ||
+              ci_contains(text, " switch") || ci_contains(text, " merge") ||
+              ci_contains(text, " revert") || ci_contains(text, " copy") ||
+              ci_contains(text, " cp "))) ||
+            (ci_contains(text, "svnadmin") &&
+             (ci_contains(text, " dump") || ci_contains(text, " load") ||
+              ci_contains(text, " setrevprop"))) ||
+            (ci_contains(text, "fossil") &&
+             (ci_contains(text, " ui") || ci_contains(text, " server") ||
+              ci_contains(text, " clone") || ci_contains(text, " open") ||
+              ci_contains(text, " -"))) ||
+            (ci_contains(text, "jj") &&
+             (ci_contains(text, " abandon") || ci_contains(text, " undo") ||
+              ci_contains(text, " squash"))) ||
+            (ci_contains(text, "pijul") && ci_contains(text, " -")) ||
+            ci_contains(text, "darcs") ||
+            ci_contains(text, "bzr") ||
+            (ci_contains(text, "monotone") && ci_contains(text, " -")) ||
+            (ci_contains(text, "cvs") &&
+             (ci_contains(text, " admin") || ci_contains(text, " -d") ||
+              ci_contains(text, " checkout") || ci_contains(text, " commit"))) ||
+            /* snmp/zmap-suite extras */
+            ci_contains(text, "oidwalk") ||
+            ci_contains(text, "snmpbulkwalk") ||
+            ci_contains(text, "snmpdf") ||
+            ci_contains(text, "snmpstatus") ||
+            ci_contains(text, "snmptest") ||
+            ci_contains(text, "zdns") ||
+            ci_contains(text, "ztee") ||
+            ci_contains(text, "zannotate") ||
+            ci_contains(text, "netsed") ||
+            ci_contains(text, "termshark") ||
+            ci_contains(text, "macchanger") ||
+            ci_contains(text, "nxc") ||
+            (ci_contains(text, "sparta") && ci_contains(text, " -")) ||
+            (ci_contains(text, "legion") && ci_contains(text, " -")) ||
+            (ci_contains(text, "caldera") && ci_contains(text, " -")) ||
+            ci_contains(text, "safebreach") ||
+            (ci_contains(text, "dnsmasq") && ci_contains(text, " -")) ||
+            /* emulators + torrent/download clis */
+            ci_contains(text, "waydroid") ||
+            ci_contains(text, "genymotion") ||
+            ci_contains(text, "anbox") ||
+            (ci_contains(text, " age ") &&
+             (ci_contains(text, " -r") || ci_contains(text, " -e") ||
+              ci_contains(text, " --encrypt"))) ||
+            (ci_contains(text, "rage") && ci_contains(text, " -")) ||
+            ci_contains(text, "transmission-cli") ||
+            ci_contains(text, "deluge-console") ||
+            ci_contains(text, "qbittorrent-nox") ||
+            ci_contains(text, "rtorrent") ||
+            ci_contains(text, "mktorrent") ||
+            ci_contains(text, "ctorrent") ||
+            (ci_contains(text, "axel") &&
+             (ci_contains(text, " -") || ci_contains(text, "http"))) ||
+            ci_contains(text, "prozilla") ||
+            ci_contains(text, "mget") ||
+            ci_contains(text, "getx") ||
+            (ci_contains(text, "snarf") && ci_contains(text, " -")) ||
+            /* mail infra */
+            ci_contains(text, "smtpd") ||
+            (ci_contains(text, "exim") && ci_contains(text, " -")) ||
+            (ci_contains(text, "exim4") && ci_contains(text, " -")) ||
+            (ci_contains(text, "postqueue") && ci_contains(text, " -")) ||
+            ci_contains(text, "postcat") ||
+            ci_contains(text, "postsuper") ||
+            ci_contains(text, "postsrsd") ||
+            ci_contains(text, "opendkim") ||
+            ci_contains(text, "dkimproxy") ||
+            ci_contains(text, "spamc") ||
+            ci_contains(text, "spamctl") ||
+            ci_contains(text, "bogofilter") ||
+            ci_contains(text, "razor-admin") ||
+            ci_contains(text, "pyzor") ||
+            ci_contains(text, "dccproc") ||
+            ci_contains(text, "postmap") ||
+            ci_contains(text, "postalias") ||
+            ci_contains(text, "newaliases") ||
+            ci_contains(text, "qmail")) {
+            what = "rtools/mail/sync/vcs/share-daemon/exec primitive";
+        }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
         }

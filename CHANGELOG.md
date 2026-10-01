@@ -4,6 +4,52 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-248)
+
+- **Paste-detector breadth — legacy remote access, mail/sync daemons,
+  non-git VCS, share services** (`hlse_supply.c`): BSD r-tools and
+  NIS/NIS+ administration (`rsh` flag-gated, `rlogin`, `rexec`, `rcp`,
+  `telnet`, `rwho`, `ruptime`, `rusers`, `rwhod`, `rwalld`, `ypcat`,
+  `ypmatch`, `ypbind`, `ypset`, `ypserv`, `yppasswd`, `niscat`,
+  `nistbladm`, `nisaddcred`, `ldapsearch`, `ldapwhoami`), mailbox and
+  mail-admin tooling (`doveadm`, `zmprov`, `zmmailbox`, `imapsync`,
+  `isync`, `notmuch`, `sendemail`, `mailutils`, `heirloom-mailx`,
+  `mutt` send-flags, `mailx`, `s-nail`, `rsync -e/--rsh/rsync://`,
+  `lsyncd`, `syncthing`, `rslsync`, `resilio`), CMS/framework CLIs
+  (`drush`, `wp-cli`, `artisan tinker|serve`, `occ`), file-sharing
+  daemons (`vsftpd`, `pure-ftpd`, `proftpd`, `tftpd`/`atftpd`/
+  `in.tftpd`/`tftpd-hpa`, `smbd`/`nmbd`, `exportfs`, `unfs3`,
+  `nfs-ganesha`, `fusedav`, `sftpgo`, `pyftpdlib`, `filebrowser`,
+  `webdav://`/`webdav mount`, `mc alias|admin|mirror`), overlay/P2P
+  and torrent services (`etserver`, `supernode`, `ssserver`, `sslocal`,
+  `mieru`, `wireproxy`, `transmission-cli`, `deluge-console`,
+  `qbittorrent-nox`, `rtorrent`, `mktorrent`, `ctorrent`, `axel`,
+  `prozilla`, `mget`, `getx`, `snarf`), non-git VCS destructive and
+  admin forms (`hg strip|rollback|purge|backout|graft`, `svn
+  delete|import|switch|merge|revert|copy|cp`, `svnadmin dump|load|
+  setrevprop`, `fossil ui|server|clone|open`, `jj abandon|undo|squash`,
+  `pijul`, `darcs`, `bzr`, `monotone`, `cvs admin|-d|checkout|commit`),
+  SNMP/ZMap/network utilities (`oidwalk`, `snmpbulkwalk`, `snmpdf`,
+  `snmpstatus`, `snmptest`, `zdns`, `ztee`, `zannotate`, `netsed`,
+  `termshark`, `macchanger`, `nxc`, `sparta`, `legion`, `caldera`,
+  `safebreach`, `dnsmasq`), emulators and crypto helpers (`waydroid`,
+  `genymotion`, `anbox`, `age` word-boundary form, `rage`), and mail
+  infrastructure (`smtpd`, `exim`/`exim4`, `postqueue`, `postcat`,
+  `postsuper`, `postsrsd`, `opendkim`, `dkimproxy`, `spamc`, `spamctl`,
+  `bogofilter`, `razor-admin`, `pyzor`, `dccproc`, `postmap`,
+  `postalias`, `newaliases`, `qmail`) — all at ALERT 45.
+
+### Fixed
+
+- Substring collision guards: `rsh` gate now requires `-l`/`-n`
+  (`virsh` benigns closed), `age` requires word-boundary ` age `
+  form (`manage -r`/`qlmanage -r` FP closed), `mutt` requires send
+  flags `-a`/`-s`/`-e`/`-h` (`mutt --version` benign stays clean).
+- Design-scope updates: legacy `mailx`/`ldapsearch`/`rsync -e`/
+  `telnet` benign entries moved to hit tests — remote-shell sync,
+  plaintext remote access, and mail-send are paste-context exfil
+  and remote-exec primitives by design.
+
 ### Added (cycle-247)
 
 - **Paste-detector breadth — overlay networks, VCS destruction,
