@@ -593,7 +593,25 @@ hlse_check_paste(const char *text) {
         (strstr(text, "vdo ") &&
          (strstr(text, "remove") || strstr(text, "delete") ||
           strstr(text, "stop"))) ||
-        (strstr(text, "stratis") && strstr(text, "destroy"))) {
+        (strstr(text, "stratis") && strstr(text, "destroy")) ||
+        /* c240: macOS + tape/firmware/raw-sector destruction */
+        (ci_contains(text, "diskutil") &&
+         (ci_contains(text, "erasedisk") || ci_contains(text, "erasevolume") ||
+          ci_contains(text, "zerodisk") || ci_contains(text, "secureerase") ||
+          ci_contains(text, "partitiondisk") ||
+          ci_contains(text, "deletecontainer") ||
+          ci_contains(text, "deletevolume") ||
+          ci_contains(text, "apfs delete") || ci_contains(text, "apfs erase"))) ||
+        ci_contains(text, "sg_erase") ||
+        (ci_contains(text, "hdparm") &&
+         (ci_contains(text, "--write-sector") ||
+          ci_contains(text, "--fwdownload") ||
+          ci_contains(text, "--dco-identify") ||
+          ci_contains(text, "--dco-restore") ||
+          ci_contains(text, "--trim-sector-ranges"))) ||
+        (ci_contains(text, "mt ") &&
+         (ci_contains(text, " -f") &&
+          (ci_contains(text, "erase") || ci_contains(text, "compression"))))) {
         v.signals |= PASTE_DESTRUCTIVE;
         v.score += 60;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -2565,6 +2583,140 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, " -ma") || ci_contains(text, " -mm") ||
                      ci_contains(text, "lsass")))) {
             what = "suid-install/cred-db/lolbin-name primitive";
+        /* c240: process-memory/core scrape + namespace/dbus exec +
+         * stream/upload exfil + file-serve hosts + MITM + macOS
+         * defense-off/exec/account primitives ── */
+        } else if ((ci_contains(text, "lldb") && ci_contains(text, " -p")) ||
+                   ci_contains(text, "gcore") || ci_contains(text, "eu-stack") ||
+                   ci_contains(text, "procstat") ||
+                   (ci_contains(text, "coredumpctl") &&
+                    (ci_contains(text, " dump") || ci_contains(text, " gdb") ||
+                     ci_contains(text, " debug"))) ||
+                   ((ci_contains(text, "cat ") || ci_contains(text, "head ") ||
+                     ci_contains(text, "xxd ") || ci_contains(text, "strings ") ||
+                     ci_contains(text, "hexdump") || ci_contains(text, "tail ") ||
+                     ci_contains(text, "od ")) &&
+                    (ci_contains(text, " /dev/mem") ||
+                     ci_contains(text, " /dev/kmem") ||
+                     ci_contains(text, " /dev/port"))) ||
+                   (ci_contains(text, "/proc/") &&
+                    ((ci_contains(text, "/mem") &&
+                      !ci_contains(text, "/meminfo")) ||
+                     ci_contains(text, "/environ") ||
+                     ci_contains(text, "/maps") ||
+                     ci_contains(text, "kcore")))) {
+            what = "memory/core scrape primitive";
+        } else if ((ci_contains(text, "unshare") &&
+                    (ci_contains(text, " -r") || ci_contains(text, " -u") ||
+                     ci_contains(text, " -m") || ci_contains(text, "-rm") ||
+                     ci_contains(text, "-ur") ||
+                     ci_contains(text, "--map-root") ||
+                     ci_contains(text, "--user") ||
+                     ci_contains(text, "--mount") ||
+                     ci_contains(text, "--fork"))) ||
+                   (ci_contains(text, "machinectl") &&
+                    (ci_contains(text, "shell") || ci_contains(text, "exec"))) ||
+                   (ci_contains(text, "busctl") && ci_contains(text, " call")) ||
+                   (ci_contains(text, "dbus-send") && ci_contains(text, "--system")) ||
+                   (ci_contains(text, "loginctl") &&
+                    ci_contains(text, "enable-linger"))) {
+            what = "namespace/dbus/systemd exec primitive";
+        } else if (((ci_contains(text, "nc ") || ci_contains(text, "ncat") ||
+                     ci_contains(text, "netcat")) && ci_contains(text, " <")) ||
+                   ((ci_contains(text, "tar") || ci_contains(text, "dd ") ||
+                     ci_contains(text, "cat ")) &&
+                    (ci_contains(text, "| nc") || ci_contains(text, "|nc") ||
+                     ci_contains(text, "| ssh") || ci_contains(text, "|ssh") ||
+                     ci_contains(text, "| socat") ||
+                     ci_contains(text, "|socat"))) ||
+                   (ci_contains(text, "nsupdate") &&
+                    (ci_contains(text, " -k") || ci_contains(text, " -y"))) ||
+                   (ci_contains(text, "openssl") &&
+                    ci_contains(text, "s_server")) ||
+                   ci_contains(text, "cryptcat") ||
+                   ci_contains(text, "php -s") ||
+                   ci_contains(text, "-m http.server") ||
+                   ci_contains(text, "ruby -run") ||
+                   ci_contains(text, "darkhttpd") ||
+                   ci_contains(text, "miniserve") || ci_contains(text, "webfsd") ||
+                   ci_contains(text, "thttpd") || ci_contains(text, "smbserver") ||
+                   ci_contains(text, "updog") || ci_contains(text, "twistd") ||
+                   ci_contains(text, "-m smtpd") ||
+                   ((ci_contains(text, "ifconfig") ||
+                     ci_contains(text, "ip link")) &&
+                    ci_contains(text, "promisc")) ||
+                   (ci_contains(text, "ip neigh") &&
+                    (ci_contains(text, "add") || ci_contains(text, "replace") ||
+                     ci_contains(text, "del")))) {
+            what = "stream-exfil/serve-host/mitm primitive";
+        } else if ((ci_contains(text, "spctl") &&
+                    (ci_contains(text, "global-disable") ||
+                     ci_contains(text, "--add"))) ||
+                   (ci_contains(text, "csrutil") &&
+                    (ci_contains(text, " clear") ||
+                     ci_contains(text, "authenticated-root"))) ||
+                   (ci_contains(text, "fdesetup") &&
+                    (ci_contains(text, "disable") ||
+                     ci_contains(text, "remove") ||
+                     ci_contains(text, "authrestart"))) ||
+                   (ci_contains(text, "profiles") &&
+                    (ci_contains(text, " -i") || ci_contains(text, " -I") ||
+                     ci_contains(text, "install") ||
+                     ci_contains(text, "remove"))) ||
+                   (ci_contains(text, "launchctl") &&
+                    (ci_contains(text, "bootout") ||
+                     ci_contains(text, "disable"))) ||
+                   (ci_contains(text, "dscl") &&
+                    (ci_contains(text, " create") ||
+                     ci_contains(text, " -create") ||
+                     ci_contains(text, " passwd") ||
+                     ci_contains(text, " -passwd") ||
+                     ci_contains(text, " append") ||
+                     ci_contains(text, " -append") ||
+                     ci_contains(text, " delete") ||
+                     ci_contains(text, " -delete") ||
+                     ci_contains(text, " change") ||
+                     ci_contains(text, " -change"))) ||
+                   (ci_contains(text, "sysadminctl") &&
+                    (ci_contains(text, "-adduser") ||
+                     ci_contains(text, "-deleteuser") ||
+                     ci_contains(text, "-resetpassword") ||
+                     ci_contains(text, "-securetokeno") ||
+                     ci_contains(text, "-disablesecuretoken") ||
+                     ci_contains(text, "-autologin"))) ||
+                   (ci_contains(text, "pwpolicy") &&
+                    (ci_contains(text, "setaccount") ||
+                     ci_contains(text, "setuser") ||
+                     ci_contains(text, "setpass") ||
+                     ci_contains(text, " -u"))) ||
+                   (ci_contains(text, "defaults write") &&
+                    (ci_contains(text, "loginhook") ||
+                     ci_contains(text, "logouthook") ||
+                     ci_contains(text, "autorun"))) ||
+                   (ci_contains(text, "hdiutil") && ci_contains(text, "http")) ||
+                   ci_contains(text, "do shell script") ||
+                   (ci_contains(text, "security") &&
+                    (ci_contains(text, "authorizationdb") ||
+                     ci_contains(text, "set-keychain"))) ||
+                   (ci_contains(text, "kickstart") &&
+                    (ci_contains(text, "-activate") ||
+                     ci_contains(text, "-configure") ||
+                     ci_contains(text, "-install") ||
+                     ci_contains(text, "-restart"))) ||
+                   ci_contains(text, "screencapture") ||
+                   ci_contains(text, "pbpaste") ||
+                   (ci_contains(text, "sntp") && ci_contains(text, " -s")) ||
+                   (ci_contains(text, "scutil") && ci_contains(text, "--nc")) ||
+                   (ci_contains(text, "cupsctl") &&
+                    ci_contains(text, "--remote")) ||
+                   (ci_contains(text, "networksetup") &&
+                    (ci_contains(text, "-setautologin") ||
+                     ci_contains(text, "-setvnc"))) ||
+                   (ci_contains(text, "shortcuts") &&
+                    ci_contains(text, " run ")) ||
+                   (ci_contains(text, "automator") &&
+                    ci_contains(text, " -i"))) {
+            what = "macOS defense-off/exec/account primitive";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

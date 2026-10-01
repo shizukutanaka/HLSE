@@ -77,6 +77,37 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **macOS defense-off/exec/account + memory/core scrape +
+  namespace/dbus exec + stream-upload exfil + serve-host/MITM +
+  diskutil/tape/firmware wipe**: spctl --global-disable|--add,
+  csrutil clear|authenticated-root, fdesetup disable|remove|
+  authrestart, profiles install|remove|-I|-i, launchctl bootout|
+  disable, dscl create|passwd|append|delete|change (space and -
+  forms), sysadminctl -addUser|-deleteUser|-resetPasswordFor|
+  -secureTokenO*|-disableSecureToken|-autologin, pwpolicy
+  setaccount|setuser|setpass|-u, defaults write LoginHook|LogoutHook|
+  autorun, hdiutil http, do shell script (AppleScript exec),
+  security authorizationdb|set-keychain, kickstart -activate|
+  -configure|-install|-restart (ARD remote-admin), screencapture,
+  pbpaste (clipboard steal), sntp -s, scutil --nc (VPN control),
+  cupsctl --remote, networksetup -setautologin|-setvnc, shortcuts
+  run, automator -i +45. lldb -p, gcore, eu-stack, procstat,
+  coredumpctl dump|gdb|debug, cat|head|xxd|strings|hexdump|tail|od
+  of /dev/mem|/dev/kmem|/dev/port, /proc/*/mem|environ|maps|
+  kcore reads (meminfo excluded) +45. unshare -r|-m|--map-root|
+  --fork (userns/mount escape), machinectl shell|exec, busctl call,
+  dbus-send --system, loginctl enable-linger +45. nc|ncat|netcat <
+  (file stream-out), tar|dd|cat piped to nc|ssh|socat (archive/disk
+  stream exfil), nsupdate -k|-y (signed DNS write), openssl s_server,
+  cryptcat, php -S, python -m http.server, ruby -run, darkhttpd|
+  miniserve|webfsd|thttpd|smbserver|updog|twistd|python -m smtpd
+  (ad-hoc serve/cred-capture hosts), ifconfig|ip link promisc
+  (sniff mode), ip neigh add|replace|del (ARP write) +45.
+  P9 +60: diskutil eraseDisk|eraseVolume|zeroDisk|secureErase|
+  partitionDisk|deleteContainer|deleteVolume|apfs delete|apfs erase,
+  sg_erase, hdparm --write-sector|--fwdownload|--dco-*|
+  --trim-sector-ranges, mt -f /dev/st* erase.
+
 - **GUI/input injection + screen/mic capture + web-terminal/VNC +
   eBPF + exfil upload + AD-recon/C2/RAT/phishing names + SUID
   install + sqlite cred-db + LOLBin names**: xdotool|ydotool|wtype

