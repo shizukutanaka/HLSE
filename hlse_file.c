@@ -599,6 +599,39 @@ static const char *EXECUTABLE_EXTS[] = {
      * .maw are Access containers that can carry VBA (same carrier
      * class as .mdb/.accdb already flagged)                        */
     ".mad", ".maf", ".mam", ".maq", ".mat", ".maw",
+    /* .tool — macOS Terminal session script: the .command sibling —
+     * runs its shell payload on open                                */
+    ".tool",
+    /* .oxt — LibreOffice/OpenOffice extension: installs Basic/Python
+     * macros that run inside the suite                             */
+    ".oxt",
+    /* .qpkg — QNAP NAS package: maintainer install scripts run as
+     * root on the appliance                                         */
+    ".qpkg",
+    /* SSI server-side-include HTML — .shtml/.shtm/.stm files can
+     * carry <!--#exec cmd/cgi directives the server runs on serve  */
+    ".shtml", ".shtm", ".stm",
+    /* MSBuild task/props files — .targets/.props/.user/.wixproj are
+     * MSBuild imports whose inline <Exec>/<Task> bodies run on any
+     * build of the importing project (the "build this repo" lure   */
+    ".targets", ".props", ".user", ".wixproj",
+    /* .prg — Commodore/dBASE program image (executable payload);
+     * .btm — 4DOS/Take Command batch file (cmd-family exec)        */
+    ".prg", ".btm",
+    /* JS module extensions — .jsm/.mjs/.cjs run under Node and in
+     * browsers like the already-flagged .js/.jse                    */
+    ".jsm", ".mjs", ".cjs",
+    /* .jxa — JavaScript-for-Automation: osascript runs it like .scpt
+     * .m — MATLAB/Octave script (executes on open in the runtime);
+     * .psh — PowerShell script sibling of .ps1                     */
+    ".jxa", ".m", ".psh",
+    /* .wasm — WebAssembly module: executable bytecode delivered to
+     * a runtime the same way .js reaches a browser                 */
+    ".wasm",
+    /* Python executable bundles — .pyc/.pyo bytecode, .pyz zipapp,
+     * .pex/.shiv/.shivam self-contained archives: all run under a
+     * python interpreter without a build step                      */
+    ".pyc", ".pyo", ".pyz", ".pex", ".shiv", ".shivam",
     NULL
 };
 

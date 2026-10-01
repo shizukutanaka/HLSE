@@ -1772,6 +1772,11 @@ static const char *const URL_LEGACY_SCHEMES[] = {
      * RFC 867/864 diagnostic ports, abused for reflection and as
      * obscure registered-handler fetch references               */
     "daytime:", "chargen:",
+    /* remaining inetd-era internal services — echo:/discard:/
+     * time:/qotd:/motd: are the same dead-protocol handler class
+     * (registered schemes nothing modern dispatches, abused as
+     * obscure fetch references)                                  */
+    "echo:", "discard:", "time:", "qotd:", "motd:",
     /* generic transport references — tcp:/udp:/sctp: name raw
      * transport endpoints; like ws: they mark a non-HTTP fetch
      * destination even though nothing dispatches them            */
@@ -1856,6 +1861,10 @@ static const char *const URL_HANDLER_SCHEMES[] = {
      * through a gateway (a real phishing-hosting channel: the CID
      * hides the origin), magnet:/ed2k: pull payloads via P2P       */
     "ipfs:", "ipns:", "magnet:", "ed2k:",
+    /* download-manager handlers — bittorrent: launches a client
+     * like magnet:'s sibling; thunder:/flashget:/qqdl: are the
+     * classic Chinese downloader URI handlers (same fetch class) */
+    "bittorrent:", "thunder:", "flashget:", "qqdl:",
     /* streaming / voice-server join schemes — rtmps: is the TLS
      * rtmp sibling, mumble:/ts3server: hand a server address to
      * the voice client                                            */
@@ -1864,6 +1873,10 @@ static const char *const URL_HANDLER_SCHEMES[] = {
      * the named app (whatsapp:/skype: were already listed)        */
     "threema:", "signal:", "line:", "kakaotalk:", "viber:",
     "wechat:", "whatsapp:", "wtai:",
+    /* remaining social/chat app deep-links — open the named app
+     * to a profile/share surface                                 */
+    "tiktok:", "snapchat:", "linkedin:", "pinterest:",
+    "hipchat:", "gtalk:",
     /* resource: exposes Firefox internal files (local-file
      * disclosure via a clickable link)                             */
     "resource:",
@@ -1882,6 +1895,15 @@ static const char *const URL_HANDLER_SCHEMES[] = {
      * jailbreak store client (install-lure class)                */
     "itms-books:", "applestore:", "ibooks:", "music:", "videos:",
     "cydia:",
+    /* apturl — Ubuntu package-install URI handler: a clicked
+     * apturl:// URL drives package installation through the GUI
+     * (install-lure class like cydia:)                            */
+    "apturl:",
+    /* remaining media/local-app handlers — youtube:/nflx:/imdb:/
+     * goodreads:/flickr:/yelp:/waze:/cast: hand the URI to the
+     * named client app                                           */
+    "youtube:", "nflx:", "imdb:", "goodreads:", "flickr:",
+    "yelp:", "waze:", "cast:",
     "zoomphonecall:", "confinstall:", "subl:", "mvim:",
     "windowsdefender:",
     "txmt:", "fork:", "sourcetree:",
@@ -1977,7 +1999,15 @@ static const char *const URL_PAYMENT_SCHEMES[] = {
      * app — the literal drainer pairing primitive               */
     "solana:", "bitcoincash:", "ripple:", "xrpl:", "stellar:",
     "cardano:", "dash:", "zcash:", "eip681:", "samsungpay:",
-    "wc:", "walletconnect:", NULL
+    "wc:", "walletconnect:",
+    /* payment-app handlers — paypal:/revolut:/usdc: hand a pay/
+     * send surface to the named fintech app (same payment-lure
+     * class as venmo:/cashapp:)                                  */
+    "paypal:", "revolut:", "usdc:",
+    /* venmo:/cashapp:/zelle:/payoneer: are the same payment-app
+     * deep-link class (previously only +15 via the fintech
+     * keyword path)                                               */
+    "venmo:", "cashapp:", "zelle:", "payoneer:", NULL
 };
 
 static int

@@ -77,6 +77,36 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Package-manager remote installs + config mgmt + scheme/ext
+  residuals**: paste adds the remote-install surface — installing
+  from a non-registry source (URL/git+/local bundle) is exec of
+  attacker bytes: npm|pnpm install|add|i and yarn|bun add|install
+  with http/git+/file:/.tgz/.tar/.zip args; pip|pip3|pipx|poetry
+  install/add or -r with http/git+/.whl/.zip/.tar; uvx http; gem
+  install http|.gem; cargo install --git|--path|http; composer
+  require http; apt|apt-get install .deb|http; dpkg -i .deb;
+  rpm -i|-U, dnf|yum|zypper|brew|winget|choco|scoop install,
+  pacman -U, xbps-install — all with http; apk add http|
+  --allow-untrusted; snap install .snap|--dangerous; flatpak
+  install http|.flatpakref|.flatpak; choco install .nupkg (+45
+  all). Config-management remote exec: ansible-pull http,
+  ansible-playbook http, ansible-galaxy install http|-r,
+  ansible -m shell|command|raw, salt|salt-call cmd.run|
+  cmd.shell|cmd.exec_code, puppet apply http, chef-client|
+  chef-solo -r http, make -f http, at -f (+45 all). Schemes
+  +30/+35/+40: apturl (Ubuntu package-install handler);
+  echo/discard/time/qotd/motd (inetd-era dead protocols);
+  bittorrent/thunder/flashget/qqdl (download managers);
+  tiktok/snapchat/linkedin/pinterest/hipchat/gtalk (social
+  deep-links); youtube/nflx/imdb/goodreads/flickr/yelp/waze/
+  cast (media/local apps); paypal/revolut/usdc/venmo/cashapp/
+  zelle/payoneer into URL_PAYMENT_SCHEMES (+40, payment-lure
+  class — venmo/cashapp previously only +15 via keywords).
+  Extensions +5: .tool/.oxt/.qpkg/.shtml/.shtm/.stm (SSI
+  #exec)/.targets/.props/.user/.wixproj (MSBuild inline-task
+  carriers)/.prg/.btm/.jsm/.mjs/.cjs/.jxa/.m/.psh/.wasm/
+  .pyc/.pyo/.pyz/.pex/.shiv/.shivam.
+
 - **Download-cradle completion** (`hlse_supply.c`): the
   download-then-execute surface had three holes — (1) `sh <(`/
   `bash <(`/`zsh <(` process-substitution script-feeds now

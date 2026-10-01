@@ -818,8 +818,8 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "pipx install") ||
                     ci_contains(text, "npm install") ||
                     ci_contains(text, "pnpm add") ||
-                    ci_contains(text, "yarn add") ||
-                    ci_contains(text, "gem install")) &&
+                    ci_contains(text, "yarn add ") ||
+                    ci_contains(text, "gem install ")) &&
                    (ci_contains(text, "--index-url") ||
                     ci_contains(text, "--extra-index-url") ||
                     ci_contains(text, "--registry") ||
@@ -1742,6 +1742,99 @@ hlse_check_paste(const char *text) {
         } else if ((ci_contains(text, "mongosh") || ci_contains(text, "mongo ")) &&
                    ci_contains(text, "--eval")) {
             what = "mongo eval exec";
+        /* ── package-manager remote installs — install IS exec ──
+         * the non-registry-source form (URL/git+/local-bundle) is
+         * the deliverable: postinstall hooks, setup.py, or maint
+         * scripts run the attacker's bytes                  */
+        } else if ((((ci_contains(text, "npm") || ci_contains(text, "pnpm")) &&
+                    (ci_contains(text, " install ") || ci_contains(text, " add ") ||
+                     ci_contains(text, " i "))) ||
+                   ci_contains(text, "yarn add ") || ci_contains(text, "yarn install ") ||
+                   ci_contains(text, "bun add ") || ci_contains(text, "bun install ")) &&
+                   (ci_contains(text, "http") || ci_contains(text, "git+") ||
+                    ci_contains(text, "file:") || ci_contains(text, ".tgz") ||
+                    ci_contains(text, ".tar") || ci_contains(text, ".zip"))) {
+            what = "npm-family remote package install";
+        } else if ((ci_contains(text, "pip ") || ci_contains(text, "pip3") ||
+                    ci_contains(text, "pipx") || ci_contains(text, "poetry add ") ||
+                    ci_contains(text, "poetry install ")) &&
+                   (ci_contains(text, " install ") || ci_contains(text, " add ") ||
+                    (ci_contains(text, " -r ") && ci_contains(text, "http"))) &&
+                   (ci_contains(text, "http") || ci_contains(text, "git+") ||
+                    ci_contains(text, ".whl") || ci_contains(text, ".zip") ||
+                    ci_contains(text, ".tar"))) {
+            what = "python remote package install";
+        } else if ((ci_contains(text, "uvx") &&
+                    ci_contains(text, "http")) ||
+                   (ci_contains(text, "gem install ") &&
+                    (ci_contains(text, "http") || ci_contains(text, ".gem"))) ||
+                   (ci_contains(text, "cargo install ") &&
+                    (ci_contains(text, "--git") || ci_contains(text, "http") ||
+                     ci_contains(text, "--path"))) ||
+                   (ci_contains(text, "composer") &&
+                    ci_contains(text, " require ") && ci_contains(text, "http"))) {
+            what = "remote package install/exec";
+        /* ── OS package remote/local-bundle installs ── */
+        } else if ((ci_contains(text, "apt") || ci_contains(text, "apt-get")) &&
+                   ci_contains(text, " install ") &&
+                   (ci_contains(text, ".deb") || ci_contains(text, "http"))) {
+            what = "apt bundle/URL install";
+        } else if (ci_contains(text, "dpkg") && ci_contains(text, "-i ") &&
+                   ci_contains(text, ".deb")) {
+            what = "dpkg bundle install";
+        } else if (((ci_contains(text, "rpm") &&
+                    (ci_contains(text, " -i") || ci_contains(text, " -U"))) ||
+                   (ci_contains(text, "dnf") && ci_contains(text, " install ")) ||
+                   (ci_contains(text, "yum") && ci_contains(text, " install ")) ||
+                   (ci_contains(text, "zypper") && ci_contains(text, " install ")) ||
+                   (ci_contains(text, "pacman") && ci_contains(text, " -u ")) ||
+                   (ci_contains(text, "xbps-install")) ||
+                   (ci_contains(text, "brew") && ci_contains(text, " install ")) ||
+                   (ci_contains(text, "winget") && ci_contains(text, " install ")) ||
+                   (ci_contains(text, "choco") && ci_contains(text, " install ")) ||
+                   (ci_contains(text, "scoop") && ci_contains(text, " install "))) &&
+                   ci_contains(text, "http")) {
+            what = "remote OS package install";
+        } else if ((ci_contains(text, "apk") && ci_contains(text, " add ") &&
+                   (ci_contains(text, "http") ||
+                    ci_contains(text, "--allow-untrusted"))) ||
+                   (ci_contains(text, "snap") && ci_contains(text, " install ") &&
+                    (ci_contains(text, ".snap") ||
+                     ci_contains(text, "--dangerous"))) ||
+                   (ci_contains(text, "flatpak") && ci_contains(text, " install ") &&
+                    (ci_contains(text, "http") || ci_contains(text, ".flatpakref") ||
+                     ci_contains(text, ".flatpak"))) ||
+                   (ci_contains(text, "choco") && ci_contains(text, " install ") &&
+                    ci_contains(text, ".nupkg"))) {
+            what = "remote/bundle package install";
+        /* ── config-management remote exec — pull/exec primitives ── */
+        } else if (ci_contains(text, "ansible-pull") &&
+                   ci_contains(text, "http")) {
+            what = "ansible-pull playbook fetch+run";
+        } else if ((ci_contains(text, "ansible-playbook") &&
+                    ci_contains(text, "http")) ||
+                   (ci_contains(text, "ansible-galaxy") &&
+                    ci_contains(text, " install ") &&
+                    (ci_contains(text, "http") || ci_contains(text, " -r ")))) {
+            what = "ansible remote playbook install";
+        } else if ((ci_contains(text, "ansible") &&
+                    (ci_contains(text, " -m shell") ||
+                     ci_contains(text, " -m command") ||
+                     ci_contains(text, " -m raw"))) ||
+                   (ci_contains(text, "salt") &&
+                    (ci_contains(text, "cmd.run") || ci_contains(text, "cmd.shell") ||
+                     ci_contains(text, "cmd.exec_code"))) ||
+                   (ci_contains(text, "salt-call") && ci_contains(text, "cmd"))) {
+            what = "remote ad-hoc command exec";
+        } else if ((ci_contains(text, "puppet") && ci_contains(text, " apply ") &&
+                    ci_contains(text, "http")) ||
+                   ((ci_contains(text, "chef-client") ||
+                     ci_contains(text, "chef-solo")) &&
+                    ci_contains(text, " -r ") && ci_contains(text, "http")) ||
+                   (ci_contains(text, "make") && ci_contains(text, " -f ") &&
+                    ci_contains(text, "http")) ||
+                   ci_contains(text, "at -f ")) {
+            what = "remote recipe/makefile exec";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
