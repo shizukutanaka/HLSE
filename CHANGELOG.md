@@ -77,6 +77,42 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **GUI/input injection + screen/mic capture + web-terminal/VNC +
+  eBPF + exfil upload + AD-recon/C2/RAT/phishing names + SUID
+  install + sqlite cred-db + LOLBin names**: xdotool|ydotool|wtype
+  (input injection), xhost +, screen -x, import -window, scrot|
+  flameshot|gnome-screenshot|spectacle|wf-recorder|xwd|maim+flag|
+  obs --start (screen capture), ffmpeg -f x11grab|avfoundation|
+  pulse|alsa|gdigrab|v4l2|dshow (device capture), parecord|arecord|
+  parec|sox -d|-t (mic capture), logkeys|keyd monitor|evsieve
+  (keylog) +45. ttyd|gotty|shellinabox|tmate|teleconsole|sish|
+  wstunnel|regeorg|pivotnacci|wetty (web-terminal backdoor),
+  x11vnc|vncserver|x0vncserver|tigervnc|wayvnc (VNC share),
+  bpftool|bpftrace (eBPF rootkit loader) +45. curl @-file upload
+  (-F|-d|--form|--data|-T|--upload-file), wget --post-file +45.
+  AD-recon names certipy|adidnsdump|windapsearch|ldeep|pywerview|
+  rusthound|adenum|ldapdomaindump|snaffler|pingcastle|sharploader|
+  sharpshooter|pezor|gadgettojscript|phant0m|stracciatella|
+  invisibilitycloak|eventlogmaster|persistence-finder|fakessh|
+  mailsniper|cewler|poshc2|nighthawk|bruteratel|cobaltstrike +
+  real-word C2/stealer names (bloodhound|sliver|havoc|mythic|
+  covenant|empire|merlin|viper|donut|freeze|scarecrow|parallax|
+  xenomorph|redline|raccoon|vidar|bumblebee) flag-gated +45.
+  Malware/RAT/phishing names asyncrat|njrat|nanocore|remcos|
+  xworm|venomrat|purecrypter|azorult|agenttesla|formbook|lokibot|
+  guloader|smokeloader|icedid|qakbot|qbot|emotet|trickbot|dridex|
+  ursnif|spyeye|danabot|flubot|sharkbot|ermac|spynote|spymax|
+  ahmyth|droidjack|androrat|omnirat|quasarrat|beef-xss|setoolkit|
+  gophish|evilginx|modlishka|zphisher|shellphish|blackeye|
+  advphishing|king-phisher|wifiphisher|wifipumpkin|airgeddon|
+  procdump +45. install -m 4|2|u+s|+s (SUID install), robocopy
+  /b (backup-mode steal), runas /savecred, sqlite3 × cookies|
+  logins|moz_logins|login data|web data|places.sqlite (browser
+  cred-db read), msbuild UNC|http, esentutl /y, iexpress|
+  extrac32|wextract|makecab|syncappvpublishingserver|verclsid|
+  pcalua|pcwrun|masvc|oobe+flag|ieexec|ie4uinit|installutil|
+  regasm|regsvcs|msxsl|ilasm +45.
+
 - **Systemctl/service/runlevel control + account mgmt + firewall
   rule-add + sysctl security keys + kernel-module load + boot/store
   config + sniff/spoof tools**: systemctl × stop|disable|mask|kill|

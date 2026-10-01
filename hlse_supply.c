@@ -2425,6 +2425,146 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "nping") ||
                    (ci_contains(text, "ostinato") && ci_contains(text, " -"))) {
             what = "sniff/spoof/DoS tool primitive";
+        /* ── c239: GUI/input injection + screen/mic capture +
+         * web-terminal/VNC backdoors + eBPF + exfil upload +
+         * AD-recon/C2/RAT/phishing names + SUID install +
+         * sqlite cred-db + LOLBin names ── */
+        } else if (ci_contains(text, "xdotool") || ci_contains(text, "ydotool") ||
+                   ci_contains(text, "wtype") ||
+                   (ci_contains(text, "xhost") && ci_contains(text, " +")) ||
+                   (ci_contains(text, "import") && ci_contains(text, "-window")) ||
+                   ci_contains(text, "scrot") ||
+                   ci_contains(text, "gnome-screenshot") ||
+                   ci_contains(text, "flameshot") ||
+                   (ci_contains(text, "maim") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "spectacle") && ci_contains(text, " -")) ||
+                   ci_contains(text, "wf-recorder") || ci_contains(text, "xwd") ||
+                   (ci_contains(text, "obs") && ci_contains(text, "--start")) ||
+                   (ci_contains(text, "ffmpeg") &&
+                    (ci_contains(text, "-f x11grab") || ci_contains(text, "avfoundation") ||
+                     ci_contains(text, "-f pulse") || ci_contains(text, "-f alsa") ||
+                     ci_contains(text, "-f gdigrab") || ci_contains(text, "-f v4l2") ||
+                     ci_contains(text, "-f dshow"))) ||
+                   ci_contains(text, "parecord") || ci_contains(text, "arecord") ||
+                   ci_contains(text, "parec") ||
+                   (ci_contains(text, "sox") &&
+                    (ci_contains(text, " -d") || ci_contains(text, " -t"))) ||
+                   ci_contains(text, "logkeys") || ci_contains(text, "evsieve") ||
+                   (ci_contains(text, "keyd") && ci_contains(text, "monitor"))) {
+            what = "GUI-injection/screen-mic capture";
+        } else if (ci_contains(text, "ttyd") || ci_contains(text, "gotty") ||
+                   ci_contains(text, "shellinabox") || ci_contains(text, "tmate") ||
+                   ci_contains(text, "teleconsole") || ci_contains(text, "sish") ||
+                   ci_contains(text, "wstunnel") || ci_contains(text, "regeorg") ||
+                   ci_contains(text, "pivotnacci") || ci_contains(text, "wetty") ||
+                   ci_contains(text, "x11vnc") || ci_contains(text, "vncserver") ||
+                   ci_contains(text, "x0vncserver") || ci_contains(text, "tigervnc") ||
+                   ci_contains(text, "wayvnc") || ci_contains(text, "bpftool") ||
+                   ci_contains(text, "bpftrace")) {
+            what = "web-terminal/VNC/eBPF backdoor primitive";
+        } else if ((ci_contains(text, "curl") &&
+                    ((ci_contains(text, "@") &&
+                      (ci_contains(text, " -f") || ci_contains(text, " -d") ||
+                       ci_contains(text, "--form") || ci_contains(text, "--data"))) ||
+                     ci_contains(text, " -t ") || ci_contains(text, "--upload-file"))) ||
+                   (ci_contains(text, "wget") && ci_contains(text, "--post-file"))) {
+            what = "curl/wget file-upload exfil form";
+        } else if (ci_contains(text, "certipy") || ci_contains(text, "adidnsdump") ||
+                   ci_contains(text, "windapsearch") || ci_contains(text, "ldeep") ||
+                   ci_contains(text, "pywerview") || ci_contains(text, "rusthound") ||
+                   ci_contains(text, "adenum") || ci_contains(text, "ldapdomaindump") ||
+                   ci_contains(text, "snaffler") || ci_contains(text, "pingcastle") ||
+                   ci_contains(text, "sharploader") || ci_contains(text, "sharpshooter") ||
+                   ci_contains(text, "pezor") || ci_contains(text, "gadgettojscript") ||
+                   ci_contains(text, "phant0m") || ci_contains(text, "stracciatella") ||
+                   ci_contains(text, "invisibilitycloak") || ci_contains(text, "eventlogmaster") ||
+                   ci_contains(text, "persistence-finder") || ci_contains(text, "fakessh") ||
+                   ci_contains(text, "mailsniper") || ci_contains(text, "cewler") ||
+                   ci_contains(text, "poshc2") || ci_contains(text, "nighthawk") ||
+                   ci_contains(text, "bruteratel") || ci_contains(text, "brute ratel") ||
+                   ci_contains(text, "cobaltstrike") || ci_contains(text, "cobalt strike") ||
+                   (ci_contains(text, "bloodhound") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "sliver") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "havoc") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "mythic") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "covenant") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "empire") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "merlin") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "viper") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "donut") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "freeze") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "scarecrow") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "parallax") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "xenomorph") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "redline") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "raccoon") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "vidar") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "bumblebee") && ci_contains(text, " -"))) {
+            what = "AD-recon/C2/offensive-tool name";
+        } else if (ci_contains(text, "asyncrat") || ci_contains(text, "njrat") ||
+                   ci_contains(text, "nanocore") || ci_contains(text, "remcos") ||
+                   ci_contains(text, "xworm") || ci_contains(text, "venomrat") ||
+                   ci_contains(text, "purecrypter") || ci_contains(text, "azorult") ||
+                   ci_contains(text, "agenttesla") || ci_contains(text, "agent tesla") ||
+                   ci_contains(text, "formbook") || ci_contains(text, "lokibot") ||
+                   ci_contains(text, "guloader") || ci_contains(text, "smokeloader") ||
+                   ci_contains(text, "icedid") || ci_contains(text, "qakbot") ||
+                   ci_contains(text, "qbot") || ci_contains(text, "emotet") ||
+                   ci_contains(text, "trickbot") || ci_contains(text, "dridex") ||
+                   ci_contains(text, "ursnif") || ci_contains(text, "spyeye") ||
+                   ci_contains(text, "danabot") || ci_contains(text, "flubot") ||
+                   ci_contains(text, "sharkbot") || ci_contains(text, "ermac") ||
+                   ci_contains(text, "spynote") || ci_contains(text, "spymax") ||
+                   ci_contains(text, "ahmyth") || ci_contains(text, "droidjack") ||
+                   ci_contains(text, "androrat") || ci_contains(text, "omnirat") ||
+                   ci_contains(text, "quasarrat") || ci_contains(text, "beef-xss") ||
+                   ci_contains(text, "setoolkit") || ci_contains(text, "gophish") ||
+                   ci_contains(text, "evilginx") || ci_contains(text, "modlishka") ||
+                   ci_contains(text, "zphisher") || ci_contains(text, "shellphish") ||
+                   ci_contains(text, "blackeye") || ci_contains(text, "advphishing") ||
+                   ci_contains(text, "king-phisher") || ci_contains(text, "wifiphisher") ||
+                   ci_contains(text, "wifipumpkin") || ci_contains(text, "airgeddon")) {
+            what = "malware-family/phishing-kit name";
+        } else if ((ci_contains(text, "install") &&
+                    (ci_contains(text, " -m 4") || ci_contains(text, " -m 2") ||
+                     ci_contains(text, " -m u+s") || ci_contains(text, " -m +s"))) ||
+                   (ci_contains(text, "robocopy") && ci_contains(text, " /b")) ||
+                   (ci_contains(text, "runas") && ci_contains(text, "/savecred")) ||
+                   (ci_contains(text, "sqlite3") &&
+                    (ci_contains(text, "cookies") || ci_contains(text, "logins") ||
+                     ci_contains(text, "moz_logins") || ci_contains(text, "login data") ||
+                     ci_contains(text, "web data") || ci_contains(text, "places.sqlite"))) ||
+                   (ci_contains(text, "msbuild") &&
+                    (ci_contains(text, " \\\\") || ci_contains(text, "http"))) ||
+                   (ci_contains(text, "esentutl") && ci_contains(text, " /y")) ||
+                   ci_contains(text, "extrac32") || ci_contains(text, "wextract") ||
+                   ci_contains(text, "pcwrun") || ci_contains(text, "masvc") ||
+                   (ci_contains(text, "oobe") && ci_contains(text, " -")) ||
+                   (ci_contains(text, "ieexec") &&
+                    (ci_contains(text, " http") || ci_contains(text, " \\\\"))) ||
+                   (ci_contains(text, "ie4uinit") && ci_contains(text, " -show")) ||
+                   (ci_contains(text, "installutil") &&
+                    (ci_contains(text, " http") || ci_contains(text, " \\\\") ||
+                     ci_contains(text, " /u"))) ||
+                   (ci_contains(text, "regasm") &&
+                    (ci_contains(text, " http") || ci_contains(text, " \\\\") ||
+                     ci_contains(text, " /u"))) ||
+                   (ci_contains(text, "regsvcs") &&
+                    (ci_contains(text, " http") || ci_contains(text, " \\\\") ||
+                     ci_contains(text, " /u"))) ||
+                   (ci_contains(text, "msxsl") &&
+                    (ci_contains(text, " http") || ci_contains(text, " \\\\"))) ||
+                   (ci_contains(text, "ilasm") &&
+                    (ci_contains(text, " http") || ci_contains(text, " \\\\"))) ||
+                   (ci_contains(text, "verclsid") &&
+                    ci_contains(text, " /s") && ci_contains(text, " /c")) ||
+                   (ci_contains(text, "syncappvpublishingserver") &&
+                    (ci_contains(text, "\";") || ci_contains(text, "';"))) ||
+                   (ci_contains(text, "pcalua") && ci_contains(text, " -a")) ||
+                   (ci_contains(text, "procdump") &&
+                    (ci_contains(text, " -ma") || ci_contains(text, " -mm") ||
+                     ci_contains(text, "lsass")))) {
+            what = "suid-install/cred-db/lolbin-name primitive";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

