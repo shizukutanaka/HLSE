@@ -77,6 +77,27 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Interpreter -e exec / npx-URL / git upload-pack / exec -a /
+  setcap+setfacl / netns+setpriv / misc exec vectors**: node|
+  python|python3|perl|ruby|php|lua|luajit|gawk|rscript|pwsh ×
+  -e|-c|-r + exec verb (child_process|os.system|subprocess|
+  os.popen|pty.spawn|system(|exec(|popen(|spawn|shell_exec|
+  passthru(|getRuntime|os.execute|eval(|commands.getoutput|
+  loadstring) → +45 (bare -e print stays LOG 30). npx|pnpm dlx|
+  bunx|yarn dlx + http|git+ (remote package exec) → +45.
+  git clone --upload-pack|-u → +45. exec -a argv0 masquerade →
+  +45. setcap +ep|+ei → +45; setfacl -m × /etc/|/root → +45.
+  blkdiscard /|-, swapoff -|/ → destructive-class (+60/+45).
+  ip netns exec|netns exec, setpriv --reuid|--inh-caps|
+  --bounding-set|--ruid|--euid → +45. bwrap --bind|--dev-bind|
+  --ro-bind → +45. emacs -l|--eval|-batch → +45. sed e-flag
+  (1e , 1e', 1e") → +45. rsync --rsh → +45. sysvinit enable:
+  update-rc.d|chkconfig|rc-update + defaults|on|add|enable → +45.
+  P12b decode→exec chain: base64 -d|-D|--decode, openssl enc|aes,
+  gpg -d|--decrypt, xxd -r added to fetch side; `; ./` added to
+  exec-chain side. P15 decode|sh: gpg -d|--decrypt added. nc
+  revshell gate excludes 'sync' (rsync -e ssh benign FP fix).
+
 - **Miner exec / terminal injection / agent kill / env exfil /
   WinRM / timestomp / device-arg dd+mkfs**: cryptominer names
   (xmrig, minerd, cpuminer, xmr-stak, ethminer, bzminer, lolminer,

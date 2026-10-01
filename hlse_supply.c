@@ -553,6 +553,7 @@ hlse_check_paste(const char *text) {
         strstr(text, "of=/dev/mmc") || strstr(text, "of=/dev/xvd") ||
         strstr(text, "if=/dev/mem") || strstr(text, "if=/dev/kmem") ||
         strstr(text, "if=/dev/sd") || strstr(text, "if=/dev/nvme") ||
+        strstr(text, "blkdiscard /") || strstr(text, "blkdiscard -") ||
         strstr(text, "shred ") || strstr(text, "> /dev/sd") ||
         strstr(text, "chmod -R 777") || strstr(text, "chmod -R 777 /")) {
         v.signals |= PASTE_DESTRUCTIVE;
@@ -646,11 +647,16 @@ hlse_check_paste(const char *text) {
     if ((strstr(text, "curl ") || strstr(text, "wget ") ||
          strstr(text, "fetch ") || strstr(text, "lynx ") ||
          strstr(text, "scp ") || strstr(text, "sftp ") ||
-         strstr(text, "rsync ") || strstr(text, "tftp ")) &&
+         strstr(text, "rsync ") || strstr(text, "tftp ") ||
+         strstr(text, "base64 -d") || strstr(text, "base64 -D") ||
+         strstr(text, "base64 --decode") || strstr(text, "openssl enc") ||
+         strstr(text, "openssl aes") || strstr(text, "gpg -d") ||
+         strstr(text, "gpg --decrypt") || strstr(text, "xxd -r")) &&
         (strstr(text, "&& bash") || strstr(text, "&& sh") ||
          strstr(text, "&& chmod") || strstr(text, "&& sudo") ||
          strstr(text, "&& ./") || strstr(text, "&& /") ||
          strstr(text, "; bash") || strstr(text, "; sh") ||
+         strstr(text, "; ./") ||
          strstr(text, "; chmod") || strstr(text, "; sudo") ||
          strstr(text, "; /"))) {
         v.signals |= PASTE_EVAL_FETCH;
@@ -736,7 +742,8 @@ hlse_check_paste(const char *text) {
      * fetch verb and P12 needs eval/source).                        */
     if ((strstr(text, "base64 -d") || strstr(text, "base64 -D") ||
          strstr(text, "base64 --decode") || strstr(text, "enc -d") ||
-         strstr(text, "openssl enc")) &&
+         strstr(text, "openssl enc") || strstr(text, "gpg -d") ||
+         strstr(text, "gpg --decrypt")) &&
         (strstr(text, "| sh") || strstr(text, "|sh") ||
          strstr(text, "| bash") || strstr(text, "|bash") ||
          strstr(text, "| python") || strstr(text, "|python") ||
@@ -1987,6 +1994,70 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "batch -f") || ci_contains(text, "| batch") ||
                    ci_contains(text, "|batch")) {
             what = "batch (at-family) queued exec";
+        /* ── c235: interpreter -e+exec-verb / npx-URL / git upload-pack /
+         * exec -a / setcap+setfacl / netns+setpriv / misc ── */
+        } else if ((ci_contains(text, "node -e") || ci_contains(text, "nodejs -e") ||
+                    ci_contains(text, "node --eval") || ci_contains(text, "python -c") ||
+                    ci_contains(text, "python2 -c") || ci_contains(text, "python3 -c") ||
+                    ci_contains(text, "perl -e") || ci_contains(text, "ruby -e") ||
+                    ci_contains(text, "php -r") || ci_contains(text, "lua -e") ||
+                    ci_contains(text, "luajit -e") || ci_contains(text, "gawk -e") ||
+                    ci_contains(text, "rscript -e") || ci_contains(text, "pwsh -c")) &&
+                   (ci_contains(text, "child_process") || ci_contains(text, "os.system") ||
+                    ci_contains(text, "subprocess") || ci_contains(text, "os.popen") ||
+                    ci_contains(text, "pty.spawn") || ci_contains(text, "system(") ||
+                    ci_contains(text, "exec(") || ci_contains(text, "popen(") ||
+                    ci_contains(text, "spawn") || ci_contains(text, "shell_exec") ||
+                    ci_contains(text, "passthru(") || ci_contains(text, "getruntime") ||
+                    ci_contains(text, "os.execute") || ci_contains(text, "eval(") ||
+                    ci_contains(text, "commands.getoutput") || ci_contains(text, "loadstring"))) {
+            what = "interpreter -e/-c inline exec";
+        } else if ((ci_contains(text, "npx") || ci_contains(text, "pnpm dlx") ||
+                    ci_contains(text, "bunx") || ci_contains(text, "yarn dlx")) &&
+                   (ci_contains(text, "http") || ci_contains(text, "git+"))) {
+            what = "npx-family remote package exec";
+        } else if (ci_contains(text, "git clone") &&
+                   (ci_contains(text, "--upload-pack") || ci_contains(text, " -u "))) {
+            what = "git clone upload-pack exec";
+        } else if (ci_contains(text, "exec -a")) {
+            what = "argv0 masquerade (exec -a)";
+        } else if (ci_contains(text, "setcap") &&
+                   (ci_contains(text, "+ep") || ci_contains(text, "+ei"))) {
+            what = "file-capability grant (setcap)";
+        } else if (ci_contains(text, "setfacl") &&
+                   ci_contains(text, " -m") &&
+                   (ci_contains(text, "/etc/") || ci_contains(text, "/root"))) {
+            what = "acl grant on system file (setfacl)";
+        } else if (ci_contains(text, "swapoff -") ||
+                   ci_contains(text, "swapoff /")) {
+            what = "swap disable (ransomware-prep class)";
+        } else if (ci_contains(text, "ip netns exec") ||
+                   ci_contains(text, "netns exec") ||
+                   (ci_contains(text, "setpriv") &&
+                    (ci_contains(text, "--reuid") || ci_contains(text, "--inh-caps") ||
+                     ci_contains(text, "--bounding-set") || ci_contains(text, "--ruid") ||
+                     ci_contains(text, "--euid")))) {
+            what = "namespace / privilege-context exec";
+        } else if (ci_contains(text, "bwrap") &&
+                   (ci_contains(text, "--bind") || ci_contains(text, "--dev-bind") ||
+                    ci_contains(text, "--ro-bind"))) {
+            what = "bwrap bind-mount (namespace escape)";
+        } else if (ci_contains(text, "emacs") &&
+                   (ci_contains(text, " -l ") || ci_contains(text, "--eval") ||
+                    ci_contains(text, "-batch"))) {
+            what = "emacs batch/elisp exec";
+        } else if (ci_contains(text, "sed") &&
+                   (ci_contains(text, "1e ") || ci_contains(text, "1e'") ||
+                    ci_contains(text, "1e\"") || ci_contains(text, " e ") ||
+                    ci_contains(text, " e'"))) {
+            what = "sed e-flag exec";
+        } else if (ci_contains(text, "rsync") && ci_contains(text, "--rsh")) {
+            what = "rsync remote-shell exec";
+        } else if ((ci_contains(text, "update-rc.d") || ci_contains(text, "chkconfig") ||
+                    ci_contains(text, "rc-update")) &&
+                   (ci_contains(text, " defaults") || ci_contains(text, " on") ||
+                    ci_contains(text, " add") || ci_contains(text, " enable"))) {
+            what = "sysvinit service enable";
         } else if ((ci_contains(text, "puppet") && ci_contains(text, " apply ") &&
                     ci_contains(text, "http")) ||
                    ((ci_contains(text, "chef-client") ||
@@ -2013,7 +2084,7 @@ hlse_check_paste(const char *text) {
         if (strstr(text, "/dev/tcp/") || strstr(text, "/dev/udp/"))
             is_revshell = 1;
         /* nc / ncat / netcat reverse shell: nc -e / -c or mkfifo pipe */
-        if (!is_revshell &&
+        if (!is_revshell && !strstr(text, "sync") &&
             (strstr(text, "nc ") || strstr(text, "ncat ") ||
              strstr(text, "netcat ")) &&
             (strstr(text, " -e ") || strstr(text, " -c ") ||
