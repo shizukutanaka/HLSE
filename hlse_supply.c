@@ -427,7 +427,9 @@ hlse_check_paste(const char *text) {
     /* P2: curl/wget piped to shell */
     {
         int has_curl = (strstr(text, "curl ") != NULL ||
-                       strstr(text, "wget ") != NULL);
+                       strstr(text, "wget ") != NULL ||
+                       strstr(text, "fetch ") != NULL ||
+                       strstr(text, "lynx ") != NULL);
         int has_pipe_sh = (strstr(text, "| sh") != NULL ||
                           strstr(text, "| bash") != NULL ||
                           strstr(text, "|sh") != NULL ||
@@ -593,7 +595,8 @@ hlse_check_paste(const char *text) {
     /* P12: eval/exec of fetched content — the non-pipe form of the
      * download cradle (P2 only catches the `| sh` shape) */
     if ((strstr(text, "eval") || strstr(text, "exec") ||
-         ci_contains(text, "source ") || ci_contains(text, ". /")) &&
+         ci_contains(text, "source ") || ci_contains(text, ". /") ||
+         strstr(text, "sh <(")) &&
         (strstr(text, "$(") || strstr(text, "`") ||
          strstr(text, "curl") || strstr(text, "wget") ||
          strstr(text, "fetch"))) {
@@ -603,6 +606,27 @@ hlse_check_paste(const char *text) {
             snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
                 "P12: Eval/source of fetched content — same RCE class as "
                 "the pipe-to-shell cradle without the pipe");
+    }
+
+    /* P12b: download-then-execute chaining — `curl x > s && bash s`,
+     * `wget x; sh s`, `curl x && sudo bash s`. P2 needs a literal
+     * `| sh` and P12 needs an eval/source verb; the `&&`/`;` exec
+     * chain is the third shape of the same download cradle.       */
+    if ((strstr(text, "curl ") || strstr(text, "wget ") ||
+         strstr(text, "fetch ") || strstr(text, "lynx ") ||
+         strstr(text, "scp ") || strstr(text, "sftp ") ||
+         strstr(text, "tftp ")) &&
+        (strstr(text, "&& bash") || strstr(text, "&& sh") ||
+         strstr(text, "&& chmod") || strstr(text, "&& sudo") ||
+         strstr(text, "&& ./") ||
+         strstr(text, "; bash") || strstr(text, "; sh") ||
+         strstr(text, "; chmod") || strstr(text, "; sudo"))) {
+        v.signals |= PASTE_EVAL_FETCH;
+        v.score += 45;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P12b: Download-then-execute chain — remote content "
+                "fetched and run via &&/;");
     }
 
     /* P13: Listener / privilege-escalation one-liners — a bind shell,

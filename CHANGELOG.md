@@ -77,6 +77,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ### Added
 
+- **Download-cradle completion** (`hlse_supply.c`): the
+  download-then-execute surface had three holes — (1) `sh <(`/
+  `bash <(`/`zsh <(` process-substitution script-feeds now
+  satisfy the P12 eval side (`sh <(` substring-covers
+  bash|zsh|ksh|dash|fish|wish); (2) new P12b catches
+  `curl|wget x &&|;; bash|sh|chmod|sudo|./` — download-then-
+  chain without a pipe or eval verb (+45); (3) the fetcher set
+  grows beyond curl|wget: `fetch ` (FreeBSD), `lynx ` (text-
+  browser fetch), `scp|sftp|tftp ` on the P12b chain side and
+  `fetch|lynx` on the P2 pipe side. `cat <(curl`/plain scp/
+  sftp/tftp fetch stay clean.
+
 - **Attack-tool names + cloud/k8s/db primitives**
   (`hlse_supply.c`): paste adds name-gated attack tooling — the
   tool IS the signal: credential/lateral (mimikatz, lazagne,

