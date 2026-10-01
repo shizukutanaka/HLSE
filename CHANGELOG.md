@@ -4,6 +4,74 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-247)
+
+- **Paste-detector breadth — overlay networks, VCS destruction,
+  persistence paths, exec/decode helpers** (`hlse_supply.c`):
+  overlay/tunnel clients beyond the existing tailscale gate
+  (`zerotier-one`, `openfortivpn`, `nebula`, `tinc`, `bore`,
+  `http-server`, `serveo`, `frp`, `croc send`, `magic-wormhole`,
+  `wormhole send`, `pwndrop`, `intersh`, `pwncat`/`pwncat-cs`,
+  `transfer.sh`, `tailscale ssh`), rootkit/UEFI/firmware-analysis and
+  scanner names (`reptile`, `diamorphine`, `kerberoast`, `chipsec`,
+  `uefitool`, `ifdtool`, `braa`, `openvas`, `gvm-cli`, `nessus`),
+  k8s/deploy/DB helper CLIs (`k9s`, `stern`, `tkn`, `dagger`, `werf`,
+  `skaffold`, `tilt`, `earthly`, `devspace`, `localstack`, `assumego`,
+  `granted`, `okta-aws`, `litecli`, `pgcli`, `mycli`, `iredis`, `usql`),
+  perf/trace/cgroup/namespace control (`perf script|trace|probe|sched`,
+  `oprofile`, `systemtap`/`stap`, `sysprof`, `bcc`, `setns`, `lsns`,
+  `netns exec`, `systemd-cgls`/`cgtop`, `cgexec`/`cgcreate`/`cgset`/
+  `cgdelete`/`cgclassify`/`cgservice`/`lssubsys`, `chcpu`/`chmem`,
+  `machinectl login|enable|terminate|poweroff|reboot`, `unshare -n/-p`,
+  `bwrap --uid`, `firejail --join`, `chsh -s`, `chfn`, extended
+  `systemd-run` flags), traffic-control and link primitives
+  (`tc qdisc|filter|class|action` write verbs, `ethtool -K/--set-*`,
+  `ip maddress`/`ip mroute`/`ip vrf`), git destructive and
+  config-poisoning forms (`push -f/--force/--delete`, `branch -d`,
+  `tag -d`, `rm -r/--cached`, `update-index --assume-unchanged/
+  --skip-worktree`, `filter-branch`/`filter-repo`, `gc --prune`,
+  `reflog expire|delete`, `stash drop|clear`, `clean -f/-x/-d`,
+  `reset --hard`, `checkout --`, `remote add|set-url|remove`,
+  `config alias.|core.pager|core.editor|core.hooks|include.|
+  credential.`, `submodule update|add`, `clone -u/--upload-pack/
+  --template`, `bundle create`, `archive --remote`, `format-patch
+  --stdout|-o`), editor/exec/decode helpers (`nano -s`, `xargs
+  sh|bash|sudo`, `make --eval`, `cmake -P`, `uudecode`/`uuencode`/
+  `basenc`, `perl -MMIME::Base64`, `setpriv --init-groups/--reset-env`,
+  `capsh --decode`, `usbipd`/`usbip`, `whoami /priv|/all|/groups`),
+  and Windows residual LOLBins (`desktopimgdownldr`, `mftrace`,
+  `shdocvw`, `stordiag`, `wab.exe`, `msconfig`, `presentationsettings`,
+  `ieadvpack`, `iedll`, `infocard`, `migwiz`, `mshfp`, `scrcons`,
+  `makecab`, `replace.exe`, `te.exe`, `fsutil usn/behavior/reparsepoint/
+  objectid`, `gpresult /h`, `pubprn http`, `slmgr /x`,
+  `squirrel --update`, `at.exe \\\\host`).
+
+- **Persistence-write path coverage (P11)**: the append/tee write rule
+  now also fires on `~/.ssh/rc`, `/etc/update-motd.d`, `/etc/pam.d`,
+  `sshd_config`, `/etc/rc.d`, `~/.config/systemd/user`,
+  `/etc/udev/rules.d`, `/etc/sysctl.d`, `/etc/ld.so.conf.d`,
+  `/etc/pacman.d`, `/etc/environment`, `/etc/timezone`, `/etc/hosts`,
+  `/etc/resolv.conf`, `nsswitch.conf`, `~/.vimrc`, `~/.tmux.conf`,
+  `config.fish`, `~/.netrc`, `~/.rhosts`, `hosts.equiv`, `~/.npmrc`,
+  `~/.curlrc`, `~/.gitconfig` — shell-init, auth-store, DNS-poison and
+  tool-config persistence paths that previously slipped through.
+
+### Fixed
+
+- `P11` regression guard: `/etc/zshrc` and `/etc/zprofile` write-append
+  entries restored after a refactor dropped them (test-gap caught).
+- Gate tuning for routine-verdict collisions: `tc` needles now require
+  write verbs (bare `tc qdisc show` stays clean), `perf` drops `top`/
+  `stat` (live/stats benigns) keeping `script`/`trace`/`probe`/`sched`,
+  `oprofile`/`stap`/`braa`/`mycli`/`frp` get boundary treatment
+  (`noprofile`/`stapler`/`braai`/`myclient` word-internal FP closed),
+  `tinc`/`tkn`/`skaffold` use flag/verb gates so `--version` benigns
+  stay clean, `netns` requires `exec`, `capsh` drops `--print`
+  (capability listing is routine), `fsutil` drops the ` file` subkey
+  (`query`/`createnew` benigns), and `rasdial`/`tttracer`/`expand`
+  were removed as weak signals that collided with existing benigns.
+
+
 ### Added (cycle-246)
 
 - **Paste-detector breadth — management & attack surface closure**

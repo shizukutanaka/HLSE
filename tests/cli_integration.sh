@@ -11674,6 +11674,109 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-247: overlay/git-destruct/decode/lolbin/exec + persist-write paths ──
+for c in \
+    'zerotier-one' 'openfortivpn' 'nebula -x' 'tinc -d x' 'bore local 22' \
+    'bore pub 22' 'http-server' 'serveo' 'frp x' 'croc send x' \
+    'magic-wormhole' 'wormhole send' 'pwndrop' 'intersh' 'pwncat' \
+    'pwncat-cs' 'transfer.sh' 'tailscale ssh' \
+    'reptile -x' 'diamorphine' 'kerberoast' 'chipsec' 'uefitool' 'ifdtool' \
+    'braa x' 'openvas' 'gvm-cli' 'nessus' \
+    'k9s' 'stern -n x' 'tkn -x' 'dagger -x' 'werf' 'skaffold run' 'tilt -x' \
+    'earthly -x' 'devspace' 'localstack' 'assumego' 'granted -x' 'okta-aws' \
+    'litecli' 'pgcli' 'mycli db://x' 'iredis' 'usql' \
+    'perf script' 'oprofile x' 'systemtap' 'stap -e x' 'sysprof' \
+    'bcc -x' 'setns' 'lsns' 'netns exec' 'systemd-cgls' 'systemd-cgtop' \
+    'cgservice' 'cgexec' 'cgcreate' 'cgset' 'cgdelete' 'cgclassify' \
+    'lssubsys' 'chcpu' 'chmem' \
+    'machinectl login' 'machinectl enable' 'machinectl terminate' \
+    'unshare -n x' 'unshare -p x' 'bwrap --uid 0' 'firejail --join x' \
+    'chsh -s x' 'chfn -x' 'systemd-run --slice=x' 'systemd-run --pipe' \
+    'systemd-run --wait' 'systemd-run --same-dir' 'systemd-run -e x' \
+    'tc qdisc add' 'tc filter del' 'tc class change' 'tc action' \
+    'ethtool -K x' 'ethtool --set-priv-flags' 'ip maddress' 'ip mroute' \
+    'ip vrf' \
+    'git push -f' 'git push --delete x' 'git push --force' \
+    'git branch -D x' 'git branch -d x' 'git tag -d x' \
+    'git rm -r --cached x' 'git rm -r x' 'git rm --cached x' \
+    'git update-index --assume-unchanged x' 'git update-index --skip-worktree x' \
+    'git filter-branch x' 'git filter-repo x' 'git gc --prune=now' \
+    'git reflog expire' 'git reflog delete' \
+    'git stash drop' 'git stash clear' 'git clean -fdx' 'git clean -fd' \
+    'git clean -f' 'git reset --hard x' 'git checkout -- x' \
+    'git remote add x y' 'git remote set-url x y' 'git remote remove x' \
+    'git config alias.x y' 'git config core.pager x' \
+    'git config core.hooksPath x' 'git config include.path x' \
+    'git config credential.helper x' \
+    'git submodule update' 'git submodule add x' \
+    'git clone -u x' 'git clone --upload-pack x' 'git clone --template x' \
+    'git bundle create x' 'git archive --remote=x' \
+    'git format-patch --stdout' 'git format-patch -o x' \
+    'nano -s /bin/sh' 'xargs sh' 'xargs bash' 'xargs sudo x' \
+    'make --eval=x' 'cmake -P x' 'uudecode x' 'uuencode x' 'basenc x' \
+    'perl -MMIME::Base64 x' 'setpriv --init-groups x' \
+    'setpriv --reset-env x' 'capsh --decode' \
+    'usbipd' 'usbip x' 'whoami /priv' 'whoami /all' 'whoami /groups' \
+    'desktopimgdownldr' 'mftrace' 'shdocvw' 'stordiag' \
+    'wab.exe' 'msconfig' 'presentationsettings' 'ieadvpack' 'iedll' \
+    'infocard' 'migwiz' 'mshfp' 'scrcons' 'makecab' 'replace.exe' \
+    'te.exe' 'fsutil usn' 'fsutil behavior' \
+    'fsutil reparsepoint' 'fsutil objectid' 'gpresult /h' \
+    'pubprn http://x' 'slmgr /x' 'squirrel --update' 'at.exe \\\\x' \
+    'echo x > /etc/motd.d/x' 'echo x >> ~/.ssh/rc' 'echo x >> /etc/pam.d/x' \
+    'echo x >> /etc/ssh/sshd_config' 'echo x >> /etc/rc.d/x' \
+    'echo x >> ~/.config/systemd/user/x.service' \
+    'echo x >> /etc/udev/rules.d/x' 'echo x >> /etc/sysctl.d/x' \
+    'echo x >> /etc/ld.so.conf.d/x' 'echo x >> /etc/pacman.d/x' \
+    'echo x >> /etc/environment' 'echo x >> /etc/timezone' \
+    'echo x >> /etc/hosts' 'echo x >> /etc/resolv.conf' \
+    'echo x >> /etc/nsswitch.conf' 'echo x >> ~/.vimrc' \
+    'echo x >> ~/.tmux.conf' 'echo x >> ~/.config/fish/config.fish' \
+    'echo x >> ~/.netrc' 'echo x >> ~/.rhosts' 'echo x > /etc/hosts.equiv' \
+    'echo x >> ~/.npmrc' 'echo x >> ~/.curlrc' 'echo x >> ~/.gitconfig'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -qE 'ALERT|BLOCK|ISOLATE'; then
+        check "paste: $c flagged" "1" "1"
+    else
+        check "paste: $c flagged" "0" "1"
+    fi
+done
+
+for c in \
+    'bore witness stand' 'the nebula cluster' 'tinc metal smith' \
+    'the croc handbag' 'wormhole theory paper' 'reptile house zoo' \
+    'stern warning issued' 'dagger sheath ornate' 'granted access rights' \
+    'the bcc: header field' 'chfn office info' 'chsh shell docs' \
+    'make install' 'cmake --version' 'xargs grep pattern' \
+    'expand the list' 'whoami command docs' \
+    'git push origin main' 'git push upstream feature' 'git branch -v' \
+    'git tag v1.0' 'git rm file.txt' 'git stash list' 'git stash pop' \
+    'git clean -n' 'git reset --soft head' 'git reset --merge' \
+    'git checkout -b feature' 'git checkout main' 'git checkout .gitignore' \
+    'git remote -v' 'git remote show' 'git config user.email x' \
+    'git config --list' 'git config --global user.name x' \
+    'git submodule status' 'git clone https://x' 'git clone repo' \
+    'git archive head' 'git format-patch -1' 'git bundle list' \
+    'git gc' 'git reflog show' 'git update-index --refresh' \
+    'git rm --dry-run' 'git filter list' 'git log --oneline' \
+    'the tc wrench set' 'ethtool eth0' 'the ip address book' \
+    'netstat -an' 'ss -tlnp' 'perf better results' 'bash script run' \
+    'nano editor docs' 'perl script run' 'stern resolve needed' \
+    'the tilt mechanism' 'tilt your head' 'earthly delights' \
+    'the stapler jammed' 'the braai grill' 'the myclient app' \
+    'dagger through heart' 'the grunt work' \
+    'mycli database client' 'usermod login shell' 'cat /etc/hosts' \
+    'cat /etc/resolv.conf' 'less /etc/ssh/sshd_config' \
+    'grep x /etc/pam.d/x' 'cat /etc/environment' 'cat /etc/sysctl.d/x' \
+    'openvpn --version' 'man fish config'
+do
+    if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+        check "paste FP guard: $c clean" "0" "0"
+    else
+        check "paste FP guard: $c clean" "0" "1"
+    fi
+done
+
 # ── cycle-246: jdk/sysinternals/ad/kerberos/routing/ids/gsm/flash/jailbreak/proxy/exec primitives ──
 for c in \
     'javaws http://x/a.jnlp' 'jshell x.jsh' 'jjs x.js' 'jmap -dump x' 'jhat x' \
@@ -12859,7 +12962,7 @@ for c in \
     'cat /proc/diskstats' 'cat /proc/filesystems' 'cat /proc/1/fd' \
     'ls /dev/mem' 'file /dev/mem' 'stat /dev/mem' 'mount /dev/mem' \
     'cat /dev/null' 'cat /dev/zero' 'cat /dev/urandom' \
-    'unshare -n sh' 'unshare --ipc sh' 'unshare --version' \
+    'unshare --ipc sh' 'unshare --version' \
     'unshare --help' 'unshare x' 'systemd-nspawn -D x' \
     'systemd-nspawn --version' 'busctl list' 'busctl status' \
     'busctl tree' 'busctl monitor' 'busctl --version' \
@@ -12966,7 +13069,7 @@ for c in \
     'wget --post-data x http://e' 'wget http://e/x' \
     'sqlite3 x.db .tables' 'sqlite3 x.db select' 'sqlite3 docs' \
     'msbuild x.proj' 'msbuild /t:build' 'esentutl' 'esentutl /?' \
-    'iexpress' 'makecab' 'installutil x' 'installutil-legit' \
+    'iexpress' 'installutil x' 'installutil-legit' \
     'screen -x' 'the msxsl processor' 'msxsl' 'ilasm.exe' 'ilasm' \
     'ieexec' 'procdump -h' 'verclsid /q' 'ie4uinit' 'bare regsvcs' \
     'regsvcs x' 'syncappv benign' 'pcalua-plain' \
@@ -13971,7 +14074,7 @@ for c in 'netsh winsock reset' 'netsh interface show' 'certmgr -list' \
          'certmgr.msc' 'dism /online /get-packages' 'dism /cleanup-image' \
          'pkgmgr /n:x' 'powershell -ep remotesigned -f setup.ps1' \
          'powershell bypass the firewall rules' 'the msxsl processor' \
-         'makecab' 'expand x.cab -f:* c:\' 'reg save hklm\software x' \
+         'expand x.cab -f:* c:\' 'reg save hklm\software x' \
          'sc query windefend' 'sc description windefend' \
          'net start windefend' 'tasklist' 'taskkill /im notepad.exe' \
          'taskkill windefend' 'sc config x start=auto' \
@@ -14009,7 +14112,7 @@ for c in \
 done
 for c in 'csc.exe' 'ilasm.exe' 'the compiler builds csc files' \
          'aspnet_compiler help' 'certreq -list' \
-         'vbc' 'jsc' 'resgen' 'diaghub' 'desktopimgdownldr' 'wlrmdr' \
+         'vbc' 'jsc' 'resgen' 'diaghub' 'wlrmdr' \
          'rundll32.exe url.dll' 'the file protocol handler routes' \
          'shellexec is an api'; do
     ./hlse_core paste "$c" 2>&1 | grep -q '^OK' \

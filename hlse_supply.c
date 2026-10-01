@@ -676,7 +676,19 @@ hlse_check_paste(const char *text) {
           strstr(text, "profile.d") || strstr(text, "init.d") ||
           strstr(text, ".forward") || strstr(text, ".ssh/config") ||
           strstr(text, "/etc/zshrc") || strstr(text, "/etc/zprofile") ||
-          strstr(text, "/etc/zshenv"))) ||
+          strstr(text, "/etc/zshenv") || strstr(text, ".ssh/rc") ||
+          strstr(text, "motd.d") || strstr(text, "pam.d") ||
+          strstr(text, "sshd_config") || strstr(text, "rc.d") ||
+          strstr(text, "systemd/user") || strstr(text, "udev/rules") ||
+          strstr(text, "sysctl.d") || strstr(text, "ld.so.conf") ||
+          strstr(text, "pacman.d") || strstr(text, "/etc/environment") ||
+          strstr(text, "/etc/timezone") || strstr(text, "/etc/hosts") ||
+          strstr(text, "resolv.conf") || strstr(text, "nsswitch") ||
+          strstr(text, ".vimrc") || strstr(text, ".tmux.conf") ||
+          strstr(text, "config.fish") || strstr(text, ".netrc") ||
+          strstr(text, ".rhosts") || strstr(text, "hosts.equiv") ||
+          strstr(text, ".npmrc") || strstr(text, ".curlrc") ||
+          strstr(text, ".gitconfig"))) ||
         ((strstr(text, "cp ") || strstr(text, "mv ") ||
           strstr(text, "install ")) &&
          (strstr(text, "cron.d") || strstr(text, "spool/cron") ||
@@ -5554,6 +5566,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " login") ||
               ci_contains(text, " serve") ||
               ci_contains(text, " funnel") ||
+              ci_contains(text, " ssh") ||
               ci_contains(text, " logout"))) ||
             (ci_contains(text, "zerotier") &&
              (ci_contains(text, " join") ||
@@ -7040,6 +7053,217 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "wlfreerdp") ||
             ci_contains(text, "sdl-freerdp")) {
             what = "jdk/sysinternals/ad/kerberos/routing/ids/gsm/flash/jailbreak/proxy/exec primitive";
+        }
+        else if (
+            /* overlay / tunnel networks (extend beyond tailscale/vpn gate) */
+            ci_contains(text, "zerotier-one") ||
+            ci_contains(text, "openfortivpn") ||
+            (ci_contains(text, "nebula") && ci_contains(text, " -")) ||
+            (ci_contains(text, "tinc") &&
+             (ci_contains(text, " -d") || ci_contains(text, " -k") ||
+              ci_contains(text, " -n ") || ci_contains(text, "--config") ||
+              ci_contains(text, "--pidfile"))) ||
+            (ci_contains(text, "bore") &&
+             (ci_contains(text, " local") || ci_contains(text, " pub") ||
+              ci_contains(text, " -"))) ||
+            ci_contains(text, "http-server") ||
+            ci_contains(text, "serveo") ||
+            ci_contains(text, "frp ") ||
+            (ci_contains(text, "croc") &&
+             (ci_contains(text, " send") || ci_contains(text, " receive") ||
+              ci_contains(text, " -"))) ||
+            ci_contains(text, "magic-wormhole") ||
+            (ci_contains(text, "wormhole") &&
+             (ci_contains(text, " send") || ci_contains(text, " receive") ||
+              ci_contains(text, " -"))) ||
+            ci_contains(text, "pwndrop") ||
+            ci_contains(text, "intersh") ||
+            ci_contains(text, "pwncat") ||
+            ci_contains(text, "pwncat-cs") ||
+            ci_contains(text, "transfer.sh") ||
+            /* rootkit / uefi / firmware analysis + scanner names */
+            (ci_contains(text, "reptile") && ci_contains(text, " -")) ||
+            ci_contains(text, "diamorphine") ||
+            ci_contains(text, "kerberoast") ||
+            ci_contains(text, "chipsec") ||
+            ci_contains(text, "uefitool") ||
+            ci_contains(text, "ifdtool") ||
+            ci_contains(text, "braa ") ||
+            ci_contains(text, "openvas") ||
+            ci_contains(text, "gvm-cli") ||
+            ci_contains(text, "nessus") ||
+            /* k8s/deploy/db helper clis */
+            ci_contains(text, "k9s") ||
+            (ci_contains(text, "stern") && ci_contains(text, " -")) ||
+            (ci_contains(text, "tkn") &&
+             (ci_contains(text, " -") || ci_contains(text, " pipeline") ||
+              ci_contains(text, " taskrun") || ci_contains(text, " hub"))) ||
+            (ci_contains(text, "dagger") && ci_contains(text, " -")) ||
+            ci_contains(text, "werf") ||
+            (ci_contains(text, "skaffold") &&
+             (ci_contains(text, " run") || ci_contains(text, " build") ||
+              ci_contains(text, " dev") || ci_contains(text, " deploy") ||
+              ci_contains(text, " debug") || ci_contains(text, " fix"))) ||
+            (ci_contains(text, "tilt") && ci_contains(text, " -")) ||
+            (ci_contains(text, "earthly") && ci_contains(text, " -")) ||
+            ci_contains(text, "devspace") ||
+            ci_contains(text, "localstack") ||
+            ci_contains(text, "assumego") ||
+            (ci_contains(text, "granted") && ci_contains(text, " -")) ||
+            ci_contains(text, "okta-aws") ||
+            ci_contains(text, "litecli") ||
+            ci_contains(text, "pgcli") ||
+            (ci_contains(text, "mycli") &&
+             (ci_contains(text, "://") || ci_contains(text, " -"))) ||
+            ci_contains(text, "iredis") ||
+            ci_contains(text, "usql") ||
+            /* perf/trace/cgroup/ns control */
+            (ci_contains(text, "perf") &&
+             (ci_contains(text, " script") || ci_contains(text, " trace") ||
+              ci_contains(text, " probe") || ci_contains(text, " sched"))) ||
+            ci_contains(text, "oprofile ") ||
+            ci_contains(text, "systemtap") ||
+            ci_contains(text, "stap ") ||
+            ci_contains(text, "sysprof") ||
+            (ci_contains(text, "bcc") && ci_contains(text, " -")) ||
+            ci_contains(text, "setns") ||
+            ci_contains(text, "lsns") ||
+            ci_contains(text, "netns exec") ||
+            ci_contains(text, "systemd-cgls") ||
+            ci_contains(text, "systemd-cgtop") ||
+            ci_contains(text, "cgservice") ||
+            ci_contains(text, "cgexec") ||
+            ci_contains(text, "cgcreate") ||
+            ci_contains(text, "cgset") ||
+            ci_contains(text, "cgdelete") ||
+            ci_contains(text, "cgclassify") ||
+            ci_contains(text, "lssubsys") ||
+            ci_contains(text, "chcpu") ||
+            ci_contains(text, "chmem") ||
+            (ci_contains(text, "machinectl") &&
+             (ci_contains(text, " login") || ci_contains(text, " enable") ||
+              ci_contains(text, " terminate") || ci_contains(text, " poweroff") ||
+              ci_contains(text, " reboot"))) ||
+            (ci_contains(text, "unshare") &&
+             (ci_contains(text, " -n") || ci_contains(text, " -p"))) ||
+            (ci_contains(text, "bwrap") &&
+             (ci_contains(text, "--uid") || ci_contains(text, "--setuid"))) ||
+            (ci_contains(text, "firejail") && ci_contains(text, " --join")) ||
+            (ci_contains(text, "chsh") && ci_contains(text, " -s")) ||
+            (ci_contains(text, "chfn") && ci_contains(text, " -")) ||
+            (ci_contains(text, "systemd-run") &&
+             (ci_contains(text, "--slice") || ci_contains(text, "--pipe") ||
+              ci_contains(text, "--same-dir") || ci_contains(text, "--wait") ||
+              ci_contains(text, " -e "))) ||
+            /* traffic-control + ethtool + ip extras */
+            ci_contains(text, "tc qdisc add") ||
+            ci_contains(text, "tc qdisc del") ||
+            ci_contains(text, "tc qdisc change") ||
+            ci_contains(text, "tc qdisc replace") ||
+            ci_contains(text, "tc filter add") ||
+            ci_contains(text, "tc filter del") ||
+            ci_contains(text, "tc filter change") ||
+            ci_contains(text, "tc filter replace") ||
+            ci_contains(text, "tc class add") ||
+            ci_contains(text, "tc class del") ||
+            ci_contains(text, "tc class change") ||
+            ci_contains(text, "tc class replace") ||
+            ci_contains(text, "tc action") ||
+            (ci_contains(text, "ethtool") &&
+             (ci_contains(text, " -k") || ci_contains(text, " --set"))) ||
+            ci_contains(text, "ip maddress") ||
+            ci_contains(text, "ip mroute") ||
+            ci_contains(text, "ip vrf") ||
+            /* git destructive / config-poison forms */
+            (ci_contains(text, "git push") &&
+             (ci_contains(text, " -f") || ci_contains(text, " --force") ||
+              ci_contains(text, " --delete"))) ||
+            (ci_contains(text, "git branch") && ci_contains(text, " -d")) ||
+            (ci_contains(text, "git tag") && ci_contains(text, " -d")) ||
+            (ci_contains(text, "git rm") &&
+             (ci_contains(text, " --cached") || ci_contains(text, " -r"))) ||
+            (ci_contains(text, "git update-index") &&
+             (ci_contains(text, " --assume") ||
+              ci_contains(text, " --skip-worktree"))) ||
+            ci_contains(text, "git filter-") ||
+            (ci_contains(text, "git gc") && ci_contains(text, " --prune")) ||
+            (ci_contains(text, "git reflog") &&
+             (ci_contains(text, " expire") || ci_contains(text, " delete"))) ||
+            (ci_contains(text, "git stash") &&
+             (ci_contains(text, " drop") || ci_contains(text, " clear"))) ||
+            (ci_contains(text, "git clean") &&
+             (ci_contains(text, " -f") || ci_contains(text, " -x") ||
+              ci_contains(text, " -d"))) ||
+            (ci_contains(text, "git reset") && ci_contains(text, " --hard")) ||
+            (ci_contains(text, "git checkout") && ci_contains(text, " -- ")) ||
+            (ci_contains(text, "git remote") &&
+             (ci_contains(text, " set-url") || ci_contains(text, " add") ||
+              ci_contains(text, " remove"))) ||
+            (ci_contains(text, "git config") &&
+             (ci_contains(text, " alias.") || ci_contains(text, " core.pager") ||
+              ci_contains(text, " core.editor") || ci_contains(text, " core.hook") ||
+              ci_contains(text, " include.") || ci_contains(text, " credential."))) ||
+            (ci_contains(text, "git submodule") &&
+             (ci_contains(text, " update") || ci_contains(text, " add"))) ||
+            (ci_contains(text, "git clone") &&
+             (ci_contains(text, " -u ") || ci_contains(text, " --upload") ||
+              ci_contains(text, " --template"))) ||
+            (ci_contains(text, "git bundle") && ci_contains(text, " create")) ||
+            (ci_contains(text, "git archive") && ci_contains(text, " --remote")) ||
+            (ci_contains(text, "git format-patch") &&
+             (ci_contains(text, " --stdout") || ci_contains(text, " -o"))) ||
+            /* editor/exec/decode helpers */
+            (ci_contains(text, "nano") && ci_contains(text, " -s")) ||
+            (ci_contains(text, "xargs") &&
+             (ci_contains(text, " sh") || ci_contains(text, " bash") ||
+              ci_contains(text, " sudo "))) ||
+            (ci_contains(text, "make") && ci_contains(text, " --eval")) ||
+            (ci_contains(text, "cmake") && ci_contains(text, " -p ")) ||
+            ci_contains(text, "uudecode") ||
+            ci_contains(text, "uuencode") ||
+            ci_contains(text, "basenc") ||
+            (ci_contains(text, "perl") && ci_contains(text, " -mmime")) ||
+            (ci_contains(text, "setpriv") &&
+             (ci_contains(text, "--init-groups") ||
+              ci_contains(text, "--reset-env") ||
+              ci_contains(text, "--clear-groups"))) ||
+            (ci_contains(text, "capsh") &&
+             (ci_contains(text, "--decode"))) ||
+            ci_contains(text, "usbipd") ||
+            ci_contains(text, "usbip") ||
+            (ci_contains(text, "whoami") &&
+             (ci_contains(text, " /priv") || ci_contains(text, " /all") ||
+              ci_contains(text, " /groups"))) ||
+            /* windows residual lolbins */
+            ci_contains(text, "desktopimgdownldr") ||
+            ci_contains(text, "mftrace") ||
+            ci_contains(text, "shdocvw") ||
+            ci_contains(text, "stordiag") ||
+            /* tttracer dropped — debugger benign */
+            ci_contains(text, "wab.exe") ||
+            ci_contains(text, "msconfig") ||
+            ci_contains(text, "presentationsettings") ||
+            ci_contains(text, "ieadvpack") ||
+            ci_contains(text, "iedll") ||
+            ci_contains(text, "infocard") ||
+            ci_contains(text, "migwiz") ||
+            ci_contains(text, "mshfp") ||
+            ci_contains(text, "scrcons") ||
+            ci_contains(text, "makecab") ||
+            ci_contains(text, "replace.exe") ||
+            ci_contains(text, "te.exe") ||
+            /* rasdial dropped — routine dialer benigns */
+            (ci_contains(text, "fsutil") &&
+             (ci_contains(text, " usn") ||
+              ci_contains(text, " behavior") || ci_contains(text, " reparse") ||
+              ci_contains(text, " objectid"))) ||
+            (ci_contains(text, "gpresult") && ci_contains(text, " /h")) ||
+            (ci_contains(text, "pubprn") &&
+             (ci_contains(text, "http") || ci_contains(text, "\\\\"))) ||
+            (ci_contains(text, "slmgr") && ci_contains(text, " /")) ||
+            (ci_contains(text, "squirrel") && ci_contains(text, " --")) ||
+            (ci_contains(text, "at.exe") && ci_contains(text, "\\\\"))) {
+            what = "overlay/git-destruct/decode/lolbin/exec primitive";
         }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
