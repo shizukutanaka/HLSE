@@ -12386,6 +12386,65 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pdfdetach") || ci_contains(text, "pdfunite") ||
              ci_contains(text, "pdfseparate") || ci_contains(text, "pdftocairo")) {
         what = "tex/bib/ps/pdf primitive";
+        } else if (
+             /* cycle-281a: gamedev/2d-anim/voxel/eda primitives */
+             ci_contains(text, "defold") || ci_contains(text, "aseprite") ||
+             ci_contains(text, "libresprite") ||
+             (ci_contains(text, "tiled") && ci_contains(text, " -")) ||
+             ci_contains(text, "ldtk") || ci_contains(text, "opentoonz") ||
+             ci_contains(text, "synfig") ||
+             (ci_contains(text, "enve") && ci_contains(text, " -")) ||
+             ci_contains(text, "goxel") ||
+             (ci_contains(text, "natron") && ci_contains(text, " -")) ||
+             ci_contains(text, "pencil2d") || ci_contains(text, "pcbnew") ||
+             ci_contains(text, "eeschema") || ci_contains(text, "gerbv") ||
+             ci_contains(text, "pcb-rnd") || ci_contains(text, "gnetlist") ||
+             (ci_contains(text, "qucs") && ci_contains(text, " -")) ||
+             ci_contains(text, "ngspice") || ci_contains(text, "xyce") ||
+             ci_contains(text, "gnucap") ||
+             (ci_contains(text, "magic") && ci_contains(text, " -")) ||
+             ci_contains(text, "klayout")) {
+        what = "gamedev/2d-anim/voxel/eda primitive";
+        } else if (
+             /* cycle-281b: flightsim/virtualworld/mud-bbs/term/fuzzy/disk primitives */
+             ci_contains(text, "jsbsim") || ci_contains(text, "fgfs") ||
+             ci_contains(text, "fgcom") || ci_contains(text, "opensimulator") ||
+             ci_contains(text, "tintin++") || ci_contains(text, "tinyfugue") ||
+             ci_contains(text, "synchronet") ||
+             (ci_contains(text, "mystic") && ci_contains(text, " -")) ||
+             ci_contains(text, "binkd") || ci_contains(text, "mtm") ||
+             (ci_contains(text, "fzy") && ci_contains(text, " -")) ||
+             ci_contains(text, "zoxide") ||
+             (ci_contains(text, "fasd") && ci_contains(text, " -")) ||
+             (ci_contains(text, "dust") && ci_contains(text, " -")) ||
+             (ci_contains(text, "duf") && ci_contains(text, " -")) ||
+             ci_contains(text, "dua-cli") || ci_contains(text, "erdtree")) {
+        what = "flightsim/virtualworld/mud-bbs/term/fuzzy/disk primitive";
+        } else if (
+             /* cycle-281c: structdata/csv/diff/watch/init primitives */
+             (ci_contains(text, "jaq") && ci_contains(text, " -")) ||
+             ci_contains(text, "jello") ||
+             (ci_contains(text, "jc") && ci_contains(text, " -")) ||
+             ci_contains(text, "dasel") ||
+             (ci_contains(text, "yj") && ci_contains(text, " -")) ||
+             ci_contains(text, "toml-cli") || ci_contains(text, "gron") ||
+             (ci_contains(text, "fq") && ci_contains(text, " -")) ||
+             (ci_contains(text, "xq") && ci_contains(text, " -")) ||
+             (ci_contains(text, "fx") && ci_contains(text, " -")) ||
+             (ci_contains(text, "xsv") && ci_contains(text, " -")) ||
+             (ci_contains(text, "miller") && ci_contains(text, " -")) ||
+             ci_contains(text, "in2csv") || ci_contains(text, "ssconvert") ||
+             ci_contains(text, "diffstat") || ci_contains(text, "colordiff") ||
+             ci_contains(text, "icdiff") || ci_contains(text, "difft") ||
+             (ci_contains(text, "delta") && ci_contains(text, " -") &&
+              !ci_contains(text, "deltav")) ||
+             ci_contains(text, "wdiff") || ci_contains(text, "dwdiff") ||
+             ci_contains(text, "grepdiff") ||
+             (ci_contains(text, "meld") && ci_contains(text, " -")) ||
+             ci_contains(text, "kdiff3") || ci_contains(text, "modd") ||
+             (ci_contains(text, "s6") && ci_contains(text, " -")) ||
+             (ci_contains(text, "supervise") && ci_contains(text, " -"))) {
+        what = "structdata/csv/diff/watch/init primitive";
         }
 
         if (what) {
