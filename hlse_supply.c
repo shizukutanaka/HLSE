@@ -10665,6 +10665,99 @@ hlse_check_paste(const char *text) {
         what = "web3/memdump/credview/token/ad-aux/obfuscate/wordlist/vm primitive";
         }
 
+        /* cycle-261: esxi/msc-cpl/macos/devops/disk-quota/init-log/fw primitives */
+        else if (
+             /* esxi / vsphere */
+             ci_contains(text, "ovftool") || ci_contains(text, "vicfg-") ||
+             ci_contains(text, "vim-cmd") || ci_contains(text, "powercli") ||
+             ci_contains(text, "connect-viserver") || ci_contains(text, "vmconnect") ||
+             ci_contains(text, "vmwp") ||
+             /* windows msc / cpl / misc admin */
+             ci_contains(text, "rasdial") ||
+             (ci_contains(text, "w32tm") &&
+              (ci_contains(text, " /resync") || ci_contains(text, " /register") ||
+               ci_contains(text, " /unregister") || ci_contains(text, " /stripchart"))) ||
+             ci_contains(text, "dsamain") || ci_contains(text, "adsiedit") ||
+             ci_contains(text, "cliconfg") || ci_contains(text, "compmgmt.msc") ||
+             ci_contains(text, "diskmgmt.msc") || ci_contains(text, "services.msc") ||
+             ci_contains(text, "taskschd.msc") || ci_contains(text, "gpedit.msc") ||
+             ci_contains(text, "secpol.msc") || ci_contains(text, "lusrmgr.msc") ||
+             ci_contains(text, "certmgr.msc") || ci_contains(text, "certlm.msc") ||
+             ci_contains(text, "certim.msc") || ci_contains(text, "fsmgmt.msc") ||
+             ci_contains(text, "wf.msc") || ci_contains(text, "rsop.msc") ||
+             ci_contains(text, "tpm.msc") || ci_contains(text, "virtmgmt.msc") ||
+             ci_contains(text, "printmanagement.msc") || ci_contains(text, "azman.msc") ||
+             ci_contains(text, "comexp.msc") || ci_contains(text, "netplwiz") ||
+             ci_contains(text, "control userpasswords2") || ci_contains(text, "sysprep") ||
+             ci_contains(text, "inetcpl.cpl") || ci_contains(text, "ncpa.cpl") ||
+             ci_contains(text, "appwiz.cpl") || ci_contains(text, "main.cpl") ||
+             ci_contains(text, "timedate.cpl") || ci_contains(text, "mmsys.cpl") ||
+             (ci_contains(text, "powerpnt") && ci_contains(text, " /m")) ||
+             ci_contains(text, "acrord32") || ci_contains(text, "foxitreader") ||
+             ci_contains(text, "outlook.exe") || ci_contains(text, "msimn") ||
+             /* macos dev / misc */
+             (ci_contains(text, "swift ") &&
+              (ci_contains(text, " -e") || ci_contains(text, " build") ||
+               ci_contains(text, " run"))) ||
+             (ci_contains(text, "carthage") && ci_contains(text, " -")) ||
+             (ci_contains(text, "xed") && ci_contains(text, " -") &&
+              !ci_contains(text, "fixed")) ||
+             (ci_contains(text, "xcrun") && ci_contains(text, " -")) ||
+             (ci_contains(text, "sips") && ci_contains(text, " -")) ||
+             ci_contains(text, "caffeinate") || ci_contains(text, "scselect") ||
+             ci_contains(text, "textutil") || ci_contains(text, "pod install") ||
+             /* ios signing / delivery toolchain */
+             (ci_contains(text, "fastlane") && ci_contains(text, " -")) ||
+             (ci_contains(text, "sigh") && ci_contains(text, " -")) ||
+             (ci_contains(text, "gym") && ci_contains(text, " -")) ||
+             (ci_contains(text, "match") && ci_contains(text, " -")) ||
+             (ci_contains(text, "deliver") && ci_contains(text, " -")) ||
+             (ci_contains(text, "pilot") && ci_contains(text, " -")) ||
+             (ci_contains(text, "snapshot") && ci_contains(text, " -")) ||
+             (ci_contains(text, "screengrab") && ci_contains(text, " -")) ||
+             (ci_contains(text, "pem ") && ci_contains(text, " -") &&
+              !ci_contains(text, ".pem")) ||
+             /* disk quota / fs maintenance */
+             ci_contains(text, "accton") || ci_contains(text, "quotacheck") ||
+             ci_contains(text, "edquota") || ci_contains(text, "setquota") ||
+             ci_contains(text, "quotaon") || ci_contains(text, "repquota") ||
+             ci_contains(text, "vgcreate") || ci_contains(text, "lvcreate") ||
+             ci_contains(text, "vgreduce") || ci_contains(text, "pvmove") ||
+             ci_contains(text, "sfdisk") || ci_contains(text, "gdisk") ||
+             ci_contains(text, "smartd") || ci_contains(text, "dumpe2fs") ||
+             ci_contains(text, "btrfsck") || ci_contains(text, "fsadm") ||
+             ci_contains(text, "mdev") || ci_contains(text, "modinfo") ||
+             ci_contains(text, "setpci") ||
+             /* account / log maintenance */
+             ci_contains(text, "groupadd") || ci_contains(text, "groupmod") ||
+             ci_contains(text, "grpck") || ci_contains(text, "pwck") ||
+             ci_contains(text, "faillog") ||
+             (ci_contains(text, "pinky") && ci_contains(text, " -")) ||
+             ci_contains(text, "scriptreplay") || ci_contains(text, "klogd") ||
+             ci_contains(text, "metalog") || ci_contains(text, "socklog") ||
+             ci_contains(text, "svlogd") || ci_contains(text, "rotatelogs") ||
+             ci_contains(text, "multilog") ||
+             /* init / cron variants */
+             ci_contains(text, "openrc") || ci_contains(text, "runit-init") ||
+             ci_contains(text, "fcron") || ci_contains(text, "dcron") ||
+             ci_contains(text, "atq") ||
+             (ci_contains(text, "batch ") && ci_contains(text, " -") &&
+              !ci_contains(text, "--help")) ||
+             /* vpn / firewall extras */
+             ci_contains(text, "charon-cmd") ||
+             (ci_contains(text, "charon") && ci_contains(text, " -")) ||
+             ci_contains(text, "pptp") || ci_contains(text, "snx") ||
+             ci_contains(text, "ip6tables") ||
+             (ci_contains(text, "nft") &&
+              (ci_contains(text, " add ") || ci_contains(text, " flush") ||
+               ci_contains(text, " delete ") || ci_contains(text, " -"))) ||
+             ci_contains(text, "arptables") || ci_contains(text, "shorewall") ||
+             (ci_contains(text, "ferm") &&
+              (ci_contains(text, " -") || ci_contains(text, " .conf"))) ||
+             ci_contains(text, "firehol")) {
+        what = "esxi/msc-cpl/macos/fastlane/disk-quota/init-log/fw primitive";
+        }
+
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
         }
