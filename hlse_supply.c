@@ -11932,6 +11932,121 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "gramps") && ci_contains(text, " -")) ||
              ci_contains(text, "webtrees")) {
         what = "notebook/data-eng/db-client/data-quality/cdc/bi/spreadsheet/forms/diagram/rss/podcast/ebook/comics/recipe/finance/library/genealogy primitive";
+        } else if (
+             /* cycle-275a: nvr-surveillance/iptv/playout/webrtc-sfu/edu
+                primitives */
+             (ci_contains(text, "frigate") && ci_contains(text, " -")) ||
+             ci_contains(text, "viseron") || ci_contains(text, "kerberos-agent") ||
+             ci_contains(text, "bluecherry") || ci_contains(text, "shinobi") ||
+             ci_contains(text, "scrypted") || ci_contains(text, "tvheadend") ||
+             (ci_contains(text, "vdr") && ci_contains(text, " -") &&
+              !ci_contains(text, "vdr-")) ||
+             ci_contains(text, "mythbackend") || ci_contains(text, "nextpvr") ||
+             ci_contains(text, "dvbscan") || ci_contains(text, "w_scan") ||
+             ci_contains(text, "casparcg") || ci_contains(text, "red5") ||
+             ci_contains(text, "mistserver") || ci_contains(text, "antmedia") ||
+             ci_contains(text, "livekit-server") || ci_contains(text, "mediasoup") ||
+             ci_contains(text, "janus-gateway") || ci_contains(text, "ion-sfu") ||
+             ci_contains(text, "openvidu") ||
+             (ci_contains(text, "galene") && ci_contains(text, " -")) ||
+             ci_contains(text, "jitsi-videobridge") || ci_contains(text, "jicofo") ||
+             ci_contains(text, "jigasi") || ci_contains(text, "chamilo") ||
+             (ci_contains(text, "ilias") && ci_contains(text, " -"))) {
+        what = "nvr-surveillance/iptv/playout/webrtc-sfu/edu primitive";
+        } else if (
+             /* cycle-275b: video-encode/subtitle/music-prod/tracker/
+                audio-analysis/asr/diarize/voice-clone/noise primitives */
+             ci_contains(text, "kdenlive-render") || ci_contains(text, "lossless-cut") ||
+             ci_contains(text, "ab-av1") || ci_contains(text, "svt-av1") ||
+             ci_contains(text, "rav1e") || ci_contains(text, "x264") ||
+             ci_contains(text, "x265") || ci_contains(text, "kvazaar") ||
+             ci_contains(text, "vvenc") || ci_contains(text, "av1an") ||
+             ci_contains(text, "vmaf") ||
+             (ci_contains(text, "gaupol") && ci_contains(text, " -")) ||
+             ci_contains(text, "subtitlecomposer") || ci_contains(text, "ccextractor") ||
+             ci_contains(text, "ffsubsync") ||
+             (ci_contains(text, "alass") && ci_contains(text, " -")) ||
+             ci_contains(text, "lmms") ||
+             (ci_contains(text, "ardour") && ci_contains(text, " -")) ||
+             (ci_contains(text, "hydrogen") && ci_contains(text, " -") &&
+              !ci_contains(text, "hydrogen-")) ||
+             ci_contains(text, "zrythm") ||
+             (ci_contains(text, "carla") && ci_contains(text, " -")) ||
+             (ci_contains(text, "cadence") && ci_contains(text, " -")) ||
+             ci_contains(text, "non-sequencer") || ci_contains(text, "rosegarden") ||
+             ci_contains(text, "musescore") ||
+             (ci_contains(text, "denemo") && ci_contains(text, " -")) ||
+             ci_contains(text, "lilypond") ||
+             (ci_contains(text, "frescobaldi") && ci_contains(text, " -")) ||
+             ci_contains(text, "pt2-clone") || ci_contains(text, "ft2-clone") ||
+             (ci_contains(text, "furnace") && ci_contains(text, " -")) ||
+             ci_contains(text, "0cc-famitracker") || ci_contains(text, "hivelytracker") ||
+             ci_contains(text, "sonic-annotator") || ci_contains(text, "aubio") ||
+             ci_contains(text, "yaafe") || ci_contains(text, "bextract") ||
+             ci_contains(text, "deepspeech") || ci_contains(text, "pocketsphinx") ||
+             (ci_contains(text, "kaldi") && ci_contains(text, " -")) ||
+             (ci_contains(text, "julius") && ci_contains(text, " -")) ||
+             ci_contains(text, "pyannote") || ci_contains(text, "resemblyzer") ||
+             ci_contains(text, "so-vits-svc") || ci_contains(text, "tortoise-tts") ||
+             ci_contains(text, "rnnoise") || ci_contains(text, "deepfilternet")) {
+        what = "video-encode/subtitle/music-prod/tracker/audio-analysis/asr/diarize/voice-clone/noise primitive";
+        } else if (
+             /* cycle-275c: emulation/game-port/vintage-sim/mcu-sim/ebpf/
+                crashdump/boot-trace/secureboot primitives */
+             ci_contains(text, "dosbox-x") || ci_contains(text, "dosbox-staging") ||
+             ci_contains(text, "fuse-emu") ||
+             (ci_contains(text, "vice") && ci_contains(text, " -") &&
+              !ci_contains(text, "vice-") && !ci_contains(text, "service") &&
+              !ci_contains(text, "advice") && !ci_contains(text, "device")) ||
+             ci_contains(text, "fs-uae") || ci_contains(text, "hatari") ||
+             (ci_contains(text, "stella") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mess") && ci_contains(text, " -") &&
+              !ci_contains(text, "messag")) ||
+             ci_contains(text, "desmume") || ci_contains(text, "melonds") ||
+             (ci_contains(text, "citra") && ci_contains(text, " -")) ||
+             (ci_contains(text, "yuzu") && ci_contains(text, " -")) ||
+             ci_contains(text, "ryujinx") ||
+             (ci_contains(text, "cemu") && ci_contains(text, " -")) ||
+             ci_contains(text, "rpcs3") ||
+             (ci_contains(text, "xemu") && ci_contains(text, " -")) ||
+             ci_contains(text, "duckstation") || ci_contains(text, "flycast") ||
+             ci_contains(text, "redream") ||
+             (ci_contains(text, "higan") && ci_contains(text, " -")) ||
+             ci_contains(text, "bsnes") || ci_contains(text, "snes9x") ||
+             ci_contains(text, "zsnes") || ci_contains(text, "fceux") ||
+             ci_contains(text, "nestopia") || ci_contains(text, "gambatte") ||
+             ci_contains(text, "mgba") ||
+             (ci_contains(text, "vbam") && ci_contains(text, " -")) ||
+             ci_contains(text, "ppsspp") ||
+             (ci_contains(text, "jpcsp") && ci_contains(text, " -")) ||
+             ci_contains(text, "openemu") || ci_contains(text, "openxcom") ||
+             ci_contains(text, "ufoai") || ci_contains(text, "openmw") ||
+             ci_contains(text, "openra") || ci_contains(text, "openage") ||
+             ci_contains(text, "wesnoth") || ci_contains(text, "openttd") ||
+             ci_contains(text, "simutrans") || ci_contains(text, "openrct2") ||
+             ci_contains(text, "openloco") || ci_contains(text, "corsixth") ||
+             ci_contains(text, "openbve") || ci_contains(text, "flightgear") ||
+             ci_contains(text, "vdrift") || ci_contains(text, "speed-dreams") ||
+             (ci_contains(text, "torcs") && ci_contains(text, " -")) ||
+             ci_contains(text, "supertuxkart") || ci_contains(text, "tuxpaint") ||
+             ci_contains(text, "dosemu") || ci_contains(text, "dosemu2") ||
+             ci_contains(text, "basilisk2") || ci_contains(text, "sheepshaver") ||
+             (ci_contains(text, "simh") && ci_contains(text, " -")) ||
+             (ci_contains(text, "klh10") && ci_contains(text, " -")) ||
+             ci_contains(text, "hercules-390") || ci_contains(text, "s390-tools") ||
+             ci_contains(text, "open-simh") || ci_contains(text, "cool-retro-term") ||
+             ci_contains(text, "simavr") || ci_contains(text, "simulide") ||
+             ci_contains(text, "gpsim") || ci_contains(text, "simulavr") ||
+             ci_contains(text, "skyeye") ||
+             (ci_contains(text, "drgn") && ci_contains(text, " -")) ||
+             ci_contains(text, "bpfmenu") || ci_contains(text, "xdpdump") ||
+             ci_contains(text, "pcapplusplus") || ci_contains(text, "kubectl-trace") ||
+             (ci_contains(text, "pstack") && ci_contains(text, " -")) ||
+             ci_contains(text, "bootchart") || ci_contains(text, "bootchart2") ||
+             ci_contains(text, "systemd-bootchart") ||
+             (ci_contains(text, "fwts") && ci_contains(text, " -")) ||
+             ci_contains(text, "sbsigntool") || ci_contains(text, "sbverify")) {
+        what = "emulation/game-port/vintage-sim/mcu-sim/ebpf/crashdump/boot-trace/secureboot primitive";
         }
 
         if (what) {
