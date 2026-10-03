@@ -12648,7 +12648,8 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "fd ") && !ci_contains(text, "fdisk")) ||
              ci_contains(text, "fdfind") || ci_contains(text, "skim") ||
              (ci_contains(text, "picker") && ci_contains(text, " -")) ||
-             ci_contains(text, "navi") || ci_contains(text, "fff")) {
+             ci_contains(text, "navi ") || ci_contains(text, "navidrome") ||
+             ci_contains(text, "naviseccli") || ci_contains(text, "fff")) {
         what = "acct/sysfs/eeprom/i2c/gpio/udev/media/fuzzy primitive";
         } else if (
              /* cycle-288a: altvcs/patch/review/monorepo/build/task primitives */
@@ -13199,6 +13200,56 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "acesrender") || ci_contains(text, "byod") ||
              ci_contains(text, "libpd")) {
         what = "jack/midi/lv2 primitive";
+        } else if (
+             /* cycle-303a: ham-radio/dab primitives */
+             ci_contains(text, "hamlib") || ci_contains(text, "rigmem") ||
+             ci_contains(text, "rigswr") || ci_contains(text, "flrig") ||
+             ci_contains(text, "flnet") || ci_contains(text, "flarq") ||
+             ci_contains(text, "flicd") || ci_contains(text, "flwrap") ||
+             ci_contains(text, "radioclk") || ci_contains(text, "linpac") ||
+             ci_contains(text, "uz7ho") || ci_contains(text, "soundmodem") ||
+             ci_contains(text, "soundcardmodem") ||
+             ci_contains(text, "igatesoundmodem") ||
+             ci_contains(text, "aprsdroid") || ci_contains(text, "aprsgate") ||
+             ci_contains(text, "aprstt") || ci_contains(text, "aprsworld") ||
+             ci_contains(text, "dablin") || ci_contains(text, "dablin_gtk") ||
+             ci_contains(text, "dabreceiver") || ci_contains(text, "fs4") ||
+             ci_contains(text, "c2enc") || ci_contains(text, "c2dec") ||
+             ci_contains(text, "c2sim")) {
+        what = "ham-radio/dab primitive";
+        } else if (
+             /* cycle-303b: media-player/disc/codec primitives */
+             ci_contains(text, "mpv") || ci_contains(text, "mpvnet") ||
+             ci_contains(text, "mplayer") || ci_contains(text, "madplay") ||
+             ci_contains(text, "mpg123") || ci_contains(text, "mpg321") ||
+             ci_contains(text, "vlc") || ci_contains(text, "cvlc") ||
+             ci_contains(text, "nvlc") || ci_contains(text, "qvlc") ||
+             ci_contains(text, "rvlc") || ci_contains(text, "svlc") ||
+             ci_contains(text, "smplayer") || ci_contains(text, "avprobe") ||
+             ci_contains(text, "avplay") || ci_contains(text, "ffserver") ||
+             ci_contains(text, "ffms") || ci_contains(text, "ffms2") ||
+             ci_contains(text, "avfs") || ci_contains(text, "avfsd") ||
+             ci_contains(text, "avisynth") || ci_contains(text, "avisynth+") ||
+             ci_contains(text, "avslib") || ci_contains(text, "avsplus") ||
+             ci_contains(text, "vsutil") || ci_contains(text, "vspreview") ||
+             ci_contains(text, "ssimulacra2") || ci_contains(text, "aomenc") ||
+             ci_contains(text, "aomdec") || ci_contains(text, "dav1d") ||
+             ci_contains(text, "svtav1encapp") ||
+             ci_contains(text, "svtav1decapp") || ci_contains(text, "vif") ||
+             ci_contains(text, "vifdiff") || ci_contains(text, "vql") ||
+             ci_contains(text, "vqm") || ci_contains(text, "cdrecord") ||
+             ci_contains(text, "growisofs") || ci_contains(text, "k3b") ||
+             ci_contains(text, "gnomebaker") || ci_contains(text, "devede") ||
+             ci_contains(text, "dvd95") || ci_contains(text, "dvdshrink") ||
+             ci_contains(text, "dvdstyler") || ci_contains(text, "tovid") ||
+             ci_contains(text, "todisc") || ci_contains(text, "poweriso") ||
+             ci_contains(text, "ultraiso") || ci_contains(text, "imgburn") ||
+             ci_contains(text, "burnaware") || ci_contains(text, "acetoneiso") ||
+             ci_contains(text, "isomaster") || ci_contains(text, "isovfy") ||
+             ci_contains(text, "toolame") ||
+             (ci_contains(text, "nero") && ci_contains(text, " -")) ||
+             (ci_contains(text, "amok") && ci_contains(text, " -"))) {
+        what = "media-player/disc/codec primitive";
         }
 
         if (what) {
