@@ -10849,7 +10849,8 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 295):** sdk/dev/research + emu/game forensic-id primitives (22 needles): zld/sdps/ps4sdk/pspsdk/dkp/abnf2/lasp/lmn/whool/lmql/dspy/nomos + muos/myboy/3dmoo/lswm/fpps4/kyty/an2k/dwsq + saw/folk/ludo flag-gated.
+```- **ALERT 45 (cycle 296):** windows/aix admin + mail/telecom/shell-trick primitives (23 needles): umdh/sqlps/pwdadm/mkldap/mkps/vmo2/pfhd/lsnw/lsswsd + brace-expansion {ls,/{pwd, + mhn/pommo/lsoft/vmh/fmh/babyl/smsq/mmplay/mmw/mmz/snpp + whom flag-gated.
+- **ALERT 45 (cycle 295):** sdk/dev/research + emu/game forensic-id primitives (22 needles): zld/sdps/ps4sdk/pspsdk/dkp/abnf2/lasp/lmn/whool/lmql/dspy/nomos + muos/myboy/3dmoo/lswm/fpps4/kyty/an2k/dwsq + saw/folk/ludo flag-gated.
 - **ALERT 45 (cycle 294):** sys/net infra + media/music/game primitives (26 needles): sj3/kanaka/wnn/dladm/flowadm/fmadm/sdladm/s2both/mhvtl/mmdf/ospf6d/ztp/ztpd/ol2tpd/mpoad/mpoas + f3d/toktok/madmom/utau/kyma/mf2t/t2mf/havannah + huh/buzz flag-gated.
 - **ALERT 45 (cycle 293):** infra/mail/news/retro-server + asm/retro-toolchain/fuzzy/filelister primitives (44 needles): vmmss/msav/ssas/mssdmn/mssph/malwasm/389ds/sssd/pyspf/nntpd/btmp/papd/avmjump/ut99/bo2/jka/vdos/munt/np2 + ld65/da65/sp65/dasm/64tass/mads(!madsen)/vasm/z88dk/pasmo/sjasm/spyfu/fzf/autojump/tym/twtd/lsws/vls/bls/tlls/zls/dls/fzz/f2l/aol + tabs/polo/pls/hls flag-gated - 2 benigns moved to hits.
 - **ALERT 45 (cycle 292):** quantum/ai-model/wasm/formal-verif/ham/hdf/webrtc/stats/dvb/knit + dfir/diff/lsp/desktop/netauto/lightning primitives (22 needles): qvm/llava/wasm3/wavm/dafny/tlf/h5ls/jvb/autolab/pspp/mumudvb/ayab /abjad|hayabusa|napalm flag-gated + dyff/pylsp/awww/mdp/jaaa/qtvlm/lnd.

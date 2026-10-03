@@ -12873,6 +12873,25 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "an2k") || ci_contains(text, "dwsq") ||
              (ci_contains(text, "ludo") && ci_contains(text, " -"))) {
         what = "emu/game forensic-id primitive";
+        } else if (
+             /* cycle-296a: windows/aix admin primitives */
+             ci_contains(text, "umdh") || ci_contains(text, "sqlps") ||
+             ci_contains(text, "pwdadm") || ci_contains(text, "mkldap") ||
+             ci_contains(text, "mkps") || ci_contains(text, "vmo2") ||
+             ci_contains(text, "pfhd") || ci_contains(text, "lsnw") ||
+             ci_contains(text, "lsswsd")) {
+        what = "windows/aix admin primitive";
+        } else if (
+             /* cycle-296b: mail/telecom/shell-trick primitives */
+             ci_contains(text, "{ls,") || ci_contains(text, "{pwd,") ||
+             ci_contains(text, "mhn") || ci_contains(text, "pommo") ||
+             ci_contains(text, "lsoft") || ci_contains(text, "vmh") ||
+             ci_contains(text, "fmh") || ci_contains(text, "babyl") ||
+             ci_contains(text, "smsq") || ci_contains(text, "mmplay") ||
+             ci_contains(text, "mmw") || ci_contains(text, "mmz") ||
+             ci_contains(text, "snpp") ||
+             (ci_contains(text, "whom") && ci_contains(text, " -"))) {
+        what = "mail/telecom/shell-trick primitive";
         }
 
         if (what) {
