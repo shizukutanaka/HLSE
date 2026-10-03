@@ -13001,6 +13001,38 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "prefetch") && ci_contains(text, " -")) ||
              (ci_contains(text, "snippy") && ci_contains(text, " -"))) {
         what = "bioinformatics primitive";
+        } else if (
+             /* cycle-299a: embedded/mcu toolchain primitives */
+             ci_contains(text, "embsys") || ci_contains(text, "espup") ||
+             ci_contains(text, "gpiotest") || ci_contains(text, "hitec") ||
+             ci_contains(text, "libgpiod") || ci_contains(text, "mikrobasic") ||
+             ci_contains(text, "mikroc") || ci_contains(text, "mikropascal") ||
+             ci_contains(text, "mplab_ipe") || ci_contains(text, "pickit3") ||
+             ci_contains(text, "segger") || ci_contains(text, "tinyuf2") ||
+             ci_contains(text, "uf2conv") || ci_contains(text, "ttygif") ||
+             ci_contains(text, "ttyplot") ||
+             (ci_contains(text, "avarice") && ci_contains(text, " -")) ||
+             (ci_contains(text, "energia") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ozone") && ci_contains(text, " -")) ||
+             (ci_contains(text, "repart") && ci_contains(text, " -"))) {
+        what = "embedded/mcu toolchain primitive";
+        } else if (
+             /* cycle-299b: gpu/vendor telemetry primitives */
+             ci_contains(text, "amdgpu_top") || ci_contains(text, "cpupower") ||
+             ci_contains(text, "dcgm") || ci_contains(text, "dcgmi") ||
+             ci_contains(text, "dcgmnvml") || ci_contains(text, "gputil") ||
+             ci_contains(text, "intel_gpu_abrt") ||
+             ci_contains(text, "intel_gpu_frequency") ||
+             ci_contains(text, "intel_gpu_time") ||
+             ci_contains(text, "intel_reg") || ci_contains(text, "nvbandwidth") ||
+             ci_contains(text, "nvitop") ||
+             ci_contains(text, "rocm_agent_enumerator") ||
+             ci_contains(text, "rocm_bandwidth_test") ||
+             ci_contains(text, "rocm_smi_lib") || ci_contains(text, "rocminfo") ||
+             ci_contains(text, "ryzenadj") || ci_contains(text, "udevd") ||
+             ci_contains(text, "udisksd") || ci_contains(text, "upowerd") ||
+             ci_contains(text, "zenpower")) {
+        what = "gpu/vendor telemetry primitive";
         }
 
         if (what) {
