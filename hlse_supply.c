@@ -10361,7 +10361,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "crc") && ci_contains(text, " -")) ||
              ci_contains(text, "minishift") ||
              (ci_contains(text, "rosa") && ci_contains(text, " -")) ||
-             (ci_contains(text, "aro") && ci_contains(text, " -")) ||
+             (ci_contains(text, "aro") && ci_contains(text, " -") && !ci_contains(text, "paro")) ||
              ci_contains(text, "eksctl") || ci_contains(text, "aks-engine") ||
              ci_contains(text, "clusterawsadm") || ci_contains(text, "clusterctl") ||
              ci_contains(text, "kops") || ci_contains(text, "kubespray") ||
@@ -11207,6 +11207,96 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ufraw") || ci_contains(text, "enfuse") ||
              ci_contains(text, "luminance-hdr")) {
         what = "sqlnosql/kv/search/tsdb/bio/molecular/astro/p2p/ocr/doc/rawimg primitive";
+        } else if (
+             /* cycle-267a: de-config/panels/compositors/lock/idle/launchers/
+                notif/term-exec/filemgr/chatc2/voip primitives */
+             ci_contains(text, "xfconf-query") || ci_contains(text, "kwriteconfig") ||
+             ci_contains(text, "kreadconfig") || ci_contains(text, "plasmashell") ||
+             ci_contains(text, "tint2") || ci_contains(text, "polybar") ||
+             ci_contains(text, "waybar") || ci_contains(text, "lemonbar") ||
+             ci_contains(text, "xmobar") || ci_contains(text, "dzen2") ||
+             (ci_contains(text, "plank") && ci_contains(text, " -")) ||
+             ci_contains(text, "latte-dock") || ci_contains(text, "cairo-dock") ||
+             ci_contains(text, "picom") ||
+             (ci_contains(text, "compton") && ci_contains(text, " -")) ||
+             ci_contains(text, "xcompmgr") || ci_contains(text, "swaybg") ||
+             ci_contains(text, "hyprpaper") || ci_contains(text, "wpaperd") ||
+             ci_contains(text, "swww") || ci_contains(text, "i3lock") ||
+             ci_contains(text, "betterlockscreen") || ci_contains(text, "xsecurelock") ||
+             ci_contains(text, "xidlehook") || ci_contains(text, "hypridle") ||
+             (ci_contains(text, "rofi") && !ci_contains(text, "profi")) || ci_contains(text, "wofi") ||
+             ci_contains(text, "bemenu") || ci_contains(text, "dmenu") ||
+             ci_contains(text, "fuzzel") || ci_contains(text, "tofi") ||
+             (ci_contains(text, "walker") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mako") && ci_contains(text, " -")) ||
+             (ci_contains(text, "wired") && ci_contains(text, " -")) ||
+             ci_contains(text, "fnott") || ci_contains(text, "ghostty") ||
+             (ci_contains(text, "nnn") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ranger") && ci_contains(text, " -")) ||
+             ci_contains(text, "vifm") || ci_contains(text, "yazi") ||
+             ci_contains(text, "broot") || ci_contains(text, "xplr") ||
+             ci_contains(text, "konversation") || ci_contains(text, "quassel") ||
+             ci_contains(text, "matrix-commander") ||
+             (ci_contains(text, "toxic") && ci_contains(text, " -")) ||
+             ci_contains(text, "qtox") || ci_contains(text, "ratox") ||
+             ci_contains(text, "jami") || ci_contains(text, "linphone") ||
+             ci_contains(text, "ekiga") ||
+             (ci_contains(text, "twinkle") && ci_contains(text, " -"))) {
+        what = "de/panel/compositor/lock/idle/launcher/notif/termexec/filemgr/chat/voip primitive";
+        } else if (
+             /* cycle-267b: media/dl/torrent/arr/mediav/home-auto/finance/
+                gis/pim/notes primitives */
+             (ci_contains(text, "celluloid") && ci_contains(text, " -") && !ci_contains(text, "--help")) ||
+             (ci_contains(text, "parole") && ci_contains(text, " -") && !ci_contains(text, "--help")) ||
+             (ci_contains(text, "totem") && ci_contains(text, " -")) ||
+             ci_contains(text, "kodi-send") || ci_contains(text, "pyload") ||
+             (ci_contains(text, "persepolis") && ci_contains(text, " -")) ||
+             (ci_contains(text, "uget") && !ci_contains(text, "nuget")) || ci_contains(text, "mldonkey") ||
+             ci_contains(text, "amule") || ci_contains(text, "vuze") ||
+             ci_contains(text, "biglybt") ||
+             (ci_contains(text, "flood") && ci_contains(text, " -")) ||
+             ci_contains(text, "autobrr") || ci_contains(text, "cross-seed") ||
+             ci_contains(text, "nzbget") || ci_contains(text, "sabnzbd") ||
+             ci_contains(text, "sabnzbdplus") || ci_contains(text, "nzbhydra") ||
+             ci_contains(text, "sonarr") || ci_contains(text, "radarr") ||
+             ci_contains(text, "lidarr") || ci_contains(text, "readarr") ||
+             ci_contains(text, "prowlarr") || ci_contains(text, "jackett") ||
+             ci_contains(text, "bazarr") || ci_contains(text, "overseerr") ||
+             ci_contains(text, "tautulli") || ci_contains(text, "ombi") ||
+             ci_contains(text, "jellyfin") || ci_contains(text, "emby") ||
+             ci_contains(text, "navidrome") || ci_contains(text, "airsonic") ||
+             ci_contains(text, "ampache") || ci_contains(text, "funkwhale") ||
+             ci_contains(text, "mstream") || ci_contains(text, "hass-cli") ||
+             ci_contains(text, "openhab") || ci_contains(text, "domoticz") ||
+             ci_contains(text, "iobroker") || ci_contains(text, "node-red-admin") ||
+             ci_contains(text, "zigbee2mqtt") || ci_contains(text, "zwavejs") ||
+             ci_contains(text, "tasmota") || ci_contains(text, "wled") ||
+             ci_contains(text, "rhasspy") ||
+             (ci_contains(text, "piper") && ci_contains(text, " -")) ||
+             ci_contains(text, "openwakeword") ||
+             ci_contains(text, "ledger-cli") || ci_contains(text, "hledger") ||
+             (ci_contains(text, "beancount") && ci_contains(text, " -")) ||
+             (ci_contains(text, "fava") && ci_contains(text, " -")) ||
+             ci_contains(text, "gnucash-cli") || ci_contains(text, "firefly-iii") ||
+             ci_contains(text, "qgis") ||
+             (ci_contains(text, "grass") && ci_contains(text, " -")) ||
+             ci_contains(text, "saga_cmd") || ci_contains(text, "tippecanoe") ||
+             ci_contains(text, "tilemaker") || ci_contains(text, "osmium") ||
+             ci_contains(text, "osmconvert") ||
+             (ci_contains(text, "osmosis") && ci_contains(text, " -")) ||
+             ci_contains(text, "nominatim") ||
+             (ci_contains(text, "martin") && ci_contains(text, " -")) ||
+             ci_contains(text, "tileserver") || ci_contains(text, "pg_tileserv") ||
+             ci_contains(text, "khard") ||
+             (ci_contains(text, "khal") && ci_contains(text, " -")) ||
+             ci_contains(text, "todoman") || ci_contains(text, "vdirsyncer") ||
+             ci_contains(text, "calcurse") ||
+             (ci_contains(text, "nb") && ci_contains(text, " -") && !ci_contains(text, "nbt") && !ci_contains(text, "bound")) ||
+             ci_contains(text, "jrnl") ||
+             (ci_contains(text, "zk") && ci_contains(text, " -")) ||
+             (ci_contains(text, "trilium") && ci_contains(text, " -")) ||
+             ci_contains(text, "logseq")) {
+        what = "media/dl/torrent/arr/mediav/homeauto/finance/gis/pim/notes primitive";
         }
 
         if (what) {
