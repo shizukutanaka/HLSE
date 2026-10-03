@@ -8510,6 +8510,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "tarantool") || ci_contains(text, "cling") ||
             ci_contains(text, "cint") ||
             (ci_contains(text, "nim") &&
+             !ci_contains(text, "nimbus") &&
              (ci_contains(text, " r") || ci_contains(text, " c") ||
               ci_contains(text, " e") || ci_contains(text, " compile") ||
               ci_contains(text, " secret") || ci_contains(text, " js"))) ||
@@ -10873,6 +10874,64 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "memcached") || ci_contains(text, "k3s ") ||
              ci_contains(text, "k0s ") || ci_contains(text, "openshift-install")) {
         what = "vcs/sci/build/js/firmware/pwmgr/re/wsl/exfil/scan/aux primitive";
+        } else if (
+             /* cycle-263: capture/usb-serial/jvm-introspection/isolation/binmod/
+                win-deploy/mount-share/kernel-trace/mailer/pkg-build/tunnel/legacy-
+                remote/initramfs/debug-server primitives */
+             ci_contains(text, "clip.exe") || ci_contains(text, "xf86-screenshot") ||
+             ci_contains(text, "maimshot") || ci_contains(text, "paplay") ||
+             ci_contains(text, "obs-cli") || ci_contains(text, "gpu-screen-recorder") ||
+             ci_contains(text, "ffplay") || ci_contains(text, "kazam") ||
+             ci_contains(text, "simplescreenrecorder") || ci_contains(text, "vokoscreen") ||
+             ci_contains(text, "uhubctl") || ci_contains(text, "hidapi") ||
+             ci_contains(text, "libusb") || ci_contains(text, "pyusb") ||
+             ci_contains(text, "usb-modeswitch") || ci_contains(text, "usbguard") ||
+             (ci_contains(text, "tio ") &&
+              (ci_contains(text, " -") || ci_contains(text, " /dev"))) ||
+             (ci_contains(text, "cu ") &&
+              (ci_contains(text, " -") || ci_contains(text, " /dev"))) ||
+             ci_contains(text, "jstat") || ci_contains(text, "jfr ") ||
+             ci_contains(text, "async-profiler") || ci_contains(text, "cgget") ||
+             ci_contains(text, "prlimit") || ci_contains(text, "numactl") ||
+             ci_contains(text, "cpuset") || ci_contains(text, "dwarfdump") ||
+             ci_contains(text, "readelf") || ci_contains(text, "eu-readelf") ||
+             (ci_contains(text, "nm ") && ci_contains(text, " -") &&
+              !ci_contains(text, ".nm")) ||
+             ci_contains(text, "drvload") ||
+             ci_contains(text, "/add-provisionedpackage") ||
+             ci_contains(text, "mount.cifs") || ci_contains(text, "mount.nfs") ||
+             ci_contains(text, "gvfs-mount") || ci_contains(text, "mount -o loop") ||
+             ci_contains(text, "mount --bind") || ci_contains(text, "mount --rbind") ||
+             ci_contains(text, "mount -t tmpfs") || ci_contains(text, "losetup") ||
+             ci_contains(text, "cryptsetup open") || ci_contains(text, "dmsetup create") ||
+             ci_contains(text, "ftrace") || ci_contains(text, "kernelshark") ||
+             (ci_contains(text, "plymouth") && ci_contains(text, " -")) ||
+             (ci_contains(text, "lighthouse") && ci_contains(text, " -")) ||
+             (ci_contains(text, "prysm") && ci_contains(text, " -")) ||
+             ci_contains(text, "teku") ||
+             (ci_contains(text, "nimbus") && ci_contains(text, " -")) ||
+             ci_contains(text, "cardano-cli") ||
+             (ci_contains(text, "lessopen") && !ci_contains(text, "lessopen=")) ||
+             ci_contains(text, "neomutt") ||
+             (ci_contains(text, "shar ") && !ci_contains(text, "share") &&
+              !ci_contains(text, " pei")) ||
+             (ci_contains(text, "fpm ") &&
+              (ci_contains(text, " -") && !ci_contains(text, "--help"))) ||
+             ci_contains(text, "nfpm") ||
+             ci_contains(text, "goreleaser") || ci_contains(text, "jpackage") ||
+             ci_contains(text, "jmod") || ci_contains(text, "jdeps") ||
+             ci_contains(text, "jimage") || ci_contains(text, "zerotier-cli") ||
+             (ci_contains(text, "mesg ") && !ci_contains(text, "dmesg")) ||
+             (ci_contains(text, "wall ") &&
+              (ci_contains(text, " -") && !ci_contains(text, "firewall") &&
+               !ci_contains(text, "seawall") && !ci_contains(text, "wallpaper"))) ||
+             (ci_contains(text, "talk ") && ci_contains(text, " -")) ||
+             ci_contains(text, "ntalk") || ci_contains(text, "rwall") ||
+             ci_contains(text, "lsinitrd") || ci_contains(text, "unmkinitramfs") ||
+             ci_contains(text, "udevctl") || ci_contains(text, "llvm-objdump") ||
+             ci_contains(text, "gdbserver") || ci_contains(text, "lldb-server") ||
+             ci_contains(text, "sysdig-inspect") || ci_contains(text, "wireshark")) {
+        what = "capture/usb/jvm/isolation/binmod/deploy/mount/trace/mailer/tunnel primitive";
         }
 
         if (what) {
