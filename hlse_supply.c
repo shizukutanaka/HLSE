@@ -13118,6 +13118,49 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "drake") && ci_contains(text, " -")) ||
              (ci_contains(text, "ignition") && ci_contains(text, " -"))) {
         what = "robotics/simulation primitive";
+        } else if (
+             /* cycle-301a: archive/library/reference primitives */
+             ci_contains(text, "arkivum") || ci_contains(text, "omeka") ||
+             ci_contains(text, "papis") || ci_contains(text, "jabref") ||
+             ci_contains(text, "zettlr") || ci_contains(text, "web2disk") ||
+             ci_contains(text, "lrs2lrf") || ci_contains(text, "srfsh") ||
+             (ci_contains(text, "providence") && ci_contains(text, " -")) ||
+             (ci_contains(text, "pawtucket") && ci_contains(text, " -"))) {
+        what = "archive/library/reference primitive";
+        } else if (
+             /* cycle-301b: translation/l10n primitives */
+             ci_contains(text, "weblate") || ci_contains(text, "wlc") ||
+             ci_contains(text, "pootle") || ci_contains(text, "virtaal") ||
+             ci_contains(text, "crowdin") || ci_contains(text, "html2po") ||
+             ci_contains(text, "ical2po") || ci_contains(text, "json2po") ||
+             ci_contains(text, "moz2po") || ci_contains(text, "prop2po") ||
+             ci_contains(text, "rc2po") || ci_contains(text, "sub2po") ||
+             ci_contains(text, "tb2po") || ci_contains(text, "tms2po") ||
+             ci_contains(text, "ts2po") || ci_contains(text, "web2py2po") ||
+             ci_contains(text, "pocount") || ci_contains(text, "podebug") ||
+             ci_contains(text, "pofilter") || ci_contains(text, "pofollows") ||
+             ci_contains(text, "pomerge") || ci_contains(text, "poswap") ||
+             ci_contains(text, "pretranslate") || ci_contains(text, "glossaire") ||
+             ci_contains(text, "build_untranslated") ||
+             ci_contains(text, "convert2to1") ||
+             (ci_contains(text, "pontoon") && ci_contains(text, " -"))) {
+        what = "translation/l10n primitive";
+        } else if (
+             /* cycle-301c: genealogy/transit primitives */
+             ci_contains(text, "gedcom") || ci_contains(text, "geneweb") ||
+             ci_contains(text, "genewebdb") || ci_contains(text, "gwb2ged") ||
+             ci_contains(text, "gwc") || ci_contains(text, "gwu") ||
+             ci_contains(text, "mostvers") || ci_contains(text, "familylines") ||
+             ci_contains(text, "heredis") || ci_contains(text, "myheritage") ||
+             ci_contains(text, "moov ") || ci_contains(text, "moovit") ||
+             ci_contains(text, "walkscore") || ci_contains(text, "otp2") ||
+             ci_contains(text, "trias") || ci_contains(text, "graphserver") ||
+             ci_contains(text, "gtfs2geojson") || ci_contains(text, "gtfs2graph") ||
+             ci_contains(text, "gtfsdb") || ci_contains(text, "gtfslib") ||
+             ci_contains(text, "gtfsrdb") || ci_contains(text, "gtfsrt") ||
+             ci_contains(text, "gpspoint") || ci_contains(text, "gconnectd") ||
+             (ci_contains(text, "ancestry") && ci_contains(text, " -"))) {
+        what = "genealogy/transit primitive";
         }
 
         if (what) {
