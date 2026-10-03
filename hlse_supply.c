@@ -12329,6 +12329,63 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "relion") && ci_contains(text, " -")) ||
              ci_contains(text, "swmm") || ci_contains(text, "epanet")) {
         what = "particle/astro/gravwave/crystallography/massspec/cryo/hydro primitive";
+        } else if (
+             /* cycle-280a: icu/dict/tts/midi/audiodsp/audiotag primitives */
+             ci_contains(text, "icuinfo") || ci_contains(text, "genrb") ||
+             ci_contains(text, "derb") || ci_contains(text, "dictd") ||
+             ci_contains(text, "dictfmt") || ci_contains(text, "aspell") ||
+             ci_contains(text, "hunspell") ||
+             (ci_contains(text, "enchant") && ci_contains(text, " -")) ||
+             ci_contains(text, "flite") ||
+             (ci_contains(text, "festival") && ci_contains(text, " -")) ||
+             ci_contains(text, "text2wave") || ci_contains(text, "pico2wave") ||
+             ci_contains(text, "fluidsynth") ||
+             (ci_contains(text, "timidity") && ci_contains(text, " -")) ||
+             ci_contains(text, "amidi") || ci_contains(text, "midicsv") ||
+             ci_contains(text, "csound") || ci_contains(text, "sclang") ||
+             ci_contains(text, "scsynth") ||
+             (ci_contains(text, "faust") && ci_contains(text, " -")) ||
+             ci_contains(text, "sooperlooper") || ci_contains(text, "id3v2") ||
+             ci_contains(text, "id3tag") || ci_contains(text, "easytag") ||
+             ci_contains(text, "kid3-cli") ||
+             (ci_contains(text, "beets") && ci_contains(text, " -")) ||
+             ci_contains(text, "mid3v2") || ci_contains(text, "vorbiscomment") ||
+             ci_contains(text, "atomicparsley") || ci_contains(text, "mp3info") ||
+             ci_contains(text, "mp4info") || ci_contains(text, "exfalso")) {
+        what = "icu/dict/tts/midi/audiodsp/audiotag primitive";
+        } else if (
+             /* cycle-280b: cd/dvd/camera/image/svg/font primitives */
+             ci_contains(text, "cdparanoia") || ci_contains(text, "cdda2wav") ||
+             ci_contains(text, "icedax") || ci_contains(text, "cdrdao") ||
+             ci_contains(text, "wodim") || ci_contains(text, "dvdauthor") ||
+             ci_contains(text, "dvdbackup") || ci_contains(text, "lsdvd") ||
+             ci_contains(text, "mkisofs") || ci_contains(text, "gphoto2") ||
+             ci_contains(text, "ptpcam") || ci_contains(text, "magick") ||
+             ci_contains(text, "mogrify") ||
+             (ci_contains(text, "composite") && ci_contains(text, " -")) ||
+             (ci_contains(text, "montage") && ci_contains(text, " -")) ||
+             (ci_contains(text, "vips") && ci_contains(text, " -")) ||
+             ci_contains(text, "netpbm") || ci_contains(text, "rsvg-convert") ||
+             ci_contains(text, "fontforge") ||
+             (ci_contains(text, "ttx") && ci_contains(text, " -")) ||
+             ci_contains(text, "pyftsubset") || ci_contains(text, "otf2bdf") ||
+             ci_contains(text, "bdftopcf") || ci_contains(text, "fc-list") ||
+             ci_contains(text, "fc-cache") || ci_contains(text, "fc-match") ||
+             ci_contains(text, "fc-query")) {
+        what = "cd/dvd/camera/image/svg/font primitive";
+        } else if (
+             /* cycle-280c: tex/bib/ps/pdf primitives */
+             (ci_contains(text, "tectonic") && ci_contains(text, " -")) ||
+             ci_contains(text, "dvips") || ci_contains(text, "dvipdf") ||
+             ci_contains(text, "latex2html") || ci_contains(text, "bibtex") ||
+             (ci_contains(text, "biber") && ci_contains(text, " -")) ||
+             ci_contains(text, "bibtool") || ci_contains(text, "makeindex") ||
+             ci_contains(text, "xindy") || ci_contains(text, "psutils") ||
+             ci_contains(text, "psnup") || ci_contains(text, "pdftotext") ||
+             ci_contains(text, "pdftoppm") || ci_contains(text, "pdfimages") ||
+             ci_contains(text, "pdfdetach") || ci_contains(text, "pdfunite") ||
+             ci_contains(text, "pdfseparate") || ci_contains(text, "pdftocairo")) {
+        what = "tex/bib/ps/pdf primitive";
         }
 
         if (what) {
