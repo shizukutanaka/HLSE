@@ -6657,7 +6657,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "ubi_reader") ||
             ci_contains(text, "ubireader") ||
             ci_contains(text, "fwanalyzer") ||
-            ci_contains(text, "emba") ||
+            (ci_contains(text, "emba") && !ci_contains(text, "embark")) ||
             ci_contains(text, "firmadyne") ||
             ci_contains(text, "firmwalker") ||
             ci_contains(text, "fmk") ||
@@ -11852,6 +11852,86 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "orekit") ||
              (ci_contains(text, "gmat") && ci_contains(text, " -"))) {
         what = "asset/cmdb/dcim/ipam/aaa/dot1x/vpn/wg/portknock/sms/sim/cellular/ais/seismic/geophysics/physics/astro primitive";
+        } else if (
+             /* cycle-274a: llm/tts/imagegen/mlops primitives */
+             ci_contains(text, "llama-cli") || ci_contains(text, "koboldcpp") ||
+             ci_contains(text, "gpt4all") ||
+             (ci_contains(text, "tgi") && ci_contains(text, " -")) ||
+             (ci_contains(text, "jan") && ci_contains(text, " -") &&
+              !ci_contains(text, "jan-")) ||
+             ci_contains(text, "gptme") ||
+             (ci_contains(text, "tabby") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mentat") && ci_contains(text, " -")) ||
+             ci_contains(text, "open-interpreter") ||
+             (ci_contains(text, "interpreter") && ci_contains(text, " -")) ||
+             ci_contains(text, "whisper-cli") || ci_contains(text, "whisperx") ||
+             ci_contains(text, "stable-ts") || ci_contains(text, "faster-whisper") ||
+             (ci_contains(text, "bark") && ci_contains(text, " -") &&
+              !ci_contains(text, "embark") && !ci_contains(text, "bark-")) ||
+             (ci_contains(text, "tts") && ci_contains(text, " -") &&
+              !ci_contains(text, "otts") && !ci_contains(text, "atts")) ||
+             (ci_contains(text, "coqui") && ci_contains(text, " -")) ||
+             (ci_contains(text, "xtts") && ci_contains(text, " -")) ||
+             (ci_contains(text, "rvc") && ci_contains(text, " -")) ||
+             ci_contains(text, "audiocraft") || ci_contains(text, "comfy-cli") ||
+             ci_contains(text, "fooocus") || ci_contains(text, "a1111") ||
+             ci_contains(text, "automatic1111") ||
+             (ci_contains(text, "cog") && ci_contains(text, " -") &&
+              !ci_contains(text, "cog-") && !ci_contains(text, "incog")) ||
+             ci_contains(text, "bentoml") || ci_contains(text, "tritonserver") ||
+             ci_contains(text, "seldon") || ci_contains(text, "kserve") ||
+             ci_contains(text, "polyaxon")) {
+        what = "llm/tts/imagegen/mlops primitive";
+        } else if (
+             /* cycle-274b: notebook/data-eng/db-client/data-quality/cdc/bi/
+                spreadsheet/forms/diagram/rss/podcast/audiobook/ebook/comics/
+                recipe/finance/library/genealogy primitives */
+             (ci_contains(text, "nteract") && !ci_contains(text, "interact")) || ci_contains(text, "streamlit") ||
+             ci_contains(text, "gradio") ||
+             (ci_contains(text, "voila") && ci_contains(text, " -")) ||
+             ci_contains(text, "nicegui") || ci_contains(text, "marimo") ||
+             ci_contains(text, "papermill") || ci_contains(text, "nbconvert") ||
+             ci_contains(text, "nbdime") || ci_contains(text, "nbstripout") ||
+             ci_contains(text, "sqlmesh") || ci_contains(text, "datahub") ||
+             ci_contains(text, "openmetadata") ||
+             (ci_contains(text, "marquez") && ci_contains(text, " -")) ||
+             ci_contains(text, "lazysql") ||
+             (ci_contains(text, "harlequin") && ci_contains(text, " -")) ||
+             ci_contains(text, "dbgate") || ci_contains(text, "great-expectations") ||
+             (ci_contains(text, "elementary") && ci_contains(text, " -")) ||
+             ci_contains(text, "debezium-server") || ci_contains(text, "peerdb") ||
+             (ci_contains(text, "sequin") && ci_contains(text, " -")) ||
+             ci_contains(text, "superset-cli") || ci_contains(text, "redash") ||
+             ci_contains(text, "lightdash") ||
+             (ci_contains(text, "cube") && ci_contains(text, " -") &&
+              !ci_contains(text, "cube-") && !ci_contains(text, "icecube")) ||
+             ci_contains(text, "dremio") ||
+             (ci_contains(text, "grist") && ci_contains(text, " -")) ||
+             ci_contains(text, "baserow") || ci_contains(text, "nocodb") ||
+             ci_contains(text, "rowy") || ci_contains(text, "teable") ||
+             ci_contains(text, "apitable") || ci_contains(text, "undb") ||
+             ci_contains(text, "formbricks") ||
+             (ci_contains(text, "d2") && ci_contains(text, " -") &&
+              !ci_contains(text, "d2-")) ||
+             ci_contains(text, "svgbob") || ci_contains(text, "freshrss") ||
+             ci_contains(text, "tt-rss") || ci_contains(text, "miniflux") ||
+             ci_contains(text, "selfoss") || ci_contains(text, "commafeed") ||
+             ci_contains(text, "rssguard") || ci_contains(text, "fluent-reader") ||
+             ci_contains(text, "rss2email") || ci_contains(text, "castget") ||
+             ci_contains(text, "podget") || ci_contains(text, "podcast-dl") ||
+             (ci_contains(text, "gpo") && ci_contains(text, " -")) ||
+             ci_contains(text, "audiobookshelf") || ci_contains(text, "lazylibrarian") ||
+             ci_contains(text, "koreader") || ci_contains(text, "epubcheck") ||
+             ci_contains(text, "kepubify") || ci_contains(text, "kindlegen") ||
+             (ci_contains(text, "sigil") && ci_contains(text, " -")) ||
+             ci_contains(text, "komga") || ci_contains(text, "kavita") ||
+             ci_contains(text, "mcomix") || ci_contains(text, "mealie") ||
+             ci_contains(text, "tandoor") || ci_contains(text, "grocy") ||
+             ci_contains(text, "actual-server") || ci_contains(text, "ghostfolio") ||
+             ci_contains(text, "koha") || ci_contains(text, "biblioteq") ||
+             (ci_contains(text, "gramps") && ci_contains(text, " -")) ||
+             ci_contains(text, "webtrees")) {
+        what = "notebook/data-eng/db-client/data-quality/cdc/bi/spreadsheet/forms/diagram/rss/podcast/ebook/comics/recipe/finance/library/genealogy primitive";
         }
 
         if (what) {
