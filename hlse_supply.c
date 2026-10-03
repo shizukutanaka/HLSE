@@ -12445,6 +12445,41 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "s6") && ci_contains(text, " -")) ||
              (ci_contains(text, "supervise") && ci_contains(text, " -"))) {
         what = "structdata/csv/diff/watch/init primitive";
+        } else if (
+             /* cycle-282a: gettext/trans/subtitle/x11/wayland/pwmgr/totp/gpg/ssh/tor primitives */
+             ci_contains(text, "msgfmt") || ci_contains(text, "msgmerge") ||
+             ci_contains(text, "msginit") || ci_contains(text, "msgconv") ||
+             ci_contains(text, "msgen") || ci_contains(text, "xgettext") ||
+             (ci_contains(text, "trans ") && ci_contains(text, " -")) ||
+             ci_contains(text, "apertium") || ci_contains(text, "aegisub") ||
+             (ci_contains(text, "subedit") && ci_contains(text, " -")) ||
+             ci_contains(text, "setxkbmap") || ci_contains(text, "xsetroot") ||
+             ci_contains(text, "xrdb") || ci_contains(text, "xcursorgen") ||
+             ci_contains(text, "oathtool") || ci_contains(text, "pam_yubico") ||
+             (ci_contains(text, "gpgv") && ci_contains(text, " -")) ||
+             (ci_contains(text, "sqv") && ci_contains(text, " -")) ||
+             (ci_contains(text, "cssh") && ci_contains(text, " -")) ||
+             ci_contains(text, "snowflake-client")) {
+        what = "gettext/trans/subtitle/x11/wayland/pwmgr/totp/gpg/ssh/tor primitive";
+        } else if (
+             /* cycle-282b: dnsprivacy/knot/mdns/ndisc/ppp/shaping/firewall/
+                netflow/captive/wifi/bt primitives */
+             ci_contains(text, "stubby") || ci_contains(text, "getdns_query") ||
+             (ci_contains(text, "khost") && ci_contains(text, " -")) ||
+             ci_contains(text, "knsupdate") || ci_contains(text, "knsec3hash") ||
+             ci_contains(text, "kjournalprint") || ci_contains(text, "mdns-scan") ||
+             ci_contains(text, "ndptool") || ci_contains(text, "accel-ppp") ||
+             ci_contains(text, "wondershaper") ||
+             (ci_contains(text, "trickle") && ci_contains(text, " -")) ||
+             ci_contains(text, "vuurmuur") || ci_contains(text, "ipset") ||
+             ci_contains(text, "flow-cat") || ci_contains(text, "ipfixprobe") ||
+             ci_contains(text, "sflowtool") || ci_contains(text, "hsflowd") ||
+             ci_contains(text, "nodogsplash") || ci_contains(text, "opennds") ||
+             (ci_contains(text, "wifidog") && ci_contains(text, " -")) ||
+             ci_contains(text, "iwlist") || ci_contains(text, "wavemon") ||
+             ci_contains(text, "btmgmt") || ci_contains(text, "hciconfig") ||
+             ci_contains(text, "hcidump")) {
+        what = "dnsprivacy/knot/mdns/ndisc/ppp/shaping/firewall/netflow/captive/wifi/bt primitive";
         }
 
         if (what) {
