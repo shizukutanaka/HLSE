@@ -12592,6 +12592,34 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ccdciel") || ci_contains(text, "phd2") ||
              (ci_contains(text, "morse") && ci_contains(text, " -"))) {
         what = "matrix/xmpp/satellite/telescope/morse/social primitive";
+        } else if (
+             /* cycle-286a: editor/dotfiles/nix/appimage/altpkg primitives */
+             (ci_contains(text, "micro") && ci_contains(text, " -")) ||
+             (ci_contains(text, "amp") && ci_contains(text, " -")) ||
+             ci_contains(text, "lite-xl") ||
+             (ci_contains(text, "lite") && ci_contains(text, " -")) ||
+             ci_contains(text, "codeblocks") || ci_contains(text, "geany") ||
+             (ci_contains(text, "kate") && ci_contains(text, " -")) ||
+             ci_contains(text, "chezmoi") || ci_contains(text, "yadm") ||
+             ci_contains(text, "dotbot") || ci_contains(text, "rcm") ||
+             ci_contains(text, "homesick") || ci_contains(text, "dotdrop") ||
+             (ci_contains(text, "stow") && ci_contains(text, " -")) ||
+             ci_contains(text, "home-manager") || ci_contains(text, "darwin-rebuild") ||
+             ci_contains(text, "nix-darwin") || ci_contains(text, "appimage-builder") ||
+             ci_contains(text, "linuxdeploy") || ci_contains(text, "freebsd-update") ||
+             ci_contains(text, "portmaster") || ci_contains(text, "portupgrade") ||
+             ci_contains(text, "syspatch") || ci_contains(text, "pfexec")) {
+        what = "editor/dotfiles/nix/appimage/altpkg primitive";
+        } else if (
+             /* cycle-286b: pki-nss/mail/contacts/rss primitives */
+             ci_contains(text, "modutil") || ci_contains(text, "pk12util") ||
+             ci_contains(text, "crlutil") || ci_contains(text, "cmsutil") ||
+             ci_contains(text, "step-cli") || ci_contains(text, "alot") ||
+             ci_contains(text, "mblaze") || ci_contains(text, "nmh") ||
+             ci_contains(text, "abook") || ci_contains(text, "lbdb") ||
+             ci_contains(text, "ikhal") || ci_contains(text, "newsboat") ||
+             ci_contains(text, "sfeed") || ci_contains(text, "greader")) {
+        what = "pki-nss/mail/contacts/rss primitive";
         }
 
         if (what) {
