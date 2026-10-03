@@ -6671,7 +6671,7 @@ hlse_check_paste(const char *text) {
             (ci_contains(text, "die ") && ci_contains(text, " -")) ||
             ci_contains(text, "diec") ||
             ci_contains(text, "exeinfo") ||
-            ci_contains(text, "trid") ||
+            (ci_contains(text, "trid") && !ci_contains(text, "strid")) ||
             ci_contains(text, "wxhex") ||
             ci_contains(text, "imhex") ||
             ci_contains(text, "zsteg") ||
@@ -11496,6 +11496,89 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "lancedb") || ci_contains(text, "pgvector") ||
              (ci_contains(text, "chroma") && ci_contains(text, " -"))) {
         what = "sbom/posture/bastion/automation/workflow/taskrun/sched/mqtt/graphdb/vecdb primitive";
+        } else if (
+             /* cycle-270a: uav/robotics/ot-ics/energy/aviation/marine/weather
+                primitives */
+             ci_contains(text, "ardupilot") || ci_contains(text, "qgroundcontrol") ||
+             ci_contains(text, "mission-planner") ||
+             (ci_contains(text, "px4") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ros2") && ci_contains(text, " -")) ||
+             ci_contains(text, "rosbag") ||
+             (ci_contains(text, "rviz") && ci_contains(text, " -")) ||
+             (ci_contains(text, "gazebo") && ci_contains(text, " -")) ||
+             (ci_contains(text, "moveit") && ci_contains(text, " -")) ||
+             ci_contains(text, "eibd") || ci_contains(text, "linknx") ||
+             ci_contains(text, "eibnetmux") || ci_contains(text, "openems") ||
+             ci_contains(text, "victron") || ci_contains(text, "solaredge") ||
+             ci_contains(text, "fronius") || ci_contains(text, "enphase") ||
+             (ci_contains(text, "evcc") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ocpp") && ci_contains(text, " -")) ||
+             ci_contains(text, "readsb") || ci_contains(text, "tar1090") ||
+             ci_contains(text, "acarsdec") || ci_contains(text, "vdlm2dec") ||
+             ci_contains(text, "opencpn") || ci_contains(text, "signalk") ||
+             ci_contains(text, "canboat") || ci_contains(text, "weewx") ||
+             (ci_contains(text, "cumulus") && ci_contains(text, " -")) ||
+             ci_contains(text, "pywws")) {
+        what = "uav/robotics/ot-ics/energy/aviation/marine/weather primitive";
+        } else if (
+             /* cycle-270b: miner-alt/wallet-alt/mev/validator/l2/bridge/
+                oracle/indexer/cosmos/mixer/privacy/signing primitives */
+             ci_contains(text, "bminer") || ci_contains(text, "dogecoin-cli") ||
+             ci_contains(text, "wownero") ||
+             (ci_contains(text, "grin") && ci_contains(text, " -")) ||
+             ci_contains(text, "beam-wallet") || ci_contains(text, "ravencoin-cli") ||
+             ci_contains(text, "mev-boost") || ci_contains(text, "flashbots") ||
+             ci_contains(text, "ethdo") || ci_contains(text, "ssv-network") ||
+             (ci_contains(text, "diva") && ci_contains(text, " -")) ||
+             (ci_contains(text, "obol") && ci_contains(text, " -")) ||
+             ci_contains(text, "lodestar") || ci_contains(text, "grandine") ||
+             ci_contains(text, "nethermind") ||
+             (ci_contains(text, "reth") && ci_contains(text, " -")) ||
+             (ci_contains(text, "helios") && ci_contains(text, " -")) ||
+             ci_contains(text, "erigon") || ci_contains(text, "op-node") ||
+             ci_contains(text, "op-geth") ||
+             (ci_contains(text, "nitro") && ci_contains(text, " -")) ||
+             ci_contains(text, "zksync") ||
+             (ci_contains(text, "bor") && ci_contains(text, " -")) ||
+             ci_contains(text, "axelard") || ci_contains(text, "gravity-bridge") ||
+             (ci_contains(text, "connext") && ci_contains(text, " -")) ||
+             ci_contains(text, "chainlink") ||
+             (ci_contains(text, "pyth") && ci_contains(text, " -") && !ci_contains(text, "pytho")) ||
+             (ci_contains(text, "api3") && ci_contains(text, " -")) ||
+             (ci_contains(text, "tellor") && ci_contains(text, " -")) ||
+             (ci_contains(text, "dia") && ci_contains(text, " -") &&
+              !ci_contains(text, "dia-") && !ci_contains(text, "india")) ||
+             ci_contains(text, "graph-node") || ci_contains(text, "graph-cli") ||
+             ci_contains(text, "subsquid") ||
+             (ci_contains(text, "ponder") && ci_contains(text, " -")) ||
+             (ci_contains(text, "envio") && ci_contains(text, " -")) ||
+             ci_contains(text, "goldsky") || ci_contains(text, "binance-chain") ||
+             ci_contains(text, "bnbcli") ||
+             (ci_contains(text, "terrad") && ci_contains(text, " -")) ||
+             ci_contains(text, "dymension") || ci_contains(text, "kujira") ||
+             (ci_contains(text, "neutron") && ci_contains(text, " -")) ||
+             (ci_contains(text, "stride") && ci_contains(text, " -")) ||
+             ci_contains(text, "akash-provider") ||
+             (ci_contains(text, "fetchd") && ci_contains(text, " -")) ||
+             (ci_contains(text, "regen") && ci_contains(text, " -")) ||
+             (ci_contains(text, "chihuahua") && ci_contains(text, " -")) ||
+             ci_contains(text, "comdex") || ci_contains(text, "omniflix") ||
+             (ci_contains(text, "quicksilver") && ci_contains(text, " -")) ||
+             (ci_contains(text, "umee") && ci_contains(text, " -")) ||
+             (ci_contains(text, "stargaze") && ci_contains(text, " -")) ||
+             ci_contains(text, "agoric") ||
+             (ci_contains(text, "crescent") && ci_contains(text, " -")) ||
+             ci_contains(text, "secretcli") ||
+             (ci_contains(text, "wasabi") && ci_contains(text, " -")) ||
+             (ci_contains(text, "whirlpool") && ci_contains(text, " -")) ||
+             (ci_contains(text, "samourai") && ci_contains(text, " -")) ||
+             ci_contains(text, "joinmarket") || ci_contains(text, "coinjoin") ||
+             (ci_contains(text, "zano") && ci_contains(text, " -")) ||
+             (ci_contains(text, "firo") && ci_contains(text, " -")) ||
+             ci_contains(text, "mobilecoin") || ci_contains(text, "bee-clef") ||
+             ci_contains(text, "horcrux") || ci_contains(text, "tmkms") ||
+             ci_contains(text, "cosmovisor")) {
+        what = "miner/wallet/mev/validator/l2/bridge/oracle/indexer/cosmos/mixer/privacy/signing primitive";
         }
 
         if (what) {
