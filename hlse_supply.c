@@ -12679,6 +12679,31 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "r2pm") || ci_contains(text, "zap-cli") ||
              ci_contains(text, "cloudlist") || ci_contains(text, "asnmap")) {
         what = "configlang/template/codegen/docgen/fuzz/mutation/recon primitive";
+        } else if (
+             /* cycle-289a: mobiledev/firmware/ics/dicom/hl7/drone/cad/fpga primitives */
+             ci_contains(text, "simctl") || ci_contains(text, "firmware-mod-kit") ||
+             ci_contains(text, "fact_extractor") || ci_contains(text, "modbus-cli") ||
+             ci_contains(text, "dcm4che") || ci_contains(text, "storescu") ||
+             ci_contains(text, "storescp") || ci_contains(text, "dcmodify") ||
+             ci_contains(text, "dcmtk") || ci_contains(text, "orthanc") ||
+             ci_contains(text, "pydicom") || ci_contains(text, "hapi") ||
+             (ci_contains(text, "mirth") && ci_contains(text, " -")) ||
+             ci_contains(text, "apmplanner") || ci_contains(text, "freecad-cli") ||
+             ci_contains(text, "brlcad") || ci_contains(text, "solvespace") ||
+             ci_contains(text, "openlane") || ci_contains(text, "qflow") ||
+             ci_contains(text, "netgen")) {
+        what = "mobiledev/firmware/ics/dicom/hl7/drone/cad/fpga primitive";
+        } else if (
+             /* cycle-289b: logic/tunnel/rmm/mobile-re primitives */
+             ci_contains(text, "pulseview") || ci_contains(text, "dslogic") ||
+             ci_contains(text, "openhantek") || ci_contains(text, "scopy") ||
+             ci_contains(text, "dnscat2") || ci_contains(text, "rustdesk-server") ||
+             (ci_contains(text, "remotely") && ci_contains(text, " -")) ||
+             ci_contains(text, "dexopt") || ci_contains(text, "oatdump") ||
+             ci_contains(text, "dexdump") || ci_contains(text, "apkeep") ||
+             ci_contains(text, "gplaycli") || ci_contains(text, "apkleaks") ||
+             ci_contains(text, "mobfs") || ci_contains(text, "qark")) {
+        what = "logic/tunnel/rmm/mobile-re primitive";
         }
 
         if (what) {
