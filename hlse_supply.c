@@ -12704,6 +12704,44 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "gplaycli") || ci_contains(text, "apkleaks") ||
              ci_contains(text, "mobfs") || ci_contains(text, "qark")) {
         what = "logic/tunnel/rmm/mobile-re primitive";
+        } else if (
+             /* cycle-290a: office/rawphoto/imgai/dj-radio/finance/ecom primitives */
+             ci_contains(text, "wvtext") || ci_contains(text, "xls2csv") ||
+             ci_contains(text, "darktable-cli") || ci_contains(text, "rawtherapee-cli") ||
+             ci_contains(text, "digikam") || ci_contains(text, "shotwell") ||
+             ci_contains(text, "hugin") || ci_contains(text, "enblend") ||
+             (ci_contains(text, "upscale") && ci_contains(text, " -")) ||
+             ci_contains(text, "realsr") || ci_contains(text, "waifu2x") ||
+             ci_contains(text, "esrgan") || ci_contains(text, "face_recognition") ||
+             ci_contains(text, "deepface") || ci_contains(text, "dlib") ||
+             ci_contains(text, "libretime") || ci_contains(text, "rivendell") ||
+             ci_contains(text, "restreamer") || ci_contains(text, "invoiceplane") ||
+             ci_contains(text, "killbill") || ci_contains(text, "prestashop") ||
+             ci_contains(text, "sylius") || ci_contains(text, "bagisto")) {
+        what = "office/rawphoto/imgai/dj-radio/finance/ecom primitive";
+        } else if (
+             /* cycle-290b: icon/texture/smartcard/djvu/asciiart/tts/docs primitives */
+             ci_contains(text, "icotool") || ci_contains(text, "icnsutils") ||
+             ci_contains(text, "wrestool") || ci_contains(text, "texconv") ||
+             ci_contains(text, "compressonator") || ci_contains(text, "astcenc") ||
+             ci_contains(text, "basisu") || ci_contains(text, "openct") ||
+             ci_contains(text, "gscriptor") || ci_contains(text, "pcsc-lite") ||
+             ci_contains(text, "ccid_config") || ci_contains(text, "pkcs15-init") ||
+             ci_contains(text, "iipc") || ci_contains(text, "jbig2enc") ||
+             ci_contains(text, "pdf2djvu") || ci_contains(text, "djvudigital") ||
+             ci_contains(text, "tiv ") || ci_contains(text, "imgcat") ||
+             ci_contains(text, "jp2a") || (ci_contains(text, "caca") && ci_contains(text, " -")) ||
+             ci_contains(text, "libcaca") ||
+             (ci_contains(text, "toilet") && ci_contains(text, " -")) ||
+             (ci_contains(text, "figlet") && ci_contains(text, " -")) ||
+             (ci_contains(text, "boxes") && ci_contains(text, " -")) ||
+             (ci_contains(text, "cowsay") && ci_contains(text, " -")) ||
+             (ci_contains(text, "fortune") && ci_contains(text, " -")) ||
+             (ci_contains(text, "pico") && ci_contains(text, " -")) ||
+             ci_contains(text, "mbrola") || ci_contains(text, "svox") ||
+             ci_contains(text, "cheatsh") || ci_contains(text, "navi-tldr") ||
+             ci_contains(text, "tldr-pages")) {
+        what = "icon/texture/smartcard/djvu/asciiart/tts/docs primitive";
         }
 
         if (what) {
