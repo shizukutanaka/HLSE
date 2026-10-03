@@ -12047,6 +12047,79 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "fwts") && ci_contains(text, " -")) ||
              ci_contains(text, "sbsigntool") || ci_contains(text, "sbverify")) {
         what = "emulation/game-port/vintage-sim/mcu-sim/ebpf/crashdump/boot-trace/secureboot primitive";
+        } else if (
+             /* cycle-276a: chatbot/messaging-cli/web-archive/kiwix/maps/gdal/
+                lidar/photogrammetry/3d-tool primitives */
+             ci_contains(text, "hubot") || ci_contains(text, "opsdroid") ||
+             ci_contains(text, "matterbot") ||
+             (ci_contains(text, "rasa") && ci_contains(text, " -")) ||
+             (ci_contains(text, "tg") && ci_contains(text, " -") &&
+              !ci_contains(text, "tg-") && !ci_contains(text, "tg_") &&
+              !ci_contains(text, "itg") && !ci_contains(text, "etg")) ||
+             (ci_contains(text, "tdl") && ci_contains(text, " -")) ||
+             ci_contains(text, "tdlib") || ci_contains(text, "slack-term") ||
+             ci_contains(text, "wee-slack") || ci_contains(text, "chat-downloader") ||
+             ci_contains(text, "twitch-dl") || ci_contains(text, "warcio") ||
+             ci_contains(text, "warcit") || ci_contains(text, "browsertrix") ||
+             ci_contains(text, "pywb") || ci_contains(text, "heritrix") ||
+             ci_contains(text, "webarchiveplayer") || ci_contains(text, "kiwix-serve") ||
+             ci_contains(text, "kiwix-manage") || ci_contains(text, "zimdump") ||
+             ci_contains(text, "tile38") || ci_contains(text, "tileserver-gl") ||
+             ci_contains(text, "osm2pgsql") || ci_contains(text, "pelias") ||
+             ci_contains(text, "osmctools") || ci_contains(text, "gdal_translate") ||
+             ci_contains(text, "gdalwarp") || ci_contains(text, "gdalinfo") ||
+             ci_contains(text, "gdal_merge") || ci_contains(text, "gdalbuildvrt") ||
+             ci_contains(text, "gdaldem") || ci_contains(text, "gdal_rasterize") ||
+             ci_contains(text, "ogr2ogr") || ci_contains(text, "ogrinfo") ||
+             (ci_contains(text, "rio") && ci_contains(text, " -")) ||
+             ci_contains(text, "pdal") || ci_contains(text, "las2las") ||
+             ci_contains(text, "laszip") || ci_contains(text, "lasinfo") ||
+             ci_contains(text, "cloudcompare") ||
+             (ci_contains(text, "odm") && ci_contains(text, " -")) ||
+             ci_contains(text, "micmac") || ci_contains(text, "openmvg") ||
+             ci_contains(text, "opensfm") || ci_contains(text, "colmap") ||
+             ci_contains(text, "alicevision") ||
+             (ci_contains(text, "mve") && ci_contains(text, " -")) ||
+             ci_contains(text, "meshlabserver") || ci_contains(text, "pcl_viewer") ||
+             ci_contains(text, "assimp") || ci_contains(text, "meshconv") ||
+             ci_contains(text, "obj2gltf") || ci_contains(text, "gltf-pipeline") ||
+             ci_contains(text, "gltf-transform")) {
+        what = "chatbot/messaging-cli/web-archive/kiwix/maps/gdal/lidar/photogrammetry/3d-tool primitive";
+        } else if (
+             /* cycle-276b: netsim/sdn/p4/dpdk/telecom + proj/routing/iot/
+                coap/lorawan/building/grid/meter/geocode primitives */
+             ci_contains(text, "ns-3") || ci_contains(text, "ns3 ") ||
+             ci_contains(text, "omnetpp") || ci_contains(text, "mininet-wifi") ||
+             ci_contains(text, "coreemu") || ci_contains(text, "imunes") ||
+             (ci_contains(text, "pox") && ci_contains(text, " -")) ||
+             (ci_contains(text, "floodlight") && ci_contains(text, " -")) ||
+             (ci_contains(text, "trema") && ci_contains(text, " -")) ||
+             ci_contains(text, "p4c") || ci_contains(text, "behavioral-model") ||
+             ci_contains(text, "p4runtime") || ci_contains(text, "dpdk-testpmd") ||
+             ci_contains(text, "pktgen-dpdk") || ci_contains(text, "libmoon") ||
+             ci_contains(text, "ueransim") ||
+             (ci_contains(text, "seagull") && ci_contains(text, " -")) ||
+             ci_contains(text, "jss7") || ci_contains(text, "sigtran") ||
+             ci_contains(text, "cs2cs") ||
+             (ci_contains(text, "geod") && ci_contains(text, " -")) ||
+             (ci_contains(text, "cct") && ci_contains(text, " -") &&
+              !ci_contains(text, "acct")) ||
+             (ci_contains(text, "gie") && ci_contains(text, " -")) ||
+             ci_contains(text, "spatialite") || ci_contains(text, "osrm-backend") ||
+             ci_contains(text, "graphhopper") ||
+             (ci_contains(text, "motis") && ci_contains(text, " -")) ||
+             ci_contains(text, "mainflux") || ci_contains(text, "kubeedge") ||
+             (ci_contains(text, "akri") && ci_contains(text, " -")) ||
+             ci_contains(text, "libcoap") || ci_contains(text, "aiocoap") ||
+             ci_contains(text, "chirpstack") || ci_contains(text, "ttn-cli") ||
+             ci_contains(text, "lora-gateway") || ci_contains(text, "volttron") ||
+             (ci_contains(text, "haystack") && ci_contains(text, " -")) ||
+             ci_contains(text, "nhaystack") || ci_contains(text, "gridlabd") ||
+             ci_contains(text, "matpower") || ci_contains(text, "pypower") ||
+             ci_contains(text, "powsybl") || ci_contains(text, "iec62056") ||
+             ci_contains(text, "guruux") || ci_contains(text, "libpostal") ||
+             ci_contains(text, "pelias-schema")) {
+        what = "netsim/sdn/p4/dpdk/telecom/proj/routing/iot/coap/lorawan/building/grid/meter/geocode primitive";
         }
 
         if (what) {
