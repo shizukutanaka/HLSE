@@ -9522,6 +9522,105 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " .") || ci_contains(text, " -b")))) {
         what = "rmm/policy/netrecon/cloud-primitive";
         }
+        else if (ci_contains(text, "core.sshcommand") ||
+             ci_contains(text, "core.fsmonitor") ||
+             ci_contains(text, "gpg.program") ||
+             ci_contains(text, "diff.external") ||
+             ci_contains(text, "difffilter") ||
+             ci_contains(text, "insteadof") ||
+             ci_contains(text, "sendemail.smtp") ||
+             (ci_contains(text, " merge.") &&
+              ci_contains(text, ".driver")) ||
+             (ci_contains(text, " filter.") &&
+              (ci_contains(text, ".clean") || ci_contains(text, ".smudge") ||
+               ci_contains(text, ".required"))) ||
+             ci_contains(text, "git daemon") || ci_contains(text, "instaweb") ||
+             (ci_contains(text, "bisect") &&
+              (ci_contains(text, " run ") || ci_contains(text, " exec"))) ||
+             ci_contains(text, "remote-hg") || ci_contains(text, "remote-bzr") ||
+             ci_contains(text, "git svn") || ci_contains(text, "svnserve") ||
+             ci_contains(text, "svnsync") ||
+             (ci_contains(text, "hg ") &&
+              (ci_contains(text, " serve") || ci_contains(text, " -R "))) ||
+             (ci_contains(text, "watchman") &&
+              (ci_contains(text, " watch ") || ci_contains(text, " trigger ") ||
+               ci_contains(text, " --")) &&
+              !ci_contains(text, "--version") &&
+              !ci_contains(text, "--help")) ||
+             (ci_contains(text, "nodemon") &&
+              (ci_contains(text, " -") || ci_contains(text, " --") ||
+               ci_contains(text, ".js")) &&
+              !ci_contains(text, "--version") &&
+              !ci_contains(text, "--help")) ||
+             ci_contains(text, "chokidar") || ci_contains(text, "cargo-watch") ||
+             (ci_contains(text, "entr") &&
+              (ci_contains(text, " -") || ci_contains(text, " /") ||
+               ci_contains(text, " ."))) ||
+             (ci_contains(text, "reflex") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             (ci_contains(text, "air ") &&
+              (ci_contains(text, " -c") || ci_contains(text, " init") ||
+               ci_contains(text, ".toml"))) ||
+             (ci_contains(text, "gaze") &&
+              (ci_contains(text, " -") || ci_contains(text, " --")) &&
+              !ci_contains(text, "--version") &&
+              !ci_contains(text, "--help")) ||
+             (ci_contains(text, "node ") &&
+              (ci_contains(text, " --eval") || ci_contains(text, " --inspect") ||
+               ci_contains(text, " -p ") ||
+               ci_contains(text, "--experimental"))) ||
+             (ci_contains(text, "deno") &&
+              (ci_contains(text, " eval") || ci_contains(text, " install") ||
+               ci_contains(text, " task") || ci_contains(text, " compile") ||
+               ci_contains(text, " run -a") || ci_contains(text, " run --allow"))) ||
+             (ci_contains(text, "bun ") &&
+              (ci_contains(text, ".js") || ci_contains(text, ".ts") ||
+               ci_contains(text, " -e") || ci_contains(text, " --eval"))) ||
+             (ci_contains(text, "pear") &&
+              (ci_contains(text, " install") || ci_contains(text, " channel") ||
+               ci_contains(text, " -"))) ||
+             ci_contains(text, "impdp") ||
+             (ci_contains(text, "mokutil") &&
+              (ci_contains(text, " --disable") || ci_contains(text, " --import") ||
+               ci_contains(text, " --delete") || ci_contains(text, " --reset") ||
+               ci_contains(text, " --mokx") || ci_contains(text, " --timeout"))) ||
+             ci_contains(text, "efi-updatevar") || ci_contains(text, "ykpersonalize") ||
+             ci_contains(text, "nitrocli") || ci_contains(text, "onlykey-cli") ||
+             (ci_contains(text, "claymore") &&
+              (ci_contains(text, " -e") || ci_contains(text, " --") ||
+               ci_contains(text, " miner") || ci_contains(text, "pool"))) ||
+             (ci_contains(text, "btrfs") &&
+              (ci_contains(text, " filesystem resiz") ||
+               ci_contains(text, " filesystem defr") ||
+               ci_contains(text, " balance") || ci_contains(text, " device add") ||
+               ci_contains(text, " device delete") || ci_contains(text, " scrub "))) ||
+             (ci_contains(text, "winrs") &&
+              ci_contains(text, " -")) ||
+             ci_contains(text, "colorcpl") ||
+             ci_contains(text, "optionalfeatures") || ci_contains(text, "syssetup") ||
+             ci_contains(text, "dcomcnfg") ||
+             (ci_contains(text, "mmc") &&
+              ci_contains(text, ".msc")) ||
+             (ci_contains(text, "strip") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             (ci_contains(text, "pmap") &&
+              (ci_contains(text, " -") || ci_contains(text, " --"))) ||
+             (ci_contains(text, "mt") &&
+              (ci_contains(text, " -f") && (ci_contains(text, " erase") ||
+               ci_contains(text, " retens")))) ||
+             ci_contains(text, "mtx") ||
+             (ci_contains(text, "dump") &&
+              (ci_contains(text, " /dev/") || ci_contains(text, " -0") ||
+               ci_contains(text, " -1"))) ||
+             (ci_contains(text, "restore") &&
+              (ci_contains(text, " -") || ci_contains(text, " /dev/") ||
+               ci_contains(text, " rf ") || ci_contains(text, " tf "))) ||
+             ci_contains(text, "amdump") || ci_contains(text, "amrestore") ||
+             ci_contains(text, "amadmin") || ci_contains(text, "amtape") ||
+             (ci_contains(text, "auditctl") &&
+              (ci_contains(text, " -r") || ci_contains(text, " -e 0")))) {
+        what = "git-config-exec/watch/js/firmware/snapshot/uac/elf primitive";
+        }
         
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;

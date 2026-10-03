@@ -4,6 +4,37 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-255)
+
+- **Paste-detector breadth — git config exec sinks, file watchers, JS/deno/bun
+  runtimes, Secure Boot/MOK ops, snapshot/volume ops, UAC-bypass leftovers,
+  tape/audit/ELF misc** (`hlse_supply.c`): git exec sinks
+  (`core.sshcommand`, `core.fsmonitor`, `gpg.program`, `diff.external`,
+  `difffilter`, `insteadof` URL rewrite, `sendemail.smtp`, `merge.*.driver`,
+  `filter.*.clean`/`smudge`/`required`, `git daemon`, `instaweb`,
+  `bisect run`/`exec`, `remote-hg`, `remote-bzr`, `git svn`, `svnserve`,
+  `svnsync`, `hg serve`); file-watch exec (`watchman` watch/trigger/--
+  gates, `nodemon` -/--/.js gates, `chokidar`, `cargo-watch`, `entr`,
+  `reflex`, `air`, `gaze`); runtimes (`node` --eval/--inspect/-p/
+  --experimental gates, `deno` eval/install/task/compile/run-allow gates,
+  `bun` .js/.ts/-e gates, `pear` install/channel); firmware/keys
+  (`impdp`, `mokutil` --disable/--import/--delete/--reset/--mokx/--timeout,
+  `efi-updatevar`, `ykpersonalize`, `nitrocli`, `onlykey-cli`, `claymore`
+  -e/miner gates, `btrfs` resiz/defr/balance/device/scrub gates);
+  Windows (`winrs` - gate, `colorcpl`, `optionalfeatures`, `syssetup`,
+  `dcomcnfg`, `mmc` .msc); misc (`strip`/`pmap` flag gates, `mt -f`
+  erase/retens, `mtx`, `dump`/`restore` gates, `amdump`, `amrestore`,
+  `amadmin`, `amtape`, `auditctl` -r/-e-0).
+
+### Fixed (cycle-255)
+
+- `watchman` ` watch`→` watch ` boundary (the watchman duty FP);
+  `nodemon`/`gaze`/`watchman` `--version`/`--help` guards;
+  `mmc`→`.msc`, `mt -f`→erase/retens, `mokutil`→destructive-verb,
+  `btrfs`→write-verb, `auditctl`→`-r`/`-e 0`, `winrs`→flag-gate —
+  read-only forms stay clean; `ausearch`/`aureport` needles dropped
+  (pre-existing coverage).
+
 ### Added (cycle-254)
 
 - **Paste-detector breadth — RMM remotes, policy/Kerberos ops, netrecon,
