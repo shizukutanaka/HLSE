@@ -12892,6 +12892,26 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "snpp") ||
              (ci_contains(text, "whom") && ci_contains(text, " -"))) {
         what = "mail/telecom/shell-trick primitive";
+        } else if (
+             /* cycle-297a: print/tex/ham-radio primitives */
+             ci_contains(text, "tth") || ci_contains(text, "ttm") ||
+             ci_contains(text, "pkp") || ci_contains(text, "ohs") ||
+             ci_contains(text, "hsmm") || ci_contains(text, "pyqso") ||
+             ci_contains(text, "wwff") || ci_contains(text, "bf888") ||
+             ci_contains(text, "ft3d") || ci_contains(text, "bpq") ||
+             ci_contains(text, "fmuk66") || ci_contains(text, "hdo2") ||
+             ci_contains(text, "fwfb")) {
+        what = "print/tex/ham primitive";
+        } else if (
+             /* cycle-297b: router/cpe/voip primitives */
+             ci_contains(text, "ubus") || ci_contains(text, "fw3") ||
+             ci_contains(text, "fw4") || ci_contains(text, "mwan3") ||
+             ci_contains(text, "owut") || ci_contains(text, "ubnthal") ||
+             ci_contains(text, "swos") || ci_contains(text, "smsd") ||
+             ci_contains(text, "kalkun") ||
+             (ci_contains(text, "snom") && !ci_contains(text, "snomed")) ||
+             ci_contains(text, "b2bua")) {
+        what = "router/cpe/voip primitive";
         }
 
         if (what) {
