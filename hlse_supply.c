@@ -6712,7 +6712,7 @@ hlse_check_paste(const char *text) {
             (ci_contains(text, "absinthe") && ci_contains(text, " -")) ||
             (ci_contains(text, "evasion") && ci_contains(text, " -")) ||
             ci_contains(text, "pangu") ||
-            ci_contains(text, "taig") ||
+            (ci_contains(text, "taig") && !ci_contains(text, "taiga")) ||
             (ci_contains(text, "phoenix") &&
              (ci_contains(text, " jb") || ci_contains(text, " jailbreak"))) ||
             ci_contains(text, "h3lix") ||
@@ -11151,7 +11151,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "delve") && ci_contains(text, " -")) ||
              ci_contains(text, "pernosco") ||
              ci_contains(text, "code --install-extension") ||
-             ci_contains(text, "codium") || ci_contains(text, "ecode") ||
+             ci_contains(text, "codium") || (ci_contains(text, "ecode") && !ci_contains(text, "recod")) ||
              ci_contains(text, "lapce") ||
              (ci_contains(text, "zed") && ci_contains(text, " -")) ||
              (ci_contains(text, "hx ") && ci_contains(text, " -")) ||
@@ -11681,6 +11681,92 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "kubeless") || ci_contains(text, "faasd") ||
              ci_contains(text, "openfaas-cli")) {
         what = "dnsdist/osint/sandbox/forensics/memory/disk/log/ir/malware-analysis/bindiff/firmware/container/k8s/serverless/faas primitive";
+        } else if (
+             /* cycle-272a: git-extra/convert/mail-infra/spam-filter/lists/
+                caldav/irc/xmpp/matrix/voip-server primitives */
+             ci_contains(text, "jujutsu") || ci_contains(text, "git-branchless") ||
+             ci_contains(text, "git-secret") || ci_contains(text, "git-secrets") ||
+             ci_contains(text, "git-quick-stats") || ci_contains(text, "git-extras") ||
+             ci_contains(text, "gitui") || ci_contains(text, "gitbutler") ||
+             ci_contains(text, "git-cliff") ||
+             (ci_contains(text, "convco") && ci_contains(text, " -")) ||
+             ci_contains(text, "cz-cli") || ci_contains(text, "semantic-release") ||
+             ci_contains(text, "release-please") ||
+             (ci_contains(text, "quilt") && ci_contains(text, " -")) ||
+             (ci_contains(text, "wiggle") && ci_contains(text, " -")) ||
+             (ci_contains(text, "recode") && ci_contains(text, " -")) ||
+             (ci_contains(text, "uconv") && ci_contains(text, " -")) ||
+             (ci_contains(text, "convmv") && ci_contains(text, " -")) ||
+             (ci_contains(text, "detex") && ci_contains(text, " -")) ||
+             (ci_contains(text, "untex") && ci_contains(text, " -")) ||
+             ci_contains(text, "catdoc") || ci_contains(text, "docx2txt") ||
+             (ci_contains(text, "unrtf") && ci_contains(text, " -")) ||
+             ci_contains(text, "antiword") ||
+             (ci_contains(text, "wvtext") && ci_contains(text, " -")) ||
+             (ci_contains(text, "dma") && ci_contains(text, " -") &&
+              !ci_contains(text, "dma-") && !ci_contains(text, "sendma") &&
+              !ci_contains(text, "grandm")) ||
+             (ci_contains(text, "maddy") && ci_contains(text, " -")) ||
+             ci_contains(text, "stalwart-mail") || ci_contains(text, "zone-mta") ||
+             ci_contains(text, "rspamd") || ci_contains(text, "mimedefang") ||
+             (ci_contains(text, "amavis") && ci_contains(text, " -")) ||
+             (ci_contains(text, "dcc") && ci_contains(text, " -")) ||
+             ci_contains(text, "listmonk") || ci_contains(text, "mlmmj") ||
+             ci_contains(text, "schleuder") ||
+             (ci_contains(text, "dada") && ci_contains(text, " -")) ||
+             ci_contains(text, "imapsync") || ci_contains(text, "radicale") ||
+             ci_contains(text, "baikal") || ci_contains(text, "davical") ||
+             (ci_contains(text, "sogo") && ci_contains(text, " -")) ||
+             ci_contains(text, "xandikos") || ci_contains(text, "ircd-hybrid") ||
+             ci_contains(text, "miniircd") || ci_contains(text, "openfire") ||
+             (ci_contains(text, "conduit") && ci_contains(text, " -")) ||
+             ci_contains(text, "conduwuit") || ci_contains(text, "matrix-appservice-irc") ||
+             ci_contains(text, "matrix-hookshot") || ci_contains(text, "heisenbridge") ||
+             ci_contains(text, "mx-puppet") ||
+             (ci_contains(text, "murmur") && ci_contains(text, " -")) ||
+             ci_contains(text, "umurmur") ||
+             (ci_contains(text, "revolt") && ci_contains(text, " -"))) {
+        what = "git-extra/convert/mail-infra/spam-filter/lists/caldav/irc/xmpp/matrix/voip-server primitive";
+        } else if (
+             /* cycle-272b: fediverse/pastebin/urlshort/bookmark/docsrv/fileshare/
+                gallery/kanban/cms/ecomm/crm primitives */
+             ci_contains(text, "misskey") || ci_contains(text, "akkoma") ||
+             ci_contains(text, "pleroma") || ci_contains(text, "gotosocial") ||
+             ci_contains(text, "pixelfed") || ci_contains(text, "owncast") ||
+             ci_contains(text, "mastodon-tootctl") || ci_contains(text, "privatebin") ||
+             (ci_contains(text, "fiche") && ci_contains(text, " -")) ||
+             ci_contains(text, "pastebinit") ||
+             (ci_contains(text, "shlink") && ci_contains(text, " -")) ||
+             (ci_contains(text, "yourls") && ci_contains(text, " -")) ||
+             (ci_contains(text, "kutt") && ci_contains(text, " -")) ||
+             (ci_contains(text, "polr") && ci_contains(text, " -")) ||
+             ci_contains(text, "wallabag") ||
+             (ci_contains(text, "shaarli") && ci_contains(text, " -")) ||
+             ci_contains(text, "linkding") || ci_contains(text, "linkwarden") ||
+             ci_contains(text, "archivebox") || ci_contains(text, "hedgedoc") ||
+             ci_contains(text, "joplin-server") ||
+             (ci_contains(text, "memos") && ci_contains(text, " -")) ||
+             ci_contains(text, "flatnotes") || ci_contains(text, "silverbullet") ||
+             ci_contains(text, "bookstack") || ci_contains(text, "snapdrop") ||
+             ci_contains(text, "localsend") || ci_contains(text, "psitransfer") ||
+             ci_contains(text, "lychee") || ci_contains(text, "piwigo") ||
+             ci_contains(text, "librephotos") || ci_contains(text, "immich") ||
+             ci_contains(text, "stagit") ||
+             (ci_contains(text, "gitiles") && ci_contains(text, " -")) ||
+             (ci_contains(text, "gitweb") && ci_contains(text, " -")) ||
+             ci_contains(text, "forgejo") ||
+             (ci_contains(text, "taskd") && ci_contains(text, " -")) ||
+             (ci_contains(text, "planka") && ci_contains(text, " -")) ||
+             ci_contains(text, "wekan") || ci_contains(text, "focalboard") ||
+             ci_contains(text, "kanboard") ||
+             (ci_contains(text, "taiga") && ci_contains(text, " -")) ||
+             ci_contains(text, "directus") || ci_contains(text, "strapi") ||
+             ci_contains(text, "sanity-cli") || ci_contains(text, "contentful-cli") ||
+             ci_contains(text, "saleor") || ci_contains(text, "vendure") ||
+             ci_contains(text, "shopify-cli") || ci_contains(text, "square-cli") ||
+             (ci_contains(text, "monica") && ci_contains(text, " -")) ||
+             (ci_contains(text, "twenty") && ci_contains(text, " -"))) {
+        what = "fediverse/pastebin/urlshort/bookmark/docsrv/fileshare/gallery/kanban/cms/ecomm/crm primitive";
         }
 
         if (what) {
