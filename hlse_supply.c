@@ -12120,6 +12120,76 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "guruux") || ci_contains(text, "libpostal") ||
              ci_contains(text, "pelias-schema")) {
         what = "netsim/sdn/p4/dpdk/telecom/proj/routing/iot/coap/lorawan/building/grid/meter/geocode primitive";
+        } else if (
+             /* cycle-277a: wasm/sandbox/unikernel/virt-guest/k8s-dist primitives */
+             ci_contains(text, "wasm-bindgen") || ci_contains(text, "emcc") ||
+             ci_contains(text, "emmake") || ci_contains(text, "emconfigure") ||
+             ci_contains(text, "wasm-opt") || ci_contains(text, "wasm2wat") ||
+             ci_contains(text, "wat2wasm") || ci_contains(text, "wasm-ld") ||
+             ci_contains(text, "twiggy") || ci_contains(text, "wasm-snip") ||
+             ci_contains(text, "sandbox2") || ci_contains(text, "unikraft") ||
+             (ci_contains(text, "nanos") && ci_contains(text, " -")) ||
+             (ci_contains(text, "osv") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mirage") && ci_contains(text, " -")) ||
+             ci_contains(text, "solo5") || ci_contains(text, "virt-p2v") ||
+             ci_contains(text, "kustomize") ||
+             (ci_contains(text, "redpanda") && ci_contains(text, " -")) ||
+             (ci_contains(text, "aeron") && ci_contains(text, " -")) ||
+             ci_contains(text, "opensearch") ||
+             (ci_contains(text, "manticore") && ci_contains(text, " -")) ||
+             ci_contains(text, "parquet-tools") || ci_contains(text, "avro-tools") ||
+             ci_contains(text, "orc-tools") || ci_contains(text, "victoriametrics") ||
+             ci_contains(text, "vmutils") || ci_contains(text, "m3db") ||
+             ci_contains(text, "valkey") || ci_contains(text, "keydb") ||
+             (ci_contains(text, "garnet") && ci_contains(text, " -")) ||
+             ci_contains(text, "rethinkdb") || ci_contains(text, "surrealdb") ||
+             ci_contains(text, "ysqlsh") || ci_contains(text, "ycqlsh") ||
+             ci_contains(text, "yb-admin") || ci_contains(text, "tidb") ||
+             ci_contains(text, "vitess") || ci_contains(text, "immudb") ||
+             ci_contains(text, "nostrcli") ||
+             (ci_contains(text, "iris") && ci_contains(text, " -")) ||
+             (ci_contains(text, "damus") && ci_contains(text, " -"))) {
+        what = "wasm/sandbox/unikernel/virt-guest/k8s-dist/mq/search/columnar/tsdb/kv/docdb/newsql/nostr primitive";
+        } else if (
+             /* cycle-277b: formatter/linter/env-mgr/build-sys primitives */
+             (ci_contains(text, "black") && ci_contains(text, " -") &&
+              !ci_contains(text, "blackb")) ||
+             (ci_contains(text, "isort") && ci_contains(text, " -")) ||
+             ci_contains(text, "flake8") ||
+             (ci_contains(text, "pylint") && ci_contains(text, " -")) ||
+             ci_contains(text, "mypy") ||
+             (ci_contains(text, "ruff") && ci_contains(text, " -")) ||
+             ci_contains(text, "eslint") ||
+             (ci_contains(text, "prettier") && ci_contains(text, " -")) ||
+             ci_contains(text, "stylelint") || ci_contains(text, "php-cs-fixer") ||
+             ci_contains(text, "gofumpt") || ci_contains(text, "goimports") ||
+             ci_contains(text, "clang-format") || ci_contains(text, "rustfmt") ||
+             (ci_contains(text, "brakeman") && ci_contains(text, " -")) ||
+             (ci_contains(text, "gosec") && ci_contains(text, " -")) ||
+             (ci_contains(text, "spack") && ci_contains(text, " -")) ||
+             ci_contains(text, "micromamba") || ci_contains(text, "virtualenv") ||
+             ci_contains(text, "pipenv") ||
+             (ci_contains(text, "volta") && ci_contains(text, " -")) ||
+             (ci_contains(text, "xmake") && ci_contains(text, " -")) ||
+             (ci_contains(text, "plz") && ci_contains(text, " -"))) {
+        what = "formatter/linter/env-mgr/build-sys primitive";
+        } else if (
+             /* cycle-277c: license/radare2/honeypot/wifi/pwattack/stego/tunnel primitives */
+             ci_contains(text, "scancode-toolkit") ||
+             (ci_contains(text, "reuse") && ci_contains(text, " -")) ||
+             (ci_contains(text, "fossa") && ci_contains(text, " -")) ||
+             ci_contains(text, "license-checker") || ci_contains(text, "ragg2") ||
+             ci_contains(text, "rax2") || ci_contains(text, "rafind2") ||
+             ci_contains(text, "rahash2") || ci_contains(text, "rarun2") ||
+             ci_contains(text, "rasign2") || ci_contains(text, "cowrie") ||
+             ci_contains(text, "honeyd") || ci_contains(text, "kippo") ||
+             ci_contains(text, "airodump-ng") || ci_contains(text, "hcxtools") ||
+             ci_contains(text, "hashcat-utils") || ci_contains(text, "kwprocessor") ||
+             ci_contains(text, "princeprocessor") || ci_contains(text, "hashid") ||
+             ci_contains(text, "name-that-hash") ||
+             (ci_contains(text, "cupp") && ci_contains(text, " -")) ||
+             ci_contains(text, "ligolo-ng")) {
+        what = "license/radare2/honeypot/wifi/pwattack/stego/tunnel primitive";
         }
 
         if (what) {
