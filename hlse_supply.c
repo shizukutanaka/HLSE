@@ -12566,6 +12566,32 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "earlyoom") || ci_contains(text, "nohang") ||
              ci_contains(text, "hid-recorder") || ci_contains(text, "hidrd-convert")) {
         what = "lttng/stap/pcp/sysstat/sched/numa/hugepages/oom/hid primitive";
+        } else if (
+             /* cycle-285a: displaymgr/notif/lock/hex/pager/markdown/present primitives */
+             ci_contains(text, "lightdm") || ci_contains(text, "gdm") ||
+             ci_contains(text, "sddm") || ci_contains(text, "dunst") ||
+             ci_contains(text, "swaync") || ci_contains(text, "xss-lock") ||
+             ci_contains(text, "hexyl") || ci_contains(text, "dhex") ||
+             ci_contains(text, "okteta") || ci_contains(text, "moar") ||
+             (ci_contains(text, "glow") && ci_contains(text, " -")) ||
+             ci_contains(text, "mdcat") || ci_contains(text, "presenterm") ||
+             (ci_contains(text, "slides") && ci_contains(text, " -")) ||
+             ci_contains(text, "patat") || ci_contains(text, "tpp") ||
+             (ci_contains(text, "tig ") && !ci_contains(text, "contig")) ||
+             ci_contains(text, "rtv ") ||
+             ci_contains(text, "tuir") || ci_contains(text, "hackernews_tui") ||
+             ci_contains(text, "oysttyer")) {
+        what = "displaymgr/notif/lock/hex/pager/markdown/present primitive";
+        } else if (
+             /* cycle-285b: matrix/xmpp/satellite/telescope/morse/social primitives */
+             ci_contains(text, "gomuks") || ci_contains(text, "iamb") ||
+             ci_contains(text, "fractal") || ci_contains(text, "poezio") ||
+             (ci_contains(text, "predict") && ci_contains(text, " -")) ||
+             ci_contains(text, "gpredict") || ci_contains(text, "satnogs") ||
+             (ci_contains(text, "indi") && ci_contains(text, " -")) ||
+             ci_contains(text, "ccdciel") || ci_contains(text, "phd2") ||
+             (ci_contains(text, "morse") && ci_contains(text, " -"))) {
+        what = "matrix/xmpp/satellite/telescope/morse/social primitive";
         }
 
         if (what) {
