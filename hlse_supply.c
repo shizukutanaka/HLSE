@@ -12190,6 +12190,73 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "cupp") && ci_contains(text, " -")) ||
              ci_contains(text, "ligolo-ng")) {
         what = "license/radare2/honeypot/wifi/pwattack/stego/tunnel primitive";
+        } else if (
+             /* cycle-278a: turn/ha/lb/cache/mail/imap/news/monitor/tracing/snmp primitives */
+             ci_contains(text, "eturnal") || ci_contains(text, "keepalived") ||
+             ci_contains(text, "ucarp") ||
+             (ci_contains(text, "pen") && ci_contains(text, " -") &&
+              !ci_contains(text, "open") && !ci_contains(text, "spen") &&
+              !ci_contains(text, "pen-")) ||
+             (ci_contains(text, "pound") && ci_contains(text, " -")) ||
+             ci_contains(text, "gobetween") || ci_contains(text, "varnishd") ||
+             ci_contains(text, "varnishadm") || ci_contains(text, "varnishlog") ||
+             ci_contains(text, "trafficserver") ||
+             (ci_contains(text, "courier") && ci_contains(text, " -")) ||
+             (ci_contains(text, "cyrus") && ci_contains(text, " -")) ||
+             ci_contains(text, "imapfilter") || ci_contains(text, "inn2 ") ||
+             ci_contains(text, "innfeed") || ci_contains(text, "jaeger-agent") ||
+             ci_contains(text, "zipkin") || ci_contains(text, "skywalking") ||
+             ci_contains(text, "snmptrap")) {
+        what = "turn/ha/lb/cache/mail/imap/news/monitor/tracing/snmp primitive";
+        } else if (
+             /* cycle-278b: ipmi/bmc/storage/zfs/ceph/gluster/pfs/nfs/dav/s3ql/fuse primitives */
+             ci_contains(text, "nvme-cli") || ci_contains(text, "thin-provisioning") ||
+             ci_contains(text, "sanoid") || ci_contains(text, "syncoid") ||
+             ci_contains(text, "ceph-volume") || ci_contains(text, "radosgw-admin") ||
+             ci_contains(text, "glusterd") || ci_contains(text, "gluster ") ||
+             ci_contains(text, "mfsmaster") || ci_contains(text, "mfsmount") ||
+             ci_contains(text, "lizardfs") ||
+             (ci_contains(text, "lctl") && ci_contains(text, " -") &&
+              !ci_contains(text, "journal")) ||
+             ci_contains(text, "nfsstat") || ci_contains(text, "ganesha.nfsd") ||
+             ci_contains(text, "afpd") || ci_contains(text, "s3ql") ||
+             ci_contains(text, "fuse-overlayfs") || ci_contains(text, "snapraid")) {
+        what = "ipmi/bmc/storage/zfs/ceph/gluster/pfs/nfs/dav/s3ql/fuse primitive";
+        } else if (
+             /* cycle-278c: pki/krb/ldap/nis/pam/apparmor/xattr/time/display/power +
+                cups/sane/modem/ax25/rc/matter/bacnet/ethercat/wire/probe/rf primitives */
+             ci_contains(text, "scepclient") || ci_contains(text, "kinit") ||
+             ci_contains(text, "kdestroy") || ci_contains(text, "slapd") ||
+             ci_contains(text, "ypxfr") || ci_contains(text, "pamtester") ||
+             ci_contains(text, "saslauthd") || ci_contains(text, "aa-status") ||
+             ci_contains(text, "xfs_quota") || ci_contains(text, "getfacl") ||
+             ci_contains(text, "lsattr") || ci_contains(text, "getfattr") ||
+             ci_contains(text, "ntpstat") || ci_contains(text, "locale-gen") ||
+             ci_contains(text, "autorandr") || ci_contains(text, "powertop") ||
+             (ci_contains(text, "tlp") && ci_contains(text, " -")) ||
+             ci_contains(text, "auto-cpufreq") || ci_contains(text, "thermald") ||
+             ci_contains(text, "acpitool") || ci_contains(text, "brightnessctl") ||
+             ci_contains(text, "lpstat") || ci_contains(text, "cupsenable") ||
+             ci_contains(text, "cupsaccept") || ci_contains(text, "lpinfo") ||
+             ci_contains(text, "scanimage") || ci_contains(text, "sane-find-scanner") ||
+             ci_contains(text, "zbarimg") || ci_contains(text, "mgetty") ||
+             ci_contains(text, "uqmi") || ci_contains(text, "axlisten") ||
+             ci_contains(text, "ax25ipd") || ci_contains(text, "mheard") ||
+             ci_contains(text, "aprsc") || ci_contains(text, "ysfreflector") ||
+             ci_contains(text, "mmdvm") || ci_contains(text, "modesmixer") ||
+             ci_contains(text, "opentx") || ci_contains(text, "edgetx-companion") ||
+             ci_contains(text, "betaflight-configurator") ||
+             (ci_contains(text, "inav") && ci_contains(text, " -")) ||
+             ci_contains(text, "speeduino") || ci_contains(text, "megasquirt") ||
+             ci_contains(text, "tunerstudio") || ci_contains(text, "chip-tool") ||
+             ci_contains(text, "deconz") || ci_contains(text, "bacwh") ||
+             ci_contains(text, "bacwp") || ci_contains(text, "bacsc") ||
+             ci_contains(text, "bacdcc") || ci_contains(text, "bacvm") ||
+             ci_contains(text, "bacrd") || ci_contains(text, "ethercat") ||
+             ci_contains(text, "eipscan") || ci_contains(text, "owfs") ||
+             ci_contains(text, "owserver") || ci_contains(text, "probe-rs") ||
+             ci_contains(text, "sdrtrunk")) {
+        what = "pki/krb/ldap/nis/pam/apparmor/xattr/time/display/power/cups/sane/modem/ax25/rc/matter/bacnet/ethercat/wire/probe/rf primitive";
         }
 
         if (what) {
