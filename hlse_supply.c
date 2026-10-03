@@ -13366,6 +13366,24 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pihole") || ci_contains(text, "torbrowser") ||
              ci_contains(text, "usewithtor")) {
         what = "privacy/ad-block/tor primitive";
+        } else if (
+             /* cycle-307a: uptime/oncall primitives */
+             ci_contains(text, "checkly") || ci_contains(text, "gotify") ||
+             ci_contains(text, "montastic") ||
+             ci_contains(text, "ntfy") || ci_contains(text, "ohdear") ||
+             ci_contains(text, "pdagent") || ci_contains(text, "phare") ||
+             ci_contains(text, "statuscake") || ci_contains(text, "uptimerobot") ||
+             (ci_contains(text, "uptime") && ci_contains(text, " -"))) {
+        what = "uptime/oncall primitive";
+        } else if (
+             /* cycle-307b: push-notification/mailing-list primitives */
+             ci_contains(text, "apprise") || ci_contains(text, "cardea") ||
+             ci_contains(text, "chanify") || ci_contains(text, "listserv") ||
+             ci_contains(text, "postorius") || ci_contains(text, "pushbullet") ||
+             ci_contains(text, "pushover") ||
+             (ci_contains(text, "join") && ci_contains(text, " -")) ||
+             (ci_contains(text, "martian") && ci_contains(text, " -"))) {
+        what = "push-notification/mailing-list primitive";
         }
 
         if (what) {
