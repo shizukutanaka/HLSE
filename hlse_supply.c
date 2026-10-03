@@ -12650,6 +12650,35 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "picker") && ci_contains(text, " -")) ||
              ci_contains(text, "navi") || ci_contains(text, "fff")) {
         what = "acct/sysfs/eeprom/i2c/gpio/udev/media/fuzzy primitive";
+        } else if (
+             /* cycle-288a: altvcs/patch/review/monorepo/build/task primitives */
+             (ci_contains(text, "got ") && !ci_contains(text, "forgot")) ||
+             ci_contains(text, "patchutils") || ci_contains(text, "interdiff") ||
+             ci_contains(text, "filterdiff") || ci_contains(text, "combinediff") ||
+             ci_contains(text, "flipdiff") || ci_contains(text, "rediff") ||
+             ci_contains(text, "rbt") || ci_contains(text, "reviewdog") ||
+             (ci_contains(text, "nx ") && !ci_contains(text, "sphinx") && !ci_contains(text, "minx") && !ci_contains(text, "nginx")) ||
+             (ci_contains(text, "turbo") && ci_contains(text, " -")) ||
+             (ci_contains(text, "redo") && ci_contains(text, " -")) ||
+             (ci_contains(text, "tup ") && !ci_contains(text, "setup") && !ci_contains(text, "startup")) ||
+             ci_contains(text, "samu") || ci_contains(text, "kati") ||
+             (ci_contains(text, "just") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mage") && !ci_contains(text, "image") && !ci_contains(text, "damage"))) {
+        what = "altvcs/patch/review/monorepo/build/task primitive";
+        } else if (
+             /* cycle-288b: configlang/template/codegen/docgen/fuzz/mutation/recon primitives */
+             (ci_contains(text, "nickel") && ci_contains(text, " -")) ||
+             ci_contains(text, "rcl ") || ci_contains(text, "j2cli") ||
+             ci_contains(text, "gomplate") || ci_contains(text, "envsubst") ||
+             ci_contains(text, "mustache") || (ci_contains(text, "buf ") && !ci_contains(text, "stdbuf")) ||
+             ci_contains(text, "flatc") || (ci_contains(text, "thrift") && ci_contains(text, " -")) ||
+             ci_contains(text, "avrogen") || ci_contains(text, "grpcurl") ||
+             ci_contains(text, "quicktype") || ci_contains(text, "jazzy") ||
+             ci_contains(text, "mutmut") || ci_contains(text, "cosmic-ray") ||
+             ci_contains(text, "stryker") || ci_contains(text, "r2agent") ||
+             ci_contains(text, "r2pm") || ci_contains(text, "zap-cli") ||
+             ci_contains(text, "cloudlist") || ci_contains(text, "asnmap")) {
+        what = "configlang/template/codegen/docgen/fuzz/mutation/recon primitive";
         }
 
         if (what) {
