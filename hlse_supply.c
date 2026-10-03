@@ -12531,6 +12531,41 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "florence") && ci_contains(text, " -")) ||
              ci_contains(text, "brltty") || ci_contains(text, "krfb")) {
         what = "alsa/pulse/pipewire/jack/gvfs/xdg/desktopdb/gsettings/kde/qt/glib/a11y primitive";
+        } else if (
+             /* cycle-284a: dmi/acpi/coreboot/hwmon/watchdog/ups/laptop/usb/tb/
+                edac/ras/mce primitives */
+             (ci_contains(text, "ownership") && ci_contains(text, " -")) ||
+             ci_contains(text, "acpidump") || ci_contains(text, "acpixtract") ||
+             ci_contains(text, "acpiexec") || ci_contains(text, "acpibin") ||
+             (ci_contains(text, "iasl") && ci_contains(text, " -")) ||
+             ci_contains(text, "inteltool") || ci_contains(text, "msrtool") ||
+             ci_contains(text, "wd_keepalive") || ci_contains(text, "rtcwake") ||
+             ci_contains(text, "upsd ") || ci_contains(text, "upsmon") ||
+             ci_contains(text, "upsc ") || ci_contains(text, "upsdrvctl") ||
+             ci_contains(text, "apcupsd") || ci_contains(text, "tpacpi-bat") ||
+             ci_contains(text, "thinkfan") || ci_contains(text, "asusd") ||
+             ci_contains(text, "usbview") || ci_contains(text, "usbhid-dump") ||
+             ci_contains(text, "usbmon") || ci_contains(text, "tbtadm") ||
+             ci_contains(text, "boltctl") || ci_contains(text, "edac-util") ||
+             ci_contains(text, "edac-ctl") || ci_contains(text, "rasdaemon") ||
+             ci_contains(text, "ras-mc-ctl") || ci_contains(text, "mcelog") ||
+             ci_contains(text, "mce-inject")) {
+        what = "dmi/acpi/coreboot/hwmon/watchdog/ups/laptop/usb/tb/edac/ras/mce primitive";
+        } else if (
+             /* cycle-284b: lttng/stap/pcp/sysstat/sched/numa/hugepages/oom/hid primitives */
+             ci_contains(text, "babeltrace") || ci_contains(text, "staprun") ||
+             ci_contains(text, "pmcd") || ci_contains(text, "pmlogger") ||
+             ci_contains(text, "pmie") || ci_contains(text, "pmval") ||
+             ci_contains(text, "pmdumplog") ||
+             (ci_contains(text, "sadc") && ci_contains(text, " -")) ||
+             (ci_contains(text, "sadf") && ci_contains(text, " -")) ||
+             ci_contains(text, "setarch") || ci_contains(text, "linux32") ||
+             ci_contains(text, "linux64") || ci_contains(text, "numastat") ||
+             ci_contains(text, "numad") || ci_contains(text, "numatop") ||
+             ci_contains(text, "hugeadm") || ci_contains(text, "oomd") ||
+             ci_contains(text, "earlyoom") || ci_contains(text, "nohang") ||
+             ci_contains(text, "hid-recorder") || ci_contains(text, "hidrd-convert")) {
+        what = "lttng/stap/pcp/sysstat/sched/numa/hugepages/oom/hid primitive";
         }
 
         if (what) {
