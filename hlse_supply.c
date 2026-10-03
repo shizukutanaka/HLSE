@@ -1916,7 +1916,8 @@ hlse_check_paste(const char *text) {
             what = "tunneling/C2 proxy tool";
         /* ── privesc enums + exploit names ── */
         } else if (ci_contains(text, "linpeas") || ci_contains(text, "winpeas") ||
-                   ci_contains(text, "linenum") || ci_contains(text, "mimipenguin") ||
+                   (ci_contains(text, "linenum") &&
+              !ci_contains(text, "linenumber")) || ci_contains(text, "mimipenguin") ||
                    ci_contains(text, "pspy") || ci_contains(text, "linux-exploit") ||
                    ci_contains(text, "dirtyc0w") || ci_contains(text, "dirtycow") ||
                    ci_contains(text, "pwnkit") || ci_contains(text, "ysoserial")) {
@@ -3602,7 +3603,8 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "comsvcs") &&
                     ci_contains(text, "minidump")) ||
                    ci_contains(text, "linpeas") ||
-                   ci_contains(text, "linenum") ||
+                   (ci_contains(text, "linenum") &&
+                    !ci_contains(text, "linenumber")) ||
                    ci_contains(text, "linux-exploit-suggester") ||
                    ci_contains(text, "unix-privesc-check") ||
                    ci_contains(text, "linuxprivchecker") ||
@@ -9620,6 +9622,311 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "auditctl") &&
               (ci_contains(text, " -r") || ci_contains(text, " -e 0")))) {
         what = "git-config-exec/watch/js/firmware/snapshot/uac/elf primitive";
+        }
+        else if ((ci_contains(text, "dseditgroup") &&
+              (ci_contains(text, " -o edit") || ci_contains(text, " -o add") ||
+               ci_contains(text, " -o delete") || ci_contains(text, " -o create") ||
+               ci_contains(text, " -a ") || ci_contains(text, " -d "))) || ci_contains(text, "dsenableroot") ||
+             ci_contains(text, "socketfilterfw") || ci_contains(text, "santactl") ||
+             ci_contains(text, "mdatp") || ci_contains(text, "falconctl") ||
+             ci_contains(text, "sentinelctl") || ci_contains(text, "munkiimport") ||
+             (ci_contains(text, "restorecon") &&
+              !ci_contains(text, "restoreconfig")) ||
+             (ci_contains(text, "runcon") &&
+              !ci_contains(text, "runcontext")) ||
+             ci_contains(text, "mpiexec") || ci_contains(text, "mpirun") ||
+             ci_contains(text, "orterun") ||
+             (ci_contains(text, "orted") && !ci_contains(text, "sorted")) ||
+             ci_contains(text, "ompi-") || ci_contains(text, "oshrun") ||
+             ci_contains(text, "shmemrun") || ci_contains(text, "hydra_pmi") ||
+             ci_contains(text, "mpicc") || ci_contains(text, "mpicxx") ||
+             ci_contains(text, "mpif77") || ci_contains(text, "mpif90") ||
+             ci_contains(text, "mpifort") || ci_contains(text, "mpdboot") ||
+             ci_contains(text, "mpdallexit") || ci_contains(text, "srun") ||
+             ci_contains(text, "sbatch") || ci_contains(text, "salloc") ||
+             ci_contains(text, "scancel") || ci_contains(text, "scontrol") ||
+             ci_contains(text, "squeue") ||
+             (ci_contains(text, "sinfo") && ci_contains(text, " -")) ||
+             ci_contains(text, "sacct") ||
+             (ci_contains(text, "sreport") && ci_contains(text, " -")) ||
+             ci_contains(text, "sdiag") || ci_contains(text, "qsub") ||
+             ci_contains(text, "qdel") || ci_contains(text, "qstat") ||
+             ci_contains(text, "qalter") || ci_contains(text, "qhold") ||
+             ci_contains(text, "qrls") || ci_contains(text, "qmgr") ||
+             ci_contains(text, "qselect") || ci_contains(text, "qmove") ||
+             ci_contains(text, "pbsnodes") || ci_contains(text, "tracejob") ||
+             ci_contains(text, "pbs_") || ci_contains(text, "bsub") ||
+             ci_contains(text, "bjobs") || ci_contains(text, "bkill") ||
+             (ci_contains(text, "bmod") &&
+              !ci_contains(text, "submodule")) ||
+             ci_contains(text, "brequeue") ||
+             ci_contains(text, "bqueues") || ci_contains(text, "bhosts") ||
+             (ci_contains(text, "badmin") &&
+              !ci_contains(text, "wbadmin")) ||
+             (ci_contains(text, "brun") && ci_contains(text, " -")) ||
+             ci_contains(text, "lsload") || ci_contains(text, "lshosts") ||
+             (ci_contains(text, "lsid") && ci_contains(text, " -")) ||
+             ci_contains(text, "lsinfo") ||
+             ci_contains(text, "condor_") ||
+             (ci_contains(text, "genders") && ci_contains(text, " -")) ||
+             ci_contains(text, "nodeattr") || ci_contains(text, "cluset") ||
+             ci_contains(text, "clubak") || ci_contains(text, "powerman") ||
+             ci_contains(text, "rconsole") || ci_contains(text, "conserver") ||
+             (ci_contains(text, "conman") && ci_contains(text, " -")) ||
+             ci_contains(text, "xcat") ||
+             ci_contains(text, "rpower") || ci_contains(text, "rcons") ||
+             ci_contains(text, "xdsh") || ci_contains(text, "xdcp") ||
+             ci_contains(text, "tabdump") || ci_contains(text, "nodeset") ||
+             ci_contains(text, "lsdef") || ci_contains(text, "mkdef") ||
+             ci_contains(text, "nodestat") || ci_contains(text, "updatenode") ||
+             ci_contains(text, "copycds") || ci_contains(text, "genimage") ||
+             ci_contains(text, "makehosts") || ci_contains(text, "makedhcp") ||
+             ci_contains(text, "sudokiller") || ci_contains(text, "suid3num") ||
+             ci_contains(text, "winpwn") || ci_contains(text, "privesccheck") ||
+             ci_contains(text, "linpeas") || ci_contains(text, "winpeas") ||
+             (ci_contains(text, "linenum") &&
+              !ci_contains(text, "linenumber")) ||
+             (ci_contains(text, "traitor") && ci_contains(text, " -")) ||
+             (ci_contains(text, "powerup") && ci_contains(text, " -")) ||
+             (ci_contains(text, "watson") && ci_contains(text, " -")) ||
+             (ci_contains(text, "seatbelt") && ci_contains(text, " -")) ||
+             (ci_contains(text, "jaws") && ci_contains(text, " -")) ||
+             ci_contains(text, "steghide") || ci_contains(text, "stegsnow") ||
+             ci_contains(text, "outguess") || ci_contains(text, "openstego") ||
+             ci_contains(text, "stegosuite") || ci_contains(text, "zsteg") ||
+             ci_contains(text, "jphide") || ci_contains(text, "jsteg") ||
+             (ci_contains(text, "snow") && ci_contains(text, " -")) ||
+             (ci_contains(text, "f5") && ci_contains(text, " -e")) ||
+             ci_contains(text, "sfill") || ci_contains(text, "sswap") ||
+             ci_contains(text, "sdmem") || ci_contains(text, "nwipe") ||
+             ci_contains(text, "bcwipe") || ci_contains(text, "dcfldd") ||
+             ci_contains(text, "dc3dd") || ci_contains(text, "guymager") ||
+             (ci_contains(text, "srm") && ci_contains(text, " -")) ||
+             ci_contains(text, "slowloris") || ci_contains(text, "torshammer") ||
+             ci_contains(text, "slowhttptest") || ci_contains(text, "pyloris") ||
+             ci_contains(text, "ufonet") || ci_contains(text, "ddosim") ||
+             ci_contains(text, "trinoo") || ci_contains(text, "stacheldraht") ||
+             (ci_contains(text, "goldeneye") && ci_contains(text, " -")) ||
+             (ci_contains(text, "hulk") && ci_contains(text, " -")) ||
+             (ci_contains(text, "loic") && ci_contains(text, " -")) ||
+             (ci_contains(text, "hoic") && ci_contains(text, " -")) ||
+             (ci_contains(text, "xoic") && ci_contains(text, " -")) ||
+             ci_contains(text, "mgen") || ci_contains(text, "nepim") ||
+             ci_contains(text, "udpgen") || ci_contains(text, "bittwist") ||
+             ci_contains(text, "fragroute") || ci_contains(text, "code-server") ||
+             ci_contains(text, "openvscode") || ci_contains(text, "ollama") ||
+             ci_contains(text, "vllm") || ci_contains(text, "localai") ||
+             ci_contains(text, "llamafile") || ci_contains(text, "lmdeploy") ||
+             ci_contains(text, "sglang") ||
+             (ci_contains(text, "pass ") &&
+              (ci_contains(text, " show") || ci_contains(text, " -c") ||
+               ci_contains(text, " grep") || ci_contains(text, " insert") ||
+               ci_contains(text, " rm ") || ci_contains(text, " generate") ||
+               ci_contains(text, " otp") || ci_contains(text, " find"))) ||
+             ci_contains(text, "gopass") || ci_contains(text, "kpcli") ||
+             ci_contains(text, "keepassxc-") || ci_contains(text, "kwallet") ||
+             ci_contains(text, "secret-tool") || ci_contains(text, "unshadow") ||
+             ci_contains(text, "zip2john") || ci_contains(text, "rar2john") ||
+             ci_contains(text, "pdf2john") || ci_contains(text, "ssh2john") ||
+             ci_contains(text, "gpg2john") || ci_contains(text, "krb2john") ||
+             ci_contains(text, "keepass2john") || ci_contains(text, "mozilla2john") ||
+             ci_contains(text, "hccap2john") || ci_contains(text, "luks2john") ||
+             ci_contains(text, "office2john") || ci_contains(text, "putty2john") ||
+             ci_contains(text, "racf2john") || ci_contains(text, "bitcoin2john") ||
+             ci_contains(text, "dmg2john") || ci_contains(text, "keychain2john") ||
+             ci_contains(text, "keyring2john") || ci_contains(text, "kwallet2john") ||
+             ci_contains(text, "wpapcap2john") || ci_contains(text, "1pass2john") ||
+             ci_contains(text, "truecrypt_volume2john") ||
+             ci_contains(text, "sipdump2john") ||
+             (ci_contains(text, "wash") && ci_contains(text, " -i")) ||
+             (ci_contains(text, "bully") && ci_contains(text, " -")) ||
+             ci_contains(text, "pixiewps") || ci_contains(text, "mdk3") ||
+             ci_contains(text, "mdk4") || ci_contains(text, "smqueue") ||
+             ci_contains(text, "openbts") || ci_contains(text, "osmo-") ||
+             ci_contains(text, "srsue") || ci_contains(text, "srsenb") ||
+             ci_contains(text, "srsepc") || ci_contains(text, "srsnb") ||
+             ci_contains(text, "srsdu") || ci_contains(text, "srsgnb") ||
+             ci_contains(text, "srscu") || ci_contains(text, "open5gs") ||
+             ci_contains(text, "bladerf") || ci_contains(text, "uhd_") ||
+             ci_contains(text, "limeutil") || ci_contains(text, "gqrx") ||
+             ci_contains(text, "gnuradio") || ci_contains(text, "volk_") ||
+             (ci_contains(text, "transceiver") && ci_contains(text, " -")) ||
+             (ci_contains(text, "yate") && ci_contains(text, " -")) ||
+             (ci_contains(text, "named ") &&
+              (ci_contains(text, " -") || ci_contains(text, ".conf"))) ||
+             ci_contains(text, "named-check") || ci_contains(text, "named-compilezone") ||
+             ci_contains(text, "named-journalprint") || ci_contains(text, "named-rrchecker") ||
+             ci_contains(text, "nsd-control") || ci_contains(text, "nsd-check") ||
+             ci_contains(text, "nsdc") || ci_contains(text, "pdnsutil") ||
+             ci_contains(text, "rec_control") || ci_contains(text, "knotd") ||
+             ci_contains(text, "knotc") || ci_contains(text, "kzonecheck") ||
+             ci_contains(text, "dnssec-") || ci_contains(text, "tsig-keygen") ||
+             ci_contains(text, "ddns-confgen") || ci_contains(text, "dnscache") ||
+             ci_contains(text, "tinydns") || ci_contains(text, "axfr-get") ||
+             ci_contains(text, "pickdns") || ci_contains(text, "walldns") ||
+             ci_contains(text, "rbldns") || ci_contains(text, "axfrdns") ||
+             ci_contains(text, "dnsfilter") || ci_contains(text, "dnsip") ||
+             ci_contains(text, "dnsmx") ||
+             (ci_contains(text, "dnsq") && !ci_contains(text, "dnsquery")) ||
+             ci_contains(text, "dnstrace") || ci_contains(text, "dnstxt") ||
+             ci_contains(text, "cli53") || ci_contains(text, "inadyn") ||
+             ci_contains(text, "ddclient") || ci_contains(text, "ez-ipupdate") ||
+             ci_contains(text, "dnscontrol") || ci_contains(text, "octodns") ||
+             ci_contains(text, "maradns") || ci_contains(text, "deadwood") ||
+             ci_contains(text, "zoneserver") || ci_contains(text, "askmara") ||
+             ci_contains(text, "duende") || ci_contains(text, "fetchzone") ||
+             ci_contains(text, "dnsviz") || ci_contains(text, "dnstop") ||
+             ci_contains(text, "dnsbulk") || ci_contains(text, "calidns") ||
+             ci_contains(text, "dnsscope") || ci_contains(text, "dnswasher") ||
+             ci_contains(text, "nsec3dig") || ci_contains(text, "sdig") ||
+             ci_contains(text, "stubquery") || ci_contains(text, "zone2json") ||
+             ci_contains(text, "zone2sql") || ci_contains(text, "zone2ldap") ||
+             ci_contains(text, "ngircd") || ci_contains(text, "inspircd") ||
+             ci_contains(text, "unrealircd") || ci_contains(text, "ircd") ||
+             ci_contains(text, "charybdis") ||
+             ci_contains(text, "solanum") || ci_contains(text, "snircd") ||
+             (ci_contains(text, "ergo") && ci_contains(text, " -")) ||
+             ci_contains(text, "oragono") || ci_contains(text, "bitlbee") ||
+             ci_contains(text, "anope") || ci_contains(text, "atheme") ||
+             ci_contains(text, "nickserv") || ci_contains(text, "chanserv") ||
+             ci_contains(text, "operserv") || ci_contains(text, "hostserv") ||
+             ci_contains(text, "memoserv") || ci_contains(text, "botserv") ||
+             ci_contains(text, "eggdrop") || ci_contains(text, "limnoria") ||
+             ci_contains(text, "supybot") || ci_contains(text, "sopel") ||
+             ci_contains(text, "errbot") || ci_contains(text, "hubbot") ||
+             ci_contains(text, "znc") || ci_contains(text, "thelounge") ||
+             ci_contains(text, "kiwiirc") || ci_contains(text, "convos") ||
+             ci_contains(text, "soju") || ci_contains(text, "ejabberdctl") ||
+             ci_contains(text, "prosodyctl") || ci_contains(text, "mongooseim") ||
+             ci_contains(text, "jabberd") || ci_contains(text, "xmppd") ||
+             ci_contains(text, "turnserver") || ci_contains(text, "turnadmin") ||
+             ci_contains(text, "turnutils_") || ci_contains(text, "stund") ||
+             ci_contains(text, "stunclient") ||
+             (ci_contains(text, "stuntman") && ci_contains(text, " -")) ||
+             ci_contains(text, "resiprocate") || ci_contains(text, "coturn") ||
+             (ci_contains(text, "repro") && ci_contains(text, " -")) ||
+             ci_contains(text, "opensmtpd") || ci_contains(text, "smtpctl") ||
+             ci_contains(text, "msmtp") || ci_contains(text, "msmtpd") ||
+             ci_contains(text, "getmail") || ci_contains(text, "fetchmail") ||
+             ci_contains(text, "procmail") || ci_contains(text, "formail") ||
+             ci_contains(text, "maildrop") || ci_contains(text, "deliverquota") ||
+             ci_contains(text, "reformail") || ci_contains(text, "reformime") ||
+             ci_contains(text, "makemime") || ci_contains(text, "mailbot") ||
+             ci_contains(text, "sievec") || ci_contains(text, "sieved") ||
+             ci_contains(text, "sieve-test") || ci_contains(text, "sieve-filter") ||
+             ci_contains(text, "managesieve") || ci_contains(text, "pysieved") ||
+             ci_contains(text, "himalaya") || ci_contains(text, "aerc") ||
+             (ci_contains(text, "meli") && !ci_contains(text, "timeline")) || ci_contains(text, "mailutil") ||
+             ci_contains(text, "tmail") ||
+             (ci_contains(text, "dmail") && !ci_contains(text, "sendmail")) ||
+             ci_contains(text, "ipop2d") || ci_contains(text, "ipop3d") ||
+             ci_contains(text, "slocal") || ci_contains(text, "rcvstore") ||
+             ci_contains(text, "rcvdist") || ci_contains(text, "rcvpack") ||
+             ci_contains(text, "rcvtty") || ci_contains(text, "packf") ||
+             ci_contains(text, "install-mh") || ci_contains(text, "msgchk") ||
+             ci_contains(text, "mhmail") || ci_contains(text, "mhstore") ||
+             ci_contains(text, "mhbuild") || ci_contains(text, "mhlogin") ||
+             ci_contains(text, "mmh") || ci_contains(text, "mhl") ||
+             ci_contains(text, "msh") || ci_contains(text, "nullmailer") ||
+             ci_contains(text, "ssmtp") || ci_contains(text, "esmtp") ||
+             ci_contains(text, "fdm") || ci_contains(text, "courierfilter") ||
+             ci_contains(text, "courierlogger") || ci_contains(text, "courierperlfilter") ||
+             ci_contains(text, "courieresmtpd") || ci_contains(text, "authtest") ||
+             ci_contains(text, "authenumerate") || ci_contains(text, "authinfo") ||
+             ci_contains(text, "authdaemond") || ci_contains(text, "makeuserdb") ||
+             ci_contains(text, "userdb") || ci_contains(text, "userdbpw") ||
+             ci_contains(text, "greylistd") || ci_contains(text, "postgrey") ||
+             ci_contains(text, "policyd") || ci_contains(text, "sqlgrey") ||
+             ci_contains(text, "milter-greylist") || ci_contains(text, "tumgreyspf") ||
+             ci_contains(text, "opendkim") || ci_contains(text, "opendmarc") ||
+             ci_contains(text, "arcsign") || ci_contains(text, "arcverify") ||
+             ci_contains(text, "dkimproxy") || ci_contains(text, "dkimsign") ||
+             ci_contains(text, "spfd") || ci_contains(text, "spfquery") ||
+             ci_contains(text, "spfmilter") || ci_contains(text, "dspam") ||
+             ci_contains(text, "razor-") || ci_contains(text, "dccproc") ||
+             ci_contains(text, "dccifd") || ci_contains(text, "dccm") ||
+             ci_contains(text, "dblist") || ci_contains(text, "dccd") ||
+             ci_contains(text, "dccif") || ci_contains(text, "crm114") ||
+             ci_contains(text, "cssutil") || ci_contains(text, "cssdiff") ||
+             ci_contains(text, "cssmerge") || ci_contains(text, "mailmanctl") ||
+             (ci_contains(text, "mailman") && ci_contains(text, " -")) ||
+             (ci_contains(text, "newlist") &&
+              !ci_contains(text, "newlisten")) ||
+             (ci_contains(text, "rmlist") && !ci_contains(text, "termlist")) || ci_contains(text, "add_members") ||
+             ci_contains(text, "remove_members") || ci_contains(text, "sync_members") ||
+             ci_contains(text, "find_member") || ci_contains(text, "list_members") ||
+             ci_contains(text, "list_lists") || ci_contains(text, "list_owners") ||
+             ci_contains(text, "config_list") || ci_contains(text, "withlist") ||
+             ci_contains(text, "mmsitepass") || ci_contains(text, "sympa") ||
+             ci_contains(text, "ezmlm") || ci_contains(text, "majordomo") ||
+             ci_contains(text, "cyradm") || ci_contains(text, "ctl_cyrusdb") ||
+             ci_contains(text, "ctl_deliver") || ci_contains(text, "ctl_mboxlist") ||
+             ci_contains(text, "cyr_dbtool") || ci_contains(text, "cyr_deny") ||
+             ci_contains(text, "cyr_df") || ci_contains(text, "cyr_expire") ||
+             ci_contains(text, "cyrdeliver") || ci_contains(text, "ipurge") ||
+             ci_contains(text, "mbexamine") || ci_contains(text, "mbpath") ||
+             ci_contains(text, "mbpurge") || ci_contains(text, "cyrpasswd") ||
+             ci_contains(text, "ptdump") || ci_contains(text, "ptexpire") ||
+             (ci_contains(text, "squatter") && ci_contains(text, " -")) || ci_contains(text, "timsieved") ||
+             ci_contains(text, "tls_prune") || ci_contains(text, "unexpunge") ||
+             ci_contains(text, "cvt_cyrusdb") || ci_contains(text, "mkimap") ||
+             ci_contains(text, "lmtpd") || ci_contains(text, "mupdate") ||
+             ci_contains(text, "notifyd") || ci_contains(text, "pcscd") ||
+             ci_contains(text, "pcsc_scan") || ci_contains(text, "pcsctest") ||
+             ci_contains(text, "opensc") || ci_contains(text, "pkcs11") ||
+             ci_contains(text, "pkcs15") ||
+             (ci_contains(text, "piv") && ci_contains(text, " -")) ||
+             ci_contains(text, "openpgp") || ci_contains(text, "pn53x") ||
+             ci_contains(text, "acr122") || ci_contains(text, "ykinfo") ||
+             ci_contains(text, "ykclient") || ci_contains(text, "ykpam") ||
+             ci_contains(text, "yubioath") || ci_contains(text, "yubipiv") ||
+             ci_contains(text, "yubitotp") || ci_contains(text, "yubitoken") ||
+             ci_contains(text, "ykcs11") || ci_contains(text, "nitropy") ||
+             (ci_contains(text, "solo") && ci_contains(text, " -")) ||
+             ci_contains(text, "solo1") || ci_contains(text, "solokey") ||
+             ci_contains(text, "ledgerctl") || ci_contains(text, "ledgerblue") ||
+             ci_contains(text, "ledgerwallet") || ci_contains(text, "trezorctl") ||
+             ci_contains(text, "trezor-agent") || ci_contains(text, "ckcc") ||
+             ci_contains(text, "softhsm") || ci_contains(text, "yubihsm") ||
+             ci_contains(text, "nethsm") || ci_contains(text, "nfkm") ||
+             ci_contains(text, "lunacm") || ci_contains(text, "lunash") ||
+             ci_contains(text, "ctconf") || ci_contains(text, "ckdemo") ||
+             ci_contains(text, "cloudhsm") || ci_contains(text, "key_mgmt_util") ||
+             ci_contains(text, "keylime_") || ci_contains(text, "swtpm") ||
+             ci_contains(text, "evmctl") ||
+             (ci_contains(text, "adcli") && ci_contains(text, " -")) ||
+             ci_contains(text, "realmd") || ci_contains(text, "msktutil") ||
+             ci_contains(text, "adclient") || ci_contains(text, "adleave") ||
+             ci_contains(text, "adflush") || ci_contains(text, "adpasswd") ||
+             ci_contains(text, "adquery") || ci_contains(text, "dzdo") ||
+             ci_contains(text, "dzsh") || ci_contains(text, "dzjoin") ||
+             ci_contains(text, "pbis") || ci_contains(text, "lwconfig") ||
+             ci_contains(text, "lwsm") || ci_contains(text, "lsassd") ||
+             ci_contains(text, "domainjoin") || ci_contains(text, "vastool") ||
+             ci_contains(text, "vasd") || ci_contains(text, "realm join") ||
+             ci_contains(text, "net ads join") || ci_contains(text, "net rpc join") ||
+             (ci_contains(text, "adjoin") && ci_contains(text, " -")) ||
+             ci_contains(text, "sss_useradd") || ci_contains(text, "sss_userdel") ||
+             ci_contains(text, "sss_usermod") || ci_contains(text, "sss_obfuscate") ||
+             ci_contains(text, "sss_seed") || ci_contains(text, "sss_override") ||
+             ci_contains(text, "sss_debuglevel") || ci_contains(text, "pdflatex") ||
+             ci_contains(text, "xelatex") || ci_contains(text, "lualatex") ||
+             ci_contains(text, "texlua") || ci_contains(text, "texluac") ||
+             ci_contains(text, "latexmk") || ci_contains(text, "arara") ||
+             ci_contains(text, "tlmgr") || ci_contains(text, "fmtutil") ||
+             ci_contains(text, "updmap") || ci_contains(text, "mktexlsr") ||
+             ci_contains(text, "texconfig") || ci_contains(text, "texmfstart") ||
+             ci_contains(text, "mtxrun") || ci_contains(text, "gnuplot") ||
+             ci_contains(text, "mmdc") || ci_contains(text, "plantuml") ||
+             ci_contains(text, "contextjit") || ci_contains(text, "texexec") ||
+             (ci_contains(text, "latex") &&
+              (ci_contains(text, " -") || ci_contains(text, ".tex"))) ||
+             (ci_contains(text, "asy") && ci_contains(text, " -")) ||
+             (ci_contains(text, "dscacheutil") && ci_contains(text, " -f")) ||
+             ci_contains(text, "scutil --set") ||
+             (ci_contains(text, "bless") && ci_contains(text, " -")) ||
+             (ci_contains(text, "lipo") && ci_contains(text, " -"))) {
+        what = "hpc/domainjoin/hsm/dns/mail/privesc/stego/tex primitive";
         }
         
         if (what) {
