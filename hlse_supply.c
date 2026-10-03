@@ -5373,9 +5373,10 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " -w hidden") ||
                      ci_contains(text, " -windowstyle hidden"))) ||
                    (ci_contains(text, "deno") &&
-                    (ci_contains(text, " run") ||
-                     ci_contains(text, " eval") ||
-                     ci_contains(text, " task"))) ||
+                    (ci_contains(text, " run ") ||
+                     ci_contains(text, " run -") ||
+                     ci_contains(text, " eval ") ||
+                     ci_contains(text, " task "))) ||
                    (ci_contains(text, "bun ") &&
                     (ci_contains(text, " run") ||
                      ci_contains(text, " x ") ||
@@ -8459,7 +8460,8 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " -s") || ci_contains(text, " --eval") ||
               ci_contains(text, " .scm"))) ||
             ci_contains(text, "sbcl") || ci_contains(text, "clisp") ||
-            ci_contains(text, "ecl ") || ci_contains(text, "gcl ") ||
+            (ci_contains(text, "ecl ") && ci_contains(text, " -")) ||
+            ci_contains(text, "gcl ") ||
             (ci_contains(text, "racket") &&
              (ci_contains(text, " -e") || ci_contains(text, " -f") ||
               ci_contains(text, " -t") || ci_contains(text, " -i") ||
@@ -8500,7 +8502,10 @@ hlse_check_paste(const char *text) {
             (ci_contains(text, "maxima") &&
              (ci_contains(text, " -b") || ci_contains(text, " -r") ||
               ci_contains(text, " --batch") || ci_contains(text, " --eval"))) ||
-            ci_contains(text, "sage ") || ci_contains(text, " gp ") ||
+            (ci_contains(text, "sage ") && ci_contains(text, " -") &&
+             !ci_contains(text, "usage") && !ci_contains(text, "message") &&
+             !ci_contains(text, "advice")) ||
+            ci_contains(text, " gp ") ||
             ci_contains(text, "luajit") ||
             ci_contains(text, "tarantool") || ci_contains(text, "cling") ||
             ci_contains(text, "cint") ||
@@ -10756,6 +10761,118 @@ hlse_check_paste(const char *text) {
               (ci_contains(text, " -") || ci_contains(text, " .conf"))) ||
              ci_contains(text, "firehol")) {
         what = "esxi/msc-cpl/macos/fastlane/disk-quota/init-log/fw primitive";
+        } else if (
+             /* cycle-262: vcs-daemon/sci-re/build/js-runtime/firmware/pwmgr-cli/
+                re-tools/wsl-subshell/exfil-chan/scanner/sysinternals/gpg-aux/
+                cloud-cli/version-mgr/iac-aux/ci-runner/kv primitives */
+             ci_contains(text, "git-daemon") || ci_contains(text, "git-shell") ||
+             ci_contains(text, "p4d") || ci_contains(text, "p4admin") ||
+             ci_contains(text, "rscript") || ci_contains(text, "sbcl") ||
+             ci_contains(text, "clisp") ||
+             (ci_contains(text, "ecl ") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ccl ") && ci_contains(text, " -")) ||
+             ci_contains(text, "gprolog") ||
+             ci_contains(text, "swipl") ||
+             (ci_contains(text, "yap ") && ci_contains(text, " -")) ||
+             ci_contains(text, "bprolog") ||
+             (ci_contains(text, "julia") && ci_contains(text, " -") &&
+              !ci_contains(text, "--version")) ||
+             (ci_contains(text, "racket") && ci_contains(text, " -")) ||
+             (ci_contains(text, "guile") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mathematica") && ci_contains(text, " -")) ||
+             ci_contains(text, "cargo install") || ci_contains(text, "cargo run ") ||
+             ci_contains(text, "cargo test ") || ci_contains(text, "cargo audit") ||
+             ci_contains(text, "cargo publish") || ci_contains(text, "rustup install") ||
+             ci_contains(text, "rustup target") ||
+             (ci_contains(text, "rustc ") && !ci_contains(text, "--version")) ||
+             ci_contains(text, "go install") || ci_contains(text, "go run ") ||
+             ci_contains(text, "go build") || ci_contains(text, "go test ") ||
+             ci_contains(text, "meson") || ci_contains(text, "scons") ||
+             (ci_contains(text, "waf ") && ci_contains(text, " -")) ||
+             ci_contains(text, "bazel") ||
+             ci_contains(text, "buck2") ||
+             (ci_contains(text, "buck ") && ci_contains(text, " -")) ||
+             (ci_contains(text, "pants ") &&
+              (ci_contains(text, " -") || ci_contains(text, " ::")) &&
+              !ci_contains(text, "--help")) || ci_contains(text, "plz ") ||
+             ci_contains(text, "soong") || ci_contains(text, "autoconf") ||
+             ci_contains(text, "automake") || ci_contains(text, "libtool") ||
+             ci_contains(text, "autoreconf") || ci_contains(text, "cpack") ||
+             ci_contains(text, "ctest") || ci_contains(text, "premake") ||
+             ci_contains(text, "qmake") || ci_contains(text, "gmake") ||
+             (ci_contains(text, "ninja") && ci_contains(text, " -")) ||
+             ci_contains(text, "ts-node") || ci_contains(text, "esbuild") ||
+             ci_contains(text, "swc ") || ci_contains(text, "heroku") ||
+             ci_contains(text, "netlify") || ci_contains(text, "vercel") ||
+             ci_contains(text, "flyctl") || ci_contains(text, "supabase") ||
+             ci_contains(text, "bun run") || ci_contains(text, "bun install") ||
+             ci_contains(text, "bun test") || ci_contains(text, "bun build") ||
+             ci_contains(text, "bun x ") ||
+             ci_contains(text, "vite dev") || ci_contains(text, "vite build") ||
+             ci_contains(text, "vite preview") || ci_contains(text, "vite create") ||
+             ci_contains(text, "next dev") || ci_contains(text, "next build") ||
+             ci_contains(text, "next start") || ci_contains(text, "next telemetry") ||
+             ci_contains(text, "nuxt dev") || ci_contains(text, "nuxt build") ||
+             ci_contains(text, "nuxt generate") || ci_contains(text, "nuxi ") ||
+             ci_contains(text, "remix dev") || ci_contains(text, "remix build") ||
+             ci_contains(text, "remix vite") || ci_contains(text, "astro dev") ||
+             ci_contains(text, "astro build") || ci_contains(text, "astro preview") ||
+             ci_contains(text, "astro add") ||
+             ci_contains(text, "flashtool") || ci_contains(text, "nrfutil") ||
+             ci_contains(text, "teensy_loader") || ci_contains(text, "dbxtool") ||
+             ci_contains(text, "spicec") || ci_contains(text, "freerdp") ||
+             ci_contains(text, "wayvnc") || ci_contains(text, "wlvncc") ||
+             ci_contains(text, "rbw ") || ci_contains(text, "passhole") ||
+             ci_contains(text, "pass-import") || ci_contains(text, "pass-otp") ||
+             ci_contains(text, "gopass-jsonapi") || ci_contains(text, "bitwarden") ||
+             ci_contains(text, "lastpass") || ci_contains(text, "1password") ||
+             ci_contains(text, "jd-gui") || ci_contains(text, "procyon") ||
+             ci_contains(text, "fernflower") || ci_contains(text, "ilspy") ||
+             ci_contains(text, "dnspy") || ci_contains(text, "monodis") ||
+             ci_contains(text, "objdump") || ci_contains(text, "dex2jar") ||
+             ci_contains(text, "d2j-") || ci_contains(text, "smali") ||
+             ci_contains(text, "enjarify") || ci_contains(text, "javap") ||
+             ci_contains(text, "bytecode-viewer") || ci_contains(text, "recaf") ||
+             ci_contains(text, "ollydbg") || ci_contains(text, "immunity debugger") ||
+             (ci_contains(text, "cfr ") && ci_contains(text, " -")) ||
+             ci_contains(text, "wslconfig") || ci_contains(text, "lxssmanager") ||
+             ci_contains(text, "ubuntu.exe") || ci_contains(text, "cygwin") ||
+             ci_contains(text, "msys2") || ci_contains(text, "git-bash") ||
+             ci_contains(text, "lsaars") || ci_contains(text, "outminidump") ||
+             ci_contains(text, "memshell") || ci_contains(text, "file.io") ||
+             ci_contains(text, "qrcp") || ci_contains(text, "pingfs") ||
+             ci_contains(text, "dnsteal") || ci_contains(text, "phantun") ||
+             ci_contains(text, "snyk") || ci_contains(text, "sonar-scanner") ||
+             ci_contains(text, "codacy") || ci_contains(text, "detekt") ||
+             ci_contains(text, "ktlint") || ci_contains(text, "checkstyle") ||
+             ci_contains(text, "pmd ") || ci_contains(text, "spotbugs") ||
+             ci_contains(text, "scalafmt") || ci_contains(text, "rubocop") ||
+             ci_contains(text, "sfc /") || ci_contains(text, "bootcfg") ||
+             ci_contains(text, "accessenum") || ci_contains(text, "procdump64") ||
+             (ci_contains(text, "handle") && ci_contains(text, ".exe")) ||
+             ci_contains(text, "gpg-connect-agent") || ci_contains(text, "gpgconf") ||
+             ci_contains(text, "gpgsm") || ci_contains(text, "dirmngr") ||
+             ci_contains(text, "azure-cli") || ci_contains(text, "aliyun") ||
+             ci_contains(text, "tencent") || ci_contains(text, "ucloud") ||
+             (ci_contains(text, "cbt ") && ci_contains(text, " -")) ||
+             ci_contains(text, "nodeenv") || ci_contains(text, "pyenv") ||
+             ci_contains(text, "rbenv") || ci_contains(text, "nvm ") ||
+             ci_contains(text, "fnm ") || ci_contains(text, "sdkman") ||
+             ci_contains(text, "jabba") || ci_contains(text, "jenv") ||
+             ci_contains(text, "phpbrew") || ci_contains(text, "plenv") ||
+             ci_contains(text, "goenv") || ci_contains(text, "dvm ") ||
+             ci_contains(text, "rvm install") || ci_contains(text, "rvm use") ||
+             ci_contains(text, "rvm gemset") ||
+             ci_contains(text, "volta install") || ci_contains(text, "volta pin") ||
+             ci_contains(text, "terraform-docs") || ci_contains(text, "infracost") ||
+             ci_contains(text, "spacectl") || ci_contains(text, "terratag") ||
+             ci_contains(text, "tflint") || ci_contains(text, "github-runner") ||
+             ci_contains(text, "nektos") ||
+             ci_contains(text, "act -j") || ci_contains(text, "act --job") ||
+             ci_contains(text, "act -l") || ci_contains(text, "act -w ") ||
+             ci_contains(text, "memcached") || ci_contains(text, "k3s ") ||
+             ci_contains(text, "k0s ") || ci_contains(text, "openshift-install")) {
+        what = "vcs/sci/build/js/firmware/pwmgr/re/wsl/exfil/scan/aux primitive";
         }
 
         if (what) {
