@@ -10932,6 +10932,105 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "gdbserver") || ci_contains(text, "lldb-server") ||
              ci_contains(text, "sysdig-inspect") || ci_contains(text, "wireshark")) {
         what = "capture/usb/jvm/isolation/binmod/deploy/mount/trace/mailer/tunnel primitive";
+        } else if (
+             /* cycle-264a: theorem-prover/functional-lang/alt-interp/asm/translation */
+             ci_contains(text, "coqc") || ci_contains(text, "coqtop") ||
+             ci_contains(text, "coqchk") || ci_contains(text, "agda") ||
+             ci_contains(text, "idris2") || ci_contains(text, "tlapm") ||
+             ci_contains(text, "tlaps") || ci_contains(text, "why3") ||
+             ci_contains(text, "frama-c") || ci_contains(text, "cbmc") ||
+             ci_contains(text, "klee") || ci_contains(text, "cvc4") ||
+             ci_contains(text, "cvc5") || ci_contains(text, "z3 ") ||
+             ci_contains(text, "boolector") || ci_contains(text, "yices") ||
+             ci_contains(text, "eprover") || ci_contains(text, "acl2") ||
+             ci_contains(text, "hol-light") || ci_contains(text, "hol88") ||
+             (ci_contains(text, "lean ") && ci_contains(text, " -") &&
+              !ci_contains(text, "clean")) ||
+             (ci_contains(text, "lake ") && ci_contains(text, " -")) ||
+             (ci_contains(text, "idris ") && ci_contains(text, " -")) ||
+             (ci_contains(text, "isabelle") && ci_contains(text, " -")) ||
+             (ci_contains(text, "hol ") && ci_contains(text, " -")) ||
+             (ci_contains(text, "princess") && ci_contains(text, " -")) ||
+             (ci_contains(text, "vampire") && ci_contains(text, " -")) ||
+             (ci_contains(text, "spass") && ci_contains(text, " -")) ||
+             ci_contains(text, "fsharp") || ci_contains(text, "elm-reactor") ||
+             ci_contains(text, "elm-make") || ci_contains(text, "purescript") ||
+             ci_contains(text, "spago") || ci_contains(text, "rescript") ||
+             (ci_contains(text, "elm ") && ci_contains(text, " -")) ||
+             (ci_contains(text, "purs ") && ci_contains(text, " -")) ||
+             (ci_contains(text, "bsc ") && ci_contains(text, " -")) ||
+             (ci_contains(text, "chicken ") && ci_contains(text, " -")) ||
+             ci_contains(text, "gsi ") || ci_contains(text, "gsc ") ||
+             ci_contains(text, "kawa") || ci_contains(text, "ironpython") ||
+             ci_contains(text, "pypy") || ci_contains(text, "graalpython") ||
+             ci_contains(text, "truffleruby") || ci_contains(text, "mirb") ||
+             ci_contains(text, "c3c") || ci_contains(text, "vala") ||
+             ci_contains(text, "fpc") || ci_contains(text, "ppcx64") ||
+             ci_contains(text, "lazbuild") || ci_contains(text, "chibicc") ||
+             ci_contains(text, "cproc") || ci_contains(text, "kellnr") ||
+             (ci_contains(text, "genie") && ci_contains(text, " -")) ||
+             ci_contains(text, "wineserver") || ci_contains(text, "wine64") ||
+             ci_contains(text, "box64") || ci_contains(text, "box86") ||
+             ci_contains(text, "fex ") ||
+             (ci_contains(text, "wine ") &&
+              (ci_contains(text, ".exe") || ci_contains(text, " -"))) ||
+             (ci_contains(text, "proton") && ci_contains(text, " -")) ||
+             (ci_contains(text, "rosetta") && ci_contains(text, " -"))) {
+        what = "prover/functional/alt-interp/translation primitive";
+        } else if (
+             /* cycle-264b: sandbox-escape/privexec/ipc/broker/storage/dir/
+                overlay/supervision/fuse/envpkg/profiler primitives */
+             ci_contains(text, "criu") || ci_contains(text, "checkpointctl") ||
+             ci_contains(text, "minijail") || ci_contains(text, "jailer") ||
+             ci_contains(text, "systemd-nspawn") || ci_contains(text, "febootstrap") ||
+             (ci_contains(text, "osc ") &&
+              (ci_contains(text, " -") && !ci_contains(text, "oscar"))) ||
+             ci_contains(text, "doas") ||
+             ci_contains(text, "opendoas") || ci_contains(text, "sudo-rs") ||
+             ci_contains(text, "beesu") || ci_contains(text, "gksu") ||
+             ci_contains(text, "kdesudo") || ci_contains(text, "gtksu") ||
+             ci_contains(text, "xdg-su") || ci_contains(text, "lxqt-sudo") ||
+             ci_contains(text, "visudo") || ci_contains(text, "grpc_cli") ||
+             ci_contains(text, "evans") || ci_contains(text, "bloomrpc") ||
+             (ci_contains(text, "newman") && ci_contains(text, " -")) ||
+             (ci_contains(text, "hurl") && ci_contains(text, " -")) ||
+             ci_contains(text, "curlie") || ci_contains(text, "wscat") ||
+             (ci_contains(text, "snc ") && ci_contains(text, " -")) ||
+             ci_contains(text, "dubbo-admin") || ci_contains(text, "natscli") ||
+             ci_contains(text, "nats-server") || ci_contains(text, "nsqadmin") ||
+             ci_contains(text, "rocketmq") || ci_contains(text, "rados") ||
+             ci_contains(text, "cephfs") ||
+             (ci_contains(text, "lfs ") && ci_contains(text, " -")) ||
+             ci_contains(text, "beegfs") || ci_contains(text, "mmfsd") ||
+             (ci_contains(text, "rook") && ci_contains(text, " -")) ||
+             ci_contains(text, "openebs") || ci_contains(text, "dsconf") ||
+             ci_contains(text, "dsadm") || ci_contains(text, "slapacl") ||
+             ci_contains(text, "slapauth") ||
+             (ci_contains(text, "ucs ") && ci_contains(text, " -")) ||
+             ci_contains(text, "zentyal") || ci_contains(text, "remoteit") ||
+             ci_contains(text, "s6-supervise") || ci_contains(text, "s6-svctl") ||
+             ci_contains(text, "s6-svc") || ci_contains(text, "s6-svwait") ||
+             ci_contains(text, "s6-svstat") || ci_contains(text, "dinit") ||
+             ci_contains(text, "sysvinit") || ci_contains(text, "sinit") ||
+             ci_contains(text, "minit") ||
+             (ci_contains(text, "epoch ") && ci_contains(text, " -")) ||
+             (ci_contains(text, "finit") && ci_contains(text, " -")) ||
+             (ci_contains(text, "perp ") && ci_contains(text, " -")) ||
+             ci_contains(text, "supervisord") || ci_contains(text, "circusd") ||
+             ci_contains(text, "mergerfs") || ci_contains(text, "unionfs") ||
+             ci_contains(text, "aufs ") || ci_contains(text, "bindfs") ||
+             ci_contains(text, "gcsfuse") || ci_contains(text, "blobfuse") ||
+             ci_contains(text, "juicefs") || ci_contains(text, "goofys") ||
+             (ci_contains(text, "hermit") && ci_contains(text, " -")) ||
+             ci_contains(text, "devbox") || ci_contains(text, "flox") ||
+             ci_contains(text, "pkgx") || ci_contains(text, "aqua-installer") ||
+             ci_contains(text, "valgrind") || ci_contains(text, "callgrind") ||
+             ci_contains(text, "massif") || ci_contains(text, "helgrind") ||
+             ci_contains(text, "gprof") || ci_contains(text, "flamegraph") ||
+             ci_contains(text, "cachegrind") || ci_contains(text, "drd") ||
+             ci_contains(text, "sgcheck") ||
+             (ci_contains(text, "hotspot") && ci_contains(text, " -"))) {
+        what = "sandbox/privexec/ipc/broker/storage/dir/overlay/supervision/fuse/profiler primitive";
         }
 
         if (what) {
