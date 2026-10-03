@@ -12480,6 +12480,57 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "btmgmt") || ci_contains(text, "hciconfig") ||
              ci_contains(text, "hcidump")) {
         what = "dnsprivacy/knot/mdns/ndisc/ppp/shaping/firewall/netflow/captive/wifi/bt primitive";
+        } else if (
+             /* cycle-283a: stress/bench/gpu/input/v4l primitives */
+             ci_contains(text, "stress-ng") || ci_contains(text, "sysbench") ||
+             ci_contains(text, "mprime") || ci_contains(text, "iperf") ||
+             ci_contains(text, "netperf") || ci_contains(text, "nuttcp") ||
+             ci_contains(text, "qperf") || ci_contains(text, "owping") ||
+             ci_contains(text, "nvtop") || ci_contains(text, "gpustat") ||
+             ci_contains(text, "intel_gpu_top") || ci_contains(text, "glxinfo") ||
+             ci_contains(text, "vulkaninfo") || ci_contains(text, "vkcube") ||
+             ci_contains(text, "clinfo") || ci_contains(text, "vainfo") ||
+             ci_contains(text, "vdpauinfo") || ci_contains(text, "glmark2") ||
+             ci_contains(text, "vkmark") || ci_contains(text, "jstest") ||
+             ci_contains(text, "sdl2-jstest") || ci_contains(text, "v4l2-compliance") ||
+             ci_contains(text, "v4l2-dbg") || ci_contains(text, "qv4l2")) {
+        what = "stress/bench/gpu/input/v4l primitive";
+        } else if (
+             /* cycle-283b: alsa/pulse/pipewire/jack/gvfs/xdg/desktopdb/gsettings/
+                kde/qt/glib/a11y primitives */
+             ci_contains(text, "amixer") || ci_contains(text, "aconnect") ||
+             ci_contains(text, "aseqdump") || ci_contains(text, "speaker-test") ||
+             ci_contains(text, "alsactl") || ci_contains(text, "alsaucm") ||
+             ci_contains(text, "alsabat") || ci_contains(text, "pacmd") ||
+             ci_contains(text, "pacat") || ci_contains(text, "pasuspender") ||
+             ci_contains(text, "pw-cli") || ci_contains(text, "pw-dump") ||
+             ci_contains(text, "pw-mon") || ci_contains(text, "pw-top") ||
+             ci_contains(text, "pw-link") || ci_contains(text, "pw-dot") ||
+             ci_contains(text, "pw-metadata") || ci_contains(text, "pw-reserve") ||
+             ci_contains(text, "wpctl") || ci_contains(text, "spa-inspect") ||
+             ci_contains(text, "spa-monitor") || ci_contains(text, "jack_control") ||
+             ci_contains(text, "jack_lsp") || ci_contains(text, "jack_connect") ||
+             ci_contains(text, "jack_disconnect") || ci_contains(text, "jack_load") ||
+             ci_contains(text, "gvfs-info") || ci_contains(text, "gvfs-ls") ||
+             ci_contains(text, "gvfs-copy") || ci_contains(text, "gvfs-move") ||
+             ci_contains(text, "gvfs-trash") || ci_contains(text, "xdg-mime") ||
+             ci_contains(text, "xdg-settings") || ci_contains(text, "xdg-user-dir") ||
+             ci_contains(text, "xdg-icon-resource") ||
+             ci_contains(text, "xdg-desktop-menu") || ci_contains(text, "xdg-screensaver") ||
+             ci_contains(text, "update-desktop-database") ||
+             ci_contains(text, "update-mime-database") ||
+             ci_contains(text, "gtk-update-icon-cache") || ci_contains(text, "gsettings") ||
+             (ci_contains(text, "dconf") && !ci_contains(text, "ldconf")) || ci_contains(text, "kdeconnect-cli") ||
+             (ci_contains(text, "kstart") && !ci_contains(text, "kickstart")) || ci_contains(text, "qtpaths") ||
+             (ci_contains(text, "linguist") && ci_contains(text, " -")) ||
+             ci_contains(text, "lrelease") || ci_contains(text, "lupdate") ||
+             ci_contains(text, "glib-compile-schemas") ||
+             ci_contains(text, "glib-compile-resources") ||
+             ci_contains(text, "gobject-query") ||
+             (ci_contains(text, "onboard") && ci_contains(text, " -")) ||
+             (ci_contains(text, "florence") && ci_contains(text, " -")) ||
+             ci_contains(text, "brltty") || ci_contains(text, "krfb")) {
+        what = "alsa/pulse/pipewire/jack/gvfs/xdg/desktopdb/gsettings/kde/qt/glib/a11y primitive";
         }
 
         if (what) {
