@@ -11031,6 +11031,84 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "sgcheck") ||
              (ci_contains(text, "hotspot") && ci_contains(text, " -"))) {
         what = "sandbox/privexec/ipc/broker/storage/dir/overlay/supervision/fuse/profiler primitive";
+        } else if (
+             /* cycle-265a: alt-shell/term-inject/firmware-tool/eda-fpga/3d-cnc/
+                game-engine/wm-input/clipboard-mgr/dialog-spoof/tmux-alt/
+                keyring-agent/boot-write primitives */
+             ci_contains(text, "xonsh") || ci_contains(text, "nushell") ||
+             ci_contains(text, "elvish") || ci_contains(text, "yash ") ||
+             ci_contains(text, "mksh") || ci_contains(text, "scsh") ||
+             (ci_contains(text, "unbuffer") && !ci_contains(text, "unbuffered")) || ci_contains(text, "botb") ||
+             ci_contains(text, "cbfstool") || ci_contains(text, "cbmem") ||
+             ci_contains(text, "nvramtool") || ci_contains(text, "superiotool") ||
+             ci_contains(text, "ectool") || ci_contains(text, "bios_extract") ||
+             ci_contains(text, "intelmetool") || ci_contains(text, "me-cleaner") ||
+             ci_contains(text, "kicad-cli") || ci_contains(text, "openscad") ||
+             ci_contains(text, "freecadcmd") || ci_contains(text, "nextpnr-ice40") ||
+             ci_contains(text, "nextpnr-ecp5") || ci_contains(text, "nextpnr-machxo2") ||
+             ci_contains(text, "icestorm") || ci_contains(text, "verilator") ||
+             ci_contains(text, "iverilog") || ci_contains(text, "gtkwave") ||
+             ci_contains(text, "vivado") || ci_contains(text, "quartus_sh") ||
+             (ci_contains(text, "quartus") && ci_contains(text, " -")) ||
+             ci_contains(text, "xapp1541") || ci_contains(text, "prusa-slicer") ||
+             ci_contains(text, "curaengine") || ci_contains(text, "octoprint") ||
+             ci_contains(text, "klipper") || ci_contains(text, "pronsole") ||
+             (ci_contains(text, "marlin") && ci_contains(text, " -")) ||
+             (ci_contains(text, "godot") && ci_contains(text, " -")) ||
+             (ci_contains(text, "blender") && ci_contains(text, " -")) ||
+             (ci_contains(text, "unity ") && ci_contains(text, " -")) ||
+             ci_contains(text, "unreal-editor") ||
+             (ci_contains(text, "riverctl") && !ci_contains(text, "driverctl")) || ci_contains(text, "wlr-randr") ||
+             ci_contains(text, "kanshi") || ci_contains(text, "wdisplays") ||
+             (ci_contains(text, "cage ") && ci_contains(text, " -")) ||
+             ci_contains(text, "clipnotify") || ci_contains(text, "xcmenu") ||
+             ci_contains(text, "dunstify") ||
+             (ci_contains(text, "yad ") && ci_contains(text, " -")) ||
+             (ci_contains(text, "dialog ") && ci_contains(text, " -")) ||
+             ci_contains(text, "gxmessage") || ci_contains(text, "xmessage") ||
+             ci_contains(text, "zellij") || ci_contains(text, "dvtm") ||
+             (ci_contains(text, "byobu") && ci_contains(text, " -")) ||
+             ci_contains(text, "keepassxc-proxy") || ci_contains(text, "ssh-askpass") ||
+             ci_contains(text, "kwalletd5") || ci_contains(text, "kwalletcli") ||
+             ci_contains(text, "gnome-keyring-daemon") || ci_contains(text, "refind-install") ||
+             ci_contains(text, "limine") || ci_contains(text, "ukify") ||
+             ci_contains(text, "pueue") || (ci_contains(text, "nq ") && !ci_contains(text, "inq")) ||
+             ci_contains(text, "task-spooler") ||
+             (ci_contains(text, "posh ") && ci_contains(text, " -") && !ci_contains(text, "--help")) ||
+             (ci_contains(text, "oil ") && ci_contains(text, " -")) ||
+             (ci_contains(text, "osh ") && ci_contains(text, " -") && !ci_contains(text, "gosh") && !ci_contains(text, "kosh") && !ci_contains(text, "posh") && !ci_contains(text, "--help"))) {
+        what = "alt-shell/term/firmware/eda/3d/game/wm/clipboard/dialog/tmux/keyring/boot primitive";
+        } else if (
+             /* cycle-265b: cosmos-iot/hw-telemetry/routing-multicast/passive-sniff/
+                pth-impacket/wireless primitives */
+             ci_contains(text, "gaiad") || ci_contains(text, "osmosisd") ||
+             ci_contains(text, "junod") || ci_contains(text, "celestia") ||
+             ci_contains(text, "seid") || ci_contains(text, "evmosd") ||
+             ci_contains(text, "platformio") || ci_contains(text, "arduino-cli") ||
+             ci_contains(text, "esphome") || ci_contains(text, "kamailio") ||
+             ci_contains(text, "xboxdrv") || ci_contains(text, "uinput") ||
+             ci_contains(text, "evdev") || ci_contains(text, "joydev") ||
+             ci_contains(text, "wiiuse") || ci_contains(text, "sixpair") ||
+             ci_contains(text, "gpsd") || ci_contains(text, "gpsctl") ||
+             ci_contains(text, "gpsfake") || ci_contains(text, "cgps") ||
+             ci_contains(text, "gpsmon") || ci_contains(text, "gpspipe") ||
+             ci_contains(text, "lm_sensors") || ci_contains(text, "sensors-detect") ||
+             ci_contains(text, "fancontrol") || ci_contains(text, "pwmconfig") ||
+             ci_contains(text, "lldpd") || ci_contains(text, "lldpctl") ||
+             ci_contains(text, "lldpcli") || ci_contains(text, "ospfclient") ||
+             (ci_contains(text, "mroute") && ci_contains(text, " -")) ||
+             ci_contains(text, "mrouted") || ci_contains(text, "smcroute") ||
+             ci_contains(text, "igmpproxy") || ci_contains(text, "httpry") ||
+             ci_contains(text, "ntlmrealyx") || ci_contains(text, "pth-toolkit") ||
+             ci_contains(text, "pth-winexe") || ci_contains(text, "pth-smbclient") ||
+             ci_contains(text, "multi_relay") ||
+             ci_contains(text, "impacket-atexec") || ci_contains(text, "impacket-dcomexec") ||
+             ci_contains(text, "impacket-psexec") || ci_contains(text, "impacket-smbexec") ||
+             ci_contains(text, "impacket-wmiexec") || ci_contains(text, "kismet_server") ||
+             ci_contains(text, "kismet_capture") ||
+             (ci_contains(text, "hornet") && ci_contains(text, " -")) ||
+             (ci_contains(text, "beelogger") && ci_contains(text, " -"))) {
+        what = "cosmos/iot/telemetry/routing/sniff/pth/wireless primitive";
         }
 
         if (what) {
