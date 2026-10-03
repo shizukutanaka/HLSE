@@ -11674,6 +11674,143 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-271: mesh/lora/sdr-radio/usenet/smallnet/anon/overlay/userspace-net + dnsdist/osint/sandbox/forensics/log/ir/malware-analysis/bindiff/firmware/container/k8s/serverless/faas primitives ──
+for c in 'rnode' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'rns -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'meshcore' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'xastir' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'qsstv' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'freedv' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'codec2' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'cubicsdr' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'nntpcache' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'leafnode' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'tin -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'slrn -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'pan -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'hellanzb' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'sacc -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'lagrange -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'amfora -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'bombadillo -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'offpunk -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'gmni -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'gtl -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'ddgr -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'googler -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'obfs4' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'obfsproxy' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dnscrypt' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'wireguard-go' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'boringtun' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'vde2 -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'slirp -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'slirp4netns' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'pasta -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'gvisor-tap-vsock' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'arpd -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'netdiscover' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'bgpq3' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'bgpq4' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'rpsl -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'peeringdb' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'routeview' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dnsdist' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'socialscan' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'cape -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'vt-cli' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'malwoverview' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'msoffcrypto' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'ils -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'blkls -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'tsk_recover' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'tsk_loaddb' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'ewfacquire' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'ewfinfo' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'ewfmount' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'affacquire' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'affinfo' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'affmount' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'qphotorec' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'lnav -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'goaccess' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'multitail -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'sigma-cli' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'log2timeline' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'plaso -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'timesketch' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'kape -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'kansa -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'ghidra-headless' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'angr -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'miasm -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'quark -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'yara-x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'bindiff' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'diaphora -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'jdiff -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'bsdiff -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'courgette -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'zydis' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'srec_cat' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'srecord -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'unblob' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'yaffshiv' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dive -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dockle -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'hadolint' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'rootlesskit' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'ksniff' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'kubefwd' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'kubent' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'fairwinds -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'datree -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'digger -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'meshctl' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'claudia -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'apex -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'kubeless' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'faasd' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'openfaas-cli' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'tin foil' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'frying pan recipe' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'lagrange point' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'amfora vessel' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'bombadillo lyrics' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'offpunk docs' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'googler app' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'slurping pasta' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'pasta recipe' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'cape cod' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'escape room' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'landscape photo' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'angry birds' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+
+for c in 'courgette soup' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'dive bar' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'diver down' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'endive salad' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'digger wasp' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'claudia schiffer' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'apex predator' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'fairwinds capital' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'datree docs' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'dockle docs' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'multitail docs' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'plaso docs' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'kape docs' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'kansa tribe' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'diaphora docs' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'srecord docs' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'miasm docs' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'rns docs' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'vde2 docs' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'arpd docs' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'ils approach' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'tin star' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'pan flute' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+
+for c in 'quark particle' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
 # ── cycle-270: uav/robotics/ot-ics/energy/aviation/marine/weather + miner/wallet/mev/validator/l2/bridge/oracle/indexer/cosmos/mixer/privacy/signing primitives ──
 for c in 'ardupilot' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
 for c in 'qgroundcontrol' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done

@@ -10119,7 +10119,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "ros") && ci_contains(text, " -")) ||
              (ci_contains(text, "gambit") && ci_contains(text, " -")) ||
              ci_contains(text, "nuitka") || ci_contains(text, "pyinstaller") ||
-             ci_contains(text, "cx_freeze") || ci_contains(text, "pex") ||
+             ci_contains(text, "cx_freeze") || (ci_contains(text, "pex") && !ci_contains(text, "apex")) ||
              ci_contains(text, "shiv") || ci_contains(text, "pyoxidizer") ||
              ci_contains(text, "cython") || ci_contains(text, "wasmtime") ||
              ci_contains(text, "wasmer") || ci_contains(text, "wasmedge") ||
@@ -11579,6 +11579,108 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "horcrux") || ci_contains(text, "tmkms") ||
              ci_contains(text, "cosmovisor")) {
         what = "miner/wallet/mev/validator/l2/bridge/oracle/indexer/cosmos/mixer/privacy/signing primitive";
+        } else if (
+             /* cycle-271a: mesh/lora/sdr-radio/sip/usenet/smallnet/anon/overlay/
+                userspace-net primitives */
+             (ci_contains(text, "rnode") && !ci_contains(text, "supernode")) ||
+             (ci_contains(text, "rns") && ci_contains(text, " -")) ||
+             ci_contains(text, "meshcore") || ci_contains(text, "xastir") ||
+             ci_contains(text, "qsstv") || ci_contains(text, "freedv") ||
+             ci_contains(text, "codec2") || ci_contains(text, "cubicsdr") ||
+             ci_contains(text, "nntpcache") || ci_contains(text, "leafnode") ||
+             (ci_contains(text, "tin ") && ci_contains(text, " -") &&
+              !ci_contains(text, "latin ") && !ci_contains(text, "artin ") &&
+              !ci_contains(text, "stin ")) ||
+             (ci_contains(text, "slrn") && ci_contains(text, " -")) ||
+             (ci_contains(text, "pan") && ci_contains(text, " -") &&
+              !ci_contains(text, "apan") && !ci_contains(text, "pan-") &&
+              !ci_contains(text, "expan") && !ci_contains(text, "japan") &&
+              !ci_contains(text, "span") && !ci_contains(text, "cpan") &&
+              !ci_contains(text, "pand") && !ci_contains(text, "pant")) ||
+             ci_contains(text, "hellanzb") ||
+             (ci_contains(text, "sacc") && ci_contains(text, " -")) ||
+             (ci_contains(text, "lagrange") && ci_contains(text, " -")) ||
+             (ci_contains(text, "amfora") && ci_contains(text, " -")) ||
+             (ci_contains(text, "bombadillo") && ci_contains(text, " -")) ||
+             (ci_contains(text, "offpunk") && ci_contains(text, " -")) ||
+             (ci_contains(text, "gmni") && ci_contains(text, " -")) ||
+             (ci_contains(text, "gtl") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ddgr") && ci_contains(text, " -")) ||
+             (ci_contains(text, "googler") && ci_contains(text, " -")) ||
+             ci_contains(text, "obfs4") || ci_contains(text, "obfsproxy") ||
+             ci_contains(text, "dnscrypt") || ci_contains(text, "wireguard-go") ||
+             ci_contains(text, "boringtun") ||
+             (ci_contains(text, "vde2") && ci_contains(text, " -")) ||
+             (ci_contains(text, "slirp") && ci_contains(text, " -") &&
+              !ci_contains(text, "slurp")) ||
+             ci_contains(text, "slirp4netns") ||
+             (ci_contains(text, "pasta") && ci_contains(text, " -")) ||
+             ci_contains(text, "gvisor-tap-vsock") ||
+             (ci_contains(text, "arpd") && ci_contains(text, " -") &&
+              !ci_contains(text, "warpd")) ||
+             ci_contains(text, "netdiscover") || ci_contains(text, "bgpq3") ||
+             ci_contains(text, "bgpq4") ||
+             (ci_contains(text, "rpsl") && ci_contains(text, " -")) ||
+             ci_contains(text, "peeringdb") || ci_contains(text, "routeview")) {
+        what = "mesh/lora/sdr-radio/usenet/smallnet/anon/overlay/userspace-net primitive";
+        } else if (
+             /* cycle-271b: dnsdist/osint/sandbox/forensics/memory/disk/log/
+                ir/malware-analysis/bindiff/firmware/container/k8s-extra/
+                serverless/faas primitives */
+             ci_contains(text, "dnsdist") || ci_contains(text, "socialscan") ||
+             (ci_contains(text, "cape") && ci_contains(text, " -") &&
+              !ci_contains(text, "cape-") && !ci_contains(text, "scape") &&
+              !ci_contains(text, "escape") && !ci_contains(text, "landscap")) ||
+             ci_contains(text, "vt-cli") || ci_contains(text, "malwoverview") ||
+             ci_contains(text, "msoffcrypto") ||
+             (ci_contains(text, "ils") && ci_contains(text, " -") &&
+              !ci_contains(text, "ails") && !ci_contains(text, "tails") &&
+              !ci_contains(text, "mails") && !ci_contains(text, "sails")) ||
+             (ci_contains(text, "blkls") && ci_contains(text, " -")) ||
+             ci_contains(text, "tsk_recover") || ci_contains(text, "tsk_loaddb") ||
+             ci_contains(text, "ewfacquire") || ci_contains(text, "ewfinfo") ||
+             ci_contains(text, "ewfmount") || ci_contains(text, "affacquire") ||
+             ci_contains(text, "affinfo") || ci_contains(text, "affmount") ||
+             ci_contains(text, "qphotorec") ||
+             (ci_contains(text, "lnav") && ci_contains(text, " -")) ||
+             ci_contains(text, "goaccess") ||
+             (ci_contains(text, "multitail") && ci_contains(text, " -")) ||
+             ci_contains(text, "sigma-cli") || ci_contains(text, "log2timeline") ||
+             (ci_contains(text, "plaso") && ci_contains(text, " -")) ||
+             ci_contains(text, "timesketch") ||
+             (ci_contains(text, "kape") && ci_contains(text, " -")) ||
+             (ci_contains(text, "kansa") && ci_contains(text, " -")) ||
+             ci_contains(text, "ghidra-headless") ||
+             (ci_contains(text, "angr") && ci_contains(text, " -") &&
+              !ci_contains(text, "angry")) ||
+             (ci_contains(text, "miasm") && ci_contains(text, " -")) ||
+             (ci_contains(text, "quark") && ci_contains(text, " -") &&
+              !ci_contains(text, "quark-") && !ci_contains(text, "square")) ||
+             ci_contains(text, "yara-x") || ci_contains(text, "bindiff") ||
+             (ci_contains(text, "diaphora") && ci_contains(text, " -")) ||
+             (ci_contains(text, "jdiff") && ci_contains(text, " -")) ||
+             (ci_contains(text, "bsdiff") && ci_contains(text, " -")) ||
+             (ci_contains(text, "courgette") && ci_contains(text, " -")) ||
+             ci_contains(text, "zydis") || ci_contains(text, "srec_cat") ||
+             (ci_contains(text, "srecord") && ci_contains(text, " -")) ||
+             ci_contains(text, "unblob") || ci_contains(text, "yaffshiv") ||
+             (ci_contains(text, "dive") && ci_contains(text, " -") &&
+              !ci_contains(text, "diver") && !ci_contains(text, "endive")) ||
+             (ci_contains(text, "dockle") && ci_contains(text, " -")) ||
+             ci_contains(text, "hadolint") || ci_contains(text, "rootlesskit") ||
+             ci_contains(text, "ksniff") || ci_contains(text, "kubefwd") ||
+             ci_contains(text, "kubent") ||
+             (ci_contains(text, "fairwinds") && ci_contains(text, " -")) ||
+             (ci_contains(text, "datree") && ci_contains(text, " -")) ||
+             (ci_contains(text, "digger") && ci_contains(text, " -") &&
+              !ci_contains(text, "digger-")) ||
+             ci_contains(text, "meshctl") ||
+             (ci_contains(text, "claudia") && ci_contains(text, " -")) ||
+             (ci_contains(text, "apex") && ci_contains(text, " -") &&
+              !ci_contains(text, "apex-") && !ci_contains(text, "tapex")) ||
+             ci_contains(text, "kubeless") || ci_contains(text, "faasd") ||
+             ci_contains(text, "openfaas-cli")) {
+        what = "dnsdist/osint/sandbox/forensics/memory/disk/log/ir/malware-analysis/bindiff/firmware/container/k8s/serverless/faas primitive";
         }
 
         if (what) {
