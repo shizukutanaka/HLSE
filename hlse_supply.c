@@ -12620,6 +12620,36 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ikhal") || ci_contains(text, "newsboat") ||
              ci_contains(text, "sfeed") || ci_contains(text, "greader")) {
         what = "pki-nss/mail/contacts/rss primitive";
+        } else if (
+             /* cycle-287a: serial/tty/console/framebuffer/kbd/getty/dm primitives */
+             ci_contains(text, "miniterm") || ci_contains(text, "cutecom") ||
+             ci_contains(text, "setterm") || ci_contains(text, "agetty") ||
+             ci_contains(text, "fgetty") || ci_contains(text, "mingetty") ||
+             ci_contains(text, "fbset") || (ci_contains(text, "fbi") && ci_contains(text, " -")) ||
+             ci_contains(text, "fbterm") || ci_contains(text, "setfont") ||
+             ci_contains(text, "showconsolefont") || ci_contains(text, "consolechars") ||
+             ci_contains(text, "loadkeys") || ci_contains(text, "telinit") ||
+             (ci_contains(text, "runlevel") && ci_contains(text, " -")) ||
+             ci_contains(text, "xdm") || ci_contains(text, "wdm") ||
+             ci_contains(text, "nodm") || ci_contains(text, "fsnotifywait") ||
+             ci_contains(text, "atrk") || ci_contains(text, "batchrun") ||
+             ci_contains(text, "pexec")) {
+        what = "serial/tty/console/framebuffer/kbd/getty/dm primitive";
+        } else if (
+             /* cycle-287b: acct/sysfs/eeprom/i2c/gpio/udev/media/fuzzy primitives */
+             ci_contains(text, "systool") || ci_contains(text, "systemd-hwdb") ||
+             ci_contains(text, "eeprom") || ci_contains(text, "i2ctransfer") ||
+             ci_contains(text, "gpiofind") || ci_contains(text, "udevinfo") ||
+             ci_contains(text, "deadbeef") || ci_contains(text, "clementine") ||
+             ci_contains(text, "strawberry") || ci_contains(text, "audacious") ||
+             ci_contains(text, "quodlibet") || ci_contains(text, "exa ") ||
+             ci_contains(text, "lsdeluxe") || ci_contains(text, "eza") ||
+             ci_contains(text, "tre ") ||
+             (ci_contains(text, "fd ") && !ci_contains(text, "fdisk")) ||
+             ci_contains(text, "fdfind") || ci_contains(text, "skim") ||
+             (ci_contains(text, "picker") && ci_contains(text, " -")) ||
+             ci_contains(text, "navi") || ci_contains(text, "fff")) {
+        what = "acct/sysfs/eeprom/i2c/gpio/udev/media/fuzzy primitive";
         }
 
         if (what) {
