@@ -13298,6 +13298,59 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "shelby") && ci_contains(text, " -")) ||
              (ci_contains(text, "theword") && ci_contains(text, " -"))) {
         what = "worship/bible-study primitive";
+        } else if (
+             /* cycle-305a: pkm/note-taking primitives */
+             ci_contains(text, "anytype") || ci_contains(text, "bearapp") ||
+             ci_contains(text, "boostnote") || ci_contains(text, "dendron") ||
+             ci_contains(text, "flomo") || ci_contains(text, "freemind") ||
+             ci_contains(text, "freeplane") || ci_contains(text, "fsnotes") ||
+             ci_contains(text, "iawriter") || ci_contains(text, "jotta") ||
+             ci_contains(text, "jottacloud") || ci_contains(text, "jotty") ||
+             ci_contains(text, "mindomo") || ci_contains(text, "mubu") ||
+             ci_contains(text, "notesbear") || ci_contains(text, "notesnook") ||
+             ci_contains(text, "nvalt") || ci_contains(text, "nvultra") ||
+             ci_contains(text, "outlinely") || ci_contains(text, "quiver") ||
+             ci_contains(text, "remnote") || ci_contains(text, "roam42") ||
+             ci_contains(text, "roamdb") || ci_contains(text, "roamjs") ||
+             ci_contains(text, "siyuan") || ci_contains(text, "smartedit") ||
+             ci_contains(text, "standardfile") ||
+             ci_contains(text, "standardnotes") || ci_contains(text, "thebrain") ||
+             ci_contains(text, "tiddlydesktop") ||
+             ci_contains(text, "tiddlyroam") || ci_contains(text, "tiddlyserver") ||
+             ci_contains(text, "tiddlywiki") || ci_contains(text, "tw5") ||
+             ci_contains(text, "typora") || ci_contains(text, "typely") ||
+             ci_contains(text, "ulyssesapp") || ci_contains(text, "workflowy") ||
+             (ci_contains(text, "bear") && ci_contains(text, " -")) ||
+             (ci_contains(text, "foam") && ci_contains(text, " -")) ||
+             (ci_contains(text, "joplin") && ci_contains(text, " -")) ||
+             (ci_contains(text, "notion") && ci_contains(text, " -")) ||
+             (ci_contains(text, "notable") && ci_contains(text, " -")) ||
+             (ci_contains(text, "roam") && ci_contains(text, " -")) ||
+             (ci_contains(text, "outliner") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ulysses") && ci_contains(text, " -"))) {
+        what = "pkm/note-taking primitive";
+        } else if (
+             /* cycle-305b: academic-writing/reference primitives */
+             ci_contains(text, "bib2html") || ci_contains(text, "bib2json") ||
+             ci_contains(text, "bibisco") || ci_contains(text, "citeproc") ||
+             ci_contains(text, "citavi") || ci_contains(text, "colwiz") ||
+             ci_contains(text, "compile4novel") || ci_contains(text, "curvenote") ||
+             ci_contains(text, "dvn") || ci_contains(text, "dvn4") ||
+             ci_contains(text, "dvndl") || ci_contains(text, "f1000") ||
+             ci_contains(text, "f1000workspace") ||
+             ci_contains(text, "hayagriva") ||
+             ci_contains(text, "papersapp") || ci_contains(text, "proquest") ||
+             ci_contains(text, "pydataverse") || ci_contains(text, "refworks") ||
+             ci_contains(text, "scapple") || ci_contains(text, "scenarist") ||
+             ci_contains(text, "sciencedirect") || ci_contains(text, "scriv") ||
+             ci_contains(text, "scrivener") || ci_contains(text, "simplemind") ||
+             ci_contains(text, "storyist") || ci_contains(text, "typst") ||
+             ci_contains(text, "typstyle") || ci_contains(text, "tytanic") ||
+             ci_contains(text, "utpm") || ci_contains(text, "zenodo") ||
+             (ci_contains(text, "dryad") && ci_contains(text, " -")) ||
+             (ci_contains(text, "endnote") && ci_contains(text, " -")) ||
+             (ci_contains(text, "papers") && ci_contains(text, " -"))) {
+        what = "academic-writing/reference primitive";
         }
 
         if (what) {
