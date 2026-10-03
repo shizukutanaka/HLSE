@@ -13351,6 +13351,21 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "endnote") && ci_contains(text, " -")) ||
              (ci_contains(text, "papers") && ci_contains(text, " -"))) {
         what = "academic-writing/reference primitive";
+        } else if (
+             /* cycle-306a: pkg-build/distro-infra primitives */
+             ci_contains(text, "ananicy") || ci_contains(text, "buildd") ||
+             ci_contains(text, "copr ") || ci_contains(text, "debcheckout") ||
+             ci_contains(text, "debcommit") || ci_contains(text, "debdiff") ||
+             ci_contains(text, "debi ") || ci_contains(text, "dscverify") ||
+             ci_contains(text, "koji") || ci_contains(text, "kojid") ||
+             ci_contains(text, "mbs") || ci_contains(text, "odcs") ||
+             ci_contains(text, "wannabuild")) {
+        what = "pkg-build/distro-infra primitive";
+        } else if (
+             /* cycle-306b: privacy/ad-block/tor primitives */
+             ci_contains(text, "pihole") || ci_contains(text, "torbrowser") ||
+             ci_contains(text, "usewithtor")) {
+        what = "privacy/ad-block/tor primitive";
         }
 
         if (what) {
