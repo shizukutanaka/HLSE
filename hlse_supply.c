@@ -11297,6 +11297,123 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "trilium") && ci_contains(text, " -")) ||
              ci_contains(text, "logseq")) {
         what = "media/dl/torrent/arr/mediav/homeauto/finance/gis/pim/notes primitive";
+        } else if (
+             /* cycle-268a: backup-sync/cloudexfil/encfs/archive/pkg-internals/
+                boot primitives */
+             (ci_contains(text, "rustic") && ci_contains(text, " -")) ||
+             ci_contains(text, "duplicacy") || ci_contains(text, "duplicati") ||
+             ci_contains(text, "obnam") || ci_contains(text, "bupstash") ||
+             ci_contains(text, "zpaq") || ci_contains(text, "backintime") ||
+             ci_contains(text, "zfsnap2") ||
+             (ci_contains(text, "unison") && ci_contains(text, " -")) ||
+             ci_contains(text, "csync2") || ci_contains(text, "osync") ||
+             (ci_contains(text, "mutagen") && ci_contains(text, " -")) ||
+             ci_contains(text, "seafile-cli") || ci_contains(text, "megacmd") ||
+             ci_contains(text, "icloudpd") || ci_contains(text, "gphotos-sync") ||
+             ci_contains(text, "boxcli") || ci_contains(text, "ydisk") ||
+             ci_contains(text, "securefs") || ci_contains(text, "ecryptfs-utils") ||
+             ci_contains(text, "cryptmount") || ci_contains(text, "atool") ||
+             ci_contains(text, "dtrx") || ci_contains(text, "unp ") ||
+             ci_contains(text, "patool") || ci_contains(text, "unar") ||
+             ci_contains(text, "lsar") || ci_contains(text, "unace") ||
+             ci_contains(text, "unlzh") || ci_contains(text, "dmg2img") ||
+             ci_contains(text, "isoinfo") || ci_contains(text, "isomd5sum") ||
+             ci_contains(text, "ccd2iso") || ci_contains(text, "nrg2iso") ||
+             ci_contains(text, "mdf2iso") || ci_contains(text, "b5i2iso") ||
+             (ci_contains(text, "iat") && ci_contains(text, " -")) ||
+             ci_contains(text, "dpkg-deb") || ci_contains(text, "lintian") ||
+             ci_contains(text, "piuparts") || ci_contains(text, "reprepro") ||
+             (ci_contains(text, "aptly") && ci_contains(text, " -")) ||
+             (ci_contains(text, "freight") && ci_contains(text, " -")) ||
+             ci_contains(text, "dpkg-sig") || ci_contains(text, "debsign") ||
+             ci_contains(text, "debsigs") || ci_contains(text, "rpm-sign") ||
+             ci_contains(text, "createrepo_c") || ci_contains(text, "mergerepo") ||
+             ci_contains(text, "modifyrepo") || ci_contains(text, "repoclosure") ||
+             ci_contains(text, "repomanage") || ci_contains(text, "repotrack") ||
+             ci_contains(text, "verifytree") || ci_contains(text, "initramfs-tools") ||
+             (ci_contains(text, "booster") && ci_contains(text, " -")) ||
+             ci_contains(text, "syslinux") || ci_contains(text, "isolinux") ||
+             ci_contains(text, "extlinux") || ci_contains(text, "pxelinux") ||
+             ci_contains(text, "memdisk") || ci_contains(text, "ipxe") ||
+             ci_contains(text, "wimboot")) {
+        what = "backupsync/cloudexfil/encfs/archive/pkg/boot primitive";
+        } else if (
+             /* cycle-268b: serial-fax/docgen/spec/mock/load/api/mobile/
+                android/ios/emu/console/retro/mediapk primitives */
+             ci_contains(text, "remserial") || ci_contains(text, "ttynvt") ||
+             ci_contains(text, "microcom") ||
+             (ci_contains(text, "sx") && ci_contains(text, " -") &&
+              !ci_contains(text, "lsx") && !ci_contains(text, "osx")) ||
+             (ci_contains(text, "sb ") && ci_contains(text, " -") && !ci_contains(text, "usb") && !ci_contains(text, "lsb")) ||
+             (ci_contains(text, "sz") && ci_contains(text, " -") &&
+              !ci_contains(text, "lsz")) ||
+             ci_contains(text, "ckermit") || ci_contains(text, "hylafax") ||
+             ci_contains(text, "faxq") || ci_contains(text, "efax") ||
+             ci_contains(text, "t38modem") || ci_contains(text, "gotenberg") ||
+             ci_contains(text, "stirling-pdf") ||
+             (ci_contains(text, "mayan") && ci_contains(text, " -")) ||
+             ci_contains(text, "docspell") || ci_contains(text, "mdbook") ||
+             ci_contains(text, "sphinx-build") || ci_contains(text, "naturaldocs") ||
+             ci_contains(text, "pdoc") || ci_contains(text, "jsdoc") ||
+             ci_contains(text, "typedoc") || ci_contains(text, "phpdoc") ||
+             (ci_contains(text, "yard") && ci_contains(text, " -")) ||
+             ci_contains(text, "rdoc") || ci_contains(text, "openapi-generator") ||
+             ci_contains(text, "swagger-codegen") || ci_contains(text, "oapi-codegen") ||
+             ci_contains(text, "graphql-codegen") || ci_contains(text, "sqlc") ||
+             (ci_contains(text, "atlas") && ci_contains(text, " -")) ||
+             (ci_contains(text, "goose") && ci_contains(text, " -")) ||
+             ci_contains(text, "dbmate") || ci_contains(text, "sqitch") ||
+             ci_contains(text, "wiremock") || ci_contains(text, "mountebank") ||
+             ci_contains(text, "hoverfly") || ci_contains(text, "json-server") ||
+             ci_contains(text, "mockoon") ||
+             (ci_contains(text, "prism") && ci_contains(text, " -") &&
+              !ci_contains(text, "prisma")) ||
+             ci_contains(text, "imposter") || ci_contains(text, "mockserver") ||
+             ci_contains(text, "selenium-side-runner") || ci_contains(text, "chromedp") ||
+             (ci_contains(text, "rod") && ci_contains(text, " -")) ||
+             ci_contains(text, "gatling") || ci_contains(text, "bombardier") ||
+             (ci_contains(text, "cassowary") && ci_contains(text, " -")) ||
+             (ci_contains(text, "plow") && ci_contains(text, " -")) ||
+             (ci_contains(text, "oha") && ci_contains(text, " -")) ||
+             ci_contains(text, "h2load") || ci_contains(text, "wrk2") ||
+             ci_contains(text, "rewrk") ||
+             (ci_contains(text, "ali") && ci_contains(text, " -")) ||
+             ci_contains(text, "fortio") || ci_contains(text, "toxiproxy") ||
+             (ci_contains(text, "comcast") && ci_contains(text, " -")) ||
+             (ci_contains(text, "clumsy") && ci_contains(text, " -")) ||
+             ci_contains(text, "hoppscotch") ||
+             (ci_contains(text, "bruno") && ci_contains(text, " -")) ||
+             ci_contains(text, "postman-cli") || ci_contains(text, "appcenter-cli") ||
+             ci_contains(text, "expo-cli") || ci_contains(text, "eas-cli") ||
+             (ci_contains(text, "capacitor") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ionic") && ci_contains(text, " -") && !ci_contains(text, "ionice")) ||
+             ci_contains(text, "nativescript") || ci_contains(text, "xcodegen") ||
+             ci_contains(text, "tuist") || ci_contains(text, "swiftlint") ||
+             ci_contains(text, "swiftformat") ||
+             (ci_contains(text, "mint") && ci_contains(text, " -") &&
+              !ci_contains(text, "mint-" ) && !ci_contains(text, "xinit")) ||
+             (ci_contains(text, "periphery") && ci_contains(text, " -")) ||
+             ci_contains(text, "xcbeautify") || ci_contains(text, "xcpretty") ||
+             ci_contains(text, "zipalign") || ci_contains(text, "bundletool") ||
+             ci_contains(text, "apkanalyzer") || ci_contains(text, "aapt2") ||
+             ci_contains(text, "idevice_id") || ci_contains(text, "idevicebackup2") ||
+             ci_contains(text, "idevicecrashreport") || ci_contains(text, "ideviceprovision") ||
+             ci_contains(text, "xcdevice") || ci_contains(text, "cfgutil") ||
+             ci_contains(text, "libimobiledevice") || ci_contains(text, "avdmanager") ||
+             ci_contains(text, "sdkmanager") || ci_contains(text, "devkitpro") ||
+             ci_contains(text, "vitasdk") || ci_contains(text, "pspdev") ||
+             ci_contains(text, "hbmenu") ||
+             (ci_contains(text, "goldleaf") && ci_contains(text, " -")) ||
+             (ci_contains(text, "tinfoil") && ci_contains(text, " -")) ||
+             (ci_contains(text, "dbi") && ci_contains(text, " -")) ||
+             ci_contains(text, "hekate") || ci_contains(text, "lockpick_rcm") ||
+             ci_contains(text, "retroarch") || ci_contains(text, "emulationstation") ||
+             ci_contains(text, "shaka-packager") || ci_contains(text, "mp4box") ||
+             ci_contains(text, "gpac") || ci_contains(text, "bento4") ||
+             ci_contains(text, "mp4split") || ci_contains(text, "mp4fragment") ||
+             (ci_contains(text, "love") && ci_contains(text, " -")) ||
+             ci_contains(text, "tic80")) {
+        what = "serial/fax/docgen/spec/mock/load/api/mobile/android/ios/emu/console/retro/mediapk primitive";
         }
 
         if (what) {
