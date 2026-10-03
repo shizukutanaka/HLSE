@@ -13033,6 +13033,91 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "udisksd") || ci_contains(text, "upowerd") ||
              ci_contains(text, "zenpower")) {
         what = "gpu/vendor telemetry primitive";
+        } else if (
+             /* cycle-300a: gis/geospatial primitives */
+             ci_contains(text, "cesiumion") || ci_contains(text, "gdal_grid") ||
+             ci_contains(text, "gdallocationinfo") ||
+             ci_contains(text, "gdalserver") || ci_contains(text, "geobuf") ||
+             ci_contains(text, "geobuf2json") || ci_contains(text, "geoclue") ||
+             ci_contains(text, "geojsonhint") ||
+             ci_contains(text, "geojsonmerge") ||
+             ci_contains(text, "json2geobuf") || ci_contains(text, "mapcache") ||
+             ci_contains(text, "mapnik") || ci_contains(text, "mbutil") ||
+             ci_contains(text, "mkmap") || ci_contains(text, "mod_tile") ||
+             ci_contains(text, "osgeo4w") || ci_contains(text, "osgconv") ||
+             ci_contains(text, "osgversion") || ci_contains(text, "osgviewer") ||
+             ci_contains(text, "pghoard") || ci_contains(text, "pgsql2shp") ||
+             ci_contains(text, "pgtileserv") ||
+             ci_contains(text, "raster2pgsql") || ci_contains(text, "renderd") ||
+             ci_contains(text, "render_list") || ci_contains(text, "saga_prj") ||
+             ci_contains(text, "shp2pgsql") || ci_contains(text, "taudem") ||
+             ci_contains(text, "pitfill") || ci_contains(text, "d8flowdir") ||
+             ci_contains(text, "dinfflowdir") || ci_contains(text, "gridnet") ||
+             ci_contains(text, "streamnet") || ci_contains(text, "tilecache") ||
+             ci_contains(text, "tilestache") ||
+             ci_contains(text, "peukerdouglas") ||
+             ci_contains(text, "gpsbabel") || ci_contains(text, "gpsprof") ||
+             ci_contains(text, "g.filename") || ci_contains(text, "g.gisenv") ||
+             ci_contains(text, "g.list") || ci_contains(text, "g.mapset") ||
+             ci_contains(text, "g.mapsets") || ci_contains(text, "g.mlist") ||
+             ci_contains(text, "g.parser") || ci_contains(text, "g.proj") ||
+             ci_contains(text, "g.rename") || ci_contains(text, "g.tempfile") ||
+             ci_contains(text, "g.version") || ci_contains(text, "r.buffer") ||
+             ci_contains(text, "r.flow") || ci_contains(text, "r.grow") ||
+             ci_contains(text, "r.in.gdal") || ci_contains(text, "r.out.gdal") ||
+             ci_contains(text, "r.patch") || ci_contains(text, "r.proj") ||
+             ci_contains(text, "r.slope.aspect") ||
+             ci_contains(text, "r.statistics") || ci_contains(text, "r.sun") ||
+             ci_contains(text, "r.univar") || ci_contains(text, "r.viewshed") ||
+             ci_contains(text, "v.buffer") || ci_contains(text, "v.db.connect") ||
+             ci_contains(text, "v.dissolve") || ci_contains(text, "v.in.ogr") ||
+             ci_contains(text, "v.out.ogr") || ci_contains(text, "v.patch") ||
+             ci_contains(text, "v.proj") || ci_contains(text, "v.to.rast") ||
+             ci_contains(text, "v.voronoi") || ci_contains(text, "v.what.rast") ||
+             (ci_contains(text, "slope") && ci_contains(text, " -")) ||
+             (ci_contains(text, "threshold") && ci_contains(text, " -"))) {
+        what = "gis/geospatial primitive";
+        } else if (
+             /* cycle-300b: 3d-print/cnc primitives */
+             ci_contains(text, "admesh") || ci_contains(text, "bcnc") ||
+             ci_contains(text, "camotics") || ci_contains(text, "gctrl") ||
+             ci_contains(text, "gplot") || ci_contains(text, "klippy") ||
+             ci_contains(text, "moonraker") || ci_contains(text, "fluidd") ||
+             ci_contains(text, "mainsail") || ci_contains(text, "obico") ||
+             ci_contains(text, "mobileraker") || ci_contains(text, "printnanny") ||
+             ci_contains(text, "pronterface") || ci_contains(text, "printcore") ||
+             ci_contains(text, "prusaslicer") ||
+             ci_contains(text, "replicatorg") ||
+             ci_contains(text, "repetierserver") ||
+             ci_contains(text, "slic3r") || ci_contains(text, "superslicer") ||
+             ci_contains(text, "ratos") || ci_contains(text, "duet3d") ||
+             ci_contains(text, "duetwebserver") || ci_contains(text, "dwc") ||
+             ci_contains(text, "einsy") || ci_contains(text, "meshio") ||
+             ci_contains(text, "meshroom") || ci_contains(text, "glomap") ||
+             ci_contains(text, "densifypointcloud") ||
+             ci_contains(text, "reconstructmesh") ||
+             ci_contains(text, "refinemesh") || ci_contains(text, "trimesh") ||
+             ci_contains(text, "kirimoto") ||
+             ci_contains(text, "matterhackers") ||
+             (ci_contains(text, "duet") && ci_contains(text, " -")) ||
+             (ci_contains(text, "photon") && ci_contains(text, " -")) ||
+             (ci_contains(text, "plater") && ci_contains(text, " -"))) {
+        what = "3d-print/cnc primitive";
+        } else if (
+             /* cycle-300c: robotics/simulation primitives */
+             ci_contains(text, "airsim") || ci_contains(text, "argos2") ||
+             ci_contains(text, "bullet3") || ci_contains(text, "catkin") ||
+             ci_contains(text, "colcon") || ci_contains(text, "fgear") ||
+             ci_contains(text, "flightsim") || ci_contains(text, "isaaclab") ||
+             ci_contains(text, "mujoco") || ci_contains(text, "omniverse") ||
+             ci_contains(text, "pybullet") || ci_contains(text, "pydrake") ||
+             ci_contains(text, "simbody") || ci_contains(text, "simpleitk") ||
+             ci_contains(text, "turtlebot") || ci_contains(text, "turtlebot3") ||
+             ci_contains(text, "turtlesim") || ci_contains(text, "vtk") ||
+             ci_contains(text, "webots") ||
+             (ci_contains(text, "drake") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ignition") && ci_contains(text, " -"))) {
+        what = "robotics/simulation primitive";
         }
 
         if (what) {
