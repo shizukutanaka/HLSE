@@ -13250,6 +13250,54 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "nero") && ci_contains(text, " -")) ||
              (ci_contains(text, "amok") && ci_contains(text, " -"))) {
         what = "media-player/disc/codec primitive";
+        } else if (
+             /* cycle-304a: tunnel/vpn/mini-k8s primitives */
+             ci_contains(text, "arkade") || ci_contains(text, "frp") ||
+             ci_contains(text, "jprq") || ci_contains(text, "k0s") ||
+             ci_contains(text, "k3os") || ci_contains(text, "k3sup") ||
+             ci_contains(text, "loophole") || ci_contains(text, "remotemoe") ||
+             ci_contains(text, "rke ") || ci_contains(text, "setconf") ||
+             ci_contains(text, "showconf") || ci_contains(text, "spoketunnel") ||
+             ci_contains(text, "sqs") || ci_contains(text, "trycloudflare") ||
+             ci_contains(text, "tsnet") || ci_contains(text, "tsrelay") ||
+             ci_contains(text, "tunnelmole") || ci_contains(text, "vpnkit") ||
+             ci_contains(text, "webhookrelay") ||
+             ci_contains(text, "webhookrelayd") ||
+             (ci_contains(text, "edge") && ci_contains(text, " -"))) {
+        what = "tunnel/vpn/mini-k8s primitive";
+        } else if (
+             /* cycle-304b: worship/bible-study primitives */
+             ci_contains(text, "bibleanalyzer") || ci_contains(text, "bibledesktop") ||
+             ci_contains(text, "biblegateway") ||
+             ci_contains(text, "biblepresenter") || ci_contains(text, "bibleshow") ||
+             ci_contains(text, "bibletime") || ci_contains(text, "bibleworks") ||
+             ci_contains(text, "biblos") || ci_contains(text, "blb") ||
+             ci_contains(text, "blueletterbible") || ci_contains(text, "ccb") ||
+             ci_contains(text, "ccbchurch") || ci_contains(text, "chms") ||
+             ci_contains(text, "churchtrac") || ci_contains(text, "elvanto") ||
+             ci_contains(text, "esword") || ci_contains(text, "faithlife") ||
+             ci_contains(text, "faithlifeproclaim") ||
+             ci_contains(text, "fellowshipone") || ci_contains(text, "freeshow") ||
+             ci_contains(text, "jsword") || ci_contains(text, "lyricslive") ||
+             ci_contains(text, "mybible") || ci_contains(text, "mysword") ||
+             ci_contains(text, "olivetree") || ci_contains(text, "pco ") ||
+             ci_contains(text, "pcstudybible") || ci_contains(text, "pocketbible") ||
+             ci_contains(text, "praison") || ci_contains(text, "praisonlive") ||
+             ci_contains(text, "praisonview") || ci_contains(text, "propresenter") ||
+             ci_contains(text, "pushpay") || ci_contains(text, "quelea") ||
+             ci_contains(text, "quickverse") || ci_contains(text, "rockms") ||
+             ci_contains(text, "servantkeeper") || ci_contains(text, "shelbyarena") ||
+             ci_contains(text, "slidegenerator") || ci_contains(text, "sundayplus") ||
+             ci_contains(text, "tithely") || ci_contains(text, "tithe.ly") ||
+             ci_contains(text, "verbum") || ci_contains(text, "verseview") ||
+             ci_contains(text, "vicndi") || ci_contains(text, "videopsalm") ||
+             (ci_contains(text, "accordance") && ci_contains(text, " -")) ||
+             (ci_contains(text, "breeze") && ci_contains(text, " -")) ||
+             (ci_contains(text, "presenter") && ci_contains(text, " -")) ||
+             (ci_contains(text, "proclaim") && ci_contains(text, " -")) ||
+             (ci_contains(text, "shelby") && ci_contains(text, " -")) ||
+             (ci_contains(text, "theword") && ci_contains(text, " -"))) {
+        what = "worship/bible-study primitive";
         }
 
         if (what) {
