@@ -12782,6 +12782,25 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "guilded") ||
              (ci_contains(text, "spacebar") && ci_contains(text, " -"))) {
         what = "fileshare/status/dashboard/chat primitive";
+        } else if (
+             /* cycle-292a: quantum/ai-model/wasm/verif/ham/hdf/webrtc/stats/dvb/knit primitives */
+             ci_contains(text, "qvm") || ci_contains(text, "llava") ||
+             ci_contains(text, "wasm3") || ci_contains(text, "wavm") ||
+             ci_contains(text, "dafny") || ci_contains(text, "tlf") ||
+             ci_contains(text, "h5ls") || ci_contains(text, "jvb") ||
+             ci_contains(text, "autolab") || ci_contains(text, "pspp") ||
+             ci_contains(text, "mumudvb") || ci_contains(text, "ayab ") ||
+             (ci_contains(text, "abjad") && ci_contains(text, " -"))) {
+        what = "quantum/wasm/verification/ham/webrtc primitive";
+        } else if (
+             /* cycle-292b: dfir/diff/lsp/desktop/netauto/pres/audio/lightning primitives */
+             ci_contains(text, "dyff") || ci_contains(text, "pylsp") ||
+             ci_contains(text, "awww") || ci_contains(text, "mdp") ||
+             ci_contains(text, "jaaa") || ci_contains(text, "qtvlm") ||
+             ci_contains(text, "lnd") ||
+             (ci_contains(text, "hayabusa") && ci_contains(text, " -")) ||
+             (ci_contains(text, "napalm") && ci_contains(text, " -"))) {
+        what = "dfir/desktop/lightning primitive";
         }
 
         if (what) {
