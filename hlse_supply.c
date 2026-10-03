@@ -13161,6 +13161,44 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "gpspoint") || ci_contains(text, "gconnectd") ||
              (ci_contains(text, "ancestry") && ci_contains(text, " -"))) {
         what = "genealogy/transit primitive";
+        } else if (
+             /* cycle-302a: daw/audio-production primitives */
+             ci_contains(text, "agordejo") || ci_contains(text, "bitwig") ||
+             ci_contains(text, "bristol") || ci_contains(text, "camomile") ||
+             ci_contains(text, "cappuccino") || ci_contains(text, "chowdsp") ||
+             ci_contains(text, "discodsp") || ci_contains(text, "distrho") ||
+             ci_contains(text, "falktx") || ci_contains(text, "fantasil") ||
+             ci_contains(text, "gigedit") || ci_contains(text, "ladish") ||
+             ci_contains(text, "nsmd") || ci_contains(text, "opusmodus") ||
+             ci_contains(text, "qjackrcd") || ci_contains(text, "qsynth") ||
+             ci_contains(text, "qtractor") || ci_contains(text, "s1noise") ||
+             ci_contains(text, "yoshimi") || ci_contains(text, "zynlmapi") ||
+             ci_contains(text, "waon") || ci_contains(text, "wav2midi") ||
+             ci_contains(text, "wildmidi") ||
+             (ci_contains(text, "reaper") && ci_contains(text, " -")) ||
+             (ci_contains(text, "vital") && ci_contains(text, " -")) ||
+             (ci_contains(text, "catia") && ci_contains(text, " -")) ||
+             (ci_contains(text, "cyclone") && ci_contains(text, " -")) ||
+             (ci_contains(text, "patchbay") && ci_contains(text, " -"))) {
+        what = "daw/audio-production primitive";
+        } else if (
+             /* cycle-302b: jack/midi/lv2 primitives */
+             ci_contains(text, "jack_metro") || ci_contains(text, "jack_netsource") ||
+             ci_contains(text, "jack_property") ||
+             ci_contains(text, "jack_showtime") || ci_contains(text, "jack_wait") ||
+             ci_contains(text, "jacktrip") || ci_contains(text, "jalv") ||
+             ci_contains(text, "lilv") || ci_contains(text, "lv2") ||
+             ci_contains(text, "lv2bench") || ci_contains(text, "lv2core") ||
+             ci_contains(text, "lv2info") || ci_contains(text, "lv2lint") ||
+             ci_contains(text, "lv2ls") || ci_contains(text, "lv2specgen") ||
+             ci_contains(text, "sordi") || ci_contains(text, "serdi") ||
+             ci_contains(text, "suil") || ci_contains(text, "abc2ly") ||
+             ci_contains(text, "midi2ly") || ci_contains(text, "aplaymidi") ||
+             ci_contains(text, "kmid") || ci_contains(text, "playmidi") ||
+             ci_contains(text, "pmidi") || ci_contains(text, "vmpk") ||
+             ci_contains(text, "acesrender") || ci_contains(text, "byod") ||
+             ci_contains(text, "libpd")) {
+        what = "jack/midi/lv2 primitive";
         }
 
         if (what) {
