@@ -11767,6 +11767,91 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "monica") && ci_contains(text, " -")) ||
              (ci_contains(text, "twenty") && ci_contains(text, " -"))) {
         what = "fediverse/pastebin/urlshort/bookmark/docsrv/fileshare/gallery/kanban/cms/ecomm/crm primitive";
+        } else if (
+             /* cycle-273a: canbus/plc/cnc/laser/pcb/rf/rfid/smartcard/hsm-tpm/
+                fido/barcode/label/pos primitives */
+             ci_contains(text, "socketcand") ||
+             (ci_contains(text, "kayak") && ci_contains(text, " -")) ||
+             ci_contains(text, "cantoolz") || ci_contains(text, "caringcaribou") ||
+             ci_contains(text, "udsim") ||
+             (ci_contains(text, "icom") && ci_contains(text, " -")) ||
+             ci_contains(text, "savvycan") || ci_contains(text, "openplc") ||
+             ci_contains(text, "matiec") || ci_contains(text, "beremiz") ||
+             ci_contains(text, "linuxcnc") || ci_contains(text, "grbl") ||
+             ci_contains(text, "fluidnc") || ci_contains(text, "bcnc") ||
+             ci_contains(text, "cncjs") ||
+             (ci_contains(text, "ugs") && ci_contains(text, " -") &&
+              !ci_contains(text, "bugs") && !ci_contains(text, "pugs") &&
+              !ci_contains(text, "plugs")) ||
+             ci_contains(text, "chilipeppr") || ci_contains(text, "laserweb") ||
+             ci_contains(text, "visicut") ||
+             (ci_contains(text, "inkcut") && ci_contains(text, " -")) ||
+             ci_contains(text, "pcb2gcode") || ci_contains(text, "flatcam") ||
+             ci_contains(text, "qspectrumanalyzer") ||
+             (ci_contains(text, "rfcat") && ci_contains(text, " -")) ||
+             (ci_contains(text, "rflib") && ci_contains(text, " -")) ||
+             ci_contains(text, "libnfc") || ci_contains(text, "nfc-tools") ||
+             ci_contains(text, "pcsc-tools") ||
+             (ci_contains(text, "ccid") && ci_contains(text, " -")) ||
+             ci_contains(text, "pkcs15-tool") || ci_contains(text, "opencryptoki") ||
+             ci_contains(text, "tpm2-tss") || ci_contains(text, "tpm2-abrmd") ||
+             (ci_contains(text, "tang") && ci_contains(text, " -") &&
+              !ci_contains(text, "mustang") && !ci_contains(text, "tang-")) ||
+             ci_contains(text, "fido2luks") || ci_contains(text, "pam-u2f") ||
+             ci_contains(text, "solo1-cli") ||
+             (ci_contains(text, "zint") && ci_contains(text, " -")) ||
+             ci_contains(text, "brother_ql") || ci_contains(text, "ptouch") ||
+             ci_contains(text, "dymoprint") ||
+             (ci_contains(text, "escpos") && ci_contains(text, " -"))) {
+        what = "canbus/plc/cnc/laser/pcb/rf/rfid/smartcard/hsm-tpm/fido/barcode/label/pos primitive";
+        } else if (
+             /* cycle-273b: asset/cmdb/dcim/ipam/aaa/dot1x/vpn/wg/portknock +
+                sms/sim/cellular/ais/seismic/geophysics/physics/astro primitives */
+             ci_contains(text, "snipeit") ||
+             (ci_contains(text, "glpi") && ci_contains(text, " -")) ||
+             ci_contains(text, "fusioninventory") || ci_contains(text, "racktables") ||
+             ci_contains(text, "i-doit") || ci_contains(text, "cmdbuild") ||
+             (ci_contains(text, "ralph") && ci_contains(text, " -")) ||
+             ci_contains(text, "phpipam") || ci_contains(text, "nipap") ||
+             ci_contains(text, "teemip") || ci_contains(text, "daloradius") ||
+             ci_contains(text, "packetfence") || ci_contains(text, "tacacs-ng") ||
+             ci_contains(text, "xsupplicant") || ci_contains(text, "softether") ||
+             ci_contains(text, "dsvpn") || ci_contains(text, "vtund") ||
+             ci_contains(text, "wgcf") || ci_contains(text, "onetun") ||
+             ci_contains(text, "knockd") ||
+             (ci_contains(text, "knock") && ci_contains(text, " -") &&
+              !ci_contains(text, "knock-")) ||
+             ci_contains(text, "fwknop") || ci_contains(text, "playsms") ||
+             ci_contains(text, "jasmin-sms") ||
+             (ci_contains(text, "lpac") && ci_contains(text, " -") &&
+              !ci_contains(text, "elpac")) ||
+             ci_contains(text, "sysmo-usim-tool") || ci_contains(text, "osmo-bsc") ||
+             ci_contains(text, "osmo-hlr") || ci_contains(text, "osmo-msc") ||
+             ci_contains(text, "osmo-sgsn") || ci_contains(text, "osmo-ggsn") ||
+             ci_contains(text, "osmo-pcu") || ci_contains(text, "osmo-cbc") ||
+             ci_contains(text, "gnuais") || ci_contains(text, "aisutils") ||
+             ci_contains(text, "seedlink") || ci_contains(text, "seiscomp") ||
+             ci_contains(text, "slinktool") || ci_contains(text, "dataselect") ||
+             ci_contains(text, "obspy") ||
+             (ci_contains(text, "gmt") && ci_contains(text, " -") &&
+              !ci_contains(text, "gmt-")) ||
+             (ci_contains(text, "madagascar") && ci_contains(text, " -")) ||
+             ci_contains(text, "seismic-unix") || ci_contains(text, "openmc") ||
+             ci_contains(text, "geant4") || ci_contains(text, "cernlib") ||
+             (ci_contains(text, "herwig") && ci_contains(text, " -")) ||
+             (ci_contains(text, "sherpa") && ci_contains(text, " -")) ||
+             ci_contains(text, "madgraph") ||
+             (ci_contains(text, "gildas") && ci_contains(text, " -")) ||
+             (ci_contains(text, "aips") && ci_contains(text, " -") &&
+              !ci_contains(text, "naips")) ||
+             (ci_contains(text, "casa") && ci_contains(text, " -") &&
+              !ci_contains(text, "casa-") && !ci_contains(text, "showcase")) ||
+             (ci_contains(text, "miriad") && ci_contains(text, " -")) ||
+             (ci_contains(text, "iraf") && ci_contains(text, " -") &&
+              !ci_contains(text, "giraf")) ||
+             ci_contains(text, "orekit") ||
+             (ci_contains(text, "gmat") && ci_contains(text, " -"))) {
+        what = "asset/cmdb/dcim/ipam/aaa/dot1x/vpn/wg/portknock/sms/sim/cellular/ais/seismic/geophysics/physics/astro primitive";
         }
 
         if (what) {
