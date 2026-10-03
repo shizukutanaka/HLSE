@@ -12854,6 +12854,25 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "huh") && ci_contains(text, " -")) ||
              (ci_contains(text, "buzz") && ci_contains(text, " -"))) {
         what = "media/music/game primitive";
+        } else if (
+             /* cycle-295a: sdk/dev/research primitives */
+             ci_contains(text, "zld") || ci_contains(text, "sdps") ||
+             ci_contains(text, "ps4sdk") || ci_contains(text, "pspsdk") ||
+             ci_contains(text, "dkp") || ci_contains(text, "abnf2") ||
+             ci_contains(text, "lasp") || ci_contains(text, "lmn") ||
+             ci_contains(text, "whool") || ci_contains(text, "lmql") ||
+             ci_contains(text, "dspy") || ci_contains(text, "nomos") ||
+             (ci_contains(text, "saw") && ci_contains(text, " -")) ||
+             (ci_contains(text, "folk") && ci_contains(text, " -"))) {
+        what = "sdk/dev/research primitive";
+        } else if (
+             /* cycle-295b: emu/game forensic-id primitives */
+             ci_contains(text, "muos") || ci_contains(text, "myboy") ||
+             ci_contains(text, "3dmoo") || ci_contains(text, "lswm") ||
+             ci_contains(text, "fpps4") || ci_contains(text, "kyty") ||
+             ci_contains(text, "an2k") || ci_contains(text, "dwsq") ||
+             (ci_contains(text, "ludo") && ci_contains(text, " -"))) {
+        what = "emu/game forensic-id primitive";
         }
 
         if (what) {
