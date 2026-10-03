@@ -12257,6 +12257,78 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "owserver") || ci_contains(text, "probe-rs") ||
              ci_contains(text, "sdrtrunk")) {
         what = "pki/krb/ldap/nis/pam/apparmor/xattr/time/display/power/cups/sane/modem/ax25/rc/matter/bacnet/ethercat/wire/probe/rf primitive";
+        } else if (
+             /* cycle-279a: bioinformatics/genomics primitives */
+             ci_contains(text, "samtools") || ci_contains(text, "bcftools") ||
+             ci_contains(text, "vcftools") || ci_contains(text, "fastqc") ||
+             ci_contains(text, "fastp") || ci_contains(text, "trimmomatic") ||
+             ci_contains(text, "cutadapt") || ci_contains(text, "hisat2") ||
+             (ci_contains(text, "star") && ci_contains(text, " -") &&
+              !ci_contains(text, "start") && !ci_contains(text, "star-")) ||
+             ci_contains(text, "minimap2") || ci_contains(text, "seqtk") ||
+             ci_contains(text, "seqkit") || ci_contains(text, "megahit") ||
+             (ci_contains(text, "spades") && ci_contains(text, " -")) ||
+             (ci_contains(text, "quast") && ci_contains(text, " -")) ||
+             (ci_contains(text, "diamond") && ci_contains(text, " -")) ||
+             ci_contains(text, "mafft") ||
+             (ci_contains(text, "muscle") && ci_contains(text, " -")) ||
+             ci_contains(text, "clustalo") || ci_contains(text, "raxml") ||
+             ci_contains(text, "iqtree") || ci_contains(text, "mrbayes") ||
+             (ci_contains(text, "beast") && ci_contains(text, " -"))) {
+        what = "bioinformatics/genomics primitive";
+        } else if (
+             /* cycle-279b: compchem/dft/materials/fea/em-sim primitives */
+             ci_contains(text, "obabel") ||
+             (ci_contains(text, "vina") && ci_contains(text, " -")) ||
+             ci_contains(text, "namd") || ci_contains(text, "cp2k") ||
+             ci_contains(text, "psi4") || ci_contains(text, "nwchem") ||
+             ci_contains(text, "pw.x") || ci_contains(text, "abinit") ||
+             (ci_contains(text, "siesta") && ci_contains(text, " -")) ||
+             ci_contains(text, "wien2k") || ci_contains(text, "cif2cell") ||
+             ci_contains(text, "pymatgen") ||
+             (ci_contains(text, "ase") && ci_contains(text, " -") &&
+              !ci_contains(text, "case") && !ci_contains(text, "base") &&
+              !ci_contains(text, "phase") && !ci_contains(text, "lease") &&
+              !ci_contains(text, "erase")) ||
+             ci_contains(text, "freefem") ||
+             (ci_contains(text, "elmer") && ci_contains(text, " -")) ||
+             ci_contains(text, "calculix") ||
+             (ci_contains(text, "su2") && ci_contains(text, " -")) ||
+             ci_contains(text, "code_aster") ||
+             (ci_contains(text, "salome") && ci_contains(text, " -")) ||
+             (ci_contains(text, "meep") && ci_contains(text, " -")) ||
+             ci_contains(text, "gprmax") || ci_contains(text, "nec2") ||
+             (ci_contains(text, "amber") && ci_contains(text, " -")) ||
+             (ci_contains(text, "tinker") && ci_contains(text, " -"))) {
+        what = "compchem/dft/materials/fea/em-sim primitive";
+        } else if (
+             /* cycle-279c: particle/astro/gravwave/crystallography/massspec/
+                cryo/hydro primitives */
+             ci_contains(text, "delphes") ||
+             (ci_contains(text, "rivet") && ci_contains(text, " -")) ||
+             ci_contains(text, "lhapdf") ||
+             (ci_contains(text, "pythia") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ciao") && ci_contains(text, " -")) ||
+             ci_contains(text, "heasoft") || ci_contains(text, "xspec") ||
+             (ci_contains(text, "ds9") && ci_contains(text, " -")) ||
+             ci_contains(text, "swarp") ||
+             (ci_contains(text, "scamp") && ci_contains(text, " -")) ||
+             ci_contains(text, "psfex") || ci_contains(text, "topcat") ||
+             ci_contains(text, "gwpy") ||
+             (ci_contains(text, "lal") && ci_contains(text, " -") &&
+              !ci_contains(text, "kala")) ||
+             ci_contains(text, "pycbc") || ci_contains(text, "wannier90") ||
+             ci_contains(text, "ccp4") ||
+             (ci_contains(text, "phenix") && ci_contains(text, " -")) ||
+             ci_contains(text, "shelx") || ci_contains(text, "olex2") ||
+             (ci_contains(text, "coot") && ci_contains(text, " -")) ||
+             ci_contains(text, "cctbx") || ci_contains(text, "mosflm") ||
+             (ci_contains(text, "xds") && ci_contains(text, " -")) ||
+             ci_contains(text, "openms") || ci_contains(text, "mzmine") ||
+             ci_contains(text, "msconvert") ||
+             (ci_contains(text, "relion") && ci_contains(text, " -")) ||
+             ci_contains(text, "swmm") || ci_contains(text, "epanet")) {
+        what = "particle/astro/gravwave/crystallography/massspec/cryo/hydro primitive";
         }
 
         if (what) {
