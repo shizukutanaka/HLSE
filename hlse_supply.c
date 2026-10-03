@@ -11414,6 +11414,88 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "love") && ci_contains(text, " -")) ||
              ci_contains(text, "tic80")) {
         what = "serial/fax/docgen/spec/mock/load/api/mobile/android/ios/emu/console/retro/mediapk primitive";
+        } else if (
+             /* cycle-269a: ci-runner/registry/gateway/feature-flag/secret-broker/
+                idp/ldap/analytics/uptime/apm/incident primitives */
+             (ci_contains(text, "woodpecker") && ci_contains(text, " -")) ||
+             ci_contains(text, "gitea-act-runner") || ci_contains(text, "appveyor") ||
+             ci_contains(text, "teamcity") || ci_contains(text, "octopus-deploy") ||
+             (ci_contains(text, "octo") && ci_contains(text, " -") &&
+              !ci_contains(text, "octopus")) ||
+             (ci_contains(text, "zot") && ci_contains(text, " -")) ||
+             ci_contains(text, "verdaccio") || ci_contains(text, "devpi") ||
+             ci_contains(text, "pypiserver") || ci_contains(text, "gemfury") ||
+             ci_contains(text, "packagecloud") || ci_contains(text, "cloudsmith") ||
+             ci_contains(text, "buildkit") || ci_contains(text, "apisix") ||
+             (ci_contains(text, "tyk") && ci_contains(text, " -")) ||
+             ci_contains(text, "gravitee") ||
+             (ci_contains(text, "unleash") && ci_contains(text, " -")) ||
+             ci_contains(text, "flagsmith") || ci_contains(text, "growthbook") ||
+             ci_contains(text, "openfeature") ||
+             (ci_contains(text, "flipt") && ci_contains(text, " -")) ||
+             ci_contains(text, "ldcli") ||
+             (ci_contains(text, "phase") && ci_contains(text, " -")) ||
+             (ci_contains(text, "hatch") && ci_contains(text, " -")) ||
+             ci_contains(text, "secretless") || ci_contains(text, "authentik") ||
+             ci_contains(text, "zitadel") || ci_contains(text, "casdoor") ||
+             (ci_contains(text, "logto") && ci_contains(text, " -")) ||
+             ci_contains(text, "supertokens") || ci_contains(text, "fusionauth") ||
+             ci_contains(text, "fusiondirectory") || ci_contains(text, "ldapvi") ||
+             (ci_contains(text, "luma") && ci_contains(text, " -")) ||
+             ci_contains(text, "shelldap") || ci_contains(text, "phpldapadmin") ||
+             (ci_contains(text, "matomo") && ci_contains(text, " -")) ||
+             (ci_contains(text, "plausible") && ci_contains(text, " -")) ||
+             (ci_contains(text, "umami") && ci_contains(text, " -")) ||
+             ci_contains(text, "goatcounter") ||
+             (ci_contains(text, "ackee") && ci_contains(text, " -")) ||
+             ci_contains(text, "uptime-kuma") || ci_contains(text, "statping") ||
+             (ci_contains(text, "cachet") && ci_contains(text, " -")) ||
+             ci_contains(text, "kener") ||
+             (ci_contains(text, "gatus") && ci_contains(text, " -")) ||
+             ci_contains(text, "signoz") || ci_contains(text, "uptrace") ||
+             ci_contains(text, "hyperdx") || ci_contains(text, "otelcol") ||
+             ci_contains(text, "otel-cli") || ci_contains(text, "grafana-oncall") ||
+             ci_contains(text, "opsgenie") || ci_contains(text, "victorops") ||
+             ci_contains(text, "xmatters") || ci_contains(text, "ilert")) {
+        what = "cirunner/registry/gateway/fflag/secretbroker/idp/ldap/analytics/uptime/apm/incident primitive";
+        } else if (
+             /* cycle-269b: sbom-sign/posture/bastion/automation-fabric/workflow/
+                taskrun/scheduler/mqtt/graphdb/vecdb primitives */
+             ci_contains(text, "sbom-tool") || ci_contains(text, "sbomqs") ||
+             ci_contains(text, "spdx-sbom-generator") || ci_contains(text, "cdxgen") ||
+             ci_contains(text, "cyclonedx-cli") ||
+             (ci_contains(text, "tern") && ci_contains(text, " -") &&
+              !ci_contains(text, "intern") && !ci_contains(text, "altern")) ||
+             (ci_contains(text, "ort") && ci_contains(text, " -") && !ci_contains(text, "port")) ||
+             ci_contains(text, "cloudsploit") ||
+             (ci_contains(text, "cartography") && ci_contains(text, " -")) ||
+             ci_contains(text, "awspx") || ci_contains(text, "bastillion") ||
+             ci_contains(text, "sshportal") || ci_contains(text, "warpgate") ||
+             (ci_contains(text, "rex") && ci_contains(text, " -")) ||
+             (ci_contains(text, "func") && ci_contains(text, " -")) ||
+             ci_contains(text, "ansible-runner") || ci_contains(text, "stackstorm") ||
+             (ci_contains(text, "st2") && ci_contains(text, " -")) ||
+             ci_contains(text, "dramatiq") ||
+             (ci_contains(text, "huey") && ci_contains(text, " -")) ||
+             ci_contains(text, "n8n") || ci_contains(text, "activepieces") ||
+             (ci_contains(text, "windmill") && ci_contains(text, " -")) ||
+             (ci_contains(text, "kestra") && ci_contains(text, " -")) ||
+             (ci_contains(text, "dask") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ray") && ci_contains(text, " -") && !ci_contains(text, "xray") && !ci_contains(text, "array") && !ci_contains(text, "gray") && !ci_contains(text, "pray")) ||
+             (ci_contains(text, "poe") && ci_contains(text, " -") &&
+              !ci_contains(text, "poet")) ||
+             ci_contains(text, "poethepoet") ||
+             (ci_contains(text, "doit") && ci_contains(text, " -")) ||
+             ci_contains(text, "pypyr") || ci_contains(text, "cronicle") ||
+             (ci_contains(text, "ofelia") && ci_contains(text, " -")) ||
+             ci_contains(text, "mcron") || ci_contains(text, "yacron") ||
+             ci_contains(text, "nanomq") || ci_contains(text, "gmqtt") ||
+             ci_contains(text, "memgraph") || ci_contains(text, "tugraph") ||
+             ci_contains(text, "agensgraph") ||
+             (ci_contains(text, "marqo") && ci_contains(text, " -")) ||
+             ci_contains(text, "lancedb") || ci_contains(text, "pgvector") ||
+             (ci_contains(text, "chroma") && ci_contains(text, " -"))) {
+        what = "sbom/posture/bastion/automation/workflow/taskrun/sched/mqtt/graphdb/vecdb primitive";
         }
 
         if (what) {
