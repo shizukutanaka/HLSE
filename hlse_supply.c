@@ -12801,6 +12801,39 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "hayabusa") && ci_contains(text, " -")) ||
              (ci_contains(text, "napalm") && ci_contains(text, " -"))) {
         what = "dfir/desktop/lightning primitive";
+        } else if (
+             /* cycle-293a: infra/mail/news/retro-server primitives */
+             ci_contains(text, "vmmss") || ci_contains(text, "msav") ||
+             ci_contains(text, "ssas") || ci_contains(text, "mssdmn") ||
+             ci_contains(text, "mssph") || ci_contains(text, "malwasm") ||
+             ci_contains(text, "389ds") || ci_contains(text, "sssd") ||
+             ci_contains(text, "pyspf") || ci_contains(text, "nntpd") ||
+             ci_contains(text, "btmp") || ci_contains(text, "papd") ||
+             ci_contains(text, "avmjump") || ci_contains(text, "ut99") ||
+             ci_contains(text, "bo2") || ci_contains(text, "jka") ||
+             ci_contains(text, "vdos") || ci_contains(text, "munt") ||
+             ci_contains(text, "np2")) {
+        what = "infra/mail/news/retro primitive";
+        } else if (
+             /* cycle-293b: asm/retro-toolchain/fuzzy/filelister primitives */
+             ci_contains(text, "ld65") || ci_contains(text, "da65") ||
+             ci_contains(text, "sp65") || ci_contains(text, "dasm") ||
+             ci_contains(text, "64tass") || ci_contains(text, "vasm") ||
+             ci_contains(text, "z88dk") || ci_contains(text, "pasmo") ||
+             ci_contains(text, "sjasm") || ci_contains(text, "spyfu") ||
+             (ci_contains(text, "mads") && !ci_contains(text, "madsen")) ||
+             ci_contains(text, "fzf") || ci_contains(text, "autojump") ||
+             ci_contains(text, "tym") || ci_contains(text, "twtd") ||
+             ci_contains(text, "lsws") || ci_contains(text, "vls") ||
+             ci_contains(text, "bls") || ci_contains(text, "tlls") ||
+             ci_contains(text, "zls") || ci_contains(text, "dls") ||
+             ci_contains(text, "fzz") || ci_contains(text, "f2l") ||
+             ci_contains(text, "aol") ||
+             (ci_contains(text, "tabs") && ci_contains(text, " -")) ||
+             (ci_contains(text, "polo") && ci_contains(text, " -")) ||
+             (ci_contains(text, "pls") && ci_contains(text, " -")) ||
+             (ci_contains(text, "hls") && ci_contains(text, " -"))) {
+        what = "asm/fuzzy/filelister primitive";
         }
 
         if (what) {
