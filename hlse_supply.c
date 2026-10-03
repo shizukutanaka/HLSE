@@ -10417,6 +10417,174 @@ hlse_check_paste(const char *text) {
         what = "forensics/idp/fuzz/chaos/data/ml/k8s/iac/git/llm/img primitive";
         }
         
+        else if (ci_contains(text, "owneredit.py") || ci_contains(text, "ticketconverter.py") ||
+             ci_contains(text, "services.py") || ci_contains(text, "reg.py") ||
+             ci_contains(text, "sniffer.py") || ci_contains(text, "rdp_check.py") ||
+             ci_contains(text, "mssqlclient.py") ||
+             (ci_contains(text, "sliver") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mythic") && ci_contains(text, " -")) ||
+             (ci_contains(text, "havoc") && ci_contains(text, " -")) ||
+             (ci_contains(text, "covenant") && ci_contains(text, " -")) ||
+             (ci_contains(text, "merlin") && ci_contains(text, " -")) ||
+             (ci_contains(text, "empire") && ci_contains(text, " -")) ||
+             ci_contains(text, "poshc2") ||
+             ci_contains(text, "koadic") ||
+             (ci_contains(text, "deimos") && ci_contains(text, " -")) ||
+             ci_contains(text, "wso") || ci_contains(text, "b374k") ||
+             (ci_contains(text, "chopper") && ci_contains(text, " -")) ||
+             ci_contains(text, "kubeletctl") ||
+             (ci_contains(text, "cdk") && ci_contains(text, " -")) ||
+             (ci_contains(text, "donut") && ci_contains(text, " -")) ||
+             ci_contains(text, "avet") || ci_contains(text, "bdf") ||
+             ci_contains(text, "cymothoa") ||
+             (ci_contains(text, "unicorn") && ci_contains(text, " -")) ||
+             ci_contains(text, "msfpc") || ci_contains(text, "revshells") ||
+             ci_contains(text, "phpsploit") ||
+             (ci_contains(text, "beef") && ci_contains(text, " -")) ||
+             (ci_contains(text, "meg") && ci_contains(text, " -") &&
+              !ci_contains(text, "omega")) ||
+             ci_contains(text, "gowitness") || ci_contains(text, "aquatone") ||
+             ci_contains(text, "eyewitness") || ci_contains(text, "wafw00f") ||
+             (ci_contains(text, "nikto") && ci_contains(text, " -")) ||
+             (ci_contains(text, "zap") && ci_contains(text, " -") &&
+              !ci_contains(text, "zapier")) ||
+             (ci_contains(text, "burp") && ci_contains(text, " -")) ||
+             ci_contains(text, "tplmap") || ci_contains(text, "kxss") ||
+             ci_contains(text, "gopherus") ||
+             /* web terminals / hosting panels */
+             ci_contains(text, "mosh-server") ||
+             ci_contains(text, "ttyd") || ci_contains(text, "gotty") ||
+             ci_contains(text, "wetty") || ci_contains(text, "shellinaboxd") ||
+             ci_contains(text, "webssh") || ci_contains(text, "sshwifty") ||
+             ci_contains(text, "cockpit") || ci_contains(text, "webmin") ||
+             ci_contains(text, "usermin") || ci_contains(text, "virtualmin") ||
+             ci_contains(text, "ajenti") || ci_contains(text, "froxlor") ||
+             ci_contains(text, "vesta") || ci_contains(text, "hestia") ||
+             ci_contains(text, "cyberpanel") || ci_contains(text, "aapanel") ||
+             ci_contains(text, "cpanel") || ci_contains(text, "whmapi1") ||
+             ci_contains(text, "uapi") || ci_contains(text, "plesk") ||
+             ci_contains(text, "directadmin") || ci_contains(text, "imscp") ||
+             ci_contains(text, "ispconfig") || ci_contains(text, "sentora") ||
+             ci_contains(text, "keyhelp") ||
+             (ci_contains(text, "enhance") && ci_contains(text, " -")) ||
+             ci_contains(text, "solusvm") || ci_contains(text, "virtualizor") ||
+             ci_contains(text, "runcloud") || ci_contains(text, "serverpilot") ||
+             ci_contains(text, "ploi") || ci_contains(text, "gridpanel") ||
+             (ci_contains(text, "moss") && ci_contains(text, " -")) ||
+             /* selinux / apparmor policy control */
+             ci_contains(text, "setenforce 0") ||
+             (ci_contains(text, "semanage") &&
+              (ci_contains(text, " -a") || ci_contains(text, " -m") ||
+               ci_contains(text, " -d") || ci_contains(text, " -D"))) ||
+             (ci_contains(text, "semodule") &&
+              (ci_contains(text, " -i") || ci_contains(text, " -r") ||
+               ci_contains(text, " -R") || ci_contains(text, " -u") ||
+               ci_contains(text, " -e") || ci_contains(text, " -d") ||
+               ci_contains(text, " -X"))) ||
+             (ci_contains(text, "getsebool") && ci_contains(text, " -")) ||
+             (ci_contains(text, "setsebool") && ci_contains(text, " -")) || ci_contains(text, "audit2allow") ||
+             ci_contains(text, "aa-complain") || ci_contains(text, "aa-enforce") ||
+             ci_contains(text, "aa-disable") || ci_contains(text, "apparmor_parser") ||
+             ci_contains(text, "tomoyo") || ci_contains(text, "gradm") ||
+             /* backup → exfil */
+             (ci_contains(text, "restic") && ci_contains(text, " -") &&
+              !ci_contains(text, "--version")) ||
+             (ci_contains(text, "duplicity") && ci_contains(text, " -") &&
+              !ci_contains(text, "--version")) ||
+             ci_contains(text, "vdump") ||
+             /* bootloader / initramfs rewrite */
+             ci_contains(text, "mkinitramfs") || ci_contains(text, "update-initramfs") ||
+             ci_contains(text, "mkinitrd") ||
+             ci_contains(text, "update-grub") || ci_contains(text, "grub-install") ||
+             ci_contains(text, "grub2-install") ||
+             /* big data exec */
+             ci_contains(text, "spark-submit") || ci_contains(text, "spark-shell") ||
+             ci_contains(text, "pyspark") ||
+             ci_contains(text, "hdfs dfs -put") || ci_contains(text, "hadoop fs -put") ||
+             (ci_contains(text, "yarn") && ci_contains(text, " -") &&
+              !ci_contains(text, "--version")) ||
+             ci_contains(text, "hbase") || ci_contains(text, "cypher-shell") ||
+             
+             ci_contains(text, "duckdb") ||
+             /* mq */
+             (ci_contains(text, "emqx") &&
+              (ci_contains(text, " ctl") || ci_contains(text, " eval") ||
+               ci_contains(text, " stop") || ci_contains(text, " kill") ||
+               ci_contains(text, " restart") || ci_contains(text, " reload"))) ||
+             ci_contains(text, "vernemq") ||
+             (ci_contains(text, "nats") && ci_contains(text, " -") &&
+              !ci_contains(text, "gnats")) ||
+             (ci_contains(text, "nsq") && !ci_contains(text, "dnsquery")) ||
+             /* ebpf snoop / tracing */
+             ci_contains(text, "mountsnoop") || ci_contains(text, "syncsnoop") ||
+             ci_contains(text, "ttysnoop") || ci_contains(text, "biotop") ||
+             ci_contains(text, "tcptop") || ci_contains(text, "tcplife") ||
+             ci_contains(text, "tcpstates") || ci_contains(text, "tcpretrans") ||
+             ci_contains(text, "stackcount") || ci_contains(text, "offcputime") ||
+             ci_contains(text, "syscount") || ci_contains(text, "runqlat") ||
+             ci_contains(text, "cpudist") || ci_contains(text, "dcstat") ||
+             ci_contains(text, "dcsnoop") || ci_contains(text, "fileslower") ||
+             ci_contains(text, "filetop") || ci_contains(text, "ext4slower") ||
+             ci_contains(text, "mysqld_qslower") || ci_contains(text, "gethostlatency") ||
+             ci_contains(text, "cachestat") || ci_contains(text, "cachetop") ||
+             ci_contains(text, "memleak") || ci_contains(text, "oomkill") ||
+             (ci_contains(text, "deadlock") && ci_contains(text, " -")) ||
+             ci_contains(text, "solisten") || ci_contains(text, "hardirqs") ||
+             ci_contains(text, "fatrace") || ci_contains(text, "filelife") ||
+             /* sandbox runtimes */
+             (ci_contains(text, "runsc") && !ci_contains(text, "runscript")) ||
+             ci_contains(text, "gvisor") ||
+             ci_contains(text, "kata-runtime") || ci_contains(text, "firecracker") ||
+             ci_contains(text, "firectl") ||
+             (ci_contains(text, "ignite") && ci_contains(text, " -")) ||
+             /* document converters / renderers */
+             ci_contains(text, "pandoc") || ci_contains(text, "unoconv") ||
+             (ci_contains(text, "soffice") && ci_contains(text, "--headless")) ||
+             ci_contains(text, "weasyprint") ||
+             (ci_contains(text, "prince") && ci_contains(text, " -")) ||
+             ci_contains(text, "dompdf") || ci_contains(text, "enscript") ||
+             ci_contains(text, "a2ps") || ci_contains(text, "paps") ||
+             ci_contains(text, "cupsfilter") || ci_contains(text, "html2text") ||
+             ci_contains(text, "ps2pdf") || ci_contains(text, "pdfjam") ||
+             ci_contains(text, "pdftk") || ci_contains(text, "mutool") ||
+             (ci_contains(text, "qpdf") && (ci_contains(text, "--decrypt") ||
+              ci_contains(text, "--password"))) ||
+             /* printing */
+             ci_contains(text, "cupsd") ||
+             (ci_contains(text, "cupsctl") && ci_contains(text, " --share")) ||
+             ci_contains(text, "lpoptions") || ci_contains(text, "cups-browsed") ||
+             ci_contains(text, "foomatic") ||
+             /* accessibility backdoor binaries */
+             ci_contains(text, "sethc") ||
+             (ci_contains(text, "utilman") && ci_contains(text, " -")) ||
+             (ci_contains(text, "magnify") && ci_contains(text, " -")) ||
+             (ci_contains(text, "narrator") && ci_contains(text, " -")) ||
+             (ci_contains(text, "osk") && ci_contains(text, " -")) ||
+             ci_contains(text, "displayswitch") ||
+             ci_contains(text, "atbroker") ||
+             /* windows admin/debug misc */
+             ci_contains(text, "register-cimprovider") || ci_contains(text, "changepk") ||
+             (ci_contains(text, "msra") && ci_contains(text, " -")) ||
+             ci_contains(text, "iisreset") ||
+             (ci_contains(text, "appcmd") &&
+              (ci_contains(text, " add ") || ci_contains(text, " set ") ||
+               ci_contains(text, " delete "))) ||
+             (ci_contains(text, "msdeploy") && ci_contains(text, " -")) ||
+             ci_contains(text, "ngen") || ci_contains(text, "mscorsvw") ||
+             ci_contains(text, "dotnet-dump") || ci_contains(text, "windbg") ||
+             ci_contains(text, "cdb") ||
+             ci_contains(text, "adplus") || ci_contains(text, "dcdiag") ||
+             (ci_contains(text, "dsacls") && ci_contains(text, " -")) ||
+             ci_contains(text, "csvde") ||
+             ci_contains(text, "ldifde") || ci_contains(text, "smbcontrol") ||
+             ci_contains(text, "smbstatus") ||
+             (ci_contains(text, "rpcclient") && ci_contains(text, " -")) ||
+             /* libguestfs image write */
+             ci_contains(text, "virt-make-fs") || ci_contains(text, "libguestfs") ||
+             (ci_contains(text, "iceman") && ci_contains(text, " -"))) {
+        what = "c2/webshell/recon/bt/panel/selinux/backup-exfil/boot/bigdata/mq/ebpf/sandbox/doc/print/a11y/dbg primitive";
+        }
+
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
         }

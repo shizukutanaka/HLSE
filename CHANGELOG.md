@@ -4,6 +4,48 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-259)
+- `hlse_supply.c` paste-detection: ~190 needles covering impacket leftovers
+  (owneredit/ticketconverter/services/reg/sniffer/rdp_check/mssqlclient), C2
+  frameworks (sliver/mythic/havoc/covenant/merlin/empire/poshc2/pupy/koadic/
+  deimos), webshells (wso/b374k/chopper), container exploit kits (cdk/
+  kubeletctl), exploit generators (donut/avet/bdf/cymothoa/unicorn/msfpc/
+  revshells/phpsploit/beef), web recon (meg/gowitness/aquatone/eyewitness/
+  wafw00f/nikto/zap/burp/tplmap/kxss/gopherus), web terminals + hosting
+  panels (mosh-server/ttyd/gotty/wetty/shellinaboxd/webssh/sshwifty/cockpit/
+  webmin/usermin/virtualmin/ajenti/froxlor/vesta/hestia/cyberpanel/aapanel/
+  cpanel/whmapi1/uapi/plesk/directadmin/imscp/ispconfig/sentora/keyhelp/
+  solusvm/virtualizor/runcloud/serverpilot/ploi/gridpanel/moss), SELinux/
+  AppArmor write verbs (setenforce 0, semanage -a/-m/-d/-D, semodule
+  install/remove, getsebool/setsebool flags, audit2allow, aa-complain/
+  enforce/disable, apparmor_parser, tomoyo, gradm), backup exfil (restic/
+  duplicity/vdump), boot-chain rewrite (mkinitramfs/update-initramfs/
+  mkinitrd/update-grub/grub-install/grub2-install), bigdata (spark-submit/
+  spark-shell/pyspark/hbase/cypher-shell/duckdb/hdfs dfs -put/hadoop fs -put),
+  message queues (emqx ctl/eval/stop/kill, vernemq, nsq family), ~40 eBPF
+  snoop tools (mountsnoop...filelife), sandboxes (runsc/gvisor/kata-runtime/
+  firecracker/firectl/ignite), document converters (pandoc/unoconv/
+  soffice --headless/weasyprint/prince/dompdf/enscript/a2ps/paps/cupsfilter/
+  html2text/ps2pdf/pdfjam/pdftk/mutool/qpdf --decrypt|--password), print
+  stack (cupsd/cupsctl --share/lpoptions/cups-browsed/foomatic), accessibility
+  backdoors (sethc/utilman/osk/magnify/narrator/displayswitch/atbroker),
+  Windows misc (register-cimprovider/changepk/msra -/iisreset/appcmd
+  add|set|delete/msdeploy -/ngen/mscorsvw/dotnet-dump/windbg/cdb/adplus/
+  dcdiag/dsacls -/csvde/ldifde/smbcontrol/smbstatus/rpcclient -), and
+  libguestfs (virt-make-fs/libguestfs/iceman -) — ALERT [45].
+
+### Fixed (cycle-259)
+- Pre-existing-coverage dedup: removed new needles for gau/presto/trino/
+  arangosh/clickhouse-client/beeline/pupy/fltmc/presentationhost/kd —
+  already gated elsewhere in the file (suite's existing hits keep verifying).
+- Benign collisions resolved via verb/flag gates: appcmd → ` add| set| delete`;
+  msra/msdeploy/dsacls/rpcclient/nikto/osk/utilman/getsebool/setsebool/
+  fltmc-form → ` -` flag gates; setenforce → `setenforce 0` literal;
+  semanage → ` -a|-m|-d|-D`; semodule → install/remove verbs; cupsctl →
+  ` --share`; emqx → ctl/eval/stop/kill/restart/reload; restic/duplicity/
+  yarn → `!--version`; nsq → `!dnsquery`; runsc → `!runscript`; deimos/
+  iceman/pupy-form → ` -` gates. dracut dropped (benign read-verbs dominate).
+
 ### Added (cycle-258)
 - Paste-detection coverage for forensics/imaging (Sleuth Kit `fls`/`istat`/`img_stat`/`fsstat`/`srch_strings`/`hfind`/`sorter`/`jcat`, `foremost`/`scalpel`/`mac-robber`, Volatility `vol.py`/`vol3`/`memprocfs`, `pmem`/`lime`/`ramcapture`/`dumplt`/`limeaide`, `wimcapture`/`wimapply`/`wimlib`, `dism++`, `bootice`, `partclone`/`ntfsclone`/`fsarchiver`/`partimage`/`clonezilla`/`ocs-*`, `ntfscat`/`ntfsfix`/`ntfsls`/`ext3grep`, `mkntfs`/`exfatlabel`/`udfinfo`/`xorrisofs`/`genisoimage`/`isohybrid`, `rufus`/`etcher`/`rpi-imager`/`ventoy`, `reagentc` write-verbs) and forensic exporters (`readpst`/`pst2ldif`/`lspst`/`pffexport`, `evtxexport`/`regexport`/`sbag`/`amcacheparser`/`jumplist`/`lnkanalyzer`/`pf.exe`/`usnjrnl`/`msiecfexport`/`olecfexport`/`lnkexport`/`wminfo`/`pyluina`/`libesedb`/`bkhive`, clipboard `clipman`, OCR `tesseract`/`gocr`/`ocrmypdf`).
 - LLM agent CLIs (`aider`/`claude-code`/`cursor-agent`/`opencode`/`codex`/`gemini`/`llxprt`, `llm`/`mods`/`fabric`/`aichat`/`tgpt`/`shell_gpt`/`sgpt`/`yai`/`plz`/`ask`/`howto`/`copilot` — real words flag-gated), IdP/secrets brokers (`oidc-agent`/`oidc-token`/`gtoken`/`jwtgen`/`jose`/`cmctl`/`dexctl`/`hydra`/`kratos`/`oathkeeper`/`authelia`/`kcadm`, `berglas`/`chamber`/`credhub`/`envchain`/`conjur`/`summon`/`secrethub`/`keywhiz`/`akeyless`/`boundary`), and fuzzers/chaos (`afl-fuzz`/`honggfuzz`/`syzkaller`/`winafl`/`boofuzz`/`zzuf`/`radamsa`/`sulley`/`domato`/`jazzer`, `litmusctl`/`chaosd`/`chaosblade`/`pumba`/`kraken`).
