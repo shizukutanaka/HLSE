@@ -10158,6 +10158,264 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dibbler-")) {
         what = "appserver/db/monitoring/edr/netdev/bmc/backup/tunnel/exec primitive";
         }
+        else if (ci_contains(text, "fls") ||
+             (ci_contains(text, "istat") && ci_contains(text, " -")) ||
+             ci_contains(text, "img_stat") || ci_contains(text, "fsstat") ||
+             ci_contains(text, "srch_strings") ||
+             (ci_contains(text, "foremost") && ci_contains(text, " -")) ||
+             (ci_contains(text, "scalpel") && ci_contains(text, " -")) ||
+             ci_contains(text, "mac-robber") || ci_contains(text, "hfind") ||
+             (ci_contains(text, "sorter") && ci_contains(text, " -")) ||
+             ci_contains(text, "sigfind") || ci_contains(text, "jcat") ||
+             ci_contains(text, "vol.py") || ci_contains(text, "vol3") ||
+             ci_contains(text, "memprocfs") || ci_contains(text, "pmem") ||
+             (ci_contains(text, "lime") && ci_contains(text, " -")) ||
+             ci_contains(text, "ramcapture") || ci_contains(text, "dumplt") ||
+             ci_contains(text, "wimcapture") || ci_contains(text, "wimapply") ||
+             ci_contains(text, "wimlib") || ci_contains(text, "dism++") ||
+             ci_contains(text, "bootice") ||
+             (ci_contains(text, "reagentc") &&
+              (ci_contains(text, " /set") || ci_contains(text, " /disable") ||
+               ci_contains(text, " /boottarge"))) ||
+             ci_contains(text, "partclone") || ci_contains(text, "ntfsclone") ||
+             ci_contains(text, "fsarchiver") || ci_contains(text, "partimage") ||
+             ci_contains(text, "clonezilla") || ci_contains(text, "ocs-sr") ||
+             ci_contains(text, "ocs-onthefly") || ci_contains(text, "ntfscat") ||
+             ci_contains(text, "ntfsfix") || ci_contains(text, "ntfsls") ||
+             ci_contains(text, "ext3grep") ||
+             ci_contains(text, "mkntfs") || ci_contains(text, "exfatlabel") ||
+             ci_contains(text, "udfinfo") || ci_contains(text, "xorrisofs") ||
+             ci_contains(text, "genisoimage") || ci_contains(text, "isohybrid") ||
+             (ci_contains(text, "rufus") && ci_contains(text, " -")) ||
+             (ci_contains(text, "etcher") && ci_contains(text, " -")) ||
+             ci_contains(text, "rpi-imager") || ci_contains(text, "ventoy") ||
+             ci_contains(text, "readpst") || ci_contains(text, "pst2ldif") ||
+             ci_contains(text, "lspst") || ci_contains(text, "pffexport") ||
+             ci_contains(text, "evtxexport") || ci_contains(text, "regexport") ||
+             ci_contains(text, "sbag") || ci_contains(text, "amcacheparser") ||
+             ci_contains(text, "jumplist") || ci_contains(text, "lnkanalyzer") ||
+             ci_contains(text, "pf.exe") || ci_contains(text, "usnjrnl") ||
+             ci_contains(text, "msiecfexport") || ci_contains(text, "olecfexport") ||
+             ci_contains(text, "lnkexport") || ci_contains(text, "wminfo") ||
+             ci_contains(text, "pyluina") || ci_contains(text, "libesedb") ||
+             ci_contains(text, "bkhive") || ci_contains(text, "clipman") ||
+             ci_contains(text, "tesseract") || (ci_contains(text, "gocr") && ci_contains(text, " -")) ||
+             ci_contains(text, "ocrmypdf") ||
+             (ci_contains(text, "aider") && ci_contains(text, " -")) ||
+             ci_contains(text, "claude-code") || ci_contains(text, "cursor-agent") ||
+             (ci_contains(text, "opencode") && ci_contains(text, " -")) ||
+             (ci_contains(text, "codex") && ci_contains(text, " -")) ||
+             (ci_contains(text, "gemini") && ci_contains(text, " -")) ||
+             ci_contains(text, "llxprt") ||
+             (ci_contains(text, "llm") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mods") && ci_contains(text, " -")) ||
+             (ci_contains(text, "fabric") && ci_contains(text, " -")) ||
+             ci_contains(text, "aichat") || ci_contains(text, "tgpt") ||
+             ci_contains(text, "shell_gpt") || ci_contains(text, "sgpt") ||
+             ci_contains(text, "yai") || ci_contains(text, "plz") ||
+             (ci_contains(text, "ask") && ci_contains(text, " -") &&
+              !ci_contains(text, "taskkill") &&
+              !ci_contains(text, "taskset")) ||
+             (ci_contains(text, "howto") && ci_contains(text, " -")) ||
+             (ci_contains(text, "copilot") && ci_contains(text, " -")) ||
+             ci_contains(text, "oidc-agent") || ci_contains(text, "oidc-token") ||
+             ci_contains(text, "gtoken") || ci_contains(text, "jwtgen") ||
+             ci_contains(text, "jose") || ci_contains(text, "cmctl") ||
+             ci_contains(text, "dexctl") ||
+             ci_contains(text, "kratos") || ci_contains(text, "oathkeeper") ||
+             ci_contains(text, "authelia") || ci_contains(text, "kcadm") ||
+             ci_contains(text, "berglas") ||
+             ci_contains(text, "credhub") ||
+             ci_contains(text, "envchain") || ci_contains(text, "conjur") ||
+             ci_contains(text, "secrethub") ||
+             ci_contains(text, "keywhiz") || ci_contains(text, "akeyless") ||
+             (ci_contains(text, "boundary") && ci_contains(text, " -")) ||
+             ci_contains(text, "afl-fuzz") || ci_contains(text, "honggfuzz") ||
+             ci_contains(text, "syzkaller") || ci_contains(text, "winafl") ||
+             ci_contains(text, "boofuzz") || ci_contains(text, "zzuf") ||
+             ci_contains(text, "radamsa") || ci_contains(text, "sulley") ||
+             ci_contains(text, "domato") || ci_contains(text, "jazzer") ||
+             ci_contains(text, "litmusctl") || ci_contains(text, "chaosd") ||
+             ci_contains(text, "chaosblade") || ci_contains(text, "pumba") ||
+             ci_contains(text, "kraken") || ci_contains(text, "airbyte") ||
+             ci_contains(text, "singer") || ci_contains(text, "meltano") ||
+             ci_contains(text, "dlt") || ci_contains(text, "debezium") ||
+             ci_contains(text, "maxwell") || ci_contains(text, "canal") ||
+             (ci_contains(text, "beam") && ci_contains(text, " -")) ||
+             ci_contains(text, "prefect") ||
+             ci_contains(text, "dagster") || ci_contains(text, "luigi") ||
+             ci_contains(text, "dbt") || ci_contains(text, "metabase") ||
+             ci_contains(text, "superset") || ci_contains(text, "mlflow") ||
+             ci_contains(text, "dvc") || ci_contains(text, "kubeflow") ||
+             ci_contains(text, "clearml") || ci_contains(text, "wandb") ||
+             ci_contains(text, "sagemaker") || ci_contains(text, "aziotctl") ||
+             ci_contains(text, "iotedge") || ci_contains(text, "greengrass") ||
+             ci_contains(text, "particle") || ci_contains(text, "balena") ||
+             ci_contains(text, "steamcmd") || ci_contains(text, "lutris") ||
+             ci_contains(text, "protontricks") || ci_contains(text, "winetricks") ||
+             ci_contains(text, "dosbox") || ci_contains(text, "virt-viewer") ||
+             ci_contains(text, "weylus") || 
+             ci_contains(text, "dayon") || ci_contains(text, "meshcmd") ||
+             ci_contains(text, "kvmd") || ci_contains(text, "pikvm") ||
+             ci_contains(text, "tinypilot") || ci_contains(text, "jetkvm") ||
+             ci_contains(text, "runtipi") || ci_contains(text, "umbrel") ||
+             ci_contains(text, "casaos") || ci_contains(text, "yunohost") ||
+             ci_contains(text, "sandstorm") || ci_contains(text, "freedombox") ||
+             ci_contains(text, "homelabos") || ci_contains(text, "dockge") ||
+             ci_contains(text, "portainer") || ci_contains(text, "yacht") ||
+             ci_contains(text, "komodo") || ci_contains(text, "dozzle") ||
+             ci_contains(text, "lazydocker") ||
+             (ci_contains(text, "lens") && ci_contains(text, " -")) ||
+             ci_contains(text, "headlamp") ||
+             (ci_contains(text, "octant") && ci_contains(text, " -")) ||
+             ci_contains(text, "kubedashboard") || ci_contains(text, "weave-scope") ||
+             (ci_contains(text, "grafana") && ci_contains(text, " -")) ||
+             (ci_contains(text, "alloy") && ci_contains(text, " -")) ||
+             ci_contains(text, "promtail") ||
+             (ci_contains(text, "mimir") && ci_contains(text, " -")) ||
+             (ci_contains(text, "loki") && ci_contains(text, " -")) ||
+             (ci_contains(text, "tempo") && ci_contains(text, " -")) ||
+             ci_contains(text, "pyroscope") ||
+             (ci_contains(text, "faro") && ci_contains(text, " -")) ||
+             (ci_contains(text, "kuma") && ci_contains(text, " -")) ||
+             ci_contains(text, "kumactl") ||
+             (ci_contains(text, "osm") && ci_contains(text, " -")) ||
+             ci_contains(text, "glooctl") || ci_contains(text, "edgectl") ||
+             (ci_contains(text, "contour") && ci_contains(text, " -")) ||
+             ci_contains(text, "emissary") ||
+             ci_contains(text, "solo-io") || ci_contains(text, "cmctl") ||
+             ci_contains(text, "spire-agent") || ci_contains(text, "spiffe") ||
+             ci_contains(text, "in-toto") ||
+             (ci_contains(text, "witness") && ci_contains(text, " -")) ||
+             ci_contains(text, "vexctl") ||
+             (ci_contains(text, "bom") && ci_contains(text, " -")) ||
+             ci_contains(text, "kritis") || ci_contains(text, "kyverno") ||
+             (ci_contains(text, "gatekeeper") && ci_contains(text, " -")) ||
+             ci_contains(text, "falcoctl") ||
+             (ci_contains(text, "tetragon") && ci_contains(text, " -")) ||
+             ci_contains(text, "pwru") ||
+             ci_contains(text, "inspektor") || ci_contains(text, "kubeshark") ||
+             ci_contains(text, "kubepug") ||
+             (ci_contains(text, "pluto") && ci_contains(text, " -")) ||
+             (ci_contains(text, "popeye") && ci_contains(text, " -")) ||
+             ci_contains(text, "krr") ||
+             (ci_contains(text, "robusta") && ci_contains(text, " -")) ||
+             ci_contains(text, "holmesgpt") ||
+             ci_contains(text, "kagent") || ci_contains(text, "kmctl") ||
+             ci_contains(text, "kgctl") || ci_contains(text, "gitea") ||
+             ci_contains(text, "gitbucket") || ci_contains(text, "gitlab-ctl") ||
+             ci_contains(text, "bucket4j") ||
+             (ci_contains(text, "arc") && ci_contains(text, " -")) ||
+             (ci_contains(text, "arcanist") && ci_contains(text, " -")) ||
+             ci_contains(text, "phab") ||
+             ci_contains(text, "repo init") || ci_contains(text, "repo sync") ||
+             ci_contains(text, "repo upload") || ci_contains(text, "git-review") ||
+             ci_contains(text, "git-imerge") || ci_contains(text, "git-absorb") ||
+             ci_contains(text, "git-revise") || ci_contains(text, "ghq") ||
+             (ci_contains(text, "hub") && ci_contains(text, " -")) ||
+             (ci_contains(text, "laconic") && ci_contains(text, " -")) ||
+             ci_contains(text, "git-lfs") ||
+             (ci_contains(text, "dolt") && ci_contains(text, " -")) ||
+             ci_contains(text, "lakefs") || ci_contains(text, "xet") ||
+             (ci_contains(text, "zookeeper") && ci_contains(text, " -")) ||
+             ci_contains(text, "etcdkeeper") || ci_contains(text, "consul-template") ||
+             (ci_contains(text, "vaulted") && ci_contains(text, " -")) ||
+             ci_contains(text, "approle") || ci_contains(text, "pomerium") ||
+             ci_contains(text, "oauth2-proxy") ||
+             (ci_contains(text, "dex") && ci_contains(text, " -") &&
+              !ci_contains(text, "index")) ||
+             (ci_contains(text, "teleport") && ci_contains(text, " -")) ||
+             (ci_contains(text, "tbot") && !ci_contains(text, "certbot")) || ci_contains(text, "boundary-worker") ||
+             ci_contains(text, "openbao") ||
+             (ci_contains(text, "bao") && ci_contains(text, " -")) ||
+             (ci_contains(text, "doppler") && ci_contains(text, " -")) ||
+             ci_contains(text, "openfga") || ci_contains(text, "fga") ||
+             (ci_contains(text, "topaz") && ci_contains(text, " -")) ||
+             ci_contains(text, "aserto") ||
+             (ci_contains(text, "permit") && ci_contains(text, " -")) ||
+             (ci_contains(text, "oso") && ci_contains(text, " -")) ||
+             (ci_contains(text, "cedar") && ci_contains(text, " -")) ||
+             ci_contains(text, "xacml") ||
+             (ci_contains(text, "sentinel") && ci_contains(text, " -")) ||
+             (ci_contains(text, "regal") && ci_contains(text, " -")) ||
+             (ci_contains(text, "polaris") && ci_contains(text, " -")) ||
+             ci_contains(text, "kubescape") || ci_contains(text, "kube-score") ||
+             ci_contains(text, "kube-linter") || ci_contains(text, "kubeval") ||
+             ci_contains(text, "kubeaudit") || ci_contains(text, "kubesec") ||
+             ci_contains(text, "kubereport") || ci_contains(text, "kuttl") ||
+             (ci_contains(text, "chaos") && ci_contains(text, " -")) ||
+             ci_contains(text, "k0sctl") || ci_contains(text, "rke2") ||
+             ci_contains(text, "microk8s") ||
+             ci_contains(text, "vcluster") ||
+             (ci_contains(text, "loft") && ci_contains(text, " -")) ||
+             (ci_contains(text, "capsule") && ci_contains(text, " -")) ||
+             ci_contains(text, "kamaji") || ci_contains(text, "hyperv") ||
+             ci_contains(text, "okd") ||
+             (ci_contains(text, "crc") && ci_contains(text, " -")) ||
+             ci_contains(text, "minishift") ||
+             (ci_contains(text, "rosa") && ci_contains(text, " -")) ||
+             (ci_contains(text, "aro") && ci_contains(text, " -")) ||
+             ci_contains(text, "eksctl") || ci_contains(text, "aks-engine") ||
+             ci_contains(text, "clusterawsadm") || ci_contains(text, "clusterctl") ||
+             ci_contains(text, "kops") || ci_contains(text, "kubespray") ||
+             ci_contains(text, "kubeasz") ||
+             ci_contains(text, "kubekey") ||
+             (ci_contains(text, "kk") && ci_contains(text, " -") &&
+              !ci_contains(text, "taskkill")) ||
+             ci_contains(text, "sealos") || ci_contains(text, "rancherd") ||
+             (ci_contains(text, "fleet") && ci_contains(text, " -")) ||
+             (ci_contains(text, "elemental") && ci_contains(text, " -")) ||
+             (ci_contains(text, "harvester") && ci_contains(text, " -")) ||
+             ci_contains(text, "epinio") ||
+             (ci_contains(text, "waypoint") && ci_contains(text, " -")) ||
+             ci_contains(text, "nocalhost") ||
+             (ci_contains(text, "garden") && ci_contains(text, " -")) ||
+             ci_contains(text, "okteto") || ci_contains(text, "bridge-to-kubernetes") ||
+             (ci_contains(text, "tanka") && ci_contains(text, " -")) ||
+             ci_contains(text, "jsonnet") ||
+             (ci_contains(text, "cue") && ci_contains(text, " -")) ||
+             ci_contains(text, "dhall") ||
+             (ci_contains(text, "hcl") && !ci_contains(text, "dhclient") &&
+              !ci_contains(text, "hcloud")) ||
+             ci_contains(text, "starlark") ||
+             (ci_contains(text, "tilt") && ci_contains(text, " -")) ||
+             ci_contains(text, "sko") || ci_contains(text, "chainguard") ||
+             (ci_contains(text, "melange") && ci_contains(text, " -")) ||
+             ci_contains(text, "apko") || ci_contains(text, "wolfictl") ||
+             (ci_contains(text, "undock") && ci_contains(text, " -")) ||
+             ci_contains(text, "image-spec") || ci_contains(text, "regclient") ||
+             ci_contains(text, "regbot") || ci_contains(text, "regsync") ||
+             ci_contains(text, "cinc") ||
+             (ci_contains(text, "inspec") && !ci_contains(text, "pythoninspect")) ||
+             ci_contains(text, "chef-apply") || ci_contains(text, "test-kitchen") ||
+             (ci_contains(text, "kitchen") && ci_contains(text, " -")) ||
+             (ci_contains(text, "molecule") && ci_contains(text, " -")) ||
+             (ci_contains(text, "goss") && ci_contains(text, " -") &&
+              !ci_contains(text, "gossa")) || ci_contains(text, "gossa") ||
+             ci_contains(text, "serverspec") || ci_contains(text, "ansible-vault") ||
+             ci_contains(text, "ansible-galaxy") ||
+             ci_contains(text, "salt-call") ||
+             ci_contains(text, "salt-run") || ci_contains(text, "salt-cloud") ||
+             ci_contains(text, "cfengine") || ci_contains(text, "cf-agent") ||
+             ci_contains(text, "cf-key") || ci_contains(text, "bcfg2") ||
+             (ci_contains(text, "puppet") &&
+              (ci_contains(text, " resource") || ci_contains(text, " apply") ||
+               ci_contains(text, " run"))) ||
+             ci_contains(text, "r10k") ||
+             (ci_contains(text, "facter") && ci_contains(text, " -")) ||
+             ci_contains(text, "hiera") || ci_contains(text, "eyaml") ||
+             ci_contains(text, "terragrunt") || ci_contains(text, "tfenv") ||
+             ci_contains(text, "tfswitch") ||
+             (ci_contains(text, "tofu") && ci_contains(text, " -")) ||
+             ci_contains(text, "openbao") || ci_contains(text, "valut") ||
+             ci_contains(text, "runecast") || ci_contains(text, "env0") ||
+             ci_contains(text, "spacelift") || ci_contains(text, "env0ctl") ||
+             ci_contains(text, "brainboard") || ci_contains(text, "inframap") ||
+             ci_contains(text, "terraformer") || ci_contains(text, "tf2pulumi") ||
+             ci_contains(text, "former2") || ci_contains(text, "aztfexport") ||
+             ci_contains(text, "terraforming") || ci_contains(text, "terracognita")) {
+        what = "forensics/idp/fuzz/chaos/data/ml/k8s/iac/git/llm/img primitive";
+        }
         
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
