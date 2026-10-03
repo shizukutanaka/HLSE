@@ -12834,6 +12834,26 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "pls") && ci_contains(text, " -")) ||
              (ci_contains(text, "hls") && ci_contains(text, " -"))) {
         what = "asm/fuzzy/filelister primitive";
+        } else if (
+             /* cycle-294a: sys/net/infra primitives */
+             ci_contains(text, "sj3") || ci_contains(text, "kanaka") ||
+             ci_contains(text, "wnn") || ci_contains(text, "dladm") ||
+             ci_contains(text, "flowadm") || ci_contains(text, "fmadm") ||
+             ci_contains(text, "sdladm") || ci_contains(text, "s2both") ||
+             ci_contains(text, "mhvtl") || ci_contains(text, "mmdf") ||
+             ci_contains(text, "ospf6d") || ci_contains(text, "ztpd") ||
+             ci_contains(text, "ztp") || ci_contains(text, "ol2tpd") ||
+             ci_contains(text, "mpoad") || ci_contains(text, "mpoas")) {
+        what = "sys/net infra primitive";
+        } else if (
+             /* cycle-294b: media/music/game/misc primitives */
+             ci_contains(text, "f3d") || ci_contains(text, "toktok") ||
+             ci_contains(text, "madmom") || ci_contains(text, "utau") ||
+             ci_contains(text, "kyma") || ci_contains(text, "mf2t") ||
+             ci_contains(text, "t2mf") || ci_contains(text, "havannah") ||
+             (ci_contains(text, "huh") && ci_contains(text, " -")) ||
+             (ci_contains(text, "buzz") && ci_contains(text, " -"))) {
+        what = "media/music/game primitive";
         }
 
         if (what) {
