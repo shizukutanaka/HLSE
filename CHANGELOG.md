@@ -10849,7 +10849,8 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 297):** print/tex/ham + router/cpe/voip primitives (24 needles): tth/ttm/pkp/ohs/hsmm/pyqso/wwff/bf888/ft3d/bpq/fmuk66/hdo2/fwfb + ubus/fw3/fw4/mwan3/owut/ubnthal/swos/smsd/kalkun/snom(!snomed)/b2bua.
+```- **ALERT 45 (cycle 298):** directory/oracle/vm + cluster/compchem/bioinfo primitives (~130 needles): adrci/sqlplus/sqlservr/ntlm_auth/wbinfo/oddjobd + sbcast/btop/qconf/htcondor/boinc + autodock/grompp/vasp/molpro/phonopy/packmol/qchem + blastn/mlst/roary/metaphlan/liftover/treetime; real-word needles gated (mercury/dirac/dalton/kaiju/prefetch/snippy/sander/spirit/auspice/avogadro/censo/crest/fleur/molar/solvate/bracken/clark/spicy), boundary needles morpho /blat .
+- **ALERT 45 (cycle 297):** print/tex/ham + router/cpe/voip primitives (24 needles): tth/ttm/pkp/ohs/hsmm/pyqso/wwff/bf888/ft3d/bpq/fmuk66/hdo2/fwfb + ubus/fw3/fw4/mwan3/owut/ubnthal/swos/smsd/kalkun/snom(!snomed)/b2bua.
 - **ALERT 45 (cycle 296):** windows/aix admin + mail/telecom/shell-trick primitives (23 needles): umdh/sqlps/pwdadm/mkldap/mkps/vmo2/pfhd/lsnw/lsswsd + brace-expansion {ls,/{pwd, + mhn/pommo/lsoft/vmh/fmh/babyl/smsq/mmplay/mmw/mmz/snpp + whom flag-gated.
 - **ALERT 45 (cycle 295):** sdk/dev/research + emu/game forensic-id primitives (22 needles): zld/sdps/ps4sdk/pspsdk/dkp/abnf2/lasp/lmn/whool/lmql/dspy/nomos + muos/myboy/3dmoo/lswm/fpps4/kyty/an2k/dwsq + saw/folk/ludo flag-gated.
 - **ALERT 45 (cycle 294):** sys/net infra + media/music/game primitives (26 needles): sj3/kanaka/wnn/dladm/flowadm/fmadm/sdladm/s2both/mhvtl/mmdf/ospf6d/ztp/ztpd/ol2tpd/mpoad/mpoas + f3d/toktok/madmom/utau/kyma/mf2t/t2mf/havannah + huh/buzz flag-gated.

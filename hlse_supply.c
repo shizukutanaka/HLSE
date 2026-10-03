@@ -12912,6 +12912,95 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "snom") && !ci_contains(text, "snomed")) ||
              ci_contains(text, "b2bua")) {
         what = "router/cpe/voip primitive";
+        } else if (
+             /* cycle-298a: directory/oracle/vm admin primitives */
+             ci_contains(text, "adrci") || ci_contains(text, "dbhome") ||
+             ci_contains(text, "dbshut") || ci_contains(text, "kfed") ||
+             ci_contains(text, "lsiutil") || ci_contains(text, "netmgr") ||
+             ci_contains(text, "ntlm_auth") ||
+             ci_contains(text, "oddjob_mkhomedir") ||
+             ci_contains(text, "oddjobd") || ci_contains(text, "oifcfg") ||
+             ci_contains(text, "orachk") || ci_contains(text, "oraenv") ||
+             ci_contains(text, "orapwd") || ci_contains(text, "sqlplus") ||
+             ci_contains(text, "sqlservr") || ci_contains(text, "sysvol") ||
+             ci_contains(text, "vghetto") || ci_contains(text, "wbinfo") ||
+             (ci_contains(text, "spicy") && ci_contains(text, " -"))) {
+        what = "directory/oracle/vm primitive";
+        } else if (
+             /* cycle-298b: cluster/hpc scheduler primitives */
+             ci_contains(text, "sbcast") || ci_contains(text, "strigger") ||
+             ci_contains(text, "bhist") || ci_contains(text, "bpeek") ||
+             ci_contains(text, "bswitch") || ci_contains(text, "btop") ||
+             ci_contains(text, "qconf") || ci_contains(text, "qmon") ||
+             ci_contains(text, "qsig") || ci_contains(text, "pdcp") ||
+             ci_contains(text, "jobgrid") || ci_contains(text, "htcondor") ||
+             ci_contains(text, "glideinwms") || ci_contains(text, "boinc") ||
+             ci_contains(text, "boinctui")) {
+        what = "cluster/hpc scheduler primitive";
+        } else if (
+             /* cycle-298c: computational-chemistry primitives */
+             ci_contains(text, "ambpdb") || ci_contains(text, "aoforce") ||
+             ci_contains(text, "autodock") || ci_contains(text, "bigdft") ||
+             ci_contains(text, "castep") || ci_contains(text, "ccdcmercury") ||
+             ci_contains(text, "cfour") || ci_contains(text, "cpptraj") ||
+             ci_contains(text, "denchar") || ci_contains(text, "dftb+") ||
+             ci_contains(text, "dftbplus") || ci_contains(text, "diffdock") ||
+             ci_contains(text, "dscf") || ci_contains(text, "editconf") ||
+             ci_contains(text, "egrad") || ci_contains(text, "escf") ||
+             ci_contains(text, "fhiaims") || ci_contains(text, "g_energy") ||
+             ci_contains(text, "g_hbond") || ci_contains(text, "gabedit") ||
+             ci_contains(text, "genconf") || ci_contains(text, "genion") ||
+             ci_contains(text, "gnina") || ci_contains(text, "gpu4qchem") ||
+             ci_contains(text, "grompp") || ci_contains(text, "iqmol") ||
+             ci_contains(text, "jmol") || ci_contains(text, "lmp") ||
+             ci_contains(text, "macmolplt") || ci_contains(text, "molcas") ||
+             ci_contains(text, "molcrys") || ci_contains(text, "molpro") ||
+             ci_contains(text, "mrcc") || ci_contains(text, "nwcs") ||
+             ci_contains(text, "obenergy") || ci_contains(text, "obprop") ||
+             ci_contains(text, "obrot") || ci_contains(text, "packmol") ||
+             ci_contains(text, "phono3py") || ci_contains(text, "phonopy") ||
+             ci_contains(text, "qchem") || ci_contains(text, "ridft") ||
+             ci_contains(text, "smina") || ci_contains(text, "tleap") ||
+             ci_contains(text, "tmole") || ci_contains(text, "vasp") ||
+             ci_contains(text, "vasp_gam") || ci_contains(text, "vasp_ncl") ||
+             ci_contains(text, "vasp_std") || ci_contains(text, "vaspkit") ||
+             ci_contains(text, "morpho ") || ci_contains(text, "blat ") ||
+             (ci_contains(text, "auspice") && ci_contains(text, " -")) ||
+             (ci_contains(text, "avogadro") && ci_contains(text, " -")) ||
+             (ci_contains(text, "censo") && ci_contains(text, " -")) ||
+             (ci_contains(text, "crest") && ci_contains(text, " -")) ||
+             (ci_contains(text, "dalton") && ci_contains(text, " -")) ||
+             (ci_contains(text, "dirac") && ci_contains(text, " -")) ||
+             (ci_contains(text, "fleur") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mercury") && ci_contains(text, " -")) ||
+             (ci_contains(text, "molar") && ci_contains(text, " -")) ||
+             (ci_contains(text, "sander") && ci_contains(text, " -")) ||
+             (ci_contains(text, "solvate") && ci_contains(text, " -")) ||
+             (ci_contains(text, "spirit") && ci_contains(text, " -"))) {
+        what = "computational-chemistry primitive";
+        } else if (
+             /* cycle-298d: bioinformatics primitives */
+             ci_contains(text, "abricate") || ci_contains(text, "bakta") ||
+             ci_contains(text, "blastn") || ci_contains(text, "blastp") ||
+             ci_contains(text, "fasttree") ||
+             ci_contains(text, "figtree") ||
+             ci_contains(text, "lastal") || ci_contains(text, "lastz") ||
+             ci_contains(text, "liftover") ||
+             ci_contains(text, "metaphlan") || ci_contains(text, "mlst") ||
+             ci_contains(text, "roary") || ci_contains(text, "seqcomplement") ||
+             ci_contains(text, "seqgt") || ci_contains(text, "seqhead") ||
+             ci_contains(text, "seqrename") || ci_contains(text, "seqrev") ||
+             ci_contains(text, "seqrevseq") || ci_contains(text, "seqshuffle") ||
+             ci_contains(text, "seqtail") || ci_contains(text, "sequniq") ||
+             ci_contains(text, "seqwindow") || ci_contains(text, "tblastn") ||
+             ci_contains(text, "treetime") || ci_contains(text, "twobittofa") ||
+             ci_contains(text, "fatotwobit") ||
+             (ci_contains(text, "bracken") && ci_contains(text, " -")) ||
+             (ci_contains(text, "clark") && ci_contains(text, " -")) ||
+             (ci_contains(text, "kaiju") && ci_contains(text, " -")) ||
+             (ci_contains(text, "prefetch") && ci_contains(text, " -")) ||
+             (ci_contains(text, "snippy") && ci_contains(text, " -"))) {
+        what = "bioinformatics primitive";
         }
 
         if (what) {
