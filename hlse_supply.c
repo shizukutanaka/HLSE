@@ -10043,7 +10043,8 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "icontrol") && ci_contains(text, " -")) ||
              ci_contains(text, "tmctl") || ci_contains(text, "bigstart") ||
              ci_contains(text, "mcpd") || ci_contains(text, "restjavad") ||
-             (ci_contains(text, "sod") && !ci_contains(text, "sodium")) ||
+             (ci_contains(text, "sod") && !ci_contains(text, "sodium") &&
+              !ci_contains(text, "episode") && !ci_contains(text, "soda")) ||
              ci_contains(text, "tmm") ||
              (ci_contains(text, "nscli") && !ci_contains(text, "dnsclient")) ||
              ci_contains(text, "nsconmsg") || ci_contains(text, "nstrace") ||
@@ -10583,6 +10584,85 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "virt-make-fs") || ci_contains(text, "libguestfs") ||
              (ci_contains(text, "iceman") && ci_contains(text, " -"))) {
         what = "c2/webshell/recon/bt/panel/selinux/backup-exfil/boot/bigdata/mq/ebpf/sandbox/doc/print/a11y/dbg primitive";
+        }
+
+        /* cycle-260: blockchain/web3 + memdump/credview + token/privesc + ad-aux + obfuscate + vm primitives */
+        else if (
+             /* web3 / blockchain dev & node clis */
+             (ci_contains(text, "cast ") &&
+              (ci_contains(text, " send") || ci_contains(text, " call") ||
+               ci_contains(text, " wallet") || ci_contains(text, " -")) &&
+              !ci_contains(text, "broadcast") && !ci_contains(text, "podcast")) ||
+             (ci_contains(text, "forge ") &&
+              (ci_contains(text, " script") || ci_contains(text, " create") ||
+               ci_contains(text, " test") || ci_contains(text, " build") ||
+               ci_contains(text, " verify") || ci_contains(text, " -"))) ||
+             (ci_contains(text, "anvil") && ci_contains(text, " -")) ||
+             ci_contains(text, "hardhat") ||
+             (ci_contains(text, "brownie") && ci_contains(text, " -")) ||
+             (ci_contains(text, "truffle") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ganache") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mythril") && ci_contains(text, " -")) ||
+             (ci_contains(text, "slither") && ci_contains(text, " -")) ||
+             (ci_contains(text, "echidna") && ci_contains(text, " -")) ||
+             (ci_contains(text, "clef") && ci_contains(text, " -")) ||
+             ci_contains(text, "bootnode") || ci_contains(text, "abigen") ||
+             ci_contains(text, "solc") || ci_contains(text, "vyper") ||
+             ci_contains(text, "scarb") || ci_contains(text, "cairo-run") ||
+             ci_contains(text, "starknet") || ci_contains(text, "aptos") ||
+             (ci_contains(text, "sui") && ci_contains(text, " -") &&
+              !ci_contains(text, "pursuit")) ||
+             (ci_contains(text, "solana") && ci_contains(text, " -")) ||
+             (ci_contains(text, "anchor") && ci_contains(text, " -")) ||
+             ci_contains(text, "near-cli") || ci_contains(text, "polkadot") ||
+             ci_contains(text, "wasm-pack") || ci_contains(text, "parity-bridges") ||
+             ci_contains(text, "ipfs-cluster-ctl") || ci_contains(text, "btfs") ||
+             ci_contains(text, "filecoin") ||
+             (ci_contains(text, "lotus") && ci_contains(text, " -")) ||
+             (ci_contains(text, "oasis") && ci_contains(text, " -")) ||
+             ci_contains(text, "safecmd") || ci_contains(text, "monero-cli") ||
+             (ci_contains(text, "evm") && !ci_contains(text, "devm")) ||
+             /* memory dump / credential viewers */
+             ci_contains(text, "safetykatz") || ci_contains(text, "dumpert") ||
+             (ci_contains(text, "mdr") && ci_contains(text, " -")) ||
+             ci_contains(text, "wmdump") || ci_contains(text, "credwmap") ||
+             (ci_contains(text, "hindsight") && ci_contains(text, " -")) ||
+             ci_contains(text, "dumpzilla") || ci_contains(text, "powerram") ||
+             ci_contains(text, "memfetch") || ci_contains(text, "dumpit") ||
+             ci_contains(text, "defenderatp") || ci_contains(text, "firepwd") ||
+             ci_contains(text, "firefox_decrypt") || ci_contains(text, "chromepass") ||
+             ci_contains(text, "browserpassview") || ci_contains(text, "webbrowserpassview") ||
+             ci_contains(text, "keepassx") || ci_contains(text, "credman") ||
+             ci_contains(text, "regripper") || ci_contains(text, "jwt_tool") ||
+             ci_contains(text, "getnthash") || ci_contains(text, "kirbi2john") ||
+             /* windows token / privesc loaders */
+             (ci_contains(text, "incognito") && ci_contains(text, " -")) ||
+             ci_contains(text, "tokenvator") || ci_contains(text, "runascs") ||
+             ci_contains(text, "delegateexec") || ci_contains(text, "ppldump") ||
+             ci_contains(text, "blockdlls") || ci_contains(text, "srdi") ||
+             (ci_contains(text, "frozen") && ci_contains(text, " -")) ||
+             /* ad / kerberos aux */
+             ci_contains(text, "certi.py") || ci_contains(text, "soaphound") ||
+             ci_contains(text, "bloodyad") || ci_contains(text, "gmsadumper") ||
+             ci_contains(text, "tgsrepcrack") || ci_contains(text, "aspxspy") ||
+             ci_contains(text, "wmi.py") ||
+             /* obfuscators + wordlist gens */
+             ci_contains(text, "invoke-obfuscation") || ci_contains(text, "dyscoblue") ||
+             ci_contains(text, "confuserex") ||
+             (ci_contains(text, "crunch") && ci_contains(text, " -")) ||
+             ci_contains(text, "statsprocessor") || ci_contains(text, "maskprocessor") ||
+             ci_contains(text, "cewl") ||
+             /* vm / emulation primitives */
+             ci_contains(text, "vmrun") || ci_contains(text, "qemu-img") ||
+             ci_contains(text, "qemu-system") ||
+             (ci_contains(text, "kvm") && ci_contains(text, " -")) ||
+             ci_contains(text, "virtiofsd") || ci_contains(text, "multipass") ||
+             ci_contains(text, "podman machine") ||
+             ci_contains(text, "hivexsh") || ci_contains(text, "hivexregedit") ||
+             ci_contains(text, "supermin") ||
+             (ci_contains(text, "lima") && ci_contains(text, " -") &&
+              !ci_contains(text, "climate") && !ci_contains(text, "sublim"))) {
+        what = "web3/memdump/credview/token/ad-aux/obfuscate/wordlist/vm primitive";
         }
 
         if (what) {

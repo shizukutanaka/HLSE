@@ -4,6 +4,34 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-260)
+- `hlse_supply.c` paste-detection: ~85 needles covering web3/blockchain
+  CLIs (cast send|call|wallet, forge script|create|test, anvil, hardhat,
+  brownie, truffle, ganache, mythril, slither, echidna, clef, bootnode,
+  abigen, solc, vyper, scarb, cairo-run, starknet, aptos, sui, solana,
+  anchor, near-cli, polkadot, wasm-pack, parity-bridges, ipfs-cluster-ctl,
+  btfs, filecoin, lotus, oasis, safecmd, monero-cli, evm — real names
+  flag-gated), memory dumpers & credential viewers (safetykatz, dumpert,
+  wmdump, credwmap, hindsight, dumpzilla, powerram, memfetch, dumpit,
+  defenderatp, firepwd, firefox_decrypt, chromepass, browserpassview,
+  webbrowserpassview, keepassx, credman, regripper, jwt_tool, getnthash,
+  kirbi2john), Windows token/privesc loaders (incognito, tokenvator,
+  runascs, delegateexec, ppldump, blockdlls, srdi, frozen), AD/Kerberos
+  aux (certi.py, soaphound, bloodyad, gmsadumper, tgsrepcrack, aspxspy,
+  wmi.py), obfuscators + wordlist generators (invoke-obfuscation,
+  dyscoblue, confuserex, crunch, statsprocessor, maskprocessor, cewl),
+  and VM/emulation primitives (vmrun, qemu-img, qemu-system, kvm,
+  virtiofsd, multipass, podman machine, hivexsh, hivexregedit, supermin,
+  lima) — ALERT [45].
+
+### Fixed (cycle-260)
+- Real-word FP prevention: brownie/mythril/anvil/truffle/ganache/slither/
+  echidna/clef/sui/solana/anchor/lotus/oasis/hindsight/incognito/frozen/
+  crunch/kvm/lima/mdr flag-gated; cast verb-gated with `!broadcast`/
+  `!podcast`; evm `!devm`; lima `!climate`/`!sublim`; sui `!pursuit`.
+- Pre-existing `sod` needle FP on `episode`/`soda` closed with exclusions
+  (found by cycle-260 benign sweep).
+
 ### Added (cycle-259)
 - `hlse_supply.c` paste-detection: ~190 needles covering impacket leftovers
   (owneredit/ticketconverter/services/reg/sniffer/rdp_check/mssqlclient), C2
