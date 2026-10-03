@@ -12742,6 +12742,46 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "cheatsh") || ci_contains(text, "navi-tldr") ||
              ci_contains(text, "tldr-pages")) {
         what = "icon/texture/smartcard/djvu/asciiart/tts/docs primitive";
+        } else if (
+             /* cycle-291a: wiki/ssg/cms/forum/pad/kanban/time primitives */
+             ci_contains(text, "mediawiki") || ci_contains(text, "dokuwiki") ||
+             ci_contains(text, "ikiwiki") || ci_contains(text, "gollum") ||
+             ci_contains(text, "xwiki") || ci_contains(text, "wiki-js") ||
+             ci_contains(text, "hexo") || ci_contains(text, "zola") ||
+             (ci_contains(text, "astro") && ci_contains(text, " -")) ||
+             ci_contains(text, "eleventy") ||
+             (ci_contains(text, "pelican") && ci_contains(text, " -")) ||
+             (ci_contains(text, "grav") && ci_contains(text, " -")) ||
+             (ci_contains(text, "wagtail") && ci_contains(text, " -")) ||
+             (ci_contains(text, "payload") && ci_contains(text, " -")) ||
+             (ci_contains(text, "keystone") && ci_contains(text, " -")) ||
+             (ci_contains(text, "apostrophe") && ci_contains(text, " -")) ||
+             (ci_contains(text, "sanity") && ci_contains(text, " -")) ||
+             ci_contains(text, "tinacms") || ci_contains(text, "nodebb") ||
+             ci_contains(text, "flarum") || ci_contains(text, "lemmy") ||
+             ci_contains(text, "kbin") || ci_contains(text, "etherpad") ||
+             ci_contains(text, "cryptpad") || ci_contains(text, "excalidraw") ||
+             ci_contains(text, "wbo") || ci_contains(text, "tldraw") ||
+             ci_contains(text, "openproject") || ci_contains(text, "phorge") ||
+             ci_contains(text, "kimai") || ci_contains(text, "activitywatch") ||
+             (ci_contains(text, "timetagger") && ci_contains(text, " -"))) {
+        what = "wiki/ssg/cms/forum/pad/kanban/time primitive";
+        } else if (
+             /* cycle-291b: fileshare/status/dashboard/chat primitives */
+             (ci_contains(text, "snippet") && ci_contains(text, " -")) ||
+             ci_contains(text, "snappass") ||
+             (ci_contains(text, "pb") && ci_contains(text, " -")) ||
+             ci_contains(text, "pingvin-share") || ci_contains(text, "filestash") ||
+             ci_contains(text, "projectsend") || ci_contains(text, "onionpipe") ||
+             (ci_contains(text, "healthchecks") && ci_contains(text, " -")) ||
+             (ci_contains(text, "homepage") && ci_contains(text, " -")) ||
+             ci_contains(text, "dashy") || ci_contains(text, "homarr") ||
+             (ci_contains(text, "flame") && ci_contains(text, " -")) ||
+             ci_contains(text, "heimdall-organizr") || ci_contains(text, "zulip") ||
+             ci_contains(text, "rocketchat") || ci_contains(text, "mattermost") ||
+             ci_contains(text, "guilded") ||
+             (ci_contains(text, "spacebar") && ci_contains(text, " -"))) {
+        what = "fileshare/status/dashboard/chat primitive";
         }
 
         if (what) {
