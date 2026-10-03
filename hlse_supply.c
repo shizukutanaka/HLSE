@@ -11109,6 +11109,104 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "hornet") && ci_contains(text, " -")) ||
              (ci_contains(text, "beelogger") && ci_contains(text, " -"))) {
         what = "cosmos/iot/telemetry/routing/sniff/pth/wireless primitive";
+        } else if (
+             /* cycle-266a: pipewire/audio-bcast/ham-radio/term-image/rec/tts/
+                ddc-monitor/key-remap/gesture primitives */
+             ci_contains(text, "pw-cat") || ci_contains(text, "pw-play") ||
+             ci_contains(text, "pw-jack") || ci_contains(text, "qpwgraph") ||
+             ci_contains(text, "helvum") || ci_contains(text, "darkice") ||
+             ci_contains(text, "liquidsoap") || ci_contains(text, "icecast") ||
+             (ci_contains(text, "butt") && ci_contains(text, " -")) ||
+             ci_contains(text, "mixxx") || ci_contains(text, "fldigi") ||
+             ci_contains(text, "wsjtx") || ci_contains(text, "js8call") ||
+             ci_contains(text, "chafa") || ci_contains(text, "viu ") ||
+             ci_contains(text, "jp2 ") || ci_contains(text, "img2txt") ||
+             ci_contains(text, "w3mimgdisplay") || ci_contains(text, "ueberzug") ||
+             ci_contains(text, "sixel") || ci_contains(text, "kooha") ||
+             (ci_contains(text, "vhs") && ci_contains(text, " -")) ||
+             ci_contains(text, "terminalizer") || ci_contains(text, "espeak-ng") ||
+             (ci_contains(text, "festival") && ci_contains(text, " -")) ||
+             (ci_contains(text, "flite") && ci_contains(text, " -")) ||
+             ci_contains(text, "speech-dispatcher") || ci_contains(text, "spd-say") ||
+             ci_contains(text, "ddcutil") || ci_contains(text, "ddcci-driver") ||
+             ci_contains(text, "interception-tools") || ci_contains(text, "evremap") ||
+             ci_contains(text, "xremap") || ci_contains(text, "touchegg") ||
+             (ci_contains(text, "fusuma") && ci_contains(text, " -")) ||
+             (ci_contains(text, "orca") && ci_contains(text, " -")) ||
+             ci_contains(text, "eternalterminal") || ci_contains(text, "s-tui") ||
+             ci_contains(text, "powerstat")) {
+        what = "pipewire/audiobcast/ham/termimg/rec/tts/ddc/keyremap/gesture primitive";
+        } else if (
+             /* cycle-266b: bench/dist-compile/re/dbg/ide/repl primitives */
+             ci_contains(text, "phoronix-test-suite") || ci_contains(text, "geekbench") ||
+             ci_contains(text, "cinebench") || ci_contains(text, "stressapptest") ||
+             ci_contains(text, "memtester") || ci_contains(text, "cpuburn") ||
+             ci_contains(text, "sccache") || ci_contains(text, "icecc") ||
+             (ci_contains(text, "icecream") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mold") && ci_contains(text, " -")) ||
+             (ci_contains(text, "lld") && ci_contains(text, " -")) ||
+             ci_contains(text, "ida64") ||
+             (ci_contains(text, "idat") && ci_contains(text, " -")) ||
+             ci_contains(text, "rz-bin") || ci_contains(text, "binary-refinery") ||
+             (ci_contains(text, "delve") && ci_contains(text, " -")) ||
+             ci_contains(text, "pernosco") ||
+             ci_contains(text, "code --install-extension") ||
+             ci_contains(text, "codium") || ci_contains(text, "ecode") ||
+             ci_contains(text, "lapce") ||
+             (ci_contains(text, "zed") && ci_contains(text, " -")) ||
+             (ci_contains(text, "hx ") && ci_contains(text, " -")) ||
+             (ci_contains(text, "kak ") && ci_contains(text, " -")) ||
+             (ci_contains(text, "vis ") && ci_contains(text, " -") &&
+              !ci_contains(text, "visit") && !ci_contains(text, "vision") &&
+              !ci_contains(text, "visible") && !ci_contains(text, "trav")) ||
+             ci_contains(text, "bpython") || ci_contains(text, "ptpython") ||
+             ci_contains(text, "jupytext")) {
+        what = "bench/distcompile/re/dbg/ide/repl primitive";
+        } else if (
+             /* cycle-266c: sql-nosql/kv/search/tsdb/bio/molecular/astro/
+                p2p-anon/ocr/assistive/doc/raw-img primitives */
+             ci_contains(text, "usql") || ci_contains(text, "sqlcl") ||
+             ci_contains(text, "orientdb") || ci_contains(text, "fauna-shell") ||
+             (ci_contains(text, "surreal") && ci_contains(text, " -")) ||
+             ci_contains(text, "edgedb") || ci_contains(text, "weaviate") ||
+             ci_contains(text, "qdrant") ||
+             (ci_contains(text, "milvus") && ci_contains(text, " -")) ||
+             ci_contains(text, "valkey-cli") ||
+             (ci_contains(text, "dragonfly") && ci_contains(text, " -")) ||
+             ci_contains(text, "keydb-cli") || ci_contains(text, "kvrocks") ||
+             ci_contains(text, "opensearch-cli") || ci_contains(text, "meilisearch") ||
+             ci_contains(text, "typesense") ||
+             (ci_contains(text, "sonic") && ci_contains(text, " -")) ||
+             ci_contains(text, "tantivy") ||
+             (ci_contains(text, "vespa") && ci_contains(text, " -")) ||
+             (ci_contains(text, "vmctl") && ci_contains(text, " -")) ||
+             ci_contains(text, "m3dbnode") || ci_contains(text, "questdb") ||
+             ci_contains(text, "timescaledb-tune") || ci_contains(text, "promscale") ||
+             ci_contains(text, "greptimedb") || ci_contains(text, "bedtools") ||
+             ci_contains(text, "bowtie2") ||
+             (ci_contains(text, "bwa") && ci_contains(text, " -")) ||
+             ci_contains(text, "gatk") ||
+             (ci_contains(text, "picard") && ci_contains(text, " -")) ||
+             ci_contains(text, "pymol") ||
+             (ci_contains(text, "vmd") && ci_contains(text, " -")) ||
+             ci_contains(text, "lammps") || ci_contains(text, "gromacs") ||
+             ci_contains(text, "ds9") ||
+             (ci_contains(text, "xpa") && ci_contains(text, " -")) ||
+             ci_contains(text, "astrometry") || ci_contains(text, "sextractor") ||
+             ci_contains(text, "i2pd") || ci_contains(text, "hyphanet") ||
+             ci_contains(text, "retroshare") ||
+             (ci_contains(text, "sia") && ci_contains(text, " -") && !ci_contains(text, "scsi")) ||
+             ci_contains(text, "storj") || ci_contains(text, "arweave") ||
+             ci_contains(text, "hypercore") ||
+             (ci_contains(text, "dat") && ci_contains(text, " -") &&
+              !ci_contains(text, "data") && !ci_contains(text, "update")) ||
+             (ci_contains(text, "cuneiform") && ci_contains(text, " -")) ||
+             ci_contains(text, "ocrad") || ci_contains(text, "at-spi") ||
+             ci_contains(text, "abiword") || ci_contains(text, "calligra") ||
+             ci_contains(text, "onlyoffice") || ci_contains(text, "dcraw") ||
+             ci_contains(text, "ufraw") || ci_contains(text, "enfuse") ||
+             ci_contains(text, "luminance-hdr")) {
+        what = "sqlnosql/kv/search/tsdb/bio/molecular/astro/p2p/ocr/doc/rawimg primitive";
         }
 
         if (what) {
