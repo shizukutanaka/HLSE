@@ -13408,6 +13408,19 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "iaito") || ci_contains(text, "r2coj") ||
              ci_contains(text, "r2dec")) {
         what = "reverse-engineering plugin primitive";
+        } else if (
+             /* cycle-310a: locate/index-search primitives */
+             ci_contains(text, "altlocate") || ci_contains(text, "fslocate") ||
+             ci_contains(text, "glocate") || ci_contains(text, "mlocate") ||
+             ci_contains(text, "plocate") || ci_contains(text, "rlocate") ||
+             ci_contains(text, "slocate") ||
+             (ci_contains(text, "locate") && ci_contains(text, " -"))) {
+        what = "locate/index-search primitive";
+        } else if (
+             /* cycle-310b: desktop-search primitives */
+             ci_contains(text, "recoll") || ci_contains(text, "rga ") ||
+             (ci_contains(text, "pinot") && ci_contains(text, " -"))) {
+        what = "desktop-search primitive";
         }
 
         if (what) {
