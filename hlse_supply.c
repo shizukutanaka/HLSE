@@ -14255,6 +14255,21 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "paq8") ||
              ci_contains(text, "flent") || ci_contains(text, "ntttcp")) {
         what = "archive/bench primitive";
+        } else if (
+             /* cycle-341a: routing/virt primitives */
+             ci_contains(text, "eigrpd") || ci_contains(text, "bfdd") ||
+             ci_contains(text, "rtrtr") || ci_contains(text, "routinator") ||
+             ci_contains(text, "vfkit")) {
+        what = "routing/virt primitive";
+        } else if (
+             /* cycle-341b: ham/mobile/build primitives */
+             ci_contains(text, "wsprd") || (ci_contains(text, "chronic") && ci_contains(text, " -")) ||
+             ci_contains(text, "gnirehtet") || ci_contains(text, "irecovery") ||
+             ci_contains(text, "qdl") || ci_contains(text, "bitbake") ||
+             ci_contains(text, "wic ") || (ci_contains(text, "toaster") && ci_contains(text, " -")) ||
+             ci_contains(text, "debos") || ci_contains(text, "perkeep") ||
+             ci_contains(text, "tessen")) {
+        what = "ham/mobile/build primitive";
         }
 
         if (what) {

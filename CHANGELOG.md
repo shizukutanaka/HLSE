@@ -10849,7 +10849,12 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 340): vcs + archive/bench primitive expansion** —
+```- **ALERT 45 (cycle 341): routing/virt + ham/mobile/build primitive expansion** —
+  new `ci_contains` needles: (341a) eigrpd・bfdd・rtrtr・routinator・vfkit;
+  (341b) wsprd・chronic(gate)・gnirehtet・irecovery・qdl・bitbake・wic(boundary)・
+  toaster(gate)・debos・perkeep・tessen.
+  16 hit + 2 benign CLI tests (19395/0).
+- **ALERT 45 (cycle 340): vcs + archive/bench primitive expansion** —
   new `ci_contains` needles: (340a) commitlint・breezy(gate);
   (340b) 7za・7zr・lzmadec(gate)・paq8・flent・ntttcp.
   8 hit + 2 benign CLI tests (19377/0).
