@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-367: firmware/sanitizer + forensics/disk primitives
+for c in 'amidecbin rom.bin -x' 'acpihelp -k sleep' 'acpinames -s dsdt.dat' 'acpisrc -c src' 'tss2_list -u' 'trousers --daemonize' 'bochscov -f cov' 'kcov /tmp/kcov prog' 'asan_symbolize -l log' 'sanstats -p prog' 'hwasan_symbolize -l log'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'reglookup -r SYSTEM' 'rip.pl -r NTUSER -p all' 'hashdb import nsrl.txt -r' 'affuse img.aff /mnt -o ro' 'affverify img.aff -v' 'affcompare a.aff b.aff -q' 'affsegment img.aff -o seg' 'fcadm info -v' 'affstats img.aff -d' 'affrecover img.aff -f' 'ddrutility log -v' 'hdparam -i /dev/sda'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'echo wear trousers today' 'his trousers were grey'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-366: ebpf/infra + build/sysadmin primitives
 for c in 'tcpsubnet -v' 'tcprtt -i 1' 'nfsslower 10' 'pidpersec -d 5' 'emqtt_bench pub -t t' 'unitd --no-daemon' 'heartbeat -e -c heartbeat.yml'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

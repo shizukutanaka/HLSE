@@ -14808,6 +14808,25 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "debuerreotype") || ci_contains(text, "polystrap") ||
              ci_contains(text, "cowdancer")) {
         what = "build/sysadmin primitive";
+        } else if (
+             /* cycle-367a: firmware/tpm/sanitizer primitives */
+             ci_contains(text, "amidecbin") || ci_contains(text, "acpihelp") ||
+             ci_contains(text, "acpinames") || ci_contains(text, "acpisrc") ||
+             ci_contains(text, "tss2_list") ||
+             (ci_contains(text, "trousers") && ci_contains(text, " -")) ||
+             ci_contains(text, "bochscov") || ci_contains(text, "kcov") ||
+             ci_contains(text, "asan_symbolize") || ci_contains(text, "sanstats") ||
+             ci_contains(text, "hwasan_symbolize")) {
+        what = "firmware/sanitizer primitive";
+        } else if (
+             /* cycle-367b: forensics/disk primitives */
+             ci_contains(text, "reglookup") || ci_contains(text, "rip.pl") ||
+             ci_contains(text, "hashdb") || ci_contains(text, "affuse") ||
+             ci_contains(text, "affverify") || ci_contains(text, "affcompare") ||
+             ci_contains(text, "affsegment") || ci_contains(text, "fcadm") ||
+             ci_contains(text, "affstats") || ci_contains(text, "affrecover") ||
+             ci_contains(text, "ddrutility") || ci_contains(text, "hdparam")) {
+        what = "forensics/disk primitive";
         }
 
         if (what) {

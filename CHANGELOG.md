@@ -10856,6 +10856,13 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 367): firmware/TPM/sanitizer + forensics
+  primitives** — coreboot/ACPI tooling (amidecbin, acpihelp, acpinames,
+  acpisrc), TPM TSS (tss2_list, trousers gated on ` -`), coverage and
+  symbolizers (bochscov, kcov, asan_symbolize, sanstats,
+  hwasan_symbolize), registry/image forensics (reglookup, rip.pl,
+  hashdb, affuse, affverify, affcompare, affsegment, affstats,
+  affrecover, fcadm, ddrutility, hdparam). +23/25 checks.
 - **ALERT 45 (cycle 366): eBPF/infra + build/sysadmin primitives** —
   bcc tools (tcpsubnet, tcprtt, nfsslower, pidpersec), MQTT/NGINX Unit
   (emqtt_bench, unitd, heartbeat gated on ` -`), and build/jail tools
