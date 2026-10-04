@@ -10849,7 +10849,18 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 359): editor/doc + office primitive expansion** —
+```- **ALERT 45 (cycle 360): CP/M/atari + mainframe/mcu primitive expansion** —
+  new `ci_contains` needles: (360a) mkfs.cpm・cpmls・cpm・cpmlabel・
+  cpmls5・altairz80・z80pack・z80sim・cpmsim・zystem・zcc・mpm・ndr・
+  zde・zsm・ld80・m80・mac80・slr・dz80・z80dis・zsid・ddtz・ddt・tvz80・
+  sio2bsd・aspeqt・respeqt・altirra; (360b) hercules (` -` gated)・
+  hercules4・softmain・dmk2・cc64・dasdcat・dasdseq・dasdconv・dasdisup・
+  dasdmso・dasdnab・dasdpds・dasdtab・dasdtr・dasdview・hetmap・hetupd・
+  hettape・hetins・vma・vmfplc2・cbt (` -`)・tape2card・cardimg・mpio・
+  espmon・stm8gal・stm8sdiscovery・sdas・s51・ucsim・shc・sdcpp・sdar・
+  sdnm・sdranlib. (sid/zas dropped: verclsid・pizzas collisions.)
+  65 hit + 2 benign CLI tests (19900/0).
+- **ALERT 45 (cycle 359): editor/doc + office primitive expansion** —
   new `ci_contains` needles: (359a) nedit・joe (` -`)・gedit (` -`)・
   leafpad・cream (` -`)・juffed・jed・epsilon (` -`)・lava (` -`)・kak・
   nvi・elvis (` -`)・vile (` -`)・neatvi・visurf・coedit・e3em・e3pi・

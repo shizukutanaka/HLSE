@@ -14612,6 +14612,46 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "wvware") || ci_contains(text, "ppthtml") ||
              ci_contains(text, "wordview") || ci_contains(text, "rtf2html")) {
         what = "office primitive";
+        } else if (
+             /* cycle-360a: cpm/atari primitives */
+             ci_contains(text, "mkfs.cpm") || ci_contains(text, "cpmls") ||
+             ci_contains(text, "cpm ") || ci_contains(text, "cpmlabel") ||
+             ci_contains(text, "cpmls5") || ci_contains(text, "altairz80") ||
+             ci_contains(text, "z80pack") || ci_contains(text, "z80sim") ||
+             ci_contains(text, "cpmsim") || ci_contains(text, "zystem") ||
+             ci_contains(text, "zcc") || ci_contains(text, "mpm") ||
+             ci_contains(text, "ndr") || ci_contains(text, "zde") ||
+             ci_contains(text, "zsm") || ci_contains(text, "ld80") ||
+             ci_contains(text, "m80") || ci_contains(text, "mac80") ||
+             ci_contains(text, "slr") || ci_contains(text, "dz80") ||
+             ci_contains(text, "z80dis") ||
+             ci_contains(text, "zsid") || ci_contains(text, "ddtz") ||
+             ci_contains(text, "ddt") || ci_contains(text, "tvz80") ||
+             ci_contains(text, "sio2bsd") || ci_contains(text, "aspeqt") ||
+             ci_contains(text, "respeqt") || ci_contains(text, "altirra")) {
+        what = "cpm/atari primitive";
+        } else if (
+             /* cycle-360b: mainframe/mcu primitives */
+             (ci_contains(text, "hercules") && ci_contains(text, " -")) ||
+             ci_contains(text, "hercules4") || ci_contains(text, "softmain") ||
+             ci_contains(text, "dmk2") || ci_contains(text, "cc64") ||
+             ci_contains(text, "dasdcat") || ci_contains(text, "dasdseq") ||
+             ci_contains(text, "dasdconv") || ci_contains(text, "dasdisup") ||
+             ci_contains(text, "dasdmso") || ci_contains(text, "dasdnab") ||
+             ci_contains(text, "dasdpds") || ci_contains(text, "dasdtab") ||
+             ci_contains(text, "dasdtr") || ci_contains(text, "dasdview") ||
+             ci_contains(text, "hetmap") || ci_contains(text, "hetupd") ||
+             ci_contains(text, "hettape") || ci_contains(text, "hetins") ||
+             ci_contains(text, "vma") || ci_contains(text, "vmfplc2") ||
+             (ci_contains(text, "cbt") && ci_contains(text, " -")) ||
+             ci_contains(text, "tape2card") || ci_contains(text, "cardimg") ||
+             ci_contains(text, "mpio") || ci_contains(text, "espmon") ||
+             ci_contains(text, "stm8gal") || ci_contains(text, "stm8sdiscovery") ||
+             ci_contains(text, "sdas") || ci_contains(text, "s51") ||
+             ci_contains(text, "ucsim") || ci_contains(text, "shc") ||
+             ci_contains(text, "sdcpp") || ci_contains(text, "sdar") ||
+             ci_contains(text, "sdnm") || ci_contains(text, "sdranlib")) {
+        what = "mainframe/mcu primitive";
         }
 
         if (what) {
