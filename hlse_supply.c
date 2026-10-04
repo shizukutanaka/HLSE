@@ -14206,6 +14206,21 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ldapcompare") || ci_contains(text, "dsidm") ||
              ci_contains(text, "nslcd")) {
         what = "ldap primitive";
+        } else if (
+             /* cycle-338a: torr/fedi primitives */
+             ci_contains(text, "torrench") || ci_contains(text, "magnet2torrent") ||
+             ci_contains(text, "tootstream") || (ci_contains(text, "nostril") && ci_contains(text, " -")) ||
+             ci_contains(text, "nostpy") || ci_contains(text, "snac ")) {
+        what = "torr/fedi primitive";
+        } else if (
+             /* cycle-338b: fb/feed/misc primitives */
+             ci_contains(text, "fbv") || ci_contains(text, "fbdesk") ||
+             ci_contains(text, "fbpdf") || ci_contains(text, "dfbg") ||
+             ci_contains(text, "dfbshow") ||
+             (ci_contains(text, "jenny") && ci_contains(text, " -")) ||
+             ci_contains(text, "newsraft") ||
+             ci_contains(text, "itchd") || ci_contains(text, "vkquake")) {
+        what = "fb/feed/misc primitive";
         }
 
         if (what) {
