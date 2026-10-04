@@ -14652,6 +14652,41 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "sdcpp") || ci_contains(text, "sdar") ||
              ci_contains(text, "sdnm") || ci_contains(text, "sdranlib")) {
         what = "mainframe/mcu primitive";
+        } else if (
+             /* cycle-361a: browser/mail primitives */
+             (ci_contains(text, "links") && ci_contains(text, " -")) ||
+             ci_contains(text, "w3m") || ci_contains(text, "netrik") ||
+             ci_contains(text, "retawq") || ci_contains(text, "conkeror") ||
+             (ci_contains(text, "surf") && ci_contains(text, " -")) ||
+             ci_contains(text, "badwolf") ||
+             (ci_contains(text, "dillo") && ci_contains(text, " -")) ||
+             ci_contains(text, "hv3") || ci_contains(text, "dooble") ||
+             (ci_contains(text, "amaya") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mosaic") && ci_contains(text, " -")) ||
+             (ci_contains(text, "arena") && ci_contains(text, " -")) ||
+             ci_contains(text, "gzilla") || ci_contains(text, "skipstone") ||
+             ci_contains(text, "hotjava") ||
+             (ci_contains(text, "alpine") && ci_contains(text, " -")) ||
+             (ci_contains(text, "elm") && ci_contains(text, " -")) ||
+             (ci_contains(text, "pine ") && ci_contains(text, " -")) ||
+             ci_contains(text, "kmail") || ci_contains(text, "balsa") ||
+             (ci_contains(text, "mahogany") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mh") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mew") && ci_contains(text, " -")) ||
+             ci_contains(text, "gnus") || ci_contains(text, "hego") ||
+             ci_contains(text, "deadcyber") ||
+             ci_contains(text, "mu4e") ||
+             (ci_contains(text, "nail") && ci_contains(text, " -"))) {
+        what = "browser/mail primitive";
+        } else if (
+             /* cycle-361b: tunnel/vpn primitives */
+             ci_contains(text, "bcrelay") ||
+             (ci_contains(text, "chat") && ci_contains(text, " -")) ||
+             (ci_contains(text, "poff") && ci_contains(text, " -")) ||
+             ci_contains(text, "l2tpd") ||
+             (ci_contains(text, "whack") && ci_contains(text, " -")) ||
+             ci_contains(text, "pki ") || ci_contains(text, "libreswan")) {
+        what = "tunnel/vpn primitive";
         }
 
         if (what) {

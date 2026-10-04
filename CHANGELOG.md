@@ -10849,7 +10849,16 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 360): CP/M/atari + mainframe/mcu primitive expansion** —
+```- **ALERT 45 (cycle 361): browser/mail + tunnel primitive expansion** —
+  new `ci_contains` needles: (361a) links (` -`)・w3m・netrik・retawq・
+  conkeror・surf (` -`)・badwolf・dillo (` -`)・hv3・dooble・amaya
+  (` -`)・mosaic (` -`)・arena (` -`)・gzilla・skipstone・hotjava・
+  alpine (` -`)・elm (` -`)・pine (`pine ` + ` -`)・kmail・balsa・
+  mahogany (` -`)・mh (` -`)・mew (` -`)・gnus・hego・deadcyber・mu4e・
+  nail (` -`); (361b) bcrelay・chat (` -`)・poff (` -`)・l2tpd・whack
+  (` -`)・pki・libreswan. (sup/vm/mu/mail/pon dropped: nsupdate/kvm/
+  email/weapon collisions.) 36 hit + 2 benign CLI tests (19938/0).
+- **ALERT 45 (cycle 360): CP/M/atari + mainframe/mcu primitive expansion** —
   new `ci_contains` needles: (360a) mkfs.cpm・cpmls・cpm・cpmlabel・
   cpmls5・altairz80・z80pack・z80sim・cpmsim・zystem・zcc・mpm・ndr・
   zde・zsm・ld80・m80・mac80・slr・dz80・z80dis・zsid・ddtz・ddt・tvz80・
