@@ -13441,6 +13441,12 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "wineg++") || ci_contains(text, "winegcc") ||
              ci_contains(text, "winelauncher") || ci_contains(text, "winepath")) {
         what = "wine toolchain primitive";
+        } else if (
+             /* cycle-313a: ipmi/bmc/oob primitives */
+             ci_contains(text, "freeipmi") || ci_contains(text, "ipmidetect") ||
+             ci_contains(text, "ipmifru") || ci_contains(text, "ipmipower") ||
+             ci_contains(text, "ipmish")) {
+        what = "ipmi/bmc/oob primitive";
         }
 
         if (what) {
