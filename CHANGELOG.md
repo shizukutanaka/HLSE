@@ -10849,7 +10849,12 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 347): ifiction + plan9/shell primitive expansion** —
+```- **ALERT 45 (cycle 348): uucp/news + tape/clone primitive expansion** —
+  new `ci_contains` needles: (348a) uustat・uupick・uucico・inncheck・
+  innconfval・innmail・news2mail・mail2news・fetchnews・applyfilter・
+  checkgroups・strn; (348b) tapestat・bdrecord・udpcast.
+  15 hit + 2 benign CLI tests (19508/0).
+- **ALERT 45 (cycle 347): ifiction + plan9/shell primitive expansion** —
   new `ci_contains` needles: (347a) dfrotz・nitfol・bocfel・scottfree・
   advsys・tweego; (347b) u9fs・factotum(gate)・upas(gate)・ndb(boundary)・
   mothra・abaco・ysh・sash(gate).

@@ -14350,6 +14350,20 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "abaco") || ci_contains(text, "ysh") ||
              (ci_contains(text, "sash") && ci_contains(text, " -"))) {
         what = "plan9/shell primitive";
+        } else if (
+             /* cycle-348a: uucp/news primitives */
+             ci_contains(text, "uustat") || ci_contains(text, "uupick") ||
+             ci_contains(text, "uucico") || ci_contains(text, "inncheck") ||
+             ci_contains(text, "innconfval") || ci_contains(text, "innmail") ||
+             ci_contains(text, "news2mail") || ci_contains(text, "mail2news") ||
+             ci_contains(text, "fetchnews") || ci_contains(text, "applyfilter") ||
+             ci_contains(text, "checkgroups") || ci_contains(text, "strn")) {
+        what = "uucp/news primitive";
+        } else if (
+             /* cycle-348b: tape/clone primitives */
+             ci_contains(text, "tapestat") || ci_contains(text, "bdrecord") ||
+             ci_contains(text, "udpcast")) {
+        what = "tape/clone primitive";
         }
 
         if (what) {
