@@ -13754,6 +13754,86 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "seepw") || ci_contains(text, "parflow") ||
              ci_contains(text, "pflotran") || ci_contains(text, "tough2")) {
         what = "meteo/micro/seismic/hydro primitive";
+        } else if (
+             /* cycle-323a: astro/drone primitives */
+             ci_contains(text, "ekos") || ci_contains(text, "astap") ||
+             ci_contains(text, "hnsky") || ci_contains(text, "skychart") ||
+             ci_contains(text, "serplayer") || ci_contains(text, "pipp ") ||
+             ci_contains(text, "sequator") || ci_contains(text, "fitswork") ||
+             ci_contains(text, "ufoanalyzer") || ci_contains(text, "siril") ||
+             ci_contains(text, "fitsliberator") ||
+             ci_contains(text, "missionplanner") || ci_contains(text, "sim_vehicle") ||
+             ci_contains(text, "mavgraph") || ci_contains(text, "mavflightview") ||
+             ci_contains(text, "mavtomfile") || ci_contains(text, "mavflightmodes") ||
+             ci_contains(text, "mavkml") || ci_contains(text, "mavaccel") ||
+             ci_contains(text, "mavsigloss") || ci_contains(text, "mavchat") ||
+             ci_contains(text, "mav_fence") || ci_contains(text, "mav_rally") ||
+             ci_contains(text, "mav_wp") || ci_contains(text, "jmavsim") ||
+             ci_contains(text, "mavsdk") || ci_contains(text, "dji_rev") ||
+             ci_contains(text, "dji_imah_fwsig")) {
+        what = "astro/drone primitive";
+        } else if (
+             /* cycle-323b: survey/ham/nlp primitives */
+             ci_contains(text, "rtkrcv") || ci_contains(text, "convbin") ||
+             ci_contains(text, "pos2kml") || ci_contains(text, "str2str") ||
+             ci_contains(text, "teqc") || ci_contains(text, "gamit") ||
+             ci_contains(text, "globk") || ci_contains(text, "glorg") ||
+             ci_contains(text, "prsolve") || ci_contains(text, "poscvt") ||
+             ci_contains(text, "timeconvert") || ci_contains(text, "rtkpost") ||
+             ci_contains(text, "ezsurv") ||
+             ci_contains(text, "goesrecv") || ci_contains(text, "spyserver") ||
+             ci_contains(text, "rtl_433") || ci_contains(text, "rtlamr") ||
+             ci_contains(text, "nrsc5") || ci_contains(text, "ebook2cw") ||
+             ci_contains(text, "cwcp") || ci_contains(text, "dvrptrptr") ||
+             ci_contains(text, "ambeserver") || ci_contains(text, "p25reflector") ||
+             ci_contains(text, "wsvt") ||
+             ci_contains(text, "corenlp") || ci_contains(text, "mgiza") ||
+             ci_contains(text, "mitlm") || ci_contains(text, "berkeleylm") ||
+             ci_contains(text, "cdec") || ci_contains(text, "sacrebleu") ||
+             ci_contains(text, "sacremoses") || ci_contains(text, "spm_train") ||
+             ci_contains(text, "learn_bpe") || ci_contains(text, "apply_bpe") ||
+             ci_contains(text, "berkeleyparser") || ci_contains(text, "maltparser") ||
+             ci_contains(text, "udparser") || ci_contains(text, "hunpos") ||
+             ci_contains(text, "crf_learn") || ci_contains(text, "crf_test") ||
+             ci_contains(text, "mecab")) {
+        what = "survey/ham/nlp primitive";
+        } else if (
+             /* cycle-323c: cam/eda/hep/archival primitives */
+             ci_contains(text, "gmoccapy") || ci_contains(text, "stepconf") ||
+             ci_contains(text, "pncconf") || ci_contains(text, "halshow") ||
+             ci_contains(text, "halscope") || ci_contains(text, "halmeter") ||
+             ci_contains(text, "machinekit") || ci_contains(text, "chillipeppr") ||
+             ci_contains(text, "estlcam") || ci_contains(text, "pycam") ||
+             ci_contains(text, "k40whisperer") || ci_contains(text, "bambustudio") ||
+             ci_contains(text, "kisslicer") || ci_contains(text, "icestl") ||
+             ci_contains(text, "skeinforge") ||
+             ci_contains(text, "bitmap2component") || ci_contains(text, "pcb_calculator") ||
+             ci_contains(text, "pl_editor") || ci_contains(text, "cvpcb") ||
+             ci_contains(text, "gschem") || ci_contains(text, "gattrib") ||
+             ci_contains(text, "gsch2pcb") || ci_contains(text, "librepcb") ||
+             ci_contains(text, "qrouter") || ci_contains(text, "timberwolf") ||
+             ci_contains(text, "svlint") || ci_contains(text, "eqy") ||
+             ci_contains(text, "bitwuzla") || ci_contains(text, "dreach") ||
+             ci_contains(text, "eproof") ||
+             ci_contains(text, "rootls") || ci_contains(text, "rootcp") ||
+             ci_contains(text, "rootmv") || ci_contains(text, "rootprint") ||
+             ci_contains(text, "rootbrowse") || ci_contains(text, "garfieldpp") ||
+             ci_contains(text, "phits") || ci_contains(text, "njoy21") ||
+             ci_contains(text, "talys") || ci_contains(text, "meqtrees") ||
+             ci_contains(text, "vocl") || ci_contains(text, "pyraf") ||
+             ci_contains(text, "gasgano") || ci_contains(text, "scisoft") ||
+             ci_contains(text, "jhove") || ci_contains(text, "verapdf") ||
+             ci_contains(text, "duracloud") || ci_contains(text, "islandora") ||
+             ci_contains(text, "rawcooked") || ci_contains(text, "vrecord") ||
+             ci_contains(text, "ffmprovisr") ||
+             ci_contains(text, "abcm2ps") || ci_contains(text, "abc2midi") ||
+             ci_contains(text, "abc2abc") || ci_contains(text, "midi2abc") ||
+             ci_contains(text, "autosp") || ci_contains(text, "luppp") ||
+             ci_contains(text, "subtitleeditor") || ci_contains(text, "suprip") ||
+             ci_contains(text, "subshift") || ci_contains(text, "subs2srs") ||
+             ci_contains(text, "pgs2srt") || ci_contains(text, "parlatype") ||
+             ci_contains(text, "humogen") || ci_contains(text, "ancestris")) {
+        what = "cam/eda/hep/archival primitive";
         }
 
         if (what) {
