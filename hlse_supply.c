@@ -14467,6 +14467,33 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "publint") || ci_contains(text, "attw") ||
              ci_contains(text, "npq") || ci_contains(text, "qnm")) {
         what = "subtitle/npm primitive";
+        } else if (
+             /* cycle-356a: retro-emu/pascal primitives */
+             ci_contains(text, "winuae") || ci_contains(text, "uae4all") ||
+             ci_contains(text, "punes") || ci_contains(text, "mesen") ||
+             ci_contains(text, "visualboyadvance") || ci_contains(text, "melonds") ||
+             ci_contains(text, "retroach") || ci_contains(text, "ppc386") ||
+             ci_contains(text, "fppkg") || ci_contains(text, "ppdep") ||
+             (ci_contains(text, "ptop") && ci_contains(text, " -")) ||
+             ci_contains(text, "pas2js") ||
+             ci_contains(text, "compileserver") || ci_contains(text, "lprfil") ||
+             ci_contains(text, "rstconv") || ci_contains(text, "h2pas") ||
+             ci_contains(text, "h2paspp") || ci_contains(text, "fppd") ||
+             ci_contains(text, "pas2fpm") || ci_contains(text, "unipas2html") ||
+             (ci_contains(text, "ecl") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ccl") && ci_contains(text, " -")) ||
+             ci_contains(text, "abcl") ||
+             (ci_contains(text, "gcl") && ci_contains(text, " -")) ||
+             ci_contains(text, "mkcl")) {
+        what = "retro/lang primitive";
+        } else if (
+             /* cycle-356b: forth primitives */
+             ci_contains(text, "ficl") || ci_contains(text, "wina ") ||
+             ci_contains(text, "mecrisp") || ci_contains(text, "stoneknife") ||
+             (ci_contains(text, "4th") && ci_contains(text, " -")) ||
+             (ci_contains(text, "lina") && ci_contains(text, " -")) ||
+             (ci_contains(text, "carp") && ci_contains(text, " -"))) {
+        what = "forth primitive";
         }
 
         if (what) {
