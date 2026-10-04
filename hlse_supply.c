@@ -13956,6 +13956,42 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "json2tsv") || ci_contains(text, "saait") ||
              ci_contains(text, "libzahl")) {
         what = "honeypot/ntpgps/moreutils/plan9 primitive";
+        } else if (
+             /* cycle-326a: pdf/present/broadcast/ascii primitives */
+             ci_contains(text, "pdfdraw") || ci_contains(text, "pdftops") ||
+             ci_contains(text, "pdfattach") || ci_contains(text, "pdffonts") ||
+             ci_contains(text, "pdfdiff") || ci_contains(text, "diffpdf") ||
+             ci_contains(text, "sioyek") ||
+             ci_contains(text, "catpoint") || ci_contains(text, "lookatme") ||
+             ci_contains(text, "decktape") ||
+             ci_contains(text, "ices0") || ci_contains(text, "ices2") ||
+             ci_contains(text, "ezstream") || ci_contains(text, "sc_serv") ||
+             ci_contains(text, "cbonsai") || ci_contains(text, "asciiquarium") ||
+             ci_contains(text, "aafire") || ci_contains(text, "asciiview") ||
+             ci_contains(text, "shelr") || ci_contains(text, "catimg") ||
+             ci_contains(text, "timg") || ci_contains(text, "uberzug")) {
+        what = "pdf/present/broadcast/ascii primitive";
+        } else if (
+             /* cycle-326b: stress/diststore/san primitives */
+             ci_contains(text, "filebench") || ci_contains(text, "smallfile") ||
+             ci_contains(text, "mdtest") || ci_contains(text, "sg_dd") ||
+             ci_contains(text, "sg_map") || ci_contains(text, "sginfo") ||
+             ci_contains(text, "sktest") || ci_contains(text, "whdd") ||
+             ci_contains(text, "hackbench") || ci_contains(text, "schbench") ||
+             ci_contains(text, "dbench") || ci_contains(text, "fsmark") ||
+             ci_contains(text, "llstat") || ci_contains(text, "pvfs2") ||
+             ci_contains(text, "scstadmin") || ci_contains(text, "scst_local") ||
+             ci_contains(text, "fcoeadm") || ci_contains(text, "fcoemon") ||
+             ci_contains(text, "fcrls")) {
+        what = "stress/diststore/san primitive";
+        } else if (
+             /* cycle-326c: tpm/pkcs11/feeds/notes primitives */
+             ci_contains(text, "tpm_version") || ci_contains(text, "eidenv") ||
+             ci_contains(text, "pamu2fcfg") ||
+             ci_contains(text, "podgrab") || ci_contains(text, "mashpodder") ||
+             ci_contains(text, "podboat") || ci_contains(text, "rawdog") ||
+             ci_contains(text, "howdoi") || ci_contains(text, "buku")) {
+        what = "tpm/pkcs11/feeds/notes primitive";
         }
 
         if (what) {
