@@ -14389,6 +14389,23 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "nodist") || ci_contains(text, "nvmw") ||
              ci_contains(text, "swiftenv")) {
         what = "vermgr primitive";
+        } else if (
+             /* cycle-351a: chess/mud primitives */
+             (ci_contains(text, "fruit") && ci_contains(text, " -")) ||
+             (ci_contains(text, "toga") && ci_contains(text, " -")) ||
+             ci_contains(text, "sjaakii") || ci_contains(text, "eubos") ||
+             ci_contains(text, "bayeselo") || ci_contains(text, "ordoprep") ||
+             ci_contains(text, "pgn2fen") || ci_contains(text, "scidvspc") ||
+             ci_contains(text, "scidb") || ci_contains(text, "tt++") ||
+             ci_contains(text, "beipmu") || ci_contains(text, "kmuddy") ||
+             ci_contains(text, "mudbot")) {
+        what = "chess/mud primitive";
+        } else if (
+             /* cycle-351b: go/puzzle primitives */
+             ci_contains(text, "minigo") || ci_contains(text, "sgf2dg") ||
+             ci_contains(text, "sgfmerge") || ci_contains(text, "sgfc") ||
+             ci_contains(text, "twogtp") || (ci_contains(text, "quarry") && ci_contains(text, " -"))) {
+        what = "go/puzzle primitive";
         }
 
         if (what) {
