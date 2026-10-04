@@ -13605,6 +13605,42 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pdf270") || ci_contains(text, "kmymoney") ||
              ci_contains(text, "skrooge")) {
         what = "cae/aiml/voip/print/finance primitive";
+        } else if (
+             /* cycle-318a: editor/browser primitives */
+             ci_contains(text, "kakoune") || ci_contains(text, "zile") ||
+             ci_contains(text, "qtcreator") || ci_contains(text, "falkon") ||
+             ci_contains(text, "qutebrowser") || ci_contains(text, "netsurf") ||
+             ci_contains(text, "links2") || ci_contains(text, "elinks") ||
+             ci_contains(text, "browsh") || ci_contains(text, "palemoon") ||
+             ci_contains(text, "icecat") || ci_contains(text, "konqueror") ||
+             (ci_contains(text, "epiphany") && ci_contains(text, " -")) ||
+             (ci_contains(text, "carbonyl") && ci_contains(text, " -")) ||
+             (ci_contains(text, "jove") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mousepad") && ci_contains(text, " -"))) {
+        what = "editor/browser primitive";
+        } else if (
+             /* cycle-318b: comms/transfer primitives */
+             ci_contains(text, "sylpheed") || ci_contains(text, "trojita") ||
+             ci_contains(text, "enigmail") || ci_contains(text, "hakuneko") ||
+             ci_contains(text, "tachidesk") || ci_contains(text, "rdedup") ||
+             ci_contains(text, "nheko") || ci_contains(text, "discordo") ||
+             ci_contains(text, "gtkcord") || ci_contains(text, "legcord") ||
+             ci_contains(text, "twurl") ||
+             (ci_contains(text, "seahorse") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ripcord") && ci_contains(text, " -")) ||
+             (ci_contains(text, "tootle") && ci_contains(text, " -"))) {
+        what = "comms/transfer primitive";
+        } else if (
+             /* cycle-318c: ssg/build/pkg-img/fpga primitives */
+             ci_contains(text, "metalsmith") || ci_contains(text, "docusaurus") ||
+             ci_contains(text, "vitepress") || ci_contains(text, "honkit") ||
+             ci_contains(text, "contentlayer") || ci_contains(text, "chpst") ||
+             ci_contains(text, "softlimit") || ci_contains(text, "envdir") ||
+             ci_contains(text, "envuidgid") || ci_contains(text, "buildroot") ||
+             ci_contains(text, "wchisp") || ci_contains(text, "stcgal") ||
+             ci_contains(text, "hw_server") || ci_contains(text, "fpgaconf") ||
+             ci_contains(text, "fpgainfo") || ci_contains(text, "aocl")) {
+        what = "ssg/build/pkg-img/fpga primitive";
         }
 
         if (what) {
