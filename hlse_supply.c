@@ -13421,6 +13421,19 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "recoll") || ci_contains(text, "rga ") ||
              (ci_contains(text, "pinot") && ci_contains(text, " -"))) {
         what = "desktop-search primitive";
+        } else if (
+             /* cycle-311a: container-runtime primitives */
+             ci_contains(text, "conmon") || ci_contains(text, "containerd")) {
+        what = "container-runtime primitive";
+        } else if (
+             /* cycle-311b: proxmox ve/pmg primitives */
+             ci_contains(text, "pmam") || ci_contains(text, "pmg") ||
+             ci_contains(text, "pmmaster") || ci_contains(text, "pveacl") ||
+             ci_contains(text, "pveam") || ci_contains(text, "pvecm") ||
+             ci_contains(text, "pvep") || ci_contains(text, "pvesm") ||
+             ci_contains(text, "pveum") || ci_contains(text, "pveversion") ||
+             ci_contains(text, "qmp")) {
+        what = "proxmox ve/pmg primitive";
         }
 
         if (what) {

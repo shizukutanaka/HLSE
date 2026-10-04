@@ -10849,7 +10849,8 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 310):** locate/index-search + desktop-search primitives (11 needles): altlocate/fslocate/glocate/mlocate/plocate/rlocate/slocate + recoll/rga; real-word needles gated (locate/pinot), boundary rga (bergamot); recollq subsumed by recoll.
+```- **ALERT 45 (cycle 311):** container-runtime + proxmox ve/pmg primitives (13 needles): conmon/containerd + pmam/pmg/pmmaster/pveacl/pveam/pvecm/pvep/pvesm/pveum/pveversion/qmp; qm/pct dropped (common abbreviations — FP-prone), pmg covers pmg* variants.
+- **ALERT 45 (cycle 310):** locate/index-search + desktop-search primitives (11 needles): altlocate/fslocate/glocate/mlocate/plocate/rlocate/slocate + recoll/rga; real-word needles gated (locate/pinot), boundary rga (bergamot); recollq subsumed by recoll.
 - **ALERT 45 (cycle 309):** fuzzing-framework + reverse-engineering plugin primitives (8 needles): clusterfuzz/libdislocator/libfuzzer/onefuzz + iaito/r2coj/r2dec; centipede gated, afl dropped (AFL football — boundary-inseparable).
 - **ALERT 45 (cycle 308):** mcu-flash/wireless-mcu + home-automation primitives (10 needles): amb23/amb26/amb82/ambiq/ambz/ambz2/ambz3/ameba/esp32 + homeassistant; hass dropped (hass avocado/berry — boundary-inseparable).
 - **ALERT 45 (cycle 307):** uptime/oncall + push-notification/mailing-list primitives (18 needles): checkly/gotify/montastic/ntfy/ohdear/pdagent/phare/statuscake/uptimerobot + apprise/cardea/chanify/listserv/postorius/pushbullet/pushover; real-word needles gated (uptime/join/martian); hyperping subsumed by ping.
