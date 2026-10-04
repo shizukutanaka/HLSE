@@ -13548,6 +13548,63 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "wyvern") && ci_contains(text, " -")) ||
              (ci_contains(text, "bottles") && ci_contains(text, " -"))) {
         what = "game-launcher primitive";
+        } else if (
+             /* cycle-317a: office/doc primitives */
+             ci_contains(text, "ooffice") || ci_contains(text, "gnumeric") ||
+             ci_contains(text, "unoserver")) {
+        what = "office/doc primitive";
+        } else if (
+             /* cycle-317b: image/photo primitives */
+             ci_contains(text, "jhead") || ci_contains(text, "jpegoptim") ||
+             ci_contains(text, "jpegtran") || ci_contains(text, "gifsicle") ||
+             ci_contains(text, "cwebp") || ci_contains(text, "dwebp") ||
+             ci_contains(text, "vwebp") || ci_contains(text, "gthumb") ||
+             ci_contains(text, "feh") || ci_contains(text, "gwenview") ||
+             ci_contains(text, "eog") || ci_contains(text, "nomacs") ||
+             ci_contains(text, "phototonic") || ci_contains(text, "viewnior") ||
+             ci_contains(text, "qview") || ci_contains(text, "kphotoalbum") ||
+             ci_contains(text, "gtkam") || ci_contains(text, "geeqie") ||
+             ci_contains(text, "gpicview") ||
+             (ci_contains(text, "ristretto") && ci_contains(text, " -"))) {
+        what = "image/photo primitive";
+        } else if (
+             /* cycle-317c: cad-eda/sci-math/gis primitives */
+             ci_contains(text, "librecad") || ci_contains(text, "icebram") ||
+             ci_contains(text, "ecppack") || ci_contains(text, "f4pga") ||
+             ci_contains(text, "vvp") || ci_contains(text, "gap4") ||
+             ci_contains(text, "macaulay2") || ci_contains(text, "cocoa5") ||
+             ci_contains(text, "qalc") || ci_contains(text, "mlr") ||
+             ci_contains(text, "mapserver") || ci_contains(text, "mapserv") ||
+             ci_contains(text, "tilemill") || ci_contains(text, "landez") ||
+             (ci_contains(text, "icepack") && ci_contains(text, " -")) ||
+             (ci_contains(text, "trellis") && ci_contains(text, " -"))) {
+        what = "cad-eda/sci-math/gis primitive";
+        } else if (
+             /* cycle-317d: bioinfo primitives */
+             ci_contains(text, "kallisto") || ci_contains(text, "freebayes") ||
+             ci_contains(text, "strelka") || ci_contains(text, "busco") ||
+             ci_contains(text, "canu") || ci_contains(text, "hifiasm") ||
+             ci_contains(text, "unicycler") || ci_contains(text, "hmmer") ||
+             ci_contains(text, "hmmbuild") || ci_contains(text, "mmseqs") ||
+             ci_contains(text, "qiime2") || ci_contains(text, "mothur") ||
+             ci_contains(text, "prinseq") ||
+             (ci_contains(text, "salmon") && ci_contains(text, " -")) ||
+             (ci_contains(text, "lumpy") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ragtag") && ci_contains(text, " -")) ||
+             (ci_contains(text, "velvet") && ci_contains(text, " -"))) {
+        what = "bioinfo primitive";
+        } else if (
+             /* cycle-317e: cae/aiml/voip/print/finance primitives */
+             ci_contains(text, "z88r") || ci_contains(text, "paraview") ||
+             ci_contains(text, "tecplot360") || ci_contains(text, "femm42") ||
+             ci_contains(text, "torchserve") || ci_contains(text, "tensorboard") ||
+             ci_contains(text, "stunserver") || ci_contains(text, "noteshrink") ||
+             ci_contains(text, "briss") || ci_contains(text, "pdfcrop") ||
+             ci_contains(text, "pdfbook") || ci_contains(text, "pdfnup") ||
+             ci_contains(text, "pdf90") || ci_contains(text, "pdf180") ||
+             ci_contains(text, "pdf270") || ci_contains(text, "kmymoney") ||
+             ci_contains(text, "skrooge")) {
+        what = "cae/aiml/voip/print/finance primitive";
         }
 
         if (what) {
