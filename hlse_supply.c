@@ -13434,6 +13434,13 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pveum") || ci_contains(text, "pveversion") ||
              ci_contains(text, "qmp")) {
         what = "proxmox ve/pmg primitive";
+        } else if (
+             /* cycle-312a: wine toolchain primitives */
+             ci_contains(text, "wineboot") || ci_contains(text, "winecfg") ||
+             ci_contains(text, "winecpp") || ci_contains(text, "winefile") ||
+             ci_contains(text, "wineg++") || ci_contains(text, "winegcc") ||
+             ci_contains(text, "winelauncher") || ci_contains(text, "winepath")) {
+        what = "wine toolchain primitive";
         }
 
         if (what) {
