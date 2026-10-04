@@ -14221,6 +14221,29 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "newsraft") ||
              ci_contains(text, "itchd") || ci_contains(text, "vkquake")) {
         what = "fb/feed/misc primitive";
+        } else if (
+             /* cycle-339a: sdrhw/can/obd primitives */
+             ci_contains(text, "hackrf_clock") ||
+             ci_contains(text, "hackrf_operacake") || ci_contains(text, "limeutil") ||
+             ci_contains(text, "quicktest") || ci_contains(text, "soapysdrutil") ||
+             ci_contains(text, "baudline") || ci_contains(text, "fosphor") ||
+             ci_contains(text, "canfdtest") || ci_contains(text, "bcmserver") ||
+             ci_contains(text, "isotprecv") || ci_contains(text, "isotpserver") ||
+             ci_contains(text, "isotptun") || ci_contains(text, "cannelloni") ||
+             ci_contains(text, "obdinfo") || ci_contains(text, "pyren")) {
+        what = "sdrhw/can/obd primitive";
+        } else if (
+             /* cycle-339b: drone/emu primitives */
+             ci_contains(text, "blheli32") || ci_contains(text, "blheli_s") ||
+             ci_contains(text, "emuflight") ||
+             ci_contains(text, "re3") || ci_contains(text, "revc") ||
+             (ci_contains(text, "descent") && ci_contains(text, " -")) ||
+             ci_contains(text, "fteqw") || ci_contains(text, "quakespasm") ||
+             ci_contains(text, "ezquake") || ci_contains(text, "fuhquake") ||
+             ci_contains(text, "ioq3ded") || ci_contains(text, "eduke32") ||
+             ci_contains(text, "gzdoom") || ci_contains(text, "zandronum") ||
+             ci_contains(text, "slade3")) {
+        what = "drone/emu primitive";
         }
 
         if (what) {

@@ -10849,7 +10849,8 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 338): torr/fedi + fb/feed/misc primitives** — torrench/magnet2torrent; tootstream/nostril(gated)/nostpy/snac(boundary); fbv/fbdesk/fbpdf/dfbg/dfbshow; jenny(gated)/newsraft; itchd/vkquake.
+```- **ALERT 45 (cycle 339): sdrhw/can/obd + drone/emu primitives** — hackrf_clock/hackrf_operacake/limeutil/quicktest/soapysdrutil/baudline/fosphor; canfdtest/bcmserver/isotprecv/isotpserver/isotptun/cannelloni; obdinfo/pyren; blheli32/blheli_s/emuflight; re3/revc/descent(gated)/fteqw/quakespasm/ezquake/fuhquake/ioq3ded/eduke32/gzdoom/zandronum/slade3. Dropped hackrf_info (existing benign).
+- **ALERT 45 (cycle 338): torr/fedi + fb/feed/misc primitives** — torrench/magnet2torrent; tootstream/nostril(gated)/nostpy/snac(boundary); fbv/fbdesk/fbpdf/dfbg/dfbshow; jenny(gated)/newsraft; itchd/vkquake.
 - **ALERT 45 (cycle 337): thin/cluster + ldap primitives** — epoptes/italc2/thinstation; dshbak/capistrano; ldapcompare/dsidm/nslcd.
 - **ALERT 45 (cycle 336): mcu/barcode/ocr + iot/midi primitives** — esplorer/circup/lpc21isp/sdas8051/sdld/gpasm/tl866; eplabel/niimbot/phomemo; ocropy/ocrfeeder; tunslip/tunslip6/wpcapslip/hdspconf.
 - **ALERT 45 (cycle 335): desktop misc primitives** — wlopm/swayr/disper; undervolt (flag-gated). Dropped oclock ("o'clock" normalization collision).
