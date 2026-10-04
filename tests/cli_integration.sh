@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-368: dict/ebook + cnc/media primitives
+for c in 'dict_lookup -d wn run' 'colorit -c cfg' 'munchlist -l aff words' 'ispellaff2myspell aff.aff' 'unmunch -l dic aff' 'licq -p icq' 'qrenc -o out.png text' 'doifetch -v 10.1/x' 'bcnc --run file.gcode' 'epubs2 -d book.epub' 'mobi2epub in.mobi -o out.epub' 'cbconvert -f pdf a.cbz' 'comic2pdf -o out.pdf c.cbz' 'pdftoepub -o out.epub in.pdf'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'candle -p /dev/ttyUSB0' 'mid3iconv -e CP1252 x.mp3' 'operon -f in.gb' 'sonata -p 6600' 'ncmpc -h host -p 6600' 'msdap -l tracks' 'gmpc --start-hidden' 'mpdris2 -d' 'dict_lookup -v book'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'echo light a candle' 'echo the operon model' 'echo sonata in c minor' 'dict_lookup code path'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-367: firmware/sanitizer + forensics/disk primitives
 for c in 'amidecbin rom.bin -x' 'acpihelp -k sleep' 'acpinames -s dsdt.dat' 'acpisrc -c src' 'tss2_list -u' 'trousers --daemonize' 'bochscov -f cov' 'kcov /tmp/kcov prog' 'asan_symbolize -l log' 'sanstats -p prog' 'hwasan_symbolize -l log'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

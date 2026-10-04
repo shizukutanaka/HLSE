@@ -10856,6 +10856,12 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 368): dict/ebook + CNC/media primitives** —
+  dict/aspell toolchain (dict_lookup gated, colorit, munchlist,
+  ispellaff2myspell, unmunch), niche clients (licq, qrenc, doifetch,
+  bcnc), ebook converters (epubs2, mobi2epub, cbconvert, comic2pdf,
+  pdftoepub), CNC/music clients (candle/operon/sonata gated,
+  mid3iconv, ncmpc, msdap, gmpc, mpdris2). +22/27 checks.
 - **ALERT 45 (cycle 367): firmware/TPM/sanitizer + forensics
   primitives** — coreboot/ACPI tooling (amidecbin, acpihelp, acpinames,
   acpisrc), TPM TSS (tss2_list, trousers gated on ` -`), coverage and

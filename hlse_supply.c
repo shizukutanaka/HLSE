@@ -14827,6 +14827,26 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "affstats") || ci_contains(text, "affrecover") ||
              ci_contains(text, "ddrutility") || ci_contains(text, "hdparam")) {
         what = "forensics/disk primitive";
+        } else if (
+             /* cycle-368a: dict/docs/ebook primitives */
+             (ci_contains(text, "dict_lookup") && ci_contains(text, " -")) ||
+             ci_contains(text, "colorit") || ci_contains(text, "munchlist") ||
+             ci_contains(text, "ispellaff2myspell") || ci_contains(text, "unmunch") ||
+             ci_contains(text, "licq") || ci_contains(text, "qrenc") ||
+             ci_contains(text, "doifetch") || ci_contains(text, "bcnc") ||
+             ci_contains(text, "epubs2") || ci_contains(text, "mobi2epub") ||
+             ci_contains(text, "cbconvert") || ci_contains(text, "comic2pdf") ||
+             ci_contains(text, "pdftoepub")) {
+        what = "dict/ebook primitive";
+        } else if (
+             /* cycle-368b: cnc/media primitives */
+             (ci_contains(text, "candle") && ci_contains(text, " -")) ||
+             ci_contains(text, "mid3iconv") ||
+             (ci_contains(text, "operon") && ci_contains(text, " -")) ||
+             (ci_contains(text, "sonata") && ci_contains(text, " -")) ||
+             ci_contains(text, "ncmpc") || ci_contains(text, "msdap") ||
+             ci_contains(text, "gmpc") || ci_contains(text, "mpdris2")) {
+        what = "cnc/media primitive";
         }
 
         if (what) {
