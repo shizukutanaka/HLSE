@@ -10856,6 +10856,13 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 364): pwgen/math/audio + HDL/DNS primitives** —
+  password generators & computer algebra (diceware, reveal, hqapgen,
+  yacas, giac), audio tagging/gain (ecasound, pianobar, mp4tags,
+  atomicparsley, mp3gain, vorbisgain, aacgain, streamlink), HDL/AVR and
+  DNS/IO tools (ghdl, avrisp2, stk500, dlint, dnswalk, hatop, mbuffer,
+  unlzma, lzstatic); `gpw` dropped (unfixable 3-letter collision);
+  `reveal` gated on ` -`. +24/26 checks.
 - **ALERT 45 (cycle 363): container/k8s + SDR/imaging primitives** — OCI
   runtime/k8s ecosystem (youki, kubecolor, kubetail, audit2rbac,
   buildpacks, jib, buildg, direnv) and SDR/ADS-B + image/document

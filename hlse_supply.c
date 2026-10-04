@@ -14739,6 +14739,25 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ddjvu") || ci_contains(text, "djview") ||
              ci_contains(text, "djvups") || ci_contains(text, "b2pdf")) {
         what = "sdr/imaging primitive";
+        } else if (
+             /* cycle-364a: password-gen/math/audio primitives */
+             ci_contains(text, "diceware") ||
+             (ci_contains(text, "reveal") && ci_contains(text, " -")) ||
+             ci_contains(text, "hqapgen") || ci_contains(text, "yacas") ||
+             ci_contains(text, "giac") || ci_contains(text, "ovito") ||
+             ci_contains(text, "ecasound") || ci_contains(text, "pianobar") ||
+             ci_contains(text, "mp4tags") || ci_contains(text, "atomicparsley") ||
+             ci_contains(text, "mp3gain") || ci_contains(text, "vorbisgain") ||
+             ci_contains(text, "aacgain") || ci_contains(text, "streamlink")) {
+        what = "pwgen/audio primitive";
+        } else if (
+             /* cycle-364b: hdl/dns/io primitives */
+             ci_contains(text, "ghdl") || ci_contains(text, "avrisp2") ||
+             ci_contains(text, "stk500") || ci_contains(text, "dlint") ||
+             ci_contains(text, "dnswalk") || ci_contains(text, "hatop") ||
+             ci_contains(text, "mbuffer") || ci_contains(text, "unlzma") ||
+             ci_contains(text, "lzstatic")) {
+        what = "hdl/dns primitive";
         }
 
         if (what) {

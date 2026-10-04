@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-364: pwgen/math/audio + hdl/dns primitives
+for c in 'diceware -n 6' 'reveal --show item' 'hqapgen -n 10' 'yacas --server' 'giac --verify' 'ovito --script render.py' 'ecasound -i in.wav -o out.wav' 'pianobar -a pandora' 'mp4tags -s song file.m4a' 'atomicparsley a.m4a --artist x -W' 'mp3gain -a track.mp3' 'vorbisgain -a album' 'aacgain -r file.m4a' 'streamlink twitch.tv/x best -O'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'ghdl -a ent.vhdl' 'avrisp2 -p m328p' 'stk500 -e' 'dlint example.com -r' 'dnswalk example.com. -F' 'hatop -s /run/haproxy.stat' 'mbuffer -i in -o out -s 128k' 'unlzma -k file.lzma' 'lzstatic -d file.tar'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'echo reveal the answer' 'unveiled last week'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-363: container/k8s + sdr/imaging primitives
 for c in 'youki create -b bundle root' 'kubecolor get pods -n prod' 'kubetail web -n prod' 'audit2rbac -f audit.log' 'gcr.io/buildpacks/builder:v1 docker pull' 'mvn compile jib:build -Dimage=x' 'buildg debug --image x' 'direnv allow .envrc'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
