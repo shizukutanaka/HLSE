@@ -14138,6 +14138,26 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "autobench") || ci_contains(text, "fs_mark") ||
              ci_contains(text, "lmbench") || ci_contains(text, "tinymembench")) {
         what = "disc/bench primitive";
+        } else if (
+             /* cycle-333a: ietf/biblio/chem primitives */
+             ci_contains(text, "onsgmls") || ci_contains(text, "nsgmls") ||
+             ci_contains(text, "mmark") || ci_contains(text, "idnits") ||
+             ci_contains(text, "rfcdiff") || ci_contains(text, "rfcmarkup") ||
+             ci_contains(text, "rfcfold") || ci_contains(text, "svgcheck") ||
+             ci_contains(text, "bibconvert") || ci_contains(text, "bib2bib") ||
+             ci_contains(text, "bibdiff") ||
+             ci_contains(text, "obfit") || ci_contains(text, "obgen") ||
+             ci_contains(text, "cpmd")) {
+        what = "ietf/biblio/chem primitive";
+        } else if (
+             /* cycle-333b: bio primitives */
+             (ci_contains(text, "tophat") && ci_contains(text, " -")) ||
+             (ci_contains(text, "glimmer") && ci_contains(text, " -")) ||
+             (ci_contains(text, "aragorn") && ci_contains(text, " -")) ||
+             ci_contains(text, "barrnap") ||
+             ci_contains(text, "cmbuild") || ci_contains(text, "cmemit") ||
+             ci_contains(text, "cmfetch") || ci_contains(text, "cmstat")) {
+        what = "bio primitive";
         }
 
         if (what) {
