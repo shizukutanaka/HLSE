@@ -13683,6 +13683,30 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "arandr") || ci_contains(text, "i3blocks") ||
              ci_contains(text, "i3status") || ci_contains(text, "swaystatus")) {
         what = "data-infra/lint/wayland primitive";
+        } else if (
+             /* cycle-321a: go/java linter primitives */
+             ci_contains(text, "staticcheck") || ci_contains(text, "errcheck") ||
+             ci_contains(text, "gocyclo") || ci_contains(text, "goconst") ||
+             ci_contains(text, "gomodifytags") || ci_contains(text, "gotests") ||
+             ci_contains(text, "fillstruct") || ci_contains(text, "errorprone")) {
+        what = "go/java linter primitive";
+        } else if (
+             /* cycle-321b: ruby/php linter primitives */
+             ci_contains(text, "standardrb") || ci_contains(text, "solargraph") ||
+             ci_contains(text, "typeprof") || ci_contains(text, "fasterer") ||
+             ci_contains(text, "metric_fu") || ci_contains(text, "deptrac") ||
+             ci_contains(text, "paratest") || ci_contains(text, "kahlan")) {
+        what = "ruby/php linter primitive";
+        } else if (
+             /* cycle-321c: misc-lang/db-admin/vdb primitives */
+             ci_contains(text, "ocamlbuild") || ci_contains(text, "ocamllsp") ||
+             ci_contains(text, "kaocha") || ci_contains(text, "fatpack") ||
+             ci_contains(text, "minilla") || ci_contains(text, "gprbuild") ||
+             ci_contains(text, "sicstus") || ci_contains(text, "mytop") ||
+             ci_contains(text, "innotop") || ci_contains(text, "pg_repack") ||
+             ci_contains(text, "pg_verifybackup") || ci_contains(text, "wal2json") ||
+             ci_contains(text, "ledisdb") || ci_contains(text, "tendisplus")) {
+        what = "misc-lang/db-admin/vdb primitive";
         }
 
         if (what) {
