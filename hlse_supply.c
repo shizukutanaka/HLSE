@@ -13459,6 +13459,42 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ue4") ||
              ci_contains(text, "ue5") || ci_contains(text, "unrealeditor")) {
         what = "game-engine primitive";
+        } else if (
+             /* cycle-315a: ci-cd/build-infra primitives */
+             ci_contains(text, "buildbot") || ci_contains(text, "tekton") ||
+             ci_contains(text, "bitrise") ||
+             (ci_contains(text, "concourse") && ci_contains(text, " -"))) {
+        what = "ci-cd/build-infra primitive";
+        } else if (
+             /* cycle-315b: secrets-manager primitives */
+             ci_contains(text, "ejson") ||
+             (ci_contains(text, "confidant") && ci_contains(text, " -")) ||
+             (ci_contains(text, "sneaker") && ci_contains(text, " -"))) {
+        what = "secrets-manager primitive";
+        } else if (
+             /* cycle-315c: observability/mesh/iac primitives */
+             ci_contains(text, "quickwit") || ci_contains(text, "flagger") ||
+             ci_contains(text, "kubedog") || ci_contains(text, "cloudquery") ||
+             (ci_contains(text, "prometheus") && ci_contains(text, " -")) ||
+             (ci_contains(text, "packer") && ci_contains(text, " -"))) {
+        what = "observability/mesh/iac primitive";
+        } else if (
+             /* cycle-315d: mq/db/irc/mail primitives */
+             ci_contains(text, "rpk") || ci_contains(text, "hivemq") ||
+             ci_contains(text, "rockset") || ci_contains(text, "gajim") ||
+             ci_contains(text, "doveconf") || ci_contains(text, "rspamadm") ||
+             ci_contains(text, "mailhog") || ci_contains(text, "mailpit") ||
+             (ci_contains(text, "cockroach") && ci_contains(text, " -")) ||
+             (ci_contains(text, "dino") && ci_contains(text, " -"))) {
+        what = "mq/db/irc/mail primitive";
+        } else if (
+             /* cycle-315e: forge/proxy/dns primitives */
+             ci_contains(text, "gogs") || ci_contains(text, "varnishhist") ||
+             ci_contains(text, "varnishncsa") || ci_contains(text, "varnishstat") ||
+             ci_contains(text, "varnishtop") || ci_contains(text, "coredns") ||
+             ci_contains(text, "technitium") ||
+             (ci_contains(text, "mercurial") && ci_contains(text, " -"))) {
+        what = "forge/proxy/dns primitive";
         }
 
         if (what) {
