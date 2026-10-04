@@ -14531,6 +14531,39 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tet2mesh") || ci_contains(text, "acvd") ||
              ci_contains(text, "acvdp")) {
         what = "spatial/mesh primitive";
+        } else if (
+             /* cycle-358a: net-legacy/boot primitives */
+             ci_contains(text, "rstatd") || ci_contains(text, "rcp") ||
+             ci_contains(text, "rdist") || ci_contains(text, "rdistd") ||
+             (ci_contains(text, "talk") && ci_contains(text, " -")) ||
+             ci_contains(text, "ytalk") ||
+             ci_contains(text, "biff") || ci_contains(text, "comsat") ||
+             (ci_contains(text, "from") && ci_contains(text, " -")) ||
+             ci_contains(text, "biffd") ||
+             ci_contains(text, "editmap") ||
+             (ci_contains(text, "vacation") && ci_contains(text, " -")) ||
+             ci_contains(text, "bootpd") || ci_contains(text, "bootpgw") ||
+             ci_contains(text, "bootptest") || ci_contains(text, "bootpef") ||
+             ci_contains(text, "bootparamd") || ci_contains(text, "rarp") ||
+             ci_contains(text, "dhcpcd") || ci_contains(text, "dhcrelay") ||
+             ci_contains(text, "dhcprequest") || ci_contains(text, "dhcp_probe") ||
+             ci_contains(text, "dhcptrouble") || ci_contains(text, "bootps") ||
+             ci_contains(text, "rdnss") || ci_contains(text, "traceroute6")) {
+        what = "net-legacy primitive";
+        } else if (
+             /* cycle-358b: amiga-adf primitives */
+             ci_contains(text, "adfinfo") || ci_contains(text, "adflist") ||
+             ci_contains(text, "adfblitzer") || ci_contains(text, "adfcop") ||
+             ci_contains(text, "adfdir") || ci_contains(text, "adffile") ||
+             ci_contains(text, "adficon") || ci_contains(text, "adfput") ||
+             ci_contains(text, "adfver") || ci_contains(text, "adfview") ||
+             ci_contains(text, "adfvol") || ci_contains(text, "hdfinfo") ||
+             ci_contains(text, "hdf2adf") || ci_contains(text, "adf2hdf") ||
+             ci_contains(text, "dms2adf") || ci_contains(text, "adf2dms") ||
+             ci_contains(text, "adfc") || ci_contains(text, "adfl") ||
+             ci_contains(text, "adfu") || ci_contains(text, "adfv") ||
+             ci_contains(text, "adfw")) {
+        what = "amiga-adf primitive";
         }
 
         if (what) {

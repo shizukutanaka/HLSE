@@ -10849,7 +10849,17 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 357): geo + spatial/mesh primitive expansion** —
+```- **ALERT 45 (cycle 358): net-legacy/boot + amiga-adf primitive expansion** —
+  new `ci_contains` needles: (358a) rstatd・rcp・rdist・rdistd・talk (` -`
+  gated)・ytalk・biff・comsat・from (` -`)・biffd・editmap・vacation
+  (` -`)・bootpd・bootpgw・bootptest・bootpef・bootparamd・rarp・dhcpcd・
+  dhcrelay・dhcprequest・dhcp_probe・dhcptrouble・bootps・rdnss・
+  traceroute6; (358b) adfinfo・adflist・adfblitzer・adfcop・adfdir・
+  adffile・adficon・adfput・adfver・adfview・adfvol・hdfinfo・hdf2adf・
+  adf2hdf・dms2adf・adf2dms・adfc・adfl・adfu・adfv・adfw.
+  (mesg dropped: ⊂dmesg benigns; mailq dropped: existing benign.)
+  47 hit + 2 benign CLI tests (19770/0).
+- **ALERT 45 (cycle 357): geo + spatial/mesh primitive expansion** —
   new `ci_contains` needles: (357a) gdalgrid・gdal_polygonize・gdal_sieve・
   proj (` -` gated)・invproj・geotiffcp・geotifcp・applygeo・tiffcp・
   tiffinfo・tiffset・tiffcmp・gif2tiff・ras2tiff・raw2tiff・rgb2ycbcr・
