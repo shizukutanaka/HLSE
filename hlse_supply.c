@@ -14180,6 +14180,21 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "undervolt") && ci_contains(text, " -")) ||
              ci_contains(text, "disper")) {
         what = "desktop misc primitive";
+        } else if (
+             /* cycle-336a: mcu/barcode/ocr primitives */
+             ci_contains(text, "esplorer") || ci_contains(text, "circup") ||
+             ci_contains(text, "lpc21isp") || ci_contains(text, "sdas8051") ||
+             ci_contains(text, "sdld") || ci_contains(text, "gpasm") ||
+             ci_contains(text, "tl866") ||
+             ci_contains(text, "eplabel") || ci_contains(text, "niimbot") ||
+             ci_contains(text, "phomemo") ||
+             ci_contains(text, "ocropy") || ci_contains(text, "ocrfeeder")) {
+        what = "mcu/barcode/ocr primitive";
+        } else if (
+             /* cycle-336b: iot/midi primitives */
+             ci_contains(text, "tunslip") || ci_contains(text, "tunslip6") ||
+             ci_contains(text, "wpcapslip") || ci_contains(text, "hdspconf")) {
+        what = "iot/midi primitive";
         }
 
         if (what) {
