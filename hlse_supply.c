@@ -14062,6 +14062,22 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pdtm") || ci_contains(text, "mapcidr") ||
              (ci_contains(text, "uncover") && ci_contains(text, " -"))) {
         what = "pkgrepo/secscan primitive";
+        } else if (
+             /* cycle-330a: mail/dns/share primitives */
+             ci_contains(text, "postdrop") || ci_contains(text, "postkick") ||
+             ci_contains(text, "postlock") || ci_contains(text, "postmulti") ||
+             ci_contains(text, "sieve2lp") ||
+             ci_contains(text, "mpop") ||
+             ci_contains(text, "dnsgram") || ci_contains(text, "dnsreplay") ||
+             ci_contains(text, "pdns_notify") || ci_contains(text, "zone2lmdb") ||
+             ci_contains(text, "dumresp") || ci_contains(text, "kaspdb") ||
+             ci_contains(text, "yadifa") || ci_contains(text, "yadifad") ||
+             ci_contains(text, "nfsref")) {
+        what = "mail/dns/share primitive";
+        } else if (
+             /* cycle-330b: backup/devmisc primitives */
+             ci_contains(text, "btape") || ci_contains(text, "apgdiff")) {
+        what = "backup/devmisc primitive";
         }
 
         if (what) {
