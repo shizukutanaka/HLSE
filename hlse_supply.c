@@ -14847,6 +14847,28 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ncmpc") || ci_contains(text, "msdap") ||
              ci_contains(text, "gmpc") || ci_contains(text, "mpdris2")) {
         what = "cnc/media primitive";
+        } else if (
+             /* cycle-369a: x11-font/voip primitives */
+             ci_contains(text, "showfont") || ci_contains(text, "mkfontdir") ||
+             ci_contains(text, "mkfontscale") || ci_contains(text, "ucs2any") ||
+             ci_contains(text, "slimlock") || ci_contains(text, "fdupe") ||
+             ci_contains(text, "percol") || ci_contains(text, "heplify") ||
+             ci_contains(text, "dahdi_pcap") || ci_contains(text, "dahdihdrc") ||
+             ci_contains(text, "sipreg")) {
+        what = "x11/voip primitive";
+        } else if (
+             /* cycle-369b: bibliography/pub primitives */
+             ci_contains(text, "bib2ris") || ci_contains(text, "cb2bib") ||
+             ci_contains(text, "biblioref") || ci_contains(text, "doi2bib") ||
+             ci_contains(text, "pubfetch") || ci_contains(text, "tcoffee") ||
+             (ci_contains(text, "prank") && ci_contains(text, " -")) ||
+             ci_contains(text, "paga") || ci_contains(text, "fyrd") ||
+             ci_contains(text, "org2pdf") || ci_contains(text, "cpif") ||
+             ci_contains(text, "nuweb") || ci_contains(text, "funnelweb") ||
+             (ci_contains(text, "zettel") && ci_contains(text, " -")) ||
+             (ci_contains(text, "cider") && ci_contains(text, " -")) ||
+             ci_contains(text, "notenik") || ci_contains(text, "11ty")) {
+        what = "biblio/pub primitive";
         }
 
         if (what) {

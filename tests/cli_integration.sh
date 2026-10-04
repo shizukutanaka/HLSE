@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-369: x11-font/voip + biblio/pub primitives
+for c in 'showfont -fs x' 'mkfontdir /usr/share/fonts/x' 'mkfontscale -b dir' 'ucs2any font.bdf' 'slimlock -p' 'fdupe -r pics/' 'percol --result-number-up' 'heplify -i eth0' 'dahdi_pcap -c chan1' 'dahdihdrc -v' 'sipreg -s sip:x'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'bib2ris in.bib -o out.ris' 'cb2bib -a x' 'biblioref -s doc' 'doi2bib -f 10.1/x' 'pubfetch -q term' 'tcoffee -in seq.aln' 'prank -d=seq.fa -o=out' 'paga -i counts.h5' 'fyrd run --local j.py' 'org2pdf notes.org -o n.pdf' 'cpif a.h cpif.c' 'nuweb -r doc.w' 'funnelweb +x doc.fw' 'zettel -n idea' 'cider -r home' 'notenik -o notes' '11ty --serve -p 8080'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'echo april prank day' 'echo apple cider press' 'ein zettel papier'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-368: dict/ebook + cnc/media primitives
 for c in 'dict_lookup -d wn run' 'colorit -c cfg' 'munchlist -l aff words' 'ispellaff2myspell aff.aff' 'unmunch -l dic aff' 'licq -p icq' 'qrenc -o out.png text' 'doifetch -v 10.1/x' 'bcnc --run file.gcode' 'epubs2 -d book.epub' 'mobi2epub in.mobi -o out.epub' 'cbconvert -f pdf a.cbz' 'comic2pdf -o out.pdf c.cbz' 'pdftoepub -o out.epub in.pdf'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

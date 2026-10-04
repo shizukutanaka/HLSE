@@ -10856,6 +10856,14 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 369): X11-font/VoIP + bibliography/pub
+  primitives** — X font tools (showfont, mkfontdir, mkfontscale,
+  ucs2any), niche X/filter tools (slimlock, fdupe, percol), VoIP/SIP
+  (heplify, dahdi_pcap, dahdihdrc, sipreg), bibliography/literate-
+  programming toolchain (bib2ris, cb2bib, biblioref, doi2bib, pubfetch,
+  tcoffee, paga, fyrd, org2pdf, cpif, nuweb, funnelweb, notenik,
+  11ty); real words (prank, zettel, cider) gated on ` -`. +28/31
+  checks.
 - **ALERT 45 (cycle 368): dict/ebook + CNC/media primitives** —
   dict/aspell toolchain (dict_lookup gated, colorit, munchlist,
   ispellaff2myspell, unmunch), niche clients (licq, qrenc, doifetch,
