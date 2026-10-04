@@ -14174,6 +14174,12 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "zmodem") || ci_contains(text, "supercronic") ||
              ci_contains(text, "aatest") || ci_contains(text, "asciigif")) {
         what = "cast/job/img primitive";
+        } else if (
+             /* cycle-335a: desktop misc primitives */
+             ci_contains(text, "wlopm") || ci_contains(text, "swayr") ||
+             (ci_contains(text, "undervolt") && ci_contains(text, " -")) ||
+             ci_contains(text, "disper")) {
+        what = "desktop misc primitive";
         }
 
         if (what) {
