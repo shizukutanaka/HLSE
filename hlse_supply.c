@@ -14364,6 +14364,18 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tapestat") || ci_contains(text, "bdrecord") ||
              ci_contains(text, "udpcast")) {
         what = "tape/clone primitive";
+        } else if (
+             /* cycle-349a: abi/dwarf primitives */
+             ci_contains(text, "elflint") || ci_contains(text, "pdwtags") ||
+             ci_contains(text, "codtag") || ci_contains(text, "abidiff") ||
+             ci_contains(text, "abidw") || ci_contains(text, "abilint")) {
+        what = "abi/dwarf primitive";
+        } else if (
+             /* cycle-349b: binutil/prof primitives */
+             ci_contains(text, "windres") || ci_contains(text, "dllwrap") ||
+             ci_contains(text, "c++filt") || ci_contains(text, "ocount") ||
+             ci_contains(text, "sprof") || ci_contains(text, "latrace")) {
+        what = "binutil/prof primitive";
         }
 
         if (what) {
