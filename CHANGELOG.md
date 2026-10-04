@@ -10849,7 +10849,14 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 362): screencast/vcs + versioning primitive expansion** —
+```- **Operations pack: production deployment path** — `docs/OPERATIONS.md`
+  runbook (rootless/system install, CI enablement via `make
+  install-workflows`, hlsed under systemd, verify/upgrade/remove),
+  `examples/hlsed.service` (Type=simple unit with hardening options) and
+  `examples/hlsed.conf` (validated by `hlsed --check`). README links the
+  hlsed section to the production path. `make install DESTDIR=...`
+  end-to-end verified.
+- **ALERT 45 (cycle 362): screencast/vcs + versioning primitive expansion** —
   new `ci_contains` needles: (362a) asciicast・agg (` -`)・trec (` -`)・
   tty2gif・vttest・tilda・yakuake・zutty・sccs・rcs (` -`)・ident (` -`)・
   merge (`merge ` + ` -`)・rcs2sccs・sccs2rcs・prcs・cvu・rview (` -`)・

@@ -252,7 +252,9 @@ Alerts ≥ `fail-on` (daemon default `alert`) go to `--log-file`/syslog sinks
 and stderr. `SIGTERM`/`SIGINT` stop cleanly (pid-file removed); `SIGHUP`
 reloads the config in place. All state is in-memory — see `SECURITY.md` for
 the scoped carve-out and `man hlsed` for the full reference. Smoke test:
-`make daemon-check`.
+`make daemon-check`. Production path (systemd unit, tuned config,
+verify/upgrade runbook): [`docs/OPERATIONS.md`](docs/OPERATIONS.md) +
+`examples/hlsed.service` + `examples/hlsed.conf`.
 
 ## Test architecture
 

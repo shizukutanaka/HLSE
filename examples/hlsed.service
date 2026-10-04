@@ -1,0 +1,29 @@
+# HLSE resident file-integrity monitor — systemd unit (Type=simple).
+# Install:
+#   sudo make install PREFIX=/usr
+#   sudo cp examples/hlsed.conf /etc/hlse/hlsed.conf   # edit watch= dirs
+#   sudo cp examples/hlsed.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now hlsed
+[Unit]
+Description=HLSE resident file-integrity monitor
+Documentation=man:hlsed(1)
+After=local-fs.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/hlsed --config /etc/hlse/hlsed.conf
+ExecReload=/bin/kill -HUP $MAINPID
+PIDFile=/run/hlsed.pid
+Restart=on-failure
+RestartSec=5s
+
+# hardening (all optional — hlsed runs rootless too)
+DynamicUser=yes
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+# If the watched trees must be writable-visible, widen with ReadWritePaths:
+# ReadWritePaths=/var/www /srv/data
+
+[Install]
+WantedBy=multi-user.target
