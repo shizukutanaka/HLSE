@@ -14078,6 +14078,34 @@ hlse_check_paste(const char *text) {
              /* cycle-330b: backup/devmisc primitives */
              ci_contains(text, "btape") || ci_contains(text, "apgdiff")) {
         what = "backup/devmisc primitive";
+        } else if (
+             /* cycle-331a: image/audio primitives */
+             ci_contains(text, "celeste_standalone") || ci_contains(text, "checkpto") ||
+             ci_contains(text, "fulla") || ci_contains(text, "nona_gpu") ||
+             ci_contains(text, "pto2mk") || ci_contains(text, "pto_gen") ||
+             ci_contains(text, "ptovariable") || ci_contains(text, "vig_optimize") ||
+             ci_contains(text, "pfsin") || ci_contains(text, "pfsout") ||
+             ci_contains(text, "pfsview") || ci_contains(text, "hdrgen") ||
+             ci_contains(text, "pfstmo") || ci_contains(text, "fcrecover") ||
+             ci_contains(text, "drumgizmo") || (ci_contains(text, "abcde") && ci_contains(text, " -")) ||
+             ci_contains(text, "eyed3") || ci_contains(text, "metaflac") ||
+             ci_contains(text, "faac") || ci_contains(text, "faad") ||
+             ci_contains(text, "twolame") || ci_contains(text, "fdkaac") ||
+             ci_contains(text, "qaac") || ci_contains(text, "whipper")) {
+        what = "image/audio primitive";
+        } else if (
+             /* cycle-331b: video/book/typeset primitives */
+             ci_contains(text, "mkvinfo") || ci_contains(text, "mkvpropedit") ||
+             ci_contains(text, "dvbtune") || ci_contains(text, "dvbstream") ||
+             ci_contains(text, "dvbnet") || ci_contains(text, "dvbtraffic") ||
+             ci_contains(text, "lrfviewer") || ci_contains(text, "pageedit") ||
+             ci_contains(text, "fb2c") ||
+             ci_contains(text, "troff") || (ci_contains(text, "eqn") && ci_contains(text, " -")) ||
+             ci_contains(text, "preconv") || ci_contains(text, "soelim") ||
+             ci_contains(text, "grn") || ci_contains(text, "nroff") ||
+             ci_contains(text, "mdocml") || ci_contains(text, "grohtml") ||
+             ci_contains(text, "neatroff")) {
+        what = "video/book/typeset primitive";
         }
 
         if (what) {
