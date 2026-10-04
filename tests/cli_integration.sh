@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-370: crystallography + chemistry primitives
+for c in 'crystfel -i run.lst' 'ambigator -o out.stream' 'process_hkl -o hkl.hkl' 'partialator -i x.stream' 'whirligig --serial 1' 'refmac5 HKLIN a.mtz' 'buccaneer -seqin seq.fasta' 'freerflag HKLIN a.mtz' 'fit2d -dim 1024x1024' 'fabio -i x.cbf' 'dioptas -i img.tif'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'moltemplate -xyz s.xyz t.lt' 'topolbuild -n 4' 'mrgddb -o out' 'abicheck -k' 'conducti in.in -o out' 'critic2 structure.cif' 'bader -c b den.cube' 'dftd3 geom.xyz -func pbe' 'wan2resu wannier' 'postw90 seed.win -kmesh' 'wannier_plot -f w90' 'cif_filter -i in.cif' 'cif_select -i in.cif' 'doschka -v' 'raster3d -png < in.r3d' 'balls -h < scene' 'sticks -r < scene'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'echo spin a whirligig' 'echo buccaneer ships sail' 'echo fabio arrived' 'echo bader surname' 'echo balls and sticks kit' 'echo glue sticks here'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-369: x11-font/voip + biblio/pub primitives
 for c in 'showfont -fs x' 'mkfontdir /usr/share/fonts/x' 'mkfontscale -b dir' 'ucs2any font.bdf' 'slimlock -p' 'fdupe -r pics/' 'percol --result-number-up' 'heplify -i eth0' 'dahdi_pcap -c chan1' 'dahdihdrc -v' 'sipreg -s sip:x'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

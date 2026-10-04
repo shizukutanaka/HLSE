@@ -14869,6 +14869,30 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "cider") && ci_contains(text, " -")) ||
              ci_contains(text, "notenik") || ci_contains(text, "11ty")) {
         what = "biblio/pub primitive";
+        } else if (
+             /* cycle-370a: crystallography primitives */
+             ci_contains(text, "crystfel") || ci_contains(text, "ambigator") ||
+             ci_contains(text, "process_hkl") || ci_contains(text, "partialator") ||
+             (ci_contains(text, "whirligig") && ci_contains(text, " -")) ||
+             ci_contains(text, "refmac5") ||
+             (ci_contains(text, "buccaneer") && ci_contains(text, " -")) ||
+             ci_contains(text, "freerflag") || ci_contains(text, "fit2d") ||
+             (ci_contains(text, "fabio") && ci_contains(text, " -")) ||
+             ci_contains(text, "dioptas")) {
+        what = "crystallography primitive";
+        } else if (
+             /* cycle-370b: chemistry/materials primitives */
+             ci_contains(text, "moltemplate") || ci_contains(text, "topolbuild") ||
+             ci_contains(text, "mrgddb") || ci_contains(text, "abicheck") ||
+             ci_contains(text, "conducti") || ci_contains(text, "critic2") ||
+             (ci_contains(text, "bader") && ci_contains(text, " -")) ||
+             ci_contains(text, "dftd3") || ci_contains(text, "wan2resu") ||
+             ci_contains(text, "postw90") || ci_contains(text, "wannier_plot") ||
+             ci_contains(text, "cif_filter") || ci_contains(text, "cif_select") ||
+             ci_contains(text, "doschka") || ci_contains(text, "raster3d") ||
+             (ci_contains(text, "balls") && ci_contains(text, " -")) ||
+             (ci_contains(text, "sticks") && ci_contains(text, " -"))) {
+        what = "chemistry primitive";
         }
 
         if (what) {

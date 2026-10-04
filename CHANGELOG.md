@@ -10856,6 +10856,13 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 370): crystallography + chemistry primitives** —
+  CrystFEL/CCP4 pipeline (crystfel, ambigator, process_hkl,
+  partialator, refmac5, freerflag, fit2d, dioptas), molecular/materials
+  tools (moltemplate, topolbuild, mrgddb, abicheck, conducti, critic2,
+  dftd3, wan2resu, postw90, wannier_plot, cif_filter, cif_select,
+  doschka, raster3d); real words (whirligig, buccaneer, fabio, bader,
+  balls, sticks) gated on ` -`. +28/34 checks.
 - **ALERT 45 (cycle 369): X11-font/VoIP + bibliography/pub
   primitives** — X font tools (showfont, mkfontdir, mkfontscale,
   ucs2any), niche X/filter tools (slimlock, fdupe, percol), VoIP/SIP
