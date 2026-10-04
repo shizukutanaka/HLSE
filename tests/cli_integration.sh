@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-366: ebpf/infra + build/sysadmin primitives
+for c in 'tcpsubnet -v' 'tcprtt -i 1' 'nfsslower 10' 'pidpersec -d 5' 'emqtt_bench pub -t t' 'unitd --no-daemon' 'heartbeat -e -c heartbeat.yml'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'earthly --artifact +build Earthfile' 'tupconf -v' 'debtap pkg.deb -i' 'snooze -R 5m cmd' 'cronie -f' 'hcron -e' 'firemon --list' 'jk_check -v' 'jk_cp /jail /bin/sh' 'jk_list -j /jail' 'jk_lsh -j /jail' 'jk_socketd -l' 'debuerreotype -v' 'polystrap -s sid' 'cowdancer -v apt'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'echo heartbeat of the city' 'echo snooze the alarm' 'unsnoozed tasks list'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-365: lsp/lint + jvm/print primitives
 for c in 'pyright --outputjson' 'sorbet -e typed' 'vale --glob "*.md" .' 'mdl -r MD001 README.md' 'dprint fmt -c dprint.json' 'biome check -w .' 'selene -q src' 'hindent --sort-imports' 'brittany --indent 4 -w f.hs' 'uncrustify -c cfg -f x.c' 'astyle --style=kr -n x.c' 'unifdef -DDEBUG x.c' 'indent -kr x.c -o y.c'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

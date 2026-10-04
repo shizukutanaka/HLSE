@@ -14789,6 +14789,25 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "psbook") || ci_contains(text, "psselect") ||
              ci_contains(text, "includeres")) {
         what = "jvm/print primitive";
+        } else if (
+             /* cycle-366a: ebpf/mq/infra primitives */
+             ci_contains(text, "tcpsubnet") || ci_contains(text, "tcprtt") ||
+             ci_contains(text, "nfsslower") || ci_contains(text, "pidpersec") ||
+             ci_contains(text, "emqtt_bench") || ci_contains(text, "unitd") ||
+             (ci_contains(text, "heartbeat") && ci_contains(text, " -"))) {
+        what = "ebpf/infra primitive";
+        } else if (
+             /* cycle-366b: build/sysadmin primitives */
+             ci_contains(text, "earthfile") || ci_contains(text, "tupconf") ||
+             ci_contains(text, "debtap") ||
+             (ci_contains(text, "snooze") && ci_contains(text, " -")) ||
+             ci_contains(text, "cronie") || ci_contains(text, "hcron") ||
+             ci_contains(text, "firemon") || ci_contains(text, "jk_check") ||
+             ci_contains(text, "jk_cp") || ci_contains(text, "jk_list") ||
+             ci_contains(text, "jk_lsh") || ci_contains(text, "jk_socketd") ||
+             ci_contains(text, "debuerreotype") || ci_contains(text, "polystrap") ||
+             ci_contains(text, "cowdancer")) {
+        what = "build/sysadmin primitive";
         }
 
         if (what) {
