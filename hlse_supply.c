@@ -14106,6 +14106,38 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mdocml") || ci_contains(text, "grohtml") ||
              ci_contains(text, "neatroff")) {
         what = "video/book/typeset primitive";
+        } else if (
+             /* cycle-332a: graph/font primitives */
+             ci_contains(text, "twopi") || ci_contains(text, "circo") ||
+             ci_contains(text, "gvpr") || ci_contains(text, "bcomps") ||
+             ci_contains(text, "ccomps") || ci_contains(text, "gvcolor") ||
+             ci_contains(text, "gvpack") || ci_contains(text, "sccmap") ||
+             ci_contains(text, "tred") || ci_contains(text, "diffimg") ||
+             ci_contains(text, "gvedit") || ci_contains(text, "lneato") ||
+             (ci_contains(text, "neato") && ci_contains(text, " -")) ||
+             (ci_contains(text, "fdp") && ci_contains(text, " -")) ||
+             (ci_contains(text, "osage") && ci_contains(text, " -")) ||
+             (ci_contains(text, "patchwork") && ci_contains(text, " -")) ||
+             (ci_contains(text, "unflatten") && ci_contains(text, " -")) ||
+             (ci_contains(text, "smyrna") && ci_contains(text, " -")) ||
+             (ci_contains(text, "dotty") && ci_contains(text, " -")) ||
+             (ci_contains(text, "lefty") && ci_contains(text, " -")) ||
+             ci_contains(text, "fontlint") || ci_contains(text, "fontbakery") ||
+             ci_contains(text, "t1disasm") || ci_contains(text, "t1asm") ||
+             ci_contains(text, "ttfautohint") || ci_contains(text, "ftview") ||
+             ci_contains(text, "ftmulti") || ci_contains(text, "ftdiff") ||
+             ci_contains(text, "ftbench") || ci_contains(text, "ftmetric") ||
+             ci_contains(text, "ftsbench")) {
+        what = "graph/font primitive";
+        } else if (
+             /* cycle-332b: disc/bench primitives */
+             ci_contains(text, "wsdd") || ci_contains(text, "mrdisc") ||
+             ci_contains(text, "ripquery") || ci_contains(text, "arpon") ||
+             ci_contains(text, "zcip") ||
+             ci_contains(text, "hpcc") || (ci_contains(text, "hey") && ci_contains(text, " -")) ||
+             ci_contains(text, "autobench") || ci_contains(text, "fs_mark") ||
+             ci_contains(text, "lmbench") || ci_contains(text, "tinymembench")) {
+        what = "disc/bench primitive";
         }
 
         if (what) {
