@@ -11674,6 +11674,18 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-340: vcs + archive/bench primitives
+for c in 'commitlint -e' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'breezy -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in '7za x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in '7zr a' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'lzmadec -d' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'paq8 -5' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'flent rrul' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'ntttcp -s' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'a breezy day' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'the quiet cat sat' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+
 # ── cycle-339: sdrhw/can/obd + drone/emu primitives
 for c in 'hackrf_clock -a' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
 for c in 'hackrf_operacake' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done

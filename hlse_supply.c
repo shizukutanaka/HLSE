@@ -14244,6 +14244,17 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "gzdoom") || ci_contains(text, "zandronum") ||
              ci_contains(text, "slade3")) {
         what = "drone/emu primitive";
+        } else if (
+             /* cycle-340a: vcs primitives */
+             ci_contains(text, "commitlint") || (ci_contains(text, "breezy") && ci_contains(text, " -"))) {
+        what = "vcs primitive";
+        } else if (
+             /* cycle-340b: archive/bench primitives */
+             ci_contains(text, "7za") || ci_contains(text, "7zr") ||
+             (ci_contains(text, "lzmadec") && ci_contains(text, " -")) ||
+             ci_contains(text, "paq8") ||
+             ci_contains(text, "flent") || ci_contains(text, "ntttcp")) {
+        what = "archive/bench primitive";
         }
 
         if (what) {
