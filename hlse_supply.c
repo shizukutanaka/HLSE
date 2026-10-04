@@ -14406,6 +14406,24 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "sgfmerge") || ci_contains(text, "sgfc") ||
              ci_contains(text, "twogtp") || (ci_contains(text, "quarry") && ci_contains(text, " -"))) {
         what = "go/puzzle primitive";
+        } else if (
+             /* cycle-352a: dicom primitives */
+             ci_contains(text, "dcm2pnm") || ci_contains(text, "dcmj2pnm") ||
+             ci_contains(text, "pdf2dcm") || ci_contains(text, "dcm2pdf") ||
+             ci_contains(text, "stl2dcm") || ci_contains(text, "dcml2pnm") ||
+             ci_contains(text, "drtt")) {
+        what = "dicom primitive";
+        } else if (
+             /* cycle-352b: med/bio primitives */
+             ci_contains(text, "bet2 ") || ci_contains(text, "convert3d") ||
+             ci_contains(text, "smartpca") || ci_contains(text, "mergeit") ||
+             ci_contains(text, "qp3pop") || ci_contains(text, "qp4pop") ||
+             ci_contains(text, "qpgraph") || ci_contains(text, "qpwave") ||
+             ci_contains(text, "qpadm") || ci_contains(text, "rolloff") ||
+             ci_contains(text, "f4stats") || ci_contains(text, "treeannotator") ||
+             ci_contains(text, "clustalw") || ci_contains(text, "probcons") ||
+             ci_contains(text, "poa ")) {
+        what = "med/bio primitive";
         }
 
         if (what) {
