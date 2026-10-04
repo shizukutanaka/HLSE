@@ -14293,6 +14293,19 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "rtweight") || ci_contains(text, "rtwizard") ||
              ci_contains(text, "blockmesh")) {
         what = "tracker/cad primitive";
+        } else if (
+             /* cycle-344a: pkt/doc/game primitives */
+             ci_contains(text, "ifpps") || ci_contains(text, "bpfc") ||
+             ci_contains(text, "curvetun") || ci_contains(text, "flowtop") ||
+             ci_contains(text, "packit ") || ci_contains(text, "tcpprep") ||
+             ci_contains(text, "wvhtml") || ci_contains(text, "umoria") ||
+             ci_contains(text, "frogcomposband")) {
+        what = "pkt/doc/game primitive";
+        } else if (
+             /* cycle-344b: dict/hex primitives */
+             ci_contains(text, "sdcv") || ci_contains(text, "bvi ") ||
+             ci_contains(text, "bviplus")) {
+        what = "dict/hex primitive";
         }
 
         if (what) {
