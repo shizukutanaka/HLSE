@@ -13707,6 +13707,53 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pg_verifybackup") || ci_contains(text, "wal2json") ||
              ci_contains(text, "ledisdb") || ci_contains(text, "tendisplus")) {
         what = "misc-lang/db-admin/vdb primitive";
+        } else if (
+             /* cycle-322a: dicom primitives */
+             ci_contains(text, "echoscu") || ci_contains(text, "dcmqrscp") ||
+             ci_contains(text, "dcm2jpg") || ci_contains(text, "jpg2dcm") ||
+             ci_contains(text, "dcmgpdir") || ci_contains(text, "dcmjpeg") ||
+             ci_contains(text, "dcmquant") || ci_contains(text, "dconvlum") ||
+             ci_contains(text, "dsr2html") || ci_contains(text, "img2dcm") ||
+             ci_contains(text, "dcmmkcrv") || ci_contains(text, "dcmmklup") ||
+             ci_contains(text, "dcmpschk") || ci_contains(text, "dcmpsprt") ||
+             ci_contains(text, "dcmrecv") || ci_contains(text, "gdcmimg") ||
+             ci_contains(text, "gdcminfo") || ci_contains(text, "gdcmpdf") ||
+             ci_contains(text, "gdcmraw") || ci_contains(text, "gdcmviewer")) {
+        what = "dicom primitive";
+        } else if (
+             /* cycle-322b: neuroimaging primitives */
+             ci_contains(text, "mri_convert") || ci_contains(text, "fslmaths") ||
+             ci_contains(text, "fslroi") || ci_contains(text, "fslmerge") ||
+             ci_contains(text, "slicetimer") || ci_contains(text, "dtifit") ||
+             ci_contains(text, "fsleyes") || ci_contains(text, "3dcalc") ||
+             ci_contains(text, "mrconvert") || ci_contains(text, "dwi2response") ||
+             ci_contains(text, "dwi2fod") || ci_contains(text, "tckgen") ||
+             ci_contains(text, "tcksift") || ci_contains(text, "mrview") ||
+             ci_contains(text, "n4biasfieldcorrection") ||
+             ci_contains(text, "reg_aladin") || ci_contains(text, "heudiconv")) {
+        what = "neuroimaging primitive";
+        } else if (
+             /* cycle-322c: meteo/micro/seismic/hydro primitives */
+             ci_contains(text, "grib_ls") || ci_contains(text, "grib_set") ||
+             ci_contains(text, "grib_filter") || ci_contains(text, "grib_compare") ||
+             ci_contains(text, "grib2to1") || ci_contains(text, "ncks") ||
+             ci_contains(text, "ncea") || ci_contains(text, "ncap2") ||
+             ci_contains(text, "ncrename") || ci_contains(text, "ncwa") ||
+             ci_contains(text, "ncbo") || ci_contains(text, "ncdiff") ||
+             ci_contains(text, "ncgen") || ci_contains(text, "h5repack") ||
+             ci_contains(text, "h5diff") || ci_contains(text, "h5stat") ||
+             ci_contains(text, "hdfview") || ci_contains(text, "pyferret") ||
+             ci_contains(text, "bufr_ls") || ci_contains(text, "bufr_set") ||
+             ci_contains(text, "bufr_compare") || ci_contains(text, "bfconvert") ||
+             ci_contains(text, "showinf") || ci_contains(text, "domainlist") ||
+             ci_contains(text, "mkmemo") || ci_contains(text, "seisan") ||
+             ci_contains(text, "geopsy") || ci_contains(text, "specfem3d") ||
+             ci_contains(text, "pygimli") || ci_contains(text, "simpeg") ||
+             ci_contains(text, "em1d") || ci_contains(text, "swat2012") ||
+             ci_contains(text, "modflow6") || ci_contains(text, "flopy") ||
+             ci_contains(text, "seepw") || ci_contains(text, "parflow") ||
+             ci_contains(text, "pflotran") || ci_contains(text, "tough2")) {
+        what = "meteo/micro/seismic/hydro primitive";
         }
 
         if (what) {
