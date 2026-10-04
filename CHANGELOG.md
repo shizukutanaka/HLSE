@@ -10849,7 +10849,12 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 342): infra/messaging primitive expansion** —
+```- **ALERT 45 (cycle 343): forensic + tracker/cad primitive expansion** —
+  new `ci_contains` needles: (343a) affconvert・mmstat・filewalk・blkstat・
+  blkcalc・img_cat・ssdeep; (343b) schism(gate)・ft2・psycle・it2midi・
+  sidplay・mocp・mged・rtweight・rtwizard・blockmesh.
+  17 hit + 2 benign CLI tests (19424/0).
+- **ALERT 45 (cycle 342): infra/messaging primitive expansion** —
   new `ci_contains` needles: moofsd・krenew・bzl・prom2json・nsc(boundary)・
   kaf(boundary)・girc・pounce(gate).
   8 hit + 2 benign CLI tests (19405/0).

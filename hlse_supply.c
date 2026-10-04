@@ -14277,6 +14277,22 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "nsc ") || ci_contains(text, "kaf ") ||
              ci_contains(text, "girc") || (ci_contains(text, "pounce") && ci_contains(text, " -"))) {
         what = "infra/messaging primitive";
+        } else if (
+             /* cycle-343a: forensic primitives */
+             ci_contains(text, "affconvert") || ci_contains(text, "mmstat") ||
+             ci_contains(text, "filewalk") || ci_contains(text, "blkstat") ||
+             ci_contains(text, "blkcalc") || ci_contains(text, "img_cat") ||
+             ci_contains(text, "ssdeep")) {
+        what = "forensic primitive";
+        } else if (
+             /* cycle-343b: tracker/cad primitives */
+             (ci_contains(text, "schism") && ci_contains(text, " -")) ||
+             ci_contains(text, "ft2") || ci_contains(text, "psycle") ||
+             ci_contains(text, "it2midi") || ci_contains(text, "sidplay") ||
+             ci_contains(text, "mocp") || ci_contains(text, "mged") ||
+             ci_contains(text, "rtweight") || ci_contains(text, "rtwizard") ||
+             ci_contains(text, "blockmesh")) {
+        what = "tracker/cad primitive";
         }
 
         if (what) {
