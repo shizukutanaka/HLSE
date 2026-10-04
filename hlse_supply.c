@@ -13447,6 +13447,18 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ipmifru") || ci_contains(text, "ipmipower") ||
              ci_contains(text, "ipmish")) {
         what = "ipmi/bmc/oob primitive";
+        } else if (
+             /* cycle-314a: blockchain-node primitives */
+             ci_contains(text, "besu") || ci_contains(text, "bitcond") ||
+             ci_contains(text, "testcoind") || ci_contains(text, "zcashd")) {
+        what = "blockchain-node primitive";
+        } else if (
+             /* cycle-314b: game-engine primitives */
+             ci_contains(text, "o3de") || ci_contains(text, "torqu3d") ||
+             ci_contains(text, "torque3d") ||
+             ci_contains(text, "ue4") ||
+             ci_contains(text, "ue5") || ci_contains(text, "unrealeditor")) {
+        what = "game-engine primitive";
         }
 
         if (what) {

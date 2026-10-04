@@ -10849,7 +10849,8 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 313):** ipmi/bmc/oob primitives (5 needles): freeipmi/ipmidetect/ipmifru/ipmipower/ipmish; ilo dropped (silo/milo — inseparable), racadm/hponcfg covered.
+```- **ALERT 45 (cycle 314): blockchain-node + game-engine primitives** — hyperledger besu / bitcond / testcoind / zcashd node daemons and o3de / torqu3d / torque3d / ue4 / ue5 / unrealeditor engine binaries. Short colliding names dropped (uat⊂aquatic/squat, ubt⊂doubt) and real words unreal/unity skipped as unfixable; block chain node and game-engine launch/build paths now flagged.
+- **ALERT 45 (cycle 313):** ipmi/bmc/oob primitives (5 needles): freeipmi/ipmidetect/ipmifru/ipmipower/ipmish; ilo dropped (silo/milo — inseparable), racadm/hponcfg covered.
 - **ALERT 45 (cycle 312):** wine toolchain primitives (8 needles): wineboot/winecfg/winecpp/winefile/wineg++/winegcc/winelauncher/winepath; bare wine dropped (the drink — inseparable), proton/dxvk/vkd3d covered by existing needles.
 - **ALERT 45 (cycle 311):** container-runtime + proxmox ve/pmg primitives (13 needles): conmon/containerd + pmam/pmg/pmmaster/pveacl/pveam/pvecm/pvep/pvesm/pveum/pveversion/qmp; qm/pct dropped (common abbreviations — FP-prone), pmg covers pmg* variants.
 - **ALERT 45 (cycle 310):** locate/index-search + desktop-search primitives (11 needles): altlocate/fslocate/glocate/mlocate/plocate/rlocate/slocate + recoll/rga; real-word needles gated (locate/pinot), boundary rga (bergamot); recollq subsumed by recoll.
