@@ -14452,6 +14452,21 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "imwcs") || ci_contains(text, "i2f") ||
              ci_contains(text, "simpos")) {
         what = "astro-wcs primitive";
+        } else if (
+             /* cycle-355a: video/disc primitives */
+             ci_contains(text, "ogminfo") || ci_contains(text, "ifogen") ||
+             ci_contains(text, "dvdwizard") || ci_contains(text, "pigz") ||
+             ci_contains(text, "dvdisaster") || ci_contains(text, "bchunk") ||
+             ci_contains(text, "daa2iso") || ci_contains(text, "uif2iso")) {
+        what = "video/disc primitive";
+        } else if (
+             /* cycle-355b: subtitle/npm primitives */
+             ci_contains(text, "subdl") || ci_contains(text, "srted") ||
+             ci_contains(text, "srtshift") || ci_contains(text, "subrip") ||
+             ci_contains(text, "ogmrip") || ci_contains(text, "depcheck") ||
+             ci_contains(text, "publint") || ci_contains(text, "attw") ||
+             ci_contains(text, "npq") || ci_contains(text, "qnm")) {
+        what = "subtitle/npm primitive";
         }
 
         if (what) {
