@@ -14270,6 +14270,13 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "debos") || ci_contains(text, "perkeep") ||
              ci_contains(text, "tessen")) {
         what = "ham/mobile/build primitive";
+        } else if (
+             /* cycle-342a: infra/messaging primitives */
+             ci_contains(text, "moofsd") || ci_contains(text, "krenew") ||
+             ci_contains(text, "bzl") || ci_contains(text, "prom2json") ||
+             ci_contains(text, "nsc ") || ci_contains(text, "kaf ") ||
+             ci_contains(text, "girc") || (ci_contains(text, "pounce") && ci_contains(text, " -"))) {
+        what = "infra/messaging primitive";
         }
 
         if (what) {
