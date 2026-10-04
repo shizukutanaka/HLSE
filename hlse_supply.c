@@ -14306,6 +14306,23 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "sdcv") || ci_contains(text, "bvi ") ||
              ci_contains(text, "bviplus")) {
         what = "dict/hex primitive";
+        } else if (
+             /* cycle-345a: unix-admin primitives */
+             ci_contains(text, "hastd") || ci_contains(text, "gmirror") ||
+             ci_contains(text, "graid3") || ci_contains(text, "graid5") ||
+             ci_contains(text, "gcache") || ci_contains(text, "pfstat") ||
+             ci_contains(text, "sockstat") ||
+             ci_contains(text, "zoneadm") || ci_contains(text, "zonename") ||
+             ci_contains(text, "svcs ") || ci_contains(text, "svcprop") ||
+             ci_contains(text, "prstat") || ci_contains(text, "pfiles") ||
+             (ci_contains(text, "crash") && ci_contains(text, " -")) ||
+             ci_contains(text, "winevdm") || ci_contains(text, "dispwin") ||
+             ci_contains(text, "iccprop")) {
+        what = "unix-admin primitive";
+        } else if (
+             /* cycle-345b: plc/print primitives */
+             ci_contains(text, "iec2c") || ci_contains(text, "foo2zjs")) {
+        what = "plc/print primitive";
         }
 
         if (what) {

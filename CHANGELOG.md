@@ -10849,7 +10849,12 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 344): pkt/doc/game + dict/hex primitive expansion** —
+```- **ALERT 45 (cycle 345): unix-admin + plc/print primitive expansion** —
+  new `ci_contains` needles: (345a) hastd・gmirror・graid3・graid5・gcache・
+  pfstat・sockstat・zoneadm・zonename・svcs(boundary)・svcprop・prstat・
+  pfiles・crash(gate)・winevdm・dispwin・iccprop; (345b) iec2c・foo2zjs.
+  19 hit + 2 benign CLI tests (19459/0).
+- **ALERT 45 (cycle 344): pkt/doc/game + dict/hex primitive expansion** —
   new `ci_contains` needles: (344a) ifpps・bpfc・curvetun・flowtop・
   packit(boundary)・tcpprep・wvhtml・umoria・frogcomposband;
   (344b) sdcv・bvi(boundary)・bviplus.
