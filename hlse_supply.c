@@ -14564,6 +14564,54 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "adfu") || ci_contains(text, "adfv") ||
              ci_contains(text, "adfw")) {
         what = "amiga-adf primitive";
+        } else if (
+             /* cycle-359a: editor/doc primitives */
+             ci_contains(text, "nedit") ||
+             (ci_contains(text, "joe") && ci_contains(text, " -")) ||
+             (ci_contains(text, "gedit") && ci_contains(text, " -")) ||
+             ci_contains(text, "leafpad") ||
+             (ci_contains(text, "cream") && ci_contains(text, " -")) ||
+             ci_contains(text, "juffed") || ci_contains(text, "jed") ||
+             (ci_contains(text, "epsilon") && ci_contains(text, " -")) ||
+             (ci_contains(text, "lava") && ci_contains(text, " -")) ||
+             ci_contains(text, "kak") ||
+             ci_contains(text, "nvi ") ||
+             (ci_contains(text, "elvis") && ci_contains(text, " -")) ||
+             (ci_contains(text, "vile") && ci_contains(text, " -")) ||
+             ci_contains(text, "neatvi") || ci_contains(text, "visurf") ||
+             ci_contains(text, "coedit") || ci_contains(text, "e3em") ||
+             ci_contains(text, "e3pi") || ci_contains(text, "e3vi") ||
+             ci_contains(text, "bpe") ||
+             (ci_contains(text, "curse") && ci_contains(text, " -")) ||
+             (ci_contains(text, "levee") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mined") && ci_contains(text, " -")) ||
+             ci_contains(text, "mle") ||
+             (ci_contains(text, "qe") && ci_contains(text, " -")) ||
+             ci_contains(text, "scite") || ci_contains(text, "thoteditor") ||
+             ci_contains(text, "twe ") ||
+             (ci_contains(text, "vigor") && ci_contains(text, " -")) ||
+             ci_contains(text, "yedit") ||
+             (ci_contains(text, "apropos") && ci_contains(text, " -")) ||
+             (ci_contains(text, "whatis") && ci_contains(text, " -")) ||
+             ci_contains(text, "groffer") || ci_contains(text, "deroff") ||
+             ci_contains(text, "dvi2tty") || ci_contains(text, "dvitty") ||
+             ci_contains(text, "dvisvga") || ci_contains(text, "dvihp") ||
+             ci_contains(text, "dvilj") || ci_contains(text, "dvilj2p") ||
+             ci_contains(text, "dvilj4") || ci_contains(text, "dvilj4l") ||
+             ci_contains(text, "dvilj6") || ci_contains(text, "dvipos") ||
+             ci_contains(text, "dvired") || ci_contains(text, "dviselect") ||
+             ci_contains(text, "dvispc") || ci_contains(text, "dvitodvi") ||
+             ci_contains(text, "dvitype") || ci_contains(text, "dv2dt") ||
+             ci_contains(text, "dt2dv") || ci_contains(text, "disdvi") ||
+             ci_contains(text, "dvi2bitmap") || ci_contains(text, "weblint")) {
+        what = "editor/doc primitive";
+        } else if (
+             /* cycle-359b: office primitives */
+             ci_contains(text, "libreoffice") || ci_contains(text, "localc") ||
+             ci_contains(text, "lodraw") || ci_contains(text, "lomath") ||
+             ci_contains(text, "wvware") || ci_contains(text, "ppthtml") ||
+             ci_contains(text, "wordview") || ci_contains(text, "rtf2html")) {
+        what = "office primitive";
         }
 
         if (what) {

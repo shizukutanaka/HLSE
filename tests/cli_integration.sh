@@ -11674,6 +11674,72 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-359: editor/doc + office primitives
+for c in 'nedit -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'joe -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'gedit -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'leafpad -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'cream -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'juffed -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'jed -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'epsilon -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'lava -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'kak -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'nvi -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'elvis -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'vile -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'neatvi -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'visurf -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'coedit -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'e3em -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'e3pi -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'e3vi -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'bpe -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'curse -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'levee -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'mined -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'mle -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'qe -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'scite -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'thoteditor -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'twe -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'vigor -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'yedit -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'apropos -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'whatis -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'groffer -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'deroff -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dvi2tty -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dvitty -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dvisvga -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dvihp -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dvilj -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dvilj2p -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dvilj4 -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dvilj4l -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dvilj6 -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dvipos -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dvired -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dviselect -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dvispc -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dvitodvi -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dvitype -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dv2dt -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dt2dv -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'disdvi -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dvi2bitmap -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'weblint -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'libreoffice -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'localc -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'lodraw -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'lomath -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'wvware -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'ppthtml -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'wordview -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'rtf2html -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'a cream pie recipe' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'the lava lamp glows' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+
 # ── cycle-358: net-legacy/boot + amiga-adf primitives
 for c in 'rstatd -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
 for c in 'rcp -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
@@ -17636,7 +17702,6 @@ for c in 'lapce' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check
 for c in 'zed -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
 for c in 'hx -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
 for c in 'kak -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
-for c in 'vis -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
 for c in 'bpython' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
 for c in 'ptpython' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
 for c in 'jupytext' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done

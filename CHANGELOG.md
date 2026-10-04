@@ -10849,7 +10849,20 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 358): net-legacy/boot + amiga-adf primitive expansion** —
+```- **ALERT 45 (cycle 359): editor/doc + office primitive expansion** —
+  new `ci_contains` needles: (359a) nedit・joe (` -`)・gedit (` -`)・
+  leafpad・cream (` -`)・juffed・jed・epsilon (` -`)・lava (` -`)・kak・
+  nvi・elvis (` -`)・vile (` -`)・neatvi・visurf・coedit・e3em・e3pi・
+  e3vi・bpe・curse (` -`)・levee (` -`)・mined (` -`)・mle・qe (` -`)・
+  scite・thoteditor・twe・vigor (` -`)・yedit・apropos (` -`)・whatis
+  (` -`)・groffer・deroff・dvi2tty・dvitty・dvisvga・dvihp・dvilj・
+  dvilj2p・dvilj4・dvilj4l・dvilj6・dvipos・dvired・dviselect・dvispc・
+  dvitodvi・dvitype・dv2dt・dt2dv・disdvi・dvi2bitmap・weblint;
+  (359b) libreoffice・localc・lodraw・lomath・wvware・ppthtml・wordview・
+  rtf2html. (vis/tne dropped: dotnet/travis/amavis/witness collisions;
+  21 two-char candidates skipped as inseparable.) 62 hit + 2 benign
+  CLI tests (19833/0).
+- **ALERT 45 (cycle 358): net-legacy/boot + amiga-adf primitive expansion** —
   new `ci_contains` needles: (358a) rstatd・rcp・rdist・rdistd・talk (` -`
   gated)・ytalk・biff・comsat・from (` -`)・biffd・editmap・vacation
   (` -`)・bootpd・bootpgw・bootptest・bootpef・bootparamd・rarp・dhcpcd・
