@@ -14758,6 +14758,37 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mbuffer") || ci_contains(text, "unlzma") ||
              ci_contains(text, "lzstatic")) {
         what = "hdl/dns primitive";
+        } else if (
+             /* cycle-365a: lsp/formatter/lint primitives */
+             ci_contains(text, "pyright") ||
+             (ci_contains(text, "sorbet") && ci_contains(text, " -")) ||
+             (ci_contains(text, "vale") && ci_contains(text, " -")) ||
+             ci_contains(text, "mdl ") || ci_contains(text, "dprint") ||
+             (ci_contains(text, "biome") && ci_contains(text, " -")) ||
+             (ci_contains(text, "selene") && ci_contains(text, " -")) ||
+             ci_contains(text, "hindent") ||
+             (ci_contains(text, "brittany") && ci_contains(text, " -")) ||
+             ci_contains(text, "uncrustify") || ci_contains(text, "astyle") ||
+             ci_contains(text, "unifdef") ||
+             (ci_contains(text, "indent") && ci_contains(text, " -"))) {
+        what = "lsp/lint primitive";
+        } else if (
+             /* cycle-365b: jvm/db/imaging-ps primitives */
+             ci_contains(text, "hsdb") || ci_contains(text, "clhsdb") ||
+             ci_contains(text, "arthas") || ci_contains(text, "ecj ") ||
+             ci_contains(text, "gcj ") || ci_contains(text, "javadoc") ||
+             ci_contains(text, "javah") || ci_contains(text, "serialver") ||
+             ci_contains(text, "tnameserv") || ci_contains(text, "sqldiff") ||
+             ci_contains(text, "pgbadger") || ci_contains(text, "patroni") ||
+             ci_contains(text, "etcdutl") || ci_contains(text, "docuum") ||
+             ci_contains(text, "leanify") || ci_contains(text, "nconvert") ||
+             ci_contains(text, "irfanview") || ci_contains(text, "imv ") ||
+             ci_contains(text, "pqiv") ||
+             (ci_contains(text, "banner") && ci_contains(text, " -")) ||
+             ci_contains(text, "grops") || ci_contains(text, "ps2ascii") ||
+             ci_contains(text, "psbook") || ci_contains(text, "psselect") ||
+             ci_contains(text, "includeres")) {
+        what = "jvm/print primitive";
         }
 
         if (what) {

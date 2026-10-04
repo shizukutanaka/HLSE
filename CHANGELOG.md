@@ -10856,6 +10856,15 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 365): LSP/lint + JVM/print primitives** — language
+  servers & linters (pyright, sorbet, vale, mdl, dprint, biome, selene,
+  hindent, brittany, uncrustify, astyle, unifdef, indent), JVM internals
+  (hsdb, clhsdb, arthas, ecj, gcj, javadoc, javah, serialver, tnameserv),
+  DB/system (sqldiff, pgbadger, patroni, etcdutl, docuum), image/PS
+  tools (leanify, nconvert, irfanview, imv, pqiv, banner, grops,
+  ps2ascii, psbook, psselect, includeres); real words gated on ` -`,
+  short names (`mdl `, `ecj `, `gcj `, `imv `) trailing-space bounded;
+  `javahpp` folded under `javah`. +38/49 checks.
 - **ALERT 45 (cycle 364): pwgen/math/audio + HDL/DNS primitives** —
   password generators & computer algebra (diceware, reveal, hqapgen,
   yacas, giac), audio tagging/gain (ecasound, pianobar, mp4tags,

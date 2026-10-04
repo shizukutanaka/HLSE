@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-365: lsp/lint + jvm/print primitives
+for c in 'pyright --outputjson' 'sorbet -e typed' 'vale --glob "*.md" .' 'mdl -r MD001 README.md' 'dprint fmt -c dprint.json' 'biome check -w .' 'selene -q src' 'hindent --sort-imports' 'brittany --indent 4 -w f.hs' 'uncrustify -c cfg -f x.c' 'astyle --style=kr -n x.c' 'unifdef -DDEBUG x.c' 'indent -kr x.c -o y.c'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'hsdb --core dump' 'clhsdb -pid 1' 'arthas -p 1234' 'ecj -1.8 Main.java' 'gcj -o app Main.java' 'javadoc -d api src' 'javah -jni C' 'serialver -classpath . C' 'tnameserv -ORBInitialPort 900' 'sqldiff a.db b.db -t' 'pgbadger -o out.html pg.log' 'patroni config.yml -d' 'etcdutl snapshot restore -d x' 'docuum --threshold 10GB' 'leanify -v file.png' 'nconvert -resize 50% in.png' 'irfanview /convert out.bmp' 'imv -r pics/' 'pqiv -t a.jpg' 'banner -w 40 hi' 'grops -man a.1' 'ps2ascii in.ps out.txt' 'psbook -s4 in.ps' 'psselect -p1-4 a.ps' 'includeres < a.ps -o b.ps'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'echo sorbet dessert menu' 'echo vale of tears' 'the biome survey' 'echo selene goddess' 'echo brittany region' 'an indent paragraph' 'echo banner ad' 'ecject the disk' 'ragcjt test' 'mvim open' 'unimvu test'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-364: pwgen/math/audio + hdl/dns primitives
 for c in 'diceware -n 6' 'reveal --show item' 'hqapgen -n 10' 'yacas --server' 'giac --verify' 'ovito --script render.py' 'ecasound -i in.wav -o out.wav' 'pianobar -a pandora' 'mp4tags -s song file.m4a' 'atomicparsley a.m4a --artist x -W' 'mp3gain -a track.mp3' 'vorbisgain -a album' 'aacgain -r file.m4a' 'streamlink twitch.tv/x best -O'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
