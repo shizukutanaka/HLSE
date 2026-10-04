@@ -13495,6 +13495,59 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "technitium") ||
              (ci_contains(text, "mercurial") && ci_contains(text, " -"))) {
         what = "forge/proxy/dns primitive";
+        } else if (
+             /* cycle-316a: disk-usage/file-manager primitives */
+             ci_contains(text, "ncdu") || ci_contains(text, "qdirstat") ||
+             ci_contains(text, "filelight") || ci_contains(text, "grandperspective") ||
+             ci_contains(text, "wiztree") || ci_contains(text, "treesize") ||
+             ci_contains(text, "k4dirstat")) {
+        what = "disk-usage/file-manager primitive";
+        } else if (
+             /* cycle-316b: net-monitor/wifi/serial primitives */
+             ci_contains(text, "trafshow") || ci_contains(text, "iftop") ||
+             ci_contains(text, "nethogs") || ci_contains(text, "vnstatd") ||
+             ci_contains(text, "darkstat") || ci_contains(text, "pktstat") ||
+             ci_contains(text, "etherape") || ci_contains(text, "jnettop") ||
+             ci_contains(text, "pathchar") || ci_contains(text, "tracepath") ||
+             ci_contains(text, "wpa_supplicant") || ci_contains(text, "moserial") ||
+             (ci_contains(text, "speedometer") && ci_contains(text, " -"))) {
+        what = "net-monitor/wifi/serial primitive";
+        } else if (
+             /* cycle-316c: forensics/mobile primitives */
+             ci_contains(text, "hashdeep") || ci_contains(text, "md5deep") ||
+             ci_contains(text, "sha1deep") || ci_contains(text, "sha256deep") ||
+             ci_contains(text, "ewfverify") || ci_contains(text, "affcat") ||
+             ci_contains(text, "pidcat")) {
+        what = "forensics/mobile primitive";
+        } else if (
+             /* cycle-316d: emulator primitives */
+             ci_contains(text, "mednafen") || ci_contains(text, "mame64") ||
+             ci_contains(text, "advancemame") || ci_contains(text, "fbneo") ||
+             ci_contains(text, "scummvm") || ci_contains(text, "amiberry") ||
+             ci_contains(text, "puae") || ci_contains(text, "caprice32")) {
+        what = "emulator primitive";
+        } else if (
+             /* cycle-316e: game-server/foss-game primitives */
+             ci_contains(text, "tshock") || ci_contains(text, "lgsm") ||
+             ci_contains(text, "srcds") || ci_contains(text, "csserver") ||
+             ci_contains(text, "rustserver") || ci_contains(text, "dayzserver") ||
+             ci_contains(text, "sdtdserver") || ci_contains(text, "pzserver") ||
+             ci_contains(text, "ecoserver") || ci_contains(text, "dfhack") ||
+             ci_contains(text, "ioquake3") || ci_contains(text, "warsow") ||
+             ci_contains(text, "warfork") || ci_contains(text, "urbanterror") ||
+             ci_contains(text, "tremulous") || ci_contains(text, "unvanquished") ||
+             ci_contains(text, "etlegacy") || ci_contains(text, "freeciv") ||
+             ci_contains(text, "naev") || ci_contains(text, "vegastrike") ||
+             ci_contains(text, "tremfusion")) {
+        what = "game-server/foss-game primitive";
+        } else if (
+             /* cycle-316f: game-launcher primitives */
+             ci_contains(text, "flatseal") ||
+             (ci_contains(text, "heroic") && ci_contains(text, " -")) ||
+             (ci_contains(text, "legendary") && ci_contains(text, " -")) ||
+             (ci_contains(text, "wyvern") && ci_contains(text, " -")) ||
+             (ci_contains(text, "bottles") && ci_contains(text, " -"))) {
+        what = "game-launcher primitive";
         }
 
         if (what) {
