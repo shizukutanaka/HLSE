@@ -14323,6 +14323,19 @@ hlse_check_paste(const char *text) {
              /* cycle-345b: plc/print primitives */
              ci_contains(text, "iec2c") || ci_contains(text, "foo2zjs")) {
         what = "plc/print primitive";
+        } else if (
+             /* cycle-346a: scamper/netdiag primitives */
+             ci_contains(text, "sc_tracediff") || ci_contains(text, "sc_tntbl") ||
+             ci_contains(text, "sc_warts2json") || ci_contains(text, "ifstatus") ||
+             ci_contains(text, "netselect") || ci_contains(text, "tcptrack")) {
+        what = "scamper/netdiag primitive";
+        } else if (
+             /* cycle-346b: task/svc primitives */
+             (ci_contains(text, "tsp") && ci_contains(text, " -")) ||
+             (ci_contains(text, "hivemind") && ci_contains(text, " -")) ||
+             (ci_contains(text, "perp") && ci_contains(text, " -")) || ci_contains(text, "perpd") ||
+             ci_contains(text, "emptty") || ci_contains(text, "obmenu")) {
+        what = "task/svc primitive";
         }
 
         if (what) {
