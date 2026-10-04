@@ -14048,6 +14048,20 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "stapdyn") || ci_contains(text, "stapio") ||
              ci_contains(text, "bpf_iter") || ci_contains(text, "bpf_asm")) {
         what = "bcc/trace/libbpf primitive";
+        } else if (
+             /* cycle-329a: hpc/mpi/gpu primitives */
+             ci_contains(text, "msub") || ci_contains(text, "showq") ||
+             ci_contains(text, "ompi_info") ||
+             ci_contains(text, "mpiicc") || ci_contains(text, "mpiicpc") ||
+             ci_contains(text, "rocprof") || ci_contains(text, "hipcc") ||
+             ci_contains(text, "nvprof")) {
+        what = "hpc/mpi/gpu primitive";
+        } else if (
+             /* cycle-329b: pkgrepo/secscan primitives */
+             ci_contains(text, "poudriere") || ci_contains(text, "smartpm") ||
+             ci_contains(text, "pdtm") || ci_contains(text, "mapcidr") ||
+             (ci_contains(text, "uncover") && ci_contains(text, " -"))) {
+        what = "pkgrepo/secscan primitive";
         }
 
         if (what) {
