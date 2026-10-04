@@ -14158,6 +14158,22 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "cmbuild") || ci_contains(text, "cmemit") ||
              ci_contains(text, "cmfetch") || ci_contains(text, "cmstat")) {
         what = "bio primitive";
+        } else if (
+             /* cycle-334a: vcs/fsrepair primitives */
+             ci_contains(text, "rcsdiff") || ci_contains(text, "rcsmerge") ||
+             ci_contains(text, "cssc") || ci_contains(text, "patchview") ||
+             ci_contains(text, "unwrapdiff") || ci_contains(text, "dehtmldiff") ||
+             ci_contains(text, "recountdiff") ||
+             ci_contains(text, "e2undo") || ci_contains(text, "zhack") ||
+             ci_contains(text, "lscp") || ci_contains(text, "mkcp") ||
+             ci_contains(text, "fsck.f2fs") || ci_contains(text, "defrag.f2fs") ||
+             ci_contains(text, "resize.f2fs")) {
+        what = "vcs/fsrepair primitive";
+        } else if (
+             /* cycle-334b: cast/job/img primitives */
+             ci_contains(text, "zmodem") || ci_contains(text, "supercronic") ||
+             ci_contains(text, "aatest") || ci_contains(text, "asciigif")) {
+        what = "cast/job/img primitive";
         }
 
         if (what) {
