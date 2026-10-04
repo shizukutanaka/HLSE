@@ -13641,6 +13641,25 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "hw_server") || ci_contains(text, "fpgaconf") ||
              ci_contains(text, "fpgainfo") || ci_contains(text, "aocl")) {
         what = "ssg/build/pkg-img/fpga primitive";
+        } else if (
+             /* cycle-319a: latex/doc/wiki/llm/dict/journal/misc primitives */
+             ci_contains(text, "gojq") || ci_contains(text, "dvisvgm") ||
+             ci_contains(text, "lacheck") || ci_contains(text, "bib2gls") ||
+             ci_contains(text, "kpsewhich") || ci_contains(text, "documize") ||
+             ci_contains(text, "wtfso") || ci_contains(text, "chatblade") ||
+             ci_contains(text, "ksnip") || ci_contains(text, "gifine") ||
+             ci_contains(text, "accerciser") || ci_contains(text, "goldendict") ||
+             ci_contains(text, "po4a") || ci_contains(text, "polib") ||
+             ci_contains(text, "rednotebook") || ci_contains(text, "pwqgen") ||
+             ci_contains(text, "randpwd") || ci_contains(text, "tai64n") ||
+             ci_contains(text, "tai64nlocal") || ci_contains(text, "softdog")) {
+        what = "latex/doc/wiki/llm/dict/journal/misc primitive";
+        } else if (
+             /* cycle-319b: iot/industrial/erp/forum primitives */
+             ci_contains(text, "tasmotizer") || ci_contains(text, "kalliope") ||
+             ci_contains(text, "bacpypes") || ci_contains(text, "weberp") ||
+             ci_contains(text, "adempiere") || ci_contains(text, "enewss")) {
+        what = "iot/industrial/erp/forum primitive";
         }
 
         if (what) {
