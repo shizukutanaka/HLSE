@@ -13903,6 +13903,59 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "randaut") || ci_contains(text, "ltlsynt") ||
              ci_contains(text, "ltl2ba")) {
         what = "capture/osint/embedded/formal primitive";
+        } else if (
+             /* cycle-325a: retro/emulator primitives */
+             ci_contains(text, "z80asm") || ci_contains(text, "tniasm") ||
+             ci_contains(text, "uz80as") || ci_contains(text, "zmac") ||
+             ci_contains(text, "spectemu") || ci_contains(text, "scl2trd") ||
+             ci_contains(text, "tape2pulses") || ci_contains(text, "tape2wav") ||
+             ci_contains(text, "tapeconv") || ci_contains(text, "audio2tape") ||
+             ci_contains(text, "listbasic") || ci_contains(text, "raw2hdf") ||
+             ci_contains(text, "c1541") || ci_contains(text, "petcat") ||
+             ci_contains(text, "cartconv") || ci_contains(text, "cc1541") ||
+             ci_contains(text, "d64cbm") || ci_contains(text, "cbmlinetester") ||
+             ci_contains(text, "unadf") || ci_contains(text, "adf2disk") ||
+             ci_contains(text, "retro68") || ci_contains(text, "basiliskii") ||
+             ci_contains(text, "minivmac") || ci_contains(text, "aranym") ||
+             ci_contains(text, "linapple") || ci_contains(text, "catakig") ||
+             ci_contains(text, "pcem") || ci_contains(text, "quasii88") ||
+             ci_contains(text, "ep128emu") || ci_contains(text, "plus4emu") ||
+             ci_contains(text, "yape") || ci_contains(text, "tivars") ||
+             ci_contains(text, "hp11c") || ci_contains(text, "free42")) {
+        what = "retro/emulator primitive";
+        } else if (
+             /* cycle-325b: bbs/osm/backup primitives */
+             ci_contains(text, "echocfg") || ci_contains(text, "asc2ans") ||
+             ci_contains(text, "binkit") || ci_contains(text, "chksmb") ||
+             ci_contains(text, "gtkuseredit") || ci_contains(text, "indfactum") ||
+             ci_contains(text, "smbactiv") || ci_contains(text, "sqpack") ||
+             ci_contains(text, "fidoconf") || ci_contains(text, "fecfg2fc") ||
+             ci_contains(text, "fido2sq") || ci_contains(text, "linkedto") ||
+             ci_contains(text, "goldedplus") || ci_contains(text, "ifcico") ||
+             ci_contains(text, "bforce") || ci_contains(text, "wwiv") ||
+             ci_contains(text, "pcboard") ||
+             ci_contains(text, "planetiler") || ci_contains(text, "img2grd") ||
+             ci_contains(text, "amrecover") || ci_contains(text, "amlabel") ||
+             ci_contains(text, "amstatus")) {
+        what = "bbs/osm/backup primitive";
+        } else if (
+             /* cycle-325c: honeypot/ntpgps/moreutils/plan9 primitives */
+             ci_contains(text, "dionaea") || ci_contains(text, "kfsensor") ||
+             ci_contains(text, "fakeses") || ci_contains(text, "honeytrap") ||
+             ci_contains(text, "pepdf") || ci_contains(text, "malsub") ||
+             ci_contains(text, "drakvuf") || ci_contains(text, "malwarezoo") ||
+             ci_contains(text, "noriben") || ci_contains(text, "procdot") ||
+             ci_contains(text, "binee") ||
+             ci_contains(text, "ntptime") || ci_contains(text, "gpscat") ||
+             ci_contains(text, "lcdgps") || ci_contains(text, "gegps") ||
+             ci_contains(text, "ntpshmmon") || ci_contains(text, "gps2udp") ||
+             ci_contains(text, "gpscorrelate") || ci_contains(text, "qlandkartegt") ||
+             ci_contains(text, "ifne") || ci_contains(text, "isutf8") ||
+             ci_contains(text, "vidir") ||
+             ci_contains(text, "mkone") ||
+             ci_contains(text, "json2tsv") || ci_contains(text, "saait") ||
+             ci_contains(text, "libzahl")) {
+        what = "honeypot/ntpgps/moreutils/plan9 primitive";
         }
 
         if (what) {
