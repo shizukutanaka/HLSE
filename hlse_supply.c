@@ -14494,6 +14494,43 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "lina") && ci_contains(text, " -")) ||
              (ci_contains(text, "carp") && ci_contains(text, " -"))) {
         what = "forth primitive";
+        } else if (
+             /* cycle-357a: geo primitives */
+             ci_contains(text, "gdalgrid") || ci_contains(text, "gdal_polygonize") ||
+             ci_contains(text, "gdal_sieve") ||
+             (ci_contains(text, "proj") && ci_contains(text, " -")) ||
+             ci_contains(text, "invproj") || ci_contains(text, "geotiffcp") ||
+             ci_contains(text, "geotifcp") || ci_contains(text, "applygeo") ||
+             ci_contains(text, "tiffcp") || ci_contains(text, "tiffinfo") ||
+             ci_contains(text, "tiffset") || ci_contains(text, "tiffcmp") ||
+             ci_contains(text, "gif2tiff") || ci_contains(text, "ras2tiff") ||
+             ci_contains(text, "raw2tiff") || ci_contains(text, "rgb2ycbcr") ||
+             (ci_contains(text, "thumbnail") && ci_contains(text, " -")) ||
+             ci_contains(text, "tiff2pdf") || ci_contains(text, "tiff2ps") ||
+             ci_contains(text, "tiff2rgba")) {
+        what = "geo primitive";
+        } else if (
+             /* cycle-357b: spatial/mesh primitives */
+             ci_contains(text, "shp2svg") || ci_contains(text, "shpcat") ||
+             ci_contains(text, "shpgeo") || ci_contains(text, "shpinfo") ||
+             ci_contains(text, "shpproj") || ci_contains(text, "shprdf") ||
+             ci_contains(text, "shprewind") || ci_contains(text, "shptree") ||
+             ci_contains(text, "shptreetst") || ci_contains(text, "shptst") ||
+             ci_contains(text, "shpwkt") || ci_contains(text, "dbfcat") ||
+             ci_contains(text, "dbfinfo") || ci_contains(text, "sbn ") ||
+             ci_contains(text, "map2img") ||
+             (ci_contains(text, "legend") && ci_contains(text, " -")) ||
+             (ci_contains(text, "scalebar") && ci_contains(text, " -")) ||
+             ci_contains(text, "shp2img") || ci_contains(text, "tile4ms") ||
+             ci_contains(text, "msencrypt") || ci_contains(text, "meshlab") ||
+             ci_contains(text, "pymeshlab") || ci_contains(text, "mmg") ||
+             ci_contains(text, "mmgs") || ci_contains(text, "mmg2d") ||
+             ci_contains(text, "mmg3d") || ci_contains(text, "gmesh") ||
+             ci_contains(text, "tetmesher") || ci_contains(text, "distmesh") ||
+             ci_contains(text, "iso2mesh") || ci_contains(text, "surf2mesh") ||
+             ci_contains(text, "tet2mesh") || ci_contains(text, "acvd") ||
+             ci_contains(text, "acvdp")) {
+        what = "spatial/mesh primitive";
         }
 
         if (what) {

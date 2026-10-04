@@ -10849,7 +10849,17 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 356): retro-emu/pascal + forth primitive expansion** —
+```- **ALERT 45 (cycle 357): geo + spatial/mesh primitive expansion** —
+  new `ci_contains` needles: (357a) gdalgrid・gdal_polygonize・gdal_sieve・
+  proj (` -` gated)・invproj・geotiffcp・geotifcp・applygeo・tiffcp・
+  tiffinfo・tiffset・tiffcmp・gif2tiff・ras2tiff・raw2tiff・rgb2ycbcr・
+  thumbnail (` -`)・tiff2pdf・tiff2ps・tiff2rgba; (357b) shp2svg・shpcat・
+  shpgeo・shpinfo・shpproj・shprdf・shprewind・shptree・shptreetst・
+  shptst・shpwkt・dbfcat・dbfinfo・sbn・map2img・legend (` -`)・scalebar
+  (` -`)・shp2img・tile4ms・msencrypt・meshlab・pymeshlab・mmg・mmgs・
+  mmg2d・mmg3d・gmesh・tetmesher・distmesh・iso2mesh・surf2mesh・
+  tet2mesh・acvd・acvdp. 54 hit + 2 benign CLI tests (19721/0).
+- **ALERT 45 (cycle 356): retro-emu/pascal + forth primitive expansion** —
   new `ci_contains` needles: (356a) winuae・uae4all・punes・mesen・
   visualboyadvance・melonds・retroach・ppc386・fppkg・ppdep・ptop (` -`
   gated)・pas2js・compileserver・lprfil・rstconv・h2pas・h2paspp・fppd・
