@@ -10856,6 +10856,14 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 363): container/k8s + SDR/imaging primitives** — OCI
+  runtime/k8s ecosystem (youki, kubecolor, kubetail, audit2rbac,
+  buildpacks, jib, buildg, direnv) and SDR/ADS-B + image/document
+  converters (freedv, quisk, fr24feed, piaware, soapy_power, rtl_power,
+  uat2esnt, pidgin, finch, jpeginfo, mozjpeg, libheif, autotrace,
+  mkbitmap, vpype, vtracer, resvg, usvg, scour, librsvg, svglib, cpdf,
+  ocropus, ddjvu, djview, djvups, b2pdf); real-word tools (jib, pidgin,
+  finch, scour) gated on ` -`. +34/27 checks.
 - **ALERT 45 (cycle 362): screencast/vcs + versioning primitive expansion** —
   new `ci_contains` needles: (362a) asciicast・agg (` -`)・trec (` -`)・
   tty2gif・vttest・tilda・yakuake・zutty・sccs・rcs (` -`)・ident (` -`)・

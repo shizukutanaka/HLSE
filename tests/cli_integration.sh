@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-363: container/k8s + sdr/imaging primitives
+for c in 'youki create -b bundle root' 'kubecolor get pods -n prod' 'kubetail web -n prod' 'audit2rbac -f audit.log' 'gcr.io/buildpacks/builder:v1 docker pull' 'mvn compile jib:build -Dimage=x' 'buildg debug --image x' 'direnv allow .envrc'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'freedv tx -f voice.wav' 'quisk -c quisk_conf.py' 'fr24feed --signup -i acct' 'piaware -restart' 'soapy_power -f 100M' 'rtl_power -f 24M:1.7G:1M' 'dump978-fa | uat2esnt 127.0.0.1' 'pidgin --config -d' 'finch -n work' 'jpeginfo -i frame.jpg' 'ldconfig -p | grep mozjpeg' 'pkg-config --cflags libheif' 'autotrace -output out.svg in.bmp' 'mkbitmap -x in.pbm' 'vpype read in.svg write -f svg out.svg' 'vtracer --input in.png --output out.svg' 'resvg in.svg -z 4 out.png' 'usvg in.svg -c out.svg' 'scour --set-precision=5 -i a.svg' 'ldconfig -p | grep librsvg' 'pip show svglib -f' 'cpdf -merge a.pdf b.pdf' 'ocropus-rpred -Q 4 book' 'ddjvu -format=tiff in.djvu out.tiff' 'djview -f doc.djvu' 'djvups in.djvu -page=1' 'b2pdf -o out.pdf in.txt'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign (real words / no-dash usage must not fire)
+for c in 'echo the jib sail swung' 'echo a pidgin language' 'grep finch birds.txt' 'echo scour them all' 'pidgin2 translators list' 'unscoured wool bale'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-362: screencast/vcs + versioning primitives
 for c in 'asciicast -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
 for c in 'agg -x' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done

@@ -14712,6 +14712,33 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "aegis") && ci_contains(text, " -")) ||
              ci_contains(text, "cm3")) {
         what = "versioning primitive";
+        } else if (
+             /* cycle-363a: container/k8s ecosystem primitives */
+             ci_contains(text, "youki") || ci_contains(text, "kubecolor") ||
+             ci_contains(text, "kubetail") || ci_contains(text, "audit2rbac") ||
+             ci_contains(text, "buildpacks") ||
+             (ci_contains(text, "jib") && ci_contains(text, " -")) ||
+             ci_contains(text, "buildg") || ci_contains(text, "direnv")) {
+        what = "container/k8s primitive";
+        } else if (
+             /* cycle-363b: sdr/radio + imaging primitives */
+             ci_contains(text, "freedv") || ci_contains(text, "quisk") ||
+             ci_contains(text, "fr24feed") || ci_contains(text, "piaware") ||
+             ci_contains(text, "soapy_power") || ci_contains(text, "rtl_power") ||
+             ci_contains(text, "uat2esnt") ||
+             (ci_contains(text, "pidgin") && ci_contains(text, " -")) ||
+             (ci_contains(text, "finch") && ci_contains(text, " -")) ||
+             ci_contains(text, "jpeginfo") || ci_contains(text, "mozjpeg") ||
+             ci_contains(text, "libheif") || ci_contains(text, "autotrace") ||
+             ci_contains(text, "mkbitmap") || ci_contains(text, "vpype") ||
+             ci_contains(text, "vtracer") || ci_contains(text, "resvg") ||
+             ci_contains(text, "usvg") ||
+             (ci_contains(text, "scour") && ci_contains(text, " -")) ||
+             ci_contains(text, "librsvg") || ci_contains(text, "svglib") ||
+             ci_contains(text, "cpdf") || ci_contains(text, "ocropus") ||
+             ci_contains(text, "ddjvu") || ci_contains(text, "djview") ||
+             ci_contains(text, "djvups") || ci_contains(text, "b2pdf")) {
+        what = "sdr/imaging primitive";
         }
 
         if (what) {
