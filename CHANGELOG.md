@@ -10849,7 +10849,12 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 346): scamper/netdiag + task/svc primitive expansion** —
+```- **ALERT 45 (cycle 347): ifiction + plan9/shell primitive expansion** —
+  new `ci_contains` needles: (347a) dfrotz・nitfol・bocfel・scottfree・
+  advsys・tweego; (347b) u9fs・factotum(gate)・upas(gate)・ndb(boundary)・
+  mothra・abaco・ysh・sash(gate).
+  14 hit + 3 benign CLI tests (19491/0).
+- **ALERT 45 (cycle 346): scamper/netdiag + task/svc primitive expansion** —
   new `ci_contains` needles: (346a) sc_tracediff・sc_tntbl・sc_warts2json・
   ifstatus・netselect・tcptrack; (346b) tsp(gate)・hivemind(gate)・
   perp(gate)・perpd・emptty・obmenu.

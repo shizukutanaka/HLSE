@@ -14336,6 +14336,20 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "perp") && ci_contains(text, " -")) || ci_contains(text, "perpd") ||
              ci_contains(text, "emptty") || ci_contains(text, "obmenu")) {
         what = "task/svc primitive";
+        } else if (
+             /* cycle-347a: ifiction primitives */
+             ci_contains(text, "dfrotz") || ci_contains(text, "nitfol") ||
+             ci_contains(text, "bocfel") || ci_contains(text, "scottfree") ||
+             ci_contains(text, "advsys") || ci_contains(text, "tweego")) {
+        what = "ifiction primitive";
+        } else if (
+             /* cycle-347b: plan9/shell primitives */
+             ci_contains(text, "u9fs") || (ci_contains(text, "factotum") && ci_contains(text, " -")) ||
+             (ci_contains(text, "upas") && ci_contains(text, " -")) ||
+             ci_contains(text, "ndb ") || ci_contains(text, "mothra") ||
+             ci_contains(text, "abaco") || ci_contains(text, "ysh") ||
+             (ci_contains(text, "sash") && ci_contains(text, " -"))) {
+        what = "plan9/shell primitive";
         }
 
         if (what) {
