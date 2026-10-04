@@ -13396,6 +13396,18 @@ hlse_check_paste(const char *text) {
              /* cycle-308b: home-automation primitives */
              ci_contains(text, "homeassistant")) {
         what = "home-automation primitive";
+        } else if (
+             /* cycle-309a: fuzzing-framework primitives */
+             ci_contains(text, "clusterfuzz") ||
+             ci_contains(text, "libdislocator") || ci_contains(text, "libfuzzer") ||
+             ci_contains(text, "onefuzz") ||
+             (ci_contains(text, "centipede") && ci_contains(text, " -"))) {
+        what = "fuzzing-framework primitive";
+        } else if (
+             /* cycle-309b: reverse-engineering plugin primitives */
+             ci_contains(text, "iaito") || ci_contains(text, "r2coj") ||
+             ci_contains(text, "r2dec")) {
+        what = "reverse-engineering plugin primitive";
         }
 
         if (what) {
