@@ -13384,6 +13384,18 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "join") && ci_contains(text, " -")) ||
              (ci_contains(text, "martian") && ci_contains(text, " -"))) {
         what = "push-notification/mailing-list primitive";
+        } else if (
+             /* cycle-308a: mcu-flash/wireless-mcu primitives */
+             ci_contains(text, "amb23") || ci_contains(text, "amb26") ||
+             ci_contains(text, "amb82") || ci_contains(text, "ambiq") ||
+             ci_contains(text, "ambz") || ci_contains(text, "ambz2") ||
+             ci_contains(text, "ambz3") || ci_contains(text, "ameba") ||
+             ci_contains(text, "esp32")) {
+        what = "mcu-flash/wireless-mcu primitive";
+        } else if (
+             /* cycle-308b: home-automation primitives */
+             ci_contains(text, "homeassistant")) {
+        what = "home-automation primitive";
         }
 
         if (what) {
