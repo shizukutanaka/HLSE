@@ -13660,6 +13660,29 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "bacpypes") || ci_contains(text, "weberp") ||
              ci_contains(text, "adempiere") || ci_contains(text, "enewss")) {
         what = "iot/industrial/erp/forum primitive";
+        } else if (
+             /* cycle-320a: input/clipboard/theme/font primitives */
+             ci_contains(text, "qjoypad") || ci_contains(text, "ds4drv") ||
+             ci_contains(text, "wminput") || ci_contains(text, "qt5ct") ||
+             ci_contains(text, "qt6ct") || ci_contains(text, "pywal") ||
+             ci_contains(text, "hsetroot") || ci_contains(text, "gowall") ||
+             ci_contains(text, "paperview") || ci_contains(text, "otfinfo") ||
+             ci_contains(text, "pyftmerge")) {
+        what = "input/clipboard/theme/font primitive";
+        } else if (
+             /* cycle-320b: launcher/av/power primitives */
+             ci_contains(text, "wyrd") || ci_contains(text, "remindme") ||
+             ci_contains(text, "jgmenu") || ci_contains(text, "mymenu") ||
+             ci_contains(text, "docky") || ci_contains(text, "pulseeffects") ||
+             ci_contains(text, "webcamoid") || ci_contains(text, "slimbookbattery")) {
+        what = "launcher/av/power primitive";
+        } else if (
+             /* cycle-320c: data-infra/lint/wayland primitives */
+             ci_contains(text, "immuadmin") || ci_contains(text, "kconnect") ||
+             ci_contains(text, "zprint") || ci_contains(text, "kibit") ||
+             ci_contains(text, "arandr") || ci_contains(text, "i3blocks") ||
+             ci_contains(text, "i3status") || ci_contains(text, "swaystatus")) {
+        what = "data-infra/lint/wayland primitive";
         }
 
         if (what) {
