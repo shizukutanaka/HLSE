@@ -14024,6 +14024,30 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ttyspy") || ci_contains(text, "seyon") ||
              ci_contains(text, "tatssy")) {
         what = "crypto/iot/lirc/serial primitive";
+        } else if (
+             /* cycle-328a: metrics/search/ctn/firmware/memory primitives */
+             ci_contains(text, "vmauth") || ci_contains(text, "vmselect") ||
+             ci_contains(text, "vminsert") || ci_contains(text, "m3coordinator") ||
+             ci_contains(text, "m3query") || ci_contains(text, "m3collector") ||
+             ci_contains(text, "dalmatinerdb") || ci_contains(text, "akumuli") ||
+             ci_contains(text, "brubeck") ||
+             ci_contains(text, "wordbreaker") ||
+             ci_contains(text, "flintlock") || ci_contains(text, "ucontainer") ||
+             ci_contains(text, "sbattach") || ci_contains(text, "mkrlconf") ||
+             ci_contains(text, "jeprof")) {
+        what = "metrics/search/ctn/firmware/memory primitive";
+        } else if (
+             /* cycle-328b: bcc/trace/libbpf primitives */
+             ci_contains(text, "tcpconnlat") || ci_contains(text, "tcpdrop") ||
+             ci_contains(text, "biolatency") || ci_contains(text, "llcstat") ||
+             ci_contains(text, "slabratetop") || ci_contains(text, "softirqs") ||
+             ci_contains(text, "tplist") || ci_contains(text, "vfscount") ||
+             ci_contains(text, "javaflow") || ci_contains(text, "javagc") ||
+             ci_contains(text, "tclcalls") || ci_contains(text, "tclflow") ||
+             ci_contains(text, "tclstat") ||
+             ci_contains(text, "stapdyn") || ci_contains(text, "stapio") ||
+             ci_contains(text, "bpf_iter") || ci_contains(text, "bpf_asm")) {
+        what = "bcc/trace/libbpf primitive";
         }
 
         if (what) {
