@@ -13992,6 +13992,38 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "podboat") || ci_contains(text, "rawdog") ||
              ci_contains(text, "howdoi") || ci_contains(text, "buku")) {
         what = "tpm/pkcs11/feeds/notes primitive";
+        } else if (
+             /* cycle-327a: voip/sdr/fax/ppp/sms primitives */
+             ci_contains(text, "dahdi_cfg") || ci_contains(text, "dahdi_hardware") ||
+             ci_contains(text, "dahdi_maint") || ci_contains(text, "dahdi_speed") ||
+             ci_contains(text, "dahdi_test") || ci_contains(text, "hdlcgen") ||
+             ci_contains(text, "hdlcstress") || ci_contains(text, "hdlcverify") ||
+             ci_contains(text, "pattest") || ci_contains(text, "patlooptest") ||
+             ci_contains(text, "tones2wav") || ci_contains(text, "iptel") ||
+             ci_contains(text, "gr_plot") || ci_contains(text, "gr_plot_fft") ||
+             ci_contains(text, "gr_plot_iq") || ci_contains(text, "gr_plot_psd") ||
+             ci_contains(text, "grcc") || ci_contains(text, "gsm_ussd") ||
+             ci_contains(text, "probemodem") || ci_contains(text, "g3cat") ||
+             ci_contains(text, "capiinfo") ||
+             ci_contains(text, "pppstats") || ci_contains(text, "zntune") ||
+             ci_contains(text, "atmloop") || ci_contains(text, "atsig") ||
+             ci_contains(text, "kannel") || ci_contains(text, "atinout")) {
+        what = "voip/sdr/fax/ppp/sms primitive";
+        } else if (
+             /* cycle-327b: crypto/iot/lirc/serial primitives */
+             ci_contains(text, "namecoind") || ci_contains(text, "peercoind") ||
+             ci_contains(text, "primecoind") || ci_contains(text, "vertcoind") ||
+             ci_contains(text, "feathercoind") || ci_contains(text, "nearup") ||
+             ci_contains(text, "neard") || ci_contains(text, "devp2p") ||
+             ci_contains(text, "lora_pkt_fwd") || ci_contains(text, "basicstation") ||
+             ci_contains(text, "rumqtt") ||
+             ci_contains(text, "irrecord") || ci_contains(text, "ircat") ||
+             ci_contains(text, "irpty") || ci_contains(text, "mode2") ||
+             ci_contains(text, "pronto2lirc") ||
+             ci_contains(text, "tty0tty") || ci_contains(text, "interceptty") ||
+             ci_contains(text, "ttyspy") || ci_contains(text, "seyon") ||
+             ci_contains(text, "tatssy")) {
+        what = "crypto/iot/lirc/serial primitive";
         }
 
         if (what) {
