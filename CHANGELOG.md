@@ -10849,7 +10849,12 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 353): weather/aviation + marine primitive expansion** —
+```- **ALERT 45 (cycle 354): print3d/ham + astro-WCS primitive expansion** —
+  new `ci_contains` needles: (354a) stl2gts・ideamaker・qsorder・grig
+  (` -` gated)・aldo (` -` gated)・qrq (` -` gated)・adif2qsl・
+  cabrillo2adif; (354b) skyfilter・skycoor・imwcs・i2f・simpos.
+  13 hit + 2 benign CLI tests (19611/0).
+- **ALERT 45 (cycle 353): weather/aviation + marine primitive expansion** —
   new `ci_contains` needles: (353a) wview・grib_convert・bufr_filter・
   ncflint・ncpdq・fgo・yasim・ivac; (353b) zygrib・avnav・ntpshm・ppscheck.
   12 hit + 2 benign CLI tests (19596/0).

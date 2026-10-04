@@ -14436,6 +14436,22 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "zygrib") || ci_contains(text, "avnav") ||
              ci_contains(text, "ntpshm") || ci_contains(text, "ppscheck")) {
         what = "marine primitive";
+        } else if (
+             /* cycle-354a: print3d/ham primitives */
+             ci_contains(text, "stl2gts") || ci_contains(text, "ideamaker") ||
+             ci_contains(text, "qsorder") ||
+             (ci_contains(text, "grig") && ci_contains(text, " -")) ||
+             (ci_contains(text, "aldo") && ci_contains(text, " -")) ||
+             (ci_contains(text, "qrq") && ci_contains(text, " -")) ||
+             ci_contains(text, "adif2qsl") ||
+             ci_contains(text, "cabrillo2adif")) {
+        what = "print3d/ham primitive";
+        } else if (
+             /* cycle-354b: astro-wcs primitives */
+             ci_contains(text, "skyfilter") || ci_contains(text, "skycoor") ||
+             ci_contains(text, "imwcs") || ci_contains(text, "i2f") ||
+             ci_contains(text, "simpos")) {
+        what = "astro-wcs primitive";
         }
 
         if (what) {
