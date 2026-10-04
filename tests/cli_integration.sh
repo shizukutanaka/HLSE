@@ -11674,6 +11674,18 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-337: thin/cluster + ldap primitives
+for c in 'epoptes' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'italc2' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'thinstation' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dshbak' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'capistrano deploy' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'ldapcompare' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'dsidm user' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'nslcd -d' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
+for c in 'a station for thin clients' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+for c in 'ldap compare note' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste FP guard: $c clean" "0" "0"; else check "paste FP guard: $c clean" "0" "1"; fi; done
+
 # ── cycle-336: mcu/barcode/ocr + iot/midi primitives
 for c in 'esplorer' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done
 for c in 'circup install' ; do if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then check "paste: $c flagged" "0" "1"; else check "paste: $c flagged" "0" "0"; fi; done

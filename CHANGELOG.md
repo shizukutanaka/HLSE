@@ -10849,7 +10849,8 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 336): mcu/barcode/ocr + iot/midi primitives** — esplorer/circup/lpc21isp/sdas8051/sdld/gpasm/tl866; eplabel/niimbot/phomemo; ocropy/ocrfeeder; tunslip/tunslip6/wpcapslip/hdspconf.
+```- **ALERT 45 (cycle 337): thin/cluster + ldap primitives** — epoptes/italc2/thinstation; dshbak/capistrano; ldapcompare/dsidm/nslcd.
+- **ALERT 45 (cycle 336): mcu/barcode/ocr + iot/midi primitives** — esplorer/circup/lpc21isp/sdas8051/sdld/gpasm/tl866; eplabel/niimbot/phomemo; ocropy/ocrfeeder; tunslip/tunslip6/wpcapslip/hdspconf.
 - **ALERT 45 (cycle 335): desktop misc primitives** — wlopm/swayr/disper; undervolt (flag-gated). Dropped oclock ("o'clock" normalization collision).
 - **ALERT 45 (cycle 334): vcs/fsrepair + cast/job/img primitives** — rcsdiff/rcsmerge/cssc; patchview/unwrapdiff/dehtmldiff/recountdiff; e2undo/zhack/lscp/mkcp/fsck.f2fs/defrag.f2fs/resize.f2fs; zmodem/supercronic/aatest/asciigif.
 - **ALERT 45 (cycle 333): ietf/biblio/chem + bio primitives** — onsgmls/nsgmls/mmark/idnits/rfcdiff/rfcmarkup/rfcfold/svgcheck; bibconvert/bib2bib/bibdiff; obfit/obgen/cpmd; tophat/glimmer/aragorn (all flag-gated real words); barrnap/cmbuild/cmemit/cmfetch/cmstat.

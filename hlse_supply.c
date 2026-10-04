@@ -14195,6 +14195,17 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tunslip") || ci_contains(text, "tunslip6") ||
              ci_contains(text, "wpcapslip") || ci_contains(text, "hdspconf")) {
         what = "iot/midi primitive";
+        } else if (
+             /* cycle-337a: thin/cluster primitives */
+             ci_contains(text, "epoptes") || ci_contains(text, "italc2") ||
+             ci_contains(text, "thinstation") || ci_contains(text, "dshbak") ||
+             ci_contains(text, "capistrano")) {
+        what = "thin/cluster primitive";
+        } else if (
+             /* cycle-337b: ldap primitives */
+             ci_contains(text, "ldapcompare") || ci_contains(text, "dsidm") ||
+             ci_contains(text, "nslcd")) {
+        what = "ldap primitive";
         }
 
         if (what) {
