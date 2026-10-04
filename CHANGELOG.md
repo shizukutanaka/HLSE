@@ -10849,7 +10849,11 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 352): dicom + med/bio primitive expansion** —
+```- **ALERT 45 (cycle 353): weather/aviation + marine primitive expansion** —
+  new `ci_contains` needles: (353a) wview・grib_convert・bufr_filter・
+  ncflint・ncpdq・fgo・yasim・ivac; (353b) zygrib・avnav・ntpshm・ppscheck.
+  12 hit + 2 benign CLI tests (19596/0).
+- **ALERT 45 (cycle 352): dicom + med/bio primitive expansion** —
   new `ci_contains` needles: (352a) dcm2pnm・dcmj2pnm・pdf2dcm・dcm2pdf・
   stl2dcm・dcml2pnm・drtt; (352b) bet2(boundary)・convert3d・smartpca・
   mergeit・qp3pop・qp4pop・qpgraph・qpwave・qpadm・rolloff・f4stats・

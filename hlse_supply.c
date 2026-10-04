@@ -14424,6 +14424,18 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "clustalw") || ci_contains(text, "probcons") ||
              ci_contains(text, "poa ")) {
         what = "med/bio primitive";
+        } else if (
+             /* cycle-353a: weather/aviation primitives */
+             ci_contains(text, "wview") || ci_contains(text, "grib_convert") ||
+             ci_contains(text, "bufr_filter") || ci_contains(text, "ncflint") ||
+             ci_contains(text, "ncpdq") || ci_contains(text, "fgo") ||
+             ci_contains(text, "yasim") || ci_contains(text, "ivac")) {
+        what = "weather/aviation primitive";
+        } else if (
+             /* cycle-353b: marine primitives */
+             ci_contains(text, "zygrib") || ci_contains(text, "avnav") ||
+             ci_contains(text, "ntpshm") || ci_contains(text, "ppscheck")) {
+        what = "marine primitive";
         }
 
         if (what) {
