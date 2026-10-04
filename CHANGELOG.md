@@ -10856,6 +10856,12 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 371): HPC scheduler + grid/iRODS primitives** —
+  batch schedulers (qorder, checkjob, moab, bparams, bugroup, bmgroups,
+  blaunch, blcollect, qquota, oarsub, oarstat, oarpeek, oarhold),
+  xrootd/dCache (ccastat, dcap) and iRODS icommands (iput dual-
+  constrained vs "iput off", isysmeta, itrim, iquest, iquota, irule,
+  idbug, ipwd, ierror). +24/26 checks.
 - **ALERT 45 (cycle 370): crystallography + chemistry primitives** —
   CrystFEL/CCP4 pipeline (crystfel, ambigator, process_hkl,
   partialator, refmac5, freerflag, fit2d, dioptas), molecular/materials

@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-371: scheduler + grid/irods primitives
+for c in 'qorder job1 job2' 'checkjob -v 1234' 'moab -l' 'bparams -a' 'bugroup -l' 'bmgroups -m grp' 'blaunch -n 4 cmd' 'blcollect -j 1' 'qquota -u user' 'oarsub -l nodes=2 script' 'oarstat -j 99' 'oarpeek -j 99' 'oarhold -j 99'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'ccastat -v' 'dcap://dc/srm file -o x' 'iput localfile -R r' 'isysmeta -l obj' 'itrim -N 2 obj' 'iquest "select x" -z' 'iquota -u user' 'irule -F rule.r' 'idbug -v' 'ipwd -l' 'ierror 14000' 'irods iput x -R y'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'echo moab desert utah' 'echo iput off task'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-370: crystallography + chemistry primitives
 for c in 'crystfel -i run.lst' 'ambigator -o out.stream' 'process_hkl -o hkl.hkl' 'partialator -i x.stream' 'whirligig --serial 1' 'refmac5 HKLIN a.mtz' 'buccaneer -seqin seq.fasta' 'freerflag HKLIN a.mtz' 'fit2d -dim 1024x1024' 'fabio -i x.cbf' 'dioptas -i img.tif'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

@@ -14893,6 +14893,25 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "balls") && ci_contains(text, " -")) ||
              (ci_contains(text, "sticks") && ci_contains(text, " -"))) {
         what = "chemistry primitive";
+        } else if (
+             /* cycle-371a: hpc scheduler primitives */
+             ci_contains(text, "qorder") || ci_contains(text, "checkjob") ||
+             (ci_contains(text, "moab") && ci_contains(text, " -")) ||
+             ci_contains(text, "bparams") || ci_contains(text, "bugroup") ||
+             ci_contains(text, "bmgroups") || ci_contains(text, "blaunch") ||
+             ci_contains(text, "blcollect") || ci_contains(text, "qquota") ||
+             ci_contains(text, "oarsub") || ci_contains(text, "oarstat") ||
+             ci_contains(text, "oarpeek") || ci_contains(text, "oarhold")) {
+        what = "scheduler primitive";
+        } else if (
+             /* cycle-371b: grid/data primitives */
+             ci_contains(text, "ccastat") || ci_contains(text, "dcap") ||
+             (ci_contains(text, "iput ") && ci_contains(text, " -")) || ci_contains(text, "isysmeta") ||
+             ci_contains(text, "itrim") || ci_contains(text, "iquest") ||
+             ci_contains(text, "iquota") || ci_contains(text, "irule") ||
+             ci_contains(text, "idbug") || ci_contains(text, "ipwd") ||
+             ci_contains(text, "ierror")) {
+        what = "grid/irods primitive";
         }
 
         if (what) {
