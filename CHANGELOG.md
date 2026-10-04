@@ -10849,7 +10849,11 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 349): abi/dwarf + binutil/prof primitive expansion** —
+```- **ALERT 45 (cycle 350): dotfiles + vermgr primitive expansion** —
+  new `ci_contains` needles: (350a) rcup・rcdn・mkrc・lsrc・autoenv・
+  homeshick・tuckr・dotbare; (350b) nave(gate)・nodist・nvmw・swiftenv.
+  12 hit + 2 benign CLI tests (19536/0).
+- **ALERT 45 (cycle 349): abi/dwarf + binutil/prof primitive expansion** —
   new `ci_contains` needles: (349a) elflint・pdwtags・codtag・abidiff・
   abidw・abilint; (349b) windres・dllwrap・c++filt・ocount・sprof・latrace.
   12 hit + 2 benign CLI tests (19522/0).

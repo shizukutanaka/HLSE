@@ -14376,6 +14376,19 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "c++filt") || ci_contains(text, "ocount") ||
              ci_contains(text, "sprof") || ci_contains(text, "latrace")) {
         what = "binutil/prof primitive";
+        } else if (
+             /* cycle-350a: dotfiles primitives */
+             ci_contains(text, "rcup") || ci_contains(text, "rcdn") ||
+             ci_contains(text, "mkrc") || ci_contains(text, "lsrc") ||
+             ci_contains(text, "autoenv") || ci_contains(text, "homeshick") ||
+             ci_contains(text, "tuckr") || ci_contains(text, "dotbare")) {
+        what = "dotfiles primitive";
+        } else if (
+             /* cycle-350b: vermgr primitives */
+             (ci_contains(text, "nave") && ci_contains(text, " -")) ||
+             ci_contains(text, "nodist") || ci_contains(text, "nvmw") ||
+             ci_contains(text, "swiftenv")) {
+        what = "vermgr primitive";
         }
 
         if (what) {
