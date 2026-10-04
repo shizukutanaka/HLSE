@@ -10849,7 +10849,14 @@ or the corpus benchmark:
 
 ```
 bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
-```- **ALERT 45 (cycle 361): browser/mail + tunnel primitive expansion** —
+```- **ALERT 45 (cycle 362): screencast/vcs + versioning primitive expansion** —
+  new `ci_contains` needles: (362a) asciicast・agg (` -`)・trec (` -`)・
+  tty2gif・vttest・tilda・yakuake・zutty・sccs・rcs (` -`)・ident (` -`)・
+  merge (`merge ` + ` -`)・rcs2sccs・sccs2rcs・prcs・cvu・rview (` -`)・
+  chora; (362b) reposurgeon・viewvc・brz・bk・bitkeeper・aegis (` -`)・
+  cm3. (co/ci dropped: inseparable 2-char.) 25 hit + 2 benign CLI
+  tests (19965/0).
+- **ALERT 45 (cycle 361): browser/mail + tunnel primitive expansion** —
   new `ci_contains` needles: (361a) links (` -`)・w3m・netrik・retawq・
   conkeror・surf (` -`)・badwolf・dillo (` -`)・hv3・dooble・amaya
   (` -`)・mosaic (` -`)・arena (` -`)・gzilla・skipstone・hotjava・

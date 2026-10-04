@@ -14687,6 +14687,31 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "whack") && ci_contains(text, " -")) ||
              ci_contains(text, "pki ") || ci_contains(text, "libreswan")) {
         what = "tunnel/vpn primitive";
+        } else if (
+             /* cycle-362a: screencast/vcs-old primitives */
+             ci_contains(text, "asciicast") ||
+             (ci_contains(text, "agg") && ci_contains(text, " -")) ||
+             (ci_contains(text, "trec") && ci_contains(text, " -")) ||
+             ci_contains(text, "tty2gif") ||
+             ci_contains(text, "vttest") || ci_contains(text, "tilda") ||
+             ci_contains(text, "yakuake") || ci_contains(text, "zutty") ||
+             ci_contains(text, "sccs") ||
+             (ci_contains(text, "rcs") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ident") && ci_contains(text, " -")) ||
+             (ci_contains(text, "merge ") && ci_contains(text, " -")) ||
+             ci_contains(text, "rcs2sccs") || ci_contains(text, "sccs2rcs") ||
+             ci_contains(text, "prcs") || ci_contains(text, "cvu") ||
+             (ci_contains(text, "rview") && ci_contains(text, " -")) ||
+             ci_contains(text, "chora ")) {
+        what = "screencast/vcs primitive";
+        } else if (
+             /* cycle-362b: versioning primitives */
+             ci_contains(text, "reposurgeon") || ci_contains(text, "viewvc") ||
+             ci_contains(text, "brz") || ci_contains(text, "bk ") ||
+             ci_contains(text, "bitkeeper") ||
+             (ci_contains(text, "aegis") && ci_contains(text, " -")) ||
+             ci_contains(text, "cm3")) {
+        what = "versioning primitive";
         }
 
         if (what) {
