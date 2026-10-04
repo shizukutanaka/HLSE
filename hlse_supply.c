@@ -13834,6 +13834,75 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pgs2srt") || ci_contains(text, "parlatype") ||
              ci_contains(text, "humogen") || ci_contains(text, "ancestris")) {
         what = "cam/eda/hep/archival primitive";
+        } else if (
+             /* cycle-324a: a11y/ime/photo/term primitives */
+             ci_contains(text, "espeakup") || ci_contains(text, "lou_translate") ||
+             ci_contains(text, "lou_trace") || ci_contains(text, "lou_debug") ||
+             ci_contains(text, "lou_allround") || ci_contains(text, "brailleblaster") ||
+             ci_contains(text, "dotsdtbook") ||
+             ci_contains(text, "scim ") || ci_contains(text, "gcin") ||
+             ci_contains(text, "rime_deployer") || ci_contains(text, "rime_patch") ||
+             ci_contains(text, "gateone") ||
+             ci_contains(text, "lightzone") || ci_contains(text, "photoflow") ||
+             ci_contains(text, "fastrawviewer") || ci_contains(text, "filmulator") ||
+             ci_contains(text, "photoflare") || ci_contains(text, "mypaint") ||
+             ci_contains(text, "drawpile") || ci_contains(text, "kolourpaint") ||
+             ci_contains(text, "tupitube")) {
+        what = "a11y/ime/photo/term primitive";
+        } else if (
+             /* cycle-324b: wm primitives */
+             ci_contains(text, "niri") || ci_contains(text, "spectrwm") ||
+             ci_contains(text, "icewm") || ci_contains(text, "fvwm3") ||
+             ci_contains(text, "ctwm") || ci_contains(text, "afterstep") ||
+             ci_contains(text, "phoc") || ci_contains(text, "wmenu") ||
+             ci_contains(text, "ulauncher") || ci_contains(text, "twmn") ||
+             ci_contains(text, "taffybar")) {
+        what = "wm primitive";
+        } else if (
+             /* cycle-324c: usd/3d/pointcloud primitives */
+             ci_contains(text, "usdcat") || ci_contains(text, "usdview") ||
+             ci_contains(text, "usdtree") || ci_contains(text, "usdchecker") ||
+             ci_contains(text, "usddiff") || ci_contains(text, "usdrecord") ||
+             ci_contains(text, "usdstitch") || ci_contains(text, "usdresolve") ||
+             ci_contains(text, "usdedit") || ci_contains(text, "gltf2glb") ||
+             ci_contains(text, "collada2gltf") || ci_contains(text, "fbx2gltf") ||
+             ci_contains(text, "gltfpack") || ci_contains(text, "vdb_print") ||
+             ci_contains(text, "vdb_render") || ci_contains(text, "vdb_view") ||
+             ci_contains(text, "abcecho") || ci_contains(text, "abcinfo") ||
+             ci_contains(text, "abcls") || ci_contains(text, "abcstitcher") ||
+             ci_contains(text, "abcdiff") || ci_contains(text, "abcstitch") ||
+             ci_contains(text, "pcl_convert") || ci_contains(text, "lasview") ||
+             ci_contains(text, "lasgrid") || ci_contains(text, "lasheight") ||
+             ci_contains(text, "lasground") || ci_contains(text, "lasclassify") ||
+             ci_contains(text, "lascolor") || ci_contains(text, "lasduplicate") ||
+             ci_contains(text, "lasdiff") || ci_contains(text, "lasmerge") ||
+             ci_contains(text, "lasthin") || ci_contains(text, "lasvalley") ||
+             ci_contains(text, "las2dem") || ci_contains(text, "las2iso") ||
+             ci_contains(text, "laslayers") || ci_contains(text, "lasnoise") ||
+             ci_contains(text, "lasscale") || ci_contains(text, "mm3d") ||
+             ci_contains(text, "regard3d") || ci_contains(text, "pmvs2") ||
+             ci_contains(text, "cmvs") || ci_contains(text, "meshrecon") ||
+             ci_contains(text, "rtabmap") || ci_contains(text, "kimera") ||
+             ci_contains(text, "tetview")) {
+        what = "usd/3d/pointcloud primitive";
+        } else if (
+             /* cycle-324d: capture/osint/embedded/formal primitives */
+             ci_contains(text, "byzanz") || ci_contains(text, "silentcast") ||
+             ci_contains(text, "swappy") || ci_contains(text, "satty") ||
+             ci_contains(text, "gpick") || ci_contains(text, "kcolorchooser") ||
+             ci_contains(text, "gcolor3") ||
+             ci_contains(text, "whatsmyname") ||
+             ci_contains(text, "mklittlefs") || ci_contains(text, "mkspiffs") ||
+             ci_contains(text, "lparse") ||
+             ci_contains(text, "proverif") || ci_contains(text, "cryptoverif") ||
+             ci_contains(text, "apalache") || ci_contains(text, "murphi") ||
+             ci_contains(text, "fdr4") || ci_contains(text, "nusmv") ||
+             ci_contains(text, "cpachecker") || ci_contains(text, "verifast") ||
+             ci_contains(text, "cpplint") ||
+             ci_contains(text, "autfilt") || ci_contains(text, "genaut") ||
+             ci_contains(text, "randaut") || ci_contains(text, "ltlsynt") ||
+             ci_contains(text, "ltl2ba")) {
+        what = "capture/osint/embedded/formal primitive";
         }
 
         if (what) {
