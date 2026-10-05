@@ -15540,6 +15540,61 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "transicc") || ci_contains(text, "wtpt") ||
              ci_contains(text, "oyranos")) {
         what = "print/color primitive";
+        } else if (
+             /* cycle-391a: fp-lang primitives */
+             ci_contains(text, "hlint") || ci_contains(text, "hoogle") ||
+             ci_contains(text, "hpack") || ci_contains(text, "leancheck") ||
+             (ci_contains(text, "elan") && ci_contains(text, " -")) ||
+             (ci_contains(text, "coq") && ci_contains(text, " -")) ||
+             ci_contains(text, "coqdep") || ci_contains(text, "coqdoc") ||
+             ci_contains(text, "coqwc") ||
+             ci_contains(text, "holtt") || ci_contains(text, "twelf") ||
+             (ci_contains(text, "maude") && ci_contains(text, " -")) ||
+             ci_contains(text, "nuxmv") || ci_contains(text, "nusmv") ||
+             (ci_contains(text, "spark") && ci_contains(text, " -")) ||
+             (ci_contains(text, "gnat") && ci_contains(text, " -")) ||
+             ci_contains(text, "gnatprove") || ci_contains(text, "gnatchop") ||
+             ci_contains(text, "gnatcheck") || ci_contains(text, "gnatelim") ||
+             ci_contains(text, "gnathtml") || ci_contains(text, "gnatkr") ||
+             ci_contains(text, "gnatname") || ci_contains(text, "gnatprep") ||
+             ci_contains(text, "gprslave") || ci_contains(text, "gprls") ||
+             ci_contains(text, "alr ") || ci_contains(text, "ocaml") ||
+             ci_contains(text, "ocamldebug") || ci_contains(text, "ocamldoc") ||
+             ci_contains(text, "ocamlmktop") || ci_contains(text, "ocamlmklib") ||
+             ci_contains(text, "ocamlopt") || ci_contains(text, "ocamldep") ||
+             ci_contains(text, "ocamlprof") || ci_contains(text, "ocamlbrowser") ||
+             (ci_contains(text, "dune") && ci_contains(text, " -")) ||
+             ci_contains(text, "odoc")) {
+        what = "fp-lang primitive";
+        } else if (
+             /* cycle-391b: lisp/forth/apl primitives */
+             ci_contains(text, "qlot") ||
+             (ci_contains(text, "planck") && ci_contains(text, " -")) ||
+             ci_contains(text, "lumo") ||
+             (ci_contains(text, "gerbil") && ci_contains(text, " -")) ||
+             ci_contains(text, "scheme48") ||
+             (ci_contains(text, "lily") && ci_contains(text, " -")) ||
+             ci_contains(text, "loko") || ci_contains(text, "s7 ") ||
+             ci_contains(text, "ironscheme") || ci_contains(text, "rscheme") ||
+             ci_contains(text, "stklos") ||
+             (ci_contains(text, "vicare") && ci_contains(text, " -")) ||
+             (ci_contains(text, "retro") && ci_contains(text, " -")) ||
+             ci_contains(text, "apl ") ||
+             (ci_contains(text, "april") && ci_contains(text, " -"))) {
+        what = "lisp/forth primitive";
+        } else if (
+             /* cycle-391c: asm/hw-lang primitives */
+             ci_contains(text, "jqt ") || ci_contains(text, "tasm") ||
+             ci_contains(text, "masm") || ci_contains(text, "hla ") ||
+             ci_contains(text, "rgbasm") || ci_contains(text, "rgblink") ||
+             ci_contains(text, "rgbds") ||
+             (ci_contains(text, "acme") && ci_contains(text, " -")) ||
+             ci_contains(text, "ar65") || ci_contains(text, "co65") ||
+             ci_contains(text, "od65") || ci_contains(text, "sim65") ||
+             ci_contains(text, "grc65") || ci_contains(text, "kickc") ||
+             ci_contains(text, "asmotor") || ci_contains(text, "basm ") ||
+             ci_contains(text, "la32r") || ci_contains(text, "wasmos")) {
+        what = "asm/hw-lang primitive";
         }
 
         if (what) {

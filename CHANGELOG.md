@@ -10856,6 +10856,18 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 391): fp/lisp/asm primitives** — functional
+  langs + proof/Ada (hlint, hoogle, hpack, leancheck, elan, coq,
+  coqdep, coqdoc, coqwc, holtt, twelf, maude, nuxmv, nusmv, spark,
+  gnat, gnatprove, gnatchop, gnatcheck, gnatelim, gnathtml, gnatkr,
+  gnatname, gnatprep, gprslave, gprls, alr, ocaml, ocamldebug,
+  ocamldoc, ocamlmktop, ocamlmklib, ocamlopt, ocamldep, ocamlprof,
+  ocamlbrowser, dune, odoc), lisp/forth/apl (qlot, planck, lumo,
+  gerbil, scheme48, lily, loko, s7, ironscheme, rscheme, stklos,
+  vicare, retro, apl, april), assemblers (jqt, tasm, masm, hla,
+  rgbasm, rgblink, rgbds, acme, ar65, co65, od65, sim65, grc65,
+  kickc, asmotor, basm, la32r, wasmos). Words gated; lake(stan)/
+hol/utop dropped. +76/93 checks.
 - **ALERT 45 (cycle 390): kvdb/storage/print primitives** —
   BerkeleyDB/LMDB/RocksDB/CouchDB (db_stat, db_verify, db_recover,
   db_checkpoint, db_upgrade, db_hotbackup, db_replicate, db_tuner,

@@ -11674,6 +11674,36 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-391: fp/lisp/asm primitives
+for c in 'hlint src' 'hoogle query' 'hpack spec' 'leancheck test' 'elan -t lean' 'coq -l file' 'coqdep f.v' 'coqdoc f.v' 'coqwc f.v' 'holtt prove' 'twelf check' 'maude -f run' 'nuxmv -int' 'nusmv -int' 'spark -p prove' 'gnat -c make' 'gnatprove -P x' 'gnatchop file' 'gnatcheck -P x' 'gnatelim file' 'gnathtml -P x' 'gnatkr file' 'gnatname -P x' 'gnatprep file' 'gprslave run' 'gprls -P x' 'alr -n build' 'ocaml file.ml' 'ocamldebug prog' 'ocamldoc -d x' 'ocamlmktop -o x' 'ocamlmklib -o x' 'ocamlopt -o x' 'ocamldep -l ml' 'ocamlprof prog' 'ocamlbrowser -I x' 'dune -b build' 'odoc compile'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'qlot install' 'planck -s clj' 'lumo -c eval' 'gerbil -x build' 'scheme48 -h' 'lily -p parse' 'loko run' 's7 repl' 'ironscheme run' 'rscheme -i file' 'stklos -f file' 'vicare -o run' 'retro -c run' 'apl -f file' 'april -e eval'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'jqt -ide run' 'tasm -80 f' 'masm file.asm' 'hla -e f' 'rgbasm -o f' 'rgblink -o out' 'rgbds build' 'acme -f a.s' 'ar65 -l lib' 'co65 -o out' 'od65 -v f' 'sim65 test' 'grc65 -r f' 'kickc -t f' 'asmotor -b f' 'basm -i f' 'la32r run' 'wasmos run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'flake off paint' 'elan vital force' 'a coq au vin dish' 'maude the name' 'spark of genius' 'gnat buzzing bug' 'dune sand hills' 'planck constant value' 'a gerbil pet cage' 'lily the flower' 'vicare the town' 'retro style wave' 'april showers rain' 'acme corporation inc' 'basmati rice dish'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-390: kvdb/storage/print primitives
 for c in 'db_stat -d f' 'db_verify f' 'db_recover -h dir' 'db_checkpoint -1' 'db_upgrade f' 'db_hotbackup -d dir' 'db_replicate -m x' 'db_tuner -d f' 'mdb_stat env' 'mdb_env env' 'mdb_chk env' 'db_bench --db x' 'cache_bench --cache x' 'persistent_cache_bench run' 'filter_bench run' 'block_cache tool' 'trace_analyzer f' 'io_tracer -o out' 'ldb_tests run' 'couchapp push' 'kanso push' 'couchpy docs' 'futon -p open' 'couch -d db' 'e3w console'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
