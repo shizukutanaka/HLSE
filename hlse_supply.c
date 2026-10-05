@@ -15825,6 +15825,43 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "sugar") && ci_contains(text, " -")) ||
              ci_contains(text, "algorand") || ci_contains(text, "refracta")) {
         what = "chain/finance primitive";
+        } else if (
+             /* cycle-397a: ssg/wiki primitives */
+             (ci_contains(text, "hugo") && ci_contains(text, " -")) ||
+             (ci_contains(text, "jekyll") && ci_contains(text, " -")) ||
+             (ci_contains(text, "gatsby") && ci_contains(text, " -")) ||
+             (ci_contains(text, "nikola") && ci_contains(text, " -")) ||
+             (ci_contains(text, "saber") && ci_contains(text, " -")) ||
+             (ci_contains(text, "sapper") && ci_contains(text, " -")) ||
+             (ci_contains(text, "quartz") && ci_contains(text, " -")) ||
+             ci_contains(text, "docsify") || ci_contains(text, "wintersmith") ||
+             ci_contains(text, "gridsome") || ci_contains(text, "scully") ||
+             ci_contains(text, "scullyio") || ci_contains(text, "retype") ||
+             ci_contains(text, "retypeapp") || ci_contains(text, "wikijs") ||
+             ci_contains(text, "moinmoin") || ci_contains(text, "pmwiki") ||
+             ci_contains(text, "foswiki")) {
+        what = "ssg/wiki primitive";
+        } else if (
+             /* cycle-397b: forum/issue primitives */
+             ci_contains(text, "bintr") || ci_contains(text, "beekeep") ||
+             ci_contains(text, "question2answer") || ci_contains(text, "scoold") ||
+             ci_contains(text, "remark42") || ci_contains(text, "onedevd") ||
+             ci_contains(text, "tracd")) {
+        what = "forum/issue primitive";
+        } else if (
+             /* cycle-397c: commerce/erp primitives */
+             ci_contains(text, "aimeos") || ci_contains(text, "shopware") ||
+             ci_contains(text, "shopware6") || ci_contains(text, "spryker") ||
+             ci_contains(text, "yetiforce") || ci_contains(text, "odoo") ||
+             ci_contains(text, "tryton") || ci_contains(text, "trytond") ||
+             ci_contains(text, "idempiere") || ci_contains(text, "moqui") ||
+             ci_contains(text, "dolibarr") || ci_contains(text, "gnuhealth") ||
+             (ci_contains(text, "propeller") && ci_contains(text, " -")) ||
+             (ci_contains(text, "propel") && ci_contains(text, " -")) ||
+             (ci_contains(text, "yves") && ci_contains(text, " -")) ||
+             (ci_contains(text, "frappe") && ci_contains(text, " -")) ||
+             (ci_contains(text, "proteus") && ci_contains(text, " -"))) {
+        what = "commerce/erp primitive";
         }
 
         if (what) {

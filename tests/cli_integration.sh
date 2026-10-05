@@ -11674,6 +11674,36 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-397: ssg/forum/erp primitives
+for c in 'hugo -s new' 'jekyll -b build' 'gatsby -d develop' 'nikola -b build' 'saber -b build' 'sapper -e export' 'quartz -b build' 'docsify serve' 'wintersmith build' 'gridsome develop' 'scully run' 'scullyio run' 'retype build' 'retypeapp run' 'wikijs start' 'moinmoin start' 'pmwiki run' 'foswiki run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'bintr run' 'beekeep run' 'question2answer install' 'scoold run' 'remark42 start' 'onedevd start' 'tracd -p 8000'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'aimeos install' 'shopware install' 'shopware6 build' 'spryker deploy' 'yetiforce install' 'odoo -d start' 'tryton run' 'trytond -c start' 'idempiere start' 'moqui run' 'dolibarr install' 'gnuhealth start' 'propeller -b run' 'propel -m build' 'yves -d start' 'frappe -b serve' 'proteus -s run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'hugo the name' 'jekyll and hyde' 'gatsby the great' 'nikola tesla inventor' 'saber the sword' 'sapper the soldier' 'quartz the crystal' 'propeller the blade' 'propel the boat' 'yves the painter' 'frappe the drink' 'proteus the god'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-396: quantum/astro/chain primitives
 for c in 'qiskit run' 'cirq sim' 'pyquil compile' 'quilc -S run' 'qsharp run' 'qdk run' 'ionq submit' 'tket compile' 'qulacs run' 'qibo run' 'gpaw run' 'lapw0 run' 'lapw1 run' 'lapw2 run' 'bandplot plot'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
