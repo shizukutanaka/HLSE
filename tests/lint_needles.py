@@ -15,6 +15,9 @@ reports on structural debt the else-if chain accumulates:
   REPORT duplicate `what = "..."` label across blocks
   REPORT word-char needle len<=4 without a trailing boundary space
           (substring-collision risk; e.g. 'curse' hit '-Recurse')
+  FAIL   labelled block has no needle in the test corpus
+          (every block needs >=1 hit test — AGENTS.md rule 4;
+          pass test files as extra argv to enable)
 
 Exit 0 = no FAILs. Reports are advisory.
 """
@@ -33,10 +36,32 @@ def gate_only(needle):
     return needle.startswith(' -')
 
 
+def content_needle(n):
+    """True for needles that carry the block's substance (tool/word),
+    not flag gates like ' -e' or bare bounds."""
+    norm = n.strip()
+    return bool(norm) and not gate_only(n) and not norm.startswith('-')
+
+
+def needle_hit(needle, corpus):
+    """Cheap lexical check: does a test input exercise this needle?
+    Long norms (>=5) need only appear as a substring; short norms need
+    a word-ish boundary so 'py' doesn't match 'python'."""
+    norm = needle.strip()
+    if len(norm) >= 5:
+        return norm in corpus
+    return re.search(r'(?<![a-z0-9_.+\-/])' + re.escape(norm) +
+                     r'(?![a-z0-9_.+\-/])', corpus) is not None
+
+
 def main():
-    if len(sys.argv) != 2:
-        sys.exit("usage: lint_needles.py <hlse_supply.c>")
+    if len(sys.argv) < 2:
+        sys.exit("usage: lint_needles.py <hlse_supply.c> [test-file ...]")
     src = open(sys.argv[1], encoding='utf-8', errors='replace').read()
+    corpus = ''
+    for tf in sys.argv[2:]:
+        corpus += open(tf, encoding='utf-8',
+                       errors='replace').read().lower() + '\n'
 
     # Split into else-if blocks; first part is preamble before the chain.
     parts = BLOCK_RE.split(src)
@@ -46,6 +71,7 @@ def main():
     block_covers = []
     labels = defaultdict(int)
     risk_short = defaultdict(list)
+    block_needles = []  # (bi, lname, [content needles]) for coverage
     n_needles = 0
 
     for bi, part in enumerate(parts[1:], start=1):
@@ -79,6 +105,9 @@ def main():
                 if len(a) < len(b) and a in b:
                     block_covers.append(
                         "%r covered by %r (block %d)" % (a, b, bi))
+        if lname:
+            block_needles.append(
+                (bi, lname, [n for n in uniq if content_needle(n)]))
 
     cross = {n: bs for n, bs in needle_blocks.items()
              if len(bs) > 1 and not gate_only(n)}
@@ -109,6 +138,18 @@ def main():
           % len(risk_short))
     for n, bs in sorted(risk_short.items())[:15]:
         print("       %r blocks %s" % (n, sorted(set(bs))[:8]))
+
+    if corpus:
+        uncovered = []
+        for bi, lname, cn in block_needles:
+            if cn and not any(needle_hit(n, corpus) for n in cn):
+                uncovered.append("block %d %r — no needle in test corpus"
+                                 % (bi, lname))
+        print("labelled blocks lacking a hit test: %d/%d"
+              % (len(uncovered), len(block_needles)))
+        for u in uncovered[:20]:
+            print("       %s" % u)
+        fails.extend(uncovered)
 
     print()
     if fails:

@@ -515,7 +515,8 @@ check-warnings:
 # only; empty string — always true) and reports structural debt
 # (cross-block duplicates, label collisions, unbound short needles).
 lint-needles:
-	@python3 tests/lint_needles.py hlse_supply.c
+	@python3 tests/lint_needles.py hlse_supply.c \
+		tests/cli_integration.sh tests/hlse_supply_tests.c
 
 # Build the CLI + tests with ASan/UBSan and run the full self-test.
 # Catches memory errors, UB, and leaks that normal builds miss.
@@ -551,6 +552,9 @@ test: $(BINARY) $(PROP_BIN) $(EXT_BIN) $(PROT_BIN) $(SECR_BIN) $(SUPP_BIN) $(FAU
 	@echo "═══════════════════════════════════════"
 	@echo " HLSE Core — Test Suite"
 	@echo "═══════════════════════════════════════"
+	@echo ""
+	@echo "── Needle lint ────────────────────────"
+	@$(MAKE) lint-needles
 	@echo ""
 	@echo "── Unit tests (URL + text) ─────────────"
 	@./$(BINARY) --self-test

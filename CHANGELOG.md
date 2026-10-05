@@ -10877,6 +10877,16 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 423 (needle↔test coverage guard):** `lint-needles`
+  now FAILs when a labelled else-if block has no content
+  needle appearing in the test corpus
+  (cli_integration.sh + supply_tests.c) — every block needs
+  >=1 hit test (AGENTS.md rule 4 becomes machine-enforced).
+  Measured coverage today: 698/698 labelled blocks covered;
+  mutation control (empty corpus) correctly reports 695
+  FAILs. Target is invoked from `make test` itself, so the
+  guard runs in the standard suite — new blocks added
+  without tests now break the build before they can rot.
 - **cycle 422 (label de-duplication):** lint-found `what` label
   collisions renamed so every else-if block reports a distinct
   label — `dicom primitive` (cycle-352a converters: dcm2pnm/
