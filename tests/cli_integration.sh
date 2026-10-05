@@ -11674,6 +11674,36 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-379: js/devops + genomics primitives
+for c in 'babeljs -d out/' 'babelify -t es6' 'esno script.ts' 'alephjs init app' 'dmm update' 'dworkin run' 'dnt build' 'citty run' 'karpor sync' 'kwok create node n1'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'gcta64 --bfile d' 'beagle -jar b.jar' 'svaba run -t t.bam' 'gridss -r ref' 'smoove call -n s1' 'cnvkit.py batch' 'sequenza-utils bam2seqz' 'facets run' 'ichorcna --centromere x' 'pyclone run_analysis' 'sciclone -i vafs' 'lichee --build' 'citup -f f' 'spruce -i tsv' 'arriba -x b.bam' 'pizzly -k31' 'defuse -d ref' 'soapfuse -c cfg' 'mapsplice -p 4' 'racon reads.fa aln.sam'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'medaka_consensus -i a' 'pilon --genome g' 'wtdbg2 -i r' 'abyss-pe -k 64' 'discovar READS=f' 'idba -r r.fa' 'minia -in r' 'bcalm -in r' 'shasta --input r' 'salsa -a a' 'juicer -g g' 'hicpro -i o' 'fithic -f frags' 'cooler -f c pairs' 'cdhit -i in.fa' 'multiqc .' 'featureCounts -a g' 'htseq-count a.bam g' 'mosdepth n b.bam' 'bedops -e a.bed'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'the beagle dog breed' 'spruce trees in the yard' 'arriba amigos vamos' 'pilon de poulet' 'abyss of the ocean' 'shasta daisy flower' 'salsa dance class' 'juicer for oranges' 'cooler than yesterday' 'defuse the situation' 'lichi fruit bowl'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-378: jack/audio + sdr/radio primitives
 for c in 'jack_rec -f out.wav' 'jack_meter -n' 'jack_cpu' 'jack_bufsize 256' 'jack_freewheel -y' 'jack_net_master -a host' 'jack_net_slave -C host' 'jack_midiseq -f m.mid' 'jack_midi_latency_test' 'patchance -v' 'a2jmidid -e' 'a2jmidi -u' 'aeolus -J' 'bspacewizard -t'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

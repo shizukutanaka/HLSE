@@ -10856,6 +10856,14 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 379): JS/devops + genomics primitives** — JS/Deno
+  (babeljs, babelify, esno, alephjs, dmm, dworkin, dnt, citty, karpor,
+  kwok) and genomics (gcta, beagle, svaba, gridss, smoove, cnvkit,
+  sequenza, facets, ichorcna, pyclone, sciclone, lichee, citup, spruce,
+  arriba, pizzly, defuse, soapfuse, mapsplice, racon, medaka, pilon,
+  wtdbg, abyss, discovar, idba, minia, bcalm, shasta, salsa, juicer,
+  hicpro, fithic, cooler, cdhit, multiqc, featurecounts, htseq,
+  mosdepth, bedops). Real words gated on ' -'. +50/61 checks.
 - **ALERT 45 (cycle 378): JACK audio + SDR/radio primitives + FP
   fixes** — jack_* tools (jack_rec, jack_meter, jack_cpu, jack_bufsize,
   jack_freewheel, jack_net_master, jack_net_slave, jack_midiseq,

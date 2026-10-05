@@ -15095,6 +15095,48 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "hackrf_debug") ||
              ci_contains(text, "hackrf_cpldjtag")) {
         what = "sdr/radio primitive";
+        } else if (
+             /* cycle-379a: js/devops primitives */
+             ci_contains(text, "babeljs") || ci_contains(text, "babelify") ||
+             ci_contains(text, "esno") || ci_contains(text, "alephjs") ||
+             ci_contains(text, "dmm") || ci_contains(text, "dworkin") ||
+             ci_contains(text, "dnt") || ci_contains(text, "citty") ||
+             ci_contains(text, "karpor") || ci_contains(text, "kwok")) {
+        what = "js/devops primitive";
+        } else if (
+             /* cycle-379b: genomics-qc primitives */
+             ci_contains(text, "gcta") ||
+             (ci_contains(text, "beagle") && ci_contains(text, " -")) ||
+             ci_contains(text, "svaba") || ci_contains(text, "gridss") ||
+             ci_contains(text, "smoove") || ci_contains(text, "cnvkit") ||
+             ci_contains(text, "sequenza") || ci_contains(text, "facets") ||
+             ci_contains(text, "ichorcna") || ci_contains(text, "pyclone") ||
+             ci_contains(text, "sciclone") || ci_contains(text, "lichee") ||
+             ci_contains(text, "citup") ||
+             (ci_contains(text, "spruce") && ci_contains(text, " -")) ||
+             (ci_contains(text, "arriba") && ci_contains(text, " -")) ||
+             ci_contains(text, "pizzly") ||
+             (ci_contains(text, "defuse") && ci_contains(text, " -")) ||
+             ci_contains(text, "soapfuse") || ci_contains(text, "mapsplice") ||
+             ci_contains(text, "racon")) {
+        what = "genomics-qc primitive";
+        } else if (
+             /* cycle-379c: genomics-asm primitives */
+             ci_contains(text, "medaka") ||
+             (ci_contains(text, "pilon") && ci_contains(text, " -")) ||
+             ci_contains(text, "wtdbg") ||
+             (ci_contains(text, "abyss") && ci_contains(text, " -")) ||
+             ci_contains(text, "discovar") || ci_contains(text, "idba") ||
+             ci_contains(text, "minia") || ci_contains(text, "bcalm") ||
+             (ci_contains(text, "shasta") && ci_contains(text, " -")) ||
+             (ci_contains(text, "salsa") && ci_contains(text, " -")) ||
+             (ci_contains(text, "juicer") && ci_contains(text, " -")) ||
+             ci_contains(text, "hicpro") || ci_contains(text, "fithic") ||
+             (ci_contains(text, "cooler") && ci_contains(text, " -")) ||
+             ci_contains(text, "cdhit") || ci_contains(text, "multiqc") ||
+             ci_contains(text, "featurecounts") || ci_contains(text, "htseq") ||
+             ci_contains(text, "mosdepth") || ci_contains(text, "bedops")) {
+        what = "genomics-asm primitive";
         }
 
         if (what) {
