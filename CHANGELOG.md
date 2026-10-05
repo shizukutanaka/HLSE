@@ -10856,6 +10856,19 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 392): k8s/obs/dns/dir primitives** —
+  gitops (sourcer, kompose, sealer, maesh, mertcan, keptn, keel,
+  brigade, ghorg), observability/chaos/tf (beats, lumberjack,
+  gollector, graphite, chronograf, cadvisor, check_mk, shinken,
+  bosun, tcollector, sidecar, querier, shipper, ddog, k6cloud,
+  jepsen, molotov, boom, latkins, terraspace, terragoat, tfk8s,
+  tfnotify, terrafile), dns/mail (globalprotect, mullvad, dnscap,
+  corefile, kresd, maradns, dnsrbl, mailwrapper, dovecot,
+  dovelpwds, imapd, perdition, haraka, dkimpy, srs2), dir/radius
+  (ldapurl, dirsrv, sim_server, uuserver, radtest, radwho,
+  radlast, radcheck, radcrypt, smbencrypt, ntlm_smb_lm_auth, pap2,
+  md4, mspwd, tac_pwd, tac_check, mkhomedir_helper, pam_warn,
+  adsys, smbnetfs). Words gated; mailq dropped. +67/78 checks.
 - **ALERT 45 (cycle 391): fp/lisp/asm primitives** — functional
   langs + proof/Ada (hlint, hoogle, hpack, leancheck, elan, coq,
   coqdep, coqdoc, coqwc, holtt, twelf, maude, nuxmv, nusmv, spark,

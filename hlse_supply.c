@@ -15595,6 +15595,61 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "asmotor") || ci_contains(text, "basm ") ||
              ci_contains(text, "la32r") || ci_contains(text, "wasmos")) {
         what = "asm/hw-lang primitive";
+        } else if (
+             /* cycle-392a: k8s/gitops primitives */
+             ci_contains(text, "sourcer") || ci_contains(text, "kompose") ||
+             ci_contains(text, "sealer") || ci_contains(text, "maesh") ||
+             ci_contains(text, "mertcan") || ci_contains(text, "keptn") ||
+             (ci_contains(text, "keel") && ci_contains(text, " -")) ||
+             (ci_contains(text, "brigade") && ci_contains(text, " -")) ||
+             ci_contains(text, "ghorg")) {
+        what = "k8s/gitops primitive";
+        } else if (
+             /* cycle-392b: observability/chaos/tf primitives */
+             (ci_contains(text, "beats") && ci_contains(text, " -")) ||
+             (ci_contains(text, "lumberjack") && ci_contains(text, " -")) ||
+             ci_contains(text, "gollector") ||
+             (ci_contains(text, "graphite") && ci_contains(text, " -")) ||
+             ci_contains(text, "chronograf") || ci_contains(text, "cadvisor") ||
+             ci_contains(text, "check_mk") || ci_contains(text, "shinken") ||
+             (ci_contains(text, "bosun") && ci_contains(text, " -")) ||
+             ci_contains(text, "tcollector") ||
+             (ci_contains(text, "sidecar") && ci_contains(text, " -")) ||
+             ci_contains(text, "querier") ||
+             (ci_contains(text, "shipper") && ci_contains(text, " -")) ||
+             ci_contains(text, "ddog") || ci_contains(text, "k6cloud") ||
+             ci_contains(text, "jepsen") ||
+             (ci_contains(text, "molotov") && ci_contains(text, " -")) ||
+             (ci_contains(text, "boom") && ci_contains(text, " -")) ||
+             ci_contains(text, "latkins") || ci_contains(text, "terraspace") ||
+             ci_contains(text, "terragoat") || ci_contains(text, "tfk8s") ||
+             ci_contains(text, "tfnotify") || ci_contains(text, "terrafile")) {
+        what = "obs/chaos/tf primitive";
+        } else if (
+             /* cycle-392c: dns/mail primitives */
+             ci_contains(text, "globalprotect") || ci_contains(text, "mullvad") ||
+             ci_contains(text, "dnscap") || ci_contains(text, "corefile") ||
+             ci_contains(text, "kresd") || ci_contains(text, "maradns") ||
+             ci_contains(text, "dnsrbl") ||
+             ci_contains(text, "mailwrapper") || ci_contains(text, "dovecot") ||
+             ci_contains(text, "dovelpwds") || ci_contains(text, "imapd") ||
+             (ci_contains(text, "perdition") && ci_contains(text, " -")) ||
+             ci_contains(text, "haraka") || ci_contains(text, "dkimpy") ||
+             ci_contains(text, "srs2")) {
+        what = "dns/mail primitive";
+        } else if (
+             /* cycle-392d: dir/radius primitives */
+             ci_contains(text, "ldapurl") || ci_contains(text, "dirsrv") ||
+             ci_contains(text, "sim_server") || ci_contains(text, "uuserver") ||
+             ci_contains(text, "radtest") || ci_contains(text, "radwho") ||
+             ci_contains(text, "radlast") || ci_contains(text, "radcheck") ||
+             ci_contains(text, "radcrypt") || ci_contains(text, "smbencrypt") ||
+             ci_contains(text, "ntlm_smb_lm_auth") || ci_contains(text, "pap2") ||
+             ci_contains(text, "md4") || ci_contains(text, "mspwd") ||
+             ci_contains(text, "tac_pwd") || ci_contains(text, "tac_check") ||
+             ci_contains(text, "mkhomedir_helper") || ci_contains(text, "pam_warn") ||
+             ci_contains(text, "adsys") || ci_contains(text, "smbnetfs")) {
+        what = "dir/radius primitive";
         }
 
         if (what) {

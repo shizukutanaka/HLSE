@@ -11674,6 +11674,43 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-392: k8s/obs/dns/dir primitives
+for c in 'sourcer run' 'kompose convert' 'sealer run' 'maesh start' 'mertcan deploy' 'keptn install' 'keel -p get' 'brigade -n run' 'ghorg clone'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'beats -c ship' 'lumberjack -c conf' 'gollector run' 'graphite -w web' 'chronograf start' 'cadvisor -port 8080' 'check_mk agent' 'shinken start' 'bosun -c web' 'tcollector run' 'sidecar -i inject' 'querier run' 'shipper -c conf' 'ddog agent' 'k6cloud run' 'jepsen test' 'molotov -d scenario' 'boom -n 100' 'latkins run' 'terraspace plan' 'terragoat init' 'tfk8s plan' 'tfnotify plan' 'terrafile install'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'globalprotect connect' 'mullvad connect' 'dnscap -i eth0' 'corefile reload' 'kresd -f run' 'maradns -f run' 'dnsrbl check' 'mailwrapper send' 'dovecot -F run' 'dovelpwds hash' 'imapd start' 'perdition -f run' 'haraka -c run' 'dkimpy sign' 'srs2 forward'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'ldapurl -h parse' 'dirsrv start' 'sim_server run' 'uuserver run' 'radtest user' 'radwho list' 'radlast log' 'radcheck list' 'radcrypt crypt' 'smbencrypt hash' 'ntlm_smb_lm_auth auth' 'pap2 chap' 'md4 hash' 'mspwd hash' 'tac_pwd crypt' 'tac_check auth' 'mkhomedir_helper run' 'pam_warn warn' 'adsys run' 'smbnetfs mount'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'keel the boat hull' 'brigade of soldiers' 'beats the drum' 'lumberjack chopping wood' 'graphite pencil lead' 'bosun whistle call' 'sidecar motorcycle rig' 'shipper freight company' 'molotov cocktail recipe' 'boom the microphone' 'perdition the movie'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-391: fp/lisp/asm primitives
 for c in 'hlint src' 'hoogle query' 'hpack spec' 'leancheck test' 'elan -t lean' 'coq -l file' 'coqdep f.v' 'coqdoc f.v' 'coqwc f.v' 'holtt prove' 'twelf check' 'maude -f run' 'nuxmv -int' 'nusmv -int' 'spark -p prove' 'gnat -c make' 'gnatprove -P x' 'gnatchop file' 'gnatcheck -P x' 'gnatelim file' 'gnathtml -P x' 'gnatkr file' 'gnatname -P x' 'gnatprep file' 'gprslave run' 'gprls -P x' 'alr -n build' 'ocaml file.ml' 'ocamldebug prog' 'ocamldoc -d x' 'ocamlmktop -o x' 'ocamlmklib -o x' 'ocamlopt -o x' 'ocamldep -l ml' 'ocamlprof prog' 'ocamlbrowser -I x' 'dune -b build' 'odoc compile'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
