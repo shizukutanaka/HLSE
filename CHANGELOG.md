@@ -10856,6 +10856,13 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 372): index/diff + charset/NLP primitives** —
+  code indexers (cscope, ctags, etags, gtags, htags, csope, mkid),
+  hex/binary diff (010editor, bspatch, vcdiff, popmail, editdiff,
+  diffoscope, bcompare), charset detectors (chardet, uchardet, kconv,
+  hnkf, qkc) and Japanese NLP (sudachi, sudachipy, unidic, cabocha,
+  fugashi, kamigoto); real words (diffuse, todos, sudachi, cabocha,
+  kamigoto, vibrato, pointwise) gated on ` -`. +29/36 checks.
 - **ALERT 45 (cycle 371): HPC scheduler + grid/iRODS primitives** —
   batch schedulers (qorder, checkjob, moab, bparams, bugroup, bmgroups,
   blaunch, blcollect, qquota, oarsub, oarstat, oarpeek, oarhold),

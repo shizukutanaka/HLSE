@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-372: index/diff + charset/nlp primitives
+for c in 'cscope -bR' 'ctags -R .' 'etags -o TAGS src' 'gtags -i' 'htags -a' 'csope -R' 'mkid -o ID' '010editor file.bin -run' 'bspatch old new patch' 'vcdiff -d a b' 'popmail -n' 'editdiff x.diff -o y' 'diffoscope a.zip b.zip -j' 'diffuse -m a b c' 'bcompare a b -solo' 'todos -u file.txt'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'chardet file.txt' 'uchardet file.txt' 'kconv -e in.txt' 'hnkf -w in.txt' 'qkc -e in.txt' 'sudachi -w text.txt' 'sudachipy -a text' 'unidic -v' 'cabocha -f1 in.txt' 'fugashi -w test' 'kamigoto -x' 'vibrato -p 440' 'pointwise -v grid'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'echo diffuse light source' 'echo todos los dias' 'sudachi citrus fruit' 'echo cabocha squash soup' 'echo kamigoto islands' 'echo add vibrato here' 'echo pointwise convergence'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-371: scheduler + grid/irods primitives
 for c in 'qorder job1 job2' 'checkjob -v 1234' 'moab -l' 'bparams -a' 'bugroup -l' 'bmgroups -m grp' 'blaunch -n 4 cmd' 'blcollect -j 1' 'qquota -u user' 'oarsub -l nodes=2 script' 'oarstat -j 99' 'oarpeek -j 99' 'oarhold -j 99'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

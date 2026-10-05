@@ -14912,6 +14912,32 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "idbug") || ci_contains(text, "ipwd") ||
              ci_contains(text, "ierror")) {
         what = "grid/irods primitive";
+        } else if (
+             /* cycle-372a: code-index/hex/diff primitives */
+             ci_contains(text, "cscope") || ci_contains(text, "ctags") ||
+             ci_contains(text, "etags") || ci_contains(text, "gtags") ||
+             ci_contains(text, "htags") || ci_contains(text, "csope") ||
+             ci_contains(text, "mkid") || ci_contains(text, "010editor") ||
+             ci_contains(text, "bspatch") || ci_contains(text, "vcdiff") ||
+             ci_contains(text, "popmail") || ci_contains(text, "editdiff") ||
+             ci_contains(text, "diffoscope") ||
+             (ci_contains(text, "diffuse") && ci_contains(text, " -")) ||
+             ci_contains(text, "bcompare") ||
+             (ci_contains(text, "todos") && ci_contains(text, " -"))) {
+        what = "index/diff primitive";
+        } else if (
+             /* cycle-372b: charset/nlp primitives */
+             ci_contains(text, "chardet") || ci_contains(text, "uchardet") ||
+             ci_contains(text, "kconv") || ci_contains(text, "hnkf") ||
+             ci_contains(text, "qkc") ||
+             (ci_contains(text, "sudachi") && ci_contains(text, " -")) ||
+             ci_contains(text, "sudachipy") || ci_contains(text, "unidic") ||
+             (ci_contains(text, "cabocha") && ci_contains(text, " -")) ||
+             ci_contains(text, "fugashi") ||
+             (ci_contains(text, "kamigoto") && ci_contains(text, " -")) ||
+             (ci_contains(text, "vibrato") && ci_contains(text, " -")) ||
+             (ci_contains(text, "pointwise") && ci_contains(text, " -"))) {
+        what = "charset/nlp primitive";
         }
 
         if (what) {
