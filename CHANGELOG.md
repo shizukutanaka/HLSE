@@ -10856,6 +10856,30 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 409): music-notation/broadcast primitives**
+  — music-notation/midi (photoscore, sharpeye, mozart,
+  finale, sibelius, vivaldistudio, dorico, wavelab, nuendo,
+  thegrand, noteflight, flatio, staffpad, gp5, gp6, gp7,
+  gpconv, gp2midi, gp7conv, powertab, pteditor, ptb, tabit,
+  tablature, tabview, tablatures, chord, chordpro, chordii,
+  chordname, chordauto, chordtrans, chordette, chordbook,
+  midi2svg, midi2wav, midi2mp3, midi2ogg, midi2score,
+  midi2mel, midi2mod, miditomp3, midirender, midimerge,
+  midiprobe, midisheet, midisheetmusic, mus2mid, verovio,
+  note2note, noteheads, antescofo, rnm, neuratron,
+  audioscore, zebrify, freemusic, freescores, wikifonia,
+  gnmidi, midieditor), broadcast/dvb (ccg, srtenc, srtstats,
+  srtserver, tsduck, tsanalyze, tsbitrate, tsdektec,
+  tsecmg, tserstats, tsgenecmg, tslatency, tslivesize,
+  tsmetrics, tsrename, tssdt, tsswitch, tstabcomp,
+  tstabinfo, tstables, tsterinfo, tstime, tsvariety,
+  dvblast, dvicon, dvbsrc, dvbt2, dvbs2, dvbc, dvbc2,
+  dvbapi, enigma2, dreamedit, vuplus, gigablue, octagon,
+  ediusion, libreleec, libreelec, coreelec, mecool,
+  tbs5590, tbs5881, tbs5990, tbs5220, tbs5280, tbs5281,
+  tbs5520se, tbs5880, tbs8922, hauppauge, wintv, e2iplayer,
+  oscam, cccam, cccam2, newcamd, cardserver, schlaflos,
+  satip). tbs dropped (TBS channel FP). +127/128 checks.
 - **ALERT 45 (cycle 408): docpub/gnss primitives**
   — docpub/cat (scribus, idml, idml2pdf, markzware,
   flightcheck, pdf2id, pdf2indd, publisher, corel, coreldraw,

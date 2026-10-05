@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-409: music-notation/broadcast primitives
+for c in 'photoscore scan' 'sharpeye scan' 'mozart -e edit' 'finale -e edit' 'sibelius -e edit' 'vivaldistudio run' 'dorico -e edit' 'wavelab master' 'nuendo mix' 'thegrand -p piano' 'noteflight write' 'flatio write' 'staffpad write' 'gp5 file' 'gp6 file' 'gp7 file' 'gpconv conv' 'gp2midi conv' 'gp7conv conv' 'powertab edit' 'pteditor edit' 'ptb file' 'tabit edit' 'tablature write' 'tabview view' 'tablatures print' 'chord -t transpose' 'chordpro conv' 'chordii conv' 'chordname lookup' 'chordauto run' 'chordtrans trans' 'chordette run' 'chordbook open' 'midi2svg conv' 'midi2wav conv' 'midi2mp3 conv' 'midi2ogg conv' 'midi2score conv' 'midi2mel conv' 'midi2mod conv' 'miditomp3 conv' 'midirender render' 'midimerge merge' 'midiprobe probe' 'midisheet sheet' 'midisheetmusic conv' 'mus2mid conv' 'verovio render' 'note2note conv' 'noteheads render' 'antescofo follow' 'rnm run' 'neuratron scan' 'audioscore transcribe' 'zebrify run' 'freemusic dl' 'freescores dl' 'wikifonia dl' 'gnmidi run' 'midieditor edit'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'ccg server' 'srtenc encode' 'srtstats stats' 'srtserver serve' 'tsduck run' 'tsanalyze analyze' 'tsbitrate analyze' 'tsdektec run' 'tsecmg run' 'tserstats stats' 'tsgenecmg run' 'tslatency measure' 'tslivesize measure' 'tsmetrics measure' 'tsrename rename' 'tssdt dump' 'tsswitch switch' 'tstabcomp compile' 'tstabinfo info' 'tstables dump' 'tsterinfo info' 'tstime stamp' 'tsvariety show' 'dvblast stream' 'dvicon run' 'dvbsrc run' 'dvbt2 scan' 'dvbs2 scan' 'dvbc scan' 'dvbc2 scan' 'dvbapi run' 'enigma2 run' 'dreamedit edit' 'vuplus run' 'gigablue run' 'octagon -r receiver' 'ediusion run' 'libreleec run' 'libreelec boot' 'coreelec boot' 'mecool boot' 'tbs5590 card' 'tbs5881 card' 'tbs5990 card' 'tbs5220 card' 'tbs5280 card' 'tbs5281 card' 'tbs5520se card' 'tbs5880 card' 'tbs8922 card' 'hauppauge card' 'wintv card' 'e2iplayer run' 'oscam run' 'cccam run' 'cccam2 run' 'newcamd run' 'cardserver serve' 'schlaflos run' 'satip stream'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'mozart biography read' 'finale of the show' 'sibelius composer' 'dorico menu item' 'thegrand ballroom' 'chord progression theory' 'octagon shape puzzle' 'government policy change'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-408: docpub/gnss primitives
 for c in 'scribus open' 'idml conv' 'idml2pdf conv' 'markzware run' 'flightcheck check' 'pdf2id conv' 'pdf2indd conv' 'publisher -o open' 'corel -d draw' 'coreldraw draw' 'cdr2pdf conv' 'cdr2svg conv' 'cdr2raw conv' 'svg2cdr conv' 'ventura -p pub' 'mif2fm conv' 'mif2docbook conv' 'mif2rtf conv' 'mif2sgml conv' 'okapi run' 'tikal run' 'olifant run' 'cafetan run' 'heartsome run' 'wordfast run' 'wfclassic run' 'memoq run' 'memsource run' 'pocompile compile' 'poconflicts check' 'pystderr run' 'po2html conv' 'htm2po conv' 'it2po conv' 'korrekturzeichen run' 'levenshtein2po conv' 'mo2po conv' 'odf2po conv' 'oo2po conv' 'pdf2po conv' 'po2dtd conv' 'po2ical conv' 'po2ini conv' 'po2json conv' 'po2md conv' 'po2oo conv' 'po2pdf conv' 'po2prop conv' 'po2rc conv' 'po2sub conv' 'po2symb conv' 'po2tiki conv' 'po2ts conv' 'po2wiki conv' 'po2web2py conv' 'qm2po conv' 'symb2po conv' 'wpml2po conv' 'poconflict check' 'poserver serve'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

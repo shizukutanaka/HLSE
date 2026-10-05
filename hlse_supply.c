@@ -16494,6 +16494,78 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "caster") && ci_contains(text, " -")) ||
              ci_contains(text, "strsvr")) {
         what = "gnss/survey primitive";
+        } else if (
+             /* cycle-409a: music-notation/midi primitives */
+             ci_contains(text, "photoscore") || ci_contains(text, "sharpeye") ||
+             (ci_contains(text, "mozart") && ci_contains(text, " -")) ||
+             (ci_contains(text, "finale") && ci_contains(text, " -")) ||
+             (ci_contains(text, "sibelius") && ci_contains(text, " -")) ||
+             ci_contains(text, "vivaldistudio") ||
+             (ci_contains(text, "dorico") && ci_contains(text, " -")) ||
+             ci_contains(text, "wavelab") || ci_contains(text, "nuendo") ||
+             (ci_contains(text, "thegrand") && ci_contains(text, " -")) ||
+             ci_contains(text, "noteflight") || ci_contains(text, "flatio") ||
+             ci_contains(text, "staffpad") || ci_contains(text, "gp5 ") ||
+             ci_contains(text, "gp6 ") || ci_contains(text, "gp7 ") ||
+             ci_contains(text, "gpconv") || ci_contains(text, "gp2midi") ||
+             ci_contains(text, "gp7conv") || ci_contains(text, "powertab") ||
+             ci_contains(text, "pteditor") || ci_contains(text, "ptb ") ||
+             ci_contains(text, "tabit") || ci_contains(text, "tablature") ||
+             ci_contains(text, "tabview") || ci_contains(text, "tablatures") ||
+             (ci_contains(text, "chord") && ci_contains(text, " -")) ||
+             ci_contains(text, "chordpro") || ci_contains(text, "chordii") ||
+             ci_contains(text, "chordname") || ci_contains(text, "chordauto") ||
+             ci_contains(text, "chordtrans") || ci_contains(text, "chordette") ||
+             ci_contains(text, "chordbook") || ci_contains(text, "midi2svg") ||
+             ci_contains(text, "midi2wav") || ci_contains(text, "midi2mp3") ||
+             ci_contains(text, "midi2ogg") || ci_contains(text, "midi2score") ||
+             ci_contains(text, "midi2mel") || ci_contains(text, "midi2mod") ||
+             ci_contains(text, "miditomp3") || ci_contains(text, "midirender") ||
+             ci_contains(text, "midimerge") || ci_contains(text, "midiprobe") ||
+             ci_contains(text, "midisheet") || ci_contains(text, "midisheetmusic") ||
+             ci_contains(text, "mus2mid") || ci_contains(text, "verovio") ||
+             ci_contains(text, "note2note") || ci_contains(text, "noteheads") ||
+             ci_contains(text, "antescofo") || ci_contains(text, "rnm ") ||
+             ci_contains(text, "neuratron") || ci_contains(text, "audioscore") ||
+             ci_contains(text, "zebrify") || ci_contains(text, "freemusic") ||
+             ci_contains(text, "freescores") || ci_contains(text, "wikifonia") ||
+             ci_contains(text, "gnmidi") || ci_contains(text, "midieditor")) {
+        what = "music-notation/midi primitive";
+        } else if (
+             /* cycle-409b: broadcast/dvb primitives */
+             ci_contains(text, "ccg ") || ci_contains(text, "srtenc") ||
+             ci_contains(text, "srtstats") || ci_contains(text, "srtserver") ||
+             ci_contains(text, "tsduck") || ci_contains(text, "tsanalyze") ||
+             ci_contains(text, "tsbitrate") || ci_contains(text, "tsdektec") ||
+             ci_contains(text, "tsecmg") || ci_contains(text, "tserstats") ||
+             ci_contains(text, "tsgenecmg") || ci_contains(text, "tslatency") ||
+             ci_contains(text, "tslivesize") || ci_contains(text, "tsmetrics") ||
+             ci_contains(text, "tsrename") || ci_contains(text, "tssdt") ||
+             ci_contains(text, "tsswitch") || ci_contains(text, "tstabcomp") ||
+             ci_contains(text, "tstabinfo") || ci_contains(text, "tstables") ||
+             ci_contains(text, "tsterinfo") || ci_contains(text, "tstime") ||
+             ci_contains(text, "tsvariety") || ci_contains(text, "dvblast") ||
+             ci_contains(text, "dvicon") || ci_contains(text, "dvbsrc") ||
+             ci_contains(text, "dvbt2") || ci_contains(text, "dvbs2") ||
+             ci_contains(text, "dvbc") || ci_contains(text, "dvbc2") ||
+             ci_contains(text, "dvbapi") || ci_contains(text, "enigma2") ||
+             ci_contains(text, "dreamedit") || ci_contains(text, "vuplus") ||
+             ci_contains(text, "gigablue") ||
+             (ci_contains(text, "octagon") && ci_contains(text, " -")) ||
+             ci_contains(text, "ediusion") || ci_contains(text, "libreleec") ||
+             ci_contains(text, "libreelec") || ci_contains(text, "coreelec") ||
+             ci_contains(text, "mecool") ||
+             ci_contains(text, "tbs5590") || ci_contains(text, "tbs5881") ||
+             ci_contains(text, "tbs5990") || ci_contains(text, "tbs5220") ||
+             ci_contains(text, "tbs5280") || ci_contains(text, "tbs5281") ||
+             ci_contains(text, "tbs5520se") || ci_contains(text, "tbs5880") ||
+             ci_contains(text, "tbs8922") || ci_contains(text, "hauppauge") ||
+             ci_contains(text, "wintv") || ci_contains(text, "e2iplayer") ||
+             ci_contains(text, "oscam") || ci_contains(text, "cccam") ||
+             ci_contains(text, "cccam2") || ci_contains(text, "newcamd") ||
+             ci_contains(text, "cardserver") || ci_contains(text, "schlaflos") ||
+             ci_contains(text, "satip")) {
+        what = "broadcast/dvb primitive";
         }
 
         if (what) {
