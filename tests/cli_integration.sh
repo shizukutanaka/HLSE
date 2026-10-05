@@ -417,6 +417,9 @@ assert data["hardening_band"] in ("hardened", "good", "fair", "weak")
 ./hlse_core --json paste 'hello world' 2>&1 | grep -q '"classes"' \
     && check "P8 classes[] absent on clean input" "1" "0" \
     || check "P8 classes[] absent on clean input" "0" "0"
+./hlse_core --json paste 'powershell -enc XX && certutil -urlcache http://x && mshta http://y && wmic os get && windbg -c x && kubeless deploy && orekit && komga && tunerstudio' 2>&1 | grep -q '"classes_total":12' \
+    && check "P8 classes_total reports true count beyond cap" "0" "0" \
+    || check "P8 classes_total reports true count beyond cap" "0" "1"
 
 # secret findings[] carry a 1-based line number (SIEM/remediation locus)
 printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | ./hlse_core --json secret --stdin 2>&1 | grep -q '"line":4' \

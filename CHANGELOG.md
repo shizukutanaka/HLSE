@@ -10877,6 +10877,15 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 443 (schema parity — spec §5.2 sync + `classes_total`):**
+  `PasteVerdict.classes_total` carries the true P8 match count when it
+  exceeds the 8-entry `classes[]` cap (reason already printed "+N
+  more"; JSON now exposes the same number). Spec §5.2 brought back to
+  parity with the emitter: documents `classes`/`classes_total` for
+  paste, `findings[].line` for secret, and corrects `signals` — it is
+  a bitmask of `PASTE_*` families, not an "integer count" as the spec
+  claimed (a real schema bug discovered while syncing). CLI test +1:
+  12-class input reports classes_total:12 alongside the capped array.
 - **cycle 442 (structured output pt. 2 — secret findings carry
   `line`):** a secret scanner that cannot say WHERE the credential
   sits forces a manual re-search: findings carried only type +

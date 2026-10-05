@@ -65,8 +65,10 @@ typedef struct {
     char reasons[HLSE_PASTE_MAX_REASONS][256];
     /* P8 multi-hold: every matched chain class, not just the primary
      * (the human reason only names the first 3 secondary hits).
-     * classes[0] is the primary label; literal pointers, static storage. */
+     * classes[0] is the primary label; literal pointers, static storage.
+     * classes_total is the true match count when it exceeds the cap. */
     int  n_classes;
+    int  classes_total;
     const char *classes[HLSE_PASTE_MAX_CLASSES];
 } PasteVerdict;
 

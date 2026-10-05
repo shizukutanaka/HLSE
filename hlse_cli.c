@@ -741,6 +741,8 @@ hlse_cmd_paste(const HlseCli *o, int argc, char **argv, int idx) {
                     for (i = 0; i < pv.n_classes; i++)
                         hlse_json_str_elem(i, pv.classes[i]);
                     printf("]");
+                    if (pv.classes_total > pv.n_classes)
+                        printf(",\"classes_total\":%d", pv.classes_total);
                 }
                 printf("}\n");
             } else if (pv.score == 0) {

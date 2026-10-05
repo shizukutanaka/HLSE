@@ -171,11 +171,15 @@ Additional fields vary by kind:
 - `network`/`esp`: `reasons:[...]`.
 - `email`: `reasons:[...]`; `body_pattern`/`body_score` when a body was
   inspected; `remediation` on detections.
-- `paste`: `signals` (integer count of fired pastejacking signals), `reasons:[...]`.
+- `paste`: `signals` (bitmask of fired `PASTE_*` signal families), `reasons:[...]`;
+  `classes` (every matched P8 chain class — the reason string names only
+  the first 3) and `classes_total` (true match count, only when it
+  exceeds the `classes` cap) on multi-class detections.
 - `clipboard`: `is_swap`, `original`, `swapped`, `reason`, `remediation`.
 - `file`: `path`, `reasons:[...]`.
-- `secret`: `findings:[{type,description,confidence?,remediation?}]`;
-  `caveat` on detections.
+- `secret`: `findings:[{type,line,description,confidence?,remediation?}]`
+  (`line` is the 1-based line of the finding within the scanned text;
+  `0` when the position is not line-resolvable); `caveat` on detections.
 - `package`: `name`, `ecosystem`, `pattern_id`; `matches:[{name,registry,
   distance}]` only on hits. `--manifest` emits one `kind=package` record per
   finding plus a `kind=manifest_summary` terminator: `manifest`,
