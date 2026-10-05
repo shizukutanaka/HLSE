@@ -10856,6 +10856,31 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 411): ui-proto/screenwriting primitives**
+  — ui-proto/diagram (figma, figjam, figa, fig2html,
+  fig2svg, evolus, akira, drawio, jgraph, yedgraph,
+  yworks, yfiles, orgchart, pumla, puml, structurizr,
+  terrastruct, graphviz, dot2svg, gml2gv, graphml2gv,
+  gv2gml, gvgen, gephi, tulip, socnetv, graphia,
+  graphviz2gv, visone, pajek, pajek2net, paj2net, libvis,
+  netwulf, infomap, mapcore, mapgenerator, mapframer,
+  nograph, graphvizdot, miro, mural, whimsical, lucid,
+  lucidchart, lucidscale, freetier, freedraw, zeplin,
+  framer, origami, principle, sketchapp, sketch2html,
+  sketch2json, abstract, v0dev, plasmic, antetype,
+  marvelapp, moqups, pidoco, wireframe, wireframecc,
+  appcooker, fluidui, shottr, droplr, cloudapp,
+  lightshot, faststone, picpick, gifrecorder, gifcap,
+  ttystudio), screenwriting/filmprod (fountain,
+  fountainio, fountainmd, trelby, fadein, studiobinder,
+  highland, slugline, storyboard, storyboarder,
+  storyboardfountain, boards, boords, fcheck, editlist,
+  callsheet, sethero, dramatify, gorilla, shotpro,
+  shotlister, sgtk, fpt, ftrack, kitsu, zou, cgwire,
+  rvio, rvsd, rqd, afrender, afserver, cgru, rules,
+  deadline, deadlineslave, royalrender, rrserver, qube,
+  qubeui, autodeskflare, smokesmoke, davinci, tuttle).
+  +136/136 checks.
 - **ALERT 45 (cycle 410): dfir/cnc primitives**
   — dfir/c2 (regtime, regparse, regdiff, regproc,
   appcompatcache, userassist, usrclass, ntuser, pefetch,

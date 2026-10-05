@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-411: ui-proto/screenwriting primitives
+for c in 'figma design' 'figjam jam' 'figa conv' 'fig2html conv' 'fig2svg conv' 'evolus pencil' 'akira ux' 'drawio diagram' 'jgraph diagram' 'yedgraph edit' 'yworks run' 'yfiles run' 'orgchart render' 'pumla conv' 'puml conv' 'structurizr model' 'terrastruct run' 'graphviz render' 'dot2svg conv' 'gml2gv conv' 'graphml2gv conv' 'gv2gml conv' 'gvgen gen' 'gephi viz' 'tulip -n network' 'socnetv viz' 'graphia viz' 'graphviz2gv conv' 'visone viz' 'pajek viz' 'pajek2net conv' 'paj2net conv' 'libvis viz' 'netwulf viz' 'infomap cluster' 'mapcore run' 'mapgenerator gen' 'mapframer run' 'nograph run' 'graphvizdot run' 'miro -b board' 'mural -b board' 'whimsical -w wire' 'lucid -c chart' 'lucidchart chart' 'lucidscale scale' 'freetier draw' 'freedraw draw' 'zeplin handoff' 'framer -m motion' 'origami -s studio' 'principle -a animate' 'sketchapp design' 'sketch2html conv' 'sketch2json conv' 'abstract -v version' 'v0dev gen' 'plasmic build' 'antetype proto' 'marvelapp proto' 'moqups mock' 'pidoco proto' 'wireframe -l low-fi' 'wireframecc draw' 'appcooker cook' 'fluidui proto' 'shottr shot' 'droplr share' 'cloudapp share' 'lightshot shot' 'faststone capture' 'picpick pick' 'gifrecorder rec' 'gifcap rec' 'ttystudio rec'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'fountain -s script' 'fountainio conv' 'fountainmd conv' 'trelby write' 'fadein write' 'studiobinder schedule' 'highland -s script' 'slugline write' 'storyboard -f frame' 'storyboarder draw' 'storyboardfountain draw' 'boards -a app' 'boords draw' 'fcheck review' 'editlist edl' 'callsheet gen' 'sethero cast' 'dramatify run' 'gorilla -s schedule' 'shotpro shot' 'shotlister list' 'sgtk toolkit' 'fpt track' 'ftrack track' 'kitsu track' 'zou api' 'cgwire run' 'rvio render' 'rvsd server' 'rqd run' 'afrender render' 'afserver serve' 'cgru run' 'rules -e engine' 'deadline -r render' 'deadlineslave render' 'royalrender render' 'rrserver serve' 'qube submit' 'qubeui submit' 'autodeskflare grade' 'smokesmoke finish' 'davinci -r resolve' 'tuttle plugin'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'tulip garden spring' 'miro print exhibition' 'mural on the wall' 'whimsical tale book' 'lucid dream journal' 'origami figures hobby' 'principle of design' 'abstract art gallery' 'wireframe models theory' 'fountain in the park' 'highland cattle scotland' 'storyboard review meeting' 'boards of directors' 'gorilla habitat study' 'rules of the road' 'deadline missed today' 'davinci painting tour'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-410: dfir/cnc primitives
 for c in 'regtime dump' 'regparse parse' 'regdiff diff' 'regproc proc' 'appcompatcache parse' 'userassist decode' 'usrclass parse' 'ntuser parse' 'pefetch parse' 'jpegparser parse' 'winevt parse' 'winevt2json conv' 'sigmac conv' 'sigma2yml conv' 'sigma2rule conv' 'sigma2sigma conv' 'misp feed' 'pymisp query' 'pycti query' 'sandcat agent' 'ragdoll agent' 'mordor dataset' 'c2server run' 'fofofo scan' 'quake360 scan' 'mdm dump' 'haven -m mode' 'faction -a agent'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

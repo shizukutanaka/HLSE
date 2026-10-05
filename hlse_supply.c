@@ -16632,6 +16632,86 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "roland") && ci_contains(text, " -")) ||
              ci_contains(text, "stika") || ci_contains(text, "mimaki")) {
         what = "cnc/3dprint primitive";
+        } else if (
+             /* cycle-411a: ui-proto/diagram primitives */
+             ci_contains(text, "figma") || ci_contains(text, "figjam") ||
+             ci_contains(text, "figa") || ci_contains(text, "fig2html") ||
+             ci_contains(text, "fig2svg") || ci_contains(text, "evolus") ||
+             ci_contains(text, "akira") || ci_contains(text, "drawio") ||
+             ci_contains(text, "jgraph") || ci_contains(text, "yedgraph") ||
+             ci_contains(text, "yworks") || ci_contains(text, "yfiles") ||
+             ci_contains(text, "orgchart") || ci_contains(text, "pumla") ||
+             ci_contains(text, "puml") || ci_contains(text, "structurizr") ||
+             ci_contains(text, "terrastruct") || ci_contains(text, "graphviz") ||
+             ci_contains(text, "dot2svg") || ci_contains(text, "gml2gv") ||
+             ci_contains(text, "graphml2gv") || ci_contains(text, "gv2gml") ||
+             ci_contains(text, "gvgen") || ci_contains(text, "gephi") ||
+             (ci_contains(text, "tulip") && ci_contains(text, " -")) ||
+             ci_contains(text, "socnetv") || ci_contains(text, "graphia") ||
+             ci_contains(text, "graphviz2gv") || ci_contains(text, "visone") ||
+             ci_contains(text, "pajek") || ci_contains(text, "pajek2net") ||
+             ci_contains(text, "paj2net") || ci_contains(text, "libvis") ||
+             ci_contains(text, "netwulf") || ci_contains(text, "infomap") ||
+             ci_contains(text, "mapcore") || ci_contains(text, "mapgenerator") ||
+             ci_contains(text, "mapframer") || ci_contains(text, "nograph") ||
+             ci_contains(text, "graphvizdot") ||
+             (ci_contains(text, "miro") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mural") && ci_contains(text, " -")) ||
+             (ci_contains(text, "whimsical") && ci_contains(text, " -")) ||
+             (ci_contains(text, "lucid") && ci_contains(text, " -")) ||
+             ci_contains(text, "lucidchart") || ci_contains(text, "lucidscale") ||
+             ci_contains(text, "freetier") || ci_contains(text, "freedraw") ||
+             ci_contains(text, "zeplin") ||
+             (ci_contains(text, "framer") && ci_contains(text, " -")) ||
+             (ci_contains(text, "origami") && ci_contains(text, " -")) ||
+             (ci_contains(text, "principle") && ci_contains(text, " -")) ||
+             ci_contains(text, "sketchapp") || ci_contains(text, "sketch2html") ||
+             ci_contains(text, "sketch2json") ||
+             (ci_contains(text, "abstract") && ci_contains(text, " -")) ||
+             ci_contains(text, "v0dev") || ci_contains(text, "plasmic") ||
+             ci_contains(text, "antetype") || ci_contains(text, "marvelapp") ||
+             ci_contains(text, "moqups") || ci_contains(text, "pidoco") ||
+             (ci_contains(text, "wireframe") && ci_contains(text, " -")) ||
+             ci_contains(text, "wireframecc") || ci_contains(text, "appcooker") ||
+             ci_contains(text, "fluidui") || ci_contains(text, "shottr") ||
+             ci_contains(text, "droplr") || ci_contains(text, "cloudapp") ||
+             ci_contains(text, "lightshot") || ci_contains(text, "faststone") ||
+             ci_contains(text, "picpick") || ci_contains(text, "gifrecorder") ||
+             ci_contains(text, "gifcap") || ci_contains(text, "ttystudio")) {
+        what = "ui-proto/diagram primitive";
+        } else if (
+             /* cycle-411b: screenwriting/filmprod primitives */
+             (ci_contains(text, "fountain") && ci_contains(text, " -")) ||
+             ci_contains(text, "fountainio") || ci_contains(text, "fountainmd") ||
+             ci_contains(text, "trelby") || ci_contains(text, "fadein") ||
+             ci_contains(text, "studiobinder") ||
+             (ci_contains(text, "highland") && ci_contains(text, " -")) ||
+             ci_contains(text, "slugline") ||
+             (ci_contains(text, "storyboard") && ci_contains(text, " -")) ||
+             ci_contains(text, "storyboarder") ||
+             ci_contains(text, "storyboardfountain") ||
+             (ci_contains(text, "boards") && ci_contains(text, " -")) ||
+             ci_contains(text, "boords") || ci_contains(text, "fcheck") ||
+             ci_contains(text, "editlist") || ci_contains(text, "callsheet") ||
+             ci_contains(text, "sethero") || ci_contains(text, "dramatify") ||
+             (ci_contains(text, "gorilla") && ci_contains(text, " -")) ||
+             ci_contains(text, "shotpro") || ci_contains(text, "shotlister") ||
+             ci_contains(text, "sgtk") || ci_contains(text, "fpt") ||
+             ci_contains(text, "ftrack") || ci_contains(text, "kitsu") ||
+             ci_contains(text, "zou") || ci_contains(text, "cgwire") ||
+             ci_contains(text, "rvio") || ci_contains(text, "rvsd") ||
+             ci_contains(text, "rqd ") || ci_contains(text, "afrender") ||
+             ci_contains(text, "afserver") || ci_contains(text, "cgru") ||
+             (ci_contains(text, "rules") && ci_contains(text, " -")) ||
+             (ci_contains(text, "deadline") && ci_contains(text, " -")) ||
+             ci_contains(text, "deadlineslave") ||
+             ci_contains(text, "royalrender") || ci_contains(text, "rrserver") ||
+             ci_contains(text, "qube") || ci_contains(text, "qubeui") ||
+             ci_contains(text, "autodeskflare") ||
+             ci_contains(text, "smokesmoke") ||
+             (ci_contains(text, "davinci") && ci_contains(text, " -")) ||
+             ci_contains(text, "tuttle")) {
+        what = "screenwriting/filmprod primitive";
         }
 
         if (what) {
