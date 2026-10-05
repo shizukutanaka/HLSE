@@ -10856,6 +10856,16 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 387): desktop/notebook/virt primitives** —
+  desktop capture (shutter, hotshots, peek, gifcurry, gifski,
+  interception, gesture, gestures, gebaar), Jupyter/GPU
+  (jupyter, ipykernel, irkernel, gophernotes, calysto, metakernel,
+  ptyprocess, unigine, glslc, shaderc, naga, rga, amdvlk, eglinfo,
+  es2_info, es2gears, es2tri, glinfo, nvenc, nvdec, umr, amd_debug),
+  virt/sec/observability (cirr, quickemu, kata, maltrail, orbit,
+  kolide, appstream, uefi, efiboot, otelcontribcol, tcptracer,
+  criticalstat, shmnoop, udpconnect, dbstat, cpufreq, klockstat,
+  netqtop). Words gated. +47/54 checks.
 - **ALERT 45 (cycle 386): vision/gis/eda primitives** — vision/OCR
   (labelimg, fiftyone, oidv6, darknet, yolo, detectron, mmdet, mmocr,
   mmpose, mmlab, ultralytics, norfair, bytetrack, jde, centertrack,

@@ -11674,6 +11674,36 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-387: desktop/notebook/virt primitives
+for c in 'shutter -s' 'hotshots region' 'peek -f win' 'gifcurry -i v' 'gifski -o g v' 'interception -t dev' 'gesture -l list' 'gestures -d dbg' 'gebaar -w run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'jupyter lab' 'ipykernel install' 'irkernel spec' 'gophernotes kernel' 'calysto kernel' 'metakernel run' 'ptyprocess spawn' 'unigine benchmark' 'glslc shader' 'shaderc compile' 'naga -v shader' 'rga -c api' 'amdvlk icd' 'eglinfo -B' 'es2_info query' 'es2gears run' 'es2tri demo' 'glinfo -q' 'nvenc encode' 'nvdec decode' 'umr -s dump' 'amd_debug env'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'cirr vm' 'quickemu --vm win' 'kata -r run' 'maltrail -i dev' 'orbit -u fleet' 'kolide launcher' 'appstream get' 'uefi boot' 'efiboot dump' 'otelcontribcol --config c' 'tcptracer -p 80' 'criticalstat -d 5' 'shmnoop -T' 'udpconnect -p 53' 'dbstat -d db' 'cpufreq -f info' 'klockstat -p 1' 'netqtop -i dev'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'take a peek inside' 'a gesture of goodwill' 'friendly gestures abroad' 'the interception play' 'kata form practice' 'orbit around the sun' 'naga the dragon'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-386: vision/gis/eda primitives
 for c in 'labelimg img' 'fiftyone launch' 'oidv6 download' 'darknet detector test' 'yolo -w v8' 'detectron2 demo' 'mmdet train' 'mmocr infer' 'mmpose top' 'mmlab run' 'ultralytics predict' 'norfair track' 'bytetrack eval' 'jde -opt x' 'centertrack demo' 'meituan sdk' 'motmetrics out' 'tracktor run' 'dwpose infer' 'alphapose demo' 'higherhrnet eval' 'gluoncv train' 'ppocr rec' 'doctr -i doc' 'calamar train' 'surya -m run' 'layoutparser parse' 'tabledetect find' 'img2table x.pdf' 'camelot -p file' 'tabula -p doc' 'marker -o out' 'nougat -m pdf' 'vott open'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

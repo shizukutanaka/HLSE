@@ -15362,6 +15362,45 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "boa ") && ci_contains(text, " -")) ||
              ci_contains(text, "tas ")) {
         what = "eda primitive";
+        } else if (
+             /* cycle-387a: desktop/capture primitives */
+             ci_contains(text, "shutter") || ci_contains(text, "hotshots") ||
+             (ci_contains(text, "peek") && ci_contains(text, " -")) ||
+             ci_contains(text, "gifcurry") || ci_contains(text, "gifski") ||
+             (ci_contains(text, "interception") && ci_contains(text, " -")) ||
+             (ci_contains(text, "gesture") && ci_contains(text, " -")) ||
+             (ci_contains(text, "gestures") && ci_contains(text, " -")) ||
+             ci_contains(text, "gebaar")) {
+        what = "desktop/capture primitive";
+        } else if (
+             /* cycle-387b: notebook/gpu primitives */
+             ci_contains(text, "jupyter") || ci_contains(text, "ipykernel") ||
+             ci_contains(text, "irkernel") || ci_contains(text, "gophernotes") ||
+             ci_contains(text, "calysto") || ci_contains(text, "metakernel") ||
+             ci_contains(text, "ptyprocess") || ci_contains(text, "unigine") ||
+             ci_contains(text, "glslc") || ci_contains(text, "shaderc") ||
+             (ci_contains(text, "naga") && ci_contains(text, " -")) ||
+             ci_contains(text, "rga ") || ci_contains(text, "amdvlk") ||
+             ci_contains(text, "eglinfo") || ci_contains(text, "es2_info") ||
+             ci_contains(text, "es2gears") || ci_contains(text, "es2tri") ||
+             ci_contains(text, "glinfo") || ci_contains(text, "nvenc") ||
+             ci_contains(text, "nvdec") || ci_contains(text, "umr ") ||
+             ci_contains(text, "amd_debug")) {
+        what = "notebook/gpu primitive";
+        } else if (
+             /* cycle-387c: virt/sec/observability primitives */
+             ci_contains(text, "cirr") || ci_contains(text, "quickemu") ||
+             (ci_contains(text, "kata") && ci_contains(text, " -")) ||
+             ci_contains(text, "maltrail") ||
+             (ci_contains(text, "orbit") && ci_contains(text, " -")) ||
+             ci_contains(text, "kolide") || ci_contains(text, "appstream") ||
+             ci_contains(text, "uefi") || ci_contains(text, "efiboot") ||
+             ci_contains(text, "otelcontribcol") || ci_contains(text, "tcptracer") ||
+             ci_contains(text, "criticalstat") || ci_contains(text, "shmnoop") ||
+             ci_contains(text, "udpconnect") || ci_contains(text, "dbstat") ||
+             ci_contains(text, "cpufreq") || ci_contains(text, "klockstat") ||
+             ci_contains(text, "netqtop")) {
+        what = "virt/sec primitive";
         }
 
         if (what) {
