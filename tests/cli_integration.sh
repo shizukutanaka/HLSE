@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-384: js/py tooling primitives
+for c in 'corepack enable' 'fnm install 20' 'nvm install 20' 'bunfig list' 'ncu -u' 'packemon build' 'bumpp -v' 'commitizen init' 'cspell lint .' 'jshint app.js' 'jslint -e es6' 'rslint -f .' 'flow -t check' 'tsc -b' 'dtslint types'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'flit -p x build' 'pipdeptree -p pkg' 'safety -r req.txt' 'pytype -d pyi' 'pyre -l src check' 'pyanalyze -f f.py' 'autopep8 -i f' 'yapf -i f.py' 'darker -r .' 'pyink -l 88 .' 'pyupgrade --py39 f' 'pydocstyle -s' 'pycln -a .' 'eradicate -c .' 'vulture -m' 'radon -e x cc src' 'scc -d' 'tokei .' 'sloccount .' 'cloc src' 'pyapp run' 'numba -m jitc' 'shedskin f.py' 'pyodide build' 'brython-cli run' 'transcrypt -b f' 'skulpt run' 'stamina -x retry' 'tenacity -n 3' 'backoff -e expo' 'aiolimiter -r 10'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'river flow direction' 'safety first rule' 'a pyre for the fallen' 'darker than night' 'eradicate the weeds' 'vulture circles above' 'radon gas levels' 'stamina training plan' 'tenacity of the team' 'backoff the limiter' 'flit across the field'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-383: torrent + archiver primitives
 for c in 'tordone -d dir' 'torrt -c cfg' 'torsniff -a 0.0.0.0' 'magnetico -v' 'imdl -t t' 'torf -i in' 'btreannounce t.torrent' 'btretrack t.torrent' 'btshowmetainfo f' 'buildtorrent -o out' 'torrentcheck -t f' 'bigtorrent -x' 'par2 c -r10 a.par2' 'parverify -q a'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

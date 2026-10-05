@@ -10856,6 +10856,15 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 384): js/py tooling primitives** — JS tooling
+  (corepack, fnm, nvm, bunfig, ncu, packemon, bumpp, commitizen,
+  cspell, jshint, jslint, rslint, flow, tsc, dtslint) and Python
+  tooling (flit, pipdeptree, safety, pytype, pyre, pyanalyze,
+  autopep8, yapf, darker, pyink, pyupgrade, pydocstyle, pycln,
+  eradicate, vulture, radon, scc, tokei, sloccount, cloc, pyapp,
+  numba, shedskin, pyodide, brython, transcrypt, skulpt, stamina,
+  tenacity, backoff, aiolimiter). Words gated; cloc/nvm space-bounded
+  (clock/hwclock/oclock, nvme). +47/59 checks.
 - **ALERT 45 (cycle 383): torrent + archiver primitives** —
   BitTorrent tooling (tordone, torrt, torsniff, magnetico, imdl, torf,
   btreannounce, btretrack, btshowmetainfo, buildtorrent, torrentcheck,

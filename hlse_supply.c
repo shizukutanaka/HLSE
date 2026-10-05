@@ -15215,6 +15215,43 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "lz4") || ci_contains(text, "brotli") ||
              ci_contains(text, "lzop") || ci_contains(text, "lzma")) {
         what = "archiver primitive";
+        } else if (
+             /* cycle-384a: js-tooling primitives */
+             ci_contains(text, "corepack") || ci_contains(text, "fnm") ||
+             ci_contains(text, "nvm ") || ci_contains(text, "bunfig") ||
+             ci_contains(text, "ncu") || ci_contains(text, "packemon") ||
+             ci_contains(text, "bumpp") || ci_contains(text, "commitizen") ||
+             ci_contains(text, "cspell") || ci_contains(text, "jshint") ||
+             ci_contains(text, "jslint") || ci_contains(text, "rslint") ||
+             (ci_contains(text, "flow") && ci_contains(text, " -")) ||
+             ci_contains(text, "tsc") || ci_contains(text, "dtslint")) {
+        what = "js-tooling primitive";
+        } else if (
+             /* cycle-384b: py-tooling primitives */
+             (ci_contains(text, "flit") && ci_contains(text, " -")) ||
+             ci_contains(text, "pipdeptree") ||
+             (ci_contains(text, "safety") && ci_contains(text, " -")) ||
+             ci_contains(text, "pytype") ||
+             (ci_contains(text, "pyre") && ci_contains(text, " -")) ||
+             ci_contains(text, "pyanalyze") || ci_contains(text, "autopep8") ||
+             ci_contains(text, "yapf") ||
+             (ci_contains(text, "darker") && ci_contains(text, " -")) ||
+             ci_contains(text, "pyink") || ci_contains(text, "pyupgrade") ||
+             ci_contains(text, "pydocstyle") || ci_contains(text, "pycln") ||
+             (ci_contains(text, "eradicate") && ci_contains(text, " -")) ||
+             (ci_contains(text, "vulture") && ci_contains(text, " -")) ||
+             (ci_contains(text, "radon") && ci_contains(text, " -")) ||
+             ci_contains(text, "scc") || ci_contains(text, "tokei") ||
+             ci_contains(text, "sloccount") || ci_contains(text, "cloc ") ||
+             ci_contains(text, "pyapp") || ci_contains(text, "numba") ||
+             ci_contains(text, "shedskin") || ci_contains(text, "pyodide") ||
+             ci_contains(text, "brython") || ci_contains(text, "transcrypt") ||
+             ci_contains(text, "skulpt") ||
+             (ci_contains(text, "stamina") && ci_contains(text, " -")) ||
+             (ci_contains(text, "tenacity") && ci_contains(text, " -")) ||
+             (ci_contains(text, "backoff") && ci_contains(text, " -")) ||
+             ci_contains(text, "aiolimiter")) {
+        what = "py-tooling primitive";
         }
 
         if (what) {
