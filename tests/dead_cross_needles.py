@@ -11,7 +11,10 @@ Deadness grammar (eval-time truth is always preserved):
   and_expr = term ('&&' term)*
   term     = call | '(' or_expr ')' | other-text
 
-  call        dead iff positive ('!x' is live) and lit in owned
+  call        dead iff positive ('!x' is live) and some owned
+              needle is a substring of lit — lit's inputs all
+              contain an owned needle, so lit is always false
+              here (exact match is the o == lit special case)
   paren group dead iff every inner operand dead
   and_expr    dead iff ANY term dead (&&-chain short-circuits)
   or-level    dead iff EVERY operand dead
@@ -105,7 +108,12 @@ class Analyzer(object):
         """Is token i (at this level) a term that's false at eval?"""
         t = self.toks[i]
         if t.kind == 'call':
-            return not t.neg and t.lit in self.owned
+            if t.neg or t.lit.startswith(' -'):
+                return False
+            for o in self.owned:
+                if not o.startswith(' -') and o in t.lit:
+                    return True
+            return False
         if t.kind == 'lp':
             # '!(..)' is a *live* term (dead interior -> true);
             # 'name(' is a call-args group, not a boolean term.

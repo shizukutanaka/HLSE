@@ -8171,8 +8171,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, " nc") || ci_contains(text, " tftp") ||
               ci_contains(text, " telnet") || ci_contains(text, " ftpd") ||
               ci_contains(text, " crond") || ci_contains(text, " adduser") ||
-              ci_contains(text, " addgroup") || ci_contains(text, " deluser") ||
-              ci_contains(text, " insmod") || ci_contains(text, " modprobe") ||
+              ci_contains(text, " addgroup") || ci_contains(text, " deluser")  || ci_contains(text, " modprobe") ||
               ci_contains(text, " chroot") || ci_contains(text, " mount") ||
               ci_contains(text, " umount") || ci_contains(text, " ifconfig") ||
               ci_contains(text, " route") || ci_contains(text, " vi ") ||
@@ -8188,7 +8187,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " telnet") || ci_contains(text, " tftp") ||
               ci_contains(text, " httpd") || ci_contains(text, " sh ") ||
               ci_contains(text, " su ") || ci_contains(text, " mount") ||
-              ci_contains(text, " umount") || ci_contains(text, " insmod") ||
+              ci_contains(text, " umount")  ||
               ci_contains(text, " modprobe") || ci_contains(text, " ifconfig") ||
               ci_contains(text, " route") || ci_contains(text, " crond") ||
               ci_contains(text, " adduser") || ci_contains(text, " chroot"))) ||
@@ -8953,7 +8952,7 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " unset") || ci_contains(text, " erase") ||
                ci_contains(text, " show") || ci_contains(text, " get") ||
                ci_contains(text, " -"))) ||
-             ci_contains(text, "sysupgrade") || ci_contains(text, "fw_printenv") ||
+             ci_contains(text, "sysupgrade")  ||
              ci_contains(text, "fw_setenv") || ci_contains(text, "uboot-env") ||
              (ci_contains(text, "pm ") &&
               !ci_contains(text, "rpm") &&
@@ -10339,7 +10338,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tplmap") || ci_contains(text, "kxss") ||
              ci_contains(text, "gopherus") ||
              /* web terminals / hosting panels */
-             ci_contains(text, "mosh-server")    || ci_contains(text, "shellinaboxd") ||
+             ci_contains(text, "mosh-server")     ||
              ci_contains(text, "webssh") || ci_contains(text, "sshwifty") ||
              ci_contains(text, "cockpit") || ci_contains(text, "webmin") ||
              ci_contains(text, "usermin") || ci_contains(text, "virtualmin") ||
@@ -16947,7 +16946,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "lastdb") || ci_contains(text, "fastal") ||
              ci_contains(text, "fastdb") || ci_contains(text, "psl2maf") ||
              ci_contains(text, "psl2bed") || ci_contains(text, "pslcheck") ||
-             ci_contains(text, "pslcat") || ci_contains(text, "pslreps")      || ci_contains(text, "fatofastq") ||
+             ci_contains(text, "pslcat")       || ci_contains(text, "fatofastq") ||
              ci_contains(text, "fastqtofa") || ci_contains(text, "fatonib") ||
              ci_contains(text, "nibfrag")    ||
              ci_contains(text, "fasize")   || ci_contains(text, "liftup") ||
@@ -16964,7 +16963,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "wigtobigwig")   || ci_contains(text, "bigbedinfo") ||
              ci_contains(text, "bigbedsummary") || ci_contains(text, "bigbednameditems") ||
              ci_contains(text, "trackdb") || ci_contains(text, "hal2maf") ||
-             ci_contains(text, "halstats") || ci_contains(text, "halliftover") ||
+             ci_contains(text, "halstats")  ||
              ci_contains(text, "halsummarizemutations") ||
              ci_contains(text, "halalignability") ||
              ci_contains(text, "hallodinterpolate") || ci_contains(text, "haltree")  || ci_contains(text, "halbranchmutations") ||

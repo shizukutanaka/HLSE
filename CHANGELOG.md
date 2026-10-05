@@ -10877,6 +10877,20 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 427 (superset-owned deadness + paste benchmark corpus):**
+  deadness extended from exact-match to substring coverage: a
+  later-block needle containing an earlier pure-OR block's
+  needle (' -' gates excluded both sides) is always false —
+  every input that would match it already fired the earlier
+  block. dead_cross_needles.py's term_dead now tests
+  `owned_o in lit`: **6 more unreachable operands removed**
+  (' insmod', fw_printenv, shellinaboxd, pslreps, halliftover,
+  second ' insmod'). hlse_benchmark's corpus was URL-only and
+  never exercised hlse_check_paste — the largest detector
+  surface; added 9 malicious (curl|bash, nc -e, /dev/tcp,
+  certutil -urlcache, chmod u+s, base64|bash, iex
+  DownloadString, powershell -enc) + 5 benign paste samples,
+  corpus now 27 mal / 23 legit, F1 1.000, FP 0%.
 - **cycle 426 (cover-dead needle purge + FAIL guard):**
   inside one '||' run at one paren depth, a positive needle that
   is a proper substring of a sibling needle can never add a hit —
