@@ -10877,6 +10877,23 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 428 (or-level absorption + secret/text benchmark corpus):**
+  deadness now propagates an or-level's standalone positive
+  disjuncts as extra owned context (D): a positive conjunct lit in
+  D kills its operand ('x || (x && y)' -> 'x'; substring coverage,
+  e.g. 'debuild'/'nixos-rebuild' subsumed by 'ebuild'), and a
+  negated conjunct '!x' with x in D is tautologically true and is
+  dropped ('(goss && " -" && !gossa)' -> '(goss && " -")'). A
+  disjunct can never subsume itself (self-exclusion in op_dead).
+  **34 operands / 39 needles removed, 0 dead blocks, 0 empty
+  parens.** Edge token fix: a block's own trailing ')' (depth -1)
+  is trimmed from operand spans so drops can never eat it.
+  hlse_benchmark extended again: secrets section (6 mal: AWS env
+  export, xoxb-, AIza key, client_secret, Slack webhook URL, JWT
+  — all split literals; 3 legit env lines) + text section (6 mal:
+  IRS gift-cards, verify-24h, BTC doubling, fake MS support,
+  lottery claim, legal-threat; 3 legit). Corpus now 39 mal /
+  29 legit, F1 1.000, FP 0%.
 - **cycle 427 (superset-owned deadness + paste benchmark corpus):**
   deadness extended from exact-match to substring coverage: a
   later-block needle containing an earlier pure-OR block's

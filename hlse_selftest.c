@@ -13,6 +13,7 @@
 #include "hlse_core.h"   /* Verdict, hlse_check_url */
 #include "hlse_text.h"   /* TextVerdict, hlse_check_text */
 #include "hlse_supply.h" /* PasteVerdict, hlse_check_paste */
+#include "hlse_secrets.h" /* SecretVerdict, hlse_scan_secrets */
 
 
 
@@ -232,6 +233,50 @@ hlse_benchmark(void) {
         NULL
     };
 
+    /* Credential-leak corpus — exercises hlse_scan_secrets. Test
+     * tokens are split literals so they are not real secrets. */
+    static const char *malicious_secrets[] = {
+        "export AWS_SECRET_ACCESS_KEY="
+            "wJalrXUtnFEMI/" "K7MDENG/bPxRfiCYEXAMPLEKEY",
+        "xoxb-" "1234567890abcdefghij",
+        "api_key=AIzaSy" "DaGmWKa4JsXZ-HjGw7ISLn_3namBGewQe",
+        "client_secret=abcdef" "1234567890",
+        "https://hooks.slack.com/services/T00000000/"
+            "B00000000/" "XXXXXXXXXXXXXXXXXXXXXXXX",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+            "eyJzdWIiOiIxMjM0NTY3ODkwIn0."
+            "dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U",
+        NULL
+    };
+    static const char *legit_secrets[] = {
+        "HOME=/home/user",
+        "PATH=/usr/bin:/bin",
+        "EDITOR=vim",
+        NULL
+    };
+
+    /* Scam/social-engineering text corpus — exercises
+     * hlse_check_text (urgency, fake alerts, crypto doubling,
+     * prize bait, threat pressure). */
+    static const char *malicious_text[] = {
+        "IRS final notice: pay immediately in gift cards",
+        "URGENT: your account will be suspended, "
+            "verify within 24 hours",
+        "Send 1 BTC and receive 2 BTC back instantly",
+        "Microsoft support: your computer has a virus, "
+            "call now",
+        "Congratulations, you won the lottery! "
+            "Claim your prize now",
+        "final warning: legal action will be taken",
+        NULL
+    };
+    static const char *legit_text[] = {
+        "please review the attached quarterly report",
+        "meeting moved to 3pm tomorrow",
+        "the project kickoff is scheduled for Monday",
+        NULL
+    };
+
     int n_mal = 0, n_legit = 0;
     int detected = 0, fp = 0;
     int i;
@@ -264,6 +309,38 @@ hlse_benchmark(void) {
             fp++;
             printf("FALSE POSITIVE paste %s [%d]\n",
                    legit_paste[i], pv.score);
+        }
+    }
+    for (i = 0; malicious_secrets[i]; i++) {
+        SecretVerdict sv = hlse_scan_secrets(malicious_secrets[i]);
+        n_mal++;
+        if (sv.score >= 40) detected++;
+        else printf("MISSED secret %s [%d]\n",
+                    malicious_secrets[i], sv.score);
+    }
+    for (i = 0; legit_secrets[i]; i++) {
+        SecretVerdict sv = hlse_scan_secrets(legit_secrets[i]);
+        n_legit++;
+        if (sv.score >= 40) {
+            fp++;
+            printf("FALSE POSITIVE secret %s [%d]\n",
+                   legit_secrets[i], sv.score);
+        }
+    }
+    for (i = 0; malicious_text[i]; i++) {
+        TextVerdict tv = hlse_check_text(malicious_text[i]);
+        n_mal++;
+        if (tv.score >= 40) detected++;
+        else printf("MISSED text %s [%d]\n",
+                    malicious_text[i], tv.score);
+    }
+    for (i = 0; legit_text[i]; i++) {
+        TextVerdict tv = hlse_check_text(legit_text[i]);
+        n_legit++;
+        if (tv.score >= 40) {
+            fp++;
+            printf("FALSE POSITIVE text %s [%d]\n",
+                   legit_text[i], tv.score);
         }
     }
 

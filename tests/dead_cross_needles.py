@@ -26,6 +26,15 @@ enclosing paren group as a dead term at the parent level. A top
 level that is fully dead is REPORTED (the whole block never
 fires) and left untouched.
 
+Absorption: at any or-level, the set D of literals carried by
+standalone positive-call disjuncts propagates as additional
+'owned' context — a positive conjunct lit in D makes its
+&&-operand dead ('x || (x && y)' == 'x'), and a negated conjunct
+'!x' with x in D is a tautological term ('x || (y && !x)' ==
+'x || y') that is dropped with one '&&'. D is position
+independent: 'X || (Y && !X)' fires via X whenever X holds, so
+'!X' never constrains the result.
+
 Usage: dead_cross_needles.py <hlse_supply.c>
 """
 import re
@@ -104,13 +113,13 @@ class Analyzer(object):
         self.drops = []      # (start, end) spans
         self.removed = []    # literals dropped
 
-    def term_dead(self, i):
+    def term_dead(self, i, eff):
         """Is token i (at this level) a term that's false at eval?"""
         t = self.toks[i]
         if t.kind == 'call':
             if t.neg or t.lit.startswith(' -'):
                 return False
-            for o in self.owned:
+            for o in eff:
                 if not o.startswith(' -') and o in t.lit:
                     return True
             return False
@@ -121,7 +130,7 @@ class Analyzer(object):
             c = self.part[p] if p >= 0 else ''
             if c == '!' or c.isalnum() or c == '_':
                 return False
-            return self.group_dead(i)
+            return self.group_dead(i, eff)
         return False               # conn/rp aren't terms
 
     def _prev_nonws(self, i):
@@ -129,12 +138,13 @@ class Analyzer(object):
             i -= 1
         return i
 
-    def group_dead(self, lp_idx):
+    def group_dead(self, lp_idx, eff):
         """'(' or_expr ')' dead iff every inner operand dead."""
         if lp_idx in self.gdead:
             return self.gdead[lp_idx]
         lp = self.toks[lp_idx]
-        dead = self.level_dead(lp_idx + 1, lp.match, lp.depth + 1)
+        dead = self.level_dead(lp_idx + 1, lp.match, lp.depth + 1,
+                               eff)
         self.gdead[lp_idx] = dead
         return dead
 
@@ -154,7 +164,7 @@ class Analyzer(object):
         ops.append((cur, hi))
         return ops, bars
 
-    def op_dead(self, lo, hi, depth):
+    def op_dead(self, lo, hi, depth, eff):
         """Operand (&&-chain) dead iff ANY of its level-d terms is
         dead — one false term short-circuits the whole &&-chain
         to false at eval time."""
@@ -163,39 +173,103 @@ class Analyzer(object):
             if t.depth != depth:
                 continue
             if t.kind == 'call' or t.kind == 'lp':
-                if self.term_dead(i):
+                if self.term_dead(i, eff):
                     return True
         return False
 
-    def level_dead(self, lo, hi, depth):
+    def level_dead(self, lo, hi, depth, eff):
         ops, _ = self.split_operands(lo, hi, depth)
         if not ops:
             return False
-        return all(self.op_dead(a, b, depth) for a, b in ops)
+        return all(self.op_dead(a, b, depth, eff) for a, b in ops)
 
-    def process_level(self, lo, hi, depth):
-        """Emit drops for dead operands with a '||' neighbour;
-        recurse into groups for nested levels. Returns True if the
-        whole level is dead."""
+    def standalone_lit(self, a, b, depth):
+        """Operand that is exactly one positive call -> its literal."""
+        els = [i for i in range(a, b)
+               if self.toks[i].depth == depth]
+        if (len(els) == 1 and self.toks[els[0]].kind == 'call'
+                and not self.toks[els[0]].neg
+                and not self.toks[els[0]].lit.startswith(' -')):
+            return self.toks[els[0]].lit
+        return None
+
+    def neg_drops(self, a, b, depth, eff):
+        """Redundant negated conjuncts at an operand's top level:
+        '!x' with x in eff is always true at eval (x's standalone
+        disjunct already claims every x-input). Drop '&& !x' (or
+        '!x &&' when it is the operand's first term)."""
+        els = [i for i in range(a, b)
+               if self.toks[i].depth == depth
+               and self.toks[i].kind == 'call']
+        live = [i for i in els
+                if not (self.toks[i].neg
+                        and self.toks[i].lit in eff)]
+        if not live:
+            return   # operand is constant-true — needs a report
+        for i in els:        # path, not a rewrite
+            t = self.toks[i]
+            if not (t.neg and t.lit in eff):
+                continue
+            prv = self.toks[i - 1] if i > a else None
+            if (prv is not None and prv.kind == 'conn'
+                    and prv.text == '&&' and prv.depth == depth):
+                self.drops.append((prv.start, t.end))
+                self.removed.append('!' + t.lit)
+                continue
+            nxt = self.toks[i + 1] if i + 1 < b else None
+            if (nxt is not None and nxt.kind == 'conn'
+                    and nxt.text == '&&' and nxt.depth == depth):
+                self.drops.append((t.start, nxt.end))
+                self.removed.append('!' + t.lit)
+
+    def process_level(self, lo, hi, depth, eff):
+        """Emit drops for dead operands with a '||' neighbour and
+        for redundant '!x' conjuncts; recurse into groups.
+        eff = context-owned needles; this level's standalone
+        positive disjuncts extend it (absorption).
+        Returns True if the whole level is dead."""
         ops, bars = self.split_operands(lo, hi, depth)
-        dead = [self.op_dead(a, b, depth) for a, b in ops]
+        D = set()
+        for a, b in ops:
+            lit = self.standalone_lit(a, b, depth)
+            if lit is not None:
+                D.add(lit)
+        eff = eff | D
+        dead = []
+        for a, b in ops:
+            lit = self.standalone_lit(a, b, depth)
+            # a disjunct cannot subsume itself — drop its own lit
+            op_eff = eff - {lit} if lit is not None else eff
+            dead.append(self.op_dead(a, b, depth, op_eff))
         all_dead = bool(ops) and all(dead)
         if all_dead:
             return True      # caller handles (group dead / dead block)
         for k, (a, b) in enumerate(ops):
             if not dead[k]:
+                # tautological conjuncts inside a live operand
+                # (the operand's own lit is already excluded via
+                # standalone_lit check above)
+                if self.standalone_lit(a, b, depth) is None:
+                    self.neg_drops(a, b, depth, eff)
                 # recurse into groups inside this live operand
                 for i in range(a, b):
                     t = self.toks[i]
                     if t.kind == 'lp' and t.depth == depth:
                         inner = self.process_level(i + 1, t.match,
-                                                   depth + 1)
+                                                   depth + 1, eff)
                         # group stays live (op was live anyway)
                         _ = inner
                 continue
             # dead operand: drop with a neighbouring '||'
-            fa = self.toks[a].start
-            lb = self.toks[b - 1].end
+            # trim edge tokens below this level (the block's own
+            # trailing ')' shows depth -1 and must never be eaten)
+            aa, bb = a, b - 1
+            while self.toks[aa].depth < depth:
+                aa += 1
+            while self.toks[bb].depth < depth:
+                bb -= 1
+            fa = self.toks[aa].start
+            lb = self.toks[bb].end
             # a '!' glued to the operand's first term must drop
             # with it ('x || !dead' would leave a dangling '!')
             p = self._prev_nonws(fa - 1)
@@ -218,7 +292,8 @@ class Analyzer(object):
     def run(self):
         if not self.toks:
             return '', 0, False
-        dead = self.process_level(0, len(self.toks), 0)
+        dead = self.process_level(0, len(self.toks), 0,
+                                  self.owned)
         if dead:
             return self.part, 0, True   # dead block — report only
         out = []
@@ -231,7 +306,7 @@ class Analyzer(object):
 
 
 def dedup(part, owned, removed_lits):
-    an = Analyzer(part, owned)
+    an = Analyzer(part, set(owned))
     fixed, c, dead = an.run()
     removed_lits.extend(an.removed)
     return fixed, c, dead
