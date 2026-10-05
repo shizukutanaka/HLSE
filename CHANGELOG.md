@@ -10856,6 +10856,17 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 393): iot/sdr/audio primitives** —
+  home-iot/embedded (jeedom, fhem, phoscon, hueadm, tuyadebug,
+  tuyaapi, gipca, broadlink, itcd, genromfs, icestudio, volare,
+  precrypt, bsvtest, bluetcl, bluesim, bluedoc, avalda, firrtl,
+  zinc), sdr/gps (sdrserver, rtl_adsb, rtl_tcp, rtl_test,
+  rtl_biast, grgsm_livemon, gsm_map, multisdr, zerk, sbsky,
+  pygps, marzban, navit), audio/daw (canorus, fluidplay,
+  jack_test, jack_net_source, jack_multiple, jack_session_notify,
+  jack_thru, audacity, cplay2, fooyin, cantata, mpdris, ympd,
+  mympd, rompr, muine, pogo, shoutcast, sc_trans, virtualdj).
+  Words gated; hackrf_info dropped. +53/58 checks.
 - **ALERT 45 (cycle 392): k8s/obs/dns/dir primitives** —
   gitops (sourcer, kompose, sealer, maesh, mertcan, keptn, keel,
   brigade, ghorg), observability/chaos/tf (beats, lumberjack,

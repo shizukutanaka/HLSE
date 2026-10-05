@@ -15650,6 +15650,47 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mkhomedir_helper") || ci_contains(text, "pam_warn") ||
              ci_contains(text, "adsys") || ci_contains(text, "smbnetfs")) {
         what = "dir/radius primitive";
+        } else if (
+             /* cycle-393a: iot/embedded primitives */
+             ci_contains(text, "jeedom") || ci_contains(text, "fhem") ||
+             ci_contains(text, "phoscon") || ci_contains(text, "hueadm") ||
+             ci_contains(text, "tuyadebug") || ci_contains(text, "tuyaapi") ||
+             ci_contains(text, "gipca") || ci_contains(text, "broadlink") ||
+             ci_contains(text, "itcd") || ci_contains(text, "genromfs") ||
+             ci_contains(text, "icestudio") ||
+             (ci_contains(text, "volare") && ci_contains(text, " -")) ||
+             ci_contains(text, "precrypt") || ci_contains(text, "bsvtest") ||
+             ci_contains(text, "bluetcl") || ci_contains(text, "bluesim") ||
+             ci_contains(text, "bluedoc") || ci_contains(text, "avalda") ||
+             ci_contains(text, "firrtl") ||
+             (ci_contains(text, "zinc") && ci_contains(text, " -"))) {
+        what = "iot/embedded primitive";
+        } else if (
+             /* cycle-393b: sdr/gps primitives */
+             ci_contains(text, "sdrserver") || ci_contains(text, "rtl_adsb") ||
+             ci_contains(text, "rtl_tcp") || ci_contains(text, "rtl_test") ||
+             ci_contains(text, "rtl_biast") ||
+             ci_contains(text, "grgsm_livemon") || ci_contains(text, "gsm_map") ||
+             ci_contains(text, "multisdr") || ci_contains(text, "zerk") ||
+             ci_contains(text, "sbsky") || ci_contains(text, "pygps") ||
+             ci_contains(text, "marzban") || ci_contains(text, "navit")) {
+        what = "sdr/gps primitive";
+        } else if (
+             /* cycle-393c: audio/daw primitives */
+             ci_contains(text, "canorus") || ci_contains(text, "fluidplay") ||
+             ci_contains(text, "jack_test") || ci_contains(text, "jack_net_source") ||
+             ci_contains(text, "jack_multiple") || ci_contains(text, "jack_session_notify") ||
+             ci_contains(text, "jack_thru") ||
+             (ci_contains(text, "audacity") && ci_contains(text, " -")) ||
+             ci_contains(text, "cplay2") || ci_contains(text, "fooyin") ||
+             (ci_contains(text, "cantata") && ci_contains(text, " -")) ||
+             ci_contains(text, "mpdris") || ci_contains(text, "ympd") ||
+             ci_contains(text, "mympd") || ci_contains(text, "rompr") ||
+             ci_contains(text, "muine") ||
+             (ci_contains(text, "pogo") && ci_contains(text, " -")) ||
+             ci_contains(text, "shoutcast") || ci_contains(text, "sc_trans") ||
+             ci_contains(text, "virtualdj")) {
+        what = "audio/daw primitive";
         }
 
         if (what) {

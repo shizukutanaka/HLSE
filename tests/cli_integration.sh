@@ -11674,6 +11674,36 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-393: iot/sdr/audio primitives
+for c in 'jeedom start' 'fhem start' 'phoscon run' 'hueadm scan' 'tuyadebug scan' 'tuyaapi get' 'gipca run' 'broadlink discover' 'itcd run' 'genromfs -d build' 'icestudio build' 'volare -p build' 'precrypt enc' 'bsvtest run' 'bluetcl load' 'bluesim run' 'bluedoc gen' 'avalda run' 'firrtl -i run' 'zinc -r run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'sdrserver start' 'rtl_adsb -S' 'rtl_tcp -a' 'rtl_test -s' 'rtl_biast -b' 'grgsm_livemon -f' 'gsm_map scan' 'multisdr rx' 'zerk calibrate' 'sbsky scan' 'pygps log' 'marzban run' 'navit -d map'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'canorus file' 'fluidplay play' 'jack_test run' 'jack_net_source run' 'jack_multiple load' 'jack_session_notify save' 'jack_thru run' 'audacity -o file' 'cplay2 file' 'fooyin file' 'cantata -p play' 'mpdris run' 'ympd run' 'mympd run' 'rompr run' 'muine run' 'pogo -l play' 'shoutcast start' 'sc_trans start' 'virtualdj run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'volare flying song' 'zinc oxide cream' 'audacity of hope' 'cantata the choir' 'pogo stick bounce'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-392: k8s/obs/dns/dir primitives
 for c in 'sourcer run' 'kompose convert' 'sealer run' 'maesh start' 'mertcan deploy' 'keptn install' 'keel -p get' 'brigade -n run' 'ghorg clone'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
