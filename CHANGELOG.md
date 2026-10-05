@@ -10877,6 +10877,18 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 432 (legit-side score-ceiling gate — symmetric
+  score-invariance):** --benchmark legit loops now assert
+  score <= a per-entry ceiling pinned to the measured baseline
+  (url 18x0; paste 0,0,15,0,0; secrets/text/pkg 0s;
+  file 0,0,5,0,0,5). A legit score rising above its pinned
+  ceiling is reported as 'LEGIT SCORE DRIFT [score > max]' and
+  counted as a false positive — detector drift is now caught in
+  BOTH directions (mal floor from cycle 431, legit ceiling here)
+  even below the 40-point verdict threshold. Six enum length
+  guards extended to the legit pairs. Verified: ceiling 15->14
+  on 'sudo apt update' yields LEGIT SCORE DRIFT [15 > 14],
+  F1 0.990, FP 2.5%.
 - **cycle 431 (benchmark score-floor regression gate):**
   --benchmark mal loops now assert score >= a per-entry floor
   pinned to the measured value at corpus-add time, not just the

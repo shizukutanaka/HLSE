@@ -216,6 +216,9 @@ hlse_benchmark(void) {
         "https://www.nhk.or.jp/news",
         NULL
     };
+    static const int legit_max[] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
 
     /* Pastejacking / supply-chain command corpus — exercises
      * hlse_check_paste (the largest detector surface). */
@@ -243,6 +246,7 @@ hlse_benchmark(void) {
         "python3 script.py",
         NULL
     };
+    static const int legit_paste_max[] = { 0, 0, 15, 0, 0 };
 
     /* Credential-leak corpus — exercises hlse_scan_secrets. Test
      * tokens are split literals so they are not real secrets. */
@@ -268,6 +272,7 @@ hlse_benchmark(void) {
         "EDITOR=vim",
         NULL
     };
+    static const int legit_secrets_max[] = { 0, 0, 0 };
 
     /* Scam/social-engineering text corpus — exercises
      * hlse_check_text (urgency, fake alerts, crypto doubling,
@@ -293,6 +298,7 @@ hlse_benchmark(void) {
         "the project kickoff is scheduled for Monday",
         NULL
     };
+    static const int legit_text_max[] = { 0, 0, 0 };
 
     /* File-masquerade corpus — exercises hlse_check_filename
      * (pure-input, no disk access). */
@@ -316,6 +322,7 @@ hlse_benchmark(void) {
         "script.sh",
         NULL
     };
+    static const int legit_file_max[] = { 0, 0, 5, 0, 0, 5 };
 
     /* Typosquat corpus — exercises hlse_check_package. */
     static const char *malicious_pkg[] = {
@@ -339,6 +346,7 @@ hlse_benchmark(void) {
         "beautifulsoup4",
         NULL
     };
+    static const int legit_pkg_max[] = { 0, 0, 0, 0, 0 };
 
     int n_mal = 0, n_legit = 0;
     int detected = 0, fp = 0;
@@ -357,7 +365,19 @@ hlse_benchmark(void) {
         _LCHK_FIL = 1 / (sizeof(malicious_file)/sizeof(malicious_file[0]) - 1
         == sizeof(malicious_file_min)/sizeof(malicious_file_min[0])),
         _LCHK_PKG = 1 / (sizeof(malicious_pkg)/sizeof(malicious_pkg[0]) - 1
-        == sizeof(malicious_pkg_min)/sizeof(malicious_pkg_min[0])) };
+        == sizeof(malicious_pkg_min)/sizeof(malicious_pkg_min[0])),
+        _LCHK_LURL = 1 / (sizeof(legit)/sizeof(legit[0]) - 1
+        == sizeof(legit_max)/sizeof(legit_max[0])),
+        _LCHK_LPST = 1 / (sizeof(legit_paste)/sizeof(legit_paste[0]) - 1
+        == sizeof(legit_paste_max)/sizeof(legit_paste_max[0])),
+        _LCHK_LSEC = 1 / (sizeof(legit_secrets)/sizeof(legit_secrets[0]) - 1
+        == sizeof(legit_secrets_max)/sizeof(legit_secrets_max[0])),
+        _LCHK_LTXT = 1 / (sizeof(legit_text)/sizeof(legit_text[0]) - 1
+        == sizeof(legit_text_max)/sizeof(legit_text_max[0])),
+        _LCHK_LFIL = 1 / (sizeof(legit_file)/sizeof(legit_file[0]) - 1
+        == sizeof(legit_file_max)/sizeof(legit_file_max[0])),
+        _LCHK_LPKG = 1 / (sizeof(legit_pkg)/sizeof(legit_pkg[0]) - 1
+        == sizeof(legit_pkg_max)/sizeof(legit_pkg_max[0])) };
 
     for (i = 0; malicious[i]; i++) {
         Verdict v = hlse_check_url(malicious[i]);
@@ -372,6 +392,10 @@ hlse_benchmark(void) {
         if (v.score >= 40) {
             fp++;
             printf("FALSE POSITIVE %s [%d]\n", legit[i], v.score);
+        } else if (v.score > legit_max[i]) {
+            fp++;
+            printf("LEGIT SCORE DRIFT %s [%d > %d]\n", legit[i],
+                   v.score, legit_max[i]);
         }
     }
     for (i = 0; malicious_paste[i]; i++) {
@@ -388,6 +412,10 @@ hlse_benchmark(void) {
             fp++;
             printf("FALSE POSITIVE paste %s [%d]\n",
                    legit_paste[i], pv.score);
+        } else if (pv.score > legit_paste_max[i]) {
+            fp++;
+            printf("LEGIT SCORE DRIFT paste %s [%d > %d]\n",
+                   legit_paste[i], pv.score, legit_paste_max[i]);
         }
     }
     for (i = 0; malicious_secrets[i]; i++) {
@@ -405,6 +433,10 @@ hlse_benchmark(void) {
             fp++;
             printf("FALSE POSITIVE secret %s [%d]\n",
                    legit_secrets[i], sv.score);
+        } else if (sv.score > legit_secrets_max[i]) {
+            fp++;
+            printf("LEGIT SCORE DRIFT secret %s [%d > %d]\n",
+                   legit_secrets[i], sv.score, legit_secrets_max[i]);
         }
     }
     for (i = 0; malicious_text[i]; i++) {
@@ -421,6 +453,10 @@ hlse_benchmark(void) {
             fp++;
             printf("FALSE POSITIVE text %s [%d]\n",
                    legit_text[i], tv.score);
+        } else if (tv.score > legit_text_max[i]) {
+            fp++;
+            printf("LEGIT SCORE DRIFT text %s [%d > %d]\n",
+                   legit_text[i], tv.score, legit_text_max[i]);
         }
     }
     for (i = 0; malicious_file[i]; i++) {
@@ -437,6 +473,10 @@ hlse_benchmark(void) {
             fp++;
             printf("FALSE POSITIVE file %s [%d]\n",
                    legit_file[i], fv.score);
+        } else if (fv.score > legit_file_max[i]) {
+            fp++;
+            printf("LEGIT SCORE DRIFT file %s [%d > %d]\n",
+                   legit_file[i], fv.score, legit_file_max[i]);
         }
     }
     for (i = 0; malicious_pkg[i]; i++) {
@@ -455,6 +495,10 @@ hlse_benchmark(void) {
             fp++;
             printf("FALSE POSITIVE pkg %s [%d]\n",
                    legit_pkg[i], pv.score);
+        } else if (pv.score > legit_pkg_max[i]) {
+            fp++;
+            printf("LEGIT SCORE DRIFT pkg %s [%d > %d]\n",
+                   legit_pkg[i], pv.score, legit_pkg_max[i]);
         }
     }
 
