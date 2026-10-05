@@ -16956,6 +16956,81 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "someip") || ci_contains(text, "someip2can") ||
              ci_contains(text, "vsomeip") || ci_contains(text, "commonapi")) {
         what = "embedded/can primitive";
+        } else if (
+             /* cycle-415a: geo-tile primitives */
+             ci_contains(text, "tegola") || ci_contains(text, "tileoven") ||
+             ci_contains(text, "tilebelt") || ci_contains(text, "tilecover") ||
+             ci_contains(text, "geoserver") || ci_contains(text, "ms4w") ||
+             ci_contains(text, "tinyows") || ci_contains(text, "geomajas") ||
+             ci_contains(text, "dem2terrain") || ci_contains(text, "nominoe") ||
+             ci_contains(text, "ogr2mvt") || ci_contains(text, "ogr2kml") ||
+             ci_contains(text, "ogr2shp") || ci_contains(text, "ogr2topojson") ||
+             ci_contains(text, "gdalcompare") || ci_contains(text, "gdal_retile") ||
+             ci_contains(text, "gdal2tiles") || ci_contains(text, "gdal_viewshed") ||
+             ci_contains(text, "esri") || ci_contains(text, "agol") ||
+             ci_contains(text, "mf4v") || ci_contains(text, "r.cost") ||
+             ci_contains(text, "r.walk") || ci_contains(text, "r.stream") ||
+             ci_contains(text, "r.basin") || ci_contains(text, "v.edit") ||
+             ci_contains(text, "v.to.db") || ci_contains(text, "i.pr") ||
+             ci_contains(text, "i.cluster") || ci_contains(text, "i.rectify")) {
+        what = "geo-tile primitive";
+        } else if (
+             /* cycle-415b: radio-astronomy primitives */
+             ci_contains(text, "obitview") || ci_contains(text, "hifa") ||
+             ci_contains(text, "hsa") ||
+             (ci_contains(text, "heuristics") && ci_contains(text, " -")) ||
+             ci_contains(text, "imstat") || ci_contains(text, "immoments") ||
+             ci_contains(text, "immath") || ci_contains(text, "imregrid") ||
+             ci_contains(text, "imsmooth") || ci_contains(text, "imval") ||
+             ci_contains(text, "imrebin") || ci_contains(text, "specfit") ||
+             ci_contains(text, "specsmooth") || ci_contains(text, "cvel") ||
+             ci_contains(text, "cvel2") || ci_contains(text, "applycal") ||
+             ci_contains(text, "gaincal") || ci_contains(text, "polcal") ||
+             ci_contains(text, "setjy") || ci_contains(text, "gencal") ||
+             ci_contains(text, "listcal") || ci_contains(text, "plotms") ||
+             ci_contains(text, "plotants") || ci_contains(text, "plotweather") ||
+             ci_contains(text, "plotcal") || ci_contains(text, "browsetable") ||
+             ci_contains(text, "vishead") || ci_contains(text, "statwt") ||
+             ci_contains(text, "wvrgcal") || ci_contains(text, "mirfreq") ||
+             ci_contains(text, "mirdup") ||
+             (ci_contains(text, "invert") && ci_contains(text, " -")) ||
+             ci_contains(text, "impoly") || ci_contains(text, "imsad") ||
+             ci_contains(text, "selfcal") || ci_contains(text, "cgdisp") ||
+             ci_contains(text, "contsub") ||
+             (ci_contains(text, "moments") && ci_contains(text, " -")) ||
+             ci_contains(text, "wcslib") || ci_contains(text, "fitshead") ||
+             ci_contains(text, "ftverify") || ci_contains(text, "funpack") ||
+             ci_contains(text, "fheader") || ci_contains(text, "flcol") ||
+             ci_contains(text, "fstruct") || ci_contains(text, "fimgmerge") ||
+             ci_contains(text, "fimgthresh") || ci_contains(text, "fimgbin") ||
+             ci_contains(text, "fcarith") || ci_contains(text, "fpart") ||
+             ci_contains(text, "farith") || ci_contains(text, "ftlist") ||
+             ci_contains(text, "ftstat") || ci_contains(text, "ftcalc") ||
+             ci_contains(text, "dysco2") || ci_contains(text, "dp3") ||
+             ci_contains(text, "ndppp") || ci_contains(text, "lofar") ||
+             ci_contains(text, "lofarstager") || ci_contains(text, "stefcal") ||
+             ci_contains(text, "sagecal") || ci_contains(text, "ddfacet") ||
+             ci_contains(text, "breizorro") || ci_contains(text, "vlbi") ||
+             ci_contains(text, "mark5") || ci_contains(text, "mark5b") ||
+             ci_contains(text, "mark5a") || ci_contains(text, "mark5c") ||
+             ci_contains(text, "mark6") || ci_contains(text, "mark6sg") ||
+             ci_contains(text, "vdif") || ci_contains(text, "vdif2spec") ||
+             ci_contains(text, "codif") ||
+             ci_contains(text, "fourfit") || ci_contains(text, "aedit") ||
+             ci_contains(text, "polconvert") ||
+             (ci_contains(text, "gains") && ci_contains(text, " -")) ||
+             ci_contains(text, "ehtim") || ci_contains(text, "smili") ||
+             ci_contains(text, "daorec") || ci_contains(text, "cattery") ||
+             ci_contains(text, "purr") || ci_contains(text, "stefcal2") ||
+             ci_contains(text, "tricolour") || ci_contains(text, "shadems") ||
+             ci_contains(text, "ragavi") || ci_contains(text, "meerkathi") ||
+             ci_contains(text, "stimela") || ci_contains(text, "prepfold") ||
+             ci_contains(text, "prepfile") || ci_contains(text, "rednoise") ||
+             ci_contains(text, "bary") || ci_contains(text, "calbin") ||
+             ci_contains(text, "pdv") || ci_contains(text, "pint") ||
+             ci_contains(text, "pintk") || ci_contains(text, "enterprise") ||
+             ci_contains(text, "t2db")) {
+        what = "radio-astronomy primitive";
         }
 
         if (what) {

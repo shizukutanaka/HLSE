@@ -10856,6 +10856,31 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 415): geo-tile/radio-astronomy primitives**
+  — geo-tile (tegola, tileoven, tilebelt, tilecover,
+  geoserver, ms4w, tinyows, geomajas, dem2terrain,
+  nominoe, ogr2mvt, ogr2kml, ogr2shp, ogr2topojson,
+  gdalcompare, gdal_retile, gdal2tiles, gdal_viewshed,
+  esri, agol, mf4v, r.cost, r.walk, r.stream, r.basin,
+  v.edit, v.to.db, i.pr, i.cluster, i.rectify),
+  radio-astronomy (obitview, hifa, hsa, heuristics,
+  imstat, immoments, immath, imregrid, imsmooth, imval,
+  imrebin, specfit, specsmooth, cvel, cvel2, applycal,
+  gaincal, polcal, setjy, gencal, listcal, plotms,
+  plotants, plotweather, plotcal, browsetable, vishead,
+  statwt, wvrgcal, mirfreq, mirdup, invert, impoly,
+  imsad, selfcal, cgdisp, contsub, moments, wcslib,
+  fitshead, ftverify, funpack, fheader, flcol, fstruct,
+  fimgmerge, fimgthresh, fimgbin, fcarith, fpart,
+  farith, ftlist, ftstat, ftcalc, dysco2, dp3, ndppp,
+  lofar, lofarstager, stefcal, sagecal, ddfacet,
+  breizorro, vlbi, mark5, mark5b, mark5a, mark5c,
+  mark6, mark6sg, vdif, vdif2spec, codif, fourfit,
+  aedit, polconvert, gains, ehtim, smili, daorec,
+  cattery, purr, stefcal2, tricolour, shadems, ragavi,
+  meerkathi, stimela, prepfold, prepfile, rednoise,
+  bary, calbin, pdv, pint, pintk, enterprise, t2db).
+  hops dropped (citra hops FP guard). +129/129 checks.
 - **ALERT 45 (cycle 414): power-grid/embedded primitives**
   — power-grid/mbd (helics, helics_apps, psse33, psse34,
   psse35, pssatraw, psscal, psspy, pssplt, savnw, dyre,

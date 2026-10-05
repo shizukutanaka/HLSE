@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-415: geo-tile/radio-astronomy primitives
+for c in 'tegola serve' 'tileoven bake' 'tilebelt conv' 'tilecover gen' 'geoserver serve' 'ms4w run' 'tinyows serve' 'geomajas run' 'dem2terrain conv' 'nominoe run' 'ogr2mvt conv' 'ogr2kml conv' 'ogr2shp conv' 'ogr2topojson conv' 'gdalcompare compare' 'gdal_retile retile' 'gdal2tiles tile' 'gdal_viewshed viewshed' 'esri data' 'agol publish' 'mf4v conv' 'r.cost cost' 'r.walk walk' 'r.stream stream' 'r.basin basin' 'v.edit edit' 'v.to.db conv' 'i.pr proc' 'i.cluster cluster' 'i.rectify rectify'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'obitview view' 'hifa run' 'hsa run' 'heuristics -h flag' 'imstat stat' 'immoments moments' 'immath math' 'imregrid regrid' 'imsmooth smooth' 'imval val' 'imrebin rebin' 'specfit fit' 'specsmooth smooth' 'cvel conv' 'cvel2 conv' 'applycal apply' 'gaincal cal' 'polcal cal' 'setjy set' 'gencal gen' 'listcal list' 'plotms plot' 'plotants plot' 'plotweather plot' 'plotcal plot' 'browsetable browse' 'vishead head' 'statwt stat' 'wvrgcal cal' 'mirfreq freq' 'mirdup dup' 'invert -i image' 'impoly poly' 'imsad detect' 'selfcal cal' 'cgdisp disp' 'contsub sub' 'moments -c compute' 'wcslib lib' 'fitshead head' 'ftverify verify' 'funpack unpack' 'fheader head' 'flcol list' 'fstruct struct' 'fimgmerge merge' 'fimgthresh thresh' 'fimgbin bin' 'fcarith arith' 'fpart part' 'farith arith' 'ftlist list' 'ftstat stat' 'ftcalc calc' 'dysco2 compress' 'dp3 run' 'ndppp run' 'lofar run' 'lofarstager stage' 'stefcal cal' 'sagecal cal' 'ddfacet facet' 'breizorro mask' 'vlbi corr' 'mark5 record' 'mark5b record' 'mark5a record' 'mark5c record' 'mark6 record' 'mark6sg record' 'vdif read' 'vdif2spec conv' 'codif read' 'fourfit fringe' 'aedit edit' 'polconvert conv' 'gains -c cal' 'ehtim image' 'smili image' 'daorec rec' 'cattery run' 'purr run' 'stefcal2 cal' 'tricolour flag' 'shadems shade' 'ragavi inspect' 'meerkathi run' 'stimela run' 'prepfold fold' 'prepfile prep' 'rednoise model' 'bary barycentre' 'calbin bin' 'pdv view' 'pint run' 'pintk gui' 'enterprise outlier' 't2db conv'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'heuristics textbook chapter' 'invert the matrix' 'moments of silence' 'gains and losses report'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-414: power-grid/embedded primitives
 for c in 'helics federate' 'helics_apps run' 'psse33 run' 'psse34 run' 'psse35 run' 'pssatraw conv' 'psscal calc' 'psspy run' 'pssplt plot' 'savnw save' 'dyre run' 'epriepc run' 'psspywarp run' 'pypsse run' 'powerworld sim' 'powerworldsim sim' 'tsat analyze' 'vsat analyze' 'fastdecoupled solve' 'dcopf solve' 'acopf solve' 'scopf solve' 'gridopt opt' 'pssetom conv' 'pglib run' 'temoa model' 'pypsa network' 'reeds -r run' 'nrel data' 'nsrdb fetch' 'pvsyst sim' 'pvlib calc' 'solpy calc' 'rredc fetch' 'dymola sim' 'dymosim sim' 'fmi2 run' 'fmi3 run' 'fmpy load' 'fmusdk build' 'qtronic run' 'simulink model' 'slcovresults cov' 'sldv prove' 'sltest test' 'slprj build' 'simpower model' 'pscad sim' 'pscad4 sim' 'pscad5 sim' 'pscad42 sim' 'pscad50 sim' 'atpdraw draw' 'pl42mat conv' 'rtlab run' 'speedgoat run' 'dspace run' 'ds1104 board' 'ds1006 board' 'ds1202 board' 'omedit edit' 'omsimulator sim' 'omnotebook note' 'omplot plot' 'omniorb run' 'impact -i modelica' 'dymolapy run'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
