@@ -141,7 +141,7 @@ install-workflows:   ## copy the shipped CI workflows into .github/workflows/
 
 # ─── primary targets ─────────────────────────────────────────────────────
 
-.PHONY: all cli lib static server server-check daemon daemon-check test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test install-workflows
+.PHONY: all cli lib static server server-check daemon daemon-check test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test install-workflows lint-needles mutation-smoke
 
 all: $(BINARY) $(SHARED) $(SERVER_BIN) $(DAEMON_BIN)
 
@@ -529,6 +529,14 @@ check-warnings:
 lint-needles:
 	@python3 tests/lint_needles.py hlse_supply.c \
 		tests/cli_integration.sh tests/hlse_supply_tests.c
+
+# Mutation smoke: rewrite one needle literal per case to a sentinel,
+# rebuild, and re-score the corpus input it covered. KILLED = the
+# score-floor gate would catch the regression; SURVIVED = sibling
+# needles cover the input (defence-in-depth, a finding not a failure).
+# Advisory — one incremental rebuild per case; not part of `make test`.
+mutation-smoke:
+	@bash tests/mutation_smoke.sh
 
 # Build the CLI + tests with ASan/UBSan and run the full self-test.
 # Catches memory errors, UB, and leaks that normal builds miss.

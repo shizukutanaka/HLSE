@@ -261,10 +261,15 @@ hlse_benchmark(void) {
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
             "eyJzdWIiOiIxMjM0NTY3ODkwIn0."
             "dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U",
+        /* exercises the AKIA prefix pattern itself — the env-export
+         * item above is scored via the export rule, so an AKIA
+         * regression would otherwise go unmeasured (the canonical
+         * AWS docs example key is placeholder-suppressed) */
+        "aws_access_key_id=AKIA" "1234567890ABCDEF",
         NULL
     };
     static const int malicious_secrets_min[] = {
-        70, 80, 100, 65, 70, 60
+        70, 80, 100, 65, 70, 60, 80
     };
     static const char *legit_secrets[] = {
         "HOME=/home/user",

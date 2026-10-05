@@ -10877,6 +10877,19 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 435 (mutation-smoke: does the score gate kill real
+  mutants?):** new advisory tool `make mutation-smoke`
+  (tests/mutation_smoke.sh) rewrites one needle literal per case to
+  a sentinel, force-rebuilds, and re-scores the corpus input it
+  covered. Result: 6/7 mutants KILLED (certutil, chmod u+s,
+  base64 -d, -enc, socat, xoxb- all dropped to 0 — the floor gate
+  catches real regressions). AKIA SURVIVED at 70 — that corpus
+  input is scored via the env-export rule, not the AKIA pattern;
+  a dedicated AKIA corpus item (aws_access_key_id=AKIA...ABCDEF,
+  floor 80) now closes that coverage gap. Side-discovery: macOS
+  BSD make compares mtimes at second granularity — a same-second
+  edit+build silently skips the rebuild; the script rm's the
+  binary before every make to force it.
 - **cycle 434 (subcommand dispatch table-driven — last P1 split
   item):** hlse_main.c's 12-entry strcmp if-chain is now a static
   const SUBCOMMANDS[] table {name, fn} with a uniform
