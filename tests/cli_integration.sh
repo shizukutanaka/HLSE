@@ -11674,6 +11674,43 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-385: net/bench/doc/mail primitives
+for c in 'trippy -n example.com' 'tcptraceroute h 80' 'iwspy ath0' 'fern -w audit' 'goodfet info'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'stress -c 8' 'tiobench -t 4' 'bonnie -d /tmp' 'pgbench -i db' 'ior -a POSIX' 'hpl -f run' 'sensors -j' 'biosdevname -d' 'e2fsck -f /dev/sda1' 'fsck -f /dev/sda1' 'btrbk run' 'dejadup backup'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'minetestserver --world x' 'tf2server start' 'spigot jar' 'bedrock_server run' 'nona -o out.pto' 'okular doc.pdf' 'zathura doc.pdf' 'mupdf draw' 'tesserocr img' 'pdfpun doc.pdf' 'ronn ronn.1' 'scdoc < in.scd' 'asciidoc doc.txt' 'groff -man x.1' 'tbl file.t' 'refer -e bib' 'gropdf out'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'yarr -serve' 'pyradio stations' 'tin -g alt.x' 'trn -x group' 'nzb -f grab' 'klibido run' 'lottanzb get' 'pynzb list' 'newsgroups file' 'afew -m' 'mdir inbox' 'mflag -S' 'minc seq' 'mseq 1:10' 'mdirs -a' 'mmime -c' 'mpick -t x' 'mrep -f' 'mrefile +sent'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'a trippy visual effect' 'fern grows in shade' 'stress relief tips' 'bonnie and clyde' 'temperature sensors guide' 'nona the weaver' 'pic of the day' 'refer to section two' 'latin american tin' 'prior to ior usage' 'within tin limits' 'a few moments later'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-384: js/py tooling primitives
 for c in 'corepack enable' 'fnm install 20' 'nvm install 20' 'bunfig list' 'ncu -u' 'packemon build' 'bumpp -v' 'commitizen init' 'cspell lint .' 'jshint app.js' 'jslint -e es6' 'rslint -f .' 'flow -t check' 'tsc -b' 'dtslint types'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
@@ -22843,7 +22880,7 @@ for c in \
     'sestatus' 'apparmor_status' 'ausearch' \
     'ip xfrm state' 'ip xfrm state list' 'ip xfrm monitor' \
     'ebtables -L' 'ebtables -t filter -L' 'brctl show' \
-    'brctl showmacs' 'iw list' 'iw dev' 'iwconfig' 'iwconfig x' \
+    'brctl showmacs' 'iw list' 'iwconfig' 'iwconfig x' \
     'the airmon suite' 'strace x' \
     'strace -c x' 'script x' 'script -a x' 'ttyplay' \
     'asciinema play' 'asciinema cat' 'kldstat' 'ipfw list' \

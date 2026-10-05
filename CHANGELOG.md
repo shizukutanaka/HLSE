@@ -10856,6 +10856,17 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 385): net/bench/doc/mail primitives** — net/wifi
+  (trippy, tcptraceroute, iwspy, fern, goodfet), bench/power
+  (stress, tiobench, bonnie, pgbench, ior, hpl, sensors,
+  biosdevname, e2fsck, fsck, btrbk, dejadup), doc/game-server
+  (minetestserver, tf2server, spigot, bedrock_server, nona,
+  okular, zathura, mupdf, tesserocr, pdfpun, ronn, scdoc,
+  asciidoc, groff, tbl, refer, gropdf), mail/feed
+  (yarr, pyradio, tin, trn, nzb, klibido, lottanzb, pynzb,
+  newsgroups, afew, mdir, mflag, minc, mseq, mdirs, mmime,
+  mpick, mrep, mrefile). Words gated; ior/tin dual; iw/pic/
+  sel/sup dropped (unfixable collisions). +52/60 checks.
 - **ALERT 45 (cycle 384): js/py tooling primitives** — JS tooling
   (corepack, fnm, nvm, bunfig, ncu, packemon, bumpp, commitizen,
   cspell, jshint, jslint, rslint, flow, tsc, dtslint) and Python

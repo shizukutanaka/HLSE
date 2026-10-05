@@ -15252,6 +15252,55 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "backoff") && ci_contains(text, " -")) ||
              ci_contains(text, "aiolimiter")) {
         what = "py-tooling primitive";
+        } else if (
+             /* cycle-385a: net/wifi primitives */
+             (ci_contains(text, "trippy") && ci_contains(text, " -")) ||
+             ci_contains(text, "tcptraceroute") || ci_contains(text, "iwspy") ||
+             (ci_contains(text, "fern") && ci_contains(text, " -")) ||
+             ci_contains(text, "goodfet")) {
+        what = "net/wifi primitive";
+        } else if (
+             /* cycle-385b: bench/power primitives */
+             (ci_contains(text, "stress") && ci_contains(text, " -")) ||
+             ci_contains(text, "tiobench") ||
+             (ci_contains(text, "bonnie") && ci_contains(text, " -")) ||
+             ci_contains(text, "pgbench") ||
+             (ci_contains(text, "ior ") && ci_contains(text, " -")) ||
+             ci_contains(text, "hpl") ||
+             (ci_contains(text, "sensors") && ci_contains(text, " -")) ||
+             ci_contains(text, "biosdevname") ||
+             ci_contains(text, "e2fsck") ||
+             (ci_contains(text, "fsck") && ci_contains(text, " -")) ||
+             ci_contains(text, "btrbk") || ci_contains(text, "dejadup")) {
+        what = "bench/power primitive";
+        } else if (
+             /* cycle-385c: doc/game-server primitives */
+             ci_contains(text, "minetestserver") || ci_contains(text, "tf2server") ||
+             ci_contains(text, "spigot") || ci_contains(text, "bedrock_server") ||
+             (ci_contains(text, "nona") && ci_contains(text, " -")) ||
+             ci_contains(text, "okular") || ci_contains(text, "zathura") ||
+             ci_contains(text, "mupdf") || ci_contains(text, "tesserocr") ||
+             ci_contains(text, "pdfpun") || ci_contains(text, "ronn") ||
+             ci_contains(text, "scdoc") || ci_contains(text, "asciidoc") ||
+             (ci_contains(text, "groff") && ci_contains(text, " -")) ||
+             ci_contains(text, "tbl ") ||
+             (ci_contains(text, "refer") && ci_contains(text, " -")) ||
+             ci_contains(text, "gropdf")) {
+        what = "doc/game-server primitive";
+        } else if (
+             /* cycle-385d: mail/feed primitives */
+             ci_contains(text, "yarr") || ci_contains(text, "pyradio") ||
+             (ci_contains(text, "tin ") && ci_contains(text, " -")) ||
+             ci_contains(text, "trn ") || ci_contains(text, "nzb ") ||
+             ci_contains(text, "klibido") || ci_contains(text, "lottanzb") ||
+             ci_contains(text, "pynzb") || ci_contains(text, "newsgroups") ||
+             ci_contains(text, "afew") ||
+             ci_contains(text, "mdir") || ci_contains(text, "mflag") ||
+             ci_contains(text, "minc ") || ci_contains(text, "mseq") ||
+             ci_contains(text, "mdirs") || ci_contains(text, "mmime") ||
+             ci_contains(text, "mpick") || ci_contains(text, "mrep") ||
+             ci_contains(text, "mrefile")) {
+        what = "mail/feed primitive";
         }
 
         if (what) {
