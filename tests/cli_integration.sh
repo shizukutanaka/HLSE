@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-418: genomics/proteomics primitives
+for c in 'graphmap align' 'graphmap2 align' 'lastdb index' 'fastal align' 'fastdb index' 'psl2maf conv' 'psl2bed conv' 'pslcheck check' 'pslcat concat' 'pslreps reps' 'fatotwobit conv' 'twobittofa conv' 'twobitinfo info' 'fasplit split' 'facount count' 'fatofastq conv' 'fastqtofa conv' 'fatonib conv' 'nibfrag frag' 'faonerecord get' 'fafilter filter' 'fasomerecords get' 'fasize size' 'fafrag frag' 'liftover lift' 'liftup lift' 'chainnet net' 'nettobed conv' 'netchainsubset subset' 'netsplit split' 'netfilter filter' 'netsyntenic syn' 'netclass class' 'chainprenet pre' 'chainsplit split' 'chainfilter filter' 'chainstitchid stitch' 'chainswap swap' 'chainnetminrepeat min' 'chaintopsl conv' 'psltochain conv' 'nettochain conv' 'lavtopsl conv' 'bedgraphtobigwig conv' 'bigwigtobedgraph conv' 'bigwiginfo info' 'bigwigsummary sum' 'bigwigmerge merge' 'bigwigcat cat' 'bigwigtowig conv' 'wigtobigwig conv' 'bedtobigbed conv' 'bigbedtobed conv' 'bigbedinfo info' 'bigbedsummary sum' 'bigbednameditems items' 'trackdb tracks' 'hal2maf conv' 'halstats stats' 'halliftover lift' 'halsummarizemutations sum' 'halalignability align' 'hallodinterpolate interp' 'haltree tree' 'haltreemutations mut' 'halbranchmutations mut' 'halsynteny syn' 'halmafscan scan' 'halmafmap map' 'cactus -w align' 'evolverevolver run' 'maftools tools' 'mafcomparator compare' 'mafduplicatefilter filter' 'maffilter filter' 'mafjoin join' 'maftofastastitcher stitch' 'sonlib lib' 'stpinchesandcacti run' 'stcaf run' 'streference run' 'stcactus run' 'stcactustests test' 'einsi align' 'ginsi align' 'linsi align' 'fftns align' 'fftnsi align' 'nwns align' 'nwnsi align' 't_coffee align' 'rcoffee align' '3dcoffee align' 'alncompare compare' 'mavid align' 'poav2 align' 'magma -a align' 'multiz align' 'phast conv' 'phastcons cons' 'phastodds odds' 'prequel -c conv' 'msa_view view' 'consentropy ent' 'refeature feat' 'yn00 run' 'evolver -s sim' 'chi2 table' 'chi2table tbl' 'paup4 run' 'revbayes run' 'bppseq run' 'dnaml run' 'dnapars pars' 'protpars pars' 'proml run' 'consense cons' 'seqboot boot' 'dnadist dist' 'protdist dist' 'dnainvar invar' 'dollop -p pars' 'restml run' 'treedist dist' 'drawtree draw' 'retree run' 'fitch -d dist' 'contml run' 'contrast -t test' 'gendist dist' 'dnacomp comp' 'promlk run' 'dnamlk run' 'paml4 run' 'geiger -t tree' 'badri run' 'usher -i place' 'matoptimize opt' 'ripples -r detect' 'scorpio -c call' 'gofasta conv'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'thegpm search' 'omssa search' 'omssacl run' 'omssadta run' 'directag tag' 'pepnovo denovo' 'novor denovo' 'pepnet denovo' 'instanovo denovo' 'pnovo denovo' 'deepnovo denovo' 'pgnovo denovo' 'sequest search' 'seems -v view' 'seemss view' 'raw2mzml conv' 'raw2mgf conv' 'mzml2mgf conv' 'toppview view' 'toppas run' 'idfilter filter' 'proteinprophet run' 'peptideprophet run' 'iprophet run' 'interprophet run' 'petunia -w run' 'biognosys run' 'spectronaut run' 'bibliospec build' 'blibfilter filter' 'blib2msms conv' 'tdf read' 'alphatims read' 'alphapept run' 'alphaviz viz' 'alpharaw read' 'alphatims2 read' 'mqpar xml' 'pyprophet run' 'swath2stats conv' 'mapdia run' 'peakview view' 'peakviewer view' 'analyst -d acquire' 'byonic search' 'metamorpheus search' 'mztab conv' 'jmztab conv' 'mztab2 conv' 'pride -s submit' 'comet2 search' 'deeplc predict' 'ms2rescore rescore' 'im2deep predict' 'pepdeep denovo' 'pep2pro map' 'compomics tools' 'colims run' 'fasta2peptides digest' 'unipept analyze' 'metaproteome run' 'metapeptide run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'cactus garden care' 'magma chamber study' 'usher at the theater' 'ripples on the pond' 'seems like a plan' 'pride of lions'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-417: analytics/astro primitives
 for c in 'bipp bi' 'hashboard dash' 'elevate -p priv' 'presne run' 'prestissimo engine' 'ahana query' 'chbackup backup' 'houseops house' 'evidence -d build' 'querysm query' 'deepnote nb' 'jupysql sql' 'spyder -e ide' 'spyder5 cal' 'zeppelin -s note' 'polynote nb' 'dbnd run' 'koalas -a api' 'llamacpp infer' 'llama.cpp infer' 'ggml tensor' 'tensorrt infer' 'deepspeed train' 'accelerate -l launch' 'unsloth train' 'kfp pipeline' 'zenml stack' 'kedro run' 'hamilton -d dag' 'dagoba graph' 'sqlglot parse' 'lineage -g graph' 'amundsen -s search' 'metacat cat' 'nessie catalog' 'pynessie cat' 'iceberg -t table' 'pyiceberg read' 'versioned -d db' 'irid cache' 'nutcracker proxy' 'dynomite proxy' 'vmui ui' 'carbonapi query' 'phlare profile' 'polarv metric' 'm3em cluster'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

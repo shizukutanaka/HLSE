@@ -17203,6 +17203,128 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "wntr") || ci_contains(text, "hmmpgmd") ||
              ci_contains(text, "hmmemit")) {
         what = "astro/hydro primitive";
+        } else if (
+             /* cycle-418a: genomics/phylo primitives */
+             ci_contains(text, "graphmap") || ci_contains(text, "graphmap2") ||
+             ci_contains(text, "lastdb") || ci_contains(text, "fastal") ||
+             ci_contains(text, "fastdb") || ci_contains(text, "psl2maf") ||
+             ci_contains(text, "psl2bed") || ci_contains(text, "pslcheck") ||
+             ci_contains(text, "pslcat") || ci_contains(text, "pslreps") ||
+             ci_contains(text, "fatotwobit") || ci_contains(text, "twobittofa") ||
+             ci_contains(text, "twobitinfo") || ci_contains(text, "fasplit") ||
+             ci_contains(text, "facount") || ci_contains(text, "fatofastq") ||
+             ci_contains(text, "fastqtofa") || ci_contains(text, "fatonib") ||
+             ci_contains(text, "nibfrag") || ci_contains(text, "faonerecord") ||
+             ci_contains(text, "fafilter") || ci_contains(text, "fasomerecords") ||
+             ci_contains(text, "fasize") || ci_contains(text, "fafrag") ||
+             ci_contains(text, "liftover") || ci_contains(text, "liftup") ||
+             ci_contains(text, "chainnet") || ci_contains(text, "nettobed") ||
+             ci_contains(text, "netchainsubset") || ci_contains(text, "netsplit") ||
+             ci_contains(text, "netfilter") || ci_contains(text, "netsyntenic") ||
+             ci_contains(text, "netclass") || ci_contains(text, "chainprenet") ||
+             ci_contains(text, "chainsplit") || ci_contains(text, "chainfilter") ||
+             ci_contains(text, "chainstitchid") || ci_contains(text, "chainswap") ||
+             ci_contains(text, "chainnetminrepeat") || ci_contains(text, "chaintopsl") ||
+             ci_contains(text, "psltochain") || ci_contains(text, "nettochain") ||
+             ci_contains(text, "lavtopsl") || ci_contains(text, "bedgraphtobigwig") ||
+             ci_contains(text, "bigwigtobedgraph") || ci_contains(text, "bigwiginfo") ||
+             ci_contains(text, "bigwigsummary") || ci_contains(text, "bigwigmerge") ||
+             ci_contains(text, "bigwigcat") || ci_contains(text, "bigwigtowig") ||
+             ci_contains(text, "wigtobigwig") || ci_contains(text, "bedtobigbed") ||
+             ci_contains(text, "bigbedtobed") || ci_contains(text, "bigbedinfo") ||
+             ci_contains(text, "bigbedsummary") || ci_contains(text, "bigbednameditems") ||
+             ci_contains(text, "trackdb") || ci_contains(text, "hal2maf") ||
+             ci_contains(text, "halstats") || ci_contains(text, "halliftover") ||
+             ci_contains(text, "halsummarizemutations") ||
+             ci_contains(text, "halalignability") ||
+             ci_contains(text, "hallodinterpolate") || ci_contains(text, "haltree") ||
+             ci_contains(text, "haltreemutations") || ci_contains(text, "halbranchmutations") ||
+             ci_contains(text, "halsynteny") || ci_contains(text, "halmafscan") ||
+             ci_contains(text, "halmafmap") ||
+             (ci_contains(text, "cactus") && ci_contains(text, " -")) ||
+             ci_contains(text, "evolverevolver") || ci_contains(text, "maftools") ||
+             ci_contains(text, "mafcomparator") || ci_contains(text, "mafduplicatefilter") ||
+             ci_contains(text, "maffilter") || ci_contains(text, "mafjoin") ||
+             ci_contains(text, "maftofastastitcher") || ci_contains(text, "sonlib") ||
+             ci_contains(text, "stpinchesandcacti") || ci_contains(text, "stcaf") ||
+             ci_contains(text, "streference") || ci_contains(text, "stcactus") ||
+             ci_contains(text, "stcactustests") || ci_contains(text, "einsi") ||
+             ci_contains(text, "ginsi") || ci_contains(text, "linsi") ||
+             ci_contains(text, "fftns") || ci_contains(text, "fftnsi") ||
+             ci_contains(text, "nwns") || ci_contains(text, "nwnsi") ||
+             ci_contains(text, "t_coffee") || ci_contains(text, "rcoffee") ||
+             ci_contains(text, "3dcoffee") || ci_contains(text, "alncompare") ||
+             ci_contains(text, "mavid") || ci_contains(text, "poav2") ||
+             (ci_contains(text, "magma") && ci_contains(text, " -")) ||
+             ci_contains(text, "multiz") || ci_contains(text, "phast") ||
+             ci_contains(text, "phastcons") || ci_contains(text, "phastodds") ||
+             (ci_contains(text, "prequel") && ci_contains(text, " -")) ||
+             ci_contains(text, "msa_view") || ci_contains(text, "consentropy") ||
+             ci_contains(text, "refeature") || ci_contains(text, "yn00") ||
+             (ci_contains(text, "evolver") && ci_contains(text, " -")) ||
+             ci_contains(text, "chi2 ") || ci_contains(text, "chi2table") ||
+             ci_contains(text, "paup4") || ci_contains(text, "revbayes") ||
+             ci_contains(text, "bppseq") || ci_contains(text, "dnaml") ||
+             ci_contains(text, "dnapars") || ci_contains(text, "protpars") ||
+             ci_contains(text, "proml") || ci_contains(text, "consense") ||
+             ci_contains(text, "seqboot") || ci_contains(text, "dnadist") ||
+             ci_contains(text, "protdist") || ci_contains(text, "dnainvar") ||
+             (ci_contains(text, "dollop") && ci_contains(text, " -")) ||
+             ci_contains(text, "restml") ||
+             ci_contains(text, "treedist") || ci_contains(text, "drawtree") ||
+             ci_contains(text, "retree") ||
+             (ci_contains(text, "fitch") && ci_contains(text, " -")) ||
+             ci_contains(text, "contml") ||
+             (ci_contains(text, "contrast") && ci_contains(text, " -")) ||
+             ci_contains(text, "gendist") || ci_contains(text, "dnacomp") ||
+             ci_contains(text, "promlk") || ci_contains(text, "dnamlk") ||
+             ci_contains(text, "paml4") ||
+             (ci_contains(text, "geiger") && ci_contains(text, " -")) ||
+             ci_contains(text, "badri") ||
+             (ci_contains(text, "usher") && ci_contains(text, " -")) ||
+             ci_contains(text, "matoptimize") ||
+             (ci_contains(text, "ripples") && ci_contains(text, " -")) ||
+             (ci_contains(text, "scorpio") && ci_contains(text, " -")) ||
+             ci_contains(text, "gofasta")) {
+        what = "genomics/phylo primitive";
+        } else if (
+             /* cycle-418b: proteomics primitives */
+             ci_contains(text, "thegpm") || ci_contains(text, "omssa") ||
+             ci_contains(text, "omssacl") || ci_contains(text, "omssadta") ||
+             ci_contains(text, "directag") || ci_contains(text, "pepnovo") ||
+             ci_contains(text, "novor") || ci_contains(text, "pepnet") ||
+             ci_contains(text, "instanovo") || ci_contains(text, "pnovo") ||
+             ci_contains(text, "deepnovo") || ci_contains(text, "pgnovo") ||
+             ci_contains(text, "sequest") ||
+             (ci_contains(text, "seems") && ci_contains(text, " -")) ||
+             ci_contains(text, "seemss") || ci_contains(text, "raw2mzml") ||
+             ci_contains(text, "raw2mgf") || ci_contains(text, "mzml2mgf") ||
+             ci_contains(text, "toppview") || ci_contains(text, "toppas") ||
+             ci_contains(text, "idfilter") || ci_contains(text, "proteinprophet") ||
+             ci_contains(text, "peptideprophet") || ci_contains(text, "iprophet") ||
+             ci_contains(text, "interprophet") ||
+             (ci_contains(text, "petunia") && ci_contains(text, " -")) ||
+             ci_contains(text, "biognosys") || ci_contains(text, "spectronaut") ||
+             ci_contains(text, "bibliospec") || ci_contains(text, "blibfilter") ||
+             ci_contains(text, "blib2msms") || ci_contains(text, "tdf ") ||
+             ci_contains(text, "alphatims") || ci_contains(text, "alphapept") ||
+             ci_contains(text, "alphaviz") || ci_contains(text, "alpharaw") ||
+             ci_contains(text, "alphatims2") || ci_contains(text, "mqpar") ||
+             ci_contains(text, "pyprophet") || ci_contains(text, "swath2stats") ||
+             ci_contains(text, "mapdia") || ci_contains(text, "peakview") ||
+             ci_contains(text, "peakviewer") ||
+             (ci_contains(text, "analyst") && ci_contains(text, " -")) ||
+             ci_contains(text, "byonic") || ci_contains(text, "metamorpheus") ||
+             ci_contains(text, "mztab") || ci_contains(text, "jmztab") ||
+             ci_contains(text, "mztab2") ||
+             (ci_contains(text, "pride") && ci_contains(text, " -")) ||
+             ci_contains(text, "comet2") || ci_contains(text, "deeplc") ||
+             ci_contains(text, "ms2rescore") || ci_contains(text, "im2deep") ||
+             ci_contains(text, "pepdeep") || ci_contains(text, "pep2pro") ||
+             ci_contains(text, "compomics") || ci_contains(text, "colims") ||
+             ci_contains(text, "fasta2peptides") || ci_contains(text, "unipept") ||
+             ci_contains(text, "metaproteome") || ci_contains(text, "metapeptide")) {
+        what = "proteomics primitive";
         }
 
         if (what) {
