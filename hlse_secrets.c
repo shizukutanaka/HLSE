@@ -398,7 +398,7 @@ static const SecretPattern SECRET_PATTERNS[] = {
 
     /* Postman / Docker Hub / Dynatrace — collaboration + registry +
      * observability credentials the earlier table rows lacked */
-    { "PMAK-",         5,  40, is_alnum_or_dash,   "Postman API Key",     80 },
+    { "PMAK-",         5,  24, is_alnum_or_dash,   "Postman API Key",     80 },
     { "dckr_pat_",     9,  20, is_alnum_or_dash,   "Docker Hub Personal Access Token", 80 },
     /* Notion integration token — ntn_ + base62 secret (current
      * format; older `secret_` tokens already match the generic

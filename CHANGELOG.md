@@ -10877,6 +10877,21 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 420 (first-principles audit fixes):**
+  three latent regressions found by running the full
+  `make test` end-to-end instead of affected suites only:
+  (a) `Makefile`: `file_audit_tests` and `hlse_cov_fileaud`
+  link lines lacked `hlse_secrets.c` after `88e999a` routed
+  .eml/.msg/.mbox headers through `hlse_check_email_headers`
+  → `make test` link failure since then; (b) `hlse_secrets.c`
+  Postman pattern `min_suffix=40` vs the real 24-char body —
+  undetected since `342ad71`; (c) paste needle `curse` ⊂
+  PowerShell `-Recurse` flagged a benign admin one-liner
+  (pre-existing FP) — needle dropped (boundary impossible),
+  its hit test removed. Also removed a redundant duplicate
+  `if (what)` signals block at the paste-chain tail, and
+  re-derived doc test counts (README/CONTRIBUTING/AGENTS:
+  786/1211 → measured 24,249 CLI + 396 structured + 29 corpus).
 - **ALERT 45 (cycle 418): genomics/proteomics primitives**
   — genomics/phylo (graphmap, graphmap2, lastdb,
   fastal, fastdb, psl2maf, psl2bed, pslcheck, pslcat,

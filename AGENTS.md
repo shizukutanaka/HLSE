@@ -35,8 +35,8 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
    ```
    If anything regresses, **do not push.**
 3. **`make test` baseline is all-green on a verified host** — measured on
-   macOS (Apple clang): 10 unit suites 381/381, extended corpus 29/29, CLI
-   integration 786 passed / 0 failed. A few checks print SKIP instead of
+   macOS (Apple clang): 10 unit suites 381/381, daemon 15/15, extended
+   corpus 29/29, CLI integration 24,249 passed / 0 failed. A few checks print SKIP instead of
    PASS when the host genuinely lacks the precondition (no sudoers NOPASSWD
    on a hardened box, `jsonschema` module absent, /etc/hosts not writable) —
    SKIP is not a failure, but a FAIL line is. **Any FAIL you introduced is a
@@ -116,8 +116,8 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 
 **P0 — consistency / reliability (low risk):**
 - ~~Sync doc numbers to measured reality~~ done: README/CONTRIBUTING/AGENTS
-  counts re-derived (1196 structured, 786 CLI, all-green baseline; now
-  1211 with the daemon-lifecycle suite).
+  counts re-derived (381 unit + 15 daemon structured, 24,249 CLI,
+  all-green baseline — re-measured cycle-420).
 - ~~Triage the 14 known failures~~ done: root causes were macOS build
   breakage + host-dependent assertions; suite is green, env-dependent checks
   SKIP explicitly.

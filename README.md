@@ -24,7 +24,7 @@ Evasion resistance:
   DGA / random domains:         BLOCKED  (x7k2p9qzr4mw.com → detected)
 
 Reliability:
-  Structured tests:             1211 passing, 0 failing (10 unit suites +
+  Structured tests:             24,674 passing, 0 failing (10 unit suites +
                                  corpus + CLI + daemon integration — see: make test)
   Fuzz iterations:              600,000 (6 harnesses × 100K, 0 crashes)
   ASan + UBSan:                 0 errors
@@ -272,7 +272,7 @@ verify/upgrade runbook): [`docs/OPERATIONS.md`](docs/OPERATIONS.md) +
 | Server | 15 | HTTP server JSON request parser/escaper + per-IP rate limiter |
 | Daemon | 15 | hlsed lifecycle: config check, pid lock, change detection, dedup, SIGHUP reload, SIGTERM cleanup |
 | OOD corpus | 29 | Out-of-distribution F1 (held-out phishing/scam) |
-| CLI integration | 786 | All 12 subcommands + --config file, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON, SARIF relative URIs, obfuscated-IP/@-authority URL guards, HTML-smuggling, secret-format coverage (JWT/AWS-creds/Telegram/URI-creds), no-arg exit=2 |
+| CLI integration | 24,249 | All 12 subcommands + --config file, JSON action band, exit codes, scan, ESP, symlink-escape, evasion, embedded-URL JSON, SARIF relative URIs, obfuscated-IP/@-authority URL guards, HTML-smuggling, secret-format coverage (JWT/AWS-creds/Telegram/URI-creds), no-arg exit=2 |
 | Fuzz | 6 × 100K | text / secrets / supply-chain / file / URL / server-JSON harnesses (random bytes, truncated UTF-8, keyword stuffing, typosquat mutation, bidi/control, Unicode mutation, percent-encoding, dangerous-scheme, malformed JSON) |
 
 ## Privacy

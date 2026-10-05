@@ -14582,7 +14582,6 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "coedit") || ci_contains(text, "e3em") ||
              ci_contains(text, "e3pi") || ci_contains(text, "e3vi") ||
              ci_contains(text, "bpe") ||
-             (ci_contains(text, "curse") && ci_contains(text, " -")) ||
              (ci_contains(text, "levee") && ci_contains(text, " -")) ||
              (ci_contains(text, "mined") && ci_contains(text, " -")) ||
              ci_contains(text, "mle") ||
@@ -17395,9 +17394,6 @@ hlse_check_paste(const char *text) {
         what = "forum/cms primitive";
         }
 
-        if (what) {
-            v.signals |= PASTE_WINDOWS_LOLBIN;
-        }
         if (what) {
             v.signals |= PASTE_WINDOWS_LOLBIN;
             v.score += 45;
