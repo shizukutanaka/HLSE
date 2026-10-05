@@ -16566,6 +16566,72 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "cardserver") || ci_contains(text, "schlaflos") ||
              ci_contains(text, "satip")) {
         what = "broadcast/dvb primitive";
+        } else if (
+             /* cycle-410a: dfir/c2 primitives */
+             ci_contains(text, "regtime") || ci_contains(text, "regparse") ||
+             ci_contains(text, "regdiff") || ci_contains(text, "regproc") ||
+             ci_contains(text, "appcompatcache") || ci_contains(text, "userassist") ||
+             ci_contains(text, "usrclass") || ci_contains(text, "ntuser") ||
+             ci_contains(text, "pefetch") || ci_contains(text, "jpegparser") ||
+             ci_contains(text, "winevt") || ci_contains(text, "winevt2json") ||
+             ci_contains(text, "sigmac") || ci_contains(text, "sigma2yml") ||
+             ci_contains(text, "sigma2rule") || ci_contains(text, "sigma2sigma") ||
+             ci_contains(text, "misp") || ci_contains(text, "pymisp") ||
+             ci_contains(text, "pycti") || ci_contains(text, "sandcat") ||
+             ci_contains(text, "ragdoll") || ci_contains(text, "mordor") ||
+             ci_contains(text, "c2server") || ci_contains(text, "fofofo") ||
+             ci_contains(text, "quake360") || ci_contains(text, "mdm ") ||
+             (ci_contains(text, "haven") && ci_contains(text, " -")) ||
+             (ci_contains(text, "faction") && ci_contains(text, " -"))) {
+        what = "dfir/c2 primitive";
+        } else if (
+             /* cycle-410b: cnc/3dprint/embroidery primitives */
+             ci_contains(text, "slicer4n") || ci_contains(text, "curaslice") ||
+             ci_contains(text, "curalegacy") || ci_contains(text, "bambulab") ||
+             ci_contains(text, "bambuslicer") || ci_contains(text, "gridbots") ||
+             ci_contains(text, "craftware") || ci_contains(text, "raise3d") ||
+             ci_contains(text, "pathio") || ci_contains(text, "icesl") ||
+             ci_contains(text, "sli3er") || ci_contains(text, "madewith") ||
+             ci_contains(text, "thespaghettidetective") || ci_contains(text, "kiauh") ||
+             ci_contains(text, "ratrig") || ci_contains(text, "rrfd") ||
+             ci_contains(text, "reprap") || ci_contains(text, "rrf") ||
+             ci_contains(text, "smoothieware") ||
+             (ci_contains(text, "smoothie") && ci_contains(text, " -")) ||
+             (ci_contains(text, "universal") && ci_contains(text, " -")) ||
+             ci_contains(text, "stl2svg") || ci_contains(text, "stl2jpg") ||
+             ci_contains(text, "stl2gif") || ci_contains(text, "stl2step") ||
+             ci_contains(text, "stl2dae") || ci_contains(text, "stl2iges") ||
+             ci_contains(text, "stl2pov") || ci_contains(text, "stl2am") ||
+             ci_contains(text, "stlthumb") || ci_contains(text, "stl2ascii") ||
+             ci_contains(text, "stl2bin") || ci_contains(text, "mesh2stl") ||
+             ci_contains(text, "nestlib") || ci_contains(text, "deepnest") ||
+             ci_contains(text, "svg2gc") || ci_contains(text, "svg2cnc") ||
+             ci_contains(text, "lightburn") || ci_contains(text, "lightburn2") ||
+             ci_contains(text, "rdworks") || ci_contains(text, "fabmo") ||
+             ci_contains(text, "mach3") || ci_contains(text, "mach4") ||
+             ci_contains(text, "uccnc") || ci_contains(text, "halui") ||
+             ci_contains(text, "halcompile") || ci_contains(text, "haljog") ||
+             ci_contains(text, "camview") ||
+             (ci_contains(text, "carbide") && ci_contains(text, " -")) ||
+             ci_contains(text, "carbide3d") || ci_contains(text, "inventables") ||
+             ci_contains(text, "vcarve") ||
+             (ci_contains(text, "aspire") && ci_contains(text, " -")) ||
+             ci_contains(text, "vectric") || ci_contains(text, "photovcarve") ||
+             ci_contains(text, "autodeskmesh") || ci_contains(text, "embrilliance") ||
+             ci_contains(text, "inkstitch") || ci_contains(text, "wilcom") ||
+             ci_contains(text, "embroiderystudio") || ci_contains(text, "sewart") ||
+             ci_contains(text, "2stitch") ||
+             (ci_contains(text, "premier") && ci_contains(text, " -")) ||
+             ci_contains(text, "tatami") || ci_contains(text, "tajima") ||
+             ci_contains(text, "barudan") || ci_contains(text, "vp3 ") ||
+             ci_contains(text, "emb2dst") || ci_contains(text, "peshow") ||
+             ci_contains(text, "dstview") || ci_contains(text, "vinylmaster") ||
+             ci_contains(text, "scal5") || ci_contains(text, "scal6") ||
+             (ci_contains(text, "silhouette") && ci_contains(text, " -")) ||
+             ci_contains(text, "graphtec") ||
+             (ci_contains(text, "roland") && ci_contains(text, " -")) ||
+             ci_contains(text, "stika") || ci_contains(text, "mimaki")) {
+        what = "cnc/3dprint primitive";
         }
 
         if (what) {

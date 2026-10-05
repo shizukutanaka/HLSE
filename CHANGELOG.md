@@ -10856,6 +10856,29 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 410): dfir/cnc primitives**
+  — dfir/c2 (regtime, regparse, regdiff, regproc,
+  appcompatcache, userassist, usrclass, ntuser, pefetch,
+  jpegparser, winevt, winevt2json, sigmac, sigma2yml,
+  sigma2rule, sigma2sigma, misp, pymisp, pycti, sandcat,
+  ragdoll, mordor, c2server, fofofo, quake360, mdm,
+  haven, faction), cnc/3dprint (slicer4n, curaslice,
+  curalegacy, bambulab, bambuslicer, gridbots, craftware,
+  raise3d, pathio, icesl, sli3er, madewith,
+  thespaghettidetective, kiauh, ratrig, rrfd, reprap, rrf,
+  smoothieware, smoothie, universal, stl2svg, stl2jpg,
+  stl2gif, stl2step, stl2dae, stl2iges, stl2pov, stl2am,
+  stlthumb, stl2ascii, stl2bin, mesh2stl, nestlib,
+  deepnest, svg2gc, svg2cnc, lightburn, lightburn2,
+  rdworks, fabmo, mach3, mach4, uccnc, halui, halcompile,
+  haljog, camview, carbide, carbide3d, inventables,
+  vcarve, aspire, vectric, photovcarve, autodeskmesh,
+  embrilliance, inkstitch, wilcom, embroiderystudio,
+  sewart, 2stitch, premier, tatami, tajima, barudan, vp3,
+  emb2dst, peshow, dstview, vinylmaster, scal5, scal6,
+  silhouette, graphtec, roland, stika, mimaki). mitre
+  dropped (superset of existing tre boundary). +105/105
+  checks.
 - **ALERT 45 (cycle 409): music-notation/broadcast primitives**
   — music-notation/midi (photoscore, sharpeye, mozart,
   finale, sibelius, vivaldistudio, dorico, wavelab, nuendo,

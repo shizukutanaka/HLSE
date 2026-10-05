@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-410: dfir/cnc primitives
+for c in 'regtime dump' 'regparse parse' 'regdiff diff' 'regproc proc' 'appcompatcache parse' 'userassist decode' 'usrclass parse' 'ntuser parse' 'pefetch parse' 'jpegparser parse' 'winevt parse' 'winevt2json conv' 'sigmac conv' 'sigma2yml conv' 'sigma2rule conv' 'sigma2sigma conv' 'misp feed' 'pymisp query' 'pycti query' 'sandcat agent' 'ragdoll agent' 'mordor dataset' 'c2server run' 'fofofo scan' 'quake360 scan' 'mdm dump' 'haven -m mode' 'faction -a agent'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'slicer4n slice' 'curaslice slice' 'curalegacy slice' 'bambulab slice' 'bambuslicer slice' 'gridbots run' 'craftware slice' 'raise3d slice' 'pathio slice' 'icesl slice' 'sli3er slice' 'madewith run' 'thespaghettidetective run' 'kiauh install' 'ratrig printer' 'rrfd run' 'reprap print' 'rrf firmware' 'smoothieware run' 'smoothie -b board' 'universal -s sender' 'stl2svg conv' 'stl2jpg conv' 'stl2gif conv' 'stl2step conv' 'stl2dae conv' 'stl2iges conv' 'stl2pov conv' 'stl2am conv' 'stlthumb thumb' 'stl2ascii conv' 'stl2bin conv' 'mesh2stl conv' 'nestlib nest' 'deepnest nest' 'svg2gc conv' 'svg2cnc conv' 'lightburn cut' 'lightburn2 cut' 'rdworks cut' 'fabmo run' 'mach3 control' 'mach4 control' 'uccnc control' 'halui run' 'halcompile compile' 'haljog jog' 'camview view' 'carbide -c create' 'carbide3d run' 'inventables carve' 'vcarve carve' 'aspire -c carve' 'vectric carve' 'photovcarve carve' 'autodeskmesh clean' 'embrilliance embroider' 'inkstitch embroider' 'wilcom embroider' 'embroiderystudio embroider' 'sewart embroider' '2stitch embroider' 'premier -e embroidery' 'tatami embroider' 'tajima embroider' 'barudan embroider' 'vp3 file' 'emb2dst conv' 'peshow view' 'dstview view' 'vinylmaster cut' 'scal5 cut' 'scal6 cut' 'silhouette -c cut' 'graphtec cut' 'roland -c cut' 'stika cut' 'mimaki cut'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'haven of peace' 'faction politics review' 'universal studio tickets' 'smoothie recipe blender' 'carbide tip drill' 'aspire to greatness' 'premier league table' 'silhouette of trees' 'roland keyboard review'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-409: music-notation/broadcast primitives
 for c in 'photoscore scan' 'sharpeye scan' 'mozart -e edit' 'finale -e edit' 'sibelius -e edit' 'vivaldistudio run' 'dorico -e edit' 'wavelab master' 'nuendo mix' 'thegrand -p piano' 'noteflight write' 'flatio write' 'staffpad write' 'gp5 file' 'gp6 file' 'gp7 file' 'gpconv conv' 'gp2midi conv' 'gp7conv conv' 'powertab edit' 'pteditor edit' 'ptb file' 'tabit edit' 'tablature write' 'tabview view' 'tablatures print' 'chord -t transpose' 'chordpro conv' 'chordii conv' 'chordname lookup' 'chordauto run' 'chordtrans trans' 'chordette run' 'chordbook open' 'midi2svg conv' 'midi2wav conv' 'midi2mp3 conv' 'midi2ogg conv' 'midi2score conv' 'midi2mel conv' 'midi2mod conv' 'miditomp3 conv' 'midirender render' 'midimerge merge' 'midiprobe probe' 'midisheet sheet' 'midisheetmusic conv' 'mus2mid conv' 'verovio render' 'note2note conv' 'noteheads render' 'antescofo follow' 'rnm run' 'neuratron scan' 'audioscore transcribe' 'zebrify run' 'freemusic dl' 'freescores dl' 'wikifonia dl' 'gnmidi run' 'midieditor edit'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
