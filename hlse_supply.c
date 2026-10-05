@@ -15939,6 +15939,47 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "wvss2300") || ci_contains(text, "vproweather") ||
              ci_contains(text, "weatherd") || ci_contains(text, "wfview")) {
         what = "marine/weather primitive";
+        } else if (
+             /* cycle-400a: retro-emu primitives */
+             ci_contains(text, "z390") || ci_contains(text, "z390emu") ||
+             ci_contains(text, "z390zam") || ci_contains(text, "zdt") ||
+             ci_contains(text, "kl10") || ci_contains(text, "apple2js") ||
+             ci_contains(text, "applewin") || ci_contains(text, "kegs") ||
+             ci_contains(text, "kegsgs") || ci_contains(text, "vsid") ||
+             ci_contains(text, "tos540") || ci_contains(text, "tap2wav") ||
+             ci_contains(text, "qlay") || ci_contains(text, "speccy") ||
+             ci_contains(text, "emu48") || ci_contains(text, "hp48") ||
+             ci_contains(text, "hp49") || ci_contains(text, "hp50g") ||
+             ci_contains(text, "tilp") || ci_contains(text, "tilp2") ||
+             ci_contains(text, "tiemu") || ci_contains(text, "tiemu3") ||
+             ci_contains(text, "almostti") || ci_contains(text, "coolcv") ||
+             ci_contains(text, "colblue") || ci_contains(text, "catapult") ||
+             ci_contains(text, "meisei") || ci_contains(text, "rumsx") ||
+             ci_contains(text, "coco3") || ci_contains(text, "ovcc") ||
+             ci_contains(text, "dragon32") || ci_contains(text, "dragon64") ||
+             ci_contains(text, "trs80") || ci_contains(text, "trs80gp") ||
+             ci_contains(text, "cpmulator") || ci_contains(text, "z80emu")) {
+        what = "retro-emu primitive";
+        } else if (
+             /* cycle-400b: disk/pres primitives */
+             ci_contains(text, "dtc ") || ci_contains(text, "supercardpro") ||
+             ci_contains(text, "omniflop") || ci_contains(text, "omnidisk") ||
+             ci_contains(text, "anadisk") || ci_contains(text, "img2dsk") ||
+             ci_contains(text, "dsk2img") || ci_contains(text, "dsk2woz") ||
+             ci_contains(text, "woz2dsk") || ci_contains(text, "a2rchery") ||
+             ci_contains(text, "c2t") || ci_contains(text, "apple2disk") ||
+             ci_contains(text, "hfe ") || ci_contains(text, "hfe2adf") ||
+             ci_contains(text, "hfe2st") || ci_contains(text, "adf2hfe") ||
+             ci_contains(text, "uaehf") || ci_contains(text, "dmklib") ||
+             ci_contains(text, "pasti") || ci_contains(text, "quasi88") ||
+             ci_contains(text, "m88 ") ||
+             (ci_contains(text, "millennium") && ci_contains(text, " -")) ||
+             ci_contains(text, "elkulator") || ci_contains(text, "electrem") ||
+             ci_contains(text, "a7800") || ci_contains(text, "m2600") ||
+             ci_contains(text, "a2600") || ci_contains(text, "z26") ||
+             (ci_contains(text, "handy") && ci_contains(text, " -")) ||
+             ci_contains(text, "pj64") || ci_contains(text, "dolwin")) {
+        what = "disk/pres primitive";
         }
 
         if (what) {

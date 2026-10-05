@@ -10856,6 +10856,17 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 400): retro/pres primitives** — retro
+  cpu/emu (z390, z390emu, z390zam, zdt, kl10, apple2js,
+  applewin, kegs, kegsgs, vsid, tos540, tap2wav, qlay, speccy,
+  emu48, hp48, hp49, hp50g, tilp, tilp2, tiemu, tiemu3,
+  almostti, coolcv, colblue, catapult, meisei, rumsx, coco3,
+  ovcc, dragon32, dragon64, trs80, trs80gp, cpmulator, z80emu),
+  disk/preservation (dtc, supercardpro, omniflop, omnidisk,
+  anadisk, img2dsk, dsk2img, dsk2woz, woz2dsk, a2rchery, c2t,
+  apple2disk, hfe, hfe2adf, hfe2st, adf2hfe, uaehf, dmklib,
+  pasti, quasi88, m88, millennium, elkulator, electrem, a7800,
+  m2600, a2600, z26, handy, pj64, dolwin). +65/67 checks.
 - **ALERT 45 (cycle 399): ham/marine primitives** — ham
   radio/packet (flcluster, yaac, aprsigi, kissutil, kissnetd,
   mkiss, rip98d, winlink, wlol, wldd, varac, varahf, ardop,

@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-400: retro/pres primitives
+for c in 'z390 run' 'z390emu run' 'z390zam run' 'zdt run' 'kl10 run' 'apple2js run' 'applewin run' 'kegs run' 'kegsgs run' 'vsid play' 'tos540 load' 'tap2wav conv' 'qlay run' 'speccy run' 'emu48 run' 'hp48 calc' 'hp49 calc' 'hp50g calc' 'tilp send' 'tilp2 send' 'tiemu run' 'tiemu3 run' 'almostti run' 'coolcv run' 'colblue run' 'catapult run' 'meisei run' 'rumsx run' 'coco3 run' 'ovcc run' 'dragon32 run' 'dragon64 run' 'trs80 run' 'trs80gp run' 'cpmulator run' 'z80emu run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'dtc read' 'supercardpro read' 'omniflop read' 'omnidisk read' 'anadisk read' 'img2dsk conv' 'dsk2img conv' 'dsk2woz conv' 'woz2dsk conv' 'a2rchery run' 'c2t conv' 'apple2disk write' 'hfe read' 'hfe2adf conv' 'hfe2st conv' 'adf2hfe conv' 'uaehf mount' 'dmklib read' 'pasti mount' 'quasi88 run' 'm88 run' 'millennium -s run' 'elkulator run' 'electrem run' 'a7800 run' 'm2600 run' 'a2600 run' 'z26 run' 'handy -r emu' 'pj64 run' 'dolwin run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'millennium the era' 'handy with tools'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-399: ham/marine primitives
 for c in 'flcluster connect' 'yaac -i map' 'aprsigi beacon' 'kissutil attach' 'kissnetd start' 'mkiss attach' 'rip98d run' 'winlink connect' 'wlol run' 'wldd run' 'varac connect' 'varahf connect' 'ardop start' 'ardopc start' 'ardopcf start' 'drats map' 'chirpw prog' 'qdmr codeplug' 'hblink3 run' 'hblink run' 'dmrlink run' 'ambed start' 'ft1d run' 'dv4mini run' 'smack -l load' 'parrot -r repeat'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
