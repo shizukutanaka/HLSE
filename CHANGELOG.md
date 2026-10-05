@@ -10877,6 +10877,18 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 431 (benchmark score-floor regression gate):**
+  --benchmark mal loops now assert score >= a per-entry floor
+  pinned to the measured value at corpus-add time, not just the
+  40-point verdict threshold — a detection-score drop that stays
+  above the threshold is now reported as MISSED [score < floor]
+  and breaks the F1 gate. Six parallel int arrays
+  (malicious{,_paste,_secrets,_text,_file,_pkg}_min) with a
+  compile-time enum length guard per pair (1/(n_strs == n_floors);
+  the -1 drops the NULL terminator). Verified both directions:
+  floor 73->74 on one URL yields MISSED [73 < 74] and F1 0.990;
+  a misaligned floor array fails the build. 51 mal entries each
+  carry their recorded floor; legit stays binary (<40 = no FP).
 - **cycle 430 (implied-term drops inside &&-operands):**
   two new provable deadness classes inside one &&-operand,
   emitted as run-aware spans (consecutive drops share one '&&',

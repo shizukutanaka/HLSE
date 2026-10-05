@@ -187,6 +187,13 @@ hlse_benchmark(void) {
         "https://my.softbank.jp.account-suspended.online/reactivate",
         NULL
     };
+    /* Score floors, one per malicious[] entry, pinned to the measured
+     * value at corpus-add time: a score drop that stays above the 40
+     * verdict threshold is still a detected regression. */
+    static const int malicious_min[] = {
+        73, 100, 60, 60, 65, 65, 75, 100, 100, 100, 100, 78, 43, 55, 55,
+        100, 100, 100
+    };
     static const char *legit[] = {
         "https://github.com",
         "https://github.com/anthropics/sdk",
@@ -225,6 +232,9 @@ hlse_benchmark(void) {
         "powershell -enc SQBFAFgA",
         NULL
     };
+    static const int malicious_paste_min[] = {
+        40, 40, 60, 60, 45, 55, 100, 45, 45
+    };
     static const char *legit_paste[] = {
         "git clone https://github.com/a/b",
         "ls -la",
@@ -249,6 +259,9 @@ hlse_benchmark(void) {
             "dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U",
         NULL
     };
+    static const int malicious_secrets_min[] = {
+        70, 80, 100, 65, 70, 60
+    };
     static const char *legit_secrets[] = {
         "HOME=/home/user",
         "PATH=/usr/bin:/bin",
@@ -271,6 +284,9 @@ hlse_benchmark(void) {
         "final warning: legal action will be taken",
         NULL
     };
+    static const int malicious_text_min[] = {
+        100, 55, 47, 55, 62, 73
+    };
     static const char *legit_text[] = {
         "please review the attached quarterly report",
         "meeting moved to 3pm tomorrow",
@@ -287,6 +303,9 @@ hlse_benchmark(void) {
         "invoice.pdf.bat",
         "report.docx.scr",
         NULL
+    };
+    static const int malicious_file_min[] = {
+        85, 85, 85, 85, 85
     };
     static const char *legit_file[] = {
         "document.pdf",
@@ -309,6 +328,9 @@ hlse_benchmark(void) {
         "djangoo",
         NULL
     };
+    static const int malicious_pkg_min[] = {
+        70, 70, 70, 70, 70, 70, 70
+    };
     static const char *legit_pkg[] = {
         "numpy",
         "react",
@@ -322,11 +344,27 @@ hlse_benchmark(void) {
     int detected = 0, fp = 0;
     int i;
 
+    /* Compile-time array-length guards: every malicious_* entry must
+     * have a matching floor (the -1 drops the NULL terminator). */
+    enum { _LCHK_URL = 1 / (sizeof(malicious)/sizeof(malicious[0]) - 1
+        == sizeof(malicious_min)/sizeof(malicious_min[0])),
+        _LCHK_PST = 1 / (sizeof(malicious_paste)/sizeof(malicious_paste[0]) - 1
+        == sizeof(malicious_paste_min)/sizeof(malicious_paste_min[0])),
+        _LCHK_SEC = 1 / (sizeof(malicious_secrets)/sizeof(malicious_secrets[0]) - 1
+        == sizeof(malicious_secrets_min)/sizeof(malicious_secrets_min[0])),
+        _LCHK_TXT = 1 / (sizeof(malicious_text)/sizeof(malicious_text[0]) - 1
+        == sizeof(malicious_text_min)/sizeof(malicious_text_min[0])),
+        _LCHK_FIL = 1 / (sizeof(malicious_file)/sizeof(malicious_file[0]) - 1
+        == sizeof(malicious_file_min)/sizeof(malicious_file_min[0])),
+        _LCHK_PKG = 1 / (sizeof(malicious_pkg)/sizeof(malicious_pkg[0]) - 1
+        == sizeof(malicious_pkg_min)/sizeof(malicious_pkg_min[0])) };
+
     for (i = 0; malicious[i]; i++) {
         Verdict v = hlse_check_url(malicious[i]);
         n_mal++;
-        if (v.score >= 40) detected++;
-        else printf("MISSED %s [%d]\n", malicious[i], v.score);
+        if (v.score >= malicious_min[i]) detected++;
+        else printf("MISSED %s [%d < %d]\n", malicious[i], v.score,
+                    malicious_min[i]);
     }
     for (i = 0; legit[i]; i++) {
         Verdict v = hlse_check_url(legit[i]);
@@ -339,9 +377,9 @@ hlse_benchmark(void) {
     for (i = 0; malicious_paste[i]; i++) {
         PasteVerdict pv = hlse_check_paste(malicious_paste[i]);
         n_mal++;
-        if (pv.score >= 40) detected++;
-        else printf("MISSED paste %s [%d]\n",
-                    malicious_paste[i], pv.score);
+        if (pv.score >= malicious_paste_min[i]) detected++;
+        else printf("MISSED paste %s [%d < %d]\n",
+                    malicious_paste[i], pv.score, malicious_paste_min[i]);
     }
     for (i = 0; legit_paste[i]; i++) {
         PasteVerdict pv = hlse_check_paste(legit_paste[i]);
@@ -355,9 +393,10 @@ hlse_benchmark(void) {
     for (i = 0; malicious_secrets[i]; i++) {
         SecretVerdict sv = hlse_scan_secrets(malicious_secrets[i]);
         n_mal++;
-        if (sv.score >= 40) detected++;
-        else printf("MISSED secret %s [%d]\n",
-                    malicious_secrets[i], sv.score);
+        if (sv.score >= malicious_secrets_min[i]) detected++;
+        else printf("MISSED secret %s [%d < %d]\n",
+                    malicious_secrets[i], sv.score,
+                    malicious_secrets_min[i]);
     }
     for (i = 0; legit_secrets[i]; i++) {
         SecretVerdict sv = hlse_scan_secrets(legit_secrets[i]);
@@ -371,9 +410,9 @@ hlse_benchmark(void) {
     for (i = 0; malicious_text[i]; i++) {
         TextVerdict tv = hlse_check_text(malicious_text[i]);
         n_mal++;
-        if (tv.score >= 40) detected++;
-        else printf("MISSED text %s [%d]\n",
-                    malicious_text[i], tv.score);
+        if (tv.score >= malicious_text_min[i]) detected++;
+        else printf("MISSED text %s [%d < %d]\n",
+                    malicious_text[i], tv.score, malicious_text_min[i]);
     }
     for (i = 0; legit_text[i]; i++) {
         TextVerdict tv = hlse_check_text(legit_text[i]);
@@ -387,9 +426,9 @@ hlse_benchmark(void) {
     for (i = 0; malicious_file[i]; i++) {
         FileVerdict fv = hlse_check_filename(malicious_file[i]);
         n_mal++;
-        if (fv.score >= 40) detected++;
-        else printf("MISSED file %s [%d]\n",
-                    malicious_file[i], fv.score);
+        if (fv.score >= malicious_file_min[i]) detected++;
+        else printf("MISSED file %s [%d < %d]\n",
+                    malicious_file[i], fv.score, malicious_file_min[i]);
     }
     for (i = 0; legit_file[i]; i++) {
         FileVerdict fv = hlse_check_filename(legit_file[i]);
@@ -404,9 +443,9 @@ hlse_benchmark(void) {
         PackageVerdict pv = hlse_check_package(malicious_pkg[i],
                                                NULL);
         n_mal++;
-        if (pv.score >= 40) detected++;
-        else printf("MISSED pkg %s [%d]\n",
-                    malicious_pkg[i], pv.score);
+        if (pv.score >= malicious_pkg_min[i]) detected++;
+        else printf("MISSED pkg %s [%d < %d]\n",
+                    malicious_pkg[i], pv.score, malicious_pkg_min[i]);
     }
     for (i = 0; legit_pkg[i]; i++) {
         PackageVerdict pv = hlse_check_package(legit_pkg[i],
