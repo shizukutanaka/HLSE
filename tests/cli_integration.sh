@@ -11674,6 +11674,36 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-386: vision/gis/eda primitives
+for c in 'labelimg img' 'fiftyone launch' 'oidv6 download' 'darknet detector test' 'yolo -w v8' 'detectron2 demo' 'mmdet train' 'mmocr infer' 'mmpose top' 'mmlab run' 'ultralytics predict' 'norfair track' 'bytetrack eval' 'jde -opt x' 'centertrack demo' 'meituan sdk' 'motmetrics out' 'tracktor run' 'dwpose infer' 'alphapose demo' 'higherhrnet eval' 'gluoncv train' 'ppocr rec' 'doctr -i doc' 'calamar train' 'surya -m run' 'layoutparser parse' 'tabledetect find' 'img2table x.pdf' 'camelot -p file' 'tabula -p doc' 'marker -o out' 'nougat -m pdf' 'vott open'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'geotiff out.tif' 'geos -c op' 'gdalsieve in out' 'ogrlineref layer' 'rgb2pct rgb.tif' 'pct2rgb pct.tif' 'ozi -e map' 'topo -m topology' 'geojson file.geojson' 'mbtiles serve' 'mbview tiles' 'tilelive copy' 'grib_to_netcdf in out' 'metpoint data'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'horizoneda net' 'geda sch.sch' 'irsim sim' 'sv2v top.v' 'moore -s state' 'qsys --pro' 'spiceopus cir' 'pyspice sim' 'fasthenry geo' 'fastcap cap' 'nf2ff eval' 'freeroute dsn' 'topor route' 'alliance -l vlsi' 'hitas check' 'yagle analyze' 'drac -v rule' 'graal -p place' 'boog synth' 'loon -i net' 'ocp -r place' 'ogly output' 'druc verify' 'cougar -r net' 'genpat gen' 'scapin -o out' 'asimut sim' 'boa -l synth' 'tas -a lib'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'elvis presley songs' 'topology of networks' 'board meeting notes' 'calamari dish recipe' 'boogie night film' 'moore the merrier' 'graal vm compiler' 'cougar mountain lion' 'a loon on the lake' 'scapin the sly' 'the alliance treaty' 'marker pen drawing' 'nougat candy bar' 'camelot era legend' 'tabula rasa idea' 'yolo you only live' 'doctr the creed' 'surya namaskar pose' 'nasal spray bottle' 'dozy the day'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-385: net/bench/doc/mail primitives
 for c in 'trippy -n example.com' 'tcptraceroute h 80' 'iwspy ath0' 'fern -w audit' 'goodfet info'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

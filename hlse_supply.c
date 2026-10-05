@@ -15301,6 +15301,67 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mpick") || ci_contains(text, "mrep") ||
              ci_contains(text, "mrefile")) {
         what = "mail/feed primitive";
+        } else if (
+             /* cycle-386a: vision/ocr primitives */
+             ci_contains(text, "labelimg") || ci_contains(text, "fiftyone") ||
+             ci_contains(text, "oidv6") ||
+             ci_contains(text, "darknet") ||
+             (ci_contains(text, "yolo") && ci_contains(text, " -")) ||
+             ci_contains(text, "detectron") || ci_contains(text, "mmdet") ||
+             ci_contains(text, "mmocr") || ci_contains(text, "mmpose") ||
+             ci_contains(text, "mmlab") || ci_contains(text, "ultralytics") ||
+             ci_contains(text, "norfair") || ci_contains(text, "bytetrack") ||
+             ci_contains(text, "jde ") || ci_contains(text, "centertrack") ||
+             ci_contains(text, "meituan") || ci_contains(text, "motmetrics") ||
+             ci_contains(text, "tracktor") || ci_contains(text, "dwpose") ||
+             ci_contains(text, "alphapose") || ci_contains(text, "higherhrnet") ||
+             ci_contains(text, "gluoncv") || ci_contains(text, "ppocr") ||
+             (ci_contains(text, "doctr") && ci_contains(text, " -")) ||
+             ci_contains(text, "calamar ") ||
+             (ci_contains(text, "surya") && ci_contains(text, " -")) ||
+             ci_contains(text, "layoutparser") || ci_contains(text, "tabledetect") ||
+             ci_contains(text, "img2table") ||
+             (ci_contains(text, "camelot") && ci_contains(text, " -")) ||
+             (ci_contains(text, "tabula") && ci_contains(text, " -")) ||
+             (ci_contains(text, "marker") && ci_contains(text, " -")) ||
+             (ci_contains(text, "nougat") && ci_contains(text, " -")) ||
+             ci_contains(text, "vott")) {
+        what = "vision/ocr primitive";
+        } else if (
+             /* cycle-386b: gis primitives */
+             ci_contains(text, "geotiff") || ci_contains(text, "geos ") ||
+             ci_contains(text, "gdalsieve") ||
+             ci_contains(text, "ogrlineref") || ci_contains(text, "rgb2pct") ||
+             ci_contains(text, "pct2rgb") || ci_contains(text, "ozi ") ||
+             (ci_contains(text, "topo ") && ci_contains(text, " -")) ||
+             ci_contains(text, "geojson") || ci_contains(text, "mbtiles") ||
+             ci_contains(text, "mbview") || ci_contains(text, "tilelive") ||
+             ci_contains(text, "grib_to_netcdf") || ci_contains(text, "metpoint")) {
+        what = "gis primitive";
+        } else if (
+             /* cycle-386c: eda primitives */
+             ci_contains(text, "horizoneda") || ci_contains(text, "geda") ||
+             ci_contains(text, "irsim") || ci_contains(text, "sv2v") ||
+             (ci_contains(text, "moore") && ci_contains(text, " -")) ||
+             ci_contains(text, "qsys") || ci_contains(text, "spiceopus") ||
+             ci_contains(text, "pyspice") || ci_contains(text, "fasthenry") ||
+             ci_contains(text, "fastcap") || ci_contains(text, "nf2ff") ||
+             ci_contains(text, "freeroute") || ci_contains(text, "topor") ||
+             (ci_contains(text, "alliance") && ci_contains(text, " -")) ||
+             ci_contains(text, "hitas") || ci_contains(text, "yagle") ||
+             ci_contains(text, "drac ") ||
+             (ci_contains(text, "graal") && ci_contains(text, " -")) ||
+             ci_contains(text, "boog ") ||
+             (ci_contains(text, "loon") && ci_contains(text, " -")) ||
+             ci_contains(text, "ocp ") || ci_contains(text, "ogly") ||
+             ci_contains(text, "druc") ||
+             (ci_contains(text, "cougar") && ci_contains(text, " -")) ||
+             ci_contains(text, "genpat") ||
+             (ci_contains(text, "scapin") && ci_contains(text, " -")) ||
+             ci_contains(text, "asimut") ||
+             (ci_contains(text, "boa ") && ci_contains(text, " -")) ||
+             ci_contains(text, "tas ")) {
+        what = "eda primitive";
         }
 
         if (what) {

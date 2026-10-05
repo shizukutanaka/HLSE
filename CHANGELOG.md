@@ -10856,6 +10856,20 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 386): vision/gis/eda primitives** — vision/OCR
+  (labelimg, fiftyone, oidv6, darknet, yolo, detectron, mmdet, mmocr,
+  mmpose, mmlab, ultralytics, norfair, bytetrack, jde, centertrack,
+  meituan, motmetrics, tracktor, dwpose, alphapose, higherhrnet,
+  gluoncv, ppocr, doctr, calamar, surya, layoutparser, tabledetect,
+  img2table, camelot, tabula, marker, nougat, vott), GIS
+  (geotiff, geos, gdalsieve, ogrlineref, rgb2pct, pct2rgb, ozi,
+  topo, geojson, mbtiles, mbview, tilelive, grib_to_netcdf,
+  metpoint), EDA/alliance
+  (horizoneda, geda, irsim, sv2v, moore, qsys, spiceopus, pyspice,
+  fasthenry, fastcap, nf2ff, freeroute, topor, alliance, hitas,
+  yagle, drac, graal, boog, loon, ocp, ogly, druc, cougar, genpat,
+  scapin, asimut, boa, tas). Words gated; topo/boa/ior-style dual;
+  lvis/nas dropped (unfixable). +82/102 checks.
 - **ALERT 45 (cycle 385): net/bench/doc/mail primitives** — net/wifi
   (trippy, tcptraceroute, iwspy, fern, goodfet), bench/power
   (stress, tiobench, bonnie, pgbench, ior, hpl, sensors,
