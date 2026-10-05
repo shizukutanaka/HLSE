@@ -10856,6 +10856,26 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 406): microscopy/eda primitives**
+  — microscopy/crystallography (fiji, fiji.app, mmstudio, mm_,
+  mm2, mkfake, bfview, ijview, omero, bflist, icycam, vaa3d,
+  tereconverter, catmaid, trakem2, trakem, ilastik, cellpose,
+  omnipose, qupath, paquo, czi2tif, czi2jpeg, czi2ome,
+  czifile, aicspylibczi, zeiss2tif, lsm2tif, lsm2ome,
+  lif2tif, lif2ome, vsi2tif, vsi2ome, evos2tif, flim2tif,
+  flim, flimlib, flimj, flimfit, phasor, imspector, ptu2tif,
+  refmacat, restrain_probes, elder, hkldisp, hklview,
+  hklviewer, hklprocess, hklpy, eiger2cbf, areadetector,
+  adaravis, adpilatus, adeiger), eda/pcb (pcb2svg, kikit,
+  kicost, eagle.rc, eaglecon, ulpcam, eagle2kicad, allegro,
+  allegro_free_viewer, pspice, hspice, spectre, titanspice,
+  hsim, ocean, siwave, hfss, pyaedt, icepak, aedt, altium,
+  dsn2pcb, protel, protel99, pads, jlc2kicad, jlcpcb, lceda,
+  fzp, gschlas, hid_gtk, gerber, gerber2svg, gerbera, gcam,
+  chilipeppr, autoleveller, jlcfab, rimu, diptrace, ultiboard,
+  scad3, spice2, spice3, adms, admsxml, oregano, csdl,
+  macspice, winspice, isspice, smartsim, falstad,
+  everycircuit, partsim, partquest). +111/117 checks.
 - **ALERT 45 (cycle 405): data-eng/aec primitives**
   — data-eng/rdf (spoon, carte, kettle, tcomp, kamelet,
   karavan, jberet, smooks, anypoint, ballerina, devlake,

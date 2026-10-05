@@ -16265,6 +16265,72 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "stanley") && ci_contains(text, " -")) ||
              (ci_contains(text, "saturn") && ci_contains(text, " -"))) {
         what = "aec/bim primitive";
+        } else if (
+             /* cycle-406a: microscopy/crystallography primitives */
+             (ci_contains(text, "fiji") && ci_contains(text, " -")) ||
+             ci_contains(text, "fiji.app") || ci_contains(text, "mmstudio") ||
+             ci_contains(text, "mm_") || ci_contains(text, "mm2") ||
+             ci_contains(text, "mkfake") || ci_contains(text, "bfview") ||
+             ci_contains(text, "ijview") || ci_contains(text, "omero") ||
+             ci_contains(text, "bflist") || ci_contains(text, "icycam") ||
+             ci_contains(text, "vaa3d") || ci_contains(text, "tereconverter") ||
+             ci_contains(text, "catmaid") || ci_contains(text, "trakem2") ||
+             ci_contains(text, "trakem") || ci_contains(text, "ilastik") ||
+             ci_contains(text, "cellpose") || ci_contains(text, "omnipose") ||
+             ci_contains(text, "qupath") || ci_contains(text, "paquo") ||
+             ci_contains(text, "czi2tif") || ci_contains(text, "czi2jpeg") ||
+             ci_contains(text, "czi2ome") || ci_contains(text, "czifile") ||
+             ci_contains(text, "aicspylibczi") || ci_contains(text, "zeiss2tif") ||
+             ci_contains(text, "lsm2tif") || ci_contains(text, "lsm2ome") ||
+             ci_contains(text, "lif2tif") || ci_contains(text, "lif2ome") ||
+             ci_contains(text, "vsi2tif") || ci_contains(text, "vsi2ome") ||
+             ci_contains(text, "evos2tif") || ci_contains(text, "flim2tif") ||
+             ci_contains(text, "flim") || ci_contains(text, "flimlib") ||
+             ci_contains(text, "flimj") || ci_contains(text, "flimfit") ||
+             ci_contains(text, "phasor") || ci_contains(text, "imspector") ||
+             ci_contains(text, "ptu2tif") || ci_contains(text, "refmacat") ||
+             ci_contains(text, "restrain_probes") ||
+             (ci_contains(text, "elder") && ci_contains(text, " -")) ||
+             ci_contains(text, "hkldisp") || ci_contains(text, "hklview") ||
+             ci_contains(text, "hklviewer") || ci_contains(text, "hklprocess") ||
+             ci_contains(text, "hklpy") || ci_contains(text, "eiger2cbf") ||
+             ci_contains(text, "areadetector") || ci_contains(text, "adaravis") ||
+             ci_contains(text, "adpilatus") || ci_contains(text, "adeiger")) {
+        what = "microscopy primitive";
+        } else if (
+             /* cycle-406b: eda/pcb primitives */
+             ci_contains(text, "pcb2svg") || ci_contains(text, "kikit") ||
+             ci_contains(text, "kicost") || ci_contains(text, "eagle.rc") ||
+             ci_contains(text, "eaglecon") || ci_contains(text, "ulpcam") ||
+             ci_contains(text, "eagle2kicad") ||
+             (ci_contains(text, "allegro") && ci_contains(text, " -")) ||
+             ci_contains(text, "allegro_free_viewer") || ci_contains(text, "pspice") ||
+             ci_contains(text, "hspice") || ci_contains(text, "spectre") ||
+             ci_contains(text, "titanspice") || ci_contains(text, "hsim") ||
+             (ci_contains(text, "ocean") && ci_contains(text, " -")) ||
+             ci_contains(text, "siwave") || ci_contains(text, "hfss") ||
+             ci_contains(text, "pyaedt") || ci_contains(text, "icepak") ||
+             ci_contains(text, "aedt") || ci_contains(text, "altium") ||
+             ci_contains(text, "dsn2pcb") || ci_contains(text, "protel") ||
+             ci_contains(text, "protel99") ||
+             (ci_contains(text, "pads") && ci_contains(text, " -")) ||
+             ci_contains(text, "jlc2kicad") || ci_contains(text, "jlcpcb") ||
+             ci_contains(text, "lceda") || ci_contains(text, "fzp ") ||
+             ci_contains(text, "gschlas") || ci_contains(text, "hid_gtk") ||
+             (ci_contains(text, "gerber") && ci_contains(text, " -")) ||
+             ci_contains(text, "gerber2svg") || ci_contains(text, "gerbera") ||
+             ci_contains(text, "gcam") || ci_contains(text, "chilipeppr") ||
+             ci_contains(text, "autoleveller") || ci_contains(text, "jlcfab") ||
+             ci_contains(text, "rimu") || ci_contains(text, "diptrace") ||
+             ci_contains(text, "ultiboard") || ci_contains(text, "scad3") ||
+             ci_contains(text, "spice2") || ci_contains(text, "spice3") ||
+             ci_contains(text, "adms") || ci_contains(text, "admsxml") ||
+             ci_contains(text, "oregano") || ci_contains(text, "csdl") ||
+             ci_contains(text, "macspice") || ci_contains(text, "winspice") ||
+             ci_contains(text, "isspice") || ci_contains(text, "smartsim") ||
+             ci_contains(text, "falstad") || ci_contains(text, "everycircuit") ||
+             ci_contains(text, "partsim") || ci_contains(text, "partquest")) {
+        what = "eda/pcb primitive";
         }
 
         if (what) {
