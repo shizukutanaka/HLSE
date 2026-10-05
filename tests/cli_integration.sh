@@ -418,6 +418,14 @@ assert data["hardening_band"] in ("hardened", "good", "fair", "weak")
     && check "P8 classes[] absent on clean input" "1" "0" \
     || check "P8 classes[] absent on clean input" "0" "0"
 
+# secret findings[] carry a 1-based line number (SIEM/remediation locus)
+printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | ./hlse_core --json secret --stdin 2>&1 | grep -q '"line":4' \
+    && check "secret finding reports correct line number" "0" "0" \
+    || check "secret finding reports correct line number" "0" "1"
+./hlse_core --json secret 'key: 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d' 2>&1 | grep -q '"line":1' \
+    && check "secret single-line input reports line 1" "0" "0" \
+    || check "secret single-line input reports line 1" "0" "1"
+
 # FileFix (2025 ClickFix variant): paste path into File Explorer address bar → flagged
 ./hlse_core text 'A file has been shared with you. Open File Explorer, then paste the path into the file explorer and press Enter.' 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "FileFix Explorer-paste lure detected" "0" "0" \

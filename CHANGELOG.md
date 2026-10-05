@@ -10877,6 +10877,15 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 442 (structured output pt. 2 — secret findings carry
+  `line`):** a secret scanner that cannot say WHERE the credential
+  sits forces a manual re-search: findings carried only type +
+  truncated description. `SecretFinding` gains `line` (1-based, 0 =
+  unknown); `sv_add` takes the match position and a shared `sv_line`
+  counts newlines from the scan base — all 19 detector call sites
+  pass their match pointer. `--json secret` findings elements now
+  emit `"line":N`. CLI tests +2: a 4-line stdin scan reports line 4;
+  single-line input reports line 1.
 - **cycle 441 (memory-safety sweep pt. 2 — bounds audit clean; JSON
   `classes[]` for P8 multi-hold):** audited all ~60 `memcpy`/`memmove`/
   `read`/`fread` sites, every `malloc`/`realloc`/`strdup` return, and

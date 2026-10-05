@@ -1013,8 +1013,9 @@ hlse_cmd_secret(const HlseCli *o, int argc, char **argv, int idx) {
                     char et[64], ed[512];
                     hlse_json_escape(sv.findings[i].type, et, sizeof(et));
                     hlse_json_escape(sv.findings[i].description, ed, sizeof(ed));
-                    printf("%s{\"type\":\"%s\",\"description\":\"%s\"}",
-                           i > 0 ? "," : "", et, ed);
+                    printf("%s{\"type\":\"%s\",\"line\":%d,"
+                           "\"description\":\"%s\"}",
+                           i > 0 ? "," : "", et, sv.findings[i].line, ed);
                 }
                 printf("]");
                 printf(",\"confidence\":\"%s\"", hlse_secret_confidence(&sv));

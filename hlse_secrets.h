@@ -16,6 +16,7 @@ extern "C" {
 
 typedef struct {
     char type[32];          /* e.g. "AWS_KEY", "GITHUB_PAT", "PRIVATE_KEY" */
+    int  line;              /* 1-based line in the scanned text; 0 = unknown */
     char description[256];
 } SecretFinding;
 

@@ -69,14 +69,25 @@ github_checksum_state(const char *prefix, const char *suffix, size_t suffix_len)
 static int check_hex_private_key(const char *text, SecretVerdict *v);
 static int check_mnemonic(const char *text, SecretVerdict *v);
 
+/* 1-based line number of position p inside scanned text base; 0 when the
+ * position isn't known relative to base. */
+static int
+sv_line(const char *base, const char *p) {
+    int ln = 1;
+    if (!base || !p || p < base) return 0;
+    while (base < p) { if (*base++ == '\n') ln++; }
+    return ln;
+}
+
 static void
-sv_add(SecretVerdict *v, int delta, const char *type,
+sv_add(SecretVerdict *v, int delta, const char *type, int line,
        const char *fmt, ...) {
     va_list ap;
     if (v->n_findings >= HLSE_SECRET_MAX_FINDINGS) return;
     v->score += delta;
     if (v->score > 100) v->score = 100;
 
+    v->findings[v->n_findings].line = line;
     strncpy(v->findings[v->n_findings].type, type,
             sizeof(v->findings[0].type) - 1);
     v->findings[v->n_findings].type[sizeof(v->findings[0].type) - 1] = '\0';
@@ -878,6 +889,7 @@ check_ssh_key(const char *text, SecretVerdict *v) {
     for (i = 0; markers[i]; i++) {
         if (strstr(text, markers[i])) {
             sv_add(v, 95, "PRIVATE_KEY",
+                   sv_line(text, strstr(text, markers[i])),
                    "Private key detected: %.40s...", markers[i]);
             found = 1;
         }
@@ -996,7 +1008,7 @@ check_env_passwords(const char *text, SecretVerdict *v) {
             if (*val && *val != '$' && *val != '{' && *val != '\n'
                 && *val != '\r' && *val != ' ')
             {
-                sv_add(v, 70, "ENV_SECRET",
+                sv_add(v, 70, "ENV_SECRET", sv_line(text, p),
                        "Hardcoded secret: %.30s<redacted>", patterns[i]);
                 found = 1;
             }
@@ -1027,7 +1039,7 @@ check_generic_hex_secret(const char *text, SecretVerdict *v) {
         const char *start = p;
         while (is_hex(*p) || is_base64(*p)) { hex_run++; p++; }
         if (hex_run >= 32) {
-            sv_add(v, 60, "GENERIC_SECRET",
+            sv_add(v, 60, "GENERIC_SECRET", sv_line(text, start),
                    "High-entropy value after '%s' (%d chars)",
                    keywords[i], hex_run);
             found = 1;
@@ -1237,7 +1249,7 @@ check_kv_assignment(const char *text, SecretVerdict *v) {
             p = sep + 1; continue;
         }
         (void)quoted;
-        sv_add(v, 65, "KV_SECRET",
+        sv_add(v, 65, "KV_SECRET", sv_line(text, p),
                "Hardcoded credential assignment: %s = <redacted> "
                "(%d chars)", key, (int)vl);
         found = 1;
@@ -1303,7 +1315,7 @@ hlse_scan_secrets(const char *text) {
                                      " (AWS account %s — rotate this key and "
                                      "audit that account)", acct);
                     }
-                    sv_add(&v, sp->score, sp->label,
+                    sv_add(&v, sp->score, sp->label, sv_line(text, p),
                            "%s found: %s%s%s", sp->label, preview, aws_note,
                            ck_state == 1
                              ? " (checksum verifies — well-formed, "
@@ -1343,7 +1355,7 @@ hlse_scan_secrets(const char *text) {
                     char preview[64];
                     snprintf(preview, sizeof(preview), "%.8s%.4s...",
                              cp->prefix, suffix);
-                    sv_add(&v, cp->score, cp->label,
+                    sv_add(&v, cp->score, cp->label, sv_line(text, p),
                            "%s found: %s", cp->label, preview);
                 }
             }
@@ -1364,6 +1376,7 @@ hlse_scan_secrets(const char *text) {
     if (strstr(text, "\"type\"") && strstr(text, "service_account") &&
         strstr(text, "\"private_key\"")) {
         sv_add(&v, 90, "GCP_SERVICE_ACCOUNT",
+               sv_line(text, strstr(text, "\"type\"")),
                "GCP service account JSON (type+private_key fields)");
     }
 
@@ -1386,7 +1399,7 @@ hlse_scan_secrets(const char *text) {
                 while (is_base64(*val) && *val != '=') { b64_run++; val++; }
                 if (b64_run >= 40 &&
                     !is_placeholder_secret(text, k, start, (size_t)b64_run)) {
-                    sv_add(&v, 90, "AWS_SECRET_KEY",
+                    sv_add(&v, 90, "AWS_SECRET_KEY", sv_line(text, k),
                            "AWS secret access key (40-char base64 after "
                            "'aws_secret_access_key')");
                 }
@@ -1405,7 +1418,7 @@ hlse_scan_secrets(const char *text) {
             while (is_base64(*val) || *val == '=') { b64_run++; val++; }
             if (b64_run >= 40 && !is_placeholder_secret(text, ak, ak + 11,
                                                          (size_t)b64_run)) {
-                sv_add(&v, 85, "AZURE_ACCOUNT_KEY",
+                sv_add(&v, 85, "AZURE_ACCOUNT_KEY", sv_line(text, ak),
                        "Azure storage AccountKey credential (%d chars)", b64_run);
             }
         }
@@ -1445,6 +1458,7 @@ hlse_scan_secrets(const char *text) {
                     if (pwlen >= 4 && *pw != '$' && *pw != '{' &&
                         !is_placeholder_secret(text, pw, pw, pwlen)) {
                         sv_add(&v, 80, "URI_CREDENTIALS",
+                               sv_line(text, pw),
                                "Embedded credentials in %s connection string "
                                "(user:password@host)", URI_SCHEMES[si]);
                         break;
@@ -1457,7 +1471,7 @@ hlse_scan_secrets(const char *text) {
     /* Azure SAS token — highly distinctive shared-access-signature pattern */
     if ((strstr(text, "sv=") || strstr(text, "SharedAccessSignature")) &&
         strstr(text, "sig=") && strstr(text, "se=")) {
-        sv_add(&v, 85, "AZURE_SAS",
+        sv_add(&v, 85, "AZURE_SAS", sv_line(text, strstr(text, "sig=")),
                "Azure SAS token (sv/sig/se fields)");
     }
 
@@ -1484,7 +1498,7 @@ hlse_scan_secrets(const char *text) {
              * start) to avoid matching the tail of a longer number.        */
             int bounded = (d == text || !(d[-1] >= '0' && d[-1] <= '9'));
             if (bounded && digits >= 8 && digits <= 10 && after >= 35) {
-                sv_add(&v, 85, "TELEGRAM_BOT_TOKEN",
+                sv_add(&v, 85, "TELEGRAM_BOT_TOKEN", sv_line(text, d),
                        "Telegram bot token (<id>:<35-char secret>)");
                 break;
             }
@@ -1543,6 +1557,7 @@ hlse_scan_secrets(const char *text) {
                                 alldigit = 0; break; }
                         if (alldigit) {
                             sv_add(&v, 85, "DISCORD_BOT_TOKEN",
+                                   sv_line(text, dc),
                                    "Discord bot token (<b64 snowflake>"
                                    ".<short>.<hmac>) — full bot control");
                             break;
@@ -1619,7 +1634,7 @@ hlse_scan_secrets(const char *text) {
                             for (ai = 0; ai < al; ai++)
                                 alg[ai] = (char)tolower((unsigned char)alg[ai]);
                             if (strcmp(alg, "none") == 0) {
-                                sv_add(&v, 70, "JWT_ALG_NONE",
+                                sv_add(&v, 70, "JWT_ALG_NONE", sv_line(text, jp),
                                     "Unsigned JWT (alg \"none\"): the signature "
                                     "is absent, so this token can be forged by "
                                     "anyone — an attack artifact or a dangerous "
@@ -1627,7 +1642,7 @@ hlse_scan_secrets(const char *text) {
                                 break;
                             }
                             if (ok) {
-                                sv_add(&v, 60, "JWT",
+                                sv_add(&v, 60, "JWT", sv_line(text, jp),
                                     "JWT bearer token (alg %s, "
                                     "header.payload.signature)", alg);
                                 break;
@@ -1637,7 +1652,7 @@ hlse_scan_secrets(const char *text) {
                 }
             }
             if (ok) {
-                sv_add(&v, 60, "JWT",
+                sv_add(&v, 60, "JWT", sv_line(text, jp),
                        "JWT bearer token (header.payload.signature)");
                 break;
             }
@@ -2661,7 +2676,7 @@ check_hex_private_key(const char *text, SecretVerdict *v) {
         while (is_hex(h[run])) run++;
         if (run == 64 &&
             !is_placeholder_secret(text, p, p + 2, (size_t)run)) {
-            sv_add(v, 55, "HEX_PRIVATE_KEY",
+            sv_add(v, 55, "HEX_PRIVATE_KEY", sv_line(text, p),
                    "0x-prefixed 64-hex value — private-key shape");
             found = 1;
         }
@@ -2725,7 +2740,7 @@ check_mnemonic(const char *text, SecretVerdict *v) {
             ctx[cn] = '\0';
             for (i = 0; CTX[i]; i++)
                 if (strstr(ctx, CTX[i])) { hot = 1; break; }
-            sv_add(v, hot ? 75 : 45, "MNEMONIC_PHRASE",
+            sv_add(v, hot ? 75 : 45, "MNEMONIC_PHRASE", sv_line(text, p),
                    hot ? "BIP39-shaped seed/recovery phrase "
                          "(keyword context + %d distinct words)"
                        : "possible seed phrase — %d consecutive "
