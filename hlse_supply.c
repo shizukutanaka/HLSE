@@ -15014,6 +15014,37 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "migalood") || ci_contains(text, "selfchaind") ||
              ci_contains(text, "stationsd") || ci_contains(text, "bcnad")) {
         what = "cosmos-chain primitive";
+        } else if (
+             /* cycle-376a: disk/optical-media primitives */
+             ci_contains(text, "ddv") || ci_contains(text, "h2testw") ||
+             ci_contains(text, "f3probe") || ci_contains(text, "unetbootin") ||
+             ci_contains(text, "cdrskin") || ci_contains(text, "cdda2mp3") ||
+             ci_contains(text, "cdpcd") || ci_contains(text, "cdquery") ||
+             ci_contains(text, "trackrip") || ci_contains(text, "cdrip") ||
+             ci_contains(text, "cdrw") || ci_contains(text, "dem2pgm")) {
+        what = "disk/media primitive";
+        } else if (
+             /* cycle-376b: recutils/astro primitives */
+             ci_contains(text, "recinf") || ci_contains(text, "recset") ||
+             ci_contains(text, "recsel") || ci_contains(text, "recins") ||
+             ci_contains(text, "imarith") || ci_contains(text, "sethead") ||
+             ci_contains(text, "imresize") || ci_contains(text, "fitsverify") ||
+             ci_contains(text, "fcalc") || ci_contains(text, "fimgstat") ||
+             ci_contains(text, "finsert") || ci_contains(text, "fmodhead") ||
+             ci_contains(text, "fprint ") || ci_contains(text, "fselect") ||
+             ci_contains(text, "fstatistic") || ci_contains(text, "ftablist") ||
+             ci_contains(text, "fsubtr") || ci_contains(text, "dmfilth") ||
+             ci_contains(text, "dmimgblob") || ci_contains(text, "dmregrid") ||
+             ci_contains(text, "dmstat") || ci_contains(text, "wavdetect") ||
+             ci_contains(text, "mkarf") || ci_contains(text, "acis_process_events") ||
+             ci_contains(text, "pileup_map") || ci_contains(text, "echem") ||
+             ci_contains(text, "qdpplote") || ci_contains(text, "q3plot")) {
+        what = "recutils/astro primitive";
+        } else if (
+             /* cycle-376c: vuln/log primitives */
+             ci_contains(text, "cvechecker") || ci_contains(text, "cvegen") ||
+             ci_contains(text, "awffull")) {
+        what = "vuln/log primitive";
         }
 
         if (what) {

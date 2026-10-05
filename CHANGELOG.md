@@ -10856,6 +10856,16 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 376): disk/optical-media + recutils/astro +
+  vuln/log primitives** — imaging/media (ddv, h2testw, f3probe,
+  unetbootin, cdrskin, cdda2mp3, cdpcd, cdquery, trackrip, cdrip,
+  cdrw, dem2pgm), recutils + astronomy (recinf, recset, recsel, recins,
+  imarith, sethead, imresize, fitsverify, fcalc, fimgstat, finsert,
+  fmodhead, fprint, fselect, fstatistic, ftablist, fsubtr, dmfilth,
+  dmimgblob, dmregrid, dmstat, wavdetect, mkarf, acis_process_events,
+  pileup_map, echem, qdpplote, q3plot), and vuln/log (cvechecker,
+  cvegen, awffull). fprint bounded on trailing space (fprintd-*).
+  +43/45 checks.
 - **ALERT 45 (cycle 375): finance/ledger + solver + cosmos-chain
   primitives** — accounting (beanquery, beanprice, knut, sunnyside,
   rotkehlchen, cointrack, jgnash, eqonomize, bank2ynab, warren, grouppay,

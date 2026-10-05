@@ -11674,6 +11674,36 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-376: disk/media + recutils/astro + vuln primitives
+for c in 'ddv -i img.dd' 'h2testw -t /mnt' 'f3probe /dev/sdX' 'unetbootin installtype=USB' 'cdrskin -scanbus' 'cdda2mp3 -D /dev/cdrom' 'cdpcd -d /dev/sr0' 'cdquery -t' 'trackrip -v' 'cdrip -a' 'cdrw -i' 'dem2pgm tile.dem'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'recinf in.rec' 'recset -t t in.rec' 'recsel in.rec' 'recins -r v in.rec' 'imarith a * b' 'sethead -n img.fits' 'imresize -o out.fits' 'fitsverify in.fits' 'fcalc expr' 'fimgstat img.fits' 'finsert file.fits' 'fmodhead in.fits key=val' 'fprint text to stdout' 'fselect in.fits out' 'fstatistic in.fits' 'ftablist in.tbl' 'fsubtr a.fits b.fits' 'dmfilth in.fits' 'dmimgblob i.fits' 'dmregrid i.fits o.fits' 'dmstat img.fits' 'wavdetect in.fits' 'mkarf obs.fits' 'acis_process_events evt1' 'pileup_map -i' 'echem -v' 'qdpplote plot' 'q3plot -f'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'cvechecker -r' 'cvegen -o out' 'awffull -c site.conf'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'fprintd-enroll -f right-index' 'echo fprints found on scene'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-375: finance/ledger + solver + cosmos primitives
 for c in 'beanquery -f book.bean select' 'beanprice -i positions' 'knut -b book.bean' 'sunnyside -f main.bean' 'rotkehlchen --data-dir d' 'cointrack -a ledger' 'jgnash -v' 'eqonomize -r' 'bank2ynab -i in.csv' 'warren -p 8332' 'grouppay -s' 'settleup -g' 'sesterce -s' 'lannister -m'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
