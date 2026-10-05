@@ -10856,6 +10856,27 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 419): ide/forum-cms primitives**
+  — ide/devtools (notepad++, sc1, devcpp, netbeans,
+  sts4, tycho, intellij, idea64, goland, rider,
+  jetbrains, jeb, frameit, supply, spaceship,
+  studio64, emulator, mksdcard, retrace, r8, dnlib,
+  de4dot, aidl, coveralls, locust), forum/cms
+  (vanilla, vanillaforums, simplemachines, smf, smf2,
+  buddyboss, piefed, postmill, voat, tildes, gwern,
+  sotoki, libreddit, teddit, oldreddit, leantime,
+  zentao, twiki, documenso, docmost, confluence,
+  wikitten, wikiwand, mwoffliner, wordpress, acorn,
+  wporg, wp2static, simplystatic, acquia, blt,
+  thunder, ddev, ddev2, joomla, typo3, typo3cms,
+  processwire, craftcms, symfony, laravel, vapor,
+  octane, pail, lumen, livewire, inertia, filament,
+  commerce, prestakit, prestasafe, prests, cscart,
+  woocommerce, bigcommerce, themekit, dawn, liquidjs,
+  spree, solidus, reaction, reactioncommerce,
+  nopcommerce, elasticpath, swell, ecwid, weebly,
+  paypal, braintree, payhip). laravel gated
+  (laravel artisan FP guard). +102/102 checks.
 - **ALERT 45 (cycle 418): genomics/proteomics primitives**
   — genomics/phylo (graphmap, graphmap2, lastdb,
   fastal, fastdb, psl2maf, psl2bed, pslcheck, pslcat,

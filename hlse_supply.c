@@ -17325,6 +17325,74 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "fasta2peptides") || ci_contains(text, "unipept") ||
              ci_contains(text, "metaproteome") || ci_contains(text, "metapeptide")) {
         what = "proteomics primitive";
+        } else if (
+             /* cycle-419a: ide/devtools primitives */
+             ci_contains(text, "notepad++") || ci_contains(text, "sc1 ") ||
+             ci_contains(text, "devcpp") || ci_contains(text, "netbeans") ||
+             ci_contains(text, "sts4") || ci_contains(text, "tycho") ||
+             ci_contains(text, "intellij") || ci_contains(text, "idea64") ||
+             ci_contains(text, "goland") ||
+             (ci_contains(text, "rider") && ci_contains(text, " -")) ||
+             ci_contains(text, "jetbrains") || ci_contains(text, "jeb ") ||
+             ci_contains(text, "frameit") ||
+             (ci_contains(text, "supply") && ci_contains(text, " -")) ||
+             (ci_contains(text, "spaceship") && ci_contains(text, " -")) ||
+             ci_contains(text, "studio64") ||
+             (ci_contains(text, "emulator") && ci_contains(text, " -")) ||
+             ci_contains(text, "mksdcard") ||
+             (ci_contains(text, "retrace") && ci_contains(text, " -")) ||
+             ci_contains(text, "r8 ") || ci_contains(text, "dnlib") ||
+             ci_contains(text, "de4dot") || ci_contains(text, "aidl") ||
+             ci_contains(text, "coveralls") ||
+             (ci_contains(text, "locust") && ci_contains(text, " -"))) {
+        what = "ide/devtools primitive";
+        } else if (
+             /* cycle-419b: forum/cms primitives */
+             (ci_contains(text, "vanilla") && ci_contains(text, " -")) ||
+             ci_contains(text, "vanillaforums") || ci_contains(text, "simplemachines") ||
+             ci_contains(text, "smf ") || ci_contains(text, "smf2") ||
+             ci_contains(text, "buddyboss") || ci_contains(text, "piefed") ||
+             ci_contains(text, "postmill") || ci_contains(text, "voat") ||
+             ci_contains(text, "tildes") || ci_contains(text, "gwern") ||
+             ci_contains(text, "sotoki") || ci_contains(text, "libreddit") ||
+             ci_contains(text, "teddit") || ci_contains(text, "oldreddit") ||
+             ci_contains(text, "leantime") || ci_contains(text, "zentao") ||
+             ci_contains(text, "twiki") || ci_contains(text, "documenso") ||
+             ci_contains(text, "docmost") ||
+             (ci_contains(text, "confluence") && ci_contains(text, " -")) ||
+             ci_contains(text, "wikitten") || ci_contains(text, "wikiwand") ||
+             ci_contains(text, "mwoffliner") || ci_contains(text, "wordpress") ||
+             ci_contains(text, "acorn") || ci_contains(text, "wporg") ||
+             ci_contains(text, "wp2static") || ci_contains(text, "simplystatic") ||
+             ci_contains(text, "acquia") || ci_contains(text, "blt ") ||
+             (ci_contains(text, "thunder") && ci_contains(text, " -")) ||
+             ci_contains(text, "ddev") || ci_contains(text, "ddev2") ||
+             ci_contains(text, "joomla") || ci_contains(text, "typo3") ||
+             ci_contains(text, "typo3cms") || ci_contains(text, "processwire") ||
+             ci_contains(text, "craftcms") || ci_contains(text, "symfony") ||
+             (ci_contains(text, "laravel") && ci_contains(text, " -")) ||
+             (ci_contains(text, "vapor") && ci_contains(text, " -")) ||
+             (ci_contains(text, "octane") && ci_contains(text, " -")) ||
+             ci_contains(text, "pail") ||
+             (ci_contains(text, "lumen") && ci_contains(text, " -")) ||
+             (ci_contains(text, "livewire") && ci_contains(text, " -")) ||
+             (ci_contains(text, "inertia") && ci_contains(text, " -")) ||
+             (ci_contains(text, "filament") && ci_contains(text, " -")) ||
+             (ci_contains(text, "commerce") && ci_contains(text, " -")) ||
+             ci_contains(text, "prestakit") || ci_contains(text, "prestasafe") ||
+             ci_contains(text, "prests") || ci_contains(text, "cscart") ||
+             ci_contains(text, "woocommerce") || ci_contains(text, "bigcommerce") ||
+             ci_contains(text, "themekit") ||
+             (ci_contains(text, "dawn") && ci_contains(text, " -")) ||
+             ci_contains(text, "liquidjs") || ci_contains(text, "spree") ||
+             ci_contains(text, "solidus") || ci_contains(text, "reaction") ||
+             ci_contains(text, "reactioncommerce") || ci_contains(text, "nopcommerce") ||
+             ci_contains(text, "elasticpath") ||
+             (ci_contains(text, "swell") && ci_contains(text, " -")) ||
+             ci_contains(text, "ecwid") || ci_contains(text, "weebly") ||
+             ci_contains(text, "paypal") || ci_contains(text, "braintree") ||
+             ci_contains(text, "payhip")) {
+        what = "forum/cms primitive";
         }
 
         if (what) {

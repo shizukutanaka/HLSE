@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-419: ide/forum-cms primitives
+for c in 'notepad++ edit' 'sc1 edit' 'devcpp ide' 'netbeans ide' 'sts4 ide' 'tycho build' 'intellij ide' 'idea64 run' 'goland ide' 'rider -r run' 'jetbrains toolbox' 'jeb decompile' 'frameit frame' 'supply -s submit' 'spaceship -s ship' 'studio64 ide' 'emulator -a run' 'mksdcard create' 'retrace -m map' 'r8 shrink' 'dnlib read' 'de4dot deobf' 'aidl compile' 'coveralls report' 'locust -f load'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'vanilla -f forum' 'vanillaforums forum' 'simplemachines forum' 'smf forum' 'smf2 forum' 'buddyboss app' 'piefed fediverse' 'postmill forum' 'voat forum' 'tildes forum' 'gwern site' 'sotoki conv' 'libreddit front' 'teddit front' 'oldreddit front' 'leantime pm' 'zentao pm' 'twiki wiki' 'documenso sign' 'docmost docs' 'confluence -w wiki' 'wikitten wiki' 'wikiwand read' 'mwoffliner offline' 'wordpress cms' 'acorn theme' 'wporg org' 'wp2static static' 'simplystatic static' 'acquia cloud' 'blt build' 'thunder -d distro' 'ddev run' 'ddev2 run' 'joomla cms' 'typo3 cms' 'typo3cms cms' 'processwire cms' 'craftcms cms' 'symfony app' 'laravel -n new' 'vapor -d deploy' 'octane -s serve' 'pail log' 'lumen -f framework' 'livewire -c component' 'inertia -j js' 'filament -a admin' 'commerce -s store' 'prestakit kit' 'prestasafe safe' 'prests shop' 'cscart shop' 'woocommerce shop' 'bigcommerce shop' 'themekit theme' 'dawn -t theme' 'liquidjs render' 'spree store' 'solidus store' 'reaction shop' 'reactioncommerce shop' 'nopcommerce shop' 'elasticpath shop' 'swell -s store' 'ecwid shop' 'weebly site' 'paypal pay' 'braintree pay' 'payhip sell'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'vanilla ice cream recipe' 'supply and demand curve' 'locust swarm damage' 'commerce department building' 'thunder storm warning' 'rider on the trail' 'emulator history exhibit'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-418: genomics/proteomics primitives
 for c in 'graphmap align' 'graphmap2 align' 'lastdb index' 'fastal align' 'fastdb index' 'psl2maf conv' 'psl2bed conv' 'pslcheck check' 'pslcat concat' 'pslreps reps' 'fatotwobit conv' 'twobittofa conv' 'twobitinfo info' 'fasplit split' 'facount count' 'fatofastq conv' 'fastqtofa conv' 'fatonib conv' 'nibfrag frag' 'faonerecord get' 'fafilter filter' 'fasomerecords get' 'fasize size' 'fafrag frag' 'liftover lift' 'liftup lift' 'chainnet net' 'nettobed conv' 'netchainsubset subset' 'netsplit split' 'netfilter filter' 'netsyntenic syn' 'netclass class' 'chainprenet pre' 'chainsplit split' 'chainfilter filter' 'chainstitchid stitch' 'chainswap swap' 'chainnetminrepeat min' 'chaintopsl conv' 'psltochain conv' 'nettochain conv' 'lavtopsl conv' 'bedgraphtobigwig conv' 'bigwigtobedgraph conv' 'bigwiginfo info' 'bigwigsummary sum' 'bigwigmerge merge' 'bigwigcat cat' 'bigwigtowig conv' 'wigtobigwig conv' 'bedtobigbed conv' 'bigbedtobed conv' 'bigbedinfo info' 'bigbedsummary sum' 'bigbednameditems items' 'trackdb tracks' 'hal2maf conv' 'halstats stats' 'halliftover lift' 'halsummarizemutations sum' 'halalignability align' 'hallodinterpolate interp' 'haltree tree' 'haltreemutations mut' 'halbranchmutations mut' 'halsynteny syn' 'halmafscan scan' 'halmafmap map' 'cactus -w align' 'evolverevolver run' 'maftools tools' 'mafcomparator compare' 'mafduplicatefilter filter' 'maffilter filter' 'mafjoin join' 'maftofastastitcher stitch' 'sonlib lib' 'stpinchesandcacti run' 'stcaf run' 'streference run' 'stcactus run' 'stcactustests test' 'einsi align' 'ginsi align' 'linsi align' 'fftns align' 'fftnsi align' 'nwns align' 'nwnsi align' 't_coffee align' 'rcoffee align' '3dcoffee align' 'alncompare compare' 'mavid align' 'poav2 align' 'magma -a align' 'multiz align' 'phast conv' 'phastcons cons' 'phastodds odds' 'prequel -c conv' 'msa_view view' 'consentropy ent' 'refeature feat' 'yn00 run' 'evolver -s sim' 'chi2 table' 'chi2table tbl' 'paup4 run' 'revbayes run' 'bppseq run' 'dnaml run' 'dnapars pars' 'protpars pars' 'proml run' 'consense cons' 'seqboot boot' 'dnadist dist' 'protdist dist' 'dnainvar invar' 'dollop -p pars' 'restml run' 'treedist dist' 'drawtree draw' 'retree run' 'fitch -d dist' 'contml run' 'contrast -t test' 'gendist dist' 'dnacomp comp' 'promlk run' 'dnamlk run' 'paml4 run' 'geiger -t tree' 'badri run' 'usher -i place' 'matoptimize opt' 'ripples -r detect' 'scorpio -c call' 'gofasta conv'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
