@@ -11674,6 +11674,36 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-388: wasm/robotics/chat primitives
+for c in 'lucetc module.wasm' 'wamr run' 'wasmkit build' 'emnm symbols' 'emopt optimize' 'emsize out' 'emsdk install' 'wasienv cc' 'wasic file.c' 'wac compose' 'wadge bindgen' 'componentize -w x' 'wadm deploy' 'wrpc call' 'hippo -c deploy' 'bindle -s push' 'lunatic -r run' 'atmo -d run' 'vino -s serve' 'wapc host' 'wsgi app' 'wagi serve' 'nsc -a add' 'jetstream -s pub' 'nats-streaming -s x'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'vcs -i import' 'rqt -p graph' 'lpzrobots sim' 'mrpt apps' 'nav2 launch' 'cartographer -n node' 'orocos deploy' 'deployer -s ops' 'trac_ik solver' 'pinocchio -m model' 'mavloss log' 'mavreplay tlog' 'mavmission wp' 'arducopter sitl' 'arduplane sitl' 'param -g set'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'metronome -c start' 'spectrum -t xmpp' 'biboumi run' 'slidge config' 'synapse -r run' 'tqt -m msg' 'ircii server' 'epic -s script' 'scrollz run' 'kvirc connect' 'psi -p profile' 'vacuum -c client' 'conversations -x chat' 'atalk net'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'remark the obvious' 'filament in the bulb' 'standard -d output' 'a hippo at the zoo' 'bindle on a stick' 'the lunatic fringe' 'vino rosso wine' 'jetstream winds aloft' 'paramount pictures film' 'the metronome ticks' 'spectrum of colors' 'synapse firing fast' 'epic tale of old' 'psi squared wave' 'vacuum the floor' 'conversations with friends' 'atmosphere is nice'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-387: desktop/notebook/virt primitives
 for c in 'shutter -s' 'hotshots region' 'peek -f win' 'gifcurry -i v' 'gifski -o g v' 'interception -t dev' 'gesture -l list' 'gestures -d dbg' 'gebaar -w run'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

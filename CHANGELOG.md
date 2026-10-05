@@ -10856,6 +10856,17 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 388): wasm/robotics/chat primitives** — wasm/NATS
+  (lucetc, wamr, wasmkit, emnm, emopt, emsize, emsdk, wasienv,
+  wasic, wac, wadge, componentize, wadm, wrpc, hippo, bindle,
+  lunatic, atmo, vino, wapc, wsgi, wagi, nsc, jetstream,
+  nats-streaming), robotics (vcs, rqt, lpzrobots, mrpt, nav2,
+  cartographer, orocos, deployer, trac_ik, pinocchio, mavloss,
+  mavreplay, mavmission, arducopter, arduplane, param), chat/IRC
+  (metronome, spectrum, biboumi, slidge, synapse, tqt, ircii,
+  epic, scrollz, kvirc, psi, vacuum, conversations, atalk).
+  Words gated; param/atmo dual; ament/emar/stan/ompl/gz dropped.
+  +58/77 checks.
 - **ALERT 45 (cycle 387): desktop/notebook/virt primitives** —
   desktop capture (shutter, hotshots, peek, gifcurry, gifski,
   interception, gesture, gestures, gebaar), Jupyter/GPU

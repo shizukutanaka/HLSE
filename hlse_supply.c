@@ -15401,6 +15401,56 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "cpufreq") || ci_contains(text, "klockstat") ||
              ci_contains(text, "netqtop")) {
         what = "virt/sec primitive";
+        } else if (
+             /* cycle-388a: wasm/nats primitives */
+             ci_contains(text, "lucetc") || ci_contains(text, "wamr") ||
+             ci_contains(text, "wasmkit") ||
+             ci_contains(text, "emnm") || ci_contains(text, "emopt") ||
+             ci_contains(text, "emsize") || ci_contains(text, "emsdk") ||
+             ci_contains(text, "wasienv") || ci_contains(text, "wasic") ||
+             ci_contains(text, "wac ") || ci_contains(text, "wadge") ||
+             (ci_contains(text, "componentize") && ci_contains(text, " -")) ||
+             ci_contains(text, "wadm") || ci_contains(text, "wrpc") ||
+             (ci_contains(text, "hippo") && ci_contains(text, " -")) ||
+             (ci_contains(text, "bindle") && ci_contains(text, " -")) ||
+             (ci_contains(text, "lunatic") && ci_contains(text, " -")) ||
+             (ci_contains(text, "atmo ") && ci_contains(text, " -")) ||
+             (ci_contains(text, "vino") && ci_contains(text, " -")) ||
+             ci_contains(text, "wapc") || ci_contains(text, "wsgi") ||
+             ci_contains(text, "wagi") || ci_contains(text, "nsc ") ||
+             (ci_contains(text, "jetstream") && ci_contains(text, " -")) ||
+             ci_contains(text, "nats-streaming")) {
+        what = "wasm/nats primitive";
+        } else if (
+             /* cycle-388b: robotics primitives */
+             ci_contains(text, "vcs ") ||
+             ci_contains(text, "rqt ") ||
+             ci_contains(text, "lpzrobots") || ci_contains(text, "mrpt") ||
+             ci_contains(text, "nav2") ||
+             (ci_contains(text, "cartographer") && ci_contains(text, " -")) ||
+             ci_contains(text, "orocos") ||
+             (ci_contains(text, "deployer") && ci_contains(text, " -")) ||
+             ci_contains(text, "trac_ik") ||
+             (ci_contains(text, "pinocchio") && ci_contains(text, " -")) ||
+             ci_contains(text, "mavloss") || ci_contains(text, "mavreplay") ||
+             ci_contains(text, "mavmission") || ci_contains(text, "arducopter") ||
+             ci_contains(text, "arduplane") ||
+             (ci_contains(text, "param ") && ci_contains(text, " -"))) {
+        what = "robotics primitive";
+        } else if (
+             /* cycle-388c: chat/irc primitives */
+             (ci_contains(text, "metronome") && ci_contains(text, " -")) ||
+             (ci_contains(text, "spectrum") && ci_contains(text, " -")) ||
+             ci_contains(text, "biboumi") || ci_contains(text, "slidge") ||
+             (ci_contains(text, "synapse") && ci_contains(text, " -")) ||
+             ci_contains(text, "tqt ") || ci_contains(text, "ircii") ||
+             (ci_contains(text, "epic") && ci_contains(text, " -")) ||
+             ci_contains(text, "scrollz") || ci_contains(text, "kvirc") ||
+             (ci_contains(text, "psi") && ci_contains(text, " -")) ||
+             (ci_contains(text, "vacuum") && ci_contains(text, " -")) ||
+             (ci_contains(text, "conversations") && ci_contains(text, " -")) ||
+             ci_contains(text, "atalk")) {
+        what = "chat/irc primitive";
         }
 
         if (what) {
