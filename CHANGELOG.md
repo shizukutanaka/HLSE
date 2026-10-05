@@ -10856,6 +10856,13 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 382): filemgr + sysstat primitives** — file
+  managers (hnn, joshuto, cfiles, hunter, noice, kfm, lfm, shfm,
+  rover, natls, dua, gdu, diskus, vtop) and sysstat/proc (procs,
+  psmem, pstree, smem, pcp, sar, iostat, mpstat, vmstat, dstat,
+  pidstat, nfsiostat, cifsiostat, pmstat). slook dropped (nslookup);
+  sadc/sadf already gated; sar/dstat space-bounded (isar/quasar,
+  kldstat); dua space-bounded (dual). +29/38 checks.
 - **ALERT 45 (cycle 381): ai/data + retro/emu primitives** —
   AI/data tooling (karafka, lightrag, promptfoo, garak, helicone,
   sqlfluff) and tracker/emulator (uade123, uade, resid, vgmplay,

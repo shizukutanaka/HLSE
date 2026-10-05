@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-382: filemgr + sysstat primitives
+for c in 'hnn -d dir' 'joshuto ~/files' 'cfiles -v' 'hunter -f dir' 'noice /tmp' 'kfm -d' 'lfm /home' 'shfm .' 'rover -l dir' 'natls -l' 'dua -i /' 'gdu -r /usr' 'diskus -j 4 /' 'vtop -t monokai'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'procs --sortd cpu' 'psmem -S' 'pstree -p 1' 'smem -k' 'pcp -a log' 'sar -u 1 3' 'iostat -x 1' 'mpstat -P ALL' 'vmstat 1 5' 'dstat -cdn' 'pidstat -u' 'nfsiostat 1' 'cifsiostat -h' 'pmstat 1'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'the hunter waits silently' 'mars rover landing footage' 'echo dual boot setup' 'sars outbreak report'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-381: ai/data + retro/emu primitives
 for c in 'karafka server' 'lightrag --model m' 'promptfoo eval' 'garak --model_type openai' 'helicone start' 'sqlfluff lint q.sql'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

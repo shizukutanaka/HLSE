@@ -15176,6 +15176,29 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "nintendulator") || ci_contains(text, "virtuanes") ||
              ci_contains(text, "jnes") || ci_contains(text, "smynes")) {
         what = "retro/emu primitive";
+        } else if (
+             /* cycle-382a: filemgr primitives */
+             ci_contains(text, "hnn") || ci_contains(text, "joshuto") ||
+             ci_contains(text, "cfiles") ||
+             (ci_contains(text, "hunter") && ci_contains(text, " -")) ||
+             ci_contains(text, "noice") || ci_contains(text, "kfm") ||
+             ci_contains(text, "lfm") || ci_contains(text, "shfm") ||
+             (ci_contains(text, "rover") && ci_contains(text, " -")) ||
+             ci_contains(text, "natls") || ci_contains(text, "dua ") ||
+             ci_contains(text, "gdu") || ci_contains(text, "diskus") ||
+             ci_contains(text, "vtop")) {
+        what = "filemgr primitive";
+        } else if (
+             /* cycle-382b: sysstat/proc primitives */
+             ci_contains(text, "procs") || ci_contains(text, "psmem") ||
+             ci_contains(text, "pstree") || ci_contains(text, "smem") ||
+             ci_contains(text, "pcp") || (ci_contains(text, "sar ") && ci_contains(text, " -")) ||
+             ci_contains(text, "iostat") || ci_contains(text, "mpstat") ||
+             ci_contains(text, "vmstat") || ci_contains(text, "dstat ") ||
+             ci_contains(text, "pidstat") ||
+             ci_contains(text, "nfsiostat") ||
+             ci_contains(text, "cifsiostat") || ci_contains(text, "pmstat")) {
+        what = "sysstat/proc primitive";
         }
 
         if (what) {
