@@ -40,7 +40,7 @@ import dead_cross_needles as dcn   # noqa: E402
 import cover_needles as cov      # noqa: E402
 
 NEEDLE_RE = re.compile(r'ci_contains\(text,\s*"((?:[^"\\]|\\.)*)"')
-WHAT_RE = re.compile(r'what\s*=\s*"([^"]+)"')
+WHAT_RE = re.compile(r'(?:what\s*=\s*|PASTE_WHAT\()"([^"]+)"')
 BLOCK_RE = re.compile(r'\}\s*else\s+if\s*\(|\bif\s*\(')
 TOKEN_RE = re.compile(
     r'(?P<call>!?\s*ci_contains\(text,\s*"(?:[^"\\]|\\.)*"\))'

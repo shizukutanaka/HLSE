@@ -390,6 +390,16 @@ assert data["hardening_band"] in ("hardened", "good", "fair", "weak")
     && check "ClickFix FP guard: legit Win+R IT instruction stays low" "0" "0" \
     || check "ClickFix FP guard: legit Win+R IT instruction stays low" "0" "1"
 
+# P8 multi-hold: an input matching >=2 chain classes names secondary hits
+./hlse_core paste 'powershell -enc SQBFAFgA && certutil -urlcache http://x' 2>&1 | grep -q "(also:" \
+    && check "P8 multi-hold names secondary class hits" "0" "0" \
+    || check "P8 multi-hold names secondary class hits" "0" "1"
+
+# P8 multi-hold keeps the score at a single +45 (no score inflation)
+./hlse_core paste 'powershell -enc SQBFAFgA && certutil -urlcache http://x' 2>&1 | grep -qE "ALERT   \[45\]" \
+    && check "P8 multi-hold keeps single +45 score" "0" "0" \
+    || check "P8 multi-hold keeps single +45 score" "0" "1"
+
 # FileFix (2025 ClickFix variant): paste path into File Explorer address bar → flagged
 ./hlse_core text 'A file has been shared with you. Open File Explorer, then paste the path into the file explorer and press Enter.' 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "FileFix Explorer-paste lure detected" "0" "0" \

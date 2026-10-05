@@ -912,143 +912,190 @@ hlse_check_paste(const char *text) {
      * not trip it. */
     {
         const char *what = NULL;
+        const char *what_hits[8];
+        int          n_what_hits = 0;
+        /* every branch condition below is pure, so the chain is
+         * evaluated in full: the first hit sets 'what' (score + flag
+         * stay single), and each matched class also lands in
+         * what_hits[] so the reason can name the secondary hits. */
+#define PASTE_WHAT(s) do {                                       \
+    if (what == NULL) what = (s);                                \
+    if (n_what_hits < (int)(sizeof(what_hits)/sizeof(what_hits[0]))) \
+        what_hits[n_what_hits++] = (s);                          \
+} while (0)
         if (ci_contains(text, "powershell") &&
             (ci_contains(text, "-enc ")        || ci_contains(text, "encodedcommand") ||
              ci_contains(text, "downloadstring")|| ci_contains(text, "frombase64string") ||
              ci_contains(text, "iex")          || ci_contains(text, "invoke-expression") ||
              ci_contains(text, "-w hidden")    || ci_contains(text, "windowstyle hidden"))) {
-            what = "PowerShell hidden/encoded/download-execute";
-        } else if (ci_contains(text, "mshta") &&
+            PASTE_WHAT("PowerShell hidden/encoded/download-execute");
+        }
+        if (ci_contains(text, "mshta") &&
                    (ci_contains(text, "http")  || ci_contains(text, "vbscript:") ||
                     ci_contains(text, "javascript:"))) {
-            what = "mshta remote/script execution";
-        } else if (ci_contains(text, "certutil") &&
+            PASTE_WHAT("mshta remote/script execution");
+        }
+        if (ci_contains(text, "certutil") &&
                    (ci_contains(text, "urlcache") || ci_contains(text, "-decode"))) {
-            what = "certutil download/decode (LOLBin)";
-        } else if (ci_contains(text, "regsvr32") && ci_contains(text, "scrobj")) {
-            what = "regsvr32 scrobj.dll (Squiblydoo)";
-        } else if (ci_contains(text, "bitsadmin") && ci_contains(text, "/transfer")) {
-            what = "bitsadmin remote file transfer (LOLBin)";
-        } else if (ci_contains(text, "msiexec") && ci_contains(text, "http")) {
-            what = "msiexec remote MSI install";
-        } else if ((ci_contains(text, "wscript") || ci_contains(text, "cscript")) &&
+            PASTE_WHAT("certutil download/decode (LOLBin)");
+        }
+        if (ci_contains(text, "regsvr32") && ci_contains(text, "scrobj")) {
+            PASTE_WHAT("regsvr32 scrobj.dll (Squiblydoo)");
+        }
+        if (ci_contains(text, "bitsadmin") && ci_contains(text, "/transfer")) {
+            PASTE_WHAT("bitsadmin remote file transfer (LOLBin)");
+        }
+        if (ci_contains(text, "msiexec") && ci_contains(text, "http")) {
+            PASTE_WHAT("msiexec remote MSI install");
+        }
+        if ((ci_contains(text, "wscript") || ci_contains(text, "cscript")) &&
                    (ci_contains(text, "http") || ci_contains(text, ".vbs") ||
                     ci_contains(text, ".js"))) {
-            what = "wscript/cscript remote/script execution (LOLBin)";
-        } else if (ci_contains(text, "wmic") &&
+            PASTE_WHAT("wscript/cscript remote/script execution (LOLBin)");
+        }
+        if (ci_contains(text, "wmic") &&
                    (ci_contains(text, "process call create") ||
                     ci_contains(text, "os get") )) {
-            what = "wmic process creation (LOLBin)";
-        } else if (ci_contains(text, "rundll32") &&
+            PASTE_WHAT("wmic process creation (LOLBin)");
+        }
+        if (ci_contains(text, "rundll32") &&
                    (ci_contains(text, "http") || ci_contains(text, "javascript"))) {
-            what = "rundll32 remote/script execution (LOLBin)";
-        } else if (ci_contains(text, "powershell") &&
+            PASTE_WHAT("rundll32 remote/script execution (LOLBin)");
+        }
+        if (ci_contains(text, "powershell") &&
                    (ci_contains(text, "invoke-restmethod") ||
                     ci_contains(text, "invoke-webrequest") ||
                     ci_contains(text, "iwr ") || ci_contains(text, "irm ") ||
                     ci_contains(text, "iwr\t") || ci_contains(text, "irm\t"))) {
-            what = "PowerShell web download (iwr/irm)";
-        } else if (ci_contains(text, "forfiles") &&
+            PASTE_WHAT("PowerShell web download (iwr/irm)");
+        }
+        if (ci_contains(text, "forfiles") &&
                    (ci_contains(text, "/p ") || ci_contains(text, "/m ")) &&
                    ci_contains(text, "/c ")) {
-            what = "forfiles command execution (LOLBin)";
-        } else if (ci_contains(text, "odbcconf") &&
+            PASTE_WHAT("forfiles command execution (LOLBin)");
+        }
+        if (ci_contains(text, "odbcconf") &&
                    (ci_contains(text, "regsvr") || ci_contains(text, "/a "))) {
-            what = "odbcconf REGSVR execution (LOLBin)";
-        } else if (ci_contains(text, "pcalua") &&
+            PASTE_WHAT("odbcconf REGSVR execution (LOLBin)");
+        }
+        if (ci_contains(text, "pcalua") &&
                    (ci_contains(text, "-a ") || ci_contains(text, "http") ||
                     ci_contains(text, "\\\\"))) {
-            what = "pcalua program-launch LOLBin";
-        } else if (ci_contains(text, "control.exe") &&
+            PASTE_WHAT("pcalua program-launch LOLBin");
+        }
+        if (ci_contains(text, "control.exe") &&
                    ci_contains(text, ".cpl")) {
-            what = "control.exe CPL payload load";
-        } else if (ci_contains(text, "esentutl") &&
+            PASTE_WHAT("control.exe CPL payload load");
+        }
+        if (ci_contains(text, "esentutl") &&
                    ci_contains(text, "/y")) {
-            what = "esentutl copy LOLBin (locked-file/ADS exfil)";
-        } else if (ci_contains(text, "desktopimgdownldr") &&
+            PASTE_WHAT("esentutl copy LOLBin (locked-file/ADS exfil)");
+        }
+        if (ci_contains(text, "desktopimgdownldr") &&
                    ci_contains(text, "/lockscreenurl:")) {
-            what = "desktopimgdownldr remote download (LOLBIN)";
-        } else if (ci_contains(text, "syncappvpublishingserver") &&
+            PASTE_WHAT("desktopimgdownldr remote download (LOLBIN)");
+        }
+        if (ci_contains(text, "syncappvpublishingserver") &&
                    ci_contains(text, "\";")) {
-            what = "syncappvpublishingserver command injection (LOLBin)";
-        } else if (ci_contains(text, "hh.exe") &&
+            PASTE_WHAT("syncappvpublishingserver command injection (LOLBin)");
+        }
+        if (ci_contains(text, "hh.exe") &&
                    (ci_contains(text, "http") || ci_contains(text, ".chm"))) {
-            what = "hh.exe remote CHM execution (LOLBin)";
-        } else if (ci_contains(text, "cmstp") && ci_contains(text, "/s")) {
-            what = "cmstp INF-profile execution (LOLBin/UAC bypass)";
-        } else if (ci_contains(text, "xwizard") ||
+            PASTE_WHAT("hh.exe remote CHM execution (LOLBin)");
+        }
+        if (ci_contains(text, "cmstp") && ci_contains(text, "/s")) {
+            PASTE_WHAT("cmstp INF-profile execution (LOLBin/UAC bypass)");
+        }
+        if (ci_contains(text, "xwizard") ||
                    (ci_contains(text, "appvlp") &&
                     ci_contains(text, "http"))) {
-            what = "xwizard/appvlp proxy execution (LOLBin)";
-        } else if ((ci_contains(text, "cscript") ||
+            PASTE_WHAT("xwizard/appvlp proxy execution (LOLBin)");
+        }
+        if ((ci_contains(text, "cscript") ||
                     ci_contains(text, "wscript")) &&
                    ci_contains(text, "//e:")) {
-            what = "script-engine extension bypass (//e: exec)";
-        } else if (ci_contains(text, "ms-appinstaller:") ||
+            PASTE_WHAT("script-engine extension bypass (//e: exec)");
+        }
+        if (ci_contains(text, "ms-appinstaller:") ||
                    (ci_contains(text, "appinstaller") &&
                     ci_contains(text, "http"))) {
-            what = "ms-appinstaller URI bypass (ClickFix 2025)";
-        } else if (ci_contains(text, "osascript") &&
+            PASTE_WHAT("ms-appinstaller URI bypass (ClickFix 2025)");
+        }
+        if (ci_contains(text, "osascript") &&
                    (ci_contains(text, "do shell script") ||
                     ci_contains(text, "http") ||
                     ci_contains(text, "curl ") || ci_contains(text, "bash"))) {
-            what = "osascript AppleScript shell execution (macOS ClickFix)";
-        } else if ((ci_contains(text, "python") ) &&
+            PASTE_WHAT("osascript AppleScript shell execution (macOS ClickFix)");
+        }
+        if ((ci_contains(text, "python") ) &&
                    (ci_contains(text, "urllib")  ||
                     ci_contains(text, "urlopen") || ci_contains(text, "requests.get")) &&
                    (ci_contains(text, "exec(") || ci_contains(text, "eval(") ||
                     ci_contains(text, ".read()") || ci_contains(text, "subprocess"))) {
-            what = "Python download-execute one-liner";
-        } else if (ci_contains(text, "regasm") &&
+            PASTE_WHAT("Python download-execute one-liner");
+        }
+        if (ci_contains(text, "regasm") &&
                    (ci_contains(text, "http") || ci_contains(text, ".dll") ||
                     ci_contains(text, ".exe"))) {
-            what = "regasm.exe .NET assembly execution (LOLBin)";
-        } else if (ci_contains(text, "installutil") &&
+            PASTE_WHAT("regasm.exe .NET assembly execution (LOLBin)");
+        }
+        if (ci_contains(text, "installutil") &&
                    (ci_contains(text, "http") || ci_contains(text, "/u ") ||
                     ci_contains(text, "/u\t"))) {
-            what = "installutil.exe .NET AppDomain execution (LOLBin)";
-        } else if (ci_contains(text, "regsvcs") &&
+            PASTE_WHAT("installutil.exe .NET AppDomain execution (LOLBin)");
+        }
+        if (ci_contains(text, "regsvcs") &&
                    (ci_contains(text, "http") || ci_contains(text, ".dll") ||
                     ci_contains(text, ".exe"))) {
-            what = "regsvcs.exe .NET assembly execution (LOLBin)";
-        } else if (ci_contains(text, "msfvenom")) {
-            what = "msfvenom payload generation (Metasploit)";
-        } else if (ci_contains(text, "dnscmd") &&
+            PASTE_WHAT("regsvcs.exe .NET assembly execution (LOLBin)");
+        }
+        if (ci_contains(text, "msfvenom")) {
+            PASTE_WHAT("msfvenom payload generation (Metasploit)");
+        }
+        if (ci_contains(text, "dnscmd") &&
                    ci_contains(text, "serverlevelplugindll")) {
-            what = "dnscmd server-level plugin DLL load (DNS persistence)";
-        } else if (ci_contains(text, "curl") &&
+            PASTE_WHAT("dnscmd server-level plugin DLL load (DNS persistence)");
+        }
+        if (ci_contains(text, "curl") &&
                    (ci_contains(text, "-t ") || ci_contains(text, "-t\t") ||
                     ci_contains(text, "--upload"))) {
-            what = "curl file upload (data exfiltration channel)";
-        } else if (ci_contains(text, "chisel") &&
+            PASTE_WHAT("curl file upload (data exfiltration channel)");
+        }
+        if (ci_contains(text, "chisel") &&
                    (ci_contains(text, " client") ||
                     ci_contains(text, " server"))) {
-            what = "chisel reverse tunnel (covert channel / LOLBin)";
-        } else if (ci_contains(text, "msiexec") &&
+            PASTE_WHAT("chisel reverse tunnel (covert channel / LOLBin)");
+        }
+        if (ci_contains(text, "msiexec") &&
                    (ci_contains(text, "/q") ) &&
                    ci_contains(text, "http")) {
-            what = "msiexec silent remote MSI install (ClickFix)";
-        } else if (ci_contains(text, "expand") &&
+            PASTE_WHAT("msiexec silent remote MSI install (ClickFix)");
+        }
+        if (ci_contains(text, "expand") &&
                    (ci_contains(text, "http") || ci_contains(text, "\\\\")) &&
                    ci_contains(text, "-f:")) {
-            what = "expand.exe remote file download (LOLBin)";
-        } else if (ci_contains(text, "curl") &&
+            PASTE_WHAT("expand.exe remote file download (LOLBin)");
+        }
+        if (ci_contains(text, "curl") &&
                    (ci_contains(text, "-o ") || ci_contains(text, "--output ")) &&
                    (ci_contains(text, ".exe") || ci_contains(text, ".ps1") ||
                     ci_contains(text, ".dll") || ci_contains(text, ".bat"))) {
-            what = "curl download of executable";
-        } else if ((ci_contains(text, "wget") || ci_contains(text, "invoke-webrequest")) &&
+            PASTE_WHAT("curl download of executable");
+        }
+        if ((ci_contains(text, "wget") || ci_contains(text, "invoke-webrequest")) &&
                    (ci_contains(text, ".exe") || ci_contains(text, ".ps1") ||
                     ci_contains(text, ".dll") || ci_contains(text, ".bat"))) {
-            what = "download of executable via wget/iwr";
-        } else if ((ci_contains(text, "iwr ") || ci_contains(text, "irm ") ||
+            PASTE_WHAT("download of executable via wget/iwr");
+        }
+        if ((ci_contains(text, "iwr ") || ci_contains(text, "irm ") ||
                     ci_contains(text, "iwr\t") || ci_contains(text, "irm\t") ||
                     ci_contains(text, "invoke-webrequest") ||
                     ci_contains(text, "invoke-restmethod")) &&
                    (ci_contains(text, "iex") ||
                     ci_contains(text, "invoke-expression") )) {
-            what = "PowerShell download-execute cradle (iwr|iex)";
-        } else if ((ci_contains(text, "pip install") ||
+            PASTE_WHAT("PowerShell download-execute cradle (iwr|iex)");
+        }
+        if ((ci_contains(text, "pip install") ||
                     ci_contains(text, "pip3 install") ||
                     ci_contains(text, "pipx install") ||
                     ci_contains(text, "npm install") ||
@@ -1059,270 +1106,327 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "--extra-index-url") ||
                     ci_contains(text, "--registry") ||
                     ci_contains(text, "--source "))) {
-            what = "alt-index package install (dependency-confusion channel)";
-        } else if (ci_contains(text, "mpcmdrun") &&
+            PASTE_WHAT("alt-index package install (dependency-confusion channel)");
+        }
+        if (ci_contains(text, "mpcmdrun") &&
                    (ci_contains(text, "-downloadfile") ||
                     ci_contains(text, "-url"))) {
-            what = "mpcmdrun.exe file download (Defender LOLBin)";
-        } else if (ci_contains(text, "odbcconf") &&
+            PASTE_WHAT("mpcmdrun.exe file download (Defender LOLBin)");
+        }
+        if (ci_contains(text, "odbcconf") &&
                    (ci_contains(text, "/f") || ci_contains(text, ".rsp") ||
                     ci_contains(text, "regsvr"))) {
-            what = "odbcconf config-file DLL execution (LOLBin)";
-        } else if (ci_contains(text, "ie4uinit") &&
+            PASTE_WHAT("odbcconf config-file DLL execution (LOLBin)");
+        }
+        if (ci_contains(text, "ie4uinit") &&
                    (ci_contains(text, "-") || ci_contains(text, ".inf") ||
                     ci_contains(text, "basesettings"))) {
-            what = "ie4uinit INF/settings execution (LOLBin)";
-        } else if (ci_contains(text, "ieadvpack") &&
+            PASTE_WHAT("ie4uinit INF/settings execution (LOLBin)");
+        }
+        if (ci_contains(text, "ieadvpack") &&
                    ci_contains(text, "/r")) {
-            what = "ieadvpack INF execution (LOLBin)";
-        } else if (ci_contains(text, "rasautou") &&
+            PASTE_WHAT("ieadvpack INF execution (LOLBin)");
+        }
+        if (ci_contains(text, "rasautou") &&
                    (ci_contains(text, "-f") || ci_contains(text, ".dll"))) {
-            what = "rasautou RAS-dialer execution (LOLBin)";
-        } else if (ci_contains(text, "mavinject") &&
+            PASTE_WHAT("rasautou RAS-dialer execution (LOLBin)");
+        }
+        if (ci_contains(text, "mavinject") &&
                    (ci_contains(text, "injectrunning") ||
                     ci_contains(text, ".dll"))) {
-            what = "mavinject.exe DLL injection (LOLBin)";
-        } else if ((ci_contains(text, "expand") ||
+            PASTE_WHAT("mavinject.exe DLL injection (LOLBin)");
+        }
+        if ((ci_contains(text, "expand") ||
                     ci_contains(text, "extrac32") ||
                     ci_contains(text, "diantz") ||
                     ci_contains(text, "extexport")) &&
                    (ci_contains(text, "http") || ci_contains(text, "\\\\"))) {
-            what = "cabinet/extexport remote file pull (LOLBin)";
-        } else if (ci_contains(text, "syncappvpublishingserver") &&
+            PASTE_WHAT("cabinet/extexport remote file pull (LOLBin)");
+        }
+        if (ci_contains(text, "syncappvpublishingserver") &&
                    ( ci_contains(text, ";") ||
                     ci_contains(text, "cmd") || ci_contains(text, "powershell"))) {
-            what = "SyncAppvPublishingServer sync-command execution (LOLBin)";
-        } else if (ci_contains(text, "wbadmin") &&
+            PASTE_WHAT("SyncAppvPublishingServer sync-command execution (LOLBin)");
+        }
+        if (ci_contains(text, "wbadmin") &&
                    (ci_contains(text, "-backuptarget:") ||
                     ci_contains(text, "\\\\"))) {
-            what = "wbadmin backup exfiltration to remote share (LOLBin)";
-        } else if (ci_contains(text, "finger") &&
+            PASTE_WHAT("wbadmin backup exfiltration to remote share (LOLBin)");
+        }
+        if (ci_contains(text, "finger") &&
                    ci_contains(text, "@")) {
-            what = "finger remote data fetch (LOLBin channel)";
-        } else if (ci_contains(text, "regini") &&
+            PASTE_WHAT("finger remote data fetch (LOLBin channel)");
+        }
+        if (ci_contains(text, "regini") &&
                    (ci_contains(text, ".ini") || ci_contains(text, "http"))) {
-            what = "regini registry-script import (LOLBin)";
+            PASTE_WHAT("regini registry-script import (LOLBin)");
         /* Ransomware preparation classics — bcdedit disables recovery /
          * forces safeboot, wevtutil wipes the event logs, wusa installs
          * attacker .msu packages (documented Fin7 vector)              */
-        } else if (ci_contains(text, "bcdedit") &&
+        }
+        if (ci_contains(text, "bcdedit") &&
                    (ci_contains(text, "/set") || ci_contains(text, "safeboot") ||
                     ci_contains(text, "recoveryenabled") ||
                     ci_contains(text, "bootstatuspolicy"))) {
-            what = "bcdedit boot/recovery tampering (LOLBin)";
-        } else if (ci_contains(text, "wevtutil") &&
+            PASTE_WHAT("bcdedit boot/recovery tampering (LOLBin)");
+        }
+        if (ci_contains(text, "wevtutil") &&
                    ( ci_contains(text, "clear-log") ||
                     ci_contains(text, " cl"))) {
-            what = "wevtutil event-log clearing (anti-forensics)";
-        } else if (ci_contains(text, "wusa") &&
+            PASTE_WHAT("wevtutil event-log clearing (anti-forensics)");
+        }
+        if (ci_contains(text, "wusa") &&
                    ci_contains(text, ".msu")) {
-            what = "wusa .msu package install (LOLBin)";
+            PASTE_WHAT("wusa .msu package install (LOLBin)");
         /* netsh portproxy tunnels C2 through the host's own network
          * stack; cmdkey /add plants stored credentials for lateral
          * movement, /list enumerates them                            */
-        } else if (ci_contains(text, "netsh") &&
+        }
+        if (ci_contains(text, "netsh") &&
                    ci_contains(text, "portproxy")) {
-            what = "netsh portproxy tunnel (LOLBin)";
-        } else if (ci_contains(text, "cmdkey") &&
+            PASTE_WHAT("netsh portproxy tunnel (LOLBin)");
+        }
+        if (ci_contains(text, "cmdkey") &&
                    (ci_contains(text, "/add") || ci_contains(text, "/list"))) {
-            what = "cmdkey stored-credential planting/enumeration";
+            PASTE_WHAT("cmdkey stored-credential planting/enumeration");
         /* dnscmd /serverlevelplugindll loads an arbitrary DLL into the
          * DNS service (documented persistence); /config disables WPAD
          * protections                                                  */
-        } else if (ci_contains(text, "dnscmd") &&
+        }
+        if (ci_contains(text, "dnscmd") &&
                    (ci_contains(text, "plugin") || ci_contains(text, "/config"))) {
-            what = "dnscmd server plugin/config abuse (LOLBin)";
+            PASTE_WHAT("dnscmd server plugin/config abuse (LOLBin)");
         /* wsl -e/-c and bash -c execute payloads inside the WSL
          * subsystem where host EDR sees only a loader                */
-        } else if (ci_contains(text, "wsl") &&
+        }
+        if (ci_contains(text, "wsl") &&
                    (ci_contains(text, "-e") || ci_contains(text, "-c") ||
                     ci_contains(text, ".sh") || ci_contains(text, "bash"))) {
-            what = "wsl subsystem payload execution (LOLBin)";
-        } else if (ci_contains(text, "certoc") &&
+            PASTE_WHAT("wsl subsystem payload execution (LOLBin)");
+        }
+        if (ci_contains(text, "certoc") &&
                    ci_contains(text, "-")) {
-            what = "certoc certificate-store DLL loading (LOLBin)";
+            PASTE_WHAT("certoc certificate-store DLL loading (LOLBin)");
         /* Ransomware pre-encryption prep — icacls /deny locks admins
          * out before encryption, takeown /r takes recursive ownership,
          * cipher /w wipes free space, fsutil usn deletejournal and
          * wevtutil destroy the forensic record, manage-bde -off kills
          * BitLocker, diskpart /s runs scripted volume ops          */
-        } else if (ci_contains(text, "icacls") &&
+        }
+        if (ci_contains(text, "icacls") &&
                    ci_contains(text, "/deny")) {
-            what = "icacls deny-ACL lockout (ransomware prep)";
-        } else if (ci_contains(text, "takeown") &&
+            PASTE_WHAT("icacls deny-ACL lockout (ransomware prep)");
+        }
+        if (ci_contains(text, "takeown") &&
                    (ci_contains(text, "/r") || ci_contains(text, " /d"))) {
-            what = "takeown recursive ownership grab (ransomware prep)";
-        } else if (ci_contains(text, "cipher") &&
+            PASTE_WHAT("takeown recursive ownership grab (ransomware prep)");
+        }
+        if (ci_contains(text, "cipher") &&
                    ci_contains(text, "/w")) {
-            what = "cipher free-space secure wipe (anti-forensics)";
-        } else if (ci_contains(text, "fsutil") &&
+            PASTE_WHAT("cipher free-space secure wipe (anti-forensics)");
+        }
+        if (ci_contains(text, "fsutil") &&
                    ci_contains(text, "usn")) {
-            what = "fsutil USN journal wipe (anti-forensics)";
-        } else if (ci_contains(text, "manage-bde") &&
+            PASTE_WHAT("fsutil USN journal wipe (anti-forensics)");
+        }
+        if (ci_contains(text, "manage-bde") &&
                    (ci_contains(text, "-off") || ci_contains(text, "-disable") ||
                     ci_contains(text, "-autounlock"))) {
-            what = "manage-bde BitLocker disable (ransomware prep)";
-        } else if (ci_contains(text, "diskpart") &&
+            PASTE_WHAT("manage-bde BitLocker disable (ransomware prep)");
+        }
+        if (ci_contains(text, "diskpart") &&
                    ci_contains(text, "/s")) {
-            what = "diskpart scripted volume operation (wiper class)";
-        } else if (ci_contains(text, "secedit") &&
+            PASTE_WHAT("diskpart scripted volume operation (wiper class)");
+        }
+        if (ci_contains(text, "secedit") &&
                    (ci_contains(text, "/configure") || ci_contains(text, "/import"))) {
-            what = "secedit policy import (host-policy weakening)";
-        } else if (ci_contains(text, "rasphone") &&
+            PASTE_WHAT("secedit policy import (host-policy weakening)");
+        }
+        if (ci_contains(text, "rasphone") &&
                    (ci_contains(text, "-d") || ci_contains(text, ".pbk"))) {
-            what = "rasphone phonebook dial-out (LOLBin)";
+            PASTE_WHAT("rasphone phonebook dial-out (LOLBin)");
         /* schtasks /create is ubiquitous legitimate admin — only the
          * privilege-escalated forms (/ru SYSTEM, /rl HIGHEST, /xml
          * import) are the documented attacker-persistence shape   */
-        } else if (ci_contains(text, "schtasks") &&
+        }
+        if (ci_contains(text, "schtasks") &&
                    ci_contains(text, "/create") &&
                    (ci_contains(text, "/ru") || ci_contains(text, "/rl") ||
                     ci_contains(text, "/xml"))) {
-            what = "schtasks privileged task creation (persistence)";
+            PASTE_WHAT("schtasks privileged task creation (persistence)");
         /* ntdsutil snapshot/ifm extracts ntds.dit — the domain
          * controller credential dump (the single highest-value
          * Windows LOLBin); pubprn/printui proxy-execute remote
          * scriptlets/driver DLLs, verclsid runs an arbitrary COM
          * CLSID, runonce /alternateshellstartup swaps the shell,
          * settingsynchost -load* embeds an executable payload   */
-        } else if (ci_contains(text, "ntdsutil") &&
+        }
+        if (ci_contains(text, "ntdsutil") &&
                    (ci_contains(text, "snapshot") || ci_contains(text, "ifm") ||
                     ci_contains(text, "create full") ||
                     ci_contains(text, "install from media") ||
                     ci_contains(text, "ac i ntds"))) {
-            what = "ntdsutil ntds.dit extraction (credential dump)";
-        } else if (ci_contains(text, "pubprn") &&
+            PASTE_WHAT("ntdsutil ntds.dit extraction (credential dump)");
+        }
+        if (ci_contains(text, "pubprn") &&
                    (ci_contains(text, "script:") || ci_contains(text, "http") ||
                     ci_contains(text, "\\\\"))) {
-            what = "pubprn remote-script proxy execution (LOLBin)";
-        } else if (ci_contains(text, "printui") &&
+            PASTE_WHAT("pubprn remote-script proxy execution (LOLBin)");
+        }
+        if (ci_contains(text, "printui") &&
                    (ci_contains(text, "\\\\") || ci_contains(text, "http") ||
                     ci_contains(text, "/u"))) {
-            what = "printui remote-driver DLL load (LOLBin)";
-        } else if (ci_contains(text, "verclsid") &&
+            PASTE_WHAT("printui remote-driver DLL load (LOLBin)");
+        }
+        if (ci_contains(text, "verclsid") &&
                    ci_contains(text, "/s")) {
-            what = "verclsid arbitrary CLSID execution (LOLBin)";
-        } else if (ci_contains(text, "runonce") &&
+            PASTE_WHAT("verclsid arbitrary CLSID execution (LOLBin)");
+        }
+        if (ci_contains(text, "runonce") &&
                    ci_contains(text, "alternateshellstartup")) {
-            what = "runonce alternate-shell substitution (persistence)";
-        } else if (ci_contains(text, "settingsynchost") &&
+            PASTE_WHAT("runonce alternate-shell substitution (persistence)");
+        }
+        if (ci_contains(text, "settingsynchost") &&
                    ci_contains(text, "-load")) {
-            what = "settingsynchost embedded payload load (LOLBin)";
+            PASTE_WHAT("settingsynchost embedded payload load (LOLBin)");
         /* sc create/config with binpath is the canonical service
          * persistence form; control + .cpl loads an arbitrary
          * Control Panel applet; findstr /v "" prints every line —
          * a whole-file read primitive hidden inside a grep      */
-        } else if (ci_contains(text, "sc create") &&
+        }
+        if (ci_contains(text, "sc create") &&
                    (ci_contains(text, "binpath") || ci_contains(text, "obj"))) {
-            what = "sc service creation (persistence primitive)";
-        } else if (ci_contains(text, "sc config") &&
+            PASTE_WHAT("sc service creation (persistence primitive)");
+        }
+        if (ci_contains(text, "sc config") &&
                    (ci_contains(text, "binpath") || ci_contains(text, "obj"))) {
-            what = "sc service reconfig (persistence primitive)";
-        } else if (ci_contains(text, "control") &&
+            PASTE_WHAT("sc service reconfig (persistence primitive)");
+        }
+        if (ci_contains(text, "control") &&
                    ci_contains(text, ".cpl")) {
-            what = "control applet load (.cpl payload)";
-        } else if (ci_contains(text, "findstr") &&
+            PASTE_WHAT("control applet load (.cpl payload)");
+        }
+        if (ci_contains(text, "findstr") &&
                    ci_contains(text, "\"\"")) {
-            what = "findstr whole-file read primitive (LOLBin)";
+            PASTE_WHAT("findstr whole-file read primitive (LOLBin)");
         /* LSASS memory dump — procdump/procdump64 and the
          * comsvcs.dll MiniDump rundll32 form are THE credential-
          * theft primitives (documented in nearly every intrusion) */
-        } else if (ci_contains(text, "procdump") &&
+        }
+        if (ci_contains(text, "procdump") &&
                    (ci_contains(text, "lsass") || ci_contains(text, "-ma"))) {
-            what = "procdump LSASS memory dump (credential theft)";
-        } else if (ci_contains(text, "comsvcs") &&
+            PASTE_WHAT("procdump LSASS memory dump (credential theft)");
+        }
+        if (ci_contains(text, "comsvcs") &&
                    ci_contains(text, "minidump")) {
-            what = "comsvcs.dll MiniDump (LSASS credential theft)";
+            PASTE_WHAT("comsvcs.dll MiniDump (LSASS credential theft)");
         /* tsecimp -f imports a TAPI XML that launches commands;
          * Microsoft.Workflow.Compiler compiles/executes XOML
          * workflow payloads (both LOLBAS-listed)                 */
-        } else if (ci_contains(text, "tsecimp") &&
+        }
+        if (ci_contains(text, "tsecimp") &&
                    (ci_contains(text, "-f") || ci_contains(text, ".xml"))) {
-            what = "tsecimp TAPI-XML payload execution (LOLBin)";
-        } else if (ci_contains(text, "workflow.compiler") &&
+            PASTE_WHAT("tsecimp TAPI-XML payload execution (LOLBin)");
+        }
+        if (ci_contains(text, "workflow.compiler") &&
                    (ci_contains(text, ".xoml") || ci_contains(text, ".cs") ||
                     ci_contains(text, ".xml"))) {
-            what = "Workflow.Compiler XOML payload (LOLBin)";
+            PASTE_WHAT("Workflow.Compiler XOML payload (LOLBin)");
         /* pnputil -i -a installs a driver package — the BYOVD
          * (bring-your-own-vulnerable-driver) primitive           */
-        } else if (ci_contains(text, "pnputil") &&
+        }
+        if (ci_contains(text, "pnputil") &&
                    (ci_contains(text, "-i") || ci_contains(text, "-a") ||
                     ci_contains(text, ".inf"))) {
-            what = "pnputil driver install (BYOVD primitive)";
+            PASTE_WHAT("pnputil driver install (BYOVD primitive)");
         /* net user/localgroup /add plants accounts, net share x=
          * exposes a drive, net use \\ leaks credentials to the
          * attacker share — the persistence/lateral account set   */
         /* net1.exe is the documented 'net' alias attackers run to
          * dodge 'net ' command monitoring — same primitives       */
-        } else if ((ci_contains(text, "net user") ||
+        }
+        if ((ci_contains(text, "net user") ||
                     ci_contains(text, "net1 user") ||
                     ci_contains(text, "net.exe user")) &&
                    ci_contains(text, "/add")) {
-            what = "net user account creation (backdoor primitive)";
-        } else if ((ci_contains(text, "net localgroup") ||
+            PASTE_WHAT("net user account creation (backdoor primitive)");
+        }
+        if ((ci_contains(text, "net localgroup") ||
                     ci_contains(text, "net1 localgroup") ||
                     ci_contains(text, "net.exe localgroup")) &&
                    ci_contains(text, "/add")) {
-            what = "net localgroup admin grant (backdoor primitive)";
-        } else if ((ci_contains(text, "net share") ||
+            PASTE_WHAT("net localgroup admin grant (backdoor primitive)");
+        }
+        if ((ci_contains(text, "net share") ||
                     ci_contains(text, "net1 share") ||
                     ci_contains(text, "net.exe share")) &&
                    ci_contains(text, "=")) {
-            what = "net share drive exposure (exfil/lateral)";
-        } else if ((ci_contains(text, "net use") ||
+            PASTE_WHAT("net share drive exposure (exfil/lateral)");
+        }
+        if ((ci_contains(text, "net use") ||
                     ci_contains(text, "net1 use") ||
                     ci_contains(text, "net.exe use")) &&
                    ci_contains(text, "\\\\")) {
-            what = "net use remote-share mount (credential send)";
+            PASTE_WHAT("net use remote-share mount (credential send)");
         /* ftp -s:script executes the embedded ! commands; iexpress
          * builds a self-extracting installer; robocopy to a UNC
          * destination is the classic bulk-exfil channel          */
-        } else if (ci_contains(text, "ftp") &&
+        }
+        if (ci_contains(text, "ftp") &&
                    ci_contains(text, "-s:")) {
-            what = "ftp script execution (LOLBin)";
-        } else if (ci_contains(text, "iexpress") &&
+            PASTE_WHAT("ftp script execution (LOLBin)");
+        }
+        if (ci_contains(text, "iexpress") &&
                    (ci_contains(text, "-") || ci_contains(text, "/n") ||
                     ci_contains(text, ".sed"))) {
-            what = "iexpress self-installer build (LOLBin)";
-        } else if (ci_contains(text, "robocopy") &&
+            PASTE_WHAT("iexpress self-installer build (LOLBin)");
+        }
+        if (ci_contains(text, "robocopy") &&
                    ci_contains(text, "\\\\")) {
-            what = "robocopy exfiltration to remote share (LOLBin)";
+            PASTE_WHAT("robocopy exfiltration to remote share (LOLBin)");
         /* LOLBAS wave: ieexec fetches and runs a remote .NET app,
          * infdefaultinstall runs an .inf [DefaultInstall] payload,
          * msdeploy syncs attacker packages / runs commands        */
-        } else if (ci_contains(text, "ieexec") &&
+        }
+        if (ci_contains(text, "ieexec") &&
                    (ci_contains(text, "http") || ci_contains(text, ".exe") ||
                     ci_contains(text, ".dll"))) {
-            what = "ieexec remote .NET execution (LOLBin)";
-        } else if (ci_contains(text, "infdefaultinstall") &&
+            PASTE_WHAT("ieexec remote .NET execution (LOLBin)");
+        }
+        if (ci_contains(text, "infdefaultinstall") &&
                    ci_contains(text, ".inf")) {
-            what = "infdefaultinstall .inf payload (LOLBin)";
-        } else if (ci_contains(text, "msdeploy") &&
+            PASTE_WHAT("infdefaultinstall .inf payload (LOLBin)");
+        }
+        if (ci_contains(text, "msdeploy") &&
                    (ci_contains(text, "-verb:") || ci_contains(text, "-source:") ||
                     ci_contains(text, "-dest:"))) {
-            what = "msdeploy package/command execution (LOLBin)";
+            PASTE_WHAT("msdeploy package/command execution (LOLBin)");
         /* rasdial /phonebook dials an attacker-supplied .pbk whose
          * entry can carry dial-up scripts (LOLBin)                */
-        } else if (ci_contains(text, "rasdial") &&
+        }
+        if (ci_contains(text, "rasdial") &&
                    (ci_contains(text, ".pbk") || ci_contains(text, "/phonebook"))) {
-            what = "rasdial attacker phonebook dial (LOLBin)";
+            PASTE_WHAT("rasdial attacker phonebook dial (LOLBin)");
         /* regedit imports .reg (install primitive); '/e ' exports
          * instead, and exporting SAM/SECURITY/SYSTEM hives is
          * credential theft                                        */
-        } else if (ci_contains(text, "regedit") &&
+        }
+        if (ci_contains(text, "regedit") &&
                    (ci_contains(text, "/s") ||
                     (ci_contains(text, ".reg") &&
                      !ci_contains(text, "/e ")))) {
-            what = "regedit registry import (install primitive)";
-        } else if (ci_contains(text, "regedit") &&
+            PASTE_WHAT("regedit registry import (install primitive)");
+        }
+        if (ci_contains(text, "regedit") &&
                    ci_contains(text, "/e") &&
                    (ci_contains(text, "\\sam") || ci_contains(text, "\\security") ||
                     ci_contains(text, "\\system"))) {
-            what = "regedit SAM/SYSTEM hive export (credential theft)";
+            PASTE_WHAT("regedit SAM/SYSTEM hive export (credential theft)");
         /* reg add into autostart keys (Run/RunOnce/IFEO/
          * SilentProcessExit/Winlogon shell) is the classic
          * registry-persistence write                             */
-        } else if ((ci_contains(text, "reg add") ||
+        }
+        if ((ci_contains(text, "reg add") ||
                     ci_contains(text, "reg.exe add")) &&
                    (ci_contains(text, "currentversion\\run") ||
                     ci_contains(text, "image file execution") ||
@@ -1330,113 +1434,134 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "ms-settings") ||
                     (ci_contains(text, "winlogon") &&
                      (ci_contains(text, "shell") || ci_contains(text, "userinit"))))) {
-            what = "reg add autostart/IFEO write (persistence primitive)";
+            PASTE_WHAT("reg add autostart/IFEO write (persistence primitive)");
         /* winrs -r runs a remote shell; tttracer/ttdinject trace
          * and inject DLLs via Time Travel Debugging (LOLBAS)      */
-        } else if (ci_contains(text, "winrs") &&
+        }
+        if (ci_contains(text, "winrs") &&
                    ci_contains(text, "-r:")) {
-            what = "winrs remote shell (LOLBin)";
-        } else if (ci_contains(text, "tttracer") &&
+            PASTE_WHAT("winrs remote shell (LOLBin)");
+        }
+        if (ci_contains(text, "tttracer") &&
                    (ci_contains(text, "-out") || ci_contains(text, "-dump") ||
                     ci_contains(text, ".exe") || ci_contains(text, ".dll"))) {
-            what = "tttracer TTD trace/load (LOLBin)";
-        } else if (ci_contains(text, "ttdinject") &&
+            PASTE_WHAT("tttracer TTD trace/load (LOLBin)");
+        }
+        if (ci_contains(text, "ttdinject") &&
                    (ci_contains(text, "/dll") || ci_contains(text, ".dll") ||
                     ci_contains(text, "/commandline"))) {
-            what = "ttdinject TTD DLL injection (LOLBin)";
+            PASTE_WHAT("ttdinject TTD DLL injection (LOLBin)");
         /* runscripthelper runs the WSUS postinstall script; te.exe
          * is the TAEF test-harness executor; presentationhost
          * fetches and runs a remote .xbap (all LOLBAS)            */
-        } else if (ci_contains(text, "runscripthelper") &&
+        }
+        if (ci_contains(text, "runscripthelper") &&
                    (ci_contains(text, "\\\\") || ci_contains(text, ".exe") ||
                     ci_contains(text, ".bat") || ci_contains(text, ".dll") ||
                     ci_contains(text, ".ps1"))) {
-            what = "runscripthelper postinstall exec (LOLBin)";
-        } else if (ci_contains(text, "te.exe") &&
+            PASTE_WHAT("runscripthelper postinstall exec (LOLBin)");
+        }
+        if (ci_contains(text, "te.exe") &&
                    (ci_contains(text, ".dll") || ci_contains(text, ".wsc") ||
                     ci_contains(text, ".xap"))) {
-            what = "te.exe TAEF payload exec (LOLBin)";
-        } else if (ci_contains(text, "presentationhost") &&
+            PASTE_WHAT("te.exe TAEF payload exec (LOLBin)");
+        }
+        if (ci_contains(text, "presentationhost") &&
                    (ci_contains(text, "http") || ci_contains(text, ".xbap") ||
                     ci_contains(text, "\\\\"))) {
-            what = "presentationhost remote .xbap exec (LOLBin)";
+            PASTE_WHAT("presentationhost remote .xbap exec (LOLBin)");
         /* replace.exe x c:\windows\... writes attacker files into
          * system dirs — the write-into-system primitive           */
-        } else if (ci_contains(text, "replace") &&
+        }
+        if (ci_contains(text, "replace") &&
                    (ci_contains(text, "system32") || ci_contains(text, "syswow64"))) {
-            what = "replace.exe write-into-system (LOLBin)";
+            PASTE_WHAT("replace.exe write-into-system (LOLBin)");
         /* .NET compiler chain — csc/vbc/jsc/ilasm/resgen build
          * payloads on the host, certreq mints certs, diaghub
          * loads unsigned DLLs, desktopimgdownldr/wlrmdr fetch
          * and schedule exec (all LOLBAS)                          */
-        } else if ((ci_contains(text, "csc ") || ci_contains(text, "csc.exe")) &&
+        }
+        if ((ci_contains(text, "csc ") || ci_contains(text, "csc.exe")) &&
                    (ci_contains(text, ".cs") || ci_contains(text, "/out") ||
                     ci_contains(text, "/t:") || ci_contains(text, "/target"))) {
-            what = "csc on-host compile (LOLBin)";
-        } else if ((ci_contains(text, "vbc ") || ci_contains(text, "vbc.exe")) &&
+            PASTE_WHAT("csc on-host compile (LOLBin)");
+        }
+        if ((ci_contains(text, "vbc ") || ci_contains(text, "vbc.exe")) &&
                    (ci_contains(text, ".vb") || ci_contains(text, "/out") ||
                     ci_contains(text, "/target"))) {
-            what = "vbc on-host compile (LOLBin)";
-        } else if ((ci_contains(text, "jsc ") || ci_contains(text, "jsc.exe")) &&
+            PASTE_WHAT("vbc on-host compile (LOLBin)");
+        }
+        if ((ci_contains(text, "jsc ") || ci_contains(text, "jsc.exe")) &&
                    (ci_contains(text, ".js") || ci_contains(text, "/out"))) {
-            what = "jsc on-host compile (LOLBin)";
-        } else if (ci_contains(text, "ilasm") &&
+            PASTE_WHAT("jsc on-host compile (LOLBin)");
+        }
+        if (ci_contains(text, "ilasm") &&
                    (ci_contains(text, ".il") || ci_contains(text, "/exe") ||
                     ci_contains(text, "/dll") || ci_contains(text, "/output"))) {
-            what = "ilasm assembly build (LOLBin)";
-        } else if (ci_contains(text, "resgen") &&
+            PASTE_WHAT("ilasm assembly build (LOLBin)");
+        }
+        if (ci_contains(text, "resgen") &&
                    (ci_contains(text, ".txt") || ci_contains(text, ".resx") ||
                     ci_contains(text, ".resources"))) {
-            what = "resgen resource build (LOLBin)";
-        } else if (ci_contains(text, "aspnet_compiler") &&
+            PASTE_WHAT("resgen resource build (LOLBin)");
+        }
+        if (ci_contains(text, "aspnet_compiler") &&
                    (ci_contains(text, "/") || ci_contains(text, "-v") ||
                     ci_contains(text, "-p"))) {
-            what = "aspnet_compiler build (LOLBin)";
-        } else if (ci_contains(text, "certreq") &&
+            PASTE_WHAT("aspnet_compiler build (LOLBin)");
+        }
+        if (ci_contains(text, "certreq") &&
                    (ci_contains(text, "-new") || ci_contains(text, ".inf") ||
                     ci_contains(text, ".csr"))) {
-            what = "certreq certificate mint (LOLBin)";
-        } else if (ci_contains(text, "diaghub") &&
+            PASTE_WHAT("certreq certificate mint (LOLBin)");
+        }
+        if (ci_contains(text, "diaghub") &&
                    (ci_contains(text, "/") || ci_contains(text, ".dll"))) {
-            what = "diaghub unsigned-DLL load (LOLBin)";
-        } else if (ci_contains(text, "desktopimgdownldr") &&
+            PASTE_WHAT("diaghub unsigned-DLL load (LOLBin)");
+        }
+        if (ci_contains(text, "desktopimgdownldr") &&
                    (ci_contains(text, "/") || ci_contains(text, "http"))) {
-            what = "desktopimgdownldr fetch (LOLBin)";
-        } else if (ci_contains(text, "wlrmdr") &&
+            PASTE_WHAT("desktopimgdownldr fetch (LOLBin)");
+        }
+        if (ci_contains(text, "wlrmdr") &&
                    (ci_contains(text, "-o") || ci_contains(text, "-f") ||
                     ci_contains(text, ".exe"))) {
-            what = "wlrmdr scheduled-exec (LOLBin)";
+            PASTE_WHAT("wlrmdr scheduled-exec (LOLBin)");
         /* rundll32 DLL targets — url.dll FileProtocolHandler runs a
          * local file, zipfldr RouteTheCall opens the payload,
          * shell32 ShellExec/OpenAs_RunDLL launches the binary,
          * advpack LaunchINFSection runs an INF section            */
-        } else if (ci_contains(text, "fileprotocolhandler") ||
+        }
+        if (ci_contains(text, "fileprotocolhandler") ||
                    ci_contains(text, "routethecall") ||
                    ci_contains(text, "shellexec_rundll") ||
                    ci_contains(text, "openas_rundll") ||
                    ci_contains(text, "launchinfsection")) {
-            what = "rundll32 proxy-exec DLL target (LOLBin)";
+            PASTE_WHAT("rundll32 proxy-exec DLL target (LOLBin)");
         /* powershell -ep bypass / -ex bypass / -executionpolicy
          * bypass|unrestricted — the signature ExecutionPolicy
          * bypass that -enc/-w-hidden gates alone do not cover   */
-        } else if ((ci_contains(text, "powershell") || ci_contains(text, "pwsh")) &&
+        }
+        if ((ci_contains(text, "powershell") || ci_contains(text, "pwsh")) &&
                    (ci_contains(text, "-ep ") || ci_contains(text, "-ex ") ||
                     ci_contains(text, "-exec") ) &&
                    (ci_contains(text, "bypass") ||
                     ci_contains(text, "unrestricted"))) {
-            what = "powershell ExecutionPolicy bypass (LOLBin)";
+            PASTE_WHAT("powershell ExecutionPolicy bypass (LOLBin)");
         /* reg save hklm\sam|security|system — SeBackupPrivilege
          * hive dump, the CLI-native credential-theft primitive
          * (regedit /e was already covered)                        */
-        } else if ((ci_contains(text, "reg ") || ci_contains(text, "reg.exe")) &&
+        }
+        if ((ci_contains(text, "reg ") || ci_contains(text, "reg.exe")) &&
                    ci_contains(text, "save") &&
                    (ci_contains(text, "\\sam") ||
                     ci_contains(text, "\\security") ||
                     ci_contains(text, "\\system"))) {
-            what = "reg save SAM/SECURITY/SYSTEM hive dump";
+            PASTE_WHAT("reg save SAM/SECURITY/SYSTEM hive dump");
         /* AV/EDR service kill — sc/net/taskkill targeting security
          * products by service or process name                    */
-        } else if ((ci_contains(text, "sc ") || ci_contains(text, "sc.exe") ||
+        }
+        if ((ci_contains(text, "sc ") || ci_contains(text, "sc.exe") ||
                     ci_contains(text, "net ") || ci_contains(text, "net1 ") ||
                     ci_contains(text, "taskkill") || ci_contains(text, "tskill")) &&
                    (ci_contains(text, "stop") || ci_contains(text, "delete") ||
@@ -1454,406 +1579,508 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "ekrn") || ci_contains(text, "csfalcon") ||
                     ci_contains(text, "csagent") || ci_contains(text, "crowdstrike") ||
                     ci_contains(text, "elastic-endpoint") || ci_contains(text, "sharedaccess"))) {
-            what = "AV/EDR service or process kill";
+            PASTE_WHAT("AV/EDR service or process kill");
         /* netsh firewall/advfirewall off/disable/allowedprogram —
          * firewall kill or punch-through                          */
-        } else if (ci_contains(text, "netsh") &&
+        }
+        if (ci_contains(text, "netsh") &&
                    ( ci_contains(text, "firewall")) &&
                    (ci_contains(text, "state off") || ci_contains(text, "opmode disable") ||
                     ci_contains(text, "allowedprogram") || ci_contains(text, "portopening") ||
                     ci_contains(text, "add helper"))) {
-            what = "netsh firewall disable/punch (LOLBin)";
-        } else if (ci_contains(text, "netsh") &&
+            PASTE_WHAT("netsh firewall disable/punch (LOLBin)");
+        }
+        if (ci_contains(text, "netsh") &&
                    ci_contains(text, "add helper")) {
-            what = "netsh helper-DLL load (LOLBin)";
+            PASTE_WHAT("netsh helper-DLL load (LOLBin)");
         /* reagentc /disable — kills Windows Recovery Environment
          * (ransomware recovery-prep, same class as bcdedit)       */
-        } else if (ci_contains(text, "reagentc") &&
+        }
+        if (ci_contains(text, "reagentc") &&
                    ci_contains(text, "/disable")) {
-            what = "reagentc recovery-disable (LOLBin)";
+            PASTE_WHAT("reagentc recovery-disable (LOLBin)");
         /* wbadmin delete backup|catalog|systemstatebackup —
          * backup destruction (ransomware prep)                    */
-        } else if (ci_contains(text, "wbadmin") && ci_contains(text, "delete")) {
-            what = "wbadmin backup destruction (LOLBin)";
+        }
+        if (ci_contains(text, "wbadmin") && ci_contains(text, "delete")) {
+            PASTE_WHAT("wbadmin backup destruction (LOLBin)");
         /* package/cert/payload install primitives — dism
          * add-package, pkgmgr /iu, ocsetup, certmgr -add,
          * msxsl script-let, makecab payload pack, tscon session
          * hijack, arp -s static-ARP poison                        */
-        } else if (ci_contains(text, "dism") && ci_contains(text, "add-package")) {
-            what = "dism package install (LOLBin)";
-        } else if (ci_contains(text, "pkgmgr") && ci_contains(text, "/iu")) {
-            what = "pkgmgr package install (LOLBin)";
-        } else if (ci_contains(text, "ocsetup") && ci_contains(text, " ")) {
-            what = "ocsetup component install (LOLBin)";
-        } else if (ci_contains(text, "certmgr") && ci_contains(text, "-add")) {
-            what = "certmgr cert-store install (LOLBin)";
-        } else if (ci_contains(text, "msxsl") &&
+        }
+        if (ci_contains(text, "dism") && ci_contains(text, "add-package")) {
+            PASTE_WHAT("dism package install (LOLBin)");
+        }
+        if (ci_contains(text, "pkgmgr") && ci_contains(text, "/iu")) {
+            PASTE_WHAT("pkgmgr package install (LOLBin)");
+        }
+        if (ci_contains(text, "ocsetup") && ci_contains(text, " ")) {
+            PASTE_WHAT("ocsetup component install (LOLBin)");
+        }
+        if (ci_contains(text, "certmgr") && ci_contains(text, "-add")) {
+            PASTE_WHAT("certmgr cert-store install (LOLBin)");
+        }
+        if (ci_contains(text, "msxsl") &&
                    (ci_contains(text, ".xsl") || ci_contains(text, ".xml"))) {
-            what = "msxsl script-let exec (LOLBin)";
-        } else if (ci_contains(text, "makecab") &&
+            PASTE_WHAT("msxsl script-let exec (LOLBin)");
+        }
+        if (ci_contains(text, "makecab") &&
                    (ci_contains(text, ".exe") || ci_contains(text, ".dll") ||
                     ci_contains(text, ".ps1") || ci_contains(text, ".bat") ||
                     ci_contains(text, ".js") || ci_contains(text, ".ddf"))) {
-            what = "makecab payload pack (LOLBin)";
-        } else if (ci_contains(text, "tscon") && ci_contains(text, "/dest")) {
-            what = "tscon session hijack (LOLBin)";
-        } else if (ci_contains(text, "arp ") && ci_contains(text, "-s ")) {
-            what = "arp static-poison entry (LOLBin)";
-        } else if (ci_contains(text, "sc ") && ci_contains(text, "sdset") &&
+            PASTE_WHAT("makecab payload pack (LOLBin)");
+        }
+        if (ci_contains(text, "tscon") && ci_contains(text, "/dest")) {
+            PASTE_WHAT("tscon session hijack (LOLBin)");
+        }
+        if (ci_contains(text, "arp ") && ci_contains(text, "-s ")) {
+            PASTE_WHAT("arp static-poison entry (LOLBin)");
+        }
+        if (ci_contains(text, "sc ") && ci_contains(text, "sdset") &&
                    ci_contains(text, "d:")) {
-            what = "sc sdset SDDL tamper (LOLBin)";
+            PASTE_WHAT("sc sdset SDDL tamper (LOLBin)");
         /* ── Unix-side post-compromise primitives ──────────────
          * UID-0 account creation — useradd/adduser -u 0|--uid 0|-ou */
-        } else if ((ci_contains(text, "useradd") || ci_contains(text, "adduser") ||
+        }
+        if ((ci_contains(text, "useradd") || ci_contains(text, "adduser") ||
                     ci_contains(text, "usermod")) &&
                    (ci_contains(text, "-u 0") || ci_contains(text, "-u0") ||
                     ci_contains(text, "--uid 0") || ci_contains(text, "-ou ") ||
                     ci_contains(text, "uid=0") ||
                     ci_contains(text, "-ag sudo") || ci_contains(text, "-g sudo") ||
                     ci_contains(text, "-ag wheel") || ci_contains(text, "-g wheel"))) {
-            what = "uid-0 / wheel account grant";
+            PASTE_WHAT("uid-0 / wheel account grant");
         /* SELinux + audit kill — the defense-off set: setenforce 0,
          * auditctl -D (delete all rules), stop/kill auditd        */
-        } else if (ci_contains(text, "setenforce") && ci_contains(text, " 0")) {
-            what = "setenforce 0 (SELinux off)";
-        } else if (ci_contains(text, "auditctl") &&
+        }
+        if (ci_contains(text, "setenforce") && ci_contains(text, " 0")) {
+            PASTE_WHAT("setenforce 0 (SELinux off)");
+        }
+        if (ci_contains(text, "auditctl") &&
                    (ci_contains(text, "-d") )) {
-            what = "auditctl rules wipe";
-        } else if ((ci_contains(text, "systemctl") || ci_contains(text, "service") ||
+            PASTE_WHAT("auditctl rules wipe");
+        }
+        if ((ci_contains(text, "systemctl") || ci_contains(text, "service") ||
                     ci_contains(text, "killall") || ci_contains(text, "pkill")) &&
                    ci_contains(text, "auditd") &&
                    (ci_contains(text, "stop") || ci_contains(text, "kill") ||
                     ci_contains(text, "disable") || ci_contains(text, "mask"))) {
-            what = "auditd service kill";
+            PASTE_WHAT("auditd service kill");
         /* shell-history tamper — history -c, unset HISTFILE,
          * HISTFILE=/dev/null, rm/redirect/truncate .bash_history */
-        } else if (ci_contains(text, "history -c") ||
+        }
+        if (ci_contains(text, "history -c") ||
                    ci_contains(text, "unset histfile") ||
                    ci_contains(text, "histfile=/dev/null") ||
                    ci_contains(text, "histfilesize=0") ||
                    (ci_contains(text, "bash_history") &&
                     (ci_contains(text, "rm") || ci_contains(text, "/dev/null") ||
                      ci_contains(text, "truncate") || ci_contains(text, "shred")))) {
-            what = "shell-history wipe";
+            PASTE_WHAT("shell-history wipe");
         /* firewall flush — iptables/ip6tables -F|-X|flush,
          * nft flush ruleset, ufw disable, pfctl -d,
          * firewall-cmd --add-port punch                          */
-        } else if ((ci_contains(text, "iptables") || ci_contains(text, "ip6tables")) &&
+        }
+        if ((ci_contains(text, "iptables") || ci_contains(text, "ip6tables")) &&
                    (ci_contains(text, "-f") || ci_contains(text, "-x") ||
                     ci_contains(text, "flush") || ci_contains(text, "-z") ||
                     ((ci_contains(text, "-t nat") || ci_contains(text, "masquerade") ||
                       ci_contains(text, "dnat")) &&
                      !ci_contains(text, " -l") && !ci_contains(text, "--list")))) {
-            what = "iptables flush/NAT pivot";
-        } else if (ci_contains(text, "nft") && ci_contains(text, "flush")) {
-            what = "nft ruleset flush";
-        } else if (ci_contains(text, "ufw") && ci_contains(text, "disable")) {
-            what = "ufw disable";
-        } else if (ci_contains(text, "pfctl") && ci_contains(text, "-d")) {
-            what = "pfctl pf disable";
-        } else if (ci_contains(text, "firewall-cmd") &&
+            PASTE_WHAT("iptables flush/NAT pivot");
+        }
+        if (ci_contains(text, "nft") && ci_contains(text, "flush")) {
+            PASTE_WHAT("nft ruleset flush");
+        }
+        if (ci_contains(text, "ufw") && ci_contains(text, "disable")) {
+            PASTE_WHAT("ufw disable");
+        }
+        if (ci_contains(text, "pfctl") && ci_contains(text, "-d")) {
+            PASTE_WHAT("pfctl pf disable");
+        }
+        if (ci_contains(text, "firewall-cmd") &&
                    (ci_contains(text, "--add-port") || ci_contains(text, "--add-service") ||
                     ci_contains(text, "--direct") || ci_contains(text, "--panic"))) {
-            what = "firewall-cmd punch/panic";
+            PASTE_WHAT("firewall-cmd punch/panic");
         /* ssh tunneling — -R reverse tunnel, -D dynamic SOCKS,
          * -Nf/-fN background-no-command; -L stays unflagged
          * (ci can't split -L forward from -l login)              */
-        } else if ((ci_contains(text, "ssh") ) &&
+        }
+        if ((ci_contains(text, "ssh") ) &&
                    (ci_contains(text, "-r ") || ci_contains(text, " -d ") ||
                     ci_contains(text, "-nf") || ci_contains(text, "-fn"))) {
-            what = "ssh tunnel / reverse forward";
+            PASTE_WHAT("ssh tunnel / reverse forward");
         /* sudoers append — >> /etc/sudoers or NOPASSWD grant     */
-        } else if (ci_contains(text, "sudoers") &&
+        }
+        if (ci_contains(text, "sudoers") &&
                    (ci_contains(text, "nopasswd") || ci_contains(text, ">>") ||
                     ci_contains(text, "tee"))) {
-            what = "sudoers privilege append";
+            PASTE_WHAT("sudoers privilege append");
         /* namespace/container escape — systemd-run transient
          * unit exec, nsenter into host ns, unshare new userns,
          * docker --privileged / host-mount / host-net-pid        */
-        } else if (ci_contains(text, "systemd-run") &&
+        }
+        if (ci_contains(text, "systemd-run") &&
                    (ci_contains(text, "--scope") || ci_contains(text, "--system") ||
                     ci_contains(text, "--pty") || ci_contains(text, "--unit") ||
                     ci_contains(text, "--user") || ci_contains(text, "--uid") ||
                     ci_contains(text, "-t ") || ci_contains(text, " -- "))) {
-            what = "systemd-run transient-unit exec";
-        } else if (ci_contains(text, "nsenter") &&
+            PASTE_WHAT("systemd-run transient-unit exec");
+        }
+        if (ci_contains(text, "nsenter") &&
                    (ci_contains(text, "-t") || ci_contains(text, "-m") ||
                     ci_contains(text, "-p") || ci_contains(text, "-n"))) {
-            what = "nsenter namespace escape";
-        } else if (ci_contains(text, "unshare") &&
+            PASTE_WHAT("nsenter namespace escape");
+        }
+        if (ci_contains(text, "unshare") &&
                    (ci_contains(text, "-u")  ||
                     ci_contains(text, "--net") || ci_contains(text, "--pid"))) {
-            what = "unshare userns escape";
-        } else if (ci_contains(text, "docker") &&
+            PASTE_WHAT("unshare userns escape");
+        }
+        if (ci_contains(text, "docker") &&
                    (ci_contains(text, "--privileged") || ci_contains(text, "-v /:") ||
                     ci_contains(text, "/:/host") || ci_contains(text, "--net=host") ||
                     ci_contains(text, "--pid=host") || ci_contains(text, "--ipc=host"))) {
-            what = "docker privileged/host-mount escape";
+            PASTE_WHAT("docker privileged/host-mount escape");
         /* decoder+exec / attribute tamper / cap-enum /
          * ptrace-attach / TLS channel                          */
-        } else if (ci_contains(text, "xxd") && ci_contains(text, "-r")) {
-            what = "xxd hex-decode payload build";
-        } else if (ci_contains(text, "chattr") &&
+        }
+        if (ci_contains(text, "xxd") && ci_contains(text, "-r")) {
+            PASTE_WHAT("xxd hex-decode payload build");
+        }
+        if (ci_contains(text, "chattr") &&
                    (ci_contains(text, "-i") || ci_contains(text, "+i"))) {
-            what = "chattr immutable-flag tamper";
-        } else if (ci_contains(text, "wipefs") &&
+            PASTE_WHAT("chattr immutable-flag tamper");
+        }
+        if (ci_contains(text, "wipefs") &&
                    (ci_contains(text, "-a") || ci_contains(text, "/dev/"))) {
-            what = "wipefs disk-signature wipe";
-        } else if (ci_contains(text, "find") && ci_contains(text, "-perm") &&
+            PASTE_WHAT("wipefs disk-signature wipe");
+        }
+        if (ci_contains(text, "find") && ci_contains(text, "-perm") &&
                    (ci_contains(text, "4000") || ci_contains(text, "2000") ||
                     ci_contains(text, "u=s"))) {
-            what = "find SUID/SGID enum";
-        } else if (ci_contains(text, "getcap") && ci_contains(text, "-r")) {
-            what = "getcap capability enum";
-        } else if ((ci_contains(text, "gdb") || ci_contains(text, "strace") ||
+            PASTE_WHAT("find SUID/SGID enum");
+        }
+        if (ci_contains(text, "getcap") && ci_contains(text, "-r")) {
+            PASTE_WHAT("getcap capability enum");
+        }
+        if ((ci_contains(text, "gdb") || ci_contains(text, "strace") ||
                     ci_contains(text, "ltrace")) && ci_contains(text, "-p")) {
-            what = "ptrace process attach";
-        } else if (ci_contains(text, "openssl") &&
+            PASTE_WHAT("ptrace process attach");
+        }
+        if (ci_contains(text, "openssl") &&
                    (ci_contains(text, "s_client") || ci_contains(text, "enc -d"))) {
-            what = "openssl TLS/decrypt channel";
-        } else if (ci_contains(text, "awk") && ci_contains(text, "system(")) {
-            what = "awk system() exec";
-        } else if (ci_contains(text, "xclip") && ci_contains(text, "-o")) {
-            what = "xclip clipboard harvest";
+            PASTE_WHAT("openssl TLS/decrypt channel");
+        }
+        if (ci_contains(text, "awk") && ci_contains(text, "system(")) {
+            PASTE_WHAT("awk system() exec");
+        }
+        if (ci_contains(text, "xclip") && ci_contains(text, "-o")) {
+            PASTE_WHAT("xclip clipboard harvest");
         /* ── macOS post-compromise primitives ──────────────────
          * launchctl persistence — bootstrap/submit/kickstart
          * into a domain (load/-w fires via the existing rule)   */
-        } else if (ci_contains(text, "launchctl") &&
+        }
+        if (ci_contains(text, "launchctl") &&
                    (ci_contains(text, "bootstrap") || ci_contains(text, "submit") ||
                     ci_contains(text, "kickstart") || ci_contains(text, "load") ||
                     ci_contains(text, "enable "))) {
-            what = "launchctl persistence/service exec";
+            PASTE_WHAT("launchctl persistence/service exec");
         /* Gatekeeper off — spctl --master-disable/--add/--disable */
-        } else if (ci_contains(text, "spctl") &&
+        }
+        if (ci_contains(text, "spctl") &&
                    (ci_contains(text, "--master-disable") ||
                     ci_contains(text, "--add") || ci_contains(text, "--disable"))) {
-            what = "spctl gatekeeper off/whitelist";
+            PASTE_WHAT("spctl gatekeeper off/whitelist");
         /* quarantine strip — the classic dropper step:
          * xattr -d com.apple.quarantine / -rc / -c              */
-        } else if (ci_contains(text, "xattr") &&
+        }
+        if (ci_contains(text, "xattr") &&
                    (ci_contains(text, "quarantine") || ci_contains(text, "-rc") ||
                     ci_contains(text, "-cr ") || ci_contains(text, " -c "))) {
-            what = "xattr quarantine strip";
+            PASTE_WHAT("xattr quarantine strip");
         /* keychain credential theft — security find-generic/
          * find-internet-password, export, unlock/dump-keychain */
-        } else if (ci_contains(text, "security") &&
+        }
+        if (ci_contains(text, "security") &&
                    (ci_contains(text, "find-generic-password") ||
                     ci_contains(text, "find-internet-password") ||
                     ci_contains(text, "export") || ci_contains(text, "unlock-keychain") ||
                     ci_contains(text, "dump-keychain"))) {
-            what = "keychain credential access";
+            PASTE_WHAT("keychain credential access");
         /* directory-service account writes — dscl -create/
          * -append, pwpolicy -setpassword, dseditgroup -o edit  */
-        } else if (ci_contains(text, "dscl") &&
+        }
+        if (ci_contains(text, "dscl") &&
                    (ci_contains(text, "-create") || ci_contains(text, "-append"))) {
-            what = "dscl account create/grant";
-        } else if (ci_contains(text, "pwpolicy") &&
+            PASTE_WHAT("dscl account create/grant");
+        }
+        if (ci_contains(text, "pwpolicy") &&
                    (ci_contains(text, "-setpassword") ||
                     ci_contains(text, "-setaccountpolicies"))) {
-            what = "pwpolicy password set";
-        } else if (ci_contains(text, "dseditgroup") &&
+            PASTE_WHAT("pwpolicy password set");
+        }
+        if (ci_contains(text, "dseditgroup") &&
                    (ci_contains(text, "-o edit") || ci_contains(text, "-a "))) {
-            what = "dseditgroup group grant";
+            PASTE_WHAT("dseditgroup group grant");
         /* package install / payload extract / record wipe —
          * installer -pkg, pkgutil --expand/--forget             */
-        } else if (ci_contains(text, "installer") && ci_contains(text, "-pkg")) {
-            what = "installer package exec";
-        } else if (ci_contains(text, "pkgutil") &&
+        }
+        if (ci_contains(text, "installer") && ci_contains(text, "-pkg")) {
+            PASTE_WHAT("installer package exec");
+        }
+        if (ci_contains(text, "pkgutil") &&
                    (ci_contains(text, "--expand") || ci_contains(text, "--forget") ||
                     ci_contains(text, "--install"))) {
-            what = "pkgutil extract/forget";
+            PASTE_WHAT("pkgutil extract/forget");
         /* persistence plist writes — defaults write loginitems/
          * autolaunched/launchagents/launchdaemons               */
-        } else if (ci_contains(text, "defaults") && ci_contains(text, "write") &&
+        }
+        if (ci_contains(text, "defaults") && ci_contains(text, "write") &&
                    (ci_contains(text, "loginitems") || ci_contains(text, "autolaunched") ||
                     ci_contains(text, "launchagents") || ci_contains(text, "launchdaemons"))) {
-            what = "defaults persistence write";
+            PASTE_WHAT("defaults persistence write");
         /* SIP off — csrutil disable / enable --without          */
-        } else if (ci_contains(text, "csrutil") &&
+        }
+        if (ci_contains(text, "csrutil") &&
                    (ci_contains(text, "disable") || ci_contains(text, "--without"))) {
-            what = "csrutil SIP disable";
+            PASTE_WHAT("csrutil SIP disable");
         /* traffic redirect — networksetup -set*proxy/-setdns*   */
-        } else if (ci_contains(text, "networksetup") &&
+        }
+        if (ci_contains(text, "networksetup") &&
                    (ci_contains(text, "-setwebproxy") ||
                     ci_contains(text, "-setsecurewebproxy") ||
                     ci_contains(text, "-setsocksfirewallproxy") ||
                     ci_contains(text, "-setdnsservers"))) {
-            what = "networksetup proxy/dns redirect";
+            PASTE_WHAT("networksetup proxy/dns redirect");
         /* pfctl enable + ruleset load (-d disable covered above) */
-        } else if (ci_contains(text, "pfctl") &&
+        }
+        if (ci_contains(text, "pfctl") &&
                    (ci_contains(text, "-e") || ci_contains(text, "-f "))) {
-            what = "pfctl pf enable/ruleset load";
+            PASTE_WHAT("pfctl pf enable/ruleset load");
         /* remote access enable — systemsetup -setremotelogin on /
          * -setremoteappleevents on (SSH / Remote Events)         */
-        } else if (ci_contains(text, "systemsetup") &&
+        }
+        if (ci_contains(text, "systemsetup") &&
                    (ci_contains(text, "remotelogin on") ||
                     ci_contains(text, "remoteappleevents on") ||
                     ci_contains(text, "wakeonnetworkaccess on"))) {
-            what = "systemsetup remote-access enable";
+            PASTE_WHAT("systemsetup remote-access enable");
         /* TCC privacy reset — tccutil reset                     */
-        } else if (ci_contains(text, "tccutil") && ci_contains(text, "reset")) {
-            what = "tccutil privacy reset";
+        }
+        if (ci_contains(text, "tccutil") && ci_contains(text, "reset")) {
+            PASTE_WHAT("tccutil privacy reset");
         /* signature strip / adhoc forge — codesign
          * --remove-signature / -s - / --sign -                  */
-        } else if (ci_contains(text, "codesign") &&
+        }
+        if (ci_contains(text, "codesign") &&
                    (ci_contains(text, "--remove-signature") ||
                     ci_contains(text, "--sign -") || ci_contains(text, "-s - "))) {
-            what = "codesign strip/adhoc sign";
+            PASTE_WHAT("codesign strip/adhoc sign");
         /* kext load — kextload / kmutil load                    */
-        } else if (ci_contains(text, "kextload") ||
+        }
+        if (ci_contains(text, "kextload") ||
                    (ci_contains(text, "kmutil") && ci_contains(text, "load"))) {
-            what = "kernel extension load";
+            PASTE_WHAT("kernel extension load");
         /* mobileconfig install — profiles install               */
-        } else if (ci_contains(text, "profiles") && ci_contains(text, "install")) {
-            what = "profiles mobileconfig install";
+        }
+        if (ci_contains(text, "profiles") && ci_contains(text, "install")) {
+            PASTE_WHAT("profiles mobileconfig install");
         /* log wipe — log erase (anti-forensic)                  */
-        } else if (ci_contains(text, "log") && ci_contains(text, "erase")) {
-            what = "log erase wipe";
+        }
+        if (ci_contains(text, "log") && ci_contains(text, "erase")) {
+            PASTE_WHAT("log erase wipe");
         /* Quick Look plugin exec — qlmanage -p                  */
-        } else if (ci_contains(text, "qlmanage") && ci_contains(text, "-p")) {
-            what = "qlmanage plugin exec";
+        }
+        if (ci_contains(text, "qlmanage") && ci_contains(text, "-p")) {
+            PASTE_WHAT("qlmanage plugin exec");
         /* backup delete — tmutil delete (ransomware prep)       */
-        } else if (ci_contains(text, "tmutil") && ci_contains(text, "delete")) {
-            what = "tmutil backup delete";
+        }
+        if (ci_contains(text, "tmutil") && ci_contains(text, "delete")) {
+            PASTE_WHAT("tmutil backup delete");
         /* plist write — plutil -replace/-insert                 */
-        } else if (ci_contains(text, "plutil") &&
+        }
+        if (ci_contains(text, "plutil") &&
                    (ci_contains(text, "-replace") || ci_contains(text, "-insert"))) {
-            what = "plutil plist write";
+            PASTE_WHAT("plutil plist write");
         /* boot-arg tamper — nvram boot-args                     */
-        } else if (ci_contains(text, "nvram") && ci_contains(text, "boot-args")) {
-            what = "nvram boot-args tamper";
+        }
+        if (ci_contains(text, "nvram") && ci_contains(text, "boot-args")) {
+            PASTE_WHAT("nvram boot-args tamper");
         /* full system dump — sysdiagnose -f                     */
-        } else if (ci_contains(text, "sysdiagnose") && ci_contains(text, "-f")) {
-            what = "sysdiagnose data harvest";
+        }
+        if (ci_contains(text, "sysdiagnose") && ci_contains(text, "-f")) {
+            PASTE_WHAT("sysdiagnose data harvest");
         /* on-host compile+run — xcrun swift                     */
-        } else if (ci_contains(text, "xcrun") &&
+        }
+        if (ci_contains(text, "xcrun") &&
                    (ci_contains(text, " swift ") || ci_contains(text, " swiftc "))) {
-            what = "xcrun swift compile+run";
+            PASTE_WHAT("xcrun swift compile+run");
         /* JXA payload — osascript -l JavaScript                 */
-        } else if (ci_contains(text, "osascript") && ci_contains(text, "javascript")) {
-            what = "osascript JXA payload";
+        }
+        if (ci_contains(text, "osascript") && ci_contains(text, "javascript")) {
+            PASTE_WHAT("osascript JXA payload");
         /* ── GTFOBins exec primitives — a flag on a benign tool
          * that runs arbitrary code (the binary stays signed)   */
-        } else if (ci_contains(text, "tar") &&
+        }
+        if (ci_contains(text, "tar") &&
                    (ci_contains(text, "--checkpoint-action") ||
                     ci_contains(text, "--use-compress"))) {
-            what = "tar checkpoint/compress exec";
-        } else if (ci_contains(text, "git") &&
+            PASTE_WHAT("tar checkpoint/compress exec");
+        }
+        if (ci_contains(text, "git") &&
                    (ci_contains(text, "-c core.pager") ||
                     ci_contains(text, "-c core.fsmonitor") ||
                     ci_contains(text, "-c core.sshcommand") ||
                     ci_contains(text, "-c core.hookspath") ||
                     ci_contains(text, "ext::"))) {
-            what = "git config/ext-transport exec";
-        } else if (ci_contains(text, "ssh") &&
+            PASTE_WHAT("git config/ext-transport exec");
+        }
+        if (ci_contains(text, "ssh") &&
                    (ci_contains(text, "proxycommand") ||
                     ci_contains(text, "localcommand") )) {
-            what = "ssh ProxyCommand/LocalCommand exec";
-        } else if (ci_contains(text, "find") &&
+            PASTE_WHAT("ssh ProxyCommand/LocalCommand exec");
+        }
+        if (ci_contains(text, "find") &&
                    (ci_contains(text, "-exec ") || ci_contains(text, "-execdir"))) {
-            what = "find -exec command run";
-        } else if ((ci_contains(text, "vim") || ci_contains(text, " vi ") ||
+            PASTE_WHAT("find -exec command run");
+        }
+        if ((ci_contains(text, "vim") || ci_contains(text, " vi ") ||
                     ci_contains(text, " ex ") || ci_contains(text, "vi -c") ||
                     ci_contains(text, "ex -c")) &&
                    (ci_contains(text, "-c ") || ci_contains(text, "--cmd"))) {
-            what = "vi/ex -c command exec";
-        } else if (ci_contains(text, "man ") && ci_contains(text, "-p ")) {
-            what = "man -P pager exec";
-        } else if (ci_contains(text, "expect") && ci_contains(text, "spawn")) {
-            what = "expect spawn exec";
-        } else if (ci_contains(text, "tcpdump") && ci_contains(text, "-z ")) {
-            what = "tcpdump -z postrotate exec";
-        } else if (ci_contains(text, "split") && ci_contains(text, "--filter")) {
-            what = "split --filter exec";
-        } else if (ci_contains(text, "watch") &&
+            PASTE_WHAT("vi/ex -c command exec");
+        }
+        if (ci_contains(text, "man ") && ci_contains(text, "-p ")) {
+            PASTE_WHAT("man -P pager exec");
+        }
+        if (ci_contains(text, "expect") && ci_contains(text, "spawn")) {
+            PASTE_WHAT("expect spawn exec");
+        }
+        if (ci_contains(text, "tcpdump") && ci_contains(text, "-z ")) {
+            PASTE_WHAT("tcpdump -z postrotate exec");
+        }
+        if (ci_contains(text, "split") && ci_contains(text, "--filter")) {
+            PASTE_WHAT("split --filter exec");
+        }
+        if (ci_contains(text, "watch") &&
                    (ci_contains(text, "-x ") || ci_contains(text, "--exec"))) {
-            what = "watch -x exec";
-        } else if (ci_contains(text, "emacs") && ci_contains(text, "--eval")) {
-            what = "emacs --eval exec";
-        } else if (ci_contains(text, "script") &&
+            PASTE_WHAT("watch -x exec");
+        }
+        if (ci_contains(text, "emacs") && ci_contains(text, "--eval")) {
+            PASTE_WHAT("emacs --eval exec");
+        }
+        if (ci_contains(text, "script") &&
                    (ci_contains(text, "-qc") || ci_contains(text, "-c ") ||
                     ci_contains(text, "-qec"))) {
-            what = "script -c pty exec";
-        } else if (ci_contains(text, "capsh") &&
+            PASTE_WHAT("script -c pty exec");
+        }
+        if (ci_contains(text, "capsh") &&
                    (ci_contains(text, "--shell") || ci_contains(text, " -- ") ||
                     ci_contains(text, "--addamb"))) {
-            what = "capsh capability exec";
-        } else if (ci_contains(text, "tcc") && ci_contains(text, "-run")) {
-            what = "tcc -run C exec";
-        } else if (ci_contains(text, "jrunscript") &&
+            PASTE_WHAT("capsh capability exec");
+        }
+        if (ci_contains(text, "tcc") && ci_contains(text, "-run")) {
+            PASTE_WHAT("tcc -run C exec");
+        }
+        if (ci_contains(text, "jrunscript") &&
                    (ci_contains(text, "-e ") || ci_contains(text, "-f "))) {
-            what = "jrunscript Nashorn exec";
-        } else if (ci_contains(text, "lua") &&
+            PASTE_WHAT("jrunscript Nashorn exec");
+        }
+        if (ci_contains(text, "lua") &&
                    (ci_contains(text, "os.execute") || ci_contains(text, "io.popen") ||
                     ci_contains(text, " -e "))) {
-            what = "lua os.execute exec";
-        } else if (ci_contains(text, "busybox") &&
+            PASTE_WHAT("lua os.execute exec");
+        }
+        if (ci_contains(text, "busybox") &&
                    (ci_contains(text, " sh") || ci_contains(text, " wget") ||
                     ci_contains(text, " httpd") || ci_contains(text, " telnet"))) {
-            what = "busybox applet exec/fetch";
-        } else if (ci_contains(text, "setsid") &&
+            PASTE_WHAT("busybox applet exec/fetch");
+        }
+        if (ci_contains(text, "setsid") &&
                    (ci_contains(text, " sh") || ci_contains(text, " bash") ||
                     ci_contains(text, " nc") || ci_contains(text, "/bin/") ||
                     ci_contains(text, "python") || ci_contains(text, "perl"))) {
-            what = "setsid detached exec";
+            PASTE_WHAT("setsid detached exec");
         /* ── privilege / account / destructive primitives ── */
-        } else if (ci_contains(text, "pkexec") ||
+        }
+        if (ci_contains(text, "pkexec") ||
                    ci_contains(text, "runuser -u") ||
                    (ci_contains(text, "chroot") &&
                     (ci_contains(text, " /") || ci_contains(text, " -")))) {
-            what = "root-exec primitive (chroot/pkexec/runuser)";
-        } else if (ci_contains(text, "chsh") && ci_contains(text, "-s")) {
-            what = "chsh login-shell change";
-        } else if (ci_contains(text, "passwd") &&
+            PASTE_WHAT("root-exec primitive (chroot/pkexec/runuser)");
+        }
+        if (ci_contains(text, "chsh") && ci_contains(text, "-s")) {
+            PASTE_WHAT("chsh login-shell change");
+        }
+        if (ci_contains(text, "passwd") &&
                    (ci_contains(text, "-l ") || ci_contains(text, "-d "))) {
-            what = "passwd lock/delete";
-        } else if (ci_contains(text, "chpasswd")) {
-            what = "chpasswd batch password set";
-        } else if (ci_contains(text, "journalctl") &&
+            PASTE_WHAT("passwd lock/delete");
+        }
+        if (ci_contains(text, "chpasswd")) {
+            PASTE_WHAT("chpasswd batch password set");
+        }
+        if (ci_contains(text, "journalctl") &&
                    ci_contains(text, "--vacuum")) {
-            what = "journalctl journal wipe";
-        } else if (ci_contains(text, "dmesg") && ci_contains(text, "-c")) {
-            what = "dmesg ring clear";
-        } else if (ci_contains(text, "mknod")) {
-            what = "mknod device create";
-        } else if (ci_contains(text, "insmod")) {
-            what = "insmod kernel module load";
-        } else if ((ci_contains(text, "rmmod") ||
+            PASTE_WHAT("journalctl journal wipe");
+        }
+        if (ci_contains(text, "dmesg") && ci_contains(text, "-c")) {
+            PASTE_WHAT("dmesg ring clear");
+        }
+        if (ci_contains(text, "mknod")) {
+            PASTE_WHAT("mknod device create");
+        }
+        if (ci_contains(text, "insmod")) {
+            PASTE_WHAT("insmod kernel module load");
+        }
+        if ((ci_contains(text, "rmmod") ||
                     (ci_contains(text, "modprobe") && ci_contains(text, "-r"))) &&
                    (ci_contains(text, "iptable") || ci_contains(text, "nf_") ||
                     ci_contains(text, "apparmor") || ci_contains(text, "selinux"))) {
-            what = "security module unload";
-        } else if (ci_contains(text, "kill") && ci_contains(text, "-9 -1")) {
-            what = "kill-all (-9 -1) DoS";
-        } else if (ci_contains(text, "init 0") || ci_contains(text, "init 6")  ) {
-            what = "runlevel halt/reboot";
-        } else if (ci_contains(text, "printenv")) {
-            what = "printenv env/secrets dump";
+            PASTE_WHAT("security module unload");
+        }
+        if (ci_contains(text, "kill") && ci_contains(text, "-9 -1")) {
+            PASTE_WHAT("kill-all (-9 -1) DoS");
+        }
+        if (ci_contains(text, "init 0") || ci_contains(text, "init 6")  ) {
+            PASTE_WHAT("runlevel halt/reboot");
+        }
+        if (ci_contains(text, "printenv")) {
+            PASTE_WHAT("printenv env/secrets dump");
         /* ── network pivot / clock tamper / remote mounts ── */
-        } else if (ci_contains(text, "ip_forward") &&
+        }
+        if (ci_contains(text, "ip_forward") &&
                    (ci_contains(text, "=1") || ci_contains(text, " 1") ||
                     ci_contains(text, ">"))) {
-            what = "ip_forward pivot enable";
-        } else if ((ci_contains(text, "ip route") || ci_contains(text, "route ")) &&
+            PASTE_WHAT("ip_forward pivot enable");
+        }
+        if ((ci_contains(text, "ip route") || ci_contains(text, "route ")) &&
                    (ci_contains(text, " add") || ci_contains(text, " replace"))) {
-            what = "route add pivot";
-        } else if (ci_contains(text, "date") &&
+            PASTE_WHAT("route add pivot");
+        }
+        if (ci_contains(text, "date") &&
                    (ci_contains(text, " -s") || ci_contains(text, "--set"))) {
-            what = "date clock set";
-        } else if (ci_contains(text, "timedatectl") &&
+            PASTE_WHAT("date clock set");
+        }
+        if (ci_contains(text, "timedatectl") &&
                    (ci_contains(text, "set-time") || ci_contains(text, "set-ntp"))) {
-            what = "timedatectl clock tamper";
-        } else if (ci_contains(text, "mount") &&
+            PASTE_WHAT("timedatectl clock tamper");
+        }
+        if (ci_contains(text, "mount") &&
                    ( ci_contains(text, "-t nfs") ||
                     ci_contains(text, "-t smb") || ci_contains(text, "cifs"))) {
-            what = "remote filesystem mount";
-        } else if (ci_contains(text, "sshfs") && ci_contains(text, ":")) {
-            what = "sshfs remote mount";
-        } else if ((ci_contains(text, "lxc") || ci_contains(text, "incus")) &&
+            PASTE_WHAT("remote filesystem mount");
+        }
+        if (ci_contains(text, "sshfs") && ci_contains(text, ":")) {
+            PASTE_WHAT("sshfs remote mount");
+        }
+        if ((ci_contains(text, "lxc") || ci_contains(text, "incus")) &&
                    ci_contains(text, " exec")) {
-            what = "lxc/incus container exec";
+            PASTE_WHAT("lxc/incus container exec");
         /* ── attack-tool names — the tool IS the signal ─────── */
-        } else if (ci_contains(text, "mimikatz") || ci_contains(text, "lazagne") ||
+        }
+        if (ci_contains(text, "mimikatz") || ci_contains(text, "lazagne") ||
                    ci_contains(text, "pwdump") || ci_contains(text, "fgdump") ||
                    ci_contains(text, "sharphound") || ci_contains(text, "rubeus.exe") ||
                    ci_contains(text, "rubeus -") ||
@@ -1868,15 +2095,17 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "bloodhound") &&
                     (ci_contains(text, ".py") || ci_contains(text, "python") ||
                      ci_contains(text, " -")))) {
-            what = "credential/lateral attack tool";
-        } else if (ci_contains(text, "hashcat") || ci_contains(text, "john --") ||
+            PASTE_WHAT("credential/lateral attack tool");
+        }
+        if (ci_contains(text, "hashcat") || ci_contains(text, "john --") ||
                    (ci_contains(text, "hydra") && ci_contains(text, " -")) ||
                    ci_contains(text, "aircrack") || ci_contains(text, "airodump") ||
                    ci_contains(text, "aireplay") || ci_contains(text, "wifite") ||
                    (ci_contains(text, "reaver") && ci_contains(text, " -")) ||
                    (ci_contains(text, "fluxion") && ci_contains(text, " -"))) {
-            what = "password/wireless attack tool";
-        } else if (ci_contains(text, "sqlmap") ||
+            PASTE_WHAT("password/wireless attack tool");
+        }
+        if (ci_contains(text, "sqlmap") ||
                    (ci_contains(text, "nikto") && ci_contains(text, " -")) ||
                    (ci_contains(text, "nmap") && ci_contains(text, " -")) ||
                    ci_contains(text, "masscan") || ci_contains(text, "nuclei") ||
@@ -1886,14 +2115,16 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "hping") || ci_contains(text, "tcpreplay") ||
                    ci_contains(text, "dirb") || ci_contains(text, "dirsearch") ||
                    ci_contains(text, "feroxbuster") || ci_contains(text, "dalfox")) {
-            what = "recon/scan attack tool";
-        } else if (ci_contains(text, "ettercap")  ||
+            PASTE_WHAT("recon/scan attack tool");
+        }
+        if (ci_contains(text, "ettercap")  ||
                    ci_contains(text, "dsniff") || ci_contains(text, "mitmproxy") ||
                    ci_contains(text, "sslstrip") || ci_contains(text, "sslsplit") ||
                    ci_contains(text, "responder.py") || ci_contains(text, "mitm6")) {
-            what = "MitM/sniffing attack tool";
+            PASTE_WHAT("MitM/sniffing attack tool");
         /* ── tunneling / C2 proxy tools ── */
-        } else if (ci_contains(text, "ngrok") || ci_contains(text, "cloudflared") ||
+        }
+        if (ci_contains(text, "ngrok") || ci_contains(text, "cloudflared") ||
                    ci_contains(text, "frpc") || ci_contains(text, "frps") ||
                    ci_contains(text, "ligolo") || ci_contains(text, "sshuttle") ||
                    ci_contains(text, "dnscat") || ci_contains(text, "dns2tcp") ||
@@ -1907,78 +2138,95 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, " server") || ci_contains(text, " client") ||
                      ci_contains(text, " --"))) ||
                    (ci_contains(text, "iodine") && ci_contains(text, "-f "))) {
-            what = "tunneling/C2 proxy tool";
+            PASTE_WHAT("tunneling/C2 proxy tool");
         /* ── privesc enums + exploit names ── */
-        } else if (ci_contains(text, "linpeas") || ci_contains(text, "winpeas") ||
+        }
+        if (ci_contains(text, "linpeas") || ci_contains(text, "winpeas") ||
                    (ci_contains(text, "linenum") &&
               !ci_contains(text, "linenumber")) || ci_contains(text, "mimipenguin") ||
                    ci_contains(text, "pspy") || ci_contains(text, "linux-exploit") ||
                    ci_contains(text, "dirtyc0w") || ci_contains(text, "dirtycow") ||
                    ci_contains(text, "pwnkit") || ci_contains(text, "ysoserial")) {
-            what = "privesc enum/exploit tool";
+            PASTE_WHAT("privesc enum/exploit tool");
         /* ── cloud CLI exfil + remote exec ── */
-        } else if (ci_contains(text, "rclone") &&
+        }
+        if (ci_contains(text, "rclone") &&
                    (ci_contains(text, "copy") || ci_contains(text, " move") ||
                     ci_contains(text, "sync") || ci_contains(text, "lsd"))) {
-            what = "rclone cloud exfil";
-        } else if (ci_contains(text, "aws") && ci_contains(text, "s3") &&
+            PASTE_WHAT("rclone cloud exfil");
+        }
+        if (ci_contains(text, "aws") && ci_contains(text, "s3") &&
                    (ci_contains(text, " cp") || ci_contains(text, " sync") ||
                     ci_contains(text, " mv") || ci_contains(text, " rm"))) {
-            what = "aws s3 exfil";
-        } else if (ci_contains(text, "aws") && ci_contains(text, "ssm") &&
+            PASTE_WHAT("aws s3 exfil");
+        }
+        if (ci_contains(text, "aws") && ci_contains(text, "ssm") &&
                    (ci_contains(text, "send-command") ||
                     ci_contains(text, "start-session"))) {
-            what = "aws ssm remote exec";
-        } else if (ci_contains(text, "gsutil") &&
+            PASTE_WHAT("aws ssm remote exec");
+        }
+        if (ci_contains(text, "gsutil") &&
                    (ci_contains(text, " cp") || ci_contains(text, " rsync") ||
                     ci_contains(text, " mv"))) {
-            what = "gsutil cloud exfil";
-        } else if (ci_contains(text, "azcopy") &&
+            PASTE_WHAT("gsutil cloud exfil");
+        }
+        if (ci_contains(text, "azcopy") &&
                    (ci_contains(text, " copy") || ci_contains(text, " sync"))) {
-            what = "azcopy cloud exfil";
-        } else if (ci_contains(text, "az ") &&
+            PASTE_WHAT("azcopy cloud exfil");
+        }
+        if (ci_contains(text, "az ") &&
                    (ci_contains(text, "run-command") ||
                     (ci_contains(text, "storage") &&
                      (ci_contains(text, "upload") || ci_contains(text, "download") ||
                       ci_contains(text, " copy"))))) {
-            what = "az storage exfil/run-command";
-        } else if (ci_contains(text, "gcloud") &&
+            PASTE_WHAT("az storage exfil/run-command");
+        }
+        if (ci_contains(text, "gcloud") &&
                    (ci_contains(text, "compute ssh") ||
                     ci_contains(text, "compute scp"))) {
-            what = "gcloud compute ssh/scp";
+            PASTE_WHAT("gcloud compute ssh/scp");
         /* ── k8s / container exec ── */
-        } else if (ci_contains(text, "kubectl") &&
+        }
+        if (ci_contains(text, "kubectl") &&
                    (ci_contains(text, " exec") || ci_contains(text, " cp ") ||
                     ci_contains(text, " port-forward") || ci_contains(text, " apply") ||
                     ci_contains(text, " attach") || ci_contains(text, " run "))) {
-            what = "kubectl exec/apply";
-        } else if (ci_contains(text, "helm") &&
+            PASTE_WHAT("kubectl exec/apply");
+        }
+        if (ci_contains(text, "helm") &&
                    (ci_contains(text, " install") || ci_contains(text, " upgrade"))) {
-            what = "helm install/upgrade";
-        } else if ((ci_contains(text, "docker") || ci_contains(text, "podman") ||
+            PASTE_WHAT("helm install/upgrade");
+        }
+        if ((ci_contains(text, "docker") || ci_contains(text, "podman") ||
                     ci_contains(text, "nerdctl")) &&
                    (ci_contains(text, " exec") || ci_contains(text, " cp "))) {
-            what = "container exec/cp";
-        } else if (ci_contains(text, "crictl") && ci_contains(text, " exec")) {
-            what = "crictl exec";
+            PASTE_WHAT("container exec/cp");
+        }
+        if (ci_contains(text, "crictl") && ci_contains(text, " exec")) {
+            PASTE_WHAT("crictl exec");
         /* ── db query exec / redis abuse ── */
-        } else if (ci_contains(text, "mysql") && ci_contains(text, "-e ")) {
-            what = "mysql -e query exec";
-        } else if (ci_contains(text, "psql") && ci_contains(text, "-c ")) {
-            what = "psql -c query exec";
-        } else if (ci_contains(text, "redis-cli") &&
+        }
+        if (ci_contains(text, "mysql") && ci_contains(text, "-e ")) {
+            PASTE_WHAT("mysql -e query exec");
+        }
+        if (ci_contains(text, "psql") && ci_contains(text, "-c ")) {
+            PASTE_WHAT("psql -c query exec");
+        }
+        if (ci_contains(text, "redis-cli") &&
                    (ci_contains(text, "config") || ci_contains(text, "eval") ||
                     ci_contains(text, "slaveof") || ci_contains(text, "replicaof") ||
                     ci_contains(text, "module load"))) {
-            what = "redis-cli abuse";
-        } else if ((ci_contains(text, "mongosh") || ci_contains(text, "mongo ")) &&
+            PASTE_WHAT("redis-cli abuse");
+        }
+        if ((ci_contains(text, "mongosh") || ci_contains(text, "mongo ")) &&
                    ci_contains(text, "--eval")) {
-            what = "mongo eval exec";
+            PASTE_WHAT("mongo eval exec");
         /* ── package-manager remote installs — install IS exec ──
          * the non-registry-source form (URL/git+/local-bundle) is
          * the deliverable: postinstall hooks, setup.py, or maint
          * scripts run the attacker's bytes                  */
-        } else if ((((ci_contains(text, "npm") ) &&
+        }
+        if ((((ci_contains(text, "npm") ) &&
                     (ci_contains(text, " install ") || ci_contains(text, " add ") ||
                      ci_contains(text, " i "))) ||
                    ci_contains(text, "yarn add ") || ci_contains(text, "yarn install ") ||
@@ -1986,8 +2234,9 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "http") || ci_contains(text, "git+") ||
                     ci_contains(text, "file:") || ci_contains(text, ".tgz") ||
                     ci_contains(text, ".tar") || ci_contains(text, ".zip"))) {
-            what = "npm-family remote package install";
-        } else if ((ci_contains(text, "pip ") || ci_contains(text, "pip3") ||
+            PASTE_WHAT("npm-family remote package install");
+        }
+        if ((ci_contains(text, "pip ") || ci_contains(text, "pip3") ||
                     ci_contains(text, "pipx") || ci_contains(text, "poetry add ") ||
                     ci_contains(text, "poetry install ")) &&
                    (ci_contains(text, " install ") || ci_contains(text, " add ") ||
@@ -1995,8 +2244,9 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "http") || ci_contains(text, "git+") ||
                     ci_contains(text, ".whl") || ci_contains(text, ".zip") ||
                     ci_contains(text, ".tar"))) {
-            what = "python remote package install";
-        } else if ((ci_contains(text, "uvx") &&
+            PASTE_WHAT("python remote package install");
+        }
+        if ((ci_contains(text, "uvx") &&
                     ci_contains(text, "http")) ||
                    (ci_contains(text, "gem install ") &&
                     (ci_contains(text, "http") || ci_contains(text, ".gem"))) ||
@@ -2005,16 +2255,19 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, "--path"))) ||
                    (ci_contains(text, "composer") &&
                     ci_contains(text, " require ") && ci_contains(text, "http"))) {
-            what = "remote package install/exec";
+            PASTE_WHAT("remote package install/exec");
         /* ── OS package remote/local-bundle installs ── */
-        } else if ((ci_contains(text, "apt") ) &&
+        }
+        if ((ci_contains(text, "apt") ) &&
                    ci_contains(text, " install ") &&
                    (ci_contains(text, ".deb") || ci_contains(text, "http"))) {
-            what = "apt bundle/URL install";
-        } else if (ci_contains(text, "dpkg") && ci_contains(text, "-i ") &&
+            PASTE_WHAT("apt bundle/URL install");
+        }
+        if (ci_contains(text, "dpkg") && ci_contains(text, "-i ") &&
                    ci_contains(text, ".deb")) {
-            what = "dpkg bundle install";
-        } else if (((ci_contains(text, "rpm") &&
+            PASTE_WHAT("dpkg bundle install");
+        }
+        if (((ci_contains(text, "rpm") &&
                     (ci_contains(text, " -i") || ci_contains(text, " -u"))) ||
                    (ci_contains(text, "dnf") && ci_contains(text, " install ")) ||
                    (ci_contains(text, "yum") && ci_contains(text, " install ")) ||
@@ -2026,8 +2279,9 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "choco") && ci_contains(text, " install ")) ||
                    (ci_contains(text, "scoop") && ci_contains(text, " install "))) &&
                    ci_contains(text, "http")) {
-            what = "remote OS package install";
-        } else if ((ci_contains(text, "apk") && ci_contains(text, " add ") &&
+            PASTE_WHAT("remote OS package install");
+        }
+        if ((ci_contains(text, "apk") && ci_contains(text, " add ") &&
                    (ci_contains(text, "http") ||
                     ci_contains(text, "--allow-untrusted"))) ||
                    (ci_contains(text, "snap") && ci_contains(text, " install ") &&
@@ -2038,18 +2292,21 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, ".flatpak"))) ||
                    (ci_contains(text, "choco") && ci_contains(text, " install ") &&
                     ci_contains(text, ".nupkg"))) {
-            what = "remote/bundle package install";
+            PASTE_WHAT("remote/bundle package install");
         /* ── config-management remote exec — pull/exec primitives ── */
-        } else if (ci_contains(text, "ansible-pull") &&
+        }
+        if (ci_contains(text, "ansible-pull") &&
                    ci_contains(text, "http")) {
-            what = "ansible-pull playbook fetch+run";
-        } else if ((ci_contains(text, "ansible-playbook") &&
+            PASTE_WHAT("ansible-pull playbook fetch+run");
+        }
+        if ((ci_contains(text, "ansible-playbook") &&
                     ci_contains(text, "http")) ||
                    (ci_contains(text, "ansible-galaxy") &&
                     ci_contains(text, " install ") &&
                     (ci_contains(text, "http") || ci_contains(text, " -r ")))) {
-            what = "ansible remote playbook install";
-        } else if ((ci_contains(text, "ansible") &&
+            PASTE_WHAT("ansible remote playbook install");
+        }
+        if ((ci_contains(text, "ansible") &&
                     (ci_contains(text, " -m shell") ||
                      ci_contains(text, " -m command") ||
                      ci_contains(text, " -m raw"))) ||
@@ -2057,10 +2314,11 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, "cmd.run") || ci_contains(text, "cmd.shell") ||
                      ci_contains(text, "cmd.exec_code"))) ||
                    (ci_contains(text, "salt-call") && ci_contains(text, "cmd"))) {
-            what = "remote ad-hoc command exec";
+            PASTE_WHAT("remote ad-hoc command exec");
         /* ── c234: miner exec / terminal injection / agent kill /
          * env exfil / winrm / timestomp / misc residuals ── */
-        } else if (ci_contains(text, "xmrig") || ci_contains(text, "minerd") ||
+        }
+        if (ci_contains(text, "xmrig") || ci_contains(text, "minerd") ||
                    ci_contains(text, "cpuminer") || ci_contains(text, "xmr-stak") ||
                    ci_contains(text, "ethminer") || ci_contains(text, "bzminer") ||
                    ci_contains(text, "lolminer") || ci_contains(text, "phoenixminer") ||
@@ -2076,13 +2334,15 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "viabtc") || ci_contains(text, "2miners") ||
                    ci_contains(text, "flypool") || ci_contains(text, "herominers") ||
                    ci_contains(text, "unmineable") || ci_contains(text, "miningpool")) {
-            what = "cryptominer exec / pool config";
-        } else if (ci_contains(text, "tmux send-keys") ||
+            PASTE_WHAT("cryptominer exec / pool config");
+        }
+        if (ci_contains(text, "tmux send-keys") ||
                    ci_contains(text, "send-keys ") ||
                    (ci_contains(text, "screen") &&
                     ci_contains(text, "-x stuff"))) {
-            what = "terminal session injection";
-        } else if ((ci_contains(text, "pkill") || ci_contains(text, "killall") ||
+            PASTE_WHAT("terminal session injection");
+        }
+        if ((ci_contains(text, "pkill") || ci_contains(text, "killall") ||
                     ci_contains(text, "kill -9")) &&
                    (ci_contains(text, "osquery") || ci_contains(text, "filebeat") ||
                     ci_contains(text, "datadog-agent") || ci_contains(text, "fluentd") ||
@@ -2094,8 +2354,9 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "insight-agent") || ci_contains(text, "sysmon") ||
                     ci_contains(text, "velociraptor") || ci_contains(text, "falcon") ||
                     ci_contains(text, "sentinel") || ci_contains(text, "elastic-agent"))) {
-            what = "monitoring/EDR agent kill";
-        } else if ((strstr(text, "env |") || strstr(text, "env|") ||
+            PASTE_WHAT("monitoring/EDR agent kill");
+        }
+        if ((strstr(text, "env |") || strstr(text, "env|") ||
                     strstr(text, "printenv") || strstr(text, "env >") ||
                     strstr(text, "printenv >")) &&
                    (strstr(text, "| nc") || strstr(text, "|nc") ||
@@ -2103,21 +2364,25 @@ hlse_check_paste(const char *text) {
                     strstr(text, "|curl") || strstr(text, "curl -F") ||
                     strstr(text, "curl -d") || strstr(text, "wget --post") ||
                     strstr(text, "| wget") || strstr(text, "| socat"))) {
-            what = "env-var dump piped to network (secrets exfil)";
-        } else if (strstr(text, "| sudo -S") || strstr(text, "|sudo -S") ||
+            PASTE_WHAT("env-var dump piped to network (secrets exfil)");
+        }
+        if (strstr(text, "| sudo -S") || strstr(text, "|sudo -S") ||
                    strstr(text, "| su -") || strstr(text, "|su -") ||
                    strstr(text, "su -c ")) {
-            what = "stdin-password / su exec pipe";
-        } else if ((ci_contains(text, "docker.sock") &&
+            PASTE_WHAT("stdin-password / su exec pipe");
+        }
+        if ((ci_contains(text, "docker.sock") &&
                     (ci_contains(text, " -v ") || ci_contains(text, "--volume"))) ||
                    (ci_contains(text, "docker") &&
                     ci_contains(text, "--socket"))) {
-            what = "docker socket mount (host control)";
-        } else if (ci_contains(text, "credential.helper") &&
+            PASTE_WHAT("docker socket mount (host control)");
+        }
+        if (ci_contains(text, "credential.helper") &&
                    (ci_contains(text, "store") || ci_contains(text, "get") ||
                     ci_contains(text, "!"))) {
-            what = "git credential.helper theft config";
-        } else if (((ci_contains(text, "enter-pssession") ||
+            PASTE_WHAT("git credential.helper theft config");
+        }
+        if (((ci_contains(text, "enter-pssession") ||
                     ci_contains(text, "new-pssession") ||
                     ci_contains(text, "invoke-command") ||
                     ci_contains(text, "invoke-wmimethod") ||
@@ -2126,17 +2391,20 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "-computer ") || ci_contains(text, "-cn "))) ||
                   (ci_contains(text, "winrm") &&
                    ci_contains(text, "quickconfig"))) {
-            what = "WinRM / PSRemoting remote exec";
-        } else if (ci_contains(text, "touch") &&
+            PASTE_WHAT("WinRM / PSRemoting remote exec");
+        }
+        if (ci_contains(text, "touch") &&
                    (ci_contains(text, " -r") || ci_contains(text, " -t") ||
                     ci_contains(text, " -d") || ci_contains(text, "--reference"))) {
-            what = "timestomp (anti-forensic timestamp)";
-        } else if (ci_contains(text, "batch -f") || ci_contains(text, "| batch") ||
+            PASTE_WHAT("timestomp (anti-forensic timestamp)");
+        }
+        if (ci_contains(text, "batch -f") || ci_contains(text, "| batch") ||
                    ci_contains(text, "|batch")) {
-            what = "batch (at-family) queued exec";
+            PASTE_WHAT("batch (at-family) queued exec");
         /* ── c235: interpreter -e+exec-verb / npx-URL / git upload-pack /
          * exec -a / setcap+setfacl / netns+setpriv / misc ── */
-        } else if ((ci_contains(text, "node -e") || ci_contains(text, "nodejs -e") ||
+        }
+        if ((ci_contains(text, "node -e") || ci_contains(text, "nodejs -e") ||
                     ci_contains(text, "node --eval") || ci_contains(text, "python -c") ||
                     ci_contains(text, "python2 -c") || ci_contains(text, "python3 -c") ||
                     ci_contains(text, "perl -e") || ci_contains(text, "ruby -e") ||
@@ -2150,57 +2418,70 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "passthru(") || ci_contains(text, "getruntime") ||
                     ci_contains(text, "os.execute") || ci_contains(text, "eval(") ||
                     ci_contains(text, "commands.getoutput") || ci_contains(text, "loadstring"))) {
-            what = "interpreter -e/-c inline exec";
-        } else if ((ci_contains(text, "npx") || ci_contains(text, "pnpm dlx") ||
+            PASTE_WHAT("interpreter -e/-c inline exec");
+        }
+        if ((ci_contains(text, "npx") || ci_contains(text, "pnpm dlx") ||
                     ci_contains(text, "bunx") || ci_contains(text, "yarn dlx")) &&
                    (ci_contains(text, "http") || ci_contains(text, "git+"))) {
-            what = "npx-family remote package exec";
-        } else if (ci_contains(text, "git clone") &&
+            PASTE_WHAT("npx-family remote package exec");
+        }
+        if (ci_contains(text, "git clone") &&
                    (ci_contains(text, "--upload-pack") || ci_contains(text, " -u "))) {
-            what = "git clone upload-pack exec";
-        } else if (ci_contains(text, "exec -a")) {
-            what = "argv0 masquerade (exec -a)";
-        } else if (ci_contains(text, "setcap") &&
+            PASTE_WHAT("git clone upload-pack exec");
+        }
+        if (ci_contains(text, "exec -a")) {
+            PASTE_WHAT("argv0 masquerade (exec -a)");
+        }
+        if (ci_contains(text, "setcap") &&
                    (ci_contains(text, "+ep") || ci_contains(text, "+ei"))) {
-            what = "file-capability grant (setcap)";
-        } else if (ci_contains(text, "setfacl") &&
+            PASTE_WHAT("file-capability grant (setcap)");
+        }
+        if (ci_contains(text, "setfacl") &&
                    ci_contains(text, " -m") &&
                    (ci_contains(text, "/etc/") || ci_contains(text, "/root"))) {
-            what = "acl grant on system file (setfacl)";
-        } else if (ci_contains(text, "swapoff -") ||
+            PASTE_WHAT("acl grant on system file (setfacl)");
+        }
+        if (ci_contains(text, "swapoff -") ||
                    ci_contains(text, "swapoff /")) {
-            what = "swap disable (ransomware-prep class)";
-        } else if (
+            PASTE_WHAT("swap disable (ransomware-prep class)");
+        }
+        if (
                    ci_contains(text, "netns exec") ||
                    (ci_contains(text, "setpriv") &&
                     (ci_contains(text, "--reuid") || ci_contains(text, "--inh-caps") ||
                      ci_contains(text, "--bounding-set") || ci_contains(text, "--ruid") ||
                      ci_contains(text, "--euid")))) {
-            what = "namespace / privilege-context exec";
-        } else if (ci_contains(text, "bwrap") &&
+            PASTE_WHAT("namespace / privilege-context exec");
+        }
+        if (ci_contains(text, "bwrap") &&
                    (ci_contains(text, "--bind") || ci_contains(text, "--dev-bind") ||
                     ci_contains(text, "--ro-bind"))) {
-            what = "bwrap bind-mount (namespace escape)";
-        } else if (ci_contains(text, "emacs") &&
+            PASTE_WHAT("bwrap bind-mount (namespace escape)");
+        }
+        if (ci_contains(text, "emacs") &&
                    (ci_contains(text, " -l ") || ci_contains(text, "--eval") ||
                     ci_contains(text, "-batch"))) {
-            what = "emacs batch/elisp exec";
-        } else if (ci_contains(text, "sed") &&
+            PASTE_WHAT("emacs batch/elisp exec");
+        }
+        if (ci_contains(text, "sed") &&
                    (ci_contains(text, "1e ") || ci_contains(text, "1e'") ||
                     ci_contains(text, "1e\"") || ci_contains(text, " e ") ||
                     ci_contains(text, " e'"))) {
-            what = "sed e-flag exec";
-        } else if (ci_contains(text, "rsync") && ci_contains(text, "--rsh")) {
-            what = "rsync remote-shell exec";
-        } else if ((ci_contains(text, "update-rc.d") || ci_contains(text, "chkconfig") ||
+            PASTE_WHAT("sed e-flag exec");
+        }
+        if (ci_contains(text, "rsync") && ci_contains(text, "--rsh")) {
+            PASTE_WHAT("rsync remote-shell exec");
+        }
+        if ((ci_contains(text, "update-rc.d") || ci_contains(text, "chkconfig") ||
                     ci_contains(text, "rc-update")) &&
                    (ci_contains(text, " defaults") || ci_contains(text, " on") ||
                     ci_contains(text, " add") || ci_contains(text, " enable"))) {
-            what = "sysvinit service enable";
+            PASTE_WHAT("sysvinit service enable");
         /* ── c236: env-var injection (loader/interpreter/vcs/shell/proxy/
          * path hijack) + lateral movement (remote schtasks/sc/reg/at,
          * admin shares) + Defender exclusions + cred-enumeration ── */
-        } else if (ci_contains(text, "ld_preload=") ||
+        }
+        if (ci_contains(text, "ld_preload=") ||
                    ci_contains(text, "ld_library_path=") ||
                    ci_contains(text, "dyld_insert_libraries=") ||
                    ci_contains(text, "dyld_fallback") ||
@@ -2245,19 +2526,22 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "path=/var/tmp") ||
                    ci_contains(text, "path=.") ||
                    ci_contains(text, "path=/usr/tmp")) {
-            what = "env-var injection (loader/interpreter/proxy/path hijack)";
-        } else if ((ci_contains(text, "schtasks") &&
+            PASTE_WHAT("env-var injection (loader/interpreter/proxy/path hijack)");
+        }
+        if ((ci_contains(text, "schtasks") &&
                     (ci_contains(text, " /s ") || ci_contains(text, " /s\\"))) ||
                    ci_contains(text, "sc \\") || ci_contains(text, "sc.exe \\") ||
                    ci_contains(text, "reg add \\") ||
                    ci_contains(text, "at \\")) {
-            what = "remote admin primitive (schtasks/sc/reg/at \\host)";
-        } else if (strstr(text, "\\\\") &&
+            PASTE_WHAT("remote admin primitive (schtasks/sc/reg/at \\host)");
+        }
+        if (strstr(text, "\\\\") &&
                    (strstr(text, "\\c$") || strstr(text, "\\d$") ||
                     strstr(text, "\\admin$") || strstr(text, "\\ipc$") ||
                     strstr(text, "\\print$"))) {
-            what = "admin-share path (\\\\host\\c$/admin$/ipc$)";
-        } else if (ci_contains(text, "add-mppreference") ||
+            PASTE_WHAT("admin-share path (\\\\host\\c$/admin$/ipc$)");
+        }
+        if (ci_contains(text, "add-mppreference") ||
                    ci_contains(text, "set-mppreference") ||
                    ci_contains(text, "-exclusionpath") ||
                    ci_contains(text, "-exclusionprocess") ||
@@ -2271,38 +2555,45 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "-disablearchive") ||
                    ci_contains(text, "-disableemailscanning") ||
                    ci_contains(text, "-disablenetworkprotection")) {
-            what = "Defender exclusion/disable (AV weakening)";
-        } else if (ci_contains(text, "vaultcmd") ||
+            PASTE_WHAT("Defender exclusion/disable (AV weakening)");
+        }
+        if (ci_contains(text, "vaultcmd") ||
                    ci_contains(text, "keymgr") ||
                    (ci_contains(text, "netsh wlan") &&
                     (ci_contains(text, "key") || ci_contains(text, "export")))) {
-            what = "credential-store enumeration";
-        } else if (ci_contains(text, "explorer") &&
+            PASTE_WHAT("credential-store enumeration");
+        }
+        if (ci_contains(text, "explorer") &&
                    (ci_contains(text, "http") || ci_contains(text, "shell:") ||
                     strstr(text, "\\\\"))) {
-            what = "explorer remote-open (URL/shell:/UNC)";
-        } else if ((ci_contains(text, "start-process") &&
+            PASTE_WHAT("explorer remote-open (URL/shell:/UNC)");
+        }
+        if ((ci_contains(text, "start-process") &&
                     ci_contains(text, "-verb runas")) ||
                    ci_contains(text, "runas /netonly")) {
-            what = "runas/elevation attempt";
-        } else if (ci_contains(text, "fsutil") &&
+            PASTE_WHAT("runas/elevation attempt");
+        }
+        if (ci_contains(text, "fsutil") &&
                    (ci_contains(text, "setzerodata") ||
                     ci_contains(text, "setvaliddata") ||
                     ci_contains(text, "behavior set"))) {
-            what = "fsutil data-wipe/behavior change";
-        } else if (ci_contains(text, "diskpart") &&
+            PASTE_WHAT("fsutil data-wipe/behavior change");
+        }
+        if (ci_contains(text, "diskpart") &&
                    (ci_contains(text, "clean") || ci_contains(text, "create") ||
                     ci_contains(text, "format") || ci_contains(text, "select disk"))) {
-            what = "diskpart partition destructive op";
+            PASTE_WHAT("diskpart partition destructive op");
         /* ── c237: PowerShell cmdlets (in-memory load, persistence,
          * accounts, remoting, install, policy-bypass, MOTW strip) +
          * audit/anti-forensics + destructive Windows + sudo/key ops ── */
-        } else if (ci_contains(text, "add-type") ||
+        }
+        if (ci_contains(text, "add-type") ||
                    ci_contains(text, "assembly]::load") ||
                    ci_contains(text, "assembly.load") ||
                    ci_contains(text, "loadwithpartialname")  ) {
-            what = "PowerShell/.NET in-memory assembly load";
-        } else if ((ci_contains(text, "new-service") &&
+            PASTE_WHAT("PowerShell/.NET in-memory assembly load");
+        }
+        if ((ci_contains(text, "new-service") &&
                     ci_contains(text, "-binarypathname")) ||
                    ci_contains(text, "register-scheduledtask") ||
                    ci_contains(text, "new-scheduledtask") ||
@@ -2313,16 +2604,19 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, "\\run") || ci_contains(text, "runonce") ||
                      ci_contains(text, "\\ifeo") || ci_contains(text, "winlogon") ||
                      ci_contains(text, "image file") || ci_contains(text, "shell\\")))) {
-            what = "PowerShell persistence install (service/task/runkey)";
-        } else if (ci_contains(text, "set-executionpolicy") &&
+            PASTE_WHAT("PowerShell persistence install (service/task/runkey)");
+        }
+        if (ci_contains(text, "set-executionpolicy") &&
                    (ci_contains(text, "bypass") || ci_contains(text, "unrestricted"))) {
-            what = "execution-policy bypass (cmdlet form)";
-        } else if (ci_contains(text, "unblock-file") ||
+            PASTE_WHAT("execution-policy bypass (cmdlet form)");
+        }
+        if (ci_contains(text, "unblock-file") ||
                    (ci_contains(text, "zone.identifier") &&
                     (ci_contains(text, "remove") || ci_contains(text, "del") ||
                      ci_contains(text, "clear")))) {
-            what = "MOTW strip (Unblock-File/Zone.Identifier removal)";
-        } else if (ci_contains(text, "new-localuser") ||
+            PASTE_WHAT("MOTW strip (Unblock-File/Zone.Identifier removal)");
+        }
+        if (ci_contains(text, "new-localuser") ||
                    ci_contains(text, "add-localgroupmember") ||
                    ci_contains(text, "enable-localuser") ||
                    (ci_contains(text, "set-localuser") &&
@@ -2330,8 +2624,9 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "new-aduser") ||
                    ci_contains(text, "add-adgroupmember") ||
                    ci_contains(text, "set-adaccountpassword")) {
-            what = "account creation/group grant (PowerShell)";
-        } else if (ci_contains(text, "enable-psremoting") ||
+            PASTE_WHAT("account creation/group grant (PowerShell)");
+        }
+        if (ci_contains(text, "enable-psremoting") ||
                    ci_contains(text, "enable-wsmancredssp") ||
                    ci_contains(text, "install-module") ||
                    ci_contains(text, "install-package") ||
@@ -2340,47 +2635,55 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, "enable-windowsoptionalfeature")) &&
                     (ci_contains(text, "telnet") || ci_contains(text, "smb1") ||
                      ci_contains(text, "snmp") || ci_contains(text, "tftp")))) {
-            what = "PS remoting/gallery-install/legacy-feature enable";
-        } else if (ci_contains(text, "auditpol") &&
+            PASTE_WHAT("PS remoting/gallery-install/legacy-feature enable");
+        }
+        if (ci_contains(text, "auditpol") &&
                    (ci_contains(text, "/clear") || ci_contains(text, "/remove") ||
                     ci_contains(text, "/set") || ci_contains(text, "/backup"))) {
-            what = "audit-policy wipe (auditpol)";
-        } else if (ci_contains(text, "shutdown") &&
+            PASTE_WHAT("audit-policy wipe (auditpol)");
+        }
+        if (ci_contains(text, "shutdown") &&
                    (ci_contains(text, " /s") || ci_contains(text, " /r") ||
                     ci_contains(text, " /m") || ci_contains(text, " /p") ||
                     ci_contains(text, " -s") || ci_contains(text, " -r"))) {
-            what = "shutdown/reboot (local or remote)";
-        } else if ((ci_contains(text, "format") &&
+            PASTE_WHAT("shutdown/reboot (local or remote)");
+        }
+        if ((ci_contains(text, "format") &&
                     (ci_contains(text, " c:") || ci_contains(text, " d:") ||
                      ci_contains(text, " e:") || ci_contains(text, " f:") ||
                      ci_contains(text, " /q") || ci_contains(text, " /y"))) ||
                    ci_contains(text, "format.com") ||
                    ci_contains(text, "del /s") || ci_contains(text, "del /f /s") ||
                    ci_contains(text, "rmdir /s") || ci_contains(text, "rd /s")) {
-            what = "format/recursive-delete (Windows destructive)";
-        } else if (ci_contains(text, "attrib ") &&
+            PASTE_WHAT("format/recursive-delete (Windows destructive)");
+        }
+        if (ci_contains(text, "attrib ") &&
                    (ci_contains(text, "+h") || ci_contains(text, "+s") ||
                     ci_contains(text, " -h") || ci_contains(text, " -s"))) {
-            what = "attrib hidden/system flag (evasion)";
-        } else if ((ci_contains(text, "net config") &&
+            PASTE_WHAT("attrib hidden/system flag (evasion)");
+        }
+        if ((ci_contains(text, "net config") &&
                     ci_contains(text, "/hidden")) ||
                    (ci_contains(text, "netsh") &&
                     (ci_contains(text, " -r ") || ci_contains(text, " -f ")))) {
-            what = "hidden-server flag / remote or scripted netsh";
-        } else if ((ci_contains(text, "klist") &&
+            PASTE_WHAT("hidden-server flag / remote or scripted netsh");
+        }
+        if ((ci_contains(text, "klist") &&
                     (ci_contains(text, "purge") || ci_contains(text, "get"))) ||
                    ci_contains(text, "sudoedit") ||
                    ci_contains(text, "sudo -e") ||
                    (ci_contains(text, "net time") &&
                     ci_contains(text, "/set"))) {
-            what = "ticket/sudo-edit/time-set primitive";
-        } else if (ci_contains(text, "get-credential") ||
+            PASTE_WHAT("ticket/sudo-edit/time-set primitive");
+        }
+        if (ci_contains(text, "get-credential") ||
                    ci_contains(text, "convertfrom-securestring") ||
                    ci_contains(text, "convertto-securestring") ||
                    ci_contains(text, "export-clixml") ||
                    ci_contains(text, "import-clixml")) {
-            what = "credential materialization (PS cred cmdlets)";
-        } else if (ci_contains(text, "gpg --export-secret") ||
+            PASTE_WHAT("credential materialization (PS cred cmdlets)");
+        }
+        if (ci_contains(text, "gpg --export-secret") ||
                    (ci_contains(text, "pkcs12") && ci_contains(text, "-export")) ||
                    ci_contains(text, "ssh-keygen -y") ||
                    ci_contains(text, "keytool -exportcert") ||
@@ -2390,8 +2693,9 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "iam create-access-key") ||
                    (ci_contains(text, "aws configure set") &&
                     (ci_contains(text, "access") || ci_contains(text, "secret")))) {
-            what = "key-material export/creation";
-        } else if ((ci_contains(text, "puppet") && ci_contains(text, " apply ") &&
+            PASTE_WHAT("key-material export/creation");
+        }
+        if ((ci_contains(text, "puppet") && ci_contains(text, " apply ") &&
                     ci_contains(text, "http")) ||
                    ((ci_contains(text, "chef-client") ||
                      ci_contains(text, "chef-solo")) &&
@@ -2399,11 +2703,12 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "make") && ci_contains(text, " -f ") &&
                     ci_contains(text, "http")) ||
                    ci_contains(text, "at -f ")) {
-            what = "remote recipe/makefile exec";
+            PASTE_WHAT("remote recipe/makefile exec");
         /* ── c238: systemctl/service/runlevel control + account mgmt +
          * firewall rule-add + sysctl security keys + kernel-module
          * load + boot/store-config + sniff/spoof tools ── */
-        } else if (ci_contains(text, "systemctl") &&
+        }
+        if (ci_contains(text, "systemctl") &&
                    (ci_contains(text, " stop") || ci_contains(text, " disable") ||
                     ci_contains(text, " mask") || ci_contains(text, " kill") ||
                     ci_contains(text, " halt") || ci_contains(text, " poweroff") ||
@@ -2411,8 +2716,9 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, " suspend") || ci_contains(text, " hibernate") ||
                     ci_contains(text, " emergency") || ci_contains(text, " rescue") ||
                     ci_contains(text, " isolate") || ci_contains(text, " restart"))) {
-            what = "systemctl stop/mask/shutdown verb";
-        } else if ((ci_contains(text, "service ") &&
+            PASTE_WHAT("systemctl stop/mask/shutdown verb");
+        }
+        if ((ci_contains(text, "service ") &&
                     (ci_contains(text, " stop") || ci_contains(text, " start") ||
                      ci_contains(text, " restart") || ci_contains(text, " disable"))) ||
                    (ci_contains(text, "loginctl") &&
@@ -2429,8 +2735,9 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "shutdown") &&
                     (ci_contains(text, " -h")  ||
                      ci_contains(text, " -p") || ci_contains(text, " -r")))) {
-            what = "service/runlevel/power primitive";
-        } else if (ci_contains(text, "userdel ") || ci_contains(text, "groupdel ") ||
+            PASTE_WHAT("service/runlevel/power primitive");
+        }
+        if (ci_contains(text, "userdel ") || ci_contains(text, "groupdel ") ||
                    (ci_contains(text, "gpasswd") &&
                     (ci_contains(text, " -a") || ci_contains(text, " -d")  || ci_contains(text, " -m"))) ||
                    (ci_contains(text, "usermod") &&
@@ -2450,14 +2757,16 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, "-m -1") || ci_contains(text, "-m 0") ||
                      ci_contains(text, "-e -1") || ci_contains(text, "-e 0") ||
                      ci_contains(text, "-i -1") || ci_contains(text, "-i 0")))) {
-            what = "account-create/password/lockout-reset";
-        } else if (((ci_contains(text, "iptables") ||
+            PASTE_WHAT("account-create/password/lockout-reset");
+        }
+        if (((ci_contains(text, "iptables") ||
                      ci_contains(text, "ip6tables")) &&
                     ci_contains(text, "--policy")) ||
                    (ci_contains(text, "ufw") &&
                     ci_contains(text, "default allow"))) {
-            what = "firewall default-policy neutralize";
-        } else if (ci_contains(text, "sysctl") &&
+            PASTE_WHAT("firewall default-policy neutralize");
+        }
+        if (ci_contains(text, "sysctl") &&
                    (ci_contains(text, " -w") || ci_contains(text, "=")) &&
                    (ci_contains(text, "randomize_va_space") ||
                     ci_contains(text, "core_pattern") ||
@@ -2484,14 +2793,16 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "protected_fifos") ||
                     ci_contains(text, "protected_regular") ||
                     ci_contains(text, "kernel.sysrq"))) {
-            what = "sysctl security-parameter write";
-        } else if ((ci_contains(text, "modprobe") &&
+            PASTE_WHAT("sysctl security-parameter write");
+        }
+        if ((ci_contains(text, "modprobe") &&
                     (ci_contains(text, " /") || ci_contains(text, "--force") ||
                      ci_contains(text, " -f "))) ||
                    (ci_contains(text, "dkms") &&
                     (ci_contains(text, "install") || ci_contains(text, "add")))) {
-            what = "kernel-module load (modprobe/dkms)";
-        } else if ((ci_contains(text, "ldconfig") &&
+            PASTE_WHAT("kernel-module load (modprobe/dkms)");
+        }
+        if ((ci_contains(text, "ldconfig") &&
                     (ci_contains(text, " /") || ci_contains(text, " -n "))) ||
                    ci_contains(text, "ssh-copy-id") ||
                    (ci_contains(text, "ssh-add") &&
@@ -2499,8 +2810,9 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " -d"))) ||
                    (ci_contains(text, "apt-key") && ci_contains(text, "add")) ||
                    (ci_contains(text, "rpm") && ci_contains(text, "--import"))) {
-            what = "ldconfig/ssh-key/trust-store primitive";
-        } else if ((ci_contains(text, "mokutil") &&
+            PASTE_WHAT("ldconfig/ssh-key/trust-store primitive");
+        }
+        if ((ci_contains(text, "mokutil") &&
                     (ci_contains(text, "--disable") || ci_contains(text, "--import") ||
                      ci_contains(text, " -i "))) ||
                    (ci_contains(text, "efibootmgr") &&
@@ -2509,8 +2821,9 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "efivar") && ci_contains(text, " -w")) ||
                    (ci_contains(text, "update-alternatives") &&
                     ci_contains(text, "--install"))) {
-            what = "secure-boot/boot-entry/alternatives primitive";
-        } else if ((ci_contains(text, "tcpdump") && ci_contains(text, " -w")) ||
+            PASTE_WHAT("secure-boot/boot-entry/alternatives primitive");
+        }
+        if ((ci_contains(text, "tcpdump") && ci_contains(text, " -w")) ||
                    (ci_contains(text, "tshark") && ci_contains(text, " -w")) ||
                    ci_contains(text, "dumpcap") || ci_contains(text, "ngrep") ||
                    ci_contains(text, "tcpflow") || ci_contains(text, "arpspoof") ||
@@ -2518,12 +2831,13 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "yersinia") || ci_contains(text, "slowloris") ||
                    ci_contains(text, "nping") ||
                    (ci_contains(text, "ostinato") && ci_contains(text, " -"))) {
-            what = "sniff/spoof/DoS tool primitive";
+            PASTE_WHAT("sniff/spoof/DoS tool primitive");
         /* ── c239: GUI/input injection + screen/mic capture +
          * web-terminal/VNC backdoors + eBPF + exfil upload +
          * AD-recon/C2/RAT/phishing names + SUID install +
          * sqlite cred-db + LOLBin names ── */
-        } else if (ci_contains(text, "xdotool") || ci_contains(text, "ydotool") ||
+        }
+        if (ci_contains(text, "xdotool") || ci_contains(text, "ydotool") ||
                    ci_contains(text, "wtype") ||
                    (ci_contains(text, "xhost") && ci_contains(text, " +")) ||
                    (ci_contains(text, "import") && ci_contains(text, "-window")) ||
@@ -2544,8 +2858,9 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, " -d") || ci_contains(text, " -t"))) ||
                    ci_contains(text, "logkeys") || ci_contains(text, "evsieve") ||
                    (ci_contains(text, "keyd") && ci_contains(text, "monitor"))) {
-            what = "GUI-injection/screen-mic capture";
-        } else if (ci_contains(text, "ttyd") || ci_contains(text, "gotty") ||
+            PASTE_WHAT("GUI-injection/screen-mic capture");
+        }
+        if (ci_contains(text, "ttyd") || ci_contains(text, "gotty") ||
                    ci_contains(text, "shellinabox") || ci_contains(text, "tmate") ||
                    ci_contains(text, "teleconsole") || ci_contains(text, "sish") ||
                    ci_contains(text, "wstunnel") || ci_contains(text, "regeorg") ||
@@ -2553,15 +2868,17 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "x11vnc") || ci_contains(text, "vncserver")  || ci_contains(text, "tigervnc") ||
                    ci_contains(text, "wayvnc") || ci_contains(text, "bpftool") ||
                    ci_contains(text, "bpftrace")) {
-            what = "web-terminal/VNC/eBPF backdoor primitive";
-        } else if ((ci_contains(text, "curl") &&
+            PASTE_WHAT("web-terminal/VNC/eBPF backdoor primitive");
+        }
+        if ((ci_contains(text, "curl") &&
                     ((ci_contains(text, "@") &&
                       (ci_contains(text, " -f") || ci_contains(text, " -d") ||
                        ci_contains(text, "--form") || ci_contains(text, "--data"))) ||
                      ci_contains(text, " -t ") || ci_contains(text, "--upload-file"))) ||
                    (ci_contains(text, "wget") && ci_contains(text, "--post-file"))) {
-            what = "curl/wget file-upload exfil form";
-        } else if (ci_contains(text, "certipy") || ci_contains(text, "adidnsdump") ||
+            PASTE_WHAT("curl/wget file-upload exfil form");
+        }
+        if (ci_contains(text, "certipy") || ci_contains(text, "adidnsdump") ||
                    ci_contains(text, "windapsearch") || ci_contains(text, "ldeep") ||
                    ci_contains(text, "pywerview") || ci_contains(text, "rusthound") ||
                    ci_contains(text, "adenum") || ci_contains(text, "ldapdomaindump") ||
@@ -2592,8 +2909,9 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "raccoon") && ci_contains(text, " -")) ||
                    (ci_contains(text, "vidar") && ci_contains(text, " -")) ||
                    (ci_contains(text, "bumblebee") && ci_contains(text, " -"))) {
-            what = "AD-recon/C2/offensive-tool name";
-        } else if (ci_contains(text, "asyncrat") || ci_contains(text, "njrat") ||
+            PASTE_WHAT("AD-recon/C2/offensive-tool name");
+        }
+        if (ci_contains(text, "asyncrat") || ci_contains(text, "njrat") ||
                    ci_contains(text, "nanocore") || ci_contains(text, "remcos") ||
                    ci_contains(text, "xworm") || ci_contains(text, "venomrat") ||
                    ci_contains(text, "purecrypter") || ci_contains(text, "azorult") ||
@@ -2616,8 +2934,9 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "blackeye") || ci_contains(text, "advphishing") ||
                    ci_contains(text, "king-phisher") || ci_contains(text, "wifiphisher") ||
                    ci_contains(text, "wifipumpkin") || ci_contains(text, "airgeddon")) {
-            what = "malware-family/phishing-kit name";
-        } else if ((ci_contains(text, "install") &&
+            PASTE_WHAT("malware-family/phishing-kit name");
+        }
+        if ((ci_contains(text, "install") &&
                     (ci_contains(text, " -m 4") || ci_contains(text, " -m 2") ||
                      ci_contains(text, " -m u+s") || ci_contains(text, " -m +s"))) ||
                    (ci_contains(text, "robocopy") && ci_contains(text, " /b")) ||
@@ -2655,11 +2974,12 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "procdump") &&
                     (ci_contains(text, " -ma") || ci_contains(text, " -mm") ||
                      ci_contains(text, "lsass")))) {
-            what = "suid-install/cred-db/lolbin-name primitive";
+            PASTE_WHAT("suid-install/cred-db/lolbin-name primitive");
         /* c240: process-memory/core scrape + namespace/dbus exec +
          * stream/upload exfil + file-serve hosts + MITM + macOS
          * defense-off/exec/account primitives ── */
-        } else if ((ci_contains(text, "lldb") && ci_contains(text, " -p")) ||
+        }
+        if ((ci_contains(text, "lldb") && ci_contains(text, " -p")) ||
                    ci_contains(text, "gcore") || ci_contains(text, "eu-stack") ||
                    ci_contains(text, "procstat") ||
                    (ci_contains(text, "coredumpctl") &&
@@ -2678,8 +2998,9 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, "/environ") ||
                      ci_contains(text, "/maps") ||
                      ci_contains(text, "kcore")))) {
-            what = "memory/core scrape primitive";
-        } else if ((ci_contains(text, "unshare") &&
+            PASTE_WHAT("memory/core scrape primitive");
+        }
+        if ((ci_contains(text, "unshare") &&
                     (ci_contains(text, " -r") || ci_contains(text, " -u") ||
                      ci_contains(text, " -m") || ci_contains(text, "-rm") ||
                      ci_contains(text, "-ur") ||
@@ -2693,8 +3014,9 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "dbus-send") && ci_contains(text, "--system")) ||
                    (ci_contains(text, "loginctl") &&
                     ci_contains(text, "enable-linger"))) {
-            what = "namespace/dbus/systemd exec primitive";
-        } else if (((ci_contains(text, "nc ") || ci_contains(text, "ncat") ||
+            PASTE_WHAT("namespace/dbus/systemd exec primitive");
+        }
+        if (((ci_contains(text, "nc ") || ci_contains(text, "ncat") ||
                      ci_contains(text, "netcat")) && ci_contains(text, " <")) ||
                    ((ci_contains(text, "tar") || ci_contains(text, "dd ") ||
                      ci_contains(text, "cat ")) &&
@@ -2721,8 +3043,9 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "ip neigh") &&
                     (ci_contains(text, "add") || ci_contains(text, "replace") ||
                      ci_contains(text, "del")))) {
-            what = "stream-exfil/serve-host/mitm primitive";
-        } else if ((ci_contains(text, "spctl") &&
+            PASTE_WHAT("stream-exfil/serve-host/mitm primitive");
+        }
+        if ((ci_contains(text, "spctl") &&
                     (ci_contains(text, "global-disable") ||
                      ci_contains(text, "--add"))) ||
                    (ci_contains(text, "csrutil") &&
@@ -2789,11 +3112,12 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, " run ")) ||
                    (ci_contains(text, "automator") &&
                     ci_contains(text, " -i"))) {
-            what = "macOS defense-off/exec/account primitive";
+            PASTE_WHAT("macOS defense-off/exec/account primitive");
         /* c241: Windows audit/ACL/AD/defense primitives + Unix
          * mount/SELinux/audit-off/xfrm/ebtables/bridge/monitor +
          * session-record + BSD + DNS/infra destructive forms ── */
-        } else if ((ci_contains(text, "wevtutil") &&
+        }
+        if ((ci_contains(text, "wevtutil") &&
                     ci_contains(text, " sl")) ||
                    (ci_contains(text, "logman") &&
                     (ci_contains(text, " create") ||
@@ -2856,8 +3180,9 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "pnputil") &&
                     (ci_contains(text, "/add-driver") ||
                      ci_contains(text, "/delete-driver")))) {
-            what = "windows audit/ACL/AD/defense primitive";
-        } else if ((ci_contains(text, "mount") &&
+            PASTE_WHAT("windows audit/ACL/AD/defense primitive");
+        }
+        if ((ci_contains(text, "mount") &&
                     (ci_contains(text, "--bind") ||
                      ci_contains(text, "--rbind") ||
                      ci_contains(text, "remount"))) ||
@@ -2951,8 +3276,9 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "resolvectl") &&
                     (ci_contains(text, " dns ") ||
                      ci_contains(text, " nta")))) {
-            what = "unix mount/selinux/audit/l2/session-record primitive";
-        } else if ((ci_contains(text, "rndc") &&
+            PASTE_WHAT("unix mount/selinux/audit/l2/session-record primitive");
+        }
+        if ((ci_contains(text, "rndc") &&
                     (ci_contains(text, "flush") || ci_contains(text, "reload") ||
                      ci_contains(text, "addzone") || ci_contains(text, "delzone") ||
                      ci_contains(text, "modzone") || ci_contains(text, "signing") ||
@@ -3002,10 +3328,11 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, " mod") ||
                      ci_contains(text, " down") ||
                      ci_contains(text, " delete")))) {
-            what = "dns-control/infra-destruct/cloud-wipe primitive";
+            PASTE_WHAT("dns-control/infra-destruct/cloud-wipe primitive");
         /* c242: Windows eventlog/defense/firewall/AD PS cmdlets +
          * boot/cert/sticky-keys/tunnel/exec primitives ── */
-        } else if (ci_contains(text, "eventcreate") ||
+        }
+        if (ci_contains(text, "eventcreate") ||
                    ci_contains(text, "clear-eventlog") ||
                    ci_contains(text, "remove-eventlog") ||
                    ci_contains(text, "limit-eventlog") ||
@@ -3222,10 +3549,11 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, "/reboot"))) ||
                    (ci_contains(text, "netdom") &&
                     ci_contains(text, " "))) {
-            what = "windows eventlog/defense/ad/boot/cert primitive";
+            PASTE_WHAT("windows eventlog/defense/ad/boot/cert primitive");
         /* c242: unix net-config writes + audit/anti-forensics +
          * account file edits + selinux/dhcp/postfix + pkg removal ── */
-        } else if ((ci_contains(text, "history") &&
+        }
+        if ((ci_contains(text, "history") &&
                     (ci_contains(text, " -c") ||
                      ci_contains(text, " -w") ||
                      ci_contains(text, " -d"))) ||
@@ -3435,10 +3763,11 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "azurehound") ||
                    ci_contains(text, "roadrecon") ||
                    ci_contains(text, "stormspotter")) {
-            what = "unix net-config/audit/account/package primitive";
+            PASTE_WHAT("unix net-config/audit/account/package primitive");
         /* c242: offensive tool names — scan/brute/exploit/c2/webshell/
          * cred-dump/privesc/k8s-attack/fleet-exec/tunnel families ── */
-        } else if ((ci_contains(text, "nmap") &&
+        }
+        if ((ci_contains(text, "nmap") &&
                     ci_contains(text, " -")) ||
                    ci_contains(text, "masscan") ||
                    ci_contains(text, "zmap") || ci_contains(text, "zgrab") ||
@@ -3682,11 +4011,12 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, " command") ||
                      ci_contains(text, " task") ||
                      ci_contains(text, " plan")))) {
-            what = "offensive-tool/recon/c2/webshell/cred-dump name";
+            PASTE_WHAT("offensive-tool/recon/c2/webshell/cred-dump name");
         /* c242: infra/cloud-writes + container/virt + ipmi/tpm +
          * cred-store + db-edit + mac ops + capture/clipboard +
          * forensics ── */
-        } else if ((ci_contains(text, "kubectl") &&
+        }
+        if ((ci_contains(text, "kubectl") &&
                     (ci_contains(text, " exec") ||
                      ci_contains(text, " cp ") ||
                      ci_contains(text, " port-forward") ||
@@ -4074,12 +4404,13 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "nbd-client") ||
                    (ci_contains(text, "nmap") &&
                     ci_contains(text, " -"))) {
-            what = "infra/cloud/container/cred-store/mac/forensic primitive";
+            PASTE_WHAT("infra/cloud/container/cred-store/mac/forensic primitive");
         /* c243: mobile device control + RE/OSINT names + SCADA/
          * telephony/queue + DB destructive + supply publish + CI/
          * deploy + supervisor/journald + hardware/radio/input snoop +
          * fake infra + phish/C2 extras ── */
-        } else if ((ci_contains(text, "adb") &&
+        }
+        if ((ci_contains(text, "adb") &&
                     (ci_contains(text, " shell") ||
                      ci_contains(text, " install") ||
                      ci_contains(text, " push") ||
@@ -4997,11 +5328,12 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "brave --remote-debugging") ||
                    ci_contains(text, "--remote-debugging-port") ||
                    ci_contains(text, "--remote-debugging-pipe")) {
-            what = "mobile/re/osint/infra-ctl/destructive primitive";
+            PASTE_WHAT("mobile/re/osint/infra-ctl/destructive primitive");
         /* c244: k8s/mesh/registry/IaC helpers + secret CLIs + UAC/
          * LOLBin extras + backup destruct + exec-context/interp
          * primitives + dialog spoof + VPN/proxy/NAT ── */
-        } else if (ci_contains(text, "kubectx") ||
+        }
+        if (ci_contains(text, "kubectx") ||
                    ci_contains(text, "kubens") ||
                    (ci_contains(text, "k9s") &&
                     ci_contains(text, " ")) ||
@@ -5398,7 +5730,7 @@ hlse_check_paste(const char *text) {
                        ci_contains(text, "socat") ||
                        ci_contains(text, " awk") ||
                        ci_contains(text, "base64")))))) {
-            what = "k8s/mesh/registry/iac/sec-cli/uac/exec primitive";
+            PASTE_WHAT("k8s/mesh/registry/iac/sec-cli/uac/exec primitive");
         }
         /* ── cycle-245: db exfil/backup + rmm/remote access + modern
            proxy/tunnel transports + BYOVD/packers + cloud-attack +
@@ -6174,7 +6506,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "add-appxpackage") ||
             ci_contains(text, "remove-appxpackage") ||
             ci_contains(text, "msix ")) {
-            what = "db-exfil/rmm/tunnel/byovd/cloud-attack/pkg primitive";
+            PASTE_WHAT("db-exfil/rmm/tunnel/byovd/cloud-attack/pkg primitive");
         }
         else if (
             /* jdk attach/exec primitives */
@@ -7060,7 +7392,7 @@ hlse_check_paste(const char *text) {
             (ci_contains(text, "synergy") && ci_contains(text, " -")) ||
             ci_contains(text, "wlfreerdp") ||
             ci_contains(text, "sdl-freerdp")) {
-            what = "jdk/sysinternals/ad/kerberos/routing/ids/gsm/flash/jailbreak/proxy/exec primitive";
+            PASTE_WHAT("jdk/sysinternals/ad/kerberos/routing/ids/gsm/flash/jailbreak/proxy/exec primitive");
         }
         else if (
             /* overlay / tunnel networks (extend beyond tailscale/vpn gate) */
@@ -7269,7 +7601,7 @@ hlse_check_paste(const char *text) {
             (ci_contains(text, "slmgr") && ci_contains(text, " /")) ||
             (ci_contains(text, "squirrel") && ci_contains(text, " --")) ||
             (ci_contains(text, "at.exe") && ci_contains(text, "\\\\"))) {
-            what = "overlay/git-destruct/decode/lolbin/exec primitive";
+            PASTE_WHAT("overlay/git-destruct/decode/lolbin/exec primitive");
         }
         else if (
             /* BSD r-tools + NIS/NIS+ (cleartext auth, recon) */
@@ -7439,8 +7771,9 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "postalias") ||
             ci_contains(text, "newaliases") ||
             ci_contains(text, "qmail")) {
-            what = "rtools/mail/sync/vcs/share-daemon/exec primitive";
-        } else if (
+            PASTE_WHAT("rtools/mail/sync/vcs/share-daemon/exec primitive");
+        }
+        if (
             /* interpreter / REPL inline-exec and editor escapes */
             ci_contains(text, "nodejs -e") || ci_contains(text, "nodejs --eval") ||
             (ci_contains(text, "irb") &&
@@ -7827,8 +8160,9 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " -t sshfs"))) ||
             ci_contains(text, "mount_smbfs") || ci_contains(text, "mount_nfs")
         ) {
-            what = "repl/escape/rmm/miner/storage/exec primitive";
-        } else if (
+            PASTE_WHAT("repl/escape/rmm/miner/storage/exec primitive");
+        }
+        if (
             /* storage teardown extras + fs destruction */
             ci_contains(text, "fstrim") ||
             ci_contains(text, "mkswap") || ci_contains(text, "resize2fs") ||
@@ -8045,8 +8379,9 @@ hlse_check_paste(const char *text) {
             strstr(text, "CPATH=:") || strstr(text, "XDG_DATA_DIRS=/") ||
             strstr(text, "XDG_DATA_DIRS=:") || strstr(text, "MAILCAP=/")
         ) {
-            what = "storage/input/stealer/env/exec primitive";
-        } else if (
+            PASTE_WHAT("storage/input/stealer/env/exec primitive");
+        }
+        if (
             /* time/NTP tampering */
             (ci_contains(text, "hwclock") && ci_contains(text, " -w")) ||
             (ci_contains(text, "ntpq") &&
@@ -8504,7 +8839,7 @@ hlse_check_paste(const char *text) {
             strstr(text, "XAUTHORITY=/") || strstr(text, "BROWSER=") ||
             strstr(text, "GPG_AGENT_INFO=") || strstr(text, "PINENTRY")
         ) {
-                    what = "time/procfs/kernel/tamper/exec-runtime primitive";
+                    PASTE_WHAT("time/procfs/kernel/tamper/exec-runtime primitive");
         }
     else if (ci_contains(text, "xhost") ||
              (ci_contains(text, "xauth") &&
@@ -9064,7 +9399,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "snmptrapd") || ci_contains(text, "snmpinform") ||
              ci_contains(text, "encode_keychange") || ci_contains(text, "snmpconf") ||
              ci_contains(text, "traptoemail")) {
-        what = "xcan/android/router/build/routing/mgmt/destructive primitive";
+        PASTE_WHAT("xcan/android/router/build/routing/mgmt/destructive primitive");
         }
         else if (ci_contains(text, "iscsicpl") ||
              (ci_contains(text, "wbadmin") &&
@@ -9276,7 +9611,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "systemextensionsctl") &&
               (ci_contains(text, " uninstall") || ci_contains(text, " reset"))) ||
              ci_contains(text, "lsappinfo") || ci_contains(text, "syspolicyd")) {
-        what = "macos/jail/build/signing/java/misc-exec primitive";
+        PASTE_WHAT("macos/jail/build/signing/java/misc-exec primitive");
         }
         else if (ci_contains(text, "dwagsvc") || ci_contains(text, "meshcentral") ||
              ci_contains(text, "meshagent") || ci_contains(text, "level.io") ||
@@ -9407,7 +9742,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "proot") &&
               (ci_contains(text, " -") || ci_contains(text, " /root") ||
                ci_contains(text, " .") || ci_contains(text, " -b")))) {
-        what = "rmm/policy/netrecon/cloud-primitive";
+        PASTE_WHAT("rmm/policy/netrecon/cloud-primitive");
         }
         else if (ci_contains(text, "core.sshcommand") ||
              ci_contains(text, "core.fsmonitor") ||
@@ -9506,7 +9841,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "amadmin") || ci_contains(text, "amtape") ||
              (ci_contains(text, "auditctl") &&
               (ci_contains(text, " -r") || ci_contains(text, " -e 0")))) {
-        what = "git-config-exec/watch/js/firmware/snapshot/uac/elf primitive";
+        PASTE_WHAT("git-config-exec/watch/js/firmware/snapshot/uac/elf primitive");
         }
         else if ((ci_contains(text, "dseditgroup") &&
               (ci_contains(text, " -o edit") || ci_contains(text, " -o add") ||
@@ -9803,7 +10138,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "scutil --set") ||
              (ci_contains(text, "bless") && ci_contains(text, " -")) ||
              (ci_contains(text, "lipo") && ci_contains(text, " -"))) {
-        what = "hpc/domainjoin/hsm/dns/mail/privesc/stego/tex primitive";
+        PASTE_WHAT("hpc/domainjoin/hsm/dns/mail/privesc/stego/tex primitive");
         }
         else if (ci_contains(text, "wsadmin") || ci_contains(text, "startserver") ||
              ci_contains(text, "stopserver") || ci_contains(text, "wlst") ||
@@ -10027,7 +10362,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dhcptest")  ||
              ci_contains(text, "dhcpstarv") || ci_contains(text, "dhcpig") ||
              ci_contains(text, "dibbler-")) {
-        what = "appserver/db/monitoring/edr/netdev/bmc/backup/tunnel/exec primitive";
+        PASTE_WHAT("appserver/db/monitoring/edr/netdev/bmc/backup/tunnel/exec primitive");
         }
         else if (ci_contains(text, "fls") ||
              (ci_contains(text, "istat") && ci_contains(text, " -")) ||
@@ -10281,7 +10616,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "terraformer") || ci_contains(text, "tf2pulumi") ||
              ci_contains(text, "former2") || ci_contains(text, "aztfexport") ||
              ci_contains(text, "terraforming") || ci_contains(text, "terracognita")) {
-        what = "forensics/idp/fuzz/chaos/data/ml/k8s/iac/git/llm/img primitive";
+        PASTE_WHAT("forensics/idp/fuzz/chaos/data/ml/k8s/iac/git/llm/img primitive");
         }
         
         else if (ci_contains(text, "owneredit.py") || ci_contains(text, "ticketconverter.py") ||
@@ -10445,7 +10780,7 @@ hlse_check_paste(const char *text) {
              /* libguestfs image write */
              ci_contains(text, "virt-make-fs") || ci_contains(text, "libguestfs") ||
              (ci_contains(text, "iceman") && ci_contains(text, " -"))) {
-        what = "c2/webshell/recon/bt/panel/selinux/backup-exfil/boot/bigdata/mq/ebpf/sandbox/doc/print/a11y/dbg primitive";
+        PASTE_WHAT("c2/webshell/recon/bt/panel/selinux/backup-exfil/boot/bigdata/mq/ebpf/sandbox/doc/print/a11y/dbg primitive");
         }
 
         /* cycle-260: blockchain/web3 + memdump/credview + token/privesc + ad-aux + obfuscate + vm primitives */
@@ -10524,7 +10859,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "supermin") ||
              (ci_contains(text, "lima") && ci_contains(text, " -") &&
               !ci_contains(text, "climate") && !ci_contains(text, "sublim"))) {
-        what = "web3/memdump/credview/token/ad-aux/obfuscate/wordlist/vm primitive";
+        PASTE_WHAT("web3/memdump/credview/token/ad-aux/obfuscate/wordlist/vm primitive");
         }
 
         /* cycle-261: esxi/msc-cpl/macos/devops/disk-quota/init-log/fw primitives */
@@ -10617,8 +10952,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "ferm") &&
               (ci_contains(text, " -") || ci_contains(text, " .conf"))) ||
              ci_contains(text, "firehol")) {
-        what = "esxi/msc-cpl/macos/fastlane/disk-quota/init-log/fw primitive";
-        } else if (
+        PASTE_WHAT("esxi/msc-cpl/macos/fastlane/disk-quota/init-log/fw primitive");
+        }
+        if (
              /* cycle-262: vcs-daemon/sci-re/build/js-runtime/firmware/pwmgr-cli/
                 re-tools/wsl-subshell/exfil-chan/scanner/sysinternals/gpg-aux/
                 cloud-cli/version-mgr/iac-aux/ci-runner/kv primitives */
@@ -10726,8 +11062,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "act -l") || ci_contains(text, "act -w ") ||
              ci_contains(text, "memcached") || ci_contains(text, "k3s ") ||
              ci_contains(text, "k0s ") || ci_contains(text, "openshift-install")) {
-        what = "vcs/sci/build/js/firmware/pwmgr/re/wsl/exfil/scan/aux primitive";
-        } else if (
+        PASTE_WHAT("vcs/sci/build/js/firmware/pwmgr/re/wsl/exfil/scan/aux primitive");
+        }
+        if (
              /* cycle-263: capture/usb-serial/jvm-introspection/isolation/binmod/
                 win-deploy/mount-share/kernel-trace/mailer/pkg-build/tunnel/legacy-
                 remote/initramfs/debug-server primitives */
@@ -10784,8 +11121,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "udevctl") || ci_contains(text, "llvm-objdump") ||
              ci_contains(text, "gdbserver") || ci_contains(text, "lldb-server") ||
              ci_contains(text, "sysdig-inspect") || ci_contains(text, "wireshark")) {
-        what = "capture/usb/jvm/isolation/binmod/deploy/mount/trace/mailer/tunnel primitive";
-        } else if (
+        PASTE_WHAT("capture/usb/jvm/isolation/binmod/deploy/mount/trace/mailer/tunnel primitive");
+        }
+        if (
              /* cycle-264a: theorem-prover/functional-lang/alt-interp/asm/translation */
              ci_contains(text, "coqc") || ci_contains(text, "coqtop")  || ci_contains(text, "agda") ||
              ci_contains(text, "idris2") || ci_contains(text, "tlapm") ||
@@ -10828,8 +11166,9 @@ hlse_check_paste(const char *text) {
               (ci_contains(text, ".exe") || ci_contains(text, " -"))) ||
              (ci_contains(text, "proton") && ci_contains(text, " -")) ||
              (ci_contains(text, "rosetta") && ci_contains(text, " -"))) {
-        what = "prover/functional/alt-interp/translation primitive";
-        } else if (
+        PASTE_WHAT("prover/functional/alt-interp/translation primitive");
+        }
+        if (
              /* cycle-264b: sandbox-escape/privexec/ipc/broker/storage/dir/
                 overlay/supervision/fuse/envpkg/profiler primitives */
              ci_contains(text, "criu") || ci_contains(text, "checkpointctl") ||
@@ -10881,8 +11220,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "cachegrind") || ci_contains(text, "drd") ||
              ci_contains(text, "sgcheck") ||
              (ci_contains(text, "hotspot") && ci_contains(text, " -"))) {
-        what = "sandbox/privexec/ipc/broker/storage/dir/overlay/supervision/fuse/profiler primitive";
-        } else if (
+        PASTE_WHAT("sandbox/privexec/ipc/broker/storage/dir/overlay/supervision/fuse/profiler primitive");
+        }
+        if (
              /* cycle-265a: alt-shell/term-inject/firmware-tool/eda-fpga/3d-cnc/
                 game-engine/wm-input/clipboard-mgr/dialog-spoof/tmux-alt/
                 keyring-agent/boot-write primitives */
@@ -10927,8 +11267,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "posh ") && ci_contains(text, " -") && !ci_contains(text, "--help")) ||
              (ci_contains(text, "oil ") && ci_contains(text, " -")) ||
              (ci_contains(text, "osh ") && ci_contains(text, " -") && !ci_contains(text, "gosh") && !ci_contains(text, "kosh") && !ci_contains(text, "posh") && !ci_contains(text, "--help"))) {
-        what = "alt-shell/term/firmware/eda/3d/game/wm/clipboard/dialog/tmux/keyring/boot primitive";
-        } else if (
+        PASTE_WHAT("alt-shell/term/firmware/eda/3d/game/wm/clipboard/dialog/tmux/keyring/boot primitive");
+        }
+        if (
              /* cycle-265b: cosmos-iot/hw-telemetry/routing-multicast/passive-sniff/
                 pth-impacket/wireless primitives */
              ci_contains(text, "gaiad") || ci_contains(text, "osmosisd") ||
@@ -10958,8 +11299,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "kismet_capture") ||
              (ci_contains(text, "hornet") && ci_contains(text, " -")) ||
              (ci_contains(text, "beelogger") && ci_contains(text, " -"))) {
-        what = "cosmos/iot/telemetry/routing/sniff/pth/wireless primitive";
-        } else if (
+        PASTE_WHAT("cosmos/iot/telemetry/routing/sniff/pth/wireless primitive");
+        }
+        if (
              /* cycle-266a: pipewire/audio-bcast/ham-radio/term-image/rec/tts/
                 ddc-monitor/key-remap/gesture primitives */
              ci_contains(text, "pw-cat") || ci_contains(text, "pw-play") ||
@@ -10985,8 +11327,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "orca") && ci_contains(text, " -")) ||
              ci_contains(text, "eternalterminal") || ci_contains(text, "s-tui") ||
              ci_contains(text, "powerstat")) {
-        what = "pipewire/audiobcast/ham/termimg/rec/tts/ddc/keyremap/gesture primitive";
-        } else if (
+        PASTE_WHAT("pipewire/audiobcast/ham/termimg/rec/tts/ddc/keyremap/gesture primitive");
+        }
+        if (
              /* cycle-266b: bench/dist-compile/re/dbg/ide/repl primitives */
              ci_contains(text, "phoronix-test-suite") || ci_contains(text, "geekbench") ||
              ci_contains(text, "cinebench") || ci_contains(text, "stressapptest") ||
@@ -11011,8 +11354,9 @@ hlse_check_paste(const char *text) {
               !ci_contains(text, "visible") && !ci_contains(text, "trav")) ||
              ci_contains(text, "bpython") || ci_contains(text, "ptpython") ||
              ci_contains(text, "jupytext")) {
-        what = "bench/distcompile/re/dbg/ide/repl primitive";
-        } else if (
+        PASTE_WHAT("bench/distcompile/re/dbg/ide/repl primitive");
+        }
+        if (
              /* cycle-266c: sql-nosql/kv/search/tsdb/bio/molecular/astro/
                 p2p-anon/ocr/assistive/doc/raw-img primitives */
              ci_contains(text, "usql") || ci_contains(text, "sqlcl") ||
@@ -11056,8 +11400,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "onlyoffice") || ci_contains(text, "dcraw") ||
              ci_contains(text, "ufraw") || ci_contains(text, "enfuse") ||
              ci_contains(text, "luminance-hdr")) {
-        what = "sqlnosql/kv/search/tsdb/bio/molecular/astro/p2p/ocr/doc/rawimg primitive";
-        } else if (
+        PASTE_WHAT("sqlnosql/kv/search/tsdb/bio/molecular/astro/p2p/ocr/doc/rawimg primitive");
+        }
+        if (
              /* cycle-267a: de-config/panels/compositors/lock/idle/launchers/
                 notif/term-exec/filemgr/chatc2/voip primitives */
              ci_contains(text, "xfconf-query") || ci_contains(text, "kwriteconfig") ||
@@ -11092,8 +11437,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "jami") || ci_contains(text, "linphone") ||
              ci_contains(text, "ekiga") ||
              (ci_contains(text, "twinkle") && ci_contains(text, " -"))) {
-        what = "de/panel/compositor/lock/idle/launcher/notif/termexec/filemgr/chat/voip primitive";
-        } else if (
+        PASTE_WHAT("de/panel/compositor/lock/idle/launcher/notif/termexec/filemgr/chat/voip primitive");
+        }
+        if (
              /* cycle-267b: media/dl/torrent/arr/mediav/home-auto/finance/
                 gis/pim/notes primitives */
              (ci_contains(text, "celluloid") && ci_contains(text, " -") && !ci_contains(text, "--help")) ||
@@ -11145,8 +11491,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "zk") && ci_contains(text, " -")) ||
              (ci_contains(text, "trilium") && ci_contains(text, " -")) ||
              ci_contains(text, "logseq")) {
-        what = "media/dl/torrent/arr/mediav/homeauto/finance/gis/pim/notes primitive";
-        } else if (
+        PASTE_WHAT("media/dl/torrent/arr/mediav/homeauto/finance/gis/pim/notes primitive");
+        }
+        if (
              /* cycle-268a: backup-sync/cloudexfil/encfs/archive/pkg-internals/
                 boot primitives */
              (ci_contains(text, "rustic") && ci_contains(text, " -")) ||
@@ -11184,8 +11531,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "extlinux") || ci_contains(text, "pxelinux") ||
              ci_contains(text, "memdisk") || ci_contains(text, "ipxe") ||
              ci_contains(text, "wimboot")) {
-        what = "backupsync/cloudexfil/encfs/archive/pkg/boot primitive";
-        } else if (
+        PASTE_WHAT("backupsync/cloudexfil/encfs/archive/pkg/boot primitive");
+        }
+        if (
              /* cycle-268b: serial-fax/docgen/spec/mock/load/api/mobile/
                 android/ios/emu/console/retro/mediapk primitives */
              ci_contains(text, "remserial") || ci_contains(text, "ttynvt") ||
@@ -11261,8 +11609,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mp4split") || ci_contains(text, "mp4fragment") ||
              (ci_contains(text, "love") && ci_contains(text, " -")) ||
              ci_contains(text, "tic80")) {
-        what = "serial/fax/docgen/spec/mock/load/api/mobile/android/ios/emu/console/retro/mediapk primitive";
-        } else if (
+        PASTE_WHAT("serial/fax/docgen/spec/mock/load/api/mobile/android/ios/emu/console/retro/mediapk primitive");
+        }
+        if (
              /* cycle-269a: ci-runner/registry/gateway/feature-flag/secret-broker/
                 idp/ldap/analytics/uptime/apm/incident primitives */
              (ci_contains(text, "woodpecker") && ci_contains(text, " -")) ||
@@ -11305,8 +11654,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "otel-cli") || ci_contains(text, "grafana-oncall") ||
              ci_contains(text, "opsgenie") || ci_contains(text, "victorops") ||
              ci_contains(text, "xmatters") || ci_contains(text, "ilert")) {
-        what = "cirunner/registry/gateway/fflag/secretbroker/idp/ldap/analytics/uptime/apm/incident primitive";
-        } else if (
+        PASTE_WHAT("cirunner/registry/gateway/fflag/secretbroker/idp/ldap/analytics/uptime/apm/incident primitive");
+        }
+        if (
              /* cycle-269b: sbom-sign/posture/bastion/automation-fabric/workflow/
                 taskrun/scheduler/mqtt/graphdb/vecdb primitives */
              ci_contains(text, "sbom-tool") || ci_contains(text, "sbomqs") ||
@@ -11343,8 +11693,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "marqo") && ci_contains(text, " -")) ||
              ci_contains(text, "lancedb") || ci_contains(text, "pgvector") ||
              (ci_contains(text, "chroma") && ci_contains(text, " -"))) {
-        what = "sbom/posture/bastion/automation/workflow/taskrun/sched/mqtt/graphdb/vecdb primitive";
-        } else if (
+        PASTE_WHAT("sbom/posture/bastion/automation/workflow/taskrun/sched/mqtt/graphdb/vecdb primitive");
+        }
+        if (
              /* cycle-270a: uav/robotics/ot-ics/energy/aviation/marine/weather
                 primitives */
              ci_contains(text, "ardupilot") || ci_contains(text, "qgroundcontrol") ||
@@ -11367,8 +11718,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "canboat") || ci_contains(text, "weewx") ||
              (ci_contains(text, "cumulus") && ci_contains(text, " -")) ||
              ci_contains(text, "pywws")) {
-        what = "uav/robotics/ot-ics/energy/aviation/marine/weather primitive";
-        } else if (
+        PASTE_WHAT("uav/robotics/ot-ics/energy/aviation/marine/weather primitive");
+        }
+        if (
              /* cycle-270b: miner-alt/wallet-alt/mev/validator/l2/bridge/
                 oracle/indexer/cosmos/mixer/privacy/signing primitives */
              ci_contains(text, "bminer") || ci_contains(text, "dogecoin-cli") ||
@@ -11426,8 +11778,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mobilecoin") || ci_contains(text, "bee-clef") ||
              ci_contains(text, "horcrux") || ci_contains(text, "tmkms") ||
              ci_contains(text, "cosmovisor")) {
-        what = "miner/wallet/mev/validator/l2/bridge/oracle/indexer/cosmos/mixer/privacy/signing primitive";
-        } else if (
+        PASTE_WHAT("miner/wallet/mev/validator/l2/bridge/oracle/indexer/cosmos/mixer/privacy/signing primitive");
+        }
+        if (
              /* cycle-271a: mesh/lora/sdr-radio/sip/usenet/smallnet/anon/overlay/
                 userspace-net primitives */
              (ci_contains(text, "rnode") && !ci_contains(text, "supernode")) ||
@@ -11470,8 +11823,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "bgpq4") ||
              (ci_contains(text, "rpsl") && ci_contains(text, " -")) ||
              ci_contains(text, "peeringdb") || ci_contains(text, "routeview")) {
-        what = "mesh/lora/sdr-radio/usenet/smallnet/anon/overlay/userspace-net primitive";
-        } else if (
+        PASTE_WHAT("mesh/lora/sdr-radio/usenet/smallnet/anon/overlay/userspace-net primitive");
+        }
+        if (
              /* cycle-271b: dnsdist/osint/sandbox/forensics/memory/disk/log/
                 ir/malware-analysis/bindiff/firmware/container/k8s-extra/
                 serverless/faas primitives */
@@ -11528,8 +11882,9 @@ hlse_check_paste(const char *text) {
               !ci_contains(text, "apex-") && !ci_contains(text, "tapex")) ||
              ci_contains(text, "kubeless") || ci_contains(text, "faasd") ||
              ci_contains(text, "openfaas-cli")) {
-        what = "dnsdist/osint/sandbox/forensics/memory/disk/log/ir/malware-analysis/bindiff/firmware/container/k8s/serverless/faas primitive";
-        } else if (
+        PASTE_WHAT("dnsdist/osint/sandbox/forensics/memory/disk/log/ir/malware-analysis/bindiff/firmware/container/k8s/serverless/faas primitive");
+        }
+        if (
              /* cycle-272a: git-extra/convert/mail-infra/spam-filter/lists/
                 caldav/irc/xmpp/matrix/voip-server primitives */
              ci_contains(text, "jujutsu") || ci_contains(text, "git-branchless") ||
@@ -11574,8 +11929,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "murmur") && ci_contains(text, " -")) ||
              ci_contains(text, "umurmur") ||
              (ci_contains(text, "revolt") && ci_contains(text, " -"))) {
-        what = "git-extra/convert/mail-infra/spam-filter/lists/caldav/irc/xmpp/matrix/voip-server primitive";
-        } else if (
+        PASTE_WHAT("git-extra/convert/mail-infra/spam-filter/lists/caldav/irc/xmpp/matrix/voip-server primitive");
+        }
+        if (
              /* cycle-272b: fediverse/pastebin/urlshort/bookmark/docsrv/fileshare/
                 gallery/kanban/cms/ecomm/crm primitives */
              ci_contains(text, "misskey") || ci_contains(text, "akkoma") ||
@@ -11614,8 +11970,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "shopify-cli") || ci_contains(text, "square-cli") ||
              (ci_contains(text, "monica") && ci_contains(text, " -")) ||
              (ci_contains(text, "twenty") && ci_contains(text, " -"))) {
-        what = "fediverse/pastebin/urlshort/bookmark/docsrv/fileshare/gallery/kanban/cms/ecomm/crm primitive";
-        } else if (
+        PASTE_WHAT("fediverse/pastebin/urlshort/bookmark/docsrv/fileshare/gallery/kanban/cms/ecomm/crm primitive");
+        }
+        if (
              /* cycle-273a: canbus/plc/cnc/laser/pcb/rf/rfid/smartcard/hsm-tpm/
                 fido/barcode/label/pos primitives */
              ci_contains(text, "socketcand") ||
@@ -11651,8 +12008,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "brother_ql") || ci_contains(text, "ptouch") ||
              ci_contains(text, "dymoprint") ||
              (ci_contains(text, "escpos") && ci_contains(text, " -"))) {
-        what = "canbus/plc/cnc/laser/pcb/rf/rfid/smartcard/hsm-tpm/fido/barcode/label/pos primitive";
-        } else if (
+        PASTE_WHAT("canbus/plc/cnc/laser/pcb/rf/rfid/smartcard/hsm-tpm/fido/barcode/label/pos primitive");
+        }
+        if (
              /* cycle-273b: asset/cmdb/dcim/ipam/aaa/dot1x/vpn/wg/portknock +
                 sms/sim/cellular/ais/seismic/geophysics/physics/astro primitives */
              ci_contains(text, "snipeit") ||
@@ -11699,8 +12057,9 @@ hlse_check_paste(const char *text) {
               !ci_contains(text, "giraf")) ||
              ci_contains(text, "orekit") ||
              (ci_contains(text, "gmat") && ci_contains(text, " -"))) {
-        what = "asset/cmdb/dcim/ipam/aaa/dot1x/vpn/wg/portknock/sms/sim/cellular/ais/seismic/geophysics/physics/astro primitive";
-        } else if (
+        PASTE_WHAT("asset/cmdb/dcim/ipam/aaa/dot1x/vpn/wg/portknock/sms/sim/cellular/ais/seismic/geophysics/physics/astro primitive");
+        }
+        if (
              /* cycle-274a: llm/tts/imagegen/mlops primitives */
              ci_contains(text, "llama-cli") || ci_contains(text, "koboldcpp") ||
              ci_contains(text, "gpt4all") ||
@@ -11729,8 +12088,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "bentoml") || ci_contains(text, "tritonserver") ||
              ci_contains(text, "seldon") || ci_contains(text, "kserve") ||
              ci_contains(text, "polyaxon")) {
-        what = "llm/tts/imagegen/mlops primitive";
-        } else if (
+        PASTE_WHAT("llm/tts/imagegen/mlops primitive");
+        }
+        if (
              /* cycle-274b: notebook/data-eng/db-client/data-quality/cdc/bi/
                 spreadsheet/forms/diagram/rss/podcast/audiobook/ebook/comics/
                 recipe/finance/library/genealogy primitives */
@@ -11779,8 +12139,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "koha") || ci_contains(text, "biblioteq") ||
              (ci_contains(text, "gramps") && ci_contains(text, " -")) ||
              ci_contains(text, "webtrees")) {
-        what = "notebook/data-eng/db-client/data-quality/cdc/bi/spreadsheet/forms/diagram/rss/podcast/ebook/comics/recipe/finance/library/genealogy primitive";
-        } else if (
+        PASTE_WHAT("notebook/data-eng/db-client/data-quality/cdc/bi/spreadsheet/forms/diagram/rss/podcast/ebook/comics/recipe/finance/library/genealogy primitive");
+        }
+        if (
              /* cycle-275a: nvr-surveillance/iptv/playout/webrtc-sfu/edu
                 primitives */
              (ci_contains(text, "frigate") && ci_contains(text, " -")) ||
@@ -11800,8 +12161,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "jitsi-videobridge") || ci_contains(text, "jicofo") ||
              ci_contains(text, "jigasi") || ci_contains(text, "chamilo") ||
              (ci_contains(text, "ilias") && ci_contains(text, " -"))) {
-        what = "nvr-surveillance/iptv/playout/webrtc-sfu/edu primitive";
-        } else if (
+        PASTE_WHAT("nvr-surveillance/iptv/playout/webrtc-sfu/edu primitive");
+        }
+        if (
              /* cycle-275b: video-encode/subtitle/music-prod/tracker/
                 audio-analysis/asr/diarize/voice-clone/noise primitives */
              ci_contains(text, "kdenlive-render") || ci_contains(text, "lossless-cut") ||
@@ -11837,8 +12199,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pyannote") || ci_contains(text, "resemblyzer") ||
              ci_contains(text, "so-vits-svc") || ci_contains(text, "tortoise-tts") ||
              ci_contains(text, "rnnoise") || ci_contains(text, "deepfilternet")) {
-        what = "video-encode/subtitle/music-prod/tracker/audio-analysis/asr/diarize/voice-clone/noise primitive";
-        } else if (
+        PASTE_WHAT("video-encode/subtitle/music-prod/tracker/audio-analysis/asr/diarize/voice-clone/noise primitive");
+        }
+        if (
              /* cycle-275c: emulation/game-port/vintage-sim/mcu-sim/ebpf/
                 crashdump/boot-trace/secureboot primitives */
              ci_contains(text, "dosbox-x") || ci_contains(text, "dosbox-staging") ||
@@ -11893,8 +12256,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "bootchart")   ||
              (ci_contains(text, "fwts") && ci_contains(text, " -")) ||
              ci_contains(text, "sbsigntool") || ci_contains(text, "sbverify")) {
-        what = "emulation/game-port/vintage-sim/mcu-sim/ebpf/crashdump/boot-trace/secureboot primitive";
-        } else if (
+        PASTE_WHAT("emulation/game-port/vintage-sim/mcu-sim/ebpf/crashdump/boot-trace/secureboot primitive");
+        }
+        if (
              /* cycle-276a: chatbot/messaging-cli/web-archive/kiwix/maps/gdal/
                 lidar/photogrammetry/3d-tool primitives */
              ci_contains(text, "hubot") || ci_contains(text, "opsdroid") ||
@@ -11931,8 +12295,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "assimp") || ci_contains(text, "meshconv") ||
              ci_contains(text, "obj2gltf") || ci_contains(text, "gltf-pipeline") ||
              ci_contains(text, "gltf-transform")) {
-        what = "chatbot/messaging-cli/web-archive/kiwix/maps/gdal/lidar/photogrammetry/3d-tool primitive";
-        } else if (
+        PASTE_WHAT("chatbot/messaging-cli/web-archive/kiwix/maps/gdal/lidar/photogrammetry/3d-tool primitive");
+        }
+        if (
              /* cycle-276b: netsim/sdn/p4/dpdk/telecom + proj/routing/iot/
                 coap/lorawan/building/grid/meter/geocode primitives */
              ci_contains(text, "ns-3") || ci_contains(text, "ns3 ") ||
@@ -11966,8 +12331,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "powsybl") || ci_contains(text, "iec62056") ||
              ci_contains(text, "guruux") || ci_contains(text, "libpostal") ||
              ci_contains(text, "pelias-schema")) {
-        what = "netsim/sdn/p4/dpdk/telecom/proj/routing/iot/coap/lorawan/building/grid/meter/geocode primitive";
-        } else if (
+        PASTE_WHAT("netsim/sdn/p4/dpdk/telecom/proj/routing/iot/coap/lorawan/building/grid/meter/geocode primitive");
+        }
+        if (
              /* cycle-277a: wasm/sandbox/unikernel/virt-guest/k8s-dist primitives */
              ci_contains(text, "wasm-bindgen") || ci_contains(text, "emcc") ||
              ci_contains(text, "emmake") || ci_contains(text, "emconfigure") ||
@@ -11996,8 +12362,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "nostrcli") ||
              (ci_contains(text, "iris") && ci_contains(text, " -")) ||
              (ci_contains(text, "damus") && ci_contains(text, " -"))) {
-        what = "wasm/sandbox/unikernel/virt-guest/k8s-dist/mq/search/columnar/tsdb/kv/docdb/newsql/nostr primitive";
-        } else if (
+        PASTE_WHAT("wasm/sandbox/unikernel/virt-guest/k8s-dist/mq/search/columnar/tsdb/kv/docdb/newsql/nostr primitive");
+        }
+        if (
              /* cycle-277b: formatter/linter/env-mgr/build-sys primitives */
              (ci_contains(text, "black") && ci_contains(text, " -") &&
               !ci_contains(text, "blackb")) ||
@@ -12019,8 +12386,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "volta") && ci_contains(text, " -")) ||
              (ci_contains(text, "xmake") && ci_contains(text, " -")) ||
              (ci_contains(text, "plz") && ci_contains(text, " -"))) {
-        what = "formatter/linter/env-mgr/build-sys primitive";
-        } else if (
+        PASTE_WHAT("formatter/linter/env-mgr/build-sys primitive");
+        }
+        if (
              /* cycle-277c: license/radare2/honeypot/wifi/pwattack/stego/tunnel primitives */
              ci_contains(text, "scancode-toolkit") ||
              (ci_contains(text, "reuse") && ci_contains(text, " -")) ||
@@ -12036,8 +12404,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "name-that-hash") ||
              (ci_contains(text, "cupp") && ci_contains(text, " -")) ||
              ci_contains(text, "ligolo-ng")) {
-        what = "license/radare2/honeypot/wifi/pwattack/stego/tunnel primitive";
-        } else if (
+        PASTE_WHAT("license/radare2/honeypot/wifi/pwattack/stego/tunnel primitive");
+        }
+        if (
              /* cycle-278a: turn/ha/lb/cache/mail/imap/news/monitor/tracing/snmp primitives */
              ci_contains(text, "eturnal") || ci_contains(text, "keepalived") ||
              ci_contains(text, "ucarp") ||
@@ -12054,8 +12423,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "innfeed") || ci_contains(text, "jaeger-agent") ||
              ci_contains(text, "zipkin") || ci_contains(text, "skywalking") ||
              ci_contains(text, "snmptrap")) {
-        what = "turn/ha/lb/cache/mail/imap/news/monitor/tracing/snmp primitive";
-        } else if (
+        PASTE_WHAT("turn/ha/lb/cache/mail/imap/news/monitor/tracing/snmp primitive");
+        }
+        if (
              /* cycle-278b: ipmi/bmc/storage/zfs/ceph/gluster/pfs/nfs/dav/s3ql/fuse primitives */
              ci_contains(text, "nvme-cli") || ci_contains(text, "thin-provisioning") ||
              ci_contains(text, "sanoid") || ci_contains(text, "syncoid") ||
@@ -12068,8 +12438,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "nfsstat") || ci_contains(text, "ganesha.nfsd") ||
              ci_contains(text, "afpd") || ci_contains(text, "s3ql") ||
              ci_contains(text, "fuse-overlayfs") || ci_contains(text, "snapraid")) {
-        what = "ipmi/bmc/storage/zfs/ceph/gluster/pfs/nfs/dav/s3ql/fuse primitive";
-        } else if (
+        PASTE_WHAT("ipmi/bmc/storage/zfs/ceph/gluster/pfs/nfs/dav/s3ql/fuse primitive");
+        }
+        if (
              /* cycle-278c: pki/krb/ldap/nis/pam/apparmor/xattr/time/display/power +
                 cups/sane/modem/ax25/rc/matter/bacnet/ethercat/wire/probe/rf primitives */
              ci_contains(text, "scepclient") || ci_contains(text, "kinit") ||
@@ -12103,8 +12474,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "eipscan") || ci_contains(text, "owfs") ||
              ci_contains(text, "owserver") || ci_contains(text, "probe-rs") ||
              ci_contains(text, "sdrtrunk")) {
-        what = "pki/krb/ldap/nis/pam/apparmor/xattr/time/display/power/cups/sane/modem/ax25/rc/matter/bacnet/ethercat/wire/probe/rf primitive";
-        } else if (
+        PASTE_WHAT("pki/krb/ldap/nis/pam/apparmor/xattr/time/display/power/cups/sane/modem/ax25/rc/matter/bacnet/ethercat/wire/probe/rf primitive");
+        }
+        if (
              /* cycle-279a: bioinformatics/genomics primitives */
              ci_contains(text, "samtools") || ci_contains(text, "bcftools") ||
              ci_contains(text, "vcftools") || ci_contains(text, "fastqc") ||
@@ -12122,8 +12494,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "clustalo") || ci_contains(text, "raxml") ||
              ci_contains(text, "iqtree") || ci_contains(text, "mrbayes") ||
              (ci_contains(text, "beast") && ci_contains(text, " -"))) {
-        what = "bioinformatics/genomics primitive";
-        } else if (
+        PASTE_WHAT("bioinformatics/genomics primitive");
+        }
+        if (
              /* cycle-279b: compchem/dft/materials/fea/em-sim primitives */
              ci_contains(text, "obabel") ||
              (ci_contains(text, "vina") && ci_contains(text, " -")) ||
@@ -12147,8 +12520,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "gprmax") || ci_contains(text, "nec2") ||
              (ci_contains(text, "amber") && ci_contains(text, " -")) ||
              (ci_contains(text, "tinker") && ci_contains(text, " -"))) {
-        what = "compchem/dft/materials/fea/em-sim primitive";
-        } else if (
+        PASTE_WHAT("compchem/dft/materials/fea/em-sim primitive");
+        }
+        if (
              /* cycle-279c: particle/astro/gravwave/crystallography/massspec/
                 cryo/hydro primitives */
              ci_contains(text, "delphes") ||
@@ -12175,8 +12549,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "msconvert") ||
              (ci_contains(text, "relion") && ci_contains(text, " -")) ||
              ci_contains(text, "swmm") || ci_contains(text, "epanet")) {
-        what = "particle/astro/gravwave/crystallography/massspec/cryo/hydro primitive";
-        } else if (
+        PASTE_WHAT("particle/astro/gravwave/crystallography/massspec/cryo/hydro primitive");
+        }
+        if (
              /* cycle-280a: icu/dict/tts/midi/audiodsp/audiotag primitives */
              ci_contains(text, "icuinfo") || ci_contains(text, "genrb") ||
              ci_contains(text, "derb") || ci_contains(text, "dictd") ||
@@ -12198,8 +12573,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "beets") && ci_contains(text, " -"))  || ci_contains(text, "vorbiscomment") ||
              ci_contains(text, "atomicparsley") || ci_contains(text, "mp3info") ||
              ci_contains(text, "mp4info") || ci_contains(text, "exfalso")) {
-        what = "icu/dict/tts/midi/audiodsp/audiotag primitive";
-        } else if (
+        PASTE_WHAT("icu/dict/tts/midi/audiodsp/audiotag primitive");
+        }
+        if (
              /* cycle-280b: cd/dvd/camera/image/svg/font primitives */
              ci_contains(text, "cdparanoia") || ci_contains(text, "cdda2wav") ||
              ci_contains(text, "icedax") || ci_contains(text, "cdrdao") ||
@@ -12218,8 +12594,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "bdftopcf") || ci_contains(text, "fc-list") ||
              ci_contains(text, "fc-cache") || ci_contains(text, "fc-match") ||
              ci_contains(text, "fc-query")) {
-        what = "cd/dvd/camera/image/svg/font primitive";
-        } else if (
+        PASTE_WHAT("cd/dvd/camera/image/svg/font primitive");
+        }
+        if (
              /* cycle-280c: tex/bib/ps/pdf primitives */
              (ci_contains(text, "tectonic") && ci_contains(text, " -")) ||
              ci_contains(text, "dvips") || ci_contains(text, "dvipdf") ||
@@ -12231,8 +12608,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pdftoppm") || ci_contains(text, "pdfimages") ||
              ci_contains(text, "pdfdetach") || ci_contains(text, "pdfunite") ||
              ci_contains(text, "pdfseparate") || ci_contains(text, "pdftocairo")) {
-        what = "tex/bib/ps/pdf primitive";
-        } else if (
+        PASTE_WHAT("tex/bib/ps/pdf primitive");
+        }
+        if (
              /* cycle-281a: gamedev/2d-anim/voxel/eda primitives */
              ci_contains(text, "defold") || ci_contains(text, "aseprite") ||
              ci_contains(text, "libresprite") ||
@@ -12250,8 +12628,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "gnucap") ||
              (ci_contains(text, "magic") && ci_contains(text, " -")) ||
              ci_contains(text, "klayout")) {
-        what = "gamedev/2d-anim/voxel/eda primitive";
-        } else if (
+        PASTE_WHAT("gamedev/2d-anim/voxel/eda primitive");
+        }
+        if (
              /* cycle-281b: flightsim/virtualworld/mud-bbs/term/fuzzy/disk primitives */
              ci_contains(text, "jsbsim") || ci_contains(text, "fgfs") ||
              ci_contains(text, "fgcom") || ci_contains(text, "opensimulator") ||
@@ -12265,8 +12644,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "dust") && ci_contains(text, " -")) ||
              (ci_contains(text, "duf") && ci_contains(text, " -")) ||
              ci_contains(text, "dua-cli") || ci_contains(text, "erdtree")) {
-        what = "flightsim/virtualworld/mud-bbs/term/fuzzy/disk primitive";
-        } else if (
+        PASTE_WHAT("flightsim/virtualworld/mud-bbs/term/fuzzy/disk primitive");
+        }
+        if (
              /* cycle-281c: structdata/csv/diff/watch/init primitives */
              (ci_contains(text, "jaq") && ci_contains(text, " -")) ||
              ci_contains(text, "jello") ||
@@ -12290,8 +12670,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "kdiff3") || ci_contains(text, "modd") ||
              (ci_contains(text, "s6") && ci_contains(text, " -")) ||
              (ci_contains(text, "supervise") && ci_contains(text, " -"))) {
-        what = "structdata/csv/diff/watch/init primitive";
-        } else if (
+        PASTE_WHAT("structdata/csv/diff/watch/init primitive");
+        }
+        if (
              /* cycle-282a: gettext/trans/subtitle/x11/wayland/pwmgr/totp/gpg/ssh/tor primitives */
              ci_contains(text, "msgfmt") || ci_contains(text, "msgmerge") ||
              ci_contains(text, "msginit") || ci_contains(text, "msgconv") ||
@@ -12306,8 +12687,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "sqv") && ci_contains(text, " -")) ||
              (ci_contains(text, "cssh") && ci_contains(text, " -")) ||
              ci_contains(text, "snowflake-client")) {
-        what = "gettext/trans/subtitle/x11/wayland/pwmgr/totp/gpg/ssh/tor primitive";
-        } else if (
+        PASTE_WHAT("gettext/trans/subtitle/x11/wayland/pwmgr/totp/gpg/ssh/tor primitive");
+        }
+        if (
              /* cycle-282b: dnsprivacy/knot/mdns/ndisc/ppp/shaping/firewall/
                 netflow/captive/wifi/bt primitives */
              ci_contains(text, "stubby") || ci_contains(text, "getdns_query") ||
@@ -12325,8 +12707,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "iwlist") || ci_contains(text, "wavemon") ||
              ci_contains(text, "btmgmt") || ci_contains(text, "hciconfig") ||
              ci_contains(text, "hcidump")) {
-        what = "dnsprivacy/knot/mdns/ndisc/ppp/shaping/firewall/netflow/captive/wifi/bt primitive";
-        } else if (
+        PASTE_WHAT("dnsprivacy/knot/mdns/ndisc/ppp/shaping/firewall/netflow/captive/wifi/bt primitive");
+        }
+        if (
              /* cycle-283a: stress/bench/gpu/input/v4l primitives */
              ci_contains(text, "stress-ng") || ci_contains(text, "sysbench") ||
              ci_contains(text, "mprime") || ci_contains(text, "iperf") ||
@@ -12339,8 +12722,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "vdpauinfo") || ci_contains(text, "glmark2") ||
              ci_contains(text, "vkmark") || ci_contains(text, "jstest")  || ci_contains(text, "v4l2-compliance") ||
              ci_contains(text, "v4l2-dbg") || ci_contains(text, "qv4l2")) {
-        what = "stress/bench/gpu/input/v4l primitive";
-        } else if (
+        PASTE_WHAT("stress/bench/gpu/input/v4l primitive");
+        }
+        if (
              /* cycle-283b: alsa/pulse/pipewire/jack/gvfs/xdg/desktopdb/gsettings/
                 kde/qt/glib/a11y primitives */
              ci_contains(text, "amixer") || ci_contains(text, "aconnect") ||
@@ -12375,8 +12759,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "onboard") && ci_contains(text, " -")) ||
              (ci_contains(text, "florence") && ci_contains(text, " -")) ||
              ci_contains(text, "brltty") || ci_contains(text, "krfb")) {
-        what = "alsa/pulse/pipewire/jack/gvfs/xdg/desktopdb/gsettings/kde/qt/glib/a11y primitive";
-        } else if (
+        PASTE_WHAT("alsa/pulse/pipewire/jack/gvfs/xdg/desktopdb/gsettings/kde/qt/glib/a11y primitive");
+        }
+        if (
              /* cycle-284a: dmi/acpi/coreboot/hwmon/watchdog/ups/laptop/usb/tb/
                 edac/ras/mce primitives */
              (ci_contains(text, "ownership") && ci_contains(text, " -")) ||
@@ -12395,8 +12780,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "edac-ctl") || ci_contains(text, "rasdaemon") ||
              ci_contains(text, "ras-mc-ctl") || ci_contains(text, "mcelog") ||
              ci_contains(text, "mce-inject")) {
-        what = "dmi/acpi/coreboot/hwmon/watchdog/ups/laptop/usb/tb/edac/ras/mce primitive";
-        } else if (
+        PASTE_WHAT("dmi/acpi/coreboot/hwmon/watchdog/ups/laptop/usb/tb/edac/ras/mce primitive");
+        }
+        if (
              /* cycle-284b: lttng/stap/pcp/sysstat/sched/numa/hugepages/oom/hid primitives */
              ci_contains(text, "babeltrace") || ci_contains(text, "staprun") ||
              ci_contains(text, "pmcd") || ci_contains(text, "pmlogger") ||
@@ -12410,8 +12796,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "hugeadm") || ci_contains(text, "oomd") ||
              ci_contains(text, "earlyoom") || ci_contains(text, "nohang") ||
              ci_contains(text, "hid-recorder") || ci_contains(text, "hidrd-convert")) {
-        what = "lttng/stap/pcp/sysstat/sched/numa/hugepages/oom/hid primitive";
-        } else if (
+        PASTE_WHAT("lttng/stap/pcp/sysstat/sched/numa/hugepages/oom/hid primitive");
+        }
+        if (
              /* cycle-285a: displaymgr/notif/lock/hex/pager/markdown/present primitives */
              ci_contains(text, "lightdm") || ci_contains(text, "gdm") ||
              ci_contains(text, "sddm") || ci_contains(text, "dunst") ||
@@ -12426,8 +12813,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "rtv ") ||
              ci_contains(text, "tuir") || ci_contains(text, "hackernews_tui") ||
              ci_contains(text, "oysttyer")) {
-        what = "displaymgr/notif/lock/hex/pager/markdown/present primitive";
-        } else if (
+        PASTE_WHAT("displaymgr/notif/lock/hex/pager/markdown/present primitive");
+        }
+        if (
              /* cycle-285b: matrix/xmpp/satellite/telescope/morse/social primitives */
              ci_contains(text, "gomuks") || ci_contains(text, "iamb") ||
              ci_contains(text, "fractal") || ci_contains(text, "poezio") ||
@@ -12436,8 +12824,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "indi") && ci_contains(text, " -")) ||
              ci_contains(text, "ccdciel") || ci_contains(text, "phd2") ||
              (ci_contains(text, "morse") && ci_contains(text, " -"))) {
-        what = "matrix/xmpp/satellite/telescope/morse/social primitive";
-        } else if (
+        PASTE_WHAT("matrix/xmpp/satellite/telescope/morse/social primitive");
+        }
+        if (
              /* cycle-286a: editor/dotfiles/nix/appimage/altpkg primitives */
              (ci_contains(text, "micro") && ci_contains(text, " -")) ||
              (ci_contains(text, "amp") && ci_contains(text, " -")) ||
@@ -12454,8 +12843,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "linuxdeploy") || ci_contains(text, "freebsd-update") ||
              ci_contains(text, "portmaster") || ci_contains(text, "portupgrade") ||
              ci_contains(text, "syspatch") || ci_contains(text, "pfexec")) {
-        what = "editor/dotfiles/nix/appimage/altpkg primitive";
-        } else if (
+        PASTE_WHAT("editor/dotfiles/nix/appimage/altpkg primitive");
+        }
+        if (
              /* cycle-286b: pki-nss/mail/contacts/rss primitives */
              ci_contains(text, "modutil") || ci_contains(text, "pk12util") ||
              ci_contains(text, "crlutil") || ci_contains(text, "cmsutil") ||
@@ -12464,8 +12854,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "abook") || ci_contains(text, "lbdb") ||
              ci_contains(text, "ikhal") || ci_contains(text, "newsboat") ||
              ci_contains(text, "sfeed") || ci_contains(text, "greader")) {
-        what = "pki-nss/mail/contacts/rss primitive";
-        } else if (
+        PASTE_WHAT("pki-nss/mail/contacts/rss primitive");
+        }
+        if (
              /* cycle-287a: serial/tty/console/framebuffer/kbd/getty/dm primitives */
              ci_contains(text, "miniterm") || ci_contains(text, "cutecom") ||
              ci_contains(text, "setterm") || ci_contains(text, "agetty") ||
@@ -12479,8 +12870,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "nodm") || ci_contains(text, "fsnotifywait") ||
              ci_contains(text, "atrk") || ci_contains(text, "batchrun") ||
              ci_contains(text, "pexec")) {
-        what = "serial/tty/console/framebuffer/kbd/getty/dm primitive";
-        } else if (
+        PASTE_WHAT("serial/tty/console/framebuffer/kbd/getty/dm primitive");
+        }
+        if (
              /* cycle-287b: acct/sysfs/eeprom/i2c/gpio/udev/media/fuzzy primitives */
              ci_contains(text, "systool") || ci_contains(text, "systemd-hwdb") ||
              ci_contains(text, "eeprom") || ci_contains(text, "i2ctransfer") ||
@@ -12495,8 +12887,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "picker") && ci_contains(text, " -")) ||
              ci_contains(text, "navi ") || ci_contains(text, "navidrome") ||
              ci_contains(text, "naviseccli") || ci_contains(text, "fff")) {
-        what = "acct/sysfs/eeprom/i2c/gpio/udev/media/fuzzy primitive";
-        } else if (
+        PASTE_WHAT("acct/sysfs/eeprom/i2c/gpio/udev/media/fuzzy primitive");
+        }
+        if (
              /* cycle-288a: altvcs/patch/review/monorepo/build/task primitives */
              (ci_contains(text, "got ") && !ci_contains(text, "forgot")) ||
              ci_contains(text, "patchutils") || ci_contains(text, "interdiff") ||
@@ -12510,8 +12903,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "samu") || ci_contains(text, "kati") ||
              (ci_contains(text, "just") && ci_contains(text, " -")) ||
              (ci_contains(text, "mage") && !ci_contains(text, "image") && !ci_contains(text, "damage"))) {
-        what = "altvcs/patch/review/monorepo/build/task primitive";
-        } else if (
+        PASTE_WHAT("altvcs/patch/review/monorepo/build/task primitive");
+        }
+        if (
              /* cycle-288b: configlang/template/codegen/docgen/fuzz/mutation/recon primitives */
              (ci_contains(text, "nickel") && ci_contains(text, " -")) ||
              ci_contains(text, "rcl ") || ci_contains(text, "j2cli") ||
@@ -12524,8 +12918,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "stryker") || ci_contains(text, "r2agent") ||
              ci_contains(text, "r2pm") || ci_contains(text, "zap-cli") ||
              ci_contains(text, "cloudlist") || ci_contains(text, "asnmap")) {
-        what = "configlang/template/codegen/docgen/fuzz/mutation/recon primitive";
-        } else if (
+        PASTE_WHAT("configlang/template/codegen/docgen/fuzz/mutation/recon primitive");
+        }
+        if (
              /* cycle-289a: mobiledev/firmware/ics/dicom/hl7/drone/cad/fpga primitives */
              ci_contains(text, "simctl") || ci_contains(text, "firmware-mod-kit") ||
              ci_contains(text, "fact_extractor") || ci_contains(text, "modbus-cli") ||
@@ -12538,8 +12933,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "brlcad") || ci_contains(text, "solvespace") ||
              ci_contains(text, "openlane") || ci_contains(text, "qflow") ||
              ci_contains(text, "netgen")) {
-        what = "mobiledev/firmware/ics/dicom/hl7/drone/cad/fpga primitive";
-        } else if (
+        PASTE_WHAT("mobiledev/firmware/ics/dicom/hl7/drone/cad/fpga primitive");
+        }
+        if (
              /* cycle-289b: logic/tunnel/rmm/mobile-re primitives */
              ci_contains(text, "pulseview") || ci_contains(text, "dslogic") ||
              ci_contains(text, "openhantek") || ci_contains(text, "scopy") ||
@@ -12549,8 +12945,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dexdump") || ci_contains(text, "apkeep") ||
              ci_contains(text, "gplaycli") || ci_contains(text, "apkleaks") ||
              ci_contains(text, "mobfs") || ci_contains(text, "qark")) {
-        what = "logic/tunnel/rmm/mobile-re primitive";
-        } else if (
+        PASTE_WHAT("logic/tunnel/rmm/mobile-re primitive");
+        }
+        if (
              /* cycle-290a: office/rawphoto/imgai/dj-radio/finance/ecom primitives */
              ci_contains(text, "wvtext") || ci_contains(text, "xls2csv") ||
              ci_contains(text, "darktable-cli") || ci_contains(text, "rawtherapee-cli") ||
@@ -12564,8 +12961,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "restreamer") || ci_contains(text, "invoiceplane") ||
              ci_contains(text, "killbill") || ci_contains(text, "prestashop") ||
              ci_contains(text, "sylius") || ci_contains(text, "bagisto")) {
-        what = "office/rawphoto/imgai/dj-radio/finance/ecom primitive";
-        } else if (
+        PASTE_WHAT("office/rawphoto/imgai/dj-radio/finance/ecom primitive");
+        }
+        if (
              /* cycle-290b: icon/texture/smartcard/djvu/asciiart/tts/docs primitives */
              ci_contains(text, "icotool") || ci_contains(text, "icnsutils") ||
              ci_contains(text, "wrestool") || ci_contains(text, "texconv") ||
@@ -12587,8 +12985,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mbrola") || ci_contains(text, "svox") ||
              ci_contains(text, "cheatsh") || ci_contains(text, "navi-tldr") ||
              ci_contains(text, "tldr-pages")) {
-        what = "icon/texture/smartcard/djvu/asciiart/tts/docs primitive";
-        } else if (
+        PASTE_WHAT("icon/texture/smartcard/djvu/asciiart/tts/docs primitive");
+        }
+        if (
              /* cycle-291a: wiki/ssg/cms/forum/pad/kanban/time primitives */
              ci_contains(text, "mediawiki") || ci_contains(text, "dokuwiki") ||
              ci_contains(text, "ikiwiki") || ci_contains(text, "gollum") ||
@@ -12611,8 +13010,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "openproject") || ci_contains(text, "phorge") ||
              ci_contains(text, "kimai") || ci_contains(text, "activitywatch") ||
              (ci_contains(text, "timetagger") && ci_contains(text, " -"))) {
-        what = "wiki/ssg/cms/forum/pad/kanban/time primitive";
-        } else if (
+        PASTE_WHAT("wiki/ssg/cms/forum/pad/kanban/time primitive");
+        }
+        if (
              /* cycle-291b: fileshare/status/dashboard/chat primitives */
              (ci_contains(text, "snippet") && ci_contains(text, " -")) ||
              ci_contains(text, "snappass") ||
@@ -12627,8 +13027,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "rocketchat") || ci_contains(text, "mattermost") ||
              ci_contains(text, "guilded") ||
              (ci_contains(text, "spacebar") && ci_contains(text, " -"))) {
-        what = "fileshare/status/dashboard/chat primitive";
-        } else if (
+        PASTE_WHAT("fileshare/status/dashboard/chat primitive");
+        }
+        if (
              /* cycle-292a: quantum/ai-model/wasm/verif/ham/hdf/webrtc/stats/dvb/knit primitives */
              ci_contains(text, "qvm") || ci_contains(text, "llava") ||
              ci_contains(text, "wasm3") || ci_contains(text, "wavm") ||
@@ -12637,8 +13038,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "autolab") || ci_contains(text, "pspp") ||
              ci_contains(text, "mumudvb") || ci_contains(text, "ayab ") ||
              (ci_contains(text, "abjad") && ci_contains(text, " -"))) {
-        what = "quantum/wasm/verification/ham/webrtc primitive";
-        } else if (
+        PASTE_WHAT("quantum/wasm/verification/ham/webrtc primitive");
+        }
+        if (
              /* cycle-292b: dfir/diff/lsp/desktop/netauto/pres/audio/lightning primitives */
              ci_contains(text, "dyff") || ci_contains(text, "pylsp") ||
              ci_contains(text, "awww") || ci_contains(text, "mdp") ||
@@ -12646,8 +13048,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "lnd") ||
              (ci_contains(text, "hayabusa") && ci_contains(text, " -")) ||
              (ci_contains(text, "napalm") && ci_contains(text, " -"))) {
-        what = "dfir/desktop/lightning primitive";
-        } else if (
+        PASTE_WHAT("dfir/desktop/lightning primitive");
+        }
+        if (
              /* cycle-293a: infra/mail/news/retro-server primitives */
              ci_contains(text, "vmmss") || ci_contains(text, "msav") ||
              ci_contains(text, "ssas") || ci_contains(text, "mssdmn") ||
@@ -12659,8 +13062,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "bo2") || ci_contains(text, "jka") ||
              ci_contains(text, "vdos") || ci_contains(text, "munt") ||
              ci_contains(text, "np2")) {
-        what = "infra/mail/news/retro primitive";
-        } else if (
+        PASTE_WHAT("infra/mail/news/retro primitive");
+        }
+        if (
              /* cycle-293b: asm/retro-toolchain/fuzzy/filelister primitives */
              ci_contains(text, "ld65") || ci_contains(text, "da65") ||
              ci_contains(text, "sp65") || ci_contains(text, "dasm") ||
@@ -12679,8 +13083,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "polo") && ci_contains(text, " -")) ||
              (ci_contains(text, "pls") && ci_contains(text, " -")) ||
              (ci_contains(text, "hls") && ci_contains(text, " -"))) {
-        what = "asm/fuzzy/filelister primitive";
-        } else if (
+        PASTE_WHAT("asm/fuzzy/filelister primitive");
+        }
+        if (
              /* cycle-294a: sys/net/infra primitives */
              ci_contains(text, "sj3") || ci_contains(text, "kanaka") ||
              ci_contains(text, "wnn") || ci_contains(text, "dladm") ||
@@ -12689,8 +13094,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ospf6d")  ||
              ci_contains(text, "ztp") || ci_contains(text, "ol2tpd") ||
              ci_contains(text, "mpoad") || ci_contains(text, "mpoas")) {
-        what = "sys/net infra primitive";
-        } else if (
+        PASTE_WHAT("sys/net infra primitive");
+        }
+        if (
              /* cycle-294b: media/music/game/misc primitives */
              ci_contains(text, "f3d") || ci_contains(text, "toktok") ||
              ci_contains(text, "madmom") || ci_contains(text, "utau") ||
@@ -12698,8 +13104,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "t2mf") || ci_contains(text, "havannah") ||
              (ci_contains(text, "huh") && ci_contains(text, " -")) ||
              (ci_contains(text, "buzz") && ci_contains(text, " -"))) {
-        what = "media/music/game primitive";
-        } else if (
+        PASTE_WHAT("media/music/game primitive");
+        }
+        if (
              /* cycle-295a: sdk/dev/research primitives */
              ci_contains(text, "zld") || ci_contains(text, "sdps") ||
              ci_contains(text, "ps4sdk") || ci_contains(text, "pspsdk") ||
@@ -12709,24 +13116,27 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dspy") || ci_contains(text, "nomos") ||
              (ci_contains(text, "saw") && ci_contains(text, " -")) ||
              (ci_contains(text, "folk") && ci_contains(text, " -"))) {
-        what = "sdk/dev/research primitive";
-        } else if (
+        PASTE_WHAT("sdk/dev/research primitive");
+        }
+        if (
              /* cycle-295b: emu/game forensic-id primitives */
              ci_contains(text, "muos") || ci_contains(text, "myboy") ||
              ci_contains(text, "3dmoo") || ci_contains(text, "lswm") ||
              ci_contains(text, "fpps4") || ci_contains(text, "kyty") ||
              ci_contains(text, "an2k") || ci_contains(text, "dwsq") ||
              (ci_contains(text, "ludo") && ci_contains(text, " -"))) {
-        what = "emu/game forensic-id primitive";
-        } else if (
+        PASTE_WHAT("emu/game forensic-id primitive");
+        }
+        if (
              /* cycle-296a: windows/aix admin primitives */
              ci_contains(text, "umdh") || ci_contains(text, "sqlps") ||
              ci_contains(text, "pwdadm") || ci_contains(text, "mkldap") ||
              ci_contains(text, "mkps") || ci_contains(text, "vmo2") ||
              ci_contains(text, "pfhd") || ci_contains(text, "lsnw") ||
              ci_contains(text, "lsswsd")) {
-        what = "windows/aix admin primitive";
-        } else if (
+        PASTE_WHAT("windows/aix admin primitive");
+        }
+        if (
              /* cycle-296b: mail/telecom/shell-trick primitives */
              ci_contains(text, "{ls,") || ci_contains(text, "{pwd,") ||
              ci_contains(text, "mhn") || ci_contains(text, "pommo") ||
@@ -12736,8 +13146,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mmw") || ci_contains(text, "mmz") ||
              ci_contains(text, "snpp") ||
              (ci_contains(text, "whom") && ci_contains(text, " -"))) {
-        what = "mail/telecom/shell-trick primitive";
-        } else if (
+        PASTE_WHAT("mail/telecom/shell-trick primitive");
+        }
+        if (
              /* cycle-297a: print/tex/ham-radio primitives */
              ci_contains(text, "tth") || ci_contains(text, "ttm") ||
              ci_contains(text, "pkp") || ci_contains(text, "ohs") ||
@@ -12746,8 +13157,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ft3d") || ci_contains(text, "bpq") ||
              ci_contains(text, "fmuk66") || ci_contains(text, "hdo2") ||
              ci_contains(text, "fwfb")) {
-        what = "print/tex/ham primitive";
-        } else if (
+        PASTE_WHAT("print/tex/ham primitive");
+        }
+        if (
              /* cycle-297b: router/cpe/voip primitives */
              ci_contains(text, "ubus") || ci_contains(text, "fw3") ||
              ci_contains(text, "fw4") || ci_contains(text, "mwan3") ||
@@ -12756,8 +13168,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "kalkun") ||
              (ci_contains(text, "snom") && !ci_contains(text, "snomed")) ||
              ci_contains(text, "b2bua")) {
-        what = "router/cpe/voip primitive";
-        } else if (
+        PASTE_WHAT("router/cpe/voip primitive");
+        }
+        if (
              /* cycle-298a: directory/oracle/vm admin primitives */
              ci_contains(text, "adrci") || ci_contains(text, "dbhome") ||
              ci_contains(text, "dbshut") || ci_contains(text, "kfed") ||
@@ -12770,8 +13183,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "sqlservr") || ci_contains(text, "sysvol") ||
              ci_contains(text, "vghetto") || ci_contains(text, "wbinfo") ||
              (ci_contains(text, "spicy") && ci_contains(text, " -"))) {
-        what = "directory/oracle/vm primitive";
-        } else if (
+        PASTE_WHAT("directory/oracle/vm primitive");
+        }
+        if (
              /* cycle-298b: cluster/hpc scheduler primitives */
              ci_contains(text, "sbcast") || ci_contains(text, "strigger") ||
              ci_contains(text, "bhist") || ci_contains(text, "bpeek") ||
@@ -12780,8 +13194,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "qsig") || ci_contains(text, "pdcp") ||
              ci_contains(text, "jobgrid") || ci_contains(text, "htcondor") ||
              ci_contains(text, "glideinwms") || ci_contains(text, "boinc") ) {
-        what = "cluster/hpc scheduler primitive";
-        } else if (
+        PASTE_WHAT("cluster/hpc scheduler primitive");
+        }
+        if (
              /* cycle-298c: computational-chemistry primitives */
              ci_contains(text, "ambpdb") || ci_contains(text, "aoforce") ||
              ci_contains(text, "autodock") || ci_contains(text, "bigdft") ||
@@ -12819,8 +13234,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "sander") && ci_contains(text, " -")) ||
              (ci_contains(text, "solvate") && ci_contains(text, " -")) ||
              (ci_contains(text, "spirit") && ci_contains(text, " -"))) {
-        what = "computational-chemistry primitive";
-        } else if (
+        PASTE_WHAT("computational-chemistry primitive");
+        }
+        if (
              /* cycle-298d: bioinformatics primitives */
              ci_contains(text, "abricate") || ci_contains(text, "bakta") ||
              ci_contains(text, "blastn") || ci_contains(text, "blastp") ||
@@ -12841,8 +13257,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "kaiju") && ci_contains(text, " -")) ||
              (ci_contains(text, "prefetch") && ci_contains(text, " -")) ||
              (ci_contains(text, "snippy") && ci_contains(text, " -"))) {
-        what = "bioinformatics primitive";
-        } else if (
+        PASTE_WHAT("bioinformatics primitive");
+        }
+        if (
              /* cycle-299a: embedded/mcu toolchain primitives */
              ci_contains(text, "embsys") || ci_contains(text, "espup") ||
              ci_contains(text, "gpiotest") || ci_contains(text, "hitec") ||
@@ -12856,8 +13273,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "energia") && ci_contains(text, " -")) ||
              (ci_contains(text, "ozone") && ci_contains(text, " -")) ||
              (ci_contains(text, "repart") && ci_contains(text, " -"))) {
-        what = "embedded/mcu toolchain primitive";
-        } else if (
+        PASTE_WHAT("embedded/mcu toolchain primitive");
+        }
+        if (
              /* cycle-299b: gpu/vendor telemetry primitives */
              ci_contains(text, "amdgpu_top") || ci_contains(text, "cpupower") ||
              ci_contains(text, "dcgm")   || ci_contains(text, "gputil") ||
@@ -12872,8 +13290,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ryzenadj") || ci_contains(text, "udevd") ||
              ci_contains(text, "udisksd") || ci_contains(text, "upowerd") ||
              ci_contains(text, "zenpower")) {
-        what = "gpu/vendor telemetry primitive";
-        } else if (
+        PASTE_WHAT("gpu/vendor telemetry primitive");
+        }
+        if (
              /* cycle-300a: gis/geospatial primitives */
              ci_contains(text, "cesiumion") || ci_contains(text, "gdal_grid") ||
              ci_contains(text, "gdallocationinfo") ||
@@ -12913,8 +13332,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "v.voronoi") || ci_contains(text, "v.what.rast") ||
              (ci_contains(text, "slope") && ci_contains(text, " -")) ||
              (ci_contains(text, "threshold") && ci_contains(text, " -"))) {
-        what = "gis/geospatial primitive";
-        } else if (
+        PASTE_WHAT("gis/geospatial primitive");
+        }
+        if (
              /* cycle-300b: 3d-print/cnc primitives */
              ci_contains(text, "admesh") || ci_contains(text, "bcnc") ||
              ci_contains(text, "camotics") || ci_contains(text, "gctrl") ||
@@ -12939,8 +13359,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "duet") && ci_contains(text, " -")) ||
              (ci_contains(text, "photon") && ci_contains(text, " -")) ||
              (ci_contains(text, "plater") && ci_contains(text, " -"))) {
-        what = "3d-print/cnc primitive";
-        } else if (
+        PASTE_WHAT("3d-print/cnc primitive");
+        }
+        if (
              /* cycle-300c: robotics/simulation primitives */
              ci_contains(text, "airsim") || ci_contains(text, "argos2") ||
              ci_contains(text, "bullet3") || ci_contains(text, "catkin") ||
@@ -12954,8 +13375,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "webots") ||
              (ci_contains(text, "drake") && ci_contains(text, " -")) ||
              (ci_contains(text, "ignition") && ci_contains(text, " -"))) {
-        what = "robotics/simulation primitive";
-        } else if (
+        PASTE_WHAT("robotics/simulation primitive");
+        }
+        if (
              /* cycle-301a: archive/library/reference primitives */
              ci_contains(text, "arkivum") || ci_contains(text, "omeka") ||
              ci_contains(text, "papis") || ci_contains(text, "jabref") ||
@@ -12963,8 +13385,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "lrs2lrf") || ci_contains(text, "srfsh") ||
              (ci_contains(text, "providence") && ci_contains(text, " -")) ||
              (ci_contains(text, "pawtucket") && ci_contains(text, " -"))) {
-        what = "archive/library/reference primitive";
-        } else if (
+        PASTE_WHAT("archive/library/reference primitive");
+        }
+        if (
              /* cycle-301b: translation/l10n primitives */
              ci_contains(text, "weblate") || ci_contains(text, "wlc") ||
              ci_contains(text, "pootle") || ci_contains(text, "virtaal") ||
@@ -12981,8 +13404,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "build_untranslated") ||
              ci_contains(text, "convert2to1") ||
              (ci_contains(text, "pontoon") && ci_contains(text, " -"))) {
-        what = "translation/l10n primitive";
-        } else if (
+        PASTE_WHAT("translation/l10n primitive");
+        }
+        if (
              /* cycle-301c: genealogy/transit primitives */
              ci_contains(text, "gedcom") || ci_contains(text, "geneweb")  || ci_contains(text, "gwb2ged") ||
              ci_contains(text, "gwc") || ci_contains(text, "gwu") ||
@@ -12996,8 +13420,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "gtfsrdb") || ci_contains(text, "gtfsrt") ||
              ci_contains(text, "gpspoint") || ci_contains(text, "gconnectd") ||
              (ci_contains(text, "ancestry") && ci_contains(text, " -"))) {
-        what = "genealogy/transit primitive";
-        } else if (
+        PASTE_WHAT("genealogy/transit primitive");
+        }
+        if (
              /* cycle-302a: daw/audio-production primitives */
              ci_contains(text, "agordejo") || ci_contains(text, "bitwig") ||
              ci_contains(text, "bristol") || ci_contains(text, "camomile") ||
@@ -13016,8 +13441,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "catia") && ci_contains(text, " -")) ||
              (ci_contains(text, "cyclone") && ci_contains(text, " -")) ||
              (ci_contains(text, "patchbay") && ci_contains(text, " -"))) {
-        what = "daw/audio-production primitive";
-        } else if (
+        PASTE_WHAT("daw/audio-production primitive");
+        }
+        if (
              /* cycle-302b: jack/midi/lv2 primitives */
              ci_contains(text, "jack_metro") || ci_contains(text, "jack_netsource") ||
              ci_contains(text, "jack_property") ||
@@ -13031,8 +13457,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pmidi") || ci_contains(text, "vmpk") ||
              ci_contains(text, "acesrender") || ci_contains(text, "byod") ||
              ci_contains(text, "libpd")) {
-        what = "jack/midi/lv2 primitive";
-        } else if (
+        PASTE_WHAT("jack/midi/lv2 primitive");
+        }
+        if (
              /* cycle-303a: ham-radio/dab primitives */
              ci_contains(text, "hamlib") || ci_contains(text, "rigmem") ||
              ci_contains(text, "rigswr") || ci_contains(text, "flrig") ||
@@ -13047,8 +13474,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dabreceiver") || ci_contains(text, "fs4") ||
              ci_contains(text, "c2enc") || ci_contains(text, "c2dec") ||
              ci_contains(text, "c2sim")) {
-        what = "ham-radio/dab primitive";
-        } else if (
+        PASTE_WHAT("ham-radio/dab primitive");
+        }
+        if (
              /* cycle-303b: media-player/disc/codec primitives */
              ci_contains(text, "mpv")  ||
              ci_contains(text, "mplayer") || ci_contains(text, "madplay") ||
@@ -13076,8 +13504,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "toolame") ||
              (ci_contains(text, "nero") && ci_contains(text, " -")) ||
              (ci_contains(text, "amok") && ci_contains(text, " -"))) {
-        what = "media-player/disc/codec primitive";
-        } else if (
+        PASTE_WHAT("media-player/disc/codec primitive");
+        }
+        if (
              /* cycle-304a: tunnel/vpn/mini-k8s primitives */
              ci_contains(text, "arkade") || ci_contains(text, "frp") ||
              ci_contains(text, "jprq") || ci_contains(text, "k0s") ||
@@ -13090,8 +13519,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tunnelmole") || ci_contains(text, "vpnkit") ||
              ci_contains(text, "webhookrelay")  ||
              (ci_contains(text, "edge") && ci_contains(text, " -"))) {
-        what = "tunnel/vpn/mini-k8s primitive";
-        } else if (
+        PASTE_WHAT("tunnel/vpn/mini-k8s primitive");
+        }
+        if (
              /* cycle-304b: worship/bible-study primitives */
              ci_contains(text, "bibleanalyzer") || ci_contains(text, "bibledesktop") ||
              ci_contains(text, "biblegateway") ||
@@ -13120,8 +13550,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "proclaim") && ci_contains(text, " -")) ||
              (ci_contains(text, "shelby") && ci_contains(text, " -")) ||
              (ci_contains(text, "theword") && ci_contains(text, " -"))) {
-        what = "worship/bible-study primitive";
-        } else if (
+        PASTE_WHAT("worship/bible-study primitive");
+        }
+        if (
              /* cycle-305a: pkm/note-taking primitives */
              ci_contains(text, "anytype") || ci_contains(text, "bearapp") ||
              ci_contains(text, "boostnote") || ci_contains(text, "dendron") ||
@@ -13150,8 +13581,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "roam") && ci_contains(text, " -")) ||
              (ci_contains(text, "outliner") && ci_contains(text, " -")) ||
              (ci_contains(text, "ulysses") && ci_contains(text, " -"))) {
-        what = "pkm/note-taking primitive";
-        } else if (
+        PASTE_WHAT("pkm/note-taking primitive");
+        }
+        if (
              /* cycle-305b: academic-writing/reference primitives */
              ci_contains(text, "bib2html") || ci_contains(text, "bib2json") ||
              ci_contains(text, "bibisco") || ci_contains(text, "citeproc") ||
@@ -13168,8 +13600,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "dryad") && ci_contains(text, " -")) ||
              (ci_contains(text, "endnote") && ci_contains(text, " -")) ||
              (ci_contains(text, "papers") && ci_contains(text, " -"))) {
-        what = "academic-writing/reference primitive";
-        } else if (
+        PASTE_WHAT("academic-writing/reference primitive");
+        }
+        if (
              /* cycle-306a: pkg-build/distro-infra primitives */
              ci_contains(text, "ananicy") || ci_contains(text, "buildd") ||
              ci_contains(text, "copr ") || ci_contains(text, "debcheckout") ||
@@ -13178,13 +13611,15 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "koji")  ||
              ci_contains(text, "mbs") || ci_contains(text, "odcs") ||
              ci_contains(text, "wannabuild")) {
-        what = "pkg-build/distro-infra primitive";
-        } else if (
+        PASTE_WHAT("pkg-build/distro-infra primitive");
+        }
+        if (
              /* cycle-306b: privacy/ad-block/tor primitives */
              ci_contains(text, "pihole") || ci_contains(text, "torbrowser") ||
              ci_contains(text, "usewithtor")) {
-        what = "privacy/ad-block/tor primitive";
-        } else if (
+        PASTE_WHAT("privacy/ad-block/tor primitive");
+        }
+        if (
              /* cycle-307a: uptime/oncall primitives */
              ci_contains(text, "checkly") || ci_contains(text, "gotify") ||
              ci_contains(text, "montastic") ||
@@ -13192,8 +13627,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pdagent") || ci_contains(text, "phare") ||
              ci_contains(text, "statuscake") || ci_contains(text, "uptimerobot") ||
              (ci_contains(text, "uptime") && ci_contains(text, " -"))) {
-        what = "uptime/oncall primitive";
-        } else if (
+        PASTE_WHAT("uptime/oncall primitive");
+        }
+        if (
              /* cycle-307b: push-notification/mailing-list primitives */
              ci_contains(text, "apprise") || ci_contains(text, "cardea") ||
              ci_contains(text, "chanify") || ci_contains(text, "listserv") ||
@@ -13201,48 +13637,56 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pushover") ||
              (ci_contains(text, "join") && ci_contains(text, " -")) ||
              (ci_contains(text, "martian") && ci_contains(text, " -"))) {
-        what = "push-notification/mailing-list primitive";
-        } else if (
+        PASTE_WHAT("push-notification/mailing-list primitive");
+        }
+        if (
              /* cycle-308a: mcu-flash/wireless-mcu primitives */
              ci_contains(text, "amb23") || ci_contains(text, "amb26") ||
              ci_contains(text, "amb82") || ci_contains(text, "ambiq") ||
              ci_contains(text, "ambz")   || ci_contains(text, "ameba") ||
              ci_contains(text, "esp32")) {
-        what = "mcu-flash/wireless-mcu primitive";
-        } else if (
+        PASTE_WHAT("mcu-flash/wireless-mcu primitive");
+        }
+        if (
              /* cycle-308b: home-automation primitives */
              ci_contains(text, "homeassistant")) {
-        what = "home-automation primitive";
-        } else if (
+        PASTE_WHAT("home-automation primitive");
+        }
+        if (
              /* cycle-309a: fuzzing-framework primitives */
              ci_contains(text, "clusterfuzz") ||
              ci_contains(text, "libdislocator") || ci_contains(text, "libfuzzer") ||
              ci_contains(text, "onefuzz") ||
              (ci_contains(text, "centipede") && ci_contains(text, " -"))) {
-        what = "fuzzing-framework primitive";
-        } else if (
+        PASTE_WHAT("fuzzing-framework primitive");
+        }
+        if (
              /* cycle-309b: reverse-engineering plugin primitives */
              ci_contains(text, "iaito") || ci_contains(text, "r2coj") ||
              ci_contains(text, "r2dec")) {
-        what = "reverse-engineering plugin primitive";
-        } else if (
+        PASTE_WHAT("reverse-engineering plugin primitive");
+        }
+        if (
              /* cycle-310a: locate/index-search primitives */
              ci_contains(text, "altlocate")  ||
              ci_contains(text, "glocate") || ci_contains(text, "mlocate") ||
              ci_contains(text, "plocate") || ci_contains(text, "rlocate") ||
              ci_contains(text, "slocate") ||
              (ci_contains(text, "locate") && ci_contains(text, " -"))) {
-        what = "locate/index-search primitive";
-        } else if (
+        PASTE_WHAT("locate/index-search primitive");
+        }
+        if (
              /* cycle-310b: desktop-search primitives */
              ci_contains(text, "recoll") || ci_contains(text, "rga ") ||
              (ci_contains(text, "pinot") && ci_contains(text, " -"))) {
-        what = "desktop-search primitive";
-        } else if (
+        PASTE_WHAT("desktop-search primitive");
+        }
+        if (
              /* cycle-311a: container-runtime primitives */
              ci_contains(text, "conmon") || ci_contains(text, "containerd")) {
-        what = "container-runtime primitive";
-        } else if (
+        PASTE_WHAT("container-runtime primitive");
+        }
+        if (
              /* cycle-311b: proxmox ve/pmg primitives */
              ci_contains(text, "pmam") || ci_contains(text, "pmg") ||
              ci_contains(text, "pmmaster") || ci_contains(text, "pveacl") ||
@@ -13250,52 +13694,60 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pvep") || ci_contains(text, "pvesm") ||
              ci_contains(text, "pveum") || ci_contains(text, "pveversion") ||
              ci_contains(text, "qmp")) {
-        what = "proxmox ve/pmg primitive";
-        } else if (
+        PASTE_WHAT("proxmox ve/pmg primitive");
+        }
+        if (
              /* cycle-312a: wine toolchain primitives */
              ci_contains(text, "wineboot") || ci_contains(text, "winecfg") ||
              ci_contains(text, "winecpp") || ci_contains(text, "winefile") ||
              ci_contains(text, "wineg++") || ci_contains(text, "winegcc") ||
              ci_contains(text, "winelauncher") || ci_contains(text, "winepath")) {
-        what = "wine toolchain primitive";
-        } else if (
+        PASTE_WHAT("wine toolchain primitive");
+        }
+        if (
              /* cycle-313a: ipmi/bmc/oob primitives */
              ci_contains(text, "freeipmi") || ci_contains(text, "ipmidetect") ||
              ci_contains(text, "ipmifru") || ci_contains(text, "ipmipower") ||
              ci_contains(text, "ipmish")) {
-        what = "ipmi/bmc/oob primitive";
-        } else if (
+        PASTE_WHAT("ipmi/bmc/oob primitive");
+        }
+        if (
              /* cycle-314a: blockchain-node primitives */
              ci_contains(text, "besu") || ci_contains(text, "bitcond") ||
              ci_contains(text, "testcoind") || ci_contains(text, "zcashd")) {
-        what = "blockchain-node primitive";
-        } else if (
+        PASTE_WHAT("blockchain-node primitive");
+        }
+        if (
              /* cycle-314b: game-engine primitives */
              ci_contains(text, "o3de") || ci_contains(text, "torqu3d") ||
              ci_contains(text, "torque3d") ||
              ci_contains(text, "ue4") ||
              ci_contains(text, "ue5") || ci_contains(text, "unrealeditor")) {
-        what = "game-engine primitive";
-        } else if (
+        PASTE_WHAT("game-engine primitive");
+        }
+        if (
              /* cycle-315a: ci-cd/build-infra primitives */
              ci_contains(text, "buildbot") || ci_contains(text, "tekton") ||
              ci_contains(text, "bitrise") ||
              (ci_contains(text, "concourse") && ci_contains(text, " -"))) {
-        what = "ci-cd/build-infra primitive";
-        } else if (
+        PASTE_WHAT("ci-cd/build-infra primitive");
+        }
+        if (
              /* cycle-315b: secrets-manager primitives */
              ci_contains(text, "ejson") ||
              (ci_contains(text, "confidant") && ci_contains(text, " -")) ||
              (ci_contains(text, "sneaker") && ci_contains(text, " -"))) {
-        what = "secrets-manager primitive";
-        } else if (
+        PASTE_WHAT("secrets-manager primitive");
+        }
+        if (
              /* cycle-315c: observability/mesh/iac primitives */
              ci_contains(text, "quickwit") || ci_contains(text, "flagger") ||
              ci_contains(text, "kubedog") || ci_contains(text, "cloudquery") ||
              (ci_contains(text, "prometheus") && ci_contains(text, " -")) ||
              (ci_contains(text, "packer") && ci_contains(text, " -"))) {
-        what = "observability/mesh/iac primitive";
-        } else if (
+        PASTE_WHAT("observability/mesh/iac primitive");
+        }
+        if (
              /* cycle-315d: mq/db/irc/mail primitives */
              ci_contains(text, "rpk") || ci_contains(text, "hivemq") ||
              ci_contains(text, "rockset") || ci_contains(text, "gajim") ||
@@ -13303,23 +13755,26 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mailhog") || ci_contains(text, "mailpit") ||
              (ci_contains(text, "cockroach") && ci_contains(text, " -")) ||
              (ci_contains(text, "dino") && ci_contains(text, " -"))) {
-        what = "mq/db/irc/mail primitive";
-        } else if (
+        PASTE_WHAT("mq/db/irc/mail primitive");
+        }
+        if (
              /* cycle-315e: forge/proxy/dns primitives */
              ci_contains(text, "gogs") || ci_contains(text, "varnishhist") ||
              ci_contains(text, "varnishncsa") || ci_contains(text, "varnishstat") ||
              ci_contains(text, "varnishtop") || ci_contains(text, "coredns") ||
              ci_contains(text, "technitium") ||
              (ci_contains(text, "mercurial") && ci_contains(text, " -"))) {
-        what = "forge/proxy/dns primitive";
-        } else if (
+        PASTE_WHAT("forge/proxy/dns primitive");
+        }
+        if (
              /* cycle-316a: disk-usage/file-manager primitives */
              ci_contains(text, "ncdu") || ci_contains(text, "qdirstat") ||
              ci_contains(text, "filelight") || ci_contains(text, "grandperspective") ||
              ci_contains(text, "wiztree") || ci_contains(text, "treesize") ||
              ci_contains(text, "k4dirstat")) {
-        what = "disk-usage/file-manager primitive";
-        } else if (
+        PASTE_WHAT("disk-usage/file-manager primitive");
+        }
+        if (
              /* cycle-316b: net-monitor/wifi/serial primitives */
              ci_contains(text, "trafshow") || ci_contains(text, "iftop") ||
              ci_contains(text, "nethogs") || ci_contains(text, "vnstatd") ||
@@ -13328,22 +13783,25 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pathchar") || ci_contains(text, "tracepath") ||
              ci_contains(text, "wpa_supplicant") || ci_contains(text, "moserial") ||
              (ci_contains(text, "speedometer") && ci_contains(text, " -"))) {
-        what = "net-monitor/wifi/serial primitive";
-        } else if (
+        PASTE_WHAT("net-monitor/wifi/serial primitive");
+        }
+        if (
              /* cycle-316c: forensics/mobile primitives */
              ci_contains(text, "hashdeep") || ci_contains(text, "md5deep") ||
              ci_contains(text, "sha1deep") || ci_contains(text, "sha256deep") ||
              ci_contains(text, "ewfverify") || ci_contains(text, "affcat") ||
              ci_contains(text, "pidcat")) {
-        what = "forensics/mobile primitive";
-        } else if (
+        PASTE_WHAT("forensics/mobile primitive");
+        }
+        if (
              /* cycle-316d: emulator primitives */
              ci_contains(text, "mednafen") || ci_contains(text, "mame64") ||
              ci_contains(text, "advancemame") || ci_contains(text, "fbneo") ||
              ci_contains(text, "scummvm") || ci_contains(text, "amiberry") ||
              ci_contains(text, "puae") || ci_contains(text, "caprice32")) {
-        what = "emulator primitive";
-        } else if (
+        PASTE_WHAT("emulator primitive");
+        }
+        if (
              /* cycle-316e: game-server/foss-game primitives */
              ci_contains(text, "tshock") || ci_contains(text, "lgsm") ||
              ci_contains(text, "srcds") || ci_contains(text, "csserver") ||
@@ -13356,21 +13814,24 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "etlegacy") || ci_contains(text, "freeciv") ||
              ci_contains(text, "naev") || ci_contains(text, "vegastrike") ||
              ci_contains(text, "tremfusion")) {
-        what = "game-server/foss-game primitive";
-        } else if (
+        PASTE_WHAT("game-server/foss-game primitive");
+        }
+        if (
              /* cycle-316f: game-launcher primitives */
              ci_contains(text, "flatseal") ||
              (ci_contains(text, "heroic") && ci_contains(text, " -")) ||
              (ci_contains(text, "legendary") && ci_contains(text, " -")) ||
              (ci_contains(text, "wyvern") && ci_contains(text, " -")) ||
              (ci_contains(text, "bottles") && ci_contains(text, " -"))) {
-        what = "game-launcher primitive";
-        } else if (
+        PASTE_WHAT("game-launcher primitive");
+        }
+        if (
              /* cycle-317a: office/doc primitives */
              ci_contains(text, "ooffice") || ci_contains(text, "gnumeric") ||
              ci_contains(text, "unoserver")) {
-        what = "office/doc primitive";
-        } else if (
+        PASTE_WHAT("office/doc primitive");
+        }
+        if (
              /* cycle-317b: image/photo primitives */
              ci_contains(text, "jhead") || ci_contains(text, "jpegoptim") ||
              ci_contains(text, "jpegtran") || ci_contains(text, "gifsicle") ||
@@ -13383,8 +13844,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "gtkam") || ci_contains(text, "geeqie") ||
              ci_contains(text, "gpicview") ||
              (ci_contains(text, "ristretto") && ci_contains(text, " -"))) {
-        what = "image/photo primitive";
-        } else if (
+        PASTE_WHAT("image/photo primitive");
+        }
+        if (
              /* cycle-317c: cad-eda/sci-math/gis primitives */
              ci_contains(text, "librecad") || ci_contains(text, "icebram") ||
              ci_contains(text, "ecppack") || ci_contains(text, "f4pga") ||
@@ -13394,8 +13856,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tilemill") || ci_contains(text, "landez") ||
              (ci_contains(text, "icepack") && ci_contains(text, " -")) ||
              (ci_contains(text, "trellis") && ci_contains(text, " -"))) {
-        what = "cad-eda/sci-math/gis primitive";
-        } else if (
+        PASTE_WHAT("cad-eda/sci-math/gis primitive");
+        }
+        if (
              /* cycle-317d: bioinfo primitives */
              ci_contains(text, "kallisto") || ci_contains(text, "freebayes") ||
              ci_contains(text, "strelka") || ci_contains(text, "busco") ||
@@ -13408,8 +13871,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "lumpy") && ci_contains(text, " -")) ||
              (ci_contains(text, "ragtag") && ci_contains(text, " -")) ||
              (ci_contains(text, "velvet") && ci_contains(text, " -"))) {
-        what = "bioinfo primitive";
-        } else if (
+        PASTE_WHAT("bioinfo primitive");
+        }
+        if (
              /* cycle-317e: cae/aiml/voip/print/finance primitives */
              ci_contains(text, "z88r") || ci_contains(text, "paraview") ||
              ci_contains(text, "tecplot360") || ci_contains(text, "femm42") ||
@@ -13420,8 +13884,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pdf90") || ci_contains(text, "pdf180") ||
              ci_contains(text, "pdf270") || ci_contains(text, "kmymoney") ||
              ci_contains(text, "skrooge")) {
-        what = "cae/aiml/voip/print/finance primitive";
-        } else if (
+        PASTE_WHAT("cae/aiml/voip/print/finance primitive");
+        }
+        if (
              /* cycle-318a: editor/browser primitives */
              ci_contains(text, "kakoune") || ci_contains(text, "zile") ||
              ci_contains(text, "qtcreator") || ci_contains(text, "falkon") ||
@@ -13433,8 +13898,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "carbonyl") && ci_contains(text, " -")) ||
              (ci_contains(text, "jove") && ci_contains(text, " -")) ||
              (ci_contains(text, "mousepad") && ci_contains(text, " -"))) {
-        what = "editor/browser primitive";
-        } else if (
+        PASTE_WHAT("editor/browser primitive");
+        }
+        if (
              /* cycle-318b: comms/transfer primitives */
              ci_contains(text, "sylpheed") || ci_contains(text, "trojita") ||
              ci_contains(text, "enigmail") || ci_contains(text, "hakuneko") ||
@@ -13445,8 +13911,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "seahorse") && ci_contains(text, " -")) ||
              (ci_contains(text, "ripcord") && ci_contains(text, " -")) ||
              (ci_contains(text, "tootle") && ci_contains(text, " -"))) {
-        what = "comms/transfer primitive";
-        } else if (
+        PASTE_WHAT("comms/transfer primitive");
+        }
+        if (
              /* cycle-318c: ssg/build/pkg-img/fpga primitives */
              ci_contains(text, "metalsmith") || ci_contains(text, "docusaurus") ||
              ci_contains(text, "vitepress") || ci_contains(text, "honkit") ||
@@ -13456,8 +13923,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "wchisp") || ci_contains(text, "stcgal") ||
              ci_contains(text, "hw_server") || ci_contains(text, "fpgaconf") ||
              ci_contains(text, "fpgainfo") || ci_contains(text, "aocl")) {
-        what = "ssg/build/pkg-img/fpga primitive";
-        } else if (
+        PASTE_WHAT("ssg/build/pkg-img/fpga primitive");
+        }
+        if (
              /* cycle-319a: latex/doc/wiki/llm/dict/journal/misc primitives */
              ci_contains(text, "gojq") || ci_contains(text, "dvisvgm") ||
              ci_contains(text, "lacheck") || ci_contains(text, "bib2gls") ||
@@ -13468,14 +13936,16 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "po4a") || ci_contains(text, "polib") ||
              ci_contains(text, "rednotebook") || ci_contains(text, "pwqgen") ||
              ci_contains(text, "randpwd") || ci_contains(text, "tai64n")  || ci_contains(text, "softdog")) {
-        what = "latex/doc/wiki/llm/dict/journal/misc primitive";
-        } else if (
+        PASTE_WHAT("latex/doc/wiki/llm/dict/journal/misc primitive");
+        }
+        if (
              /* cycle-319b: iot/industrial/erp/forum primitives */
              ci_contains(text, "tasmotizer") || ci_contains(text, "kalliope") ||
              ci_contains(text, "bacpypes") || ci_contains(text, "weberp") ||
              ci_contains(text, "adempiere") || ci_contains(text, "enewss")) {
-        what = "iot/industrial/erp/forum primitive";
-        } else if (
+        PASTE_WHAT("iot/industrial/erp/forum primitive");
+        }
+        if (
              /* cycle-320a: input/clipboard/theme/font primitives */
              ci_contains(text, "qjoypad") || ci_contains(text, "ds4drv") ||
              ci_contains(text, "wminput") || ci_contains(text, "qt5ct") ||
@@ -13483,36 +13953,41 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "hsetroot") || ci_contains(text, "gowall") ||
              ci_contains(text, "paperview") || ci_contains(text, "otfinfo") ||
              ci_contains(text, "pyftmerge")) {
-        what = "input/clipboard/theme/font primitive";
-        } else if (
+        PASTE_WHAT("input/clipboard/theme/font primitive");
+        }
+        if (
              /* cycle-320b: launcher/av/power primitives */
              ci_contains(text, "wyrd") || ci_contains(text, "remindme") ||
              ci_contains(text, "jgmenu") || ci_contains(text, "mymenu") ||
              ci_contains(text, "docky") || ci_contains(text, "pulseeffects") ||
              ci_contains(text, "webcamoid") || ci_contains(text, "slimbookbattery")) {
-        what = "launcher/av/power primitive";
-        } else if (
+        PASTE_WHAT("launcher/av/power primitive");
+        }
+        if (
              /* cycle-320c: data-infra/lint/wayland primitives */
              ci_contains(text, "immuadmin") || ci_contains(text, "kconnect") ||
              ci_contains(text, "zprint") || ci_contains(text, "kibit") ||
              ci_contains(text, "arandr") || ci_contains(text, "i3blocks") ||
              ci_contains(text, "i3status") || ci_contains(text, "swaystatus")) {
-        what = "data-infra/lint/wayland primitive";
-        } else if (
+        PASTE_WHAT("data-infra/lint/wayland primitive");
+        }
+        if (
              /* cycle-321a: go/java linter primitives */
              ci_contains(text, "staticcheck") || ci_contains(text, "errcheck") ||
              ci_contains(text, "gocyclo") || ci_contains(text, "goconst") ||
              ci_contains(text, "gomodifytags") || ci_contains(text, "gotests") ||
              ci_contains(text, "fillstruct") || ci_contains(text, "errorprone")) {
-        what = "go/java linter primitive";
-        } else if (
+        PASTE_WHAT("go/java linter primitive");
+        }
+        if (
              /* cycle-321b: ruby/php linter primitives */
              ci_contains(text, "standardrb") || ci_contains(text, "solargraph") ||
              ci_contains(text, "typeprof") || ci_contains(text, "fasterer") ||
              ci_contains(text, "metric_fu") || ci_contains(text, "deptrac") ||
              ci_contains(text, "paratest") || ci_contains(text, "kahlan")) {
-        what = "ruby/php linter primitive";
-        } else if (
+        PASTE_WHAT("ruby/php linter primitive");
+        }
+        if (
              /* cycle-321c: misc-lang/db-admin/vdb primitives */
              ci_contains(text, "ocamlbuild") || ci_contains(text, "ocamllsp") ||
              ci_contains(text, "kaocha") || ci_contains(text, "fatpack") ||
@@ -13521,8 +13996,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "innotop") || ci_contains(text, "pg_repack") ||
              ci_contains(text, "pg_verifybackup") || ci_contains(text, "wal2json") ||
              ci_contains(text, "ledisdb") || ci_contains(text, "tendisplus")) {
-        what = "misc-lang/db-admin/vdb primitive";
-        } else if (
+        PASTE_WHAT("misc-lang/db-admin/vdb primitive");
+        }
+        if (
              /* cycle-322a: dicom primitives */
              ci_contains(text, "echoscu") || ci_contains(text, "dcmqrscp") ||
              ci_contains(text, "dcm2jpg") || ci_contains(text, "jpg2dcm") ||
@@ -13534,8 +14010,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dcmrecv") || ci_contains(text, "gdcmimg") ||
              ci_contains(text, "gdcminfo") || ci_contains(text, "gdcmpdf") ||
              ci_contains(text, "gdcmraw") || ci_contains(text, "gdcmviewer")) {
-        what = "dicom primitive";
-        } else if (
+        PASTE_WHAT("dicom primitive");
+        }
+        if (
              /* cycle-322b: neuroimaging primitives */
              ci_contains(text, "mri_convert") || ci_contains(text, "fslmaths") ||
              ci_contains(text, "fslroi") || ci_contains(text, "fslmerge") ||
@@ -13546,8 +14023,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tcksift") || ci_contains(text, "mrview") ||
              ci_contains(text, "n4biasfieldcorrection") ||
              ci_contains(text, "reg_aladin") || ci_contains(text, "heudiconv")) {
-        what = "neuroimaging primitive";
-        } else if (
+        PASTE_WHAT("neuroimaging primitive");
+        }
+        if (
              /* cycle-322c: meteo/micro/seismic/hydro primitives */
              ci_contains(text, "grib_ls") || ci_contains(text, "grib_set") ||
              ci_contains(text, "grib_filter") || ci_contains(text, "grib_compare") ||
@@ -13568,8 +14046,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "modflow6") || ci_contains(text, "flopy") ||
              ci_contains(text, "seepw") || ci_contains(text, "parflow") ||
              ci_contains(text, "pflotran") || ci_contains(text, "tough2")) {
-        what = "meteo/micro/seismic/hydro primitive";
-        } else if (
+        PASTE_WHAT("meteo/micro/seismic/hydro primitive");
+        }
+        if (
              /* cycle-323a: astro/drone primitives */
              ci_contains(text, "ekos") || ci_contains(text, "astap") ||
              ci_contains(text, "hnsky") || ci_contains(text, "skychart") ||
@@ -13586,8 +14065,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mav_wp") || ci_contains(text, "jmavsim") ||
              ci_contains(text, "mavsdk") || ci_contains(text, "dji_rev") ||
              ci_contains(text, "dji_imah_fwsig")) {
-        what = "astro/drone primitive";
-        } else if (
+        PASTE_WHAT("astro/drone primitive");
+        }
+        if (
              /* cycle-323b: survey/ham/nlp primitives */
              ci_contains(text, "rtkrcv") || ci_contains(text, "convbin") ||
              ci_contains(text, "pos2kml") || ci_contains(text, "str2str") ||
@@ -13611,8 +14091,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "udparser") || ci_contains(text, "hunpos") ||
              ci_contains(text, "crf_learn") || ci_contains(text, "crf_test") ||
              ci_contains(text, "mecab")) {
-        what = "survey/ham/nlp primitive";
-        } else if (
+        PASTE_WHAT("survey/ham/nlp primitive");
+        }
+        if (
              /* cycle-323c: cam/eda/hep/archival primitives */
              ci_contains(text, "gmoccapy") || ci_contains(text, "stepconf") ||
              ci_contains(text, "pncconf") || ci_contains(text, "halshow") ||
@@ -13648,8 +14129,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "subshift") || ci_contains(text, "subs2srs") ||
              ci_contains(text, "pgs2srt") || ci_contains(text, "parlatype") ||
              ci_contains(text, "humogen") || ci_contains(text, "ancestris")) {
-        what = "cam/eda/hep/archival primitive";
-        } else if (
+        PASTE_WHAT("cam/eda/hep/archival primitive");
+        }
+        if (
              /* cycle-324a: a11y/ime/photo/term primitives */
              ci_contains(text, "espeakup") || ci_contains(text, "lou_translate") ||
              ci_contains(text, "lou_trace") || ci_contains(text, "lou_debug") ||
@@ -13663,8 +14145,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "photoflare") || ci_contains(text, "mypaint") ||
              ci_contains(text, "drawpile") || ci_contains(text, "kolourpaint") ||
              ci_contains(text, "tupitube")) {
-        what = "a11y/ime/photo/term primitive";
-        } else if (
+        PASTE_WHAT("a11y/ime/photo/term primitive");
+        }
+        if (
              /* cycle-324b: wm primitives */
              ci_contains(text, "niri") || ci_contains(text, "spectrwm") ||
              ci_contains(text, "icewm") || ci_contains(text, "fvwm3") ||
@@ -13672,8 +14155,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "phoc") || ci_contains(text, "wmenu") ||
              ci_contains(text, "ulauncher") || ci_contains(text, "twmn") ||
              ci_contains(text, "taffybar")) {
-        what = "wm primitive";
-        } else if (
+        PASTE_WHAT("wm primitive");
+        }
+        if (
              /* cycle-324c: usd/3d/pointcloud primitives */
              ci_contains(text, "usdcat") || ci_contains(text, "usdview") ||
              ci_contains(text, "usdtree") || ci_contains(text, "usdchecker") ||
@@ -13699,8 +14183,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "cmvs") || ci_contains(text, "meshrecon") ||
              ci_contains(text, "rtabmap") || ci_contains(text, "kimera") ||
              ci_contains(text, "tetview")) {
-        what = "usd/3d/pointcloud primitive";
-        } else if (
+        PASTE_WHAT("usd/3d/pointcloud primitive");
+        }
+        if (
              /* cycle-324d: capture/osint/embedded/formal primitives */
              ci_contains(text, "byzanz") || ci_contains(text, "silentcast") ||
              ci_contains(text, "swappy") || ci_contains(text, "satty") ||
@@ -13717,8 +14202,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "autfilt") || ci_contains(text, "genaut") ||
              ci_contains(text, "randaut") || ci_contains(text, "ltlsynt") ||
              ci_contains(text, "ltl2ba")) {
-        what = "capture/osint/embedded/formal primitive";
-        } else if (
+        PASTE_WHAT("capture/osint/embedded/formal primitive");
+        }
+        if (
              /* cycle-325a: retro/emulator primitives */
              ci_contains(text, "z80asm") || ci_contains(text, "tniasm") ||
              ci_contains(text, "uz80as") || ci_contains(text, "zmac") ||
@@ -13737,8 +14223,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ep128emu") || ci_contains(text, "plus4emu") ||
              ci_contains(text, "yape") || ci_contains(text, "tivars") ||
              ci_contains(text, "hp11c") || ci_contains(text, "free42")) {
-        what = "retro/emulator primitive";
-        } else if (
+        PASTE_WHAT("retro/emulator primitive");
+        }
+        if (
              /* cycle-325b: bbs/osm/backup primitives */
              ci_contains(text, "echocfg") || ci_contains(text, "asc2ans") ||
              ci_contains(text, "binkit") || ci_contains(text, "chksmb") ||
@@ -13752,8 +14239,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "planetiler") || ci_contains(text, "img2grd") ||
              ci_contains(text, "amrecover") || ci_contains(text, "amlabel") ||
              ci_contains(text, "amstatus")) {
-        what = "bbs/osm/backup primitive";
-        } else if (
+        PASTE_WHAT("bbs/osm/backup primitive");
+        }
+        if (
              /* cycle-325c: honeypot/ntpgps/moreutils/plan9 primitives */
              ci_contains(text, "dionaea") || ci_contains(text, "kfsensor") ||
              ci_contains(text, "fakeses") || ci_contains(text, "honeytrap") ||
@@ -13770,8 +14258,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mkone") ||
              ci_contains(text, "json2tsv") || ci_contains(text, "saait") ||
              ci_contains(text, "libzahl")) {
-        what = "honeypot/ntpgps/moreutils/plan9 primitive";
-        } else if (
+        PASTE_WHAT("honeypot/ntpgps/moreutils/plan9 primitive");
+        }
+        if (
              /* cycle-326a: pdf/present/broadcast/ascii primitives */
              ci_contains(text, "pdfdraw") || ci_contains(text, "pdftops") ||
              ci_contains(text, "pdfattach") || ci_contains(text, "pdffonts") ||
@@ -13785,8 +14274,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "aafire") || ci_contains(text, "asciiview") ||
              ci_contains(text, "shelr")  ||
              ci_contains(text, "timg") || ci_contains(text, "uberzug")) {
-        what = "pdf/present/broadcast/ascii primitive";
-        } else if (
+        PASTE_WHAT("pdf/present/broadcast/ascii primitive");
+        }
+        if (
              /* cycle-326b: stress/diststore/san primitives */
              ci_contains(text, "filebench") || ci_contains(text, "smallfile") ||
              ci_contains(text, "mdtest") || ci_contains(text, "sg_dd") ||
@@ -13798,16 +14288,18 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "scstadmin") || ci_contains(text, "scst_local") ||
              ci_contains(text, "fcoeadm") || ci_contains(text, "fcoemon") ||
              ci_contains(text, "fcrls")) {
-        what = "stress/diststore/san primitive";
-        } else if (
+        PASTE_WHAT("stress/diststore/san primitive");
+        }
+        if (
              /* cycle-326c: tpm/pkcs11/feeds/notes primitives */
              ci_contains(text, "tpm_version") || ci_contains(text, "eidenv") ||
              ci_contains(text, "pamu2fcfg") ||
              ci_contains(text, "podgrab") || ci_contains(text, "mashpodder") ||
              ci_contains(text, "podboat") || ci_contains(text, "rawdog") ||
              ci_contains(text, "howdoi") || ci_contains(text, "buku")) {
-        what = "tpm/pkcs11/feeds/notes primitive";
-        } else if (
+        PASTE_WHAT("tpm/pkcs11/feeds/notes primitive");
+        }
+        if (
              /* cycle-327a: voip/sdr/fax/ppp/sms primitives */
              ci_contains(text, "dahdi_cfg") || ci_contains(text, "dahdi_hardware") ||
              ci_contains(text, "dahdi_maint") || ci_contains(text, "dahdi_speed") ||
@@ -13822,8 +14314,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pppstats") || ci_contains(text, "zntune") ||
              ci_contains(text, "atmloop") || ci_contains(text, "atsig") ||
              ci_contains(text, "kannel") || ci_contains(text, "atinout")) {
-        what = "voip/sdr/fax/ppp/sms primitive";
-        } else if (
+        PASTE_WHAT("voip/sdr/fax/ppp/sms primitive");
+        }
+        if (
              /* cycle-327b: crypto/iot/lirc/serial primitives */
              ci_contains(text, "namecoind") || ci_contains(text, "peercoind") ||
              ci_contains(text, "primecoind") || ci_contains(text, "vertcoind") ||
@@ -13837,8 +14330,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tty0tty") || ci_contains(text, "interceptty") ||
              ci_contains(text, "ttyspy") || ci_contains(text, "seyon") ||
              ci_contains(text, "tatssy")) {
-        what = "crypto/iot/lirc/serial primitive";
-        } else if (
+        PASTE_WHAT("crypto/iot/lirc/serial primitive");
+        }
+        if (
              /* cycle-328a: metrics/search/ctn/firmware/memory primitives */
              ci_contains(text, "vmauth") || ci_contains(text, "vmselect") ||
              ci_contains(text, "vminsert") || ci_contains(text, "m3coordinator") ||
@@ -13849,8 +14343,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "flintlock") || ci_contains(text, "ucontainer") ||
              ci_contains(text, "sbattach") || ci_contains(text, "mkrlconf") ||
              ci_contains(text, "jeprof")) {
-        what = "metrics/search/ctn/firmware/memory primitive";
-        } else if (
+        PASTE_WHAT("metrics/search/ctn/firmware/memory primitive");
+        }
+        if (
              /* cycle-328b: bcc/trace/libbpf primitives */
              ci_contains(text, "tcpconnlat") || ci_contains(text, "tcpdrop") ||
              ci_contains(text, "biolatency") || ci_contains(text, "llcstat") ||
@@ -13861,22 +14356,25 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tclstat") ||
              ci_contains(text, "stapdyn") || ci_contains(text, "stapio") ||
              ci_contains(text, "bpf_iter") || ci_contains(text, "bpf_asm")) {
-        what = "bcc/trace/libbpf primitive";
-        } else if (
+        PASTE_WHAT("bcc/trace/libbpf primitive");
+        }
+        if (
              /* cycle-329a: hpc/mpi/gpu primitives */
              ci_contains(text, "msub") || ci_contains(text, "showq") ||
              ci_contains(text, "ompi_info") ||
              ci_contains(text, "mpiicc") || ci_contains(text, "mpiicpc") ||
              ci_contains(text, "rocprof") || ci_contains(text, "hipcc") ||
              ci_contains(text, "nvprof")) {
-        what = "hpc/mpi/gpu primitive";
-        } else if (
+        PASTE_WHAT("hpc/mpi/gpu primitive");
+        }
+        if (
              /* cycle-329b: pkgrepo/secscan primitives */
              ci_contains(text, "poudriere") || ci_contains(text, "smartpm") ||
              ci_contains(text, "pdtm") || ci_contains(text, "mapcidr") ||
              (ci_contains(text, "uncover") && ci_contains(text, " -"))) {
-        what = "pkgrepo/secscan primitive";
-        } else if (
+        PASTE_WHAT("pkgrepo/secscan primitive");
+        }
+        if (
              /* cycle-330a: mail/dns/share primitives */
              ci_contains(text, "postdrop") || ci_contains(text, "postkick") ||
              ci_contains(text, "postlock") || ci_contains(text, "postmulti") ||
@@ -13887,12 +14385,14 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dumresp") || ci_contains(text, "kaspdb") ||
              ci_contains(text, "yadifa")  ||
              ci_contains(text, "nfsref")) {
-        what = "mail/dns/share primitive";
-        } else if (
+        PASTE_WHAT("mail/dns/share primitive");
+        }
+        if (
              /* cycle-330b: backup/devmisc primitives */
              ci_contains(text, "btape") || ci_contains(text, "apgdiff")) {
-        what = "backup/devmisc primitive";
-        } else if (
+        PASTE_WHAT("backup/devmisc primitive");
+        }
+        if (
              /* cycle-331a: image/audio primitives */
              ci_contains(text, "celeste_standalone") || ci_contains(text, "checkpto") ||
              ci_contains(text, "fulla") || ci_contains(text, "nona_gpu") ||
@@ -13906,8 +14406,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "faac") || ci_contains(text, "faad") ||
              ci_contains(text, "twolame") || ci_contains(text, "fdkaac") ||
              ci_contains(text, "qaac") || ci_contains(text, "whipper")) {
-        what = "image/audio primitive";
-        } else if (
+        PASTE_WHAT("image/audio primitive");
+        }
+        if (
              /* cycle-331b: video/book/typeset primitives */
              ci_contains(text, "mkvinfo") || ci_contains(text, "mkvpropedit") ||
              ci_contains(text, "dvbtune") || ci_contains(text, "dvbstream") ||
@@ -13918,8 +14419,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "preconv") || ci_contains(text, "soelim") ||
              ci_contains(text, "grn") || ci_contains(text, "nroff") ||
              ci_contains(text, "mdocml") || ci_contains(text, "grohtml") ) {
-        what = "video/book/typeset primitive";
-        } else if (
+        PASTE_WHAT("video/book/typeset primitive");
+        }
+        if (
              /* cycle-332a: graph/font primitives */
              ci_contains(text, "twopi") || ci_contains(text, "circo") ||
              ci_contains(text, "gvpr") || ci_contains(text, "bcomps") ||
@@ -13941,8 +14443,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ftmulti") || ci_contains(text, "ftdiff") ||
              ci_contains(text, "ftbench") || ci_contains(text, "ftmetric") ||
              ci_contains(text, "ftsbench")) {
-        what = "graph/font primitive";
-        } else if (
+        PASTE_WHAT("graph/font primitive");
+        }
+        if (
              /* cycle-332b: disc/bench primitives */
              ci_contains(text, "wsdd") || ci_contains(text, "mrdisc") ||
              ci_contains(text, "ripquery") || ci_contains(text, "arpon") ||
@@ -13950,8 +14453,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "hpcc") || (ci_contains(text, "hey") && ci_contains(text, " -")) ||
              ci_contains(text, "autobench") || ci_contains(text, "fs_mark") ||
              ci_contains(text, "lmbench") || ci_contains(text, "tinymembench")) {
-        what = "disc/bench primitive";
-        } else if (
+        PASTE_WHAT("disc/bench primitive");
+        }
+        if (
              /* cycle-333a: ietf/biblio/chem primitives */ ci_contains(text, "nsgmls") ||
              ci_contains(text, "mmark") || ci_contains(text, "idnits") ||
              ci_contains(text, "rfcdiff") || ci_contains(text, "rfcmarkup") ||
@@ -13960,8 +14464,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "bibdiff") ||
              ci_contains(text, "obfit") || ci_contains(text, "obgen") ||
              ci_contains(text, "cpmd")) {
-        what = "ietf/biblio/chem primitive";
-        } else if (
+        PASTE_WHAT("ietf/biblio/chem primitive");
+        }
+        if (
              /* cycle-333b: bio primitives */
              (ci_contains(text, "tophat") && ci_contains(text, " -")) ||
              (ci_contains(text, "glimmer") && ci_contains(text, " -")) ||
@@ -13969,8 +14474,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "barrnap") ||
              ci_contains(text, "cmbuild") || ci_contains(text, "cmemit") ||
              ci_contains(text, "cmfetch") || ci_contains(text, "cmstat")) {
-        what = "bio primitive";
-        } else if (
+        PASTE_WHAT("bio primitive");
+        }
+        if (
              /* cycle-334a: vcs/fsrepair primitives */
              ci_contains(text, "rcsdiff") || ci_contains(text, "rcsmerge") ||
              ci_contains(text, "cssc") || ci_contains(text, "patchview") ||
@@ -13980,19 +14486,22 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "lscp") || ci_contains(text, "mkcp") ||
              ci_contains(text, "fsck.f2fs") || ci_contains(text, "defrag.f2fs") ||
              ci_contains(text, "resize.f2fs")) {
-        what = "vcs/fsrepair primitive";
-        } else if (
+        PASTE_WHAT("vcs/fsrepair primitive");
+        }
+        if (
              /* cycle-334b: cast/job/img primitives */
              ci_contains(text, "zmodem") || ci_contains(text, "supercronic") ||
              ci_contains(text, "aatest") || ci_contains(text, "asciigif")) {
-        what = "cast/job/img primitive";
-        } else if (
+        PASTE_WHAT("cast/job/img primitive");
+        }
+        if (
              /* cycle-335a: desktop misc primitives */
              ci_contains(text, "wlopm") || ci_contains(text, "swayr") ||
              (ci_contains(text, "undervolt") && ci_contains(text, " -")) ||
              ci_contains(text, "disper")) {
-        what = "desktop misc primitive";
-        } else if (
+        PASTE_WHAT("desktop misc primitive");
+        }
+        if (
              /* cycle-336a: mcu/barcode/ocr primitives */
              ci_contains(text, "esplorer") || ci_contains(text, "circup") ||
              ci_contains(text, "lpc21isp") || ci_contains(text, "sdas8051") ||
@@ -14001,30 +14510,35 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "eplabel") || ci_contains(text, "niimbot") ||
              ci_contains(text, "phomemo") ||
              ci_contains(text, "ocropy") || ci_contains(text, "ocrfeeder")) {
-        what = "mcu/barcode/ocr primitive";
-        } else if (
+        PASTE_WHAT("mcu/barcode/ocr primitive");
+        }
+        if (
              /* cycle-336b: iot/midi primitives */
              ci_contains(text, "tunslip")  ||
              ci_contains(text, "wpcapslip") || ci_contains(text, "hdspconf")) {
-        what = "iot/midi primitive";
-        } else if (
+        PASTE_WHAT("iot/midi primitive");
+        }
+        if (
              /* cycle-337a: thin/cluster primitives */
              ci_contains(text, "epoptes") || ci_contains(text, "italc2") ||
              ci_contains(text, "thinstation") || ci_contains(text, "dshbak") ||
              ci_contains(text, "capistrano")) {
-        what = "thin/cluster primitive";
-        } else if (
+        PASTE_WHAT("thin/cluster primitive");
+        }
+        if (
              /* cycle-337b: ldap primitives */
              ci_contains(text, "ldapcompare") || ci_contains(text, "dsidm") ||
              ci_contains(text, "nslcd")) {
-        what = "ldap primitive";
-        } else if (
+        PASTE_WHAT("ldap primitive");
+        }
+        if (
              /* cycle-338a: torr/fedi primitives */
              ci_contains(text, "torrench") || ci_contains(text, "magnet2torrent") ||
              ci_contains(text, "tootstream") || (ci_contains(text, "nostril") && ci_contains(text, " -")) ||
              ci_contains(text, "nostpy") || ci_contains(text, "snac ")) {
-        what = "torr/fedi primitive";
-        } else if (
+        PASTE_WHAT("torr/fedi primitive");
+        }
+        if (
              /* cycle-338b: fb/feed/misc primitives */
              ci_contains(text, "fbv") || ci_contains(text, "fbdesk") ||
              ci_contains(text, "fbpdf") || ci_contains(text, "dfbg") ||
@@ -14032,8 +14546,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "jenny") && ci_contains(text, " -")) ||
              ci_contains(text, "newsraft") ||
              ci_contains(text, "itchd") || ci_contains(text, "vkquake")) {
-        what = "fb/feed/misc primitive";
-        } else if (
+        PASTE_WHAT("fb/feed/misc primitive");
+        }
+        if (
              /* cycle-339a: sdrhw/can/obd primitives */
              ci_contains(text, "hackrf_clock") ||
              ci_contains(text, "hackrf_operacake") || ci_contains(text, "limeutil") ||
@@ -14043,8 +14558,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "isotprecv") || ci_contains(text, "isotpserver") ||
              ci_contains(text, "isotptun") || ci_contains(text, "cannelloni") ||
              ci_contains(text, "obdinfo") || ci_contains(text, "pyren")) {
-        what = "sdrhw/can/obd primitive";
-        } else if (
+        PASTE_WHAT("sdrhw/can/obd primitive");
+        }
+        if (
              /* cycle-339b: drone/emu primitives */
              ci_contains(text, "blheli32") || ci_contains(text, "blheli_s") ||
              ci_contains(text, "emuflight") ||
@@ -14055,25 +14571,29 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ioq3ded") || ci_contains(text, "eduke32") ||
              ci_contains(text, "gzdoom") || ci_contains(text, "zandronum") ||
              ci_contains(text, "slade3")) {
-        what = "drone/emu primitive";
-        } else if (
+        PASTE_WHAT("drone/emu primitive");
+        }
+        if (
              /* cycle-340a: vcs primitives */
              ci_contains(text, "commitlint") || (ci_contains(text, "breezy") && ci_contains(text, " -"))) {
-        what = "vcs primitive";
-        } else if (
+        PASTE_WHAT("vcs primitive");
+        }
+        if (
              /* cycle-340b: archive/bench primitives */
              ci_contains(text, "7za") || ci_contains(text, "7zr") ||
              (ci_contains(text, "lzmadec") && ci_contains(text, " -")) ||
              ci_contains(text, "paq8") ||
              ci_contains(text, "flent") || ci_contains(text, "ntttcp")) {
-        what = "archive/bench primitive";
-        } else if (
+        PASTE_WHAT("archive/bench primitive");
+        }
+        if (
              /* cycle-341a: routing/virt primitives */
              ci_contains(text, "eigrpd") || ci_contains(text, "bfdd") ||
              ci_contains(text, "rtrtr") || ci_contains(text, "routinator") ||
              ci_contains(text, "vfkit")) {
-        what = "routing/virt primitive";
-        } else if (
+        PASTE_WHAT("routing/virt primitive");
+        }
+        if (
              /* cycle-341b: ham/mobile/build primitives */
              ci_contains(text, "wsprd") || (ci_contains(text, "chronic") && ci_contains(text, " -")) ||
              ci_contains(text, "gnirehtet") || ci_contains(text, "irecovery") ||
@@ -14081,22 +14601,25 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "wic ") || (ci_contains(text, "toaster") && ci_contains(text, " -")) ||
              ci_contains(text, "debos") || ci_contains(text, "perkeep") ||
              ci_contains(text, "tessen")) {
-        what = "ham/mobile/build primitive";
-        } else if (
+        PASTE_WHAT("ham/mobile/build primitive");
+        }
+        if (
              /* cycle-342a: infra/messaging primitives */
              ci_contains(text, "moofsd") || ci_contains(text, "krenew") ||
              ci_contains(text, "bzl") || ci_contains(text, "prom2json") ||
              ci_contains(text, "nsc ") || ci_contains(text, "kaf ") ||
              ci_contains(text, "girc") || (ci_contains(text, "pounce") && ci_contains(text, " -"))) {
-        what = "infra/messaging primitive";
-        } else if (
+        PASTE_WHAT("infra/messaging primitive");
+        }
+        if (
              /* cycle-343a: forensic primitives */
              ci_contains(text, "affconvert") || ci_contains(text, "mmstat") ||
              ci_contains(text, "filewalk") || ci_contains(text, "blkstat") ||
              ci_contains(text, "blkcalc") || ci_contains(text, "img_cat") ||
              ci_contains(text, "ssdeep")) {
-        what = "forensic primitive";
-        } else if (
+        PASTE_WHAT("forensic primitive");
+        }
+        if (
              /* cycle-343b: tracker/cad primitives */
              (ci_contains(text, "schism") && ci_contains(text, " -")) ||
              ci_contains(text, "ft2") || ci_contains(text, "psycle") ||
@@ -14104,21 +14627,24 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mocp") || ci_contains(text, "mged") ||
              ci_contains(text, "rtweight") || ci_contains(text, "rtwizard") ||
              ci_contains(text, "blockmesh")) {
-        what = "tracker/cad primitive";
-        } else if (
+        PASTE_WHAT("tracker/cad primitive");
+        }
+        if (
              /* cycle-344a: pkt/doc/game primitives */
              ci_contains(text, "ifpps") || ci_contains(text, "bpfc") ||
              ci_contains(text, "curvetun") || ci_contains(text, "flowtop") ||
              ci_contains(text, "packit ") || ci_contains(text, "tcpprep") ||
              ci_contains(text, "wvhtml") || ci_contains(text, "umoria") ||
              ci_contains(text, "frogcomposband")) {
-        what = "pkt/doc/game primitive";
-        } else if (
+        PASTE_WHAT("pkt/doc/game primitive");
+        }
+        if (
              /* cycle-344b: dict/hex primitives */
              ci_contains(text, "sdcv") || ci_contains(text, "bvi ") ||
              ci_contains(text, "bviplus")) {
-        what = "dict/hex primitive";
-        } else if (
+        PASTE_WHAT("dict/hex primitive");
+        }
+        if (
              /* cycle-345a: unix-admin primitives */
              ci_contains(text, "hastd") || ci_contains(text, "gmirror") ||
              ci_contains(text, "graid3") || ci_contains(text, "graid5") ||
@@ -14130,39 +14656,45 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "crash") && ci_contains(text, " -")) ||
              ci_contains(text, "winevdm") || ci_contains(text, "dispwin") ||
              ci_contains(text, "iccprop")) {
-        what = "unix-admin primitive";
-        } else if (
+        PASTE_WHAT("unix-admin primitive");
+        }
+        if (
              /* cycle-345b: plc/print primitives */
              ci_contains(text, "iec2c") || ci_contains(text, "foo2zjs")) {
-        what = "plc/print primitive";
-        } else if (
+        PASTE_WHAT("plc/print primitive");
+        }
+        if (
              /* cycle-346a: scamper/netdiag primitives */
              ci_contains(text, "sc_tracediff") || ci_contains(text, "sc_tntbl") ||
              ci_contains(text, "sc_warts2json") || ci_contains(text, "ifstatus") ||
              ci_contains(text, "netselect") || ci_contains(text, "tcptrack")) {
-        what = "scamper/netdiag primitive";
-        } else if (
+        PASTE_WHAT("scamper/netdiag primitive");
+        }
+        if (
              /* cycle-346b: task/svc primitives */
              (ci_contains(text, "tsp") && ci_contains(text, " -")) ||
              (ci_contains(text, "hivemind") && ci_contains(text, " -")) ||
              (ci_contains(text, "perp") && ci_contains(text, " -")) || ci_contains(text, "perpd") ||
              ci_contains(text, "emptty") || ci_contains(text, "obmenu")) {
-        what = "task/svc primitive";
-        } else if (
+        PASTE_WHAT("task/svc primitive");
+        }
+        if (
              /* cycle-347a: ifiction primitives */
              ci_contains(text, "dfrotz") || ci_contains(text, "nitfol") ||
              ci_contains(text, "bocfel") || ci_contains(text, "scottfree") ||
              ci_contains(text, "advsys") || ci_contains(text, "tweego")) {
-        what = "ifiction primitive";
-        } else if (
+        PASTE_WHAT("ifiction primitive");
+        }
+        if (
              /* cycle-347b: plan9/shell primitives */
              ci_contains(text, "u9fs") || (ci_contains(text, "factotum") && ci_contains(text, " -")) ||
              (ci_contains(text, "upas") && ci_contains(text, " -")) ||
              ci_contains(text, "ndb ") || ci_contains(text, "mothra") ||
              ci_contains(text, "abaco") || ci_contains(text, "ysh") ||
              (ci_contains(text, "sash") && ci_contains(text, " -"))) {
-        what = "plan9/shell primitive";
-        } else if (
+        PASTE_WHAT("plan9/shell primitive");
+        }
+        if (
              /* cycle-348a: uucp/news primitives */
              ci_contains(text, "uustat") || ci_contains(text, "uupick") ||
              ci_contains(text, "uucico") || ci_contains(text, "inncheck") ||
@@ -14170,38 +14702,44 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "news2mail") || ci_contains(text, "mail2news") ||
              ci_contains(text, "fetchnews") || ci_contains(text, "applyfilter") ||
              ci_contains(text, "checkgroups") || ci_contains(text, "strn")) {
-        what = "uucp/news primitive";
-        } else if (
+        PASTE_WHAT("uucp/news primitive");
+        }
+        if (
              /* cycle-348b: tape/clone primitives */
              ci_contains(text, "tapestat") || ci_contains(text, "bdrecord") ||
              ci_contains(text, "udpcast")) {
-        what = "tape/clone primitive";
-        } else if (
+        PASTE_WHAT("tape/clone primitive");
+        }
+        if (
              /* cycle-349a: abi/dwarf primitives */
              ci_contains(text, "elflint") || ci_contains(text, "pdwtags") ||
              ci_contains(text, "codtag") || ci_contains(text, "abidiff") ||
              ci_contains(text, "abidw") || ci_contains(text, "abilint")) {
-        what = "abi/dwarf primitive";
-        } else if (
+        PASTE_WHAT("abi/dwarf primitive");
+        }
+        if (
              /* cycle-349b: binutil/prof primitives */
              ci_contains(text, "windres") || ci_contains(text, "dllwrap") ||
              ci_contains(text, "c++filt") || ci_contains(text, "ocount") ||
              ci_contains(text, "sprof") || ci_contains(text, "latrace")) {
-        what = "binutil/prof primitive";
-        } else if (
+        PASTE_WHAT("binutil/prof primitive");
+        }
+        if (
              /* cycle-350a: dotfiles primitives */
              ci_contains(text, "rcup") || ci_contains(text, "rcdn") ||
              ci_contains(text, "mkrc") || ci_contains(text, "lsrc") ||
              ci_contains(text, "autoenv") || ci_contains(text, "homeshick") ||
              ci_contains(text, "tuckr") || ci_contains(text, "dotbare")) {
-        what = "dotfiles primitive";
-        } else if (
+        PASTE_WHAT("dotfiles primitive");
+        }
+        if (
              /* cycle-350b: vermgr primitives */
              (ci_contains(text, "nave") && ci_contains(text, " -")) ||
              ci_contains(text, "nodist") || ci_contains(text, "nvmw") ||
              ci_contains(text, "swiftenv")) {
-        what = "vermgr primitive";
-        } else if (
+        PASTE_WHAT("vermgr primitive");
+        }
+        if (
              /* cycle-351a: chess/mud primitives */
              (ci_contains(text, "fruit") && ci_contains(text, " -")) ||
              (ci_contains(text, "toga") && ci_contains(text, " -")) ||
@@ -14211,21 +14749,24 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "scidb") || ci_contains(text, "tt++") ||
              ci_contains(text, "beipmu") || ci_contains(text, "kmuddy") ||
              ci_contains(text, "mudbot")) {
-        what = "chess/mud primitive";
-        } else if (
+        PASTE_WHAT("chess/mud primitive");
+        }
+        if (
              /* cycle-351b: go/puzzle primitives */
              ci_contains(text, "minigo") || ci_contains(text, "sgf2dg") ||
              ci_contains(text, "sgfmerge") || ci_contains(text, "sgfc") ||
              ci_contains(text, "twogtp") || (ci_contains(text, "quarry") && ci_contains(text, " -"))) {
-        what = "go/puzzle primitive";
-        } else if (
+        PASTE_WHAT("go/puzzle primitive");
+        }
+        if (
              /* cycle-352a: dicom primitives */
              ci_contains(text, "dcm2pnm") || ci_contains(text, "dcmj2pnm") ||
              ci_contains(text, "pdf2dcm") || ci_contains(text, "dcm2pdf") ||
              ci_contains(text, "stl2dcm") || ci_contains(text, "dcml2pnm") ||
              ci_contains(text, "drtt")) {
-        what = "dicom-converter primitive";
-        } else if (
+        PASTE_WHAT("dicom-converter primitive");
+        }
+        if (
              /* cycle-352b: med/bio primitives */
              ci_contains(text, "bet2 ") || ci_contains(text, "convert3d") ||
              ci_contains(text, "smartpca") || ci_contains(text, "mergeit") ||
@@ -14235,20 +14776,23 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "f4stats") || ci_contains(text, "treeannotator") ||
              ci_contains(text, "clustalw") || ci_contains(text, "probcons") ||
              ci_contains(text, "poa ")) {
-        what = "med/bio primitive";
-        } else if (
+        PASTE_WHAT("med/bio primitive");
+        }
+        if (
              /* cycle-353a: weather/aviation primitives */
              ci_contains(text, "wview") || ci_contains(text, "grib_convert") ||
              ci_contains(text, "bufr_filter") || ci_contains(text, "ncflint") ||
              ci_contains(text, "ncpdq") || ci_contains(text, "fgo") ||
              ci_contains(text, "yasim") || ci_contains(text, "ivac")) {
-        what = "weather/aviation primitive";
-        } else if (
+        PASTE_WHAT("weather/aviation primitive");
+        }
+        if (
              /* cycle-353b: marine primitives */
              ci_contains(text, "zygrib") || ci_contains(text, "avnav") ||
              ci_contains(text, "ntpshm") || ci_contains(text, "ppscheck")) {
-        what = "marine primitive";
-        } else if (
+        PASTE_WHAT("marine primitive");
+        }
+        if (
              /* cycle-354a: print3d/ham primitives */
              ci_contains(text, "stl2gts") || ci_contains(text, "ideamaker") ||
              ci_contains(text, "qsorder") ||
@@ -14257,29 +14801,33 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "qrq") && ci_contains(text, " -")) ||
              ci_contains(text, "adif2qsl") ||
              ci_contains(text, "cabrillo2adif")) {
-        what = "print3d/ham primitive";
-        } else if (
+        PASTE_WHAT("print3d/ham primitive");
+        }
+        if (
              /* cycle-354b: astro-wcs primitives */
              ci_contains(text, "skyfilter") || ci_contains(text, "skycoor") ||
              ci_contains(text, "imwcs") || ci_contains(text, "i2f") ||
              ci_contains(text, "simpos")) {
-        what = "astro-wcs primitive";
-        } else if (
+        PASTE_WHAT("astro-wcs primitive");
+        }
+        if (
              /* cycle-355a: video/disc primitives */
              ci_contains(text, "ogminfo") || ci_contains(text, "ifogen") ||
              ci_contains(text, "dvdwizard") || ci_contains(text, "pigz") ||
              ci_contains(text, "dvdisaster") || ci_contains(text, "bchunk") ||
              ci_contains(text, "daa2iso") || ci_contains(text, "uif2iso")) {
-        what = "video/disc primitive";
-        } else if (
+        PASTE_WHAT("video/disc primitive");
+        }
+        if (
              /* cycle-355b: subtitle/npm primitives */
              ci_contains(text, "subdl") || ci_contains(text, "srted") ||
              ci_contains(text, "srtshift") || ci_contains(text, "subrip") ||
              ci_contains(text, "ogmrip") || ci_contains(text, "depcheck") ||
              ci_contains(text, "publint") || ci_contains(text, "attw") ||
              ci_contains(text, "npq") || ci_contains(text, "qnm")) {
-        what = "subtitle/npm primitive";
-        } else if (
+        PASTE_WHAT("subtitle/npm primitive");
+        }
+        if (
              /* cycle-356a: retro-emu/pascal primitives */
              ci_contains(text, "winuae") || ci_contains(text, "uae4all") ||
              ci_contains(text, "punes") || ci_contains(text, "mesen") ||
@@ -14296,16 +14844,18 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "abcl") ||
              (ci_contains(text, "gcl") && ci_contains(text, " -")) ||
              ci_contains(text, "mkcl")) {
-        what = "retro/lang primitive";
-        } else if (
+        PASTE_WHAT("retro/lang primitive");
+        }
+        if (
              /* cycle-356b: forth primitives */
              ci_contains(text, "ficl") || ci_contains(text, "wina ") ||
              ci_contains(text, "mecrisp") || ci_contains(text, "stoneknife") ||
              (ci_contains(text, "4th") && ci_contains(text, " -")) ||
              (ci_contains(text, "lina") && ci_contains(text, " -")) ||
              (ci_contains(text, "carp") && ci_contains(text, " -"))) {
-        what = "forth primitive";
-        } else if (
+        PASTE_WHAT("forth primitive");
+        }
+        if (
              /* cycle-357a: geo primitives */
              ci_contains(text, "gdalgrid") || ci_contains(text, "gdal_polygonize") ||
              ci_contains(text, "gdal_sieve") ||
@@ -14319,8 +14869,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "thumbnail") && ci_contains(text, " -")) ||
              ci_contains(text, "tiff2pdf") || ci_contains(text, "tiff2ps") ||
              ci_contains(text, "tiff2rgba")) {
-        what = "geo primitive";
-        } else if (
+        PASTE_WHAT("geo primitive");
+        }
+        if (
              /* cycle-357b: spatial/mesh primitives */
              ci_contains(text, "shp2svg") || ci_contains(text, "shpcat") ||
              ci_contains(text, "shpgeo") || ci_contains(text, "shpinfo") ||
@@ -14336,8 +14887,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tetmesher") || ci_contains(text, "distmesh") ||
              ci_contains(text, "iso2mesh") || ci_contains(text, "surf2mesh") ||
              ci_contains(text, "tet2mesh") || ci_contains(text, "acvd") ) {
-        what = "spatial/mesh primitive";
-        } else if (
+        PASTE_WHAT("spatial/mesh primitive");
+        }
+        if (
              /* cycle-358a: net-legacy/boot primitives */
              ci_contains(text, "rstatd") || ci_contains(text, "rcp") ||
              ci_contains(text, "rdist")  ||
@@ -14354,8 +14906,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dhcprequest") || ci_contains(text, "dhcp_probe") ||
              ci_contains(text, "dhcptrouble") || ci_contains(text, "bootps") ||
              ci_contains(text, "rdnss") || ci_contains(text, "traceroute6")) {
-        what = "net-legacy primitive";
-        } else if (
+        PASTE_WHAT("net-legacy primitive");
+        }
+        if (
              /* cycle-358b: amiga-adf primitives */
              ci_contains(text, "adfinfo")  ||
              ci_contains(text, "adfblitzer")  ||
@@ -14366,8 +14919,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "adfc") || ci_contains(text, "adfl") ||
              ci_contains(text, "adfu") || ci_contains(text, "adfv") ||
              ci_contains(text, "adfw")) {
-        what = "amiga-adf primitive";
-        } else if (
+        PASTE_WHAT("amiga-adf primitive");
+        }
+        if (
              /* cycle-359a: editor/doc primitives */
              ci_contains(text, "nedit") ||
              (ci_contains(text, "joe") && ci_contains(text, " -")) ||
@@ -14404,15 +14958,17 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dvitype") || ci_contains(text, "dv2dt") ||
              ci_contains(text, "dt2dv") || ci_contains(text, "disdvi") ||
              ci_contains(text, "dvi2bitmap") || ci_contains(text, "weblint")) {
-        what = "editor/doc primitive";
-        } else if (
+        PASTE_WHAT("editor/doc primitive");
+        }
+        if (
              /* cycle-359b: office primitives */
              ci_contains(text, "libreoffice") || ci_contains(text, "localc") ||
              ci_contains(text, "lodraw") || ci_contains(text, "lomath") ||
              ci_contains(text, "wvware") || ci_contains(text, "ppthtml") ||
              ci_contains(text, "wordview") || ci_contains(text, "rtf2html")) {
-        what = "office primitive";
-        } else if (
+        PASTE_WHAT("office primitive");
+        }
+        if (
              /* cycle-360a: cpm/atari primitives */
              ci_contains(text, "mkfs.cpm") || ci_contains(text, "cpmls") ||
              ci_contains(text, "cpm ") || ci_contains(text, "cpmlabel")  || ci_contains(text, "altairz80") ||
@@ -14428,8 +14984,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ddt") || ci_contains(text, "tvz80") ||
              ci_contains(text, "sio2bsd") || ci_contains(text, "aspeqt") ||
              ci_contains(text, "respeqt") || ci_contains(text, "altirra")) {
-        what = "cpm/atari primitive";
-        } else if (
+        PASTE_WHAT("cpm/atari primitive");
+        }
+        if (
              /* cycle-360b: mainframe/mcu primitives */
              (ci_contains(text, "hercules") && ci_contains(text, " -")) ||
              ci_contains(text, "hercules4") || ci_contains(text, "softmain") ||
@@ -14450,8 +15007,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ucsim") || ci_contains(text, "shc") ||
              ci_contains(text, "sdcpp") || ci_contains(text, "sdar") ||
              ci_contains(text, "sdnm") || ci_contains(text, "sdranlib")) {
-        what = "mainframe/mcu primitive";
-        } else if (
+        PASTE_WHAT("mainframe/mcu primitive");
+        }
+        if (
              /* cycle-361a: browser/mail primitives */
              (ci_contains(text, "links") && ci_contains(text, " -")) ||
              ci_contains(text, "w3m") || ci_contains(text, "netrik") ||
@@ -14476,8 +15034,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "deadcyber") ||
              ci_contains(text, "mu4e") ||
              (ci_contains(text, "nail") && ci_contains(text, " -"))) {
-        what = "browser/mail primitive";
-        } else if (
+        PASTE_WHAT("browser/mail primitive");
+        }
+        if (
              /* cycle-361b: tunnel/vpn primitives */
              ci_contains(text, "bcrelay") ||
              (ci_contains(text, "chat") && ci_contains(text, " -")) ||
@@ -14485,8 +15044,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "l2tpd") ||
              (ci_contains(text, "whack") && ci_contains(text, " -")) ||
              ci_contains(text, "pki ") || ci_contains(text, "libreswan")) {
-        what = "tunnel/vpn primitive";
-        } else if (
+        PASTE_WHAT("tunnel/vpn primitive");
+        }
+        if (
              /* cycle-362a: screencast/vcs-old primitives */
              ci_contains(text, "asciicast") ||
              (ci_contains(text, "agg") && ci_contains(text, " -")) ||
@@ -14501,24 +15061,27 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "prcs") || ci_contains(text, "cvu") ||
              (ci_contains(text, "rview") && ci_contains(text, " -")) ||
              ci_contains(text, "chora ")) {
-        what = "screencast/vcs primitive";
-        } else if (
+        PASTE_WHAT("screencast/vcs primitive");
+        }
+        if (
              /* cycle-362b: versioning primitives */
              ci_contains(text, "reposurgeon") || ci_contains(text, "viewvc") ||
              ci_contains(text, "brz") || ci_contains(text, "bk ") ||
              ci_contains(text, "bitkeeper") ||
              (ci_contains(text, "aegis") && ci_contains(text, " -")) ||
              ci_contains(text, "cm3")) {
-        what = "versioning primitive";
-        } else if (
+        PASTE_WHAT("versioning primitive");
+        }
+        if (
              /* cycle-363a: container/k8s ecosystem primitives */
              ci_contains(text, "youki") || ci_contains(text, "kubecolor") ||
              ci_contains(text, "kubetail") || ci_contains(text, "audit2rbac") ||
              ci_contains(text, "buildpacks") ||
              (ci_contains(text, "jib") && ci_contains(text, " -")) ||
              ci_contains(text, "buildg") || ci_contains(text, "direnv")) {
-        what = "container/k8s primitive";
-        } else if (
+        PASTE_WHAT("container/k8s primitive");
+        }
+        if (
              /* cycle-363b: sdr/radio + imaging primitives */
              ci_contains(text, "freedv") || ci_contains(text, "quisk") ||
              ci_contains(text, "fr24feed") || ci_contains(text, "piaware") ||
@@ -14536,8 +15099,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "cpdf") || ci_contains(text, "ocropus") ||
              ci_contains(text, "ddjvu") || ci_contains(text, "djview") ||
              ci_contains(text, "djvups") || ci_contains(text, "b2pdf")) {
-        what = "sdr/imaging primitive";
-        } else if (
+        PASTE_WHAT("sdr/imaging primitive");
+        }
+        if (
              /* cycle-364a: password-gen/math/audio primitives */
              ci_contains(text, "diceware") ||
              (ci_contains(text, "reveal") && ci_contains(text, " -")) ||
@@ -14547,16 +15111,18 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mp4tags") || ci_contains(text, "atomicparsley") ||
              ci_contains(text, "mp3gain") || ci_contains(text, "vorbisgain") ||
              ci_contains(text, "aacgain") || ci_contains(text, "streamlink")) {
-        what = "pwgen/audio primitive";
-        } else if (
+        PASTE_WHAT("pwgen/audio primitive");
+        }
+        if (
              /* cycle-364b: hdl/dns/io primitives */
              ci_contains(text, "ghdl") || ci_contains(text, "avrisp2") ||
              ci_contains(text, "stk500") || ci_contains(text, "dlint") ||
              ci_contains(text, "dnswalk") || ci_contains(text, "hatop") ||
              ci_contains(text, "mbuffer") || ci_contains(text, "unlzma") ||
              ci_contains(text, "lzstatic")) {
-        what = "hdl/dns primitive";
-        } else if (
+        PASTE_WHAT("hdl/dns primitive");
+        }
+        if (
              /* cycle-365a: lsp/formatter/lint primitives */
              ci_contains(text, "pyright") ||
              (ci_contains(text, "sorbet") && ci_contains(text, " -")) ||
@@ -14569,8 +15135,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "uncrustify") || ci_contains(text, "astyle") ||
              ci_contains(text, "unifdef") ||
              (ci_contains(text, "indent") && ci_contains(text, " -"))) {
-        what = "lsp/lint primitive";
-        } else if (
+        PASTE_WHAT("lsp/lint primitive");
+        }
+        if (
              /* cycle-365b: jvm/db/imaging-ps primitives */
              ci_contains(text, "hsdb")  ||
              ci_contains(text, "arthas") || ci_contains(text, "ecj ") ||
@@ -14586,15 +15153,17 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "grops") || ci_contains(text, "ps2ascii") ||
              ci_contains(text, "psbook") || ci_contains(text, "psselect") ||
              ci_contains(text, "includeres")) {
-        what = "jvm/print primitive";
-        } else if (
+        PASTE_WHAT("jvm/print primitive");
+        }
+        if (
              /* cycle-366a: ebpf/mq/infra primitives */
              ci_contains(text, "tcpsubnet") || ci_contains(text, "tcprtt") ||
              ci_contains(text, "nfsslower") || ci_contains(text, "pidpersec") ||
              ci_contains(text, "emqtt_bench") || ci_contains(text, "unitd") ||
              (ci_contains(text, "heartbeat") && ci_contains(text, " -"))) {
-        what = "ebpf/infra primitive";
-        } else if (
+        PASTE_WHAT("ebpf/infra primitive");
+        }
+        if (
              /* cycle-366b: build/sysadmin primitives */
              ci_contains(text, "earthfile") || ci_contains(text, "tupconf") ||
              ci_contains(text, "debtap") ||
@@ -14605,8 +15174,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "jk_lsh") || ci_contains(text, "jk_socketd") ||
              ci_contains(text, "debuerreotype") || ci_contains(text, "polystrap") ||
              ci_contains(text, "cowdancer")) {
-        what = "build/sysadmin primitive";
-        } else if (
+        PASTE_WHAT("build/sysadmin primitive");
+        }
+        if (
              /* cycle-367a: firmware/tpm/sanitizer primitives */
              ci_contains(text, "amidecbin") || ci_contains(text, "acpihelp") ||
              ci_contains(text, "acpinames") || ci_contains(text, "acpisrc") ||
@@ -14614,8 +15184,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "trousers") && ci_contains(text, " -")) ||
              ci_contains(text, "bochscov") || ci_contains(text, "kcov") ||
              ci_contains(text, "asan_symbolize") || ci_contains(text, "sanstats") ) {
-        what = "firmware/sanitizer primitive";
-        } else if (
+        PASTE_WHAT("firmware/sanitizer primitive");
+        }
+        if (
              /* cycle-367b: forensics/disk primitives */
              ci_contains(text, "reglookup") || ci_contains(text, "rip.pl") ||
              ci_contains(text, "hashdb") || ci_contains(text, "affuse") ||
@@ -14623,8 +15194,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "affsegment") || ci_contains(text, "fcadm") ||
              ci_contains(text, "affstats") || ci_contains(text, "affrecover") ||
              ci_contains(text, "ddrutility") || ci_contains(text, "hdparam")) {
-        what = "forensics/disk primitive";
-        } else if (
+        PASTE_WHAT("forensics/disk primitive");
+        }
+        if (
              /* cycle-368a: dict/docs/ebook primitives */
              (ci_contains(text, "dict_lookup") && ci_contains(text, " -")) ||
              ci_contains(text, "colorit") || ci_contains(text, "munchlist") ||
@@ -14634,8 +15206,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "epubs2") || ci_contains(text, "mobi2epub") ||
              ci_contains(text, "cbconvert") || ci_contains(text, "comic2pdf") ||
              ci_contains(text, "pdftoepub")) {
-        what = "dict/ebook primitive";
-        } else if (
+        PASTE_WHAT("dict/ebook primitive");
+        }
+        if (
              /* cycle-368b: cnc/media primitives */
              (ci_contains(text, "candle") && ci_contains(text, " -")) ||
              ci_contains(text, "mid3iconv") ||
@@ -14643,8 +15216,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "sonata") && ci_contains(text, " -")) ||
              ci_contains(text, "ncmpc") || ci_contains(text, "msdap") ||
              ci_contains(text, "gmpc") || ci_contains(text, "mpdris2")) {
-        what = "cnc/media primitive";
-        } else if (
+        PASTE_WHAT("cnc/media primitive");
+        }
+        if (
              /* cycle-369a: x11-font/voip primitives */
              ci_contains(text, "showfont") || ci_contains(text, "mkfontdir") ||
              ci_contains(text, "mkfontscale") || ci_contains(text, "ucs2any") ||
@@ -14652,8 +15226,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "percol") || ci_contains(text, "heplify") ||
              ci_contains(text, "dahdi_pcap") || ci_contains(text, "dahdihdrc") ||
              ci_contains(text, "sipreg")) {
-        what = "x11/voip primitive";
-        } else if (
+        PASTE_WHAT("x11/voip primitive");
+        }
+        if (
              /* cycle-369b: bibliography/pub primitives */
              ci_contains(text, "bib2ris") || ci_contains(text, "cb2bib") ||
              ci_contains(text, "biblioref") || ci_contains(text, "doi2bib") ||
@@ -14665,8 +15240,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "zettel") && ci_contains(text, " -")) ||
              (ci_contains(text, "cider") && ci_contains(text, " -")) ||
              ci_contains(text, "notenik") || ci_contains(text, "11ty")) {
-        what = "biblio/pub primitive";
-        } else if (
+        PASTE_WHAT("biblio/pub primitive");
+        }
+        if (
              /* cycle-370a: crystallography primitives */
              ci_contains(text, "crystfel") || ci_contains(text, "ambigator") ||
              ci_contains(text, "process_hkl") || ci_contains(text, "partialator") ||
@@ -14676,8 +15252,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "freerflag") || ci_contains(text, "fit2d") ||
              (ci_contains(text, "fabio") && ci_contains(text, " -")) ||
              ci_contains(text, "dioptas")) {
-        what = "crystallography primitive";
-        } else if (
+        PASTE_WHAT("crystallography primitive");
+        }
+        if (
              /* cycle-370b: chemistry/materials primitives */
              ci_contains(text, "moltemplate") || ci_contains(text, "topolbuild") ||
              ci_contains(text, "mrgddb") || ci_contains(text, "abicheck") ||
@@ -14689,8 +15266,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "doschka") || ci_contains(text, "raster3d") ||
              (ci_contains(text, "balls") && ci_contains(text, " -")) ||
              (ci_contains(text, "sticks") && ci_contains(text, " -"))) {
-        what = "chemistry primitive";
-        } else if (
+        PASTE_WHAT("chemistry primitive");
+        }
+        if (
              /* cycle-371a: hpc scheduler primitives */
              ci_contains(text, "qorder") || ci_contains(text, "checkjob") ||
              (ci_contains(text, "moab") && ci_contains(text, " -")) ||
@@ -14699,8 +15277,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "blcollect") || ci_contains(text, "qquota") ||
              ci_contains(text, "oarsub") || ci_contains(text, "oarstat") ||
              ci_contains(text, "oarpeek") || ci_contains(text, "oarhold")) {
-        what = "scheduler primitive";
-        } else if (
+        PASTE_WHAT("scheduler primitive");
+        }
+        if (
              /* cycle-371b: grid/data primitives */
              ci_contains(text, "ccastat") || ci_contains(text, "dcap") ||
              (ci_contains(text, "iput ") && ci_contains(text, " -")) || ci_contains(text, "isysmeta") ||
@@ -14708,8 +15287,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "iquota") || ci_contains(text, "irule") ||
              ci_contains(text, "idbug") || ci_contains(text, "ipwd") ||
              ci_contains(text, "ierror")) {
-        what = "grid/irods primitive";
-        } else if (
+        PASTE_WHAT("grid/irods primitive");
+        }
+        if (
              /* cycle-372a: code-index/hex/diff primitives */
              ci_contains(text, "cscope") || ci_contains(text, "ctags") ||
              ci_contains(text, "etags") || ci_contains(text, "gtags") ||
@@ -14721,8 +15301,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "diffuse") && ci_contains(text, " -")) ||
              ci_contains(text, "bcompare") ||
              (ci_contains(text, "todos") && ci_contains(text, " -"))) {
-        what = "index/diff primitive";
-        } else if (
+        PASTE_WHAT("index/diff primitive");
+        }
+        if (
              /* cycle-372b: charset/nlp primitives */
              ci_contains(text, "chardet")  ||
              ci_contains(text, "kconv") || ci_contains(text, "hnkf") ||
@@ -14734,8 +15315,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "kamigoto") && ci_contains(text, " -")) ||
              (ci_contains(text, "vibrato") && ci_contains(text, " -")) ||
              (ci_contains(text, "pointwise") && ci_contains(text, " -"))) {
-        what = "charset/nlp primitive";
-        } else if (
+        PASTE_WHAT("charset/nlp primitive");
+        }
+        if (
              /* cycle-373a: js/anki/data primitives */
              ci_contains(text, "sivp") ||
              (ci_contains(text, "zeit") && ci_contains(text, " -")) ||
@@ -14743,8 +15325,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mnemosyne2anki") || ci_contains(text, "libanki") ||
              (ci_contains(text, "repetitions") && ci_contains(text, " -")) ||
              ci_contains(text, "gapminder")) {
-        what = "js/anki primitive";
-        } else if (
+        PASTE_WHAT("js/anki primitive");
+        }
+        if (
              /* cycle-373b: hexconv/embedded primitives */
              ci_contains(text, "srec_cmp") || ci_contains(text, "srec_info") ||
              ci_contains(text, "bin2h") || ci_contains(text, "bin2c") ||
@@ -14753,8 +15336,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mot2bin") || ci_contains(text, "s19tobin") ||
              ci_contains(text, "elf2bin") || ci_contains(text, "uf2uf") ||
              ci_contains(text, "elf2uf2") || ci_contains(text, "pioasm")) {
-        what = "hexconv primitive";
-        } else if (
+        PASTE_WHAT("hexconv primitive");
+        }
+        if (
              /* cycle-374a: irc-bot primitives */
              ci_contains(text, "phenny") || ci_contains(text, "gonzobot") ||
              ci_contains(text, "cloudbot") || ci_contains(text, "hellabot") ||
@@ -14762,8 +15346,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "irccd") || ci_contains(text, "dzivo") ||
              ci_contains(text, "hibot") || ci_contains(text, "kooki") ||
              ci_contains(text, "meatballbot") || ci_contains(text, "omorobot")) {
-        what = "irc-bot primitive";
-        } else if (
+        PASTE_WHAT("irc-bot primitive");
+        }
+        if (
              /* cycle-374b: mail/spam primitives */
              ci_contains(text, "postfwd") || ci_contains(text, "spfzone") ||
              ci_contains(text, "bogoutil") || ci_contains(text, "bogoqp") ||
@@ -14771,8 +15356,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "bogotune") || ci_contains(text, "cssput") ||
              ci_contains(text, "mailfilter") || ci_contains(text, "spamoracle") ||
              ci_contains(text, "interimap") || ci_contains(text, "afsieve")) {
-        what = "mail/spam primitive";
-        } else if (
+        PASTE_WHAT("mail/spam primitive");
+        }
+        if (
              /* cycle-375a: finance/ledger primitives */
              ci_contains(text, "beanquery") || ci_contains(text, "beanprice") ||
              (ci_contains(text, "knut") && ci_contains(text, " -")) ||
@@ -14784,8 +15370,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "grouppay") || ci_contains(text, "settleup") ||
              (ci_contains(text, "sesterce") && ci_contains(text, " -")) ||
              (ci_contains(text, "lannister") && ci_contains(text, " -"))) {
-        what = "finance/ledger primitive";
-        } else if (
+        PASTE_WHAT("finance/ledger primitive");
+        }
+        if (
              /* cycle-375b: sat/smt + bayes primitives */
              ci_contains(text, "minisat") ||
              (ci_contains(text, "glucose") && ci_contains(text, " -")) ||
@@ -14800,8 +15387,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "rjags") || ci_contains(text, "dynesty") ||
              ci_contains(text, "ultranest") || ci_contains(text, "mathics") ||
              ci_contains(text, "jill")) {
-        what = "solver/stats primitive";
-        } else if (
+        PASTE_WHAT("solver/stats primitive");
+        }
+        if (
              /* cycle-375c: cosmos-chain primitives */
              ci_contains(text, "hadurd") || ci_contains(text, "aurad") ||
              ci_contains(text, "akashd") || ci_contains(text, "bandd") ||
@@ -14810,8 +15398,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "shentud") || ci_contains(text, "oraid") ||
              ci_contains(text, "migalood") || ci_contains(text, "selfchaind") ||
              ci_contains(text, "stationsd") || ci_contains(text, "bcnad")) {
-        what = "cosmos-chain primitive";
-        } else if (
+        PASTE_WHAT("cosmos-chain primitive");
+        }
+        if (
              /* cycle-376a: disk/optical-media primitives */
              ci_contains(text, "ddv") || ci_contains(text, "h2testw") ||
              ci_contains(text, "f3probe") || ci_contains(text, "unetbootin") ||
@@ -14819,8 +15408,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "cdpcd") || ci_contains(text, "cdquery") ||
              ci_contains(text, "trackrip") || ci_contains(text, "cdrip") ||
              ci_contains(text, "cdrw") || ci_contains(text, "dem2pgm")) {
-        what = "disk/media primitive";
-        } else if (
+        PASTE_WHAT("disk/media primitive");
+        }
+        if (
              /* cycle-376b: recutils/astro primitives */
              ci_contains(text, "recinf") || ci_contains(text, "recset") ||
              ci_contains(text, "recsel") || ci_contains(text, "recins") ||
@@ -14836,13 +15426,15 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mkarf") || ci_contains(text, "acis_process_events") ||
              ci_contains(text, "pileup_map") || ci_contains(text, "echem") ||
              ci_contains(text, "qdpplote") || ci_contains(text, "q3plot")) {
-        what = "recutils/astro primitive";
-        } else if (
+        PASTE_WHAT("recutils/astro primitive");
+        }
+        if (
              /* cycle-376c: vuln/log primitives */
              ci_contains(text, "cvechecker") || ci_contains(text, "cvegen") ||
              ci_contains(text, "awffull")) {
-        what = "vuln/log primitive";
-        } else if (
+        PASTE_WHAT("vuln/log primitive");
+        }
+        if (
              /* cycle-377a: chess/shogi/go primitives */
              (ci_contains(text, "crafty") && ci_contains(text, " -")) ||
              ci_contains(text, "chessdb") || ci_contains(text, "pychess") ||
@@ -14856,8 +15448,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pgnmentor") || ci_contains(text, "lczero") ||
              (ci_contains(text, "senpai") && ci_contains(text, " -")) ||
              (ci_contains(text, "polyglot") && ci_contains(text, " -"))) {
-        what = "board-game primitive";
-        } else if (
+        PASTE_WHAT("board-game primitive");
+        }
+        if (
              /* cycle-377b: fem/imaging/misc primitives */
              ci_contains(text, "pokersource") || ci_contains(text, "kmj") ||
              ci_contains(text, "dicelab") || ci_contains(text, "diceroller") ||
@@ -14865,8 +15458,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "oof2") || ci_contains(text, "oofem") ||
              ci_contains(text, "afni_proc") || ci_contains(text, "afni_bids") ||
              ci_contains(text, "mincedit")) {
-        what = "fem/imaging primitive";
-        } else if (
+        PASTE_WHAT("fem/imaging primitive");
+        }
+        if (
              /* cycle-378a: jack/audio primitives */
              ci_contains(text, "jack_rec") || ci_contains(text, "jack_meter") ||
              ci_contains(text, "jack_cpu") || ci_contains(text, "jack_bufsize") ||
@@ -14874,8 +15468,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "jack_net_slave") || ci_contains(text, "jack_midiseq") ||
              ci_contains(text, "jack_midi_latency_test") || ci_contains(text, "patchance")  || ci_contains(text, "a2jmidi") ||
              ci_contains(text, "aeolus") || ci_contains(text, "bspacewizard")) {
-        what = "jack/audio primitive";
-        } else if (
+        PASTE_WHAT("jack/audio primitive");
+        }
+        if (
              /* cycle-378b: sdr/radio primitives */
              ci_contains(text, "sattrack") ||
              (ci_contains(text, "sgp4") && ci_contains(text, " -"))  || ci_contains(text, "yfktest") ||
@@ -14889,16 +15484,18 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "fl2k_tcp") || ci_contains(text, "fl2k_test") ||
              ci_contains(text, "hackrf_debug") ||
              ci_contains(text, "hackrf_cpldjtag")) {
-        what = "sdr/radio primitive";
-        } else if (
+        PASTE_WHAT("sdr/radio primitive");
+        }
+        if (
              /* cycle-379a: js/devops primitives */
              ci_contains(text, "babeljs") || ci_contains(text, "babelify") ||
              ci_contains(text, "esno") || ci_contains(text, "alephjs") ||
              ci_contains(text, "dmm") || ci_contains(text, "dworkin") ||
              ci_contains(text, "dnt") || ci_contains(text, "citty") ||
              ci_contains(text, "karpor") || ci_contains(text, "kwok")) {
-        what = "js/devops primitive";
-        } else if (
+        PASTE_WHAT("js/devops primitive");
+        }
+        if (
              /* cycle-379b: genomics-qc primitives */
              ci_contains(text, "gcta") ||
              (ci_contains(text, "beagle") && ci_contains(text, " -")) ||
@@ -14914,8 +15511,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "defuse") && ci_contains(text, " -")) ||
              ci_contains(text, "soapfuse") || ci_contains(text, "mapsplice") ||
              ci_contains(text, "racon")) {
-        what = "genomics-qc primitive";
-        } else if (
+        PASTE_WHAT("genomics-qc primitive");
+        }
+        if (
              /* cycle-379c: genomics-asm primitives */
              ci_contains(text, "medaka") ||
              (ci_contains(text, "pilon") && ci_contains(text, " -")) ||
@@ -14931,8 +15529,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "cdhit") || ci_contains(text, "multiqc") ||
              ci_contains(text, "featurecounts") || ci_contains(text, "htseq") ||
              ci_contains(text, "mosdepth") || ci_contains(text, "bedops")) {
-        what = "genomics-asm primitive";
-        } else if (
+        PASTE_WHAT("genomics-asm primitive");
+        }
+        if (
              /* cycle-380a: wayland/a11y primitives */
              ci_contains(text, "shikane") || ci_contains(text, "wvkbd") ||
              ci_contains(text, "squeekboard") || ci_contains(text, "uim-") ||
@@ -14942,19 +15541,22 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "hdajacksensetest") || ci_contains(text, "iecset") ||
              ci_contains(text, "alsatplg") || ci_contains(text, "aplay") ||
              ci_contains(text, "arecord")) {
-        what = "wayland/a11y primitive";
-        } else if (
+        PASTE_WHAT("wayland/a11y primitive");
+        }
+        if (
              /* cycle-380b: monitor/misc primitives */
              (ci_contains(text, "zenith") && ci_contains(text, " -")) ||
              ci_contains(text, "kafkatop") || ci_contains(text, "lrb")) {
-        what = "monitor/misc primitive";
-        } else if (
+        PASTE_WHAT("monitor/misc primitive");
+        }
+        if (
              /* cycle-381a: ai/data primitives */
              ci_contains(text, "karafka") || ci_contains(text, "lightrag") ||
              ci_contains(text, "promptfoo") || ci_contains(text, "garak") ||
              ci_contains(text, "helicone") || ci_contains(text, "sqlfluff")) {
-        what = "ai/data primitive";
-        } else if (
+        PASTE_WHAT("ai/data primitive");
+        }
+        if (
              /* cycle-381b: retro/emu primitives */ ci_contains(text, "uade") ||
              ci_contains(text, "resid ") || ci_contains(text, "vgmplay") ||
              ci_contains(text, "klystrack") || ci_contains(text, "neko8") ||
@@ -14969,8 +15571,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mynes") || ci_contains(text, "halfnes") ||
              ci_contains(text, "nintendulator") || ci_contains(text, "virtuanes") ||
              ci_contains(text, "jnes") ) {
-        what = "retro/emu primitive";
-        } else if (
+        PASTE_WHAT("retro/emu primitive");
+        }
+        if (
              /* cycle-382a: filemgr primitives */
              ci_contains(text, "hnn") || ci_contains(text, "joshuto") ||
              ci_contains(text, "cfiles") ||
@@ -14981,8 +15584,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "natls") || ci_contains(text, "dua ") ||
              ci_contains(text, "gdu") || ci_contains(text, "diskus") ||
              ci_contains(text, "vtop")) {
-        what = "filemgr primitive";
-        } else if (
+        PASTE_WHAT("filemgr primitive");
+        }
+        if (
              /* cycle-382b: sysstat/proc primitives */
              ci_contains(text, "procs")  ||
              ci_contains(text, "pstree") || ci_contains(text, "smem") ||
@@ -14990,8 +15594,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "iostat") || ci_contains(text, "mpstat") ||
              ci_contains(text, "vmstat") || ci_contains(text, "dstat ") ||
              ci_contains(text, "pidstat")   || ci_contains(text, "pmstat")) {
-        what = "sysstat/proc primitive";
-        } else if (
+        PASTE_WHAT("sysstat/proc primitive");
+        }
+        if (
              /* cycle-383a: torrent primitives */
              ci_contains(text, "tordone") || ci_contains(text, "torrt") ||
              ci_contains(text, "torsniff") || ci_contains(text, "magnetico") ||
@@ -15000,14 +15605,16 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "btshowmetainfo") || ci_contains(text, "buildtorrent") ||
              ci_contains(text, "torrentcheck") || ci_contains(text, "bigtorrent") ||
              ci_contains(text, "par2") || ci_contains(text, "parverify")) {
-        what = "torrent primitive";
-        } else if (
+        PASTE_WHAT("torrent primitive");
+        }
+        if (
              /* cycle-383b: archiver primitives */
              ci_contains(text, "unzoo") || ci_contains(text, "unalz") ||
              ci_contains(text, "lz4") || ci_contains(text, "brotli") ||
              ci_contains(text, "lzop") || ci_contains(text, "lzma")) {
-        what = "archiver primitive";
-        } else if (
+        PASTE_WHAT("archiver primitive");
+        }
+        if (
              /* cycle-384a: js-tooling primitives */
              ci_contains(text, "corepack") || ci_contains(text, "fnm") ||
              ci_contains(text, "nvm ") || ci_contains(text, "bunfig") ||
@@ -15017,8 +15624,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "jslint") || ci_contains(text, "rslint") ||
              (ci_contains(text, "flow") && ci_contains(text, " -")) ||
              ci_contains(text, "tsc") || ci_contains(text, "dtslint")) {
-        what = "js-tooling primitive";
-        } else if (
+        PASTE_WHAT("js-tooling primitive");
+        }
+        if (
              /* cycle-384b: py-tooling primitives */
              (ci_contains(text, "flit") && ci_contains(text, " -")) ||
              ci_contains(text, "pipdeptree") ||
@@ -15043,15 +15651,17 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "tenacity") && ci_contains(text, " -")) ||
              (ci_contains(text, "backoff") && ci_contains(text, " -")) ||
              ci_contains(text, "aiolimiter")) {
-        what = "py-tooling primitive";
-        } else if (
+        PASTE_WHAT("py-tooling primitive");
+        }
+        if (
              /* cycle-385a: net/wifi primitives */
              (ci_contains(text, "trippy") && ci_contains(text, " -")) ||
              ci_contains(text, "tcptraceroute") || ci_contains(text, "iwspy") ||
              (ci_contains(text, "fern") && ci_contains(text, " -")) ||
              ci_contains(text, "goodfet")) {
-        what = "net/wifi primitive";
-        } else if (
+        PASTE_WHAT("net/wifi primitive");
+        }
+        if (
              /* cycle-385b: bench/power primitives */
              (ci_contains(text, "stress") && ci_contains(text, " -")) ||
              ci_contains(text, "tiobench") ||
@@ -15064,8 +15674,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "e2fsck") ||
              (ci_contains(text, "fsck") && ci_contains(text, " -")) ||
              ci_contains(text, "btrbk") || ci_contains(text, "dejadup")) {
-        what = "bench/power primitive";
-        } else if (
+        PASTE_WHAT("bench/power primitive");
+        }
+        if (
              /* cycle-385c: doc/game-server primitives */
              ci_contains(text, "minetestserver") || ci_contains(text, "tf2server") ||
              ci_contains(text, "spigot") || ci_contains(text, "bedrock_server") ||
@@ -15078,8 +15689,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tbl ") ||
              (ci_contains(text, "refer") && ci_contains(text, " -")) ||
              ci_contains(text, "gropdf")) {
-        what = "doc/game-server primitive";
-        } else if (
+        PASTE_WHAT("doc/game-server primitive");
+        }
+        if (
              /* cycle-385d: mail/feed primitives */
              ci_contains(text, "yarr") || ci_contains(text, "pyradio") ||
              (ci_contains(text, "tin ") && ci_contains(text, " -")) ||
@@ -15091,8 +15703,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "minc ") || ci_contains(text, "mseq")  || ci_contains(text, "mmime") ||
              ci_contains(text, "mpick") || ci_contains(text, "mrep") ||
              ci_contains(text, "mrefile")) {
-        what = "mail/feed primitive";
-        } else if (
+        PASTE_WHAT("mail/feed primitive");
+        }
+        if (
              /* cycle-386a: vision/ocr primitives */
              ci_contains(text, "labelimg") || ci_contains(text, "fiftyone") ||
              ci_contains(text, "oidv6") ||
@@ -15117,8 +15730,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "marker") && ci_contains(text, " -")) ||
              (ci_contains(text, "nougat") && ci_contains(text, " -")) ||
              ci_contains(text, "vott")) {
-        what = "vision/ocr primitive";
-        } else if (
+        PASTE_WHAT("vision/ocr primitive");
+        }
+        if (
              /* cycle-386b: gis primitives */
              ci_contains(text, "geotiff") || ci_contains(text, "geos ") ||
              ci_contains(text, "gdalsieve") ||
@@ -15128,8 +15742,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "geojson") || ci_contains(text, "mbtiles") ||
              ci_contains(text, "mbview") || ci_contains(text, "tilelive") ||
              ci_contains(text, "grib_to_netcdf") || ci_contains(text, "metpoint")) {
-        what = "gis primitive";
-        } else if (
+        PASTE_WHAT("gis primitive");
+        }
+        if (
              /* cycle-386c: eda primitives */
              ci_contains(text, "horizoneda") || ci_contains(text, "geda") ||
              ci_contains(text, "irsim") || ci_contains(text, "sv2v") ||
@@ -15152,8 +15767,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "asimut") ||
              (ci_contains(text, "boa ") && ci_contains(text, " -")) ||
              ci_contains(text, "tas ")) {
-        what = "eda primitive";
-        } else if (
+        PASTE_WHAT("eda primitive");
+        }
+        if (
              /* cycle-387a: desktop/capture primitives */
              ci_contains(text, "shutter") || ci_contains(text, "hotshots") ||
              (ci_contains(text, "peek") && ci_contains(text, " -")) ||
@@ -15162,8 +15778,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "gesture") && ci_contains(text, " -")) ||
              (ci_contains(text, "gestures") && ci_contains(text, " -")) ||
              ci_contains(text, "gebaar")) {
-        what = "desktop/capture primitive";
-        } else if (
+        PASTE_WHAT("desktop/capture primitive");
+        }
+        if (
              /* cycle-387b: notebook/gpu primitives */
              ci_contains(text, "jupyter") || ci_contains(text, "ipykernel") ||
              ci_contains(text, "irkernel") || ci_contains(text, "gophernotes") ||
@@ -15176,8 +15793,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "glinfo") || ci_contains(text, "nvenc") ||
              ci_contains(text, "nvdec") || ci_contains(text, "umr ") ||
              ci_contains(text, "amd_debug")) {
-        what = "notebook/gpu primitive";
-        } else if (
+        PASTE_WHAT("notebook/gpu primitive");
+        }
+        if (
              /* cycle-387c: virt/sec/observability primitives */
              ci_contains(text, "cirr") || ci_contains(text, "quickemu") ||
              (ci_contains(text, "kata") && ci_contains(text, " -")) ||
@@ -15190,8 +15808,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "udpconnect") || ci_contains(text, "dbstat") ||
              ci_contains(text, "cpufreq") || ci_contains(text, "klockstat") ||
              ci_contains(text, "netqtop")) {
-        what = "virt/sec primitive";
-        } else if (
+        PASTE_WHAT("virt/sec primitive");
+        }
+        if (
              /* cycle-388a: wasm/nats primitives */
              ci_contains(text, "lucetc") || ci_contains(text, "wamr") ||
              ci_contains(text, "wasmkit") ||
@@ -15210,8 +15829,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "wagi") || ci_contains(text, "nsc ") ||
              (ci_contains(text, "jetstream") && ci_contains(text, " -")) ||
              ci_contains(text, "nats-streaming")) {
-        what = "wasm/nats primitive";
-        } else if (
+        PASTE_WHAT("wasm/nats primitive");
+        }
+        if (
              /* cycle-388b: robotics primitives */
              ci_contains(text, "vcs ") ||
              ci_contains(text, "rqt ") ||
@@ -15226,8 +15846,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mavmission") || ci_contains(text, "arducopter") ||
              ci_contains(text, "arduplane") ||
              (ci_contains(text, "param ") && ci_contains(text, " -"))) {
-        what = "robotics primitive";
-        } else if (
+        PASTE_WHAT("robotics primitive");
+        }
+        if (
              /* cycle-388c: chat/irc primitives */
              (ci_contains(text, "metronome") && ci_contains(text, " -")) ||
              (ci_contains(text, "spectrum") && ci_contains(text, " -")) ||
@@ -15240,8 +15861,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "vacuum") && ci_contains(text, " -")) ||
              (ci_contains(text, "conversations") && ci_contains(text, " -")) ||
              ci_contains(text, "atalk")) {
-        what = "chat/irc primitive";
-        } else if (
+        PASTE_WHAT("chat/irc primitive");
+        }
+        if (
              /* cycle-389a: sci-data primitives */
              ci_contains(text, "f77 ") || ci_contains(text, "f95 ") ||
              ci_contains(text, "g95 ") || ci_contains(text, "ftn ") ||
@@ -15256,8 +15878,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ncesm") || ci_contains(text, "mbt ") ||
              ci_contains(text, "mbprocess") || ci_contains(text, "mbinfo") ||
              ci_contains(text, "mbfilter") || ci_contains(text, "mbroute")) {
-        what = "sci-data primitive";
-        } else if (
+        PASTE_WHAT("sci-data primitive");
+        }
+        if (
              /* cycle-389b: math/db primitives */
              (ci_contains(text, "gap") && ci_contains(text, " -")) ||
              (ci_contains(text, "cocoa") && ci_contains(text, " -")) ||
@@ -15274,8 +15897,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dsq") || ci_contains(text, "sqlean") ||
              ci_contains(text, "sqls") || ci_contains(text, "dbkoda") ||
              ci_contains(text, "robo3t") || ci_contains(text, "redis ")) {
-        what = "math/db primitive";
-        } else if (
+        PASTE_WHAT("math/db primitive");
+        }
+        if (
              /* cycle-389c: hw/media primitives */
              ci_contains(text, "pylink") ||
              (ci_contains(text, "bossa") && ci_contains(text, " -")) ||
@@ -15292,8 +15916,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "puddletag") ||
              (ci_contains(text, "cowbell") && ci_contains(text, " -")) ||
              ci_contains(text, "apetag")) {
-        what = "hw/media primitive";
-        } else if (
+        PASTE_WHAT("hw/media primitive");
+        }
+        if (
              /* cycle-390a: kvdb/couch primitives */
              ci_contains(text, "db_stat") || ci_contains(text, "db_verify") ||
              ci_contains(text, "db_recover") || ci_contains(text, "db_checkpoint") ||
@@ -15309,8 +15934,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "futon") && ci_contains(text, " -")) ||
              (ci_contains(text, "couch") && ci_contains(text, " -")) ||
              ci_contains(text, "e3w")) {
-        what = "kvdb/couch primitive";
-        } else if (
+        PASTE_WHAT("kvdb/couch primitive");
+        }
+        if (
              /* cycle-390b: storage primitives */
              ci_contains(text, "gdeploy") ||
              (ci_contains(text, "ganesha") && ci_contains(text, " -")) ||
@@ -15318,8 +15944,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "thin_trim") || ci_contains(text, "thin_ls") ||
              ci_contains(text, "cache_check") || ci_contains(text, "cache_repair") ||
              ci_contains(text, "era_check")) {
-        what = "storage primitive";
-        } else if (
+        PASTE_WHAT("storage primitive");
+        }
+        if (
              /* cycle-390c: print/color primitives */
              ci_contains(text, "cupstestdsc") ||
              ci_contains(text, "escputil") || ci_contains(text, "cjet") ||
@@ -15327,8 +15954,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tifficc") || ci_contains(text, "linkicc") ||
              ci_contains(text, "transicc") || ci_contains(text, "wtpt") ||
              ci_contains(text, "oyranos")) {
-        what = "print/color primitive";
-        } else if (
+        PASTE_WHAT("print/color primitive");
+        }
+        if (
              /* cycle-391a: fp-lang primitives */
              ci_contains(text, "hlint") || ci_contains(text, "hoogle") ||
              ci_contains(text, "hpack") || ci_contains(text, "leancheck") ||
@@ -15349,8 +15977,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "alr ") || ci_contains(text, "ocaml")         ||
              (ci_contains(text, "dune") && ci_contains(text, " -")) ||
              ci_contains(text, "odoc")) {
-        what = "fp-lang primitive";
-        } else if (
+        PASTE_WHAT("fp-lang primitive");
+        }
+        if (
              /* cycle-391b: lisp/forth/apl primitives */
              ci_contains(text, "qlot") ||
              (ci_contains(text, "planck") && ci_contains(text, " -")) ||
@@ -15365,8 +15994,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "retro") && ci_contains(text, " -")) ||
              ci_contains(text, "apl ") ||
              (ci_contains(text, "april") && ci_contains(text, " -"))) {
-        what = "lisp/forth primitive";
-        } else if (
+        PASTE_WHAT("lisp/forth primitive");
+        }
+        if (
              /* cycle-391c: asm/hw-lang primitives */
              ci_contains(text, "jqt ") || ci_contains(text, "tasm") ||
              ci_contains(text, "masm") || ci_contains(text, "hla ") ||
@@ -15378,8 +16008,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "grc65") || ci_contains(text, "kickc") ||
              ci_contains(text, "asmotor") || ci_contains(text, "basm ") ||
              ci_contains(text, "la32r") || ci_contains(text, "wasmos")) {
-        what = "asm/hw-lang primitive";
-        } else if (
+        PASTE_WHAT("asm/hw-lang primitive");
+        }
+        if (
              /* cycle-392a: k8s/gitops primitives */
              ci_contains(text, "sourcer") || ci_contains(text, "kompose") ||
              ci_contains(text, "sealer") || ci_contains(text, "maesh") ||
@@ -15387,8 +16018,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "keel") && ci_contains(text, " -")) ||
              (ci_contains(text, "brigade") && ci_contains(text, " -")) ||
              ci_contains(text, "ghorg")) {
-        what = "k8s/gitops primitive";
-        } else if (
+        PASTE_WHAT("k8s/gitops primitive");
+        }
+        if (
              /* cycle-392b: observability/chaos/tf primitives */
              (ci_contains(text, "beats") && ci_contains(text, " -")) ||
              (ci_contains(text, "lumberjack") && ci_contains(text, " -")) ||
@@ -15408,8 +16040,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "latkins") || ci_contains(text, "terraspace") ||
              ci_contains(text, "terragoat") || ci_contains(text, "tfk8s") ||
              ci_contains(text, "tfnotify") || ci_contains(text, "terrafile")) {
-        what = "obs/chaos/tf primitive";
-        } else if (
+        PASTE_WHAT("obs/chaos/tf primitive");
+        }
+        if (
              /* cycle-392c: dns/mail primitives */
              ci_contains(text, "globalprotect") || ci_contains(text, "mullvad") ||
              ci_contains(text, "dnscap") || ci_contains(text, "corefile") ||
@@ -15420,8 +16053,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "perdition") && ci_contains(text, " -")) ||
              ci_contains(text, "haraka") || ci_contains(text, "dkimpy") ||
              ci_contains(text, "srs2")) {
-        what = "dns/mail primitive";
-        } else if (
+        PASTE_WHAT("dns/mail primitive");
+        }
+        if (
              /* cycle-392d: dir/radius primitives */
              ci_contains(text, "ldapurl") || ci_contains(text, "dirsrv") ||
              ci_contains(text, "sim_server") || ci_contains(text, "uuserver") ||
@@ -15433,8 +16067,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tac_pwd") || ci_contains(text, "tac_check") ||
              ci_contains(text, "mkhomedir_helper") || ci_contains(text, "pam_warn") ||
              ci_contains(text, "adsys") || ci_contains(text, "smbnetfs")) {
-        what = "dir/radius primitive";
-        } else if (
+        PASTE_WHAT("dir/radius primitive");
+        }
+        if (
              /* cycle-393a: iot/embedded primitives */
              ci_contains(text, "jeedom") || ci_contains(text, "fhem") ||
              ci_contains(text, "phoscon") || ci_contains(text, "hueadm") ||
@@ -15448,8 +16083,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "bluedoc") || ci_contains(text, "avalda") ||
              ci_contains(text, "firrtl") ||
              (ci_contains(text, "zinc") && ci_contains(text, " -"))) {
-        what = "iot/embedded primitive";
-        } else if (
+        PASTE_WHAT("iot/embedded primitive");
+        }
+        if (
              /* cycle-393b: sdr/gps primitives */
              ci_contains(text, "sdrserver") || ci_contains(text, "rtl_adsb") ||
              ci_contains(text, "rtl_tcp") || ci_contains(text, "rtl_test") ||
@@ -15458,8 +16094,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "multisdr") || ci_contains(text, "zerk") ||
              ci_contains(text, "sbsky") || ci_contains(text, "pygps") ||
              ci_contains(text, "marzban") || ci_contains(text, "navit")) {
-        what = "sdr/gps primitive";
-        } else if (
+        PASTE_WHAT("sdr/gps primitive");
+        }
+        if (
              /* cycle-393c: audio/daw primitives */
              ci_contains(text, "canorus") || ci_contains(text, "fluidplay") ||
              ci_contains(text, "jack_test") || ci_contains(text, "jack_net_source") ||
@@ -15473,8 +16110,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "pogo") && ci_contains(text, " -")) ||
              ci_contains(text, "shoutcast") || ci_contains(text, "sc_trans") ||
              ci_contains(text, "virtualdj")) {
-        what = "audio/daw primitive";
-        } else if (
+        PASTE_WHAT("audio/daw primitive");
+        }
+        if (
              /* cycle-394a: video/nle primitives */
              ci_contains(text, "h265enc") || ci_contains(text, "klvga") ||
              ci_contains(text, "tracers") || ci_contains(text, "dvdbchap") ||
@@ -15487,8 +16125,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "n_m3u8dl") || ci_contains(text, "dlvideo") ||
              ci_contains(text, "vapoursynth") || ci_contains(text, "dv2sub") ||
              (ci_contains(text, "subtitles") && ci_contains(text, " -"))) {
-        what = "video/nle primitive";
-        } else if (
+        PASTE_WHAT("video/nle primitive");
+        }
+        if (
              /* cycle-394b: cad/fem/print primitives */
              ci_contains(text, "rtcheck") || ci_contains(text, "nirt") ||
              ci_contains(text, "remrt") || ci_contains(text, "g2asc") ||
@@ -15501,8 +16140,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "ispy") && ci_contains(text, " -")) ||
              ci_contains(text, "ispyconnect") || ci_contains(text, "zmu") ||
              ci_contains(text, "zmvideo.pl") || ci_contains(text, "compreface")) {
-        what = "cad/fem/print primitive";
-        } else if (
+        PASTE_WHAT("cad/fem/print primitive");
+        }
+        if (
              /* cycle-394c: font/tex primitives */
              ci_contains(text, "otfautohint") || ci_contains(text, "afdko") ||
              ci_contains(text, "fontconvert") || ci_contains(text, "afm2tfm") ||
@@ -15511,8 +16151,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pdf2ps") || ci_contains(text, "showchar") ||
              ci_contains(text, "eplain") || ci_contains(text, "mkiv") ||
              ci_contains(text, "pybliographer") || ci_contains(text, "citoid")) {
-        what = "font/tex primitive";
-        } else if (
+        PASTE_WHAT("font/tex primitive");
+        }
+        if (
              /* cycle-395a: bio-align/ucsc primitives */
              ci_contains(text, "mashmap") || ci_contains(text, "mummer") ||
              ci_contains(text, "nucmer") || ci_contains(text, "dnadiff")  || ci_contains(text, "promer") ||
@@ -15525,16 +16166,18 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "fafrag") || ci_contains(text, "fagap") ||
              ci_contains(text, "faonerecord") || ci_contains(text, "farandomize") ||
              ci_contains(text, "fasomerecords")) {
-        what = "bio-align/ucsc primitive";
-        } else if (
+        PASTE_WHAT("bio-align/ucsc primitive");
+        }
+        if (
              /* cycle-395b: bio-variant/viz primitives */
              ci_contains(text, "vcffilter") || ci_contains(text, "deepvariant") ||
              ci_contains(text, "clair3") ||
              (ci_contains(text, "platypus") && ci_contains(text, " -")) ||
              ci_contains(text, "igv ") || ci_contains(text, "goleft") ||
              ci_contains(text, "duphold") || ci_contains(text, "seqan")) {
-        what = "bio-variant/viz primitive";
-        } else if (
+        PASTE_WHAT("bio-variant/viz primitive");
+        }
+        if (
              /* cycle-395c: emboss/rna primitives */
              (ci_contains(text, "emboss") && ci_contains(text, " -")) ||
              (ci_contains(text, "water ") && ci_contains(text, " -")) ||
@@ -15549,8 +16192,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "primer_core") || ci_contains(text, "primerprep") ||
              ci_contains(text, "revseqd")  ||
              ci_contains(text, "sl2j")) {
-        what = "emboss/rna primitive";
-        } else if (
+        PASTE_WHAT("emboss/rna primitive");
+        }
+        if (
              /* cycle-395d: bio-annotate/phylo primitives */
              ci_contains(text, "annovar")  ||
              ci_contains(text, "snpeff") || ci_contains(text, "vcfanno") ||
@@ -15563,8 +16207,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "rnacofold")  ||
              ci_contains(text, "rnadistance") || ci_contains(text, "rnaup") ||
              ci_contains(text, "mfold") || ci_contains(text, "unafold")) {
-        what = "bio-annotate/phylo primitive";
-        } else if (
+        PASTE_WHAT("bio-annotate/phylo primitive");
+        }
+        if (
              /* cycle-396a: quantum/phys primitives */
              ci_contains(text, "qiskit") || ci_contains(text, "cirq") ||
              ci_contains(text, "pyquil") || ci_contains(text, "quilc") ||
@@ -15574,8 +16219,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "gpaw") || ci_contains(text, "lapw0") ||
              ci_contains(text, "lapw1") || ci_contains(text, "lapw2") ||
              ci_contains(text, "bandplot")) {
-        what = "quantum/phys primitive";
-        } else if (
+        PASTE_WHAT("quantum/phys primitive");
+        }
+        if (
              /* cycle-396b: astro/plot/wrf primitives */
              ci_contains(text, "mayavi2") || ci_contains(text, "scidavis") ||
              ci_contains(text, "labplot") ||
@@ -15590,8 +16236,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "adcirc")  ||
              ci_contains(text, "padcswan") || ci_contains(text, "hhsun") ||
              ci_contains(text, "relacs")) {
-        what = "astro/plot/wrf primitive";
-        } else if (
+        PASTE_WHAT("astro/plot/wrf primitive");
+        }
+        if (
              /* cycle-396c: chain/finance primitives */
              ci_contains(text, "ravend") || ci_contains(text, "electrond") ||
              (ci_contains(text, "integration") && ci_contains(text, " -")) ||
@@ -15605,8 +16252,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "eleutheria") ||
              (ci_contains(text, "sugar") && ci_contains(text, " -")) ||
              ci_contains(text, "algorand") || ci_contains(text, "refracta")) {
-        what = "chain/finance primitive";
-        } else if (
+        PASTE_WHAT("chain/finance primitive");
+        }
+        if (
              /* cycle-397a: ssg/wiki primitives */
              (ci_contains(text, "hugo") && ci_contains(text, " -")) ||
              (ci_contains(text, "jekyll") && ci_contains(text, " -")) ||
@@ -15619,15 +16267,17 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "gridsome") || ci_contains(text, "scully")  || ci_contains(text, "retype")  || ci_contains(text, "wikijs") ||
              ci_contains(text, "moinmoin") || ci_contains(text, "pmwiki") ||
              ci_contains(text, "foswiki")) {
-        what = "ssg/wiki primitive";
-        } else if (
+        PASTE_WHAT("ssg/wiki primitive");
+        }
+        if (
              /* cycle-397b: forum/issue primitives */
              ci_contains(text, "bintr") || ci_contains(text, "beekeep") ||
              ci_contains(text, "question2answer") || ci_contains(text, "scoold") ||
              ci_contains(text, "remark42") || ci_contains(text, "onedevd") ||
              ci_contains(text, "tracd")) {
-        what = "forum/issue primitive";
-        } else if (
+        PASTE_WHAT("forum/issue primitive");
+        }
+        if (
              /* cycle-397c: commerce/erp primitives */
              ci_contains(text, "aimeos") || ci_contains(text, "shopware")  || ci_contains(text, "spryker") ||
              ci_contains(text, "yetiforce") || ci_contains(text, "odoo") ||
@@ -15639,8 +16289,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "yves") && ci_contains(text, " -")) ||
              (ci_contains(text, "frappe") && ci_contains(text, " -")) ||
              (ci_contains(text, "proteus") && ci_contains(text, " -"))) {
-        what = "commerce/erp primitive";
-        } else if (
+        PASTE_WHAT("commerce/erp primitive");
+        }
+        if (
              /* cycle-398a: game-engine primitives */
              ci_contains(text, "ueditor") || ci_contains(text, "uefn") ||
              ci_contains(text, "unpkg")  ||
@@ -15656,8 +16307,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "darkplaces") || ci_contains(text, "lamaj") ||
              (ci_contains(text, "woof") && ci_contains(text, " -")) ||
              (ci_contains(text, "croft") && ci_contains(text, " -"))) {
-        what = "game-dev primitive";
-        } else if (
+        PASTE_WHAT("game-dev primitive");
+        }
+        if (
              /* cycle-398b: chess/board primitives */
              ci_contains(text, "lc0") || ci_contains(text, "gnuchess") ||
              ci_contains(text, "andscacs") || ci_contains(text, "booot") ||
@@ -15678,8 +16330,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "weiss") && ci_contains(text, " -")) ||
              (ci_contains(text, "knights") && ci_contains(text, " -")) ||
              (ci_contains(text, "blunder") && ci_contains(text, " -"))) {
-        what = "chess/board primitive";
-        } else if (
+        PASTE_WHAT("chess/board primitive");
+        }
+        if (
              /* cycle-399a: ham/packet primitives */
              ci_contains(text, "flcluster") || ci_contains(text, "yaac") ||
              ci_contains(text, "aprsigi") || ci_contains(text, "kissutil") ||
@@ -15693,8 +16346,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ft1d") || ci_contains(text, "dv4mini") ||
              (ci_contains(text, "smack") && ci_contains(text, " -")) ||
              (ci_contains(text, "parrot") && ci_contains(text, " -"))) {
-        what = "ham/packet primitive";
-        } else if (
+        PASTE_WHAT("ham/packet primitive");
+        }
+        if (
              /* cycle-399b: marine/weather primitives */
              ci_contains(text, "aisdispatcher") || ci_contains(text, "aiscatcher") ||
              ci_contains(text, "aisdeco")  ||
@@ -15710,8 +16364,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "wvpgsql") || ci_contains(text, "wvserial") ||
              ci_contains(text, "wvss2300") || ci_contains(text, "vproweather") ||
              ci_contains(text, "weatherd") || ci_contains(text, "wfview")) {
-        what = "marine/weather primitive";
-        } else if (
+        PASTE_WHAT("marine/weather primitive");
+        }
+        if (
              /* cycle-400a: retro-emu primitives */
              ci_contains(text, "z390")   || ci_contains(text, "zdt") ||
              ci_contains(text, "kl10") || ci_contains(text, "apple2js") ||
@@ -15729,8 +16384,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dragon32") || ci_contains(text, "dragon64") ||
              ci_contains(text, "trs80")  ||
              ci_contains(text, "cpmulator") || ci_contains(text, "z80emu")) {
-        what = "retro-emu primitive";
-        } else if (
+        PASTE_WHAT("retro-emu primitive");
+        }
+        if (
              /* cycle-400b: disk/pres primitives */
              ci_contains(text, "dtc ") || ci_contains(text, "supercardpro") ||
              ci_contains(text, "omniflop") || ci_contains(text, "omnidisk") ||
@@ -15749,8 +16405,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "a2600") || ci_contains(text, "z26") ||
              (ci_contains(text, "handy") && ci_contains(text, " -")) ||
              ci_contains(text, "pj64") || ci_contains(text, "dolwin")) {
-        what = "disk/pres primitive";
-        } else if (
+        PASTE_WHAT("disk/pres primitive");
+        }
+        if (
              /* cycle-401a: robotics2/drone primitives */
              ci_contains(text, "uorb") ||
              (ci_contains(text, "listener") && ci_contains(text, " -")) ||
@@ -15768,8 +16425,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "lovam") || ci_contains(text, "loam") ||
              ci_contains(text, "velodyne") || ci_contains(text, "ouster") ||
              ci_contains(text, "hokuyo") || ci_contains(text, "lms100")) {
-        what = "robotics2/drone primitive";
-        } else if (
+        PASTE_WHAT("robotics2/drone primitive");
+        }
+        if (
              /* cycle-401b: industrial/plc primitives */
              ci_contains(text, "plcverif") || ci_contains(text, "libads") ||
              ci_contains(text, "studio5000") || ci_contains(text, "plcide") ||
@@ -15789,8 +16447,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "groupresponse") || ci_contains(text, "grouppoll") ||
              ci_contains(text, "groupsocketlisten") || ci_contains(text, "groupsocketresponse") ||
              ci_contains(text, "bcusdk")) {
-        what = "industrial/plc primitive";
-        } else if (
+        PASTE_WHAT("industrial/plc primitive");
+        }
+        if (
              /* cycle-402a: mass-spec/proteomics primitives */
              (ci_contains(text, "perseus") && ci_contains(text, " -")) ||
              ci_contains(text, "peptideshaker") ||
@@ -15815,8 +16474,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "prolfiq") || ci_contains(text, "mz2m") ||
              ci_contains(text, "pyteomics") || ci_contains(text, "brainpy") ||
              ci_contains(text, "mspeaks")) {
-        what = "mass-spec primitive";
-        } else if (
+        PASTE_WHAT("mass-spec primitive");
+        }
+        if (
              /* cycle-402b: hwmgmt/san primitives */
              ci_contains(text, "syscfg") || ci_contains(text, "idrac7") ||
              ci_contains(text, "idrac8") || ci_contains(text, "idrac9") ||
@@ -15835,8 +16495,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ilo3") || ci_contains(text, "ilo4") ||
              ci_contains(text, "locfg") || ci_contains(text, "vinegar") ||
              ci_contains(text, "prlcore2dmp")) {
-        what = "hwmgmt/san primitive";
-        } else if (
+        PASTE_WHAT("hwmgmt/san primitive");
+        }
+        if (
              /* cycle-403a: voip/pbx primitives */
              ci_contains(text, "misdn") || ci_contains(text, "astrisk") ||
              ci_contains(text, "freeswitch") || ci_contains(text, "fs_ivrd") ||
@@ -15849,8 +16510,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "sipml5") || ci_contains(text, "sipgo") ||
              ci_contains(text, "callweaver") || ci_contains(text, "callgen")  || ci_contains(text, "smpp")  || ci_contains(text, "emserver") ||
              ci_contains(text, "gsmsms") || ci_contains(text, "atemu")) {
-        what = "voip/pbx primitive";
-        } else if (
+        PASTE_WHAT("voip/pbx primitive");
+        }
+        if (
              /* cycle-403b: medical-imaging primitives */
              ci_contains(text, "dcmsnd") || ci_contains(text, "dcmqrti") ||
              ci_contains(text, "dcm2json") || ci_contains(text, "dcmp2pgm") ||
@@ -15892,8 +16554,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mris_convert") || ci_contains(text, "mris_info") ||
              ci_contains(text, "mris_mesh") || ci_contains(text, "mris_seg2annot") ||
              ci_contains(text, "mris_smooth") || ci_contains(text, "fsvv")) {
-        what = "medical-imaging primitive";
-        } else if (
+        PASTE_WHAT("medical-imaging primitive");
+        }
+        if (
              /* cycle-404a: ebook/library primitives */
              ci_contains(text, "cr3 ") ||
              (ci_contains(text, "pocketbook") && ci_contains(text, " -")) ||
@@ -15926,8 +16589,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "hoarder") && ci_contains(text, " -")) ||
              (ci_contains(text, "omnivore") && ci_contains(text, " -")) ||
              ci_contains(text, "pinchflat") || ci_contains(text, "metube")) {
-        what = "ebook/library primitive";
-        } else if (
+        PASTE_WHAT("ebook/library primitive");
+        }
+        if (
              /* cycle-404b: photogrammetry/genealogy primitives */
              ci_contains(text, "detectfeatures") || ci_contains(text, "describefeatures") ||
              ci_contains(text, "visualsfm") || ci_contains(text, "interfescene") ||
@@ -15948,8 +16612,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "genealodzy") ||
              ci_contains(text, "jgenea") || ci_contains(text, "familieroots") ||
              ci_contains(text, "flttracer")) {
-        what = "photogrammetry primitive";
-        } else if (
+        PASTE_WHAT("photogrammetry primitive");
+        }
+        if (
              /* cycle-405a: data-eng/rdf primitives */
              (ci_contains(text, "spoon") && ci_contains(text, " -")) ||
              (ci_contains(text, "carte") && ci_contains(text, " -")) ||
@@ -15962,8 +16627,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "cayley") || ci_contains(text, "lodlive") ||
              ci_contains(text, "rdftkb") || ci_contains(text, "sparqlify") ||
              ci_contains(text, "tdbquery") || ci_contains(text, "tdbgraph")) {
-        what = "data-eng/rdf primitive";
-        } else if (
+        PASTE_WHAT("data-eng/rdf primitive");
+        }
+        if (
              /* cycle-405b: aec/bim primitives */
              ci_contains(text, "ifccheck") || ci_contains(text, "ifcconvert") ||
              ci_contains(text, "ifcdiff") || ci_contains(text, "ifcinfo") ||
@@ -16019,8 +16685,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "astk") ||
              (ci_contains(text, "stanley") && ci_contains(text, " -")) ||
              (ci_contains(text, "saturn") && ci_contains(text, " -"))) {
-        what = "aec/bim primitive";
-        } else if (
+        PASTE_WHAT("aec/bim primitive");
+        }
+        if (
              /* cycle-406a: microscopy/crystallography primitives */
              (ci_contains(text, "fiji") && ci_contains(text, " -")) ||
              ci_contains(text, "fiji.app") || ci_contains(text, "mmstudio") ||
@@ -16049,8 +16716,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "hklpy") || ci_contains(text, "eiger2cbf") ||
              ci_contains(text, "areadetector") || ci_contains(text, "adaravis") ||
              ci_contains(text, "adpilatus") || ci_contains(text, "adeiger")) {
-        what = "microscopy primitive";
-        } else if (
+        PASTE_WHAT("microscopy primitive");
+        }
+        if (
              /* cycle-406b: eda/pcb primitives */
              ci_contains(text, "pcb2svg") || ci_contains(text, "kikit") ||
              ci_contains(text, "kicost") || ci_contains(text, "eagle.rc") ||
@@ -16081,8 +16749,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "isspice") || ci_contains(text, "smartsim") ||
              ci_contains(text, "falstad") || ci_contains(text, "everycircuit") ||
              ci_contains(text, "partsim") || ci_contains(text, "partquest")) {
-        what = "eda/pcb primitive";
-        } else if (
+        PASTE_WHAT("eda/pcb primitive");
+        }
+        if (
              /* cycle-407a: compchem/crystal primitives */
              ci_contains(text, "g16 ") || ci_contains(text, "g09 ") ||
              ci_contains(text, "g03 ") || ci_contains(text, "g98 ") ||
@@ -16132,8 +16801,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "bkchem") || ci_contains(text, "gchempaint") ||
              ci_contains(text, "molconvert") || ci_contains(text, "standardizer") ||
              ci_contains(text, "structurecheck") || ci_contains(text, "metator")) {
-        what = "compchem/crystal primitive";
-        } else if (
+        PASTE_WHAT("compchem/crystal primitive");
+        }
+        if (
              /* cycle-407b: speech/asr primitives */
              (ci_contains(text, "steps") && ci_contains(text, " -")) ||
              ci_contains(text, "arpa2fst") ||
@@ -16161,8 +16831,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "sre10") || ci_contains(text, "sre16") ||
              ci_contains(text, "sre18") || ci_contains(text, "sre19") ||
              ci_contains(text, "sre21") || ci_contains(text, "dihard")  ) {
-        what = "speech/asr primitive";
-        } else if (
+        PASTE_WHAT("speech/asr primitive");
+        }
+        if (
              /* cycle-408a: docpub/cat primitives */
              ci_contains(text, "scribus") || ci_contains(text, "idml")  || ci_contains(text, "markzware") ||
              ci_contains(text, "flightcheck") || ci_contains(text, "pdf2id") ||
@@ -16195,8 +16866,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "qm2po") || ci_contains(text, "symb2po") ||
              ci_contains(text, "wpml2po") || ci_contains(text, "poconflict") ||
              ci_contains(text, "poserver")) {
-        what = "docpub/cat primitive";
-        } else if (
+        PASTE_WHAT("docpub/cat primitive");
+        }
+        if (
              /* cycle-408b: gnss/survey primitives */
              ci_contains(text, "rtklib") || ci_contains(text, "rtkcmn") ||
              ci_contains(text, "rtksvr") || ci_contains(text, "rtkplot") ||
@@ -16231,8 +16903,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ntrip")    ||
              (ci_contains(text, "caster") && ci_contains(text, " -")) ||
              ci_contains(text, "strsvr")) {
-        what = "gnss/survey primitive";
-        } else if (
+        PASTE_WHAT("gnss/survey primitive");
+        }
+        if (
              /* cycle-409a: music-notation/midi primitives */
              ci_contains(text, "photoscore") || ci_contains(text, "sharpeye") ||
              (ci_contains(text, "mozart") && ci_contains(text, " -")) ||
@@ -16268,8 +16941,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "zebrify") || ci_contains(text, "freemusic") ||
              ci_contains(text, "freescores") || ci_contains(text, "wikifonia") ||
              ci_contains(text, "gnmidi") || ci_contains(text, "midieditor")) {
-        what = "music-notation/midi primitive";
-        } else if (
+        PASTE_WHAT("music-notation/midi primitive");
+        }
+        if (
              /* cycle-409b: broadcast/dvb primitives */
              ci_contains(text, "ccg ") || ci_contains(text, "srtenc") ||
              ci_contains(text, "srtstats") || ci_contains(text, "srtserver") ||
@@ -16302,8 +16976,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "oscam") || ci_contains(text, "cccam")  || ci_contains(text, "newcamd") ||
              ci_contains(text, "cardserver") || ci_contains(text, "schlaflos") ||
              ci_contains(text, "satip")) {
-        what = "broadcast/dvb primitive";
-        } else if (
+        PASTE_WHAT("broadcast/dvb primitive");
+        }
+        if (
              /* cycle-410a: dfir/c2 primitives */
              ci_contains(text, "regtime") || ci_contains(text, "regparse") ||
              ci_contains(text, "regdiff") || ci_contains(text, "regproc") ||
@@ -16320,8 +16995,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "quake360") || ci_contains(text, "mdm ") ||
              (ci_contains(text, "haven") && ci_contains(text, " -")) ||
              (ci_contains(text, "faction") && ci_contains(text, " -"))) {
-        what = "dfir/c2 primitive";
-        } else if (
+        PASTE_WHAT("dfir/c2 primitive");
+        }
+        if (
              /* cycle-410b: cnc/3dprint/embroidery primitives */
              ci_contains(text, "slicer4n") || ci_contains(text, "curaslice") ||
              ci_contains(text, "curalegacy") || ci_contains(text, "bambulab") ||
@@ -16368,8 +17044,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "graphtec") ||
              (ci_contains(text, "roland") && ci_contains(text, " -")) ||
              ci_contains(text, "stika") || ci_contains(text, "mimaki")) {
-        what = "cnc/3dprint primitive";
-        } else if (
+        PASTE_WHAT("cnc/3dprint primitive");
+        }
+        if (
              /* cycle-411a: ui-proto/diagram primitives */
              ci_contains(text, "figma") || ci_contains(text, "figjam") ||
              ci_contains(text, "figa") || ci_contains(text, "fig2html") ||
@@ -16413,8 +17090,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "lightshot") || ci_contains(text, "faststone") ||
              ci_contains(text, "picpick") || ci_contains(text, "gifrecorder") ||
              ci_contains(text, "gifcap") || ci_contains(text, "ttystudio")) {
-        what = "ui-proto/diagram primitive";
-        } else if (
+        PASTE_WHAT("ui-proto/diagram primitive");
+        }
+        if (
              /* cycle-411b: screenwriting/filmprod primitives */
              (ci_contains(text, "fountain") && ci_contains(text, " -")) ||
              ci_contains(text, "fountainio") || ci_contains(text, "fountainmd") ||
@@ -16446,8 +17124,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "smokesmoke") ||
              (ci_contains(text, "davinci") && ci_contains(text, " -")) ||
              ci_contains(text, "tuttle")) {
-        what = "screenwriting/filmprod primitive";
-        } else if (
+        PASTE_WHAT("screenwriting/filmprod primitive");
+        }
+        if (
              /* cycle-412a: seismology primitives */
              ci_contains(text, "scmv") || ci_contains(text, "scolv") ||
              ci_contains(text, "scesv") || ci_contains(text, "scrttv") ||
@@ -16493,8 +17172,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pickew") || ci_contains(text, "pick_ew")  || ci_contains(text, "pickfk") ||
              ci_contains(text, "binder_ew") || ci_contains(text, "eqbuf") ||
              ci_contains(text, "sniffwave") || ci_contains(text, "tankplayer")) {
-        what = "seismology primitive";
-        } else if (
+        PASTE_WHAT("seismology primitive");
+        }
+        if (
              /* cycle-412b: oceanography primitives */
              ci_contains(text, "cnv2asc") || ci_contains(text, "sbe911") ||
              ci_contains(text, "sbe37") ||
@@ -16513,8 +17193,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "argopy") || ci_contains(text, "bgc ") ||
              ci_contains(text, "ooi ") || ci_contains(text, "ooinet") ||
              ci_contains(text, "seaglider") || ci_contains(text, "pyglider")) {
-        what = "oceanography primitive";
-        } else if (
+        PASTE_WHAT("oceanography primitive");
+        }
+        if (
              /* cycle-413a: legaltech/ediscovery primitives */
              (ci_contains(text, "relativity") && ci_contains(text, " -")) ||
              ci_contains(text, "relativityserver") ||
@@ -16547,8 +17228,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "kldiscovery") || ci_contains(text, "cimplifi") ||
              ci_contains(text, "complianceds") || ci_contains(text, "epiq")  || ci_contains(text, "lhed") ||
              ci_contains(text, "reviewedocs")) {
-        what = "legaltech/ediscovery primitive";
-        } else if (
+        PASTE_WHAT("legaltech/ediscovery primitive");
+        }
+        if (
              /* cycle-413b: agritech primitives */
              ci_contains(text, "jdlink") ||
              ci_contains(text, "operationcenter") ||
@@ -16604,8 +17286,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "intellect") && ci_contains(text, " -")) ||
              ci_contains(text, "fieldin") || ci_contains(text, "cropin") ||
              ci_contains(text, "intelligro")) {
-        what = "agritech primitive";
-        } else if (
+        PASTE_WHAT("agritech primitive");
+        }
+        if (
              /* cycle-414a: power-grid/mbd primitives */
              ci_contains(text, "helics")  ||
              ci_contains(text, "psse33") || ci_contains(text, "psse34") ||
@@ -16639,8 +17322,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "omnotebook") || ci_contains(text, "omplot") ||
              ci_contains(text, "omniorb") ||
              (ci_contains(text, "impact") && ci_contains(text, " -")) ) {
-        what = "power-grid/mbd primitive";
-        } else if (
+        PASTE_WHAT("power-grid/mbd primitive");
+        }
+        if (
              /* cycle-414b: embedded/can primitives */
              ci_contains(text, "nrf91") || ci_contains(text, "embedddedstudio") ||
              ci_contains(text, "embeddedstudio") || ci_contains(text, "jscope") ||
@@ -16671,8 +17355,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "iso14229") || ci_contains(text, "doip") ||
              ci_contains(text, "can2udp") || ci_contains(text, "somip") ||
              ci_contains(text, "someip")   || ci_contains(text, "commonapi")) {
-        what = "embedded/can primitive";
-        } else if (
+        PASTE_WHAT("embedded/can primitive");
+        }
+        if (
              /* cycle-415a: geo-tile primitives */
              ci_contains(text, "tegola") || ci_contains(text, "tileoven") ||
              ci_contains(text, "tilebelt") || ci_contains(text, "tilecover") ||
@@ -16689,8 +17374,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "r.basin") || ci_contains(text, "v.edit") ||
              ci_contains(text, "v.to.db") || ci_contains(text, "i.pr") ||
              ci_contains(text, "i.cluster") || ci_contains(text, "i.rectify")) {
-        what = "geo-tile primitive";
-        } else if (
+        PASTE_WHAT("geo-tile primitive");
+        }
+        if (
              /* cycle-415b: radio-astronomy primitives */
              ci_contains(text, "obitview") || ci_contains(text, "hifa") ||
              ci_contains(text, "hsa") ||
@@ -16742,8 +17428,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "bary") || ci_contains(text, "calbin") ||
              ci_contains(text, "pdv") || ci_contains(text, "pint")  || ci_contains(text, "enterprise") ||
              ci_contains(text, "t2db")) {
-        what = "radio-astronomy primitive";
-        } else if (
+        PASTE_WHAT("radio-astronomy primitive");
+        }
+        if (
              /* cycle-416a: eda/fpga primitives */
              ci_contains(text, "simv") ||
              (ci_contains(text, "verdi") && ci_contains(text, " -")) ||
@@ -16808,8 +17495,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ispvm") ||
              (ci_contains(text, "gowin") && ci_contains(text, " -")) ||
              ci_contains(text, "gowin_pack") || ci_contains(text, "gowin_unpack")) {
-        what = "eda/fpga primitive";
-        } else if (
+        PASTE_WHAT("eda/fpga primitive");
+        }
+        if (
              /* cycle-416b: hpc/storage primitives */
              ci_contains(text, "smgr") || ci_contains(text, "printjob") ||
              ci_contains(text, "setqos") || ci_contains(text, "mbalance") ||
@@ -16833,8 +17521,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "znapzend") || ci_contains(text, "moosefs") ||
              ci_contains(text, "gpfs") || ci_contains(text, "mmapplypolicy") ||
              ci_contains(text, "mmbackup") || ci_contains(text, "mmremote")) {
-        what = "hpc/storage primitive";
-        } else if (
+        PASTE_WHAT("hpc/storage primitive");
+        }
+        if (
              /* cycle-417a: analytics/ml-infra primitives */
              ci_contains(text, "bipp") || ci_contains(text, "hashboard") ||
              (ci_contains(text, "elevate") && ci_contains(text, " -")) ||
@@ -16867,8 +17556,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dynomite") || ci_contains(text, "vmui") ||
              ci_contains(text, "carbonapi") || ci_contains(text, "phlare") ||
              ci_contains(text, "polarv") || ci_contains(text, "m3em")) {
-        what = "analytics/ml-infra primitive";
-        } else if (
+        PASTE_WHAT("analytics/ml-infra primitive");
+        }
+        if (
              /* cycle-417b: astro/hydro primitives */
              ci_contains(text, "eqmod") || ci_contains(text, "ascom")  || ci_contains(text, "alpyca") ||
              ci_contains(text, "solvefield") || ci_contains(text, "fits2fits") ||
@@ -16909,8 +17599,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mikeplus") || ci_contains(text, "dhisoftware") ||
              ci_contains(text, "wntr") || ci_contains(text, "hmmpgmd") ||
              ci_contains(text, "hmmemit")) {
-        what = "astro/hydro primitive";
-        } else if (
+        PASTE_WHAT("astro/hydro primitive");
+        }
+        if (
              /* cycle-418a: genomics/phylo primitives */
              ci_contains(text, "graphmap")  ||
              ci_contains(text, "lastdb") || ci_contains(text, "fastal") ||
@@ -16981,8 +17672,9 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "ripples") && ci_contains(text, " -")) ||
              (ci_contains(text, "scorpio") && ci_contains(text, " -")) ||
              ci_contains(text, "gofasta")) {
-        what = "genomics/phylo primitive";
-        } else if (
+        PASTE_WHAT("genomics/phylo primitive");
+        }
+        if (
              /* cycle-418b: proteomics primitives */
              ci_contains(text, "thegpm") || ci_contains(text, "omssa")   ||
              ci_contains(text, "directag")  ||
@@ -17014,8 +17706,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "compomics") || ci_contains(text, "colims") ||
              ci_contains(text, "fasta2peptides") || ci_contains(text, "unipept") ||
              ci_contains(text, "metaproteome") || ci_contains(text, "metapeptide")) {
-        what = "proteomics primitive";
-        } else if (
+        PASTE_WHAT("proteomics primitive");
+        }
+        if (
              /* cycle-419a: ide/devtools primitives */
              ci_contains(text, "notepad++") || ci_contains(text, "sc1 ") ||
              ci_contains(text, "devcpp") || ci_contains(text, "netbeans") ||
@@ -17035,8 +17728,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "de4dot") || ci_contains(text, "aidl") ||
              ci_contains(text, "coveralls") ||
              (ci_contains(text, "locust") && ci_contains(text, " -"))) {
-        what = "ide/devtools primitive";
-        } else if (
+        PASTE_WHAT("ide/devtools primitive");
+        }
+        if (
              /* cycle-419b: forum/cms primitives */
              (ci_contains(text, "vanilla") && ci_contains(text, " -")) ||
              ci_contains(text, "vanillaforums") || ci_contains(text, "simplemachines") ||
@@ -17080,16 +17774,33 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ecwid") || ci_contains(text, "weebly") ||
              ci_contains(text, "paypal") || ci_contains(text, "braintree") ||
              ci_contains(text, "payhip")) {
-        what = "forum/cms primitive";
+        PASTE_WHAT("forum/cms primitive");
         }
 
         if (what) {
+            char extra[192];
+            int i;
+            size_t off = 0;
             v.signals |= PASTE_WINDOWS_LOLBIN;
             v.score += 45;
+            extra[0] = '\0';
+            for (i = 1; i < n_what_hits; i++) {
+                if (i == 4) {
+                    off += (size_t)snprintf(extra + off, sizeof(extra) - off,
+                                            ", +%d more", n_what_hits - 4);
+                    break;
+                }
+                off += (size_t)snprintf(extra + off, sizeof(extra) - off,
+                                        i == 1 ? " (also: %s" : ", %s",
+                                        what_hits[i]);
+            }
+            if (off)
+                snprintf(extra + off, sizeof(extra) - off, ")");
             if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
                 snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
-                    "P8: Windows ClickFix / LOLBin — %s", what);
+                    "P8: Windows ClickFix / LOLBin — %s%s", what, extra);
         }
+#undef PASTE_WHAT
     }
 
     /* P9: Reverse shell payloads (Unix) */

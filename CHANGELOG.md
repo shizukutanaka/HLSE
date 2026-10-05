@@ -10877,6 +10877,20 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 437 (P8 `what` multi-hold — secondary class hits now
+  reported):** the 698-branch else-if chain in hlse_check_paste
+  dropped the first-match label when several classes matched —
+  a PowerShell download-cradle that also uses certutil reported
+  only the first. Chain conditions are pure strstr calls with no
+  side effects, no catch-all else, and no mid-chain returns, so
+  the chain is now evaluated in full: `} else if (` -> `if (`,
+  `what = "x"` -> `PASTE_WHAT("x")` records every matched class
+  into a bounded hit list. Score stays a single +45 and the
+  PASTE_WINDOWS_LOLBIN flag is unchanged — the reason gains
+  "(also: b, c, +N more)". Paired tests: dual-hit input prints
+  "(also:" and keeps ALERT [45]. Lint WHAT_RE updated for the
+  new macro (coverage guard stays live). Cost: worst-case scan
+  work is now the norm (same as a benign scan today).
 - **cycle 436 (mutation-smoke covers all six surfaces):** CASES
   grew to 12 — url (javascript: scheme), text (gift card), file
   (.exe double-ext), package (requests typosquat), secrets
