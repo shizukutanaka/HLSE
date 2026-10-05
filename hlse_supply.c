@@ -17811,6 +17811,9 @@ hlse_check_paste(const char *text) {
             if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
                 snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
                     "P8: Windows ClickFix / LOLBin — %s%s", what, extra);
+            v.n_classes = n_what_hits;
+            for (i = 0; i < n_what_hits; i++)
+                v.classes[i] = what_hits[i];
         }
 #undef PASTE_WHAT
     }

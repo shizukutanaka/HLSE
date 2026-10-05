@@ -410,6 +410,14 @@ assert data["hardening_band"] in ("hardened", "good", "fair", "weak")
     && check "P8 (also:) long-label multi-hit still displays" "0" "0" \
     || check "P8 (also:) long-label multi-hit still displays" "0" "1"
 
+# P8 classes[]: JSON carries every matched class (reason truncates to 3)
+./hlse_core --json paste 'powershell -enc XX && certutil -urlcache http://x && mshta http://y && wmic os get' 2>&1 | grep -q '"classes":\["PowerShell hidden/encoded/download-execute","mshta remote/script execution","certutil download/decode (LOLBin)","wmic process creation (LOLBin)"' \
+    && check "P8 JSON classes[] lists every matched class" "0" "0" \
+    || check "P8 JSON classes[] lists every matched class" "0" "1"
+./hlse_core --json paste 'hello world' 2>&1 | grep -q '"classes"' \
+    && check "P8 classes[] absent on clean input" "1" "0" \
+    || check "P8 classes[] absent on clean input" "0" "0"
+
 # FileFix (2025 ClickFix variant): paste path into File Explorer address bar → flagged
 ./hlse_core text 'A file has been shared with you. Open File Explorer, then paste the path into the file explorer and press Enter.' 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "FileFix Explorer-paste lure detected" "0" "0" \

@@ -733,7 +733,16 @@ hlse_cmd_paste(const HlseCli *o, int argc, char **argv, int idx) {
                 printf(",\"reasons\":[");
                 for (i = 0; i < pv.n_reasons; i++)
                         hlse_json_str_elem(i, pv.reasons[i]);
-                printf("]}\n");
+                printf("]");
+                if (pv.n_classes > 0) {
+                    /* machine-readable P8 class list — every matched chain
+                     * class, where the reason string truncates to 3 names. */
+                    printf(",\"classes\":[");
+                    for (i = 0; i < pv.n_classes; i++)
+                        hlse_json_str_elem(i, pv.classes[i]);
+                    printf("]");
+                }
+                printf("}\n");
             } else if (pv.score == 0) {
                 const char *bs = hlse_blindspot_for("paste");
                 printf("OK    (paste)\n");

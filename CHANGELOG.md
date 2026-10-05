@@ -10877,6 +10877,18 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 441 (memory-safety sweep pt. 2 — bounds audit clean; JSON
+  `classes[]` for P8 multi-hold):** audited all ~60 `memcpy`/`memmove`/
+  `read`/`fread` sites, every `malloc`/`realloc`/`strdup` return, and
+  every `atoi`/`strtol`/`sscanf` conversion for the cycle-439/440
+  class. All bounded and checked — the class is closed codebase-wide.
+  The remaining gap was semantic, not memory: `--json paste` reported
+  the multi-hold class list only inside the human reason string
+  ("(also: a, b, +N more)"), invisible to machine consumers. Added
+  `PasteVerdict.classes[]`/`n_classes` (literal pointers, capped at 8)
+  and emit `"classes":[...]` in the paste JSON — SIEM/SOAR consumers
+  now get every matched chain class structurally. CLI tests +2:
+  classes array lists all hits; key absent on clean input.
 - **cycle 440 (string-op safety audit — sv_add unterminated `type`
   field):** swept the codebase for the cycle-439 class (unbounded /
   advance-by-would-be string ops). Zero `sprintf`/`vsprintf`/`strcat`/

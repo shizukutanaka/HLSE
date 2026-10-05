@@ -56,11 +56,18 @@ PackageVerdict hlse_check_package(const char *pkg_name,
 #define PASTE_EVAL_FETCH      0x800  /* eval/source of fetched content (non-pipe cradle) */
 #define PASTE_LISTENER_PRIV   0x1000 /* bind-shell listener / SUID bit / staging server */
 
+#define HLSE_PASTE_MAX_CLASSES 8
+
 typedef struct {
     int  score;              /* 0..100 */
     int  signals;            /* bitmask of PASTE_* signals */
     int  n_reasons;
     char reasons[HLSE_PASTE_MAX_REASONS][256];
+    /* P8 multi-hold: every matched chain class, not just the primary
+     * (the human reason only names the first 3 secondary hits).
+     * classes[0] is the primary label; literal pointers, static storage. */
+    int  n_classes;
+    const char *classes[HLSE_PASTE_MAX_CLASSES];
 } PasteVerdict;
 
 /* Analyze text that a user is about to paste into a terminal.
