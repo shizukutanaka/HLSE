@@ -10856,6 +10856,18 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 399): ham/marine primitives** — ham
+  radio/packet (flcluster, yaac, aprsigi, kissutil, kissnetd,
+  mkiss, rip98d, winlink, wlol, wldd, varac, varahf, ardop,
+  ardopc, ardopcf, drats, chirpw, qdmr, hblink3, hblink,
+  dmrlink, ambed, ft1d, dv4mini, smack, parrot), marine/weather
+  (aisdispatcher, aiscatcher, aisdeco, aisdeco2, nauticalcharts,
+  aisparser, aislib, aisreceiver, naviserver, nmea, nmea0183,
+  nmearemote, nmeasimulator, nmeagps, nmeaconverter, saildocs,
+  sailgrib, sailtimer, sailplanner, adrena, actisense, ge2kap,
+  bsb2tif, imgkap, kapgen, tiff2kap, chartconvert, merak,
+  merak1, wvlibrary, wvpgsql, wvserial, wvss2300, vproweather,
+  weatherd, wfview). +62/64 checks.
 - **ALERT 45 (cycle 398): game/chess primitives** — game
   engines/ports (ueditor, uefn, unpkg, cocos2d, cocos, yacf,
   q3map2, q3asm, trenchbroom, levelforge, unrealpk, sseedit,

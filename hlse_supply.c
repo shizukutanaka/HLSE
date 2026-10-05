@@ -15901,6 +15901,44 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "knights") && ci_contains(text, " -")) ||
              (ci_contains(text, "blunder") && ci_contains(text, " -"))) {
         what = "chess/board primitive";
+        } else if (
+             /* cycle-399a: ham/packet primitives */
+             ci_contains(text, "flcluster") || ci_contains(text, "yaac") ||
+             ci_contains(text, "aprsigi") || ci_contains(text, "kissutil") ||
+             ci_contains(text, "kissnetd") || ci_contains(text, "mkiss") ||
+             ci_contains(text, "rip98d") || ci_contains(text, "winlink") ||
+             ci_contains(text, "wlol") || ci_contains(text, "wldd") ||
+             ci_contains(text, "varac") || ci_contains(text, "varahf") ||
+             ci_contains(text, "ardop") || ci_contains(text, "ardopc") ||
+             ci_contains(text, "ardopcf") || ci_contains(text, "drats") ||
+             ci_contains(text, "chirpw") || ci_contains(text, "qdmr") ||
+             ci_contains(text, "hblink3") || ci_contains(text, "hblink") ||
+             ci_contains(text, "dmrlink") || ci_contains(text, "ambed") ||
+             ci_contains(text, "ft1d") || ci_contains(text, "dv4mini") ||
+             (ci_contains(text, "smack") && ci_contains(text, " -")) ||
+             (ci_contains(text, "parrot") && ci_contains(text, " -"))) {
+        what = "ham/packet primitive";
+        } else if (
+             /* cycle-399b: marine/weather primitives */
+             ci_contains(text, "aisdispatcher") || ci_contains(text, "aiscatcher") ||
+             ci_contains(text, "aisdeco") || ci_contains(text, "aisdeco2") ||
+             ci_contains(text, "nauticalcharts") || ci_contains(text, "aisparser") ||
+             ci_contains(text, "aislib") || ci_contains(text, "aisreceiver") ||
+             ci_contains(text, "naviserver") || ci_contains(text, "nmea") ||
+             ci_contains(text, "nmea0183") || ci_contains(text, "nmearemote") ||
+             ci_contains(text, "nmeasimulator") || ci_contains(text, "nmeagps") ||
+             ci_contains(text, "nmeaconverter") || ci_contains(text, "saildocs") ||
+             ci_contains(text, "sailgrib") || ci_contains(text, "sailtimer") ||
+             ci_contains(text, "sailplanner") || ci_contains(text, "adrena") ||
+             ci_contains(text, "actisense") || ci_contains(text, "ge2kap") ||
+             ci_contains(text, "bsb2tif") || ci_contains(text, "imgkap") ||
+             ci_contains(text, "kapgen") || ci_contains(text, "tiff2kap") ||
+             ci_contains(text, "chartconvert") || ci_contains(text, "merak") ||
+             ci_contains(text, "merak1") || ci_contains(text, "wvlibrary") ||
+             ci_contains(text, "wvpgsql") || ci_contains(text, "wvserial") ||
+             ci_contains(text, "wvss2300") || ci_contains(text, "vproweather") ||
+             ci_contains(text, "weatherd") || ci_contains(text, "wfview")) {
+        what = "marine/weather primitive";
         }
 
         if (what) {

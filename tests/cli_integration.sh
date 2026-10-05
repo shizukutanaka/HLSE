@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-399: ham/marine primitives
+for c in 'flcluster connect' 'yaac -i map' 'aprsigi beacon' 'kissutil attach' 'kissnetd start' 'mkiss attach' 'rip98d run' 'winlink connect' 'wlol run' 'wldd run' 'varac connect' 'varahf connect' 'ardop start' 'ardopc start' 'ardopcf start' 'drats map' 'chirpw prog' 'qdmr codeplug' 'hblink3 run' 'hblink run' 'dmrlink run' 'ambed start' 'ft1d run' 'dv4mini run' 'smack -l load' 'parrot -r repeat'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'aisdispatcher start' 'aiscatcher run' 'aisdeco run' 'aisdeco2 run' 'nauticalcharts get' 'aisparser parse' 'aislib lib' 'aisreceiver rx' 'naviserver start' 'nmea read' 'nmea0183 parse' 'nmearemote send' 'nmeasimulator sim' 'nmeagps read' 'nmeaconverter conv' 'saildocs get' 'sailgrib get' 'sailtimer run' 'sailplanner plan' 'adrena run' 'actisense run' 'ge2kap conv' 'bsb2tif conv' 'imgkap gen' 'kapgen gen' 'tiff2kap conv' 'chartconvert conv' 'merak run' 'merak1 run' 'wvlibrary lib' 'wvpgsql store' 'wvserial read' 'wvss2300 read' 'vproweather read' 'weatherd run' 'wfview run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'smack the lips loud' 'parrot the bird flew'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-398: game/chess primitives
 for c in 'ueditor run' 'uefn run' 'unpkg serve' 'cocos2d run' 'cocos new' 'yacf run' 'q3map2 -b map' 'q3asm assemble' 'trenchbroom map' 'levelforge build' 'unrealpk pack' 'sseedit clean' 'tes5edit clean' 'fo4edit clean' 'freerct run' 'duke3d run' 'lzdoom run' 'qzdoom run' 'doomsday run' 'markv run' 'ironwail run' 'nquake run' 'darkplaces run' 'lamaj run' 'woof -n bark' 'croft -m manor'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
