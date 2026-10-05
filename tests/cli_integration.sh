@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-383: torrent + archiver primitives
+for c in 'tordone -d dir' 'torrt -c cfg' 'torsniff -a 0.0.0.0' 'magnetico -v' 'imdl -t t' 'torf -i in' 'btreannounce t.torrent' 'btretrack t.torrent' 'btshowmetainfo f' 'buildtorrent -o out' 'torrentcheck -t f' 'bigtorrent -x' 'par2 c -r10 a.par2' 'parverify -q a'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'unzoo -x arc.zoo' 'unalz -d out' 'lz4 -d f.lz4' 'brotli -d in' 'lzop -d f.lzo' 'lzma -d f.xz'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'compare2 values quickly' 'echo torfx build'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-382: filemgr + sysstat primitives
 for c in 'hnn -d dir' 'joshuto ~/files' 'cfiles -v' 'hunter -f dir' 'noice /tmp' 'kfm -d' 'lfm /home' 'shfm .' 'rover -l dir' 'natls -l' 'dua -i /' 'gdu -r /usr' 'diskus -j 4 /' 'vtop -t monokai'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

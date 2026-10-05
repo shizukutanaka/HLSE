@@ -15199,6 +15199,22 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "nfsiostat") ||
              ci_contains(text, "cifsiostat") || ci_contains(text, "pmstat")) {
         what = "sysstat/proc primitive";
+        } else if (
+             /* cycle-383a: torrent primitives */
+             ci_contains(text, "tordone") || ci_contains(text, "torrt") ||
+             ci_contains(text, "torsniff") || ci_contains(text, "magnetico") ||
+             ci_contains(text, "imdl") || ci_contains(text, "torf ") ||
+             ci_contains(text, "btreannounce") || ci_contains(text, "btretrack") ||
+             ci_contains(text, "btshowmetainfo") || ci_contains(text, "buildtorrent") ||
+             ci_contains(text, "torrentcheck") || ci_contains(text, "bigtorrent") ||
+             ci_contains(text, "par2") || ci_contains(text, "parverify")) {
+        what = "torrent primitive";
+        } else if (
+             /* cycle-383b: archiver primitives */
+             ci_contains(text, "unzoo") || ci_contains(text, "unalz") ||
+             ci_contains(text, "lz4") || ci_contains(text, "brotli") ||
+             ci_contains(text, "lzop") || ci_contains(text, "lzma")) {
+        what = "archiver primitive";
         }
 
         if (what) {

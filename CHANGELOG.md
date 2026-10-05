@@ -10856,6 +10856,11 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 383): torrent + archiver primitives** —
+  BitTorrent tooling (tordone, torrt, torsniff, magnetico, imdl, torf,
+  btreannounce, btretrack, btshowmetainfo, buildtorrent, torrentcheck,
+  bigtorrent, par2, parverify) and archivers (unzoo, unalz, lz4,
+  brotli, lzop, lzma). torf space-bounded (torfx). +20/22 checks.
 - **ALERT 45 (cycle 382): filemgr + sysstat primitives** — file
   managers (hnn, joshuto, cfiles, hunter, noice, kfm, lfm, shfm,
   rover, natls, dua, gdu, diskus, vtop) and sysstat/proc (procs,
