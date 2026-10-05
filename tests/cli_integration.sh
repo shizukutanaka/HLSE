@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-408: docpub/gnss primitives
+for c in 'scribus open' 'idml conv' 'idml2pdf conv' 'markzware run' 'flightcheck check' 'pdf2id conv' 'pdf2indd conv' 'publisher -o open' 'corel -d draw' 'coreldraw draw' 'cdr2pdf conv' 'cdr2svg conv' 'cdr2raw conv' 'svg2cdr conv' 'ventura -p pub' 'mif2fm conv' 'mif2docbook conv' 'mif2rtf conv' 'mif2sgml conv' 'okapi run' 'tikal run' 'olifant run' 'cafetan run' 'heartsome run' 'wordfast run' 'wfclassic run' 'memoq run' 'memsource run' 'pocompile compile' 'poconflicts check' 'pystderr run' 'po2html conv' 'htm2po conv' 'it2po conv' 'korrekturzeichen run' 'levenshtein2po conv' 'mo2po conv' 'odf2po conv' 'oo2po conv' 'pdf2po conv' 'po2dtd conv' 'po2ical conv' 'po2ini conv' 'po2json conv' 'po2md conv' 'po2oo conv' 'po2pdf conv' 'po2prop conv' 'po2rc conv' 'po2sub conv' 'po2symb conv' 'po2tiki conv' 'po2ts conv' 'po2wiki conv' 'po2web2py conv' 'qm2po conv' 'symb2po conv' 'wpml2po conv' 'poconflict check' 'poserver serve'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'rtklib run' 'rtkcmn run' 'rtksvr serve' 'rtkplot plot' 'rtklaunch launch' 'emlid run' 'emlidcast cast' 'reachview view' 'reachrs run' 'reachrs2 run' 'novatel run' 'trimble -r run' 'tps2rin conv' 'qc2sky run' 'qc32 run' 'satbias run' 'sv2whu conv' 'rincomp run' 'rin2dsk conv' 'as2rin conv' 'ashtech conv' 'bin2rin conv' 'rtnet run' 'brdc run' 'brdc2 run' 'brdc3 run' 'brdcm merge' 'brdcmerge merge' 'orbfit fit' 'orbgen gen' 'genday run' 'doy conv' 'doy2mjd conv' 'bcontinue run' 'htoglb conv' 'glbtog conv' 'glupd upd' 'otl_fes2004 run' 'otl_list list' 'otl_ascii2hardisp conv' 'hardisp run' 'vgosdb run' 'vgosdbcalc calc' 'vgosdbproc proc' 'vsop run' 'fours run' 'drudg run' 'nnkf run' 'nnks run' 'nntime time' 'clocks -r run' 'clkplot plot' 'clkpatch patch' 'gpt2 run' 'gpt2w run' 'ecmp run' 'ecmp2 run' 'eopp run' 'eopc04 run' 'igs14 run' 'igs20 run' 'itrf run' 'itrf2014 run' 'itrf2020 run' 'brasilia run' 'rtcm stream' 'rtcm2 stream' 'ntrip stream' 'ntripcaster cast' 'ntripserver serve' 'ntrip2 stream' 'caster -r run' 'strsvr serve'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'publisher of books' 'corel house brand' 'ventura california trip' 'trimble county road' 'clocks on the wall' 'caster sugar baking'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-407: compchem/speech primitives
 for c in 'g16 input' 'g09 input' 'g03 input' 'g98 input' 'g16view view' 'gaussview view' 'gaussview6 view' 'newzmat conv' 'unfchk conv' 'freqchk chk' 'freqmem run' 'testrt run' 'obmm run' 'obgopt opt' 'obchiral run' 'obci run' 'obfragment frag' 'obgas run' 'obh run' 'obutil run' 'obtautomer run' 'obrandom run' 'platon run' 'plout run' 'sir97 run' 'sir2002 run' 'sir2011 run' 'sir2019 run' 'sir2020 run' 'endeavour -r run' 'winspall run' 'fullprof run' 'gsas run' 'gsas2 run' 'powdercell run' 'powdll run' 'winplotr plot' 'diffrac run' 'diffracplus run' 'leptos run' 'highscore run' 'jade -r run' 'materia calc' 'checkcell run' 'chekcell run' 'icdd run' 'sirware run' 'dabars run' 'po15 run' 'lesocq run' 'molmot run' 'molmotif run' 'encifer run' 'publcif check' 'checkcif check' 'squeeze -r run' 'abins run' 'horace -r run' 'mslice run' 'simpson -r run' 'simpsol run' 'dmfit fit' 'solnmr run' 'nmrfam run' 'nmrdraw draw' 'ccpn run' 'ccpnmr run' 'vnmrj run' 'vnmr run' 'olea run' 'mnova run' 'mestrenova run' 'nmrglue run' 'auremol run' 'cara -r run' 'nessy run' 'pales run' 'talos -r run' 'talosn run' 'talos+ run' 'bmrb run' 'foldit run' 'ligand_dock dock' 'momo run' 'bkchem draw' 'gchempaint draw' 'molconvert conv' 'standardizer std' 'structurecheck check' 'metator run'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

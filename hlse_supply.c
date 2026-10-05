@@ -16415,6 +16415,85 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "sre21") || ci_contains(text, "dihard") ||
              ci_contains(text, "dihard3") || ci_contains(text, "dihards")) {
         what = "speech/asr primitive";
+        } else if (
+             /* cycle-408a: docpub/cat primitives */
+             ci_contains(text, "scribus") || ci_contains(text, "idml") ||
+             ci_contains(text, "idml2pdf") || ci_contains(text, "markzware") ||
+             ci_contains(text, "flightcheck") || ci_contains(text, "pdf2id") ||
+             ci_contains(text, "pdf2indd") ||
+             (ci_contains(text, "publisher") && ci_contains(text, " -")) ||
+             (ci_contains(text, "corel") && ci_contains(text, " -")) ||
+             ci_contains(text, "coreldraw") || ci_contains(text, "cdr2pdf") ||
+             ci_contains(text, "cdr2svg") || ci_contains(text, "cdr2raw") ||
+             ci_contains(text, "svg2cdr") ||
+             (ci_contains(text, "ventura") && ci_contains(text, " -")) ||
+             ci_contains(text, "mif2fm") || ci_contains(text, "mif2docbook") ||
+             ci_contains(text, "mif2rtf") || ci_contains(text, "mif2sgml") ||
+             ci_contains(text, "okapi") || ci_contains(text, "tikal") ||
+             ci_contains(text, "olifant") || ci_contains(text, "cafetan") ||
+             ci_contains(text, "heartsome") || ci_contains(text, "wordfast") ||
+             ci_contains(text, "wfclassic") || ci_contains(text, "memoq") ||
+             ci_contains(text, "memsource") || ci_contains(text, "pocompile") ||
+             ci_contains(text, "poconflicts") || ci_contains(text, "pystderr") ||
+             ci_contains(text, "po2html") || ci_contains(text, "htm2po") ||
+             ci_contains(text, "it2po") || ci_contains(text, "korrekturzeichen") ||
+             ci_contains(text, "levenshtein2po") || ci_contains(text, "mo2po") ||
+             ci_contains(text, "odf2po") || ci_contains(text, "oo2po") ||
+             ci_contains(text, "pdf2po") || ci_contains(text, "po2dtd") ||
+             ci_contains(text, "po2ical") || ci_contains(text, "po2ini") ||
+             ci_contains(text, "po2json") || ci_contains(text, "po2md") ||
+             ci_contains(text, "po2oo") || ci_contains(text, "po2pdf") ||
+             ci_contains(text, "po2prop") || ci_contains(text, "po2rc") ||
+             ci_contains(text, "po2sub") || ci_contains(text, "po2symb") ||
+             ci_contains(text, "po2tiki") || ci_contains(text, "po2ts") ||
+             ci_contains(text, "po2wiki") || ci_contains(text, "po2web2py") ||
+             ci_contains(text, "qm2po") || ci_contains(text, "symb2po") ||
+             ci_contains(text, "wpml2po") || ci_contains(text, "poconflict") ||
+             ci_contains(text, "poserver")) {
+        what = "docpub/cat primitive";
+        } else if (
+             /* cycle-408b: gnss/survey primitives */
+             ci_contains(text, "rtklib") || ci_contains(text, "rtkcmn") ||
+             ci_contains(text, "rtksvr") || ci_contains(text, "rtkplot") ||
+             ci_contains(text, "rtklaunch") || ci_contains(text, "emlid") ||
+             ci_contains(text, "emlidcast") || ci_contains(text, "reachview") ||
+             ci_contains(text, "reachrs") || ci_contains(text, "reachrs2") ||
+             ci_contains(text, "novatel") ||
+             (ci_contains(text, "trimble") && ci_contains(text, " -")) ||
+             ci_contains(text, "tps2rin") || ci_contains(text, "qc2sky") ||
+             ci_contains(text, "qc32") || ci_contains(text, "satbias") ||
+             ci_contains(text, "sv2whu") || ci_contains(text, "rincomp") ||
+             ci_contains(text, "rin2dsk") || ci_contains(text, "as2rin") ||
+             ci_contains(text, "ashtech") || ci_contains(text, "bin2rin") ||
+             ci_contains(text, "rtnet") || ci_contains(text, "brdc") ||
+             ci_contains(text, "brdc2") || ci_contains(text, "brdc3") ||
+             ci_contains(text, "brdcm") || ci_contains(text, "brdcmerge") ||
+             ci_contains(text, "orbfit") || ci_contains(text, "orbgen") ||
+             ci_contains(text, "genday") || ci_contains(text, "doy") ||
+             ci_contains(text, "doy2mjd") || ci_contains(text, "bcontinue") ||
+             ci_contains(text, "htoglb") || ci_contains(text, "glbtog") ||
+             ci_contains(text, "glupd") || ci_contains(text, "otl_fes2004") ||
+             ci_contains(text, "otl_list") || ci_contains(text, "otl_ascii2hardisp") ||
+             ci_contains(text, "hardisp") || ci_contains(text, "vgosdb") ||
+             ci_contains(text, "vgosdbcalc") || ci_contains(text, "vgosdbproc") ||
+             ci_contains(text, "vsop") || ci_contains(text, "fours") ||
+             ci_contains(text, "drudg") ||
+             ci_contains(text, "nnkf") || ci_contains(text, "nnks") ||
+             ci_contains(text, "nntime") ||
+             (ci_contains(text, "clocks") && ci_contains(text, " -")) ||
+             ci_contains(text, "clkplot") || ci_contains(text, "clkpatch") ||
+             ci_contains(text, "gpt2") || ci_contains(text, "gpt2w") ||
+             ci_contains(text, "ecmp") || ci_contains(text, "ecmp2") ||
+             ci_contains(text, "eopp") || ci_contains(text, "eopc04") ||
+             ci_contains(text, "igs14") || ci_contains(text, "igs20") ||
+             ci_contains(text, "itrf") || ci_contains(text, "itrf2014") ||
+             ci_contains(text, "itrf2020") || ci_contains(text, "brasilia") ||
+             ci_contains(text, "rtcm") || ci_contains(text, "rtcm2") ||
+             ci_contains(text, "ntrip") || ci_contains(text, "ntripcaster") ||
+             ci_contains(text, "ntripserver") || ci_contains(text, "ntrip2") ||
+             (ci_contains(text, "caster") && ci_contains(text, " -")) ||
+             ci_contains(text, "strsvr")) {
+        what = "gnss/survey primitive";
         }
 
         if (what) {

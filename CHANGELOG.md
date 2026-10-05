@@ -10856,6 +10856,30 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 408): docpub/gnss primitives**
+  — docpub/cat (scribus, idml, idml2pdf, markzware,
+  flightcheck, pdf2id, pdf2indd, publisher, corel, coreldraw,
+  cdr2pdf, cdr2svg, cdr2raw, svg2cdr, ventura, mif2fm,
+  mif2docbook, mif2rtf, mif2sgml, okapi, tikal, olifant,
+  cafetan, heartsome, wordfast, wfclassic, memoq, memsource,
+  pocompile, poconflicts, pystderr, po2html, htm2po, it2po,
+  korrekturzeichen, levenshtein2po, mo2po, odf2po, oo2po,
+  pdf2po, po2dtd, po2ical, po2ini, po2json, po2md, po2oo,
+  po2pdf, po2prop, po2rc, po2sub, po2symb, po2tiki, po2ts,
+  po2wiki, po2web2py, qm2po, symb2po, wpml2po, poconflict,
+  poserver), gnss/survey (rtklib, rtkcmn, rtksvr, rtkplot,
+  rtklaunch, emlid, emlidcast, reachview, reachrs, reachrs2,
+  novatel, trimble, tps2rin, qc2sky, qc32, satbias, sv2whu,
+  rincomp, rin2dsk, as2rin, ashtech, bin2rin, rtnet, brdc,
+  brdc2, brdc3, brdcm, brdcmerge, orbfit, orbgen, genday,
+  doy, doy2mjd, bcontinue, htoglb, glbtog, glupd,
+  otl_fes2004, otl_list, otl_ascii2hardisp, hardisp, vgosdb,
+  vgosdbcalc, vgosdbproc, vsop, fours, drudg, nnkf, nnks,
+  nntime, clocks, clkplot, clkpatch, gpt2, gpt2w, ecmp,
+  ecmp2, eopp, eopc04, igs14, igs20, itrf, itrf2014,
+  itrf2020, brasilia, rtcm, rtcm2, ntrip, ntripcaster,
+  ntripserver, ntrip2, caster, strsvr). sked dropped
+  (subset of asked FP guard). +122/123 checks.
 - **ALERT 45 (cycle 407): compchem/speech primitives**
   — compchem/crystallography/nmr (g16, g09, g03, g98, g16view,
   gaussview, gaussview6, newzmat, unfchk, freqchk, freqmem,
