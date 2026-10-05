@@ -15137,6 +15137,22 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "featurecounts") || ci_contains(text, "htseq") ||
              ci_contains(text, "mosdepth") || ci_contains(text, "bedops")) {
         what = "genomics-asm primitive";
+        } else if (
+             /* cycle-380a: wayland/a11y primitives */
+             ci_contains(text, "shikane") || ci_contains(text, "wvkbd") ||
+             ci_contains(text, "squeekboard") || ci_contains(text, "uim-") ||
+             (ci_contains(text, "mimic") && ci_contains(text, " -")) ||
+             ci_contains(text, "spdsay") || ci_contains(text, "brlapi") ||
+             ci_contains(text, "fenrir") || ci_contains(text, "alsaloop") ||
+             ci_contains(text, "hdajacksensetest") || ci_contains(text, "iecset") ||
+             ci_contains(text, "alsatplg") || ci_contains(text, "aplay") ||
+             ci_contains(text, "arecord")) {
+        what = "wayland/a11y primitive";
+        } else if (
+             /* cycle-380b: monitor/misc primitives */
+             (ci_contains(text, "zenith") && ci_contains(text, " -")) ||
+             ci_contains(text, "kafkatop") || ci_contains(text, "lrb")) {
+        what = "monitor/misc primitive";
         }
 
         if (what) {

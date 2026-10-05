@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-380: wayland/a11y + monitor/misc primitives
+for c in 'shikane -c cfg' 'wvkbd-mobintl' 'squeekboard -l us' 'uim-xim' 'mimic -t hello' 'spdsay hello' 'brlapi -s' 'fenrir -o' 'alsaloop -C hw:0' 'hdajacksensetest -a' 'iecset -c 0' 'alsatplg -c f' 'aplay -l' 'arecord -d 5'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'zenith -d 1' 'kafkatop --brokers b:9092' 'lrb file.bin'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'the mimic bird sings' 'zenith of the sun' 'echo uimx work' 'echo tuim work' 'echo mimics text'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-379: js/devops + genomics primitives
 for c in 'babeljs -d out/' 'babelify -t es6' 'esno script.ts' 'alephjs init app' 'dmm update' 'dworkin run' 'dnt build' 'citty run' 'karpor sync' 'kwok create node n1'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

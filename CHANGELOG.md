@@ -10856,6 +10856,11 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 380): wayland/a11y + monitor primitives** —
+  Wayland/ALS a11y (shikane, wvkbd, squeekboard, uim-, mimic, spdsay,
+  brlapi, fenrir, alsaloop, hdajacksensetest, iecset, alsatplg, aplay,
+  arecord) and monitors (zenith, kafkatop, lrb). Real words gated on
+  ' -'; uim- prefix-bounded (uimx). +17/22 checks.
 - **ALERT 45 (cycle 379): JS/devops + genomics primitives** — JS/Deno
   (babeljs, babelify, esno, alephjs, dmm, dworkin, dnt, citty, karpor,
   kwok) and genomics (gcta, beagle, svaba, gridss, smoove, cnvkit,
