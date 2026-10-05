@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-413: legaltech/agritech primitives
+for c in 'relativity -e ediscovery' 'relativityserver run' 'brainspace run' 'brainspace6 run' 'discovia run' 'kcura run' 'ftib run' 'cocounsel draft' 'westlaw search' 'pacer -c court' 'pacerpro monitor' 'recap -a archive' 'recaprecap run' 'unicourt search' 'docketnav track' 'bloomberglaw search' 'blaw search' 'canlii search' 'austlii search' 'bailii search' 'worldlii search' 'jstor search' 'heinonline search' 'judge -r ruling' 'judgment -e entry' 'onelegal file' 'infotrack search' 'affidafast serve' 'smokeball manage' 'filevine case' 'litify case' 'trialworks case' 'trial -p prep' 'trialpad present' 'cloudnine review' 'cloudninediscovery review' 'ediscoveryassistant run' 'zdiscovery hold' 'consent -m manage' 'consilio review' 'completelegal review' 'kldiscovery review' 'cimplifi run' 'complianceds run' 'epiq review' 'epiqglobal run' 'lhed review' 'reviewedocs review'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'jdlink connect' 'operationcenter run' 'operationscenter run' 'opscenter run' 'gs2630 display' 'gs1800 display' 'gen4 display' 'fieldview log' 'cabview run' 'fieldviewcab log' 'agleader monitor' 'v2display run' 'envizio run' 'topcon steer' 'afsconnect connect' 'newholland tractor' 'myplm run' 'cnh run' 'kuhn spreader' 'claas combine' 'ceemis run' 'telematics -d data' 'agco tractor' 'fusetech run' 'fendt tractor' 'fendtone run' 'valtra tractor' 'massey -f ferguson' 'agriconnect run' 'michelin -t tire' 'kubota tractor' 'amity -t tillage' 'horsch seeder' 'lemken plow' 'amatron control' 'amatron4 control' 'gpswitch run' 'vaderstad drill' 'isobus connect' 'ez250 guide' 'ezdraulic run' 'fieldiq control' 'accugrade run' 'fildiq2 run' 'fieldiq2 run' 'agrirouter route' 'agrarrouter route' 'proagrica run' 'telemetria run' 'solinfotec run' 'inon run' 'plantio run' 'truterra run' 'granular -f farm' 'cropio scout' 'agrivi farm' 'aweather station' 'metos station' 'pessl station' 'imetos station' 'metosb run' 'cropmetrics irrigate' 'veris soil' 'soiltest test' 'soilmap map' 'agvise sample' 'wintest run' 'fhka run' 'adap2 run' 'fatv run' 'agricheck test' 'agrichecker test' 'cropster roast' 'agrobit run' 'agridius run' 'livestocked track' 'breedr track' 'cattler track' 'ranchr manage' 'dairyplan plan' 'dairycomp run' 'dairycomp305 run' 'pcart run' 'pcdart herd' 'lely robot' 't4c run' 'afimilk milk' 'milkmeter meter' 'boumatic milk' 'nedap cow' 'smaxtec bolus' 'quietime tag' 'cowlar collar' 'moocall calving' 'seetree scan' 'aerobotics scout' 'intellect -a agri' 'fieldin scout' 'cropin run' 'intelligro run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'relativity theory lecture' 'pacer test fitness' 'recap of the meeting' 'judge of character' 'judgment call review' 'trial by jury' 'consent form signature' 'telematics unit repair' 'massey hall concert' 'michelin star restaurant' 'amity between nations' 'granular texture of soil' 'intellect and reason'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-412: seismology/ocean primitives
 for c in 'scmv monitor' 'scolv locate' 'scesv events' 'scrttv trace' 'scqcv qc' 'scmaster run' 'libslink read' 'slinfo info' 'mseed conv' 'mseedgroup group' 'mseedinfo info' 'mseedmerge merge' 'ms2sac conv' 'sac2mseed conv' 'saclst list' 'sachelp help' 'sacio io' 'sac2eps conv' 'sac2gse conv' 'gse2sac conv' 'gse2seed conv' 'gse2evt conv' 'ah2evt conv' 'sac2ah conv' 'evt2sac conv' 'rdseed extract' 'rdseed5 extract' 'orbserver serve' 'q330 log' 'quanterra log' 'centaur -r run' 'trillium -s sensor' 'gcf2sac conv' 'gcf2mseed conv' 'gcfview view' 'k2mi conv' 'mk6 log' 'reftek log' 'rt125 log' 'rt130 log' 'soh2asc conv' 'qlib2 lib' 'ggseismic run' 'ggc run' 'gcap invert' 'focmec solve' 'wavelet -t transform' 'fkfilter filter' 'fkplot plot' 'slowness -a analysis' 'infrasound -d detect' 'specfem2d run' 'aneu run' 'lvz model' 'sw4 run' 'sw4m run' 'salvus run' 'disp96 disp' 'hspec96 synth' 'momenttensor invert' 'gcap3d invert' 'fktradeoff analyze' 'growclust cluster' 'ph2dt conv' 'velest invert' 'fshom run' 'isola2005 invert' 'nonlinloc locate' 'nlloc locate' 'nldiff diff' 'bayesloc locate' 'shakecast cast' 'shakemap map' 'shakelib lib' 'groundfailure model' 'losspager page' 'dyfi report' 'grt run' 'ew2mseed conv' 'stat2d stat' 'ewthresh thresh' 'localmag mag' 'wave2buf conv' 'pickew pick' 'pick_ew pick' 'pick_ew2 pick' 'pickfk pick' 'binder_ew bind' 'eqbuf buf' 'sniffwave sniff' 'tankplayer play'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

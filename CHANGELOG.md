@@ -10856,6 +10856,38 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 413): legaltech/agritech primitives**
+  — legaltech/ediscovery (relativity, relativityserver,
+  brainspace, brainspace6, discovia, kcura, ftib,
+  cocounsel, westlaw, pacer, pacerpro, recap,
+  recaprecap, unicourt, docketnav, bloomberglaw, blaw,
+  canlii, austlii, bailii, worldlii, jstor, heinonline,
+  judge, judgment, onelegal, infotrack, affidafast,
+  smokeball, filevine, litify, trialworks, trial,
+  trialpad, cloudnine, cloudninediscovery,
+  ediscoveryassistant, zdiscovery, consent, consilio,
+  completelegal, kldiscovery, cimplifi, complianceds,
+  epiq, epiqglobal, lhed, reviewedocs), agritech
+  (jdlink, operationcenter, operationscenter, opscenter,
+  gs2630, gs1800, gen4, fieldview, cabview,
+  fieldviewcab, agleader, v2display, envizio, topcon,
+  afsconnect, newholland, myplm, cnh, kuhn, claas,
+  ceemis, telematics, agco, fusetech, fendt, fendtone,
+  valtra, massey, agriconnect, michelin, kubota, amity,
+  horsch, lemken, amatron, amatron4, gpswitch,
+  vaderstad, isobus, ez250, ezdraulic, fieldiq,
+  accugrade, fildiq2, fieldiq2, agrirouter, agrarrouter,
+  proagrica, telemetria, solinfotec, inon, plantio,
+  truterra, granular, cropio, agrivi, aweather, metos,
+  pessl, imetos, metosb, cropmetrics, veris, soiltest,
+  soilmap, agvise, wintest, fhka, adap2, fatv,
+  agricheck, agrichecker, cropster, agrobit, agridius,
+  livestocked, breedr, cattler, ranchr, dairyplan,
+  dairycomp, dairycomp305, pcart, pcdart, lely, t4c,
+  afimilk, milkmeter, boumatic, nedap, smaxtec,
+  quietime, cowlar, moocall, seetree, aerobotics,
+  intellect, fieldin, cropin, intelligro). +163/163
+  checks.
 - **ALERT 45 (cycle 412): seismology/ocean primitives**
   — seismology (scmv, scolv, scesv, scrttv, scqcv,
   scmaster, libslink, slinfo, mseed, mseedgroup,

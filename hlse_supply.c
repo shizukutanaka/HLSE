@@ -16784,6 +16784,102 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ooi ") || ci_contains(text, "ooinet") ||
              ci_contains(text, "seaglider") || ci_contains(text, "pyglider")) {
         what = "oceanography primitive";
+        } else if (
+             /* cycle-413a: legaltech/ediscovery primitives */
+             (ci_contains(text, "relativity") && ci_contains(text, " -")) ||
+             ci_contains(text, "relativityserver") ||
+             ci_contains(text, "brainspace") || ci_contains(text, "brainspace6") ||
+             ci_contains(text, "discovia") || ci_contains(text, "kcura") ||
+             ci_contains(text, "ftib") || ci_contains(text, "cocounsel") ||
+             ci_contains(text, "westlaw") ||
+             (ci_contains(text, "pacer") && ci_contains(text, " -")) ||
+             ci_contains(text, "pacerpro") ||
+             (ci_contains(text, "recap") && ci_contains(text, " -")) ||
+             ci_contains(text, "recaprecap") || ci_contains(text, "unicourt") ||
+             ci_contains(text, "docketnav") || ci_contains(text, "bloomberglaw") ||
+             ci_contains(text, "blaw") || ci_contains(text, "canlii") ||
+             ci_contains(text, "austlii") || ci_contains(text, "bailii") ||
+             ci_contains(text, "worldlii") || ci_contains(text, "jstor") ||
+             ci_contains(text, "heinonline") ||
+             (ci_contains(text, "judge") && ci_contains(text, " -")) ||
+             (ci_contains(text, "judgment") && ci_contains(text, " -")) ||
+             ci_contains(text, "onelegal") || ci_contains(text, "infotrack") ||
+             ci_contains(text, "affidafast") || ci_contains(text, "smokeball") ||
+             ci_contains(text, "filevine") || ci_contains(text, "litify") ||
+             ci_contains(text, "trialworks") ||
+             (ci_contains(text, "trial") && ci_contains(text, " -")) ||
+             ci_contains(text, "trialpad") || ci_contains(text, "cloudnine") ||
+             ci_contains(text, "cloudninediscovery") ||
+             ci_contains(text, "ediscoveryassistant") ||
+             ci_contains(text, "zdiscovery") ||
+             (ci_contains(text, "consent") && ci_contains(text, " -")) ||
+             ci_contains(text, "consilio") ||
+             ci_contains(text, "completelegal") ||
+             ci_contains(text, "kldiscovery") || ci_contains(text, "cimplifi") ||
+             ci_contains(text, "complianceds") || ci_contains(text, "epiq") ||
+             ci_contains(text, "epiqglobal") || ci_contains(text, "lhed") ||
+             ci_contains(text, "reviewedocs")) {
+        what = "legaltech/ediscovery primitive";
+        } else if (
+             /* cycle-413b: agritech primitives */
+             ci_contains(text, "jdlink") ||
+             ci_contains(text, "operationcenter") ||
+             ci_contains(text, "operationscenter") ||
+             ci_contains(text, "opscenter") || ci_contains(text, "gs2630") ||
+             ci_contains(text, "gs1800") || ci_contains(text, "gen4") ||
+             ci_contains(text, "fieldview") || ci_contains(text, "cabview") ||
+             ci_contains(text, "fieldviewcab") || ci_contains(text, "agleader") ||
+             ci_contains(text, "v2display") || ci_contains(text, "envizio") ||
+             ci_contains(text, "topcon") || ci_contains(text, "afsconnect") ||
+             ci_contains(text, "newholland") || ci_contains(text, "myplm") ||
+             ci_contains(text, "cnh ") || ci_contains(text, "kuhn") ||
+             ci_contains(text, "claas") || ci_contains(text, "ceemis") ||
+             (ci_contains(text, "telematics") && ci_contains(text, " -")) ||
+             ci_contains(text, "agco") || ci_contains(text, "fusetech") ||
+             ci_contains(text, "fendt") || ci_contains(text, "fendtone") ||
+             ci_contains(text, "valtra") ||
+             (ci_contains(text, "massey") && ci_contains(text, " -")) ||
+             ci_contains(text, "agriconnect") ||
+             (ci_contains(text, "michelin") && ci_contains(text, " -")) ||
+             ci_contains(text, "kubota") ||
+             (ci_contains(text, "amity") && ci_contains(text, " -")) ||
+             ci_contains(text, "horsch") || ci_contains(text, "lemken") ||
+             ci_contains(text, "amatron") || ci_contains(text, "amatron4") ||
+             ci_contains(text, "gpswitch") || ci_contains(text, "vaderstad") ||
+             ci_contains(text, "isobus") || ci_contains(text, "ez250") ||
+             ci_contains(text, "ezdraulic") || ci_contains(text, "fieldiq") ||
+             ci_contains(text, "accugrade") || ci_contains(text, "fildiq2") ||
+             ci_contains(text, "fieldiq2") || ci_contains(text, "agrirouter") ||
+             ci_contains(text, "agrarrouter") || ci_contains(text, "proagrica") ||
+             ci_contains(text, "telemetria") || ci_contains(text, "solinfotec") ||
+             ci_contains(text, "inon ") || ci_contains(text, "plantio") ||
+             ci_contains(text, "truterra") ||
+             (ci_contains(text, "granular") && ci_contains(text, " -")) ||
+             ci_contains(text, "cropio") || ci_contains(text, "agrivi") ||
+             ci_contains(text, "aweather") || ci_contains(text, "metos") ||
+             ci_contains(text, "pessl") || ci_contains(text, "imetos") ||
+             ci_contains(text, "metosb") || ci_contains(text, "cropmetrics") ||
+             ci_contains(text, "veris") || ci_contains(text, "soiltest") ||
+             ci_contains(text, "soilmap") || ci_contains(text, "agvise") ||
+             ci_contains(text, "wintest") || ci_contains(text, "fhka") ||
+             ci_contains(text, "adap2") || ci_contains(text, "fatv") ||
+             ci_contains(text, "agricheck") || ci_contains(text, "agrichecker") ||
+             ci_contains(text, "cropster") || ci_contains(text, "agrobit") ||
+             ci_contains(text, "agridius") || ci_contains(text, "livestocked") ||
+             ci_contains(text, "breedr") || ci_contains(text, "cattler") ||
+             ci_contains(text, "ranchr") || ci_contains(text, "dairyplan") ||
+             ci_contains(text, "dairycomp") || ci_contains(text, "dairycomp305") ||
+             ci_contains(text, "pcart") || ci_contains(text, "pcdart") ||
+             ci_contains(text, "lely") || ci_contains(text, "t4c ") ||
+             ci_contains(text, "afimilk") || ci_contains(text, "milkmeter") ||
+             ci_contains(text, "boumatic") || ci_contains(text, "nedap") ||
+             ci_contains(text, "smaxtec") || ci_contains(text, "quietime") ||
+             ci_contains(text, "cowlar") || ci_contains(text, "moocall") ||
+             ci_contains(text, "seetree") || ci_contains(text, "aerobotics") ||
+             (ci_contains(text, "intellect") && ci_contains(text, " -")) ||
+             ci_contains(text, "fieldin") || ci_contains(text, "cropin") ||
+             ci_contains(text, "intelligro")) {
+        what = "agritech primitive";
         }
 
         if (what) {
