@@ -16067,6 +16067,68 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "locfg") || ci_contains(text, "vinegar") ||
              ci_contains(text, "prlcore2dmp")) {
         what = "hwmgmt/san primitive";
+        } else if (
+             /* cycle-403a: voip/pbx primitives */
+             ci_contains(text, "misdn") || ci_contains(text, "astrisk") ||
+             ci_contains(text, "freeswitch") || ci_contains(text, "fs_ivrd") ||
+             ci_contains(text, "mod_sofia") || ci_contains(text, "sofiasip") ||
+             (ci_contains(text, "sofia") && ci_contains(text, " -")) ||
+             ci_contains(text, "osip2") || ci_contains(text, "osipua") ||
+             ci_contains(text, "sipfrag") || ci_contains(text, "zrtp") ||
+             ci_contains(text, "zfone") || ci_contains(text, "pjsip") ||
+             (ci_contains(text, "homer") && ci_contains(text, " -")) ||
+             ci_contains(text, "sipml5") || ci_contains(text, "sipgo") ||
+             ci_contains(text, "callweaver") || ci_contains(text, "callgen") ||
+             ci_contains(text, "callgen518") || ci_contains(text, "smpp") ||
+             ci_contains(text, "smppcsmp") || ci_contains(text, "emserver") ||
+             ci_contains(text, "gsmsms") || ci_contains(text, "atemu")) {
+        what = "voip/pbx primitive";
+        } else if (
+             /* cycle-403b: medical-imaging primitives */
+             ci_contains(text, "dcmsnd") || ci_contains(text, "dcmqrti") ||
+             ci_contains(text, "dcm2json") || ci_contains(text, "dcmp2pgm") ||
+             ci_contains(text, "dcmfile") || ci_contains(text, "dcmftest") ||
+             ci_contains(text, "dcmpsmk") || ci_contains(text, "wltest") ||
+             ci_contains(text, "dcentv2") || ci_contains(text, "dclut") ||
+             ci_contains(text, "dcposn") || ci_contains(text, "iodcomp") ||
+             ci_contains(text, "an2dc") || ci_contains(text, "dcjpeg") ||
+             ci_contains(text, "dcstid") || ci_contains(text, "histo3d") ||
+             ci_contains(text, "rawtodc") || ci_contains(text, "dcunmk") ||
+             ci_contains(text, "weasis") || ci_contains(text, "kvak") ||
+             ci_contains(text, "aeskulap") || ci_contains(text, "medcon") ||
+             ci_contains(text, "medview") || ci_contains(text, "dcm2nii") ||
+             ci_contains(text, "mricron") || ci_contains(text, "mricro") ||
+             ci_contains(text, "mricrogl") || ci_contains(text, "dcmind") ||
+             ci_contains(text, "dcmpat") || ci_contains(text, "dcmseg") ||
+             ci_contains(text, "segdcatseg") || ci_contains(text, "c4d ") ||
+             ci_contains(text, "niftyreg") || ci_contains(text, "reg_jacobian") ||
+             ci_contains(text, "niftyseg") || ci_contains(text, "seg_stats") ||
+             ci_contains(text, "seg_maths") || ci_contains(text, "seg_em") ||
+             ci_contains(text, "seg_labfusion") || ci_contains(text, "seg_patchmatch") ||
+             ci_contains(text, "nifti") || ci_contains(text, "nifti1_test") ||
+             ci_contains(text, "nifti_stats") || ci_contains(text, "mnc2nii") ||
+             ci_contains(text, "nii2mnc") || ci_contains(text, "mincinfo") ||
+             ci_contains(text, "mincstats") || ci_contains(text, "mincreshape") ||
+             ci_contains(text, "minctracc") || ci_contains(text, "minc_modify_header") ||
+             ci_contains(text, "mincheader") || ci_contains(text, "minctoraw") ||
+             ci_contains(text, "dcm2mnc") || ci_contains(text, "fslview") ||
+             ci_contains(text, "fslcpgeom") ||
+             (ci_contains(text, "flirt") && ci_contains(text, " -")) ||
+             ci_contains(text, "slicerd") || ci_contains(text, "mirtk") ||
+             ci_contains(text, "mrinfo") || ci_contains(text, "mrstats") ||
+             ci_contains(text, "mrcalc") || ci_contains(text, "mrcat") ||
+             ci_contains(text, "dwi2tensor") || ci_contains(text, "tensor2metric") ||
+             ci_contains(text, "tckinfo") || ci_contains(text, "tckmap") ||
+             ci_contains(text, "tckstats") || ci_contains(text, "tckedit") ||
+             ci_contains(text, "mri_info") || ci_contains(text, "mri_stats") ||
+             ci_contains(text, "mri_binarize") || ci_contains(text, "mri_cor2label") ||
+             ci_contains(text, "mri_diff") || ci_contains(text, "mri_glmfit") ||
+             ci_contains(text, "mri_label2label") || ci_contains(text, "mri_label2vol") ||
+             ci_contains(text, "mri_pretess") || ci_contains(text, "mri_vol2vol") ||
+             ci_contains(text, "mris_convert") || ci_contains(text, "mris_info") ||
+             ci_contains(text, "mris_mesh") || ci_contains(text, "mris_seg2annot") ||
+             ci_contains(text, "mris_smooth") || ci_contains(text, "fsvv")) {
+        what = "medical-imaging primitive";
         }
 
         if (what) {

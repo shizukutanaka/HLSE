@@ -10856,6 +10856,27 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 403): voip/medical primitives**
+  — voip/pbx (misdn, astrisk, freeswitch, fs_ivrd, mod_sofia,
+  sofiasip, sofia, osip2, osipua, sipfrag, zrtp, zfone, pjsip,
+  homer, sipml5, sipgo, callweaver, callgen, callgen518, smpp,
+  smppcsmp, emserver, gsmsms, atemu), medical-imaging
+  (dcmsnd, dcmqrti, dcm2json, dcmp2pgm, dcmfile, dcmftest,
+  dcmpsmk, wltest, dcentv2, dclut, dcposn, iodcomp, an2dc,
+  dcjpeg, dcstid, histo3d, rawtodc, dcunmk, weasis, kvak,
+  aeskulap, medcon, medview, dcm2nii, mricron, mricro,
+  mricrogl, dcmind, dcmpat, dcmseg, segdcatseg, c4d, niftyreg,
+  reg_jacobian, niftyseg, seg_stats, seg_maths, seg_em,
+  seg_labfusion, seg_patchmatch, nifti, nifti1_test,
+  nifti_stats, mnc2nii, nii2mnc, mincinfo, mincstats,
+  mincreshape, minctracc, minc_modify_header, mincheader,
+  minctoraw, dcm2mnc, fslview, fslcpgeom, flirt, slicerd,
+  mirtk, mrinfo, mrstats, mrcalc, mrcat, dwi2tensor,
+  tensor2metric, tckinfo, tckmap, tckstats, tckedit,
+  mri_info, mri_stats, mri_binarize, mri_cor2label, mri_diff,
+  mri_glmfit, mri_label2label, mri_label2vol, mri_pretess,
+  mri_vol2vol, mris_convert, mris_info, mris_mesh,
+  mris_seg2annot, mris_smooth, fsvv). +108/111 checks.
 - **ALERT 45 (cycle 402): mass-spec/hwmgmt primitives**
   — proteomics (perseus, peptideshaker, skyline, hardklor,
   kronik, decon2ls, deconlrz, filefilter, fileconverter,

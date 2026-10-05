@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-403: voip/medical primitives
+for c in 'misdn run' 'astrisk -r cli' 'freeswitch start' 'fs_ivrd run' 'mod_sofia load' 'sofiasip run' 'sofia -c run' 'osip2 run' 'osipua call' 'sipfrag send' 'zrtp run' 'zfone run' 'pjsip run' 'homer -c capture' 'sipml5 call' 'sipgo run' 'callweaver run' 'callgen gen' 'callgen518 gen' 'smpp bind' 'smppcsmp run' 'emserver run' 'gsmsms send' 'atemu run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'dcmsnd send' 'dcmqrti query' 'dcm2json conv' 'dcmp2pgm conv' 'dcmfile info' 'dcmftest test' 'dcmpsmk mk' 'wltest test' 'dcentv2 run' 'dclut lut' 'dcposn run' 'iodcomp comp' 'an2dc conv' 'dcjpeg dec' 'dcstid run' 'histo3d run' 'rawtodc conv' 'dcunmk run' 'weasis open' 'kvak run' 'aeskulap open' 'medcon conv' 'medview view' 'dcm2nii conv' 'mricron open' 'mricro open' 'mricrogl open' 'dcmind index' 'dcmpat anon' 'dcmseg seg' 'segdcatseg seg' 'c4d conv' 'niftyreg reg' 'reg_jacobian jac' 'niftyseg seg' 'seg_stats stats' 'seg_maths calc' 'seg_em run' 'seg_labfusion fuse' 'seg_patchmatch run' 'nifti run' 'nifti1_test test' 'nifti_stats stats' 'mnc2nii conv' 'nii2mnc conv' 'mincinfo info' 'mincstats stats' 'mincreshape reshape' 'minctracc reg' 'minc_modify_header mod' 'mincheader hdr' 'minctoraw conv' 'dcm2mnc conv' 'fslview view' 'fslcpgeom cp' 'flirt -i reg' 'slicerd run' 'mirtk run' 'mrinfo info' 'mrstats stats' 'mrcalc calc' 'mrcat cat' 'dwi2tensor conv' 'tensor2metric conv' 'tckinfo info' 'tckmap map' 'tckstats stats' 'tckedit edit' 'mri_info info' 'mri_stats stats' 'mri_binarize bin' 'mri_cor2label conv' 'mri_diff diff' 'mri_glmfit fit' 'mri_label2label conv' 'mri_label2vol conv' 'mri_pretess run' 'mri_vol2vol conv' 'mris_convert conv' 'mris_info info' 'mris_mesh mesh' 'mris_seg2annot conv' 'mris_smooth smooth' 'fsvv run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'sofia the first movie' 'homer simpson episode' 'flirt with someone'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-402: mass-spec/hwmgmt primitives
 for c in 'perseus -f run' 'peptideshaker run' 'skyline -i open' 'hardklor run' 'kronik run' 'decon2ls run' 'deconlrz run' 'filefilter run' 'fileconverter conv' 'idfileconverter conv' 'idmerger merge' 'masserrorcorrection corr' 'quantmetrin run' 'metrin run' 'spectrafilter run' 'spectrastfilter run' 'sirius run' 'metfrag run' 'mascot -s search' 'distiller -p process' 'proteowizard run' 'chainchains run' 'skypointer run' 'gpmaw run' 'tandem -s search' 'protsw run' 'proten run' 'ptprophet run' 'mayu run' 'nistmstran run' 'nistmsqc run' 'rawabicus run' 'rawfileviewer view' 'unifi start' 'mzparser parse' 'prolfiq run' 'mz2m conv' 'pyteomics run' 'brainpy run' 'mspeaks run'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
