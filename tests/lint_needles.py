@@ -10,7 +10,10 @@ reports on structural debt the else-if chain accumulates:
   REPORT needle in >=2 distinct blocks  (earliest else-if wins -> label
                                          misattribution; never fires in
                                          later blocks)
-  REPORT duplicate needle inside one block (redundant disjunct)
+  FAIL   same-run duplicate disjunct      (A || B || A — dead code)
+  REPORT needle repeated across distinct sub-expressions
+          (different paren depth / connector run — may be
+          intentional reuse, not a dead disjunct)
   REPORT needle covered by a longer needle in the same block
   REPORT duplicate `what = "..."` label across blocks
   REPORT word-char needle len<=4 without a trailing boundary space
@@ -28,6 +31,49 @@ from collections import Counter, defaultdict
 NEEDLE_RE = re.compile(r'ci_contains\(text,\s*"((?:[^"\\]|\\.)*)"')
 WHAT_RE = re.compile(r'what\s*=\s*"([^"]+)"')
 BLOCK_RE = re.compile(r'\}\s*else\s+if\s*\(|\bif\s*\(')
+TOKEN_RE = re.compile(
+    r'(?P<call>!?\s*ci_contains\(text,\s*"(?:[^"\\]|\\.)*"\))'
+    r'|(?P<conn>\|\||&&)'
+    r'|(?P<lp>\()|(?P<rp>\))')
+
+
+class _Run(object):
+    """Calls joined by one connector type at one paren depth."""
+    __slots__ = ('conn', 'seen')
+
+    def __init__(self):
+        self.conn = None
+        self.seen = set()
+
+
+def same_run_dups(part):
+    """Count 2nd+ identical call occurrences within one connector
+    run at one paren depth — provably dead (x||x == x, x&&x == x).
+    Mirrors tests/dedup_needles.py's removal semantics."""
+    stack = [_Run()]
+    dead = 0
+    for t in TOKEN_RE.finditer(part):
+        kind = t.lastgroup
+        if kind == 'lp':
+            stack.append(_Run())
+        elif kind == 'rp':
+            if len(stack) > 1:
+                stack.pop()
+        elif kind == 'conn':
+            run = stack[-1]
+            if run.conn is None:
+                run.conn = t.group(0)
+            elif run.conn != t.group(0):
+                stack[-1] = _Run()
+                stack[-1].conn = t.group(0)
+        else:
+            lit = NEEDLE_RE.search(t.group(0)).group(1)
+            key = (t.group(0).lstrip().startswith('!'), lit)
+            if key in stack[-1].seen:
+                dead += 1
+            else:
+                stack[-1].seen.add(key)
+    return dead
 
 
 def gate_only(needle):
@@ -96,6 +142,10 @@ def main():
                     not n.endswith(' ') and
                     re.fullmatch(r'[a-z0-9_.+\-/]{2,4}', n)):
                 risk_short[n].append(bi)
+        dead = same_run_dups(part)
+        if dead:
+            fails.append("same-run dead disjunct(s): %d in block %d"
+                         % (dead, bi))
         for n, c in seen.items():
             if c > 1 and not gate_only(n):
                 block_intra_dups[n] += c - 1
@@ -123,7 +173,8 @@ def main():
     for n, bs in sorted(cross.items(), key=lambda kv: -len(kv[1]))[:15]:
         print("       %r in %d blocks %s"
               % (n, len(bs), sorted(bs)[:8]))
-    print("REPORT intra-block duplicate disjuncts: %d"
+    print("REPORT needles repeated across distinct "
+          "sub-expressions: %d"
           % sum(block_intra_dups.values()))
     for n, c in sorted(block_intra_dups.items(), key=lambda kv: -kv[1])[:10]:
         print("       %r x%d extra" % (n, c))

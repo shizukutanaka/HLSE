@@ -10877,6 +10877,19 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 424 (same-run dead-disjunct purge + FAIL guard):**
+  `lint-needles` learns connector/paren-run semantics —
+  a needle repeated inside ONE `||`/`&&` run at ONE paren
+  depth is provably dead (`x||x==x`), while the same string
+  across distinct sub-expressions may be intentional reuse.
+  Ran `tests/dedup_needles.py` (tokenizes CALL/CONN/parens,
+  drops only same-run repeats): **63 dead disjuncts removed**
+  (e.g. `-d||-d`, ` -h|| -h`, ` -a|| -a`, duplicate
+  `idevicerestore`/`idevicepair`/`minerd`/`init s` terms).
+  The remaining 854 cross-sub-expression repeats are NOT
+  dead — `A || B && A` absorbs to `A`, and `!call` differs
+  from `call` — so lint keeps them as advisory REPORT and
+  now FAILs on any new same-run dead disjunct.
 - **cycle 423 (needle↔test coverage guard):** `lint-needles`
   now FAILs when a labelled else-if block has no content
   needle appearing in the test corpus

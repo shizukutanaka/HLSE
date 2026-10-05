@@ -1519,7 +1519,7 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "setenforce") && ci_contains(text, " 0")) {
             what = "setenforce 0 (SELinux off)";
         } else if (ci_contains(text, "auditctl") &&
-                   (ci_contains(text, "-d") || ci_contains(text, "-d"))) {
+                   (ci_contains(text, "-d") )) {
             what = "auditctl rules wipe";
         } else if ((ci_contains(text, "systemctl") || ci_contains(text, "service") ||
                     ci_contains(text, "killall") || ci_contains(text, "pkill")) &&
@@ -2073,7 +2073,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "nanominer") || ci_contains(text, "gminer") ||
                    ci_contains(text, "teamredminer") || ci_contains(text, "nbminer") ||
                    ci_contains(text, "cgminer") || ci_contains(text, "sgminer") ||
-                   ci_contains(text, "bfgminer") || ci_contains(text, "minerd") ||
+                   ci_contains(text, "bfgminer")  ||
                    ci_contains(text, "claymore -o") || ci_contains(text, "claymore.exe") ||
                    ci_contains(text, "trex miner") ||
                    ci_contains(text, "stratum+") || ci_contains(text, "stratum:") ||
@@ -2435,19 +2435,17 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "busybox") &&
                     (ci_contains(text, "poweroff") || ci_contains(text, "halt") ||
                      ci_contains(text, "reboot"))) ||
-                   ci_contains(text, "init 1") || ci_contains(text, "init s") ||
-                   ci_contains(text, "init s") || ci_contains(text, "telinit 1") ||
-                   ci_contains(text, "telinit s") || ci_contains(text, "telinit s") ||
+                   ci_contains(text, "init 1") || ci_contains(text, "init s")  || ci_contains(text, "telinit 1") ||
+                   ci_contains(text, "telinit s")  ||
                    ci_contains(text, "reboot -") || ci_contains(text, "reboot now") ||
                    ci_contains(text, "poweroff -") || ci_contains(text, "halt -") ||
                    (ci_contains(text, "shutdown") &&
-                    (ci_contains(text, " -h") || ci_contains(text, " -h") ||
+                    (ci_contains(text, " -h")  ||
                      ci_contains(text, " -p") || ci_contains(text, " -r")))) {
             what = "service/runlevel/power primitive";
         } else if (ci_contains(text, "userdel ") || ci_contains(text, "groupdel ") ||
                    (ci_contains(text, "gpasswd") &&
-                    (ci_contains(text, " -a") || ci_contains(text, " -d") ||
-                     ci_contains(text, " -a") || ci_contains(text, " -m"))) ||
+                    (ci_contains(text, " -a") || ci_contains(text, " -d")  || ci_contains(text, " -m"))) ||
                    (ci_contains(text, "usermod") &&
                     (ci_contains(text, " -p") || ci_contains(text, " -l") ||
                      ci_contains(text, " -u") || ci_contains(text, " -s"))) ||
@@ -2520,7 +2518,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " -i "))) ||
                    (ci_contains(text, "efibootmgr") &&
                     (ci_contains(text, " -c") || ci_contains(text, " -b") ||
-                     ci_contains(text, " -d") || ci_contains(text, " -b"))) ||
+                     ci_contains(text, " -d") )) ||
                    (ci_contains(text, "efivar") && ci_contains(text, " -w")) ||
                    (ci_contains(text, "update-alternatives") &&
                     ci_contains(text, "--install"))) {
@@ -2751,7 +2749,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, "remove") ||
                      ci_contains(text, "authrestart"))) ||
                    (ci_contains(text, "profiles") &&
-                    (ci_contains(text, " -i") || ci_contains(text, " -i") ||
+                    (ci_contains(text, " -i")  ||
                      ci_contains(text, "install") ||
                      ci_contains(text, "remove"))) ||
                    (ci_contains(text, "launchctl") &&
@@ -4146,8 +4144,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "idevicediagnostics") ||
                    ci_contains(text, "ideviceinfo") ||
                    ci_contains(text, "idevicerestore") ||
-                   ci_contains(text, "idevicepair") ||
-                   ci_contains(text, "idevicerestore") ||
+                   ci_contains(text, "idevicepair")  ||
                    ci_contains(text, "ios-deploy") ||
                    ci_contains(text, "ifuse") ||
                    ci_contains(text, "iproxy") ||
@@ -4831,8 +4828,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "ecryptfs") ||
                    (ci_contains(text, "htpasswd") &&
                     (ci_contains(text, " -c") ||
-                     ci_contains(text, " -b") ||
-                     ci_contains(text, " -b") ||
+                     ci_contains(text, " -b")  ||
                      ci_contains(text, " -d") ||
                      ci_contains(text, " -v"))) ||
                    (ci_contains(text, "amtool") &&
@@ -5613,8 +5609,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "islonline") ||
             ci_contains(text, "netop") ||
             ci_contains(text, "gocket") ||
-            ci_contains(text, "beanywhere") ||
-            ci_contains(text, "splashtop") ||
+            ci_contains(text, "beanywhere")  ||
             /* modern proxy / tunnel / c2 transports */
             ci_contains(text, "sing-box") ||
             ci_contains(text, "mihomo") ||
@@ -8144,7 +8139,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " -t tracefs") || ci_contains(text, " -t securityfs") ||
               ci_contains(text, " -t cgroup") || ci_contains(text, " -t pstore") ||
               ci_contains(text, " -t configfs") || ci_contains(text, " -t fusectl") ||
-              ci_contains(text, " -t mqueue") || ci_contains(text, " -t hugetlbfs") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") || ci_contains(text, " -t overlay") ||
+              ci_contains(text, " -t mqueue") || ci_contains(text, " -t hugetlbfs") || ci_contains(text, " -t overlay")           ||
               ci_contains(text, " -t binfmt_misc") || ci_contains(text, " -t proc") ||
               ci_contains(text, " -o bind"))) ||
             /* fim-baseline + edr/host agents + backup cli */
@@ -8601,9 +8596,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "lvm") &&
               (ci_contains(text, " pv") || ci_contains(text, " vg") ||
                ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -"))) ||
-             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
-             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+               ci_contains(text, " create") || ci_contains(text, " -")))     ||
              (ci_contains(text, "dnf ") &&
               (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
                ci_contains(text, " install") || ci_contains(text, " remove") ||
@@ -8612,9 +8605,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "lvm") &&
               (ci_contains(text, " pv") || ci_contains(text, " vg") ||
                ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -"))) ||
-             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
-             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+               ci_contains(text, " create") || ci_contains(text, " -")))     ||
              (ci_contains(text, "dnf ") &&
               (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
                ci_contains(text, " install") || ci_contains(text, " remove") ||
@@ -8623,9 +8614,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "lvm") &&
               (ci_contains(text, " pv") || ci_contains(text, " vg") ||
                ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -"))) ||
-             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
-             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+               ci_contains(text, " create") || ci_contains(text, " -")))     ||
              (ci_contains(text, "dnf ") &&
               (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
                ci_contains(text, " install") || ci_contains(text, " remove") ||
@@ -8634,9 +8623,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "lvm") &&
               (ci_contains(text, " pv") || ci_contains(text, " vg") ||
                ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -"))) ||
-             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
-             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+               ci_contains(text, " create") || ci_contains(text, " -")))     ||
              (ci_contains(text, "dnf ") &&
               (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
                ci_contains(text, " install") || ci_contains(text, " remove") ||
@@ -8645,9 +8632,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "lvm") &&
               (ci_contains(text, " pv") || ci_contains(text, " vg") ||
                ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -"))) ||
-             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
-             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+               ci_contains(text, " create") || ci_contains(text, " -")))     ||
              (ci_contains(text, "dnf ") &&
               (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
                ci_contains(text, " install") || ci_contains(text, " remove") ||
@@ -8656,9 +8641,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "lvm") &&
               (ci_contains(text, " pv") || ci_contains(text, " vg") ||
                ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -"))) ||
-             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
-             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+               ci_contains(text, " create") || ci_contains(text, " -")))     ||
              (ci_contains(text, "dnf ") &&
               (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
                ci_contains(text, " install") || ci_contains(text, " remove") ||
@@ -8667,9 +8650,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "lvm") &&
               (ci_contains(text, " pv") || ci_contains(text, " vg") ||
                ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -"))) ||
-             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
-             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+               ci_contains(text, " create") || ci_contains(text, " -")))     ||
              (ci_contains(text, "dnf ") &&
               (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
                ci_contains(text, " install") || ci_contains(text, " remove") ||
@@ -8678,9 +8659,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "lvm") &&
               (ci_contains(text, " pv") || ci_contains(text, " vg") ||
                ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -"))) ||
-             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
-             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+               ci_contains(text, " create") || ci_contains(text, " -")))     ||
              (ci_contains(text, "dnf ") &&
               (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
                ci_contains(text, " install") || ci_contains(text, " remove") ||
@@ -8689,9 +8668,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "lvm") &&
               (ci_contains(text, " pv") || ci_contains(text, " vg") ||
                ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -"))) ||
-             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
-             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+               ci_contains(text, " create") || ci_contains(text, " -")))     ||
              (ci_contains(text, "dnf ") &&
               (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
                ci_contains(text, " install") || ci_contains(text, " remove") ||
@@ -8700,9 +8677,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "lvm") &&
               (ci_contains(text, " pv") || ci_contains(text, " vg") ||
                ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -"))) ||
-             ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
-             ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
+               ci_contains(text, " create") || ci_contains(text, " -")))     ||
              (ci_contains(text, "dnf ") &&
               (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
                ci_contains(text, " install") || ci_contains(text, " remove") ||
@@ -10282,7 +10257,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "glooctl") || ci_contains(text, "edgectl") ||
              (ci_contains(text, "contour") && ci_contains(text, " -")) ||
              ci_contains(text, "emissary") ||
-             ci_contains(text, "solo-io") || ci_contains(text, "cmctl") ||
+             ci_contains(text, "solo-io")  ||
              ci_contains(text, "spire-agent") || ci_contains(text, "spiffe") ||
              ci_contains(text, "in-toto") ||
              (ci_contains(text, "witness") && ci_contains(text, " -")) ||
@@ -10405,8 +10380,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "hiera") || ci_contains(text, "eyaml") ||
              ci_contains(text, "terragrunt") || ci_contains(text, "tfenv") ||
              ci_contains(text, "tfswitch") ||
-             (ci_contains(text, "tofu") && ci_contains(text, " -")) ||
-             ci_contains(text, "openbao") || ci_contains(text, "valut") ||
+             (ci_contains(text, "tofu") && ci_contains(text, " -"))  || ci_contains(text, "valut") ||
              ci_contains(text, "runecast") || ci_contains(text, "env0") ||
              ci_contains(text, "spacelift") || ci_contains(text, "env0ctl") ||
              ci_contains(text, "brainboard") || ci_contains(text, "inframap") ||
