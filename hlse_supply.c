@@ -914,11 +914,14 @@ hlse_check_paste(const char *text) {
         const char *what = NULL;
         const char *what_hits[8];
         int          n_what_hits = 0;
+        int          n_what_matched = 0;
         /* every branch condition below is pure, so the chain is
          * evaluated in full: the first hit sets 'what' (score + flag
          * stay single), and each matched class also lands in
-         * what_hits[] so the reason can name the secondary hits. */
+         * what_hits[] so the reason can name the secondary hits.
+         * n_what_matched counts every hit (display caps at 8). */
 #define PASTE_WHAT(s) do {                                       \
+    n_what_matched++;                                            \
     if (what == NULL) what = (s);                                \
     if (n_what_hits < (int)(sizeof(what_hits)/sizeof(what_hits[0]))) \
         what_hits[n_what_hits++] = (s);                          \
@@ -17785,14 +17788,23 @@ hlse_check_paste(const char *text) {
             v.score += 45;
             extra[0] = '\0';
             for (i = 1; i < n_what_hits; i++) {
+                /* snprintf returns the would-be length: advance off
+                 * by the clamped value so off never exceeds
+                 * sizeof(extra)-1 and the next size never underflows. */
+                size_t rem = sizeof(extra) - off;
+                int w;
                 if (i == 4) {
-                    off += (size_t)snprintf(extra + off, sizeof(extra) - off,
-                                            ", +%d more", n_what_hits - 4);
+                    w = snprintf(extra + off, rem,
+                                 ", +%d more", n_what_matched - 4);
+                    off += ((size_t)w >= rem) ? rem - 1 : (size_t)w;
                     break;
                 }
-                off += (size_t)snprintf(extra + off, sizeof(extra) - off,
-                                        i == 1 ? " (also: %s" : ", %s",
-                                        what_hits[i]);
+                w = snprintf(extra + off, rem,
+                             i == 1 ? " (also: %s" : ", %s",
+                             what_hits[i]);
+                if (w < 0)
+                    break;
+                off += ((size_t)w >= rem) ? rem - 1 : (size_t)w;
             }
             if (off)
                 snprintf(extra + off, sizeof(extra) - off, ")");

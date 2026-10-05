@@ -400,6 +400,16 @@ assert data["hardening_band"] in ("hardened", "good", "fair", "weak")
     && check "P8 multi-hold keeps single +45 score" "0" "0" \
     || check "P8 multi-hold keeps single +45 score" "0" "1"
 
+# P8 (also:) overflow guard: 5 hits with 105-141-char labels must not
+# smash extra[192] — cycle-439 fixed a would-be-length advance that
+# underflowed the snprintf size (ASan stack-buffer-overflow).
+./hlse_core paste 'windbg kubeless orekit komga tunerstudio' >/dev/null 2>&1 \
+    && check "P8 (also:) long-label multi-hit exits clean" "0" "0" \
+    || check "P8 (also:) long-label multi-hit exits clean" "0" "1"
+./hlse_core paste 'windbg kubeless orekit komga tunerstudio' 2>&1 | grep -q "(also:" \
+    && check "P8 (also:) long-label multi-hit still displays" "0" "0" \
+    || check "P8 (also:) long-label multi-hit still displays" "0" "1"
+
 # FileFix (2025 ClickFix variant): paste path into File Explorer address bar → flagged
 ./hlse_core text 'A file has been shared with you. Open File Explorer, then paste the path into the file explorer and press Enter.' 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "FileFix Explorer-paste lure detected" "0" "0" \

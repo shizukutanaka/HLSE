@@ -10877,6 +10877,24 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 439 (stack-buffer-overflow in the P8 "(also:" reason —
+  reachable, ASan-verified):** the multi-hit display in
+  hlse_check_paste advanced `off` by snprintf's *would-be* length.
+  When a write truncated, `off` outgrew `extra[192]`, the next
+  `sizeof(extra) - off` underflowed to a huge size_t, and snprintf
+  wrote attacker-influenced bytes past the stack buffer. Reproduced
+  under ASan with `hlse_core paste 'windbg kubeless orekit komga
+  tunerstudio'` (5 hits, 105-141-char labels — overflow write at
+  offset 373); the production binary aborted via stack protector.
+  Fix: count all matched classes in `n_what_matched` (the "+N more"
+  figure now reports the true total instead of the 8-slot cap) and
+  clamp `off` at `rem - 1` after every write, so the next size can
+  never underflow. Same latent anti-pattern clamped in
+  `json_append_lit` (hlse_server.c) — unreachable today (short
+  literals only, early-return guards), same landmine removed.
+  Paired tests: the 5-hit input exits clean and still displays
+  "(also:"; a 10-hit input now reports "+6 more" (was "+4 more" —
+  capped hits hid the real count).
 - **cycle 438 (deadness analysis scoped per else-if chain):** the
   dead-needle model accumulated "owned" needles monotonically over
   the whole file — sound while the P8 chain was first-match-wins,

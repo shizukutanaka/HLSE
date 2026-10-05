@@ -222,8 +222,13 @@ json_append_elem(char *dst, size_t cap, size_t *len, const char *s, int idx) {
 static void
 json_append_lit(char *dst, size_t cap, size_t *len, const char *lit) {
     size_t room = (*len < cap) ? cap - *len : 0;
+    int w;
     if (room <= 1) return;
-    *len += (size_t)snprintf(dst + *len, room, "%s", lit);
+    w = snprintf(dst + *len, room, "%s", lit);
+    if (w < 0) return;
+    /* snprintf returns the would-be length: clamp so *len never
+     * passes cap-1 (the next room can never underflow). */
+    *len += ((size_t)w >= room) ? room - 1 : (size_t)w;
 }
 
 /* Extract a string field named `key` from a flat JSON object into `out`.
