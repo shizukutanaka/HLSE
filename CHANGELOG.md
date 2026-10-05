@@ -10856,6 +10856,28 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 405): data-eng/aec primitives**
+  — data-eng/rdf (spoon, carte, kettle, tcomp, kamelet,
+  karavan, jberet, smooks, anypoint, ballerina, devlake,
+  tusker, oetl, cayley, lodlive, rdftkb, sparqlify, tdbquery,
+  tdbgraph), aec/bim/structural (ifccheck, ifcconvert, ifcdiff,
+  ifcinfo, ifcquery, ifcparse, ifcg, ifcgeom, ifcgeomserver,
+  ifcpatch, ifcbrowser, ifcfm, ifctester, ifcdoc, bcfapi,
+  ifcforge, bimserver, bimvie, speckle, specklepy, revit,
+  revitlookup, rvt, rvt2ifc, rvtjson, navisworks, naviswork,
+  gsm2ifc, pln, pln2ifc, rhino, rhino3d, rhinocommon,
+  rhino3dm, karamba3d, karamba, ladybug, honeybee, rev2,
+  cesiumjs, 3dtiles, draco, draco2gltf, bimrocket, qcad,
+  odafc, odaview, odarecv, teigha, teighafileconverter, staad,
+  staadpro, bentley, dgn, dgnlib, civil3d, csicol, csiplant,
+  gtstrudl, gtmenu, ramses, rconcept, ramstruct, ramss, risa,
+  risafloor, spframe, spcol, spmats, spwall, tedds, skyciv,
+  ideastatica, conidea, checkbot, dlubal, rfem, rstab,
+  rsection, rfem6, scia, buildsoft, powerconnect, cypecad,
+  cype, tricalc, lusas, atena, sofistik, sofiplus, teddy,
+  aquila, entber, sisgraph, frame3dd, mstk, mastan2, opsview,
+  onelab, astk, stanley, saturn). sept dropped
+  (subset of transept FP guard). +104/105 checks.
 - **ALERT 45 (cycle 404): ebook/photogrammetry primitives**
   — ebook/library (cr3, pocketbook, nooklet, fb2toepub, epubcf,
   epubpack, epubrepack, flightcrew, epubmerge, fanfictionebook,

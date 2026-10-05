@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-405: data-eng/aec primitives
+for c in 'spoon -f run' 'carte -s run' 'kettle -r run' 'tcomp run' 'kamelet run' 'karavan run' 'jberet run' 'smooks run' 'anypoint run' 'ballerina run' 'devlake run' 'tusker run' 'oetl run' 'cayley repl' 'lodlive run' 'rdftkb run' 'sparqlify run' 'tdbquery query' 'tdbgraph run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'ifccheck check' 'ifcconvert conv' 'ifcdiff diff' 'ifcinfo info' 'ifcquery query' 'ifcparse parse' 'ifcg run' 'ifcgeom run' 'ifcgeomserver serve' 'ifcpatch patch' 'ifcbrowser browse' 'ifcfm run' 'ifctester test' 'ifcdoc doc' 'bcfapi api' 'ifcforge run' 'bimserver serve' 'bimvie view' 'speckle -s send' 'specklepy run' 'revit open' 'revitlookup lookup' 'rvt file' 'rvt2ifc conv' 'rvtjson conv' 'navisworks open' 'naviswork open' 'gsm2ifc conv' 'pln file' 'pln2ifc conv' 'rhino -r open' 'rhino3d open' 'rhinocommon run' 'rhino3dm conv' 'karamba3d run' 'karamba run' 'ladybug -r run' 'honeybee -r run' 'rev2 run' 'cesiumjs run' '3dtiles tile' 'draco -e encode' 'draco2gltf conv' 'bimrocket run' 'qcad open' 'odafc conv' 'odaview view' 'odarecv recv' 'teigha conv' 'teighafileconverter conv' 'staad run' 'staadpro run' 'bentley -r run' 'dgn file' 'dgnlib lib' 'civil3d run' 'csicol run' 'csiplant run' 'gtstrudl run' 'gtmenu run' 'ramses -r run' 'rconcept run' 'ramstruct run' 'ramss run' 'risa run' 'risafloor run' 'spframe run' 'spcol run' 'spmats run' 'spwall run' 'tedds run' 'skyciv run' 'ideastatica run' 'conidea run' 'checkbot run' 'dlubal run' 'rfem run' 'rstab run' 'rsection run' 'rfem6 run' 'scia run' 'buildsoft run' 'powerconnect run' 'cypecad run' 'cype run' 'tricalc run' 'lusas run' 'atena run' 'sofistik run' 'sofiplus run' 'teddy -r run' 'aquila -r run' 'entber run' 'sisgraph run' 'frame3dd run' 'mstk run' 'mastan2 run' 'opsview view' 'onelab run' 'astk run' 'stanley -r run' 'saturn -r run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'spoon and fork set' 'kettle boiling water' 'rhino at the zoo' 'ladybug in garden' 'honeybee collecting nectar' 'draco constellation' 'bentley car review' 'teddy bear toy' 'stanley cup final' 'saturn planet rings' 'aquila constellation' 'speckle paint finish' 'ramses pharaoh tomb' 'carte menu french'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-404: ebook/photogrammetry primitives
 for c in 'cr3 open' 'pocketbook -r read' 'nooklet read' 'fb2toepub conv' 'epubcf check' 'epubpack pack' 'epubrepack repack' 'flightcrew check' 'epubmerge merge' 'fanfictionebook dl' 'marvin -r read' 'epubli pub' 'ibooks open' 'stanza -r read' 'desktoppr run' 'pages2epub conv' 'mobipocket conv' 'apprenticeharper run' 'epublib read' 'libebook read' 'epubz zip' 'comicinfo tag' 'comicrack tag' 'comicvine fetch' 'chunkystream stream' 'ubooquity serve' 'qbook open' 'booklibrarian org' 'librera read' 'bibliocommons cat' 'ldcm read' 'scythe -r run' 'fanficfare dl' 'ircbook run' 'zlibrary dl' 'dotepub conv' 'opds serve' 'cops -s serve' 'lanraragi serve' 'shoko serve' 'stashapp serve' 'mylar run' 'mylar3 run' 'kapowarr run' 'jellyseerr serve' 'petio serve' 'requestrr serve' 'varken serve' 'ebooksis run' 'linkace serve' 'karakeep serve' 'hoarder -r run' 'omnivore -r run' 'pinchflat run' 'metube serve'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

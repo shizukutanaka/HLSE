@@ -16188,6 +16188,83 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "jgenea") || ci_contains(text, "familieroots") ||
              ci_contains(text, "flttracer")) {
         what = "photogrammetry primitive";
+        } else if (
+             /* cycle-405a: data-eng/rdf primitives */
+             (ci_contains(text, "spoon") && ci_contains(text, " -")) ||
+             (ci_contains(text, "carte") && ci_contains(text, " -")) ||
+             (ci_contains(text, "kettle") && ci_contains(text, " -")) ||
+             ci_contains(text, "tcomp") || ci_contains(text, "kamelet") ||
+             ci_contains(text, "karavan") || ci_contains(text, "jberet") ||
+             ci_contains(text, "smooks") || ci_contains(text, "anypoint") ||
+             ci_contains(text, "ballerina") || ci_contains(text, "devlake") ||
+             ci_contains(text, "tusker") || ci_contains(text, "oetl") ||
+             ci_contains(text, "cayley") || ci_contains(text, "lodlive") ||
+             ci_contains(text, "rdftkb") || ci_contains(text, "sparqlify") ||
+             ci_contains(text, "tdbquery") || ci_contains(text, "tdbgraph")) {
+        what = "data-eng/rdf primitive";
+        } else if (
+             /* cycle-405b: aec/bim primitives */
+             ci_contains(text, "ifccheck") || ci_contains(text, "ifcconvert") ||
+             ci_contains(text, "ifcdiff") || ci_contains(text, "ifcinfo") ||
+             ci_contains(text, "ifcquery") || ci_contains(text, "ifcparse") ||
+             ci_contains(text, "ifcg") || ci_contains(text, "ifcgeom") ||
+             ci_contains(text, "ifcgeomserver") || ci_contains(text, "ifcpatch") ||
+             ci_contains(text, "ifcbrowser") || ci_contains(text, "ifcfm") ||
+             ci_contains(text, "ifctester") || ci_contains(text, "ifcdoc") ||
+             ci_contains(text, "bcfapi") || ci_contains(text, "ifcforge") ||
+             ci_contains(text, "bimserver") || ci_contains(text, "bimvie") ||
+             (ci_contains(text, "speckle") && ci_contains(text, " -")) ||
+             ci_contains(text, "specklepy") || ci_contains(text, "revit") ||
+             ci_contains(text, "revitlookup") || ci_contains(text, "rvt ") ||
+             ci_contains(text, "rvt2ifc") || ci_contains(text, "rvtjson") ||
+             ci_contains(text, "navisworks") || ci_contains(text, "naviswork") ||
+             ci_contains(text, "gsm2ifc") || ci_contains(text, "pln ") ||
+             ci_contains(text, "pln2ifc") ||
+             (ci_contains(text, "rhino") && ci_contains(text, " -")) ||
+             ci_contains(text, "rhino3d") || ci_contains(text, "rhinocommon") ||
+             ci_contains(text, "rhino3dm") || ci_contains(text, "karamba3d") ||
+             ci_contains(text, "karamba") ||
+             (ci_contains(text, "ladybug") && ci_contains(text, " -")) ||
+             (ci_contains(text, "honeybee") && ci_contains(text, " -")) ||
+             ci_contains(text, "rev2") || ci_contains(text, "cesiumjs") ||
+             ci_contains(text, "3dtiles") ||
+             (ci_contains(text, "draco") && ci_contains(text, " -")) ||
+             ci_contains(text, "draco2gltf") || ci_contains(text, "bimrocket") ||
+             ci_contains(text, "qcad") || ci_contains(text, "odafc") ||
+             ci_contains(text, "odaview") || ci_contains(text, "odarecv") ||
+             ci_contains(text, "teigha") || ci_contains(text, "teighafileconverter") ||
+             ci_contains(text, "staad") || ci_contains(text, "staadpro") ||
+             (ci_contains(text, "bentley") && ci_contains(text, " -")) ||
+             ci_contains(text, "dgn") || ci_contains(text, "dgnlib") ||
+             ci_contains(text, "civil3d") || ci_contains(text, "csicol") ||
+             ci_contains(text, "csiplant") || ci_contains(text, "gtstrudl") ||
+             ci_contains(text, "gtmenu") ||
+             (ci_contains(text, "ramses") && ci_contains(text, " -")) ||
+             ci_contains(text, "rconcept") || ci_contains(text, "ramstruct") ||
+             ci_contains(text, "ramss") || ci_contains(text, "risa ") ||
+             ci_contains(text, "risafloor") || ci_contains(text, "spframe") ||
+             ci_contains(text, "spcol") || ci_contains(text, "spmats") ||
+             ci_contains(text, "spwall") || ci_contains(text, "tedds") ||
+             ci_contains(text, "skyciv") || ci_contains(text, "ideastatica") ||
+             ci_contains(text, "conidea") || ci_contains(text, "checkbot") ||
+             ci_contains(text, "dlubal") || ci_contains(text, "rfem") ||
+             ci_contains(text, "rstab") || ci_contains(text, "rsection") ||
+             ci_contains(text, "rfem6") || ci_contains(text, "scia") ||
+             ci_contains(text, "buildsoft") || ci_contains(text, "powerconnect") ||
+             ci_contains(text, "cypecad") || ci_contains(text, "cype") ||
+             ci_contains(text, "tricalc") || ci_contains(text, "lusas") ||
+             ci_contains(text, "atena") || ci_contains(text, "sofistik") ||
+             ci_contains(text, "sofiplus") ||
+             (ci_contains(text, "teddy") && ci_contains(text, " -")) ||
+             (ci_contains(text, "aquila") && ci_contains(text, " -")) ||
+             ci_contains(text, "entber") ||
+             ci_contains(text, "sisgraph") || ci_contains(text, "frame3dd") ||
+             ci_contains(text, "mstk") || ci_contains(text, "mastan2") ||
+             ci_contains(text, "opsview") || ci_contains(text, "onelab") ||
+             ci_contains(text, "astk") ||
+             (ci_contains(text, "stanley") && ci_contains(text, " -")) ||
+             (ci_contains(text, "saturn") && ci_contains(text, " -"))) {
+        what = "aec/bim primitive";
         }
 
         if (what) {
