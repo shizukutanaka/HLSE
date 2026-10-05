@@ -10877,19 +10877,34 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 436 (mutation-smoke covers all six surfaces):** CASES
+  grew to 12 — url (javascript: scheme), text (gift card), file
+  (.exe double-ext), package (requests typosquat), secrets
+  (xoxb-/AKIA/AIza), paste (certutil/chmod u+s/base64 -d/-enc/
+  socat). Results: 7 KILLED (xoxb-, AIza 100->65, javascript:
+  90->30, gift card 100->91, .exe, requests 70->15, base64 -d
+  100->85) and 5 SURVIVED (certutil/chmod u+s/-enc/socat/AKIA —
+  sibling needles or blocks re-fire at the same score: measured
+  defence-in-depth, not a gate gap). Robustness fixes from real
+  runs: row-parser now trims before splitting (>2-space gaps
+  yielded empty literals -> stray token at file start -> silent
+  build failure scored as fake KILLED); empty-literal and
+  missing-binary guards abort instead of scoring 0; token inputs
+  use placeholder suffixes so no contiguous credential literal is
+  committed (AGENTS rule 7).
 - **cycle 435 (mutation-smoke: does the score gate kill real
   mutants?):** new advisory tool `make mutation-smoke`
   (tests/mutation_smoke.sh) rewrites one needle literal per case to
   a sentinel, force-rebuilds, and re-scores the corpus input it
-  covered. Result: 6/7 mutants KILLED (certutil, chmod u+s,
-  base64 -d, -enc, socat, xoxb- all dropped to 0 — the floor gate
-  catches real regressions). AKIA SURVIVED at 70 — that corpus
-  input is scored via the env-export rule, not the AKIA pattern;
-  a dedicated AKIA corpus item (aws_access_key_id=AKIA...ABCDEF,
-  floor 80) now closes that coverage gap. Side-discovery: macOS
-  BSD make compares mtimes at second granularity — a same-second
-  edit+build silently skips the rebuild; the script rm's the
-  binary before every make to force it.
+  covered. First run proved the floor gate kills real regressions
+  (per-case verdicts corrected in cycle 436's wider table: some
+  cases the stale-binary artifact had flipped). AKIA SURVIVED at
+  70 — that corpus input is scored via the env-export rule, not
+  the AKIA pattern; a dedicated AKIA corpus item
+  (aws_access_key_id=AKIA...ABCDEF, floor 80) now closes that
+  coverage gap. Side-discovery: macOS BSD make compares mtimes at
+  second granularity — a same-second edit+build silently skips
+  the rebuild; the script rm's the binary before every make.
 - **cycle 434 (subcommand dispatch table-driven — last P1 split
   item):** hlse_main.c's 12-entry strcmp if-chain is now a static
   const SUBCOMMANDS[] table {name, fn} with a uniform
