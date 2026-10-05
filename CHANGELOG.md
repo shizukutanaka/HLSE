@@ -10856,6 +10856,30 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 412): seismology/ocean primitives**
+  — seismology (scmv, scolv, scesv, scrttv, scqcv,
+  scmaster, libslink, slinfo, mseed, mseedgroup,
+  mseedinfo, mseedmerge, ms2sac, sac2mseed, saclst,
+  sachelp, sacio, sac2eps, sac2gse, gse2sac, gse2seed,
+  gse2evt, ah2evt, sac2ah, evt2sac, rdseed, rdseed5,
+  orbserver, q330, quanterra, centaur, trillium,
+  gcf2sac, gcf2mseed, gcfview, k2mi, mk6, reftek,
+  rt125, rt130, soh2asc, qlib2, ggseismic, ggc, gcap,
+  focmec, wavelet, fkfilter, fkplot, slowness,
+  infrasound, specfem2d, aneu, lvz, sw4, sw4m, salvus,
+  disp96, hspec96, momenttensor, gcap3d, fktradeoff,
+  growclust, ph2dt, velest, fshom, isola2005,
+  nonlinloc, nlloc, nldiff, bayesloc, shakecast,
+  shakemap, shakelib, groundfailure, losspager, dyfi,
+  grt, ew2mseed, stat2d, ewthresh, localmag, wave2buf,
+  pickew, pick_ew, pick_ew2, pickfk, binder_ew, eqbuf,
+  sniffwave, tankplayer), oceanography (cnv2asc, sbe911,
+  sbe37, glider, gliderdac, slocum, sg139, teledyne,
+  workhorse, rdiradcp, wh300, wh600, ldeo, codar,
+  codar2nc, codarqa, hfrnet, seacurrent, metoc,
+  mercator, roms2roms, roms2nc, roms2wrf, woa, woa18,
+  woa23, argopy, bgc, ooi, ooinet, seaglider,
+  pyglider). +123/123 checks.
 - **ALERT 45 (cycle 411): ui-proto/screenwriting primitives**
   — ui-proto/diagram (figma, figjam, figa, fig2html,
   fig2svg, evolus, akira, drawio, jgraph, yedgraph,

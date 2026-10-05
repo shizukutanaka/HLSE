@@ -16712,6 +16712,78 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "davinci") && ci_contains(text, " -")) ||
              ci_contains(text, "tuttle")) {
         what = "screenwriting/filmprod primitive";
+        } else if (
+             /* cycle-412a: seismology primitives */
+             ci_contains(text, "scmv") || ci_contains(text, "scolv") ||
+             ci_contains(text, "scesv") || ci_contains(text, "scrttv") ||
+             ci_contains(text, "scqcv") || ci_contains(text, "scmaster") ||
+             ci_contains(text, "libslink") || ci_contains(text, "slinfo") ||
+             ci_contains(text, "mseed") || ci_contains(text, "mseedgroup") ||
+             ci_contains(text, "mseedinfo") || ci_contains(text, "mseedmerge") ||
+             ci_contains(text, "ms2sac") || ci_contains(text, "sac2mseed") ||
+             ci_contains(text, "saclst") || ci_contains(text, "sachelp") ||
+             ci_contains(text, "sacio") || ci_contains(text, "sac2eps") ||
+             ci_contains(text, "sac2gse") || ci_contains(text, "gse2sac") ||
+             ci_contains(text, "gse2seed") || ci_contains(text, "gse2evt") ||
+             ci_contains(text, "ah2evt") || ci_contains(text, "sac2ah") ||
+             ci_contains(text, "evt2sac") || ci_contains(text, "rdseed") ||
+             ci_contains(text, "rdseed5") || ci_contains(text, "orbserver") ||
+             ci_contains(text, "q330") || ci_contains(text, "quanterra") ||
+             (ci_contains(text, "centaur") && ci_contains(text, " -")) ||
+             (ci_contains(text, "trillium") && ci_contains(text, " -")) ||
+             ci_contains(text, "gcf2sac") || ci_contains(text, "gcf2mseed") ||
+             ci_contains(text, "gcfview") || ci_contains(text, "k2mi") ||
+             ci_contains(text, "mk6 ") || ci_contains(text, "reftek") ||
+             ci_contains(text, "rt125") || ci_contains(text, "rt130") ||
+             ci_contains(text, "soh2asc") || ci_contains(text, "qlib2") ||
+             ci_contains(text, "ggseismic") || ci_contains(text, "ggc") ||
+             ci_contains(text, "gcap") || ci_contains(text, "focmec") ||
+             (ci_contains(text, "wavelet") && ci_contains(text, " -")) ||
+             ci_contains(text, "fkfilter") || ci_contains(text, "fkplot") ||
+             (ci_contains(text, "slowness") && ci_contains(text, " -")) ||
+             (ci_contains(text, "infrasound") && ci_contains(text, " -")) ||
+             ci_contains(text, "specfem2d") || ci_contains(text, "aneu") ||
+             ci_contains(text, "lvz ") || ci_contains(text, "sw4") ||
+             ci_contains(text, "sw4m") || ci_contains(text, "salvus") ||
+             ci_contains(text, "disp96") || ci_contains(text, "hspec96") ||
+             ci_contains(text, "momenttensor") || ci_contains(text, "gcap3d") ||
+             ci_contains(text, "fktradeoff") || ci_contains(text, "growclust") ||
+             ci_contains(text, "ph2dt") || ci_contains(text, "velest") ||
+             ci_contains(text, "fshom") || ci_contains(text, "isola2005") ||
+             ci_contains(text, "nonlinloc") || ci_contains(text, "nlloc") ||
+             ci_contains(text, "nldiff") || ci_contains(text, "bayesloc") ||
+             ci_contains(text, "shakecast") || ci_contains(text, "shakemap") ||
+             ci_contains(text, "shakelib") || ci_contains(text, "groundfailure") ||
+             ci_contains(text, "losspager") || ci_contains(text, "dyfi") ||
+             ci_contains(text, "grt ") || ci_contains(text, "ew2mseed") ||
+             ci_contains(text, "stat2d") || ci_contains(text, "ewthresh") ||
+             ci_contains(text, "localmag") || ci_contains(text, "wave2buf") ||
+             ci_contains(text, "pickew") || ci_contains(text, "pick_ew") ||
+             ci_contains(text, "pick_ew2") || ci_contains(text, "pickfk") ||
+             ci_contains(text, "binder_ew") || ci_contains(text, "eqbuf") ||
+             ci_contains(text, "sniffwave") || ci_contains(text, "tankplayer")) {
+        what = "seismology primitive";
+        } else if (
+             /* cycle-412b: oceanography primitives */
+             ci_contains(text, "cnv2asc") || ci_contains(text, "sbe911") ||
+             ci_contains(text, "sbe37") ||
+             (ci_contains(text, "glider") && ci_contains(text, " -")) ||
+             ci_contains(text, "gliderdac") || ci_contains(text, "slocum") ||
+             ci_contains(text, "sg139") || ci_contains(text, "teledyne") ||
+             (ci_contains(text, "workhorse") && ci_contains(text, " -")) ||
+             ci_contains(text, "rdiradcp") || ci_contains(text, "wh300") ||
+             ci_contains(text, "wh600") || ci_contains(text, "ldeo") ||
+             ci_contains(text, "codar") || ci_contains(text, "codar2nc") ||
+             ci_contains(text, "codarqa") || ci_contains(text, "hfrnet") ||
+             ci_contains(text, "seacurrent") || ci_contains(text, "metoc") ||
+             (ci_contains(text, "mercator") && ci_contains(text, " -")) ||
+             ci_contains(text, "roms2roms") || ci_contains(text, "roms2nc") ||
+             ci_contains(text, "roms2wrf") || ci_contains(text, "woa ") ||
+             ci_contains(text, "woa18") || ci_contains(text, "woa23") ||
+             ci_contains(text, "argopy") || ci_contains(text, "bgc ") ||
+             ci_contains(text, "ooi ") || ci_contains(text, "ooinet") ||
+             ci_contains(text, "seaglider") || ci_contains(text, "pyglider")) {
+        what = "oceanography primitive";
         }
 
         if (what) {

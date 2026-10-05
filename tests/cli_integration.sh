@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-412: seismology/ocean primitives
+for c in 'scmv monitor' 'scolv locate' 'scesv events' 'scrttv trace' 'scqcv qc' 'scmaster run' 'libslink read' 'slinfo info' 'mseed conv' 'mseedgroup group' 'mseedinfo info' 'mseedmerge merge' 'ms2sac conv' 'sac2mseed conv' 'saclst list' 'sachelp help' 'sacio io' 'sac2eps conv' 'sac2gse conv' 'gse2sac conv' 'gse2seed conv' 'gse2evt conv' 'ah2evt conv' 'sac2ah conv' 'evt2sac conv' 'rdseed extract' 'rdseed5 extract' 'orbserver serve' 'q330 log' 'quanterra log' 'centaur -r run' 'trillium -s sensor' 'gcf2sac conv' 'gcf2mseed conv' 'gcfview view' 'k2mi conv' 'mk6 log' 'reftek log' 'rt125 log' 'rt130 log' 'soh2asc conv' 'qlib2 lib' 'ggseismic run' 'ggc run' 'gcap invert' 'focmec solve' 'wavelet -t transform' 'fkfilter filter' 'fkplot plot' 'slowness -a analysis' 'infrasound -d detect' 'specfem2d run' 'aneu run' 'lvz model' 'sw4 run' 'sw4m run' 'salvus run' 'disp96 disp' 'hspec96 synth' 'momenttensor invert' 'gcap3d invert' 'fktradeoff analyze' 'growclust cluster' 'ph2dt conv' 'velest invert' 'fshom run' 'isola2005 invert' 'nonlinloc locate' 'nlloc locate' 'nldiff diff' 'bayesloc locate' 'shakecast cast' 'shakemap map' 'shakelib lib' 'groundfailure model' 'losspager page' 'dyfi report' 'grt run' 'ew2mseed conv' 'stat2d stat' 'ewthresh thresh' 'localmag mag' 'wave2buf conv' 'pickew pick' 'pick_ew pick' 'pick_ew2 pick' 'pickfk pick' 'binder_ew bind' 'eqbuf buf' 'sniffwave sniff' 'tankplayer play'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'cnv2asc conv' 'sbe911 ctd' 'sbe37 ctd' 'glider -m mission' 'gliderdac serve' 'slocum deploy' 'sg139 run' 'teledyne run' 'workhorse -a adcp' 'rdiradcp read' 'wh300 adcp' 'wh600 adcp' 'ldeo data' 'codar radar' 'codar2nc conv' 'codarqa qc' 'hfrnet net' 'seacurrent measure' 'metoc run' 'mercator -f forecast' 'roms2roms interp' 'roms2nc conv' 'roms2wrf conv' 'woa data' 'woa18 atlas' 'woa23 atlas' 'argopy fetch' 'bgc run' 'ooi data' 'ooinet fetch' 'seaglider fly' 'pyglider proc'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'centaur constellation story' 'trillium flower spring' 'wavelet transform theory' 'slowness of the system' 'infrasound elephant study' 'glider paper airplane' 'workhorse of the fleet' 'mercator map projection'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-411: ui-proto/screenwriting primitives
 for c in 'figma design' 'figjam jam' 'figa conv' 'fig2html conv' 'fig2svg conv' 'evolus pencil' 'akira ux' 'drawio diagram' 'jgraph diagram' 'yedgraph edit' 'yworks run' 'yfiles run' 'orgchart render' 'pumla conv' 'puml conv' 'structurizr model' 'terrastruct run' 'graphviz render' 'dot2svg conv' 'gml2gv conv' 'graphml2gv conv' 'gv2gml conv' 'gvgen gen' 'gephi viz' 'tulip -n network' 'socnetv viz' 'graphia viz' 'graphviz2gv conv' 'visone viz' 'pajek viz' 'pajek2net conv' 'paj2net conv' 'libvis viz' 'netwulf viz' 'infomap cluster' 'mapcore run' 'mapgenerator gen' 'mapframer run' 'nograph run' 'graphvizdot run' 'miro -b board' 'mural -b board' 'whimsical -w wire' 'lucid -c chart' 'lucidchart chart' 'lucidscale scale' 'freetier draw' 'freedraw draw' 'zeplin handoff' 'framer -m motion' 'origami -s studio' 'principle -a animate' 'sketchapp design' 'sketch2html conv' 'sketch2json conv' 'abstract -v version' 'v0dev gen' 'plasmic build' 'antetype proto' 'marvelapp proto' 'moqups mock' 'pidoco proto' 'wireframe -l low-fi' 'wireframecc draw' 'appcooker cook' 'fluidui proto' 'shottr shot' 'droplr share' 'cloudapp share' 'lightshot shot' 'faststone capture' 'picpick pick' 'gifrecorder rec' 'gifcap rec' 'ttystudio rec'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
