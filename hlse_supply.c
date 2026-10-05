@@ -15503,6 +15503,43 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "cowbell") && ci_contains(text, " -")) ||
              ci_contains(text, "apetag")) {
         what = "hw/media primitive";
+        } else if (
+             /* cycle-390a: kvdb/couch primitives */
+             ci_contains(text, "db_stat") || ci_contains(text, "db_verify") ||
+             ci_contains(text, "db_recover") || ci_contains(text, "db_checkpoint") ||
+             ci_contains(text, "db_upgrade") || ci_contains(text, "db_hotbackup") ||
+             ci_contains(text, "db_replicate") || ci_contains(text, "db_tuner") ||
+             ci_contains(text, "mdb_stat") || ci_contains(text, "mdb_env") ||
+             ci_contains(text, "mdb_chk") || ci_contains(text, "db_bench") ||
+             ci_contains(text, "cache_bench") ||
+             ci_contains(text, "persistent_cache_bench") ||
+             ci_contains(text, "filter_bench") || ci_contains(text, "block_cache") ||
+             ci_contains(text, "trace_analyzer") || ci_contains(text, "io_tracer") ||
+             ci_contains(text, "ldb_tests") || ci_contains(text, "couchapp") ||
+             ci_contains(text, "kanso") ||
+             ci_contains(text, "couchpy") ||
+             (ci_contains(text, "futon") && ci_contains(text, " -")) ||
+             (ci_contains(text, "couch") && ci_contains(text, " -")) ||
+             ci_contains(text, "e3w")) {
+        what = "kvdb/couch primitive";
+        } else if (
+             /* cycle-390b: storage primitives */
+             ci_contains(text, "gdeploy") ||
+             (ci_contains(text, "ganesha") && ci_contains(text, " -")) ||
+             ci_contains(text, "lustrefs") || ci_contains(text, "zstream") ||
+             ci_contains(text, "thin_trim") || ci_contains(text, "thin_ls") ||
+             ci_contains(text, "cache_check") || ci_contains(text, "cache_repair") ||
+             ci_contains(text, "era_check")) {
+        what = "storage primitive";
+        } else if (
+             /* cycle-390c: print/color primitives */
+             ci_contains(text, "cupstestdsc") ||
+             ci_contains(text, "escputil") || ci_contains(text, "cjet") ||
+             ci_contains(text, "cnijfilter") || ci_contains(text, "jpgicc") ||
+             ci_contains(text, "tifficc") || ci_contains(text, "linkicc") ||
+             ci_contains(text, "transicc") || ci_contains(text, "wtpt") ||
+             ci_contains(text, "oyranos")) {
+        what = "print/color primitive";
         }
 
         if (what) {

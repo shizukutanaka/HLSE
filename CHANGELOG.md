@@ -10856,6 +10856,17 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 390): kvdb/storage/print primitives** —
+  BerkeleyDB/LMDB/RocksDB/CouchDB (db_stat, db_verify, db_recover,
+  db_checkpoint, db_upgrade, db_hotbackup, db_replicate, db_tuner,
+  mdb_stat, mdb_env, mdb_chk, db_bench, cache_bench,
+  persistent_cache_bench, filter_bench, block_cache,
+  trace_analyzer, io_tracer, ldb_tests, couchapp, kanso, couchpy,
+  futon, couch, e3w), storage (gdeploy, ganesha, lustrefs,
+  zstream, thin_trim, thin_ls, cache_check, cache_repair,
+  era_check), print/color (cupstestdsc, escputil, cjet,
+  cnijfilter, jpgicc, tifficc, linkicc, transicc, wtpt, oyranos).
+  Words gated; accept/reject/avahi/erica dropped. +52/59 checks.
 - **ALERT 45 (cycle 389): sci/math/hw primitives** — sci-data
   (f77, f95, g95, ftn, f90, f2c, ratfor, fprettify, caf, h5jam,
   h5unjam, h5debug, h5mkgrp, h52gif, gif2h5, ncecat, ncra, ncvit,

@@ -11674,6 +11674,36 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-390: kvdb/storage/print primitives
+for c in 'db_stat -d f' 'db_verify f' 'db_recover -h dir' 'db_checkpoint -1' 'db_upgrade f' 'db_hotbackup -d dir' 'db_replicate -m x' 'db_tuner -d f' 'mdb_stat env' 'mdb_env env' 'mdb_chk env' 'db_bench --db x' 'cache_bench --cache x' 'persistent_cache_bench run' 'filter_bench run' 'block_cache tool' 'trace_analyzer f' 'io_tracer -o out' 'ldb_tests run' 'couchapp push' 'kanso push' 'couchpy docs' 'futon -p open' 'couch -d db' 'e3w console'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'gdeploy -c cfg' 'ganesha -n nfsd' 'lustrefs mount' 'zstream dump' 'thin_trim meta' 'thin_ls meta' 'cache_check dev' 'cache_repair dev' 'era_check dev'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'cupstestdsc ppd' 'escputil -c clr' 'cjet print' 'cnijfilter drv' 'jpgicc in out' 'tifficc -i f' 'linkicc -o out' 'transicc -i in' 'wtpt -p plot' 'oyranos profile'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'america the beautiful' 'erica reads a book' 'a futon for guests' 'couch potato day' 'ganesha statue shrine'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-389: sci/math/hw primitives
 for c in 'f77 prog.f' 'f95 -o a prog' 'g95 prog.f' 'ftn -o a x' 'f90 prog.f' 'f2c prog.f' 'ratfor prog.r' 'fprettify prog.f' 'caf -f run' 'h5jam -i f' 'h5unjam -i f' 'h5debug file' 'h5mkgrp grp' 'h52gif h5 out' 'gif2h5 in out' 'ncecat in out' 'ncra in out' 'ncvit file' 'ncremap -m map' 'ncesm run' 'mbt -F fmt' 'mbprocess -I in' 'mbinfo -I in' 'mbfilter -I in' 'mbroute -I in'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
