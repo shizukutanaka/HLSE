@@ -14938,6 +14938,25 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "vibrato") && ci_contains(text, " -")) ||
              (ci_contains(text, "pointwise") && ci_contains(text, " -"))) {
         what = "charset/nlp primitive";
+        } else if (
+             /* cycle-373a: js/anki/data primitives */
+             ci_contains(text, "sivp") ||
+             (ci_contains(text, "zeit") && ci_contains(text, " -")) ||
+             ci_contains(text, "jiti") || ci_contains(text, "ankitects") ||
+             ci_contains(text, "mnemosyne2anki") || ci_contains(text, "libanki") ||
+             (ci_contains(text, "repetitions") && ci_contains(text, " -")) ||
+             ci_contains(text, "gapminder")) {
+        what = "js/anki primitive";
+        } else if (
+             /* cycle-373b: hexconv/embedded primitives */
+             ci_contains(text, "srec_cmp") || ci_contains(text, "srec_info") ||
+             ci_contains(text, "bin2h") || ci_contains(text, "bin2c") ||
+             ci_contains(text, "file2c") || ci_contains(text, "srec2bin") ||
+             ci_contains(text, "mios") || ci_contains(text, "spifs") ||
+             ci_contains(text, "mot2bin") || ci_contains(text, "s19tobin") ||
+             ci_contains(text, "elf2bin") || ci_contains(text, "uf2uf") ||
+             ci_contains(text, "elf2uf2") || ci_contains(text, "pioasm")) {
+        what = "hexconv primitive";
         }
 
         if (what) {

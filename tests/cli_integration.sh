@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-373: js/anki + hexconv primitives
+for c in 'sivp -l toolbox' 'zeit -f file' 'jiti index.ts --run' 'ankitects -b build' 'mnemosyne2anki in.db -o out.apkg' 'libanki -v' 'repetitions -s 10' 'gapminder --list' 'cat package.json | sivp'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'srec_cmp a.s19 b.s19 -v' 'srec_info fw.s19' 'bin2h -i a.bin' 'bin2c a.bin -o array.c' 'file2c a.bin -o x.c' 'srec2bin fw.s19 -o fw.bin' 'mios -d /dev/tty' 'spifs -b image' 'mot2bin fw.mot -o fw.bin' 's19tobin x.s19 -o x.bin' 'elf2bin app.elf -o app.bin' 'uf2uf fw.uf2 -o out.uf2' 'elf2uf2 app.elf -o app.uf2' 'pioasm -o hex pio.pio'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'die zeit ist reif' 'echo repetitions of the tune'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-372: index/diff + charset/nlp primitives
 for c in 'cscope -bR' 'ctags -R .' 'etags -o TAGS src' 'gtags -i' 'htags -a' 'csope -R' 'mkid -o ID' '010editor file.bin -run' 'bspatch old new patch' 'vcdiff -d a b' 'popmail -n' 'editdiff x.diff -o y' 'diffoscope a.zip b.zip -j' 'diffuse -m a b c' 'bcompare a b -solo' 'todos -u file.txt'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

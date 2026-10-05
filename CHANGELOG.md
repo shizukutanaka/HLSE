@@ -10856,6 +10856,12 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 373): JS/Anki + hex/embedded primitives** — JS
+  toolchain aids (sivp, jiti), flashcard/Anki (zeit, ankitects,
+  mnemosyne2anki, libanki, repetitions, gapminder), and hex/embedded
+  converters (srec_cmp, srec_info, bin2h, bin2c, file2c, srec2bin,
+  mios, spifs, mot2bin, s19tobin, elf2bin, uf2uf, elf2uf2, pioasm);
+  real words (zeit, repetitions) gated on ` -`. +22/25 checks.
 - **ALERT 45 (cycle 372): index/diff + charset/NLP primitives** —
   code indexers (cscope, ctags, etags, gtags, htags, csope, mkid),
   hex/binary diff (010editor, bspatch, vcdiff, popmail, editdiff,
