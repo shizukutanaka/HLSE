@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-374: irc-bot + mail/spam primitives
+for c in 'phenny -c cfg' 'gonzobot -f bot.conf' 'cloudbot -c config.json' 'hellabot --conf h.json' 'cardbot -s irc.x' 'nesbot --register' 'irccd -c irccd.conf' 'dzivo -v' 'hibot -c hibot.conf' 'kooki -s server' 'meatballbot -n nick' 'omorobot -d'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'postfwd -f rules.cf' 'spfzone -o zone.txt' 'bogoutil -d wordlist.db' 'bogoqp -v' 'bogoupgrade -i wordlist.db' 'bft -v filter' 'bogotune -v' 'cssput span.css < file' 'mailfilter -c rc' 'spamoracle -a corpus/' 'interimap -d -v' 'afsieve -s script'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'echo a mail filter rule' 'bftx test value'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-373: js/anki + hexconv primitives
 for c in 'sivp -l toolbox' 'zeit -f file' 'jiti index.ts --run' 'ankitects -b build' 'mnemosyne2anki in.db -o out.apkg' 'libanki -v' 'repetitions -s 10' 'gapminder --list' 'cat package.json | sivp'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

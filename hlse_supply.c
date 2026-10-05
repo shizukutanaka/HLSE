@@ -14957,6 +14957,24 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "elf2bin") || ci_contains(text, "uf2uf") ||
              ci_contains(text, "elf2uf2") || ci_contains(text, "pioasm")) {
         what = "hexconv primitive";
+        } else if (
+             /* cycle-374a: irc-bot primitives */
+             ci_contains(text, "phenny") || ci_contains(text, "gonzobot") ||
+             ci_contains(text, "cloudbot") || ci_contains(text, "hellabot") ||
+             ci_contains(text, "cardbot") || ci_contains(text, "nesbot") ||
+             ci_contains(text, "irccd") || ci_contains(text, "dzivo") ||
+             ci_contains(text, "hibot") || ci_contains(text, "kooki") ||
+             ci_contains(text, "meatballbot") || ci_contains(text, "omorobot")) {
+        what = "irc-bot primitive";
+        } else if (
+             /* cycle-374b: mail/spam primitives */
+             ci_contains(text, "postfwd") || ci_contains(text, "spfzone") ||
+             ci_contains(text, "bogoutil") || ci_contains(text, "bogoqp") ||
+             ci_contains(text, "bogoupgrade") || ci_contains(text, "bft ") ||
+             ci_contains(text, "bogotune") || ci_contains(text, "cssput") ||
+             ci_contains(text, "mailfilter") || ci_contains(text, "spamoracle") ||
+             ci_contains(text, "interimap") || ci_contains(text, "afsieve")) {
+        what = "mail/spam primitive";
         }
 
         if (what) {

@@ -10856,6 +10856,12 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 374): IRC bots + mail/anti-spam primitives** —
+  niche IRC bots (phenny, gonzobot, cloudbot, hellabot, cardbot,
+  nesbot, irccd, dzivo, hibot, kooki, meatballbot, omorobot) and mail
+  filtering (postfwd, spfzone, bogoutil, bogoqp, bogoupgrade, bft,
+  bogotune, cssput, mailfilter, spamoracle, interimap, afsieve).
+  +24/26 checks.
 - **ALERT 45 (cycle 373): JS/Anki + hex/embedded primitives** — JS
   toolchain aids (sivp, jiti), flashcard/Anki (zeit, ankitects,
   mnemosyne2anki, libanki, repetitions, gapminder), and hex/embedded
