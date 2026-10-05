@@ -10877,6 +10877,18 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 429 (file + package benchmark corpus — B3 arc complete):**
+  hlse_benchmark now exercises the last two unmeasured pure-input
+  detection surfaces: file-masquerade via hlse_check_filename
+  (5 mal: doc/txt/jpg/pdf/docx double-extension payloads — all
+  ISOLATE 85; 6 legit: pdf/txt/msi/csv/png/sh — all <=5) and
+  typosquatting via hlse_check_package (7 mal: reqeusts, lodahs,
+  flast, expres, numppy, panddas, djangoo — all BLOCK 70; 5 legit:
+  numpy, react, requests, flask, beautifulsoup4 — all 0). Every
+  pure-input detector surface (url, paste, secrets, text, file,
+  package) is now inside the F1 = 1.000 / FP = 0% gate — a
+  regression anywhere in the corpus fires as a benchmark failure.
+  Corpus: 51 mal / 40 legit.
 - **cycle 428 (or-level absorption + secret/text benchmark corpus):**
   deadness now propagates an or-level's standalone positive
   disjuncts as extra owned context (D): a positive conjunct lit in

@@ -14,6 +14,7 @@
 #include "hlse_text.h"   /* TextVerdict, hlse_check_text */
 #include "hlse_supply.h" /* PasteVerdict, hlse_check_paste */
 #include "hlse_secrets.h" /* SecretVerdict, hlse_scan_secrets */
+#include "hlse_file.h"   /* FileVerdict, hlse_check_filename */
 
 
 
@@ -277,6 +278,46 @@ hlse_benchmark(void) {
         NULL
     };
 
+    /* File-masquerade corpus — exercises hlse_check_filename
+     * (pure-input, no disk access). */
+    static const char *malicious_file[] = {
+        "invoice.doc.exe",
+        "readme.txt.scr",
+        "photo.jpg.exe",
+        "invoice.pdf.bat",
+        "report.docx.scr",
+        NULL
+    };
+    static const char *legit_file[] = {
+        "document.pdf",
+        "notes.txt",
+        "setup.msi",
+        "data.csv",
+        "photo.png",
+        "script.sh",
+        NULL
+    };
+
+    /* Typosquat corpus — exercises hlse_check_package. */
+    static const char *malicious_pkg[] = {
+        "reqeusts",
+        "lodahs",
+        "flast",
+        "expres",
+        "numppy",
+        "panddas",
+        "djangoo",
+        NULL
+    };
+    static const char *legit_pkg[] = {
+        "numpy",
+        "react",
+        "requests",
+        "flask",
+        "beautifulsoup4",
+        NULL
+    };
+
     int n_mal = 0, n_legit = 0;
     int detected = 0, fp = 0;
     int i;
@@ -341,6 +382,40 @@ hlse_benchmark(void) {
             fp++;
             printf("FALSE POSITIVE text %s [%d]\n",
                    legit_text[i], tv.score);
+        }
+    }
+    for (i = 0; malicious_file[i]; i++) {
+        FileVerdict fv = hlse_check_filename(malicious_file[i]);
+        n_mal++;
+        if (fv.score >= 40) detected++;
+        else printf("MISSED file %s [%d]\n",
+                    malicious_file[i], fv.score);
+    }
+    for (i = 0; legit_file[i]; i++) {
+        FileVerdict fv = hlse_check_filename(legit_file[i]);
+        n_legit++;
+        if (fv.score >= 40) {
+            fp++;
+            printf("FALSE POSITIVE file %s [%d]\n",
+                   legit_file[i], fv.score);
+        }
+    }
+    for (i = 0; malicious_pkg[i]; i++) {
+        PackageVerdict pv = hlse_check_package(malicious_pkg[i],
+                                               NULL);
+        n_mal++;
+        if (pv.score >= 40) detected++;
+        else printf("MISSED pkg %s [%d]\n",
+                    malicious_pkg[i], pv.score);
+    }
+    for (i = 0; legit_pkg[i]; i++) {
+        PackageVerdict pv = hlse_check_package(legit_pkg[i],
+                                               NULL);
+        n_legit++;
+        if (pv.score >= 40) {
+            fp++;
+            printf("FALSE POSITIVE pkg %s [%d]\n",
+                   legit_pkg[i], pv.score);
         }
     }
 
