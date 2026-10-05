@@ -148,8 +148,8 @@ all: $(BINARY) $(SHARED) $(SERVER_BIN) $(DAEMON_BIN)
 cli: $(BINARY)         ## build CLI binary only
 lib: $(SHARED)         ## build shared library only
 
-$(BINARY): $(CORE_SRC) hlse_text.h hlse_core.h hlse_protect.h
-	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE -o $@ $(CORE_SRC) $(PIE_LDFLAGS) -I. -lm
+$(BINARY): $(CORE_SRC) hlse_main.c hlse_text.h hlse_core.h hlse_protect.h
+	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE -o $@ hlse_main.c $(CORE_SRC) $(PIE_LDFLAGS) -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
 $(SHARED): $(CORE_SRC) hlse_text.h hlse_core.h hlse_protect.h
@@ -331,7 +331,7 @@ $(EXT_BIN): tests/hlse_corpus_extended.c hlse_core.c hlse_text.c hlse_text.h hls
 coverage:
 	@rm -f *.gcda *.gcno *.gcov
 	$(CC) -O0 -g --coverage -Wall -Wextra -D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -D_GNU_SOURCE \
-		-o hlse_core_cov $(CORE_SRC) -I. -lm
+		-o hlse_core_cov hlse_main.c $(CORE_SRC) -I. -lm
 	@echo "Running comprehensive coverage exercises..."
 	@# Core CLI paths
 	@./hlse_core_cov                 > /dev/null 2>&1 || true
@@ -497,6 +497,18 @@ check-warnings:
 	done; \
 	if [ "$$fail" -ne 0 ]; then echo "STRICT WARNINGS FOUND (library build)"; exit 1; fi; \
 	echo "All modules clean under strict flags (CLI + library builds)."
+	@echo "Checking strict warnings in CLI-only sources..."
+	@fail=0; for f in hlse_main.c; do \
+		w=$$($(CC) $(CFLAGS_STRICT) -D_GNU_SOURCE -c $$f -I. -o /dev/null 2>&1 | grep -c "warning:"); \
+		if [ "$$w" -ne 0 ]; then \
+			echo "  FAIL: $$f has $$w warning(s)"; \
+			$(CC) $(CFLAGS_STRICT) -D_GNU_SOURCE -c $$f -I. -o /dev/null 2>&1 | grep "warning:"; \
+			fail=1; \
+		else \
+			echo "  OK:   $$f"; \
+		fi; \
+	done; \
+	if [ "$$fail" -ne 0 ]; then echo "STRICT WARNINGS FOUND (CLI-only build)"; exit 1; fi
 	@echo "Checking strict warnings in daemon sources..."
 	@fail=0; for f in hlsed.c hlse_daemon.c; do \
 		w=$$($(CC) $(CFLAGS_STRICT) -D_GNU_SOURCE -DHLSE_CORE_AS_LIB -c $$f -I. -o /dev/null 2>&1 | grep -c "warning:"); \
@@ -524,7 +536,7 @@ asan-test:
 	@echo "Building with AddressSanitizer + UBSan..."
 	$(CC) -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer \
 		-D_POSIX_C_SOURCE=200809L $(PLATFORM_CFLAGS) -D_GNU_SOURCE \
-		-o hlse_core_asan $(CORE_SRC) -I. -lm
+		-o hlse_core_asan hlse_main.c $(CORE_SRC) -I. -lm
 	@echo "Running self-test under sanitizers..."
 	@./hlse_core_asan --self-test
 	@./hlse_core_asan --benchmark > /dev/null
@@ -615,8 +627,8 @@ ifeq ($(UNAME_S),Darwin)
 hlse_core_static:
 	@echo "make static: unsupported on macOS (no static libc); build the normal binary" >&2; exit 1
 else
-hlse_core_static: $(CORE_SRC) hlse_text.h hlse_core.h hlse_protect.h
-	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE $(STATIC_LDFLAGS) -o $@ $(CORE_SRC) -I. -lm
+hlse_core_static: $(CORE_SRC) hlse_main.c hlse_text.h hlse_core.h hlse_protect.h
+	$(CC) $(CFLAGS) $(PIE_CFLAGS) -D_GNU_SOURCE $(STATIC_LDFLAGS) -o $@ hlse_main.c $(CORE_SRC) -I. -lm
 	strip $@
 	@printf '  %-20s %s (%s bytes)\n' "CC (static)" "$@" "$$(wc -c < $@)"
 endif

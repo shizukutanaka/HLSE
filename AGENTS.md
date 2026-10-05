@@ -78,10 +78,10 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
 
 ## Weaknesses / risks (what to improve — cite when you touch them)
 
-- **`hlse_core.c` is ~2,759 lines**: the URL engine + thin public
+- **`hlse_core.c` is ~3,425 lines**: the URL engine + thin public
   wrappers + `hlse_canonical_confirm` (closes over the static BRANDS[]
-  table) + a thin `main()` (config load, flag parse into `HlseCli`,
-  alert-sink init, one-line dispatch). Extracted modules:
+  table). `main()` lives in `hlse_main.c` (CLI-only — not in CORE_SRC,
+  so AS_LIB builds never link it). Extracted modules:
   `hlse_selftest.c`, `hlse_registry.c`, `hlse_channel.c` (channel
   prior), `hlse_baseline.c` (fingerprint + suppress),
   `hlse_patterns.c` (SECRET/BRAND loader), `hlse_sarif.c` (collector +
@@ -90,7 +90,8 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
   `hlse_advisory.c` (public verdict-interpretation layer),
   `hlse_emit.c` (CLI output: advisory getters, JSON/human emitters,
   stdin mode), `hlse_cli.c` (all 12 subcommand handlers taking
-  `const HlseCli *`). No file-scope flag statics remain.
+  `const HlseCli *`), `hlse_main.c` (no-args demo, option parse,
+  alert-sink init, dispatch). No file-scope flag statics remain.
   JSON escaping is consolidated on
   `hlse_util.c:hlse_json_escape` — `hlse_server.c` delegates to it.
 - **No hosted CI:** `.github/workflows/` is absent (only `FUNDING.yml`). The
@@ -126,12 +127,13 @@ HTTP server + web dashboard (`hlse-server`), and a push-alert sink
   Remaining: a maintainer with `workflows` permission runs it once.
 
 **P1 — maintainability / detection quality:**
-- Split `hlse_core.c` (extract CLI dispatch to `hlse_cli.c`; table-drive the
-  subcommand handlers) — behavior-preserving, incremental. Done: selftest +
-  pattern registry extracted. Remaining clusters, in coupling order:
-  output printers (`print_json_*`, advisories, `channel_*` + `g_from_channel`),
-  scan-driver helpers (baseline/fingerprint/patterns-load/manifest/
-  git-history), `stdin_mode`, then the subcommand handlers + `main`.
+- ~~Split `hlse_core.c`~~ done: every planned cluster extracted —
+  output printers + stdin_mode (`hlse_emit.c`), scan-driver helpers
+  (baseline/patterns/manifest/git-history), all 12 subcommand handlers
+  (`hlse_cli.c`), and `main()` itself (`hlse_main.c` — CLI-only, not in
+  CORE_SRC so AS_LIB builds never link it). `hlse_core.c` is now pure
+  engine + public API. Remaining P1: table-drive the `hlse_supply.c`
+  needle chain (severity/provenance/platform metadata).
 - ~~Consolidate JSON escaping onto `hlse_util.c:hlse_json_escape`~~ done:
   `hlse_server.c:json_escape_append` now delegates.
 - ~~Escape attacker-controlled `.efi` filenames in `esp` output~~ done, and

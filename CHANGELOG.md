@@ -10877,6 +10877,19 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 433 (main() extracted to hlse_main.c — hlse_core.c split
+  arc complete):** the last CLI-only cluster moved out of
+  hlse_core.c (3,946 -> 3,425 lines): no-args demo, option parsing
+  into HlseCli, alert-sink init, and the hlse_cmd_* dispatch now
+  live in hlse_main.c (545 lines). hlse_core.c is pure engine +
+  public API with zero preprocessor splits; the
+  '#ifndef HLSE_CORE_AS_LIB' region is gone entirely.
+  hlse_main.c is deliberately NOT in CORE_SRC — only the
+  $(BINARY), hlse_core_static, hlse_core_cov and hlse_core_asan
+  link lines compile it, so libhlse.so / hlse-server / hlsed
+  can never grow a main() (verified: nm shows _main only in the
+  two binaries that own one). check-warnings gained a CLI-only
+  pass covering hlse_main.c. AGENTS.md P1 split item closed.
 - **cycle 432 (legit-side score-ceiling gate — symmetric
   score-invariance):** --benchmark legit loops now assert
   score <= a per-entry ceiling pinned to the measured baseline
