@@ -10877,6 +10877,15 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 434 (subcommand dispatch table-driven — last P1 split
+  item):** hlse_main.c's 12-entry strcmp if-chain is now a static
+  const SUBCOMMANDS[] table {name, fn} with a uniform
+  (o, argc, argv, idx) signature — a new subcommand is one line.
+  `network`/`audit` (options-only signatures) gained thin
+  cmd_network_/cmd_audit_ adapters. Dispatch verified: all 12
+  subcommands route identically (usage errors still 2, no-arg
+  runs still 0). Behavior-preserving; AGENTS.md P1 split arc
+  fully closed.
 - **cycle 433 (main() extracted to hlse_main.c — hlse_core.c split
   arc complete):** the last CLI-only cluster moved out of
   hlse_core.c (3,946 -> 3,425 lines): no-args demo, option parsing

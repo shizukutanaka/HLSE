@@ -36,6 +36,38 @@
 
 #define HLSE_BUILD_DATE    __DATE__
 
+/* Subcommand dispatch table — the handler signature is uniform so a
+ * new subcommand is one line here and nowhere else. `network`/`audit`
+ * take only the options struct; thin wrappers adapt them.            */
+static int cmd_network_(const HlseCli *o, int argc, char **argv, int idx) {
+    (void)argc; (void)argv; (void)idx;
+    return hlse_cmd_network(o);
+}
+static int cmd_audit_(const HlseCli *o, int argc, char **argv, int idx) {
+    (void)argc; (void)argv; (void)idx;
+    return hlse_cmd_audit(o);
+}
+
+static const struct {
+    const char *name;
+    int (*fn)(const HlseCli *, int, char **, int);
+} SUBCOMMANDS[] = {
+    /* hlse_core scan <dir> — recursive secrets + masquerade; exit 1 on hit */
+    { "scan",      hlse_cmd_scan      },
+    /* hlse_core protect <path> [--ransomware|--smb|--mbr|--net] */
+    { "protect",   hlse_cmd_protect   },
+    { "esp",       hlse_cmd_esp       },
+    { "package",   hlse_cmd_package   },
+    { "paste",     hlse_cmd_paste     },
+    { "secret",    hlse_cmd_secret    },
+    { "email",     hlse_cmd_email     },
+    { "clipboard", hlse_cmd_clipboard },
+    { "file",      hlse_cmd_file      },
+    { "text",      hlse_cmd_text      },
+    { "network",   cmd_network_       },
+    { "audit",     cmd_audit_         },
+};
+
 int
 main(int argc, char **argv) {
     HlseCli o = {0};
@@ -371,51 +403,13 @@ main(int argc, char **argv) {
         return 0;
     }
 
-    /* ── scan subcommand ───────────────────────────────────────────────
-     * Recursively scan a directory for secrets + file masquerade.
-     * Designed for CI/CD pipelines:
-     *   ./hlse_core scan /path/to/project
-     *   exit 0 = clean, exit 1 = threats found                        */
-    if (strcmp(argv[idx], "scan") == 0)
-        return hlse_cmd_scan(&o, argc, argv, idx);
-
-    /* ── protect subcommand ──────────────────────────────────────────
-     * Usage: hlse_core protect <path> [--ransomware|--smb|--mbr|--net]
-     * Without flags: runs all modules applicable to the path.        */
-    if (strcmp(argv[idx], "protect") == 0)
-        return hlse_cmd_protect(&o, argc, argv, idx);
-
-    if (strcmp(argv[idx], "esp") == 0)
-        return hlse_cmd_esp(&o, argc, argv, idx);
-
-    /* ── Supply Chain Defense subcommands ───────────────────────────── */
-
-    if (strcmp(argv[idx], "package") == 0)
-        return hlse_cmd_package(&o, argc, argv, idx);
-
-    if (strcmp(argv[idx], "paste") == 0)
-        return hlse_cmd_paste(&o, argc, argv, idx);
-
-    if (strcmp(argv[idx], "network") == 0)
-        return hlse_cmd_network(&o);
-
-    if (strcmp(argv[idx], "secret") == 0)
-        return hlse_cmd_secret(&o, argc, argv, idx);
-
-    if (strcmp(argv[idx], "email") == 0)
-        return hlse_cmd_email(&o, argc, argv, idx);
-
-    if (strcmp(argv[idx], "clipboard") == 0)
-        return hlse_cmd_clipboard(&o, argc, argv, idx);
-
-    if (strcmp(argv[idx], "file") == 0)
-        return hlse_cmd_file(&o, argc, argv, idx);
-
-    if (strcmp(argv[idx], "audit") == 0)
-        return hlse_cmd_audit(&o);
-
-    if (strcmp(argv[idx], "text") == 0)
-        return hlse_cmd_text(&o, argc, argv, idx);
+    {
+        size_t ci;
+        for (ci = 0; ci < sizeof(SUBCOMMANDS)/sizeof(SUBCOMMANDS[0]); ci++) {
+            if (strcmp(argv[idx], SUBCOMMANDS[ci].name) == 0)
+                return SUBCOMMANDS[ci].fn(&o, argc, argv, idx);
+        }
+    }
 
     /* Default: use unified scan (auto-detects URL vs text) */
     {
