@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-381: ai/data + retro/emu primitives
+for c in 'karafka server' 'lightrag --model m' 'promptfoo eval' 'garak --model_type openai' 'helicone start' 'sqlfluff lint q.sql'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'uade123 song.mod' 'uade -t f' 'resid -o out' 'vgmplay tune.vgm' 'klystrack -i' 'neko8 game.n8' 'basic8 prog.b8' 'cel7 run' 'mame -roms galaga' 'shadps4 -g g' 'suyu -f game' 'kega -f rom' 'blastem rom.bin' 'reicast -c cfg' 'demul -run=dc' 'fakenes rom.nes' 'quicknes rom.nes' 'punes rom.nes' 'rocknes -f r' 'nesicide -p prj' 'ksnes r' 'mynes rom' 'halfnes rom' 'nintendulator rom' 'virtuanes r.nes' 'jnes rom' 'smynes r'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'the mame arcade collection' 'echo residents of the town' 'echo residual value'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-380: wayland/a11y + monitor/misc primitives
 for c in 'shikane -c cfg' 'wvkbd-mobintl' 'squeekboard -l us' 'uim-xim' 'mimic -t hello' 'spdsay hello' 'brlapi -s' 'fenrir -o' 'alsaloop -C hw:0' 'hdajacksensetest -a' 'iecset -c 0' 'alsatplg -c f' 'aplay -l' 'arecord -d 5'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

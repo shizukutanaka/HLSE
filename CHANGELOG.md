@@ -10856,6 +10856,13 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 381): ai/data + retro/emu primitives** —
+  AI/data tooling (karafka, lightrag, promptfoo, garak, helicone,
+  sqlfluff) and tracker/emulator (uade123, uade, resid, vgmplay,
+  klystrack, neko8, basic8, cel7, mame, shadps4, suyu, kega, blastem,
+  reicast, demul, fakenes, quicknes, punes, rocknes, nesicide, ksnes,
+  mynes, halfnes, nintendulator, virtuanes, jnes, smynes). mame gated;
+  resid space-bounded (residents). +33/36 checks.
 - **ALERT 45 (cycle 380): wayland/a11y + monitor primitives** —
   Wayland/ALS a11y (shikane, wvkbd, squeekboard, uim-, mimic, spdsay,
   brlapi, fenrir, alsaloop, hdajacksensetest, iecset, alsatplg, aplay,

@@ -15153,6 +15153,29 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "zenith") && ci_contains(text, " -")) ||
              ci_contains(text, "kafkatop") || ci_contains(text, "lrb")) {
         what = "monitor/misc primitive";
+        } else if (
+             /* cycle-381a: ai/data primitives */
+             ci_contains(text, "karafka") || ci_contains(text, "lightrag") ||
+             ci_contains(text, "promptfoo") || ci_contains(text, "garak") ||
+             ci_contains(text, "helicone") || ci_contains(text, "sqlfluff")) {
+        what = "ai/data primitive";
+        } else if (
+             /* cycle-381b: retro/emu primitives */
+             ci_contains(text, "uade123") || ci_contains(text, "uade") ||
+             ci_contains(text, "resid ") || ci_contains(text, "vgmplay") ||
+             ci_contains(text, "klystrack") || ci_contains(text, "neko8") ||
+             ci_contains(text, "basic8") || ci_contains(text, "cel7") ||
+             (ci_contains(text, "mame") && ci_contains(text, " -")) ||
+             ci_contains(text, "shadps4") || ci_contains(text, "suyu") ||
+             ci_contains(text, "kega") || ci_contains(text, "blastem") ||
+             ci_contains(text, "reicast") || ci_contains(text, "demul") ||
+             ci_contains(text, "fakenes") || ci_contains(text, "quicknes") ||
+             ci_contains(text, "punes") || ci_contains(text, "rocknes") ||
+             ci_contains(text, "nesicide") || ci_contains(text, "ksnes") ||
+             ci_contains(text, "mynes") || ci_contains(text, "halfnes") ||
+             ci_contains(text, "nintendulator") || ci_contains(text, "virtuanes") ||
+             ci_contains(text, "jnes") || ci_contains(text, "smynes")) {
+        what = "retro/emu primitive";
         }
 
         if (what) {
