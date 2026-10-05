@@ -527,6 +527,7 @@ check-warnings:
 # only; empty string — always true) and reports structural debt
 # (cross-block duplicates, label collisions, unbound short needles).
 lint-needles:
+	@python3 tests/dead_cross_needles.py --selftest
 	@python3 tests/lint_needles.py hlse_supply.c \
 		tests/cli_integration.sh tests/hlse_supply_tests.c
 

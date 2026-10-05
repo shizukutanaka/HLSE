@@ -104,6 +104,88 @@ def is_pure_or(part):
     return TOKEN_RE.search(part) is not None
 
 
+def _code_depths(src):
+    """Brace depth at every source offset, computed on a copy with
+    comments and string literals blanked so braces inside them do
+    not skew the count."""
+    def _blank(m):
+        return ''.join('\n' if c == '\n' else ' ' for c in m.group(0))
+    s = re.sub(r'//[^\n]*', _blank, src)
+    s = re.sub(r'/\*.*?\*/', _blank, s, flags=re.S)
+    s = re.sub(r'"(?:[^"\\]|\\.)*"',
+               lambda m: '"' + ''.join('\n' if c == '\n' else ' '
+                                       for c in m.group(0)[1:-1]) + '"', s)
+    s = re.sub(r"'(?:[^'\\]|\\.)*'",
+               lambda m: "'" + ''.join('\n' if c == '\n' else ' '
+                                       for c in m.group(0)[1:-1]) + "'", s)
+    depth = [0] * (len(s) + 1)
+    d = 0
+    for i, c in enumerate(s):
+        if c == '{':
+            d += 1
+        elif c == '}':
+            d -= 1
+        depth[i + 1] = d
+    return depth
+
+
+class ChainScope(object):
+    """else-if chain scoping for cross-condition ownership.
+
+    A condition's needles are 'owned' (provably absent) only for
+    the conditions evaluated AFTER it in the *same* else-if chain
+    — first-match-wins. Independent 'if' statements do not gate
+    each other (the multi-hold P8 chain is a flat run of 'if's:
+    every condition evaluates), and a pure-OR chain nested inside
+    a body never ran when its enclosing condition was false.
+
+    Tracking is per brace depth: 'if' opens a fresh chain at its
+    depth, '} else if' continues the chain at that depth, and
+    chains deeper than the current separator are stale (their
+    bodies already closed).
+    """
+
+    def __init__(self, src):
+        self.depth = _code_depths(src)
+        self.seps = list(BLOCK_RE.finditer(src))
+        self.owned = {}    # depth -> needles of earlier chain conditions
+        self.self_n = {}   # depth -> needles of the enclosing condition
+                           # (evaluated TRUE when its body runs — must
+                           # be excluded from the inner parts' context)
+
+    def _dpt(self, bi):
+        return self.depth[self.seps[bi - 1].end()]
+
+    def _elif(self, bi):
+        return 'else' in self.seps[bi - 1].group(0)
+
+    def eff(self, bi):
+        """Effective owned-needle context for part bi — call before
+        analyzing it; then learn() its pure-OR needles."""
+        dpt = self._dpt(bi)
+        for k in [k for k in self.owned if k > dpt]:
+            del self.owned[k]
+            self.self_n.pop(k, None)
+        if not self._elif(bi):
+            self.owned[dpt] = set()
+        self.self_n.pop(dpt, None)
+        eff = set()
+        for k, s in self.owned.items():
+            eff |= s
+            if k < dpt:
+                eff -= self.self_n.get(k, set())
+        return eff, dpt
+
+    def learn(self, dpt, needles):
+        """Record part dpt's own needles: earlier siblings' needles
+        stay absent for later chain conditions; this condition's
+        needles are PRESENT inside its own body, so they are kept
+        out of eff via self_n."""
+        if needles:
+            self.owned.setdefault(dpt, set()).update(needles)
+            self.self_n[dpt] = set(needles)
+
+
 class Analyzer(object):
     def __init__(self, part, owned):
         self.part = part
@@ -438,25 +520,73 @@ def dedup(part, owned, removed_lits):
     return fixed, c, dead
 
 
+_SELFTEST = """int ci_contains(const char*, const char*);
+void t(const char *text) {
+    if (ci_contains(text, "aaa") || ci_contains(text, "bbb")) { }
+    else if (ci_contains(text, "aaa") && ci_contains(text, "zzz")) { }
+    else if (ci_contains(text, "qqq")) { }
+}
+void u(const char *text) {
+    if (ci_contains(text, "ccc")) { }
+    if (ci_contains(text, "ccc")) { }
+    if (ci_contains(text, "ccc") || ci_contains(text, "ddd")) { }
+}
+void v(const char *text) {
+    if (ci_contains(text, "eee")) {
+        if (ci_contains(text, "fff") || ci_contains(text, "ggg")) { }
+    } else if (ci_contains(text, "fff") && ci_contains(text, "hhh")) { }
+}
+"""
+
+
+def selftest():
+    """ChainScope regression: same-chain elif gating must fire;
+    independent 'if's and inner-chain needles must not gate."""
+    parts = BLOCK_RE.split(_SELFTEST)
+    scope = ChainScope(_SELFTEST)
+    dead = []
+    for bi, part in enumerate(parts[1:], start=1):
+        eff, dpt = scope.eff(bi)
+        _, _, is_dead = Analyzer(part, eff).run()
+        dead.append(is_dead)
+        if is_pure_or(part):
+            scope.learn(dpt, {
+                NEEDLE_RE.search(m.group(0)).group(1)
+                for m in TOKEN_RE.finditer(part)
+                if m.lastgroup == 'call'})
+    # t: 'aaa' owned -> 'aaa && zzz' dead. u: three independent ifs,
+    # none dead. v: inner 'fff||ggg' must not own the outer elif.
+    want = [False, True, False, False, False, False, False, False, False]
+    if dead != want:
+        print("selftest: dead-map %s != %s" % (dead, want))
+        return 1
+    print("selftest: chain-scope semantics OK")
+    return 0
+
+
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == '--selftest':
+        return selftest()
     src = open(sys.argv[1], encoding='utf-8').read()
     parts = BLOCK_RE.split(src)
     delims = BLOCK_RE.findall(src)
-    owned = set()
+    scope = ChainScope(src)
     total = 0
     removed_lits = []
     dead_blocks = []
     new = [parts[0]]
     for bi, part in enumerate(parts[1:], start=1):
-        fixed, c, dead = dedup(part, owned, removed_lits)
+        eff, dpt = scope.eff(bi)
+        fixed, c, dead = dedup(part, eff, removed_lits)
         total += c
         if dead:
             dead_blocks.append(bi)
         new.append(fixed)
         if is_pure_or(part):
-            for m in TOKEN_RE.finditer(part):
-                if m.lastgroup == 'call':
-                    owned.add(NEEDLE_RE.search(m.group(0)).group(1))
+            scope.learn(dpt, {
+                NEEDLE_RE.search(m.group(0)).group(1)
+                for m in TOKEN_RE.finditer(part)
+                if m.lastgroup == 'call'})
     res = new[0]
     for d, p in zip(delims, new[1:]):
         res += d + p

@@ -10877,6 +10877,26 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 438 (deadness analysis scoped per else-if chain):** the
+  dead-needle model accumulated "owned" needles monotonically over
+  the whole file — sound while the P8 chain was first-match-wins,
+  wrong after cycle 437 flattened it into independent `if`s whose
+  later operands are legitimately reachable, and leaky even before
+  (one else-if chain's needles bled into unrelated chains below it,
+  and an enclosing condition's own needles were treated as absent
+  inside its body). `ChainScope` in tests/dead_cross_needles.py
+  tracks ownership per brace depth: `if (` opens a fresh chain,
+  `} else if` continues it, deeper chains are purged when control
+  returns shallower, and an ancestor's own pure-OR needles are
+  subtracted from the effective set seen by inner parts (they are
+  present, not absent). Verified both directions on a synthetic
+  fixture: same-chain elif gating still fires (true positive),
+  independent `if`s and inner-chain needles no longer gate (no
+  false positives — 0 removals on the real source). A
+  `--selftest` mode pins these three semantics and runs at the
+  head of `make lint-needles`, so a future regression in the
+  scope model fails the build gate instead of silently
+  mis-flagging. Lint unchanged otherwise: PASS, 698 labels.
 - **cycle 437 (P8 `what` multi-hold — secondary class hits now
   reported):** the 698-branch else-if chain in hlse_check_paste
   dropped the first-match label when several classes matched —

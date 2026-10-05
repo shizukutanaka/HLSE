@@ -129,10 +129,11 @@ def main():
     labels = defaultdict(int)
     risk_short = defaultdict(list)
     block_needles = []  # (bi, lname, [content needles]) for coverage
-    owned_cross = set()   # needles owned by earlier pure-OR blocks
+    scope = dcn.ChainScope(src)   # per-chain else-if ownership
     n_needles = 0
 
     for bi, part in enumerate(parts[1:], start=1):
+        eff, dpt = scope.eff(bi)
         needles = NEEDLE_RE.findall(part)
         n_needles += len(needles)
         label = WHAT_RE.search(part)
@@ -158,7 +159,7 @@ def main():
         if dead:
             fails.append("same-run dead disjunct(s): %d in block %d"
                          % (dead, bi))
-        an = dcn.Analyzer(part, owned_cross)
+        an = dcn.Analyzer(part, eff)
         _, ndrop, deadblock = an.run()
         if deadblock:
             fails.append("dead block: whole condition unreachable "
@@ -168,10 +169,10 @@ def main():
                          "(needle owned by earlier pure-OR block)"
                          % (ndrop, bi))
         if dcn.is_pure_or(part):
-            for m in dcn.TOKEN_RE.finditer(part):
-                if m.lastgroup == 'call':
-                    owned_cross.add(
-                        dcn.NEEDLE_RE.search(m.group(0)).group(1))
+            scope.learn(dpt, {
+                dcn.NEEDLE_RE.search(m.group(0)).group(1)
+                for m in dcn.TOKEN_RE.finditer(part)
+                if m.lastgroup == 'call'})
         cdrops, _ = cov.find_drops(cov.tokenize(part))
         if cdrops:
             fails.append("cover-dead needle(s): %d in block %d "
