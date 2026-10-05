@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-404: ebook/photogrammetry primitives
+for c in 'cr3 open' 'pocketbook -r read' 'nooklet read' 'fb2toepub conv' 'epubcf check' 'epubpack pack' 'epubrepack repack' 'flightcrew check' 'epubmerge merge' 'fanfictionebook dl' 'marvin -r read' 'epubli pub' 'ibooks open' 'stanza -r read' 'desktoppr run' 'pages2epub conv' 'mobipocket conv' 'apprenticeharper run' 'epublib read' 'libebook read' 'epubz zip' 'comicinfo tag' 'comicrack tag' 'comicvine fetch' 'chunkystream stream' 'ubooquity serve' 'qbook open' 'booklibrarian org' 'librera read' 'bibliocommons cat' 'ldcm read' 'scythe -r run' 'fanficfare dl' 'ircbook run' 'zlibrary dl' 'dotepub conv' 'opds serve' 'cops -s serve' 'lanraragi serve' 'shoko serve' 'stashapp serve' 'mylar run' 'mylar3 run' 'kapowarr run' 'jellyseerr serve' 'petio serve' 'requestrr serve' 'varken serve' 'ebooksis run' 'linkace serve' 'karakeep serve' 'hoarder -r run' 'omnivore -r run' 'pinchflat run' 'metube serve'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'detectfeatures run' 'describefeatures run' 'visualsfm run' 'interfescene run' 'viewscene view' 'scene2pset conv' 'scn2img conv' 'smvs run' 'theia -r run' 'theia_main run' 'theia_mapper map' 'theia_track_generator gen' 'theia_reconstruction_estimator run' 'theia_compare_reconstructions cmp' 'theia_view_reconstruction view' 'theia_build_reconstruction build' 'theia_gmm run' 'theia_convert_reconstruction_file conv' 'orbslam3 run' 'orb_slam run' 'orb_slam2 run' 'orb_slam3 run' 'okvis run' 'okvis2 run' 'ccviewer view' 'cloud_compariss cmp' 'gospy run' 'gwd run' 'familytree run' 'legacyfamilytree run' 'reunion -r run' 'genealodzy run' 'jgenea run' 'familieroots run' 'flttracer run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'pocketbook of poems' 'stanza in poem' 'scythe cutting tool' 'cops tv show' 'marvin gaye song' 'reunion with family' 'omnivore diet' 'hoarder house tv' 'theia ancient titan'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-403: voip/medical primitives
 for c in 'misdn run' 'astrisk -r cli' 'freeswitch start' 'fs_ivrd run' 'mod_sofia load' 'sofiasip run' 'sofia -c run' 'osip2 run' 'osipua call' 'sipfrag send' 'zrtp run' 'zfone run' 'pjsip run' 'homer -c capture' 'sipml5 call' 'sipgo run' 'callweaver run' 'callgen gen' 'callgen518 gen' 'smpp bind' 'smppcsmp run' 'emserver run' 'gsmsms send' 'atemu run'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

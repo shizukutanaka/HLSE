@@ -16129,6 +16129,65 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mris_mesh") || ci_contains(text, "mris_seg2annot") ||
              ci_contains(text, "mris_smooth") || ci_contains(text, "fsvv")) {
         what = "medical-imaging primitive";
+        } else if (
+             /* cycle-404a: ebook/library primitives */
+             ci_contains(text, "cr3 ") ||
+             (ci_contains(text, "pocketbook") && ci_contains(text, " -")) ||
+             ci_contains(text, "nooklet") || ci_contains(text, "fb2toepub") ||
+             ci_contains(text, "epubcf") || ci_contains(text, "epubpack") ||
+             ci_contains(text, "epubrepack") || ci_contains(text, "flightcrew") ||
+             ci_contains(text, "epubmerge") || ci_contains(text, "fanfictionebook") ||
+             (ci_contains(text, "marvin") && ci_contains(text, " -")) ||
+             ci_contains(text, "epubli") || ci_contains(text, "ibooks") ||
+             (ci_contains(text, "stanza") && ci_contains(text, " -")) ||
+             ci_contains(text, "desktoppr") || ci_contains(text, "pages2epub") ||
+             ci_contains(text, "mobipocket") || ci_contains(text, "apprenticeharper") ||
+             ci_contains(text, "epublib") || ci_contains(text, "libebook") ||
+             ci_contains(text, "epubz") || ci_contains(text, "comicinfo") ||
+             ci_contains(text, "comicrack") || ci_contains(text, "comicvine") ||
+             ci_contains(text, "chunkystream") || ci_contains(text, "ubooquity") ||
+             ci_contains(text, "qbook") || ci_contains(text, "booklibrarian") ||
+             ci_contains(text, "librera") || ci_contains(text, "bibliocommons") ||
+             ci_contains(text, "ldcm") ||
+             (ci_contains(text, "scythe") && ci_contains(text, " -")) ||
+             ci_contains(text, "fanficfare") || ci_contains(text, "ircbook") ||
+             ci_contains(text, "zlibrary") || ci_contains(text, "dotepub") ||
+             ci_contains(text, "opds") ||
+             (ci_contains(text, "cops") && ci_contains(text, " -")) ||
+             ci_contains(text, "lanraragi") || ci_contains(text, "shoko") ||
+             ci_contains(text, "stashapp") || ci_contains(text, "mylar") ||
+             ci_contains(text, "mylar3") || ci_contains(text, "kapowarr") ||
+             ci_contains(text, "jellyseerr") || ci_contains(text, "petio") ||
+             ci_contains(text, "requestrr") || ci_contains(text, "varken") ||
+             ci_contains(text, "ebooksis") || ci_contains(text, "linkace") ||
+             ci_contains(text, "karakeep") ||
+             (ci_contains(text, "hoarder") && ci_contains(text, " -")) ||
+             (ci_contains(text, "omnivore") && ci_contains(text, " -")) ||
+             ci_contains(text, "pinchflat") || ci_contains(text, "metube")) {
+        what = "ebook/library primitive";
+        } else if (
+             /* cycle-404b: photogrammetry/genealogy primitives */
+             ci_contains(text, "detectfeatures") || ci_contains(text, "describefeatures") ||
+             ci_contains(text, "visualsfm") || ci_contains(text, "interfescene") ||
+             ci_contains(text, "viewscene") || ci_contains(text, "scene2pset") ||
+             ci_contains(text, "scn2img") || ci_contains(text, "smvs") ||
+             (ci_contains(text, "theia") && ci_contains(text, " -")) ||
+             ci_contains(text, "theia_main") || ci_contains(text, "theia_mapper") ||
+             ci_contains(text, "theia_track_generator") || ci_contains(text, "theia_reconstruction_estimator") ||
+             ci_contains(text, "theia_compare_reconstructions") || ci_contains(text, "theia_view_reconstruction") ||
+             ci_contains(text, "theia_build_reconstruction") || ci_contains(text, "theia_gmm") ||
+             ci_contains(text, "theia_convert_reconstruction_file") ||
+             ci_contains(text, "orbslam3") || ci_contains(text, "orb_slam") ||
+             ci_contains(text, "orb_slam2") || ci_contains(text, "orb_slam3") ||
+             ci_contains(text, "okvis") || ci_contains(text, "okvis2") ||
+             ci_contains(text, "ccviewer") || ci_contains(text, "cloud_compariss") ||
+             ci_contains(text, "gospy") || ci_contains(text, "gwd ") ||
+             ci_contains(text, "familytree") || ci_contains(text, "legacyfamilytree") ||
+             (ci_contains(text, "reunion") && ci_contains(text, " -")) ||
+             ci_contains(text, "genealodzy") ||
+             ci_contains(text, "jgenea") || ci_contains(text, "familieroots") ||
+             ci_contains(text, "flttracer")) {
+        what = "photogrammetry primitive";
         }
 
         if (what) {

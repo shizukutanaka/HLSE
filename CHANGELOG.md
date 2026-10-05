@@ -10856,6 +10856,27 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 404): ebook/photogrammetry primitives**
+  — ebook/library (cr3, pocketbook, nooklet, fb2toepub, epubcf,
+  epubpack, epubrepack, flightcrew, epubmerge, fanfictionebook,
+  marvin, epubli, ibooks, stanza, desktoppr, pages2epub,
+  mobipocket, apprenticeharper, epublib, libebook, epubz,
+  comicinfo, comicrack, comicvine, chunkystream, ubooquity,
+  qbook, booklibrarian, librera, bibliocommons, ldcm, scythe,
+  fanficfare, ircbook, zlibrary, dotepub, opds, cops,
+  lanraragi, shoko, stashapp, mylar, mylar3, kapowarr,
+  jellyseerr, petio, requestrr, varken, ebooksis, linkace,
+  karakeep, hoarder, omnivore, pinchflat, metube),
+  photogrammetry/genealogy (detectfeatures, describefeatures,
+  visualsfm, interfescene, viewscene, scene2pset, scn2img,
+  smvs, theia, theia_main, theia_mapper, theia_track_generator,
+  theia_reconstruction_estimator, theia_compare_reconstructions,
+  theia_view_reconstruction, theia_build_reconstruction,
+  theia_gmm, theia_convert_reconstruction_file, orbslam3,
+  orb_slam, orb_slam2, orb_slam3, okvis, okvis2, ccviewer,
+  cloud_compariss, gospy, gwd, familytree, legacyfamilytree,
+  reunion, genealodzy, jgenea, familieroots, flttracer).
+  lifelines dropped (existing FP guard). +94/103 checks.
 - **ALERT 45 (cycle 403): voip/medical primitives**
   — voip/pbx (misdn, astrisk, freeswitch, fs_ivrd, mod_sofia,
   sofiasip, sofia, osip2, osipua, sipfrag, zrtp, zfone, pjsip,
