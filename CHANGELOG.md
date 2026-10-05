@@ -10877,6 +10877,24 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 426 (cover-dead needle purge + FAIL guard):**
+  inside one '||' run at one paren depth, a positive needle that
+  is a proper substring of a sibling needle can never add a hit —
+  'install' already fires on every input containing
+  'install-tiktok'. tests/cover_needles.py runs the same
+  contiguous-run model as dedup_needles.py and removes the
+  longer literal plus one '||' (first element drops 'lit ||',
+  others drop '|| lit'; overlapping spans merged). Positivity,
+  connector type, and ' -' gates are respected — only || runs,
+  only positive calls, never flag predicates. Ran it: **418
+  cover-dead needles removed** (icmptunnel>ptunnel,
+  sgminer/cgminer/bfgminer>gminer, telinit 6>init 6,
+  get-adgroupmember>get-adgroup, nosqlmap>sqlmap,
+  x0vncserver>vncserver, ...), zero empty parens, F1 1.000
+  unchanged. lint-needles now FAILs on cover-dead needles via
+  the shared find_drops/tokenize — the fourth dead-code class
+  closed by the lint (uppercase, same-run dup, cross-block
+  unreachable, same-run cover).
 - **cycle 425 (cross-block unreachable-operand purge + FAIL guard):**
   else-if chains are first-match-wins, so a needle owned by an
   earlier pure-OR block is always false in a later block's

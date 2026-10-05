@@ -993,8 +993,8 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "http") ||
                     ci_contains(text, "curl ") || ci_contains(text, "bash"))) {
             what = "osascript AppleScript shell execution (macOS ClickFix)";
-        } else if ((ci_contains(text, "python") || ci_contains(text, "python3")) &&
-                   (ci_contains(text, "urllib") || ci_contains(text, "urllib2") ||
+        } else if ((ci_contains(text, "python") ) &&
+                   (ci_contains(text, "urllib")  ||
                     ci_contains(text, "urlopen") || ci_contains(text, "requests.get")) &&
                    (ci_contains(text, "exec(") || ci_contains(text, "eval(") ||
                     ci_contains(text, ".read()") || ci_contains(text, "subprocess"))) {
@@ -1025,7 +1025,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, " server"))) {
             what = "chisel reverse tunnel (covert channel / LOLBin)";
         } else if (ci_contains(text, "msiexec") &&
-                   (ci_contains(text, "/q") || ci_contains(text, "/quiet")) &&
+                   (ci_contains(text, "/q") ) &&
                    ci_contains(text, "http")) {
             what = "msiexec silent remote MSI install (ClickFix)";
         } else if (ci_contains(text, "expand") &&
@@ -1046,8 +1046,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "invoke-webrequest") ||
                     ci_contains(text, "invoke-restmethod")) &&
                    (ci_contains(text, "iex") ||
-                    ci_contains(text, "invoke-expression") ||
-                    ci_contains(text, "| iex"))) {
+                    ci_contains(text, "invoke-expression") )) {
             what = "PowerShell download-execute cradle (iwr|iex)";
         } else if ((ci_contains(text, "pip install") ||
                     ci_contains(text, "pip3 install") ||
@@ -1090,7 +1089,7 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "http") || ci_contains(text, "\\\\"))) {
             what = "cabinet/extexport remote file pull (LOLBin)";
         } else if (ci_contains(text, "syncappvpublishingserver") &&
-                   (ci_contains(text, "n;") || ci_contains(text, ";") ||
+                   ( ci_contains(text, ";") ||
                     ci_contains(text, "cmd") || ci_contains(text, "powershell"))) {
             what = "SyncAppvPublishingServer sync-command execution (LOLBin)";
         } else if (ci_contains(text, "wbadmin") &&
@@ -1112,7 +1111,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "bootstatuspolicy"))) {
             what = "bcdedit boot/recovery tampering (LOLBin)";
         } else if (ci_contains(text, "wevtutil") &&
-                   (ci_contains(text, " cl ") || ci_contains(text, "clear-log") ||
+                   ( ci_contains(text, "clear-log") ||
                     ci_contains(text, " cl"))) {
             what = "wevtutil event-log clearing (anti-forensics)";
         } else if (ci_contains(text, "wusa") &&
@@ -1422,8 +1421,7 @@ hlse_check_paste(const char *text) {
          * bypass that -enc/-w-hidden gates alone do not cover   */
         } else if ((ci_contains(text, "powershell") || ci_contains(text, "pwsh")) &&
                    (ci_contains(text, "-ep ") || ci_contains(text, "-ex ") ||
-                    ci_contains(text, "-exec") ||
-                    ci_contains(text, "-executionpolicy")) &&
+                    ci_contains(text, "-exec") ) &&
                    (ci_contains(text, "bypass") ||
                     ci_contains(text, "unrestricted"))) {
             what = "powershell ExecutionPolicy bypass (LOLBin)";
@@ -1460,7 +1458,7 @@ hlse_check_paste(const char *text) {
         /* netsh firewall/advfirewall off/disable/allowedprogram —
          * firewall kill or punch-through                          */
         } else if (ci_contains(text, "netsh") &&
-                   (ci_contains(text, "advfirewall") || ci_contains(text, "firewall")) &&
+                   ( ci_contains(text, "firewall")) &&
                    (ci_contains(text, "state off") || ci_contains(text, "opmode disable") ||
                     ci_contains(text, "allowedprogram") || ci_contains(text, "portopening") ||
                     ci_contains(text, "add helper"))) {
@@ -1560,7 +1558,7 @@ hlse_check_paste(const char *text) {
         /* ssh tunneling — -R reverse tunnel, -D dynamic SOCKS,
          * -Nf/-fN background-no-command; -L stays unflagged
          * (ci can't split -L forward from -l login)              */
-        } else if ((ci_contains(text, "ssh") || ci_contains(text, "autossh")) &&
+        } else if ((ci_contains(text, "ssh") ) &&
                    (ci_contains(text, "-r ") || ci_contains(text, " -d ") ||
                     ci_contains(text, "-nf") || ci_contains(text, "-fn"))) {
             what = "ssh tunnel / reverse forward";
@@ -1583,7 +1581,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "-p") || ci_contains(text, "-n"))) {
             what = "nsenter namespace escape";
         } else if (ci_contains(text, "unshare") &&
-                   (ci_contains(text, "-u") || ci_contains(text, "--user") ||
+                   (ci_contains(text, "-u")  ||
                     ci_contains(text, "--net") || ci_contains(text, "--pid"))) {
             what = "unshare userns escape";
         } else if (ci_contains(text, "docker") &&
@@ -1749,8 +1747,7 @@ hlse_check_paste(const char *text) {
             what = "git config/ext-transport exec";
         } else if (ci_contains(text, "ssh") &&
                    (ci_contains(text, "proxycommand") ||
-                    ci_contains(text, "localcommand") ||
-                    ci_contains(text, "permitlocalcommand"))) {
+                    ci_contains(text, "localcommand") )) {
             what = "ssh ProxyCommand/LocalCommand exec";
         } else if (ci_contains(text, "find") &&
                    (ci_contains(text, "-exec ") || ci_contains(text, "-execdir"))) {
@@ -1828,8 +1825,7 @@ hlse_check_paste(const char *text) {
             what = "security module unload";
         } else if (ci_contains(text, "kill") && ci_contains(text, "-9 -1")) {
             what = "kill-all (-9 -1) DoS";
-        } else if (ci_contains(text, "init 0") || ci_contains(text, "init 6") ||
-                   ci_contains(text, "telinit 0") || ci_contains(text, "telinit 6")) {
+        } else if (ci_contains(text, "init 0") || ci_contains(text, "init 6")  ) {
             what = "runlevel halt/reboot";
         } else if (ci_contains(text, "printenv")) {
             what = "printenv env/secrets dump";
@@ -1848,7 +1844,7 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "set-time") || ci_contains(text, "set-ntp"))) {
             what = "timedatectl clock tamper";
         } else if (ci_contains(text, "mount") &&
-                   (ci_contains(text, "-t cifs") || ci_contains(text, "-t nfs") ||
+                   ( ci_contains(text, "-t nfs") ||
                     ci_contains(text, "-t smb") || ci_contains(text, "cifs"))) {
             what = "remote filesystem mount";
         } else if (ci_contains(text, "sshfs") && ci_contains(text, ":")) {
@@ -1891,7 +1887,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "dirb") || ci_contains(text, "dirsearch") ||
                    ci_contains(text, "feroxbuster") || ci_contains(text, "dalfox")) {
             what = "recon/scan attack tool";
-        } else if (ci_contains(text, "ettercap") || ci_contains(text, "bettercap") ||
+        } else if (ci_contains(text, "ettercap")  ||
                    ci_contains(text, "dsniff") || ci_contains(text, "mitmproxy") ||
                    ci_contains(text, "sslstrip") || ci_contains(text, "sslsplit") ||
                    ci_contains(text, "responder.py") || ci_contains(text, "mitm6")) {
@@ -1901,8 +1897,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "frpc") || ci_contains(text, "frps") ||
                    ci_contains(text, "ligolo") || ci_contains(text, "sshuttle") ||
                    ci_contains(text, "dnscat") || ci_contains(text, "dns2tcp") ||
-                   ci_contains(text, "ptunnel") || ci_contains(text, "icmpsh") ||
-                   ci_contains(text, "icmptunnel") || ci_contains(text, "iodined") ||
+                   ci_contains(text, "ptunnel") || ci_contains(text, "icmpsh")  || ci_contains(text, "iodined") ||
                    ci_contains(text, "proxychains") || ci_contains(text, "torsocks") ||
                    ci_contains(text, "tshd") || ci_contains(text, "zrok") ||
                    (ci_contains(text, "gost") && ci_contains(text, " -")) ||
@@ -1983,7 +1978,7 @@ hlse_check_paste(const char *text) {
          * the non-registry-source form (URL/git+/local-bundle) is
          * the deliverable: postinstall hooks, setup.py, or maint
          * scripts run the attacker's bytes                  */
-        } else if ((((ci_contains(text, "npm") || ci_contains(text, "pnpm")) &&
+        } else if ((((ci_contains(text, "npm") ) &&
                     (ci_contains(text, " install ") || ci_contains(text, " add ") ||
                      ci_contains(text, " i "))) ||
                    ci_contains(text, "yarn add ") || ci_contains(text, "yarn install ") ||
@@ -2012,7 +2007,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, " require ") && ci_contains(text, "http"))) {
             what = "remote package install/exec";
         /* ── OS package remote/local-bundle installs ── */
-        } else if ((ci_contains(text, "apt") || ci_contains(text, "apt-get")) &&
+        } else if ((ci_contains(text, "apt") ) &&
                    ci_contains(text, " install ") &&
                    (ci_contains(text, ".deb") || ci_contains(text, "http"))) {
             what = "apt bundle/URL install";
@@ -2039,7 +2034,7 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, ".snap") ||
                      ci_contains(text, "--dangerous"))) ||
                    (ci_contains(text, "flatpak") && ci_contains(text, " install ") &&
-                    (ci_contains(text, "http") || ci_contains(text, ".flatpakref") ||
+                    (ci_contains(text, "http")  ||
                      ci_contains(text, ".flatpak"))) ||
                    (ci_contains(text, "choco") && ci_contains(text, " install ") &&
                     ci_contains(text, ".nupkg"))) {
@@ -2070,9 +2065,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "ethminer") || ci_contains(text, "bzminer") ||
                    ci_contains(text, "lolminer") || ci_contains(text, "phoenixminer") ||
                    ci_contains(text, "nanominer") || ci_contains(text, "gminer") ||
-                   ci_contains(text, "teamredminer") || ci_contains(text, "nbminer") ||
-                   ci_contains(text, "cgminer") || ci_contains(text, "sgminer") ||
-                   ci_contains(text, "bfgminer")  ||
+                   ci_contains(text, "teamredminer") || ci_contains(text, "nbminer")     ||
                    ci_contains(text, "claymore -o") || ci_contains(text, "claymore.exe") ||
                    ci_contains(text, "trex miner") ||
                    ci_contains(text, "stratum+") || ci_contains(text, "stratum:") ||
@@ -2151,8 +2144,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "luajit -e") || ci_contains(text, "gawk -e") ||
                     ci_contains(text, "rscript -e") || ci_contains(text, "pwsh -c")) &&
                    (ci_contains(text, "child_process") || ci_contains(text, "os.system") ||
-                    ci_contains(text, "subprocess") || ci_contains(text, "os.popen") ||
-                    ci_contains(text, "pty.spawn") || ci_contains(text, "system(") ||
+                    ci_contains(text, "subprocess") || ci_contains(text, "os.popen")  || ci_contains(text, "system(") ||
                     ci_contains(text, "exec(") || ci_contains(text, "popen(") ||
                     ci_contains(text, "spawn") || ci_contains(text, "shell_exec") ||
                     ci_contains(text, "passthru(") || ci_contains(text, "getruntime") ||
@@ -2178,7 +2170,7 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "swapoff -") ||
                    ci_contains(text, "swapoff /")) {
             what = "swap disable (ransomware-prep class)";
-        } else if (ci_contains(text, "ip netns exec") ||
+        } else if (
                    ci_contains(text, "netns exec") ||
                    (ci_contains(text, "setpriv") &&
                     (ci_contains(text, "--reuid") || ci_contains(text, "--inh-caps") ||
@@ -2226,8 +2218,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "perl5lib=") ||
                    ci_contains(text, "perl5db=") ||
                    ci_contains(text, "java_tool_options=") ||
-                   ci_contains(text, "_java_options=") ||
-                   ci_contains(text, "jdk_java_options=") ||
+                   ci_contains(text, "_java_options=")  ||
                    ci_contains(text, "phprc=") ||
                    ci_contains(text, "php_ini_scan_dir=") ||
                    ci_contains(text, "gem_home=") ||
@@ -2309,16 +2300,14 @@ hlse_check_paste(const char *text) {
         } else if (ci_contains(text, "add-type") ||
                    ci_contains(text, "assembly]::load") ||
                    ci_contains(text, "assembly.load") ||
-                   ci_contains(text, "loadwithpartialname") ||
-                   ci_contains(text, "assembly]::loadfrom") ||
-                   ci_contains(text, "assembly]::loadfile")) {
+                   ci_contains(text, "loadwithpartialname")  ) {
             what = "PowerShell/.NET in-memory assembly load";
         } else if ((ci_contains(text, "new-service") &&
                     ci_contains(text, "-binarypathname")) ||
                    ci_contains(text, "register-scheduledtask") ||
                    ci_contains(text, "new-scheduledtask") ||
                    ci_contains(text, "set-scheduledtask") ||
-                   ((ci_contains(text, "new-itemproperty") ||
+                   ((
                      ci_contains(text, "set-itemproperty") ||
                      ci_contains(text, "new-item")) &&
                     (ci_contains(text, "\\run") || ci_contains(text, "runonce") ||
@@ -2434,8 +2423,7 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "busybox") &&
                     (ci_contains(text, "poweroff") || ci_contains(text, "halt") ||
                      ci_contains(text, "reboot"))) ||
-                   ci_contains(text, "init 1") || ci_contains(text, "init s")  || ci_contains(text, "telinit 1") ||
-                   ci_contains(text, "telinit s")  ||
+                   ci_contains(text, "init 1") || ci_contains(text, "init s")     ||
                    ci_contains(text, "reboot -") || ci_contains(text, "reboot now") ||
                    ci_contains(text, "poweroff -") || ci_contains(text, "halt -") ||
                    (ci_contains(text, "shutdown") &&
@@ -2550,8 +2538,7 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, "-f x11grab") || ci_contains(text, "avfoundation") ||
                      ci_contains(text, "-f pulse") || ci_contains(text, "-f alsa") ||
                      ci_contains(text, "-f gdigrab") || ci_contains(text, "-f v4l2") ||
-                     ci_contains(text, "-f dshow"))) ||
-                   ci_contains(text, "parecord") || ci_contains(text, "arecord") ||
+                     ci_contains(text, "-f dshow"))) || ci_contains(text, "arecord") ||
                    ci_contains(text, "parec") ||
                    (ci_contains(text, "sox") &&
                     (ci_contains(text, " -d") || ci_contains(text, " -t"))) ||
@@ -2563,8 +2550,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "teleconsole") || ci_contains(text, "sish") ||
                    ci_contains(text, "wstunnel") || ci_contains(text, "regeorg") ||
                    ci_contains(text, "pivotnacci") || ci_contains(text, "wetty") ||
-                   ci_contains(text, "x11vnc") || ci_contains(text, "vncserver") ||
-                   ci_contains(text, "x0vncserver") || ci_contains(text, "tigervnc") ||
+                   ci_contains(text, "x11vnc") || ci_contains(text, "vncserver")  || ci_contains(text, "tigervnc") ||
                    ci_contains(text, "wayvnc") || ci_contains(text, "bpftool") ||
                    ci_contains(text, "bpftrace")) {
             what = "web-terminal/VNC/eBPF backdoor primitive";
@@ -2637,8 +2623,7 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "robocopy") && ci_contains(text, " /b")) ||
                    (ci_contains(text, "runas") && ci_contains(text, "/savecred")) ||
                    (ci_contains(text, "sqlite3") &&
-                    (ci_contains(text, "cookies") || ci_contains(text, "logins") ||
-                     ci_contains(text, "moz_logins") || ci_contains(text, "login data") ||
+                    (ci_contains(text, "cookies") || ci_contains(text, "logins")  || ci_contains(text, "login data") ||
                      ci_contains(text, "web data") || ci_contains(text, "places.sqlite"))) ||
                    (ci_contains(text, "msbuild") &&
                     (ci_contains(text, " \\\\") || ci_contains(text, "http"))) ||
@@ -2939,8 +2924,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "grub-set-default") ||
                    (ci_contains(text, "dracut") &&
                     (ci_contains(text, "--add") ||
-                     ci_contains(text, "--install") ||
-                     ci_contains(text, "--add-drivers") ||
+                     ci_contains(text, "--install")  ||
                      ci_contains(text, "--kernel-image"))) ||
                    (ci_contains(text, "realm") &&
                     (ci_contains(text, " join") ||
@@ -2974,7 +2958,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, "modzone") || ci_contains(text, "signing") ||
                      ci_contains(text, "halt") || ci_contains(text, "stop"))) ||
                    (ci_contains(text, "unbound-control") &&
-                    (ci_contains(text, "reload") || ci_contains(text, "load") ||
+                    ( ci_contains(text, "load") ||
                      ci_contains(text, "flush") || ci_contains(text, "stub") ||
                      ci_contains(text, "forward"))) ||
                    ci_contains(text, "knotc") ||
@@ -3080,8 +3064,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "invoke-sharphound") ||
                    ci_contains(text, "invoke-recon") ||
                    ci_contains(text, "get-aduser") ||
-                   ci_contains(text, "get-adcomputer") ||
-                   ci_contains(text, "get-adgroupmember") ||
+                   ci_contains(text, "get-adcomputer")  ||
                    ci_contains(text, "get-addomain") ||
                    ci_contains(text, "get-forest") ||
                    ci_contains(text, "get-domaintrust") ||
@@ -3097,8 +3080,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "remove-aduser") ||
                    ci_contains(text, "remove-adcomputer") ||
                    ci_contains(text, "remove-adgroupmember") ||
-                   ci_contains(text, "get-adgroup") ||
-                   ci_contains(text, "get-addomaincontroller") ||
+                   ci_contains(text, "get-adgroup")  ||
                    ci_contains(text, "set-adaccountpassword") ||
                    ci_contains(text, "enable-adaccount") ||
                    ci_contains(text, "unlock-adaccount") ||
@@ -3229,8 +3211,7 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "fltmc") &&
                     (ci_contains(text, "unload") ||
                      ci_contains(text, "detach"))) ||
-                   ci_contains(text, "lodctr") ||
-                   ci_contains(text, "unlodctr") ||
+                   ci_contains(text, "lodctr")  ||
                    (ci_contains(text, "psr") &&
                     (ci_contains(text, " /") ||
                      ci_contains(text, " -"))) ||
@@ -3354,8 +3335,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, "vcan") ||
                      ci_contains(text, "vxcan") ||
                      ci_contains(text, "geneve") ||
-                     ci_contains(text, "erspan") ||
-                     ci_contains(text, "gretap") ||
+                     ci_contains(text, "erspan")  ||
                      ci_contains(text, "vti") ||
                      ci_contains(text, "nlmon") ||
                      ci_contains(text, "ipoib"))) ||
@@ -3449,8 +3429,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "adidnsdump") ||
                    ci_contains(text, "dnstool") ||
                    ci_contains(text, "coercer") ||
-                   ci_contains(text, "dpapi") ||
-                   ci_contains(text, "sharpdpapi") ||
+                   ci_contains(text, "dpapi")  ||
                    ci_contains(text, "sharpsccm") ||
                    ci_contains(text, "sccmhunter") ||
                    ci_contains(text, "azurehound") ||
@@ -3504,8 +3483,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "cmsmap") ||
                    ci_contains(text, "sqlmap") ||
                    ci_contains(text, "ghauri") ||
-                   ci_contains(text, "commix") ||
-                   ci_contains(text, "nosqlmap") ||
+                   ci_contains(text, "commix")  ||
                    ci_contains(text, "xsstrike") ||
                    ci_contains(text, "dalfox") ||
                    ci_contains(text, "skipfish") ||
@@ -3545,8 +3523,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "sngrep") ||
                    ci_contains(text, "tcpreplay") ||
                    ci_contains(text, "tcprewrite") ||
-                   ci_contains(text, "bittwist") ||
-                   ci_contains(text, "bittwiste") ||
+                   ci_contains(text, "bittwist")  ||
                    ci_contains(text, "packeth") ||
                    ci_contains(text, "scapy") ||
                    ci_contains(text, "ysoserial")  ||
@@ -3620,9 +3597,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "efspotato") ||
                    ci_contains(text, "genericpotato") ||
                    ci_contains(text, "badpotato") ||
-                   ci_contains(text, "hotpotato") ||
-                   ci_contains(text, "sharpprintspoofer") ||
-                   ci_contains(text, "juicypotatong") ||
+                   ci_contains(text, "hotpotato")   ||
                    ci_contains(text, "kube-hunter") ||
                    ci_contains(text, "peirates") ||
                    ci_contains(text, "kubesploit") ||
@@ -3924,8 +3899,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, "disable") ||
                      ci_contains(text, "setdestination") ||
                      ci_contains(text, "removedestination") ||
-                     ci_contains(text, "thinlocalsnapshots") ||
-                     ci_contains(text, "deletelocalsnapshots") ||
+                     ci_contains(text, "thinlocalsnapshots")  ||
                      ci_contains(text, "stopbackup") ||
                      ci_contains(text, "exclude"))) ||
                    (ci_contains(text, "softwareupdate") &&
@@ -4310,8 +4284,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " drop"))) ||
                    (ci_contains(text, "bq ") &&
                     (ci_contains(text, " rm") ||
-                     ci_contains(text, " delete") ||
-                     ci_contains(text, " rm -rf"))) ||
+                     ci_contains(text, " delete") )) ||
                    (ci_contains(text, "snowsql") &&
                     (ci_contains(text, "drop ") ||
                      ci_contains(text, "delete "))) ||
@@ -4364,10 +4337,8 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "oras") &&
                     ci_contains(text, " push")) ||
                    (ci_contains(text, "jfrog") &&
-                    (ci_contains(text, " rt u") ||
-                     ci_contains(text, " rt upload") ||
-                     ci_contains(text, " rt del") ||
-                     ci_contains(text, " rt delete"))) ||
+                    (ci_contains(text, " rt u")  ||
+                     ci_contains(text, " rt del") )) ||
                    (ci_contains(text, "mvn") &&
                     (ci_contains(text, " deploy") ||
                      ci_contains(text, " release"))) ||
@@ -4400,8 +4371,7 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "fly ") &&
                     (ci_contains(text, "set-pipeline") ||
                      ci_contains(text, "destroy-pipeline") ||
-                     ci_contains(text, " hijack") ||
-                     ci_contains(text, " unpause") ||
+                     ci_contains(text, " hijack")  ||
                      ci_contains(text, "pause") ||
                      ci_contains(text, "trigger-job") ||
                      ci_contains(text, "validate-pipeline"))) ||
@@ -4411,8 +4381,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " scale") ||
                      ci_contains(text, " secrets") ||
                      ci_contains(text, " ssh"))) ||
-                   (ci_contains(text, "jenkins-cli") ||
-                    ci_contains(text, "jenkins-cli.jar")) ||
+                   (ci_contains(text, "jenkins-cli") ) ||
                    (ci_contains(text, "gitlab-runner") &&
                     (ci_contains(text, " register") ||
                      ci_contains(text, " unregister") ||
@@ -5182,7 +5151,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " cleanup") ||
                      ci_contains(text, " full"))) ||
                    (ci_contains(text, "kopia") &&
-                    (ci_contains(text, " snapshot delete") ||
+                    (
                      ci_contains(text, " delete") ||
                      ci_contains(text, " maintenance"))) ||
                    ci_contains(text, "bconsole") ||
@@ -5203,8 +5172,7 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, " /") ||
                      ci_contains(text, " -"))) ||
                    ci_contains(text, "ktutil") ||
-                   ci_contains(text, "kadmin") ||
-                   ci_contains(text, "msktutil") ||
+                   ci_contains(text, "kadmin")  ||
                    (ci_contains(text, "systemd-run") &&
                     (ci_contains(text, "--pty") ||
                      ci_contains(text, "--uid") ||
@@ -5364,8 +5332,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " -w hidden") ||
                      ci_contains(text, " -windowstyle hidden"))) ||
                    (ci_contains(text, "deno") &&
-                    (ci_contains(text, " run ") ||
-                     ci_contains(text, " run -") ||
+                    (ci_contains(text, " run ")  ||
                      ci_contains(text, " eval ") ||
                      ci_contains(text, " task "))) ||
                    (ci_contains(text, "bun ") &&
@@ -5859,8 +5826,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "flood_mld") ||
             ci_contains(text, "flood_dhcpc6") ||
             ci_contains(text, "flood_rs6") ||
-            ci_contains(text, "flood_advertise6") ||
-            ci_contains(text, "flood_redir6") ||
+            ci_contains(text, "flood_advertise6")  ||
             ci_contains(text, "flood_solicitate6") ||
             ci_contains(text, "flood_router26") ||
             ci_contains(text, "fake_router6") ||
@@ -5874,8 +5840,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "ndpexhaust") ||
             ci_contains(text, "thcping6") ||
             ci_contains(text, "thcsyn6") ||
-            ci_contains(text, "smurf6") ||
-            ci_contains(text, "rsmurf6") ||
+            ci_contains(text, "smurf6")  ||
             ci_contains(text, "toobig6") ||
             ci_contains(text, "trace6 ") ||
             ci_contains(text, "fuzz_ip6") ||
@@ -5901,8 +5866,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "swanctl") ||
             ci_contains(text, "racoon") ||
             ci_contains(text, "fcrackzip") ||
-            ci_contains(text, "pdfcrack") ||
-            ci_contains(text, "rarcrack") ||
+            ci_contains(text, "pdfcrack")  ||
             ci_contains(text, "pkcrack") ||
             ci_contains(text, "bkcrack") ||
             ci_contains(text, "rcrack") ||
@@ -6367,8 +6331,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "tpm2_nvwrite") ||
             ci_contains(text, "tpm2_flushcontext") ||
             /* ca / cert forge tooling */
-            ci_contains(text, "cfssl") ||
-            ci_contains(text, "cfssljson") ||
+            ci_contains(text, "cfssl")  ||
             ci_contains(text, "certstrap") ||
             ci_contains(text, "minica") ||
             ci_contains(text, "mkcert") ||
@@ -6404,11 +6367,9 @@ hlse_check_paste(const char *text) {
               ci_contains(text, "bmx7"))) ||
             ci_contains(text, "cjdns") ||
             ci_contains(text, "yggdrasil") ||
-            ci_contains(text, "gobgp") ||
-            ci_contains(text, "gobgpd") ||
+            ci_contains(text, "gobgp")  ||
             ci_contains(text, "exabgp") ||
-            ci_contains(text, "quagga") ||
-            ci_contains(text, "watchquagga") ||
+            ci_contains(text, "quagga")  ||
             /* ids/av/monitoring kill + recon */
             ci_contains(text, "denyhosts") ||
             ci_contains(text, "sshguard") ||
@@ -6450,8 +6411,7 @@ hlse_check_paste(const char *text) {
             /* audit/selinux/attr recon */
             (ci_contains(text, "ausearch") && ci_contains(text, " -")) ||
             ci_contains(text, "aureport") ||
-            ci_contains(text, "aulast") ||
-            ci_contains(text, "aulastlog") ||
+            ci_contains(text, "aulast")  ||
             ci_contains(text, "auvirt") ||
             ci_contains(text, "autrace") ||
             ci_contains(text, "secon") ||
@@ -6471,9 +6431,7 @@ hlse_check_paste(const char *text) {
             /* supervisor/daemon mgmt + busybox applets */
             ci_contains(text, "start-stop-daemon") ||
             ci_contains(text, "svscan") ||
-            ci_contains(text, "svstat") ||
-            ci_contains(text, "s6-svscan") ||
-            ci_contains(text, "s6-svscanctl") ||
+            ci_contains(text, "svstat")   ||
             ci_contains(text, "s6-rc") ||
             ci_contains(text, "svccfg") ||
             (ci_contains(text, "daemon") && ci_contains(text, " -")) ||
@@ -6586,8 +6544,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "phoenixsuit") ||
             ci_contains(text, "livesuit") ||
             ci_contains(text, "nanddump") ||
-            ci_contains(text, "flash_erase") ||
-            ci_contains(text, "flash_eraseall") ||
+            ci_contains(text, "flash_erase")  ||
             ci_contains(text, "ubidetach") ||
             ci_contains(text, "ubimkvol") ||
             ci_contains(text, "ubirmvol") ||
@@ -6616,8 +6573,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "blueborn") ||
             ci_contains(text, "gattacker") ||
             ci_contains(text, "btdump") ||
-            ci_contains(text, "bluebug") ||
-            ci_contains(text, "bluebugger") ||
+            ci_contains(text, "bluebug")  ||
             ci_contains(text, "bluepot") ||
             ci_contains(text, "bluescan") ||
             ci_contains(text, "bluesniff") ||
@@ -6835,8 +6791,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "altdns") ||
             ci_contains(text, "ctfr") ||
             ci_contains(text, "cero ") ||
-            ci_contains(text, "dnsgen") ||
-            ci_contains(text, "goaltdns") ||
+            ci_contains(text, "dnsgen")  ||
             ci_contains(text, "gotator") ||
             ci_contains(text, "alterx") ||
             ci_contains(text, "puredns") ||
@@ -7012,13 +6967,11 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, " tunnel user") ||
               ci_contains(text, " tunnel rename") ||
               ci_contains(text, " tunnel service") ||
-              ci_contains(text, " tunnel unregister") ||
-              ci_contains(text, " tunnel --") || ci_contains(text, " tunnel -"))) ||
+              ci_contains(text, " tunnel unregister")  || ci_contains(text, " tunnel -"))) ||
             (ci_contains(text, "cursor") && ci_contains(text, " tunnel")) ||
             (ci_contains(text, "zed ") && ci_contains(text, " -")) ||
             ci_contains(text, "faketime") ||
-            ci_contains(text, "datefudge") ||
-            ci_contains(text, "libfaketime") ||
+            ci_contains(text, "datefudge")  ||
             /* file-sync/exfil upload clis */
             ci_contains(text, "megatools") ||
             ci_contains(text, "megacopy") ||
@@ -7139,8 +7092,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " -"))) ||
             ci_contains(text, "pwndrop") ||
             ci_contains(text, "intersh") ||
-            ci_contains(text, "pwncat") ||
-            ci_contains(text, "pwncat-cs") ||
+            ci_contains(text, "pwncat")  ||
             ci_contains(text, "transfer.sh") ||
             /* rootkit / uefi / firmware analysis + scanner names */
             (ci_contains(text, "reptile") && ci_contains(text, " -")) ||
@@ -7290,7 +7242,6 @@ hlse_check_paste(const char *text) {
               ci_contains(text, "--clear-groups"))) ||
             (ci_contains(text, "capsh") &&
              (ci_contains(text, "--decode"))) ||
-            ci_contains(text, "usbipd") ||
             ci_contains(text, "usbip") ||
             (ci_contains(text, "whoami") &&
              (ci_contains(text, " /priv") || ci_contains(text, " /all") ||
@@ -7336,8 +7287,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "telnet") ||
             ci_contains(text, "rwho") ||
             ci_contains(text, "ruptime") ||
-            ci_contains(text, "rusers") ||
-            ci_contains(text, "rwhod") ||
+            ci_contains(text, "rusers")  ||
             ci_contains(text, "rwalld") ||
             ci_contains(text, "ypcat") ||
             ci_contains(text, "ypmatch") ||
@@ -7385,10 +7335,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "vsftpd") ||
             ci_contains(text, "pure-ftpd") ||
             ci_contains(text, "proftpd") ||
-            ci_contains(text, "tftpd") ||
-            ci_contains(text, "atftpd") ||
-            ci_contains(text, "in.tftpd") ||
-            ci_contains(text, "tftpd-hpa") ||
+            ci_contains(text, "tftpd")    ||
             (ci_contains(text, "smbd") &&
              (ci_contains(text, " -d") || ci_contains(text, " -i") ||
               ci_contains(text, " -f"))) ||
@@ -7489,8 +7436,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "postsrsd") ||
             ci_contains(text, "opendkim") ||
             ci_contains(text, "dkimproxy") ||
-            ci_contains(text, "spamc") ||
-            ci_contains(text, "spamctl") ||
+            ci_contains(text, "spamc")  ||
             ci_contains(text, "bogofilter") ||
             ci_contains(text, "razor-admin") ||
             ci_contains(text, "pyzor") ||
@@ -7518,7 +7464,7 @@ hlse_check_paste(const char *text) {
             (ci_contains(text, "pwsh") && ci_contains(text, " -e")) ||
             (ci_contains(text, "perl") &&
              (ci_contains(text, " -pi") || ci_contains(text, " -pe"))) ||
-            ((ci_contains(text, "vim") || ci_contains(text, "nvim")) &&
+            ((ci_contains(text, "vim") ) &&
              (ci_contains(text, " +!") || ci_contains(text, " +:"))) ||
             (ci_contains(text, "less") && ci_contains(text, " !")) ||
             (ci_contains(text, "more") && ci_contains(text, " !")) ||
@@ -7561,8 +7507,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " sh ") || ci_contains(text, " bash"))) ||
             /* exec-wrapper primitives (GTFOBins-style prog spawn) */
             ((ci_contains(text, "flock") || ci_contains(text, "nice") ||
-              ci_contains(text, "timeout") || ci_contains(text, "stdbuf") ||
-              ci_contains(text, "ionice") || ci_contains(text, "taskset") ||
+              ci_contains(text, "timeout") || ci_contains(text, "stdbuf")  || ci_contains(text, "taskset") ||
               ci_contains(text, "chrt") || ci_contains(text, "schedtool") ||
               ci_contains(text, "env ") || ci_contains(text, "chroot") ||
               ci_contains(text, "unshare") || ci_contains(text, "setpriv") ||
@@ -7596,7 +7541,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " fsi") || ci_contains(text, " msbuild"))) ||
             ci_contains(text, "cargo-script") ||
             /* IRC clients and C2-capable chat bots */
-            ci_contains(text, "ircd") || ci_contains(text, "ngircd") ||
+            ci_contains(text, "ircd")  ||
             (ci_contains(text, "irssi") &&
              (ci_contains(text, " -c") || ci_contains(text, " -!") ||
               ci_contains(text, " --connect"))) ||
@@ -7877,7 +7822,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " print") || ci_contains(text, " send") ||
               ci_contains(text, " start") || ci_contains(text, " stop") ||
               ci_contains(text, " continue") || ci_contains(text, " pause") ||
-              ci_contains(text, " use") || ci_contains(text, " user") ||
+              ci_contains(text, " use")  ||
               ci_contains(text, " localgroup") || ci_contains(text, " group") ||
               ci_contains(text, " helpmsg") || ci_contains(text, " name"))) ||
             ci_contains(text, "mongoexport") || ci_contains(text, "mongodump") ||
@@ -8285,8 +8230,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " --export") || ci_contains(text, " --import") ||
               ci_contains(text, " --set") || ci_contains(text, " --install") ||
               ci_contains(text, " --update"))) ||
-            /* hardware / pci / msr / physmem / ipmi-freeipmi / usbmux / mediatek / sdr-voip */
-            ci_contains(text, "devmem2") || ci_contains(text, "devmem") ||
+            /* hardware / pci / msr / physmem / ipmi-freeipmi / usbmux / mediatek / sdr-voip */ ci_contains(text, "devmem") ||
             ci_contains(text, "memtool") || ci_contains(text, "iotools") ||
             ci_contains(text, "rdmsr") || ci_contains(text, "wrmsr") ||
             ci_contains(text, "x86info") ||
@@ -8362,7 +8306,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " tap ") || ci_contains(text, " untap") ||
               ci_contains(text, " services") || ci_contains(text, " reinstall") ||
               ci_contains(text, " uninstall") || ci_contains(text, " developer") ||
-              ci_contains(text, " cask install") || ci_contains(text, " cask uninstall"))) ||
+              ci_contains(text, " cask install") )) ||
             (ci_contains(text, "nix-env") &&
              (ci_contains(text, " -e") || ci_contains(text, " --uninstall") ||
               ci_contains(text, " --delete-generations") || ci_contains(text, " -i") ||
@@ -8443,8 +8387,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, " -e") || ci_contains(text, " -ghci") ||
               ci_contains(text, " :") || ci_contains(text, " .hs"))) ||
             ci_contains(text, "jython") ||
-            ci_contains(text, "jruby") || ci_contains(text, "raku") ||
-            ci_contains(text, "rakudo") ||
+            ci_contains(text, "jruby") || ci_contains(text, "raku")  ||
             (ci_contains(text, "guile") &&
              (ci_contains(text, " -c") || ci_contains(text, " -l") ||
               ci_contains(text, " -s") || ci_contains(text, " --eval") ||
@@ -8502,7 +8445,7 @@ hlse_check_paste(const char *text) {
             (ci_contains(text, "nim") &&
              !ci_contains(text, "nimbus") &&
              (ci_contains(text, " r") || ci_contains(text, " c") ||
-              ci_contains(text, " e") || ci_contains(text, " compile") ||
+              ci_contains(text, " e")  ||
               ci_contains(text, " secret") || ci_contains(text, " js"))) ||
             (ci_contains(text, "nimble") &&
              (ci_contains(text, " install") || ci_contains(text, " remove") ||
@@ -8679,8 +8622,7 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
                ci_contains(text, " check"))) ||
              ci_contains(text, "synergyc") || ci_contains(text, "synergys") ||
-             ci_contains(text, "barrierc") || ci_contains(text, "barriers") ||
-             ci_contains(text, "ydotool") || ci_contains(text, "wtype") ||
+             ci_contains(text, "barrierc") || ci_contains(text, "barriers")  || ci_contains(text, "wtype") ||
              ci_contains(text, "dotool") ||
              ci_contains(text, "evemu-event") || ci_contains(text, "evemu-play") ||
              (ci_contains(text, "pppd") &&
@@ -8809,14 +8751,13 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "kiwi") &&
               (ci_contains(text, " system") || ci_contains(text, " build") ||
                ci_contains(text, " --") || ci_contains(text, " -") ||
-               ci_contains(text, "kiwi-ng"))) ||
-             ci_contains(text, "osbuild") || ci_contains(text, "multistrap") ||
+               ci_contains(text, "kiwi-ng"))) || ci_contains(text, "multistrap") ||
              ci_contains(text, "pbuilder") || ci_contains(text, "sbuild") ||
              (ci_contains(text, "mock") &&
               (ci_contains(text, " --") || ci_contains(text, " -r") ||
                ci_contains(text, " build") || ci_contains(text, " shell"))) ||
              ci_contains(text, "rpmbuild") || ci_contains(text, "rpmspec") ||
-             ci_contains(text, "debuild") || ci_contains(text, "pdebuild") ||
+             ci_contains(text, "debuild")  ||
              ci_contains(text, "vmdb2") || ci_contains(text, "livemedia-creator") ||
              ci_contains(text, "lorax") || ci_contains(text, "image-builder") ||
              ci_contains(text, "virt-builder") || ci_contains(text, "virt-sysprep") ||
@@ -8858,8 +8799,7 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " in ") || ci_contains(text, " rm ") ||
                ci_contains(text, " install") || ci_contains(text, " remove") ||
                ci_contains(text, " ar ") || ci_contains(text, " rr ") ||
-               ci_contains(text, " mr ") || ci_contains(text, " up") ||
-               ci_contains(text, " update"))) ||
+               ci_contains(text, " mr ") || ci_contains(text, " up") )) ||
              ci_contains(text, "appimagetool") || ci_contains(text, "appimaged") ||
              (ci_contains(text, "pack ") &&
               (ci_contains(text, " build") || ci_contains(text, " --"))) ||
@@ -8969,11 +8909,11 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "minica") ||
              (ci_contains(text, "openssl") &&
               (ci_contains(text, " ca ") || ci_contains(text, " req") ||
-               ci_contains(text, " x509") || ci_contains(text, " pkcs12") ||
+               ci_contains(text, " x509")  ||
                ci_contains(text, " cms") || ci_contains(text, " smime") ||
                ci_contains(text, " enc ") || ci_contains(text, " dgst") ||
                ci_contains(text, " pkey") || ci_contains(text, " genpkey") ||
-               ci_contains(text, " rsautl") || ci_contains(text, " pkeyutl") ||
+               ci_contains(text, " rsautl")  ||
                ci_contains(text, " s_server") || ci_contains(text, " s_client") ||
                ci_contains(text, " srp") || ci_contains(text, " passwd") ||
                ci_contains(text, " crl") || ci_contains(text, " ocsp") ||
@@ -8982,7 +8922,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "lego") &&
               (ci_contains(text, " -") || ci_contains(text, " --"))) ||
              ci_contains(text, "dehydrated") || ci_contains(text, "kdb5_util") ||
-             ci_contains(text, "kprop") || ci_contains(text, "kpropd") ||
+             ci_contains(text, "kprop")  ||
              ci_contains(text, "kdb5_ldap_util") ||
              (ci_contains(text, "scoop") &&
               (ci_contains(text, " install") || ci_contains(text, " uninstall") ||
@@ -9001,8 +8941,7 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " unmerge") || ci_contains(text, " sync"))) ||
              ci_contains(text, "ebuild") || ci_contains(text, "equery") ||
              ci_contains(text, "dispatch-conf") || ci_contains(text, "etc-update") ||
-             ci_contains(text, "eselect") || ci_contains(text, "genkernel") ||
-             ci_contains(text, "revdep-rebuild") ||
+             ci_contains(text, "eselect") || ci_contains(text, "genkernel")  ||
              ci_contains(text, "xbps-") ||
              (ci_contains(text, "nixos-rebuild") &&
               (ci_contains(text, " switch") || ci_contains(text, " boot") ||
@@ -9144,8 +9083,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "wbadmin") &&
               (ci_contains(text, " get") || ci_contains(text, " delete") ||
                ci_contains(text, " stop") || ci_contains(text, " disable") ||
-               ci_contains(text, " start backup") ||
-               ci_contains(text, " delete catalog"))) ||
+               ci_contains(text, " start backup") )) ||
              (ci_contains(text, "javac") &&
               (ci_contains(text, ".java") || ci_contains(text, " -"))) ||
              (ci_contains(text, "java ") &&
@@ -9192,7 +9130,7 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " db:") || ci_contains(text, " config:") ||
                ci_contains(text, " down") || ci_contains(text, " optimize")))) ||
              (ci_contains(text, "wp ") &&
-              (ci_contains(text, " eval") || ci_contains(text, " eval-file") ||
+              (ci_contains(text, " eval")  ||
                ci_contains(text, " shell") || ci_contains(text, " db ") ||
                ci_contains(text, " user ") || ci_contains(text, " plugin") ||
                ci_contains(text, " theme") || ci_contains(text, " cron"))) ||
@@ -9377,7 +9315,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "quser") || ci_contains(text, "qprocess") ||
              ci_contains(text, "query session") || ci_contains(text, "query user") ||
              (ci_contains(text, "shadow ") &&
-              (ci_contains(text, " /dest") || ci_contains(text, " -") ||
+              ( ci_contains(text, " -") ||
                ci_contains(text, " /"))) ||
              (ci_contains(text, "msg") &&
               (ci_contains(text, " *") || ci_contains(text, " /server") ||
@@ -9415,8 +9353,7 @@ hlse_check_paste(const char *text) {
               (ci_contains(text, " /") || ci_contains(text, " -") ||
                ci_contains(text, " c:") || ci_contains(text, " d:"))) ||
              ci_contains(text, "efibootmgr") ||
-             ci_contains(text, "efivar") || ci_contains(text, "fwupdmgr") ||
-             ci_contains(text, "fwupdtool") || ci_contains(text, "fwupd") ||
+             ci_contains(text, "efivar")   || ci_contains(text, "fwupd") ||
              ci_contains(text, "kernel-install") || ci_contains(text, "devmem") ||
              ci_contains(text, "memtool") || ci_contains(text, "i2cget") ||
              ci_contains(text, "i2cdetect") || ci_contains(text, "i2cdump") ||
@@ -9427,8 +9364,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "fakeroot") || ci_contains(text, "pwconv") ||
              ci_contains(text, "grpconv") || ci_contains(text, "chage") ||
              ci_contains(text, "lastlog") || ci_contains(text, "hostnamectl") ||
-             ci_contains(text, "domainname") || ci_contains(text, "ypdomainname") ||
-             ci_contains(text, "nisdomainname") || ci_contains(text, "netcap") ||
+             ci_contains(text, "domainname")   || ci_contains(text, "netcap") ||
              ci_contains(text, "audicap") ||
              (ci_contains(text, "setcap") &&
               (ci_contains(text, " cap") || ci_contains(text, " -"))) ||
@@ -9696,7 +9632,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "office2john") || ci_contains(text, "putty2john") ||
              ci_contains(text, "racf2john") || ci_contains(text, "bitcoin2john") ||
              ci_contains(text, "dmg2john") || ci_contains(text, "keychain2john") ||
-             ci_contains(text, "keyring2john") || ci_contains(text, "kwallet2john") ||
+             ci_contains(text, "keyring2john")  ||
              ci_contains(text, "wpapcap2john") || ci_contains(text, "1pass2john") ||
              ci_contains(text, "truecrypt_volume2john") ||
              ci_contains(text, "sipdump2john") ||
@@ -9742,11 +9678,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dnsscope") || ci_contains(text, "dnswasher") ||
              ci_contains(text, "nsec3dig") || ci_contains(text, "sdig") ||
              ci_contains(text, "stubquery") || ci_contains(text, "zone2json") ||
-             ci_contains(text, "zone2sql") || ci_contains(text, "zone2ldap") ||
-             ci_contains(text, "ngircd") || ci_contains(text, "inspircd") ||
-             ci_contains(text, "unrealircd") || ci_contains(text, "ircd") ||
+             ci_contains(text, "zone2sql") || ci_contains(text, "zone2ldap")    || ci_contains(text, "ircd") ||
              ci_contains(text, "charybdis") ||
-             ci_contains(text, "solanum") || ci_contains(text, "snircd") ||
+             ci_contains(text, "solanum")  ||
              (ci_contains(text, "ergo") && ci_contains(text, " -")) ||
              ci_contains(text, "oragono") || ci_contains(text, "bitlbee") ||
              ci_contains(text, "anope") || ci_contains(text, "atheme") ||
@@ -9758,7 +9692,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "errbot") || ci_contains(text, "hubbot") ||
              ci_contains(text, "znc") || ci_contains(text, "thelounge") ||
              ci_contains(text, "kiwiirc") || ci_contains(text, "convos") ||
-             ci_contains(text, "soju") || ci_contains(text, "ejabberdctl") ||
+             ci_contains(text, "soju")  ||
              ci_contains(text, "prosodyctl") || ci_contains(text, "mongooseim") ||
              ci_contains(text, "jabberd") || ci_contains(text, "xmppd") ||
              ci_contains(text, "turnserver") || ci_contains(text, "turnadmin") ||
@@ -9768,15 +9702,14 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "resiprocate") || ci_contains(text, "coturn") ||
              (ci_contains(text, "repro") && ci_contains(text, " -")) ||
              ci_contains(text, "opensmtpd") || ci_contains(text, "smtpctl") ||
-             ci_contains(text, "msmtp") || ci_contains(text, "msmtpd") ||
+             ci_contains(text, "msmtp")  ||
              ci_contains(text, "getmail") || ci_contains(text, "fetchmail") ||
              ci_contains(text, "procmail") || ci_contains(text, "formail") ||
-             ci_contains(text, "maildrop") || ci_contains(text, "deliverquota") ||
-             ci_contains(text, "reformail") || ci_contains(text, "reformime") ||
+             ci_contains(text, "maildrop") || ci_contains(text, "deliverquota")  || ci_contains(text, "reformime") ||
              ci_contains(text, "makemime") || ci_contains(text, "mailbot") ||
              ci_contains(text, "sievec") || ci_contains(text, "sieved") ||
              ci_contains(text, "sieve-test") || ci_contains(text, "sieve-filter") ||
-             ci_contains(text, "managesieve") || ci_contains(text, "pysieved") ||
+             ci_contains(text, "managesieve")  ||
              ci_contains(text, "himalaya") || ci_contains(text, "aerc") ||
              (ci_contains(text, "meli") && !ci_contains(text, "timeline")) || ci_contains(text, "mailutil") ||
              ci_contains(text, "tmail") ||
@@ -9787,16 +9720,15 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "rcvtty") || ci_contains(text, "packf") ||
              ci_contains(text, "install-mh") || ci_contains(text, "msgchk") ||
              ci_contains(text, "mhmail") || ci_contains(text, "mhstore") ||
-             ci_contains(text, "mhbuild") || ci_contains(text, "mhlogin") ||
+             ci_contains(text, "mhbuild")  ||
              ci_contains(text, "mmh") || ci_contains(text, "mhl") ||
              ci_contains(text, "msh") || ci_contains(text, "nullmailer") ||
              ci_contains(text, "ssmtp") || ci_contains(text, "esmtp") ||
              ci_contains(text, "fdm") || ci_contains(text, "courierfilter") ||
-             ci_contains(text, "courierlogger") || ci_contains(text, "courierperlfilter") ||
-             ci_contains(text, "courieresmtpd") || ci_contains(text, "authtest") ||
+             ci_contains(text, "courierlogger") || ci_contains(text, "courierperlfilter")  || ci_contains(text, "authtest") ||
              ci_contains(text, "authenumerate") || ci_contains(text, "authinfo") ||
-             ci_contains(text, "authdaemond") || ci_contains(text, "makeuserdb") ||
-             ci_contains(text, "userdb") || ci_contains(text, "userdbpw") ||
+             ci_contains(text, "authdaemond")  ||
+             ci_contains(text, "userdb")  ||
              ci_contains(text, "greylistd") || ci_contains(text, "postgrey") ||
              ci_contains(text, "policyd") || ci_contains(text, "sqlgrey") ||
              ci_contains(text, "milter-greylist") || ci_contains(text, "tumgreyspf") ||
@@ -9805,8 +9737,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dkimproxy") || ci_contains(text, "dkimsign") ||
              ci_contains(text, "spfd") || ci_contains(text, "spfquery") ||
              ci_contains(text, "spfmilter") || ci_contains(text, "dspam") ||
-             ci_contains(text, "razor-") || ci_contains(text, "dccproc") ||
-             ci_contains(text, "dccifd") || ci_contains(text, "dccm") ||
+             ci_contains(text, "razor-") || ci_contains(text, "dccproc")  || ci_contains(text, "dccm") ||
              ci_contains(text, "dblist") || ci_contains(text, "dccd") ||
              ci_contains(text, "dccif") || ci_contains(text, "crm114") ||
              ci_contains(text, "cssutil") || ci_contains(text, "cssdiff") ||
@@ -9873,7 +9804,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "sss_seed") || ci_contains(text, "sss_override") ||
              ci_contains(text, "sss_debuglevel") || ci_contains(text, "pdflatex") ||
              ci_contains(text, "xelatex") || ci_contains(text, "lualatex") ||
-             ci_contains(text, "texlua") || ci_contains(text, "texluac") ||
+             ci_contains(text, "texlua")  ||
              ci_contains(text, "latexmk") || ci_contains(text, "arara") ||
              ci_contains(text, "tlmgr") || ci_contains(text, "fmtutil") ||
              ci_contains(text, "updmap") || ci_contains(text, "mktexlsr") ||
@@ -9947,8 +9878,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "alembic") ||
              (ci_contains(text, "prisma") && ci_contains(text, " -")) ||
              ci_contains(text, "n98-magerun") || ci_contains(text, "shopify") ||
-             ci_contains(text, "kapacitor") || ci_contains(text, "nrpe") ||
-             ci_contains(text, "check_nrpe") || ci_contains(text, "centcore") ||
+             ci_contains(text, "kapacitor") || ci_contains(text, "nrpe")  || ci_contains(text, "centcore") ||
              ci_contains(text, "centengine") || ci_contains(text, "gmond") ||
              ci_contains(text, "gmetad") || ci_contains(text, "gmetric") ||
              ci_contains(text, "rrdcached") || ci_contains(text, "munin-node") ||
@@ -10025,8 +9955,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "onecli") ||
              (ci_contains(text, "asu") && ci_contains(text, " -")) ||
              ci_contains(text, "xclarity") || ci_contains(text, "ilomconfig") ||
-             ci_contains(text, "itpconfig") || ci_contains(text, "hwmgmtcli") ||
-             ci_contains(text, "ubiosconfig") || ci_contains(text, "biosconfig") ||
+             ci_contains(text, "itpconfig") || ci_contains(text, "hwmgmtcli")  || ci_contains(text, "biosconfig") ||
              ci_contains(text, "conrep") || ci_contains(text, "ssaducli") ||
              (ci_contains(text, "omconfig") && ci_contains(text, " -")) ||
              ci_contains(text, "omreport") ||
@@ -10041,8 +9970,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "isi") && ci_contains(text, " -")) ||
              ci_contains(text, "vserver") || ci_contains(text, "ontapcli") ||
              ci_contains(text, "asmb") || ci_contains(text, "aswm") ||
-             ci_contains(text, "asmc") || ci_contains(text, "dsmc") ||
-             ci_contains(text, "dsmcad") || ci_contains(text, "bpbackup") ||
+             ci_contains(text, "asmc") || ci_contains(text, "dsmc")  || ci_contains(text, "bpbackup") ||
              ci_contains(text, "bprestore") || ci_contains(text, "bplist") ||
              ci_contains(text, "simpana") || ci_contains(text, "qoperation") ||
              ci_contains(text, "qcommand") || ci_contains(text, "cvcl") ||
@@ -10113,10 +10041,8 @@ hlse_check_paste(const char *text) {
               !ci_contains(text, "motion -h") &&
               !ci_contains(text, "motion --help")) ||
              ci_contains(text, "lkl") || ci_contains(text, "uberkey") ||
-             ci_contains(text, "kea-") || ci_contains(text, "keactrl") ||
-             ci_contains(text, "kea-shell") || ci_contains(text, "kea-dhcp-ddns") ||
-             ci_contains(text, "kea-netconf") || ci_contains(text, "dhcpd") ||
-             ci_contains(text, "dhcptest") || ci_contains(text, "dhcpdump") ||
+             ci_contains(text, "kea-") || ci_contains(text, "keactrl")    || ci_contains(text, "dhcpd") ||
+             ci_contains(text, "dhcptest")  ||
              ci_contains(text, "dhcpstarv") || ci_contains(text, "dhcpig") ||
              ci_contains(text, "dibbler-")) {
         what = "appserver/db/monitoring/edr/netdev/bmc/backup/tunnel/exec primitive";
@@ -10291,8 +10217,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "tbot") && !ci_contains(text, "certbot")) || ci_contains(text, "boundary-worker") ||
              ci_contains(text, "openbao") ||
              (ci_contains(text, "bao") && ci_contains(text, " -")) ||
-             (ci_contains(text, "doppler") && ci_contains(text, " -")) ||
-             ci_contains(text, "openfga") || ci_contains(text, "fga") ||
+             (ci_contains(text, "doppler") && ci_contains(text, " -")) || ci_contains(text, "fga") ||
              (ci_contains(text, "topaz") && ci_contains(text, " -")) ||
              ci_contains(text, "aserto") ||
              (ci_contains(text, "permit") && ci_contains(text, " -")) ||
@@ -10371,7 +10296,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tfswitch") ||
              (ci_contains(text, "tofu") && ci_contains(text, " -"))  || ci_contains(text, "valut") ||
              ci_contains(text, "runecast") || ci_contains(text, "env0") ||
-             ci_contains(text, "spacelift") || ci_contains(text, "env0ctl") ||
+             ci_contains(text, "spacelift")  ||
              ci_contains(text, "brainboard") || ci_contains(text, "inframap") ||
              ci_contains(text, "terraformer") || ci_contains(text, "tf2pulumi") ||
              ci_contains(text, "former2") || ci_contains(text, "aztfexport") ||
@@ -10589,7 +10514,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "memfetch") || ci_contains(text, "dumpit") ||
              ci_contains(text, "defenderatp") || ci_contains(text, "firepwd") ||
              ci_contains(text, "firefox_decrypt") || ci_contains(text, "chromepass") ||
-             ci_contains(text, "browserpassview") || ci_contains(text, "webbrowserpassview") ||
+             ci_contains(text, "browserpassview")  ||
              ci_contains(text, "keepassx") || ci_contains(text, "credman") ||
              ci_contains(text, "regripper") || ci_contains(text, "jwt_tool") ||
              ci_contains(text, "getnthash") || ci_contains(text, "kirbi2john") ||
@@ -10845,7 +10770,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "async-profiler") || ci_contains(text, "cgget") ||
              ci_contains(text, "prlimit") || ci_contains(text, "numactl") ||
              ci_contains(text, "cpuset") || ci_contains(text, "dwarfdump") ||
-             ci_contains(text, "readelf") || ci_contains(text, "eu-readelf") ||
+             ci_contains(text, "readelf")  ||
              (ci_contains(text, "nm ") && ci_contains(text, " -") &&
               !ci_contains(text, ".nm")) ||
              ci_contains(text, "drvload") ||
@@ -10885,8 +10810,7 @@ hlse_check_paste(const char *text) {
         what = "capture/usb/jvm/isolation/binmod/deploy/mount/trace/mailer/tunnel primitive";
         } else if (
              /* cycle-264a: theorem-prover/functional-lang/alt-interp/asm/translation */
-             ci_contains(text, "coqc") || ci_contains(text, "coqtop") ||
-             ci_contains(text, "coqchk") || ci_contains(text, "agda") ||
+             ci_contains(text, "coqc") || ci_contains(text, "coqtop")  || ci_contains(text, "agda") ||
              ci_contains(text, "idris2") || ci_contains(text, "tlapm") ||
              ci_contains(text, "tlaps") || ci_contains(text, "why3") ||
              ci_contains(text, "frama-c") || ci_contains(text, "cbmc") ||
@@ -10905,7 +10829,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "vampire") && ci_contains(text, " -")) ||
              (ci_contains(text, "spass") && ci_contains(text, " -")) ||
              ci_contains(text, "fsharp") || ci_contains(text, "elm-reactor") ||
-             ci_contains(text, "elm-make") || ci_contains(text, "purescript") ||
+             ci_contains(text, "elm-make")  ||
              ci_contains(text, "spago") || ci_contains(text, "rescript") ||
              (ci_contains(text, "elm ") && ci_contains(text, " -")) ||
              (ci_contains(text, "purs ") && ci_contains(text, " -")) ||
@@ -10936,8 +10860,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "systemd-nspawn") || ci_contains(text, "febootstrap") ||
              (ci_contains(text, "osc ") &&
               (ci_contains(text, " -") && !ci_contains(text, "oscar"))) ||
-             ci_contains(text, "doas") ||
-             ci_contains(text, "opendoas") || ci_contains(text, "sudo-rs") ||
+             ci_contains(text, "doas")  || ci_contains(text, "sudo-rs") ||
              ci_contains(text, "beesu") || ci_contains(text, "gksu") ||
              ci_contains(text, "kdesudo") || ci_contains(text, "gtksu") ||
              ci_contains(text, "xdg-su") || ci_contains(text, "lxqt-sudo") ||
@@ -10959,7 +10882,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "slapauth") ||
              (ci_contains(text, "ucs ") && ci_contains(text, " -")) ||
              ci_contains(text, "zentyal") || ci_contains(text, "remoteit") ||
-             ci_contains(text, "s6-supervise") || ci_contains(text, "s6-svctl") ||
+             ci_contains(text, "s6-supervise")  ||
              ci_contains(text, "s6-svc") || ci_contains(text, "s6-svwait") ||
              ci_contains(text, "s6-svstat") || ci_contains(text, "dinit") ||
              ci_contains(text, "sysvinit") || ci_contains(text, "sinit") ||
@@ -11015,8 +10938,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "clipnotify") || ci_contains(text, "xcmenu") ||
              ci_contains(text, "dunstify") ||
              (ci_contains(text, "yad ") && ci_contains(text, " -")) ||
-             (ci_contains(text, "dialog ") && ci_contains(text, " -")) ||
-             ci_contains(text, "gxmessage") || ci_contains(text, "xmessage") ||
+             (ci_contains(text, "dialog ") && ci_contains(text, " -")) || ci_contains(text, "xmessage") ||
              ci_contains(text, "zellij") || ci_contains(text, "dvtm") ||
              (ci_contains(text, "byobu") && ci_contains(text, " -")) ||
              ci_contains(text, "keepassxc-proxy") || ci_contains(text, "ssh-askpass") ||
@@ -11207,8 +11129,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "biglybt") ||
              (ci_contains(text, "flood") && ci_contains(text, " -")) ||
              ci_contains(text, "autobrr") || ci_contains(text, "cross-seed") ||
-             ci_contains(text, "nzbget") || ci_contains(text, "sabnzbd") ||
-             ci_contains(text, "sabnzbdplus") || ci_contains(text, "nzbhydra") ||
+             ci_contains(text, "nzbget") || ci_contains(text, "sabnzbd")  || ci_contains(text, "nzbhydra") ||
              ci_contains(text, "sonarr") || ci_contains(text, "radarr") ||
              ci_contains(text, "lidarr") || ci_contains(text, "readarr") ||
              ci_contains(text, "prowlarr") || ci_contains(text, "jackett") ||
@@ -11264,8 +11185,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "boxcli") || ci_contains(text, "ydisk") ||
              ci_contains(text, "securefs") || ci_contains(text, "ecryptfs-utils") ||
              ci_contains(text, "cryptmount") || ci_contains(text, "atool") ||
-             ci_contains(text, "dtrx") || ci_contains(text, "unp ") ||
-             ci_contains(text, "patool") || ci_contains(text, "unar") ||
+             ci_contains(text, "dtrx") || ci_contains(text, "unp ")  || ci_contains(text, "unar") ||
              ci_contains(text, "lsar") || ci_contains(text, "unace") ||
              ci_contains(text, "unlzh") || ci_contains(text, "dmg2img") ||
              ci_contains(text, "isoinfo") || ci_contains(text, "isomd5sum") ||
@@ -11306,7 +11226,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "docspell") || ci_contains(text, "mdbook") ||
              ci_contains(text, "sphinx-build") || ci_contains(text, "naturaldocs") ||
              ci_contains(text, "pdoc") || ci_contains(text, "jsdoc") ||
-             ci_contains(text, "typedoc") || ci_contains(text, "phpdoc") ||
+             ci_contains(text, "typedoc")  ||
              (ci_contains(text, "yard") && ci_contains(text, " -")) ||
              ci_contains(text, "rdoc") || ci_contains(text, "openapi-generator") ||
              ci_contains(text, "swagger-codegen") || ci_contains(text, "oapi-codegen") ||
@@ -11636,7 +11556,7 @@ hlse_check_paste(const char *text) {
              /* cycle-272a: git-extra/convert/mail-infra/spam-filter/lists/
                 caldav/irc/xmpp/matrix/voip-server primitives */
              ci_contains(text, "jujutsu") || ci_contains(text, "git-branchless") ||
-             ci_contains(text, "git-secret") || ci_contains(text, "git-secrets") ||
+             ci_contains(text, "git-secret")  ||
              ci_contains(text, "git-quick-stats") || ci_contains(text, "git-extras") ||
              ci_contains(text, "gitui") || ci_contains(text, "gitbutler") ||
              ci_contains(text, "git-cliff") ||
@@ -11980,7 +11900,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "vdrift") || ci_contains(text, "speed-dreams") ||
              (ci_contains(text, "torcs") && ci_contains(text, " -")) ||
              ci_contains(text, "supertuxkart") || ci_contains(text, "tuxpaint") ||
-             ci_contains(text, "dosemu") || ci_contains(text, "dosemu2") ||
+             ci_contains(text, "dosemu")  ||
              ci_contains(text, "basilisk2") || ci_contains(text, "sheepshaver") ||
              (ci_contains(text, "simh") && ci_contains(text, " -")) ||
              (ci_contains(text, "klh10") && ci_contains(text, " -")) ||
@@ -11993,8 +11913,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "bpfmenu") || ci_contains(text, "xdpdump") ||
              ci_contains(text, "pcapplusplus") || ci_contains(text, "kubectl-trace") ||
              (ci_contains(text, "pstack") && ci_contains(text, " -")) ||
-             ci_contains(text, "bootchart") || ci_contains(text, "bootchart2") ||
-             ci_contains(text, "systemd-bootchart") ||
+             ci_contains(text, "bootchart")   ||
              (ci_contains(text, "fwts") && ci_contains(text, " -")) ||
              ci_contains(text, "sbsigntool") || ci_contains(text, "sbverify")) {
         what = "emulation/game-port/vintage-sim/mcu-sim/ebpf/crashdump/boot-trace/secureboot primitive";
@@ -12389,7 +12308,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "icdiff") || ci_contains(text, "difft") ||
              (ci_contains(text, "delta") && ci_contains(text, " -") &&
               !ci_contains(text, "deltav")) ||
-             ci_contains(text, "wdiff") || ci_contains(text, "dwdiff") ||
+             ci_contains(text, "wdiff")  ||
              ci_contains(text, "grepdiff") ||
              (ci_contains(text, "meld") && ci_contains(text, " -")) ||
              ci_contains(text, "kdiff3") || ci_contains(text, "modd") ||
@@ -12442,8 +12361,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "vulkaninfo") || ci_contains(text, "vkcube") ||
              ci_contains(text, "clinfo") || ci_contains(text, "vainfo") ||
              ci_contains(text, "vdpauinfo") || ci_contains(text, "glmark2") ||
-             ci_contains(text, "vkmark") || ci_contains(text, "jstest") ||
-             ci_contains(text, "sdl2-jstest") || ci_contains(text, "v4l2-compliance") ||
+             ci_contains(text, "vkmark") || ci_contains(text, "jstest")  || ci_contains(text, "v4l2-compliance") ||
              ci_contains(text, "v4l2-dbg") || ci_contains(text, "qv4l2")) {
         what = "stress/bench/gpu/input/v4l primitive";
         } else if (
@@ -12790,10 +12708,9 @@ hlse_check_paste(const char *text) {
              /* cycle-294a: sys/net/infra primitives */
              ci_contains(text, "sj3") || ci_contains(text, "kanaka") ||
              ci_contains(text, "wnn") || ci_contains(text, "dladm") ||
-             ci_contains(text, "flowadm") || ci_contains(text, "fmadm") ||
-             ci_contains(text, "sdladm") || ci_contains(text, "s2both") ||
+             ci_contains(text, "flowadm") || ci_contains(text, "fmadm")  || ci_contains(text, "s2both") ||
              ci_contains(text, "mhvtl") || ci_contains(text, "mmdf") ||
-             ci_contains(text, "ospf6d") || ci_contains(text, "ztpd") ||
+             ci_contains(text, "ospf6d")  ||
              ci_contains(text, "ztp") || ci_contains(text, "ol2tpd") ||
              ci_contains(text, "mpoad") || ci_contains(text, "mpoas")) {
         what = "sys/net infra primitive";
@@ -12886,8 +12803,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "qconf") || ci_contains(text, "qmon") ||
              ci_contains(text, "qsig") || ci_contains(text, "pdcp") ||
              ci_contains(text, "jobgrid") || ci_contains(text, "htcondor") ||
-             ci_contains(text, "glideinwms") || ci_contains(text, "boinc") ||
-             ci_contains(text, "boinctui")) {
+             ci_contains(text, "glideinwms") || ci_contains(text, "boinc") ) {
         what = "cluster/hpc scheduler primitive";
         } else if (
              /* cycle-298c: computational-chemistry primitives */
@@ -12902,7 +12818,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "fhiaims") || ci_contains(text, "g_energy") ||
              ci_contains(text, "g_hbond") || ci_contains(text, "gabedit") ||
              ci_contains(text, "genconf") || ci_contains(text, "genion") ||
-             ci_contains(text, "gnina") || ci_contains(text, "gpu4qchem") ||
+             ci_contains(text, "gnina")  ||
              ci_contains(text, "grompp") || ci_contains(text, "iqmol") ||
              ci_contains(text, "jmol") || ci_contains(text, "lmp") ||
              ci_contains(text, "macmolplt") || ci_contains(text, "molcas") ||
@@ -12913,9 +12829,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "phono3py") || ci_contains(text, "phonopy") ||
              ci_contains(text, "qchem") || ci_contains(text, "ridft") ||
              ci_contains(text, "smina") || ci_contains(text, "tleap") ||
-             ci_contains(text, "tmole") || ci_contains(text, "vasp") ||
-             ci_contains(text, "vasp_gam") || ci_contains(text, "vasp_ncl") ||
-             ci_contains(text, "vasp_std") || ci_contains(text, "vaspkit") ||
+             ci_contains(text, "tmole") || ci_contains(text, "vasp")     ||
              ci_contains(text, "morpho ") || ci_contains(text, "blat ") ||
              (ci_contains(text, "auspice") && ci_contains(text, " -")) ||
              (ci_contains(text, "avogadro") && ci_contains(text, " -")) ||
@@ -12941,10 +12855,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "metaphlan") || ci_contains(text, "mlst") ||
              ci_contains(text, "roary") || ci_contains(text, "seqcomplement") ||
              ci_contains(text, "seqgt") || ci_contains(text, "seqhead") ||
-             ci_contains(text, "seqrename") || ci_contains(text, "seqrev") ||
-             ci_contains(text, "seqrevseq") || ci_contains(text, "seqshuffle") ||
+             ci_contains(text, "seqrename") || ci_contains(text, "seqrev")  || ci_contains(text, "seqshuffle") ||
              ci_contains(text, "seqtail") || ci_contains(text, "sequniq") ||
-             ci_contains(text, "seqwindow") || ci_contains(text, "tblastn") ||
+             ci_contains(text, "seqwindow")  ||
              ci_contains(text, "treetime") || ci_contains(text, "twobittofa") ||
              ci_contains(text, "fatotwobit") ||
              (ci_contains(text, "bracken") && ci_contains(text, " -")) ||
@@ -12971,8 +12884,7 @@ hlse_check_paste(const char *text) {
         } else if (
              /* cycle-299b: gpu/vendor telemetry primitives */
              ci_contains(text, "amdgpu_top") || ci_contains(text, "cpupower") ||
-             ci_contains(text, "dcgm") || ci_contains(text, "dcgmi") ||
-             ci_contains(text, "dcgmnvml") || ci_contains(text, "gputil") ||
+             ci_contains(text, "dcgm")   || ci_contains(text, "gputil") ||
              ci_contains(text, "intel_gpu_abrt") ||
              ci_contains(text, "intel_gpu_frequency") ||
              ci_contains(text, "intel_gpu_time") ||
@@ -12989,11 +12901,9 @@ hlse_check_paste(const char *text) {
              /* cycle-300a: gis/geospatial primitives */
              ci_contains(text, "cesiumion") || ci_contains(text, "gdal_grid") ||
              ci_contains(text, "gdallocationinfo") ||
-             ci_contains(text, "gdalserver") || ci_contains(text, "geobuf") ||
-             ci_contains(text, "geobuf2json") || ci_contains(text, "geoclue") ||
+             ci_contains(text, "gdalserver") || ci_contains(text, "geobuf")  || ci_contains(text, "geoclue") ||
              ci_contains(text, "geojsonhint") ||
-             ci_contains(text, "geojsonmerge") ||
-             ci_contains(text, "json2geobuf") || ci_contains(text, "mapcache") ||
+             ci_contains(text, "geojsonmerge")  || ci_contains(text, "mapcache") ||
              ci_contains(text, "mapnik") || ci_contains(text, "mbutil") ||
              ci_contains(text, "mkmap") || ci_contains(text, "mod_tile") ||
              ci_contains(text, "osgeo4w") || ci_contains(text, "osgconv") ||
@@ -13010,8 +12920,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "peukerdouglas") ||
              ci_contains(text, "gpsbabel") || ci_contains(text, "gpsprof") ||
              ci_contains(text, "g.filename") || ci_contains(text, "g.gisenv") ||
-             ci_contains(text, "g.list") || ci_contains(text, "g.mapset") ||
-             ci_contains(text, "g.mapsets") || ci_contains(text, "g.mlist") ||
+             ci_contains(text, "g.list") || ci_contains(text, "g.mapset")  || ci_contains(text, "g.mlist") ||
              ci_contains(text, "g.parser") || ci_contains(text, "g.proj") ||
              ci_contains(text, "g.rename") || ci_contains(text, "g.tempfile") ||
              ci_contains(text, "g.version") || ci_contains(text, "r.buffer") ||
@@ -13064,7 +12973,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mujoco") || ci_contains(text, "omniverse") ||
              ci_contains(text, "pybullet") || ci_contains(text, "pydrake") ||
              ci_contains(text, "simbody") || ci_contains(text, "simpleitk") ||
-             ci_contains(text, "turtlebot") || ci_contains(text, "turtlebot3") ||
+             ci_contains(text, "turtlebot")  ||
              ci_contains(text, "turtlesim") || ci_contains(text, "vtk") ||
              ci_contains(text, "webots") ||
              (ci_contains(text, "drake") && ci_contains(text, " -")) ||
@@ -13099,8 +13008,7 @@ hlse_check_paste(const char *text) {
         what = "translation/l10n primitive";
         } else if (
              /* cycle-301c: genealogy/transit primitives */
-             ci_contains(text, "gedcom") || ci_contains(text, "geneweb") ||
-             ci_contains(text, "genewebdb") || ci_contains(text, "gwb2ged") ||
+             ci_contains(text, "gedcom") || ci_contains(text, "geneweb")  || ci_contains(text, "gwb2ged") ||
              ci_contains(text, "gwc") || ci_contains(text, "gwu") ||
              ci_contains(text, "mostvers") || ci_contains(text, "familylines") ||
              ci_contains(text, "heredis") || ci_contains(text, "myheritage") ||
@@ -13139,13 +13047,10 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "jack_property") ||
              ci_contains(text, "jack_showtime") || ci_contains(text, "jack_wait") ||
              ci_contains(text, "jacktrip") || ci_contains(text, "jalv") ||
-             ci_contains(text, "lilv") || ci_contains(text, "lv2") ||
-             ci_contains(text, "lv2bench") || ci_contains(text, "lv2core") ||
-             ci_contains(text, "lv2info") || ci_contains(text, "lv2lint") ||
-             ci_contains(text, "lv2ls") || ci_contains(text, "lv2specgen") ||
+             ci_contains(text, "lilv") || ci_contains(text, "lv2")       ||
              ci_contains(text, "sordi") || ci_contains(text, "serdi") ||
              ci_contains(text, "suil") || ci_contains(text, "abc2ly") ||
-             ci_contains(text, "midi2ly") || ci_contains(text, "aplaymidi") ||
+             ci_contains(text, "midi2ly")  ||
              ci_contains(text, "kmid") || ci_contains(text, "playmidi") ||
              ci_contains(text, "pmidi") || ci_contains(text, "vmpk") ||
              ci_contains(text, "acesrender") || ci_contains(text, "byod") ||
@@ -13159,35 +13064,30 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "flicd") || ci_contains(text, "flwrap") ||
              ci_contains(text, "radioclk") || ci_contains(text, "linpac") ||
              ci_contains(text, "uz7ho") || ci_contains(text, "soundmodem") ||
-             ci_contains(text, "soundcardmodem") ||
-             ci_contains(text, "igatesoundmodem") ||
+             ci_contains(text, "soundcardmodem")  ||
              ci_contains(text, "aprsdroid") || ci_contains(text, "aprsgate") ||
              ci_contains(text, "aprstt") || ci_contains(text, "aprsworld") ||
-             ci_contains(text, "dablin") || ci_contains(text, "dablin_gtk") ||
+             ci_contains(text, "dablin")  ||
              ci_contains(text, "dabreceiver") || ci_contains(text, "fs4") ||
              ci_contains(text, "c2enc") || ci_contains(text, "c2dec") ||
              ci_contains(text, "c2sim")) {
         what = "ham-radio/dab primitive";
         } else if (
              /* cycle-303b: media-player/disc/codec primitives */
-             ci_contains(text, "mpv") || ci_contains(text, "mpvnet") ||
+             ci_contains(text, "mpv")  ||
              ci_contains(text, "mplayer") || ci_contains(text, "madplay") ||
              ci_contains(text, "mpg123") || ci_contains(text, "mpg321") ||
-             ci_contains(text, "vlc") || ci_contains(text, "cvlc") ||
-             ci_contains(text, "nvlc") || ci_contains(text, "qvlc") ||
-             ci_contains(text, "rvlc") || ci_contains(text, "svlc") ||
-             ci_contains(text, "smplayer") || ci_contains(text, "avprobe") ||
+             ci_contains(text, "vlc")       || ci_contains(text, "avprobe") ||
              ci_contains(text, "avplay") || ci_contains(text, "ffserver") ||
-             ci_contains(text, "ffms") || ci_contains(text, "ffms2") ||
-             ci_contains(text, "avfs") || ci_contains(text, "avfsd") ||
-             ci_contains(text, "avisynth") || ci_contains(text, "avisynth+") ||
+             ci_contains(text, "ffms")  ||
+             ci_contains(text, "avfs")  ||
+             ci_contains(text, "avisynth")  ||
              ci_contains(text, "avslib") || ci_contains(text, "avsplus") ||
              ci_contains(text, "vsutil") || ci_contains(text, "vspreview") ||
              ci_contains(text, "ssimulacra2") || ci_contains(text, "aomenc") ||
              ci_contains(text, "aomdec") || ci_contains(text, "dav1d") ||
              ci_contains(text, "svtav1encapp") ||
-             ci_contains(text, "svtav1decapp") || ci_contains(text, "vif") ||
-             ci_contains(text, "vifdiff") || ci_contains(text, "vql") ||
+             ci_contains(text, "svtav1decapp") || ci_contains(text, "vif")  || ci_contains(text, "vql") ||
              ci_contains(text, "vqm") || ci_contains(text, "cdrecord") ||
              ci_contains(text, "growisofs") || ci_contains(text, "k3b") ||
              ci_contains(text, "gnomebaker") || ci_contains(text, "devede") ||
@@ -13212,8 +13112,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "sqs") || ci_contains(text, "trycloudflare") ||
              ci_contains(text, "tsnet") || ci_contains(text, "tsrelay") ||
              ci_contains(text, "tunnelmole") || ci_contains(text, "vpnkit") ||
-             ci_contains(text, "webhookrelay") ||
-             ci_contains(text, "webhookrelayd") ||
+             ci_contains(text, "webhookrelay")  ||
              (ci_contains(text, "edge") && ci_contains(text, " -"))) {
         what = "tunnel/vpn/mini-k8s primitive";
         } else if (
@@ -13223,18 +13122,15 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "biblepresenter") || ci_contains(text, "bibleshow") ||
              ci_contains(text, "bibletime") || ci_contains(text, "bibleworks") ||
              ci_contains(text, "biblos") || ci_contains(text, "blb") ||
-             ci_contains(text, "blueletterbible") || ci_contains(text, "ccb") ||
-             ci_contains(text, "ccbchurch") || ci_contains(text, "chms") ||
+             ci_contains(text, "blueletterbible") || ci_contains(text, "ccb")  || ci_contains(text, "chms") ||
              ci_contains(text, "churchtrac") || ci_contains(text, "elvanto") ||
-             ci_contains(text, "esword") || ci_contains(text, "faithlife") ||
-             ci_contains(text, "faithlifeproclaim") ||
+             ci_contains(text, "esword") || ci_contains(text, "faithlife")  ||
              ci_contains(text, "fellowshipone") || ci_contains(text, "freeshow") ||
              ci_contains(text, "jsword") || ci_contains(text, "lyricslive") ||
              ci_contains(text, "mybible") || ci_contains(text, "mysword") ||
              ci_contains(text, "olivetree") || ci_contains(text, "pco ") ||
              ci_contains(text, "pcstudybible") || ci_contains(text, "pocketbible") ||
-             ci_contains(text, "praison") || ci_contains(text, "praisonlive") ||
-             ci_contains(text, "praisonview") || ci_contains(text, "propresenter") ||
+             ci_contains(text, "praison")   || ci_contains(text, "propresenter") ||
              ci_contains(text, "pushpay") || ci_contains(text, "quelea") ||
              ci_contains(text, "quickverse") || ci_contains(text, "rockms") ||
              ci_contains(text, "servantkeeper") || ci_contains(text, "shelbyarena") ||
@@ -13255,8 +13151,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "boostnote") || ci_contains(text, "dendron") ||
              ci_contains(text, "flomo") || ci_contains(text, "freemind") ||
              ci_contains(text, "freeplane") || ci_contains(text, "fsnotes") ||
-             ci_contains(text, "iawriter") || ci_contains(text, "jotta") ||
-             ci_contains(text, "jottacloud") || ci_contains(text, "jotty") ||
+             ci_contains(text, "iawriter") || ci_contains(text, "jotta")  || ci_contains(text, "jotty") ||
              ci_contains(text, "mindomo") || ci_contains(text, "mubu") ||
              ci_contains(text, "notesbear") || ci_contains(text, "notesnook") ||
              ci_contains(text, "nvalt") || ci_contains(text, "nvultra") ||
@@ -13286,17 +13181,13 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "bibisco") || ci_contains(text, "citeproc") ||
              ci_contains(text, "citavi") || ci_contains(text, "colwiz") ||
              ci_contains(text, "compile4novel") || ci_contains(text, "curvenote") ||
-             ci_contains(text, "dvn") || ci_contains(text, "dvn4") ||
-             ci_contains(text, "dvndl") || ci_contains(text, "f1000") ||
-             ci_contains(text, "f1000workspace") ||
+             ci_contains(text, "dvn")   || ci_contains(text, "f1000")  ||
              ci_contains(text, "hayagriva") ||
              ci_contains(text, "papersapp") || ci_contains(text, "proquest") ||
              ci_contains(text, "pydataverse") || ci_contains(text, "refworks") ||
              ci_contains(text, "scapple") || ci_contains(text, "scenarist") ||
-             ci_contains(text, "sciencedirect") || ci_contains(text, "scriv") ||
-             ci_contains(text, "scrivener") || ci_contains(text, "simplemind") ||
-             ci_contains(text, "storyist") || ci_contains(text, "typst") ||
-             ci_contains(text, "typstyle") || ci_contains(text, "tytanic") ||
+             ci_contains(text, "sciencedirect") || ci_contains(text, "scriv")  || ci_contains(text, "simplemind") ||
+             ci_contains(text, "storyist") || ci_contains(text, "typst")  || ci_contains(text, "tytanic") ||
              ci_contains(text, "utpm") || ci_contains(text, "zenodo") ||
              (ci_contains(text, "dryad") && ci_contains(text, " -")) ||
              (ci_contains(text, "endnote") && ci_contains(text, " -")) ||
@@ -13308,7 +13199,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "copr ") || ci_contains(text, "debcheckout") ||
              ci_contains(text, "debcommit") || ci_contains(text, "debdiff") ||
              ci_contains(text, "debi ") || ci_contains(text, "dscverify") ||
-             ci_contains(text, "koji") || ci_contains(text, "kojid") ||
+             ci_contains(text, "koji")  ||
              ci_contains(text, "mbs") || ci_contains(text, "odcs") ||
              ci_contains(text, "wannabuild")) {
         what = "pkg-build/distro-infra primitive";
@@ -13339,8 +13230,7 @@ hlse_check_paste(const char *text) {
              /* cycle-308a: mcu-flash/wireless-mcu primitives */
              ci_contains(text, "amb23") || ci_contains(text, "amb26") ||
              ci_contains(text, "amb82") || ci_contains(text, "ambiq") ||
-             ci_contains(text, "ambz") || ci_contains(text, "ambz2") ||
-             ci_contains(text, "ambz3") || ci_contains(text, "ameba") ||
+             ci_contains(text, "ambz")   || ci_contains(text, "ameba") ||
              ci_contains(text, "esp32")) {
         what = "mcu-flash/wireless-mcu primitive";
         } else if (
@@ -13361,7 +13251,7 @@ hlse_check_paste(const char *text) {
         what = "reverse-engineering plugin primitive";
         } else if (
              /* cycle-310a: locate/index-search primitives */
-             ci_contains(text, "altlocate") || ci_contains(text, "fslocate") ||
+             ci_contains(text, "altlocate")  ||
              ci_contains(text, "glocate") || ci_contains(text, "mlocate") ||
              ci_contains(text, "plocate") || ci_contains(text, "rlocate") ||
              ci_contains(text, "slocate") ||
@@ -13524,8 +13414,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ecppack") || ci_contains(text, "f4pga") ||
              ci_contains(text, "vvp") || ci_contains(text, "gap4") ||
              ci_contains(text, "macaulay2") || ci_contains(text, "cocoa5") ||
-             ci_contains(text, "qalc") || ci_contains(text, "mlr") ||
-             ci_contains(text, "mapserver") || ci_contains(text, "mapserv") ||
+             ci_contains(text, "qalc") || ci_contains(text, "mlr")  || ci_contains(text, "mapserv") ||
              ci_contains(text, "tilemill") || ci_contains(text, "landez") ||
              (ci_contains(text, "icepack") && ci_contains(text, " -")) ||
              (ci_contains(text, "trellis") && ci_contains(text, " -"))) {
@@ -13602,8 +13491,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "accerciser") || ci_contains(text, "goldendict") ||
              ci_contains(text, "po4a") || ci_contains(text, "polib") ||
              ci_contains(text, "rednotebook") || ci_contains(text, "pwqgen") ||
-             ci_contains(text, "randpwd") || ci_contains(text, "tai64n") ||
-             ci_contains(text, "tai64nlocal") || ci_contains(text, "softdog")) {
+             ci_contains(text, "randpwd") || ci_contains(text, "tai64n")  || ci_contains(text, "softdog")) {
         what = "latex/doc/wiki/llm/dict/journal/misc primitive";
         } else if (
              /* cycle-319b: iot/industrial/erp/forum primitives */
@@ -13820,7 +13708,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "gltfpack") || ci_contains(text, "vdb_print") ||
              ci_contains(text, "vdb_render") || ci_contains(text, "vdb_view") ||
              ci_contains(text, "abcecho") || ci_contains(text, "abcinfo") ||
-             ci_contains(text, "abcls") || ci_contains(text, "abcstitcher") ||
+             ci_contains(text, "abcls")  ||
              ci_contains(text, "abcdiff") || ci_contains(text, "abcstitch") ||
              ci_contains(text, "pcl_convert") || ci_contains(text, "lasview") ||
              ci_contains(text, "lasgrid") || ci_contains(text, "lasheight") ||
@@ -13863,7 +13751,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tapeconv") || ci_contains(text, "audio2tape") ||
              ci_contains(text, "listbasic") || ci_contains(text, "raw2hdf") ||
              ci_contains(text, "c1541") || ci_contains(text, "petcat") ||
-             ci_contains(text, "cartconv") || ci_contains(text, "cc1541") ||
+             ci_contains(text, "cartconv")  ||
              ci_contains(text, "d64cbm") || ci_contains(text, "cbmlinetester") ||
              ci_contains(text, "unadf") || ci_contains(text, "adf2disk") ||
              ci_contains(text, "retro68") || ci_contains(text, "basiliskii") ||
@@ -13919,7 +13807,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ezstream") || ci_contains(text, "sc_serv") ||
              ci_contains(text, "cbonsai") || ci_contains(text, "asciiquarium") ||
              ci_contains(text, "aafire") || ci_contains(text, "asciiview") ||
-             ci_contains(text, "shelr") || ci_contains(text, "catimg") ||
+             ci_contains(text, "shelr")  ||
              ci_contains(text, "timg") || ci_contains(text, "uberzug")) {
         what = "pdf/present/broadcast/ascii primitive";
         } else if (
@@ -13951,8 +13839,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "hdlcstress") || ci_contains(text, "hdlcverify") ||
              ci_contains(text, "pattest") || ci_contains(text, "patlooptest") ||
              ci_contains(text, "tones2wav") || ci_contains(text, "iptel") ||
-             ci_contains(text, "gr_plot") || ci_contains(text, "gr_plot_fft") ||
-             ci_contains(text, "gr_plot_iq") || ci_contains(text, "gr_plot_psd") ||
+             ci_contains(text, "gr_plot")    ||
              ci_contains(text, "grcc") || ci_contains(text, "gsm_ussd") ||
              ci_contains(text, "probemodem") || ci_contains(text, "g3cat") ||
              ci_contains(text, "capiinfo") ||
@@ -14022,7 +13909,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dnsgram") || ci_contains(text, "dnsreplay") ||
              ci_contains(text, "pdns_notify") || ci_contains(text, "zone2lmdb") ||
              ci_contains(text, "dumresp") || ci_contains(text, "kaspdb") ||
-             ci_contains(text, "yadifa") || ci_contains(text, "yadifad") ||
+             ci_contains(text, "yadifa")  ||
              ci_contains(text, "nfsref")) {
         what = "mail/dns/share primitive";
         } else if (
@@ -14090,8 +13977,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "lmbench") || ci_contains(text, "tinymembench")) {
         what = "disc/bench primitive";
         } else if (
-             /* cycle-333a: ietf/biblio/chem primitives */
-             ci_contains(text, "onsgmls") || ci_contains(text, "nsgmls") ||
+             /* cycle-333a: ietf/biblio/chem primitives */ ci_contains(text, "nsgmls") ||
              ci_contains(text, "mmark") || ci_contains(text, "idnits") ||
              ci_contains(text, "rfcdiff") || ci_contains(text, "rfcmarkup") ||
              ci_contains(text, "rfcfold") || ci_contains(text, "svgcheck") ||
@@ -14143,7 +14029,7 @@ hlse_check_paste(const char *text) {
         what = "mcu/barcode/ocr primitive";
         } else if (
              /* cycle-336b: iot/midi primitives */
-             ci_contains(text, "tunslip") || ci_contains(text, "tunslip6") ||
+             ci_contains(text, "tunslip")  ||
              ci_contains(text, "wpcapslip") || ci_contains(text, "hdspconf")) {
         what = "iot/midi primitive";
         } else if (
@@ -14428,8 +14314,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "ptop") && ci_contains(text, " -")) ||
              ci_contains(text, "pas2js") ||
              ci_contains(text, "compileserver") || ci_contains(text, "lprfil") ||
-             ci_contains(text, "rstconv") || ci_contains(text, "h2pas") ||
-             ci_contains(text, "h2paspp") || ci_contains(text, "fppd") ||
+             ci_contains(text, "rstconv") || ci_contains(text, "h2pas")  || ci_contains(text, "fppd") ||
              ci_contains(text, "pas2fpm") || ci_contains(text, "unipas2html") ||
              (ci_contains(text, "ecl") && ci_contains(text, " -")) ||
              (ci_contains(text, "ccl") && ci_contains(text, " -")) ||
@@ -14450,7 +14335,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "gdalgrid") || ci_contains(text, "gdal_polygonize") ||
              ci_contains(text, "gdal_sieve") ||
              (ci_contains(text, "proj") && ci_contains(text, " -")) ||
-             ci_contains(text, "invproj") || ci_contains(text, "geotiffcp") ||
+             ci_contains(text, "invproj")  ||
              ci_contains(text, "geotifcp") || ci_contains(text, "applygeo") ||
              ci_contains(text, "tiffcp") || ci_contains(text, "tiffinfo") ||
              ci_contains(text, "tiffset") || ci_contains(text, "tiffcmp") ||
@@ -14465,27 +14350,22 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "shp2svg") || ci_contains(text, "shpcat") ||
              ci_contains(text, "shpgeo") || ci_contains(text, "shpinfo") ||
              ci_contains(text, "shpproj") || ci_contains(text, "shprdf") ||
-             ci_contains(text, "shprewind") || ci_contains(text, "shptree") ||
-             ci_contains(text, "shptreetst") || ci_contains(text, "shptst") ||
+             ci_contains(text, "shprewind") || ci_contains(text, "shptree")  || ci_contains(text, "shptst") ||
              ci_contains(text, "shpwkt") || ci_contains(text, "dbfcat") ||
              ci_contains(text, "dbfinfo") || ci_contains(text, "sbn ") ||
              ci_contains(text, "map2img") ||
              (ci_contains(text, "legend") && ci_contains(text, " -")) ||
              (ci_contains(text, "scalebar") && ci_contains(text, " -")) ||
              ci_contains(text, "shp2img") || ci_contains(text, "tile4ms") ||
-             ci_contains(text, "msencrypt") || ci_contains(text, "meshlab") ||
-             ci_contains(text, "pymeshlab") || ci_contains(text, "mmg") ||
-             ci_contains(text, "mmgs") || ci_contains(text, "mmg2d") ||
-             ci_contains(text, "mmg3d") || ci_contains(text, "gmesh") ||
+             ci_contains(text, "msencrypt") || ci_contains(text, "meshlab")  || ci_contains(text, "mmg")    || ci_contains(text, "gmesh") ||
              ci_contains(text, "tetmesher") || ci_contains(text, "distmesh") ||
              ci_contains(text, "iso2mesh") || ci_contains(text, "surf2mesh") ||
-             ci_contains(text, "tet2mesh") || ci_contains(text, "acvd") ||
-             ci_contains(text, "acvdp")) {
+             ci_contains(text, "tet2mesh") || ci_contains(text, "acvd") ) {
         what = "spatial/mesh primitive";
         } else if (
              /* cycle-358a: net-legacy/boot primitives */
              ci_contains(text, "rstatd") || ci_contains(text, "rcp") ||
-             ci_contains(text, "rdist") || ci_contains(text, "rdistd") ||
+             ci_contains(text, "rdist")  ||
              (ci_contains(text, "talk") && ci_contains(text, " -")) ||
              ci_contains(text, "ytalk") ||
              ci_contains(text, "biff") || ci_contains(text, "comsat") ||
@@ -14503,12 +14383,10 @@ hlse_check_paste(const char *text) {
         what = "net-legacy primitive";
         } else if (
              /* cycle-358b: amiga-adf primitives */
-             ci_contains(text, "adfinfo") || ci_contains(text, "adflist") ||
-             ci_contains(text, "adfblitzer") || ci_contains(text, "adfcop") ||
+             ci_contains(text, "adfinfo")  ||
+             ci_contains(text, "adfblitzer")  ||
              ci_contains(text, "adfdir") || ci_contains(text, "adffile") ||
-             ci_contains(text, "adficon") || ci_contains(text, "adfput") ||
-             ci_contains(text, "adfver") || ci_contains(text, "adfview") ||
-             ci_contains(text, "adfvol") || ci_contains(text, "hdfinfo") ||
+             ci_contains(text, "adficon") || ci_contains(text, "adfput")    || ci_contains(text, "hdfinfo") ||
              ci_contains(text, "hdf2adf") || ci_contains(text, "adf2hdf") ||
              ci_contains(text, "dms2adf") || ci_contains(text, "adf2dms") ||
              ci_contains(text, "adfc") || ci_contains(text, "adfl") ||
@@ -14546,9 +14424,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "groffer") || ci_contains(text, "deroff") ||
              ci_contains(text, "dvi2tty") || ci_contains(text, "dvitty") ||
              ci_contains(text, "dvisvga") || ci_contains(text, "dvihp") ||
-             ci_contains(text, "dvilj") || ci_contains(text, "dvilj2p") ||
-             ci_contains(text, "dvilj4") || ci_contains(text, "dvilj4l") ||
-             ci_contains(text, "dvilj6") || ci_contains(text, "dvipos") ||
+             ci_contains(text, "dvilj")     || ci_contains(text, "dvipos") ||
              ci_contains(text, "dvired") || ci_contains(text, "dviselect") ||
              ci_contains(text, "dvispc") || ci_contains(text, "dvitodvi") ||
              ci_contains(text, "dvitype") || ci_contains(text, "dv2dt") ||
@@ -14565,8 +14441,7 @@ hlse_check_paste(const char *text) {
         } else if (
              /* cycle-360a: cpm/atari primitives */
              ci_contains(text, "mkfs.cpm") || ci_contains(text, "cpmls") ||
-             ci_contains(text, "cpm ") || ci_contains(text, "cpmlabel") ||
-             ci_contains(text, "cpmls5") || ci_contains(text, "altairz80") ||
+             ci_contains(text, "cpm ") || ci_contains(text, "cpmlabel")  || ci_contains(text, "altairz80") ||
              ci_contains(text, "z80pack") || ci_contains(text, "z80sim") ||
              ci_contains(text, "cpmsim") || ci_contains(text, "zystem") ||
              ci_contains(text, "zcc") || ci_contains(text, "mpm") ||
@@ -14575,7 +14450,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "m80") || ci_contains(text, "mac80") ||
              ci_contains(text, "slr") || ci_contains(text, "dz80") ||
              ci_contains(text, "z80dis") ||
-             ci_contains(text, "zsid") || ci_contains(text, "ddtz") ||
+             ci_contains(text, "zsid")  ||
              ci_contains(text, "ddt") || ci_contains(text, "tvz80") ||
              ci_contains(text, "sio2bsd") || ci_contains(text, "aspeqt") ||
              ci_contains(text, "respeqt") || ci_contains(text, "altirra")) {
@@ -14724,7 +14599,7 @@ hlse_check_paste(const char *text) {
         what = "lsp/lint primitive";
         } else if (
              /* cycle-365b: jvm/db/imaging-ps primitives */
-             ci_contains(text, "hsdb") || ci_contains(text, "clhsdb") ||
+             ci_contains(text, "hsdb")  ||
              ci_contains(text, "arthas") || ci_contains(text, "ecj ") ||
              ci_contains(text, "gcj ") || ci_contains(text, "javadoc") ||
              ci_contains(text, "javah") || ci_contains(text, "serialver") ||
@@ -14765,8 +14640,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tss2_list") ||
              (ci_contains(text, "trousers") && ci_contains(text, " -")) ||
              ci_contains(text, "bochscov") || ci_contains(text, "kcov") ||
-             ci_contains(text, "asan_symbolize") || ci_contains(text, "sanstats") ||
-             ci_contains(text, "hwasan_symbolize")) {
+             ci_contains(text, "asan_symbolize") || ci_contains(text, "sanstats") ) {
         what = "firmware/sanitizer primitive";
         } else if (
              /* cycle-367b: forensics/disk primitives */
@@ -14877,7 +14751,7 @@ hlse_check_paste(const char *text) {
         what = "index/diff primitive";
         } else if (
              /* cycle-372b: charset/nlp primitives */
-             ci_contains(text, "chardet") || ci_contains(text, "uchardet") ||
+             ci_contains(text, "chardet")  ||
              ci_contains(text, "kconv") || ci_contains(text, "hnkf") ||
              ci_contains(text, "qkc") ||
              (ci_contains(text, "sudachi") && ci_contains(text, " -")) ||
@@ -15025,8 +14899,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "jack_cpu") || ci_contains(text, "jack_bufsize") ||
              ci_contains(text, "jack_freewheel") || ci_contains(text, "jack_net_master") ||
              ci_contains(text, "jack_net_slave") || ci_contains(text, "jack_midiseq") ||
-             ci_contains(text, "jack_midi_latency_test") || ci_contains(text, "patchance") ||
-             ci_contains(text, "a2jmidid") || ci_contains(text, "a2jmidi") ||
+             ci_contains(text, "jack_midi_latency_test") || ci_contains(text, "patchance")  || ci_contains(text, "a2jmidi") ||
              ci_contains(text, "aeolus") || ci_contains(text, "bspacewizard")) {
         what = "jack/audio primitive";
         } else if (
@@ -15109,8 +14982,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "helicone") || ci_contains(text, "sqlfluff")) {
         what = "ai/data primitive";
         } else if (
-             /* cycle-381b: retro/emu primitives */
-             ci_contains(text, "uade123") || ci_contains(text, "uade") ||
+             /* cycle-381b: retro/emu primitives */ ci_contains(text, "uade") ||
              ci_contains(text, "resid ") || ci_contains(text, "vgmplay") ||
              ci_contains(text, "klystrack") || ci_contains(text, "neko8") ||
              ci_contains(text, "basic8") || ci_contains(text, "cel7") ||
@@ -15123,7 +14995,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "nesicide") || ci_contains(text, "ksnes") ||
              ci_contains(text, "mynes") || ci_contains(text, "halfnes") ||
              ci_contains(text, "nintendulator") || ci_contains(text, "virtuanes") ||
-             ci_contains(text, "jnes") || ci_contains(text, "smynes")) {
+             ci_contains(text, "jnes") ) {
         what = "retro/emu primitive";
         } else if (
              /* cycle-382a: filemgr primitives */
@@ -15139,14 +15011,12 @@ hlse_check_paste(const char *text) {
         what = "filemgr primitive";
         } else if (
              /* cycle-382b: sysstat/proc primitives */
-             ci_contains(text, "procs") || ci_contains(text, "psmem") ||
+             ci_contains(text, "procs")  ||
              ci_contains(text, "pstree") || ci_contains(text, "smem") ||
              ci_contains(text, "pcp") || (ci_contains(text, "sar ") && ci_contains(text, " -")) ||
              ci_contains(text, "iostat") || ci_contains(text, "mpstat") ||
              ci_contains(text, "vmstat") || ci_contains(text, "dstat ") ||
-             ci_contains(text, "pidstat") ||
-             ci_contains(text, "nfsiostat") ||
-             ci_contains(text, "cifsiostat") || ci_contains(text, "pmstat")) {
+             ci_contains(text, "pidstat")   || ci_contains(text, "pmstat")) {
         what = "sysstat/proc primitive";
         } else if (
              /* cycle-383a: torrent primitives */
@@ -15245,8 +15115,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pynzb") || ci_contains(text, "newsgroups") ||
              ci_contains(text, "afew") ||
              ci_contains(text, "mdir") || ci_contains(text, "mflag") ||
-             ci_contains(text, "minc ") || ci_contains(text, "mseq") ||
-             ci_contains(text, "mdirs") || ci_contains(text, "mmime") ||
+             ci_contains(text, "minc ") || ci_contains(text, "mseq")  || ci_contains(text, "mmime") ||
              ci_contains(text, "mpick") || ci_contains(text, "mrep") ||
              ci_contains(text, "mrefile")) {
         what = "mail/feed primitive";
@@ -15329,8 +15198,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ptyprocess") || ci_contains(text, "unigine") ||
              ci_contains(text, "glslc") || ci_contains(text, "shaderc") ||
              (ci_contains(text, "naga") && ci_contains(text, " -")) ||
-             ci_contains(text, "rga ") || ci_contains(text, "amdvlk") ||
-             ci_contains(text, "eglinfo") || ci_contains(text, "es2_info") ||
+             ci_contains(text, "rga ") || ci_contains(text, "amdvlk")  || ci_contains(text, "es2_info") ||
              ci_contains(text, "es2gears") || ci_contains(text, "es2tri") ||
              ci_contains(text, "glinfo") || ci_contains(text, "nvenc") ||
              ci_contains(text, "nvdec") || ci_contains(text, "umr ") ||
@@ -15457,11 +15325,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "db_stat") || ci_contains(text, "db_verify") ||
              ci_contains(text, "db_recover") || ci_contains(text, "db_checkpoint") ||
              ci_contains(text, "db_upgrade") || ci_contains(text, "db_hotbackup") ||
-             ci_contains(text, "db_replicate") || ci_contains(text, "db_tuner") ||
-             ci_contains(text, "mdb_stat") || ci_contains(text, "mdb_env") ||
+             ci_contains(text, "db_replicate") || ci_contains(text, "db_tuner")  || ci_contains(text, "mdb_env") ||
              ci_contains(text, "mdb_chk") || ci_contains(text, "db_bench") ||
-             ci_contains(text, "cache_bench") ||
-             ci_contains(text, "persistent_cache_bench") ||
+             ci_contains(text, "cache_bench")  ||
              ci_contains(text, "filter_bench") || ci_contains(text, "block_cache") ||
              ci_contains(text, "trace_analyzer") || ci_contains(text, "io_tracer") ||
              ci_contains(text, "ldb_tests") || ci_contains(text, "couchapp") ||
@@ -15507,11 +15373,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "gnathtml") || ci_contains(text, "gnatkr") ||
              ci_contains(text, "gnatname") || ci_contains(text, "gnatprep") ||
              ci_contains(text, "gprslave") || ci_contains(text, "gprls") ||
-             ci_contains(text, "alr ") || ci_contains(text, "ocaml") ||
-             ci_contains(text, "ocamldebug") || ci_contains(text, "ocamldoc") ||
-             ci_contains(text, "ocamlmktop") || ci_contains(text, "ocamlmklib") ||
-             ci_contains(text, "ocamlopt") || ci_contains(text, "ocamldep") ||
-             ci_contains(text, "ocamlprof") || ci_contains(text, "ocamlbrowser") ||
+             ci_contains(text, "alr ") || ci_contains(text, "ocaml")         ||
              (ci_contains(text, "dune") && ci_contains(text, " -")) ||
              ci_contains(text, "odoc")) {
         what = "fp-lang primitive";
@@ -15633,8 +15495,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "audacity") && ci_contains(text, " -")) ||
              ci_contains(text, "cplay2") || ci_contains(text, "fooyin") ||
              (ci_contains(text, "cantata") && ci_contains(text, " -")) ||
-             ci_contains(text, "mpdris") || ci_contains(text, "ympd") ||
-             ci_contains(text, "mympd") || ci_contains(text, "rompr") ||
+             ci_contains(text, "mpdris") || ci_contains(text, "ympd")  || ci_contains(text, "rompr") ||
              ci_contains(text, "muine") ||
              (ci_contains(text, "pogo") && ci_contains(text, " -")) ||
              ci_contains(text, "shoutcast") || ci_contains(text, "sc_trans") ||
@@ -15681,8 +15542,7 @@ hlse_check_paste(const char *text) {
         } else if (
              /* cycle-395a: bio-align/ucsc primitives */
              ci_contains(text, "mashmap") || ci_contains(text, "mummer") ||
-             ci_contains(text, "nucmer") || ci_contains(text, "dnadiff") ||
-             ci_contains(text, "mummerplot") || ci_contains(text, "promer") ||
+             ci_contains(text, "nucmer") || ci_contains(text, "dnadiff")  || ci_contains(text, "promer") ||
              ci_contains(text, "bedgraphtobigwig") || ci_contains(text, "bigwigtobedgraph") ||
              ci_contains(text, "bigbedtobed") || ci_contains(text, "bedtobigbed") ||
              ci_contains(text, "fatotwobit") || ci_contains(text, "twobittofa") ||
@@ -15705,8 +15565,7 @@ hlse_check_paste(const char *text) {
              /* cycle-395c: emboss/rna primitives */
              (ci_contains(text, "emboss") && ci_contains(text, " -")) ||
              (ci_contains(text, "water ") && ci_contains(text, " -")) ||
-             ci_contains(text, "seqret") || ci_contains(text, "transeq") ||
-             ci_contains(text, "backtranseq") || ci_contains(text, "backtranambig") ||
+             ci_contains(text, "seqret") || ci_contains(text, "transeq")  || ci_contains(text, "backtranambig") ||
              ci_contains(text, "showfeat") || ci_contains(text, "abiview") ||
              ci_contains(text, "fconseq") || ci_contains(text, "fprotdom") ||
              ci_contains(text, "fprotfam") || ci_contains(text, "plotorf") ||
@@ -15715,20 +15574,20 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "prophecy") && ci_contains(text, " -")) ||
              ci_contains(text, "esim4") || ci_contains(text, "patmatmotifs") ||
              ci_contains(text, "primer_core") || ci_contains(text, "primerprep") ||
-             ci_contains(text, "revseqd") || ci_contains(text, "sl2jm") ||
+             ci_contains(text, "revseqd")  ||
              ci_contains(text, "sl2j")) {
         what = "emboss/rna primitive";
         } else if (
              /* cycle-395d: bio-annotate/phylo primitives */
-             ci_contains(text, "annovar") || ci_contains(text, "table_annovar") ||
+             ci_contains(text, "annovar")  ||
              ci_contains(text, "snpeff") || ci_contains(text, "vcfanno") ||
              ci_contains(text, "goffy") || ci_contains(text, "funannotate") ||
              ci_contains(text, "genemark") || ci_contains(text, "antismash") ||
              ci_contains(text, "paup ") || ci_contains(text, "paml ") ||
-             ci_contains(text, "bpp ") || ci_contains(text, "mlocarna") ||
+             ci_contains(text, "bpp ")  ||
              ci_contains(text, "locarna") || ci_contains(text, "viennarna") ||
              ci_contains(text, "rnafold") || ci_contains(text, "rnaplot") ||
-             ci_contains(text, "rnacofold") || ci_contains(text, "rnafoldp") ||
+             ci_contains(text, "rnacofold")  ||
              ci_contains(text, "rnadistance") || ci_contains(text, "rnaup") ||
              ci_contains(text, "mfold") || ci_contains(text, "unafold")) {
         what = "bio-annotate/phylo primitive";
@@ -15755,7 +15614,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "astquery") || ci_contains(text, "atlod") ||
              ci_contains(text, "wrf ") || ci_contains(text, "da_wrfvar") ||
              ci_contains(text, "ncarg") || ci_contains(text, "adcprep") ||
-             ci_contains(text, "adcirc") || ci_contains(text, "padcirc") ||
+             ci_contains(text, "adcirc")  ||
              ci_contains(text, "padcswan") || ci_contains(text, "hhsun") ||
              ci_contains(text, "relacs")) {
         what = "astro/plot/wrf primitive";
@@ -15784,9 +15643,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "sapper") && ci_contains(text, " -")) ||
              (ci_contains(text, "quartz") && ci_contains(text, " -")) ||
              ci_contains(text, "docsify") || ci_contains(text, "wintersmith") ||
-             ci_contains(text, "gridsome") || ci_contains(text, "scully") ||
-             ci_contains(text, "scullyio") || ci_contains(text, "retype") ||
-             ci_contains(text, "retypeapp") || ci_contains(text, "wikijs") ||
+             ci_contains(text, "gridsome") || ci_contains(text, "scully")  || ci_contains(text, "retype")  || ci_contains(text, "wikijs") ||
              ci_contains(text, "moinmoin") || ci_contains(text, "pmwiki") ||
              ci_contains(text, "foswiki")) {
         what = "ssg/wiki primitive";
@@ -15799,10 +15656,9 @@ hlse_check_paste(const char *text) {
         what = "forum/issue primitive";
         } else if (
              /* cycle-397c: commerce/erp primitives */
-             ci_contains(text, "aimeos") || ci_contains(text, "shopware") ||
-             ci_contains(text, "shopware6") || ci_contains(text, "spryker") ||
+             ci_contains(text, "aimeos") || ci_contains(text, "shopware")  || ci_contains(text, "spryker") ||
              ci_contains(text, "yetiforce") || ci_contains(text, "odoo") ||
-             ci_contains(text, "tryton") || ci_contains(text, "trytond") ||
+             ci_contains(text, "tryton")  ||
              ci_contains(text, "idempiere") || ci_contains(text, "moqui") ||
              ci_contains(text, "dolibarr") || ci_contains(text, "gnuhealth") ||
              (ci_contains(text, "propeller") && ci_contains(text, " -")) ||
@@ -15814,7 +15670,7 @@ hlse_check_paste(const char *text) {
         } else if (
              /* cycle-398a: game-engine primitives */
              ci_contains(text, "ueditor") || ci_contains(text, "uefn") ||
-             ci_contains(text, "unpkg") || ci_contains(text, "cocos2d") ||
+             ci_contains(text, "unpkg")  ||
              ci_contains(text, "cocos") || ci_contains(text, "yacf") ||
              ci_contains(text, "q3map2") || ci_contains(text, "q3asm") ||
              ci_contains(text, "trenchbroom") || ci_contains(text, "levelforge") ||
@@ -15858,10 +15714,8 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "rip98d") || ci_contains(text, "winlink") ||
              ci_contains(text, "wlol") || ci_contains(text, "wldd") ||
              ci_contains(text, "varac") || ci_contains(text, "varahf") ||
-             ci_contains(text, "ardop") || ci_contains(text, "ardopc") ||
-             ci_contains(text, "ardopcf") || ci_contains(text, "drats") ||
-             ci_contains(text, "chirpw") || ci_contains(text, "qdmr") ||
-             ci_contains(text, "hblink3") || ci_contains(text, "hblink") ||
+             ci_contains(text, "ardop")   || ci_contains(text, "drats") ||
+             ci_contains(text, "chirpw") || ci_contains(text, "qdmr")  || ci_contains(text, "hblink") ||
              ci_contains(text, "dmrlink") || ci_contains(text, "ambed") ||
              ci_contains(text, "ft1d") || ci_contains(text, "dv4mini") ||
              (ci_contains(text, "smack") && ci_contains(text, " -")) ||
@@ -15870,43 +15724,37 @@ hlse_check_paste(const char *text) {
         } else if (
              /* cycle-399b: marine/weather primitives */
              ci_contains(text, "aisdispatcher") || ci_contains(text, "aiscatcher") ||
-             ci_contains(text, "aisdeco") || ci_contains(text, "aisdeco2") ||
+             ci_contains(text, "aisdeco")  ||
              ci_contains(text, "nauticalcharts") || ci_contains(text, "aisparser") ||
              ci_contains(text, "aislib") || ci_contains(text, "aisreceiver") ||
-             ci_contains(text, "naviserver") || ci_contains(text, "nmea") ||
-             ci_contains(text, "nmea0183") || ci_contains(text, "nmearemote") ||
-             ci_contains(text, "nmeasimulator") || ci_contains(text, "nmeagps") ||
-             ci_contains(text, "nmeaconverter") || ci_contains(text, "saildocs") ||
+             ci_contains(text, "naviserver") || ci_contains(text, "nmea")      || ci_contains(text, "saildocs") ||
              ci_contains(text, "sailgrib") || ci_contains(text, "sailtimer") ||
              ci_contains(text, "sailplanner") || ci_contains(text, "adrena") ||
              ci_contains(text, "actisense") || ci_contains(text, "ge2kap") ||
              ci_contains(text, "bsb2tif") || ci_contains(text, "imgkap") ||
              ci_contains(text, "kapgen") || ci_contains(text, "tiff2kap") ||
-             ci_contains(text, "chartconvert") || ci_contains(text, "merak") ||
-             ci_contains(text, "merak1") || ci_contains(text, "wvlibrary") ||
+             ci_contains(text, "chartconvert") || ci_contains(text, "merak")  || ci_contains(text, "wvlibrary") ||
              ci_contains(text, "wvpgsql") || ci_contains(text, "wvserial") ||
              ci_contains(text, "wvss2300") || ci_contains(text, "vproweather") ||
              ci_contains(text, "weatherd") || ci_contains(text, "wfview")) {
         what = "marine/weather primitive";
         } else if (
              /* cycle-400a: retro-emu primitives */
-             ci_contains(text, "z390") || ci_contains(text, "z390emu") ||
-             ci_contains(text, "z390zam") || ci_contains(text, "zdt") ||
+             ci_contains(text, "z390")   || ci_contains(text, "zdt") ||
              ci_contains(text, "kl10") || ci_contains(text, "apple2js") ||
-             ci_contains(text, "applewin") || ci_contains(text, "kegs") ||
-             ci_contains(text, "kegsgs") || ci_contains(text, "vsid") ||
+             ci_contains(text, "applewin") || ci_contains(text, "kegs")  || ci_contains(text, "vsid") ||
              ci_contains(text, "tos540") || ci_contains(text, "tap2wav") ||
              ci_contains(text, "qlay") || ci_contains(text, "speccy") ||
              ci_contains(text, "emu48") || ci_contains(text, "hp48") ||
              ci_contains(text, "hp49") || ci_contains(text, "hp50g") ||
-             ci_contains(text, "tilp") || ci_contains(text, "tilp2") ||
-             ci_contains(text, "tiemu") || ci_contains(text, "tiemu3") ||
+             ci_contains(text, "tilp")  ||
+             ci_contains(text, "tiemu")  ||
              ci_contains(text, "almostti") || ci_contains(text, "coolcv") ||
              ci_contains(text, "colblue") || ci_contains(text, "catapult") ||
              ci_contains(text, "meisei") || ci_contains(text, "rumsx") ||
              ci_contains(text, "coco3") || ci_contains(text, "ovcc") ||
              ci_contains(text, "dragon32") || ci_contains(text, "dragon64") ||
-             ci_contains(text, "trs80") || ci_contains(text, "trs80gp") ||
+             ci_contains(text, "trs80")  ||
              ci_contains(text, "cpmulator") || ci_contains(text, "z80emu")) {
         what = "retro-emu primitive";
         } else if (
@@ -15935,7 +15783,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "listener") && ci_contains(text, " -")) ||
              ci_contains(text, "mavft") || ci_contains(text, "mavtelemetry") ||
              ci_contains(text, "mavgen") || ci_contains(text, "mavtest") ||
-             ci_contains(text, "plummeter") || ci_contains(text, "asctec_hl") ||
+             ci_contains(text, "plummeter")  ||
              ci_contains(text, "asctec") || ci_contains(text, "athr") ||
              ci_contains(text, "hector_quadrotor") || ci_contains(text, "tum_simulator") ||
              ci_contains(text, "bebop_autonomy") || ci_contains(text, "kobuki") ||
@@ -15976,9 +15824,8 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "skyline") && ci_contains(text, " -")) ||
              ci_contains(text, "hardklor") || ci_contains(text, "kronik") ||
              ci_contains(text, "decon2ls") || ci_contains(text, "deconlrz") ||
-             ci_contains(text, "filefilter") || ci_contains(text, "fileconverter") ||
-             ci_contains(text, "idfileconverter") || ci_contains(text, "idmerger") ||
-             ci_contains(text, "masserrorcorrection") || ci_contains(text, "quantmetrin") ||
+             ci_contains(text, "filefilter") || ci_contains(text, "fileconverter")  || ci_contains(text, "idmerger") ||
+             ci_contains(text, "masserrorcorrection")  ||
              ci_contains(text, "metrin") || ci_contains(text, "spectrafilter") ||
              ci_contains(text, "spectrastfilter") || ci_contains(text, "sirius") ||
              ci_contains(text, "metfrag") ||
@@ -16027,9 +15874,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "zfone") || ci_contains(text, "pjsip") ||
              (ci_contains(text, "homer") && ci_contains(text, " -")) ||
              ci_contains(text, "sipml5") || ci_contains(text, "sipgo") ||
-             ci_contains(text, "callweaver") || ci_contains(text, "callgen") ||
-             ci_contains(text, "callgen518") || ci_contains(text, "smpp") ||
-             ci_contains(text, "smppcsmp") || ci_contains(text, "emserver") ||
+             ci_contains(text, "callweaver") || ci_contains(text, "callgen")  || ci_contains(text, "smpp")  || ci_contains(text, "emserver") ||
              ci_contains(text, "gsmsms") || ci_contains(text, "atemu")) {
         what = "voip/pbx primitive";
         } else if (
@@ -16045,17 +15890,14 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "rawtodc") || ci_contains(text, "dcunmk") ||
              ci_contains(text, "weasis") || ci_contains(text, "kvak") ||
              ci_contains(text, "aeskulap") || ci_contains(text, "medcon") ||
-             ci_contains(text, "medview") || ci_contains(text, "dcm2nii") ||
-             ci_contains(text, "mricron") || ci_contains(text, "mricro") ||
-             ci_contains(text, "mricrogl") || ci_contains(text, "dcmind") ||
+             ci_contains(text, "medview") || ci_contains(text, "dcm2nii")  || ci_contains(text, "mricro")  || ci_contains(text, "dcmind") ||
              ci_contains(text, "dcmpat") || ci_contains(text, "dcmseg") ||
              ci_contains(text, "segdcatseg") || ci_contains(text, "c4d ") ||
              ci_contains(text, "niftyreg") || ci_contains(text, "reg_jacobian") ||
              ci_contains(text, "niftyseg") || ci_contains(text, "seg_stats") ||
              ci_contains(text, "seg_maths") || ci_contains(text, "seg_em") ||
              ci_contains(text, "seg_labfusion") || ci_contains(text, "seg_patchmatch") ||
-             ci_contains(text, "nifti") || ci_contains(text, "nifti1_test") ||
-             ci_contains(text, "nifti_stats") || ci_contains(text, "mnc2nii") ||
+             ci_contains(text, "nifti")   || ci_contains(text, "mnc2nii") ||
              ci_contains(text, "nii2mnc") || ci_contains(text, "mincinfo") ||
              ci_contains(text, "mincstats") || ci_contains(text, "mincreshape") ||
              ci_contains(text, "minctracc") || ci_contains(text, "minc_modify_header") ||
@@ -16104,8 +15946,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "opds") ||
              (ci_contains(text, "cops") && ci_contains(text, " -")) ||
              ci_contains(text, "lanraragi") || ci_contains(text, "shoko") ||
-             ci_contains(text, "stashapp") || ci_contains(text, "mylar") ||
-             ci_contains(text, "mylar3") || ci_contains(text, "kapowarr") ||
+             ci_contains(text, "stashapp") || ci_contains(text, "mylar")  || ci_contains(text, "kapowarr") ||
              ci_contains(text, "jellyseerr") || ci_contains(text, "petio") ||
              ci_contains(text, "requestrr") || ci_contains(text, "varken") ||
              ci_contains(text, "ebooksis") || ci_contains(text, "linkace") ||
@@ -16126,12 +15967,11 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "theia_compare_reconstructions") || ci_contains(text, "theia_view_reconstruction") ||
              ci_contains(text, "theia_build_reconstruction") || ci_contains(text, "theia_gmm") ||
              ci_contains(text, "theia_convert_reconstruction_file") ||
-             ci_contains(text, "orbslam3") || ci_contains(text, "orb_slam") ||
-             ci_contains(text, "orb_slam2") || ci_contains(text, "orb_slam3") ||
-             ci_contains(text, "okvis") || ci_contains(text, "okvis2") ||
+             ci_contains(text, "orbslam3") || ci_contains(text, "orb_slam")   ||
+             ci_contains(text, "okvis")  ||
              ci_contains(text, "ccviewer") || ci_contains(text, "cloud_compariss") ||
              ci_contains(text, "gospy") || ci_contains(text, "gwd ") ||
-             ci_contains(text, "familytree") || ci_contains(text, "legacyfamilytree") ||
+             ci_contains(text, "familytree")  ||
              (ci_contains(text, "reunion") && ci_contains(text, " -")) ||
              ci_contains(text, "genealodzy") ||
              ci_contains(text, "jgenea") || ci_contains(text, "familieroots") ||
@@ -16156,22 +15996,18 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ifccheck") || ci_contains(text, "ifcconvert") ||
              ci_contains(text, "ifcdiff") || ci_contains(text, "ifcinfo") ||
              ci_contains(text, "ifcquery") || ci_contains(text, "ifcparse") ||
-             ci_contains(text, "ifcg") || ci_contains(text, "ifcgeom") ||
-             ci_contains(text, "ifcgeomserver") || ci_contains(text, "ifcpatch") ||
+             ci_contains(text, "ifcg")   || ci_contains(text, "ifcpatch") ||
              ci_contains(text, "ifcbrowser") || ci_contains(text, "ifcfm") ||
              ci_contains(text, "ifctester") || ci_contains(text, "ifcdoc") ||
              ci_contains(text, "bcfapi") || ci_contains(text, "ifcforge") ||
              ci_contains(text, "bimserver") || ci_contains(text, "bimvie") ||
              (ci_contains(text, "speckle") && ci_contains(text, " -")) ||
-             ci_contains(text, "specklepy") || ci_contains(text, "revit") ||
-             ci_contains(text, "revitlookup") || ci_contains(text, "rvt ") ||
-             ci_contains(text, "rvt2ifc") || ci_contains(text, "rvtjson") ||
-             ci_contains(text, "navisworks") || ci_contains(text, "naviswork") ||
+             ci_contains(text, "specklepy") || ci_contains(text, "revit")  || ci_contains(text, "rvt ") ||
+             ci_contains(text, "rvt2ifc") || ci_contains(text, "rvtjson")  || ci_contains(text, "naviswork") ||
              ci_contains(text, "gsm2ifc") || ci_contains(text, "pln ") ||
              ci_contains(text, "pln2ifc") ||
              (ci_contains(text, "rhino") && ci_contains(text, " -")) ||
-             ci_contains(text, "rhino3d") || ci_contains(text, "rhinocommon") ||
-             ci_contains(text, "rhino3dm") || ci_contains(text, "karamba3d") ||
+             ci_contains(text, "rhino3d") || ci_contains(text, "rhinocommon")   ||
              ci_contains(text, "karamba") ||
              (ci_contains(text, "ladybug") && ci_contains(text, " -")) ||
              (ci_contains(text, "honeybee") && ci_contains(text, " -")) ||
@@ -16181,10 +16017,10 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "draco2gltf") || ci_contains(text, "bimrocket") ||
              ci_contains(text, "qcad") || ci_contains(text, "odafc") ||
              ci_contains(text, "odaview") || ci_contains(text, "odarecv") ||
-             ci_contains(text, "teigha") || ci_contains(text, "teighafileconverter") ||
-             ci_contains(text, "staad") || ci_contains(text, "staadpro") ||
+             ci_contains(text, "teigha")  ||
+             ci_contains(text, "staad")  ||
              (ci_contains(text, "bentley") && ci_contains(text, " -")) ||
-             ci_contains(text, "dgn") || ci_contains(text, "dgnlib") ||
+             ci_contains(text, "dgn")  ||
              ci_contains(text, "civil3d") || ci_contains(text, "csicol") ||
              ci_contains(text, "csiplant") || ci_contains(text, "gtstrudl") ||
              ci_contains(text, "gtmenu") ||
@@ -16197,10 +16033,8 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "skyciv") || ci_contains(text, "ideastatica") ||
              ci_contains(text, "conidea") || ci_contains(text, "checkbot") ||
              ci_contains(text, "dlubal") || ci_contains(text, "rfem") ||
-             ci_contains(text, "rstab") || ci_contains(text, "rsection") ||
-             ci_contains(text, "rfem6") || ci_contains(text, "scia") ||
-             ci_contains(text, "buildsoft") || ci_contains(text, "powerconnect") ||
-             ci_contains(text, "cypecad") || ci_contains(text, "cype") ||
+             ci_contains(text, "rstab") || ci_contains(text, "rsection")  || ci_contains(text, "scia") ||
+             ci_contains(text, "buildsoft") || ci_contains(text, "powerconnect")  || ci_contains(text, "cype") ||
              ci_contains(text, "tricalc") || ci_contains(text, "lusas") ||
              ci_contains(text, "atena") || ci_contains(text, "sofistik") ||
              ci_contains(text, "sofiplus") ||
@@ -16223,7 +16057,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "ijview") || ci_contains(text, "omero") ||
              ci_contains(text, "bflist") || ci_contains(text, "icycam") ||
              ci_contains(text, "vaa3d") || ci_contains(text, "tereconverter") ||
-             ci_contains(text, "catmaid") || ci_contains(text, "trakem2") ||
+             ci_contains(text, "catmaid")  ||
              ci_contains(text, "trakem") || ci_contains(text, "ilastik") ||
              ci_contains(text, "cellpose") || ci_contains(text, "omnipose") ||
              ci_contains(text, "qupath") || ci_contains(text, "paquo") ||
@@ -16233,15 +16067,13 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "lsm2tif") || ci_contains(text, "lsm2ome") ||
              ci_contains(text, "lif2tif") || ci_contains(text, "lif2ome") ||
              ci_contains(text, "vsi2tif") || ci_contains(text, "vsi2ome") ||
-             ci_contains(text, "evos2tif") || ci_contains(text, "flim2tif") ||
-             ci_contains(text, "flim") || ci_contains(text, "flimlib") ||
-             ci_contains(text, "flimj") || ci_contains(text, "flimfit") ||
+             ci_contains(text, "evos2tif")  ||
+             ci_contains(text, "flim")    ||
              ci_contains(text, "phasor") || ci_contains(text, "imspector") ||
              ci_contains(text, "ptu2tif") || ci_contains(text, "refmacat") ||
              ci_contains(text, "restrain_probes") ||
              (ci_contains(text, "elder") && ci_contains(text, " -")) ||
-             ci_contains(text, "hkldisp") || ci_contains(text, "hklview") ||
-             ci_contains(text, "hklviewer") || ci_contains(text, "hklprocess") ||
+             ci_contains(text, "hkldisp") || ci_contains(text, "hklview")  || ci_contains(text, "hklprocess") ||
              ci_contains(text, "hklpy") || ci_contains(text, "eiger2cbf") ||
              ci_contains(text, "areadetector") || ci_contains(text, "adaravis") ||
              ci_contains(text, "adpilatus") || ci_contains(text, "adeiger")) {
@@ -16257,11 +16089,9 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "hspice") || ci_contains(text, "spectre") ||
              ci_contains(text, "titanspice") || ci_contains(text, "hsim") ||
              (ci_contains(text, "ocean") && ci_contains(text, " -")) ||
-             ci_contains(text, "siwave") || ci_contains(text, "hfss") ||
-             ci_contains(text, "pyaedt") || ci_contains(text, "icepak") ||
+             ci_contains(text, "siwave") || ci_contains(text, "hfss")  || ci_contains(text, "icepak") ||
              ci_contains(text, "aedt") || ci_contains(text, "altium") ||
-             ci_contains(text, "dsn2pcb") || ci_contains(text, "protel") ||
-             ci_contains(text, "protel99") ||
+             ci_contains(text, "dsn2pcb") || ci_contains(text, "protel")  ||
              (ci_contains(text, "pads") && ci_contains(text, " -")) ||
              ci_contains(text, "jlc2kicad") || ci_contains(text, "jlcpcb") ||
              ci_contains(text, "lceda") || ci_contains(text, "fzp ") ||
@@ -16273,7 +16103,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "rimu") || ci_contains(text, "diptrace") ||
              ci_contains(text, "ultiboard") || ci_contains(text, "scad3") ||
              ci_contains(text, "spice2") || ci_contains(text, "spice3") ||
-             ci_contains(text, "adms") || ci_contains(text, "admsxml") ||
+             ci_contains(text, "adms")  ||
              ci_contains(text, "oregano") || ci_contains(text, "csdl") ||
              ci_contains(text, "macspice") || ci_contains(text, "winspice") ||
              ci_contains(text, "isspice") || ci_contains(text, "smartsim") ||
@@ -16284,8 +16114,7 @@ hlse_check_paste(const char *text) {
              /* cycle-407a: compchem/crystal primitives */
              ci_contains(text, "g16 ") || ci_contains(text, "g09 ") ||
              ci_contains(text, "g03 ") || ci_contains(text, "g98 ") ||
-             ci_contains(text, "g16view") || ci_contains(text, "gaussview") ||
-             ci_contains(text, "gaussview6") || ci_contains(text, "newzmat") ||
+             ci_contains(text, "g16view") || ci_contains(text, "gaussview")  || ci_contains(text, "newzmat") ||
              ci_contains(text, "unfchk") || ci_contains(text, "freqchk") ||
              ci_contains(text, "freqmem") || ci_contains(text, "testrt") ||
              ci_contains(text, "obmm") || ci_contains(text, "obgopt") ||
@@ -16299,17 +16128,16 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "sir2020") ||
              (ci_contains(text, "endeavour") && ci_contains(text, " -")) ||
              ci_contains(text, "winspall") || ci_contains(text, "fullprof") ||
-             ci_contains(text, "gsas") || ci_contains(text, "gsas2") ||
+             ci_contains(text, "gsas")  ||
              ci_contains(text, "powdercell") || ci_contains(text, "powdll") ||
-             ci_contains(text, "winplotr") || ci_contains(text, "diffrac") ||
-             ci_contains(text, "diffracplus") || ci_contains(text, "leptos") ||
+             ci_contains(text, "winplotr") || ci_contains(text, "diffrac")  || ci_contains(text, "leptos") ||
              ci_contains(text, "highscore") ||
              (ci_contains(text, "jade") && ci_contains(text, " -")) ||
              ci_contains(text, "materia ") || ci_contains(text, "checkcell") ||
              ci_contains(text, "chekcell") || ci_contains(text, "icdd") ||
              ci_contains(text, "sirware") || ci_contains(text, "dabars") ||
              ci_contains(text, "po15") || ci_contains(text, "lesocq") ||
-             ci_contains(text, "molmot") || ci_contains(text, "molmotif") ||
+             ci_contains(text, "molmot")  ||
              ci_contains(text, "encifer") || ci_contains(text, "publcif") ||
              ci_contains(text, "checkcif") ||
              (ci_contains(text, "squeeze") && ci_contains(text, " -")) ||
@@ -16319,8 +16147,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "simpson") && ci_contains(text, " -")) ||
              ci_contains(text, "simpsol") || ci_contains(text, "dmfit") ||
              ci_contains(text, "solnmr") || ci_contains(text, "nmrfam") ||
-             ci_contains(text, "nmrdraw") || ci_contains(text, "ccpn") ||
-             ci_contains(text, "ccpnmr") || ci_contains(text, "vnmrj") ||
+             ci_contains(text, "nmrdraw") || ci_contains(text, "ccpn")   ||
              ci_contains(text, "vnmr") || ci_contains(text, "olea") ||
              ci_contains(text, "mnova") || ci_contains(text, "mestrenova") ||
              ci_contains(text, "nmrglue") || ci_contains(text, "auremol") ||
@@ -16346,7 +16173,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "train_lvtln") || ci_contains(text, "train_map") ||
              ci_contains(text, "train_mmi") || ci_contains(text, "train_mpe") ||
              ci_contains(text, "train_sat") || ci_contains(text, "rnnlm") ||
-             ci_contains(text, "cslu") || ci_contains(text, "mini_librispeech") ||
+             ci_contains(text, "cslu")  ||
              ci_contains(text, "librispeech") || ci_contains(text, "vctk") ||
              ci_contains(text, "timit") || ci_contains(text, "chime1") ||
              ci_contains(text, "chime2") || ci_contains(text, "chime3") ||
@@ -16361,13 +16188,11 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "lre22") || ci_contains(text, "sre08") ||
              ci_contains(text, "sre10") || ci_contains(text, "sre16") ||
              ci_contains(text, "sre18") || ci_contains(text, "sre19") ||
-             ci_contains(text, "sre21") || ci_contains(text, "dihard") ||
-             ci_contains(text, "dihard3") || ci_contains(text, "dihards")) {
+             ci_contains(text, "sre21") || ci_contains(text, "dihard")  ) {
         what = "speech/asr primitive";
         } else if (
              /* cycle-408a: docpub/cat primitives */
-             ci_contains(text, "scribus") || ci_contains(text, "idml") ||
-             ci_contains(text, "idml2pdf") || ci_contains(text, "markzware") ||
+             ci_contains(text, "scribus") || ci_contains(text, "idml")  || ci_contains(text, "markzware") ||
              ci_contains(text, "flightcheck") || ci_contains(text, "pdf2id") ||
              ci_contains(text, "pdf2indd") ||
              (ci_contains(text, "publisher") && ci_contains(text, " -")) ||
@@ -16382,8 +16207,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "olifant") || ci_contains(text, "cafetan") ||
              ci_contains(text, "heartsome") || ci_contains(text, "wordfast") ||
              ci_contains(text, "wfclassic") || ci_contains(text, "memoq") ||
-             ci_contains(text, "memsource") || ci_contains(text, "pocompile") ||
-             ci_contains(text, "poconflicts") || ci_contains(text, "pystderr") ||
+             ci_contains(text, "memsource") || ci_contains(text, "pocompile")  || ci_contains(text, "pystderr") ||
              ci_contains(text, "po2html") || ci_contains(text, "htm2po") ||
              ci_contains(text, "it2po") || ci_contains(text, "korrekturzeichen") ||
              ci_contains(text, "levenshtein2po") || ci_contains(text, "mo2po") ||
@@ -16404,9 +16228,8 @@ hlse_check_paste(const char *text) {
              /* cycle-408b: gnss/survey primitives */
              ci_contains(text, "rtklib") || ci_contains(text, "rtkcmn") ||
              ci_contains(text, "rtksvr") || ci_contains(text, "rtkplot") ||
-             ci_contains(text, "rtklaunch") || ci_contains(text, "emlid") ||
-             ci_contains(text, "emlidcast") || ci_contains(text, "reachview") ||
-             ci_contains(text, "reachrs") || ci_contains(text, "reachrs2") ||
+             ci_contains(text, "rtklaunch") || ci_contains(text, "emlid")  || ci_contains(text, "reachview") ||
+             ci_contains(text, "reachrs")  ||
              ci_contains(text, "novatel") ||
              (ci_contains(text, "trimble") && ci_contains(text, " -")) ||
              ci_contains(text, "tps2rin") || ci_contains(text, "qc2sky") ||
@@ -16414,32 +16237,26 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "sv2whu") || ci_contains(text, "rincomp") ||
              ci_contains(text, "rin2dsk") || ci_contains(text, "as2rin") ||
              ci_contains(text, "ashtech") || ci_contains(text, "bin2rin") ||
-             ci_contains(text, "rtnet") || ci_contains(text, "brdc") ||
-             ci_contains(text, "brdc2") || ci_contains(text, "brdc3") ||
-             ci_contains(text, "brdcm") || ci_contains(text, "brdcmerge") ||
+             ci_contains(text, "rtnet") || ci_contains(text, "brdc")     ||
              ci_contains(text, "orbfit") || ci_contains(text, "orbgen") ||
-             ci_contains(text, "genday") || ci_contains(text, "doy") ||
-             ci_contains(text, "doy2mjd") || ci_contains(text, "bcontinue") ||
+             ci_contains(text, "genday") || ci_contains(text, "doy")  || ci_contains(text, "bcontinue") ||
              ci_contains(text, "htoglb") || ci_contains(text, "glbtog") ||
              ci_contains(text, "glupd") || ci_contains(text, "otl_fes2004") ||
-             ci_contains(text, "otl_list") || ci_contains(text, "otl_ascii2hardisp") ||
-             ci_contains(text, "hardisp") || ci_contains(text, "vgosdb") ||
-             ci_contains(text, "vgosdbcalc") || ci_contains(text, "vgosdbproc") ||
+             ci_contains(text, "otl_list")  ||
+             ci_contains(text, "hardisp") || ci_contains(text, "vgosdb")   ||
              ci_contains(text, "vsop") || ci_contains(text, "fours") ||
              ci_contains(text, "drudg") ||
              ci_contains(text, "nnkf") || ci_contains(text, "nnks") ||
              ci_contains(text, "nntime") ||
              (ci_contains(text, "clocks") && ci_contains(text, " -")) ||
              ci_contains(text, "clkplot") || ci_contains(text, "clkpatch") ||
-             ci_contains(text, "gpt2") || ci_contains(text, "gpt2w") ||
-             ci_contains(text, "ecmp") || ci_contains(text, "ecmp2") ||
+             ci_contains(text, "gpt2")  ||
+             ci_contains(text, "ecmp")  ||
              ci_contains(text, "eopp") || ci_contains(text, "eopc04") ||
              ci_contains(text, "igs14") || ci_contains(text, "igs20") ||
-             ci_contains(text, "itrf") || ci_contains(text, "itrf2014") ||
-             ci_contains(text, "itrf2020") || ci_contains(text, "brasilia") ||
-             ci_contains(text, "rtcm") || ci_contains(text, "rtcm2") ||
-             ci_contains(text, "ntrip") || ci_contains(text, "ntripcaster") ||
-             ci_contains(text, "ntripserver") || ci_contains(text, "ntrip2") ||
+             ci_contains(text, "itrf")   || ci_contains(text, "brasilia") ||
+             ci_contains(text, "rtcm")  ||
+             ci_contains(text, "ntrip")    ||
              (ci_contains(text, "caster") && ci_contains(text, " -")) ||
              ci_contains(text, "strsvr")) {
         what = "gnss/survey primitive";
@@ -16460,7 +16277,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "gp7conv") || ci_contains(text, "powertab") ||
              ci_contains(text, "pteditor") || ci_contains(text, "ptb ") ||
              ci_contains(text, "tabit") || ci_contains(text, "tablature") ||
-             ci_contains(text, "tabview") || ci_contains(text, "tablatures") ||
+             ci_contains(text, "tabview")  ||
              (ci_contains(text, "chord") && ci_contains(text, " -")) ||
              ci_contains(text, "chordpro") || ci_contains(text, "chordii") ||
              ci_contains(text, "chordname") || ci_contains(text, "chordauto") ||
@@ -16471,7 +16288,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "midi2mel") || ci_contains(text, "midi2mod") ||
              ci_contains(text, "miditomp3") || ci_contains(text, "midirender") ||
              ci_contains(text, "midimerge") || ci_contains(text, "midiprobe") ||
-             ci_contains(text, "midisheet") || ci_contains(text, "midisheetmusic") ||
+             ci_contains(text, "midisheet")  ||
              ci_contains(text, "mus2mid") || ci_contains(text, "verovio") ||
              ci_contains(text, "note2note") || ci_contains(text, "noteheads") ||
              ci_contains(text, "antescofo") || ci_contains(text, "rnm ") ||
@@ -16496,7 +16313,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tsvariety") || ci_contains(text, "dvblast") ||
              ci_contains(text, "dvicon") || ci_contains(text, "dvbsrc") ||
              ci_contains(text, "dvbt2") || ci_contains(text, "dvbs2") ||
-             ci_contains(text, "dvbc") || ci_contains(text, "dvbc2") ||
+             ci_contains(text, "dvbc")  ||
              ci_contains(text, "dvbapi") || ci_contains(text, "enigma2") ||
              ci_contains(text, "dreamedit") || ci_contains(text, "vuplus") ||
              ci_contains(text, "gigablue") ||
@@ -16510,8 +16327,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tbs5520se") || ci_contains(text, "tbs5880") ||
              ci_contains(text, "tbs8922") || ci_contains(text, "hauppauge") ||
              ci_contains(text, "wintv") || ci_contains(text, "e2iplayer") ||
-             ci_contains(text, "oscam") || ci_contains(text, "cccam") ||
-             ci_contains(text, "cccam2") || ci_contains(text, "newcamd") ||
+             ci_contains(text, "oscam") || ci_contains(text, "cccam")  || ci_contains(text, "newcamd") ||
              ci_contains(text, "cardserver") || ci_contains(text, "schlaflos") ||
              ci_contains(text, "satip")) {
         what = "broadcast/dvb primitive";
@@ -16522,10 +16338,10 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "appcompatcache") || ci_contains(text, "userassist") ||
              ci_contains(text, "usrclass") || ci_contains(text, "ntuser") ||
              ci_contains(text, "pefetch") || ci_contains(text, "jpegparser") ||
-             ci_contains(text, "winevt") || ci_contains(text, "winevt2json") ||
+             ci_contains(text, "winevt")  ||
              ci_contains(text, "sigmac") || ci_contains(text, "sigma2yml") ||
              ci_contains(text, "sigma2rule") || ci_contains(text, "sigma2sigma") ||
-             ci_contains(text, "misp") || ci_contains(text, "pymisp") ||
+             ci_contains(text, "misp")  ||
              ci_contains(text, "pycti") || ci_contains(text, "sandcat") ||
              ci_contains(text, "ragdoll") || ci_contains(text, "mordor") ||
              ci_contains(text, "c2server") || ci_contains(text, "fofofo") ||
@@ -16542,7 +16358,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pathio") || ci_contains(text, "icesl") ||
              ci_contains(text, "sli3er") || ci_contains(text, "madewith") ||
              ci_contains(text, "thespaghettidetective") || ci_contains(text, "kiauh") ||
-             ci_contains(text, "ratrig") || ci_contains(text, "rrfd") ||
+             ci_contains(text, "ratrig")  ||
              ci_contains(text, "reprap") || ci_contains(text, "rrf") ||
              ci_contains(text, "smoothieware") ||
              (ci_contains(text, "smoothie") && ci_contains(text, " -")) ||
@@ -16555,7 +16371,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "stl2bin") || ci_contains(text, "mesh2stl") ||
              ci_contains(text, "nestlib") || ci_contains(text, "deepnest") ||
              ci_contains(text, "svg2gc") || ci_contains(text, "svg2cnc") ||
-             ci_contains(text, "lightburn") || ci_contains(text, "lightburn2") ||
+             ci_contains(text, "lightburn")  ||
              ci_contains(text, "rdworks") || ci_contains(text, "fabmo") ||
              ci_contains(text, "mach3") || ci_contains(text, "mach4") ||
              ci_contains(text, "uccnc") || ci_contains(text, "halui") ||
@@ -16589,7 +16405,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "akira") || ci_contains(text, "drawio") ||
              ci_contains(text, "jgraph") || ci_contains(text, "yedgraph") ||
              ci_contains(text, "yworks") || ci_contains(text, "yfiles") ||
-             ci_contains(text, "orgchart") || ci_contains(text, "pumla") ||
+             ci_contains(text, "orgchart")  ||
              ci_contains(text, "puml") || ci_contains(text, "structurizr") ||
              ci_contains(text, "terrastruct") || ci_contains(text, "graphviz") ||
              ci_contains(text, "dot2svg") || ci_contains(text, "gml2gv") ||
@@ -16598,7 +16414,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "tulip") && ci_contains(text, " -")) ||
              ci_contains(text, "socnetv") || ci_contains(text, "graphia") ||
              ci_contains(text, "graphviz2gv") || ci_contains(text, "visone") ||
-             ci_contains(text, "pajek") || ci_contains(text, "pajek2net") ||
+             ci_contains(text, "pajek")  ||
              ci_contains(text, "paj2net") || ci_contains(text, "libvis") ||
              ci_contains(text, "netwulf") || ci_contains(text, "infomap") ||
              ci_contains(text, "mapcore") || ci_contains(text, "mapgenerator") ||
@@ -16655,7 +16471,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "deadline") && ci_contains(text, " -")) ||
              ci_contains(text, "deadlineslave") ||
              ci_contains(text, "royalrender") || ci_contains(text, "rrserver") ||
-             ci_contains(text, "qube") || ci_contains(text, "qubeui") ||
+             ci_contains(text, "qube")  ||
              ci_contains(text, "autodeskflare") ||
              ci_contains(text, "smokesmoke") ||
              (ci_contains(text, "davinci") && ci_contains(text, " -")) ||
@@ -16667,16 +16483,14 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "scesv") || ci_contains(text, "scrttv") ||
              ci_contains(text, "scqcv") || ci_contains(text, "scmaster") ||
              ci_contains(text, "libslink") || ci_contains(text, "slinfo") ||
-             ci_contains(text, "mseed") || ci_contains(text, "mseedgroup") ||
-             ci_contains(text, "mseedinfo") || ci_contains(text, "mseedmerge") ||
-             ci_contains(text, "ms2sac") || ci_contains(text, "sac2mseed") ||
+             ci_contains(text, "mseed")    ||
+             ci_contains(text, "ms2sac")  ||
              ci_contains(text, "saclst") || ci_contains(text, "sachelp") ||
              ci_contains(text, "sacio") || ci_contains(text, "sac2eps") ||
              ci_contains(text, "sac2gse") || ci_contains(text, "gse2sac") ||
              ci_contains(text, "gse2seed") || ci_contains(text, "gse2evt") ||
              ci_contains(text, "ah2evt") || ci_contains(text, "sac2ah") ||
-             ci_contains(text, "evt2sac") || ci_contains(text, "rdseed") ||
-             ci_contains(text, "rdseed5") || ci_contains(text, "orbserver") ||
+             ci_contains(text, "evt2sac") || ci_contains(text, "rdseed")  || ci_contains(text, "orbserver") ||
              ci_contains(text, "q330") || ci_contains(text, "quanterra") ||
              (ci_contains(text, "centaur") && ci_contains(text, " -")) ||
              (ci_contains(text, "trillium") && ci_contains(text, " -")) ||
@@ -16692,8 +16506,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "slowness") && ci_contains(text, " -")) ||
              (ci_contains(text, "infrasound") && ci_contains(text, " -")) ||
              ci_contains(text, "specfem2d") || ci_contains(text, "aneu") ||
-             ci_contains(text, "lvz ") || ci_contains(text, "sw4") ||
-             ci_contains(text, "sw4m") || ci_contains(text, "salvus") ||
+             ci_contains(text, "lvz ") || ci_contains(text, "sw4")  || ci_contains(text, "salvus") ||
              ci_contains(text, "disp96") || ci_contains(text, "hspec96") ||
              ci_contains(text, "momenttensor") || ci_contains(text, "gcap3d") ||
              ci_contains(text, "fktradeoff") || ci_contains(text, "growclust") ||
@@ -16707,8 +16520,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "grt ") || ci_contains(text, "ew2mseed") ||
              ci_contains(text, "stat2d") || ci_contains(text, "ewthresh") ||
              ci_contains(text, "localmag") || ci_contains(text, "wave2buf") ||
-             ci_contains(text, "pickew") || ci_contains(text, "pick_ew") ||
-             ci_contains(text, "pick_ew2") || ci_contains(text, "pickfk") ||
+             ci_contains(text, "pickew") || ci_contains(text, "pick_ew")  || ci_contains(text, "pickfk") ||
              ci_contains(text, "binder_ew") || ci_contains(text, "eqbuf") ||
              ci_contains(text, "sniffwave") || ci_contains(text, "tankplayer")) {
         what = "seismology primitive";
@@ -16722,8 +16534,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "workhorse") && ci_contains(text, " -")) ||
              ci_contains(text, "rdiradcp") || ci_contains(text, "wh300") ||
              ci_contains(text, "wh600") || ci_contains(text, "ldeo") ||
-             ci_contains(text, "codar") || ci_contains(text, "codar2nc") ||
-             ci_contains(text, "codarqa") || ci_contains(text, "hfrnet") ||
+             ci_contains(text, "codar")   || ci_contains(text, "hfrnet") ||
              ci_contains(text, "seacurrent") || ci_contains(text, "metoc") ||
              (ci_contains(text, "mercator") && ci_contains(text, " -")) ||
              ci_contains(text, "roms2roms") || ci_contains(text, "roms2nc") ||
@@ -16737,7 +16548,7 @@ hlse_check_paste(const char *text) {
              /* cycle-413a: legaltech/ediscovery primitives */
              (ci_contains(text, "relativity") && ci_contains(text, " -")) ||
              ci_contains(text, "relativityserver") ||
-             ci_contains(text, "brainspace") || ci_contains(text, "brainspace6") ||
+             ci_contains(text, "brainspace")  ||
              ci_contains(text, "discovia") || ci_contains(text, "kcura") ||
              ci_contains(text, "ftib") || ci_contains(text, "cocounsel") ||
              ci_contains(text, "westlaw") ||
@@ -16757,16 +16568,14 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "filevine") || ci_contains(text, "litify") ||
              ci_contains(text, "trialworks") ||
              (ci_contains(text, "trial") && ci_contains(text, " -")) ||
-             ci_contains(text, "trialpad") || ci_contains(text, "cloudnine") ||
-             ci_contains(text, "cloudninediscovery") ||
+             ci_contains(text, "trialpad") || ci_contains(text, "cloudnine")  ||
              ci_contains(text, "ediscoveryassistant") ||
              ci_contains(text, "zdiscovery") ||
              (ci_contains(text, "consent") && ci_contains(text, " -")) ||
              ci_contains(text, "consilio") ||
              ci_contains(text, "completelegal") ||
              ci_contains(text, "kldiscovery") || ci_contains(text, "cimplifi") ||
-             ci_contains(text, "complianceds") || ci_contains(text, "epiq") ||
-             ci_contains(text, "epiqglobal") || ci_contains(text, "lhed") ||
+             ci_contains(text, "complianceds") || ci_contains(text, "epiq")  || ci_contains(text, "lhed") ||
              ci_contains(text, "reviewedocs")) {
         what = "legaltech/ediscovery primitive";
         } else if (
@@ -16776,8 +16585,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "operationscenter") ||
              ci_contains(text, "opscenter") || ci_contains(text, "gs2630") ||
              ci_contains(text, "gs1800") || ci_contains(text, "gen4") ||
-             ci_contains(text, "fieldview") || ci_contains(text, "cabview") ||
-             ci_contains(text, "fieldviewcab") || ci_contains(text, "agleader") ||
+             ci_contains(text, "fieldview") || ci_contains(text, "cabview")  || ci_contains(text, "agleader") ||
              ci_contains(text, "v2display") || ci_contains(text, "envizio") ||
              ci_contains(text, "topcon") || ci_contains(text, "afsconnect") ||
              ci_contains(text, "newholland") || ci_contains(text, "myplm") ||
@@ -16785,7 +16593,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "claas") || ci_contains(text, "ceemis") ||
              (ci_contains(text, "telematics") && ci_contains(text, " -")) ||
              ci_contains(text, "agco") || ci_contains(text, "fusetech") ||
-             ci_contains(text, "fendt") || ci_contains(text, "fendtone") ||
+             ci_contains(text, "fendt")  ||
              ci_contains(text, "valtra") ||
              (ci_contains(text, "massey") && ci_contains(text, " -")) ||
              ci_contains(text, "agriconnect") ||
@@ -16793,12 +16601,11 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "kubota") ||
              (ci_contains(text, "amity") && ci_contains(text, " -")) ||
              ci_contains(text, "horsch") || ci_contains(text, "lemken") ||
-             ci_contains(text, "amatron") || ci_contains(text, "amatron4") ||
+             ci_contains(text, "amatron")  ||
              ci_contains(text, "gpswitch") || ci_contains(text, "vaderstad") ||
              ci_contains(text, "isobus") || ci_contains(text, "ez250") ||
              ci_contains(text, "ezdraulic") || ci_contains(text, "fieldiq") ||
-             ci_contains(text, "accugrade") || ci_contains(text, "fildiq2") ||
-             ci_contains(text, "fieldiq2") || ci_contains(text, "agrirouter") ||
+             ci_contains(text, "accugrade") || ci_contains(text, "fildiq2")  || ci_contains(text, "agrirouter") ||
              ci_contains(text, "agrarrouter") || ci_contains(text, "proagrica") ||
              ci_contains(text, "telemetria") || ci_contains(text, "solinfotec") ||
              ci_contains(text, "inon ") || ci_contains(text, "plantio") ||
@@ -16806,18 +16613,17 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "granular") && ci_contains(text, " -")) ||
              ci_contains(text, "cropio") || ci_contains(text, "agrivi") ||
              ci_contains(text, "aweather") || ci_contains(text, "metos") ||
-             ci_contains(text, "pessl") || ci_contains(text, "imetos") ||
-             ci_contains(text, "metosb") || ci_contains(text, "cropmetrics") ||
+             ci_contains(text, "pessl")   || ci_contains(text, "cropmetrics") ||
              ci_contains(text, "veris") || ci_contains(text, "soiltest") ||
              ci_contains(text, "soilmap") || ci_contains(text, "agvise") ||
              ci_contains(text, "wintest") || ci_contains(text, "fhka") ||
              ci_contains(text, "adap2") || ci_contains(text, "fatv") ||
-             ci_contains(text, "agricheck") || ci_contains(text, "agrichecker") ||
+             ci_contains(text, "agricheck")  ||
              ci_contains(text, "cropster") || ci_contains(text, "agrobit") ||
              ci_contains(text, "agridius") || ci_contains(text, "livestocked") ||
              ci_contains(text, "breedr") || ci_contains(text, "cattler") ||
              ci_contains(text, "ranchr") || ci_contains(text, "dairyplan") ||
-             ci_contains(text, "dairycomp") || ci_contains(text, "dairycomp305") ||
+             ci_contains(text, "dairycomp")  ||
              ci_contains(text, "pcart") || ci_contains(text, "pcdart") ||
              ci_contains(text, "lely") || ci_contains(text, "t4c ") ||
              ci_contains(text, "afimilk") || ci_contains(text, "milkmeter") ||
@@ -16831,14 +16637,13 @@ hlse_check_paste(const char *text) {
         what = "agritech primitive";
         } else if (
              /* cycle-414a: power-grid/mbd primitives */
-             ci_contains(text, "helics") || ci_contains(text, "helics_apps") ||
+             ci_contains(text, "helics")  ||
              ci_contains(text, "psse33") || ci_contains(text, "psse34") ||
              ci_contains(text, "psse35") || ci_contains(text, "pssatraw") ||
              ci_contains(text, "psscal") || ci_contains(text, "psspy") ||
              ci_contains(text, "pssplt") || ci_contains(text, "savnw") ||
-             ci_contains(text, "dyre") || ci_contains(text, "epriepc") ||
-             ci_contains(text, "psspywarp") || ci_contains(text, "pypsse") ||
-             ci_contains(text, "powerworld") || ci_contains(text, "powerworldsim") ||
+             ci_contains(text, "dyre") || ci_contains(text, "epriepc")  || ci_contains(text, "pypsse") ||
+             ci_contains(text, "powerworld")  ||
              ci_contains(text, "tsat") || ci_contains(text, "vsat") ||
              ci_contains(text, "fastdecoupled") || ci_contains(text, "dcopf") ||
              ci_contains(text, "acopf") || ci_contains(text, "scopf") ||
@@ -16855,9 +16660,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "qtronic") || ci_contains(text, "simulink") ||
              ci_contains(text, "slcovresults") || ci_contains(text, "sldv") ||
              ci_contains(text, "sltest") || ci_contains(text, "slprj") ||
-             ci_contains(text, "simpower") || ci_contains(text, "pscad") ||
-             ci_contains(text, "pscad4") || ci_contains(text, "pscad5") ||
-             ci_contains(text, "pscad42") || ci_contains(text, "pscad50") ||
+             ci_contains(text, "simpower") || ci_contains(text, "pscad")     ||
              ci_contains(text, "atpdraw") || ci_contains(text, "pl42mat") ||
              ci_contains(text, "rtlab") || ci_contains(text, "speedgoat") ||
              ci_contains(text, "dspace") || ci_contains(text, "ds1104") ||
@@ -16875,11 +16678,10 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "rttviewer") || ci_contains(text, "stm32isp") ||
              ci_contains(text, "truestudio") || ci_contains(text, "atollic") ||
              ci_contains(text, "ac6") || ci_contains(text, "stm32duino") ||
-             ci_contains(text, "keil") || ci_contains(text, "keil5") ||
-             ci_contains(text, "ulink") || ci_contains(text, "ulink2") ||
-             ci_contains(text, "ulinkpro") || ci_contains(text, "iar ") ||
+             ci_contains(text, "keil")  ||
+             ci_contains(text, "ulink")   || ci_contains(text, "iar ") ||
              ci_contains(text, "iarbuild") || ci_contains(text, "stvp") ||
-             ci_contains(text, "stvd") || ci_contains(text, "stvd4") ||
+             ci_contains(text, "stvd")  ||
              ci_contains(text, "st7 ") || ci_contains(text, "ride7") ||
              ci_contains(text, "rkit") || ci_contains(text, "raisonance") ||
              ci_contains(text, "tricore") || ci_contains(text, "davdev") ||
@@ -16888,22 +16690,18 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "vn5610") || ci_contains(text, "vn7640") ||
              ci_contains(text, "vspy") ||
              (ci_contains(text, "intrepid") && ci_contains(text, " -")) ||
-             ci_contains(text, "intrepidcs") || ci_contains(text, "valuecan") ||
-             ci_contains(text, "valuecan4") || ci_contains(text, "neoecu") ||
+             ci_contains(text, "intrepidcs") || ci_contains(text, "valuecan")  || ci_contains(text, "neoecu") ||
              ci_contains(text, "neoivi") || ci_contains(text, "fire2") ||
-             ci_contains(text, "pcan") || ci_contains(text, "canlib") ||
-             ci_contains(text, "canlibsdk") || ci_contains(text, "canlib5") ||
+             ci_contains(text, "pcan") || ci_contains(text, "canlib")   ||
              ci_contains(text, "canleaf") || ci_contains(text, "canwizard") ||
              ci_contains(text, "busmaster") ||
              ci_contains(text, "isotpsniffer") || ci_contains(text, "blf ") ||
              ci_contains(text, "blf2asc") || ci_contains(text, "mf4 ") ||
              ci_contains(text, "mdf4") || ci_contains(text, "mdfconvert") ||
-             ci_contains(text, "mdfblock") || ci_contains(text, "dbc2c") ||
-             ci_contains(text, "dbc2cpp") || ci_contains(text, "udsoncan") ||
+             ci_contains(text, "mdfblock") || ci_contains(text, "dbc2c")  || ci_contains(text, "udsoncan") ||
              ci_contains(text, "iso14229") || ci_contains(text, "doip") ||
              ci_contains(text, "can2udp") || ci_contains(text, "somip") ||
-             ci_contains(text, "someip") || ci_contains(text, "someip2can") ||
-             ci_contains(text, "vsomeip") || ci_contains(text, "commonapi")) {
+             ci_contains(text, "someip")   || ci_contains(text, "commonapi")) {
         what = "embedded/can primitive";
         } else if (
              /* cycle-415a: geo-tile primitives */
@@ -16932,8 +16730,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "immath") || ci_contains(text, "imregrid") ||
              ci_contains(text, "imsmooth") || ci_contains(text, "imval") ||
              ci_contains(text, "imrebin") || ci_contains(text, "specfit") ||
-             ci_contains(text, "specsmooth") || ci_contains(text, "cvel") ||
-             ci_contains(text, "cvel2") || ci_contains(text, "applycal") ||
+             ci_contains(text, "specsmooth") || ci_contains(text, "cvel")  || ci_contains(text, "applycal") ||
              ci_contains(text, "gaincal") || ci_contains(text, "polcal") ||
              ci_contains(text, "setjy") || ci_contains(text, "gencal") ||
              ci_contains(text, "listcal") || ci_contains(text, "plotms") ||
@@ -16956,14 +16753,12 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "farith") || ci_contains(text, "ftlist") ||
              ci_contains(text, "ftstat") || ci_contains(text, "ftcalc") ||
              ci_contains(text, "dysco2") || ci_contains(text, "dp3") ||
-             ci_contains(text, "ndppp") || ci_contains(text, "lofar") ||
-             ci_contains(text, "lofarstager") || ci_contains(text, "stefcal") ||
+             ci_contains(text, "ndppp") || ci_contains(text, "lofar")  || ci_contains(text, "stefcal") ||
              ci_contains(text, "sagecal") || ci_contains(text, "ddfacet") ||
              ci_contains(text, "breizorro") || ci_contains(text, "vlbi") ||
-             ci_contains(text, "mark5") || ci_contains(text, "mark5b") ||
-             ci_contains(text, "mark5a") || ci_contains(text, "mark5c") ||
-             ci_contains(text, "mark6") || ci_contains(text, "mark6sg") ||
-             ci_contains(text, "vdif") || ci_contains(text, "vdif2spec") ||
+             ci_contains(text, "mark5")    ||
+             ci_contains(text, "mark6")  ||
+             ci_contains(text, "vdif")  ||
              ci_contains(text, "codif") ||
              ci_contains(text, "fourfit") || ci_contains(text, "aedit") ||
              ci_contains(text, "polconvert") ||
@@ -16976,8 +16771,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "stimela") || ci_contains(text, "prepfold") ||
              ci_contains(text, "prepfile") || ci_contains(text, "rednoise") ||
              ci_contains(text, "bary") || ci_contains(text, "calbin") ||
-             ci_contains(text, "pdv") || ci_contains(text, "pint") ||
-             ci_contains(text, "pintk") || ci_contains(text, "enterprise") ||
+             ci_contains(text, "pdv") || ci_contains(text, "pint")  || ci_contains(text, "enterprise") ||
              ci_contains(text, "t2db")) {
         what = "radio-astronomy primitive";
         } else if (
@@ -16994,7 +16788,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "inforce") && ci_contains(text, " -")) ||
              ci_contains(text, "vgper") || ci_contains(text, "vsimsa") ||
              ci_contains(text, "activehdl") || ci_contains(text, "aldec") ||
-             ci_contains(text, "riviera") || ci_contains(text, "rivierapro") ||
+             ci_contains(text, "riviera")  ||
              (ci_contains(text, "questa") && ci_contains(text, " -")) ||
              ci_contains(text, "questasim") || ci_contains(text, "vcom") ||
              ci_contains(text, "vcover") || ci_contains(text, "vopt") ||
@@ -17006,7 +16800,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "simics") && ci_contains(text, " -")) ||
              ci_contains(text, "m5 ") || ci_contains(text, "fs.fs") ||
              ci_contains(text, "icfb") || ci_contains(text, "ic51") ||
-             ci_contains(text, "ic61") || ci_contains(text, "ic618") ||
+             ci_contains(text, "ic61")  ||
              ci_contains(text, "encouner") ||
              (ci_contains(text, "innovus") && ci_contains(text, " -")) ||
              (ci_contains(text, "genus") && ci_contains(text, " -")) ||
@@ -17022,14 +16816,14 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "encounter") && ci_contains(text, " -")) ||
              ci_contains(text, "lef2oa") || ci_contains(text, "oa2lef") ||
              ci_contains(text, "def2oa") || ci_contains(text, "oa2def") ||
-             ci_contains(text, "lefdef") || ci_contains(text, "gdsiipick") ||
+             ci_contains(text, "lefdef")  ||
              ci_contains(text, "gdsii") || ci_contains(text, "gdstk") ||
              ci_contains(text, "cif2gds") || ci_contains(text, "gds2cif") ||
              ci_contains(text, "siliconcompiler") || ci_contains(text, "skywater") ||
              ci_contains(text, "sky130") || ci_contains(text, "gf180") ||
              ci_contains(text, "pdkmaster") || ci_contains(text, "pdks") ||
              ci_contains(text, "abc9") || ci_contains(text, "aiger") ||
-             ci_contains(text, "aigtoaig") || ci_contains(text, "aiger2") ||
+             ci_contains(text, "aigtoaig")  ||
              ci_contains(text, "suprove") ||
              ci_contains(text, "nios2") || ci_contains(text, "sopcinfo") ||
              ci_contains(text, "mkimg") || ci_contains(text, "sof2jic") ||
@@ -17059,8 +16853,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "lcgc") || ci_contains(text, "nordugrid") ||
              ci_contains(text, "unicore") || ci_contains(text, "enroot") ||
              ci_contains(text, "apptainer") || ci_contains(text, "sif2") ||
-             ci_contains(text, "sylabs") || ci_contains(text, "shifter") ||
-             ci_contains(text, "shifterimg") || ci_contains(text, "sarus") ||
+             ci_contains(text, "sylabs") || ci_contains(text, "shifter")  || ci_contains(text, "sarus") ||
              ci_contains(text, "udocks") || ci_contains(text, "lmod") ||
              ci_contains(text, "brightcm") || ci_contains(text, "warewulf") ||
              ci_contains(text, "wwsh") || ci_contains(text, "ldlm") ||
@@ -17097,8 +16890,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "dagoba") || ci_contains(text, "sqlglot") ||
              (ci_contains(text, "lineage") && ci_contains(text, " -")) ||
              (ci_contains(text, "amundsen") && ci_contains(text, " -")) ||
-             ci_contains(text, "metacat") || ci_contains(text, "nessie") ||
-             ci_contains(text, "pynessie") ||
+             ci_contains(text, "metacat") || ci_contains(text, "nessie")  ||
              (ci_contains(text, "iceberg") && ci_contains(text, " -")) ||
              ci_contains(text, "pyiceberg") ||
              (ci_contains(text, "versioned") && ci_contains(text, " -")) ||
@@ -17109,8 +16901,7 @@ hlse_check_paste(const char *text) {
         what = "analytics/ml-infra primitive";
         } else if (
              /* cycle-417b: astro/hydro primitives */
-             ci_contains(text, "eqmod") || ci_contains(text, "ascom") ||
-             ci_contains(text, "ascompad") || ci_contains(text, "alpyca") ||
+             ci_contains(text, "eqmod") || ci_contains(text, "ascom")  || ci_contains(text, "alpyca") ||
              ci_contains(text, "solvefield") || ci_contains(text, "fits2fits") ||
              (ci_contains(text, "stiff") && ci_contains(text, " -")) ||
              ci_contains(text, "funhist") ||
@@ -17140,21 +16931,19 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "swan_unstructured") || ci_contains(text, "roms2d") ||
              ci_contains(text, "pyroms") || ci_contains(text, "gcm ") ||
              ci_contains(text, "fvccom") || ci_contains(text, "aswip") ||
-             ci_contains(text, "telemac") || ci_contains(text, "telemac2d") ||
-             ci_contains(text, "telemac3d") || ci_contains(text, "sisyphe") ||
+             ci_contains(text, "telemac")   || ci_contains(text, "sisyphe") ||
              ci_contains(text, "tomawac") ||
              (ci_contains(text, "estuary") && ci_contains(text, " -")) ||
              ci_contains(text, "hecras") ||
              (ci_contains(text, "mike") && ci_contains(text, " -")) ||
-             ci_contains(text, "mike21") || ci_contains(text, "mike3") ||
-             ci_contains(text, "mike21c") || ci_contains(text, "mikezero") ||
+             ci_contains(text, "mike21") || ci_contains(text, "mike3")  || ci_contains(text, "mikezero") ||
              ci_contains(text, "mikeplus") || ci_contains(text, "dhisoftware") ||
              ci_contains(text, "wntr") || ci_contains(text, "hmmpgmd") ||
              ci_contains(text, "hmmemit")) {
         what = "astro/hydro primitive";
         } else if (
              /* cycle-418a: genomics/phylo primitives */
-             ci_contains(text, "graphmap") || ci_contains(text, "graphmap2") ||
+             ci_contains(text, "graphmap")  ||
              ci_contains(text, "lastdb") || ci_contains(text, "fastal") ||
              ci_contains(text, "fastdb") || ci_contains(text, "psl2maf") ||
              ci_contains(text, "psl2bed") || ci_contains(text, "pslcheck") ||
@@ -17167,8 +16956,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "netfilter") || ci_contains(text, "netsyntenic") ||
              ci_contains(text, "netclass") || ci_contains(text, "chainprenet") ||
              ci_contains(text, "chainsplit") || ci_contains(text, "chainfilter") ||
-             ci_contains(text, "chainstitchid") || ci_contains(text, "chainswap") ||
-             ci_contains(text, "chainnetminrepeat") || ci_contains(text, "chaintopsl") ||
+             ci_contains(text, "chainstitchid") || ci_contains(text, "chainswap")  || ci_contains(text, "chaintopsl") ||
              ci_contains(text, "psltochain") || ci_contains(text, "nettochain") ||
              ci_contains(text, "lavtopsl")   || ci_contains(text, "bigwiginfo") ||
              ci_contains(text, "bigwigsummary") || ci_contains(text, "bigwigmerge") ||
@@ -17179,8 +16967,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "halstats") || ci_contains(text, "halliftover") ||
              ci_contains(text, "halsummarizemutations") ||
              ci_contains(text, "halalignability") ||
-             ci_contains(text, "hallodinterpolate") || ci_contains(text, "haltree") ||
-             ci_contains(text, "haltreemutations") || ci_contains(text, "halbranchmutations") ||
+             ci_contains(text, "hallodinterpolate") || ci_contains(text, "haltree")  || ci_contains(text, "halbranchmutations") ||
              ci_contains(text, "halsynteny") || ci_contains(text, "halmafscan") ||
              ci_contains(text, "halmafmap") ||
              (ci_contains(text, "cactus") && ci_contains(text, " -")) ||
@@ -17189,17 +16976,15 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "maffilter") || ci_contains(text, "mafjoin") ||
              ci_contains(text, "maftofastastitcher") || ci_contains(text, "sonlib") ||
              ci_contains(text, "stpinchesandcacti") || ci_contains(text, "stcaf") ||
-             ci_contains(text, "streference") || ci_contains(text, "stcactus") ||
-             ci_contains(text, "stcactustests") || ci_contains(text, "einsi") ||
+             ci_contains(text, "streference") || ci_contains(text, "stcactus")  || ci_contains(text, "einsi") ||
              ci_contains(text, "ginsi") || ci_contains(text, "linsi") ||
-             ci_contains(text, "fftns") || ci_contains(text, "fftnsi") ||
-             ci_contains(text, "nwns") || ci_contains(text, "nwnsi") ||
+             ci_contains(text, "fftns")  ||
+             ci_contains(text, "nwns")  ||
              ci_contains(text, "t_coffee") || ci_contains(text, "rcoffee") ||
              ci_contains(text, "3dcoffee") || ci_contains(text, "alncompare") ||
              ci_contains(text, "mavid") || ci_contains(text, "poav2") ||
              (ci_contains(text, "magma") && ci_contains(text, " -")) ||
-             ci_contains(text, "multiz") || ci_contains(text, "phast") ||
-             ci_contains(text, "phastcons") || ci_contains(text, "phastodds") ||
+             ci_contains(text, "multiz") || ci_contains(text, "phast")   ||
              (ci_contains(text, "prequel") && ci_contains(text, " -")) ||
              ci_contains(text, "msa_view") || ci_contains(text, "consentropy") ||
              ci_contains(text, "refeature") || ci_contains(text, "yn00") ||
@@ -17231,12 +17016,10 @@ hlse_check_paste(const char *text) {
         what = "genomics/phylo primitive";
         } else if (
              /* cycle-418b: proteomics primitives */
-             ci_contains(text, "thegpm") || ci_contains(text, "omssa") ||
-             ci_contains(text, "omssacl") || ci_contains(text, "omssadta") ||
-             ci_contains(text, "directag") || ci_contains(text, "pepnovo") ||
+             ci_contains(text, "thegpm") || ci_contains(text, "omssa")   ||
+             ci_contains(text, "directag")  ||
              ci_contains(text, "novor") || ci_contains(text, "pepnet") ||
-             ci_contains(text, "instanovo") || ci_contains(text, "pnovo") ||
-             ci_contains(text, "deepnovo") || ci_contains(text, "pgnovo") ||
+             ci_contains(text, "instanovo") || ci_contains(text, "pnovo")  || ci_contains(text, "pgnovo") ||
              ci_contains(text, "sequest") ||
              (ci_contains(text, "seems") && ci_contains(text, " -")) ||
              ci_contains(text, "seemss") || ci_contains(text, "raw2mzml") ||
@@ -17250,15 +17033,12 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "bibliospec") || ci_contains(text, "blibfilter") ||
              ci_contains(text, "blib2msms") || ci_contains(text, "tdf ") ||
              ci_contains(text, "alphatims") || ci_contains(text, "alphapept") ||
-             ci_contains(text, "alphaviz") || ci_contains(text, "alpharaw") ||
-             ci_contains(text, "alphatims2") || ci_contains(text, "mqpar") ||
+             ci_contains(text, "alphaviz") || ci_contains(text, "alpharaw")  || ci_contains(text, "mqpar") ||
              ci_contains(text, "pyprophet") || ci_contains(text, "swath2stats") ||
-             ci_contains(text, "mapdia") || ci_contains(text, "peakview") ||
-             ci_contains(text, "peakviewer") ||
+             ci_contains(text, "mapdia") || ci_contains(text, "peakview")  ||
              (ci_contains(text, "analyst") && ci_contains(text, " -")) ||
              ci_contains(text, "byonic") || ci_contains(text, "metamorpheus") ||
-             ci_contains(text, "mztab") || ci_contains(text, "jmztab") ||
-             ci_contains(text, "mztab2") ||
+             ci_contains(text, "mztab")   ||
              (ci_contains(text, "pride") && ci_contains(text, " -")) ||
              ci_contains(text, "comet2") || ci_contains(text, "deeplc") ||
              ci_contains(text, "ms2rescore") || ci_contains(text, "im2deep") ||
@@ -17308,9 +17088,8 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "wp2static") || ci_contains(text, "simplystatic") ||
              ci_contains(text, "acquia") || ci_contains(text, "blt ") ||
              (ci_contains(text, "thunder") && ci_contains(text, " -")) ||
-             ci_contains(text, "ddev") || ci_contains(text, "ddev2") ||
-             ci_contains(text, "joomla") || ci_contains(text, "typo3") ||
-             ci_contains(text, "typo3cms") || ci_contains(text, "processwire") ||
+             ci_contains(text, "ddev")  ||
+             ci_contains(text, "joomla") || ci_contains(text, "typo3")  || ci_contains(text, "processwire") ||
              ci_contains(text, "craftcms") || ci_contains(text, "symfony") ||
              (ci_contains(text, "laravel") && ci_contains(text, " -")) ||
              (ci_contains(text, "vapor") && ci_contains(text, " -")) ||
@@ -17327,8 +17106,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "themekit") ||
              (ci_contains(text, "dawn") && ci_contains(text, " -")) ||
              ci_contains(text, "liquidjs") || ci_contains(text, "spree") ||
-             ci_contains(text, "solidus") || ci_contains(text, "reaction") ||
-             ci_contains(text, "reactioncommerce") || ci_contains(text, "nopcommerce") ||
+             ci_contains(text, "solidus") || ci_contains(text, "reaction")  || ci_contains(text, "nopcommerce") ||
              ci_contains(text, "elasticpath") ||
              (ci_contains(text, "swell") && ci_contains(text, " -")) ||
              ci_contains(text, "ecwid") || ci_contains(text, "weebly") ||

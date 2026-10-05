@@ -14,6 +14,9 @@ reports on structural debt the else-if chain accumulates:
   FAIL   unreachable operand — needle owned by an earlier
           pure-OR block can never be true here (first-match-wins;
           fix with tests/dedup_needles.py then dead_cross_needles.py)
+  FAIL   cover-dead needle in a '||' run — a proper substring
+          of a sibling needle can never add a hit
+          (fix with tests/cover_needles.py)
   REPORT needle repeated across distinct sub-expressions
           (different paren depth / connector run — may be
           intentional reuse, not a dead disjunct)
@@ -34,6 +37,7 @@ from collections import Counter, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dead_cross_needles as dcn   # noqa: E402
+import cover_needles as cov      # noqa: E402
 
 NEEDLE_RE = re.compile(r'ci_contains\(text,\s*"((?:[^"\\]|\\.)*)"')
 WHAT_RE = re.compile(r'what\s*=\s*"([^"]+)"')
@@ -168,6 +172,11 @@ def main():
                 if m.lastgroup == 'call':
                     owned_cross.add(
                         dcn.NEEDLE_RE.search(m.group(0)).group(1))
+        cdrops, _ = cov.find_drops(cov.tokenize(part))
+        if cdrops:
+            fails.append("cover-dead needle(s): %d in block %d "
+                         "(proper substring of a sibling '||' needle)"
+                         % (len(cdrops), bi))
         for n, c in seen.items():
             if c > 1 and not gate_only(n):
                 block_intra_dups[n] += c - 1
