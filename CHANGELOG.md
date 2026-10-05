@@ -10856,6 +10856,19 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 401): robotics2/industrial primitives**
+  — drone/slam (uorb, listener, mavft, mavtelemetry, mavgen,
+  mavtest, plummeter, asctec_hl, asctec, athr,
+  hector_quadrotor, tum_simulator, bebop_autonomy, kobuki,
+  roomba, rplidar, slam2d, slam3d, kissicp, fastlio,
+  hdl_graph_slam, ndt_omp, imu_preint, blam, lovam, loam,
+  velodyne, ouster, hokuyo, lms100), plc/scada/bacnet/knx
+  (plcverif, libads, studio5000, plcide, mdbus, mbtcp, uaprof,
+  opcenum, kepware, wonderware, aveva, crimson, crimson3,
+  graphiq, pl7, scadapack, vijeo, bacarf, bacserv, baciam,
+  bacapp, bacrt, bacrst, bactor, bacucov, bacdts, bacbasic,
+  grouplisten, groupresponse, grouppoll, groupsocketlisten,
+  groupsocketresponse, bcusdk). +63/65 checks.
 - **ALERT 45 (cycle 400): retro/pres primitives** — retro
   cpu/emu (z390, z390emu, z390zam, zdt, kl10, apple2js,
   applewin, kegs, kegsgs, vsid, tos540, tap2wav, qlay, speccy,

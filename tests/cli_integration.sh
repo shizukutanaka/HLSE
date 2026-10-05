@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-401: robotics2/industrial primitives
+for c in 'uorb top' 'listener -t topic' 'mavft log' 'mavtelemetry view' 'mavgen gen' 'mavtest run' 'plummeter cal' 'asctec_hl ctrl' 'asctec ctrl' 'athr run' 'hector_quadrotor sim' 'tum_simulator sim' 'bebop_autonomy run' 'kobuki run' 'roomba clean' 'rplidar scan' 'slam2d run' 'slam3d run' 'kissicp run' 'fastlio run' 'hdl_graph_slam run' 'ndt_omp run' 'imu_preint run' 'blam run' 'lovam run' 'loam run' 'velodyne run' 'ouster run' 'hokuyo run' 'lms100 scan'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'plcverif check' 'libads read' 'studio5000 prog' 'plcide open' 'mdbus poll' 'mbtcp read' 'uaprof profile' 'opcenum scan' 'kepware start' 'wonderware run' 'aveva run' 'crimson -e download' 'crimson3 run' 'graphiq run' 'pl7 prog' 'scadapack prog' 'vijeo run' 'bacarf read' 'bacserv serve' 'baciam iam' 'bacapp run' 'bacrt route' 'bacrst reset' 'bactor tor' 'bacucov cov' 'bacdts dts' 'bacbasic run' 'grouplisten listen' 'groupresponse resp' 'grouppoll poll' 'groupsocketlisten listen' 'groupsocketresponse resp' 'bcusdk run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'listener to radio' 'crimson tide movie'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-400: retro/pres primitives
 for c in 'z390 run' 'z390emu run' 'z390zam run' 'zdt run' 'kl10 run' 'apple2js run' 'applewin run' 'kegs run' 'kegsgs run' 'vsid play' 'tos540 load' 'tap2wav conv' 'qlay run' 'speccy run' 'emu48 run' 'hp48 calc' 'hp49 calc' 'hp50g calc' 'tilp send' 'tilp2 send' 'tiemu run' 'tiemu3 run' 'almostti run' 'coolcv run' 'colblue run' 'catapult run' 'meisei run' 'rumsx run' 'coco3 run' 'ovcc run' 'dragon32 run' 'dragon64 run' 'trs80 run' 'trs80gp run' 'cpmulator run' 'z80emu run'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

@@ -15980,6 +15980,46 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "handy") && ci_contains(text, " -")) ||
              ci_contains(text, "pj64") || ci_contains(text, "dolwin")) {
         what = "disk/pres primitive";
+        } else if (
+             /* cycle-401a: robotics2/drone primitives */
+             ci_contains(text, "uorb") ||
+             (ci_contains(text, "listener") && ci_contains(text, " -")) ||
+             ci_contains(text, "mavft") || ci_contains(text, "mavtelemetry") ||
+             ci_contains(text, "mavgen") || ci_contains(text, "mavtest") ||
+             ci_contains(text, "plummeter") || ci_contains(text, "asctec_hl") ||
+             ci_contains(text, "asctec") || ci_contains(text, "athr") ||
+             ci_contains(text, "hector_quadrotor") || ci_contains(text, "tum_simulator") ||
+             ci_contains(text, "bebop_autonomy") || ci_contains(text, "kobuki") ||
+             ci_contains(text, "roomba") || ci_contains(text, "rplidar") ||
+             ci_contains(text, "slam2d") || ci_contains(text, "slam3d") ||
+             ci_contains(text, "kissicp") || ci_contains(text, "fastlio") ||
+             ci_contains(text, "hdl_graph_slam") || ci_contains(text, "ndt_omp") ||
+             ci_contains(text, "imu_preint") || ci_contains(text, "blam") ||
+             ci_contains(text, "lovam") || ci_contains(text, "loam") ||
+             ci_contains(text, "velodyne") || ci_contains(text, "ouster") ||
+             ci_contains(text, "hokuyo") || ci_contains(text, "lms100")) {
+        what = "robotics2/drone primitive";
+        } else if (
+             /* cycle-401b: industrial/plc primitives */
+             ci_contains(text, "plcverif") || ci_contains(text, "libads") ||
+             ci_contains(text, "studio5000") || ci_contains(text, "plcide") ||
+             ci_contains(text, "mdbus") || ci_contains(text, "mbtcp") ||
+             ci_contains(text, "uaprof") || ci_contains(text, "opcenum") ||
+             ci_contains(text, "kepware") || ci_contains(text, "wonderware") ||
+             ci_contains(text, "aveva") ||
+             (ci_contains(text, "crimson") && ci_contains(text, " -")) ||
+             ci_contains(text, "crimson3") || ci_contains(text, "graphiq") ||
+             ci_contains(text, "pl7 ") || ci_contains(text, "scadapack") ||
+             ci_contains(text, "vijeo") || ci_contains(text, "bacarf") ||
+             ci_contains(text, "bacserv") || ci_contains(text, "baciam") ||
+             ci_contains(text, "bacapp") || ci_contains(text, "bacrt") ||
+             ci_contains(text, "bacrst") || ci_contains(text, "bactor") ||
+             ci_contains(text, "bacucov") || ci_contains(text, "bacdts") ||
+             ci_contains(text, "bacbasic") || ci_contains(text, "grouplisten") ||
+             ci_contains(text, "groupresponse") || ci_contains(text, "grouppoll") ||
+             ci_contains(text, "groupsocketlisten") || ci_contains(text, "groupsocketresponse") ||
+             ci_contains(text, "bcusdk")) {
+        what = "industrial/plc primitive";
         }
 
         if (what) {
