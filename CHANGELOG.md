@@ -10856,6 +10856,31 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 417): analytics/astro primitives**
+  — analytics/ml-infra (bipp, hashboard, elevate,
+  presne, prestissimo, ahana, chbackup, houseops,
+  evidence, querysm, deepnote, jupysql, spyder,
+  spyder5, zeppelin, polynote, dbnd, koalas, llamacpp,
+  llama.cpp, ggml, tensorrt, deepspeed, accelerate,
+  unsloth, kfp, zenml, kedro, hamilton, dagoba,
+  sqlglot, lineage, amundsen, metacat, nessie,
+  pynessie, iceberg, pyiceberg, versioned, irid,
+  nutcracker, dynomite, vmui, carbonapi, phlare,
+  polarv, m3em), astro/hydro (eqmod, ascom, ascompad,
+  alpyca, solvefield, fits2fits, stiff, funhist,
+  funtable, fundisp, saotn, votable, votlint, gavo,
+  dachs, pyvo, irsa, stwcs, drizzle, drizzlepac,
+  tweakreg, photcal, apphot, daophot, ccdproc, ccdops,
+  pinpoint, aip4win, sequencegenerator, sgpro,
+  voyager, sharpcap, avi2bmp, ser2avi, ser2fits,
+  weathersat, wrf_real, wrfda, wrfplus, ccsm, cesm2,
+  cam6, cism, ww3, swan40, swan41, swan45, swan9131,
+  swan_nested, swan_unstructured, roms2d, pyroms, gcm,
+  fvccom, aswip, telemac, telemac2d, telemac3d,
+  sisyphe, tomawac, estuary, hecras, mike, mike21,
+  mike3, mike21c, mikezero, mikeplus, dhisoftware,
+  wntr, hmmpgmd, hmmemit). artemis dup of existing
+  needle. +125/125 checks.
 - **ALERT 45 (cycle 416): eda/fpga/hpc primitives**
   — eda/fpga (simv, verdi, vcstatic, vc_apps, vcst,
   spyglass, leda, ncsim, jasper, ifv, 0in, inforce,

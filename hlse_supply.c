@@ -17123,6 +17123,86 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "gpfs") || ci_contains(text, "mmapplypolicy") ||
              ci_contains(text, "mmbackup") || ci_contains(text, "mmremote")) {
         what = "hpc/storage primitive";
+        } else if (
+             /* cycle-417a: analytics/ml-infra primitives */
+             ci_contains(text, "bipp") || ci_contains(text, "hashboard") ||
+             (ci_contains(text, "elevate") && ci_contains(text, " -")) ||
+             ci_contains(text, "presne") || ci_contains(text, "prestissimo") ||
+             ci_contains(text, "ahana") || ci_contains(text, "chbackup") ||
+             ci_contains(text, "houseops") ||
+             (ci_contains(text, "evidence") && ci_contains(text, " -")) ||
+             ci_contains(text, "querysm") || ci_contains(text, "deepnote") ||
+             ci_contains(text, "jupysql") ||
+             (ci_contains(text, "spyder") && ci_contains(text, " -")) ||
+             ci_contains(text, "spyder5") ||
+             (ci_contains(text, "zeppelin") && ci_contains(text, " -")) ||
+             ci_contains(text, "polynote") || ci_contains(text, "dbnd") ||
+             (ci_contains(text, "koalas") && ci_contains(text, " -")) ||
+             ci_contains(text, "llamacpp") || ci_contains(text, "llama.cpp") ||
+             ci_contains(text, "ggml") || ci_contains(text, "tensorrt") ||
+             ci_contains(text, "deepspeed") ||
+             (ci_contains(text, "accelerate") && ci_contains(text, " -")) ||
+             ci_contains(text, "unsloth") || ci_contains(text, "kfp") ||
+             ci_contains(text, "zenml") || ci_contains(text, "kedro") ||
+             (ci_contains(text, "hamilton") && ci_contains(text, " -")) ||
+             ci_contains(text, "dagoba") || ci_contains(text, "sqlglot") ||
+             (ci_contains(text, "lineage") && ci_contains(text, " -")) ||
+             (ci_contains(text, "amundsen") && ci_contains(text, " -")) ||
+             ci_contains(text, "metacat") || ci_contains(text, "nessie") ||
+             ci_contains(text, "pynessie") ||
+             (ci_contains(text, "iceberg") && ci_contains(text, " -")) ||
+             ci_contains(text, "pyiceberg") ||
+             (ci_contains(text, "versioned") && ci_contains(text, " -")) ||
+             ci_contains(text, "irid") || ci_contains(text, "nutcracker") ||
+             ci_contains(text, "dynomite") || ci_contains(text, "vmui") ||
+             ci_contains(text, "carbonapi") || ci_contains(text, "phlare") ||
+             ci_contains(text, "polarv") || ci_contains(text, "m3em")) {
+        what = "analytics/ml-infra primitive";
+        } else if (
+             /* cycle-417b: astro/hydro primitives */
+             ci_contains(text, "eqmod") || ci_contains(text, "ascom") ||
+             ci_contains(text, "ascompad") || ci_contains(text, "alpyca") ||
+             ci_contains(text, "solvefield") || ci_contains(text, "fits2fits") ||
+             (ci_contains(text, "stiff") && ci_contains(text, " -")) ||
+             ci_contains(text, "funhist") ||
+             ci_contains(text, "funtable") || ci_contains(text, "fundisp") ||
+             ci_contains(text, "saotn") || ci_contains(text, "votable") ||
+             ci_contains(text, "votlint") || ci_contains(text, "gavo") ||
+             ci_contains(text, "dachs") || ci_contains(text, "pyvo") ||
+             ci_contains(text, "irsa") || ci_contains(text, "stwcs") ||
+             (ci_contains(text, "drizzle") && ci_contains(text, " -")) ||
+             ci_contains(text, "drizzlepac") ||
+             ci_contains(text, "tweakreg") || ci_contains(text, "photcal") ||
+             ci_contains(text, "apphot") || ci_contains(text, "daophot") ||
+             ci_contains(text, "ccdproc") || ci_contains(text, "ccdops") ||
+             (ci_contains(text, "pinpoint") && ci_contains(text, " -")) ||
+             ci_contains(text, "aip4win") || ci_contains(text, "sequencegenerator") ||
+             ci_contains(text, "sgpro") ||
+             (ci_contains(text, "voyager") && ci_contains(text, " -")) ||
+             ci_contains(text, "sharpcap") || ci_contains(text, "avi2bmp") ||
+             ci_contains(text, "ser2avi") || ci_contains(text, "ser2fits") ||
+             ci_contains(text, "weathersat") || ci_contains(text, "wrf_real") ||
+             ci_contains(text, "wrfda") || ci_contains(text, "wrfplus") ||
+             ci_contains(text, "ccsm") || ci_contains(text, "cesm2") ||
+             ci_contains(text, "cam6") || ci_contains(text, "cism") ||
+             ci_contains(text, "ww3") || ci_contains(text, "swan40") ||
+             ci_contains(text, "swan41") || ci_contains(text, "swan45") ||
+             ci_contains(text, "swan9131") || ci_contains(text, "swan_nested") ||
+             ci_contains(text, "swan_unstructured") || ci_contains(text, "roms2d") ||
+             ci_contains(text, "pyroms") || ci_contains(text, "gcm ") ||
+             ci_contains(text, "fvccom") || ci_contains(text, "aswip") ||
+             ci_contains(text, "telemac") || ci_contains(text, "telemac2d") ||
+             ci_contains(text, "telemac3d") || ci_contains(text, "sisyphe") ||
+             ci_contains(text, "tomawac") ||
+             (ci_contains(text, "estuary") && ci_contains(text, " -")) ||
+             ci_contains(text, "hecras") ||
+             (ci_contains(text, "mike") && ci_contains(text, " -")) ||
+             ci_contains(text, "mike21") || ci_contains(text, "mike3") ||
+             ci_contains(text, "mike21c") || ci_contains(text, "mikezero") ||
+             ci_contains(text, "mikeplus") || ci_contains(text, "dhisoftware") ||
+             ci_contains(text, "wntr") || ci_contains(text, "hmmpgmd") ||
+             ci_contains(text, "hmmemit")) {
+        what = "astro/hydro primitive";
         }
 
         if (what) {

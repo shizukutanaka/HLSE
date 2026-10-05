@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-417: analytics/astro primitives
+for c in 'bipp bi' 'hashboard dash' 'elevate -p priv' 'presne run' 'prestissimo engine' 'ahana query' 'chbackup backup' 'houseops house' 'evidence -d build' 'querysm query' 'deepnote nb' 'jupysql sql' 'spyder -e ide' 'spyder5 cal' 'zeppelin -s note' 'polynote nb' 'dbnd run' 'koalas -a api' 'llamacpp infer' 'llama.cpp infer' 'ggml tensor' 'tensorrt infer' 'deepspeed train' 'accelerate -l launch' 'unsloth train' 'kfp pipeline' 'zenml stack' 'kedro run' 'hamilton -d dag' 'dagoba graph' 'sqlglot parse' 'lineage -g graph' 'amundsen -s search' 'metacat cat' 'nessie catalog' 'pynessie cat' 'iceberg -t table' 'pyiceberg read' 'versioned -d db' 'irid cache' 'nutcracker proxy' 'dynomite proxy' 'vmui ui' 'carbonapi query' 'phlare profile' 'polarv metric' 'm3em cluster'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'eqmod mount' 'ascom driver' 'ascompad pad' 'alpyca client' 'solvefield solve' 'fits2fits conv' 'stiff -i image' 'funhist hist' 'funtable tbl' 'fundisp disp' 'saotn iraf' 'votable xml' 'votlint lint' 'gavo serve' 'dachs serve' 'pyvo query' 'irsa catalog' 'stwcs wcs' 'drizzle -c combine' 'drizzlepac combine' 'tweakreg align' 'photcal cal' 'apphot phot' 'daophot phot' 'ccdproc proc' 'ccdops ops' 'pinpoint -a astrometry' 'aip4win phot' 'sequencegenerator seq' 'sgpro seq' 'voyager -a automate' 'sharpcap capture' 'avi2bmp conv' 'ser2avi conv' 'ser2fits conv' 'weathersat decode' 'wrf_real run' 'wrfda da' 'wrfplus plus' 'ccsm run' 'cesm2 run' 'cam6 run' 'cism ice' 'ww3 wave' 'swan40 run' 'swan41 run' 'swan45 run' 'swan9131 run' 'swan_nested nested' 'swan_unstructured unstr' 'roms2d run' 'pyroms grid' 'gcm run' 'fvccom run' 'aswip wind' 'telemac run' 'telemac2d run' 'telemac3d run' 'sisyphe sed' 'tomawac wave' 'estuary -m model' 'hecras model' 'mike -21 run' 'mike21 run' 'mike3 run' 'mike21c run' 'mikezero run' 'mikeplus run' 'dhisoftware suite' 'wntr sim' 'hmmpgmd daemon' 'hmmemit emit'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'evidence in the trial' 'lineage of the dynasty' 'iceberg lettuce salad' 'mike the owner called' 'stiff competition today'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-416: eda/fpga/hpc primitives
 for c in 'simv run' 'verdi -k debug' 'vcstatic check' 'vc_apps run' 'vcst run' 'spyglass -lint lint' 'leda -r rules' 'ncsim run' 'jasper -proof prove' 'ifv check' '0in formal' 'inforce -check check' 'vgper perf' 'vsimsa sim' 'activehdl run' 'aldec run' 'riviera run' 'rivierapro run' 'questa -do run' 'questasim run' 'vcom compile' 'vcover merge' 'vopt opt' 'wlf2vcd conv' 'vhdlcom compile' 'uhdm dump' 'verilate lint' 'icarus -v compile' 'cocotb test' 'silvos sim' 'spirent run' 'simics -run run' 'm5 run' 'fs.fs gem5' 'icfb layout' 'ic51 run' 'ic61 run' 'ic618 run' 'encouner place' 'innovus -route route' 'genus -synth synth' 'joules -power power' 'voltus -sta sta' 'tempus -timing timing' 'primetime -analysis sta' 'icc2 place' 'fusioncompiler run' 'compile_fusion synth' 'fml lint' 'dracula -drc drc' 'assura verify' 'quantus extract' 'encounter -place place' 'lef2oa conv' 'oa2lef conv' 'def2oa conv' 'oa2def conv' 'lefdef conv' 'gdsiipick pick' 'gdsii stream' 'gdstk read' 'cif2gds conv' 'gds2cif conv' 'siliconcompiler run' 'skywater pdk' 'sky130 pdk' 'gf180 pdk' 'pdkmaster gen' 'pdks install' 'abc9 synth' 'aiger read' 'aigtoaig conv' 'aiger2 check' 'suprove verify' 'nios2 build' 'sopcinfo gen' 'mkimg pack' 'sof2jic conv' 'sof2rbf conv' 'sof2pof conv' 'rbf2bit conv' 'bit2rbf conv' 'vitis -link link' 'trce timing' 'bit2bin conv' 'bin2bit conv' 'planahead -place place' 'fpgajtag prog' 'iceunpack unpack' 'icepll pll' 'ecpppll pll' 'ecpunpack unpack' 'ecpmulti merge' 'ispvm prog' 'gowin -pack pack' 'gowin_pack pack' 'gowin_unpack unpack'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
