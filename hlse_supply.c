@@ -14975,6 +14975,45 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "mailfilter") || ci_contains(text, "spamoracle") ||
              ci_contains(text, "interimap") || ci_contains(text, "afsieve")) {
         what = "mail/spam primitive";
+        } else if (
+             /* cycle-375a: finance/ledger primitives */
+             ci_contains(text, "beanquery") || ci_contains(text, "beanprice") ||
+             (ci_contains(text, "knut") && ci_contains(text, " -")) ||
+             (ci_contains(text, "sunnyside") && ci_contains(text, " -")) ||
+             ci_contains(text, "rotkehlchen") || ci_contains(text, "cointrack") ||
+             ci_contains(text, "jgnash") || ci_contains(text, "eqonomize") ||
+             ci_contains(text, "bank2ynab") ||
+             (ci_contains(text, "warren") && ci_contains(text, " -")) ||
+             ci_contains(text, "grouppay") || ci_contains(text, "settleup") ||
+             (ci_contains(text, "sesterce") && ci_contains(text, " -")) ||
+             (ci_contains(text, "lannister") && ci_contains(text, " -"))) {
+        what = "finance/ledger primitive";
+        } else if (
+             /* cycle-375b: sat/smt + bayes primitives */
+             ci_contains(text, "minisat") ||
+             (ci_contains(text, "glucose") && ci_contains(text, " -")) ||
+             ci_contains(text, "cadical") || ci_contains(text, "cryptominisat") ||
+             ci_contains(text, "maplesat") || ci_contains(text, "drat2er") ||
+             ci_contains(text, "cake_lpr") || ci_contains(text, "pr2lrat") ||
+             ci_contains(text, "clrat") || ci_contains(text, "quabs") ||
+             ci_contains(text, "qfun") || ci_contains(text, "depqbf") ||
+             ci_contains(text, "rqbf") || ci_contains(text, "ijtihad") ||
+             ci_contains(text, "genqbf") ||
+             (ci_contains(text, "jags") && ci_contains(text, " -")) ||
+             ci_contains(text, "rjags") || ci_contains(text, "dynesty") ||
+             ci_contains(text, "ultranest") || ci_contains(text, "mathics") ||
+             ci_contains(text, "jill")) {
+        what = "solver/stats primitive";
+        } else if (
+             /* cycle-375c: cosmos-chain primitives */
+             ci_contains(text, "hadurd") || ci_contains(text, "aurad") ||
+             ci_contains(text, "akashd") || ci_contains(text, "bandd") ||
+             ci_contains(text, "celod") || ci_contains(text, "persistencecore") ||
+             ci_contains(text, "coreumd") || ci_contains(text, "nibid") ||
+             ci_contains(text, "shentud") || ci_contains(text, "oraid") ||
+             ci_contains(text, "migalood") || ci_contains(text, "selfchaind") ||
+             ci_contains(text, "stationsd") || ci_contains(text, "bcnad")) {
+        what = "cosmos-chain primitive";
         }
 
         if (what) {

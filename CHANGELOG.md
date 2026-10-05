@@ -10856,6 +10856,16 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 375): finance/ledger + solver + cosmos-chain
+  primitives** — accounting (beanquery, beanprice, knut, sunnyside,
+  rotkehlchen, cointrack, jgnash, eqonomize, bank2ynab, warren, grouppay,
+  settleup, sesterce, lannister), SAT/QBF/Bayes (minisat, glucose,
+  cadical, cryptominisat, maplesat, drat2er, cake_lpr, pr2lrat, clrat,
+  quabs, qfun, depqbf, rqbf, ijtihad, genqbf, jags, rjags, dynesty,
+  ultranest, mathics, jill), and Cosmos SDK daemon names (hadurd,
+  aurad, akashd, bandd, celod, persistencecore, coreumd, nibid,
+  shentud, oraid, migalood, selfchaind, stationsd, bcnad). Real words
+  gated on ' -'. +49/56 checks.
 - **ALERT 45 (cycle 374): IRC bots + mail/anti-spam primitives** —
   niche IRC bots (phenny, gonzobot, cloudbot, hellabot, cardbot,
   nesbot, irccd, dzivo, hibot, kooki, meatballbot, omorobot) and mail

@@ -11674,6 +11674,36 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-375: finance/ledger + solver + cosmos primitives
+for c in 'beanquery -f book.bean select' 'beanprice -i positions' 'knut -b book.bean' 'sunnyside -f main.bean' 'rotkehlchen --data-dir d' 'cointrack -a ledger' 'jgnash -v' 'eqonomize -r' 'bank2ynab -i in.csv' 'warren -p 8332' 'grouppay -s' 'settleup -g' 'sesterce -s' 'lannister -m'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'minisat in.cnf' 'glucose -in=sat.cnf' 'cadical f.cnf' 'cryptominisat x.cnf' 'maplesat -i f' 'drat2er -v' 'cake_lpr -i proof' 'pr2lrat proof.pr' 'clrat check' 'quabs -i f' 'qfun f.qdimacs' 'depqbf --dep-man=simple' 'rqbf -f' 'ijtihad -v' 'genqbf -m' 'jags -q model.bug' 'rjags -d f' 'dynesty -n' 'ultranest -r' 'mathics -e 1+1' 'jill install'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'hadurd -i' 'aurad init m' 'akashd tx bank send' 'bandd init' 'celod init n' 'persistencecore init' 'coreumd init' 'nibid init' 'shentud init' 'oraid init' 'migalood init' 'selfchaind init' 'stationsd init' 'bcnad init'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'blood glucose levels are high' 'the warren commission' 'jags fans celebrate' 'echo knut work' 'echo sunnyside up' 'echo sesterce value' 'echo lannister story'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-374: irc-bot + mail/spam primitives
 for c in 'phenny -c cfg' 'gonzobot -f bot.conf' 'cloudbot -c config.json' 'hellabot --conf h.json' 'cardbot -s irc.x' 'nesbot --register' 'irccd -c irccd.conf' 'dzivo -v' 'hibot -c hibot.conf' 'kooki -s server' 'meatballbot -n nick' 'omorobot -d'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
