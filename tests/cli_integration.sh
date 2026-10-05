@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-398: game/chess primitives
+for c in 'ueditor run' 'uefn run' 'unpkg serve' 'cocos2d run' 'cocos new' 'yacf run' 'q3map2 -b map' 'q3asm assemble' 'trenchbroom map' 'levelforge build' 'unrealpk pack' 'sseedit clean' 'tes5edit clean' 'fo4edit clean' 'freerct run' 'duke3d run' 'lzdoom run' 'qzdoom run' 'doomsday run' 'markv run' 'ironwail run' 'nquake run' 'darkplaces run' 'lamaj run' 'woof -n bark' 'croft -m manor'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'lc0 -w play' 'gnuchess -x play' 'andscacs play' 'booot play' 'pedone play' 'vajolet play' 'igel play' 'pleco play' 'qtchess play' 'pgnlint check' 'eco2pgn conv' 'pgn2scid conv' 'timeseal connect' 'oware play' 'gnubg -t match' 'sgf2img conv' 'gnugo --mode gtp' 'lizzie analyze' 'sabaki open' 'cgos serve' 'michi play' 'leela -n zero' 'hannibal -p play' 'critter -p play' 'ethereal -p play' 'berserk -p play' 'weiss -p play' 'knights -n play' 'blunder -c check'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'woof the dog barked' 'croft the cottage' 'leela the character' 'hannibal the general' 'critter in the woods' 'ethereal beauty shine' 'berserk mode rage' 'weiss the surname' 'knights of old' 'blunder the mistake'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-397: ssg/forum/erp primitives
 for c in 'hugo -s new' 'jekyll -b build' 'gatsby -d develop' 'nikola -b build' 'saber -b build' 'sapper -e export' 'quartz -b build' 'docsify serve' 'wintersmith build' 'gridsome develop' 'scully run' 'scullyio run' 'retype build' 'retypeapp run' 'wikijs start' 'moinmoin start' 'pmwiki run' 'foswiki run'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

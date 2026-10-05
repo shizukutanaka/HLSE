@@ -15862,6 +15862,45 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "frappe") && ci_contains(text, " -")) ||
              (ci_contains(text, "proteus") && ci_contains(text, " -"))) {
         what = "commerce/erp primitive";
+        } else if (
+             /* cycle-398a: game-engine primitives */
+             ci_contains(text, "ueditor") || ci_contains(text, "uefn") ||
+             ci_contains(text, "unpkg") || ci_contains(text, "cocos2d") ||
+             ci_contains(text, "cocos") || ci_contains(text, "yacf") ||
+             ci_contains(text, "q3map2") || ci_contains(text, "q3asm") ||
+             ci_contains(text, "trenchbroom") || ci_contains(text, "levelforge") ||
+             ci_contains(text, "unrealpk") || ci_contains(text, "sseedit") ||
+             ci_contains(text, "tes5edit") || ci_contains(text, "fo4edit") ||
+             ci_contains(text, "freerct") || ci_contains(text, "duke3d") ||
+             ci_contains(text, "lzdoom") || ci_contains(text, "qzdoom") ||
+             ci_contains(text, "doomsday") || ci_contains(text, "markv") ||
+             ci_contains(text, "ironwail") || ci_contains(text, "nquake") ||
+             ci_contains(text, "darkplaces") || ci_contains(text, "lamaj") ||
+             (ci_contains(text, "woof") && ci_contains(text, " -")) ||
+             (ci_contains(text, "croft") && ci_contains(text, " -"))) {
+        what = "game-engine primitive";
+        } else if (
+             /* cycle-398b: chess/board primitives */
+             ci_contains(text, "lc0") || ci_contains(text, "gnuchess") ||
+             ci_contains(text, "andscacs") || ci_contains(text, "booot") ||
+             ci_contains(text, "pedone") || ci_contains(text, "vajolet") ||
+             ci_contains(text, "igel") || ci_contains(text, "pleco") ||
+             ci_contains(text, "qtchess") || ci_contains(text, "pgnlint") ||
+             ci_contains(text, "eco2pgn") || ci_contains(text, "pgn2scid") ||
+             ci_contains(text, "timeseal") || ci_contains(text, "oware") ||
+             ci_contains(text, "gnubg") || ci_contains(text, "sgf2img") ||
+             ci_contains(text, "gnugo") || ci_contains(text, "lizzie") ||
+             ci_contains(text, "sabaki") || ci_contains(text, "cgos") ||
+             ci_contains(text, "michi") ||
+             (ci_contains(text, "leela") && ci_contains(text, " -")) ||
+             (ci_contains(text, "hannibal") && ci_contains(text, " -")) ||
+             (ci_contains(text, "critter") && ci_contains(text, " -")) ||
+             (ci_contains(text, "ethereal") && ci_contains(text, " -")) ||
+             (ci_contains(text, "berserk") && ci_contains(text, " -")) ||
+             (ci_contains(text, "weiss") && ci_contains(text, " -")) ||
+             (ci_contains(text, "knights") && ci_contains(text, " -")) ||
+             (ci_contains(text, "blunder") && ci_contains(text, " -"))) {
+        what = "chess/board primitive";
         }
 
         if (what) {

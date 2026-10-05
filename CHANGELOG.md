@@ -10856,6 +10856,16 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 398): game/chess primitives** — game
+  engines/ports (ueditor, uefn, unpkg, cocos2d, cocos, yacf,
+  q3map2, q3asm, trenchbroom, levelforge, unrealpk, sseedit,
+  tes5edit, fo4edit, freerct, duke3d, lzdoom, qzdoom, doomsday,
+  markv, ironwail, nquake, darkplaces, lamaj, woof, croft),
+  chess/board engines (lc0, gnuchess, andscacs, booot, pedone,
+  vajolet, igel, pleco, qtchess, pgnlint, eco2pgn, pgn2scid,
+  timeseal, oware, gnubg, sgf2img, gnugo, lizzie, sabaki, cgos,
+  michi, leela, hannibal, critter, ethereal, berserk, weiss,
+  knights, blunder). Words gated. +55/65 checks.
 - **ALERT 45 (cycle 397): ssg/forum/erp primitives** —
   static-site/wiki (hugo, jekyll, gatsby, nikola, saber, sapper,
   quartz, docsify, wintersmith, gridsome, scully, scullyio,
