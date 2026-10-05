@@ -17031,6 +17031,98 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pintk") || ci_contains(text, "enterprise") ||
              ci_contains(text, "t2db")) {
         what = "radio-astronomy primitive";
+        } else if (
+             /* cycle-416a: eda/fpga primitives */
+             ci_contains(text, "simv") ||
+             (ci_contains(text, "verdi") && ci_contains(text, " -")) ||
+             ci_contains(text, "vcstatic") || ci_contains(text, "vc_apps") ||
+             ci_contains(text, "vcst ") ||
+             (ci_contains(text, "spyglass") && ci_contains(text, " -")) ||
+             (ci_contains(text, "leda") && ci_contains(text, " -")) ||
+             ci_contains(text, "ncsim") ||
+             (ci_contains(text, "jasper") && ci_contains(text, " -")) ||
+             ci_contains(text, "ifv") || ci_contains(text, "0in ") ||
+             (ci_contains(text, "inforce") && ci_contains(text, " -")) ||
+             ci_contains(text, "vgper") || ci_contains(text, "vsimsa") ||
+             ci_contains(text, "activehdl") || ci_contains(text, "aldec") ||
+             ci_contains(text, "riviera") || ci_contains(text, "rivierapro") ||
+             (ci_contains(text, "questa") && ci_contains(text, " -")) ||
+             ci_contains(text, "questasim") || ci_contains(text, "vcom") ||
+             ci_contains(text, "vcover") || ci_contains(text, "vopt") ||
+             ci_contains(text, "wlf2vcd") || ci_contains(text, "vhdlcom") ||
+             ci_contains(text, "uhdm") || ci_contains(text, "verilate") ||
+             (ci_contains(text, "icarus") && ci_contains(text, " -")) ||
+             ci_contains(text, "cocotb") ||
+             ci_contains(text, "silvos") || ci_contains(text, "spirent") ||
+             (ci_contains(text, "simics") && ci_contains(text, " -")) ||
+             ci_contains(text, "m5 ") || ci_contains(text, "fs.fs") ||
+             ci_contains(text, "icfb") || ci_contains(text, "ic51") ||
+             ci_contains(text, "ic61") || ci_contains(text, "ic618") ||
+             ci_contains(text, "encouner") ||
+             (ci_contains(text, "innovus") && ci_contains(text, " -")) ||
+             (ci_contains(text, "genus") && ci_contains(text, " -")) ||
+             (ci_contains(text, "joules") && ci_contains(text, " -")) ||
+             (ci_contains(text, "voltus") && ci_contains(text, " -")) ||
+             (ci_contains(text, "tempus") && ci_contains(text, " -")) ||
+             (ci_contains(text, "primetime") && ci_contains(text, " -")) ||
+             ci_contains(text, "icc2") || ci_contains(text, "fusioncompiler") ||
+             ci_contains(text, "compile_fusion") || ci_contains(text, "fml ") ||
+             (ci_contains(text, "dracula") && ci_contains(text, " -")) ||
+             ci_contains(text, "assura") ||
+             ci_contains(text, "quantus") ||
+             (ci_contains(text, "encounter") && ci_contains(text, " -")) ||
+             ci_contains(text, "lef2oa") || ci_contains(text, "oa2lef") ||
+             ci_contains(text, "def2oa") || ci_contains(text, "oa2def") ||
+             ci_contains(text, "lefdef") || ci_contains(text, "gdsiipick") ||
+             ci_contains(text, "gdsii") || ci_contains(text, "gdstk") ||
+             ci_contains(text, "cif2gds") || ci_contains(text, "gds2cif") ||
+             ci_contains(text, "siliconcompiler") || ci_contains(text, "skywater") ||
+             ci_contains(text, "sky130") || ci_contains(text, "gf180") ||
+             ci_contains(text, "pdkmaster") || ci_contains(text, "pdks") ||
+             ci_contains(text, "abc9") || ci_contains(text, "aiger") ||
+             ci_contains(text, "aigtoaig") || ci_contains(text, "aiger2") ||
+             ci_contains(text, "suprove") ||
+             ci_contains(text, "nios2") || ci_contains(text, "sopcinfo") ||
+             ci_contains(text, "mkimg") || ci_contains(text, "sof2jic") ||
+             ci_contains(text, "sof2rbf") || ci_contains(text, "sof2pof") ||
+             ci_contains(text, "rbf2bit") || ci_contains(text, "bit2rbf") ||
+             (ci_contains(text, "vitis") && ci_contains(text, " -")) ||
+             ci_contains(text, "trce") || ci_contains(text, "bit2bin") ||
+             ci_contains(text, "bin2bit") ||
+             (ci_contains(text, "planahead") && ci_contains(text, " -")) ||
+             ci_contains(text, "fpgajtag") || ci_contains(text, "iceunpack") ||
+             ci_contains(text, "icepll") || ci_contains(text, "ecpppll") ||
+             ci_contains(text, "ecpunpack") || ci_contains(text, "ecpmulti") ||
+             ci_contains(text, "ispvm") ||
+             (ci_contains(text, "gowin") && ci_contains(text, " -")) ||
+             ci_contains(text, "gowin_pack") || ci_contains(text, "gowin_unpack")) {
+        what = "eda/fpga primitive";
+        } else if (
+             /* cycle-416b: hpc/storage primitives */
+             ci_contains(text, "smgr") || ci_contains(text, "printjob") ||
+             ci_contains(text, "setqos") || ci_contains(text, "mbalance") ||
+             ci_contains(text, "mpart") || ci_contains(text, "sge_qmaster") ||
+             ci_contains(text, "sge_shepherd") || ci_contains(text, "sge_commd") ||
+             ci_contains(text, "sonofgrid") || ci_contains(text, "bgmod") ||
+             ci_contains(text, "lsclusters") || ci_contains(text, "lsmon") ||
+             ci_contains(text, "lsadmin") || ci_contains(text, "globus") ||
+             ci_contains(text, "osgs") || ci_contains(text, "oillpv") ||
+             ci_contains(text, "lcgc") || ci_contains(text, "nordugrid") ||
+             ci_contains(text, "unicore") || ci_contains(text, "enroot") ||
+             ci_contains(text, "apptainer") || ci_contains(text, "sif2") ||
+             ci_contains(text, "sylabs") || ci_contains(text, "shifter") ||
+             ci_contains(text, "shifterimg") || ci_contains(text, "sarus") ||
+             ci_contains(text, "udocks") || ci_contains(text, "lmod") ||
+             ci_contains(text, "brightcm") || ci_contains(text, "warewulf") ||
+             ci_contains(text, "wwsh") || ci_contains(text, "ldlm") ||
+             ci_contains(text, "zpios") || ci_contains(text, "heketi") ||
+             ci_contains(text, "ovirt") || ci_contains(text, "freenas") ||
+             ci_contains(text, "truenas") || ci_contains(text, "mpathpersist") ||
+             ci_contains(text, "zrepl") || ci_contains(text, "pyznap") ||
+             ci_contains(text, "znapzend") || ci_contains(text, "moosefs") ||
+             ci_contains(text, "gpfs") || ci_contains(text, "mmapplypolicy") ||
+             ci_contains(text, "mmbackup") || ci_contains(text, "mmremote")) {
+        what = "hpc/storage primitive";
         }
 
         if (what) {

@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-416: eda/fpga/hpc primitives
+for c in 'simv run' 'verdi -k debug' 'vcstatic check' 'vc_apps run' 'vcst run' 'spyglass -lint lint' 'leda -r rules' 'ncsim run' 'jasper -proof prove' 'ifv check' '0in formal' 'inforce -check check' 'vgper perf' 'vsimsa sim' 'activehdl run' 'aldec run' 'riviera run' 'rivierapro run' 'questa -do run' 'questasim run' 'vcom compile' 'vcover merge' 'vopt opt' 'wlf2vcd conv' 'vhdlcom compile' 'uhdm dump' 'verilate lint' 'icarus -v compile' 'cocotb test' 'silvos sim' 'spirent run' 'simics -run run' 'm5 run' 'fs.fs gem5' 'icfb layout' 'ic51 run' 'ic61 run' 'ic618 run' 'encouner place' 'innovus -route route' 'genus -synth synth' 'joules -power power' 'voltus -sta sta' 'tempus -timing timing' 'primetime -analysis sta' 'icc2 place' 'fusioncompiler run' 'compile_fusion synth' 'fml lint' 'dracula -drc drc' 'assura verify' 'quantus extract' 'encounter -place place' 'lef2oa conv' 'oa2lef conv' 'def2oa conv' 'oa2def conv' 'lefdef conv' 'gdsiipick pick' 'gdsii stream' 'gdstk read' 'cif2gds conv' 'gds2cif conv' 'siliconcompiler run' 'skywater pdk' 'sky130 pdk' 'gf180 pdk' 'pdkmaster gen' 'pdks install' 'abc9 synth' 'aiger read' 'aigtoaig conv' 'aiger2 check' 'suprove verify' 'nios2 build' 'sopcinfo gen' 'mkimg pack' 'sof2jic conv' 'sof2rbf conv' 'sof2pof conv' 'rbf2bit conv' 'bit2rbf conv' 'vitis -link link' 'trce timing' 'bit2bin conv' 'bin2bit conv' 'planahead -place place' 'fpgajtag prog' 'iceunpack unpack' 'icepll pll' 'ecpppll pll' 'ecpunpack unpack' 'ecpmulti merge' 'ispvm prog' 'gowin -pack pack' 'gowin_pack pack' 'gowin_unpack unpack'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'smgr report' 'printjob print' 'setqos qos' 'mbalance bal' 'mpart part' 'sge_qmaster run' 'sge_shepherd run' 'sge_commd run' 'sonofgrid run' 'bgmod group' 'lsclusters list' 'lsmon mon' 'lsadmin admin' 'globus transfer' 'osgs run' 'oillpv run' 'lcgc submit' 'nordugrid sub' 'unicore run' 'enroot run' 'apptainer run' 'sif2 build' 'sylabs build' 'shifter run' 'shifterimg pull' 'sarus run' 'udocks run' 'lmod load' 'brightcm run' 'warewulf build' 'wwsh shell' 'ldlm lock' 'zpios perf' 'heketi vol' 'ovirt vm' 'freenas run' 'truenas run' 'mpathpersist persist' 'zrepl snap' 'pyznap snap' 'znapzend backup' 'moosefs mount' 'gpfs mount' 'mmapplypolicy policy' 'mmbackup backup' 'mmremote remote'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'verdi opera performance' 'icarus mythology lesson' 'dracula novel review' 'joule heating physics class' 'primetime tv schedule' 'encounter at the park' 'gowin road closed'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-415: geo-tile/radio-astronomy primitives
 for c in 'tegola serve' 'tileoven bake' 'tilebelt conv' 'tilecover gen' 'geoserver serve' 'ms4w run' 'tinyows serve' 'geomajas run' 'dem2terrain conv' 'nominoe run' 'ogr2mvt conv' 'ogr2kml conv' 'ogr2shp conv' 'ogr2topojson conv' 'gdalcompare compare' 'gdal_retile retile' 'gdal2tiles tile' 'gdal_viewshed viewshed' 'esri data' 'agol publish' 'mf4v conv' 'r.cost cost' 'r.walk walk' 'r.stream stream' 'r.basin basin' 'v.edit edit' 'v.to.db conv' 'i.pr proc' 'i.cluster cluster' 'i.rectify rectify'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

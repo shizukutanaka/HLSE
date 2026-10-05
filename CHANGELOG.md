@@ -10856,6 +10856,34 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 416): eda/fpga/hpc primitives**
+  — eda/fpga (simv, verdi, vcstatic, vc_apps, vcst,
+  spyglass, leda, ncsim, jasper, ifv, 0in, inforce,
+  vgper, vsimsa, activehdl, aldec, riviera, rivierapro,
+  questa, questasim, vcom, vcover, vopt, wlf2vcd,
+  vhdlcom, uhdm, verilate, icarus, cocotb, silvos,
+  spirent, simics, m5, fs.fs, icfb, ic51, ic61, ic618,
+  encouner, innovus, genus, joules, voltus, tempus,
+  primetime, icc2, fusioncompiler, compile_fusion, fml,
+  dracula, assura, quantus, encounter, lef2oa, oa2lef,
+  def2oa, oa2def, lefdef, gdsiipick, gdsii, gdstk,
+  cif2gds, gds2cif, siliconcompiler, skywater, sky130,
+  gf180, pdkmaster, pdks, abc9, aiger, aigtoaig,
+  aiger2, suprove, nios2, sopcinfo, mkimg, sof2jic,
+  sof2rbf, sof2pof, rbf2bit, bit2rbf, vitis, trce,
+  bit2bin, bin2bit, planahead, fpgajtag, iceunpack,
+  icepll, ecpppll, ecpunpack, ecpmulti, ispvm, gowin,
+  gowin_pack, gowin_unpack), hpc/storage (smgr,
+  printjob, setqos, mbalance, mpart, sge_qmaster,
+  sge_shepherd, sge_commd, sonofgrid, bgmod,
+  lsclusters, lsmon, lsadmin, globus, osgs, oillpv,
+  lcgc, nordugrid, unicore, enroot, apptainer, sif2,
+  sylabs, shifter, shifterimg, sarus, udocks, lmod,
+  brightcm, warewulf, wwsh, ldlm, zpios, heketi,
+  ovirt, freenas, truenas, mpathpersist, zrepl,
+  pyznap, znapzend, moosefs, gpfs, mmapplypolicy,
+  mmbackup, mmremote). avy dropped (gravy/heavy).
+  +150/150 checks.
 - **ALERT 45 (cycle 415): geo-tile/radio-astronomy primitives**
   — geo-tile (tegola, tileoven, tilebelt, tilecover,
   geoserver, ms4w, tinyows, geomajas, dem2terrain,
