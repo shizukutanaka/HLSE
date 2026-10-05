@@ -16880,6 +16880,82 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "fieldin") || ci_contains(text, "cropin") ||
              ci_contains(text, "intelligro")) {
         what = "agritech primitive";
+        } else if (
+             /* cycle-414a: power-grid/mbd primitives */
+             ci_contains(text, "helics") || ci_contains(text, "helics_apps") ||
+             ci_contains(text, "psse33") || ci_contains(text, "psse34") ||
+             ci_contains(text, "psse35") || ci_contains(text, "pssatraw") ||
+             ci_contains(text, "psscal") || ci_contains(text, "psspy") ||
+             ci_contains(text, "pssplt") || ci_contains(text, "savnw") ||
+             ci_contains(text, "dyre") || ci_contains(text, "epriepc") ||
+             ci_contains(text, "psspywarp") || ci_contains(text, "pypsse") ||
+             ci_contains(text, "powerworld") || ci_contains(text, "powerworldsim") ||
+             ci_contains(text, "tsat") || ci_contains(text, "vsat") ||
+             ci_contains(text, "fastdecoupled") || ci_contains(text, "dcopf") ||
+             ci_contains(text, "acopf") || ci_contains(text, "scopf") ||
+             ci_contains(text, "gridopt") || ci_contains(text, "pssetom") ||
+             ci_contains(text, "pglib") || ci_contains(text, "temoa") ||
+             ci_contains(text, "pypsa") ||
+             (ci_contains(text, "reeds") && ci_contains(text, " -")) ||
+             ci_contains(text, "nrel") || ci_contains(text, "nsrdb") ||
+             ci_contains(text, "pvsyst") || ci_contains(text, "pvlib") ||
+             ci_contains(text, "solpy") || ci_contains(text, "rredc") ||
+             ci_contains(text, "dymola") || ci_contains(text, "dymosim") ||
+             ci_contains(text, "fmi2") || ci_contains(text, "fmi3") ||
+             ci_contains(text, "fmpy") || ci_contains(text, "fmusdk") ||
+             ci_contains(text, "qtronic") || ci_contains(text, "simulink") ||
+             ci_contains(text, "slcovresults") || ci_contains(text, "sldv") ||
+             ci_contains(text, "sltest") || ci_contains(text, "slprj") ||
+             ci_contains(text, "simpower") || ci_contains(text, "pscad") ||
+             ci_contains(text, "pscad4") || ci_contains(text, "pscad5") ||
+             ci_contains(text, "pscad42") || ci_contains(text, "pscad50") ||
+             ci_contains(text, "atpdraw") || ci_contains(text, "pl42mat") ||
+             ci_contains(text, "rtlab") || ci_contains(text, "speedgoat") ||
+             ci_contains(text, "dspace") || ci_contains(text, "ds1104") ||
+             ci_contains(text, "ds1006") || ci_contains(text, "ds1202") ||
+             ci_contains(text, "omedit") || ci_contains(text, "omsimulator") ||
+             ci_contains(text, "omnotebook") || ci_contains(text, "omplot") ||
+             ci_contains(text, "omniorb") ||
+             (ci_contains(text, "impact") && ci_contains(text, " -")) ||
+             ci_contains(text, "dymolapy")) {
+        what = "power-grid/mbd primitive";
+        } else if (
+             /* cycle-414b: embedded/can primitives */
+             ci_contains(text, "nrf91") || ci_contains(text, "embedddedstudio") ||
+             ci_contains(text, "embeddedstudio") || ci_contains(text, "jscope") ||
+             ci_contains(text, "rttviewer") || ci_contains(text, "stm32isp") ||
+             ci_contains(text, "truestudio") || ci_contains(text, "atollic") ||
+             ci_contains(text, "ac6") || ci_contains(text, "stm32duino") ||
+             ci_contains(text, "keil") || ci_contains(text, "keil5") ||
+             ci_contains(text, "ulink") || ci_contains(text, "ulink2") ||
+             ci_contains(text, "ulinkpro") || ci_contains(text, "iar ") ||
+             ci_contains(text, "iarbuild") || ci_contains(text, "stvp") ||
+             ci_contains(text, "stvd") || ci_contains(text, "stvd4") ||
+             ci_contains(text, "st7 ") || ci_contains(text, "ride7") ||
+             ci_contains(text, "rkit") || ci_contains(text, "raisonance") ||
+             ci_contains(text, "tricore") || ci_contains(text, "davdev") ||
+             ci_contains(text, "tresos") || ci_contains(text, "ebutos") ||
+             ci_contains(text, "autosar") || ci_contains(text, "vn1640") ||
+             ci_contains(text, "vn5610") || ci_contains(text, "vn7640") ||
+             ci_contains(text, "vspy") ||
+             (ci_contains(text, "intrepid") && ci_contains(text, " -")) ||
+             ci_contains(text, "intrepidcs") || ci_contains(text, "valuecan") ||
+             ci_contains(text, "valuecan4") || ci_contains(text, "neoecu") ||
+             ci_contains(text, "neoivi") || ci_contains(text, "fire2") ||
+             ci_contains(text, "pcan") || ci_contains(text, "canlib") ||
+             ci_contains(text, "canlibsdk") || ci_contains(text, "canlib5") ||
+             ci_contains(text, "canleaf") || ci_contains(text, "canwizard") ||
+             ci_contains(text, "busmaster") ||
+             ci_contains(text, "isotpsniffer") || ci_contains(text, "blf ") ||
+             ci_contains(text, "blf2asc") || ci_contains(text, "mf4 ") ||
+             ci_contains(text, "mdf4") || ci_contains(text, "mdfconvert") ||
+             ci_contains(text, "mdfblock") || ci_contains(text, "dbc2c") ||
+             ci_contains(text, "dbc2cpp") || ci_contains(text, "udsoncan") ||
+             ci_contains(text, "iso14229") || ci_contains(text, "doip") ||
+             ci_contains(text, "can2udp") || ci_contains(text, "somip") ||
+             ci_contains(text, "someip") || ci_contains(text, "someip2can") ||
+             ci_contains(text, "vsomeip") || ci_contains(text, "commonapi")) {
+        what = "embedded/can primitive";
         }
 
         if (what) {

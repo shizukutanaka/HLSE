@@ -10856,6 +10856,31 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 414): power-grid/embedded primitives**
+  — power-grid/mbd (helics, helics_apps, psse33, psse34,
+  psse35, pssatraw, psscal, psspy, pssplt, savnw, dyre,
+  epriepc, psspywarp, pypsse, powerworld, powerworldsim,
+  tsat, vsat, fastdecoupled, dcopf, acopf, scopf,
+  gridopt, pssetom, pglib, temoa, pypsa, reeds, nrel,
+  nsrdb, pvsyst, pvlib, solpy, rredc, dymola, dymosim,
+  fmi2, fmi3, fmpy, fmusdk, qtronic, simulink,
+  slcovresults, sldv, sltest, slprj, simpower, pscad,
+  pscad4, pscad5, pscad42, pscad50, atpdraw, pl42mat,
+  rtlab, speedgoat, dspace, ds1104, ds1006, ds1202,
+  omedit, omsimulator, omnotebook, omplot, omniorb,
+  impact, dymolapy), embedded/can (nrf91,
+  embedddedstudio, embeddedstudio, jscope, rttviewer,
+  stm32isp, truestudio, atollic, ac6, stm32duino, keil,
+  keil5, ulink, ulink2, ulinkpro, iar, iarbuild, stvp,
+  stvd, stvd4, st7, ride7, rkit, raisonance, tricore,
+  davdev, tresos, ebutos, autosar, vn1640, vn5610,
+  vn7640, vspy, intrepid, intrepidcs, valuecan,
+  valuecan4, neoecu, neoivi, fire2, pcan, canlib,
+  canlibsdk, canlib5, canleaf, canwizard, busmaster,
+  isotpsniffer, blf, blf2asc, mf4, mdf4, mdfconvert,
+  mdfblock, dbc2c, dbc2cpp, udsoncan, iso14229, doip,
+  can2udp, somip, someip, someip2can, vsomeip,
+  commonapi). +138/138 checks.
 - **ALERT 45 (cycle 413): legaltech/agritech primitives**
   — legaltech/ediscovery (relativity, relativityserver,
   brainspace, brainspace6, discovia, kcura, ftib,

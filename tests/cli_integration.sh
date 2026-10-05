@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-414: power-grid/embedded primitives
+for c in 'helics federate' 'helics_apps run' 'psse33 run' 'psse34 run' 'psse35 run' 'pssatraw conv' 'psscal calc' 'psspy run' 'pssplt plot' 'savnw save' 'dyre run' 'epriepc run' 'psspywarp run' 'pypsse run' 'powerworld sim' 'powerworldsim sim' 'tsat analyze' 'vsat analyze' 'fastdecoupled solve' 'dcopf solve' 'acopf solve' 'scopf solve' 'gridopt opt' 'pssetom conv' 'pglib run' 'temoa model' 'pypsa network' 'reeds -r run' 'nrel data' 'nsrdb fetch' 'pvsyst sim' 'pvlib calc' 'solpy calc' 'rredc fetch' 'dymola sim' 'dymosim sim' 'fmi2 run' 'fmi3 run' 'fmpy load' 'fmusdk build' 'qtronic run' 'simulink model' 'slcovresults cov' 'sldv prove' 'sltest test' 'slprj build' 'simpower model' 'pscad sim' 'pscad4 sim' 'pscad5 sim' 'pscad42 sim' 'pscad50 sim' 'atpdraw draw' 'pl42mat conv' 'rtlab run' 'speedgoat run' 'dspace run' 'ds1104 board' 'ds1006 board' 'ds1202 board' 'omedit edit' 'omsimulator sim' 'omnotebook note' 'omplot plot' 'omniorb run' 'impact -i modelica' 'dymolapy run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'nrf91 flash' 'embedddedstudio run' 'embeddedstudio run' 'jscope view' 'rttviewer view' 'stm32isp flash' 'truestudio build' 'atollic build' 'ac6 build' 'stm32duino upload' 'keil build' 'keil5 build' 'ulink debug' 'ulink2 debug' 'ulinkpro debug' 'iar build' 'iarbuild build' 'stvp program' 'stvd debug' 'stvd4 debug' 'st7 chip' 'ride7 build' 'rkit build' 'raisonance run' 'tricore run' 'davdev config' 'tresos studio' 'ebutos run' 'autosar config' 'vn1640 channel' 'vn5610 channel' 'vn7640 channel' 'vspy monitor' 'intrepid -c capture' 'intrepidcs run' 'valuecan read' 'valuecan4 read' 'neoecu run' 'neoivi run' 'fire2 run' 'pcan read' 'canlib init' 'canlibsdk dev' 'canlib5 init' 'canleaf run' 'canwizard run' 'busmaster monitor' 'isotpsniffer sniff' 'blf log' 'blf2asc conv' 'mf4 conv' 'mdf4 conv' 'mdfconvert conv' 'mdfblock conv' 'dbc2c conv' 'dbc2cpp conv' 'udsoncan diag' 'iso14229 diag' 'doip diag' 'can2udp fwd' 'somip fwd' 'someip fwd' 'someip2can fwd' 'vsomeip run' 'commonapi gen'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'reeds by the river' 'impact of the storm' 'intrepid explorer tale'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-413: legaltech/agritech primitives
 for c in 'relativity -e ediscovery' 'relativityserver run' 'brainspace run' 'brainspace6 run' 'discovia run' 'kcura run' 'ftib run' 'cocounsel draft' 'westlaw search' 'pacer -c court' 'pacerpro monitor' 'recap -a archive' 'recaprecap run' 'unicourt search' 'docketnav track' 'bloomberglaw search' 'blaw search' 'canlii search' 'austlii search' 'bailii search' 'worldlii search' 'jstor search' 'heinonline search' 'judge -r ruling' 'judgment -e entry' 'onelegal file' 'infotrack search' 'affidafast serve' 'smokeball manage' 'filevine case' 'litify case' 'trialworks case' 'trial -p prep' 'trialpad present' 'cloudnine review' 'cloudninediscovery review' 'ediscoveryassistant run' 'zdiscovery hold' 'consent -m manage' 'consilio review' 'completelegal review' 'kldiscovery review' 'cimplifi run' 'complianceds run' 'epiq review' 'epiqglobal run' 'lhed review' 'reviewedocs review'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
