@@ -102,9 +102,9 @@ def main():
           % len(block_covers))
     for c in block_covers[:10]:
         print("       %s" % c)
-    print("REPORT duplicate 'what' labels: %d" % len(dup_labels))
-    for k, v in sorted(dup_labels.items())[:10]:
-        print("       %r x%d" % (k, v))
+    for k, v in sorted(dup_labels.items()):
+        fails.append("duplicate 'what' label %r used by %d blocks"
+                     % (k, v))
     print("REPORT short unbound word needles (boundary risk): %d"
           % len(risk_short))
     for n, bs in sorted(risk_short.items())[:15]:

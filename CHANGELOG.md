@@ -10877,6 +10877,16 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 422 (label de-duplication):** lint-found `what` label
+  collisions renamed so every else-if block reports a distinct
+  label — `dicom primitive` (cycle-352a converters: dcm2pnm/
+  dcmj2pnm/pdf2dcm/dcm2pdf/stl2dcm/dcml2pnm/drtt) →
+  `dicom-converter primitive`; chess/go engines block (crafty/
+  katago/lczero/fuego/pachi/senpai…) → `board-game primitive`;
+  game-dev tools block (ueditor/uefn/cocos2d/q3map2/
+  trenchbroom/sseedit/lzdoom…) → `game-dev primitive`
+  (314b engine runtimes keep `game-engine primitive`).
+  `lint-needles` now FAILs on duplicate `what` labels.
 - **cycle 421 (needle lint + dead-needle purge):**
   new `make lint-needles` (`tests/lint_needles.py`) statically
   audits the paste chain: FAIL on needles that can never fire

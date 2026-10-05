@@ -14403,7 +14403,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pdf2dcm") || ci_contains(text, "dcm2pdf") ||
              ci_contains(text, "stl2dcm") || ci_contains(text, "dcml2pnm") ||
              ci_contains(text, "drtt")) {
-        what = "dicom primitive";
+        what = "dicom-converter primitive";
         } else if (
              /* cycle-352b: med/bio primitives */
              ci_contains(text, "bet2 ") || ci_contains(text, "convert3d") ||
@@ -15049,7 +15049,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "pgnmentor") || ci_contains(text, "lczero") ||
              (ci_contains(text, "senpai") && ci_contains(text, " -")) ||
              (ci_contains(text, "polyglot") && ci_contains(text, " -"))) {
-        what = "game-engine primitive";
+        what = "board-game primitive";
         } else if (
              /* cycle-377b: fem/imaging/misc primitives */
              ci_contains(text, "pokersource") || ci_contains(text, "kmj") ||
@@ -15868,7 +15868,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "darkplaces") || ci_contains(text, "lamaj") ||
              (ci_contains(text, "woof") && ci_contains(text, " -")) ||
              (ci_contains(text, "croft") && ci_contains(text, " -"))) {
-        what = "game-engine primitive";
+        what = "game-dev primitive";
         } else if (
              /* cycle-398b: chess/board primitives */
              ci_contains(text, "lc0") || ci_contains(text, "gnuchess") ||
