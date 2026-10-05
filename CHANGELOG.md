@@ -10877,6 +10877,19 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 440 (string-op safety audit — sv_add unterminated `type`
+  field):** swept the codebase for the cycle-439 class (unbounded /
+  advance-by-would-be string ops). Zero `sprintf`/`vsprintf`/`strcat`/
+  `gets` exist; every `sscanf` conversion is width-bounded; the one
+  `strcpy` is size-guarded; 8 of 9 `strncpy` sites NUL-terminate
+  explicitly. The ninth did not: `sv_add` copied the finding `type`
+  (which can be a custom `--patterns` label up to 255 B) into
+  `type[32]` with `strncpy(..., 31)` and no terminator — a >=32-char
+  label left the field unterminated, so every `%s`/JSON-escape reader
+  ran past byte 31 into the adjacent `description`. It survived only
+  because the verdict array is zero-initialised (type[31] happened to
+  be 0). Added the explicit `'\0'`; paired test p110b loads a 62-char
+  custom label and asserts the type prints truncated to 31 chars.
 - **cycle 439 (stack-buffer-overflow in the P8 "(also:" reason —
   reachable, ASan-verified):** the multi-hit display in
   hlse_check_paste advanced `off` by snprintf's *would-be* length.

@@ -79,6 +79,7 @@ sv_add(SecretVerdict *v, int delta, const char *type,
 
     strncpy(v->findings[v->n_findings].type, type,
             sizeof(v->findings[0].type) - 1);
+    v->findings[v->n_findings].type[sizeof(v->findings[0].type) - 1] = '\0';
     va_start(ap, fmt);
     vsnprintf(v->findings[v->n_findings].description,
               sizeof(v->findings[0].description), fmt, ap);

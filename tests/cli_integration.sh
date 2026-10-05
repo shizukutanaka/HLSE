@@ -6579,6 +6579,18 @@ echo "$P110_OUT" | grep -q "ACME Internal API Key" \
     && check "p110: --patterns detects custom token at configured score" "0" "0" \
     || check "p110: --patterns detects custom token at configured score" "0" "1"
 
+# p110b: a custom label longer than type[32] must truncate cleanly —
+# cycle-440 added the explicit NUL after strncpy in sv_add (the
+# finding 'type' fed every %s/JSON reader past byte 31 otherwise).
+P110L_PAT=$(mktemp)
+printf 'SECRET LONGKEY_ 10 alnum 80 ACME_Internal_API_Key_Extremely_Long_Label_That_Exceeds_32_Bytes\n' > "$P110L_PAT"
+P110L_OUT=$(./hlse_core --patterns "$P110L_PAT" secret "hdr LONGKEY_abc123XYZ9" 2>/dev/null || true)
+echo "$P110L_OUT" | grep -q "ACME_Internal_API_Key_Extremely\]" \
+    && echo "$P110L_OUT" | grep -q "ISOLATE \[80\]" \
+    && check "p110b: >32B custom label truncates to type[32] cleanly" "0" "0" \
+    || check "p110b: >32B custom label truncates to type[32] cleanly" "0" "1"
+rm -f "$P110L_PAT"
+
 # JSON mode: custom finding present, pattern_id falls back to the generic
 # append-only token (no new pattern_id is minted for a user-defined type)
 ./hlse_core --patterns "$P110_PAT" --json secret "hdr ACME_KEY_abcdefghij1234567890XY" 2>/dev/null | \
