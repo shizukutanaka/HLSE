@@ -510,6 +510,13 @@ check-warnings:
 	done; \
 	if [ "$$fail" -ne 0 ]; then echo "STRICT WARNINGS FOUND (daemon build)"; exit 1; fi
 
+# Static audit of the ci_contains paste-needle chain: FAILs on needles
+# that can never fire (uppercase — ci_contains lowercases the haystack
+# only; empty string — always true) and reports structural debt
+# (cross-block duplicates, label collisions, unbound short needles).
+lint-needles:
+	@python3 tests/lint_needles.py hlse_supply.c
+
 # Build the CLI + tests with ASan/UBSan and run the full self-test.
 # Catches memory errors, UB, and leaks that normal builds miss.
 asan-test:

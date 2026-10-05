@@ -8731,9 +8731,8 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "vgcfgrestore") || ci_contains(text, "vgcfgbackup") ||
              ci_contains(text, "pvcreate") || ci_contains(text, "lvmdiskscan") ||
              (ci_contains(text, "multipath") &&
-              (ci_contains(text, " -f") || ci_contains(text, " -F") ||
-               ci_contains(text, " -c") || ci_contains(text, " -w") ||
-               ci_contains(text, " -W"))) ||
+              (ci_contains(text, " -f") || ci_contains(text, " -c") ||
+               ci_contains(text, " -w"))) ||
              ci_contains(text, "fusermount") ||
              ci_contains(text, "veritysetup") || ci_contains(text, "integritysetup") ||
              (ci_contains(text, "ndctl") &&
@@ -9182,14 +9181,13 @@ hlse_check_paste(const char *text) {
               (ci_contains(text, ".java") || ci_contains(text, " -"))) ||
              (ci_contains(text, "java ") &&
               (ci_contains(text, " -agentlib") || ci_contains(text, " -agentpath") ||
-               ci_contains(text, " -javaagent") || ci_contains(text, " -Xrunhprof") ||
+               ci_contains(text, " -javaagent") ||
                ci_contains(text, " -agent"))) ||
              (ci_contains(text, "mvn ") &&
-              (ci_contains(text, " exec:") || ci_contains(text, " ant:") ||
-               ci_contains(text, " -Dexec"))) ||
+              (ci_contains(text, " exec:") || ci_contains(text, " ant:"))) ||
              (ci_contains(text, "ant ") &&
               (ci_contains(text, " -f") || ci_contains(text, " -buildfile") ||
-               ci_contains(text, " -D") || ci_contains(text, " -find"))) ||
+               ci_contains(text, " -find"))) ||
              (ci_contains(text, "gradle") &&
               (ci_contains(text, " -") || ci_contains(text, " init") ||
                ci_contains(text, " build") || ci_contains(text, " clean"))) ||
@@ -9200,8 +9198,7 @@ hlse_check_paste(const char *text) {
               (ci_contains(text, " run") || ci_contains(text, " repl") ||
                ci_contains(text, " uberjar") || ci_contains(text, " -"))) ||
              (ci_contains(text, "clojure") &&
-              (ci_contains(text, " -e") || ci_contains(text, " -M") ||
-               ci_contains(text, " -X") || ci_contains(text, " -T"))) ||
+              ci_contains(text, " -e")) ||
              (ci_contains(text, "celery") &&
               (ci_contains(text, " -a") || ci_contains(text, " worker") ||
                ci_contains(text, " call") || ci_contains(text, " purge") ||
@@ -9248,18 +9245,14 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " --full-gen") ||
                ci_contains(text, " --quick-gen"))) ||
              (ci_contains(text, "ssh-keygen") &&
-              (ci_contains(text, " -s") || ci_contains(text, " -R") ||
-               ci_contains(text, " -A") || ci_contains(text, " -k") ||
-               ci_contains(text, " -K") || ci_contains(text, " -I") ||
-               ci_contains(text, " -L") || ci_contains(text, " -r") ||
-               ci_contains(text, " -h"))) ||
+              (ci_contains(text, " -s") || ci_contains(text, " -k") ||
+               ci_contains(text, " -r") || ci_contains(text, " -h"))) ||
              ci_contains(text, "ssh-keyscan") || ci_contains(text, "puttygen") ||
              (ci_contains(text, "tftp") &&
               (ci_contains(text, " get") || ci_contains(text, " put") ||
                ci_contains(text, " -"))) ||
              (ci_contains(text, "kermit") &&
-              (ci_contains(text, " -s") || ci_contains(text, " -g") ||
-               ci_contains(text, " -C"))) ||
+              (ci_contains(text, " -s") || ci_contains(text, " -g"))) ||
              ci_contains(text, "lrzsz") || ci_contains(text, "rz -e") ||
              ci_contains(text, "sz -e") || ci_contains(text, "nc6") ||
              ci_contains(text, "pnetcat") || ci_contains(text, "sbd") ||
@@ -9381,8 +9374,7 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " --"))) ||
              (ci_contains(text, "open ") &&
               (ci_contains(text, " -a") || ci_contains(text, " -b") ||
-               ci_contains(text, " -e") || ci_contains(text, " -F") ||
-               ci_contains(text, " -R"))) ||
+               ci_contains(text, " -e"))) ||
              (ci_contains(text, "sfltool") &&
               (ci_contains(text, " resetbtm") || ci_contains(text, " addbtm") ||
                ci_contains(text, " -"))) ||
@@ -9549,7 +9541,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "git svn") || ci_contains(text, "svnserve") ||
              ci_contains(text, "svnsync") ||
              (ci_contains(text, "hg ") &&
-              (ci_contains(text, " serve") || ci_contains(text, " -R "))) ||
+              ci_contains(text, " serve")) ||
              (ci_contains(text, "watchman") &&
               (ci_contains(text, " watch ") || ci_contains(text, " trigger ") ||
                ci_contains(text, " --")) &&
@@ -10482,12 +10474,11 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "setenforce 0") ||
              (ci_contains(text, "semanage") &&
               (ci_contains(text, " -a") || ci_contains(text, " -m") ||
-               ci_contains(text, " -d") || ci_contains(text, " -D"))) ||
+               ci_contains(text, " -d"))) ||
              (ci_contains(text, "semodule") &&
               (ci_contains(text, " -i") || ci_contains(text, " -r") ||
-               ci_contains(text, " -R") || ci_contains(text, " -u") ||
-               ci_contains(text, " -e") || ci_contains(text, " -d") ||
-               ci_contains(text, " -X"))) ||
+               ci_contains(text, " -u") || ci_contains(text, " -e") ||
+               ci_contains(text, " -d"))) ||
              (ci_contains(text, "getsebool") && ci_contains(text, " -")) ||
              (ci_contains(text, "setsebool") && ci_contains(text, " -")) || ci_contains(text, "audit2allow") ||
              ci_contains(text, "aa-complain") || ci_contains(text, "aa-enforce") ||

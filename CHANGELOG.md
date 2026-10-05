@@ -10877,6 +10877,18 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 421 (needle lint + dead-needle purge):**
+  new `make lint-needles` (`tests/lint_needles.py`) statically
+  audits the paste chain: FAIL on needles that can never fire
+  (uppercase — `ci_contains` lowercases the haystack only; empty),
+  advisory reports for cross-block duplicate needles (1,207),
+  intra-block duplicate disjuncts (902), same-block cover pairs
+  (2,918), duplicate `what` labels (dicom x2, game-engine x3),
+  and unbound short word needles. Purged 20 dead uppercase
+  disjuncts (` -F`, ` -W`, ` -Xrunhprof`, ` -Dexec`, ` -D`,
+  ` -M`, ` -X`, ` -T`, ` -R`, ` -A`, ` -K`, ` -I`, ` -L`,
+  ` -C`, ` -R `) that had never matched anything — lowercase
+  siblings keep identical semantics.
 - **cycle 420 (first-principles audit fixes):**
   three latent regressions found by running the full
   `make test` end-to-end instead of affected suites only:
