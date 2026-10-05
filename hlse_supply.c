@@ -15783,6 +15783,48 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "rnadistance") || ci_contains(text, "rnaup") ||
              ci_contains(text, "mfold") || ci_contains(text, "unafold")) {
         what = "bio-annotate/phylo primitive";
+        } else if (
+             /* cycle-396a: quantum/phys primitives */
+             ci_contains(text, "qiskit") || ci_contains(text, "cirq") ||
+             ci_contains(text, "pyquil") || ci_contains(text, "quilc") ||
+             ci_contains(text, "qsharp") || ci_contains(text, "qdk") ||
+             ci_contains(text, "ionq") || ci_contains(text, "tket") ||
+             ci_contains(text, "qulacs") || ci_contains(text, "qibo") ||
+             ci_contains(text, "gpaw") || ci_contains(text, "lapw0") ||
+             ci_contains(text, "lapw1") || ci_contains(text, "lapw2") ||
+             ci_contains(text, "bandplot")) {
+        what = "quantum/phys primitive";
+        } else if (
+             /* cycle-396b: astro/plot/wrf primitives */
+             ci_contains(text, "mayavi2") || ci_contains(text, "scidavis") ||
+             ci_contains(text, "labplot") ||
+             (ci_contains(text, "grace") && ci_contains(text, " -")) ||
+             ci_contains(text, "gracebat") || ci_contains(text, "chemfit") ||
+             ci_contains(text, "astwarp") || ci_contains(text, "astcrop") ||
+             ci_contains(text, "asttable") || ci_contains(text, "astfits") ||
+             ci_contains(text, "astmkprof") || ci_contains(text, "astconvolve") ||
+             ci_contains(text, "astquery") || ci_contains(text, "atlod") ||
+             ci_contains(text, "wrf ") || ci_contains(text, "da_wrfvar") ||
+             ci_contains(text, "ncarg") || ci_contains(text, "adcprep") ||
+             ci_contains(text, "adcirc") || ci_contains(text, "padcirc") ||
+             ci_contains(text, "padcswan") || ci_contains(text, "hhsun") ||
+             ci_contains(text, "relacs")) {
+        what = "astro/plot/wrf primitive";
+        } else if (
+             /* cycle-396c: chain/finance primitives */
+             ci_contains(text, "ravend") || ci_contains(text, "electrond") ||
+             (ci_contains(text, "integration") && ci_contains(text, " -")) ||
+             (ci_contains(text, "torrents") && ci_contains(text, " -")) ||
+             ci_contains(text, "dbgtrace") || ci_contains(text, "ethereumjs") ||
+             (ci_contains(text, "suave") && ci_contains(text, " -")) ||
+             ci_contains(text, "forseti") || ci_contains(text, "checkpointz") ||
+             (ci_contains(text, "vouch") && ci_contains(text, " -")) ||
+             (ci_contains(text, "dirk") && ci_contains(text, " -")) ||
+             (ci_contains(text, "attester") && ci_contains(text, " -")) ||
+             ci_contains(text, "eleutheria") ||
+             (ci_contains(text, "sugar") && ci_contains(text, " -")) ||
+             ci_contains(text, "algorand") || ci_contains(text, "refracta")) {
+        what = "chain/finance primitive";
         }
 
         if (what) {

@@ -10856,6 +10856,17 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 396): quantum/astro/chain primitives** —
+  quantum/phys (qiskit, cirq, pyquil, quilc, qsharp, qdk, ionq,
+  tket, qulacs, qibo, gpaw, lapw0, lapw1, lapw2, bandplot),
+  astro/plot/wrf (mayavi2, scidavis, labplot, grace, gracebat,
+  chemfit, astwarp, astcrop, asttable, astfits, astmkprof,
+  astconvolve, astquery, atlod, wrf, da_wrfvar, ncarg, adcprep,
+  adcirc, padcirc, padcswan, hhsun, relacs), chain/finance
+  (ravend, electrond, integration, torrents, dbgtrace,
+  ethereumjs, suave, forseti, checkpointz, vouch, dirk,
+  attester, eleutheria, sugar, algorand, refracta). Words gated.
+  +54/62 checks.
 - **ALERT 45 (cycle 395): bio/emboss/phylo primitives** —
   bioinformatics: align/ucsc (mashmap, mummer, nucmer, dnadiff,
   mummerplot, promer, bedgraphtobigwig, bigwigtobedgraph,

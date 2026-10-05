@@ -11674,6 +11674,36 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-396: quantum/astro/chain primitives
+for c in 'qiskit run' 'cirq sim' 'pyquil compile' 'quilc -S run' 'qsharp run' 'qdk run' 'ionq submit' 'tket compile' 'qulacs run' 'qibo run' 'gpaw run' 'lapw0 run' 'lapw1 run' 'lapw2 run' 'bandplot plot'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'mayavi2 viz' 'scidavis plot' 'labplot plot' 'grace -b plot' 'gracebat batch' 'chemfit fit' 'astwarp warp' 'astcrop crop' 'asttable query' 'astfits list' 'astmkprof make' 'astconvolve conv' 'astquery query' 'atlod load' 'wrf -r run' 'da_wrfvar run' 'ncarg run' 'adcprep prep' 'adcirc run' 'padcirc run' 'padcswan run' 'hhsun run' 'relacs run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'ravend -daemon start' 'electrond start' 'integration -t tests' 'torrents -d list' 'dbgtrace run' 'ethereumjs run' 'suave -n run' 'forseti run' 'checkpointz run' 'vouch -a attest' 'dirk -s sign' 'attester -r run' 'eleutheria run' 'sugar -c mint' 'algorand run' 'refracta build'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'grace under pressure' 'integration by parts' 'torrents of rain' 'suave the diplomat' 'vouch for me' 'dirk the name' 'attester of deeds' 'sugar and spice'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-395: bio/emboss/phylo primitives
 for c in 'mashmap ref' 'mummer run' 'nucmer align' 'dnadiff cmp' 'mummerplot plot' 'promer run' 'bedgraphtobigwig conv' 'bigwigtobedgraph conv' 'bigbedtobed conv' 'bedtobigbed conv' 'fatotwobit conv' 'twobittofa conv' 'twobitinfo query' 'liftover map' 'psltobed conv' 'fasplit split' 'facount count' 'fafilter filter' 'fafrag extract' 'fagap list' 'faonerecord get' 'farandomize sample' 'fasomerecords pick'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
