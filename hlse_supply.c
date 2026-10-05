@@ -15451,6 +15451,58 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "conversations") && ci_contains(text, " -")) ||
              ci_contains(text, "atalk")) {
         what = "chat/irc primitive";
+        } else if (
+             /* cycle-389a: sci-data primitives */
+             ci_contains(text, "f77 ") || ci_contains(text, "f95 ") ||
+             ci_contains(text, "g95 ") || ci_contains(text, "ftn ") ||
+             ci_contains(text, "f90 ") || ci_contains(text, "f2c ") ||
+             ci_contains(text, "ratfor") || ci_contains(text, "fprettify") ||
+             ci_contains(text, "caf ") || ci_contains(text, "h5jam") ||
+             ci_contains(text, "h5unjam") || ci_contains(text, "h5debug") ||
+             ci_contains(text, "h5mkgrp") || ci_contains(text, "h52gif") ||
+             ci_contains(text, "gif2h5") || ci_contains(text, "ncecat") ||
+             ci_contains(text, "ncra") ||
+             ci_contains(text, "ncvit") || ci_contains(text, "ncremap") ||
+             ci_contains(text, "ncesm") || ci_contains(text, "mbt ") ||
+             ci_contains(text, "mbprocess") || ci_contains(text, "mbinfo") ||
+             ci_contains(text, "mbfilter") || ci_contains(text, "mbroute")) {
+        what = "sci-data primitive";
+        } else if (
+             /* cycle-389b: math/db primitives */
+             (ci_contains(text, "gap") && ci_contains(text, " -")) ||
+             (ci_contains(text, "cocoa") && ci_contains(text, " -")) ||
+             ci_contains(text, "4ti2") ||
+             (ci_contains(text, "latte") && ci_contains(text, " -")) ||
+             ci_contains(text, "topcom") || ci_contains(text, "gfan") ||
+             ci_contains(text, "bertini") || ci_contains(text, "hom4ps") ||
+             ci_contains(text, "msolve") || ci_contains(text, "gp2c") ||
+             ci_contains(text, "mwrank") || ci_contains(text, "ratpoints") ||
+             (ci_contains(text, "flint") && ci_contains(text, " -")) ||
+             
+             (ci_contains(text, "antic") && ci_contains(text, " -")) ||
+             (ci_contains(text, "calcium") && ci_contains(text, " -")) ||
+             ci_contains(text, "dsq") || ci_contains(text, "sqlean") ||
+             ci_contains(text, "sqls") || ci_contains(text, "dbkoda") ||
+             ci_contains(text, "robo3t") || ci_contains(text, "redis ")) {
+        what = "math/db primitive";
+        } else if (
+             /* cycle-389c: hw/media primitives */
+             ci_contains(text, "pylink") ||
+             (ci_contains(text, "bossa") && ci_contains(text, " -")) ||
+             ci_contains(text, "hidutil") ||
+             ci_contains(text, "sg3") ||
+             (ci_contains(text, "hass") && ci_contains(text, " -")) ||
+             ci_contains(text, "nymea") || ci_contains(text, "mosquitto_rr") ||
+             ci_contains(text, "mqttui") || ci_contains(text, "hbmqtt") ||
+             ci_contains(text, "spt ") ||
+             (ci_contains(text, "cava") && ci_contains(text, " -")) ||
+             ci_contains(text, "moc ") || ci_contains(text, "mp3blaster") ||
+             ci_contains(text, "mp4art") || ci_contains(text, "mp4track") ||
+             ci_contains(text, "id3 ") || ci_contains(text, "id3ren") ||
+             ci_contains(text, "puddletag") ||
+             (ci_contains(text, "cowbell") && ci_contains(text, " -")) ||
+             ci_contains(text, "apetag")) {
+        what = "hw/media primitive";
         }
 
         if (what) {

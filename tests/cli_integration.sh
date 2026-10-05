@@ -11674,6 +11674,36 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-389: sci/math/hw primitives
+for c in 'f77 prog.f' 'f95 -o a prog' 'g95 prog.f' 'ftn -o a x' 'f90 prog.f' 'f2c prog.f' 'ratfor prog.r' 'fprettify prog.f' 'caf -f run' 'h5jam -i f' 'h5unjam -i f' 'h5debug file' 'h5mkgrp grp' 'h52gif h5 out' 'gif2h5 in out' 'ncecat in out' 'ncra in out' 'ncvit file' 'ncremap -m map' 'ncesm run' 'mbt -F fmt' 'mbprocess -I in' 'mbinfo -I in' 'mbfilter -I in' 'mbroute -I in'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'gap -q run' 'cocoa -e eval' '4ti2 zsolve' 'latte -f count' 'topcom points' 'gfan compute' 'bertini input' 'hom4ps poly' 'msolve -f sys' 'gp2c run.gp' 'mwrank curve' 'ratpoints hyper' 'flint -t test' 'antic -e num' 'calcium -f field' 'dsq file' 'sqlean db' 'sqls serve' 'dbkoda connect' 'robo3t connect' 'redis cli'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'pylink connect' 'bossa -p write' 'hidutil list' 'sg3 utils' 'hass -c state' 'nymea app' 'mosquitto_rr -t t' 'mqttui connect' 'hbmqtt pub' 'spt -p play' 'cava -p run' 'moc -S play' 'mp3blaster play' 'mp4art --art f' 'mp4track f' 'id3 -l f' 'id3ren -t tag' 'puddletag tag' 'cowbell -t tag' 'apetag -i f'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'usage of the tool' 'mind the gap ahead' 'cocoa powder drink' 'a latte please' 'flint and steel fire' 'the antics of kids' 'calcium rich foods' 'rediscover old cities' 'bossa nova dance' 'hass avocado toast' 'cava sparkling wine' 'mock the draft' 'cowbell sound check' 'massage the data'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-388: wasm/robotics/chat primitives
 for c in 'lucetc module.wasm' 'wamr run' 'wasmkit build' 'emnm symbols' 'emopt optimize' 'emsize out' 'emsdk install' 'wasienv cc' 'wasic file.c' 'wac compose' 'wadge bindgen' 'componentize -w x' 'wadm deploy' 'wrpc call' 'hippo -c deploy' 'bindle -s push' 'lunatic -r run' 'atmo -d run' 'vino -s serve' 'wapc host' 'wsgi app' 'wagi serve' 'nsc -a add' 'jetstream -s pub' 'nats-streaming -s x'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

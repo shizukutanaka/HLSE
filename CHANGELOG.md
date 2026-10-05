@@ -10856,6 +10856,17 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 389): sci/math/hw primitives** — sci-data
+  (f77, f95, g95, ftn, f90, f2c, ratfor, fprettify, caf, h5jam,
+  h5unjam, h5debug, h5mkgrp, h52gif, gif2h5, ncecat, ncra, ncvit,
+  ncremap, ncesm, mbt, mbprocess, mbinfo, mbfilter, mbroute),
+  math/db (gap, cocoa, 4ti2, latte, topcom, gfan, bertini,
+  hom4ps, msolve, gp2c, mwrank, ratpoints, flint, antic, calcium,
+  dsq, sqlean, sqls, dbkoda, robo3t, redis), hw/media (pylink,
+  bossa, hidutil, sg3, hass, nymea, mosquitto_rr, mqttui, hbmqtt,
+  spt, cava, moc, mp3blaster, mp4art, mp4track, id3, id3ren,
+  puddletag, cowbell, apetag). Words gated; redis/3-char bounded;
+  nces/arb/udev/sage dropped (unfixable). +68/83 checks.
 - **ALERT 45 (cycle 388): wasm/robotics/chat primitives** — wasm/NATS
   (lucetc, wamr, wasmkit, emnm, emopt, emsize, emsdk, wasienv,
   wasic, wac, wadge, componentize, wadm, wrpc, hippo, bindle,
