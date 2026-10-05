@@ -10856,6 +10856,17 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 378): JACK audio + SDR/radio primitives + FP
+  fixes** — jack_* tools (jack_rec, jack_meter, jack_cpu, jack_bufsize,
+  jack_freewheel, jack_net_master, jack_net_slave, jack_midiseq,
+  jack_midi_latency_test, patchance, a2jmidid, a2jmidi, aeolus,
+  bspacewizard) and radio (sattrack, sgp4, soapysdrutil, yfktest,
+  conquest, csdsp, linrad, iqanalyzer, spek, iio_info, iio_attr,
+  iio_reg, iio_event, iiod, rsp_tcp, rspduo, fl2k_file, fl2k_tcp,
+  fl2k_test, hackrf_debug, hackrf_cpldjtag). FP fixes: 'gau ' and
+  'paga ' now space-bounded (gaul / propagator), 'gaupol' ungated
+  (coined name), hackrf_info dropped (existing FP guard). +34/38
+  checks.
 - **ALERT 45 (cycle 377): game-engine + FEM/imaging primitives** —
   chess/shogi/go engines (crafty, chessdb, pychess, knightcap, pachi,
   fuego, katago, autogtp, qgo, lishogi, bonanza, kishid, elostat,

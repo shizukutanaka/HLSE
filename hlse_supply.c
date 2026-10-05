@@ -3487,7 +3487,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "findomain") ||
                    ci_contains(text, "httprobe") ||
                    ci_contains(text, "httpx") ||
-                   (ci_contains(text, "gau") &&
+                   (ci_contains(text, "gau ") &&
                     ci_contains(text, " ")) ||
                    ci_contains(text, "waybackurls") ||
                    ci_contains(text, "katana") ||
@@ -11962,7 +11962,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "x265") || ci_contains(text, "kvazaar") ||
              ci_contains(text, "vvenc") || ci_contains(text, "av1an") ||
              ci_contains(text, "vmaf") ||
-             (ci_contains(text, "gaupol") && ci_contains(text, " -")) ||
+             ci_contains(text, "gaupol") ||
              ci_contains(text, "subtitlecomposer") || ci_contains(text, "ccextractor") ||
              ci_contains(text, "ffsubsync") ||
              (ci_contains(text, "alass") && ci_contains(text, " -")) ||
@@ -14862,7 +14862,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "biblioref") || ci_contains(text, "doi2bib") ||
              ci_contains(text, "pubfetch") || ci_contains(text, "tcoffee") ||
              (ci_contains(text, "prank") && ci_contains(text, " -")) ||
-             ci_contains(text, "paga") || ci_contains(text, "fyrd") ||
+             ci_contains(text, "paga ") || ci_contains(text, "fyrd") ||
              ci_contains(text, "org2pdf") || ci_contains(text, "cpif") ||
              ci_contains(text, "nuweb") || ci_contains(text, "funnelweb") ||
              (ci_contains(text, "zettel") && ci_contains(text, " -")) ||
@@ -15069,6 +15069,32 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "afni_proc") || ci_contains(text, "afni_bids") ||
              ci_contains(text, "mincedit")) {
         what = "fem/imaging primitive";
+        } else if (
+             /* cycle-378a: jack/audio primitives */
+             ci_contains(text, "jack_rec") || ci_contains(text, "jack_meter") ||
+             ci_contains(text, "jack_cpu") || ci_contains(text, "jack_bufsize") ||
+             ci_contains(text, "jack_freewheel") || ci_contains(text, "jack_net_master") ||
+             ci_contains(text, "jack_net_slave") || ci_contains(text, "jack_midiseq") ||
+             ci_contains(text, "jack_midi_latency_test") || ci_contains(text, "patchance") ||
+             ci_contains(text, "a2jmidid") || ci_contains(text, "a2jmidi") ||
+             ci_contains(text, "aeolus") || ci_contains(text, "bspacewizard")) {
+        what = "jack/audio primitive";
+        } else if (
+             /* cycle-378b: sdr/radio primitives */
+             ci_contains(text, "sattrack") ||
+             (ci_contains(text, "sgp4") && ci_contains(text, " -")) ||
+             ci_contains(text, "soapysdrutil") || ci_contains(text, "yfktest") ||
+             (ci_contains(text, "conquest") && ci_contains(text, " -")) ||
+             ci_contains(text, "csdsp") || ci_contains(text, "linrad") ||
+             ci_contains(text, "iqanalyzer") || ci_contains(text, "spek") ||
+             ci_contains(text, "iio_info") || ci_contains(text, "iio_attr") ||
+             ci_contains(text, "iio_reg") || ci_contains(text, "iio_event") ||
+             ci_contains(text, "iiod") || ci_contains(text, "rsp_tcp") ||
+             ci_contains(text, "rspduo") || ci_contains(text, "fl2k_file") ||
+             ci_contains(text, "fl2k_tcp") || ci_contains(text, "fl2k_test") ||
+             ci_contains(text, "hackrf_debug") ||
+             ci_contains(text, "hackrf_cpldjtag")) {
+        what = "sdr/radio primitive";
         }
 
         if (what) {

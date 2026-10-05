@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-378: jack/audio + sdr/radio primitives
+for c in 'jack_rec -f out.wav' 'jack_meter -n' 'jack_cpu' 'jack_bufsize 256' 'jack_freewheel -y' 'jack_net_master -a host' 'jack_net_slave -C host' 'jack_midiseq -f m.mid' 'jack_midi_latency_test' 'patchance -v' 'a2jmidid -e' 'a2jmidi -u' 'aeolus -J' 'bspacewizard -t'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'sattrack -f tle.txt' 'sgp4 -f sat.tle' 'SoapySDRUtil --find' 'yfktest -c contest' 'conquest -m' 'csdsp -r 48000' 'linrad -w' 'iqanalyzer -f iq.dat' 'spek -f a.wav' 'iio_info -u ip:host' 'iio_attr -u x -c dev' 'iio_reg -u x dev 0' 'iio_event -u x' 'iiod -D' 'rsp_tcp -a 0.0.0.0' 'rspduo -m' 'fl2k_file -s 1e6 f' 'fl2k_tcp -a' 'fl2k_test -s' 'hackrf_debug -x' 'hackrf_cpldjtag -x file'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'the sgp4 propagator model' 'roman conquest of gaul' 'echo sgp4 works' 'echo conquest day'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-377: game-engine + fem/imaging primitives
 for c in 'crafty -b' 'chessdb -q' 'pychess --debug' 'knightcap -t' 'pachi -t =1000' 'fuego -q' 'katago benchmark' 'autogtp -k dir' 'qgo -server' 'lishogi -v' 'bonanza -f book' 'kishid -v' 'elostat -p' 'pgnmentor -f g.pgn' 'lczero -w net' 'senpai -h' 'polyglot -pgn in'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
