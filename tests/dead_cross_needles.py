@@ -222,9 +222,134 @@ class Analyzer(object):
                 self.drops.append((t.start, nxt.end))
                 self.removed.append('!' + t.lit)
 
+    def _drop_term(self, a, b, depth, i, label):
+        """Drop term i plus one adjacent '&&' at this level."""
+        t = self.toks[i]
+        prv = self.toks[i - 1] if i > a else None
+        if (prv is not None and prv.kind == 'conn'
+                and prv.text == '&&' and prv.depth == depth):
+            self.drops.append((prv.start, t.end))
+            self.removed.append(label)
+            return True
+        nxt = self.toks[i + 1] if i + 1 < b else None
+        if (nxt is not None and nxt.kind == 'conn'
+                and nxt.text == '&&' and nxt.depth == depth):
+            self.drops.append((t.start, nxt.end))
+            self.removed.append(label)
+            return True
+        return False
+
+    def neg_drops(self, a, b, depth, eff):
+        """Redundant negated conjuncts at an operand's top level:
+        '!x' with x in eff is always true at eval (x's standalone
+        disjunct already claims every x-input). Drop '&& !x' (or
+        '!x &&' when it is the operand's first term)."""
+        els = [i for i in range(a, b)
+               if self.toks[i].depth == depth
+               and self.toks[i].kind == 'call']
+        live = [i for i in els
+                if not (self.toks[i].neg
+                        and self.toks[i].lit in eff)]
+        if not live:
+            return   # operand is constant-true — needs a report
+        for i in els:        # path, not a rewrite
+            t = self.toks[i]
+            if not (t.neg and t.lit in eff):
+                continue
+            self._drop_term(a, b, depth, i, '!' + t.lit)
+
+    def implied_drops(self, a, b, depth, eff):
+        """Implied terms inside an operand (all are dropped only
+        when a surviving term keeps the operand non-empty):
+          (a) positive conjunct x with x ⊆ a sibling positive
+              conjunct's literal — x is implied ('dfs && hdfs'
+              ≡ 'hdfs'; ' ' ⊆ 'gau ' → drop ' ');
+          (b) a '(…)' group term whose inner standalone disjunct
+              il ⊆ a surviving conjunct x — the group is always
+              true ('apksigner && (sign || rotate)' ≡ 'apksigner').
+        '!(…)' and 'name(' groups are not boolean terms."""
+        terms = [i for i in range(a, b)
+                 if self.toks[i].depth == depth
+                 and self.toks[i].kind in ('call', 'lp')]
+        pos = {}
+        for i in terms:
+            t = self.toks[i]
+            if t.kind == 'call' and not t.neg:
+                pos[i] = t.lit
+        # (a) implied positive conjuncts
+        drop_idx = set()
+        for i, x in pos.items():
+            for j, L in pos.items():
+                if i != j and x in L:
+                    drop_idx.add(i)
+                    break
+        # (b) group implied by a surviving conjunct
+        surviving = set(l for i, l in pos.items()
+                        if i not in drop_idx)
+        for i in terms:
+            t = self.toks[i]
+            if t.kind != 'lp':
+                continue
+            p = self._prev_nonws(t.start - 1)
+            c = self.part[p] if p >= 0 else ''
+            if c == '!' or c.isalnum() or c == '_':
+                continue    # !(…) or call-args — not a boolean term
+            iops, _ = self.split_operands(i + 1, t.match,
+                                          depth + 1)
+            inner = set()
+            for ia, ib in iops:
+                lit = self.standalone_lit(ia, ib, depth + 1)
+                if lit is not None:
+                    inner.add(lit)
+            if any(il in x for x in surviving for il in inner):
+                drop_idx.add(i)
+        if len(terms) - len(drop_idx) < 1:
+            return          # would empty the operand — skip
+        # consecutive dropped terms share a '&&' — emit one span
+        # per maximal run: a leading run drops 't && … && ',
+        # every other run drops '&& … && t'.
+        def term_end(i):
+            t = self.toks[i]
+            return self.toks[t.match].end if t.kind == 'lp' \
+                else t.end
+
+        pos_in_terms = {t: k for k, t in enumerate(terms)}
+        dropped_pos = sorted(pos_in_terms[i] for i in drop_idx)
+        runs = []
+        for k in dropped_pos:
+            if runs and k == runs[-1][-1] + 1:
+                runs[-1].append(k)
+            else:
+                runs.append([k])
+        for run in runs:
+            first = terms[run[0]]
+            last = terms[run[-1]]
+            label = ', '.join(
+                '(...)' if self.toks[i].kind == 'lp'
+                else self.toks[i].lit
+                for i in (terms[k] for k in run))
+            if run[0] == 0:
+                # leading run: drop 't && … && ' — the && is the
+                # one immediately before the next surviving term
+                if run[-1] + 1 >= len(terms):
+                    continue
+                conn = self.toks[terms[run[-1] + 1] - 1]
+                if (conn.kind == 'conn' and conn.text == '&&'
+                        and conn.depth == depth):
+                    self.drops.append(
+                        (self.toks[first].start, conn.end))
+                    self.removed.append(label)
+            else:
+                prv = self.toks[first - 1]
+                if (prv.kind == 'conn' and prv.text == '&&'
+                        and prv.depth == depth):
+                    self.drops.append(
+                        (prv.start, term_end(last)))
+                    self.removed.append(label)
+
     def process_level(self, lo, hi, depth, eff):
         """Emit drops for dead operands with a '||' neighbour and
-        for redundant '!x' conjuncts; recurse into groups.
+        for redundant conjuncts; recurse into groups.
         eff = context-owned needles; this level's standalone
         positive disjuncts extend it (absorption).
         Returns True if the whole level is dead."""
@@ -251,6 +376,7 @@ class Analyzer(object):
                 # standalone_lit check above)
                 if self.standalone_lit(a, b, depth) is None:
                     self.neg_drops(a, b, depth, eff)
+                    self.implied_drops(a, b, depth, eff)
                 # recurse into groups inside this live operand
                 for i in range(a, b):
                     t = self.toks[i]

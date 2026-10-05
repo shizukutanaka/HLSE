@@ -10877,6 +10877,22 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 430 (implied-term drops inside &&-operands):**
+  two new provable deadness classes inside one &&-operand,
+  emitted as run-aware spans (consecutive drops share one '&&',
+  a leading run drops 't && ', a non-leading run drops '&& t';
+  an lp term's span ends at its matching ')'):
+  (a) a positive conjunct x implied by a sibling conjunct L
+      (x ⊆ L): 'dfs' ⊆ 'hdfs' -> drop 'dfs'; ' ' ⊆ 'gau ' ->
+      drop ' ';
+  (b) a '(…)' group term whose inner standalone disjunct il
+      ⊆ a surviving conjunct x — the group is always true:
+      'apksigner && (sign || rotate)' ≡ 'apksigner'
+      ('sign' ⊆ 'apksigner'). '!(…)' and 'name(' groups
+      excluded as non-boolean terms.
+  **3 implied terms removed**; operand kept non-empty by the
+  ≥1-survivor guard. lint FAIL coverage extends automatically
+  (same Analyzer). F1 1.000, all suites green.
 - **cycle 429 (file + package benchmark corpus — B3 arc complete):**
   hlse_benchmark now exercises the last two unmeasured pure-input
   detection surfaces: file-masquerade via hlse_check_filename

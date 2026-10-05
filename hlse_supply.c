@@ -3462,8 +3462,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "findomain") ||
                    ci_contains(text, "httprobe") ||
                    ci_contains(text, "httpx") ||
-                   (ci_contains(text, "gau ") &&
-                    ci_contains(text, " ")) ||
+                   (ci_contains(text, "gau ") ) ||
                    ci_contains(text, "waybackurls") ||
                    ci_contains(text, "katana") ||
                    ci_contains(text, "hakrawler") ||
@@ -4056,8 +4055,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " purge") ||
                      ci_contains(text, " osd out") ||
                      ci_contains(text, " mds"))) ||
-                   (ci_contains(text, "hdfs") &&
-                    ci_contains(text, "dfs") &&
+                   (ci_contains(text, "hdfs")  &&
                     (ci_contains(text, "-rm") ||
                      ci_contains(text, "-expunge") ||
                      ci_contains(text, "-chmod") ||
@@ -4127,9 +4125,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "objection") ||
                    ci_contains(text, "apktool") ||
                    ci_contains(text, "jadx") ||
-                   (ci_contains(text, "apksigner") &&
-                    (ci_contains(text, "sign") ||
-                     ci_contains(text, "rotate"))) ||
+                   (ci_contains(text, "apksigner") ) ||
                    ci_contains(text, "d2j-dex2jar") ||
                    ci_contains(text, "baksmali") ||
                    ci_contains(text, "quark-engine") ||
