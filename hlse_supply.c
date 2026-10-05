@@ -16331,6 +16331,90 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "falstad") || ci_contains(text, "everycircuit") ||
              ci_contains(text, "partsim") || ci_contains(text, "partquest")) {
         what = "eda/pcb primitive";
+        } else if (
+             /* cycle-407a: compchem/crystal primitives */
+             ci_contains(text, "g16 ") || ci_contains(text, "g09 ") ||
+             ci_contains(text, "g03 ") || ci_contains(text, "g98 ") ||
+             ci_contains(text, "g16view") || ci_contains(text, "gaussview") ||
+             ci_contains(text, "gaussview6") || ci_contains(text, "newzmat") ||
+             ci_contains(text, "unfchk") || ci_contains(text, "freqchk") ||
+             ci_contains(text, "freqmem") || ci_contains(text, "testrt") ||
+             ci_contains(text, "obmm") || ci_contains(text, "obgopt") ||
+             ci_contains(text, "obchiral") || ci_contains(text, "obci") ||
+             ci_contains(text, "obfragment") || ci_contains(text, "obgas") ||
+             ci_contains(text, "obh ") || ci_contains(text, "obutil") ||
+             ci_contains(text, "obtautomer") || ci_contains(text, "obrandom") ||
+             ci_contains(text, "platon") || ci_contains(text, "plout") ||
+             ci_contains(text, "sir97") || ci_contains(text, "sir2002") ||
+             ci_contains(text, "sir2011") || ci_contains(text, "sir2019") ||
+             ci_contains(text, "sir2020") ||
+             (ci_contains(text, "endeavour") && ci_contains(text, " -")) ||
+             ci_contains(text, "winspall") || ci_contains(text, "fullprof") ||
+             ci_contains(text, "gsas") || ci_contains(text, "gsas2") ||
+             ci_contains(text, "powdercell") || ci_contains(text, "powdll") ||
+             ci_contains(text, "winplotr") || ci_contains(text, "diffrac") ||
+             ci_contains(text, "diffracplus") || ci_contains(text, "leptos") ||
+             ci_contains(text, "highscore") ||
+             (ci_contains(text, "jade") && ci_contains(text, " -")) ||
+             ci_contains(text, "materia ") || ci_contains(text, "checkcell") ||
+             ci_contains(text, "chekcell") || ci_contains(text, "icdd") ||
+             ci_contains(text, "sirware") || ci_contains(text, "dabars") ||
+             ci_contains(text, "po15") || ci_contains(text, "lesocq") ||
+             ci_contains(text, "molmot") || ci_contains(text, "molmotif") ||
+             ci_contains(text, "encifer") || ci_contains(text, "publcif") ||
+             ci_contains(text, "checkcif") ||
+             (ci_contains(text, "squeeze") && ci_contains(text, " -")) ||
+             ci_contains(text, "abins") ||
+             (ci_contains(text, "horace") && ci_contains(text, " -")) ||
+             ci_contains(text, "mslice") ||
+             (ci_contains(text, "simpson") && ci_contains(text, " -")) ||
+             ci_contains(text, "simpsol") || ci_contains(text, "dmfit") ||
+             ci_contains(text, "solnmr") || ci_contains(text, "nmrfam") ||
+             ci_contains(text, "nmrdraw") || ci_contains(text, "ccpn") ||
+             ci_contains(text, "ccpnmr") || ci_contains(text, "vnmrj") ||
+             ci_contains(text, "vnmr") || ci_contains(text, "olea") ||
+             ci_contains(text, "mnova") || ci_contains(text, "mestrenova") ||
+             ci_contains(text, "nmrglue") || ci_contains(text, "auremol") ||
+             (ci_contains(text, "cara") && ci_contains(text, " -")) ||
+             ci_contains(text, "nessy") || ci_contains(text, "pales") ||
+             (ci_contains(text, "talos") && ci_contains(text, " -")) ||
+             ci_contains(text, "talosn") || ci_contains(text, "talos+") ||
+             ci_contains(text, "bmrb") || ci_contains(text, "foldit") ||
+             ci_contains(text, "ligand_dock") || ci_contains(text, "momo") ||
+             ci_contains(text, "bkchem") || ci_contains(text, "gchempaint") ||
+             ci_contains(text, "molconvert") || ci_contains(text, "standardizer") ||
+             ci_contains(text, "structurecheck") || ci_contains(text, "metator")) {
+        what = "compchem/crystal primitive";
+        } else if (
+             /* cycle-407b: speech/asr primitives */
+             (ci_contains(text, "steps") && ci_contains(text, " -")) ||
+             ci_contains(text, "arpa2fst") ||
+             (ci_contains(text, "blah") && ci_contains(text, " -")) ||
+             ci_contains(text, "blahbs") || ci_contains(text, "composefs") ||
+             ci_contains(text, "fstdraw") || ci_contains(text, "fstprint") ||
+             ci_contains(text, "fstpropfinal") || ci_contains(text, "fstpushspecial") ||
+             ci_contains(text, "fsttablecompose") || ci_contains(text, "train_lda_mllt") ||
+             ci_contains(text, "train_lvtln") || ci_contains(text, "train_map") ||
+             ci_contains(text, "train_mmi") || ci_contains(text, "train_mpe") ||
+             ci_contains(text, "train_sat") || ci_contains(text, "rnnlm") ||
+             ci_contains(text, "cslu") || ci_contains(text, "mini_librispeech") ||
+             ci_contains(text, "librispeech") || ci_contains(text, "vctk") ||
+             ci_contains(text, "timit") || ci_contains(text, "chime1") ||
+             ci_contains(text, "chime2") || ci_contains(text, "chime3") ||
+             ci_contains(text, "chime4") || ci_contains(text, "chime5") ||
+             ci_contains(text, "chime6") || ci_contains(text, "swbd") ||
+             (ci_contains(text, "switchboard") && ci_contains(text, " -")) ||
+             ci_contains(text, "callhome") || ci_contains(text, "callhm") ||
+             ci_contains(text, "mgb2") || ci_contains(text, "mgb3") ||
+             ci_contains(text, "mgb5") || ci_contains(text, "corpus5") ||
+             ci_contains(text, "lre07") || ci_contains(text, "lre09") ||
+             ci_contains(text, "lre15") || ci_contains(text, "lre17") ||
+             ci_contains(text, "lre22") || ci_contains(text, "sre08") ||
+             ci_contains(text, "sre10") || ci_contains(text, "sre16") ||
+             ci_contains(text, "sre18") || ci_contains(text, "sre19") ||
+             ci_contains(text, "sre21") || ci_contains(text, "dihard") ||
+             ci_contains(text, "dihard3") || ci_contains(text, "dihards")) {
+        what = "speech/asr primitive";
         }
 
         if (what) {

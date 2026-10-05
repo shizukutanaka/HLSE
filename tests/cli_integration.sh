@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-407: compchem/speech primitives
+for c in 'g16 input' 'g09 input' 'g03 input' 'g98 input' 'g16view view' 'gaussview view' 'gaussview6 view' 'newzmat conv' 'unfchk conv' 'freqchk chk' 'freqmem run' 'testrt run' 'obmm run' 'obgopt opt' 'obchiral run' 'obci run' 'obfragment frag' 'obgas run' 'obh run' 'obutil run' 'obtautomer run' 'obrandom run' 'platon run' 'plout run' 'sir97 run' 'sir2002 run' 'sir2011 run' 'sir2019 run' 'sir2020 run' 'endeavour -r run' 'winspall run' 'fullprof run' 'gsas run' 'gsas2 run' 'powdercell run' 'powdll run' 'winplotr plot' 'diffrac run' 'diffracplus run' 'leptos run' 'highscore run' 'jade -r run' 'materia calc' 'checkcell run' 'chekcell run' 'icdd run' 'sirware run' 'dabars run' 'po15 run' 'lesocq run' 'molmot run' 'molmotif run' 'encifer run' 'publcif check' 'checkcif check' 'squeeze -r run' 'abins run' 'horace -r run' 'mslice run' 'simpson -r run' 'simpsol run' 'dmfit fit' 'solnmr run' 'nmrfam run' 'nmrdraw draw' 'ccpn run' 'ccpnmr run' 'vnmrj run' 'vnmr run' 'olea run' 'mnova run' 'mestrenova run' 'nmrglue run' 'auremol run' 'cara -r run' 'nessy run' 'pales run' 'talos -r run' 'talosn run' 'talos+ run' 'bmrb run' 'foldit run' 'ligand_dock dock' 'momo run' 'bkchem draw' 'gchempaint draw' 'molconvert conv' 'standardizer std' 'structurecheck check' 'metator run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'steps -r run' 'arpa2fst conv' 'blah -r run' 'blahbs run' 'composefs run' 'fstdraw draw' 'fstprint print' 'fstpropfinal prop' 'fstpushspecial push' 'fsttablecompose comp' 'train_lda_mllt train' 'train_lvtln train' 'train_map train' 'train_mmi train' 'train_mpe train' 'train_sat train' 'rnnlm train' 'cslu run' 'mini_librispeech prep' 'librispeech prep' 'vctk prep' 'timit prep' 'chime1 prep' 'chime2 prep' 'chime3 prep' 'chime4 prep' 'chime5 prep' 'chime6 prep' 'swbd prep' 'switchboard -r run' 'callhome prep' 'callhm run' 'mgb2 prep' 'mgb3 prep' 'mgb5 prep' 'corpus5 run' 'lre07 eval' 'lre09 eval' 'lre15 eval' 'lre17 eval' 'lre22 eval' 'sre08 eval' 'sre10 eval' 'sre16 eval' 'sre18 eval' 'sre19 eval' 'sre21 eval' 'dihard eval' 'dihard3 eval' 'dihards eval'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'endeavour space shuttle' 'jade stone jewelry' 'squeeze the lemon' 'horace roman poet' 'simpson cartoon show' 'cara delevingne model' 'talos greek myth' 'steps to follow' 'blah blah boring' 'switchboard operator job'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-406: microscopy/eda primitives
 for c in 'fiji -r run' 'fiji.app open' 'mmstudio run' 'mm_config cfg' 'mm2 run' 'mkfake make' 'bfview view' 'ijview view' 'omero admin' 'bflist list' 'icycam run' 'vaa3d view' 'tereconverter conv' 'catmaid serve' 'trakem2 run' 'trakem run' 'ilastik run' 'cellpose run' 'omnipose run' 'qupath open' 'paquo run' 'czi2tif conv' 'czi2jpeg conv' 'czi2ome conv' 'czifile read' 'aicspylibczi read' 'zeiss2tif conv' 'lsm2tif conv' 'lsm2ome conv' 'lif2tif conv' 'lif2ome conv' 'vsi2tif conv' 'vsi2ome conv' 'evos2tif conv' 'flim2tif conv' 'flim run' 'flimlib lib' 'flimj run' 'flimfit fit' 'phasor run' 'imspector run' 'ptu2tif conv' 'refmacat ref' 'restrain_probes run' 'elder -r run' 'hkldisp disp' 'hklview view' 'hklviewer view' 'hklprocess run' 'hklpy run' 'eiger2cbf conv' 'areadetector run' 'adaravis run' 'adpilatus run' 'adeiger run'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

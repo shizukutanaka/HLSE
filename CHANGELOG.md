@@ -10856,6 +10856,30 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 407): compchem/speech primitives**
+  — compchem/crystallography/nmr (g16, g09, g03, g98, g16view,
+  gaussview, gaussview6, newzmat, unfchk, freqchk, freqmem,
+  testrt, obmm, obgopt, obchiral, obci, obfragment, obgas,
+  obh, obutil, obtautomer, obrandom, platon, plout, sir97,
+  sir2002, sir2011, sir2019, sir2020, endeavour, winspall,
+  fullprof, gsas, gsas2, powdercell, powdll, winplotr,
+  diffrac, diffracplus, leptos, highscore, jade, materia,
+  checkcell, chekcell, icdd, sirware, dabars, po15, lesocq,
+  molmot, molmotif, encifer, publcif, checkcif, squeeze,
+  abins, horace, mslice, simpson, simpsol, dmfit, solnmr,
+  nmrfam, nmrdraw, ccpn, ccpnmr, vnmrj, vnmr, olea, mnova,
+  mestrenova, nmrglue, auremol, cara, nessy, pales, talos,
+  talosn, talos+, bmrb, foldit, ligand_dock, momo, bkchem,
+  gchempaint, molconvert, standardizer, structurecheck,
+  metator), speech/asr (steps, arpa2fst, blah, blahbs,
+  composefs, fstdraw, fstprint, fstpropfinal, fstpushspecial,
+  fsttablecompose, train_lda_mllt, train_lvtln, train_map,
+  train_mmi, train_mpe, train_sat, rnnlm, cslu,
+  mini_librispeech, librispeech, vctk, timit, chime1-6, swbd,
+  switchboard, callhome, callhm, mgb2, mgb3, mgb5, corpus5,
+  lre07, lre09, lre15, lre17, lre22, sre08, sre10, sre16,
+  sre18, sre19, sre21, dihard, dihard3, dihards). materia
+  bounded (subset of material FP guard). +138/140 checks.
 - **ALERT 45 (cycle 406): microscopy/eda primitives**
   — microscopy/crystallography (fiji, fiji.app, mmstudio, mm_,
   mm2, mkfake, bfview, ijview, omero, bflist, icycam, vaa3d,
