@@ -11674,6 +11674,36 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-394: video/cad/font primitives
+for c in 'h265enc in.mp4' 'klvga run' 'tracers frame' 'dvdbchap list' 'handbrake -i run' 'pitivi file' 'tahoma2d scene' 'kpim run' 'friction -e render' 'krita file.kra' 'karbon doc' 'bilili down' 'bbdown -p get' 'n_m3u8dl -M run' 'dlvideo fetch' 'vapoursynth script' 'dv2sub extract' 'subtitles -x extract'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'rtcheck model' 'nirt -x view' 'remrt frame' 'g2asc export' 'asc2g import' 'syrthes run' 'femap model' 'ansys run' 'abaqus job' 'lsprepost model' 'radioss run' 'suez -f canal' 'simplify3d slice' 'crowsnest start' 'ispy -c record' 'ispyconnect start' 'zmu monitor' 'zmvideo.pl export' 'compreface api'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'otfautohint font' 'afdko run' 'fontconvert in' 'afm2tfm font' 'tftopl font' 'pltotf font' 'vptovf font' 'vftovp font' 'pdf2ps doc' 'showchar show' 'eplain doc' 'mkiv run' 'pybliographer bib' 'citoid cite'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'handbrake the lever' 'friction between surfaces' 'subtitles for film' 'ispy with my eye'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-393: iot/sdr/audio primitives
 for c in 'jeedom start' 'fhem start' 'phoscon run' 'hueadm scan' 'tuyadebug scan' 'tuyaapi get' 'gipca run' 'broadlink discover' 'itcd run' 'genromfs -d build' 'icestudio build' 'volare -p build' 'precrypt enc' 'bsvtest run' 'bluetcl load' 'bluesim run' 'bluedoc gen' 'avalda run' 'firrtl -i run' 'zinc -r run'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

@@ -15691,6 +15691,44 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "shoutcast") || ci_contains(text, "sc_trans") ||
              ci_contains(text, "virtualdj")) {
         what = "audio/daw primitive";
+        } else if (
+             /* cycle-394a: video/nle primitives */
+             ci_contains(text, "h265enc") || ci_contains(text, "klvga") ||
+             ci_contains(text, "tracers") || ci_contains(text, "dvdbchap") ||
+             (ci_contains(text, "handbrake") && ci_contains(text, " -")) ||
+             ci_contains(text, "pitivi") || ci_contains(text, "tahoma2d") ||
+             ci_contains(text, "kpim") ||
+             (ci_contains(text, "friction") && ci_contains(text, " -")) ||
+             ci_contains(text, "krita") || ci_contains(text, "karbon") ||
+             ci_contains(text, "bilili") || ci_contains(text, "bbdown") ||
+             ci_contains(text, "n_m3u8dl") || ci_contains(text, "dlvideo") ||
+             ci_contains(text, "vapoursynth") || ci_contains(text, "dv2sub") ||
+             (ci_contains(text, "subtitles") && ci_contains(text, " -"))) {
+        what = "video/nle primitive";
+        } else if (
+             /* cycle-394b: cad/fem/print primitives */
+             ci_contains(text, "rtcheck") || ci_contains(text, "nirt") ||
+             ci_contains(text, "remrt") || ci_contains(text, "g2asc") ||
+             ci_contains(text, "asc2g") || ci_contains(text, "syrthes") ||
+             ci_contains(text, "femap") || ci_contains(text, "ansys") ||
+             ci_contains(text, "abaqus") || ci_contains(text, "lsprepost") ||
+             ci_contains(text, "radioss") ||
+             (ci_contains(text, "suez") && ci_contains(text, " -")) ||
+             ci_contains(text, "simplify3d") || ci_contains(text, "crowsnest") ||
+             (ci_contains(text, "ispy") && ci_contains(text, " -")) ||
+             ci_contains(text, "ispyconnect") || ci_contains(text, "zmu") ||
+             ci_contains(text, "zmvideo.pl") || ci_contains(text, "compreface")) {
+        what = "cad/fem/print primitive";
+        } else if (
+             /* cycle-394c: font/tex primitives */
+             ci_contains(text, "otfautohint") || ci_contains(text, "afdko") ||
+             ci_contains(text, "fontconvert") || ci_contains(text, "afm2tfm") ||
+             ci_contains(text, "tftopl") || ci_contains(text, "pltotf") ||
+             ci_contains(text, "vptovf") || ci_contains(text, "vftovp") ||
+             ci_contains(text, "pdf2ps") || ci_contains(text, "showchar") ||
+             ci_contains(text, "eplain") || ci_contains(text, "mkiv") ||
+             ci_contains(text, "pybliographer") || ci_contains(text, "citoid")) {
+        what = "font/tex primitive";
         }
 
         if (what) {

@@ -10856,6 +10856,16 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 394): video/cad/font primitives** —
+  video/nle (h265enc, klvga, tracers, dvdbchap, handbrake,
+  pitivi, tahoma2d, kpim, friction, krita, karbon, bilili,
+  bbdown, n_m3u8dl, dlvideo, vapoursynth, dv2sub, subtitles),
+  cad/fem/print (rtcheck, nirt, remrt, g2asc, asc2g, syrthes,
+  femap, ansys, abaqus, lsprepost, radioss, suez, simplify3d,
+  crowsnest, ispy, ispyconnect, zmu, zmvideo.pl, compreface),
+  font/tex (otfautohint, afdko, fontconvert, afm2tfm, tftopl,
+  pltotf, vptovf, vftovp, pdf2ps, showchar, eplain, mkiv,
+  pybliographer, citoid). Words gated. +52/57 checks.
 - **ALERT 45 (cycle 393): iot/sdr/audio primitives** —
   home-iot/embedded (jeedom, fhem, phoscon, hueadm, tuyadebug,
   tuyaapi, gipca, broadlink, itcd, genromfs, icestudio, volare,
