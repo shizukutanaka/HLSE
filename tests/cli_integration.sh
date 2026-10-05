@@ -11674,6 +11674,43 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-395: bio/emboss/phylo primitives
+for c in 'mashmap ref' 'mummer run' 'nucmer align' 'dnadiff cmp' 'mummerplot plot' 'promer run' 'bedgraphtobigwig conv' 'bigwigtobedgraph conv' 'bigbedtobed conv' 'bedtobigbed conv' 'fatotwobit conv' 'twobittofa conv' 'twobitinfo query' 'liftover map' 'psltobed conv' 'fasplit split' 'facount count' 'fafilter filter' 'fafrag extract' 'fagap list' 'faonerecord get' 'farandomize sample' 'fasomerecords pick'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'vcffilter run' 'deepvariant call' 'clair3 call' 'platypus -v variant' 'igv view' 'goleft index' 'duphold annotate' 'seqan run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'emboss -d run' 'water -g align' 'seqret convert' 'transeq translate' 'backtranseq back' 'backtranambig back' 'showfeat display' 'abiview trace' 'fconseq cons' 'fprotdom find' 'fprotfam find' 'plotorf plot' 'antigenic -s scan' 'hmoment calc' 'iep calc' 'prophecy -m matrix' 'esim4 align' 'patmatmotifs scan' 'primer_core design' 'primerprep prep' 'revseqd run' 'sl2jm conv' 'sl2j conv'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'annovar annotate' 'table_annovar query' 'snpeff eff' 'vcfanno annotate' 'goffy run' 'funannotate annotate' 'genemark train' 'antismash run' 'paup run' 'paml run' 'bpp run' 'mlocarna align' 'locarna align' 'viennarna fold' 'rnafold fold' 'rnaplot plot' 'rnacofold cofold' 'rnafoldp fold' 'rnadistance dist' 'rnaup calc' 'mfold fold' 'unafold fold'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'platypus the animal' 'emboss the cover' 'waterfall model dev' 'antigenic drift shift' 'prophecy of doom' 'eclair pastry shop' 'bigwater river run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-394: video/cad/font primitives
 for c in 'h265enc in.mp4' 'klvga run' 'tracers frame' 'dvdbchap list' 'handbrake -i run' 'pitivi file' 'tahoma2d scene' 'kpim run' 'friction -e render' 'krita file.kra' 'karbon doc' 'bilili down' 'bbdown -p get' 'n_m3u8dl -M run' 'dlvideo fetch' 'vapoursynth script' 'dv2sub extract' 'subtitles -x extract'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

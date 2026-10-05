@@ -10856,6 +10856,22 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 395): bio/emboss/phylo primitives** —
+  bioinformatics: align/ucsc (mashmap, mummer, nucmer, dnadiff,
+  mummerplot, promer, bedgraphtobigwig, bigwigtobedgraph,
+  bigbedtobed, bedtobigbed, fatotwobit, twobittofa, twobitinfo,
+  liftover, psltobed, fasplit, facount, fafilter, fafrag, fagap,
+  faonerecord, farandomize, fasomerecords), variant/viz
+  (vcffilter, deepvariant, clair3, platypus, igv, goleft,
+  duphold, seqan), emboss/rna (emboss, water, seqret, transeq,
+  backtranseq, backtranambig, showfeat, abiview, fconseq,
+  fprotdom, fprotfam, plotorf, antigenic, hmoment, iep,
+  prophecy, esim4, patmatmotifs, primer_core, primerprep,
+  revseqd, sl2jm, sl2j), annotate/phylo (annovar, table_annovar,
+  snpeff, vcfanno, goffy, funannotate, genemark, antismash,
+  paup, paml, bpp, mlocarna, locarna, viennarna, rnafold,
+  rnaplot, rnacofold, rnafoldp, rnadistance, rnaup, mfold,
+  unafold). Words gated; clair dropped. +75/82 checks.
 - **ALERT 45 (cycle 394): video/cad/font primitives** —
   video/nle (h265enc, klvga, tracers, dvdbchap, handbrake,
   pitivi, tahoma2d, kpim, friction, krita, karbon, bilili,

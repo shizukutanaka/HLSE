@@ -15729,6 +15729,60 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "eplain") || ci_contains(text, "mkiv") ||
              ci_contains(text, "pybliographer") || ci_contains(text, "citoid")) {
         what = "font/tex primitive";
+        } else if (
+             /* cycle-395a: bio-align/ucsc primitives */
+             ci_contains(text, "mashmap") || ci_contains(text, "mummer") ||
+             ci_contains(text, "nucmer") || ci_contains(text, "dnadiff") ||
+             ci_contains(text, "mummerplot") || ci_contains(text, "promer") ||
+             ci_contains(text, "bedgraphtobigwig") || ci_contains(text, "bigwigtobedgraph") ||
+             ci_contains(text, "bigbedtobed") || ci_contains(text, "bedtobigbed") ||
+             ci_contains(text, "fatotwobit") || ci_contains(text, "twobittofa") ||
+             ci_contains(text, "twobitinfo") || ci_contains(text, "liftover") ||
+             ci_contains(text, "psltobed") || ci_contains(text, "fasplit") ||
+             ci_contains(text, "facount") || ci_contains(text, "fafilter") ||
+             ci_contains(text, "fafrag") || ci_contains(text, "fagap") ||
+             ci_contains(text, "faonerecord") || ci_contains(text, "farandomize") ||
+             ci_contains(text, "fasomerecords")) {
+        what = "bio-align/ucsc primitive";
+        } else if (
+             /* cycle-395b: bio-variant/viz primitives */
+             ci_contains(text, "vcffilter") || ci_contains(text, "deepvariant") ||
+             ci_contains(text, "clair3") ||
+             (ci_contains(text, "platypus") && ci_contains(text, " -")) ||
+             ci_contains(text, "igv ") || ci_contains(text, "goleft") ||
+             ci_contains(text, "duphold") || ci_contains(text, "seqan")) {
+        what = "bio-variant/viz primitive";
+        } else if (
+             /* cycle-395c: emboss/rna primitives */
+             (ci_contains(text, "emboss") && ci_contains(text, " -")) ||
+             (ci_contains(text, "water ") && ci_contains(text, " -")) ||
+             ci_contains(text, "seqret") || ci_contains(text, "transeq") ||
+             ci_contains(text, "backtranseq") || ci_contains(text, "backtranambig") ||
+             ci_contains(text, "showfeat") || ci_contains(text, "abiview") ||
+             ci_contains(text, "fconseq") || ci_contains(text, "fprotdom") ||
+             ci_contains(text, "fprotfam") || ci_contains(text, "plotorf") ||
+             (ci_contains(text, "antigenic") && ci_contains(text, " -")) ||
+             ci_contains(text, "hmoment") || ci_contains(text, "iep ") ||
+             (ci_contains(text, "prophecy") && ci_contains(text, " -")) ||
+             ci_contains(text, "esim4") || ci_contains(text, "patmatmotifs") ||
+             ci_contains(text, "primer_core") || ci_contains(text, "primerprep") ||
+             ci_contains(text, "revseqd") || ci_contains(text, "sl2jm") ||
+             ci_contains(text, "sl2j")) {
+        what = "emboss/rna primitive";
+        } else if (
+             /* cycle-395d: bio-annotate/phylo primitives */
+             ci_contains(text, "annovar") || ci_contains(text, "table_annovar") ||
+             ci_contains(text, "snpeff") || ci_contains(text, "vcfanno") ||
+             ci_contains(text, "goffy") || ci_contains(text, "funannotate") ||
+             ci_contains(text, "genemark") || ci_contains(text, "antismash") ||
+             ci_contains(text, "paup ") || ci_contains(text, "paml ") ||
+             ci_contains(text, "bpp ") || ci_contains(text, "mlocarna") ||
+             ci_contains(text, "locarna") || ci_contains(text, "viennarna") ||
+             ci_contains(text, "rnafold") || ci_contains(text, "rnaplot") ||
+             ci_contains(text, "rnacofold") || ci_contains(text, "rnafoldp") ||
+             ci_contains(text, "rnadistance") || ci_contains(text, "rnaup") ||
+             ci_contains(text, "mfold") || ci_contains(text, "unafold")) {
+        what = "bio-annotate/phylo primitive";
         }
 
         if (what) {
