@@ -1861,8 +1861,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "pwdump") || ci_contains(text, "fgdump") ||
                    ci_contains(text, "sharphound") || ci_contains(text, "rubeus.exe") ||
                    ci_contains(text, "rubeus -") ||
-                   ci_contains(text, "msfconsole") || ci_contains(text, "meterpreter") ||
-                   ci_contains(text, "msfvenom") || ci_contains(text, "impacket") ||
+                   ci_contains(text, "msfconsole") || ci_contains(text, "meterpreter")  || ci_contains(text, "impacket") ||
                    ci_contains(text, "ntlmrelayx") || ci_contains(text, "secretsdump") ||
                    ci_contains(text, "getuserspns") || ci_contains(text, "getnpusers") ||
                    ci_contains(text, "psexec") || ci_contains(text, "psexesvc") ||
@@ -3419,8 +3418,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "eaphammer") ||
                    ci_contains(text, "kismet") ||
                    (ci_contains(text, "responder") &&
-                    ci_contains(text, " -")) ||
-                   ci_contains(text, "mitm6") ||
+                    ci_contains(text, " -"))  ||
                    ci_contains(text, "ntlmrelayx") ||
                    ci_contains(text, "impacket-") ||
                    ci_contains(text, "secretsdump") ||
@@ -3551,8 +3549,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "bittwiste") ||
                    ci_contains(text, "packeth") ||
                    ci_contains(text, "scapy") ||
-                   ci_contains(text, "ysoserial") ||
-                   ci_contains(text, "msfvenom") ||
+                   ci_contains(text, "ysoserial")  ||
                    ci_contains(text, "msfconsole") ||
                    ci_contains(text, "meterpreter") ||
                    ci_contains(text, "shellter") ||
@@ -3825,9 +3822,7 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, " -f") ||
                      ci_contains(text, " /dev/loop") ||
                      ci_contains(text, " -p") ||
-                     ci_contains(text, " -o"))) ||
-                   (ci_contains(text, "mknod") &&
-                    ci_contains(text, "/dev/")) ||
+                     ci_contains(text, " -o")))  ||
                    ci_contains(text, "debugfs") ||
                    ci_contains(text, "xfsdump") ||
                    ci_contains(text, "xfsrestore") ||
@@ -8722,8 +8717,7 @@ hlse_check_paste(const char *text) {
               (ci_contains(text, " bind") || ci_contains(text, " unbind") ||
                ci_contains(text, " set-override") || ci_contains(text, " unset"))) ||
              (ci_contains(text, "anacron") &&
-              !ci_contains(text, "anacrontab")) ||
-             ci_contains(text, "| batch") ||
+              !ci_contains(text, "anacrontab"))  ||
              ci_contains(text, "inotifywait") || ci_contains(text, "inotifywatch") ||
              ci_contains(text, "acpi_listen") ||
              ci_contains(text, "sbkeysync") || ci_contains(text, "sbvarsign") ||
@@ -9466,19 +9460,14 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " -") || ci_contains(text, " --"))) ||
              ci_contains(text, "enum4linux") || ci_contains(text, "snaffler") ||
              ci_contains(text, "certipy") || ci_contains(text, "rubeus") ||
-             ci_contains(text, "kekeo") || ci_contains(text, "mitmproxy") ||
-             ci_contains(text, "mitmdump") || ci_contains(text, "mitmweb") ||
-             ci_contains(text, "sslsplit") || ci_contains(text, "sslstrip") ||
+             ci_contains(text, "kekeo")  ||
+             ci_contains(text, "mitmdump") || ci_contains(text, "mitmweb")   ||
              ci_contains(text, "sslscan") || ci_contains(text, "sslyze") ||
              ci_contains(text, "testssl") || ci_contains(text, "tlssled") ||
              ci_contains(text, "subjack") || ci_contains(text, "subzy") ||
              ci_contains(text, "subover") || ci_contains(text, "tko-subs") ||
              ci_contains(text, "cloudenum") || ci_contains(text, "cloudmapper") ||
-             ci_contains(text, "cloudsplaining") ||
-             ci_contains(text, "gophish") || ci_contains(text, "evilginx") ||
-             ci_contains(text, "modlishka") || ci_contains(text, "muraena") ||
-             ci_contains(text, "setoolkit") || ci_contains(text, "wifiphisher") ||
-             ci_contains(text, "airgeddon") || ci_contains(text, "ropgadget") ||
+             ci_contains(text, "cloudsplaining")    || ci_contains(text, "muraena")    || ci_contains(text, "ropgadget") ||
              ci_contains(text, "ropper") || ci_contains(text, "rop-cli") ||
              ci_contains(text, "one_gadget") || ci_contains(text, "pwntools") ||
              ci_contains(text, "checksec") || ci_contains(text, "trivy") ||
@@ -10425,9 +10414,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "tplmap") || ci_contains(text, "kxss") ||
              ci_contains(text, "gopherus") ||
              /* web terminals / hosting panels */
-             ci_contains(text, "mosh-server") ||
-             ci_contains(text, "ttyd") || ci_contains(text, "gotty") ||
-             ci_contains(text, "wetty") || ci_contains(text, "shellinaboxd") ||
+             ci_contains(text, "mosh-server")    || ci_contains(text, "shellinaboxd") ||
              ci_contains(text, "webssh") || ci_contains(text, "sshwifty") ||
              ci_contains(text, "cockpit") || ci_contains(text, "webmin") ||
              ci_contains(text, "usermin") || ci_contains(text, "virtualmin") ||
@@ -10786,8 +10773,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "astro add") ||
              ci_contains(text, "flashtool") || ci_contains(text, "nrfutil") ||
              ci_contains(text, "teensy_loader") || ci_contains(text, "dbxtool") ||
-             ci_contains(text, "spicec") || ci_contains(text, "freerdp") ||
-             ci_contains(text, "wayvnc") || ci_contains(text, "wlvncc") ||
+             ci_contains(text, "spicec") || ci_contains(text, "freerdp")  || ci_contains(text, "wlvncc") ||
              ci_contains(text, "rbw ") || ci_contains(text, "passhole") ||
              ci_contains(text, "pass-import") || ci_contains(text, "pass-otp") ||
              ci_contains(text, "gopass-jsonapi") || ci_contains(text, "bitwarden") ||
@@ -15046,8 +15032,7 @@ hlse_check_paste(const char *text) {
         } else if (
              /* cycle-378b: sdr/radio primitives */
              ci_contains(text, "sattrack") ||
-             (ci_contains(text, "sgp4") && ci_contains(text, " -")) ||
-             ci_contains(text, "soapysdrutil") || ci_contains(text, "yfktest") ||
+             (ci_contains(text, "sgp4") && ci_contains(text, " -"))  || ci_contains(text, "yfktest") ||
              (ci_contains(text, "conquest") && ci_contains(text, " -")) ||
              ci_contains(text, "csdsp") || ci_contains(text, "linrad") ||
              ci_contains(text, "iqanalyzer") || ci_contains(text, "spek") ||
@@ -15514,7 +15499,7 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "coqwc") ||
              ci_contains(text, "holtt") || ci_contains(text, "twelf") ||
              (ci_contains(text, "maude") && ci_contains(text, " -")) ||
-             ci_contains(text, "nuxmv") || ci_contains(text, "nusmv") ||
+             ci_contains(text, "nuxmv")  ||
              (ci_contains(text, "spark") && ci_contains(text, " -")) ||
              (ci_contains(text, "gnat") && ci_contains(text, " -")) ||
              ci_contains(text, "gnatprove") || ci_contains(text, "gnatchop") ||
@@ -17173,15 +17158,10 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "lastdb") || ci_contains(text, "fastal") ||
              ci_contains(text, "fastdb") || ci_contains(text, "psl2maf") ||
              ci_contains(text, "psl2bed") || ci_contains(text, "pslcheck") ||
-             ci_contains(text, "pslcat") || ci_contains(text, "pslreps") ||
-             ci_contains(text, "fatotwobit") || ci_contains(text, "twobittofa") ||
-             ci_contains(text, "twobitinfo") || ci_contains(text, "fasplit") ||
-             ci_contains(text, "facount") || ci_contains(text, "fatofastq") ||
+             ci_contains(text, "pslcat") || ci_contains(text, "pslreps")      || ci_contains(text, "fatofastq") ||
              ci_contains(text, "fastqtofa") || ci_contains(text, "fatonib") ||
-             ci_contains(text, "nibfrag") || ci_contains(text, "faonerecord") ||
-             ci_contains(text, "fafilter") || ci_contains(text, "fasomerecords") ||
-             ci_contains(text, "fasize") || ci_contains(text, "fafrag") ||
-             ci_contains(text, "liftover") || ci_contains(text, "liftup") ||
+             ci_contains(text, "nibfrag")    ||
+             ci_contains(text, "fasize")   || ci_contains(text, "liftup") ||
              ci_contains(text, "chainnet") || ci_contains(text, "nettobed") ||
              ci_contains(text, "netchainsubset") || ci_contains(text, "netsplit") ||
              ci_contains(text, "netfilter") || ci_contains(text, "netsyntenic") ||
@@ -17190,12 +17170,10 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "chainstitchid") || ci_contains(text, "chainswap") ||
              ci_contains(text, "chainnetminrepeat") || ci_contains(text, "chaintopsl") ||
              ci_contains(text, "psltochain") || ci_contains(text, "nettochain") ||
-             ci_contains(text, "lavtopsl") || ci_contains(text, "bedgraphtobigwig") ||
-             ci_contains(text, "bigwigtobedgraph") || ci_contains(text, "bigwiginfo") ||
+             ci_contains(text, "lavtopsl")   || ci_contains(text, "bigwiginfo") ||
              ci_contains(text, "bigwigsummary") || ci_contains(text, "bigwigmerge") ||
              ci_contains(text, "bigwigcat") || ci_contains(text, "bigwigtowig") ||
-             ci_contains(text, "wigtobigwig") || ci_contains(text, "bedtobigbed") ||
-             ci_contains(text, "bigbedtobed") || ci_contains(text, "bigbedinfo") ||
+             ci_contains(text, "wigtobigwig")   || ci_contains(text, "bigbedinfo") ||
              ci_contains(text, "bigbedsummary") || ci_contains(text, "bigbednameditems") ||
              ci_contains(text, "trackdb") || ci_contains(text, "hal2maf") ||
              ci_contains(text, "halstats") || ci_contains(text, "halliftover") ||

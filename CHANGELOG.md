@@ -10877,6 +10877,24 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 425 (cross-block unreachable-operand purge + FAIL guard):**
+  else-if chains are first-match-wins, so a needle owned by an
+  earlier pure-OR block is always false in a later block's
+  condition — every operand built only on owned needles is
+  unreachable dead code. tests/dead_cross_needles.py
+  implements the deadness grammar (or-level dead iff every
+  operand dead; and-operand dead iff any term dead, since one
+  false term short-circuits the whole &&-chain; paren group
+  dead iff inner level dead; 'name(' args and '!(' negation are
+  live terms, never terms). Ran it: **34 unreachable operands
+  removed** (msfvenom, gophish, evilginx, modlishka,
+  mitmproxy, sslsplit, sslstrip, mosh-server, ttyd, gotty,
+  wetty, shellinaboxd, psexec variants, ...), zero dead
+  blocks, no '()' empties. lint-needles now FAILs on
+  unreachable operands / dead blocks (reuses the Analyzer).
+  The removal is eval-time semantics-preserving: every dropped
+  operand could never have been true when the later block was
+  reached.
 - **cycle 424 (same-run dead-disjunct purge + FAIL guard):**
   `lint-needles` learns connector/paren-run semantics —
   a needle repeated inside ONE `||`/`&&` run at ONE paren

@@ -11,6 +11,9 @@ reports on structural debt the else-if chain accumulates:
                                          misattribution; never fires in
                                          later blocks)
   FAIL   same-run duplicate disjunct      (A || B || A — dead code)
+  FAIL   unreachable operand — needle owned by an earlier
+          pure-OR block can never be true here (first-match-wins;
+          fix with tests/dedup_needles.py then dead_cross_needles.py)
   REPORT needle repeated across distinct sub-expressions
           (different paren depth / connector run — may be
           intentional reuse, not a dead disjunct)
@@ -24,9 +27,13 @@ reports on structural debt the else-if chain accumulates:
 
 Exit 0 = no FAILs. Reports are advisory.
 """
+import os
 import re
 import sys
 from collections import Counter, defaultdict
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import dead_cross_needles as dcn   # noqa: E402
 
 NEEDLE_RE = re.compile(r'ci_contains\(text,\s*"((?:[^"\\]|\\.)*)"')
 WHAT_RE = re.compile(r'what\s*=\s*"([^"]+)"')
@@ -118,6 +125,7 @@ def main():
     labels = defaultdict(int)
     risk_short = defaultdict(list)
     block_needles = []  # (bi, lname, [content needles]) for coverage
+    owned_cross = set()   # needles owned by earlier pure-OR blocks
     n_needles = 0
 
     for bi, part in enumerate(parts[1:], start=1):
@@ -146,6 +154,20 @@ def main():
         if dead:
             fails.append("same-run dead disjunct(s): %d in block %d"
                          % (dead, bi))
+        an = dcn.Analyzer(part, owned_cross)
+        _, ndrop, deadblock = an.run()
+        if deadblock:
+            fails.append("dead block: whole condition unreachable "
+                         "(block %d)" % bi)
+        elif ndrop:
+            fails.append("unreachable operand(s): %d in block %d "
+                         "(needle owned by earlier pure-OR block)"
+                         % (ndrop, bi))
+        if dcn.is_pure_or(part):
+            for m in dcn.TOKEN_RE.finditer(part):
+                if m.lastgroup == 'call':
+                    owned_cross.add(
+                        dcn.NEEDLE_RE.search(m.group(0)).group(1))
         for n, c in seen.items():
             if c > 1 and not gate_only(n):
                 block_intra_dups[n] += c - 1

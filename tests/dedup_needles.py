@@ -117,4 +117,5 @@ def main():
     print("removed %d same-run duplicate disjuncts" % total)
 
 
-main()
+if __name__ == "__main__":
+    main()
