@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-402: mass-spec/hwmgmt primitives
+for c in 'perseus -f run' 'peptideshaker run' 'skyline -i open' 'hardklor run' 'kronik run' 'decon2ls run' 'deconlrz run' 'filefilter run' 'fileconverter conv' 'idfileconverter conv' 'idmerger merge' 'masserrorcorrection corr' 'quantmetrin run' 'metrin run' 'spectrafilter run' 'spectrastfilter run' 'sirius run' 'metfrag run' 'mascot -s search' 'distiller -p process' 'proteowizard run' 'chainchains run' 'skypointer run' 'gpmaw run' 'tandem -s search' 'protsw run' 'proten run' 'ptprophet run' 'mayu run' 'nistmstran run' 'nistmsqc run' 'rawabicus run' 'rawfileviewer view' 'unifi start' 'mzparser parse' 'prolfiq run' 'mz2m conv' 'pyteomics run' 'brainpy run' 'mspeaks run'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'syscfg -b bios' 'idrac7 racadm' 'idrac8 racadm' 'idrac9 racadm' 'wsmid run' 'cvfs check' 'cvadmin admin' 'cvlabel label' 'perc2 info' 'hrconf conf' 'ciss info' 'volcheck check' 'sautil info' 't3am run' 'hpfcms info' 'lsssa info' 'sasiocfg list' 'sasdisc scan' 'mptfusion info' 'mptsas info' 'mptdisk info' 'cimserver start' 'smluninfo info' 'bladecenter info' 'immact act' 'hpilo info' 'ribcl info' 'ilo2 reset' 'ilo3 reset' 'ilo4 reset' 'locfg info' 'vinegar run' 'prlcore2dmp dump'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'perseus greek hero' 'skyline city view' 'mascot of team' 'tandem bicycle ride'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-401: robotics2/industrial primitives
 for c in 'uorb top' 'listener -t topic' 'mavft log' 'mavtelemetry view' 'mavgen gen' 'mavtest run' 'plummeter cal' 'asctec_hl ctrl' 'asctec ctrl' 'athr run' 'hector_quadrotor sim' 'tum_simulator sim' 'bebop_autonomy run' 'kobuki run' 'roomba clean' 'rplidar scan' 'slam2d run' 'slam3d run' 'kissicp run' 'fastlio run' 'hdl_graph_slam run' 'ndt_omp run' 'imu_preint run' 'blam run' 'lovam run' 'loam run' 'velodyne run' 'ouster run' 'hokuyo run' 'lms100 scan'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

@@ -10856,6 +10856,20 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 402): mass-spec/hwmgmt primitives**
+  — proteomics (perseus, peptideshaker, skyline, hardklor,
+  kronik, decon2ls, deconlrz, filefilter, fileconverter,
+  idfileconverter, idmerger, masserrorcorrection, quantmetrin,
+  metrin, spectrafilter, spectrastfilter, sirius, metfrag,
+  mascot, distiller, proteowizard, chainchains, skypointer,
+  gpmaw, tandem, protsw, proten, ptprophet, mayu, nistmstran,
+  nistmsqc, rawabicus, rawfileviewer, unifi, mzparser, prolfiq,
+  mz2m, pyteomics, brainpy, mspeaks), hwmgmt/san (syscfg,
+  idrac7, idrac8, idrac9, wsmid, cvfs, cvadmin, cvlabel, perc2,
+  hrconf, ciss, volcheck, sautil, t3am, hpfcms, lsssa,
+  sasiocfg, sasdisc, mptfusion, mptsas, mptdisk, cimserver,
+  smluninfo, bladecenter, immact, hpilo, ribcl, ilo2, ilo3,
+  ilo4, locfg, vinegar, prlcore2dmp). +75/77 checks.
 - **ALERT 45 (cycle 401): robotics2/industrial primitives**
   — drone/slam (uorb, listener, mavft, mavtelemetry, mavgen,
   mavtest, plummeter, asctec_hl, asctec, athr,

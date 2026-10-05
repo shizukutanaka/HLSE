@@ -16020,6 +16020,53 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "groupsocketlisten") || ci_contains(text, "groupsocketresponse") ||
              ci_contains(text, "bcusdk")) {
         what = "industrial/plc primitive";
+        } else if (
+             /* cycle-402a: mass-spec/proteomics primitives */
+             (ci_contains(text, "perseus") && ci_contains(text, " -")) ||
+             ci_contains(text, "peptideshaker") ||
+             (ci_contains(text, "skyline") && ci_contains(text, " -")) ||
+             ci_contains(text, "hardklor") || ci_contains(text, "kronik") ||
+             ci_contains(text, "decon2ls") || ci_contains(text, "deconlrz") ||
+             ci_contains(text, "filefilter") || ci_contains(text, "fileconverter") ||
+             ci_contains(text, "idfileconverter") || ci_contains(text, "idmerger") ||
+             ci_contains(text, "masserrorcorrection") || ci_contains(text, "quantmetrin") ||
+             ci_contains(text, "metrin") || ci_contains(text, "spectrafilter") ||
+             ci_contains(text, "spectrastfilter") || ci_contains(text, "sirius") ||
+             ci_contains(text, "metfrag") ||
+             (ci_contains(text, "mascot") && ci_contains(text, " -")) ||
+             (ci_contains(text, "distiller") && ci_contains(text, " -")) ||
+             ci_contains(text, "proteowizard") || ci_contains(text, "chainchains") ||
+             ci_contains(text, "skypointer") || ci_contains(text, "gpmaw") ||
+             (ci_contains(text, "tandem") && ci_contains(text, " -")) ||
+             ci_contains(text, "protsw") || ci_contains(text, "proten") ||
+             ci_contains(text, "ptprophet") || ci_contains(text, "mayu") ||
+             ci_contains(text, "nistmstran") || ci_contains(text, "nistmsqc") ||
+             ci_contains(text, "rawabicus") || ci_contains(text, "rawfileviewer") ||
+             ci_contains(text, "unifi") || ci_contains(text, "mzparser") ||
+             ci_contains(text, "prolfiq") || ci_contains(text, "mz2m") ||
+             ci_contains(text, "pyteomics") || ci_contains(text, "brainpy") ||
+             ci_contains(text, "mspeaks")) {
+        what = "mass-spec primitive";
+        } else if (
+             /* cycle-402b: hwmgmt/san primitives */
+             ci_contains(text, "syscfg") || ci_contains(text, "idrac7") ||
+             ci_contains(text, "idrac8") || ci_contains(text, "idrac9") ||
+             ci_contains(text, "wsmid") || ci_contains(text, "cvfs") ||
+             ci_contains(text, "cvadmin") || ci_contains(text, "cvlabel") ||
+             ci_contains(text, "perc2") || ci_contains(text, "hrconf") ||
+             ci_contains(text, "ciss ") || ci_contains(text, "volcheck") ||
+             ci_contains(text, "sautil") || ci_contains(text, "t3am") ||
+             ci_contains(text, "hpfcms") || ci_contains(text, "lsssa") ||
+             ci_contains(text, "sasiocfg") || ci_contains(text, "sasdisc") ||
+             ci_contains(text, "mptfusion") || ci_contains(text, "mptsas") ||
+             ci_contains(text, "mptdisk") || ci_contains(text, "cimserver") ||
+             ci_contains(text, "smluninfo") || ci_contains(text, "bladecenter") ||
+             ci_contains(text, "immact") || ci_contains(text, "hpilo") ||
+             ci_contains(text, "ribcl") || ci_contains(text, "ilo2") ||
+             ci_contains(text, "ilo3") || ci_contains(text, "ilo4") ||
+             ci_contains(text, "locfg") || ci_contains(text, "vinegar") ||
+             ci_contains(text, "prlcore2dmp")) {
+        what = "hwmgmt/san primitive";
         }
 
         if (what) {
