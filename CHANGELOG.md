@@ -10856,6 +10856,13 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   `examples/hlsed.conf` (validated by `hlsed --check`). README links the
   hlsed section to the production path. `make install DESTDIR=...`
   end-to-end verified.
+- **ALERT 45 (cycle 377): game-engine + FEM/imaging primitives** —
+  chess/shogi/go engines (crafty, chessdb, pychess, knightcap, pachi,
+  fuego, katago, autogtp, qgo, lishogi, bonanza, kishid, elostat,
+  pgnmentor, lczero, senpai, polyglot) and FEM/neuroimaging/misc
+  (pokersource, kmj, dicelab, diceroller, piqueserver, pfem, oof2,
+  oofem, afni_proc, afni_bids, mincedit). Real words gated on ' -'.
+  +28/34 checks.
 - **ALERT 45 (cycle 376): disk/optical-media + recutils/astro +
   vuln/log primitives** — imaging/media (ddv, h2testw, f3probe,
   unetbootin, cdrskin, cdda2mp3, cdpcd, cdquery, trackrip, cdrip,

@@ -11674,6 +11674,29 @@ check "url: cydia flagged" "$(./hlse_core 'cydia://evil' | head -1 | grep -c 'LO
 
 
 
+# ── cycle-377: game-engine + fem/imaging primitives
+for c in 'crafty -b' 'chessdb -q' 'pychess --debug' 'knightcap -t' 'pachi -t =1000' 'fuego -q' 'katago benchmark' 'autogtp -k dir' 'qgo -server' 'lishogi -v' 'bonanza -f book' 'kishid -v' 'elostat -p' 'pgnmentor -f g.pgn' 'lczero -w net' 'senpai -h' 'polyglot -pgn in'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+for c in 'pokersource -x' 'kmj -s srv' 'dicelab -e 3d6' 'diceroller 2d6' 'piqueserver -d dir' 'pfem -i model' 'oof2 -f script' 'oofem -p -f in' 'afni_proc.py -subj s1' 'afni_bids -d ds' 'mincedit in.mnc'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c flagged" "0" "1"
+  else
+    check "paste: $c flagged" "0" "0"
+  fi
+done
+# benign
+for c in 'a crafty plan to win' 'fuego means fire' 'pachinko parlor tour' 'tv bonanza rerun' 'my senpai at work' 'a polyglot speaker'; do
+  if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then
+    check "paste: $c benign" "0" "0"
+  else
+    check "paste: $c benign" "0" "1"
+  fi
+done
 # ── cycle-376: disk/media + recutils/astro + vuln primitives
 for c in 'ddv -i img.dd' 'h2testw -t /mnt' 'f3probe /dev/sdX' 'unetbootin installtype=USB' 'cdrskin -scanbus' 'cdda2mp3 -D /dev/cdrom' 'cdpcd -d /dev/sr0' 'cdquery -t' 'trackrip -v' 'cdrip -a' 'cdrw -i' 'dem2pgm tile.dem'; do
   if ./hlse_core paste "$c" 2>&1 | grep -q '^OK'; then

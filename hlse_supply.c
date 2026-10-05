@@ -15045,6 +15045,30 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "cvechecker") || ci_contains(text, "cvegen") ||
              ci_contains(text, "awffull")) {
         what = "vuln/log primitive";
+        } else if (
+             /* cycle-377a: chess/shogi/go primitives */
+             (ci_contains(text, "crafty") && ci_contains(text, " -")) ||
+             ci_contains(text, "chessdb") || ci_contains(text, "pychess") ||
+             ci_contains(text, "knightcap") ||
+             (ci_contains(text, "pachi") && ci_contains(text, " -")) ||
+             (ci_contains(text, "fuego") && ci_contains(text, " -")) ||
+             ci_contains(text, "katago") || ci_contains(text, "autogtp") ||
+             ci_contains(text, "qgo") || ci_contains(text, "lishogi") ||
+             (ci_contains(text, "bonanza") && ci_contains(text, " -")) ||
+             ci_contains(text, "kishid") || ci_contains(text, "elostat") ||
+             ci_contains(text, "pgnmentor") || ci_contains(text, "lczero") ||
+             (ci_contains(text, "senpai") && ci_contains(text, " -")) ||
+             (ci_contains(text, "polyglot") && ci_contains(text, " -"))) {
+        what = "game-engine primitive";
+        } else if (
+             /* cycle-377b: fem/imaging/misc primitives */
+             ci_contains(text, "pokersource") || ci_contains(text, "kmj") ||
+             ci_contains(text, "dicelab") || ci_contains(text, "diceroller") ||
+             ci_contains(text, "piqueserver") || ci_contains(text, "pfem") ||
+             ci_contains(text, "oof2") || ci_contains(text, "oofem") ||
+             ci_contains(text, "afni_proc") || ci_contains(text, "afni_bids") ||
+             ci_contains(text, "mincedit")) {
+        what = "fem/imaging primitive";
         }
 
         if (what) {
