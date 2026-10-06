@@ -474,6 +474,80 @@ static void test_aws_account_null_safe(void) {
           !hlse_aws_account_from_key("short", out, sizeof out), "should reject");
 }
 
+/* ─── Any-needle table matchers ───────────────────────────────────────── */
+
+static void test_str_any_hits(void) {
+    static const char *tbl[] = {"alpha", "beta", "gamma", NULL};
+    TEST("str_any: first/middle/last needle hits");
+    CHECK(hlse_str_any("xx alpha yy", tbl) &&
+          hlse_str_any("contains beta here", tbl) &&
+          hlse_str_any("ends in gamma", tbl), "each needle must match");
+}
+
+static void test_str_any_miss_and_empty(void) {
+    static const char *tbl[] = {"alpha", "beta", NULL};
+    static const char *empty[] = {NULL};
+    TEST("str_any: miss, empty hay, empty table, NULL hay");
+    CHECK(!hlse_str_any("delta only", tbl) &&
+          !hlse_str_any("", tbl) &&
+          !hlse_str_any("alpha", empty) &&
+          !hlse_str_any(NULL, tbl), "no match expected");
+}
+
+static void test_str_any_case_sensitive(void) {
+    static const char *tbl[] = {"alpha", NULL};
+    TEST("str_any: case-sensitive — 'ALPHA' does not match");
+    CHECK(!hlse_str_any("xx ALPHA yy", tbl), "strstr semantics are case-sensitive");
+}
+
+static void test_str_any_substring(void) {
+    static const char *tbl[] = {"payload", NULL};
+    TEST("str_any: substring match (unanchored)");
+    CHECK(hlse_str_any("thepayloadline", tbl), "strstr is unanchored");
+}
+
+static void test_ci_any_insensitive(void) {
+    static const char *tbl[] = {"alpha", "beta", NULL};
+    TEST("ci_any: case-insensitive hits on mixed case");
+    CHECK(hlse_ci_any("xx ALPHA yy", tbl) &&
+          hlse_ci_any("xx BeTa yy", tbl), "lowercase needle matches any case");
+}
+
+static void test_ci_any_miss_and_empty(void) {
+    static const char *tbl[] = {"alpha", NULL};
+    static const char *empty[] = {NULL};
+    TEST("ci_any: miss, empty hay, empty table, NULL hay");
+    CHECK(!hlse_ci_any("delta", tbl) &&
+          !hlse_ci_any("", tbl) &&
+          !hlse_ci_any("alpha", empty) &&
+          !hlse_ci_any(NULL, tbl), "no match expected");
+}
+
+static void test_str_eq_any_exact(void) {
+    static const char *tbl[] = {"grub.cfg", "menu.lst", NULL};
+    TEST("str_eq_any: exact strcmp hits");
+    CHECK(hlse_str_eq_any("grub.cfg", tbl) &&
+          hlse_str_eq_any("menu.lst", tbl), "exact names match");
+}
+
+static void test_str_eq_any_rejects_substring(void) {
+    static const char *tbl[] = {"grub.cfg", NULL};
+    TEST("str_eq_any: 'xgrub.cfgx' does NOT match (unlike strstr)");
+    CHECK(!hlse_str_eq_any("xgrub.cfgx", tbl) &&
+          !hlse_str_eq_any("grub.cfg.bak", tbl) &&
+          !hlse_str_eq_any("sub/grub.cfg", tbl), "strcmp is anchored");
+}
+
+static void test_str_eq_any_empty(void) {
+    static const char *tbl[] = {"a", NULL};
+    static const char *empty[] = {NULL};
+    TEST("str_eq_any: miss, empty hay, empty table, NULL hay");
+    CHECK(!hlse_str_eq_any("b", tbl) &&
+          !hlse_str_eq_any("", tbl) &&
+          !hlse_str_eq_any("a", empty) &&
+          !hlse_str_eq_any(NULL, tbl), "no match expected");
+}
+
 int main(void) {
     printf("HLSE Util — Shared Utility Tests\n");
     printf("══════════════════════════════════════\n\n");
@@ -549,6 +623,17 @@ int main(void) {
     test_aws_account_bad_length();
     test_aws_account_bad_alphabet();
     test_aws_account_null_safe();
+
+    printf("\nAny-needle table matchers:\n");
+    test_str_any_hits();
+    test_str_any_miss_and_empty();
+    test_str_any_case_sensitive();
+    test_str_any_substring();
+    test_ci_any_insensitive();
+    test_ci_any_miss_and_empty();
+    test_str_eq_any_exact();
+    test_str_eq_any_rejects_substring();
+    test_str_eq_any_empty();
 
     printf("\n══════════════════════════════════════\n");
     printf("Util tests: %d/%d passed", passed, total);

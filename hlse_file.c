@@ -57,6 +57,799 @@
                         * the URL engine rather than reimplemented here */
 #include "hlse_util.h"
 
+/* Needle vocabularies — NULL-terminated tables consumed by
+ * hlse_str_any/hlse_str_eq_any (table-driven form of the former
+ * hand-written `strstr(x,..) ||strstr(y,..)` and `strcmp(x,..)==0||`
+ * chains; identical semantics, auditable diffs for additions).    */
+
+static const char *FILE_TBL_001[] = {
+    "onload=", "onerror=", "onclick=", "onmouseover=",
+    "<foreignobject", "javascript:",
+    NULL
+};
+
+static const char *FILE_TBL_002[] = {
+    "vbscript:", "jscript:", "data:text/html", "ms-its",
+    "mk:@msitstore",
+    NULL
+};
+
+static const char *FILE_TBL_003[] = {
+    "|sh", "| bash", "|bash", "sh -c",
+    NULL
+};
+
+static const char *FILE_TBL_004[] = {
+    "base64 --decode", "xxd -r", "openssl", "eval ",
+    "python -c",
+    NULL
+};
+
+static const char *FILE_TBL_005[] = {
+    "[shell]", "<librarydescription", "searchconnectordescription", "iconfile",
+    "iconresource", "iconunc",
+    NULL
+};
+
+static const char *FILE_TBL_006[] = {
+    "[slideshow]", "[visualstyles]", "wallpaper=", "imagesrootpidl",
+    NULL
+};
+
+static const char *FILE_TBL_007[] = {
+    "runonce", "image file execution options", "debugger", "winlogon",
+    "userinit",
+    NULL
+};
+
+static const char *FILE_TBL_008[] = {
+    "perl5opt", "pythoninspect", "perl5lib", "curl",
+    "wget", "sh -c", "/bin/", "system",
+    NULL
+};
+
+static const char *FILE_TBL_009[] = {
+    "precmd", "alias sudo", "alias ssh",
+    NULL
+};
+
+static const char *FILE_TBL_010[] = {
+    "environment=", "permitopen", "permitlisten",
+    NULL
+};
+
+static const char *FILE_TBL_011[] = {
+    "client-key", "password", "client-certificate-data",
+    NULL
+};
+
+static const char *FILE_TBL_012[] = {
+    "wget", "eval", "source ", "sh -c",
+    "bash -c", "exec ",
+    NULL
+};
+
+static const char *FILE_TBL_013[] = {
+    "- \"/:", "- '/:", "- /etc:", "- /etc/",
+    "- /root:", "- /root/", "- /boot", "- /dev/",
+    "- /proc", "- /sys/",
+    NULL
+};
+
+static const char *FILE_TBL_014[] = {
+    "!python/object", "!python/name", "!python/module", "!ruby/",
+    "!!perl/", "!perl/", "!!php/",
+    NULL
+};
+
+static const char *FILE_TBL_015[] = {
+    "cnt\nsystem", "cos\nsystem", "cos\npopen", "csubprocess",
+    "cpty\n", "c__builtin__\neval", "c__builtin__\nexec",
+    NULL
+};
+
+static const char *FILE_TBL_016[] = {
+    "\nshellexecute=", "shell\\", "\nshell=",
+    NULL
+};
+
+static const char *FILE_TBL_017[] = {
+    "language c", "language 'c'", "language \"c\"",
+    NULL
+};
+
+static const char *FILE_TBL_018[] = {
+    "os.popen", "subprocess", "socket.socket", "eval(",
+    "exec(", "__import__", "urllib", "requests.",
+    NULL
+};
+
+static const char *FILE_TBL_019[] = {
+    "wscript.shell", "shell.application", ".run(", ".exec(",
+    NULL
+};
+
+static const char *FILE_TBL_020[] = {
+    "runpostsetupcommands", "addservice", "updatesysownfiles", "copyfiles",
+    NULL
+};
+
+static const char *FILE_TBL_021[] = {
+    "codebase='http", "codebase=\"\\\\", "href=\"http", "href='http",
+    NULL
+};
+
+static const char *FILE_TBL_022[] = {
+    "getobject", "wscript.shell", "shell.application", "powershell",
+    "cmd.exe", ".run ",
+    NULL
+};
+
+static const char *FILE_TBL_023[] = {
+    "system(", "curl ", "wget ", "open(",
+    NULL
+};
+
+static const char *FILE_TBL_024[] = {
+    "sethandler", "php_flag", "php_value",
+    NULL
+};
+
+static const char *FILE_TBL_025[] = {
+    "extend", "pass_persist", "traphandle",
+    NULL
+};
+
+static const char *FILE_TBL_026[] = {
+    "keepalive", "watchpaths", "startinterval", "programarguments",
+    NULL
+};
+
+static const char *FILE_TBL_027[] = {
+    "run =", "program=", "import{program}",
+    NULL
+};
+
+static const char *FILE_TBL_028[] = {
+    "_vimrc", "init.vim", "init.lua", ".exrc",
+    NULL
+};
+
+static const char *FILE_TBL_029[] = {
+    "system(", "os.execute", "io.popen", ":!",
+    NULL
+};
+
+static const char *FILE_TBL_030[] = {
+    "wget", "invoke-webrequest", "bitsadmin", "| sh",
+    "|sh",
+    NULL
+};
+
+static const char *FILE_TBL_031[] = {
+    "wget", "http", "sh -c", "bash ",
+    "rm -", "nc ",
+    NULL
+};
+
+static const char *FILE_TBL_032[] = {
+    "sconstruct", "meson.build", "rakefile", "rakefile.rb",
+    "earthfile", "taskfile.yml",
+    NULL
+};
+
+static const char *FILE_TBL_033[] = {
+    "subprocess", "run_command", "run_target", "system(",
+    "system \"", "sh \"", "`", "curl",
+    "wget", "invoke-webrequest", "http", "eval ",
+    "exec(", "| sh", "|sh",
+    NULL
+};
+
+static const char *FILE_TBL_034[] = {
+    ".emacs", "early-init.el", ".rprofile", "rprofile.site",
+    ".ghci", "ghci.conf", ".latexmkrc", ".conkyrc",
+    "conky.conf", "activate", "activate_this.py", "activate.csh",
+    "activate.fish", ".octaverc",
+    NULL
+};
+
+static const char *FILE_TBL_035[] = {
+    "call-process", "start-process", "system", "os.execute",
+    "io.popen", "${exec", "${texeci", "exec",
+    ":!", "curl", "wget", "eval",
+    "`", "| sh",
+    NULL
+};
+
+static const char *FILE_TBL_036[] = {
+    "python", "system", "source", "eval",
+    NULL
+};
+
+static const char *FILE_TBL_037[] = {
+    "npmrc", ".yarnrc", ".yarnrc.yml", ".yarnrc.yaml",
+    NULL
+};
+
+static const char *FILE_TBL_038[] = {
+    "script-shell", "unsafehttpwhitelist", "npmregistryserver",
+    NULL
+};
+
+static const char *FILE_TBL_039[] = {
+    "require(", "curl", "wget", "child_process",
+    NULL
+};
+
+static const char *FILE_TBL_040[] = {
+    "rustflags", "[alias]", "[patch.", "[source.",
+    NULL
+};
+
+static const char *FILE_TBL_041[] = {
+    "exec", "curl", "wget", "http",
+    NULL
+};
+
+static const char *FILE_TBL_042[] = {
+    "[socket]", "[path]", "oncalendar", "listenstream",
+    "onbootsec",
+    NULL
+};
+
+static const char *FILE_TBL_043[] = {
+    "git_repository", "new_git_repository", "local_repository",
+    NULL
+};
+
+static const char *FILE_TBL_044[] = {
+    "brew ", "cask ", "mas ",
+    NULL
+};
+
+static const char *FILE_TBL_045[] = {
+    "subprocess", "eval(", "exec(", "curl",
+    "wget", "tools.download",
+    NULL
+};
+
+static const char *FILE_TBL_046[] = {
+    "guardfile", "capfile", "snapfile", "gymfile",
+    "matchfile", "deliverfile", "scanfile", "screengrabfile",
+    "pilotfile", "pluginfile", "appfile", "berksfile",
+    "cheffile", "thorfile", "fastfile", "rakefile",
+    NULL
+};
+
+static const char *FILE_TBL_047[] = {
+    "sh(", "system", "`", "eval",
+    "curl", "wget", "exec", "git:",
+    ":git", "cookbook",
+    NULL
+};
+
+static const char *FILE_TBL_048[] = {
+    "on-bt-", "command", "rpc-secret",
+    NULL
+};
+
+static const char *FILE_TBL_049[] = {
+    "kptr_restrict", "dmesg_restrict", "ptrace_scope", "perf_event_paranoid",
+    NULL
+};
+
+static const char *FILE_TBL_050[] = {
+    "=0", "= -1", "=-1",
+    NULL
+};
+
+static const char *FILE_TBL_051[] = {
+    "grub.conf", "menu.lst", "syslinux.cfg", "isolinux.cfg",
+    "pxelinux.cfg", "loader.conf",
+    NULL
+};
+
+static const char *FILE_TBL_052[] = {
+    "rdinit", "chainloader", "configfile", "source ",
+    "module", "linux ",
+    NULL
+};
+
+static const char *FILE_TBL_053[] = {
+    "@", "daily", "weekly",
+    NULL
+};
+
+static const char *FILE_TBL_054[] = {
+    "after_hook", "error_hook", "execute", "run_cmd",
+    "dev_overrides", "plugin_cache",
+    NULL
+};
+
+static const char *FILE_TBL_055[] = {
+    "tool.uv", "index-url", "extra-index-url",
+    NULL
+};
+
+static const char *FILE_TBL_056[] = {
+    "index-url", "dependency_links", "find-links",
+    NULL
+};
+
+static const char *FILE_TBL_057[] = {
+    "early exec", "exec =", "secrets file",
+    NULL
+};
+
+static const char *FILE_TBL_058[] = {
+    "_paths", "library", "module_utils", "stdout_callback",
+    NULL
+};
+
+static const char *FILE_TBL_059[] = {
+    "downloader", "printer", "system_editor",
+    NULL
+};
+
+static const char *FILE_TBL_060[] = {
+    "postauthtunnel", "remotepasseval", "hook",
+    NULL
+};
+
+static const char *FILE_TBL_061[] = {
+    ".phtml", ".php5", ".pht", ".phar",
+    NULL
+};
+
+static const char *FILE_TBL_062[] = {
+    "assert(", "system(", "passthru(", "exec(",
+    "popen(", "proc_open", "shell_exec", "`",
+    NULL
+};
+
+static const char *FILE_TBL_063[] = {
+    "gzinflate", "gzuncompress", "str_rot13",
+    NULL
+};
+
+static const char *FILE_TBL_064[] = {
+    "assert", "$_", "post",
+    NULL
+};
+
+static const char *FILE_TBL_065[] = {
+    ".aspx", ".ashx", ".asmx",
+    NULL
+};
+
+static const char *FILE_TBL_066[] = {
+    "createobject", "process.start", "cmd.exe", "powershell",
+    "executeglobal", "shell.application", "request.form", "request(",
+    NULL
+};
+
+static const char *FILE_TBL_067[] = {
+    "exec(", "open2", "open3", "`",
+    NULL
+};
+
+static const char *FILE_TBL_068[] = {
+    "into outfile", "into dumpfile", "load_file", "sp_oacreate",
+    "sp_oamethod",
+    NULL
+};
+
+static const char *FILE_TBL_069[] = {
+    "lo_import", "lo_export", "pg_read_file", "sys_eval",
+    "sys_exec", "utl_file",
+    NULL
+};
+
+static const char *FILE_TBL_070[] = {
+    "wscript.shell", "shell.application", "run(", "exec(",
+    "powershell", "mshta", "vbscript", "javascript:",
+    NULL
+};
+
+static const char *FILE_TBL_071[] = {
+    "run(", "exec(", "cscript",
+    NULL
+};
+
+static const char *FILE_TBL_072[] = {
+    "behavior", "-moz-binding", "javascript:", "vbscript:",
+    NULL
+};
+
+static const char *FILE_TBL_073[] = {
+    "startapp", "vl-cmdf", "arxload",
+    NULL
+};
+
+static const char *FILE_TBL_074[] = {
+    "eval", "unix(", "dos(", "urlread",
+    "websave", "run(", "import", "pacletinstall",
+    NULL
+};
+
+static const char *FILE_TBL_075[] = {
+    "id_dsa", "id_ecdsa", "id_ed25519",
+    NULL
+};
+
+static const char *FILE_TBL_076[] = {
+    "core", "lsass.dmp", "memory.dmp", "hiberfil.sys",
+    NULL
+};
+
+static const char *FILE_TBL_077[] = {
+    "key4.db", "key3.db", "cert8.db", "cert9.db",
+    "cookies.sqlite", "signons.sqlite", "formhistory.sqlite", "login data",
+    "web data", "secring.gpg", "secring.skr",
+    NULL
+};
+
+static const char *FILE_TBL_078[] = {
+    ".kdbx", ".kdb", ".keychain", ".agilekeychain",
+    ".opvault", ".keystore", ".jks", ".ppk",
+    ".skr", ".psafe3", ".enpass", ".1pif",
+    ".pst", ".ost", ".dbx",
+    NULL
+};
+
+static const char *FILE_TBL_079[] = {
+    ".my.cnf", ".s3cfg", "id_rsa", "id_dsa",
+    "id_ecdsa", "id_ed25519",
+    NULL
+};
+
+static const char *FILE_TBL_080[] = {
+    "hostpage", "cpl", "executable",
+    NULL
+};
+
+static const char *FILE_TBL_081[] = {
+    ".fsproj", ".vcxproj", ".vbproj", ".targets",
+    ".props",
+    NULL
+};
+
+static const char *FILE_TBL_082[] = {
+    "prebuild", "postbuild", "usingtask", "codetask",
+    "beforetargets", "aftertargets", "downloadfile",
+    NULL
+};
+
+static const char *FILE_TBL_083[] = {
+    "file(download", "externalproject", "curl", "wget",
+    NULL
+};
+
+static const char *FILE_TBL_084[] = {
+    "git:", "path:", "eval_gemfile",
+    NULL
+};
+
+static const char *FILE_TBL_085[] = {
+    "wget", "http", "|sh", "| sh",
+    "nc ",
+    NULL
+};
+
+static const char *FILE_TBL_086[] = {
+    "wget", "http", "powershell", "cmd",
+    "bash", "sh ", "nc ", "base64",
+    NULL
+};
+
+static const char *FILE_TBL_087[] = {
+    ".windsurfrules", "copilot-instructions.md", "claude.md", "agents.md",
+    NULL
+};
+
+static const char *FILE_TBL_088[] = {
+    "| sh", "|sh", "base64 -d", "nc -e",
+    "eval $(", "bash -c",
+    NULL
+};
+
+static const char *FILE_TBL_089[] = {
+    "bases", "helmcharts", "generators",
+    NULL
+};
+
+static const char *FILE_TBL_090[] = {
+    "secret", "private_key", "access_key", "api_key",
+    "token", "client_secret", "resources",
+    NULL
+};
+
+static const char *FILE_TBL_091[] = {
+    "service-account", "service_account", "client_secret",
+    NULL
+};
+
+static const char *FILE_TBL_092[] = {
+    "private_key", "client_secret", "refresh_token", "token_uri",
+    "auth_uri",
+    NULL
+};
+
+static const char *FILE_TBL_093[] = {
+    "secret", "token", "key", "api",
+    "private",
+    NULL
+};
+
+static const char *FILE_TBL_094[] = {
+    ".afploc", ".vloc", ".mailloc", ".newsloc",
+    NULL
+};
+
+static const char *FILE_TBL_095[] = {
+    "ftp:", "afp:", "vnc:",
+    NULL
+};
+
+static const char *FILE_TBL_096[] = {
+    "execute", "vnd.dovecot", "filter",
+    NULL
+};
+
+static const char *FILE_TBL_097[] = {
+    "pipe", "filter", "external", "preconnect",
+    "postconnect",
+    NULL
+};
+
+static const char *FILE_TBL_098[] = {
+    ".conf.ts", "gulpfile.", "gruntfile.",
+    NULL
+};
+
+static const char *FILE_TBL_099[] = {
+    "conftest.py", "noxfile.py", "setup.py", "config.ru",
+    "tsconfig.json", "jsconfig.json", "jsr.json", "deno.json",
+    "deno.jsonc",
+    NULL
+};
+
+static const char *FILE_TBL_100[] = {
+    "import ", "plugins", "presets", "exec",
+    "spawn", "child_process", "eval", "curl",
+    "wget", "http", "setup(", "cmdclass",
+    "entry_points", "pytest", "fixture", "hookimpl",
+    "tasks", "paths", "extends", "imports",
+    "importmap", "registry", "trusteddependencies", "postinstall",
+    "loader", "map ", "use ", "run ",
+    NULL
+};
+
+static const char *FILE_TBL_101[] = {
+    "bitrise.yml", "bitrise.yaml", "pipeline.yml", "pipeline.yaml",
+    NULL
+};
+
+static const char *FILE_TBL_102[] = {
+    "run:", "command", "exec", "curl",
+    "wget", "bash", "powershell", "entrypoint",
+    "args", "path:", "privileged", "params",
+    "image", "cwd",
+    NULL
+};
+
+static const char *FILE_TBL_103[] = {
+    "nomad.hcl", "consul.hcl", "vault.hcl",
+    NULL
+};
+
+static const char *FILE_TBL_104[] = {
+    "driver", "config", "command", "artifact",
+    "template", "provisioner", "script", "check",
+    "listener", "plugin", "source", "build",
+    "job", "exec",
+    NULL
+};
+
+static const char *FILE_TBL_105[] = {
+    "serverless.yaml", "serverless.ts", "serverless.js", "sst.config.ts",
+    NULL
+};
+
+static const char *FILE_TBL_106[] = {
+    "functions", "provider", "resources", "hooks",
+    NULL
+};
+
+static const char *FILE_TBL_107[] = {
+    "plugins", "package", "edge_functions", "redirects",
+    "functions",
+    NULL
+};
+
+static const char *FILE_TBL_108[] = {
+    "rewrites", "redirects", "crons", "builds",
+    "cleanurls",
+    NULL
+};
+
+static const char *FILE_TBL_109[] = {
+    "exec", "cmd", "entrypoint", "mounts",
+    "processes", "checks", "deploy",
+    NULL
+};
+
+static const char *FILE_TBL_110[] = {
+    "app.yml", "appengine-web.xml", "render.yaml", "heroku.yml",
+    "app.json", "dokku.json", "railway.json",
+    NULL
+};
+
+static const char *FILE_TBL_111[] = {
+    "runtime", "handlers", "env_variables", "inbound_services",
+    "script", "buildcommand", "startcommand", "predeploycommand",
+    "healthcheck", "run", "scripts", "build",
+    "release", "formation", "addons", "buildpacks",
+    NULL
+};
+
+static const char *FILE_TBL_112[] = {
+    "context.xml", "tomcat-users.xml", "web.xml", "weblogic.xml",
+    "beans.xml", "applicationcontext.xml", "struts.xml", "faces-config.xml",
+    "ejb-jar.xml", "persistence.xml", "hibernate.cfg.xml",
+    NULL
+};
+
+static const char *FILE_TBL_113[] = {
+    "listener", "resource", "jndi", "servlet-class",
+    "filter-class", "listener-class", "<bean ", "factory-bean",
+    "init-method", "valve", "realm", "environment",
+    "password", "datasource", "connection-url", "driver-class",
+    NULL
+};
+
+static const char *FILE_TBL_114[] = {
+    "jndi", "socketappender", "smtpappender", "jmsappender",
+    "script", "lookup", "http",
+    NULL
+};
+
+static const char *FILE_TBL_115[] = {
+    "agent-class", "launcher-agent-class", "class-path", "main-class",
+    "extension-name", "can-redefine",
+    NULL
+};
+
+static const char *FILE_TBL_116[] = {
+    "exec", "shell", "dde", "macro",
+    NULL
+};
+
+static const char *FILE_TBL_117[] = {
+    "pubspec.lock", "pubspec_overrides.yaml", "deps.edn", "bb.edn",
+    "build.edn", "mix.exs", "project.clj", "build.boot",
+    "shard.yml", "shard.lock", "composer.json", "composer.lock",
+    "cabal.project", "stack.yaml", "stack.yml", "rebar.config",
+    "rebar3.config", "dune", "dune-project",
+    NULL
+};
+
+static const char *FILE_TBL_118[] = {
+    "guix.scm", "manifest.scm", "channels.scm", "nim.cfg",
+    NULL
+};
+
+static const char *FILE_TBL_119[] = {
+    ":git", "github:", "gitlab:", "hosted:",
+    "path:", "dependency_overrides", "source-repository", "location",
+    "extra-deps", "repositories", "\"scripts\"", "minimum-stability",
+    "allow-plugins", "depexts", "pin-depends", "dev-repo",
+    "fetchurl", "fetchgit", "fetchtarball", "builtins",
+    "inputs", "shellhook", "installphase", "buildcommand",
+    "origin", "channels", "writeShellScript", "mkderivation",
+    "(rule", "(action", "(run", "(system",
+    "(bash", "task", "requires", "hooks",
+    "post_hooks", "pre_hooks", "escript", "erl_opts",
+    "eval_in_leiningen", "deftask", "set-env!", "executables",
+    "targets", "switch", "installdirs", "srcDir",
+    NULL
+};
+
+static const char *FILE_TBL_120[] = {
+    "\"launch\"", "executablepath", "server.path", "defaultinterpreterpath",
+    "alternatetools", "\"terminal\"", "\"folders\"",
+    NULL
+};
+
+static const char *FILE_TBL_121[] = {
+    "$(shell wget", "$(shell nc", "$(shell sh", "$(shell bash",
+    "$(shell eval", "$(shell python", "$(shell perl", "$(shell ruby",
+    "$(shell php", "$(shell node", "$(shell http", "-include",
+    "curl", "wget", "nc ", "powershell",
+    "invoke-webrequest", "bitsadmin", "certutil", "iwr ",
+    "iex(", "base64", "|sh", "| sh",
+    "|bash",
+    NULL
+};
+
+static const char *FILE_TBL_122[] = {
+    ".com", ".net", ".org",
+    NULL
+};
+
+static const char *FILE_TBL_123[] = {
+    "\"authorization\"", "\"set-cookie\"", "\"password\"",
+    NULL
+};
+
+static const char *FILE_TBL_124[] = {
+    "enable secret", "snmp-server community", "crypto isakmp key", "tacacs-server key",
+    "radius-server key",
+    NULL
+};
+
+static const char *FILE_TBL_125[] = {
+    "\nf ", "\nw ", "\nd ", "f+ /",
+    "w /", "d /",
+    NULL
+};
+
+static const char *FILE_TBL_126[] = {
+    ".tmux.conf", "tmux.conf", ".muttrc", "muttrc",
+    ".screenrc",
+    NULL
+};
+
+static const char *FILE_TBL_127[] = {
+    "permitemptypasswords yes", "authorizedkeysfile", "forcecommand",
+    NULL
+};
+
+static const char *FILE_TBL_128[] = {
+    "httpd.conf", "apache2.conf", "haproxy.cfg", "caddyfile",
+    "traefik.yml",
+    NULL
+};
+
+static const char *FILE_TBL_129[] = {
+    "passwd", "group", "gshadow",
+    NULL
+};
+
+static const char *FILE_TBL_130[] = {
+    "mongod.conf", "postgresql.conf", "my.cnf", "my.ini",
+    NULL
+};
+
+static const char *FILE_TBL_131[] = {
+    "bind: 0.0.0.0", "bind_ip = 0.0.0.0", "host: 0.0.0.0", "listen_addresses",
+    NULL
+};
+
+static const char *FILE_TBL_132[] = {
+    "protected-mode: no", "authorization: disabled", "noauth",
+    NULL
+};
+
+static const char *FILE_TBL_133[] = {
+    "wget", "invoke-webrequest", "iwr ", "url.openstream",
+    "new url(",
+    NULL
+};
+
+static const char *FILE_TBL_134[] = {
+    "JPEG", "PNG", "ZIP", "GZIP",
+    "7ZIP", "Cabinet",
+    NULL
+};
+
+static const char *FILE_TBL_135[] = {
+    ".xlsm", ".pptm", ".ppsm",
+    NULL
+};
+
+
 /* ─── helpers ─────────────────────────────────────────────────────────── */
 
 static void
@@ -739,12 +1532,7 @@ svg_has_script(const unsigned char *head, size_t len) {
     low[n] = '\0';
     if (strstr(low, "<svg") == NULL) return 0;
     return (strstr(low, "<script")       != NULL ||
-            strstr(low, "onload=")        != NULL ||
-            strstr(low, "onerror=")       != NULL ||
-            strstr(low, "onclick=")       != NULL ||
-            strstr(low, "onmouseover=")   != NULL ||
-            strstr(low, "<foreignobject") != NULL ||
-            strstr(low, "javascript:")    != NULL ||
+            hlse_str_any(low, FILE_TBL_001) ||
             strstr(low, ";base64,")       != NULL);
 }
 
@@ -931,9 +1719,7 @@ launcher_payload_score(const unsigned char *head, size_t len) {
         /* A shortcut's URL= value is opened verbatim by Explorer/the
          * browser: script and MIME/ITS-help schemes are execution
          * primitives that never pass through the http(s) link scan. */
-        if (strstr(low, "javascript:") || strstr(low, "vbscript:") ||
-            strstr(low, "jscript:")    || strstr(low, "data:text/html") ||
-            strstr(low, "ms-its")      || strstr(low, "mk:@msitstore") ||
+        if (strstr(low, "javascript:") || hlse_str_any(low, FILE_TBL_002) ||
             strstr(low, "mhtml:")) {
             if (best < 65) best = 65;
         }
@@ -950,15 +1736,11 @@ launcher_payload_score(const unsigned char *head, size_t len) {
             ex[u] = '\0';
             dl = strstr(ex, "curl ")  != NULL || strstr(ex, "curl\t") ||
                  strstr(ex, "wget ")  != NULL || strstr(ex, "wget\t");
-            shell = strstr(ex, "| sh")  != NULL || strstr(ex, "|sh")   ||
-                    strstr(ex, "| bash") != NULL || strstr(ex, "|bash") ||
-                    strstr(ex, "sh -c")  != NULL || strstr(ex, "bash -c");
+            shell = strstr(ex, "| sh")  != NULL || hlse_str_any(ex, FILE_TBL_003) || strstr(ex, "bash -c");
             if (dl && (shell || strstr(ex, "/tmp/") != NULL ||
                        strstr(ex, "chmod") != NULL)) {
                 if (best < 70) best = 70;   /* fetch → /tmp|pipe → exec */
-            } else if (strstr(ex, "base64 -d") || strstr(ex, "base64 --decode") ||
-                       strstr(ex, "xxd -r")     || strstr(ex, "openssl") ||
-                       strstr(ex, "eval ")      || strstr(ex, "python -c") ||
+            } else if (strstr(ex, "base64 -d") || hlse_str_any(ex, FILE_TBL_004) ||
                        strstr(ex, "perl -e")) {
                 if (best < 55) best = 55;   /* opaque decode/exec */
             } else if (dl) {
@@ -1058,21 +1840,13 @@ unc_leak_score(const unsigned char *head, size_t len) {
     for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
     low[n] = '\0';
     carrier = strstr(low, "[.shellclassinfo")          != NULL ||
-              strstr(low, "[shell]")                  != NULL ||
-              strstr(low, "<librarydescription")      != NULL ||
-              strstr(low, "searchconnectordescription") != NULL ||
-              strstr(low, "iconfile")                != NULL ||
-              strstr(low, "iconresource")            != NULL ||
-              strstr(low, "iconunc")                 != NULL ||
+              hlse_str_any(low, FILE_TBL_005) ||
               /* Windows .theme — ThemeBleed/CVE-2024-38030 class:
                * [Theme]/[Slideshow] sections carry Wallpaper=,
                * ItemNPath= or ImagesRootPIDL values that may point
                * at a remote UNC and leak NetNTLM on load.         */
               strstr(low, "[theme]")                 != NULL ||
-              strstr(low, "[slideshow]")             != NULL ||
-              strstr(low, "[visualstyles]")          != NULL ||
-              strstr(low, "wallpaper=")              != NULL ||
-              strstr(low, "imagesrootpidl")          != NULL ||
+              hlse_str_any(low, FILE_TBL_006) ||
               /* freedesktop `.desktop`/KDE `.directory` files — Icon=
                * or Exec= pointing at \\host\share leaks NetNTLM on
                * folder view, same class as desktop.ini/scf         */
@@ -1266,10 +2040,7 @@ reg_persistence_score(const unsigned char *head, size_t len,
         !strstr(low, "hklm") && !strstr(low, "hkcr") &&
         !strstr(low, "hk_u") && !strstr(low, "hku"))
         return 0;
-    if (strstr(low, "\\run") || strstr(low, "runonce") ||
-        strstr(low, "image file execution options") ||
-        strstr(low, "debugger") || strstr(low, "winlogon") ||
-        strstr(low, "userinit") || strstr(low, "shell\\"))
+    if (strstr(low, "\\run") || hlse_str_any(low, FILE_TBL_007) || strstr(low, "shell\\"))
         return 65;
     return 0;
 }
@@ -1486,19 +2257,14 @@ rc_persist_score(const unsigned char *head, size_t len,
      * BASH_ENV/Perl/Python env hooks there are the same primitive
      * as LD_PRELOAD in a shell rc                                  */
     if (ssh_rc) {
-        if (strstr(low, "bash_env") || strstr(low, "perl5opt") ||
-            strstr(low, "pythoninspect") || strstr(low, "perl5lib") ||
-            strstr(low, "curl") || strstr(low, "wget") ||
-            strstr(low, "sh -c") || strstr(low, "/bin/") ||
-            strstr(low, "system") || strchr(low, '`') ||
+        if (strstr(low, "bash_env") || hlse_str_any(low, FILE_TBL_008) || strchr(low, '`') ||
             strstr(low, "$(") || strstr(low, "nc "))
             return 55;
     } else if (strstr(low, "bash_env") || strstr(low, "perl5opt") ||
                strstr(low, "pythoninspect"))
         sc = sc < 55 ? 55 : sc;
     /* shell hook / alias hijack */
-    if (strstr(low, "prompt_command") || strstr(low, "precmd") ||
-        strstr(low, "alias sudo") || strstr(low, "alias ssh") ||
+    if (strstr(low, "prompt_command") || hlse_str_any(low, FILE_TBL_009) ||
         strstr(low, "trap ") )
         sc = sc < 55 ? 55 : sc;
     /* git config redirects (GitBless: core.hooksPath → attacker dir,
@@ -1514,8 +2280,7 @@ rc_persist_score(const unsigned char *head, size_t len,
     /* authorized_keys options that force a command or open tunnels */
     if (strstr(low, "ssh-rsa") || strstr(low, "ssh-ed25519") ||
         strstr(low, "ecdsa-sha2")) {
-        if (strstr(low, "command=") || strstr(low, "environment=") ||
-            strstr(low, "permitopen") || strstr(low, "permitlisten") ||
+        if (strstr(low, "command=") || hlse_str_any(low, FILE_TBL_010) ||
             strstr(low, "permituserenv"))
             sc = sc < 50 ? 50 : sc;
     }
@@ -1538,8 +2303,7 @@ rc_persist_score(const unsigned char *head, size_t len,
      * over cluster access (token/client-key/password) even without
      * an exec plugin                                          */
     if (strstr(low, "clusters:") && strstr(low, "users:") &&
-        (strstr(low, "token") || strstr(low, "client-key") ||
-         strstr(low, "password") || strstr(low, "client-certificate-data") ||
+        (strstr(low, "token") || hlse_str_any(low, FILE_TBL_011) ||
          strstr(low, "client-key-data")))
         sc = sc < 45 ? 45 : sc;
     /* .envrc is a shell script direnv runs on `cd` — after the
@@ -1550,10 +2314,7 @@ rc_persist_score(const unsigned char *head, size_t len,
         char lown2[64];
         str_lower(basename, lown2, sizeof(lown2));
         if (strcmp(lown2, ".envrc") == 0 &&
-            (strstr(low, "curl") || strstr(low, "wget") ||
-             strstr(low, "eval") || strstr(low, "source ") ||
-             strstr(low, "sh -c") || strstr(low, "bash -c") ||
-             strstr(low, "exec ") || strstr(low, ". /")))
+            (strstr(low, "curl") || hlse_str_any(low, FILE_TBL_012) || strstr(low, ". /")))
             sc = sc < 55 ? 55 : sc;
     }
     /* git exec config — INI sections hide the dotted name: under
@@ -1856,12 +2617,7 @@ compose_priv_score(const unsigned char *head, size_t len,
         if (sc < 60) sc = 60;
     }
     /* host-root / sensitive-dir bind mounts */
-    if (strstr(low, "- /:") || strstr(low, "- \"/:") ||
-        strstr(low, "- '/:") || strstr(low, "- /etc:") ||
-        strstr(low, "- /etc/") || strstr(low, "- /root:") ||
-        strstr(low, "- /root/") || strstr(low, "- /boot") ||
-        strstr(low, "- /dev/") || strstr(low, "- /proc") ||
-        strstr(low, "- /sys/") || strstr(low, "- /sys:")) {
+    if (strstr(low, "- /:") || hlse_str_any(low, FILE_TBL_013) || strstr(low, "- /sys:")) {
         if (sc < 50) sc = 50;
     }
     if (yaml_key_present(low, "security_opt") &&
@@ -1888,10 +2644,7 @@ yaml_unsafe_tag_score(const unsigned char *head, size_t len,
     if (len > sizeof(low) - 1) len = sizeof(low) - 1;
     for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
     low[n] = '\0';
-    if (strstr(low, "!!python/") || strstr(low, "!python/object") ||
-        strstr(low, "!python/name") || strstr(low, "!python/module") ||
-        strstr(low, "!ruby/") || strstr(low, "!!perl/") ||
-        strstr(low, "!perl/") || strstr(low, "!!php/") ||
+    if (strstr(low, "!!python/") || hlse_str_any(low, FILE_TBL_014) ||
         strstr(low, "!php/object"))
         return 65;
     return 0;
@@ -1914,11 +2667,7 @@ py_exec_score(const unsigned char *head, size_t len, const char *ext) {
         strcmp(extl, ".pth") == 0) {
         /* pickle GLOBAL/STACK_GLOBAL refs — same byte pattern in
          * text and binary protocols (`c<mod>\n<name>` / `\x93`) */
-        if (strstr(low, "cposix\nsystem") || strstr(low, "cnt\nsystem") ||
-            strstr(low, "cos\nsystem") || strstr(low, "cos\npopen") ||
-            strstr(low, "csubprocess") || strstr(low, "cpty\n") ||
-            strstr(low, "c__builtin__\neval") ||
-            strstr(low, "c__builtin__\nexec") ||
+        if (strstr(low, "cposix\nsystem") || hlse_str_any(low, FILE_TBL_015) ||
             strstr(low, "c__builtin__\nsystem"))
             return 70;
     }
@@ -1948,8 +2697,7 @@ autorun_score(const unsigned char *head, size_t len, const char *ext) {
     for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
     low[n] = '\0';
     if (!strstr(low, "[autorun]")) return 0;
-    if (strstr(low, "\nopen=") || strstr(low, "\nshellexecute=") ||
-        strstr(low, "shell\\") || strstr(low, "\nshell=") ||
+    if (strstr(low, "\nopen=") || hlse_str_any(low, FILE_TBL_016) ||
         strstr(low, "\nopen =") )
         return 55;
     return 0;
@@ -2102,8 +2850,7 @@ sql_exec_score(const unsigned char *head, size_t len, const char *ext) {
     for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
     low[n] = '\0';
     if ((strstr(low, "copy") && strstr(low, " program")) ||
-        strstr(low, "language c") || strstr(low, "language 'c'") ||
-        strstr(low, "language \"c\"") ||
+        hlse_str_any(low, FILE_TBL_017) ||
         strncmp(low, "load '", 6) == 0 || strstr(low, "\nload '"))
         return 55;
     if (strstr(low, "\n\\!") || strncmp(low, "\\!", 2) == 0)
@@ -2127,11 +2874,7 @@ py_autoexec_score(const unsigned char *head, size_t len,
     if (len > sizeof(low) - 1) len = sizeof(low) - 1;
     for (i = 0; i < len; i++) low[n++] = (char)tolower(head[i]);
     low[n] = '\0';
-    if (strstr(low, "os.system") || strstr(low, "os.popen") ||
-        strstr(low, "subprocess") || strstr(low, "socket.socket") ||
-        strstr(low, "eval(") || strstr(low, "exec(") ||
-        strstr(low, "__import__") || strstr(low, "urllib") ||
-        strstr(low, "requests.") || strstr(low, "base64"))
+    if (strstr(low, "os.system") || hlse_str_any(low, FILE_TBL_018) || strstr(low, "base64"))
         return 55;
     return 0;
 }
@@ -2151,9 +2894,7 @@ wsf_scriptlet_score(const unsigned char *head, size_t len,
     low[n] = '\0';
     if (!strstr(low, "<script") || !strstr(low, "<job"))
         return 0;
-    if (strstr(low, "createobject") || strstr(low, "wscript.shell") ||
-        strstr(low, "shell.application") || strstr(low, ".run(") ||
-        strstr(low, ".exec(") || strstr(low, "getobject"))
+    if (strstr(low, "createobject") || hlse_str_any(low, FILE_TBL_019) || strstr(low, "getobject"))
         return 55;
     return 45;
 }
@@ -2174,9 +2915,7 @@ inf_install_score(const unsigned char *head, size_t len,
     if (!strstr(low, "[defaultinstall") && !strstr(low, "[install"))
         return 0;
     if (strstr(low, "runpresetupcommands") ||
-        strstr(low, "runpostsetupcommands") ||
-        strstr(low, "addservice") || strstr(low, "updatesysownfiles") ||
-        strstr(low, "copyfiles") || strstr(low, "delnodes"))
+        hlse_str_any(low, FILE_TBL_020) || strstr(low, "delnodes"))
         return 55;
     return 40;
 }
@@ -2287,9 +3026,7 @@ jnlp_score(const unsigned char *head, size_t len, const char *ext) {
     low[n] = '\0';
     if (!strstr(low, "<jnlp"))
         return 0;
-    if (strstr(low, "codebase=\"http") || strstr(low, "codebase='http") ||
-        strstr(low, "codebase=\"\\\\") ||
-        strstr(low, "href=\"http") || strstr(low, "href='http") ||
+    if (strstr(low, "codebase=\"http") || hlse_str_any(low, FILE_TBL_021) ||
         strstr(low, "url=\"http"))
         return 50;
     return 0;
@@ -2312,10 +3049,7 @@ sct_scriptlet_score(const unsigned char *head, size_t len,
         return 0;
     if (!strstr(low, "<script") && !strstr(low, "<registration"))
         return 0;
-    if (strstr(low, "createobject") || strstr(low, "getobject") ||
-        strstr(low, "wscript.shell") || strstr(low, "shell.application") ||
-        strstr(low, "powershell") || strstr(low, "cmd.exe") ||
-        strstr(low, ".run ") || strstr(low, ".exec "))
+    if (strstr(low, "createobject") || hlse_str_any(low, FILE_TBL_022) || strstr(low, ".exec "))
         return 55;
     return 45;
 }
@@ -2365,9 +3099,7 @@ brew_formula_score(const unsigned char *head, size_t len,
     low[n] = '\0';
     if (!strstr(low, "< formula") && !strstr(low, "<formula"))
         return 0;
-    if (strstr(low, "system ") || strstr(low, "system(") ||
-        strstr(low, "curl ") || strstr(low, "wget ") ||
-        strstr(low, "open(") || strstr(low, "eval "))
+    if (strstr(low, "system ") || hlse_str_any(low, FILE_TBL_023) || strstr(low, "eval "))
         return 55;
     return 0;   /* a plain formula is ordinary .rb — no signal */
 }
@@ -2409,8 +3141,7 @@ serverconfig_score(const unsigned char *head, size_t len,
      * coercion (AddType/SetHandler/php_flag) turns an upload dir into
      * a webshell; Redirect/RewriteRule to a remote host skims traffic */
     if (strcmp(bn, ".htaccess") == 0) {
-        if (strstr(low, "addtype") || strstr(low, "sethandler") ||
-            strstr(low, "php_flag") || strstr(low, "php_value") ||
+        if (strstr(low, "addtype") || hlse_str_any(low, FILE_TBL_024) ||
             (strstr(low, "options") && strstr(low, "execcgi")) ||
             strstr(low, "php_flag engine"))
             return 55;
@@ -2590,8 +3321,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     /* snmpd.conf — exec/extend/pass/traphandle run a command per
      * SNMP query or trap; the file is a daemon-side exec hook       */
     if (strcmp(bn, "snmpd.conf") == 0 || strstr(bn, "snmpd") != NULL) {
-        if (strstr(low, "exec ") || strstr(low, "extend") ||
-            strstr(low, "pass_persist") || strstr(low, "traphandle") ||
+        if (strstr(low, "exec ") || hlse_str_any(low, FILE_TBL_025) ||
             strstr(low, "monitor"))
             return 50;
         return 30;
@@ -2625,9 +3355,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     /* launchd plist — RunAtLoad/KeepAlive/WatchPaths fires the payload
      * on load/login; the classic macOS persistence carrier */
     if (strstr(bn, ".plist") != NULL &&
-        (strstr(low, "runatload") || strstr(low, "keepalive") ||
-         strstr(low, "watchpaths") || strstr(low, "startinterval") ||
-         strstr(low, "programarguments") || strstr(low, "<key>program</key>")))
+        (strstr(low, "runatload") || hlse_str_any(low, FILE_TBL_026) || strstr(low, "<key>program</key>")))
         return 55;
     /* Info.plist — a .app bundle that hides itself (LSUIElement/
      * LSBackgroundOnly) while declaring an executable is the stealth
@@ -2639,8 +3367,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     /* udev rules — RUN+=/PROGRAM=/IMPORT{program} fire when a device
      * is plugged (badusb / rogue-device execution) */
     if (strstr(bn, ".rules") != NULL &&
-        (strstr(low, "run+=") || strstr(low, "run =") ||
-         strstr(low, "program=") || strstr(low, "import{program}") ||
+        (strstr(low, "run+=") || hlse_str_any(low, FILE_TBL_027) ||
          strstr(low, "import{")))
         return 55;
     /* polkit rules are JS evaluated on every authorization — a rule
@@ -2670,12 +3397,8 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     }
     /* .vimrc / init.vim / init.lua — editor startup files evaluate
      * autocmd/system()/os.execute()/io.popen on every launch */
-    if (strcmp(bn, ".vimrc") == 0 || strcmp(bn, "_vimrc") == 0 ||
-        strcmp(bn, "init.vim") == 0 || strcmp(bn, "init.lua") == 0 ||
-        strcmp(bn, ".exrc") == 0 || strcmp(bn, "_exrc") == 0) {
-        if (strstr(low, "autocmd") || strstr(low, "system(") ||
-            strstr(low, "os.execute") || strstr(low, "io.popen") ||
-            strstr(low, ":!") || strstr(low, "vim.fn"))
+    if (strcmp(bn, ".vimrc") == 0 || hlse_str_eq_any(bn, FILE_TBL_028) || strcmp(bn, "_exrc") == 0) {
+        if (strstr(low, "autocmd") || hlse_str_any(low, FILE_TBL_029) || strstr(low, "vim.fn"))
             return 50;
         return 0;   /* ordinary vim config — no signal */
     }
@@ -2698,9 +3421,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
              strstr(low, "externalproject") ||
              strstr(low, "add_custom_command") ||
              strstr(low, "add_custom_target")) &&
-            (strstr(low, "curl") || strstr(low, "wget") ||
-             strstr(low, "invoke-webrequest") || strstr(low, "bitsadmin") ||
-             strstr(low, "| sh") || strstr(low, "|sh") ||
+            (strstr(low, "curl") || hlse_str_any(low, FILE_TBL_030) ||
              strstr(low, "base64")))
             return 55;
         return 0;
@@ -2730,10 +3451,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * whole purpose is keypress-exec, so only flag when a bound command
      * reaches a fetcher/shell/destructor primitive */
     if (strcmp(bn, ".xbindkeysrc") == 0) {
-        if (strstr(low, "curl") || strstr(low, "wget") ||
-            strstr(low, "http") || strstr(low, "sh -c") ||
-            strstr(low, "bash ") || strstr(low, "rm -") ||
-            strstr(low, "nc ") || strstr(low, "ncat"))
+        if (strstr(low, "curl") || hlse_str_any(low, FILE_TBL_031) || strstr(low, "ncat"))
             return 50;
         return 0;
     }
@@ -2768,18 +3486,8 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * meson.build, Rakefile/Rakefile.rb, Earthfile, Taskfile: all run
      * embedded code at build/configure time. An exec or fetch primitive
      * in one is the build-time equivalent of Makefile $(shell curl). */
-    if (strcmp(bn, "wscript") == 0 || strcmp(bn, "sconstruct") == 0 ||
-        strcmp(bn, "meson.build") == 0 || strcmp(bn, "rakefile") == 0 ||
-        strcmp(bn, "rakefile.rb") == 0 || strcmp(bn, "earthfile") == 0 ||
-        strcmp(bn, "taskfile.yml") == 0 || strcmp(bn, "taskfile.yaml") == 0) {
-        if (strstr(low, "os.system") || strstr(low, "subprocess") ||
-            strstr(low, "run_command") || strstr(low, "run_target") ||
-            strstr(low, "system(") || strstr(low, "system \"") ||
-            strstr(low, "sh \"") || strstr(low, "`") ||
-            strstr(low, "curl") || strstr(low, "wget") ||
-            strstr(low, "invoke-webrequest") || strstr(low, "http") ||
-            strstr(low, "eval ") || strstr(low, "exec(") ||
-            strstr(low, "| sh") || strstr(low, "|sh") ||
+    if (strcmp(bn, "wscript") == 0 || hlse_str_eq_any(bn, FILE_TBL_032) || strcmp(bn, "taskfile.yaml") == 0) {
+        if (strstr(low, "os.system") || hlse_str_any(low, FILE_TBL_033) ||
             strstr(low, "base64"))
             return 55;
         return 0;
@@ -2789,23 +3497,8 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * init.el/.emacs (elisp), .Rprofile (R), .ghci (haskell),
      * .latexmkrc (perl), .conkyrc (${exec}), activate/activate_this.py
      * (venv activation runs arbitrary shell), .octaverc/.jl startup. */
-    if (strcmp(bn, "init.el") == 0 || strcmp(bn, ".emacs") == 0 ||
-        strcmp(bn, "early-init.el") == 0 ||
-        strcmp(bn, ".rprofile") == 0 || strcmp(bn, "rprofile.site") == 0 ||
-        strcmp(bn, ".ghci") == 0 || strcmp(bn, "ghci.conf") == 0 ||
-        strcmp(bn, ".latexmkrc") == 0 ||
-        strcmp(bn, ".conkyrc") == 0 || strcmp(bn, "conky.conf") == 0 ||
-        strcmp(bn, "activate") == 0 || strcmp(bn, "activate_this.py") == 0 ||
-        strcmp(bn, "activate.csh") == 0 || strcmp(bn, "activate.fish") == 0 ||
-        strcmp(bn, ".octaverc") == 0 || strcmp(bn, "octaverc") == 0) {
-        if (strstr(low, "shell-command") || strstr(low, "call-process") ||
-            strstr(low, "start-process") || strstr(low, "system") ||
-            strstr(low, "os.execute") || strstr(low, "io.popen") ||
-            strstr(low, "${exec") || strstr(low, "${texeci") ||
-            strstr(low, "exec") || strstr(low, ":!") ||
-            strstr(low, "curl") || strstr(low, "wget") ||
-            strstr(low, "eval") || strstr(low, "`") ||
-            strstr(low, "| sh") || strstr(low, "|sh"))
+    if (strcmp(bn, "init.el") == 0 || hlse_str_eq_any(bn, FILE_TBL_034) || strcmp(bn, "octaverc") == 0) {
+        if (strstr(low, "shell-command") || hlse_str_any(low, FILE_TBL_035) || strstr(low, "|sh"))
             return 50;
         return 0;
     }
@@ -2815,9 +3508,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * "just debugged it" */
     if (strcmp(bn, ".gdbinit") == 0 || strcmp(bn, "gdbinit") == 0 ||
         strcmp(bn, ".lldbinit") == 0 || strcmp(bn, "lldbinit") == 0) {
-        if (strstr(low, "shell") || strstr(low, "python") ||
-            strstr(low, "system") || strstr(low, "source") ||
-            strstr(low, "eval") || strstr(low, "command script"))
+        if (strstr(low, "shell") || hlse_str_any(low, FILE_TBL_036) || strstr(low, "command script"))
             return 50;
         return 0;
     }
@@ -2852,21 +3543,15 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * shell (script-shell = exec on lifecycle scripts), whitelist http
      * registries, or name a plugin; .pnpmfile.cjs runs JS hooks on
      * every install; .gemrc sources: redirects gem resolution */
-    if (strcmp(bn, ".npmrc") == 0 || strcmp(bn, "npmrc") == 0 ||
-        strcmp(bn, ".yarnrc") == 0 || strcmp(bn, ".yarnrc.yml") == 0 ||
-        strcmp(bn, ".yarnrc.yaml") == 0 || strcmp(bn, "yarnrc.yml") == 0) {
-        if (strstr(low, "registry") || strstr(low, "script-shell") ||
-            strstr(low, "unsafehttpwhitelist") ||
-            strstr(low, "npmregistryserver") ||
+    if (strcmp(bn, ".npmrc") == 0 || hlse_str_eq_any(bn, FILE_TBL_037) || strcmp(bn, "yarnrc.yml") == 0) {
+        if (strstr(low, "registry") || hlse_str_any(low, FILE_TBL_038) ||
             strstr(low, "plugin"))
             return 50;
         return 0;
     }
     if (strstr(bn, ".pnpmfile.") != NULL || strcmp(bn, "pnpmfile.cjs") == 0 ||
         strcmp(bn, "pnpmfile.js") == 0) {
-        if (strstr(low, "eval") || strstr(low, "require(") ||
-            strstr(low, "curl") || strstr(low, "wget") ||
-            strstr(low, "child_process") || strstr(low, "exec"))
+        if (strstr(low, "eval") || hlse_str_any(low, FILE_TBL_039) || strstr(low, "exec"))
             return 50;
         return 45;
     }
@@ -2882,9 +3567,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * Basename alone is too generic to flag (every tool ships one), so
      * it gates on the cargo-specific keys. */
     if (strcmp(bn, "config.toml") == 0) {
-        if (strstr(low, "rustc-wrapper") || strstr(low, "rustflags") ||
-            strstr(low, "[alias]") || strstr(low, "[patch.") ||
-            strstr(low, "[source.") || strstr(low, "[path"))
+        if (strstr(low, "rustc-wrapper") || hlse_str_any(low, FILE_TBL_040) || strstr(low, "[path"))
             return 50;
         return 0;
     }
@@ -2915,9 +3598,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     if (strstr(bn, "init.gradle") != NULL ||
         strstr(bn, "settings.gradle") != NULL ||
         strstr(bn, "build.gradle") != NULL) {
-        if (strstr(low, "eval") || strstr(low, "exec") ||
-            strstr(low, "curl") || strstr(low, "wget") ||
-            strstr(low, "http") || strstr(low, "url"))
+        if (strstr(low, "eval") || hlse_str_any(low, FILE_TBL_041) || strstr(low, "url"))
             return 50;
         return 0;
     }
@@ -2995,9 +3676,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * dangerous on its own) */
     if (strstr(bn, ".timer") != NULL || strstr(bn, ".socket") != NULL ||
         strstr(bn, ".path") != NULL) {
-        if (strstr(low, "[timer]") || strstr(low, "[socket]") ||
-            strstr(low, "[path]") || strstr(low, "oncalendar") ||
-            strstr(low, "listenstream") || strstr(low, "onbootsec") ||
+        if (strstr(low, "[timer]") || hlse_str_any(low, FILE_TBL_042) ||
             strstr(low, "accept="))
             return 45;
         return 0;
@@ -3039,45 +3718,26 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         strcmp(bn, "workspace.bzlmod") == 0) {
         /* remote-fetch/repo-override primitives only — bazel_dep and
          * plain http:// are ordinary declarations, not the vector */
-        if (strstr(low, "http_archive") || strstr(low, "git_repository") ||
-            strstr(low, "new_git_repository") ||
-            strstr(low, "local_repository") ||
+        if (strstr(low, "http_archive") || hlse_str_any(low, FILE_TBL_043) ||
             strstr(low, "register_toolchains"))
             return 45;
         return 0;
     }
     if (strcmp(bn, "brewfile") == 0) {
-        if (strstr(low, "tap ") || strstr(low, "brew ") ||
-            strstr(low, "cask ") || strstr(low, "mas ") ||
+        if (strstr(low, "tap ") || hlse_str_any(low, FILE_TBL_044) ||
             strstr(low, "whalebrew "))
             return 45;
         return 0;
     }
     if (strcmp(bn, "conanfile.py") == 0) {
-        if (strstr(low, "os.system") || strstr(low, "subprocess") ||
-            strstr(low, "eval(") || strstr(low, "exec(") ||
-            strstr(low, "curl") || strstr(low, "wget") ||
-            strstr(low, "tools.download") || strstr(low, "tools.get"))
+        if (strstr(low, "os.system") || hlse_str_any(low, FILE_TBL_045) || strstr(low, "tools.get"))
             return 50;
         return 0;   /* a plain conanfile.py is the normal case */
     }
     /* fastlane/chef/thor ruby toolfiles — same `sh`/`system`/eval
      * surface as Dangerfile: each runs ruby at tool invocation */
-    if (strcmp(bn, "dangerfile") == 0 || strcmp(bn, "guardfile") == 0 ||
-        strcmp(bn, "capfile") == 0 || strcmp(bn, "snapfile") == 0 ||
-        strcmp(bn, "gymfile") == 0 || strcmp(bn, "matchfile") == 0 ||
-        strcmp(bn, "deliverfile") == 0 || strcmp(bn, "scanfile") == 0 ||
-        strcmp(bn, "screengrabfile") == 0 || strcmp(bn, "pilotfile") == 0 ||
-        strcmp(bn, "pluginfile") == 0 || strcmp(bn, "appfile") == 0 ||
-        strcmp(bn, "berksfile") == 0 || strcmp(bn, "cheffile") == 0 ||
-        strcmp(bn, "thorfile") == 0 || strcmp(bn, "fastfile") == 0 ||
-        strcmp(bn, "rakefile") == 0 || strcmp(bn, "policyfile.rb") == 0) {
-        if (strstr(low, "sh ") || strstr(low, "sh(") ||
-            strstr(low, "system") || strstr(low, "`") ||
-            strstr(low, "eval") || strstr(low, "curl") ||
-            strstr(low, "wget") || strstr(low, "exec") ||
-            strstr(low, "git:") || strstr(low, ":git") ||
-            strstr(low, "cookbook") || strstr(low, "source "))
+    if (strcmp(bn, "dangerfile") == 0 || hlse_str_eq_any(bn, FILE_TBL_046) || strcmp(bn, "policyfile.rb") == 0) {
+        if (strstr(low, "sh ") || hlse_str_any(low, FILE_TBL_047) || strstr(low, "source "))
             return 45;
         return 0;
     }
@@ -3089,8 +3749,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * .rtorrent.rc execute/schedule runs on torrent events */
     if (strcmp(bn, "aria2.conf") == 0 || strcmp(bn, ".aria2.conf") == 0 ||
         strcmp(bn, "aria2c.conf") == 0) {
-        if (strstr(low, "on-download") || strstr(low, "on-bt-") ||
-            strstr(low, "command") || strstr(low, "rpc-secret") ||
+        if (strstr(low, "on-download") || hlse_str_any(low, FILE_TBL_048) ||
             strstr(low, "save-session-interval"))
             return 50;
         return 0;
@@ -3138,13 +3797,9 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
          * unprivileged user namespaces on — each weakens a boundary an
          * attacker wants down before exploiting                          */
         if (((strstr(low, "randomize_va_space") ||
-              strstr(low, "kptr_restrict") ||
-              strstr(low, "dmesg_restrict") ||
-              strstr(low, "ptrace_scope") ||
-              strstr(low, "perf_event_paranoid") ||
+              hlse_str_any(low, FILE_TBL_049) ||
               strstr(low, "unprivileged_bpf_disabled")) &&
-             (strstr(low, "= 0") || strstr(low, "=0") ||
-              strstr(low, "= -1") || strstr(low, "=-1"))) ||
+             (strstr(low, "= 0") || hlse_str_any(low, FILE_TBL_050))) ||
             (strstr(low, "unprivileged_userns_clone") &&
              (strstr(low, "= 1") || strstr(low, "=1"))))
             return 40;
@@ -3156,22 +3811,15 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 45;
         return 0;
     }
-    if (strcmp(bn, "grub.cfg") == 0 || strcmp(bn, "grub.conf") == 0 ||
-        strcmp(bn, "menu.lst") == 0 || strcmp(bn, "syslinux.cfg") == 0 ||
-        strcmp(bn, "isolinux.cfg") == 0 || strcmp(bn, "pxelinux.cfg") == 0 ||
-        strcmp(bn, "loader.conf") == 0 || strstr(bn, "grub.d") != NULL ||
+    if (strcmp(bn, "grub.cfg") == 0 || hlse_str_eq_any(bn, FILE_TBL_051) || strstr(bn, "grub.d") != NULL ||
         strstr(bn, "_custom") != NULL) {
-        if (strstr(low, "init=") || strstr(low, "rdinit") ||
-            strstr(low, "chainloader") || strstr(low, "configfile") ||
-            strstr(low, "source ") || strstr(low, "module") ||
-            strstr(low, "linux ") || strstr(low, "append "))
+        if (strstr(low, "init=") || hlse_str_any(low, FILE_TBL_052) || strstr(low, "append "))
             return 50;
         return 0;
     }
     /* anacrontab — same scheduled-exec carrier as crontab */
     if (strcmp(bn, "anacrontab") == 0) {
-        if (strstr(low, "/") && (strstr(low, "*") || strstr(low, "@") ||
-            strstr(low, "daily") || strstr(low, "weekly") ||
+        if (strstr(low, "/") && (strstr(low, "*") || hlse_str_any(low, FILE_TBL_053) ||
             strstr(low, "monthly")))
             return 40;
         return 0;
@@ -3209,10 +3857,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     }
     if (strcmp(bn, "terragrunt.hcl") == 0 ||
         strcmp(bn, ".terraformrc") == 0 || strcmp(bn, "terraform.rc") == 0) {
-        if (strstr(low, "before_hook") || strstr(low, "after_hook") ||
-            strstr(low, "error_hook") || strstr(low, "execute") ||
-            strstr(low, "run_cmd") || strstr(low, "dev_overrides") ||
-            strstr(low, "plugin_cache") ||
+        if (strstr(low, "before_hook") || hlse_str_any(low, FILE_TBL_054) ||
             strstr(low, "provider_installation"))
             return 50;
         return 0;
@@ -3232,8 +3877,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     }
     if (strcmp(bn, "pyproject.toml") == 0) {
         if (strstr(low, "tool.poetry.source") ||
-            strstr(low, "tool.uv") || strstr(low, "index-url") ||
-            strstr(low, "extra-index-url") || strstr(low, "find-links"))
+            hlse_str_any(low, FILE_TBL_055) || strstr(low, "find-links"))
             return 45;
         return 0;
     }
@@ -3241,8 +3885,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * dependency_links / find-links repoint the setuptools resolver
      * just like pyproject index-url                                       */
     if (strcmp(bn, "setup.cfg") == 0) {
-        if (strstr(low, "index_url") || strstr(low, "index-url") ||
-            strstr(low, "dependency_links") || strstr(low, "find-links") ||
+        if (strstr(low, "index_url") || hlse_str_any(low, FILE_TBL_056) ||
             strstr(low, "easy_install"))
             return 45;
         return 0;
@@ -3264,8 +3907,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * the initramfs on every boot; ansible.cfg *_plugins and *_paths
      * load Python modules as code on every run */
     if (strcmp(bn, "rsyncd.conf") == 0 || strcmp(bn, "rsyncd.secrets") == 0) {
-        if (strstr(low, "xfer exec") || strstr(low, "early exec") ||
-            strstr(low, "exec =") || strstr(low, "secrets file") ||
+        if (strstr(low, "xfer exec") || hlse_str_any(low, FILE_TBL_057) ||
             strstr(low, "rsyncable"))
             return 50;
         return 0;
@@ -3277,9 +3919,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         return 0;
     }
     if (strcmp(bn, "ansible.cfg") == 0) {
-        if (strstr(low, "_plugins") || strstr(low, "_paths") ||
-            strstr(low, "library") || strstr(low, "module_utils") ||
-            strstr(low, "stdout_callback") || strstr(low, "connection"))
+        if (strstr(low, "_plugins") || hlse_str_any(low, FILE_TBL_058) || strstr(low, "connection"))
             return 45;
         return 0;
     }
@@ -3298,16 +3938,14 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     }
     if (strcmp(bn, "lynx.cfg") == 0 || strcmp(bn, "lynxrc") == 0 ||
         strcmp(bn, ".lynxrc") == 0) {
-        if (strstr(low, "external") || strstr(low, "downloader") ||
-            strstr(low, "printer") || strstr(low, "system_editor") ||
+        if (strstr(low, "external") || hlse_str_any(low, FILE_TBL_059) ||
             strstr(low, "trusted_exec"))
             return 45;
         return 0;
     }
     if (strcmp(bn, ".offlineimaprc") == 0 || strcmp(bn, "offlineimaprc") == 0 ||
         strcmp(bn, "offlineimap.conf") == 0) {
-        if (strstr(low, "preauthtunnel") || strstr(low, "postauthtunnel") ||
-            strstr(low, "remotepasseval") || strstr(low, "hook") ||
+        if (strstr(low, "preauthtunnel") || hlse_str_any(low, FILE_TBL_060) ||
             strstr(low, "eval"))
             return 50;
         return 0;
@@ -3324,22 +3962,14 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * .sql with xp_cmdshell, INTO OUTFILE, sp_oa* or COPY PROGRAM
      * turns a query file into host command execution; .lua os.execute/
      * dofile(loadstring over http) does the same for lua hosts */
-    if (strstr(bn, ".php") || strstr(bn, ".phtml") ||
-        strstr(bn, ".php5") || strstr(bn, ".pht") ||
-        strstr(bn, ".phar") || strstr(bn, ".inc")) {
-        if ((strstr(low, "eval(") || strstr(low, "assert(") ||
-             strstr(low, "system(") || strstr(low, "passthru(") ||
-             strstr(low, "exec(") || strstr(low, "popen(") ||
-             strstr(low, "proc_open") || strstr(low, "shell_exec") ||
-             strstr(low, "`") || strstr(low, "preg_replace")) &&
+    if (strstr(bn, ".php") || hlse_str_any(bn, FILE_TBL_061) || strstr(bn, ".inc")) {
+        if ((strstr(low, "eval(") || hlse_str_any(low, FILE_TBL_062) || strstr(low, "preg_replace")) &&
             (strstr(low, "$_") || strstr(low, "request") ||
              strstr(low, "post[") || strstr(low, "get[")))
             return 75;
-        if ((strstr(low, "base64_decode") || strstr(low, "gzinflate") ||
-             strstr(low, "gzuncompress") || strstr(low, "str_rot13") ||
+        if ((strstr(low, "base64_decode") || hlse_str_any(low, FILE_TBL_063) ||
              strstr(low, "strrev")) &&
-            (strstr(low, "eval") || strstr(low, "assert") ||
-             strstr(low, "$_") || strstr(low, "post") ||
+            (strstr(low, "eval") || hlse_str_any(low, FILE_TBL_064) ||
              strstr(low, "get")))
             return 60;
         if (strstr(low, "move_uploaded_file") && strstr(low, "_files"))
@@ -3356,14 +3986,9 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 75;
         return 0;
     }
-    if (strstr(bn, ".asp") || strstr(bn, ".aspx") ||
-        strstr(bn, ".ashx") || strstr(bn, ".asmx") ||
+    if (strstr(bn, ".asp") || hlse_str_any(bn, FILE_TBL_065) ||
         strstr(bn, ".cer")) {
-        if (strstr(low, "wscript.shell") || strstr(low, "createobject") ||
-            strstr(low, "process.start") || strstr(low, "cmd.exe") ||
-            strstr(low, "powershell") || strstr(low, "executeglobal") ||
-            strstr(low, "shell.application") ||
-            strstr(low, "request.form") || strstr(low, "request(") ||
+        if (strstr(low, "wscript.shell") || hlse_str_any(low, FILE_TBL_066) ||
             strstr(low, "eval("))
             return 75;
         return 0;
@@ -3375,9 +4000,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         return 0;
     }
     if (strstr(bn, ".pl") || strstr(bn, ".cgi")) {
-        if ((strstr(low, "system(") || strstr(low, "exec(") ||
-             strstr(low, "open2") || strstr(low, "open3") ||
-             strstr(low, "`") || strstr(low, "qx(")) &&
+        if ((strstr(low, "system(") || hlse_str_any(low, FILE_TBL_067) || strstr(low, "qx(")) &&
             (strstr(low, "param(") || strstr(low, "env") ||
              strstr(low, "stdin") || strstr(low, "query")))
             return 55;
@@ -3392,38 +4015,27 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         return 0;
     }
     if (strstr(bn, ".sql")) {
-        if (strstr(low, "xp_cmdshell") || strstr(low, "into outfile") ||
-            strstr(low, "into dumpfile") || strstr(low, "load_file") ||
-            strstr(low, "sp_oacreate") || strstr(low, "sp_oamethod") ||
+        if (strstr(low, "xp_cmdshell") || hlse_str_any(low, FILE_TBL_068) ||
             (strstr(low, "sp_executesql") && strstr(low, "master.")) ||
             (strstr(low, "copy ") && strstr(low, "program")) ||
-            strstr(low, "lo_import") || strstr(low, "lo_export") ||
-            strstr(low, "pg_read_file") || strstr(low, "sys_eval") ||
-            strstr(low, "sys_exec") || strstr(low, "utl_file") ||
+            hlse_str_any(low, FILE_TBL_069) ||
             strstr(low, "sqlmap"))
             return 60;
         return 0;
     }
     if (strstr(bn, ".hta")) {
-        if (strstr(low, "activexobject") || strstr(low, "wscript.shell") ||
-            strstr(low, "shell.application") || strstr(low, "run(") ||
-            strstr(low, "exec(") || strstr(low, "powershell") ||
-            strstr(low, "mshta") || strstr(low, "vbscript") ||
-            strstr(low, "javascript:") || strstr(low, "createobject"))
+        if (strstr(low, "activexobject") || hlse_str_any(low, FILE_TBL_070) || strstr(low, "createobject"))
             return 55;
         return 0;
     }
     if (strstr(bn, ".wsf") || strstr(bn, ".wsh")) {
-        if (strstr(low, "<script") || strstr(low, "run(") ||
-            strstr(low, "exec(") || strstr(low, "cscript") ||
+        if (strstr(low, "<script") || hlse_str_any(low, FILE_TBL_071) ||
             strstr(low, "wscript"))
             return 50;
         return 0;
     }
     if (strstr(bn, ".css") || strstr(bn, ".htc")) {
-        if (strstr(low, "expression(") || strstr(low, "behavior") ||
-            strstr(low, "-moz-binding") || strstr(low, "javascript:") ||
-            strstr(low, "vbscript:") || strstr(low, "binding:"))
+        if (strstr(low, "expression(") || hlse_str_any(low, FILE_TBL_072) || strstr(low, "binding:"))
             return 45;
         return 0;
     }
@@ -3436,8 +4048,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     }
     if (strstr(bn, ".lsp") || strstr(bn, ".mnl") ||
         strcmp(bn, "acad.lsp") == 0 || strcmp(bn, "acaddoc.lsp") == 0) {
-        if (strstr(low, "(command") || strstr(low, "startapp") ||
-            strstr(low, "vl-cmdf") || strstr(low, "arxload") ||
+        if (strstr(low, "(command") || hlse_str_any(low, FILE_TBL_073) ||
             (strstr(low, "(load") && strstr(low, "http")) ||
             strstr(low, "shell"))
             return 45;
@@ -3445,11 +4056,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     }
     if (strcmp(bn, "startup.m") == 0 || strcmp(bn, "finish.m") == 0 ||
         strcmp(bn, "init.m") == 0) {
-        if (strstr(low, "system") || strstr(low, "eval") ||
-            strstr(low, "unix(") || strstr(low, "dos(") ||
-            strstr(low, "urlread") || strstr(low, "websave") ||
-            strstr(low, "run(") || strstr(low, "import") ||
-            strstr(low, "pacletinstall") || strstr(low, "install"))
+        if (strstr(low, "system") || hlse_str_any(low, FILE_TBL_074) || strstr(low, "install"))
             return 45;
         return 0;
     }
@@ -3466,8 +4073,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 30;
         return 0;
     }
-    if (strcmp(bn, "id_rsa") == 0 || strcmp(bn, "id_dsa") == 0 ||
-        strcmp(bn, "id_ecdsa") == 0 || strcmp(bn, "id_ed25519") == 0 ||
+    if (strcmp(bn, "id_rsa") == 0 || hlse_str_eq_any(bn, FILE_TBL_075) ||
         strcmp(bn, "identity") == 0) {
         if (strstr(low, "private") || strstr(low, "begin") ||
             strstr(low, "mii") || strstr(low, "key"))
@@ -3485,24 +4091,10 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         strstr(bn, ".ktb") || strcmp(bn, "krbtgt") == 0)
         return 55;
     if (strstr(bn, ".dmp") || strstr(bn, ".mdmp") ||
-        strstr(bn, ".dump") || strcmp(bn, "core") == 0 ||
-        strcmp(bn, "lsass.dmp") == 0 || strcmp(bn, "memory.dmp") == 0 ||
-        strcmp(bn, "hiberfil.sys") == 0 || strcmp(bn, "pagefile.sys") == 0)
+        strstr(bn, ".dump") || hlse_str_eq_any(bn, FILE_TBL_076) || strcmp(bn, "pagefile.sys") == 0)
         return 45;
-    if (strcmp(bn, "logins.json") == 0 || strcmp(bn, "key4.db") == 0 ||
-        strcmp(bn, "key3.db") == 0 || strcmp(bn, "cert8.db") == 0 ||
-        strcmp(bn, "cert9.db") == 0 || strcmp(bn, "cookies.sqlite") == 0 ||
-        strcmp(bn, "signons.sqlite") == 0 || strcmp(bn, "formhistory.sqlite") == 0 ||
-        strcmp(bn, "login data") == 0 || strcmp(bn, "web data") == 0 ||
-        strcmp(bn, "secring.gpg") == 0 || strcmp(bn, "secring.skr") == 0 ||
-        strstr(bn, ".kdbx") || strstr(bn, ".kdb") ||
-        strstr(bn, ".keychain") || strstr(bn, ".agilekeychain") ||
-        strstr(bn, ".opvault") || strstr(bn, ".keystore") ||
-        strstr(bn, ".jks") || strstr(bn, ".ppk") ||
-        strstr(bn, ".skr") || strstr(bn, ".psafe3") ||
-        strstr(bn, ".enpass") || strstr(bn, ".1pif") ||
-        strstr(bn, ".pst") || strstr(bn, ".ost") ||
-        strstr(bn, ".dbx") || strstr(bn, ".mbox"))
+    if (strcmp(bn, "logins.json") == 0 || hlse_str_eq_any(bn, FILE_TBL_077) ||
+        hlse_str_any(bn, FILE_TBL_078) || strstr(bn, ".mbox"))
         return 45;
     /* Files whose NAME IS the credential store: .git-credentials and
      * .my.cnf/.s3cfg hold plaintext logins by definition, the id_…
@@ -3511,10 +4103,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * that only MAY hold creds (.netrc/.pgpass/.ovpn/…) are already
      * content-gated by the F56 family — name-flagging them broke
      * the benign-content tests                                   */
-    if (strstr(bn, ".git-credentials") || strstr(bn, ".my.cnf") ||
-        strstr(bn, ".s3cfg") || strstr(bn, "id_rsa") ||
-        strstr(bn, "id_dsa") || strstr(bn, "id_ecdsa") ||
-        strstr(bn, "id_ed25519") || strstr(bn, "authorized_keys"))
+    if (strstr(bn, ".git-credentials") || hlse_str_any(bn, FILE_TBL_079) || strstr(bn, "authorized_keys"))
         return 45;
     /* .pem/.key/.p8 — public cert material is LOG; the PRIVATE block
      * above already returns 80 for key material */
@@ -3549,8 +4138,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         return 0;
     }
     if (strstr(bn, ".settingcontent-ms")) {
-        if (strstr(low, "deeplink") || strstr(low, "hostpage") ||
-            strstr(low, "cpl") || strstr(low, "executable") ||
+        if (strstr(low, "deeplink") || hlse_str_any(low, FILE_TBL_080) ||
             strstr(low, "arguments"))
             return 60;
         return 0;
@@ -3564,22 +4152,15 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     /* msbuild / build-descriptor exec — csproj Exec/PreBuildEvent/
      * UsingTask run at build; *.cmake execute_process/file(DOWNLOAD)
      * run at configure; build.ninja rule command= runs at build */
-    if (strstr(bn, ".csproj") || strstr(bn, ".fsproj") ||
-        strstr(bn, ".vcxproj") || strstr(bn, ".vbproj") ||
-        strstr(bn, ".targets") || strstr(bn, ".props") ||
+    if (strstr(bn, ".csproj") || hlse_str_any(bn, FILE_TBL_081) ||
         (strstr(bn, ".proj") != NULL && strstr(bn, ".proj")[5] == '\0')) {
-        if (strstr(low, "exec") || strstr(low, "prebuild") ||
-            strstr(low, "postbuild") || strstr(low, "usingtask") ||
-            strstr(low, "codetask") || strstr(low, "beforetargets") ||
-            strstr(low, "aftertargets") || strstr(low, "downloadfile") ||
+        if (strstr(low, "exec") || hlse_str_any(low, FILE_TBL_082) ||
             strstr(low, "webclient"))
             return 55;
         return 0;
     }
     if (strstr(bn, ".cmake") && strcmp(bn, "cmakelists.txt") != 0) {
-        if (strstr(low, "execute_process") || strstr(low, "file(download") ||
-            strstr(low, "externalproject") || strstr(low, "curl") ||
-            strstr(low, "wget") || strstr(low, "invoke-webrequest"))
+        if (strstr(low, "execute_process") || hlse_str_any(low, FILE_TBL_083) || strstr(low, "invoke-webrequest"))
             return 55;
         return 0;
     }
@@ -3599,8 +4180,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     /* Gemfile: every file has a `source` — the dep-confusion vector
      * is the non-registry specifiers :git/git:/path:/eval_gemfile */
     if (strcmp(bn, "gemfile") == 0 || strcmp(bn, "gems.rb") == 0) {
-        if (strstr(low, ":git") || strstr(low, "git:") ||
-            strstr(low, "path:") || strstr(low, "eval_gemfile") ||
+        if (strstr(low, ":git") || hlse_str_any(low, FILE_TBL_084) ||
             strstr(low, "instance_eval"))
             return 45;
         return 0;
@@ -3625,9 +4205,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         strcmp(bn, "woodpecker.yml") == 0) {
         if ((strstr(low, "commands") || strstr(low, "script") ||
              strstr(low, "steps")) &&
-            (strstr(low, "curl") || strstr(low, "wget") ||
-             strstr(low, "http") || strstr(low, "|sh") ||
-             strstr(low, "| sh") || strstr(low, "nc ") ||
+            (strstr(low, "curl") || hlse_str_any(low, FILE_TBL_085) ||
              strstr(low, "bash")))
             return 45;
         return 0;
@@ -3640,11 +4218,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
          * fetches or shells out */
         if ((strstr(low, "\"command\"") || strstr(low, "\"shell\"") ||
              strstr(low, "\"script\"")) &&
-            (strstr(low, "curl") || strstr(low, "wget") ||
-             strstr(low, "http") || strstr(low, "powershell") ||
-             strstr(low, "cmd") || strstr(low, "bash") ||
-             strstr(low, "sh ") || strstr(low, "nc ") ||
-             strstr(low, "base64") || strstr(low, "eval")))
+            (strstr(low, "curl") || hlse_str_any(low, FILE_TBL_086) || strstr(low, "eval")))
             return 50;
         return 0;
     }
@@ -3659,16 +4233,11 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * the model context by coding assistants; a payload line
      * (fetch|pipe|decode-exec) is a prompt-injection supply-chain
      * vector. Keyed tightly to exec payloads so real docs stay clean */
-    if (strcmp(bn, ".cursorrules") == 0 || strcmp(bn, ".windsurfrules") == 0 ||
-        strcmp(bn, "copilot-instructions.md") == 0 ||
-        strcmp(bn, "claude.md") == 0 || strcmp(bn, "agents.md") == 0 ||
+    if (strcmp(bn, ".cursorrules") == 0 || hlse_str_eq_any(bn, FILE_TBL_087) ||
         strcmp(bn, ".cursorrules.md") == 0) {
         if (((strstr(low, "curl") || strstr(low, "wget") ||
               strstr(low, "invoke-webrequest") || strstr(low, "iwr ")) &&
-             strstr(low, "http")) || strstr(low, "| sh") ||
-            strstr(low, "|sh") || strstr(low, "base64 -d") ||
-            strstr(low, "nc -e") || strstr(low, "eval $(") ||
-            strstr(low, "bash -c") || strstr(low, "iex("))
+             strstr(low, "http")) || hlse_str_any(low, FILE_TBL_088) || strstr(low, "iex("))
             return 50;
         return 0;
     }
@@ -3680,8 +4249,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     if (strcmp(bn, "kustomization.yaml") == 0 ||
         strcmp(bn, "kustomization.yml") == 0 ||
         strcmp(bn, "kustomization") == 0) {
-        if ((strstr(low, "resources") || strstr(low, "bases") ||
-             strstr(low, "helmcharts") || strstr(low, "generators") ||
+        if ((strstr(low, "resources") || hlse_str_any(low, FILE_TBL_089) ||
              strstr(low, "patches")) &&
             (strstr(low, "http") || strstr(low, "git@") ||
              strstr(low, ".git")))
@@ -3697,21 +4265,14 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     if (strstr(bn, ".tfvars") || strstr(bn, ".tfstate") ||
         strcmp(bn, "terraform.tfstate") == 0 ||
         strstr(bn, "tfstate")) {
-        if (strstr(low, "password") || strstr(low, "secret") ||
-            strstr(low, "private_key") || strstr(low, "access_key") ||
-            strstr(low, "api_key") || strstr(low, "token") ||
-            strstr(low, "client_secret") || strstr(low, "resources") ||
+        if (strstr(low, "password") || hlse_str_any(low, FILE_TBL_090) ||
             strstr(low, "backend"))
             return 50;
         return 0;
     }
     if (strcmp(bn, "credentials.json") == 0 ||
-        strstr(bn, "service-account") != NULL ||
-        strstr(bn, "service_account") != NULL ||
-        strstr(bn, "client_secret") != NULL || strstr(bn, "-key.json") != NULL) {
-        if (strstr(low, "service_account") || strstr(low, "private_key") ||
-            strstr(low, "client_secret") || strstr(low, "refresh_token") ||
-            strstr(low, "token_uri") || strstr(low, "auth_uri") ||
+        hlse_str_any(bn, FILE_TBL_091) || strstr(bn, "-key.json") != NULL) {
+        if (strstr(low, "service_account") || hlse_str_any(low, FILE_TBL_092) ||
             strstr(low, "installed"))
             return 65;
         return 0;
@@ -3725,9 +4286,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
              strcmp(bn, "env.list") == 0 || strcmp(bn, "envfile") == 0) &&
             strstr(bn, "example") == NULL && strstr(bn, "sample") == NULL &&
             strstr(bn, "template") == NULL && strstr(bn, "dist") == NULL) {
-            if (strstr(low, "password") || strstr(low, "secret") ||
-                strstr(low, "token") || strstr(low, "key") ||
-                strstr(low, "api") || strstr(low, "private") ||
+            if (strstr(low, "password") || hlse_str_any(low, FILE_TBL_093) ||
                 strstr(low, "credential"))
                 return 45;
             return 0;
@@ -3784,11 +4343,8 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
             return 60;
         return 0;
     }
-    if (strstr(bn, ".ftploc") || strstr(bn, ".afploc") ||
-        strstr(bn, ".vloc") || strstr(bn, ".mailloc") ||
-        strstr(bn, ".newsloc") || strstr(bn, ".fileloc")) {
-        if (strstr(low, "url") || strstr(low, "ftp:") ||
-            strstr(low, "afp:") || strstr(low, "vnc:") ||
+    if (strstr(bn, ".ftploc") || hlse_str_any(bn, FILE_TBL_094) || strstr(bn, ".fileloc")) {
+        if (strstr(low, "url") || hlse_str_any(low, FILE_TBL_095) ||
             strstr(low, "http"))
             return 45;
         return 0;
@@ -3799,17 +4355,14 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * dunstrc script= runs on every notification; .xscreensaver
      * programs: lists what the screensaver launches */
     if (strstr(bn, ".sieve") || strstr(bn, "dovecot.sieve")) {
-        if (strstr(low, "pipe") || strstr(low, "execute") ||
-            strstr(low, "vnd.dovecot") || strstr(low, "filter") ||
+        if (strstr(low, "pipe") || hlse_str_any(low, FILE_TBL_096) ||
             (strstr(low, "include") && strstr(low, "http")))
             return 55;
         return 0;
     }
     if (strcmp(bn, "getmailrc") == 0 || strcmp(bn, "fdm.conf") == 0 ||
         strcmp(bn, ".esmtprc") == 0) {
-        if (strstr(low, "mda") || strstr(low, "pipe") ||
-            strstr(low, "filter") || strstr(low, "external") ||
-            strstr(low, "preconnect") || strstr(low, "postconnect") ||
+        if (strstr(low, "mda") || hlse_str_any(low, FILE_TBL_097) ||
             strstr(low, "path ="))
             return 50;
         return 0;
@@ -3862,114 +4415,55 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
              !strcmp(cext, ".config.mjs") || !strcmp(cext, ".config.cjs") ||
              !strcmp(cext, ".config.mts")))
             is_tool_cfg = 1;
-        if (strstr(bn, ".conf.js") || strstr(bn, ".conf.ts") ||
-            strstr(bn, "gulpfile.") || strstr(bn, "gruntfile.") ||
-            strcmp(bn, "conftest.py") == 0 || strcmp(bn, "noxfile.py") == 0 ||
-            strcmp(bn, "setup.py") == 0 || strcmp(bn, "config.ru") == 0 ||
-            strcmp(bn, "tsconfig.json") == 0 || strcmp(bn, "jsconfig.json") == 0 ||
-            strcmp(bn, "jsr.json") == 0 || strcmp(bn, "deno.json") == 0 ||
-            strcmp(bn, "deno.jsonc") == 0 || strcmp(bn, "bunfig.toml") == 0)
+        if (strstr(bn, ".conf.js") || hlse_str_any(bn, FILE_TBL_098) ||
+            hlse_str_eq_any(bn, FILE_TBL_099) || strcmp(bn, "bunfig.toml") == 0)
             is_tool_cfg = 1;
         if (is_tool_cfg &&
-            (strstr(low, "require(") || strstr(low, "import ") ||
-             strstr(low, "plugins") || strstr(low, "presets") ||
-             strstr(low, "exec") || strstr(low, "spawn") ||
-             strstr(low, "child_process") || strstr(low, "eval") ||
-             strstr(low, "curl") || strstr(low, "wget") ||
-             strstr(low, "http") || strstr(low, "setup(") ||
-             strstr(low, "cmdclass") || strstr(low, "entry_points") ||
-             strstr(low, "pytest") || strstr(low, "fixture") ||
-             strstr(low, "hookimpl") || strstr(low, "tasks") ||
-             strstr(low, "paths") || strstr(low, "extends") ||
-             strstr(low, "imports") || strstr(low, "importmap") ||
-             strstr(low, "registry") || strstr(low, "trusteddependencies") ||
-             strstr(low, "postinstall") || strstr(low, "loader") ||
-             strstr(low, "map ") || strstr(low, "use ") ||
-             strstr(low, "run ") || strstr(low, "process.")))
+            (strstr(low, "require(") || hlse_str_any(low, FILE_TBL_100) || strstr(low, "process.")))
             return 40;
     }
     /* CI/build descriptor remainder — wercker/bitrise/concourse/
      * netlify/vercel/now/fly/app.yaml/render/heroku/railway/app.json
      * all declare commands or remote resources CI/deploy runs */
-    if (strcmp(bn, "wercker.yml") == 0 || strcmp(bn, "bitrise.yml") == 0 ||
-        strcmp(bn, "bitrise.yaml") == 0 || strcmp(bn, "pipeline.yml") == 0 ||
-        strcmp(bn, "pipeline.yaml") == 0 || strcmp(bn, "concourse.yml") == 0) {
+    if (strcmp(bn, "wercker.yml") == 0 || hlse_str_eq_any(bn, FILE_TBL_101) || strcmp(bn, "concourse.yml") == 0) {
         /* the vector is a runnable step/image — schema keys like
          * `steps:` alone are the normal empty case */
-        if (strstr(low, "script") || strstr(low, "run:") ||
-            strstr(low, "command") || strstr(low, "exec") ||
-            strstr(low, "curl") || strstr(low, "wget") ||
-            strstr(low, "bash") || strstr(low, "powershell") ||
-            strstr(low, "entrypoint") || strstr(low, "args") ||
-            strstr(low, "path:") || strstr(low, "privileged") ||
-            strstr(low, "params") || strstr(low, "image") ||
-            strstr(low, "cwd") || strstr(low, "run_if"))
+        if (strstr(low, "script") || hlse_str_any(low, FILE_TBL_102) || strstr(low, "run_if"))
             return 45;
         return 0;
     }
     if (strstr(bn, ".nomad") || strstr(bn, ".hcl") ||
-        strcmp(bn, "nomad.hcl") == 0 || strcmp(bn, "consul.hcl") == 0 ||
-        strcmp(bn, "vault.hcl") == 0 || strstr(bn, "waypoint") != NULL) {
-        if (strstr(low, "task") || strstr(low, "driver") ||
-            strstr(low, "config") || strstr(low, "command") ||
-            strstr(low, "artifact") || strstr(low, "template") ||
-            strstr(low, "provisioner") || strstr(low, "script") ||
-            strstr(low, "check") || strstr(low, "listener") ||
-            strstr(low, "plugin") || strstr(low, "source") ||
-            strstr(low, "build") || strstr(low, "job") ||
-            strstr(low, "exec") || strstr(low, "shell"))
+        hlse_str_eq_any(bn, FILE_TBL_103) || strstr(bn, "waypoint") != NULL) {
+        if (strstr(low, "task") || hlse_str_any(low, FILE_TBL_104) || strstr(low, "shell"))
             return 45;
         return 0;
     }
-    if (strcmp(bn, "serverless.yml") == 0 || strcmp(bn, "serverless.yaml") == 0 ||
-        strcmp(bn, "serverless.ts") == 0 || strcmp(bn, "serverless.js") == 0 ||
-        strcmp(bn, "sst.config.ts") == 0 || strcmp(bn, "sst.config.js") == 0) {
-        if (strstr(low, "plugins") || strstr(low, "functions") ||
-            strstr(low, "provider") || strstr(low, "resources") ||
-            strstr(low, "hooks") || strstr(low, "custom"))
+    if (strcmp(bn, "serverless.yml") == 0 || hlse_str_eq_any(bn, FILE_TBL_105) || strcmp(bn, "sst.config.js") == 0) {
+        if (strstr(low, "plugins") || hlse_str_any(low, FILE_TBL_106) || strstr(low, "custom"))
             return 40;
         return 0;
     }
     if (strcmp(bn, "netlify.toml") == 0 || strcmp(bn, "netlify.yaml") == 0) {
-        if (strstr(low, "command") || strstr(low, "plugins") ||
-            strstr(low, "package") || strstr(low, "edge_functions") ||
-            strstr(low, "redirects") || strstr(low, "functions") ||
+        if (strstr(low, "command") || hlse_str_any(low, FILE_TBL_107) ||
             strstr(low, "build"))
             return 45;
         return 0;
     }
     if (strcmp(bn, "vercel.json") == 0 || strcmp(bn, "now.json") == 0) {
-        if (strstr(low, "functions") || strstr(low, "rewrites") ||
-            strstr(low, "redirects") || strstr(low, "crons") ||
-            strstr(low, "builds") || strstr(low, "cleanurls") ||
+        if (strstr(low, "functions") || hlse_str_any(low, FILE_TBL_108) ||
             strstr(low, "regions"))
             return 45;
         return 0;
     }
     if (strcmp(bn, "fly.toml") == 0 || (strstr(bn, "fly.") != NULL &&
         strstr(bn, ".toml") != NULL)) {
-        if (strstr(low, "release_command") || strstr(low, "exec") ||
-            strstr(low, "cmd") || strstr(low, "entrypoint") ||
-            strstr(low, "mounts") || strstr(low, "processes") ||
-            strstr(low, "checks") || strstr(low, "deploy") ||
+        if (strstr(low, "release_command") || hlse_str_any(low, FILE_TBL_109) ||
             strstr(low, "services"))
             return 45;
         return 0;
     }
-    if (strcmp(bn, "app.yaml") == 0 || strcmp(bn, "app.yml") == 0 ||
-        strcmp(bn, "appengine-web.xml") == 0 ||
-        strcmp(bn, "render.yaml") == 0 || strcmp(bn, "heroku.yml") == 0 ||
-        strcmp(bn, "app.json") == 0 || strcmp(bn, "dokku.json") == 0 ||
-        strcmp(bn, "railway.json") == 0 || strcmp(bn, "railway.toml") == 0) {
-        if (strstr(low, "entrypoint") || strstr(low, "runtime") ||
-            strstr(low, "handlers") || strstr(low, "env_variables") ||
-            strstr(low, "inbound_services") || strstr(low, "script") ||
-            strstr(low, "buildcommand") || strstr(low, "startcommand") ||
-            strstr(low, "predeploycommand") || strstr(low, "healthcheck") ||
-            strstr(low, "run") || strstr(low, "scripts") ||
-            strstr(low, "build") || strstr(low, "release") ||
-            strstr(low, "formation") || strstr(low, "addons") ||
-            strstr(low, "buildpacks") || strstr(low, "cron"))
+    if (strcmp(bn, "app.yaml") == 0 || hlse_str_eq_any(bn, FILE_TBL_110) || strcmp(bn, "railway.toml") == 0) {
+        if (strstr(low, "entrypoint") || hlse_str_any(low, FILE_TBL_111) || strstr(low, "cron"))
             return 45;
         return 0;
     }
@@ -3977,50 +4471,28 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * web.xml/spring/struts/beans instantiate classes, realms and
      * datasources; log4j/logback ${jndi: is the Log4Shell lookup;
      * MANIFEST Premain/Agent-Class/Class-Path is a java-agent exec */
-    if (strcmp(bn, "server.xml") == 0 || strcmp(bn, "context.xml") == 0 ||
-        strcmp(bn, "tomcat-users.xml") == 0 || strcmp(bn, "web.xml") == 0 ||
-        strcmp(bn, "weblogic.xml") == 0 || strcmp(bn, "beans.xml") == 0 ||
-        strcmp(bn, "applicationcontext.xml") == 0 ||
-        strcmp(bn, "struts.xml") == 0 || strcmp(bn, "faces-config.xml") == 0 ||
-        strcmp(bn, "ejb-jar.xml") == 0 || strcmp(bn, "persistence.xml") == 0 ||
-        strcmp(bn, "hibernate.cfg.xml") == 0 ||
+    if (strcmp(bn, "server.xml") == 0 || hlse_str_eq_any(bn, FILE_TBL_112) ||
         (strstr(bn, "spring") != NULL && strstr(bn, ".xml") != NULL) ||
         (strstr(bn, "jboss") != NULL && strstr(bn, ".xml") != NULL)) {
-        if (strstr(low, "classname") || strstr(low, "listener") ||
-            strstr(low, "resource") || strstr(low, "jndi") ||
-            strstr(low, "servlet-class") || strstr(low, "filter-class") ||
-            strstr(low, "listener-class") || strstr(low, "<bean ") ||
-            strstr(low, "factory-bean") || strstr(low, "init-method") ||
-            strstr(low, "valve") || strstr(low, "realm") ||
-            strstr(low, "environment") || strstr(low, "password") ||
-            strstr(low, "datasource") || strstr(low, "connection-url") ||
-            strstr(low, "driver-class") || strstr(low, "destroy-method"))
+        if (strstr(low, "classname") || hlse_str_any(low, FILE_TBL_113) || strstr(low, "destroy-method"))
             return 50;
         return 0;
     }
     if (strstr(bn, "log4j") != NULL || strstr(bn, "logback") != NULL ||
         strcmp(bn, "logging.properties") == 0 ||
         strcmp(bn, "log4j2-test.xml") == 0) {
-        if (strstr(low, "${jndi") || strstr(low, "jndi") ||
-            strstr(low, "socketappender") || strstr(low, "smtpappender") ||
-            strstr(low, "jmsappender") || strstr(low, "script") ||
-            strstr(low, "lookup") || strstr(low, "http") ||
+        if (strstr(low, "${jndi") || hlse_str_any(low, FILE_TBL_114) ||
             strstr(low, "write"))
             return 55;
         return 0;
     }
     if (strcmp(bn, "manifest.mf") == 0) {
-        if (strstr(low, "premain-class") || strstr(low, "agent-class") ||
-            strstr(low, "launcher-agent-class") || strstr(low, "class-path") ||
-            strstr(low, "main-class") || strstr(low, "extension-name") ||
-            strstr(low, "can-redefine") || strstr(low, "can-retransform"))
+        if (strstr(low, "premain-class") || hlse_str_any(low, FILE_TBL_115) || strstr(low, "can-retransform"))
             return 50;
         return 0;
     }
     if (strstr(bn, ".slk") != NULL && strstr(bn, ".slk")[4] == 0) {
-        if (strstr(low, "cmd") || strstr(low, "exec") ||
-            strstr(low, "shell") || strstr(low, "dde") ||
-            strstr(low, "macro") || strstr(low, "formula"))
+        if (strstr(low, "cmd") || hlse_str_any(low, FILE_TBL_116) || strstr(low, "formula"))
             return 55;
         return 0;
     }
@@ -4031,46 +4503,10 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * rebar.config hooks, dune run/system actions, *.nix flake inputs/
      * fetchurl/shellHook, nimble tasks, deno tasks/imports, bunfig
      * registry — each repoints the resolver or runs at tool time */
-    if (strcmp(bn, "pubspec.yaml") == 0 || strcmp(bn, "pubspec.lock") == 0 ||
-        strcmp(bn, "pubspec_overrides.yaml") == 0 ||
-        strcmp(bn, "deps.edn") == 0 || strcmp(bn, "bb.edn") == 0 ||
-        strcmp(bn, "build.edn") == 0 || strcmp(bn, "mix.exs") == 0 ||
-        strcmp(bn, "project.clj") == 0 || strcmp(bn, "build.boot") == 0 ||
-        strcmp(bn, "shard.yml") == 0 || strcmp(bn, "shard.lock") == 0 ||
-        strcmp(bn, "composer.json") == 0 || strcmp(bn, "composer.lock") == 0 ||
-        strcmp(bn, "cabal.project") == 0 || strcmp(bn, "stack.yaml") == 0 ||
-        strcmp(bn, "stack.yml") == 0 || strcmp(bn, "rebar.config") == 0 ||
-        strcmp(bn, "rebar3.config") == 0 || strcmp(bn, "dune") == 0 ||
-        strcmp(bn, "dune-project") == 0 || strstr(bn, ".opam") != NULL ||
-        strstr(bn, ".nix") != NULL || strcmp(bn, "guix.scm") == 0 ||
-        strcmp(bn, "manifest.scm") == 0 || strcmp(bn, "channels.scm") == 0 ||
-        strcmp(bn, "nim.cfg") == 0 || strstr(bn, ".nimble") != NULL ||
+    if (strcmp(bn, "pubspec.yaml") == 0 || hlse_str_eq_any(bn, FILE_TBL_117) || strstr(bn, ".opam") != NULL ||
+        strstr(bn, ".nix") != NULL || hlse_str_eq_any(bn, FILE_TBL_118) || strstr(bn, ".nimble") != NULL ||
         strstr(bn, ".nims") != NULL || strcmp(bn, "nimble") == 0) {
-        if (strstr(low, "git:") || strstr(low, ":git") ||
-            strstr(low, "github:") || strstr(low, "gitlab:") ||
-            strstr(low, "hosted:") || strstr(low, "path:") ||
-            strstr(low, "dependency_overrides") ||
-            strstr(low, "source-repository") || strstr(low, "location") ||
-            strstr(low, "extra-deps") || strstr(low, "repositories") ||
-            strstr(low, "\"scripts\"") || strstr(low, "minimum-stability") ||
-            strstr(low, "allow-plugins") || strstr(low, "depexts") ||
-            strstr(low, "pin-depends") || strstr(low, "dev-repo") ||
-            strstr(low, "fetchurl") || strstr(low, "fetchgit") ||
-            strstr(low, "fetchtarball") || strstr(low, "builtins") ||
-            strstr(low, "inputs") || strstr(low, "shellhook") ||
-            strstr(low, "installphase") || strstr(low, "buildcommand") ||
-            strstr(low, "origin") || strstr(low, "channels") ||
-            strstr(low, "writeShellScript") || strstr(low, "mkderivation") ||
-            strstr(low, "(rule") || strstr(low, "(action") ||
-            strstr(low, "(run") || strstr(low, "(system") ||
-            strstr(low, "(bash") || strstr(low, "task") ||
-            strstr(low, "requires") || strstr(low, "hooks") ||
-            strstr(low, "post_hooks") || strstr(low, "pre_hooks") ||
-            strstr(low, "escript") || strstr(low, "erl_opts") ||
-            strstr(low, "eval_in_leiningen") || strstr(low, "deftask") ||
-            strstr(low, "set-env!") || strstr(low, "executables") ||
-            strstr(low, "targets") || strstr(low, "switch") ||
-            strstr(low, "installdirs") || strstr(low, "srcDir") ||
+        if (strstr(low, "git:") || hlse_str_any(low, FILE_TBL_119) ||
             strstr(low, "scripts"))
             return 45;
         return 0;
@@ -4078,11 +4514,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     /* vscode multi-root workspace — folders/settings/tasks can point
      * interpreters and language-server binaries at attacker paths */
     if (strstr(bn, ".code-workspace") != NULL) {
-        if (strstr(low, "\"tasks\"") || strstr(low, "\"launch\"") ||
-            strstr(low, "executablepath") || strstr(low, "server.path") ||
-            strstr(low, "defaultinterpreterpath") ||
-            strstr(low, "alternatetools") || strstr(low, "\"terminal\"") ||
-            strstr(low, "\"folders\"") || strstr(low, "\"extensions\""))
+        if (strstr(low, "\"tasks\"") || hlse_str_any(low, FILE_TBL_120) || strstr(low, "\"extensions\""))
             return 45;
         return 0;
     }
@@ -4091,19 +4523,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         strcmp(bn, "bsdmakefile") == 0 || strstr(bn, "makefile.") != NULL) {
         /* $(shell …) is normal make syntax — the vector is a fetch or
          * interpreter inside it or a recipe line */
-        if (strstr(low, "$(shell curl") || strstr(low, "$(shell wget") ||
-            strstr(low, "$(shell nc") || strstr(low, "$(shell sh") ||
-            strstr(low, "$(shell bash") || strstr(low, "$(shell eval") ||
-            strstr(low, "$(shell python") || strstr(low, "$(shell perl") ||
-            strstr(low, "$(shell ruby") || strstr(low, "$(shell php") ||
-            strstr(low, "$(shell node") || strstr(low, "$(shell http") ||
-            strstr(low, "-include") || strstr(low, "curl") ||
-            strstr(low, "wget") || strstr(low, "nc ") ||
-            strstr(low, "powershell") || strstr(low, "invoke-webrequest") ||
-            strstr(low, "bitsadmin") || strstr(low, "certutil") ||
-            strstr(low, "iwr ") || strstr(low, "iex(") ||
-            strstr(low, "base64") || strstr(low, "|sh") ||
-            strstr(low, "| sh") || strstr(low, "|bash") ||
+        if (strstr(low, "$(shell curl") || hlse_str_any(low, FILE_TBL_121) ||
             strstr(low, "| bash"))
             return 45;
         return 0;
@@ -4111,8 +4531,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     /* .rhosts — `+ host` / host lines grant passwordless rsh/rlogin
      * trust to the listed host: a dropped .rhosts is an auth bypass */
     if (strcmp(bn, ".rhosts") == 0 || strcmp(bn, "hosts.equiv") == 0)
-        return (strstr(low, "+") != NULL || strstr(low, ".com") ||
-                strstr(low, ".net") || strstr(low, ".org") ||
+        return (strstr(low, "+") != NULL || hlse_str_any(low, FILE_TBL_122) ||
                 strchr(low, '.')) ? 50 : 40;
     /* .netrc — plaintext `machine X login Y password Z` credentials
      * for ftp/curl/rsync — a captured .netrc is a credential file */
@@ -4122,8 +4541,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     /* .har — HTTP archive exports carry live session cookies and
      * authorization headers (a stolen-session file) */
     if (strstr(bn, ".har") != NULL &&
-        (strstr(low, "\"cookies\"") || strstr(low, "\"authorization\"") ||
-         strstr(low, "\"set-cookie\"") || strstr(low, "\"password\"") ||
+        (strstr(low, "\"cookies\"") || hlse_str_any(low, FILE_TBL_123) ||
          strstr(low, "\"token\"")))
         return 45;
     /* Network device configs — running-config / startup-config /
@@ -4133,11 +4551,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     if (strstr(bn, ".cfg") != NULL || strcmp(bn, "running-config") == 0 ||
         strcmp(bn, "startup-config") == 0 ||
         strncmp(bn, "running", 7) == 0) {
-        if (strstr(low, "enable password") || strstr(low, "enable secret") ||
-            strstr(low, "snmp-server community") ||
-            strstr(low, "crypto isakmp key") ||
-            strstr(low, "tacacs-server key") ||
-            strstr(low, "radius-server key") ||
+        if (strstr(low, "enable password") || hlse_str_any(low, FILE_TBL_124) ||
             (strstr(low, "username ") && strstr(low, "password")))
             return 45;
     }
@@ -4152,10 +4566,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     /* tmpfiles.d — a `f+`/`w`/`d`/`L` line plants or overwrites files
      * (incl. authorized_keys) on boot */
     if ((strstr(bn, ".conf") != NULL || strcmp(bn, "tmpfiles") == 0) &&
-        (strstr(low, "\nf+ ") || strstr(low, "\nf ") ||
-         strstr(low, "\nw ") || strstr(low, "\nd ") ||
-         strstr(low, "f+ /") || strstr(low, "w /") ||
-         strstr(low, "d /") || strstr(low, "l /")))
+        (strstr(low, "\nf+ ") || hlse_str_any(low, FILE_TBL_125) || strstr(low, "l /")))
         return 40;
     /* shell login files — sourced at login/zsh startup; .zshenv is the
      * aggressive one (every zsh, incl. non-interactive). The common
@@ -4172,9 +4583,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * executes a script, .muttrc hooks sendmail/mailcap, .screenrc
      * `exec` runs commands — same persistence class as shell rc */
     if (strcmp(bn, "config.fish") == 0 ||
-        strcmp(bn, ".tmux.conf") == 0 || strcmp(bn, "tmux.conf") == 0 ||
-        strcmp(bn, ".muttrc") == 0 || strcmp(bn, "muttrc") == 0 ||
-        strcmp(bn, ".screenrc") == 0 ||
+        hlse_str_eq_any(bn, FILE_TBL_126) ||
         strcmp(bn, "config.exs") == 0)
         return 45;
     /* package-manager configs — an index-url/channel override hands the
@@ -4190,18 +4599,14 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
      * swaps out the remote-access policy itself */
     if (strcmp(bn, "sshd_config") == 0) {
         if (strstr(low, "permitrootlogin yes") ||
-            strstr(low, "permitemptypasswords yes") ||
-            strstr(low, "authorizedkeysfile") ||
-            strstr(low, "forcecommand") ||
+            hlse_str_any(low, FILE_TBL_127) ||
             strstr(low, "permituserenvironment yes"))
             return 60;
         return 30;
     }
     /* web/proxy daemon configs — proxy_pass/rewrite/backend hands the
      * traffic to an attacker upstream */
-    if (strcmp(bn, "nginx.conf") == 0 || strcmp(bn, "httpd.conf") == 0 ||
-        strcmp(bn, "apache2.conf") == 0 || strcmp(bn, "haproxy.cfg") == 0 ||
-        strcmp(bn, "caddyfile") == 0 || strcmp(bn, "traefik.yml") == 0 ||
+    if (strcmp(bn, "nginx.conf") == 0 || hlse_str_eq_any(bn, FILE_TBL_128) ||
         strcmp(bn, "traefik.yaml") == 0) {
         if (strstr(low, "proxy_pass") || strstr(low, "redirect") ||
             strstr(low, "server ") || strstr(low, "backend"))
@@ -4210,8 +4615,7 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
     }
     /* auth databases — a dropped passwd/shadow/group replaces the
      * account list wholesale */
-    if (strcmp(bn, "shadow") == 0 || strcmp(bn, "passwd") == 0 ||
-        strcmp(bn, "group") == 0 || strcmp(bn, "gshadow") == 0 ||
+    if (strcmp(bn, "shadow") == 0 || hlse_str_eq_any(bn, FILE_TBL_129) ||
         strcmp(bn, "master.passwd") == 0) {
         if (strchr(low, ':') != NULL && strstr(low, ":") != NULL &&
             (strstr(low, "root") || strchr(low, '$') != NULL ||
@@ -4220,17 +4624,11 @@ sysconfig_carrier_score(const unsigned char *head, size_t len,
         return 30;
     }
     /* DB service configs — bind-all + no-auth is silent data exposure */
-    if (strcmp(bn, "redis.conf") == 0 || strcmp(bn, "mongod.conf") == 0 ||
-        strcmp(bn, "postgresql.conf") == 0 || strcmp(bn, "my.cnf") == 0 ||
-        strcmp(bn, "my.ini") == 0 || strcmp(bn, "elasticsearch.yml") == 0) {
-        if ((strstr(low, "bind 0.0.0.0") || strstr(low, "bind: 0.0.0.0") ||
-             strstr(low, "bind_ip = 0.0.0.0") || strstr(low, "host: 0.0.0.0") ||
-             strstr(low, "listen_addresses") ||
+    if (strcmp(bn, "redis.conf") == 0 || hlse_str_eq_any(bn, FILE_TBL_130) || strcmp(bn, "elasticsearch.yml") == 0) {
+        if ((strstr(low, "bind 0.0.0.0") || hlse_str_any(low, FILE_TBL_131) ||
              strstr(low, "network.host")) &&
             (strstr(low, "protected-mode no") ||
-             strstr(low, "protected-mode: no") ||
-             strstr(low, "authorization: disabled") ||
-             strstr(low, "noauth") || strstr(low, "requirepass") == NULL))
+             hlse_str_any(low, FILE_TBL_132) || strstr(low, "requirepass") == NULL))
             return 55;
         if (strstr(low, "0.0.0.0"))
             return 40;
@@ -4459,9 +4857,7 @@ build_exec_score(const unsigned char *head, size_t len,
         !strstr(low, "ant.exec"))
         return 0;
     /* plus a fetch/exfil primitive? */
-    if (strstr(low, "curl") || strstr(low, "wget") ||
-        strstr(low, "invoke-webrequest") || strstr(low, "iwr ") ||
-        strstr(low, "url.openstream") || strstr(low, "new url(") ||
+    if (strstr(low, "curl") || hlse_str_any(low, FILE_TBL_133) ||
         strstr(low, "httpclient"))
         return 55;
     /* gradle 'repositories' / maven mirrors to an unknown host is the
@@ -4698,12 +5094,7 @@ hlse_check_file(const char *filepath) {
          * presents as benign content but carries an executable name.    */
         if (is_executable_ext(ext) &&
             (strcmp(magic_type, "GIF")         == 0 ||
-             strcmp(magic_type, "JPEG")        == 0 ||
-             strcmp(magic_type, "PNG")         == 0 ||
-             strcmp(magic_type, "ZIP")         == 0 ||
-             strcmp(magic_type, "GZIP")        == 0 ||
-             strcmp(magic_type, "7ZIP")        == 0 ||
-             strcmp(magic_type, "Cabinet")     == 0 ||
+             hlse_str_eq_any(magic_type, FILE_TBL_134) ||
              strcmp(magic_type, "WebAssembly") == 0)) {
             fv_add(&v, 50,
                 "F2: %s content with executable extension '%s' — "
@@ -4866,9 +5257,7 @@ hlse_check_file(const char *filepath) {
         char lower_ext[32];
         str_lower(ext, lower_ext, sizeof(lower_ext));
         if (strcmp(lower_ext, ".docm") == 0 ||
-            strcmp(lower_ext, ".xlsm") == 0 ||
-            strcmp(lower_ext, ".pptm") == 0 ||
-            strcmp(lower_ext, ".ppsm") == 0 ||
+            hlse_str_eq_any(lower_ext, FILE_TBL_135) ||
             strcmp(lower_ext, ".potm") == 0)
         {
             fv_add(&v, 30,

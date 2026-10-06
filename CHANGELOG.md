@@ -4,6 +4,30 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Changed (cycle-470)
+- Table-driven needle vocabularies, project-wide: every `strstr(hay,X) ||
+  strstr(hay,Y) || …` / `strcmp(hay,X)==0 || …` chain of ≥3 same-haystack
+  terms is now a `static const char *[]` NULL-terminated table consumed
+  by `hlse_str_any`/`hlse_ci_any`/`hlse_str_eq_any` — 153 chains / 892
+  needles across hlse_file.c (135 chains — the biggest concentration),
+  hlse_advisory.c (7), hlse_supply.c (4), hlse_audit.c (3), hlse_cli.c (2),
+  hlse_core.c (1), hlse_emit.c (1). Semantics are identical by
+  construction (strstr unanchored, strcmp anchored, NULL hay/table ⇒ no
+  match); verified by F1 = 1.000 on the full corpus, 24,286 CLI checks,
+  zero warnings under the strict flag set, and clean ASan/UBSan + all 8
+  fuzz harnesses. Adding a needle is now a one-line, auditable diff
+  instead of a condition rewrite.
+- New shared matcher `hlse_str_eq_any` (hlse_util.c) for the exact-match
+  `strcmp == 0 ||` chain shape; `.h` documents that `str_any` is
+  unanchored while `eq_any` is anchored.
+
+### Added (cycle-470)
+- tests/hlse_util_tests.c: 9 unit tests for the any-needle matchers —
+  first/middle/last hits, miss/empty-hay/empty-table/NULL-hay, the
+  case-sensitive vs case-insensitive split, and the key invariant that
+  `eq_any` does NOT match substrings (`xgrub.cfgx`, `sub/grub.cfg`) while
+  `str_any` does.
+
 ### Added (cycle-260)
 - `hlse_supply.c` paste-detection: ~85 needles covering web3/blockchain
   CLIs (cast send|call|wallet, forge script|create|test, anvil, hardhat,

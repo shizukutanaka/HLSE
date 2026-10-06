@@ -28,6 +28,21 @@
 #include "hlse_alert.h"
 #include "hlse_cli.h"
 
+/* Needle vocabularies — NULL-terminated tables consumed by
+ * hlse_str_any/hlse_str_eq_any (table-driven form of the former
+ * hand-written `strstr(x,..) ||strstr(y,..)` and `strcmp(x,..)==0||`
+ * chains; identical semantics, auditable diffs for additions).    */
+static const char *CLI_TBL_001[] = {
+    "vsc", "pck", "glci", "comp",
+    "plat",
+    NULL
+};
+static const char *CLI_TBL_002[] = {
+    "npm", "cargo", "go",
+    NULL
+};
+
+
 /* Emit the "reason_ids":[...] array parallel to a reasons[] array for the
  * code-prefixed surfaces (protect/esp/network). Each element is the
  * HLSE-<FAMILY>-<CODE> token for that reason, or the family OTHER token
@@ -2068,11 +2083,7 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                  * all execute when a reviewer opens, trusts, or
                  * commits in the workspace. */
                 if (strcmp(eco, "devc") == 0 ||
-                    strcmp(eco, "vsc") == 0 ||
-                    strcmp(eco, "pck") == 0 ||
-                    strcmp(eco, "glci") == 0 ||
-                    strcmp(eco, "comp") == 0 ||
-                    strcmp(eco, "plat") == 0 ||
+                    hlse_str_eq_any(eco, CLI_TBL_001) ||
                     strcmp(eco, "pkbb") == 0) {
                     char xreason[HLSE_HOOK_REASON_LEN];
                     int xsc;
@@ -2209,9 +2220,7 @@ hlse_cmd_package(const HlseCli *o, int argc, char **argv, int idx) {
                  * every stray word (procfile 'web:', compose 'pid:')
                  * becomes a fake package name and an FP. */
                 int is_pkg = (strcmp(eco, "pip") == 0 ||
-                              strcmp(eco, "npm") == 0 ||
-                              strcmp(eco, "cargo") == 0 ||
-                              strcmp(eco, "go") == 0 ||
+                              hlse_str_eq_any(eco, CLI_TBL_002) ||
                               strcmp(eco, "gem") == 0);
                 for (;;) {
                     int got = 0;

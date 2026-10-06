@@ -64,6 +64,16 @@
 #include <fcntl.h>
 #include <errno.h>
 
+/* Needle vocabularies — NULL-terminated tables consumed by
+ * hlse_str_any/hlse_str_eq_any (table-driven form of the former
+ * hand-written `strstr(x,..) ||strstr(y,..)` and `strcmp(x,..)==0||`
+ * chains; identical semantics, auditable diffs for additions).    */
+static const char *CORE_TBL_001[] = {
+    "\\\\", "|u|", "location=",
+    NULL
+};
+
+
 /* ───────────────────────────── version ──────────────────────────────── */
 /* HLSE_VERSION is defined in hlse_core.h so library users can read it
  * without access to this translation unit.                             */
@@ -2310,9 +2320,7 @@ check_url(const char *raw_url) {
                     if (strncmp(raw_url, URL_HANDLER_SCHEMES[i], hl) == 0) {
                         const char *arg = raw_url + hl;
                         int remote = strstr(arg, "http") != NULL ||
-                                     strstr(arg, "\\\\") != NULL ||
-                                     strstr(arg, "|u|") != NULL ||
-                                     strstr(arg, "location=") != NULL ||
+                                     hlse_str_any(arg, CORE_TBL_001) ||
                                      strstr(arg, "LOCATION=") != NULL;
                         add_reason(&v, remote ? 60 : 35,
                             "URI-handler scheme '%.*s' — launches a local "

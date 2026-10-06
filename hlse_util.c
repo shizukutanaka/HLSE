@@ -482,3 +482,15 @@ hlse_ci_any(const char *hay, const char *const needles[]) {
         if (hlse_ci_contains(hay, needles[i])) return 1;
     return 0;
 }
+
+/* Same-table matcher for exact-match chains: `needles` is a
+ * NULL-terminated array; returns 1 when any strcmp(hay, n) == 0.
+ * The table-driven form of `strcmp(x,"a")==0 || strcmp(x,"b")==0`.  */
+int
+hlse_str_eq_any(const char *hay, const char *const needles[]) {
+    size_t i;
+    if (!hay) return 0;
+    for (i = 0; needles[i]; i++)
+        if (strcmp(hay, needles[i]) == 0) return 1;
+    return 0;
+}

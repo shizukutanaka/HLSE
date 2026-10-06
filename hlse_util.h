@@ -47,6 +47,9 @@ int hlse_ci_contains(const char *hay, const char *needle);
 int hlse_str_any(const char *hay, const char *const needles[]);
 int hlse_ci_any(const char *hay, const char *const needles[]);
 
+/* Exact-match variant: table-driven `strcmp(hay,"a")==0 || ...`.   */
+int hlse_str_eq_any(const char *hay, const char *const needles[]);
+
 /* True if `buf` (first `n` bytes of a file) begins with the magic
  * signature of a known compressed/encrypted-looking but BENIGN format
  * (ZIP, GZIP, RAR, 7z, XZ, BZIP2, Zstd, JPEG, PNG, MP4/MOV, PDF).

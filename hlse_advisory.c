@@ -12,6 +12,57 @@
 #include "hlse_text.h"
 #include "hlse_util.h"
 
+/* Needle vocabularies — NULL-terminated tables consumed by
+ * hlse_str_any (table-driven form of the former hand-written
+ * `strstr(x,..) ||strstr(y,..)` chains; identical semantics,
+ * auditable diffs for additions).                              */
+
+static const char *ADV_TBL_001[] = {
+    "device code", "two-factor code", "one-time code",
+    NULL
+};
+
+static const char *ADV_TBL_002[] = {
+    "banking details", "payment details have changed", "update our bank", "update our payment",
+    "direct deposit", "new bank account",
+    NULL
+};
+
+static const char *ADV_TBL_003[] = {
+    "approve the push", "approve the sign-in", "approve the login", "approve the authentication",
+    "approve the mfa", "approve the two-factor", "approve on your phone", "just approve",
+    "approve in", "approve on your authenticator",
+    NULL
+};
+
+static const char *ADV_TBL_004[] = {
+    "no experience required", "starter kit", "buy your equipment", "purchase the equipment",
+    "equipment will be reimbursed", "reimbursed on first paycheck", "mystery shopper", "brand ambassador",
+    "money transfer agent", "reshipping agent", "shipping agent position", "per day from home",
+    "per week from home",
+    NULL
+};
+
+static const char *ADV_TBL_005[] = {
+    "video of you", "photos of you", "recorded you", "your webcam",
+    "your camera", "camera was hacked", "adult content", "watching explicit",
+    "compromising footage", "compromising material", "send this to your contacts",
+    NULL
+};
+
+static const char *ADV_TBL_006[] = {
+    "membership has renewed", "subscription has renewed", "subscription has been renewed", "annual membership",
+    "receive a full refund", "cancel and refund", "cancel and receive a refund", "to cancel and receive",
+    "did not authorize this", "did not authorize this charge",
+    NULL
+};
+
+static const char *ADV_TBL_007[] = {
+    "Homoglyph", "Mixed-script", "confusable",
+    NULL
+};
+
+
 const char *
 hlse_action_for_score(int score) {
     if (score >= 80) return "ISOLATE";
@@ -642,9 +693,7 @@ hlse_classify_text_attack(const TextVerdict *v) {
          * from the auth-bait list. Detection is unchanged; this only refines
          * the pattern label so the user knows the unique mechanism. */
         if (strstr(r, "verification code") ||
-            strstr(r, "device code") ||
-            strstr(r, "two-factor code") ||
-            strstr(r, "one-time code") ||
+            hlse_str_any(r, ADV_TBL_001) ||
             strstr(r, "otp code"))                    devicecode = 1;
         /* Payment/payroll-diversion BEC (P73): the attacker impersonates an
          * employee (to HR/payroll) or a vendor (to AP/finance) and requests a
@@ -654,12 +703,7 @@ hlse_classify_text_attack(const TextVerdict *v) {
          * own label and advisory. The banking-change phrases surface in the
          * matched-phrase "e.g. '...'" of the reason text, same as gift-card. */
         if (strstr(r, "bank account has changed") ||
-            strstr(r, "banking details") ||
-            strstr(r, "payment details have changed") ||
-            strstr(r, "update our bank") ||
-            strstr(r, "update our payment") ||
-            strstr(r, "direct deposit") ||
-            strstr(r, "new bank account") ||
+            hlse_str_any(r, ADV_TBL_002) ||
             strstr(r, "new payment account"))         bankchange = 1;
         /* MFA-fatigue / push-bombing (P74): the attacker already has the
          * password and spams authenticator push prompts (or phones the victim)
@@ -668,16 +712,7 @@ hlse_classify_text_attack(const TextVerdict *v) {
          * the prompt and rotate the already-compromised password. Phrases
          * surface in the matched-phrase text of the reasons. */
         if (strstr(r, "approve the notification") ||
-            strstr(r, "approve the push") ||
-            strstr(r, "approve the sign-in") ||
-            strstr(r, "approve the login") ||
-            strstr(r, "approve the authentication") ||
-            strstr(r, "approve the mfa") ||
-            strstr(r, "approve the two-factor") ||
-            strstr(r, "approve on your phone") ||
-            strstr(r, "just approve") ||
-            strstr(r, "approve in") ||
-            strstr(r, "approve on your authenticator") ||
+            hlse_str_any(r, ADV_TBL_003) ||
             strstr(r, "until you approve"))            mfapush = 1;
         /* Fake-job / task scam (P75): 2026's fastest-growing consumer fraud
          * (FTC: $521M, +1000% spike). The defining tell is a "job" that
@@ -686,19 +721,7 @@ hlse_classify_text_attack(const TextVerdict *v) {
          * Distinct remedy: a real job only ever pays money TO you. Phrases
          * surface in the matched-phrase text of the reasons. */
         if (strstr(r, "work from home opportunity") ||
-            strstr(r, "no experience required") ||
-            strstr(r, "starter kit") ||
-            strstr(r, "buy your equipment") ||
-            strstr(r, "purchase the equipment") ||
-            strstr(r, "equipment will be reimbursed") ||
-            strstr(r, "reimbursed on first paycheck") ||
-            strstr(r, "mystery shopper") ||
-            strstr(r, "brand ambassador") ||
-            strstr(r, "money transfer agent") ||
-            strstr(r, "reshipping agent") ||
-            strstr(r, "shipping agent position") ||
-            strstr(r, "per day from home") ||
-            strstr(r, "per week from home") ||
+            hlse_str_any(r, ADV_TBL_004) ||
             strstr(r, "weekly income from home"))      jobscam = 1;
         /* Sextortion / webcam-extortion (P76): the attacker claims to hold
          * intimate footage (real, bluffed, or AI-deepfaked) and threatens to
@@ -708,17 +731,7 @@ hlse_classify_text_attack(const TextVerdict *v) {
          * not reply, preserve and report. Phrases surface in the matched-phrase
          * text of the Ransom/extortion reason. */
         if (strstr(r, "footage of you") ||
-            strstr(r, "video of you") ||
-            strstr(r, "photos of you") ||
-            strstr(r, "recorded you") ||
-            strstr(r, "your webcam") ||
-            strstr(r, "your camera") ||
-            strstr(r, "camera was hacked") ||
-            strstr(r, "adult content") ||
-            strstr(r, "watching explicit") ||
-            strstr(r, "compromising footage") ||
-            strstr(r, "compromising material") ||
-            strstr(r, "send this to your contacts") ||
+            hlse_str_any(r, ADV_TBL_005) ||
             strstr(r, "send this video to your contacts"))  sextortion = 1;
         /* Refund / subscription-renewal scam (P77): a fake auto-renewal invoice
          * (Geek Squad, Norton, McAfee, PayPal) that exists to make the victim
@@ -727,16 +740,7 @@ hlse_classify_text_attack(const TextVerdict *v) {
          * cards/wire. Distinct from a plain callback scam by the refund pretext.
          * Phrases surface in the matched-phrase text of the reasons. */
         if (strstr(r, "auto-renew") ||
-            strstr(r, "membership has renewed") ||
-            strstr(r, "subscription has renewed") ||
-            strstr(r, "subscription has been renewed") ||
-            strstr(r, "annual membership") ||
-            strstr(r, "receive a full refund") ||
-            strstr(r, "cancel and refund") ||
-            strstr(r, "cancel and receive a refund") ||
-            strstr(r, "to cancel and receive") ||
-            strstr(r, "did not authorize this") ||
-            strstr(r, "did not authorize this charge") ||
+            hlse_str_any(r, ADV_TBL_006) ||
             strstr(r, "to cancel this charge"))         refundscam = 1;
     }
 
@@ -914,8 +918,7 @@ hlse_confidence_for(const Verdict *v, char *out, size_t outsz) {
 
     for (i = 0; i < v->n_reasons; i++) {
         const char *r = v->reasons[i];
-        if (strstr(r, "homoglyph") || strstr(r, "Homoglyph") ||
-            strstr(r, "Mixed-script") || strstr(r, "confusable") ||
+        if (strstr(r, "homoglyph") || hlse_str_any(r, ADV_TBL_007) ||
             strstr(r, "Confusable"))                      fam_homoglyph = 1;
         if (strstr(r, "Typosquat") || strstr(r, "typosquat")) fam_typosquat = 1;
         if (strstr(r, "IDN") || strstr(r, "Punycode"))    fam_idn       = 1;

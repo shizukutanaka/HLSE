@@ -35,6 +35,26 @@
 #include "hlse_audit.h"
 #include "hlse_util.h"
 
+/* Needle vocabularies — NULL-terminated tables consumed by
+ * hlse_str_any/hlse_str_eq_any (table-driven form of the former
+ * hand-written `strstr(x,..) ||strstr(y,..)` and `strcmp(x,..)==0||`
+ * chains; identical semantics, auditable diffs for additions).    */
+static const char *AUD_TBL_001[] = {
+    "8.8.4.4", "1.1.1.1", "1.0.0.1", "9.9.9.9",
+    "208.67.", "127.0.0.",
+    NULL
+};
+static const char *AUD_TBL_002[] = {
+    "wget ", "/dev/tcp", "nc ", "eval ",
+    NULL
+};
+static const char *AUD_TBL_003[] = {
+    "wget", "/dev/tcp", "nc ", "eval",
+    "base64", "grep -v", "| grep", "python",
+    NULL
+};
+
+
 /* ─── helpers ─────────────────────────────────────────────────────────── */
 
 static void
@@ -374,10 +394,7 @@ hlse_audit_dns(void) {
                 char *ns = line + 10;
                 while (*ns == ' ') ns++;
                 /* Well-known DNS: 8.8.8.8, 8.8.4.4, 1.1.1.1, 9.9.9.9 */
-                if (strstr(ns, "8.8.8.8") || strstr(ns, "8.8.4.4") ||
-                    strstr(ns, "1.1.1.1") || strstr(ns, "1.0.0.1") ||
-                    strstr(ns, "9.9.9.9") || strstr(ns, "208.67.") ||
-                    strstr(ns, "127.0.0.") || strstr(ns, "::1"))
+                if (strstr(ns, "8.8.8.8") || hlse_str_any(ns, AUD_TBL_001) || strstr(ns, "::1"))
                 {
                     /* Known good */
                 } else {
@@ -687,9 +704,7 @@ hlse_audit_shellrc(void) {
             }
             /* PROMPT_COMMAND injection — every command prompt executes payload */
             if (strstr(p, "PROMPT_COMMAND") &&
-                (strstr(p, "curl ") || strstr(p, "wget ") ||
-                 strstr(p, "/dev/tcp") || strstr(p, "nc ") ||
-                 strstr(p, "eval ") || strstr(p, "base64"))) {
+                (strstr(p, "curl ") || hlse_str_any(p, AUD_TBL_002) || strstr(p, "base64"))) {
                 av_add(&v,40, AUDIT_CRITICAL,
                     "HLSE-AUDIT-A6-PROMPT-COMMAND","A6: PROMPT_COMMAND injection in ~/%s:%d — "
                     "payload runs on every shell prompt", files[fi], lineno);
@@ -725,11 +740,7 @@ hlse_audit_shellrc(void) {
                 for (hi = 0; halias[hi]; hi++) {
                     const char *a = strstr(p, halias[hi]);
                     /* the aliased target must invoke something dangerous */
-                    if (a && (strstr(p, "curl") || strstr(p, "wget") ||
-                              strstr(p, "/dev/tcp") || strstr(p, "nc ") ||
-                              strstr(p, "eval") || strstr(p, "base64") ||
-                              strstr(p, "grep -v") || strstr(p, "| grep") ||
-                              strstr(p, "python") || strstr(p, "/tmp/"))) {
+                    if (a && (strstr(p, "curl") || hlse_str_any(p, AUD_TBL_003) || strstr(p, "/tmp/"))) {
                         av_add(&v,35, AUDIT_HIGH,
                     "HLSE-AUDIT-A6-ALIAS-HIJACK","A6: system command '%.*s' hijacked by alias in "
                             "~/%s:%d — possible rootkit/credential theft",

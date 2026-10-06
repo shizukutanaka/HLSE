@@ -28,6 +28,30 @@
 #include "hlse_supply.h"
 #include "hlse_util.h"
 
+/* Needle vocabularies — NULL-terminated tables consumed by
+ * hlse_str_any/hlse_str_eq_any (table-driven form of the former
+ * hand-written `strstr(x,..) ||strstr(y,..)` and `strcmp(x,..)==0||`
+ * chains; identical semantics, auditable diffs for additions).    */
+static const char *SUP_TBL_001[] = {
+    "--zero-superblock", "--fail", "--remove",
+    NULL
+};
+static const char *SUP_TBL_002[] = {
+    "\\d$", "\\admin$", "\\ipc$",
+    NULL
+};
+static const char *SUP_TBL_003[] = {
+    "1.0.0.1", "8.8.8.8", "8.8.4.4", "9.9.9.9",
+    "149.112.112.112", "208.67.222.222", "208.67.220.220", "64.6.64.6",
+    "64.6.65.6", "185.228.168.9", "185.228.169.9", "94.140.14.14",
+    NULL
+};
+static const char *SUP_TBL_004[] = {
+    "127.0.0.1", "127.0.0.53", "::1", "2606:4700:4700::1111",
+    NULL
+};
+
+
 /* ═══════════════════════════════════════════════════════════════════════
  * Damerau-Levenshtein distance — delegates to shared hlse_util.
  * ═══════════════════════════════════════════════════════════════════════ */
@@ -765,8 +789,7 @@ hlse_check_paste(const char *text) {
         (strstr(text, "hpssacli") && strstr(text, "delete")) ||
         (strstr(text, "omconfig") && strstr(text, "action=delete")) ||
         (strstr(text, "mdadm") &&
-         (strstr(text, "--stop") || strstr(text, "--zero-superblock") ||
-          strstr(text, "--fail") || strstr(text, "--remove"))) ||
+         (strstr(text, "--stop") || hlse_str_any(text, SUP_TBL_001))) ||
         (ci_contains(text, "cryptsetup") &&
          (ci_contains(text, "erase") || ci_contains(text, "luksformat"))) ||
         (strstr(text, "btrfs") &&
@@ -963,7 +986,7 @@ hlse_check_paste(const char *text) {
 } while (0)
         if (ci_contains(text, "powershell") &&
             (ci_contains(text, "-enc ")        || ci_contains(text, "encodedcommand") ||
-             ci_contains(text, "downloadstring")|| ci_contains(text, "frombase64string") ||
+             ci_contains(text, "downloadstring") || ci_contains(text, "frombase64string") ||
              ci_contains(text, "iex")          || ci_contains(text, "invoke-expression") ||
              ci_contains(text, "-w hidden")    || ci_contains(text, "windowstyle hidden"))) {
             PASTE_WHAT("PowerShell hidden/encoded/download-execute");
@@ -2566,8 +2589,7 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT("remote admin primitive (schtasks/sc/reg/at \\host)");
         }
         if (strstr(text, "\\\\") &&
-                   (strstr(text, "\\c$") || strstr(text, "\\d$") ||
-                    strstr(text, "\\admin$") || strstr(text, "\\ipc$") ||
+                   (strstr(text, "\\c$") || hlse_str_any(text, SUP_TBL_002) ||
                     strstr(text, "\\print$"))) {
             PASTE_WHAT("admin-share path (\\\\host\\c$/admin$/ipc$)");
         }
@@ -17977,26 +17999,12 @@ hlse_check_network(void) {
                      * 94.140 (AdGuard), 156.154 (Neustar/UltraDNS)             */
                     int is_known = (
                         strcmp(ip, "1.1.1.1") == 0 ||
-                        strcmp(ip, "1.0.0.1") == 0 ||
-                        strcmp(ip, "8.8.8.8") == 0 ||
-                        strcmp(ip, "8.8.4.4") == 0 ||
-                        strcmp(ip, "9.9.9.9") == 0 ||
-                        strcmp(ip, "149.112.112.112") == 0 ||
-                        strcmp(ip, "208.67.222.222") == 0 ||
-                        strcmp(ip, "208.67.220.220") == 0 ||
-                        strcmp(ip, "64.6.64.6") == 0 ||
-                        strcmp(ip, "64.6.65.6") == 0 ||
-                        strcmp(ip, "185.228.168.9") == 0 ||
-                        strcmp(ip, "185.228.169.9") == 0 ||
-                        strcmp(ip, "94.140.14.14") == 0 ||  /* AdGuard */
+                        hlse_str_eq_any(ip, SUP_TBL_003) ||  /* AdGuard */
                         strcmp(ip, "94.140.15.15") == 0 ||
                         strcmp(ip, "94.140.14.15") == 0 ||
                         strcmp(ip, "156.154.70.1") == 0 ||  /* Neustar/UltraDNS */
                         strcmp(ip, "156.154.71.1") == 0 ||
-                        strcmp(ip, "127.0.0.1") == 0 ||
-                        strcmp(ip, "127.0.0.53") == 0 ||
-                        strcmp(ip, "::1") == 0 ||
-                        strcmp(ip, "2606:4700:4700::1111") == 0 || /* CF IPv6 */
+                        hlse_str_eq_any(ip, SUP_TBL_004) || /* CF IPv6 */
                         strcmp(ip, "2606:4700:4700::1001") == 0 ||
                         strcmp(ip, "2001:4860:4860::8888") == 0 || /* Google IPv6 */
                         strcmp(ip, "2001:4860:4860::8844") == 0 ||

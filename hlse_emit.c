@@ -14,6 +14,16 @@
 #include "hlse_emit.h"
 #include "hlse_channel.h"
 
+/* Needle vocabularies — NULL-terminated tables consumed by
+ * hlse_str_any/hlse_str_eq_any (table-driven form of the former
+ * hand-written `strstr(x,..) ||strstr(y,..)` and `strcmp(x,..)==0||`
+ * chains; identical semantics, auditable diffs for additions).    */
+static const char *EMT_TBL_001[] = {
+    "KV_SECRET", "GENERIC_SECRET", "HEX_PRIVATE_KEY",
+    NULL
+};
+
+
 /* Per-finding remediation hint for HIGH/CRIT audit findings.
  * Returns a short command or action string, or NULL if no specific fix
  * is available for this finding. Keyed to the A-code prefix + keywords. */
@@ -211,9 +221,7 @@ hlse_secret_finding_caveat(const char *type) {
      * configs and innocently high-entropy strings can mimic the shape.
      * The plaintext path has always told the user this; give the JSON
      * consumer the same caveat. */
-    if (strcmp(type, "ENV_SECRET") == 0 || strcmp(type, "KV_SECRET") == 0
-        || strcmp(type, "GENERIC_SECRET") == 0
-        || strcmp(type, "HEX_PRIVATE_KEY") == 0
+    if (strcmp(type, "ENV_SECRET") == 0 || hlse_str_eq_any(type, EMT_TBL_001)
         || strcmp(type, "MNEMONIC_PHRASE") == 0)
         return "heuristic match \xe2\x80\x94 a pattern-shaped string without "
                "an unforgeable anchor; documentation examples and "
