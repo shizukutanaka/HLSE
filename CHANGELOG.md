@@ -10877,6 +10877,15 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 467 (SARIF results carry partialFingerprints):** results had
+  no dedup-fingerprint contribution — code-scanning consumers had to
+  reconstruct result identity from message text and location, so an
+  advisory-text edit or a file rename could duplicate findings across
+  scans. Every result now emits
+  partialFingerprints.hlse/stable-id = "rule/pattern_id:line", built
+  from the stable HLSE tokens (pattern_id "-" when absent) so finding
+  identity is independent of message wording. SPECIFICATION §5.3
+  documents the field. CLI integration +1.
 - **cycle 466 (SARIF rules carry remediation help.text):** declared
   rules had shortDescription + helpUri but no help.text — the field
   code-scanning UIs surface as the fix instruction. Each of the 28

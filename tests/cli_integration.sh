@@ -1450,6 +1450,24 @@ assert not missing, 'rules without help.text: ' + str(missing)
 " 2>/dev/null \
         && check "SARIF: every declared rule carries help.text" "0" "0" \
         || check "SARIF: every declared rule carries help.text" "0" "1"
+
+    # every result carries a stable dedup fingerprint built from the
+    # rule id + pattern_id + line — survives advisory-text edits.
+    ./hlse_core --sarif scan "$SARIF_DIR" 2>/dev/null | python3 -c "
+import sys, json, re
+d = json.load(sys.stdin)
+rs = d['runs'][0]['results']
+assert rs, 'no results'
+for r in rs:
+    fp = r.get('partialFingerprints', {}).get('hlse/stable-id', '')
+    assert re.match(r'^[a-z-]+/[A-Z0-9-]+:[0-9]+$', fp), \
+        'bad fingerprint: ' + fp
+    assert fp.startswith(r['ruleId'] + '/'), fp
+    line = r['locations'][0]['physicalLocation']['region']['startLine']
+    assert fp.endswith(':' + str(line)), fp
+" 2>/dev/null \
+        && check "SARIF: results carry partialFingerprints" "0" "0" \
+        || check "SARIF: results carry partialFingerprints" "0" "1"
 fi
 rm -rf "$SARIF_DIR"
 

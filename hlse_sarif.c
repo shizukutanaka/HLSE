@@ -313,6 +313,14 @@ hlse_sarif_emit(const char *tool_version) {
             printf("          \"properties\": { \"security-severity\": \"%.1f\","
                    " \"hlse-score\": %d },\n", sev, f->score);
         }
+        /* partialFingerprints — stable dedup identity for code-scanning
+         * consumers. Built from the stable HLSE tokens (rule +
+         * pattern_id) plus the 1-based line, so result identity survives
+         * advisory-text edits and file renames better than a message
+         * hash while staying unique per finding instance. */
+        printf("          \"partialFingerprints\": { \"hlse/stable-id\": "
+               "\"%s/%s:%d\" },\n",
+               f->rule, f->pattern_id[0] ? f->pattern_id : "-", f->line);
         printf("          \"locations\": [\n            {\n");
         printf("              \"physicalLocation\": {\n");
         hlse_json_escape(f->path, esc, sizeof(esc));

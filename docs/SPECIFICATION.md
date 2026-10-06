@@ -207,12 +207,17 @@ Additional fields vary by kind:
   (clean) or `immediate_action` (threats found).
 
 ### 5.3 SARIF (`--sarif scan <dir>`)
-SARIF 2.1.0 with rule definitions and `security-severity`. Each result's
+SARIF 2.1.0 with rule definitions and `security-severity`. Every declared
+rule also emits `help.text` — per-class remediation guidance the
+code-scanning UI shows as the fix instruction. Each result's
 `properties` carries `hlse-score` and, when resolvable, `pattern_id`
 (the coarse `HLSE-*` finding-type token). `file-masquerade` results
 additionally emit `reason_ids` — the same per-reason `HLSE-FILE-*` array
 the JSON verdicts carry (§5.2), so a SIEM reading SARIF alone can dedup
-or suppress individual reasons.
+or suppress individual reasons. Every result carries
+`partialFingerprints.hlse/stable-id` = `rule/pattern_id:line` — a
+dedup identity built from the stable HLSE tokens that survives
+advisory-text edits and file renames.
 
 ## 6. Library API
 All public functions are declared in the module headers (`hlse_core.h`,
