@@ -75,17 +75,30 @@ Body: `{ "text": "..." }` — scans code/config for leaked credentials.
   "findings": [
     { "id": "HLSE-SECRET-AWS-KEY", "type": "AWS Access Key ID",
       "line": 3, "detail": "AWS Access Key ID found: AKIA2E3M..." }
-  ]
+  ],
+  "confidence": "certain",
+  "remediation": "Treat this credential as compromised: ...",
+  "pattern": "exposed credential — AWS Access Key ID",
+  "pattern_id": "HLSE-SECRET-AWS",
+  "objective": "cloud API access — S3 read/write, ...",
+  "verify": "check access logs for this credential BEFORE revoking ...",
+  "triage": "revoke or rotate the credential immediately ...",
+  "cascade_risk": "every other credential in the same file ..."
 }
 ```
 
 Each finding carries a stable `id` (`HLSE-SECRET-*`, or
 `HLSE-SECRET-CUSTOM-*` for `--patterns` rules — see the CLI's
 `--list-patterns` registry) for dedup/suppression, plus `line` (1-based)
-when the line is known. A clean result (`score: 0`) also returns
-`blind_spot` — an explicit statement of what this detector cannot see,
-so consumers never mistake a clean score for clearance. The same field
-appears on clean `/scan/url`, `/scan/text` and `/scan/file` responses.
+when the line is known. The verdict-level fields mirror the CLI's
+`--json secret` contract: `confidence` (always), `remediation`,
+`caveat` (when findings exist), and at `score >= 60` the full advisory
+set (`pattern`/`pattern_id`/`objective`/`verify`/`triage`/
+`cascade_risk`); `0 < score < 60` returns `exoneration` instead. A
+clean result (`score: 0`) also returns `blind_spot` — an explicit
+statement of what this detector cannot see, so consumers never mistake
+a clean score for clearance. The same field appears on clean
+`/scan/url`, `/scan/text` and `/scan/file` responses.
 
 ### `POST /api/v1/scan/file`
 Body: `{ "filename": "...", "content": "..." }` — combines name-based masquerade
@@ -102,12 +115,22 @@ stored server-side.
   "reasons": ["F1: DOUBLE EXTENSION — '.pdf.exe' disguised as .pdf"],
   "reason_ids": ["HLSE-FILE-F1"],
   "secrets": [ { "id": "HLSE-SECRET-AWS-KEY", "type": "AWS Access Key ID",
-    "line": 1, "detail": "..." } ]
+    "line": 1, "detail": "..." } ],
+  "pattern": "double-extension masquerade",
+  "pattern_id": "HLSE-FILE-DOUBLE-EXT",
+  "objective": "get the victim to open the file ...",
+  "verify": "check the real file type ...",
+  "triage": "if already opened: disconnect ...",
+  "cascade_risk": "all credentials and session tokens ..."
 }
 ```
 `reason_ids` mirrors `reasons` 1:1 — the stable `HLSE-FILE-*` token for
 each reason (the per-finding dedup/suppression key); reasons without an
 F code carry `HLSE-FILE-OTHER`. A clean filename emits `"reason_ids":[]`.
+The masquerade advisory fields mirror the CLI's `--json file` contract
+gated on the filename verdict (`fv.score`): `pattern`/`pattern_id`/
+`objective`/`verify` at `>= 40`, plus `triage`/`cascade_risk` at
+`>= 60`, or `exoneration` for `0 < score < 60`.
 
 ## Errors
 

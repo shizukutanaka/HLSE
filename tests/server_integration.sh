@@ -67,6 +67,18 @@ check "file reason_ids carry HLSE-FILE-F1" \
   "$(curl -s -X POST $B/api/v1/scan/file -d '{"filename":"a.pdf.exe","content":"x"}')" '"reason_ids":["HLSE-FILE-F1"'
 check "clean file emits reason_ids:[]" \
   "$(curl -s -X POST $B/api/v1/scan/file -d '{"filename":"ok.txt","content":"x"}')" '"reason_ids":[]'
+# verdict-level advisory parity with the CLI JSON contract
+check "secrets verdict carries advisory fields" \
+  "$(curl -s -X POST $B/api/v1/scan/secrets -d '{"text":"AKIA2E3MWORQXYZ4567PQ"}' | grep -o '"confidence":"certain"')," \
+  '"confidence":"certain",'
+check "secrets verdict has objective+triage at ISOLATE" \
+  "$(curl -s -X POST $B/api/v1/scan/secrets -d '{"text":"AKIA2E3MWORQXYZ4567PQ"}' | grep -cE '"objective":"cloud API access.*"cascade_risk"')" '1'
+check "clean secrets confidence:none, no triage" \
+  "$(curl -s -X POST $B/api/v1/scan/secrets -d '{"text":"nothing here"}' | grep -c '"triage"')" '0'
+check "file verdict carries advisory fields" \
+  "$(curl -s -X POST $B/api/v1/scan/file -d '{"filename":"a.pdf.exe","content":"x"}' | grep -o '"pattern_id":"HLSE-FILE-DOUBLE-EXT"')" '"pattern_id":"HLSE-FILE-DOUBLE-EXT"'
+check "clean file omits objective" \
+  "$(curl -s -X POST $B/api/v1/scan/file -d '{"filename":"ok.txt","content":"x"}' | grep -c '"objective"')" '0'
 check "bad json 400" \
   "$(curl -s -X POST $B/api/v1/scan/url -d '{"nope":1}')" '"error"'
 check "unknown route 404" \

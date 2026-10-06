@@ -10877,6 +10877,25 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 462 (HTTP API advisory-field parity with CLI JSON):** the
+  server's verdict-level advisory fields stopped at blind_spot —
+  /scan/secrets and /scan/file emitted findings + reasons but none of
+  the confidence/caveat/objective/verify/triage/cascade_risk/
+  exoneration text the CLI's --json contract carries, so an API-only
+  consumer could not give an operator the same triage guidance.
+  respond_secrets now emits confidence (always), remediation, caveat,
+  and the score>=60 advisory set (pattern/pattern_id/objective/
+  verify/triage/cascade_risk) or exoneration for 0<score<60 —
+  identical gating and text to the CLI path. respond_file emits the
+  masquerade advisory fields gated on fv.score (>=40: pattern/
+  pattern_id/objective/verify; >=60: triage/cascade_risk; 0<x<60:
+  exoneration), since those texts describe the filename verdict, not
+  the combined fv+sv score. hlse_emit.h is now included (hlse_emit.c
+  was already linked). url/text endpoints keep ScanResult's thinner
+  shape — their advisory getters need the typed Verdict/TextVerdict
+  that hlse_scan discards; that needs a library surface, not an
+  emitter tweak. API.md documents both contracts. Server
+  integration +5.
 - **cycle 461 (SARIF file results carry reason_ids):** the SARIF
   emitter was the last surface where multiple coded reasons collapsed
   into one result — file-masquerade results carried only the coarse

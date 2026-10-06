@@ -79,6 +79,7 @@
 #include "hlse_core.h"
 #include "hlse_secrets.h"
 #include "hlse_meta.h"
+#include "hlse_emit.h"
 #include "hlse_file.h"
 #include "hlse_util.h"
 
@@ -441,11 +442,69 @@ respond_secrets(ConnCtx *cx, const char *input) {
         json_append_char(body, sizeof(body), &len, '}');
     }
     json_append_char(body, sizeof(body), &len, ']');
+    /* verdict-level advisory fields — same contract the CLI JSON emits
+     * (hlse_cli.c secrets path), so API consumers get the full triage
+     * surface, not just the finding list. */
+    json_append_lit(body, sizeof(body), &len, ",\"confidence\":\"");
+    json_escape_append(body, sizeof(body), &len, hlse_secret_confidence(&v));
+    json_append_char(body, sizeof(body), &len, '"');
+    {
+        const char *rem = hlse_remediation_for("secret", v.score);
+        if (rem) {
+            json_append_lit(body, sizeof(body), &len, ",\"remediation\":\"");
+            json_escape_append(body, sizeof(body), &len, rem);
+            json_append_char(body, sizeof(body), &len, '"');
+        }
+    }
     if (v.score == 0) {
         const char *bs = hlse_blindspot_for("secret");
         if (bs) {
             json_append_lit(body, sizeof(body), &len, ",\"blind_spot\":\"");
             json_escape_append(body, sizeof(body), &len, bs);
+            json_append_char(body, sizeof(body), &len, '"');
+        }
+    }
+    if (v.n_findings > 0) {
+        const char *cav = hlse_secret_finding_caveat(v.findings[0].type);
+        if (cav) {
+            json_append_lit(body, sizeof(body), &len, ",\"caveat\":\"");
+            json_escape_append(body, sizeof(body), &len, cav);
+            json_append_char(body, sizeof(body), &len, '"');
+        }
+    }
+    if (v.score >= 60 && v.n_findings > 0) {
+        const char *ftype = v.findings[0].type;
+        const char *sobj  = hlse_secret_objective_for(ftype);
+        char epat[128], pidb[80];
+        hlse_secret_pattern_label(ftype, epat, sizeof(epat));
+        json_append_lit(body, sizeof(body), &len, ",\"pattern\":\"");
+        json_escape_append(body, sizeof(body), &len, epat);
+        json_append_lit(body, sizeof(body), &len, "\",\"pattern_id\":\"");
+        json_escape_append(body, sizeof(body), &len,
+                           hlse_secret_pattern_id_r(ftype, pidb,
+                                                    sizeof(pidb)));
+        json_append_char(body, sizeof(body), &len, '"');
+        if (sobj) {
+            json_append_lit(body, sizeof(body), &len, ",\"objective\":\"");
+            json_escape_append(body, sizeof(body), &len, sobj);
+            json_append_char(body, sizeof(body), &len, '"');
+        }
+        json_append_lit(body, sizeof(body), &len, ",\"verify\":\"");
+        json_escape_append(body, sizeof(body), &len,
+                           hlse_secret_verify_text());
+        json_append_lit(body, sizeof(body), &len, "\",\"triage\":\"");
+        json_escape_append(body, sizeof(body), &len,
+                           hlse_secret_triage_text());
+        json_append_lit(body, sizeof(body), &len, "\",\"cascade_risk\":\"");
+        json_escape_append(body, sizeof(body), &len,
+                           hlse_secret_cascade_text());
+        json_append_char(body, sizeof(body), &len, '"');
+    }
+    if (v.score > 0 && v.score < 60) {
+        const char *ex = hlse_exoneration_for("secret", v.score);
+        if (ex) {
+            json_append_lit(body, sizeof(body), &len, ",\"exoneration\":\"");
+            json_escape_append(body, sizeof(body), &len, ex);
             json_append_char(body, sizeof(body), &len, '"');
         }
     }
@@ -514,6 +573,50 @@ respond_file(ConnCtx *cx, const char *filename, const char *content) {
         if (bs) {
             json_append_lit(body, sizeof(body), &len, ",\"blind_spot\":\"");
             json_escape_append(body, sizeof(body), &len, bs);
+            json_append_char(body, sizeof(body), &len, '"');
+        }
+    }
+    /* verdict-level advisory fields for the masquerade verdict — same
+     * contract the CLI file JSON emits (gated on fv.score, not the
+     * combined score: these texts describe the file verdict). */
+    if (fv.score >= 40) {
+        const char *fpat = hlse_file_classify_pattern(&fv);
+        json_append_lit(body, sizeof(body), &len, ",\"pattern\":\"");
+        json_escape_append(body, sizeof(body), &len, fpat);
+        json_append_lit(body, sizeof(body), &len, "\",\"pattern_id\":\"");
+        json_escape_append(body, sizeof(body), &len,
+                           hlse_file_pattern_id(fpat));
+        json_append_lit(body, sizeof(body), &len, "\",\"objective\":\"");
+        json_escape_append(body, sizeof(body), &len,
+                           hlse_file_masquerade_objective());
+        json_append_lit(body, sizeof(body), &len, "\",\"verify\":\"");
+        json_escape_append(body, sizeof(body), &len,
+                           hlse_file_masquerade_verify());
+        json_append_char(body, sizeof(body), &len, '"');
+    }
+    if (fv.score >= 60) {
+        static const char file_tri[] =
+            "if already opened: disconnect from the network "
+            "immediately; run a full antivirus scan; change "
+            "credentials for any service you were logged into at "
+            "the time; consider a full OS reinstall for high-score "
+            "detections";
+        static const char file_cas[] =
+            "all credentials and session tokens active when the file "
+            "was opened \xe2\x80\x94 malware runs with your session "
+            "context; also check for persistence (startup items, "
+            "scheduled tasks, browser extensions added)";
+        json_append_lit(body, sizeof(body), &len, ",\"triage\":\"");
+        json_escape_append(body, sizeof(body), &len, file_tri);
+        json_append_lit(body, sizeof(body), &len, "\",\"cascade_risk\":\"");
+        json_escape_append(body, sizeof(body), &len, file_cas);
+        json_append_char(body, sizeof(body), &len, '"');
+    }
+    if (fv.score > 0 && fv.score < 60) {
+        const char *ex = hlse_exoneration_for("file", fv.score);
+        if (ex) {
+            json_append_lit(body, sizeof(body), &len, ",\"exoneration\":\"");
+            json_escape_append(body, sizeof(body), &len, ex);
             json_append_char(body, sizeof(body), &len, '"');
         }
     }
