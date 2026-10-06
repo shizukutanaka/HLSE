@@ -26,5 +26,8 @@ const char *hlse_secret_pattern_id(const char *ftype);
  * static literal; falls back to "HLSE-SECRET-GENERIC". */
 const char *hlse_secret_pattern_id_r(const char *ftype, char *buf,
                                      size_t buflen);
+/* Maps an email-forensics reason's "E<n>:" prefix to its registered
+ * HLSE-EMAIL-E<n> token (per-finding dedup key). NULL when absent. */
+const char *hlse_email_reason_id(const char *reason);
 
 #endif /* HLSE_META_H */

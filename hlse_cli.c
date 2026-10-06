@@ -826,6 +826,16 @@ hlse_cmd_email(const HlseCli *o, int argc, char **argv, int idx) {
                 for (i = 0; i < ev.n_reasons; i++)
                         hlse_json_str_elem(i, ev.reasons[i]);
                 printf("]");
+                {
+                        printf(",\"reason_ids\":[");
+                        for (i = 0; i < ev.n_reasons; i++) {
+                            const char *rid =
+                                hlse_email_reason_id(ev.reasons[i]);
+                            if (i) putchar(',');
+                            printf("\"%s\"", rid ? rid : "HLSE-EMAIL-OTHER");
+                        }
+                        printf("]");
+                }
                 if (ev.score == 0 && !body_pat) {
                     const char *bs = hlse_blindspot_for("email");
                     if (bs) {

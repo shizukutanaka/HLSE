@@ -10877,6 +10877,16 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 456 (email findings carry stable HLSE-EMAIL-* ids):** email
+  forensics was the last finding surface without a per-finding dedup key —
+  reasons carried the E1–E7 codes but no registered token, so SIEM rules
+  could not suppress/route individual email findings the way audit
+  (HLSE-AUDIT-*) and secret (HLSE-SECRET-*) findings already allow. The
+  JSON verdict now emits `reason_ids` parallel to `reasons`, each element
+  mapped from the reason's "E<n>:" prefix via `hlse_email_reason_id`
+  (falls back to HLSE-EMAIL-OTHER); the seven codes plus the fallback are
+  registered in g_pattern_registry so `--list-patterns` stays exhaustive.
+  Clean verdicts emit `reason_ids:[]` for schema stability. CLI tests +2.
 - **cycle 455 (hlsed secret alerts carry stable id + line):** the
   daemon's secret alert reasons were "Secret detected: <type>" — the
   only output surface still lacking finding identity after cycles

@@ -129,6 +129,15 @@ static const struct pattern_entry g_pattern_registry[] = {
     { "HLSE-SECRET-SEED-PHRASE",  "secret",    "BIP-39 cryptocurrency seed/mnemonic phrase" },
     { "HLSE-TEXT-INVISIBLE",      "text",      "Invisible Unicode carrier characters in text" },
     { "HLSE-NET-C2",             "network",   "Suspicious network activity (C2 / exfiltration)" },
+    /* email-forensics finding ids — one per E-code (hlse_secrets.c) */
+    { "HLSE-EMAIL-E1",           "email",     "Display name implies a brand but From domain differs" },
+    { "HLSE-EMAIL-E2",           "email",     "Reply-To domain differs from From domain" },
+    { "HLSE-EMAIL-E3",           "email",     "Corporate title sent from a free-mail domain" },
+    { "HLSE-EMAIL-E4",           "email",     "SPF/DKIM/DMARC authentication failure or absence" },
+    { "HLSE-EMAIL-E5",           "email",     "Missing or thin Received-header chain" },
+    { "HLSE-EMAIL-E6",           "email",     "Look-alike sender domain or urgent-subject lure" },
+    { "HLSE-EMAIL-E7",           "email",     "Multiple From: headers (RFC violation)" },
+    { "HLSE-EMAIL-OTHER",        "email",     "Email finding without an E-code prefix" },
     { "HLSE-CLIP-HIJACK",         "clipboard", "Cryptocurrency clipboard hijack (clipper malware)" },
     { "HLSE-PROTECT-RANSOM",      "protect",   "Ransomware / destructive-malware indicator (file entropy, SMB canary, mass rename)" },
     /* audit finding ids (hlse_audit.c av_add slugs) — per-finding keys */

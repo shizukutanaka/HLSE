@@ -281,3 +281,22 @@ hlse_secret_pattern_id_r(const char *ftype, char *buf, size_t buflen) {
     buf[n] = '\0';
     return (n > sizeof(pfx) - 1) ? buf : "HLSE-SECRET-GENERIC";
 }
+
+/* Stable machine-readable id for an email-forensics finding — the E-code
+ * prefix ("E1:" … "E7:") on each reason maps to a registered HLSE-EMAIL-*
+ * token so email findings get the same dedup/suppression key audit and
+ * secret findings already carry. Returns NULL for unrecognised input. */
+const char *
+hlse_email_reason_id(const char *reason) {
+    if (!reason || reason[0] != 'E' || reason[2] != ':') return NULL;
+    switch (reason[1]) {
+    case '1': return "HLSE-EMAIL-E1";
+    case '2': return "HLSE-EMAIL-E2";
+    case '3': return "HLSE-EMAIL-E3";
+    case '4': return "HLSE-EMAIL-E4";
+    case '5': return "HLSE-EMAIL-E5";
+    case '6': return "HLSE-EMAIL-E6";
+    case '7': return "HLSE-EMAIL-E7";
+    default:  return NULL;
+    }
+}

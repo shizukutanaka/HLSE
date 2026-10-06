@@ -169,8 +169,9 @@ Additional fields vary by kind:
 - `text`: `target` (the scanned string), `reasons:[...]`.
 - `protect`: `target` (the scanned path), `reasons:[...]`.
 - `network`/`esp`: `reasons:[...]`.
-- `email`: `reasons:[...]`; `body_pattern`/`body_score` when a body was
-  inspected; `remediation` on detections.
+- `email`: `reasons:[...]`; `reason_ids:[...]` — the stable `HLSE-EMAIL-E<n>`
+  token for each reason (per-finding dedup key); `body_pattern`/`body_score`
+  when a body was inspected; `remediation` on detections.
 - `paste`: `signals` (bitmask of fired `PASTE_*` signal families), `reasons:[...]`;
   `classes` (every matched P8 chain class — the reason string names only
   the first 3) and `classes_total` (true match count, only when it

@@ -1693,6 +1693,19 @@ assert d["kind"] == "email" and "reasons" in d
 ' && check "--json email parseable" "0" "0" \
    || check "--json email parseable" "0" "1"
 
+# email: per-finding stable ids (reason_ids, HLSE-EMAIL-E*)
+printf 'From: Microsoft Support <hacker@gmail.com>\nSubject: Verify\n' \
+    | ./hlse_core --json email --stdin 2>&1 | grep -q '"reason_ids":\["HLSE-EMAIL-E1"' \
+    && check "email: reason_ids carry HLSE-EMAIL-E1" "0" "0" \
+    || check "email: reason_ids carry HLSE-EMAIL-E1" "0" "1"
+
+# email: clean headers still emit empty reason_ids (schema stability)
+./hlse_core --json email "From: a@b.com
+Received: from mx.b.com by mta.a.com
+Subject: hi" 2>&1 | grep -q '"reason_ids":\[\]' \
+    && check "email: clean emits reason_ids:[]" "0" "0" \
+    || check "email: clean emits reason_ids:[]" "0" "1"
+
 # ─── Perspective 38: email body social-engineering lens ───────────────────────
 # p38: BEC body surfaced as ▸ Body pattern advisory (header forensics is blind to body)
 ./hlse_core email "From: ceo@company.com
