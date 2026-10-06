@@ -1417,6 +1417,27 @@ assert 'reason_ids' not in sec[0].get('properties', {}), sec[0]['properties']
 " 2>/dev/null \
         && check "SARIF: secret result omits reason_ids" "0" "0" \
         || check "SARIF: secret result omits reason_ids" "0" "1"
+
+    # ruleId parity: every ruleId the scan emitters can produce must be
+    # declared in the driver.rules metadata table — an undeclared ruleId
+    # leaves code-scanning consumers with a dangling reference.
+    missing_rules=$(grep -oE '"(secret|phishing-url|file-masquerade|package-[a-z0-9-]+)"' \
+        hlse_cli.c | tr -d '"' | sort -u | while read -r rid; do
+        grep -q "{ \"$rid\"" hlse_sarif.c || echo "$rid"
+    done)
+    check "SARIF: every emitted ruleId is declared" "$missing_rules" ""
+
+    # emitted SARIF results all resolve to a declared rule id.
+    ./hlse_core --sarif scan "$SARIF_DIR" 2>/dev/null | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+declared = {r['id'] for r in d['runs'][0]['tool']['driver']['rules']}
+used = {r['ruleId'] for r in d['runs'][0]['results']}
+assert used <= declared, 'undeclared ruleIds: ' + str(used - declared)
+assert len(declared) >= 28, len(declared)
+" 2>/dev/null \
+        && check "SARIF: emitted results resolve to declared rules" "0" "0" \
+        || check "SARIF: emitted results resolve to declared rules" "0" "1"
 fi
 rm -rf "$SARIF_DIR"
 

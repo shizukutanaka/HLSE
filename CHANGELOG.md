@@ -10877,6 +10877,24 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 465 (SARIF rule metadata declares every emitted ruleId):**
+  the driver.rules table declared 4 rules while the scan emitters
+  produce 28 distinct ruleIds — 24 package-* findings (lifecycle-hook,
+  lockfile-poisoning, registry-override, index-redirect, mcp,
+  devcontainer, gha, npm-alias, cargo-patch, cargo-toolchain,
+  go-replace[-local], vcs-source, swift-url, pod-source, gem-source,
+  docker, nuget-source, and the IDE/build-autoexec family:
+  vscode/composer/pkgbuild/platform/precommit/gitlabcicd) resolved to
+  no metadata, leaving code-scanning consumers with dangling ruleId
+  references (no name, description, security-severity, or CWE tag).
+  Each missing rule now carries a name, shortDescription,
+  security-severity (9.0 install-hooks → 6.5 source overrides), and a
+  CWE tag — CWE-829 (untrusted-functionality inclusion) for
+  supply-chain classes, CWE-494 (unverified code download) for
+  lockfile/index redirection. Parity gate: a static check extracts
+  every ruleId literal in hlse_cli.c and asserts it is declared in
+  RULES, plus a run-time check that emitted results resolve to a
+  declared rule. CLI integration +2.
 - **cycle 464 (dashboard renders the advisory fields the API emits):**
   web/app.js showed only gauge + reasons + blind_spot for every scan
   kind — the full verdict-level advisory set the API started emitting

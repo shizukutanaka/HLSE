@@ -108,6 +108,125 @@ hlse_sarif_emit(const char *tool_version) {
           "(dependency-confusion / supply-chain attack).",
           "7.0",
           "\"security\", \"external/cwe/cwe-1357\"" },
+        { "package-lifecycle-hook","Install Lifecycle Hook",
+          "Manifest declares an install/postinstall script that runs arbitrary "
+          "code at install time (Shai-Hulud-style install worm surface).",
+          "9.0",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-lockfile-poisoning","Lockfile Poisoning",
+          "Lockfile resolved-URL host is outside the package registry — "
+          "dependency substitution via a tampered lockfile.",
+          "8.0",
+          "\"security\", \"external/cwe/cwe-494\"" },
+        { "package-registry-override","Registry Override",
+          "A registry-override setting redirects every package lookup off the "
+          "known registries (dependency confusion).",
+          "8.5",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-index-redirect","Package Index Redirect",
+          "Package index/lookup is redirected to a host outside the default "
+          "index — verify it is the organization's own index.",
+          "7.5",
+          "\"security\", \"external/cwe/cwe-494\"" },
+        { "package-mcp",       "MCP Server Risk",
+          "MCP server configuration can spawn arbitrary commands inside "
+          "agent tooling (tool-poisoning attack surface).",
+          "7.5",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-devcontainer","Dev Container Risk",
+          "Dev-container/CI config fetches and executes remote content at "
+          "workspace or pipeline start.",
+          "7.0",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-gha",       "Unpinned Action Reference",
+          "GitHub Actions reference resolves a mutable ref (default branch "
+          "tip) instead of a pinned commit SHA.",
+          "7.0",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-npm-alias", "npm Alias Dependency",
+          "npm: alias hides the real install source behind the declared "
+          "name.",
+          "7.0",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-cargo-patch","Cargo Patch Redirect",
+          "Cargo [patch] section redirects crates.io dependencies to "
+          "another source — verify every patched target is intended.",
+          "7.0",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-cargo-toolchain","Rust Toolchain Override",
+          "rust-toolchain configuration downloads a toolchain binary/script "
+          "that runs on every build.",
+          "7.0",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-go-replace","Go Replace Redirect",
+          "go.mod replace directive redirects a module to another source — "
+          "verify the replacement is intended.",
+          "7.0",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-vcs-source","VCS Dependency Source",
+          "Dependency pinned to a VCS/direct-URL host outside known forges — "
+          "installs unvetted code (dependency substitution).",
+          "6.5",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-swift-url", "Swift URL Source",
+          "Swift package resolved from an off-forge git/URL host that can "
+          "substitute package content (dependency confusion).",
+          "6.5",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-pod-source","CocoaPods Source Override",
+          "CocoaPods dependency resolves through an override source instead "
+          "of trunk/CDN — every pod follows it.",
+          "6.5",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-gem-source","Gem Source Override",
+          "Gem dependency resolves through a source outside the known "
+          "registries/forges.",
+          "6.5",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-docker",    "Container Source Risk",
+          "Container/compose configuration pulls from a mutable or "
+          "unverified image source.",
+          "6.5",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-go-replace-local","Go Local Replace",
+          "go.mod replace directive points at a local path — bypasses module "
+          "checksum verification.",
+          "6.5",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-nuget-source","NuGet Source Override",
+          "NuGet package source points off the official feed — every "
+          "resolved package substitutes through it.",
+          "7.5",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-vscode",    "VS Code Autoexec",
+          "Workspace settings/extensions can auto-execute tasks or binaries "
+          "on folder open.",
+          "7.0",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-composer",  "Composer Autoexec",
+          "Composer configuration or scripts run code at install/build "
+          "time.",
+          "7.0",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-pkgbuild",  "PKGBUILD Autoexec",
+          "Arch PKGBUILD runs arbitrary shell during package build.",
+          "7.0",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-platform",  "PlatformIO Autoexec",
+          "PlatformIO configuration can inject build flags or scripts that "
+          "run at build time.",
+          "7.0",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-precommit", "Pre-commit Autoexec",
+          "pre-commit hook configuration executes hook code on every "
+          "commit.",
+          "7.0",
+          "\"security\", \"external/cwe/cwe-829\"" },
+        { "package-gitlabcicd","GitLab CI Remote Exec",
+          "GitLab CI script block fetches or pipes remote/encoded content — "
+          "executes with CI variable scope.",
+          "7.5",
+          "\"security\", \"external/cwe/cwe-829\"" },
         { NULL, NULL, NULL, NULL, NULL }
     };
     char esc[1280];
