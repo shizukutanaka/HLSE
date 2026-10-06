@@ -70,6 +70,8 @@ Body: `{ "text": "..." }` — scans code/config for leaked credentials.
 {
   "kind": "secrets",
   "score": 100,
+  "severity": 4,
+  "action": "ISOLATE",
   "findings": [
     { "id": "HLSE-SECRET-AWS-KEY", "type": "AWS Access Key ID",
       "line": 3, "detail": "AWS Access Key ID found: AKIA2E3M..." }

@@ -47,6 +47,8 @@ check "text scam detected" \
   "$(curl -s -X POST $B/api/v1/scan/text -d '{"text":"URGENT buy gift cards now"}')" '"kind":"text"'
 check "secrets found" \
   "$(curl -s -X POST $B/api/v1/scan/secrets -d '{"text":"AKIA2E3MWORQXYZ4567PQ"}')" '"kind":"secrets"'
+check "secrets verdict fields" \
+  "$(curl -s -X POST $B/api/v1/scan/secrets -d '{"text":"xoxb-1234567890-1234567890-abcdefghijkl"}')" '"severity":4,"action":"ISOLATE"'
 check "secret finding id+line" \
   "$(curl -s -X POST $B/api/v1/scan/secrets -d '{"text":"ok\nxoxb-1234567890-1234567890-abcdefghijkl"}')" '"id":"HLSE-SECRET-SLACK","type":"Slack Bot Token","line":2'
 check "clean text no findings" \

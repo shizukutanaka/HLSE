@@ -415,7 +415,10 @@ respond_secrets(ConnCtx *cx, const char *input) {
 
     body[0] = '\0';
     snprintf(body, sizeof(body),
-        "{\"kind\":\"secrets\",\"score\":%d,\"findings\":[", v.score);
+        "{\"kind\":\"secrets\",\"score\":%d,\"severity\":%d,\"action\":\"%s\","
+        "\"findings\":[",
+        v.score, hlse_severity_for_score(v.score),
+        hlse_action_for_score(v.score));
     len = strlen(body);
     for (i = 0; i < v.n_findings; i++) {
         char pidb[80];

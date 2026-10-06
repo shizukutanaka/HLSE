@@ -10877,6 +10877,11 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 453 (scan/secrets verdict parity):** the secrets endpoint was
+  the only response lacking `severity`/`action`, forcing API consumers
+  to recompute the band from score while /scan/{url,text,file} supply
+  both. It now emits `severity` + `action` like its siblings. API.md
+  updated. Server integration tests +1.
 - **cycle 452 (HTTP API clean verdicts carry blind_spot):** the CLI's
   signature honesty field — an explicit statement of what the detector
   cannot see, so a clean score is never mistaken for clearance — was
