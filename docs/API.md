@@ -80,7 +80,10 @@ Body: `{ "text": "..." }` — scans code/config for leaked credentials.
 Each finding carries a stable `id` (`HLSE-SECRET-*`, or
 `HLSE-SECRET-CUSTOM-*` for `--patterns` rules — see the CLI's
 `--list-patterns` registry) for dedup/suppression, plus `line` (1-based)
-when the line is known.
+when the line is known. A clean result (`score: 0`) also returns
+`blind_spot` — an explicit statement of what this detector cannot see,
+so consumers never mistake a clean score for clearance. The same field
+appears on clean `/scan/url`, `/scan/text` and `/scan/file` responses.
 
 ### `POST /api/v1/scan/file`
 Body: `{ "filename": "...", "content": "..." }` — combines name-based masquerade

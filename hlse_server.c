@@ -394,6 +394,14 @@ respond_scan(ConnCtx *cx, const char *input) {
     for (i = 0; i < r.n_reasons; i++)
         json_append_elem(body, sizeof(body), &len, r.reasons[i], i);
     json_append_char(body, sizeof(body), &len, ']');
+    if (r.score == 0) {
+        const char *bs = hlse_blindspot_for(r.is_url ? "url" : "text");
+        if (bs) {
+            json_append_lit(body, sizeof(body), &len, ",\"blind_spot\":\"");
+            json_escape_append(body, sizeof(body), &len, bs);
+            json_append_char(body, sizeof(body), &len, '"');
+        }
+    }
     json_append_char(body, sizeof(body), &len, '}');
     send_json(cx, 200, "OK", body);
 }
@@ -430,6 +438,14 @@ respond_secrets(ConnCtx *cx, const char *input) {
         json_append_char(body, sizeof(body), &len, '}');
     }
     json_append_char(body, sizeof(body), &len, ']');
+    if (v.score == 0) {
+        const char *bs = hlse_blindspot_for("secret");
+        if (bs) {
+            json_append_lit(body, sizeof(body), &len, ",\"blind_spot\":\"");
+            json_escape_append(body, sizeof(body), &len, bs);
+            json_append_char(body, sizeof(body), &len, '"');
+        }
+    }
     json_append_char(body, sizeof(body), &len, '}');
     send_json(cx, 200, "OK", body);
 }
@@ -479,6 +495,14 @@ respond_file(ConnCtx *cx, const char *filename, const char *content) {
         json_append_char(body, sizeof(body), &len, '}');
     }
     json_append_char(body, sizeof(body), &len, ']');
+    if (score == 0) {
+        const char *bs = hlse_blindspot_for("file");
+        if (bs) {
+            json_append_lit(body, sizeof(body), &len, ",\"blind_spot\":\"");
+            json_escape_append(body, sizeof(body), &len, bs);
+            json_append_char(body, sizeof(body), &len, '"');
+        }
+    }
     json_append_char(body, sizeof(body), &len, '}');
     send_json(cx, 200, "OK", body);
 }

@@ -51,6 +51,12 @@ check "secret finding id+line" \
   "$(curl -s -X POST $B/api/v1/scan/secrets -d '{"text":"ok\nxoxb-1234567890-1234567890-abcdefghijkl"}')" '"id":"HLSE-SECRET-SLACK","type":"Slack Bot Token","line":2'
 check "clean text no findings" \
   "$(curl -s -X POST $B/api/v1/scan/secrets -d '{"text":"nothing here"}')" '"findings":[]'
+check "clean url has blind_spot" \
+  "$(curl -s -X POST $B/api/v1/scan/url -d '{"url":"https://github.com"}')" '"blind_spot":"structural check only'
+check "clean secrets has blind_spot" \
+  "$(curl -s -X POST $B/api/v1/scan/secrets -d '{"text":"nothing here"}')" '"blind_spot":"pattern-based detection'
+check "flagged url no blind_spot" \
+  "$(curl -s -X POST $B/api/v1/scan/url -d '{"url":"https://paypal.com@evil.xyz"}' | grep -c blind_spot)" '0'
 check "file finding id" \
   "$(curl -s -X POST $B/api/v1/scan/file -d '{"filename":"x.txt","content":"xoxb-1234567890-1234567890-abcdefghijkl"}')" '"id":"HLSE-SECRET-SLACK"'
 check "file masquerade" \

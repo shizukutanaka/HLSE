@@ -10877,6 +10877,14 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 452 (HTTP API clean verdicts carry blind_spot):** the CLI's
+  signature honesty field — an explicit statement of what the detector
+  cannot see, so a clean score is never mistaken for clearance — was
+  absent from every server response. `/api/v1/scan/{url,text}`,
+  `/scan/secrets` and `/scan/file` now emit `blind_spot` on score==0
+  (kind-mapped: url/text/secret/file, via hlse_blindspot_for), matching
+  the CLI's per-kind coverage. Additive only; omitted on non-zero
+  scores. API.md updated. Server integration tests +3.
 - **cycle 451 (HTTP API findings carry stable id + line):** the
   hlse-server endpoints emitted `{type, detail}` per finding while the
   CLI emitted `{id, type, line, description}` — API consumers could not
