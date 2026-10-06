@@ -10877,6 +10877,17 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 450 (registry completeness — 77 emitted tokens registered +
+  static drift gate):** the registry claimed to be the authoritative
+  append-only token set but was missing 77 emitted ids: all 47
+  HLSE-AUDIT-* finding ids, 24 HLSE-PKG-* manifest-scanner ids, 5
+  HLSE-SECRET-* arms added across cycles 446–448, and
+  HLSE-TEXT-INVISIBLE. Registered all of them (registry 62→139,
+  now exactly matching every "HLSE-*" literal in the sources).
+  New p88d gate extracts every quoted HLSE-* literal from hlse_*.c
+  and asserts ⊆ registry — a static completeness check that catches
+  what behavioral probes cannot (audit ids only appear on
+  host-dependent paths). CLI tests +1.
 - **cycle 449 (--list-patterns exposes loaded custom rules):** cycle 448
   gave custom --patterns rules their own HLSE-SECRET-CUSTOM-* ids, but
   the registry only listed the 62 static tokens — a SIEM operator could

@@ -5504,6 +5504,27 @@ assert not missing, "tokens emitted but absent from registry: " + repr(sorted(mi
 ' && check "p88: emitted pattern_id tokens are all in the registry" "0" "0" \
    || check "p88: emitted pattern_id tokens are all in the registry" "0" "1"
 
+# p88d (cycle 450): static completeness — every "HLSE-*" literal in the C
+# sources is a token a verdict can emit, so it must be registered. This
+# catches what the behavioral probes cannot see (audit finding ids only
+# appear on host-dependent paths; per-finding secret ids are not record
+# pattern_ids). "HLSE-SECRET-CUSTOM-" is a prefix template, not a token.
+python3 -c '
+import json, subprocess, re, glob
+reg = set(p["id"] for p in json.loads(
+    subprocess.check_output(["./hlse_core","--json","--list-patterns"]))["patterns"])
+lit = set()
+for f in glob.glob("hlse_*.c"):
+    for m in re.finditer(r"\"(HLSE-[A-Z0-9-]+)\"", open(f).read()):
+        tok = m.group(1)
+        if tok.endswith("-"):   continue        # prefix template
+        lit.add(tok)
+missing = lit - reg
+assert not missing, "HLSE-* literals emitted but absent from registry: " \
+    + repr(sorted(missing))
+' && check "p88d: every HLSE-* literal is registered (static drift gate)" "0" "0" \
+   || check "p88d: every HLSE-* literal is registered (static drift gate)" "0" "1"
+
 # text mode lists tokens with their kind and is a clean exit (meta-command)
 ./hlse_core --list-patterns 2>&1 | grep -q "HLSE-CLIP-HIJACK" \
     && ./hlse_core --list-patterns >/dev/null 2>&1 \
@@ -5528,7 +5549,7 @@ cust = [p for p in d["patterns"] if p["id"].startswith("HLSE-SECRET-CUSTOM-")]
 assert len(cust) == 1, cust
 assert cust[0]["id"] == "HLSE-SECRET-CUSTOM-ZZ-CORP-SIGNING-TOKEN", cust
 assert cust[0]["kind"] == "secret" and cust[0]["description"], cust
-assert d["count"] == len(d["patterns"]) == 63, d["count"]
+assert d["count"] == len(d["patterns"]), d["count"]
 ' && check "p88b: custom pattern discoverable in registry (JSON)" "0" "0" \
    || check "p88b: custom pattern discoverable in registry (JSON)" "0" "1"
 ./hlse_core --patterns "$P88_PAT" --list-patterns 2>/dev/null | \
@@ -5536,12 +5557,12 @@ grep -q "custom patterns (--patterns, 1 registered)" \
     && check "p88b: custom patterns section shown (text)" "0" "0" \
     || check "p88b: custom patterns section shown (text)" "0" "1"
 rm -f "$P88_PAT"
-# benign: no --patterns → count stays at the 62 static tokens
+# benign: no --patterns → registry has no CUSTOM entries at all
 ./hlse_core --json --list-patterns 2>/dev/null | \
 python3 -c '
 import sys, json
 d = json.loads(sys.stdin.read())
-assert d["count"] == 62, d["count"]
+assert d["count"] == len(d["patterns"]), d["count"]
 assert not any(p["id"].startswith("HLSE-SECRET-CUSTOM-") for p in d["patterns"]), d
 ' && check "p88c: no custom entries without --patterns" "0" "0" \
    || check "p88c: no custom entries without --patterns" "0" "1"
