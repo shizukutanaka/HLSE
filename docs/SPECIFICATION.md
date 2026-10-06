@@ -185,7 +185,9 @@ Additional fields vary by kind:
   finding plus a `kind=manifest_summary` terminator: `manifest`,
   `ecosystem`, `packages_checked`, `threats`, `max_severity`, `gate_hits`.
 - `audit`: `hardening_index`, `hardening_band`, `crit_count`, `high_count`,
-  `findings:[{severity,description,fix?}]`, `next_steps` on non-SAFE.
+  `findings:[{id,severity,description,fix?}]`, `next_steps` on non-SAFE.
+  `id` is the stable `HLSE-AUDIT-<section>-<name>` slug (dedup /
+  suppression key; `description` embeds volatile paths and lines).
 - streaming `scan` records add `path`/`line`/`url` as applicable (record
   kinds are `url`, `file`, and `secret`; secret records carry `findings`
   and `caveat`, url records carry `safe_url`).

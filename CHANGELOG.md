@@ -10877,6 +10877,13 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 444 (audit findings carry stable ids):** every audit finding
+  now carries `"id":"HLSE-AUDIT-<section>-<name>"` — the SIEM dedup /
+  suppression key that was missing (descriptions embed volatile paths
+  and line numbers, so they cannot serve as one; secrets/patterns
+  already have pattern_ids). `AuditFinding` gains `id[48]`, all 47
+  `av_add` sites pass a slug, JSON emits it per finding. Spec §5.2
+  documents the field. CLI test +1: ids present and unique.
 - **cycle 443 (schema parity — spec §5.2 sync + `classes_total`):**
   `PasteVerdict.classes_total` carries the true P8 match count when it
   exceeds the 8-entry `classes[]` cap (reason already printed "+N

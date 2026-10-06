@@ -341,8 +341,9 @@ hlse_cmd_audit(const HlseCli *o) {
                     ? hlse_audit_remediation_for(av.findings[i].description)
                     : NULL;
                 hlse_json_escape(av.findings[i].description, esc, sizeof(esc));
-                printf("%s{\"severity\":%d,\"description\":\"%s\"",
+                printf("%s{\"id\":\"%s\",\"severity\":%d,\"description\":\"%s\"",
                        i > 0 ? "," : "",
+                       av.findings[i].id,
                        av.findings[i].severity, esc);
                 if (fix) {
                     

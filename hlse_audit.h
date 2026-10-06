@@ -31,6 +31,10 @@ typedef enum {
 
 typedef struct {
     AuditSeverity severity;
+    /* Stable finding id ("HLSE-AUDIT-A*-*"): a dedup/suppression key for
+     * SIEM consumers — the description carries volatile paths/lines and
+     * cannot serve as one. */
+    char          id[48];
     char          description[256];
 } AuditFinding;
 

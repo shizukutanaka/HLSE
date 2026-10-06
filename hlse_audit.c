@@ -39,10 +39,13 @@
 
 static void
 av_add(AuditVerdict *v, int delta, AuditSeverity sev,
-       const char *fmt, ...) {
+       const char *id, const char *fmt, ...) {
     va_list ap;
     if (v->n_findings >= HLSE_AUDIT_MAX_FINDINGS) return;
     v->findings[v->n_findings].severity = sev;
+    strncpy(v->findings[v->n_findings].id, id,
+            sizeof(v->findings[0].id) - 1);
+    v->findings[v->n_findings].id[sizeof(v->findings[0].id) - 1] = '\0';
     v->score += delta;
     if (v->score > 100) v->score = 100;
     va_start(ap, fmt);
@@ -84,7 +87,8 @@ hlse_audit_ssh(void) {
     {
         FILE *fp = hlse_open_system_file(sshd_conf);
         if (!fp) {
-            av_add(&v, 0, AUDIT_INFO, "A1: Cannot read %s (no SSH server?)",
+            av_add(&v,0, AUDIT_INFO,
+                    "HLSE-AUDIT-A1-SSHD-UNREADABLE","A1: Cannot read %s (no SSH server?)",
                    sshd_conf);
         } else {
             char line[1024];
@@ -100,23 +104,23 @@ hlse_audit_ssh(void) {
                 if (strstr(p, "PermitRootLogin")) {
                     root_login_found = 1;
                     if (strstr(p, "yes")) {
-                        av_add(&v, 30, AUDIT_HIGH,
-                            "A1: PermitRootLogin yes — root SSH access enabled");
+                        av_add(&v,30, AUDIT_HIGH,
+                    "HLSE-AUDIT-A1-PERMIT-ROOT-LOGIN","A1: PermitRootLogin yes — root SSH access enabled");
                     } else if (strstr(p, "no") || strstr(p, "prohibit-password")) {
-                        av_add(&v, 0, AUDIT_PASS,
-                            "A1: PermitRootLogin properly restricted");
+                        av_add(&v,0, AUDIT_PASS,
+                    "HLSE-AUDIT-A1-PERMIT-ROOT-LOGIN-OK","A1: PermitRootLogin properly restricted");
                     }
                 }
                 if (strstr(p, "PasswordAuthentication")) {
                     password_auth_found = 1;
                     if (strstr(p, "yes")) {
-                        av_add(&v, 20, AUDIT_MEDIUM,
-                            "A1: PasswordAuthentication yes — brute-force risk");
+                        av_add(&v,20, AUDIT_MEDIUM,
+                    "HLSE-AUDIT-A1-PASSWORD-AUTH","A1: PasswordAuthentication yes — brute-force risk");
                     }
                 }
                 if (strncmp(p, "Protocol", 8) == 0 && strstr(p, "1")) {
-                    av_add(&v, 40, AUDIT_HIGH,
-                        "A1: Protocol 1 enabled — SSHv1 is cryptographically broken");
+                    av_add(&v,40, AUDIT_HIGH,
+                    "HLSE-AUDIT-A1-PROTOCOL-V1","A1: Protocol 1 enabled — SSHv1 is cryptographically broken");
                 }
                 if (strncmp(p, "MaxAuthTries", 12) == 0) {
                     int tries = 0;
@@ -124,25 +128,25 @@ hlse_audit_ssh(void) {
                     while (*tp == ' ' || *tp == '\t') tp++;
                     tries = atoi(tp);
                     if (tries > 3) {
-                        av_add(&v, 10, AUDIT_LOW,
-                            "A1: MaxAuthTries %d > 3 — consider reducing to "
+                        av_add(&v,10, AUDIT_LOW,
+                    "HLSE-AUDIT-A1-MAX-AUTH-TRIES","A1: MaxAuthTries %d > 3 — consider reducing to "
                             "limit brute-force attempts", tries);
                     }
                 }
                 if (strncmp(p, "PermitEmptyPasswords", 20) == 0
                     && strstr(p, "yes")) {
-                    av_add(&v, 50, AUDIT_HIGH,
-                        "A1: PermitEmptyPasswords yes — accounts with no "
+                    av_add(&v,50, AUDIT_HIGH,
+                    "HLSE-AUDIT-A1-EMPTY-PASSWORDS","A1: PermitEmptyPasswords yes — accounts with no "
                         "password are accessible over SSH");
                 }
                 if (strncmp(p, "X11Forwarding", 13) == 0 && strstr(p, "yes")) {
-                    av_add(&v, 15, AUDIT_MEDIUM,
-                        "A1: X11Forwarding yes — enables display forwarding "
+                    av_add(&v,15, AUDIT_MEDIUM,
+                    "HLSE-AUDIT-A1-X11-FORWARDING","A1: X11Forwarding yes — enables display forwarding "
                         "which can be abused for screen capture / keylogging");
                 }
                 if (strncmp(p, "AllowTcpForwarding", 18) == 0 && strstr(p, "yes")) {
-                    av_add(&v, 15, AUDIT_MEDIUM,
-                        "A1: AllowTcpForwarding yes — enables TCP tunneling, "
+                    av_add(&v,15, AUDIT_MEDIUM,
+                    "HLSE-AUDIT-A1-TCP-FORWARDING","A1: AllowTcpForwarding yes — enables TCP tunneling, "
                         "allowing port-forwarding pivots through this host");
                 }
                 if (strncmp(p, "LoginGraceTime", 14) == 0) {
@@ -151,8 +155,8 @@ hlse_audit_ssh(void) {
                     while (*gp == ' ' || *gp == '\t') gp++;
                     grace = atoi(gp);
                     if (grace > 60 || grace == 0) {
-                        av_add(&v, 5, AUDIT_LOW,
-                            "A1: LoginGraceTime %d — consider setting to 30s "
+                        av_add(&v,5, AUDIT_LOW,
+                    "HLSE-AUDIT-A1-LOGIN-GRACE-TIME","A1: LoginGraceTime %d — consider setting to 30s "
                             "to limit connection slot exhaustion", grace);
                     }
                 }
@@ -160,12 +164,12 @@ hlse_audit_ssh(void) {
             fclose(fp);
 
             if (!root_login_found) {
-                av_add(&v, 15, AUDIT_MEDIUM,
-                    "A1: PermitRootLogin not explicitly set (default may be 'yes')");
+                av_add(&v,15, AUDIT_MEDIUM,
+                    "HLSE-AUDIT-A1-ROOT-LOGIN-DEFAULT","A1: PermitRootLogin not explicitly set (default may be 'yes')");
             }
             if (!password_auth_found) {
-                av_add(&v, 10, AUDIT_LOW,
-                    "A1: PasswordAuthentication not explicitly set");
+                av_add(&v,10, AUDIT_LOW,
+                    "HLSE-AUDIT-A1-PASSWORD-AUTH-DEFAULT","A1: PasswordAuthentication not explicitly set");
             }
         }
     }
@@ -179,8 +183,8 @@ hlse_audit_ssh(void) {
             snprintf(ak_path, sizeof(ak_path), "%s/.ssh/authorized_keys", home);
             if (stat(ak_path, &st) == 0) {
                 if (st.st_mode & 0077) {
-                    av_add(&v, 25, AUDIT_HIGH,
-                        "A1: authorized_keys is group/world-accessible "
+                    av_add(&v,25, AUDIT_HIGH,
+                    "HLSE-AUDIT-A1-AUTHORIZED-KEYS-MODE","A1: authorized_keys is group/world-accessible "
                         "(mode %04o)", st.st_mode & 0777);
                 }
             }
@@ -210,8 +214,8 @@ hlse_audit_permissions(void) {
             struct stat st;
             if (stat(sensitive_files[i], &st) == 0) {
                 if (st.st_mode & 0004) {
-                    av_add(&v, 40, AUDIT_CRITICAL,
-                        "A2: %s is world-readable (mode %04o)",
+                    av_add(&v,40, AUDIT_CRITICAL,
+                    "HLSE-AUDIT-A2-SENSITIVE-FILE-MODE","A2: %s is world-readable (mode %04o)",
                         sensitive_files[i], st.st_mode & 0777);
                 }
             }
@@ -261,8 +265,8 @@ hlse_audit_permissions(void) {
                 snprintf(path, sizeof(path), "%s/%s", home, HOME_SECRETS[i].rel);
                 if (stat(path, &st) == 0 &&
                     (st.st_mode & HOME_SECRETS[i].bad_bits)) {
-                    av_add(&v, HOME_SECRETS[i].score, AUDIT_HIGH,
-                        "%s (mode %04o)",
+                    av_add(&v,HOME_SECRETS[i].score, AUDIT_HIGH,
+                    "HLSE-AUDIT-AX-HOME-SECRET-MODE","%s (mode %04o)",
                         HOME_SECRETS[i].label, st.st_mode & 0777);
                 }
             }
@@ -325,7 +329,8 @@ hlse_audit_dns(void) {
 
     fp = hlse_open_system_file("/etc/hosts");
     if (!fp) {
-        av_add(&v, 0, AUDIT_INFO, "A3: Cannot read /etc/hosts");
+        av_add(&v,0, AUDIT_INFO,
+                    "HLSE-AUDIT-A3-HOSTS-UNREADABLE","A3: Cannot read /etc/hosts");
         return v;
     }
 
@@ -351,8 +356,8 @@ hlse_audit_dns(void) {
             for (i = 0; SENSITIVE_DOMAINS[i]; i++) {
                 if (strstr(lower, SENSITIVE_DOMAINS[i])) {
                     /* This domain is being redirected via /etc/hosts */
-                    av_add(&v, 60, AUDIT_CRITICAL,
-                        "A3: HOSTS POISONING — %s redirected in /etc/hosts",
+                    av_add(&v,60, AUDIT_CRITICAL,
+                    "HLSE-AUDIT-A3-HOSTS-POISONING","A3: HOSTS POISONING — %s redirected in /etc/hosts",
                         SENSITIVE_DOMAINS[i]);
                 }
             }
@@ -376,8 +381,8 @@ hlse_audit_dns(void) {
                 {
                     /* Known good */
                 } else {
-                    av_add(&v, 15, AUDIT_MEDIUM,
-                        "A3: Custom nameserver: %.*s (verify this is intentional)",
+                    av_add(&v,15, AUDIT_MEDIUM,
+                    "HLSE-AUDIT-A3-CUSTOM-NAMESERVER","A3: Custom nameserver: %.*s (verify this is intentional)",
                         30, ns);
                 }
             }
@@ -460,8 +465,8 @@ hlse_audit_cron(void) {
 
                         for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
                             if (strstr(p, SUSPICIOUS_CRON_PATTERNS[i])) {
-                                av_add(&v, 40, AUDIT_HIGH,
-                                    "A4: Suspicious cron entry in %s: "
+                                av_add(&v,40, AUDIT_HIGH,
+                    "HLSE-AUDIT-A4-CRON-ENTRY","A4: Suspicious cron entry in %s: "
                                     "%.60s", ent->d_name, p);
                                 break;
                             }
@@ -500,8 +505,8 @@ hlse_audit_cron(void) {
                     for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
                         int r = file_contains(path, SUSPICIOUS_CRON_PATTERNS[i]);
                         if (r == 1) {
-                            av_add(&v, 35, AUDIT_HIGH,
-                                "A4: Suspicious pattern in %s/%s: '%s'",
+                            av_add(&v,35, AUDIT_HIGH,
+                    "HLSE-AUDIT-A4-CRON-DIR-PATTERN","A4: Suspicious pattern in %s/%s: '%s'",
                                 cron_dirs[ci], ent->d_name,
                                 SUSPICIOUS_CRON_PATTERNS[i]);
                             break;
@@ -525,8 +530,8 @@ hlse_audit_cron(void) {
                 if (*p == '#' || *p == '\n') continue;
                 for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
                     if (strstr(p, SUSPICIOUS_CRON_PATTERNS[i])) {
-                        av_add(&v, 40, AUDIT_HIGH,
-                            "A4: Suspicious pattern in /etc/crontab: '%s'",
+                        av_add(&v,40, AUDIT_HIGH,
+                    "HLSE-AUDIT-A4-CRONTAB-PATTERN","A4: Suspicious pattern in /etc/crontab: '%s'",
                             SUSPICIOUS_CRON_PATTERNS[i]);
                         break;
                     }
@@ -558,7 +563,8 @@ hlse_audit_path(void) {
 
     memset(&v, 0, sizeof(v));
     if (!path || !*path) {
-        av_add(&v, 0, AUDIT_INFO, "A5: PATH is empty or unset");
+        av_add(&v,0, AUDIT_INFO,
+                    "HLSE-AUDIT-A5-PATH-EMPTY","A5: PATH is empty or unset");
         return v;
     }
 
@@ -568,8 +574,8 @@ hlse_audit_path(void) {
 
         if (len == 0 || (len == 1 && s[0] == '.')) {
             if (!flagged_cwd) {
-                av_add(&v, 30, AUDIT_HIGH,
-                    "A5: current directory ('.' or empty element) in PATH — "
+                av_add(&v,30, AUDIT_HIGH,
+                    "HLSE-AUDIT-A5-PATH-DOT","A5: current directory ('.' or empty element) in PATH — "
                     "a planted binary in any cwd can hijack commands");
                 flagged_cwd = 1;
             }
@@ -580,8 +586,8 @@ hlse_audit_path(void) {
             dir[len] = '\0';
             if (stat(dir, &st) == 0 && S_ISDIR(st.st_mode) &&
                 (st.st_mode & S_IWOTH) && !(st.st_mode & S_ISVTX)) {
-                av_add(&v, 35, AUDIT_HIGH,
-                    "A5: world-writable directory in PATH: %.180s (mode %04o)",
+                av_add(&v,35, AUDIT_HIGH,
+                    "HLSE-AUDIT-A5-PATH-WRITABLE","A5: world-writable directory in PATH: %.180s (mode %04o)",
                     dir, (unsigned)(st.st_mode & 07777));
             }
         }
@@ -591,7 +597,8 @@ hlse_audit_path(void) {
     }
 
     if (v.n_findings == 0)
-        av_add(&v, 0, AUDIT_PASS, "A5: PATH has no writable or '.' entries");
+        av_add(&v,0, AUDIT_PASS,
+                    "HLSE-AUDIT-A5-PATH-CLEAN","A5: PATH has no writable or '.' entries");
     return v;
 }
 
@@ -617,7 +624,8 @@ hlse_audit_shellrc(void) {
 
     memset(&v, 0, sizeof(v));
     if (!home) {
-        av_add(&v, 0, AUDIT_INFO, "A6: HOME unset — cannot check shell rc files");
+        av_add(&v,0, AUDIT_INFO,
+                    "HLSE-AUDIT-A6-HOME-UNSET","A6: HOME unset — cannot check shell rc files");
         return v;
     }
 
@@ -638,43 +646,43 @@ hlse_audit_shellrc(void) {
             if (*p == '#' || *p == '\n' || *p == '\0') continue;
 
             if (strstr(p, "/dev/tcp/") || strstr(p, "/dev/udp/")) {
-                av_add(&v, 45, AUDIT_CRITICAL,
-                    "A6: reverse-shell device path (/dev/tcp) in ~/%s:%d",
+                av_add(&v,45, AUDIT_CRITICAL,
+                    "HLSE-AUDIT-A6-DEV-TCP-SHELL","A6: reverse-shell device path (/dev/tcp) in ~/%s:%d",
                     files[fi], lineno);
             }
             if (strstr(p, "nc -e") || strstr(p, "ncat -e") ||
                 strstr(p, "nc.traditional -e")) {
-                av_add(&v, 40, AUDIT_CRITICAL,
-                    "A6: netcat -e reverse shell in ~/%s:%d", files[fi], lineno);
+                av_add(&v,40, AUDIT_CRITICAL,
+                    "HLSE-AUDIT-A6-NETCAT-E-SHELL","A6: netcat -e reverse shell in ~/%s:%d", files[fi], lineno);
             }
             if ((strstr(p, "curl ") || strstr(p, "wget ")) &&
                 (strstr(p, "| sh")   || strstr(p, "|sh") ||
                  strstr(p, "| bash") || strstr(p, "|bash"))) {
-                av_add(&v, 35, AUDIT_HIGH,
-                    "A6: download-piped-to-shell in ~/%s:%d "
+                av_add(&v,35, AUDIT_HIGH,
+                    "HLSE-AUDIT-A6-DOWNLOAD-PIPE-SHELL","A6: download-piped-to-shell in ~/%s:%d "
                     "(persistence/backdoor)", files[fi], lineno);
             }
             if (strstr(p, "LD_PRELOAD=")) {
-                av_add(&v, 20, AUDIT_MEDIUM,
-                    "A6: LD_PRELOAD set in ~/%s:%d — verify the library is "
+                av_add(&v,20, AUDIT_MEDIUM,
+                    "HLSE-AUDIT-A6-LD-PRELOAD","A6: LD_PRELOAD set in ~/%s:%d — verify the library is "
                     "trusted", files[fi], lineno);
             }
             if (strstr(p, "socat ") &&
                 (strstr(p, "exec:") || strstr(p, "/bin/sh") ||
                  strstr(p, "/bin/bash"))) {
-                av_add(&v, 45, AUDIT_CRITICAL,
-                    "A6: socat reverse shell in ~/%s:%d", files[fi], lineno);
+                av_add(&v,45, AUDIT_CRITICAL,
+                    "HLSE-AUDIT-A6-SOCAT-SHELL","A6: socat reverse shell in ~/%s:%d", files[fi], lineno);
             }
             if (strstr(p, "bash -i") || strstr(p, "bash -c")) {
-                av_add(&v, 30, AUDIT_HIGH,
-                    "A6: interactive shell invocation in ~/%s:%d",
+                av_add(&v,30, AUDIT_HIGH,
+                    "HLSE-AUDIT-A6-SHELL-INVOKE","A6: interactive shell invocation in ~/%s:%d",
                     files[fi], lineno);
             }
             if (strstr(p, "mkfifo ") &&
                 (strstr(p, "nc ") || strstr(p, "ncat ") ||
                  strstr(p, "bash") || strstr(p, "sh"))) {
-                av_add(&v, 45, AUDIT_CRITICAL,
-                    "A6: named-pipe reverse shell (mkfifo+nc) in ~/%s:%d",
+                av_add(&v,45, AUDIT_CRITICAL,
+                    "HLSE-AUDIT-A6-MKFIFO-NC-SHELL","A6: named-pipe reverse shell (mkfifo+nc) in ~/%s:%d",
                     files[fi], lineno);
             }
             /* PROMPT_COMMAND injection — every command prompt executes payload */
@@ -682,8 +690,8 @@ hlse_audit_shellrc(void) {
                 (strstr(p, "curl ") || strstr(p, "wget ") ||
                  strstr(p, "/dev/tcp") || strstr(p, "nc ") ||
                  strstr(p, "eval ") || strstr(p, "base64"))) {
-                av_add(&v, 40, AUDIT_CRITICAL,
-                    "A6: PROMPT_COMMAND injection in ~/%s:%d — "
+                av_add(&v,40, AUDIT_CRITICAL,
+                    "HLSE-AUDIT-A6-PROMPT-COMMAND","A6: PROMPT_COMMAND injection in ~/%s:%d — "
                     "payload runs on every shell prompt", files[fi], lineno);
             }
             /* function() override of system commands — rootkit-style hiding */
@@ -696,8 +704,8 @@ hlse_audit_shellrc(void) {
                 int hi;
                 for (hi = 0; hid[hi]; hi++) {
                     if (strstr(p, hid[hi])) {
-                        av_add(&v, 35, AUDIT_HIGH,
-                            "A6: system command '%.*s' overridden by shell "
+                        av_add(&v,35, AUDIT_HIGH,
+                    "HLSE-AUDIT-A6-FUNCTION-OVERRIDE","A6: system command '%.*s' overridden by shell "
                             "function in ~/%s:%d — possible rootkit persistence",
                             (int)(strchr(hid[hi], '(') - hid[hi]),
                             hid[hi], files[fi], lineno);
@@ -722,8 +730,8 @@ hlse_audit_shellrc(void) {
                               strstr(p, "eval") || strstr(p, "base64") ||
                               strstr(p, "grep -v") || strstr(p, "| grep") ||
                               strstr(p, "python") || strstr(p, "/tmp/"))) {
-                        av_add(&v, 35, AUDIT_HIGH,
-                            "A6: system command '%.*s' hijacked by alias in "
+                        av_add(&v,35, AUDIT_HIGH,
+                    "HLSE-AUDIT-A6-ALIAS-HIJACK","A6: system command '%.*s' hijacked by alias in "
                             "~/%s:%d — possible rootkit/credential theft",
                             (int)(strchr(halias[hi], '=') - halias[hi]),
                             halias[hi], files[fi], lineno);
@@ -759,22 +767,22 @@ hlse_audit_shellrc(void) {
                     if (*p == '#' || *p == '\n' || *p == '\0') continue;
 
                     if (strstr(p, "/dev/tcp/") || strstr(p, "/dev/udp/")) {
-                        av_add(&v, 55, AUDIT_CRITICAL,
-                            "A6: reverse-shell device path in system-wide "
+                        av_add(&v,55, AUDIT_CRITICAL,
+                    "HLSE-AUDIT-A6-PROFILED-DEV-TCP","A6: reverse-shell device path in system-wide "
                             "/etc/profile.d/%s:%d (affects ALL users)",
                             ent->d_name, lineno);
                     }
                     if ((strstr(p, "curl ") || strstr(p, "wget ")) &&
                         (strstr(p, "| sh")   || strstr(p, "|sh") ||
                          strstr(p, "| bash") || strstr(p, "|bash"))) {
-                        av_add(&v, 50, AUDIT_CRITICAL,
-                            "A6: download-piped-to-shell in system-wide "
+                        av_add(&v,50, AUDIT_CRITICAL,
+                    "HLSE-AUDIT-A6-PROFILED-DOWNLOAD-SHELL","A6: download-piped-to-shell in system-wide "
                             "/etc/profile.d/%s:%d (affects ALL users)",
                             ent->d_name, lineno);
                     }
                     if (strstr(p, "nc -e") || strstr(p, "socat ")) {
-                        av_add(&v, 50, AUDIT_CRITICAL,
-                            "A6: reverse-shell tool in system-wide "
+                        av_add(&v,50, AUDIT_CRITICAL,
+                    "HLSE-AUDIT-A6-PROFILED-REVERSE-TOOL","A6: reverse-shell tool in system-wide "
                             "/etc/profile.d/%s:%d (affects ALL users)",
                             ent->d_name, lineno);
                     }
@@ -786,8 +794,8 @@ hlse_audit_shellrc(void) {
     }
 
     if (v.n_findings == 0)
-        av_add(&v, 0, AUDIT_PASS,
-               "A6: No backdoor patterns in shell startup files");
+        av_add(&v,0, AUDIT_PASS,
+                    "HLSE-AUDIT-A6-SHELL-RC-CLEAN","A6: No backdoor patterns in shell startup files");
     return v;
 }
 
@@ -823,8 +831,8 @@ hlse_audit_sudoers(void) {
                     /* Strip trailing newline for cleaner output */
                     char *nl = strchr(line, '\n');
                     if (nl) *nl = '\0';
-                    av_add(&v, 40, AUDIT_HIGH,
-                        "A7: NOPASSWD in /etc/sudoers:%d — "
+                    av_add(&v,40, AUDIT_HIGH,
+                    "HLSE-AUDIT-A7-SUDOERS-NOPASSWD","A7: NOPASSWD in /etc/sudoers:%d — "
                         "passwordless sudo: %.120s", lineno, line);
                 }
             }
@@ -859,8 +867,8 @@ hlse_audit_sudoers(void) {
                         if (strstr(line, "NOPASSWD") && !strstr(line, "#")) {
                             char *nl = strchr(line, '\n');
                             if (nl) *nl = '\0';
-                            av_add(&v, 40, AUDIT_HIGH,
-                                "A7: NOPASSWD in /etc/sudoers.d/%s:%d — "
+                            av_add(&v,40, AUDIT_HIGH,
+                    "HLSE-AUDIT-A7-SUDOERSD-NOPASSWD","A7: NOPASSWD in /etc/sudoers.d/%s:%d — "
                                 "passwordless sudo: %.100s",
                                 ent->d_name, lineno, line);
                         }
@@ -873,8 +881,8 @@ hlse_audit_sudoers(void) {
     }
 
     if (v.n_findings == 0)
-        av_add(&v, 0, AUDIT_PASS,
-               "A7: No NOPASSWD entries found in sudoers");
+        av_add(&v,0, AUDIT_PASS,
+                    "HLSE-AUDIT-A7-SUDOERS-CLEAN","A7: No NOPASSWD entries found in sudoers");
     return v;
 }
 
@@ -901,14 +909,16 @@ hlse_audit_systemd_user(void) {
         if (pw) home = pw->pw_dir;
     }
     if (!home || !home[0]) {
-        av_add(&v, 0, AUDIT_INFO, "A8: HOME unset — cannot check systemd user units");
+        av_add(&v,0, AUDIT_INFO,
+                    "HLSE-AUDIT-A8-HOME-UNSET-UNITS","A8: HOME unset — cannot check systemd user units");
         return v;
     }
 
     snprintf(unit_dir, sizeof(unit_dir), "%s/.config/systemd/user", home);
     d = opendir(unit_dir);
     if (!d) {
-        av_add(&v, 0, AUDIT_PASS, "A8: No user systemd unit directory found");
+        av_add(&v,0, AUDIT_PASS,
+                    "HLSE-AUDIT-A8-NO-USER-UNITS","A8: No user systemd unit directory found");
         return v;
     }
 
@@ -956,8 +966,8 @@ hlse_audit_systemd_user(void) {
 
                 for (i = 0; SUSPICIOUS_CRON_PATTERNS[i]; i++) {
                     if (strstr(p, SUSPICIOUS_CRON_PATTERNS[i])) {
-                        av_add(&v, 40, AUDIT_HIGH,
-                            "A8: Suspicious ExecStart in user unit %s: %.60s",
+                        av_add(&v,40, AUDIT_HIGH,
+                    "HLSE-AUDIT-A8-EXECSTART-SUSPICIOUS","A8: Suspicious ExecStart in user unit %s: %.60s",
                             ent->d_name, p);
                         found_suspicious = 1;
                         break;
@@ -968,8 +978,8 @@ hlse_audit_systemd_user(void) {
         }
 
         if (!found_suspicious) {
-            av_add(&v, 0, AUDIT_PASS,
-                   "A8: No suspicious ExecStart patterns in user systemd units");
+            av_add(&v,0, AUDIT_PASS,
+                    "HLSE-AUDIT-A8-UNITS-CLEAN","A8: No suspicious ExecStart patterns in user systemd units");
         }
     }
     closedir(d);
