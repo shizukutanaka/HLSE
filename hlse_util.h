@@ -36,6 +36,17 @@ double hlse_shannon_entropy_str(const char *s);
 
 int hlse_edit_distance(const char *a, const char *b);
 
+/* Case-insensitive substring search (`needle` must be lowercase ASCII).
+ * O(n*m), allocation-free.                                          */
+int hlse_ci_contains(const char *hay, const char *needle);
+
+/* Any-needle matchers over a NULL-terminated needle array —
+ * the table-driven form of `strstr(hay, X) || strstr(hay, Y) || …`
+ * chains. hlse_str_any is case-sensitive; hlse_ci_any requires
+ * lowercase needles. Empty haystack/table never matches.           */
+int hlse_str_any(const char *hay, const char *const needles[]);
+int hlse_ci_any(const char *hay, const char *const needles[]);
+
 /* True if `buf` (first `n` bytes of a file) begins with the magic
  * signature of a known compressed/encrypted-looking but BENIGN format
  * (ZIP, GZIP, RAR, 7z, XZ, BZIP2, Zstd, JPEG, PNG, MP4/MOV, PDF).

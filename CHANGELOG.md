@@ -10877,6 +10877,26 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 469 (needle table-driving goes cross-file + a real defect):**
+  Second increment of the table-drive: the any-needle matchers are now
+  shared utilities — `hlse_str_any` / `hlse_ci_any` /
+  `hlse_ci_contains` live in hlse_util.c (hlse_supply.c's file-static
+  ci_contains/hay_any delegate), so every module can table-drive its
+  own vocabularies. In hlse_supply.c itself the remaining strstr
+  OR-chains in the paste region are converted: P14 webshell
+  input/exec/marker lists, P15 decode+pipe lists, env-dump→net exfil,
+  sudo-pipe, the two env-injection key blocks, all reverse-shell side
+  lists (nc/telnet/TCPSocket/python/php-perl), and the persistence
+  lists — 172 more literals moved to 16 additional PASTE_* tables;
+  `strstr(text,` sites fell 338 → 42 (only compound/single-needle
+  terms remain inline). Found while converting: a runaway copy-paste
+  block in the c240 else-if chain repeated the identical
+  `(lvm && (pv|vg|lv|remove|create|-))` and
+  `(dnf && (system-upgrade|upgrade|install|remove|autoremove|
+  distro-sync|check))` compound terms TEN times each (~90 dead lines)
+  — deduplicated to single terms (OR-idempotent, behavior unchanged).
+  Verified needle-for-needle: zero literals dropped, zero added.
+  F1=1.000, 0% FP, all paste checks green.
 - **cycle 468 (paste-surface needles table-driven, first increment):**
   hlse_supply.c's paste-check region held ~185 needles inside
   hand-written `strstr(text, ...) || ...` OR-chains (P2 pipe-shell, P4

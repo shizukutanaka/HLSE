@@ -381,33 +381,18 @@ hlse_check_package(const char *pkg_name, const char *ecosystem) {
  *   P8. Windows LOLBin     — "ClickFix" PowerShell/mshta/certutil one-liners
  * ═══════════════════════════════════════════════════════════════════════ */
 
-/* Case-insensitive substring search. `needle` MUST be lowercase ASCII.
- * O(n*m), fine for paste-sized text; avoids allocating a lowercased copy. */
+/* Single-needle case-insensitive match — delegates to the shared
+ * implementation; `needle` must be lowercase ASCII.                 */
 static int
 ci_contains(const char *hay, const char *needle) {
-    size_t nl = strlen(needle);
-    if (nl == 0) return 1;
-    for (; *hay; hay++) {
-        size_t k = 0;
-        while (k < nl && hay[k] &&
-               (char)tolower((unsigned char)hay[k]) == needle[k])
-            k++;
-        if (k == nl) return 1;
-    }
-    return 0;
+    return hlse_ci_contains(hay, needle);
 }
 
-/* Any-needle matcher: hay == haystack, needles == NULL-terminated array
- * of case-sensitive strstr() needles — the same semantics the hand-
- * written `strstr(text, X) || strstr(text, Y) || …` chains had.
- * Keeping the vocabularies as data makes additions auditable and
- * shrinks the classifier bodies.                                   */
+/* Any-needle matcher — delegates to the shared hlse_str_any (see
+ * hlse_util.c); needles are case-sensitive strstr() literals.       */
 static int
 hay_any(const char *hay, const char *const needles[]) {
-    size_t i;
-    for (i = 0; needles[i]; i++)
-        if (strstr(hay, needles[i])) return 1;
-    return 0;
+    return hlse_str_any(hay, needles);
 }
 
 static const char *PASTE_DOWNLOADERS[] = {
@@ -537,6 +522,114 @@ static const char *PASTE_HTTPSRV[] = {
 };
 static const char *PASTE_HTTPSRV_HOSTS[] = {
     "python", "php", "busybox", "ruby", "-m ", NULL
+};
+
+/* P14: webshell-side vocabularies */
+static const char *PASTE_WEBSHELL_INPUTS[] = {
+    "$_GET", "$_POST", "$_REQUEST", "$_COOKIE", "$_FILES",
+    "getParameter", NULL
+};
+static const char *PASTE_WEBSHELL_EXEC[] = {
+    "system(", "eval(", "exec(", "shell_exec(", "passthru(",
+    "assert(", "popen(", "proc_open(", "getRuntime", NULL
+};
+static const char *PASTE_ASP_MARKERS[] = {
+    "<%", ".asp", ".aspx", NULL
+};
+static const char *PASTE_WEBSHELL_MARKERS[] = {
+    "<?php", "<?=", "<%", ".php", ".asp", ".jsp", ".cgi",
+    ".war", NULL
+};
+static const char *PASTE_ASP_EXEC[] = {
+    "eval", "exec", NULL
+};
+
+/* P15: decode-then-pipe — the decoder side replaces the download */
+static const char *PASTE_DECODE_BINS[] = {
+    "base64 -d", "base64 -D", "base64 --decode", "enc -d",
+    "openssl enc", "gpg -d", "gpg --decrypt", NULL
+};
+static const char *PASTE_PIPE_INTERP[] = {
+    "| sh", "|sh", "| bash", "|bash", "| python", "|python",
+    "| perl", "| node", "| pwsh", "| powershell", NULL
+};
+
+/* env-dump → network exfiltration */
+static const char *PASTE_ENV_DUMP[] = {
+    "env |", "env|", "printenv", "env >", "printenv >", NULL
+};
+static const char *PASTE_PIPE_NET[] = {
+    "| nc", "|nc", "nc ", "| curl", "|curl", "curl -F", "curl -d",
+    "wget --post", "| wget", "| socat", NULL
+};
+static const char *PASTE_PIPE_SUDO[] = {
+    "| sudo -S", "|sudo -S", "| su -", "|su -", "su -c ", NULL
+};
+
+/* environment-variable exec/poisoning keys */
+static const char *PASTE_ENV_PRIMS[] = {
+    "ENV=/", "LESSOPEN=|", "LESSOPEN=/", "LESSCLOSE=|", "LESSCLOSE=/",
+    "PAGER=/", "PAGER=sh", "PS4=$", "BASH_XTRACEFD=/", "BASH_XTRACEFD=",
+    "IFS=/", "IFS=:", "SHELLOPTS=", "GLOBIGNORE=", "MALLOC_TRACE=/",
+    "NLSPATH=/", "NLSPATH=%", "LD_ORIGIN_PATH=/", "GCC_EXEC_PREFIX=/",
+    "CPATH=/", "CPATH=:", "XDG_DATA_DIRS=/", "XDG_DATA_DIRS=:",
+    "MAILCAP=/", NULL
+};
+static const char *PASTE_ENV_RUNTIME[] = {
+    "BASH_ENV=/", "PROMPT_COMMAND=", "EDITOR=/", "VISUAL=/",
+    "SUDO_EDITOR=/", "FCEDIT=/", "GIT_EDITOR=/", "GIT_DIR=/",
+    "GIT_EXEC_PATH=/", "GIT_TEMPLATE_DIR=/", "GIT_WORK_TREE=/",
+    "GIT_INDEX_FILE=/", "GIT_OBJECT_DIRECTORY=/", "GIT_CONFIG=/",
+    "GIT_CONFIG_PARAMETERS=", "GIT_SSH=", "GIT_PAGER=/", "PERL5LIB=",
+    "PERL5OPT=-", "PERL5DB=", "PYTHONSTARTUP=/", "PYTHONPATH=",
+    "PYTHONHOME=/", "NODE_OPTIONS=-", "NODE_PATH=", "RUBYLIB=",
+    "RUBYOPT=", "ZDOTDIR=/", "SUDO_ASKPASS=/", "SSH_AUTH_SOCK=/",
+    "QT_IM_MODULE=", "GTK_IM_MODULE=", "XMODIFIERS=",
+    "GLIBC_TUNABLES=", "LOCPATH=", "TZDIR=/", "HOSTALIASES=/",
+    "KRB5_CONFIG=/", "KRB5_KTNAME=", "KRB5CCNAME=",
+    "PKCS11_MODULE_PATH=", "MANPAGER=", "SYSTEMD_PAGER=", "LD_AUDIT=",
+    "LD_PROFILE=", "DISPLAY=:", "XAUTHORITY=/", "BROWSER=",
+    "GPG_AGENT_INFO=", "PINENTRY", NULL
+};
+
+/* reverse-shell vocabularies */
+static const char *PASTE_NC_BINS[] = {
+    "nc ", "ncat ", "netcat ", NULL
+};
+static const char *PASTE_NC_EXEC[] = {
+    " -e ", " -c ", "--exec", "--sh-exec", "mkfifo", NULL
+};
+static const char *PASTE_TELNET_SH[] = {
+    "|sh", "| sh", "/bin/sh", "sh -i", NULL
+};
+static const char *PASTE_TCPEXEC[] = {
+    "popen", "exec", "system(", "dup2", NULL
+};
+static const char *PASTE_PY_SOCK[] = {
+    "socket.", "connect(", NULL
+};
+static const char *PASTE_PY_EXEC[] = {
+    "subprocess", "os.dup2", "pty.spawn", NULL
+};
+static const char *PASTE_REVSCRIPTS[] = {
+    "php -r", "perl -e", NULL
+};
+static const char *PASTE_SOCK_TERMS[] = {
+    "fsockopen", "socket_create", "IO::Socket", NULL
+};
+
+/* persistence-injection vocabularies */
+static const char *PASTE_KEY_APPEND[] = {
+    ">>", "echo ", NULL
+};
+static const char *PASTE_CRON_TERMS[] = {
+    "crontab -l", "(crontab", "| crontab", "|crontab", NULL
+};
+static const char *PASTE_STARTUP_FILES[] = {
+    ".bashrc", ".bash_profile", ".zshrc", ".profile", NULL
+};
+static const char *PASTE_BACKDOOR_FETCH[] = {
+    "curl ", "wget ", "/dev/tcp", "bash -i", NULL
 };
 
 PasteVerdict
@@ -813,21 +906,11 @@ hlse_check_paste(const char *text) {
     /* P14: Webshell write — a script tag or web extension plus a request
      * superglobal plus an exec verb is unambiguous webshell vocabulary;
      * nobody pastes that benignly.                                   */
-    if (((strstr(text, "<?php") || strstr(text, "<?=") ||
-          strstr(text, "<%") || strstr(text, ".php") ||
-          strstr(text, ".asp") || strstr(text, ".jsp") ||
-          strstr(text, ".cgi") || strstr(text, ".war")) &&
-         (strstr(text, "$_GET") || strstr(text, "$_POST") ||
-          strstr(text, "$_REQUEST") || strstr(text, "$_COOKIE") ||
-          strstr(text, "$_FILES") || strstr(text, "getParameter")) &&
-         (strstr(text, "system(") || strstr(text, "eval(") ||
-          strstr(text, "exec(") || strstr(text, "shell_exec(") ||
-          strstr(text, "passthru(") || strstr(text, "assert(") ||
-          strstr(text, "popen(") || strstr(text, "proc_open(") ||
-          strstr(text, "getRuntime"))) ||
-        ((strstr(text, "<%") || strstr(text, ".asp") ||
-          strstr(text, ".aspx")) &&
-         (strstr(text, "eval") || strstr(text, "exec")) &&
+    if ((hay_any(text, PASTE_WEBSHELL_MARKERS) &&
+         hay_any(text, PASTE_WEBSHELL_INPUTS) &&
+         hay_any(text, PASTE_WEBSHELL_EXEC)) ||
+        (hay_any(text, PASTE_ASP_MARKERS) &&
+         hay_any(text, PASTE_ASP_EXEC) &&
          strstr(text, "request")) ||
         (strstr(text, "getRuntime().exec") && strstr(text, ".jsp")) ||
         ci_contains(text, "<%eval") || ci_contains(text, "<% eval") ||
@@ -845,15 +928,8 @@ hlse_check_paste(const char *text) {
     /* P15: decode-then-pipe — `base64 -d | sh` / `openssl enc -d | sh`;
      * the decoder replaces the download side of the cradle (P2 needs a
      * fetch verb and P12 needs eval/source).                        */
-    if ((strstr(text, "base64 -d") || strstr(text, "base64 -D") ||
-         strstr(text, "base64 --decode") || strstr(text, "enc -d") ||
-         strstr(text, "openssl enc") || strstr(text, "gpg -d") ||
-         strstr(text, "gpg --decrypt")) &&
-        (strstr(text, "| sh") || strstr(text, "|sh") ||
-         strstr(text, "| bash") || strstr(text, "|bash") ||
-         strstr(text, "| python") || strstr(text, "|python") ||
-         strstr(text, "| perl") || strstr(text, "| node") ||
-         strstr(text, "| pwsh") || strstr(text, "| powershell"))) {
+    if (hay_any(text, PASTE_DECODE_BINS) &&
+        hay_any(text, PASTE_PIPE_INTERP)) {
         v.signals |= PASTE_EVAL_FETCH;
         v.score += 45;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -2318,19 +2394,11 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "sentinel") || ci_contains(text, "elastic-agent"))) {
             PASTE_WHAT("monitoring/EDR agent kill");
         }
-        if ((strstr(text, "env |") || strstr(text, "env|") ||
-                    strstr(text, "printenv") || strstr(text, "env >") ||
-                    strstr(text, "printenv >")) &&
-                   (strstr(text, "| nc") || strstr(text, "|nc") ||
-                    strstr(text, "nc ") || strstr(text, "| curl") ||
-                    strstr(text, "|curl") || strstr(text, "curl -F") ||
-                    strstr(text, "curl -d") || strstr(text, "wget --post") ||
-                    strstr(text, "| wget") || strstr(text, "| socat"))) {
+        if (hay_any(text, PASTE_ENV_DUMP) &&
+            hay_any(text, PASTE_PIPE_NET)) {
             PASTE_WHAT("env-var dump piped to network (secrets exfil)");
         }
-        if (strstr(text, "| sudo -S") || strstr(text, "|sudo -S") ||
-                   strstr(text, "| su -") || strstr(text, "|su -") ||
-                   strstr(text, "su -c ")) {
+        if (hay_any(text, PASTE_PIPE_SUDO)) {
             PASTE_WHAT("stdin-password / su exec pipe");
         }
         if ((ci_contains(text, "docker.sock") &&
@@ -8328,18 +8396,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "lshw") || ci_contains(text, "hwinfo") ||
             ci_contains(text, "inxi") ||
             /* environment-variable exec/poisoning keys */
-            strstr(text, "ENV=/") || strstr(text, "LESSOPEN=|") ||
-            strstr(text, "LESSOPEN=/") || strstr(text, "LESSCLOSE=|") ||
-            strstr(text, "LESSCLOSE=/") || strstr(text, "PAGER=/") ||
-            strstr(text, "PAGER=sh") || strstr(text, "PS4=$") ||
-            strstr(text, "BASH_XTRACEFD=/") || strstr(text, "BASH_XTRACEFD=") ||
-            strstr(text, "IFS=/") || strstr(text, "IFS=:") ||
-            strstr(text, "SHELLOPTS=") || strstr(text, "GLOBIGNORE=") ||
-            strstr(text, "MALLOC_TRACE=/") || strstr(text, "NLSPATH=/") ||
-            strstr(text, "NLSPATH=%") || strstr(text, "LD_ORIGIN_PATH=/") ||
-            strstr(text, "GCC_EXEC_PREFIX=/") || strstr(text, "CPATH=/") ||
-            strstr(text, "CPATH=:") || strstr(text, "XDG_DATA_DIRS=/") ||
-            strstr(text, "XDG_DATA_DIRS=:") || strstr(text, "MAILCAP=/")
+            hay_any(text, PASTE_ENV_PRIMS)
         ) {
             PASTE_WHAT("storage/input/stealer/env/exec primitive");
         }
@@ -8775,31 +8832,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " -o forwardagent") || ci_contains(text, " -o proxyjump") ||
               ci_contains(text, " -o sendenv") || ci_contains(text, " -o permit"))) ||
             /* env-var injection keys (value-bound) */
-            strstr(text, "BASH_ENV=/") || strstr(text, "PROMPT_COMMAND=") ||
-            strstr(text, "EDITOR=/") || strstr(text, "VISUAL=/") ||
-            strstr(text, "SUDO_EDITOR=/") || strstr(text, "FCEDIT=/") ||
-            strstr(text, "GIT_EDITOR=/") || strstr(text, "GIT_DIR=/") ||
-            strstr(text, "GIT_EXEC_PATH=/") || strstr(text, "GIT_TEMPLATE_DIR=/") ||
-            strstr(text, "GIT_WORK_TREE=/") || strstr(text, "GIT_INDEX_FILE=/") ||
-            strstr(text, "GIT_OBJECT_DIRECTORY=/") || strstr(text, "GIT_CONFIG=/") ||
-            strstr(text, "GIT_CONFIG_PARAMETERS=") || strstr(text, "GIT_SSH=") ||
-            strstr(text, "GIT_PAGER=/") || strstr(text, "PERL5LIB=") ||
-            strstr(text, "PERL5OPT=-") || strstr(text, "PERL5DB=") ||
-            strstr(text, "PYTHONSTARTUP=/") || strstr(text, "PYTHONPATH=") ||
-            strstr(text, "PYTHONHOME=/") || strstr(text, "NODE_OPTIONS=-") ||
-            strstr(text, "NODE_PATH=") || strstr(text, "RUBYLIB=") ||
-            strstr(text, "RUBYOPT=") || strstr(text, "ZDOTDIR=/") ||
-            strstr(text, "SUDO_ASKPASS=/") || strstr(text, "SSH_AUTH_SOCK=/") ||
-            strstr(text, "QT_IM_MODULE=") || strstr(text, "GTK_IM_MODULE=") ||
-            strstr(text, "XMODIFIERS=") || strstr(text, "GLIBC_TUNABLES=") ||
-            strstr(text, "LOCPATH=") || strstr(text, "TZDIR=/") ||
-            strstr(text, "HOSTALIASES=/") || strstr(text, "KRB5_CONFIG=/") ||
-            strstr(text, "KRB5_KTNAME=") || strstr(text, "KRB5CCNAME=") ||
-            strstr(text, "PKCS11_MODULE_PATH=") || strstr(text, "MANPAGER=") ||
-            strstr(text, "SYSTEMD_PAGER=") || strstr(text, "LD_AUDIT=") ||
-            strstr(text, "LD_PROFILE=") || strstr(text, "DISPLAY=:") ||
-            strstr(text, "XAUTHORITY=/") || strstr(text, "BROWSER=") ||
-            strstr(text, "GPG_AGENT_INFO=") || strstr(text, "PINENTRY")
+            hay_any(text, PASTE_ENV_RUNTIME)
         ) {
                     PASTE_WHAT("time/procfs/kernel/tamper/exec-runtime primitive");
         }
@@ -8816,96 +8849,6 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " create") || ci_contains(text, " -"))) ||
              ci_contains(text, "mavlink") || ci_contains(text, "pastebin") ||
              ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
-             (ci_contains(text, "dnf ") &&
-              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
-               ci_contains(text, " install") || ci_contains(text, " remove") ||
-               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
-               ci_contains(text, " check"))) ||
-             (ci_contains(text, "lvm") &&
-              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
-               ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -")))     ||
-             (ci_contains(text, "dnf ") &&
-              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
-               ci_contains(text, " install") || ci_contains(text, " remove") ||
-               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
-               ci_contains(text, " check"))) ||
-             (ci_contains(text, "lvm") &&
-              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
-               ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -")))     ||
-             (ci_contains(text, "dnf ") &&
-              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
-               ci_contains(text, " install") || ci_contains(text, " remove") ||
-               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
-               ci_contains(text, " check"))) ||
-             (ci_contains(text, "lvm") &&
-              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
-               ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -")))     ||
-             (ci_contains(text, "dnf ") &&
-              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
-               ci_contains(text, " install") || ci_contains(text, " remove") ||
-               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
-               ci_contains(text, " check"))) ||
-             (ci_contains(text, "lvm") &&
-              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
-               ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -")))     ||
-             (ci_contains(text, "dnf ") &&
-              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
-               ci_contains(text, " install") || ci_contains(text, " remove") ||
-               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
-               ci_contains(text, " check"))) ||
-             (ci_contains(text, "lvm") &&
-              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
-               ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -")))     ||
-             (ci_contains(text, "dnf ") &&
-              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
-               ci_contains(text, " install") || ci_contains(text, " remove") ||
-               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
-               ci_contains(text, " check"))) ||
-             (ci_contains(text, "lvm") &&
-              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
-               ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -")))     ||
-             (ci_contains(text, "dnf ") &&
-              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
-               ci_contains(text, " install") || ci_contains(text, " remove") ||
-               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
-               ci_contains(text, " check"))) ||
-             (ci_contains(text, "lvm") &&
-              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
-               ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -")))     ||
-             (ci_contains(text, "dnf ") &&
-              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
-               ci_contains(text, " install") || ci_contains(text, " remove") ||
-               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
-               ci_contains(text, " check"))) ||
-             (ci_contains(text, "lvm") &&
-              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
-               ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -")))     ||
-             (ci_contains(text, "dnf ") &&
-              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
-               ci_contains(text, " install") || ci_contains(text, " remove") ||
-               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
-               ci_contains(text, " check"))) ||
-             (ci_contains(text, "lvm") &&
-              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
-               ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -")))     ||
-             (ci_contains(text, "dnf ") &&
-              (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
-               ci_contains(text, " install") || ci_contains(text, " remove") ||
-               ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
-               ci_contains(text, " check"))) ||
-             (ci_contains(text, "lvm") &&
-              (ci_contains(text, " pv") || ci_contains(text, " vg") ||
-               ci_contains(text, " lv") || ci_contains(text, " remove") ||
-               ci_contains(text, " create") || ci_contains(text, " -")))     ||
              (ci_contains(text, "dnf ") &&
               (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
                ci_contains(text, " install") || ci_contains(text, " remove") ||
@@ -17786,21 +17729,16 @@ hlse_check_paste(const char *text) {
             is_revshell = 1;
         /* nc / ncat / netcat reverse shell: nc -e / -c or mkfifo pipe */
         if (!is_revshell && !strstr(text, "sync") &&
-            (strstr(text, "nc ") || strstr(text, "ncat ") ||
-             strstr(text, "netcat ")) &&
-            (strstr(text, " -e ") || strstr(text, " -c ") ||
-             strstr(text, "--exec") ||
-             strstr(text, "--sh-exec") || strstr(text, "mkfifo")))
+            hay_any(text, PASTE_NC_BINS) &&
+            hay_any(text, PASTE_NC_EXEC))
             is_revshell = 1;
         /* telnet | sh — the double-telnet data-exfil shell */
         if (!is_revshell && ci_contains(text, "telnet") &&
-            (strstr(text, "|sh") || strstr(text, "| sh") ||
-             strstr(text, "/bin/sh") || strstr(text, "sh -i")))
+            hay_any(text, PASTE_TELNET_SH))
             is_revshell = 1;
         /* ruby TCPSocket / perl -M module-load socket shells */
         if (!is_revshell && strstr(text, "TCPSocket") &&
-            (strstr(text, "popen") || strstr(text, "exec") ||
-             strstr(text, "system(") || strstr(text, "dup2")))
+            hay_any(text, PASTE_TCPEXEC))
             is_revshell = 1;
         if (!is_revshell && strstr(text, "perl -M") &&
             strstr(text, "IO::Socket"))
@@ -17811,9 +17749,8 @@ hlse_check_paste(const char *text) {
             is_revshell = 1;
         /* Python socket reverse shell */
         if (!is_revshell &&
-            (strstr(text, "socket.") || strstr(text, "connect(")) &&
-            (strstr(text, "subprocess") || strstr(text, "os.dup2") ||
-             strstr(text, "pty.spawn")))
+            hay_any(text, PASTE_PY_SOCK) &&
+            hay_any(text, PASTE_PY_EXEC))
             is_revshell = 1;
         /* socat reverse shell — address keywords are case-insensitive */
         if (!is_revshell &&
@@ -17824,9 +17761,8 @@ hlse_check_paste(const char *text) {
             is_revshell = 1;
         /* php/perl one-liner reverse shells: fsockopen/socket → exec */
         if (!is_revshell &&
-            (strstr(text, "php -r") || strstr(text, "perl -e")) &&
-            (strstr(text, "fsockopen") || strstr(text, "socket_create") ||
-             strstr(text, "IO::Socket")))
+            hay_any(text, PASTE_REVSCRIPTS) &&
+            hay_any(text, PASTE_SOCK_TERMS))
             is_revshell = 1;
         if (is_revshell) {
             v.score += 60;
@@ -17861,19 +17797,14 @@ hlse_check_paste(const char *text) {
         int is_persist = 0;
         const char *why = NULL;
         if ((strstr(text, ".ssh/authorized_keys") &&
-             (strstr(text, ">>") || strstr(text, "echo "))) ||
+             hay_any(text, PASTE_KEY_APPEND)) ||
             strstr(text, "> ~/.ssh/authorized_keys")) {
             is_persist = 1; why = "SSH authorized_keys injection";
         } else if (strstr(text, "crontab") &&
-                   (strstr(text, "crontab -l") ||
-                    strstr(text, "(crontab") ||
-                    strstr(text, "| crontab") ||
-                    strstr(text, "|crontab"))) {
+                   hay_any(text, PASTE_CRON_TERMS)) {
             is_persist = 1; why = "crontab persistence injection";
-        } else if ((strstr(text, ".bashrc") || strstr(text, ".bash_profile") ||
-                    strstr(text, ".zshrc")  || strstr(text, ".profile")) &&
-                   (strstr(text, "curl ") || strstr(text, "wget ") ||
-                    strstr(text, "/dev/tcp") || strstr(text, "bash -i"))) {
+        } else if (hay_any(text, PASTE_STARTUP_FILES) &&
+                   hay_any(text, PASTE_BACKDOOR_FETCH)) {
             is_persist = 1; why = "shell startup file backdoor injection";
         }
         if (is_persist) {

@@ -8,6 +8,7 @@
 #include "hlse_util.h"
 
 #include <string.h>
+#include <ctype.h>
 #include <math.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -438,4 +439,46 @@ hlse_base64url_decode(const char *in, size_t in_len, char *out, size_t out_size)
     }
     out[n] = '\0';
     return n;
+}
+
+/* Case-insensitive substring search. `needle` MUST be lowercase ASCII.
+ * O(n*m) — fine for classifier-sized inputs; avoids allocating a
+ * lowercased copy of the haystack.                                  */
+int
+hlse_ci_contains(const char *hay, const char *needle) {
+    size_t nl;
+    if (!hay || !needle) return 0;
+    nl = strlen(needle);
+    if (nl == 0) return 1;
+    for (; *hay; hay++) {
+        size_t k = 0;
+        while (k < nl && hay[k] &&
+               (char)tolower((unsigned char)hay[k]) == needle[k])
+            k++;
+        if (k == nl) return 1;
+    }
+    return 0;
+}
+
+/* Any-needle matchers: `needles` is a NULL-terminated array. The
+ * NULL-haystack/NULL-needle guards let callers skip emptiness
+ * pre-checks — an empty table or empty haystack simply never matches.
+ * hlse_str_any: case-sensitive strstr() semantics.
+ * hlse_ci_any:  same, case-insensitive (needles must be lowercase).  */
+int
+hlse_str_any(const char *hay, const char *const needles[]) {
+    size_t i;
+    if (!hay) return 0;
+    for (i = 0; needles[i]; i++)
+        if (strstr(hay, needles[i])) return 1;
+    return 0;
+}
+
+int
+hlse_ci_any(const char *hay, const char *const needles[]) {
+    size_t i;
+    if (!hay) return 0;
+    for (i = 0; needles[i]; i++)
+        if (hlse_ci_contains(hay, needles[i])) return 1;
+    return 0;
 }
