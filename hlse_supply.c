@@ -397,6 +397,148 @@ ci_contains(const char *hay, const char *needle) {
     return 0;
 }
 
+/* Any-needle matcher: hay == haystack, needles == NULL-terminated array
+ * of case-sensitive strstr() needles — the same semantics the hand-
+ * written `strstr(text, X) || strstr(text, Y) || …` chains had.
+ * Keeping the vocabularies as data makes additions auditable and
+ * shrinks the classifier bodies.                                   */
+static int
+hay_any(const char *hay, const char *const needles[]) {
+    size_t i;
+    for (i = 0; needles[i]; i++)
+        if (strstr(hay, needles[i])) return 1;
+    return 0;
+}
+
+static const char *PASTE_DOWNLOADERS[] = {
+    "curl ", "wget ", "fetch ", "lynx ", NULL
+};
+static const char *PASTE_PIPE_SHELLS[] = {
+    "| sh", "| bash", "|sh", "|bash", "| sudo", "| /bin/sh",
+    "| /bin/bash",
+    /* interpreter cradles — same RCE class */
+    "| python", "| perl", "| node", "| ruby", "| php", "|pwsh",
+    "| pwsh", "| powershell", "| zsh", "| fish", "| dash", "| ksh",
+    NULL
+};
+static const char *PASTE_PRIV_ESC[] = {
+    "sudo ", "su -c", "doas ", NULL
+};
+static const char *PASTE_DECODERS[] = {
+    "base64 -d", "base64 --decode", "python -c", "python3 -c",
+    "perl -e", "ruby -e", "node -e", "php -r", NULL
+};
+static const char *PASTE_DESTRUCT[] = {
+    "rm -rf /", "rm -rf ~", "rm -rf $HOME", "rm -fr /", ":(){ :|:",
+    "mkfs.", "mkfs /", "mkfs -", "mke2fs /",
+    "of=/dev/sd", "of=/dev/nvme", "of=/dev/hd", "of=/dev/vd",
+    "of=/dev/mmc", "of=/dev/xvd",
+    "if=/dev/mem", "if=/dev/kmem", "if=/dev/sd", "if=/dev/nvme",
+    "blkdiscard /", "blkdiscard -", "shred ", "> /dev/sd",
+    "chmod -R 777", "chmod -R 777 /",
+    /* storage/volume/RAID destruction */
+    "nvme format", "nvme sanitize", "sg_sanitize", "sg_format",
+    "sg_write_buffer",
+    "pvremove ", "vgremove ", "lvremove ", "lvreduce ",
+    "dmsetup remove",
+    "zfs destroy", "zpool destroy", "zpool labelclear",
+    "sfdisk --delete", "sfdisk /", "fdisk /", "gdisk /", "cgdisk /",
+    NULL
+};
+static const char *PASTE_CRED_PATHS[] = {
+    ".ssh/id_", "id_rsa", "id_ed25519", ".ssh/authorized_keys",
+    ".aws/credentials", ".aws/config", ".gnupg/", ".kube/config",
+    ".docker/config.json", ".netrc", ".git-credentials", "shadow",
+    "/etc/passwd", ".pgpass", ".my.cnf", ".pypirc", ".s3cfg",
+    ".boto", ".env", "master.passwd", "/etc/security", "/etc/group",
+    "/etc/sudoers", "sudoers.d", "/etc/login.defs", "config/gcloud",
+    ".azure", "_history", ".viminfo", ".lesshst", ".wget-hsts",
+    "auth.log", "/var/log/secure", "/var/log/btmp", "/var/log/wtmp",
+    "/var/log/lastlog", "/var/log/faillog", NULL
+};
+static const char *PASTE_WRITE_VERBS[] = {
+    ">>", "echo ", "crontab", "at now", "systemctl enable",
+    "launchctl load", "tee /", "tee .", "tee ~", "tee -",
+    "curl ", "wget ", NULL
+};
+/* Persistence targets — deduplicated from the former || chain. */
+static const char *PASTE_PERSIST_TARGETS[] = {
+    ".bashrc", ".zshrc", ".profile", "authorized_keys", "crontab",
+    "systemctl enable", "launchctl", "rc.local", ".xinitrc",
+    ".zshenv", ".bash_profile", ".bash_login", ".zprofile",
+    ".zlogin", ".xprofile", ".pam_environment", "ld.so.preload",
+    "cron.d", "spool/cron", "autostart", "systemd/system", "inetd",
+    "xinetd", "/etc/profile", "profile.d", "init.d", ".forward",
+    ".ssh/config", "/etc/zshrc", "/etc/zprofile", "/etc/zshenv",
+    ".ssh/rc", "motd.d", "pam.d", "sshd_config", "rc.d",
+    "systemd/user", "udev/rules", "sysctl.d", "ld.so.conf",
+    "pacman.d", "/etc/environment", "/etc/timezone", "/etc/hosts",
+    "resolv.conf", "nsswitch", ".vimrc", ".tmux.conf", "config.fish",
+    ".netrc", ".rhosts", "hosts.equiv", ".npmrc", ".curlrc",
+    ".gitconfig", ".xsession", ".bash_logout", ".zlogout",
+    "ssh_config", ".gtkrc", ".Xresources", ".xmodmaprc", ".inputrc",
+    ".screenrc", ".muttrc", ".mailrc", ".procmailrc", ".pinerc",
+    ".lynxrc", ".wgetrc", ".git-crypt", ".config/git", ".gnomerc",
+    ".kderc", "kdeglobals", "kglobalshortcutsrc", "kwinrc",
+    ".config/pulse", ".config/systemd",
+    ".local/share/applications", "environment.d",
+    ".ssh/environment", ".ssh/sshrc", "native-messaging-hosts",
+    "NativeMessagingHosts", ".vscode/extensions", ".config/Code",
+    ".gcloud", "sources.list", "apt/preferences", "apt.conf.d",
+    "yum.repos.d", "modprobe.d", "polkit-1", "dbus-1", "sudoers.d",
+    "daemon.json", ".git/hooks", ".gitmodules", ".gitattributes",
+    "known_hosts", "modules-load.d", "tmpfiles.d", "binfmt.d",
+    "hwdb.d", "firewalld", "fail2ban", "logrotate.d", "rsyslog.d",
+    "audit/rules.d", "auditd.conf", "fstab", "crypttab", "exports",
+    "netgroup", "auto.master", "hostapd", "wpa_supplicant",
+    "dhclient", "dhcpcd", "netplan", "systemd/network", "resolvconf",
+    "hosts.allow", "hosts.deny", "ipsec.conf", "ppp/peers",
+    "wireguard", "wg0.conf", "openvpn", "vtund", "dnsmasq",
+    "unbound.conf", "named.conf", "msmtprc", "fetchmailrc",
+    "aliases", "mailname", "main.cf", "master.cf", "postfix",
+    "dovecot", "saslauthd", "opendkim", ".xserverrc", ".pam.d",
+    NULL
+};
+static const char *PASTE_INSTALL_VERBS[] = {
+    "cp ", "mv ", "install ", NULL
+};
+static const char *PASTE_INSTALL_TARGETS[] = {
+    "cron.d", "spool/cron", "systemd/system", "inetd", "xinetd",
+    "init.d", "/etc/profile", "profile.d", "ld.so", "rc.local",
+    "autostart", "authorized_keys", NULL
+};
+static const char *PASTE_EVAL_VERBS[] = {
+    "eval", "exec", "sh <(", NULL
+};
+static const char *PASTE_FETCHES[] = {
+    "$(", "`", "curl", "wget", "fetch", NULL
+};
+static const char *PASTE_FETCH_TOOLS[] = {
+    "curl ", "wget ", "fetch ", "lynx ", "scp ", "sftp ", "rsync ",
+    "tftp ", "base64 -d", "base64 -D", "base64 --decode",
+    "openssl enc", "openssl aes", "gpg -d", "gpg --decrypt",
+    "xxd -r", NULL
+};
+static const char *PASTE_EXEC_CHAINS[] = {
+    "&& bash", "&& sh", "&& chmod", "&& sudo", "&& ./", "&& /",
+    "; bash", "; sh", "; ./", "; chmod", "; sudo", "; /", NULL
+};
+static const char *PASTE_LISTENERS[] = {
+    "nc -l", "ncat -l", "netcat -l", " -lv", "ncat --listen",
+    "nc -p ", NULL
+};
+static const char *PASTE_SUID[] = {
+    "chmod +s", "chmod u+s", "chmod 4", "chmod 6", "setuid", "u+s ",
+    NULL
+};
+static const char *PASTE_HTTPSRV[] = {
+    "-m http.server", "php -S ", "SimpleHTTPServer", "busybox httpd",
+    "-ehttpd", NULL
+};
+static const char *PASTE_HTTPSRV_HOSTS[] = {
+    "python", "php", "busybox", "ruby", "-m ", NULL
+};
+
 PasteVerdict
 hlse_check_paste(const char *text) {
     PasteVerdict v;
@@ -426,30 +568,8 @@ hlse_check_paste(const char *text) {
 
     /* P2: curl/wget piped to shell */
     {
-        int has_curl = (strstr(text, "curl ") != NULL ||
-                       strstr(text, "wget ") != NULL ||
-                       strstr(text, "fetch ") != NULL ||
-                       strstr(text, "lynx ") != NULL);
-        int has_pipe_sh = (strstr(text, "| sh") != NULL ||
-                          strstr(text, "| bash") != NULL ||
-                          strstr(text, "|sh") != NULL ||
-                          strstr(text, "|bash") != NULL ||
-                          strstr(text, "| sudo") != NULL ||
-                          strstr(text, "| /bin/sh") != NULL ||
-                          strstr(text, "| /bin/bash") != NULL ||
-                          /* interpreter cradles — same RCE class */
-                          strstr(text, "| python") != NULL ||
-                          strstr(text, "| perl") != NULL ||
-                          strstr(text, "| node") != NULL ||
-                          strstr(text, "| ruby") != NULL ||
-                          strstr(text, "| php") != NULL ||
-                          strstr(text, "|pwsh") != NULL ||
-                          strstr(text, "| pwsh") != NULL ||
-                          strstr(text, "| powershell") != NULL ||
-                          strstr(text, "| zsh") != NULL ||
-                          strstr(text, "| fish") != NULL ||
-                          strstr(text, "| dash") != NULL ||
-                          strstr(text, "| ksh") != NULL);
+        int has_curl = hay_any(text, PASTE_DOWNLOADERS);
+        int has_pipe_sh = hay_any(text, PASTE_PIPE_SHELLS);
         if (has_curl && has_pipe_sh) {
             v.signals |= PASTE_CURL_PIPE_SH;
             v.score += 40;
@@ -497,8 +617,7 @@ hlse_check_paste(const char *text) {
     }
 
     /* P4: Sudo / su injection */
-    if (strstr(text, "sudo ") || strstr(text, "su -c") ||
-        strstr(text, "doas ")) {
+    if (hay_any(text, PASTE_PRIV_ESC)) {
         v.signals |= PASTE_SUDO_INJECTION;
         v.score += 15;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -507,10 +626,7 @@ hlse_check_paste(const char *text) {
     }
 
     /* P5: Encoded payloads */
-    if (strstr(text, "base64 -d") || strstr(text, "base64 --decode") ||
-        strstr(text, "python -c") || strstr(text, "python3 -c") ||
-        strstr(text, "perl -e") || strstr(text, "ruby -e") ||
-        strstr(text, "node -e") || strstr(text, "php -r") ||
+    if (hay_any(text, PASTE_DECODERS) ||
         (strstr(text, "echo ") && strstr(text, "| base64"))) {
         v.signals |= PASTE_ENCODED_PAYLOAD;
         v.score += 30;
@@ -543,23 +659,8 @@ hlse_check_paste(const char *text) {
     }
 
     /* P9: Destructive commands — the classic baited one-liner */
-    if (strstr(text, "rm -rf /") || strstr(text, "rm -rf ~") ||
-        strstr(text, "rm -rf $HOME") || strstr(text, "rm -fr /") ||
-        strstr(text, ":(){ :|:") ||
-        strstr(text, "mkfs.") || strstr(text, "mkfs /") ||
-        strstr(text, "mkfs -") || strstr(text, "mke2fs /") ||
-        strstr(text, "of=/dev/sd") || strstr(text, "of=/dev/nvme") ||
-        strstr(text, "of=/dev/hd") || strstr(text, "of=/dev/vd") ||
-        strstr(text, "of=/dev/mmc") || strstr(text, "of=/dev/xvd") ||
-        strstr(text, "if=/dev/mem") || strstr(text, "if=/dev/kmem") ||
-        strstr(text, "if=/dev/sd") || strstr(text, "if=/dev/nvme") ||
-        strstr(text, "blkdiscard /") || strstr(text, "blkdiscard -") ||
-        strstr(text, "shred ") || strstr(text, "> /dev/sd") ||
-        strstr(text, "chmod -R 777") || strstr(text, "chmod -R 777 /") ||
-        /* c238: storage/volume/RAID destruction */
-        strstr(text, "nvme format") || strstr(text, "nvme sanitize") ||
-        strstr(text, "sg_sanitize") || strstr(text, "sg_format") ||
-        strstr(text, "sg_write_buffer") ||
+    if (hay_any(text, PASTE_DESTRUCT) ||
+        /* c238: storage/volume/RAID destruction (compound terms) */
         (strstr(text, "hdparm") &&
          (strstr(text, "--security-erase") ||
           strstr(text, "--security-disable"))) ||
@@ -573,21 +674,13 @@ hlse_check_paste(const char *text) {
         (strstr(text, "mdadm") &&
          (strstr(text, "--stop") || strstr(text, "--zero-superblock") ||
           strstr(text, "--fail") || strstr(text, "--remove"))) ||
-        strstr(text, "pvremove ") || strstr(text, "vgremove ") ||
-        strstr(text, "lvremove ") || strstr(text, "lvreduce ") ||
-        strstr(text, "dmsetup remove") ||
         (ci_contains(text, "cryptsetup") &&
          (ci_contains(text, "erase") || ci_contains(text, "luksformat"))) ||
-        strstr(text, "zfs destroy") || strstr(text, "zpool destroy") ||
-        strstr(text, "zpool labelclear") ||
         (strstr(text, "btrfs") &&
          (strstr(text, "subvolume delete") ||
           strstr(text, "device delete"))) ||
-        strstr(text, "sfdisk --delete") || strstr(text, "sfdisk /") ||
         (strstr(text, "parted") &&
          (strstr(text, " rm ") || strstr(text, "mklabel"))) ||
-        strstr(text, "fdisk /") || strstr(text, "gdisk /") ||
-        strstr(text, "cgdisk /") ||
         (strstr(text, "camcontrol") &&
          (strstr(text, "format") || strstr(text, "sanitize"))) ||
         (strstr(text, "vdo ") &&
@@ -635,25 +728,7 @@ hlse_check_paste(const char *text) {
 
     /* P10: Credential-file access — reading private keys/credentials is
      * the pre-exfiltration step of pastejacking */
-    if (strstr(text, ".ssh/id_") || strstr(text, "id_rsa") ||
-        strstr(text, "id_ed25519") || strstr(text, ".ssh/authorized_keys") ||
-        strstr(text, ".aws/credentials") || strstr(text, ".aws/config") ||
-        strstr(text, ".gnupg/") || strstr(text, ".kube/config") ||
-        strstr(text, ".docker/config.json") || strstr(text, ".netrc") ||
-        strstr(text, ".git-credentials") || strstr(text, "shadow") ||
-        strstr(text, "/etc/passwd") || strstr(text, ".pgpass") ||
-        strstr(text, ".my.cnf") || strstr(text, ".pypirc") ||
-        strstr(text, ".s3cfg") || strstr(text, ".boto") ||
-        strstr(text, ".env") || strstr(text, "master.passwd") ||
-        strstr(text, "/etc/security") || strstr(text, "/etc/group") ||
-        strstr(text, "/etc/sudoers") || strstr(text, "sudoers.d") ||
-        strstr(text, "/etc/login.defs") || strstr(text, "config/gcloud") ||
-        strstr(text, ".azure") || strstr(text, "_history") ||
-        strstr(text, ".viminfo") || strstr(text, ".lesshst") ||
-        strstr(text, ".wget-hsts") || strstr(text, "auth.log") ||
-        strstr(text, "/var/log/secure") || strstr(text, "/var/log/btmp") ||
-        strstr(text, "/var/log/wtmp") || strstr(text, "/var/log/lastlog") ||
-        strstr(text, "/var/log/faillog")) {
+    if (hay_any(text, PASTE_CRED_PATHS)) {
         v.signals |= PASTE_CRED_ACCESS;
         v.score += 40;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -666,102 +741,10 @@ hlse_check_paste(const char *text) {
      * installs the payload to run on every login. Copy/move/install
      * verbs only fire on system-level targets (routine home-dir
      * backups must stay clean).                                 */
-    if (((strstr(text, ">>") || strstr(text, "echo ") ||
-          strstr(text, "crontab") || strstr(text, "at now") ||
-          strstr(text, "systemctl enable") || strstr(text, "launchctl load") ||
-          strstr(text, "tee /") || strstr(text, "tee .") ||
-          strstr(text, "tee ~") || strstr(text, "tee -") ||
-          strstr(text, "curl ") ||
-          strstr(text, "wget ")) &&
-         (strstr(text, ".bashrc") || strstr(text, ".zshrc") ||
-          strstr(text, ".profile") || strstr(text, "authorized_keys") ||
-          strstr(text, "crontab") || strstr(text, "systemctl enable") ||
-          strstr(text, "launchctl") || strstr(text, "rc.local") ||
-          strstr(text, ".xinitrc") || strstr(text, ".zshenv") ||
-          strstr(text, ".bash_profile") || strstr(text, ".bash_login") ||
-          strstr(text, ".zprofile") || strstr(text, ".zlogin") ||
-          strstr(text, ".xprofile") || strstr(text, ".pam_environment") ||
-          strstr(text, "ld.so.preload") || strstr(text, "cron.d") ||
-          strstr(text, "spool/cron") || strstr(text, "autostart") ||
-          strstr(text, "systemd/system") || strstr(text, "inetd") ||
-          strstr(text, "xinetd") || strstr(text, "/etc/profile") ||
-          strstr(text, "profile.d") || strstr(text, "init.d") ||
-          strstr(text, ".forward") || strstr(text, ".ssh/config") ||
-          strstr(text, "/etc/zshrc") || strstr(text, "/etc/zprofile") ||
-          strstr(text, "/etc/zshenv") || strstr(text, ".ssh/rc") ||
-          strstr(text, "motd.d") || strstr(text, "pam.d") ||
-          strstr(text, "sshd_config") || strstr(text, "rc.d") ||
-          strstr(text, "systemd/user") || strstr(text, "udev/rules") ||
-          strstr(text, "sysctl.d") || strstr(text, "ld.so.conf") ||
-          strstr(text, "pacman.d") || strstr(text, "/etc/environment") ||
-          strstr(text, "/etc/timezone") || strstr(text, "/etc/hosts") ||
-          strstr(text, "resolv.conf") || strstr(text, "nsswitch") ||
-          strstr(text, ".vimrc") || strstr(text, ".tmux.conf") ||
-          strstr(text, "config.fish") || strstr(text, ".netrc") ||
-          strstr(text, ".rhosts") || strstr(text, "hosts.equiv") ||
-          strstr(text, ".npmrc") || strstr(text, ".curlrc") ||
-          strstr(text, ".gitconfig") || strstr(text, ".xsession") ||
-          strstr(text, ".bash_logout") || strstr(text, ".zlogout") ||
-          strstr(text, "ssh_config") || strstr(text, ".gtkrc") ||
-          strstr(text, ".Xresources") || strstr(text, ".xmodmaprc") ||
-          strstr(text, ".inputrc") || strstr(text, ".screenrc") ||
-          strstr(text, ".muttrc") || strstr(text, ".mailrc") ||
-          strstr(text, ".procmailrc") || strstr(text, ".pinerc") ||
-          strstr(text, ".lynxrc") || strstr(text, ".wgetrc") ||
-          strstr(text, ".git-crypt") || strstr(text, ".config/git") ||
-          strstr(text, ".gnomerc") || strstr(text, ".kderc") ||
-          strstr(text, "kdeglobals") || strstr(text, "kglobalshortcutsrc") ||
-          strstr(text, "kwinrc") || strstr(text, ".config/pulse") ||
-          strstr(text, ".config/systemd") ||
-          strstr(text, ".local/share/applications") ||
-          strstr(text, "environment.d") || strstr(text, ".ssh/environment") ||
-          strstr(text, ".ssh/sshrc") ||
-          strstr(text, "native-messaging-hosts") ||
-          strstr(text, "NativeMessagingHosts") ||
-          strstr(text, ".vscode/extensions") || strstr(text, ".config/Code") ||
-          strstr(text, ".gcloud") || strstr(text, "sources.list") ||
-          strstr(text, "apt/preferences") || strstr(text, "apt.conf.d") ||
-          strstr(text, "yum.repos.d") || strstr(text, "modprobe.d") ||
-          strstr(text, "sysctl.d") || strstr(text, "polkit-1") ||
-          strstr(text, "dbus-1") || strstr(text, "sudoers.d") ||
-          strstr(text, "spool/cron") || strstr(text, "cron.d") ||
-          strstr(text, "daemon.json") || strstr(text, ".git/hooks") ||
-          strstr(text, ".gitmodules") || strstr(text, ".gitattributes") ||
-          strstr(text, "known_hosts") || strstr(text, "profile.d") ||
-          strstr(text, ".pam_environment") || strstr(text, "modules-load.d") ||
-          strstr(text, "tmpfiles.d") || strstr(text, "binfmt.d") ||
-          strstr(text, "hwdb.d") || strstr(text, "firewalld") ||
-          strstr(text, "fail2ban") || strstr(text, "logrotate.d") ||
-          strstr(text, "rsyslog.d") || strstr(text, "audit/rules.d") ||
-          strstr(text, "auditd.conf") || strstr(text, "ld.so.preload") ||
-          strstr(text, "fstab") || strstr(text, "crypttab") ||
-          strstr(text, "exports") || strstr(text, "netgroup") ||
-          strstr(text, "auto.master") || strstr(text, "hostapd") ||
-          strstr(text, "wpa_supplicant") || strstr(text, "dhclient") ||
-          strstr(text, "dhcpcd") || strstr(text, "netplan") ||
-          strstr(text, "systemd/network") || strstr(text, "resolvconf") ||
-          strstr(text, "hosts.allow") || strstr(text, "hosts.deny") ||
-          strstr(text, "ipsec.conf") || strstr(text, "ppp/peers") ||
-          strstr(text, "wireguard") || strstr(text, "wg0.conf") ||
-          strstr(text, "openvpn") || strstr(text, "vtund") ||
-          strstr(text, "dnsmasq") || strstr(text, "unbound.conf") ||
-          strstr(text, "named.conf") || strstr(text, "msmtprc") ||
-          strstr(text, "fetchmailrc") || strstr(text, "aliases") ||
-          strstr(text, "mailname") || strstr(text, "main.cf") ||
-          strstr(text, "master.cf") || strstr(text, "postfix") ||
-          strstr(text, "dovecot") || strstr(text, "saslauthd") ||
-          strstr(text, "opendkim") || strstr(text, ".bash_profile") ||
-          strstr(text, ".ssh/rc") || strstr(text, ".xinitrc") ||
-          strstr(text, ".xprofile") || strstr(text, ".xserverrc") ||
-          strstr(text, ".pam.d") || strstr(text, "pam.d"))) ||
-        ((strstr(text, "cp ") || strstr(text, "mv ") ||
-          strstr(text, "install ")) &&
-         (strstr(text, "cron.d") || strstr(text, "spool/cron") ||
-          strstr(text, "systemd/system") || strstr(text, "inetd") ||
-          strstr(text, "xinetd") || strstr(text, "init.d") ||
-          strstr(text, "/etc/profile") || strstr(text, "profile.d") ||
-          strstr(text, "ld.so") || strstr(text, "rc.local") ||
-          strstr(text, "autostart") || strstr(text, "authorized_keys")))) {
+    if ((hay_any(text, PASTE_WRITE_VERBS) &&
+         hay_any(text, PASTE_PERSIST_TARGETS)) ||
+        (hay_any(text, PASTE_INSTALL_VERBS) &&
+         hay_any(text, PASTE_INSTALL_TARGETS))) {
         v.signals |= PASTE_PERSIST_WRITE;
         v.score += 45;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -772,12 +755,9 @@ hlse_check_paste(const char *text) {
 
     /* P12: eval/exec of fetched content — the non-pipe form of the
      * download cradle (P2 only catches the `| sh` shape) */
-    if ((strstr(text, "eval") || strstr(text, "exec") ||
-         ci_contains(text, "source ") || ci_contains(text, ". /") ||
-         strstr(text, "sh <(")) &&
-        (strstr(text, "$(") || strstr(text, "`") ||
-         strstr(text, "curl") || strstr(text, "wget") ||
-         strstr(text, "fetch"))) {
+    if ((hay_any(text, PASTE_EVAL_VERBS) ||
+         ci_contains(text, "source ") || ci_contains(text, ". /")) &&
+        hay_any(text, PASTE_FETCHES)) {
         v.signals |= PASTE_EVAL_FETCH;
         v.score += 45;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -790,21 +770,8 @@ hlse_check_paste(const char *text) {
      * `wget x; sh s`, `curl x && sudo bash s`. P2 needs a literal
      * `| sh` and P12 needs an eval/source verb; the `&&`/`;` exec
      * chain is the third shape of the same download cradle.       */
-    if ((strstr(text, "curl ") || strstr(text, "wget ") ||
-         strstr(text, "fetch ") || strstr(text, "lynx ") ||
-         strstr(text, "scp ") || strstr(text, "sftp ") ||
-         strstr(text, "rsync ") || strstr(text, "tftp ") ||
-         strstr(text, "base64 -d") || strstr(text, "base64 -D") ||
-         strstr(text, "base64 --decode") || strstr(text, "openssl enc") ||
-         strstr(text, "openssl aes") || strstr(text, "gpg -d") ||
-         strstr(text, "gpg --decrypt") || strstr(text, "xxd -r")) &&
-        (strstr(text, "&& bash") || strstr(text, "&& sh") ||
-         strstr(text, "&& chmod") || strstr(text, "&& sudo") ||
-         strstr(text, "&& ./") || strstr(text, "&& /") ||
-         strstr(text, "; bash") || strstr(text, "; sh") ||
-         strstr(text, "; ./") ||
-         strstr(text, "; chmod") || strstr(text, "; sudo") ||
-         strstr(text, "; /"))) {
+    if (hay_any(text, PASTE_FETCH_TOOLS) &&
+        hay_any(text, PASTE_EXEC_CHAINS)) {
         v.signals |= PASTE_EVAL_FETCH;
         v.score += 45;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -817,9 +784,7 @@ hlse_check_paste(const char *text) {
      * a staging/exfil HTTP server, or a SUID bit install. These are
      * pastejacked post-exploitation verbs, not admin commands: nobody
      * needs `nc -l` or `chmod +s` in pasted content.            */
-    if (strstr(text, "nc -l") || strstr(text, "ncat -l") ||
-        strstr(text, "netcat -l") || strstr(text, " -lv") ||
-        strstr(text, "ncat --listen") || strstr(text, "nc -p ")) {
+    if (hay_any(text, PASTE_LISTENERS)) {
         v.signals |= PASTE_LISTENER_PRIV;
         v.score += 45;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -827,9 +792,7 @@ hlse_check_paste(const char *text) {
                 "P13: Bind-shell listener — 'nc -l'/'ncat -l' opens a "
                 "shell port for the attacker to connect back to");
     }
-    if (strstr(text, "chmod +s") || strstr(text, "chmod u+s") ||
-        strstr(text, "chmod 4") || strstr(text, "chmod 6") ||
-        strstr(text, "setuid") || strstr(text, "u+s ")) {
+    if (hay_any(text, PASTE_SUID)) {
         v.signals |= PASTE_LISTENER_PRIV;
         v.score += 55;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -837,12 +800,8 @@ hlse_check_paste(const char *text) {
                 "P13: SUID/setuid bit install — pasted privilege "
                 "escalation primitive");
     }
-    if ((strstr(text, "-m http.server") || strstr(text, "php -S ") ||
-         strstr(text, "SimpleHTTPServer") || strstr(text, "busybox httpd") ||
-         strstr(text, "-ehttpd")) &&
-        (strstr(text, "python") || strstr(text, "php") ||
-         strstr(text, "busybox") || strstr(text, "ruby") ||
-         strstr(text, "-m "))) {
+    if (hay_any(text, PASTE_HTTPSRV) &&
+        hay_any(text, PASTE_HTTPSRV_HOSTS)) {
         v.signals |= PASTE_LISTENER_PRIV;
         v.score += 35;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)

@@ -10877,6 +10877,20 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 468 (paste-surface needles table-driven, first increment):**
+  hlse_supply.c's paste-check region held ~185 needles inside
+  hand-written `strstr(text, ...) || ...` OR-chains (P2 pipe-shell, P4
+  priv-esc, P5 decoders, P9 destructive, P10 credential paths, P11
+  persistence verb/target products, P12 eval-fetch, P12b download-exec,
+  P13 listeners/suid/http-servers) — every addition meant editing a
+  5–90-term boolean chain, and the P11 target list alone contained 13
+  exact duplicates. The chains are now NULL-terminated static tables
+  (16 PASTE_* vocabularies) walked by a shared `hay_any()` matcher with
+  identical case-sensitive strstr semantics; compound (verb && target)
+  sub-expressions and ci_contains needles stay inline where the shape
+  isn't a pure OR. P11's target list is deduplicated (OR-idempotent).
+  Verified needle-for-needle: zero literals dropped, zero added.
+  Behavior-preserving: benchmark F1=1.000, all paste checks green.
 - **cycle 467 (SARIF results carry partialFingerprints):** results had
   no dedup-fingerprint contribution — code-scanning consumers had to
   reconstruct result identity from message text and location, so an
