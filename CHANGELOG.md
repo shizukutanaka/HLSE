@@ -10877,6 +10877,13 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 455 (hlsed secret alerts carry stable id + line):** the
+  daemon's secret alert reasons were "Secret detected: <type>" — the
+  only output surface still lacking finding identity after cycles
+  444-454 closed it for CLI/SARIF/HTTP/dashboard. hlsed now emits
+  "Secret detected: <type> [HLSE-SECRET-*] (line N)" so log sinks and
+  stderr can dedup and locate hits without a rescan.
+  Daemon integration tests +2.
 - **cycle 454 (dashboard surfaces id/line/blind_spot):** the API gained
   finding ids, line numbers and blind_spot (cycles 451-452) but the
   dashboard dropped them — the most exposed audience saw the least

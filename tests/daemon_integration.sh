@@ -60,6 +60,8 @@ printf 'aws_key = "AKIAQB3X7F2MN9T4KZWJ"\n' > "$WATCH/sub/keys.txt"
 sleep 1.4
 check "secret found on stderr"  "$(cat "$ERR")" "score="
 check "secret logged"           "$(cat "$LOG" 2>/dev/null)"             "secret"
+check "alert carries pattern id" "$(cat "$ERR")" "HLSE-SECRET-"
+check "alert carries line num"   "$(cat "$ERR")" "(line 1)"
 
 # a benign file at/below threshold is watched but not alerted ------------
 printf 'hello\n' > "$WATCH/ok.txt"

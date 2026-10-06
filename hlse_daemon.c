@@ -26,6 +26,7 @@
 
 #include "hlse_config.h"
 #include "hlse_core.h"    /* hlse_severity_for_score, HLSE_VERSION */
+#include "hlse_meta.h"    /* hlse_secret_pattern_id_r */
 #include "hlse_file.h"
 #include "hlse_secrets.h"
 #include "hlse_alert.h"
@@ -150,8 +151,19 @@ scan_new_file(const char *path, int threshold) {
                 int n = 0;
                 for (i = 0;
                      i < sv.n_findings && i < HLSE_SECRET_MAX_FINDINGS; i++) {
-                    snprintf(sreasons[i], sizeof(sreasons[i]),
-                             "Secret detected: %s", sv.findings[i].type);
+                    char pidb[80];
+                    const char *pid =
+                        hlse_secret_pattern_id_r(sv.findings[i].type,
+                                                 pidb, sizeof(pidb));
+                    if (sv.findings[i].line > 0)
+                        snprintf(sreasons[i], sizeof(sreasons[i]),
+                                 "Secret detected: %s [%s] (line %d)",
+                                 sv.findings[i].type, pid,
+                                 sv.findings[i].line);
+                    else
+                        snprintf(sreasons[i], sizeof(sreasons[i]),
+                                 "Secret detected: %s [%s]",
+                                 sv.findings[i].type, pid);
                     rr[i] = sreasons[i];
                     n++;
                 }
