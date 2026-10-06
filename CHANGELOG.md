@@ -10877,6 +10877,16 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 446 (secret findings carry stable pattern ids):** every
+  secret finding element now carries `"id":"HLSE-SECRET-*"` on BOTH
+  paths (standalone `secret` and streaming `scan`) — the SIEM dedup /
+  suppression key that only existed at record level on >=60 scores.
+  `hlse_secret_pattern_id` had the same case-sensitive strstr gap as
+  the objective map: enum tokens (AZURE_*, GCP_*, TELEGRAM_*,
+  DISCORD_*, URI_CREDENTIALS, MNEMONIC_*, *_PRIVATE_KEY) all fell
+  through to HLSE-SECRET-GENERIC — explicit branches added
+  (JWT_ALG_NONE/JWT already had dedicated ids). Spec §5.2 updated.
+  CLI tests +2: ids emitted on both paths with correct routing.
 - **cycle 445 (objective advisory covers enum-type findings):**
   `hlse_secret_objective_for` only matched the friendly registry
   labels ("Stripe Live Publishable", "AWS …") — the built-in

@@ -230,5 +230,15 @@ hlse_secret_pattern_id(const char *ftype) {
      * deserves its own routing token downstream. */
     if (strstr(ftype, "JWT_ALG_NONE")) return "HLSE-SECRET-JWT-ALG-NONE";
     if (strstr(ftype, "JWT"))     return "HLSE-SECRET-JWT";
+    /* Built-in detector types are enum-style tokens (sv_add literals) that
+     * the friendly labels above cannot reach — strstr is case-sensitive. */
+    if (strstr(ftype, "GCP"))     return "HLSE-SECRET-GOOGLE";
+    if (strstr(ftype, "AZURE"))   return "HLSE-SECRET-AZURE";
+    if (strstr(ftype, "TELEGRAM")) return "HLSE-SECRET-TELEGRAM";
+    if (strstr(ftype, "DISCORD")) return "HLSE-SECRET-DISCORD";
+    if (strstr(ftype, "URI_CREDENTIALS")) return "HLSE-SECRET-URI-CREDS";
+    if (strstr(ftype, "MNEMONIC")) return "HLSE-SECRET-SEED-PHRASE";
+    if (strstr(ftype, "PRIVATE_KEY") || strstr(ftype, "RSA_PRIVATE"))
+                                  return "HLSE-SECRET-PRIVATE-KEY";
     return "HLSE-SECRET-GENERIC";
 }

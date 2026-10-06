@@ -177,9 +177,11 @@ Additional fields vary by kind:
   exceeds the `classes` cap) on multi-class detections.
 - `clipboard`: `is_swap`, `original`, `swapped`, `reason`, `remediation`.
 - `file`: `path`, `reasons:[...]`.
-- `secret`: `findings:[{type,line,description,confidence?,remediation?}]`
+- `secret`: `findings:[{id,type,line,description,confidence?,remediation?}]`
   (`line` is the 1-based line of the finding within the scanned text;
-  `0` when the position is not line-resolvable); `caveat` on detections.
+  `0` when the position is not line-resolvable; `id` is the stable
+  `HLSE-SECRET-*` pattern id — the dedup/suppression key); `caveat` on
+  detections.
 - `package`: `name`, `ecosystem`, `pattern_id`; `matches:[{name,registry,
   distance}]` only on hits. `--manifest` emits one `kind=package` record per
   finding plus a `kind=manifest_summary` terminator: `manifest`,

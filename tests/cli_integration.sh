@@ -439,6 +439,18 @@ printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | ./hlse
     && check "enum-type secret finding emits objective" "0" "0" \
     || check "enum-type secret finding emits objective" "0" "1"
 
+# secret findings carry stable HLSE-SECRET-* ids (dedup key, both paths)
+./hlse_core --json secret 'postgresql://admin:Str0ngPass999@db.internal:5432/prod' 2>&1 | grep -q '"id":"HLSE-SECRET-URI-CREDS"' \
+    && check "secret finding carries stable pattern id" "0" "0" \
+    || check "secret finding carries stable pattern id" "0" "1"
+PT_SCAN_DIR=$(mktemp -d)
+printf 'token: eyJhbGciOiJub25lIn0.eyJzdWIiOiIxMjM0NTY3ODkwIn0.e30\n' \
+    > "$PT_SCAN_DIR/creds.env"
+./hlse_core --json scan "$PT_SCAN_DIR" 2>&1 | grep -q '"id":"HLSE-SECRET-JWT-ALG-NONE"' \
+    && check "scan-path secret finding carries pattern id" "0" "0" \
+    || check "scan-path secret finding carries pattern id" "0" "1"
+rm -rf "$PT_SCAN_DIR"
+
 # FileFix (2025 ClickFix variant): paste path into File Explorer address bar → flagged
 ./hlse_core text 'A file has been shared with you. Open File Explorer, then paste the path into the file explorer and press Enter.' 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "FileFix Explorer-paste lure detected" "0" "0" \
