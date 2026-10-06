@@ -451,6 +451,14 @@ printf 'token: eyJhbGciOiJub25lIn0.eyJzdWIiOiIxMjM0NTY3ODkwIn0.e30\n' \
     || check "scan-path secret finding carries pattern id" "0" "1"
 rm -rf "$PT_SCAN_DIR"
 
+# heuristic secret classes get a FP caveat (not just the plaintext hint)
+./hlse_core --json secret 'password=hunter2abc' 2>&1 | grep -q '"caveat":"heuristic match' \
+    && check "heuristic secret finding emits caveat" "0" "0" \
+    || check "heuristic secret finding emits caveat" "0" "1"
+./hlse_core --json secret 'postgresql://admin:Str0ngPass999@db.internal:5432/prod' 2>&1 | grep -q '"caveat":"embedded credentials' \
+    && check "URI_CREDENTIALS finding emits caveat" "0" "0" \
+    || check "URI_CREDENTIALS finding emits caveat" "0" "1"
+
 # FileFix (2025 ClickFix variant): paste path into File Explorer address bar → flagged
 ./hlse_core text 'A file has been shared with you. Open File Explorer, then paste the path into the file explorer and press Enter.' 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "FileFix Explorer-paste lure detected" "0" "0" \

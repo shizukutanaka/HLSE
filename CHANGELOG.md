@@ -10877,6 +10877,17 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 447 (caveat covers heuristic + URI credential classes):**
+  `hlse_secret_finding_caveat` was a single-case function (Stripe
+  Live Publishable only) — the plaintext path has always warned
+  "confidence: heuristic — pattern guess" for the anchor-less
+  classes (ENV/KV/GENERIC_SECRET, HEX_PRIVATE_KEY, MNEMONIC_PHRASE),
+  but JSON/SIEM consumers got no per-finding FP signal. Added
+  branches: the five heuristic types get a "heuristic match …
+  confirm it is live" caveat and URI_CREDENTIALS gets a
+  "may be documentation/dev defaults" caveat — the same types
+  hlse_secret_confidence() marks heuristic, keeping the fields
+  consistent by construction. CLI tests +2.
 - **cycle 446 (secret findings carry stable pattern ids):** every
   secret finding element now carries `"id":"HLSE-SECRET-*"` on BOTH
   paths (standalone `secret` and streaming `scan`) — the SIEM dedup /

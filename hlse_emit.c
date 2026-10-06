@@ -205,6 +205,24 @@ hlse_secret_finding_caveat(const char *type) {
                "Rotation is not required for this key; if a paired SECRET "
                "key (sk_live_/rk_live_) was also exposed, that one needs "
                "immediate rotation instead.";
+    /* The heuristic-confidence types (the same classes
+     * hlse_secret_confidence() marks "heuristic"): a pattern-shaped match
+     * without an unforgeable anchor — documentation placeholders, example
+     * configs and innocently high-entropy strings can mimic the shape.
+     * The plaintext path has always told the user this; give the JSON
+     * consumer the same caveat. */
+    if (strcmp(type, "ENV_SECRET") == 0 || strcmp(type, "KV_SECRET") == 0
+        || strcmp(type, "GENERIC_SECRET") == 0
+        || strcmp(type, "HEX_PRIVATE_KEY") == 0
+        || strcmp(type, "MNEMONIC_PHRASE") == 0)
+        return "heuristic match \xe2\x80\x94 a pattern-shaped string without "
+               "an unforgeable anchor; documentation examples and "
+               "placeholder values can mimic this shape, so confirm the "
+               "credential is live before treating it as compromised";
+    if (strcmp(type, "URI_CREDENTIALS") == 0)
+        return "embedded credentials also appear in documentation, dev "
+               "defaults and example connection strings \xe2\x80\x94 confirm "
+               "the host and credential are real before rotating blindly";
     return NULL;
 }
 
