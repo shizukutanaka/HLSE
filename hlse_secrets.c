@@ -794,6 +794,12 @@ hlse_custom_secret_pattern_count(void) {
     return g_custom_pattern_n;
 }
 
+const char *
+hlse_custom_secret_pattern_label(int idx) {
+    if (idx < 0 || idx >= g_custom_pattern_n) return NULL;
+    return g_custom_patterns[idx].label;
+}
+
 /* ── Custom brands / organization impersonation targets (roadmap P1-6) ──── */
 typedef struct {
     char name[64];

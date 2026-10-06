@@ -75,6 +75,11 @@ void hlse_clear_custom_secret_patterns(void);
 /* Number of currently registered custom patterns. */
 int hlse_custom_secret_pattern_count(void);
 
+/* Label of the i-th registered custom pattern (index < count), or NULL.
+ * Used by --list-patterns so a loaded --patterns file's rules are
+ * discoverable alongside the built-in registry. */
+const char *hlse_custom_secret_pattern_label(int idx);
+
 /* ── Module 2: Email Header Forensics ─────────────────────────────────── */
 
 #define HLSE_EMAIL_MAX_REASONS 8

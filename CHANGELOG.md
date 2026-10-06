@@ -10877,6 +10877,18 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 449 (--list-patterns exposes loaded custom rules):** cycle 448
+  gave custom --patterns rules their own HLSE-SECRET-CUSTOM-* ids, but
+  the registry only listed the 62 static tokens — a SIEM operator could
+  not discover what ids their loaded rules emit without grepping.
+  hlse_list_patterns now appends every registered custom pattern
+  ({id, kind:"secret", description:label}); JSON mode routes the
+  user-controlled label through hlse_json_escape (the old
+  no-escape-needed comment is updated — it held only while every string
+  was an author constant). New hlse_custom_secret_pattern_label(idx)
+  getter. Text mode gets a "custom patterns" section; without
+  --patterns nothing changes (count stays 62). CLI tests +3 (p88b
+  JSON+text discovery, p88c benign no-custom).
 - **cycle 448 (custom secret patterns get their own pattern ids):**
   every custom `--patterns` finding collapsed into
   `HLSE-SECRET-GENERIC` — two distinct org rules were

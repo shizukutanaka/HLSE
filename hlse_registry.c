@@ -9,7 +9,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "hlse_core.h"   /* HLSE_VERSION */
+#include "hlse_core.h"    /* HLSE_VERSION */
+#include "hlse_secrets.h" /* custom-pattern count + label getters */
+#include "hlse_meta.h"    /* hlse_secret_pattern_id_r (CUSTOM slug) */
+#include "hlse_util.h"    /* hlse_json_escape (custom labels are user text) */
 
 /* ── Pattern-ID registry (Perspective 88) ──────────────────────────────────
  * The stable HLSE-* pattern_id tokens introduced across P78–P87 exist so SIEM
@@ -105,20 +108,30 @@ static const struct pattern_entry g_pattern_registry[] = {
 int
 hlse_list_patterns(int json_out) {
     size_t n = sizeof(g_pattern_registry) / sizeof(g_pattern_registry[0]);
+    int ncustom = hlse_custom_secret_pattern_count();
     size_t i;
+    int ci;
     if (json_out) {
-        /* The registry strings are author-controlled constants (ASCII, no
-         * quotes/backslashes/control chars), so they need no JSON escaping —
-         * keeping this self-contained and free of a forward reference to
-         * json_escape, which is defined later in the file. */
+        /* The static registry strings are author-controlled constants, but
+         * custom --patterns labels are user-controlled text — they go
+         * through hlse_json_escape. */
         printf("{\"kind\":\"pattern_registry\",\"hlse_version\":\"" HLSE_VERSION
-               "\",\"count\":%zu,\"patterns\":[", n);
+               "\",\"count\":%zu,\"patterns\":[", n + (size_t)ncustom);
         for (i = 0; i < n; i++) {
             printf("%s{\"id\":\"%s\",\"kind\":\"%s\",\"description\":\"%s\"}",
                    i > 0 ? "," : "",
                    g_pattern_registry[i].id,
                    g_pattern_registry[i].kind,
                    g_pattern_registry[i].desc);
+        }
+        for (ci = 0; ci < ncustom; ci++) {
+            const char *label = hlse_custom_secret_pattern_label(ci);
+            char idbuf[80], esc[256];
+            if (!label) continue;
+            hlse_json_escape(label, esc, sizeof(esc));
+            printf(",{\"id\":\"%s\",\"kind\":\"secret\",\"description\":\"%s\"}",
+                   hlse_secret_pattern_id_r(label, idbuf, sizeof(idbuf)),
+                   esc);
         }
         printf("]}\n");
     } else {
@@ -128,6 +141,17 @@ hlse_list_patterns(int json_out) {
                    g_pattern_registry[i].id,
                    g_pattern_registry[i].kind,
                    g_pattern_registry[i].desc);
+        if (ncustom > 0) {
+            printf("custom patterns (--patterns, %d registered)\n", ncustom);
+            for (ci = 0; ci < ncustom; ci++) {
+                const char *label = hlse_custom_secret_pattern_label(ci);
+                char idbuf[80];
+                if (!label) continue;
+                printf("  %-28s [%-9s] %s\n",
+                       hlse_secret_pattern_id_r(label, idbuf, sizeof(idbuf)),
+                       "secret", label);
+            }
+        }
     }
     return 0;
 }

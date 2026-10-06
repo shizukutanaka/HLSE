@@ -5515,6 +5515,37 @@ assert not missing, "tokens emitted but absent from registry: " + repr(sorted(mi
     && check "p88: help advertises --list-patterns" "0" "0" \
     || check "p88: help advertises --list-patterns" "0" "1"
 
+# p88b (cycle 449): --patterns-registered rules appear in the registry —
+# a SIEM operator loading custom rules must be able to discover the
+# HLSE-SECRET-CUSTOM-* ids those rules emit.
+P88_PAT=$(mktemp)
+printf 'SECRET ZZTK_ 12 alnum 85 ZZ Corp Signing Token\n' > "$P88_PAT"
+./hlse_core --patterns "$P88_PAT" --json --list-patterns 2>/dev/null | \
+python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+cust = [p for p in d["patterns"] if p["id"].startswith("HLSE-SECRET-CUSTOM-")]
+assert len(cust) == 1, cust
+assert cust[0]["id"] == "HLSE-SECRET-CUSTOM-ZZ-CORP-SIGNING-TOKEN", cust
+assert cust[0]["kind"] == "secret" and cust[0]["description"], cust
+assert d["count"] == len(d["patterns"]) == 63, d["count"]
+' && check "p88b: custom pattern discoverable in registry (JSON)" "0" "0" \
+   || check "p88b: custom pattern discoverable in registry (JSON)" "0" "1"
+./hlse_core --patterns "$P88_PAT" --list-patterns 2>/dev/null | \
+grep -q "custom patterns (--patterns, 1 registered)" \
+    && check "p88b: custom patterns section shown (text)" "0" "0" \
+    || check "p88b: custom patterns section shown (text)" "0" "1"
+rm -f "$P88_PAT"
+# benign: no --patterns → count stays at the 62 static tokens
+./hlse_core --json --list-patterns 2>/dev/null | \
+python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["count"] == 62, d["count"]
+assert not any(p["id"].startswith("HLSE-SECRET-CUSTOM-") for p in d["patterns"]), d
+' && check "p88c: no custom entries without --patterns" "0" "0" \
+   || check "p88c: no custom entries without --patterns" "0" "1"
+
 # ─── P89: normative schemas for all 13 JSON kinds ──────────────────────────
 # P78–P88 completed the JSON API contract (uniform envelope, stable tokens,
 # discoverable registry), but left a schema gap: 5 schemas existed (url/text/
