@@ -28,6 +28,26 @@
 #include "hlse_alert.h"
 #include "hlse_cli.h"
 
+/* Emit the "reason_ids":[...] array parallel to a reasons[] array for the
+ * code-prefixed surfaces (protect/esp/network). Each element is the
+ * HLSE-<FAMILY>-<CODE> token for that reason, or the family OTHER token
+ * when the reason carries no recognised code — keeping the array aligned
+ * 1:1 with reasons so consumers can index them together. */
+static void
+emit_reason_ids(const char *kind, const char *other_tok,
+                char reasons[][256], int n_reasons) {
+        int i;
+        printf(",\"reason_ids\":[");
+        for (i = 0; i < n_reasons; i++) {
+            char idb[48];
+            const char *rid = hlse_reason_code_id(kind, reasons[i],
+                                                  idb, sizeof(idb));
+            if (i) putchar(',');
+            printf("\"%s\"", rid ? rid : other_tok);
+        }
+        printf("]");
+}
+
 int
 hlse_cmd_protect(const HlseCli *o, int argc, char **argv, int idx) {
         if (argc < idx + 2) {
@@ -88,6 +108,8 @@ hlse_cmd_protect(const HlseCli *o, int argc, char **argv, int idx) {
                         hlse_json_str_elem(i, pv.reasons[i]);
                 }
                 printf("]");
+                emit_reason_ids("protect", "HLSE-PROTECT-OTHER",
+                                pv.reasons, pv.n_reasons);
                 if (pv.score == 0) {
                     const char *bs = hlse_blindspot_for("protect");
                     if (bs) {
@@ -180,6 +202,8 @@ hlse_cmd_esp(const HlseCli *o, int argc, char **argv, int idx) {
             for (i = 0; i < pv.n_reasons; i++)
                         hlse_json_str_elem(i, pv.reasons[i]);
             printf("]");
+            emit_reason_ids("esp", "HLSE-ESP-OTHER",
+                            pv.reasons, pv.n_reasons);
             {
                 const char *bs = hlse_blindspot_for("esp");
                 if (pv.score == 0 && bs) {
@@ -587,6 +611,8 @@ hlse_cmd_network(const HlseCli *o) {
             for (i = 0; i < nv.n_reasons; i++)
                         hlse_json_str_elem(i, nv.reasons[i]);
             printf("]");
+            emit_reason_ids("network", "HLSE-NET-OTHER",
+                            nv.reasons, nv.n_reasons);
             if (nv.score == 0) {
                 const char *bs = hlse_blindspot_for("network");
                 if (bs) {

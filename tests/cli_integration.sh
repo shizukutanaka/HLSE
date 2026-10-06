@@ -171,6 +171,16 @@ assert "reasons" in data
 ' && check "--json protect parseable" "0" "0" \
    || check "--json protect parseable" "0" "1"
 
+# reason_ids: per-finding stable ids (HLSE-PROTECT-R3) on ransom note
+echo "$JSON_PROT" | grep -q '"reason_ids":\[[^]]*"HLSE-PROTECT-R3"' \
+    && check "protect: reason_ids carry HLSE-PROTECT-R3" "0" "0" \
+    || check "protect: reason_ids carry HLSE-PROTECT-R3" "0" "1"
+
+# clean protect still emits empty reason_ids (schema stability)
+./hlse_core --json protect /tmp 2>&1 | grep -q '"reason_ids":\[\]' \
+    && check "protect: clean emits reason_ids:[]" "0" "0" \
+    || check "protect: clean emits reason_ids:[]" "0" "1"
+
 rm -rf "$PROT_DIR"
 
 # ─── esp subcommand (UEFI/ESP integrity) ────────────────────────────
@@ -200,6 +210,11 @@ check "esp: ignores non-.efi files" "0" "$?"
 # Missing ESP path → graceful exit 0
 ./hlse_core esp "$ESP_DIR/nope" >/dev/null 2>&1
 check "esp: missing path exits 0 (graceful)" "0" "$?"
+
+# reason_ids: per-finding stable ids (HLSE-ESP-E3) on a flagged .efi
+./hlse_core --json esp "$ESP_DIR" 2>&1 | grep -q '"reason_ids":\[[^]]*"HLSE-ESP-E3"' \
+    && check "esp: reason_ids carry HLSE-ESP-E3" "0" "0" \
+    || check "esp: reason_ids carry HLSE-ESP-E3" "0" "1"
 
 # JSON parseable
 ./hlse_core --json esp "$ESP_DIR" 2>&1 | python3 -c '

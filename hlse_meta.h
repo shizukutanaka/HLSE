@@ -29,5 +29,11 @@ const char *hlse_secret_pattern_id_r(const char *ftype, char *buf,
 /* Maps an email-forensics reason's "E<n>:" prefix to its registered
  * HLSE-EMAIL-E<n> token (per-finding dedup key). NULL when absent. */
 const char *hlse_email_reason_id(const char *reason);
+/* Maps a code-prefixed reason on the protect/esp/network surfaces to a
+ * registered HLSE-<FAMILY>-<CODE> token (per-finding dedup key). Writes
+ * the token into `buf` (needs buflen >= 32) and returns it, or NULL when
+ * the reason carries no valid code for that kind. */
+const char *hlse_reason_code_id(const char *kind, const char *reason,
+                                char *buf, size_t buflen);
 
 #endif /* HLSE_META_H */

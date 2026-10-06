@@ -10877,6 +10877,18 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 457 (protect/esp/network findings carry stable ids):** the
+  code-prefixed host surfaces completed the per-finding-identity arc —
+  their reasons led with "<letter><digits>:" codes (R/N/S on protect,
+  E/M on esp, N on network) but emitted no dedup key, so SIEM rules
+  could not suppress or route e.g. only HLSE-PROTECT-S4 canary hits.
+  A generic mapper (hlse_reason_code_id, kind-validated because the
+  namespaces overlap — network N1 is ARP poisoning, protect N1 is an
+  SMB mount) now emits "reason_ids" parallel to "reasons" on all three
+  JSON verdicts, falling back to a per-family -OTHER token so the
+  arrays stay 1:1-aligned. All 24 tokens (12 protect + 5 esp + 4
+  network + 3 OTHER) registered — --list-patterns stays exhaustive.
+  Clean verdicts emit "reason_ids":[] for schema stability. CLI tests +3.
 - **cycle 456 (email findings carry stable HLSE-EMAIL-* ids):** email
   forensics was the last finding surface without a per-finding dedup key —
   reasons carried the E1–E7 codes but no registered token, so SIEM rules

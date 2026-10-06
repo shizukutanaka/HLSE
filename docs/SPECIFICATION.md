@@ -167,8 +167,11 @@ Additional fields vary by kind:
 - `url`: `target` (the scanned URL), `reasons:[...]`; detection-only:
   `canonical_brand`, `confusable`, `ascii_diff`, `safe_url`.
 - `text`: `target` (the scanned string), `reasons:[...]`.
-- `protect`: `target` (the scanned path), `reasons:[...]`.
-- `network`/`esp`: `reasons:[...]`.
+- `protect`: `target` (the scanned path), `reasons:[...]`; `reason_ids:[...]`
+  — the stable `HLSE-PROTECT-<R|N|S><n>` token for each reason
+  (per-finding dedup key).
+- `network`/`esp`: `reasons:[...]`; `reason_ids:[...]` — the stable
+  `HLSE-NET-N<n>` / `HLSE-ESP-<E|M><n>` token for each reason.
 - `email`: `reasons:[...]`; `reason_ids:[...]` — the stable `HLSE-EMAIL-E<n>`
   token for each reason (per-finding dedup key); `body_pattern`/`body_score`
   when a body was inspected; `remediation` on detections.
