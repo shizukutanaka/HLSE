@@ -10877,6 +10877,15 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 459 (HTTP API + dashboard propagate file reason_ids):** the
+  per-finding dedup keys stopped at the CLI — /api/v1/scan/file emitted
+  "reasons" without "reason_ids", so SIEM clients consuming the HTTP
+  surface could not suppress/route HLSE-FILE-* findings, and the
+  dashboard showed reasons with no stable token. respond_file now
+  emits the same 1:1-aligned reason_ids array (HLSE-FILE-OTHER
+  fallback; [] when clean), API.md documents it, and the file panel
+  renders the token beside each reason like the secrets' finding ids.
+  Server integration +3 (live emit, clean [], dashboard parity gate).
 - **cycle 458 (file findings carry stable HLSE-FILE-* ids):** the file
   surface closed the per-finding-identity arc — its 51 reason codes
   (F1–F51 + F56–F58) emitted no dedup key, so a SIEM rule could not

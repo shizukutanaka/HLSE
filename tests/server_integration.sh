@@ -63,6 +63,10 @@ check "file finding id" \
   "$(curl -s -X POST $B/api/v1/scan/file -d '{"filename":"x.txt","content":"xoxb-1234567890-1234567890-abcdefghijkl"}')" '"id":"HLSE-SECRET-SLACK"'
 check "file masquerade" \
   "$(curl -s -X POST $B/api/v1/scan/file -d '{"filename":"a.pdf.exe","content":"x"}')" 'DOUBLE EXTENSION'
+check "file reason_ids carry HLSE-FILE-F1" \
+  "$(curl -s -X POST $B/api/v1/scan/file -d '{"filename":"a.pdf.exe","content":"x"}')" '"reason_ids":["HLSE-FILE-F1"'
+check "clean file emits reason_ids:[]" \
+  "$(curl -s -X POST $B/api/v1/scan/file -d '{"filename":"ok.txt","content":"x"}')" '"reason_ids":[]'
 check "bad json 400" \
   "$(curl -s -X POST $B/api/v1/scan/url -d '{"nope":1}')" '"error"'
 check "unknown route 404" \
@@ -78,6 +82,7 @@ check "security header" "$(curl -s -D - -o /dev/null $B/api/v1/health)" 'Content
 check "dashboard renders blind_spot" "$(grep -c 'data\.blind_spot' web/app.js)" '6'
 check "dashboard renders finding id"   "$(grep -c 'f\.id' web/app.js)" '2'
 check "dashboard renders finding line" "$(grep -c 'f\.line' web/app.js)" '2'
+check "dashboard renders reason_ids"   "$(grep -c 'data\.reason_ids' web/app.js)" '1'
 
 # SIGTERM must stop the accept loop promptly (no SA_RESTART on sigaction).
 kill -TERM "$SRV" 2>/dev/null

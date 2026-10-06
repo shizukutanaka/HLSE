@@ -476,6 +476,17 @@ respond_file(ConnCtx *cx, const char *filename, const char *content) {
         "\"action\":\"%s\",\"reasons\":[", fn_esc, score, severity, action);
     for (i = 0; i < fv.n_reasons; i++)
         json_append_elem(body, sizeof(body), &len, fv.reasons[i], i);
+    json_append_lit(body, sizeof(body), &len, "],\"reason_ids\":[");
+    for (i = 0; i < fv.n_reasons; i++) {
+        char idb[32];
+        const char *rid = hlse_reason_code_id("file", fv.reasons[i],
+                                              idb, sizeof(idb));
+        if (i > 0) json_append_char(body, sizeof(body), &len, ',');
+        json_append_char(body, sizeof(body), &len, '"');
+        json_escape_append(body, sizeof(body), &len,
+                           rid ? rid : "HLSE-FILE-OTHER");
+        json_append_char(body, sizeof(body), &len, '"');
+    }
     json_append_lit(body, sizeof(body), &len, "],\"secrets\":[");
     for (i = 0; i < sv.n_findings; i++) {
         char pidb[80];

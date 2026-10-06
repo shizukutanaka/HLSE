@@ -100,10 +100,14 @@ stored server-side.
   "severity": 4,
   "action": "ISOLATE",
   "reasons": ["F1: DOUBLE EXTENSION — '.pdf.exe' disguised as .pdf"],
+  "reason_ids": ["HLSE-FILE-F1"],
   "secrets": [ { "id": "HLSE-SECRET-AWS-KEY", "type": "AWS Access Key ID",
     "line": 1, "detail": "..." } ]
 }
 ```
+`reason_ids` mirrors `reasons` 1:1 — the stable `HLSE-FILE-*` token for
+each reason (the per-finding dedup/suppression key); reasons without an
+F code carry `HLSE-FILE-OTHER`. A clean filename emits `"reason_ids":[]`.
 
 ## Errors
 

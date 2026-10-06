@@ -122,9 +122,14 @@
     html += "<h2>File analysis</h2>";
     html += '<p class="muted">' + escapeHtml(data.filename || "") + "</p></div></div>";
     var items = (data.reasons || []).slice();
+    var rids = data.reason_ids || [];
     if (items.length) {
       html += '<ul class="reasons sev-' + action + '">';
-      items.forEach(function (r) { html += "<li>" + escapeHtml(r) + "</li>"; });
+      items.forEach(function (r, i) {
+        html += "<li>" + escapeHtml(r);
+        if (rids[i]) html += ' <span class="fid">' + escapeHtml(rids[i]) + "</span>";
+        html += "</li>";
+      });
       html += "</ul>";
     }
     if (nsec) {
