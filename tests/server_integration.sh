@@ -74,6 +74,10 @@ check "oversize 413" \
 check "dashboard served" "$(curl -s $B/)" '<title>HLSE'
 check "static css" "$(curl -s -o /dev/null -w '%{http_code}' $B/style.css)" '200'
 check "security header" "$(curl -s -D - -o /dev/null $B/api/v1/health)" 'Content-Security-Policy'
+# Static parity gate: the dashboard must surface the fields the API emits.
+check "dashboard renders blind_spot" "$(grep -c 'data\.blind_spot' web/app.js)" '6'
+check "dashboard renders finding id"   "$(grep -c 'f\.id' web/app.js)" '2'
+check "dashboard renders finding line" "$(grep -c 'f\.line' web/app.js)" '2'
 
 # SIGTERM must stop the accept loop promptly (no SA_RESTART on sigaction).
 kill -TERM "$SRV" 2>/dev/null

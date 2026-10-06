@@ -80,6 +80,9 @@
     } else {
       html += '<p class="no-reasons">No suspicious signals detected.</p>';
     }
+    if (data.blind_spot) {
+      html += '<p class="muted blind-spot">' + escapeHtml(data.blind_spot) + "</p>";
+    }
     result.innerHTML = html;
   }
 
@@ -94,11 +97,17 @@
     if (n) {
       html += '<ul class="reasons sev-' + action + '">';
       data.findings.forEach(function (f) {
-        html += '<li class="finding"><span class="ftype">' + escapeHtml(f.type) + "</span>" + escapeHtml(f.detail) + "</li>";
+        html += '<li class="finding"><span class="ftype">' + escapeHtml(f.type) + "</span>" + escapeHtml(f.detail);
+        if (f.line) html += ' <span class="fline">line ' + f.line + "</span>";
+        if (f.id) html += ' <span class="fid">' + escapeHtml(f.id) + "</span>";
+        html += "</li>";
       });
       html += "</ul>";
     } else {
       html += '<p class="no-reasons">No leaked credentials detected.</p>';
+    }
+    if (data.blind_spot) {
+      html += '<p class="muted blind-spot">' + escapeHtml(data.blind_spot) + "</p>";
     }
     result.innerHTML = html;
   }
@@ -121,11 +130,17 @@
     if (nsec) {
       html += '<ul class="reasons sev-ISOLATE">';
       data.secrets.forEach(function (f) {
-        html += '<li class="finding"><span class="ftype">' + escapeHtml(f.type) + "</span>" + escapeHtml(f.detail) + "</li>";
+        html += '<li class="finding"><span class="ftype">' + escapeHtml(f.type) + "</span>" + escapeHtml(f.detail);
+        if (f.line) html += ' <span class="fline">line ' + f.line + "</span>";
+        if (f.id) html += ' <span class="fid">' + escapeHtml(f.id) + "</span>";
+        html += "</li>";
       });
       html += "</ul>";
     }
     if (!items.length && !nsec) html += '<p class="no-reasons">No masquerade or leaked secrets detected.</p>';
+    if (data.blind_spot) {
+      html += '<p class="muted blind-spot">' + escapeHtml(data.blind_spot) + "</p>";
+    }
     result.innerHTML = html;
   }
 

@@ -10877,6 +10877,13 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 454 (dashboard surfaces id/line/blind_spot):** the API gained
+  finding ids, line numbers and blind_spot (cycles 451-452) but the
+  dashboard dropped them — the most exposed audience saw the least
+  honest output. app.js now renders the honesty note on every clean
+  verdict (dashed blind-spot block) and shows `line` + stable
+  `HLSE-*` id chips on each secret finding. Static parity gate in
+  server-integration (3 checks) pins the API↔dashboard contract.
 - **cycle 453 (scan/secrets verdict parity):** the secrets endpoint was
   the only response lacking `severity`/`action`, forcing API consumers
   to recompute the band from score while /scan/{url,text,file} supply
