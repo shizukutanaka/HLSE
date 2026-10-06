@@ -6640,17 +6640,52 @@ echo "$P110L_OUT" | grep -q "ACME_Internal_API_Key_Extremely\]" \
     || check "p110b: >32B custom label truncates to type[32] cleanly" "0" "1"
 rm -f "$P110L_PAT"
 
-# JSON mode: custom finding present, pattern_id falls back to the generic
-# append-only token (no new pattern_id is minted for a user-defined type)
+# JSON mode: custom finding gets its own stable pattern_id —
+# HLSE-SECRET-CUSTOM-<slug> (cycle 448): every distinct custom rule is a
+# dedup/suppression key for SIEM consumers instead of all collapsing into
+# HLSE-SECRET-GENERIC.
 ./hlse_core --patterns "$P110_PAT" --json secret "hdr ACME_KEY_abcdefghij1234567890XY" 2>/dev/null | \
 python3 -c '
 import sys, json
 d = json.loads(sys.stdin.read())
 assert d["score"] == 85, d
-assert d["pattern_id"] == "HLSE-SECRET-GENERIC", d
+assert d["pattern_id"] == "HLSE-SECRET-CUSTOM-ACME-INTERNAL-API-KEY", d
 assert d["findings"][0]["type"] == "ACME Internal API Key", d
-' && check "p110 json: custom finding present, pattern_id falls back to generic" "0" "0" \
-   || check "p110 json: custom finding present, pattern_id falls back to generic" "0" "1"
+assert d["findings"][0]["id"] == "HLSE-SECRET-CUSTOM-ACME-INTERNAL-API-KEY", d
+' && check "p110 json: custom finding gets HLSE-SECRET-CUSTOM-<slug> id" "0" "0" \
+   || check "p110 json: custom finding gets HLSE-SECRET-CUSTOM-<slug> id" "0" "1"
+
+# Benign: built-in GENERIC-by-design types keep the generic id — the
+# CUSTOM slug only mints for types with no fixed arm (never for
+# ENV_SECRET/KV_SECRET/GENERIC_SECRET themselves).
+./hlse_core --json secret 'password=hunter2abc' 2>/dev/null | \
+python3 -c '
+import sys, json
+d = json.loads(sys.stdin.read())
+assert d["findings"][0]["id"] == "HLSE-SECRET-GENERIC", d
+assert "CUSTOM" not in d["findings"][0]["id"], d
+' && check "p110c: builtin heuristic type keeps GENERIC id (no CUSTOM slug)" "0" "0" \
+   || check "p110c: builtin heuristic type keeps GENERIC id (no CUSTOM slug)" "0" "1"
+
+# scan path: the same CUSTOM id reaches per-finding records there too
+P110C_DIR=$(mktemp -d)
+echo "hdr ACME_KEY_abcdefghij1234567890XY" > "$P110C_DIR/creds.txt"
+./hlse_core --patterns "$P110_PAT" --json scan "$P110C_DIR" 2>/dev/null | \
+python3 -c '
+import sys, json
+found = 0
+for line in sys.stdin:
+    line = line.strip()
+    if not line.startswith("{"): continue
+    d = json.loads(line)
+    if d.get("kind") != "secret": continue
+    for f in d.get("findings", []):
+        if f.get("id") == "HLSE-SECRET-CUSTOM-ACME-INTERNAL-API-KEY":
+            found = 1
+assert found, "custom slug id missing from scan findings"
+' && check "p110d: scan-path secret finding carries CUSTOM slug id" "0" "0" \
+   || check "p110d: scan-path secret finding carries CUSTOM slug id" "0" "1"
+rm -rf "$P110C_DIR"
 
 # Built-in patterns still fire normally when --patterns is also loaded
 ./hlse_core --patterns "$P110_PAT" --json secret "aws_access_key_id=AKIA1234567890ABCDEF" 2>/dev/null | \

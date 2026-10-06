@@ -242,3 +242,42 @@ hlse_secret_pattern_id(const char *ftype) {
                                   return "HLSE-SECRET-PRIVATE-KEY";
     return "HLSE-SECRET-GENERIC";
 }
+
+/* Buffer-returning variant of hlse_secret_pattern_id: when the type has no
+ * fixed HLSE-SECRET-* arm (a registry label that predates arms, or a
+ * user-defined --patterns custom label) it synthesises
+ * "HLSE-SECRET-CUSTOM-<slug>" — uppercase, non-alnum collapsed to '-',
+ * edge-trimmed — so every distinct custom rule still gets its own stable
+ * dedup/suppression key instead of all collapsing into GENERIC.
+ * The three built-in types that are GENERIC *by design* (the anchor-less
+ * heuristic classes) keep GENERIC. Returns `buf` or a static literal. */
+const char *
+hlse_secret_pattern_id_r(const char *ftype, char *buf, size_t buflen) {
+    const char *fixed = hlse_secret_pattern_id(ftype);
+    static const char pfx[] = "HLSE-SECRET-CUSTOM-";
+    size_t n = 0;
+    int edge = 1;   /* true while we are at a boundary (start or just
+                     * emitted '-'): suppress another '-' */
+    const unsigned char *c;
+    if (!ftype || !buf || buflen == 0
+        || strcmp(ftype, "ENV_SECRET") == 0
+        || strcmp(ftype, "KV_SECRET") == 0
+        || strcmp(ftype, "GENERIC_SECRET") == 0
+        || (fixed && strcmp(fixed, "HLSE-SECRET-GENERIC") != 0))
+        return fixed;
+    while (pfx[n] && n + 1 < buflen) { buf[n] = pfx[n]; n++; }
+    for (c = (const unsigned char *)ftype; *c && n + 1 < buflen; c++) {
+        int alnum = (*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z')
+                    || (*c >= '0' && *c <= '9');
+        if (alnum) {
+            buf[n++] = (char)(*c >= 'a' && *c <= 'z' ? *c - 32 : *c);
+            edge = 0;
+        } else if (!edge) {
+            buf[n++] = '-';
+            edge = 1;
+        }
+    }
+    if (n > 0 && buf[n - 1] == '-') n--;
+    buf[n] = '\0';
+    return (n > sizeof(pfx) - 1) ? buf : "HLSE-SECRET-GENERIC";
+}

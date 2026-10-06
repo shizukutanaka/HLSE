@@ -1013,13 +1013,14 @@ hlse_cmd_secret(const HlseCli *o, int argc, char **argv, int idx) {
                        sv.score, hlse_action_for_score(sv.score),
                        hlse_severity_for_score(sv.score));
                 for (i = 0; i < sv.n_findings; i++) {
-                    char et[64], ed[512];
+                    char et[64], ed[512], pidb[80];
                     hlse_json_escape(sv.findings[i].type, et, sizeof(et));
                     hlse_json_escape(sv.findings[i].description, ed, sizeof(ed));
                     printf("%s{\"id\":\"%s\",\"type\":\"%s\",\"line\":%d,"
                            "\"description\":\"%s\"}",
                            i > 0 ? "," : "",
-                           hlse_secret_pattern_id(sv.findings[i].type),
+                           hlse_secret_pattern_id_r(sv.findings[i].type,
+                                                    pidb, sizeof(pidb)),
                            et, sv.findings[i].line, ed);
                 }
                 printf("]");
@@ -1054,7 +1055,12 @@ hlse_cmd_secret(const HlseCli *o, int argc, char **argv, int idx) {
                     char epat[128];
                     hlse_secret_pattern_label(ftype, epat, sizeof(epat));
                     hlse_json_str_field("pattern", epat);
-                    printf(",\"pattern_id\":\"%s\"", hlse_secret_pattern_id(ftype));
+                    {
+                        char pidb[80];
+                        printf(",\"pattern_id\":\"%s\"",
+                               hlse_secret_pattern_id_r(ftype, pidb,
+                                                        sizeof(pidb)));
+                    }
                     if (sobj) { hlse_json_str_field("objective", sobj); }
                     hlse_json_str_field("verify", hlse_secret_verify_text());
                     hlse_json_str_field("triage", hlse_secret_triage_text());
@@ -2775,8 +2781,10 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                      * hlse:allow suppression. Distinguisher =
                                      * the redacted finding description (stable
                                      * per distinct secret, line-independent). */
+                                    char spid_buf[80];
                                     const char *spid = sv.n_findings > 0
-                                        ? hlse_secret_pattern_id(sv.findings[0].type)
+                                        ? hlse_secret_pattern_id_r(sv.findings[0].type,
+                                                                   spid_buf, sizeof(spid_buf))
                                         : "HLSE-SECRET-GENERIC";
                                     const char *sdesc = sv.n_findings > 0
                                         ? sv.findings[0].description : "";
@@ -2802,9 +2810,7 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                                      sv.findings[i].description);
                                         }
                                         hlse_sarif_add(sarif_path, lineno, "secret",
-                                                  sv.n_findings > 0
-                                                    ? hlse_secret_pattern_id(sv.findings[0].type)
-                                                    : "HLSE-SECRET-GENERIC",
+                                                  spid,
                                                   msg[0] ? msg : "secret", sv.score);
                                     } else if (o->json_out) {
                                         int i;
@@ -2821,12 +2827,14 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                                hlse_action_for_score(sv.score),
                                                hlse_severity_for_score(sv.score));
                                         for (i = 0; i < sv.n_findings; i++) {
+                                            char pidb[80];
                                             hlse_json_escape(sv.findings[i].type, et, sizeof(et));
                                             hlse_json_escape(sv.findings[i].description, ed, sizeof(ed));
                                             printf("%s{\"id\":\"%s\",\"type\":\"%s\","
                                                    "\"line\":%d,\"description\":\"%s\"}",
                                                    i ? "," : "",
-                                                   hlse_secret_pattern_id(sv.findings[i].type),
+                                                   hlse_secret_pattern_id_r(sv.findings[i].type,
+                                                                            pidb, sizeof(pidb)),
                                                    et, sv.findings[i].line, ed);
                                         }
                                         printf("]");
@@ -2853,7 +2861,12 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                             const char *sobj  = hlse_secret_objective_for(ftype);
                                             hlse_secret_pattern_label(ftype, esc_p, sizeof(esc_p));
                                             hlse_json_str_field("pattern", esc_p);
-                                            printf(",\"pattern_id\":\"%s\"", hlse_secret_pattern_id(ftype));
+                                            {
+                                                char pidb[80];
+                                                printf(",\"pattern_id\":\"%s\"",
+                                                       hlse_secret_pattern_id_r(ftype, pidb,
+                                                                                sizeof(pidb)));
+                                            }
                                             if (sobj) {
                                                 hlse_json_str_field("objective", sobj);
                                             }

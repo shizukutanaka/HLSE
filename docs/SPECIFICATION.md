@@ -180,7 +180,10 @@ Additional fields vary by kind:
 - `secret`: `findings:[{id,type,line,description,confidence?,remediation?}]`
   (`line` is the 1-based line of the finding within the scanned text;
   `0` when the position is not line-resolvable; `id` is the stable
-  `HLSE-SECRET-*` pattern id — the dedup/suppression key); `caveat` on
+  `HLSE-SECRET-*` pattern id — the dedup/suppression key; types with
+  no fixed arm, e.g. `--patterns` custom labels, get a synthesized
+  `HLSE-SECRET-CUSTOM-<slug>` — uppercase, non-alnum collapsed to `-`
+  — so distinct custom rules keep distinct dedup keys); `caveat` on
   detections.
 - `package`: `name`, `ecosystem`, `pattern_id`; `matches:[{name,registry,
   distance}]` only on hits. `--manifest` emits one `kind=package` record per

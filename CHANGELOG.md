@@ -10877,6 +10877,21 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 448 (custom secret patterns get their own pattern ids):**
+  every custom `--patterns` finding collapsed into
+  `HLSE-SECRET-GENERIC` — two distinct org rules were
+  indistinguishable for SIEM dedup/suppression. New
+  `hlse_secret_pattern_id_r(ftype, buf, buflen)` synthesises
+  `HLSE-SECRET-CUSTOM-<slug>` (uppercase, non-alnum collapsed to
+  `-`, edge-trimmed) for types with no fixed arm; all 6 emit sites
+  (standalone findings, record pattern_id, scan findings, scan
+  record, SARIF rule id, baseline-suppression distinguisher) now
+  pass distinct ids per custom rule. The three built-in types that
+  are GENERIC *by design* (ENV/KV/GENERIC_SECRET) keep it.
+  `hlse_secret_pattern_id` (thread-safe literal API) unchanged —
+  `_r` is the buffer-returning sibling. Spec §5.2 documents the
+  CUSTOM slug. CLI tests +2 (p110c benign: builtin heuristic type
+  keeps GENERIC; p110d: scan-path finding carries the slug).
 - **cycle 447 (caveat covers heuristic + URI credential classes):**
   `hlse_secret_finding_caveat` was a single-case function (Stripe
   Live Publishable only) — the plaintext path has always warned

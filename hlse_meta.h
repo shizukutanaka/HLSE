@@ -21,5 +21,10 @@ const char *hlse_file_classify_pattern(const FileVerdict *fv);
 const char *hlse_file_masquerade_objective(void);
 const char *hlse_file_masquerade_verify(void);
 const char *hlse_secret_pattern_id(const char *ftype);
+/* Same, but synthesises "HLSE-SECRET-CUSTOM-<slug>" into `buf` for types
+ * with no fixed arm (custom --patterns labels). Returns `buf` or a
+ * static literal; falls back to "HLSE-SECRET-GENERIC". */
+const char *hlse_secret_pattern_id_r(const char *ftype, char *buf,
+                                     size_t buflen);
 
 #endif /* HLSE_META_H */
