@@ -1438,6 +1438,18 @@ assert len(declared) >= 28, len(declared)
 " 2>/dev/null \
         && check "SARIF: emitted results resolve to declared rules" "0" "0" \
         || check "SARIF: emitted results resolve to declared rules" "0" "1"
+
+    # every declared rule carries remediation guidance (help.text) —
+    # code-scanning UIs surface it as the fix instruction.
+    ./hlse_core --sarif scan "$SARIF_DIR" 2>/dev/null | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+missing = [r['id'] for r in d['runs'][0]['tool']['driver']['rules']
+           if not r.get('help', {}).get('text')]
+assert not missing, 'rules without help.text: ' + str(missing)
+" 2>/dev/null \
+        && check "SARIF: every declared rule carries help.text" "0" "0" \
+        || check "SARIF: every declared rule carries help.text" "0" "1"
 fi
 rm -rf "$SARIF_DIR"
 

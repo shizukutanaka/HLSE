@@ -10877,6 +10877,14 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 466 (SARIF rules carry remediation help.text):** declared
+  rules had shortDescription + helpUri but no help.text — the field
+  code-scanning UIs surface as the fix instruction. Each of the 28
+  rules now emits per-class remediation guidance (rotate-and-purge for
+  secrets, pin-to-SHA for GHA refs, regenerate-lockfile for poisoning,
+  remove/pin for autoexec classes, digest-pin for containers, ...).
+  Parity gate extended: every declared rule must carry a non-empty
+  help.text. CLI integration +1.
 - **cycle 465 (SARIF rule metadata declares every emitted ruleId):**
   the driver.rules table declared 4 rules while the scan emitters
   produce 28 distinct ruleIds — 24 package-* findings (lifecycle-hook,
