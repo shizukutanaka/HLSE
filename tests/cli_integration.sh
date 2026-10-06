@@ -434,6 +434,11 @@ printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | ./hlse
     && check "audit findings carry stable HLSE-AUDIT-* ids" "0" "0" \
     || check "audit findings carry stable HLSE-AUDIT-* ids" "0" "1"
 
+# enum-style secret types (URI_CREDENTIALS) get an objective like labels do
+./hlse_core --json secret 'postgresql://admin:Str0ngPass999@db.internal:5432/prod' 2>&1 | grep -q '"objective"' \
+    && check "enum-type secret finding emits objective" "0" "0" \
+    || check "enum-type secret finding emits objective" "0" "1"
+
 # FileFix (2025 ClickFix variant): paste path into File Explorer address bar → flagged
 ./hlse_core text 'A file has been shared with you. Open File Explorer, then paste the path into the file explorer and press Enter.' 2>&1 | grep -qE "ALERT|BLOCK|ISOLATE" \
     && check "FileFix Explorer-paste lure detected" "0" "0" \

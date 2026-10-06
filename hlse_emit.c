@@ -135,6 +135,42 @@ hlse_secret_objective_for(const char *type)
     if (strstr(type, "Slack"))
         return "workspace access \xe2\x80\x94 read messages and files across "
                "channels, post as the bot user or the token owner";
+    /* Built-in detector types are enum-style machine tokens
+     * (sv_add literals: "JWT_ALG_NONE", "AZURE_ACCOUNT_KEY", ...) that the
+     * friendly registry labels above cannot reach — strstr is
+     * case-sensitive.  Match them explicitly so `objective` is not
+     * silently omitted for the majority of built-in findings. */
+    if (strstr(type, "AZURE") || strstr(type, "Azure"))
+        return "Azure resource access \xe2\x80\x94 data-plane control over "
+               "the named account or signed resource (blobs, queues, "
+               "tables); SAS tokens grant whatever permissions they were "
+               "signed with";
+    if (strstr(type, "TELEGRAM") || strstr(type, "Telegram"))
+        return "Telegram bot control \xe2\x80\x94 send/read messages as the "
+               "bot; abused for C2 and data exfiltration via the bot API";
+    if (strstr(type, "DISCORD") || strstr(type, "Discord"))
+        return "Discord bot control \xe2\x80\x94 post and read as the bot in "
+               "every joined guild; abused for phishing pivots and C2";
+    if (strstr(type, "JWT_ALG_NONE"))
+        return "unsigned JWT (alg=none) \xe2\x80\x94 authentication bypass: "
+               "every claim in this token is forgeable by definition";
+    if (strstr(type, "JWT"))
+        return "session/API authentication \xe2\x80\x94 replay grants this "
+               "token's claims until expiry; treat as a live session";
+    if (strstr(type, "URI_CREDENTIALS"))
+        return "credentials embedded in a URI \xe2\x80\x94 grants access to "
+               "the service that URI targets (database, API endpoint)";
+    if (strstr(type, "MNEMONIC"))
+        return "BIP-39 seed phrase \xe2\x80\x94 complete and irreversible "
+               "control of the crypto wallet; anyone holding it can drain "
+               "all funds with no recourse";
+    if (strstr(type, "PRIVATE_KEY") || strstr(type, "RSA_PRIVATE"))
+        return "private key material \xe2\x80\x94 authenticates as the key "
+               "holder to every service/wallet that trusts it";
+    if (strstr(type, "ENV_SECRET") || strstr(type, "KV_SECRET")
+        || strstr(type, "GENERIC_SECRET"))
+        return "a credential in configuration \xe2\x80\x94 grants access to "
+               "whatever service the variable name points at";
     if (strstr(type, "SSH") || strstr(type, "Private Key")
         || strstr(type, "RSA") || strstr(type, "OPENSSH"))
         return "server authentication \xe2\x80\x94 SSH access to every host that "

@@ -10877,6 +10877,17 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 445 (objective advisory covers enum-type findings):**
+  `hlse_secret_objective_for` only matched the friendly registry
+  labels ("Stripe Live Publishable", "AWS …") — the built-in
+  detectors' enum-style types ("JWT_ALG_NONE", "AZURE_ACCOUNT_KEY",
+  "URI_CREDENTIALS", "MNEMONIC_PHRASE", "KV_SECRET", …) are
+  case-sensitive strstr misses, so `objective` was silently omitted
+  for 13/15 built-in finding types. Added explicit branches for every
+  enum token (JWT alg=none/JWT, Azure, Telegram, Discord,
+  URI_CREDENTIALS, MNEMONIC, PRIVATE_KEY, ENV/KV/GENERIC_SECRET) —
+  verified `objective` now emits on KV/URI/JWT-class inputs. Scores
+  below the >=60 advisory threshold stay field-less by design.
 - **cycle 444 (audit findings carry stable ids):** every audit finding
   now carries `"id":"HLSE-AUDIT-<section>-<name>"` — the SIEM dedup /
   suppression key that was missing (descriptions embed volatile paths
