@@ -19,6 +19,7 @@
 
 #include "hlse_alert.h"
 #include "hlse_util.h"   /* hlse_json_escape */
+#include "hlse_meta.h"   /* hlse_reason_code_id / hlse_email_reason_id */
 
 #include <stdio.h>
 #include <string.h>
@@ -87,14 +88,57 @@ alert_append(char *out, size_t cap, size_t len, const char *src) {
     return len;
 }
 
+/* Recover an "HLSE-*" token embedded verbatim in a reason string
+ * (e.g. daemon secret rows carry "[HLSE-SECRET-SLACK]"). Token charset
+ * is [A-Z0-9-]; a bare "HLSE-" prefix with nothing after it is not a
+ * token. Returns buf on success. */
+static const char *
+embedded_token(const char *s, char *buf, size_t cap) {
+    const char *p = s ? strstr(s, "HLSE-") : NULL;
+    size_t n = 0;
+    if (!p) return NULL;
+    while ((*p >= 'A' && *p <= 'Z') || (*p >= '0' && *p <= '9') ||
+           *p == '-') {
+        if (n + 1 >= cap) return NULL;
+        buf[n++] = *p++;
+    }
+    buf[n] = '\0';
+    /* "HLSE-" alone is a prefix, not a token — require more. */
+    return n > 5 ? buf : NULL;
+}
+
 static size_t
 build_line(char *out, size_t cap, const char *kind, int score, int severity,
            const char *target, const char **reasons, int n_reasons) {
     char ts[32], num[16], esc[1024];
+    /* per-reason stable ids, resolved three ways: the generic code
+     * mapper for coded kinds (file/protect/esp/network), the email
+     * mapper for E-coded reasons, or a verbatim embedded HLSE-*
+     * token. Elements with no resolvable id emit null so the array
+     * stays 1:1-aligned with "reasons"; the field is omitted entirely
+     * when nothing resolved (scheme-free kinds like url/text/paste). */
+    #define ALERT_MAX_IDS 64
+    const char *ids[ALERT_MAX_IDS];
+    char idb[ALERT_MAX_IDS][48];
+    int n_ids = n_reasons < ALERT_MAX_IDS ? n_reasons : -1;
+    int n_res = 0;
     time_t now = time(NULL);
     struct tm tmv;
     size_t len = 0;
     int i;
+
+    for (i = 0; i < n_ids; i++) {
+        const char *r = reasons ? reasons[i] : NULL;
+        const char *id = NULL;
+        if (r) {
+            id = hlse_reason_code_id(kind, r, idb[i], sizeof(idb[i]));
+            if (!id && kind && strcmp(kind, "email") == 0)
+                id = hlse_email_reason_id(r);
+            if (!id) id = embedded_token(r, idb[i], sizeof(idb[i]));
+        }
+        ids[i] = id;
+        if (id) n_res++;
+    }
 
     gmtime_r(&now, &tmv);
     strftime(ts, sizeof ts, "%Y-%m-%dT%H:%M:%SZ", &tmv);
@@ -128,7 +172,22 @@ build_line(char *out, size_t cap, const char *kind, int score, int severity,
         len = alert_append(out, cap, len, esc);
         len = alert_append(out, cap, len, "\"");
     }
-    len = alert_append(out, cap, len, "]}");
+    len = alert_append(out, cap, len, "]");
+    if (n_res > 0 && n_ids == n_reasons) {
+        len = alert_append(out, cap, len, ",\"reason_ids\":[");
+        for (i = 0; i < n_reasons; i++) {
+            if (i > 0) len = alert_append(out, cap, len, ",");
+            if (ids[i]) {
+                len = alert_append(out, cap, len, "\"");
+                len = alert_append(out, cap, len, ids[i]);
+                len = alert_append(out, cap, len, "\"");
+            } else {
+                len = alert_append(out, cap, len, "null");
+            }
+        }
+        len = alert_append(out, cap, len, "]");
+    }
+    len = alert_append(out, cap, len, "}");
     return len;
 }
 
@@ -146,7 +205,7 @@ write_all_fd(int fd, const char *buf, size_t len) {
 void
 hlse_alert_emit(const char *kind, int score, int severity,
                 const char *target, const char **reasons, int n_reasons) {
-    char line[4096];
+    char line[8192];
     size_t len;
 
     if (!g_syslog_on && g_fd < 0) return;   /* fast no-op */

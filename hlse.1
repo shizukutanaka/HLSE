@@ -180,7 +180,17 @@ which is created if absent and opened
 with mode
 .B 0600
 (findings may contain secret fragments). A path that is a symlink or
-non-regular file is rejected.
+non-regular file is rejected. When the finding's reasons resolve to
+stable tokens — code-prefixed kinds (file/protect/esp/network/email)
+or reasons carrying an embedded
+.BR HLSE- *
+pattern id — the record also carries
+.BR """reason_ids""" ,
+an array aligned 1:1 with
+.BR """reasons""" ;
+unresolvable elements are
+.BR null .
+Scheme-free kinds (url/text/paste/...) omit the field.
 .TP
 .BI --baseline " file"
 For the

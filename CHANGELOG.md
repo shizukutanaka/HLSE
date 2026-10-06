@@ -10877,6 +10877,20 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 460 (alert records carry reason_ids):** the JSONL/syslog alert
+  sink was the last emit path without per-reason dedup keys — its
+  "reasons" had to be re-parsed downstream to recover what the verdict
+  JSON already states. build_line now resolves ids three ways:
+  hlse_reason_code_id for code-prefixed kinds (file/protect/esp/
+  network), hlse_email_reason_id for E-coded email reasons, and a
+  verbatim embedded "HLSE-*" token extraction (hlsed's secret rows).
+  "reason_ids" is emitted only when at least one element resolved —
+  scheme-free kinds (url/text/paste) get no invented tokens — and
+  unresolvable elements are null so the array stays 1:1-aligned.
+  Alert line buffer grew 4 KiB -> 8 KiB for the added field. Found
+  and fixed in-review: the embedded-token extractor dropped the
+  "HLSE-" prefix (emitted unregistered "SECRET-AWS"). man page
+  documents the field. CLI +2, daemon +1.
 - **cycle 459 (HTTP API + dashboard propagate file reason_ids):** the
   per-finding dedup keys stopped at the CLI — /api/v1/scan/file emitted
   "reasons" without "reason_ids", so SIEM clients consuming the HTTP

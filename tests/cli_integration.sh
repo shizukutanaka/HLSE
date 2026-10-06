@@ -7588,6 +7588,21 @@ n=$(wc -l < "$LF" | tr -d ' ')
     || check "log-file: text/esp/audit emit records" "3" "$n"
 rm -f "$LF"
 
+# alert records carry per-reason stable ids where an id scheme exists,
+# mirroring the JSON verdicts' reason_ids; scheme-free kinds omit it.
+LF=/tmp/hlse_lf2.$$.jsonl; rm -f "$LF"
+touch /tmp/hlse_a.pdf.exe
+./hlse_core --log-file "$LF" file /tmp/hlse_a.pdf.exe >/dev/null 2>&1 || :
+grep -q '"reason_ids":\["HLSE-FILE-F1"' "$LF" \
+    && check "log-file: file alert emits reason_ids" "0" "0" \
+    || check "log-file: file alert emits reason_ids" "0" "1"
+rm -f "$LF" /tmp/hlse_a.pdf.exe
+./hlse_core --log-file "$LF" text "URGENT buy gift cards now" >/dev/null 2>&1 || :
+grep -q 'reason_ids' "$LF" \
+    && check "log-file: text alert omits reason_ids" "1" "0" \
+    || check "log-file: text alert omits reason_ids" "0" "0"
+rm -f "$LF"
+
 # ── cycle-22: URI-handler schemes, OOXML macro smuggling, GHA script
 #    injection, MCP tool-poisoning ──
 # search-ms: opens Explorer on a remote share — leaks NetNTLM

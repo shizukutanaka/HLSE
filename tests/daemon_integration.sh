@@ -62,6 +62,7 @@ check "secret found on stderr"  "$(cat "$ERR")" "score="
 check "secret logged"           "$(cat "$LOG" 2>/dev/null)"             "secret"
 check "alert carries pattern id" "$(cat "$ERR")" "HLSE-SECRET-"
 check "alert carries line num"   "$(cat "$ERR")" "(line 1)"
+check "alert JSONL carries reason_ids" "$(cat "$LOG" 2>/dev/null)" '"reason_ids":["HLSE-SECRET-'
 
 # a benign file at/below threshold is watched but not alerted ------------
 printf 'hello\n' > "$WATCH/ok.txt"
