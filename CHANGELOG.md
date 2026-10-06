@@ -10877,6 +10877,22 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 464 (dashboard renders the advisory fields the API emits):**
+  web/app.js showed only gauge + reasons + blind_spot for every scan
+  kind — the full verdict-level advisory set the API started emitting
+  (cycles 462-463: pattern/pattern_id, confidence/signal_count,
+  objective, verify, triage, cascade_risk, exoneration, remediation,
+  caveat, canonical_brand, confusable, ascii_diff, safe_url) never
+  reached the operator-facing surface, so a dashboard user got a
+  thinner triage view than a curl user. A shared advisoryHtml()
+  renderer now walks a table of the 13 advisory keys, prints the
+  label/value pairs that are present (pattern carries the pattern_id
+  chip; confidence carries the signal count), and is called by all
+  three panels — url/text, secrets, and file — so new advisory fields
+  automatically surface wherever a verdict lands. .advisory dl styles
+  added. Integration parity gate now asserts the renderer is wired
+  into all three panels and that the key table matches the API
+  contract. Server integration +3.
 - **cycle 463 (HTTP API advisory parity completes: url/text):** cycle
   462 assumed /scan/url and /scan/text could not emit the verdict-level
   advisory fields because hlse_scan collapses every input into

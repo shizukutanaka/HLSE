@@ -103,6 +103,12 @@ check "dashboard renders blind_spot" "$(grep -c 'data\.blind_spot' web/app.js)" 
 check "dashboard renders finding id"   "$(grep -c 'f\.id' web/app.js)" '2'
 check "dashboard renders finding line" "$(grep -c 'f\.line' web/app.js)" '2'
 check "dashboard renders reason_ids"   "$(grep -c 'data\.reason_ids' web/app.js)" '1'
+check "dashboard advisory renderer in all panels" \
+  "$(grep -c '+= advisoryHtml(data)' web/app.js)" '3'
+check "dashboard advisory keys match API" \
+  "$(grep -oE '\["(pattern|confidence|canonical_brand|confusable|ascii_diff|safe_url|objective|verify|triage|cascade_risk|exoneration|remediation|caveat)",' web/app.js | sort -u | wc -l | tr -d ' ')" '13'
+check "dashboard advisory styled" \
+  "$(grep -c '\.advisory' web/style.css)" '3'
 
 # SIGTERM must stop the accept loop promptly (no SA_RESTART on sigaction).
 kill -TERM "$SRV" 2>/dev/null

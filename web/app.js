@@ -63,6 +63,42 @@
     result.innerHTML = '<p class="error">' + escapeHtml(msg) + "</p>";
   }
 
+  // Verdict-level advisory fields the API emits when the corresponding
+  // signal fired — same keys the CLI's --json contract carries.
+  var ADVISORY_FIELDS = [
+    ["pattern", "Pattern"],
+    ["confidence", "Confidence"],
+    ["canonical_brand", "Canonical domain"],
+    ["confusable", "Confusable chars"],
+    ["ascii_diff", "ASCII diff"],
+    ["safe_url", "Safe destination"],
+    ["objective", "Likely objective"],
+    ["verify", "How to verify"],
+    ["triage", "If you already acted"],
+    ["cascade_risk", "Cascade risk"],
+    ["exoneration", "Why it may be benign"],
+    ["remediation", "Remediation"],
+    ["caveat", "Caveat"]
+  ];
+
+  function advisoryHtml(data) {
+    var html = "";
+    ADVISORY_FIELDS.forEach(function (pair) {
+      var v = data[pair[0]];
+      if (!v) return;
+      if (!html) html = '<dl class="advisory">';
+      html += "<dt>" + pair[1] + "</dt><dd>" + escapeHtml(v);
+      if (pair[0] === "pattern" && data.pattern_id)
+        html += ' <span class="fid">' + escapeHtml(data.pattern_id) + "</span>";
+      if (pair[0] === "confidence" && data.signal_count)
+        html += ' <span class="fline">' + data.signal_count +
+                " signal" + (data.signal_count === 1 ? "" : "s") + "</span>";
+      html += "</dd>";
+    });
+    if (html) html += "</dl>";
+    return html;
+  }
+
   function renderScan(data) {
     var action = ACTIONS[data.severity] || "SAFE";
     var pct = Math.max(0, Math.min(100, data.score));
@@ -80,6 +116,7 @@
     } else {
       html += '<p class="no-reasons">No suspicious signals detected.</p>';
     }
+    html += advisoryHtml(data);
     if (data.blind_spot) {
       html += '<p class="muted blind-spot">' + escapeHtml(data.blind_spot) + "</p>";
     }
@@ -106,6 +143,7 @@
     } else {
       html += '<p class="no-reasons">No leaked credentials detected.</p>';
     }
+    html += advisoryHtml(data);
     if (data.blind_spot) {
       html += '<p class="muted blind-spot">' + escapeHtml(data.blind_spot) + "</p>";
     }
@@ -143,6 +181,7 @@
       html += "</ul>";
     }
     if (!items.length && !nsec) html += '<p class="no-reasons">No masquerade or leaked secrets detected.</p>';
+    html += advisoryHtml(data);
     if (data.blind_spot) {
       html += '<p class="muted blind-spot">' + escapeHtml(data.blind_spot) + "</p>";
     }
