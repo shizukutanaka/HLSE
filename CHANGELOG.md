@@ -10877,6 +10877,21 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 461 (SARIF file results carry reason_ids):** the SARIF
+  emitter was the last surface where multiple coded reasons collapsed
+  into one result — file-masquerade results carried only the coarse
+  verdict-level pattern_id, so a SIEM reading SARIF alone (e.g.
+  GitHub code scanning) could not dedup/suppress individual
+  HLSE-FILE-F* reasons. SarifFinding gained an optional
+  reason_ids[8][40] slot via a new hlse_sarif_add_ids() variant
+  (hlse_sarif_add delegates to it), and the file-verdict call site
+  resolves each fv.reasons[] through hlse_reason_code_id with the
+  same HLSE-FILE-OTHER fallback as the JSON emit. properties emits
+  "reason_ids": [...] only when populated; per-finding results
+  (secrets/urls/packages) stay single-id — no invented parallel
+  arrays. SPECIFICATION.md §5.3 documents the property. While
+  testing, hardened two host-dependent protect checks off /tmp
+  (R1 mass-mod burst fires legitimately on busy tmpdirs). CLI +2.
 - **cycle 460 (alert records carry reason_ids):** the JSONL/syslog alert
   sink was the last emit path without per-reason dedup keys — its
   "reasons" had to be re-parsed downstream to recover what the verdict

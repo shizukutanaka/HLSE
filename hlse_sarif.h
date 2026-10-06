@@ -10,6 +10,13 @@
 
 void hlse_sarif_add(const char *path, int line, const char *rule,
                     const char *pattern_id, const char *message, int score);
+/* ids-aware variant: reason_ids (may be NULL) is copied into the
+ * finding and emitted as a "reason_ids" array inside properties —
+ * same per-reason dedup keys the JSON verdicts carry. */
+void hlse_sarif_add_ids(const char *path, int line, const char *rule,
+                        const char *pattern_id,
+                        const char *const reason_ids[], int n_reason_ids,
+                        const char *message, int score);
 void hlse_sarif_emit(const char *tool_version);
 
 #endif /* HLSE_SARIF_H */

@@ -149,9 +149,12 @@ check "stdin: default gate spares a LOG finding → exit 0" "0" "$rc"
 
 # ─── protect subcommand ─────────────────────────────────────────────
 
-# protect on /tmp (clean) → should exit 0
-./hlse_core protect /tmp >/dev/null 2>&1
-check "protect /tmp exits 0 (clean)" "0" "$?"
+# protect on a clean dir → should exit 0 (fresh empty dir: /tmp can
+# legitimately trip R1 mass-mod detection on a busy host)
+PROT_CLEAN0=$(mktemp -d)
+./hlse_core protect "$PROT_CLEAN0" >/dev/null 2>&1
+check "protect clean dir exits 0" "0" "$?"
+rm -rf "$PROT_CLEAN0"
 
 # protect with ransom note
 PROT_DIR=$(mktemp -d)
@@ -176,10 +179,14 @@ echo "$JSON_PROT" | grep -q '"reason_ids":\[[^]]*"HLSE-PROTECT-R3"' \
     && check "protect: reason_ids carry HLSE-PROTECT-R3" "0" "0" \
     || check "protect: reason_ids carry HLSE-PROTECT-R3" "0" "1"
 
-# clean protect still emits empty reason_ids (schema stability)
-./hlse_core --json protect /tmp 2>&1 | grep -q '"reason_ids":\[\]' \
+# clean protect still emits empty reason_ids (schema stability) —
+# use a fresh empty dir: /tmp can legitimately trip R1 (mass-mod
+# burst) on a busy host, which is not what this check exercises.
+PROT_CLEAN=$(mktemp -d)
+./hlse_core --json protect "$PROT_CLEAN" 2>&1 | grep -q '"reason_ids":\[\]' \
     && check "protect: clean emits reason_ids:[]" "0" "0" \
     || check "protect: clean emits reason_ids:[]" "0" "1"
+rm -rf "$PROT_CLEAN"
 
 rm -rf "$PROT_DIR"
 
@@ -1384,6 +1391,32 @@ assert all(not u.startswith('/') for u in uris), 'absolute URI found: ' + str(ur
 " 2>/dev/null \
         && check "SARIF: artifactLocation URIs are relative" "0" "0" \
         || check "SARIF: artifactLocation URIs are relative" "0" "1"
+
+    # file-masquerade results carry the full reason_ids array (the
+    # per-reason dedup keys the JSON verdicts emit), not just the
+    # verdict-level pattern_id.
+    ./hlse_core --sarif scan "$SARIF_DIR" 2>/dev/null | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+fm = [r for r in d['runs'][0]['results'] if r['ruleId'] == 'file-masquerade']
+assert fm, 'no file-masquerade result'
+assert any('HLSE-FILE-F1' in r['properties'].get('reason_ids', [])
+           for r in fm), [r['properties'] for r in fm]
+" 2>/dev/null \
+        && check "SARIF: file result carries reason_ids" "0" "0" \
+        || check "SARIF: file result carries reason_ids" "0" "1"
+
+    # per-finding results (secrets) stay per-finding — no parallel array
+    # is emitted where one pattern_id already identifies the finding.
+    ./hlse_core --sarif scan "$SARIF_DIR" 2>/dev/null | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+sec = [r for r in d['runs'][0]['results'] if r['ruleId'] == 'secret']
+assert sec, 'no secret result'
+assert 'reason_ids' not in sec[0].get('properties', {}), sec[0]['properties']
+" 2>/dev/null \
+        && check "SARIF: secret result omits reason_ids" "0" "0" \
+        || check "SARIF: secret result omits reason_ids" "0" "1"
 fi
 rm -rf "$SARIF_DIR"
 

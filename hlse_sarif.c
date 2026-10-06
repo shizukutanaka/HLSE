@@ -21,12 +21,16 @@
  *
  * Each finding: file path, 1-based line, rule id, message, score.        */
 #define SARIF_MAX_FINDINGS 4096
+#define SARIF_MAX_IDS      8   /* per-result reason_ids cap (file verdicts
+                                * bound reasons at 8) */
 
 typedef struct {
     char  path[1024];
     int   line;
     char  rule[32];      /* e.g. "secret", "phishing-url", "file-masquerade" */
     char  pattern_id[40];/* stable HLSE-* token for SOAR routing (P91)        */
+    char  reason_ids[SARIF_MAX_IDS][40]; /* per-reason dedup keys (optional)  */
+    int   n_reason_ids;
     char  message[512];
     int   score;
 } SarifFinding;
@@ -36,9 +40,11 @@ static int          g_sarif_n = 0;
 static int          g_sarif_overflow = 0;
 
 void
-hlse_sarif_add(const char *path, int line, const char *rule,
-          const char *pattern_id, const char *message, int score) {
+hlse_sarif_add_ids(const char *path, int line, const char *rule,
+          const char *pattern_id, const char *const reason_ids[],
+          int n_reason_ids, const char *message, int score) {
     SarifFinding *f;
+    int i;
     if (g_sarif_n >= SARIF_MAX_FINDINGS) { g_sarif_overflow = 1; return; }
     f = &g_sarif[g_sarif_n++];
     snprintf(f->path, sizeof(f->path), "%s", path);
@@ -46,8 +52,23 @@ hlse_sarif_add(const char *path, int line, const char *rule,
     snprintf(f->rule, sizeof(f->rule), "%s", rule);
     snprintf(f->pattern_id, sizeof(f->pattern_id), "%s",
              pattern_id ? pattern_id : "");
+    if (n_reason_ids > SARIF_MAX_IDS) n_reason_ids = SARIF_MAX_IDS;
+    f->n_reason_ids = 0;
+    for (i = 0; reason_ids && i < n_reason_ids; i++) {
+        if (!reason_ids[i]) continue;
+        snprintf(f->reason_ids[f->n_reason_ids],
+                 sizeof(f->reason_ids[0]), "%s", reason_ids[i]);
+        f->n_reason_ids++;
+    }
     snprintf(f->message, sizeof(f->message), "%s", message);
     f->score = score;
+}
+
+void
+hlse_sarif_add(const char *path, int line, const char *rule,
+          const char *pattern_id, const char *message, int score) {
+    hlse_sarif_add_ids(path, line, rule, pattern_id, NULL, 0, message,
+                       score);
 }
 
 /* Map HLSE 0-100 score to SARIF level + security-severity (0.0-10.0). */
@@ -120,12 +141,25 @@ hlse_sarif_emit(const char *tool_version) {
         printf("          \"level\": \"%s\",\n", sarif_level(f->score));
         hlse_json_escape(f->message, esc, sizeof(esc));
         printf("          \"message\": { \"text\": \"%s\" },\n", esc);
-        if (f->pattern_id[0]) {
-            char epid[64];
-            hlse_json_escape(f->pattern_id, epid, sizeof(epid));
+        if (f->pattern_id[0] || f->n_reason_ids > 0) {
             printf("          \"properties\": { \"security-severity\": \"%.1f\","
-                   " \"hlse-score\": %d, \"pattern_id\": \"%s\" },\n",
-                   sev, f->score, epid);
+                   " \"hlse-score\": %d", sev, f->score);
+            if (f->pattern_id[0]) {
+                char epid[64];
+                hlse_json_escape(f->pattern_id, epid, sizeof(epid));
+                printf(", \"pattern_id\": \"%s\"", epid);
+            }
+            if (f->n_reason_ids > 0) {
+                int j;
+                printf(", \"reason_ids\": [");
+                for (j = 0; j < f->n_reason_ids; j++) {
+                    char rid[64];
+                    hlse_json_escape(f->reason_ids[j], rid, sizeof(rid));
+                    printf("%s\"%s\"", j ? ", " : "", rid);
+                }
+                printf("]");
+            }
+            printf(" },\n");
         } else {
             printf("          \"properties\": { \"security-severity\": \"%.1f\","
                    " \"hlse-score\": %d },\n", sev, f->score);

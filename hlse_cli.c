@@ -2661,15 +2661,32 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                         if (fv.score >= o->fail_threshold) gate_hits++;
                         if (o->sarif_out) {
                             char msg[512] = {0};
+                            char ridb[8][32];
+                            const char *rids[8];
+                            int n_rids = 0;
                             int i;
-                            for (i = 0; i < fv.n_reasons; i++) {
+                            for (i = 0; i < fv.n_reasons &&
+                                        n_rids < (int)(sizeof rids /
+                                                       sizeof rids[0]);
+                                 i++) {
                                 size_t l = strlen(msg);
                                 snprintf(msg + l, sizeof(msg) - l, "%s%s",
                                          i ? "; " : "", fv.reasons[i]);
+                                if (hlse_reason_code_id(
+                                        "file", fv.reasons[i],
+                                        ridb[n_rids],
+                                        sizeof(ridb[0])))
+                                    rids[n_rids] = ridb[n_rids];
+                                else
+                                    rids[n_rids] = "HLSE-FILE-OTHER";
+                                n_rids++;
                             }
-                            hlse_sarif_add(sarif_path, 1, "file-masquerade",
+                            hlse_sarif_add_ids(sarif_path, 1,
+                                      "file-masquerade",
                                       hlse_file_verdict_pattern_id(&fv),
-                                      msg[0] ? msg : "file masquerade", fv.score);
+                                      rids, n_rids,
+                                      msg[0] ? msg : "file masquerade",
+                                      fv.score);
                         } else if (o->json_out) {
                             int i;
                             char esc[512];
