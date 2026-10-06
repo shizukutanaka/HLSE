@@ -349,7 +349,17 @@ touch /tmp/hlse_invoice.pdf.exe
 ./hlse_core file /tmp/hlse_invoice.pdf.exe 2>&1 | grep -qE "ISOLATE|BLOCK|ALERT" \
     && check "file: double extension .pdf.exe → detected" "0" "0" \
     || check "file: double extension .pdf.exe → detected" "0" "1"
+./hlse_core --json file /tmp/hlse_invoice.pdf.exe 2>&1 | grep -q '"reason_ids":\["HLSE-FILE-F1"' \
+    && check "file: reason_ids carry HLSE-FILE-F1" "0" "0" \
+    || check "file: reason_ids carry HLSE-FILE-F1" "0" "1"
 rm -f /tmp/hlse_invoice.pdf.exe
+
+# clean file still emits empty reason_ids (schema stability)
+echo "hello" > /tmp/hlse_test_clean.txt
+./hlse_core --json file /tmp/hlse_test_clean.txt 2>&1 | grep -q '"reason_ids":\[\]' \
+    && check "file: clean emits reason_ids:[]" "0" "0" \
+    || check "file: clean emits reason_ids:[]" "0" "1"
+rm -f /tmp/hlse_test_clean.txt
 
 # HTML smuggling: HTML content wearing a .pdf extension
 printf '<!DOCTYPE html><html><body><script>x</script></body></html>' > /tmp/hlse_smug.pdf

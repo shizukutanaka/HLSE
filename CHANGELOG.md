@@ -10877,6 +10877,17 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 458 (file findings carry stable HLSE-FILE-* ids):** the file
+  surface closed the per-finding-identity arc — its 51 reason codes
+  (F1–F51 + F56–F58) emitted no dedup key, so a SIEM rule could not
+  suppress e.g. only HLSE-FILE-F23 makefile $(shell) hits without
+  also hiding F11 HTML smuggling. The same hlse_reason_code_id mapper
+  now emits "reason_ids" parallel to "reasons" on both file emit paths
+  (standalone `file` verdicts and `scan <dir>` file records), falling
+  back to HLSE-FILE-OTHER for code-less notes so the arrays stay
+  1:1-aligned; clean verdicts emit "reason_ids":[]. All 55 tokens
+  registered — registry 171→226, --list-patterns stays exhaustive.
+  CLI tests +2.
 - **cycle 457 (protect/esp/network findings carry stable ids):** the
   code-prefixed host surfaces completed the per-finding-identity arc —
   their reasons led with "<letter><digits>:" codes (R/N/S on protect,

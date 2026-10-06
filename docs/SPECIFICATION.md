@@ -180,7 +180,8 @@ Additional fields vary by kind:
   the first 3) and `classes_total` (true match count, only when it
   exceeds the `classes` cap) on multi-class detections.
 - `clipboard`: `is_swap`, `original`, `swapped`, `reason`, `remediation`.
-- `file`: `path`, `reasons:[...]`.
+- `file`: `path`, `reasons:[...]`; `reason_ids:[...]` — the stable
+  `HLSE-FILE-F<n>` token for each reason (per-finding dedup key).
 - `secret`: `findings:[{id,type,line,description,confidence?,remediation?}]`
   (`line` is the 1-based line of the finding within the scanned text;
   `0` when the position is not line-resolvable; `id` is the stable

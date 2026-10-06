@@ -507,6 +507,8 @@ hlse_cmd_file(const HlseCli *o, int argc, char **argv, int idx) {
                 for (i = 0; i < fv.n_reasons; i++)
                     hlse_json_str_elem(i, fv.reasons[i]);
                 printf("]");
+                emit_reason_ids("file", "HLSE-FILE-OTHER",
+                                fv.reasons, fv.n_reasons);
                 if (fv.score == 0) {
                     const char *bs = hlse_blindspot_for("file");
                     if (bs) {
@@ -2681,6 +2683,8 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                             for (i = 0; i < fv.n_reasons; i++)
                     hlse_json_str_elem(i, fv.reasons[i]);
                             printf("]");
+                            emit_reason_ids("file", "HLSE-FILE-OTHER",
+                                            fv.reasons, fv.n_reasons);
                             if (fv.score >= 40) {
                                 /* Perspective 98: matches the standalone
                                  * `file` JSON path — pattern/objective/verify
