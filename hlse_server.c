@@ -78,6 +78,7 @@
 
 #include "hlse_core.h"
 #include "hlse_secrets.h"
+#include "hlse_meta.h"
 #include "hlse_file.h"
 #include "hlse_util.h"
 
@@ -409,10 +410,21 @@ respond_secrets(ConnCtx *cx, const char *input) {
         "{\"kind\":\"secrets\",\"score\":%d,\"findings\":[", v.score);
     len = strlen(body);
     for (i = 0; i < v.n_findings; i++) {
+        char pidb[80];
+        const char *pid = hlse_secret_pattern_id_r(v.findings[i].type,
+                                                   pidb, sizeof(pidb));
         if (i > 0) json_append_char(body, sizeof(body), &len, ',');
-        json_append_lit(body, sizeof(body), &len, "{\"type\":\"");
+        json_append_lit(body, sizeof(body), &len, "{\"id\":\"");
+        json_escape_append(body, sizeof(body), &len, pid);
+        json_append_lit(body, sizeof(body), &len, "\",\"type\":\"");
         json_escape_append(body, sizeof(body), &len, v.findings[i].type);
-        json_append_lit(body, sizeof(body), &len, "\",\"detail\":\"");
+        json_append_lit(body, sizeof(body), &len, "\"");
+        if (v.findings[i].line > 0) {
+            char lb[16];
+            snprintf(lb, sizeof(lb), ",\"line\":%d", v.findings[i].line);
+            json_append_lit(body, sizeof(body), &len, lb);
+        }
+        json_append_lit(body, sizeof(body), &len, ",\"detail\":\"");
         json_escape_append(body, sizeof(body), &len, v.findings[i].description);
         json_append_char(body, sizeof(body), &len, '"');
         json_append_char(body, sizeof(body), &len, '}');
@@ -447,10 +459,21 @@ respond_file(ConnCtx *cx, const char *filename, const char *content) {
         json_append_elem(body, sizeof(body), &len, fv.reasons[i], i);
     json_append_lit(body, sizeof(body), &len, "],\"secrets\":[");
     for (i = 0; i < sv.n_findings; i++) {
+        char pidb[80];
+        const char *pid = hlse_secret_pattern_id_r(sv.findings[i].type,
+                                                   pidb, sizeof(pidb));
         if (i > 0) json_append_char(body, sizeof(body), &len, ',');
-        json_append_lit(body, sizeof(body), &len, "{\"type\":\"");
+        json_append_lit(body, sizeof(body), &len, "{\"id\":\"");
+        json_escape_append(body, sizeof(body), &len, pid);
+        json_append_lit(body, sizeof(body), &len, "\",\"type\":\"");
         json_escape_append(body, sizeof(body), &len, sv.findings[i].type);
-        json_append_lit(body, sizeof(body), &len, "\",\"detail\":\"");
+        json_append_lit(body, sizeof(body), &len, "\"");
+        if (sv.findings[i].line > 0) {
+            char lb[16];
+            snprintf(lb, sizeof(lb), ",\"line\":%d", sv.findings[i].line);
+            json_append_lit(body, sizeof(body), &len, lb);
+        }
+        json_append_lit(body, sizeof(body), &len, ",\"detail\":\"");
         json_escape_append(body, sizeof(body), &len, sv.findings[i].description);
         json_append_char(body, sizeof(body), &len, '"');
         json_append_char(body, sizeof(body), &len, '}');

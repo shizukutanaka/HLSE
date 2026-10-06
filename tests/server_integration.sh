@@ -47,6 +47,12 @@ check "text scam detected" \
   "$(curl -s -X POST $B/api/v1/scan/text -d '{"text":"URGENT buy gift cards now"}')" '"kind":"text"'
 check "secrets found" \
   "$(curl -s -X POST $B/api/v1/scan/secrets -d '{"text":"AKIA2E3MWORQXYZ4567PQ"}')" '"kind":"secrets"'
+check "secret finding id+line" \
+  "$(curl -s -X POST $B/api/v1/scan/secrets -d '{"text":"ok\nxoxb-1234567890-1234567890-abcdefghijkl"}')" '"id":"HLSE-SECRET-SLACK","type":"Slack Bot Token","line":2'
+check "clean text no findings" \
+  "$(curl -s -X POST $B/api/v1/scan/secrets -d '{"text":"nothing here"}')" '"findings":[]'
+check "file finding id" \
+  "$(curl -s -X POST $B/api/v1/scan/file -d '{"filename":"x.txt","content":"xoxb-1234567890-1234567890-abcdefghijkl"}')" '"id":"HLSE-SECRET-SLACK"'
 check "file masquerade" \
   "$(curl -s -X POST $B/api/v1/scan/file -d '{"filename":"a.pdf.exe","content":"x"}')" 'DOUBLE EXTENSION'
 check "bad json 400" \

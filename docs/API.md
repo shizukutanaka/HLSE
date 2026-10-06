@@ -71,10 +71,16 @@ Body: `{ "text": "..." }` — scans code/config for leaked credentials.
   "kind": "secrets",
   "score": 100,
   "findings": [
-    { "type": "AWS Access Key ID", "detail": "AWS Access Key ID found: AKIA2E3M..." }
+    { "id": "HLSE-SECRET-AWS-KEY", "type": "AWS Access Key ID",
+      "line": 3, "detail": "AWS Access Key ID found: AKIA2E3M..." }
   ]
 }
 ```
+
+Each finding carries a stable `id` (`HLSE-SECRET-*`, or
+`HLSE-SECRET-CUSTOM-*` for `--patterns` rules — see the CLI's
+`--list-patterns` registry) for dedup/suppression, plus `line` (1-based)
+when the line is known.
 
 ### `POST /api/v1/scan/file`
 Body: `{ "filename": "...", "content": "..." }` — combines name-based masquerade
@@ -89,7 +95,8 @@ stored server-side.
   "severity": 4,
   "action": "ISOLATE",
   "reasons": ["F1: DOUBLE EXTENSION — '.pdf.exe' disguised as .pdf"],
-  "secrets": [ { "type": "AWS Access Key ID", "detail": "..." } ]
+  "secrets": [ { "id": "HLSE-SECRET-AWS-KEY", "type": "AWS Access Key ID",
+    "line": 1, "detail": "..." } ]
 }
 ```
 

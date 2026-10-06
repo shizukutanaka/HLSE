@@ -10877,6 +10877,16 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 451 (HTTP API findings carry stable id + line):** the
+  hlse-server endpoints emitted `{type, detail}` per finding while the
+  CLI emitted `{id, type, line, description}` — API consumers could not
+  dedup or locate findings (same class of gap closed for the CLI in
+  cycles 442–448). `/api/v1/scan/secrets` findings and
+  `/api/v1/scan/file` secrets now carry `"id"` (`HLSE-SECRET-*`, or
+  `HLSE-SECRET-CUSTOM-*` for `--patterns` rules via
+  `hlse_secret_pattern_id_r`) and `"line"` (1-based, omitted when
+  unknown). Additive only — `type`/`detail` unchanged. API.md updated.
+  Server integration tests +3.
 - **cycle 450 (registry completeness — 77 emitted tokens registered +
   static drift gate):** the registry claimed to be the authoritative
   append-only token set but was missing 77 emitted ids: all 47
