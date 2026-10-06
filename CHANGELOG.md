@@ -10877,6 +10877,25 @@ bitcoin:bc1qjaet6jgpk08la46jelmlpgsz84luc4lc0tnwr5
   nopcommerce, elasticpath, swell, ecwid, weebly,
   paypal, braintree, payhip). laravel gated
   (laravel artisan FP guard). +102/102 checks.
+- **cycle 463 (HTTP API advisory parity completes: url/text):** cycle
+  462 assumed /scan/url and /scan/text could not emit the verdict-level
+  advisory fields because hlse_scan collapses every input into
+  ScanResult{score,is_url,n_reasons,reasons} and discards the typed
+  Verdict/TextVerdict the advisory getters take. The CLI already solves
+  the identical problem in its --json auto-detect path: re-run
+  hlse_check_url(input) when ScanResult.is_url, and synthesize a
+  TextVerdict from the merged ScanResult otherwise — so respond_scan
+  now mirrors that contract instead of extending the library surface.
+  url responses emit signal_count/confidence, pattern, pattern_id,
+  objective, confusable, ascii_diff, safe_url, verify, triage,
+  cascade_risk, exoneration, and canonical_brand for
+  registry-confirmed clean domains; text responses emit
+  signal_count/confidence, pattern, pattern_id, objective, verify,
+  triage, cascade_risk, exoneration — the same getter set and gating
+  the CLI printers use. reasons[]/score stay merged
+  (hlse_scan semantics) while advisory text comes from the recovered
+  typed verdict. Response buffer 8->16 KiB for the added text. API.md
+  documents the full contract. Server integration +4.
 - **cycle 462 (HTTP API advisory-field parity with CLI JSON):** the
   server's verdict-level advisory fields stopped at blind_spot —
   /scan/secrets and /scan/file emitted findings + reasons but none of

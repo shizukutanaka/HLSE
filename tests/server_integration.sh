@@ -79,6 +79,14 @@ check "file verdict carries advisory fields" \
   "$(curl -s -X POST $B/api/v1/scan/file -d '{"filename":"a.pdf.exe","content":"x"}' | grep -o '"pattern_id":"HLSE-FILE-DOUBLE-EXT"')" '"pattern_id":"HLSE-FILE-DOUBLE-EXT"'
 check "clean file omits objective" \
   "$(curl -s -X POST $B/api/v1/scan/file -d '{"filename":"ok.txt","content":"x"}' | grep -c '"objective"')" '0'
+check "url verdict carries advisory fields" \
+  "$(curl -s -X POST $B/api/v1/scan/url -d '{"url":"https://g00gle.com/login"}' | grep -o '"pattern_id":"HLSE-URL-HOMOGLYPH"')" '"pattern_id":"HLSE-URL-HOMOGLYPH"'
+check "url verdict has objective+triage" \
+  "$(curl -s -X POST $B/api/v1/scan/url -d '{"url":"https://g00gle.com/login"}' | grep -cE '"objective":.*"triage"')" '1'
+check "text verdict carries advisory fields" \
+  "$(curl -s -X POST $B/api/v1/scan/text -d '{"text":"URGENT wire money now bitcoin"}' | grep -o '"pattern_id":"HLSE-BEC-WIRE"')" '"pattern_id":"HLSE-BEC-WIRE"'
+check "clean url omits pattern_id" \
+  "$(curl -s -X POST $B/api/v1/scan/url -d '{"url":"https://x9k2.example"}' | grep -c '"pattern_id"')" '0'
 check "bad json 400" \
   "$(curl -s -X POST $B/api/v1/scan/url -d '{"nope":1}')" '"error"'
 check "unknown route 404" \

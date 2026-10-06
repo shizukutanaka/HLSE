@@ -378,10 +378,22 @@ send_error(ConnCtx *cx, int status, const char *status_text, const char *message
 
 /* --------------------------- verdict -> JSON ------------------------- */
 
+/* Append one advisory key/value pair when the getter yields text. */
+static void
+json_advisory_field(char *body, size_t cap, size_t *len,
+                    const char *name, const char *val) {
+    if (!val) return;
+    json_append_lit(body, cap, len, ",\"");
+    json_append_lit(body, cap, len, name);
+    json_append_lit(body, cap, len, "\":\"");
+    json_escape_append(body, cap, len, val);
+    json_append_char(body, cap, len, '"');
+}
+
 static void
 respond_scan(ConnCtx *cx, const char *input) {
     ScanResult r = hlse_scan(input);
-    char body[8192];
+    char body[16384];
     size_t len = 0;
     int i;
     int severity = hlse_severity_for_score(r.score);
@@ -402,6 +414,93 @@ respond_scan(ConnCtx *cx, const char *input) {
             json_escape_append(body, sizeof(body), &len, bs);
             json_append_char(body, sizeof(body), &len, '"');
         }
+    }
+    /* Verdict-level advisory fields — the same getters the CLI's JSON
+     * printers call, so an API consumer gets the same triage surface.
+     * The typed verdict is recovered exactly like the CLI's
+     * auto-detect path: re-run hlse_check_url for URLs (the advisory
+     * getters need the Verdict hlse_scan collapsed away), and
+     * synthesize a TextVerdict from the merged ScanResult for text. */
+    if (r.is_url) {
+        Verdict uv = hlse_check_url(input);
+        char cf[160], obj[320], tri[512], asc[256], safe[384], conf[160];
+        int sig = hlse_confidence_for(&uv, cf, sizeof(cf));
+        int has_obj = hlse_compound_objective(&uv, obj, sizeof(obj));
+        int has_tri = hlse_compound_triage(&uv, tri, sizeof(tri));
+        int has_asc = hlse_ascii_diff(&uv, asc, sizeof(asc));
+        int has_safe = hlse_safe_destinations(&uv, safe, sizeof(safe));
+        int has_conf = hlse_confusable_report(input, conf, sizeof(conf));
+        char canon_brand[64];
+        int has_canon = (uv.score == 0) &&
+                        hlse_canonical_confirm(input, canon_brand,
+                                               sizeof(canon_brand));
+        if (sig > 0) {
+            char nb[24];
+            snprintf(nb, sizeof(nb), ",\"signal_count\":%d", sig);
+            json_append_lit(body, sizeof(body), &len, nb);
+            json_append_lit(body, sizeof(body), &len, ",\"confidence\":\"");
+            json_escape_append(body, sizeof(body), &len, cf);
+            json_append_char(body, sizeof(body), &len, '"');
+        }
+        if (has_canon)
+            json_advisory_field(body, sizeof(body), &len,
+                                "canonical_brand", canon_brand);
+        json_advisory_field(body, sizeof(body), &len, "pattern",
+                            hlse_classify_url_attack(&uv));
+        json_advisory_field(body, sizeof(body), &len, "pattern_id",
+                            hlse_url_pattern_id(&uv));
+        if (has_obj)
+            json_advisory_field(body, sizeof(body), &len, "objective", obj);
+        if (has_conf)
+            json_advisory_field(body, sizeof(body), &len, "confusable", conf);
+        if (has_asc)
+            json_advisory_field(body, sizeof(body), &len, "ascii_diff", asc);
+        if (has_safe)
+            json_advisory_field(body, sizeof(body), &len, "safe_url", safe);
+        json_advisory_field(body, sizeof(body), &len, "verify",
+                            hlse_verification_for(&uv));
+        if (has_tri)
+            json_advisory_field(body, sizeof(body), &len, "triage", tri);
+        json_advisory_field(body, sizeof(body), &len, "cascade_risk",
+                            hlse_cascade_risk(&uv));
+        json_advisory_field(body, sizeof(body), &len, "exoneration",
+                            hlse_url_exoneration(&uv));
+    } else {
+        TextVerdict tv;
+        char cf[160];
+        int ti, sig;
+        memset(&tv, 0, sizeof(tv));
+        tv.score = r.score;
+        tv.n_reasons = r.n_reasons <
+                       (int)(sizeof(tv.reasons) / sizeof(tv.reasons[0]))
+                       ? r.n_reasons
+                       : (int)(sizeof(tv.reasons) / sizeof(tv.reasons[0]));
+        for (ti = 0; ti < tv.n_reasons; ti++)
+            snprintf(tv.reasons[ti], sizeof(tv.reasons[0]), "%s",
+                     r.reasons[ti]);
+        sig = hlse_text_confidence(&tv, cf, sizeof(cf));
+        if (sig > 0) {
+            char nb[24];
+            snprintf(nb, sizeof(nb), ",\"signal_count\":%d", sig);
+            json_append_lit(body, sizeof(body), &len, nb);
+            json_append_lit(body, sizeof(body), &len, ",\"confidence\":\"");
+            json_escape_append(body, sizeof(body), &len, cf);
+            json_append_char(body, sizeof(body), &len, '"');
+        }
+        json_advisory_field(body, sizeof(body), &len, "pattern",
+                            hlse_classify_text_attack(&tv));
+        json_advisory_field(body, sizeof(body), &len, "pattern_id",
+                            hlse_text_pattern_id(&tv));
+        json_advisory_field(body, sizeof(body), &len, "objective",
+                            hlse_text_objective(&tv));
+        json_advisory_field(body, sizeof(body), &len, "verify",
+                            hlse_text_verify(&tv));
+        json_advisory_field(body, sizeof(body), &len, "triage",
+                            hlse_text_triage(&tv));
+        json_advisory_field(body, sizeof(body), &len, "cascade_risk",
+                            hlse_text_cascade(&tv));
+        json_advisory_field(body, sizeof(body), &len, "exoneration",
+                            hlse_text_exoneration(&tv));
     }
     json_append_char(body, sizeof(body), &len, '}');
     send_json(cx, 200, "OK", body);

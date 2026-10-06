@@ -54,15 +54,32 @@ curl -s localhost:8080/api/v1/scan/url \
   "reasons": [
     "URL credential trick: @ in authority — displayed host is fake, real host follows @",
     "High-risk TLD: .xyz"
-  ]
+  ],
+  "signal_count": 2,
+  "confidence": "corroborated by 2 independent signals — ...",
+  "pattern": "credential trick in authority",
+  "pattern_id": "HLSE-URL-AT-TRICK",
+  "objective": "credential theft — ...",
+  "verify": "don't read the link — ...",
+  "triage": "change your email password ...",
+  "cascade_risk": "every account that lists this email ..."
 }
 ```
 
 `severity` maps to `action`: `0 SAFE`, `1 LOG`, `2 ALERT`, `3 BLOCK`, `4 ISOLATE`.
 
+The verdict-level advisory fields mirror the CLI's `--json` contract:
+`signal_count`+`confidence`, `pattern`, `pattern_id` (stable `HLSE-*`
+token), `objective`, `verify`, `triage`, `cascade_risk`, and
+`exoneration` for borderline scores — plus URL-only `confusable`,
+`ascii_diff`, `safe_url`, and `canonical_brand` on registry-confirmed
+clean domains. Fields only appear when the corresponding signal fired.
+
 ### `POST /api/v1/scan/text`
 Body: `{ "text": "..." }` — scans a message for scam/phishing language.
-Same response shape as `/scan/url` with `"kind":"text"`.
+Same response shape as `/scan/url` with `"kind":"text"` (text advisory
+fields: `signal_count`/`confidence`, `pattern`, `pattern_id`,
+`objective`, `verify`, `triage`, `cascade_risk`, `exoneration`).
 
 ### `POST /api/v1/scan/secrets`
 Body: `{ "text": "..." }` — scans code/config for leaked credentials.
