@@ -4,6 +4,25 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Changed (cycle-471)
+- `tests/cli_integration.sh` paste stanzas migrated from `| grep -q`
+  output-wording checks to JSON-structural assertions: new `jcheck`
+  helper runs `./hlse_core --json` and evaluates a Python expression
+  against the parsed verdict via `tests/json_check.py` (a 60-line
+  harness that binds the verdict to `d` with a minimal builtin set —
+  len/str/any/all/set/sorted/min/max). A grep only proved the wording
+  appeared; jcheck asserts the semantics — `d["score"] > 0` /
+  `d["reasons"] == []` / `d["action"] in ["ALERT","BLOCK","ISOLATE"]` /
+  P-code presence inside `reasons[]` / absence of advisory lenses on
+  clean verdicts. **8,765 checks converted** (every `hlse_core paste …
+  | grep` stanza: loop-flagged, FP-guard, P-code, band, and
+  field-level advisory stanzas) — the suite stays at 24,286 passed / 0
+  failed. 9 field-level stanzas were strengthened beyond the old grep:
+  exact `score == 45`, `blind_spot`/`pattern`/`objective`/`triage`/
+  `cascade_risk`/`exoneration` key assertions replace regex over
+  display text. url/text/file/secret/audit stanzas (~15.5k checks)
+  keep their grep checks — same migration applies incrementally.
+
 ### Changed (cycle-470)
 - Table-driven needle vocabularies, project-wide: every `strstr(hay,X) ||
   strstr(hay,Y) || …` / `strcmp(hay,X)==0 || …` chain of ≥3 same-haystack
