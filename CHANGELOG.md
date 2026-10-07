@@ -4,6 +4,23 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Changed (cycle-474)
+- **P8 per-class severity tiers (audit B2):** the Windows ClickFix/LOLBin
+  else-if chain no longer scores a flat `+45` for every class. The new
+  `PASTE_WHAT_SEV` macro records the maximum severity across all matched
+  classes and keeps the first hit at that severity as the reason label;
+  `classes[]`/`classes_total` ordering is unchanged. Remote
+  payload-fetch-and-execute cradles and payload generators — PowerShell
+  encoded/download-execute, mshta remote script, certutil download/decode,
+  Squiblydoo, bitsadmin transfer, remote msiexec, wscript/cscript/rundll32
+  remote, iwr/irm download + `| iex` cradle, hh.exe remote CHM,
+  ms-appinstaller URI bypass, osascript shell exec, python urllib
+  download-execute, msfvenom, expand remote pull, curl/wget executable
+  downloads, pubprn, ftp -s, ieexec — score **65 (BLOCK)**; pure
+  exec/persistence/exfil primitives and bare-name mentions stay **45
+  (ALERT)**. Multi-hold verdicts still get a single score (max, not sum).
+  35/55 tiers are reserved for finer grading.
+
 ### Added (cycle-473)
 - **Generated paste benchmark corpus (audit B3):** `--benchmark` now
   scores a deterministic 550-item sample derived from the

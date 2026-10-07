@@ -973,46 +973,54 @@ hlse_check_paste(const char *text) {
         const char *what_hits[8];
         int          n_what_hits = 0;
         int          n_what_matched = 0;
+        int          what_sev = 0;
         /* every branch condition below is pure, so the chain is
-         * evaluated in full: the first hit sets 'what' (score + flag
-         * stay single), and each matched class also lands in
-         * what_hits[] so the reason can name the secondary hits.
-         * n_what_matched counts every hit (display caps at 8). */
-#define PASTE_WHAT(s) do {                                       \
+         * evaluated in full: the FIRST hit at the highest severity
+         * sets 'what' (PASTE_WHAT_SEV — ties keep the first hit),
+         * and each matched class also lands in what_hits[] so the
+         * reason can name the secondary hits. n_what_matched counts
+         * every hit (display caps at 8).
+         * Severity tiers (audit B2): 45 = default ALERT (execution
+         * primitive / persistence / exfil / bare name mention);
+         * 65 = BLOCK — remote payload fetch+execute or payload
+         * generation (the canonical ClickFix kill-chain stage).
+         * 35/55 tiers remain reserved for finer grading. */
+#define PASTE_WHAT_SEV(s, sv) do {                               \
     n_what_matched++;                                            \
-    if (what == NULL) what = (s);                                \
+    if ((sv) > what_sev) { what_sev = (sv); what = (s); }       \
     if (n_what_hits < (int)(sizeof(what_hits)/sizeof(what_hits[0]))) \
         what_hits[n_what_hits++] = (s);                          \
 } while (0)
+#define PASTE_WHAT(s) PASTE_WHAT_SEV((s), 45)
         if (ci_contains(text, "powershell") &&
             (ci_contains(text, "-enc ")        || ci_contains(text, "encodedcommand") ||
              ci_contains(text, "downloadstring") || ci_contains(text, "frombase64string") ||
              ci_contains(text, "iex")          || ci_contains(text, "invoke-expression") ||
              ci_contains(text, "-w hidden")    || ci_contains(text, "windowstyle hidden"))) {
-            PASTE_WHAT("PowerShell hidden/encoded/download-execute");
+            PASTE_WHAT_SEV("PowerShell hidden/encoded/download-execute", 65);
         }
         if (ci_contains(text, "mshta") &&
                    (ci_contains(text, "http")  || ci_contains(text, "vbscript:") ||
                     ci_contains(text, "javascript:"))) {
-            PASTE_WHAT("mshta remote/script execution");
+            PASTE_WHAT_SEV("mshta remote/script execution", 65);
         }
         if (ci_contains(text, "certutil") &&
                    (ci_contains(text, "urlcache") || ci_contains(text, "-decode"))) {
-            PASTE_WHAT("certutil download/decode (LOLBin)");
+            PASTE_WHAT_SEV("certutil download/decode (LOLBin)", 65);
         }
         if (ci_contains(text, "regsvr32") && ci_contains(text, "scrobj")) {
-            PASTE_WHAT("regsvr32 scrobj.dll (Squiblydoo)");
+            PASTE_WHAT_SEV("regsvr32 scrobj.dll (Squiblydoo)", 65);
         }
         if (ci_contains(text, "bitsadmin") && ci_contains(text, "/transfer")) {
-            PASTE_WHAT("bitsadmin remote file transfer (LOLBin)");
+            PASTE_WHAT_SEV("bitsadmin remote file transfer (LOLBin)", 65);
         }
         if (ci_contains(text, "msiexec") && ci_contains(text, "http")) {
-            PASTE_WHAT("msiexec remote MSI install");
+            PASTE_WHAT_SEV("msiexec remote MSI install", 65);
         }
         if ((ci_contains(text, "wscript") || ci_contains(text, "cscript")) &&
                    (ci_contains(text, "http") || ci_contains(text, ".vbs") ||
                     ci_contains(text, ".js"))) {
-            PASTE_WHAT("wscript/cscript remote/script execution (LOLBin)");
+            PASTE_WHAT_SEV("wscript/cscript remote/script execution (LOLBin)", 65);
         }
         if (ci_contains(text, "wmic") &&
                    (ci_contains(text, "process call create") ||
@@ -1021,14 +1029,14 @@ hlse_check_paste(const char *text) {
         }
         if (ci_contains(text, "rundll32") &&
                    (ci_contains(text, "http") || ci_contains(text, "javascript"))) {
-            PASTE_WHAT("rundll32 remote/script execution (LOLBin)");
+            PASTE_WHAT_SEV("rundll32 remote/script execution (LOLBin)", 65);
         }
         if (ci_contains(text, "powershell") &&
                    (ci_contains(text, "invoke-restmethod") ||
                     ci_contains(text, "invoke-webrequest") ||
                     ci_contains(text, "iwr ") || ci_contains(text, "irm ") ||
                     ci_contains(text, "iwr\t") || ci_contains(text, "irm\t"))) {
-            PASTE_WHAT("PowerShell web download (iwr/irm)");
+            PASTE_WHAT_SEV("PowerShell web download (iwr/irm)", 65);
         }
         if (ci_contains(text, "forfiles") &&
                    (ci_contains(text, "/p ") || ci_contains(text, "/m ")) &&
@@ -1062,7 +1070,7 @@ hlse_check_paste(const char *text) {
         }
         if (ci_contains(text, "hh.exe") &&
                    (ci_contains(text, "http") || ci_contains(text, ".chm"))) {
-            PASTE_WHAT("hh.exe remote CHM execution (LOLBin)");
+            PASTE_WHAT_SEV("hh.exe remote CHM execution (LOLBin)", 65);
         }
         if (ci_contains(text, "cmstp") && ci_contains(text, "/s")) {
             PASTE_WHAT("cmstp INF-profile execution (LOLBin/UAC bypass)");
@@ -1080,20 +1088,20 @@ hlse_check_paste(const char *text) {
         if (ci_contains(text, "ms-appinstaller:") ||
                    (ci_contains(text, "appinstaller") &&
                     ci_contains(text, "http"))) {
-            PASTE_WHAT("ms-appinstaller URI bypass (ClickFix 2025)");
+            PASTE_WHAT_SEV("ms-appinstaller URI bypass (ClickFix 2025)", 65);
         }
         if (ci_contains(text, "osascript") &&
                    (ci_contains(text, "do shell script") ||
                     ci_contains(text, "http") ||
                     ci_contains(text, "curl ") || ci_contains(text, "bash"))) {
-            PASTE_WHAT("osascript AppleScript shell execution (macOS ClickFix)");
+            PASTE_WHAT_SEV("osascript AppleScript shell execution (macOS ClickFix)", 65);
         }
         if ((ci_contains(text, "python") ) &&
                    (ci_contains(text, "urllib")  ||
                     ci_contains(text, "urlopen") || ci_contains(text, "requests.get")) &&
                    (ci_contains(text, "exec(") || ci_contains(text, "eval(") ||
                     ci_contains(text, ".read()") || ci_contains(text, "subprocess"))) {
-            PASTE_WHAT("Python download-execute one-liner");
+            PASTE_WHAT_SEV("Python download-execute one-liner", 65);
         }
         if (ci_contains(text, "regasm") &&
                    (ci_contains(text, "http") || ci_contains(text, ".dll") ||
@@ -1111,7 +1119,7 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT("regsvcs.exe .NET assembly execution (LOLBin)");
         }
         if (ci_contains(text, "msfvenom")) {
-            PASTE_WHAT("msfvenom payload generation (Metasploit)");
+            PASTE_WHAT_SEV("msfvenom payload generation (Metasploit)", 65);
         }
         if (ci_contains(text, "dnscmd") &&
                    ci_contains(text, "serverlevelplugindll")) {
@@ -1130,23 +1138,23 @@ hlse_check_paste(const char *text) {
         if (ci_contains(text, "msiexec") &&
                    (ci_contains(text, "/q") ) &&
                    ci_contains(text, "http")) {
-            PASTE_WHAT("msiexec silent remote MSI install (ClickFix)");
+            PASTE_WHAT_SEV("msiexec silent remote MSI install (ClickFix)", 65);
         }
         if (ci_contains(text, "expand") &&
                    (ci_contains(text, "http") || ci_contains(text, "\\\\")) &&
                    ci_contains(text, "-f:")) {
-            PASTE_WHAT("expand.exe remote file download (LOLBin)");
+            PASTE_WHAT_SEV("expand.exe remote file download (LOLBin)", 65);
         }
         if (ci_contains(text, "curl") &&
                    (ci_contains(text, "-o ") || ci_contains(text, "--output ")) &&
                    (ci_contains(text, ".exe") || ci_contains(text, ".ps1") ||
                     ci_contains(text, ".dll") || ci_contains(text, ".bat"))) {
-            PASTE_WHAT("curl download of executable");
+            PASTE_WHAT_SEV("curl download of executable", 65);
         }
         if ((ci_contains(text, "wget") || ci_contains(text, "invoke-webrequest")) &&
                    (ci_contains(text, ".exe") || ci_contains(text, ".ps1") ||
                     ci_contains(text, ".dll") || ci_contains(text, ".bat"))) {
-            PASTE_WHAT("download of executable via wget/iwr");
+            PASTE_WHAT_SEV("download of executable via wget/iwr", 65);
         }
         if ((ci_contains(text, "iwr ") || ci_contains(text, "irm ") ||
                     ci_contains(text, "iwr\t") || ci_contains(text, "irm\t") ||
@@ -1154,7 +1162,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "invoke-restmethod")) &&
                    (ci_contains(text, "iex") ||
                     ci_contains(text, "invoke-expression") )) {
-            PASTE_WHAT("PowerShell download-execute cradle (iwr|iex)");
+            PASTE_WHAT_SEV("PowerShell download-execute cradle (iwr|iex)", 65);
         }
         if ((ci_contains(text, "pip install") ||
                     ci_contains(text, "pip3 install") ||
@@ -1332,7 +1340,7 @@ hlse_check_paste(const char *text) {
         if (ci_contains(text, "pubprn") &&
                    (ci_contains(text, "script:") || ci_contains(text, "http") ||
                     ci_contains(text, "\\\\"))) {
-            PASTE_WHAT("pubprn remote-script proxy execution (LOLBin)");
+            PASTE_WHAT_SEV("pubprn remote-script proxy execution (LOLBin)", 65);
         }
         if (ci_contains(text, "printui") &&
                    (ci_contains(text, "\\\\") || ci_contains(text, "http") ||
@@ -1435,7 +1443,7 @@ hlse_check_paste(const char *text) {
         }
         if (ci_contains(text, "ftp") &&
                    ci_contains(text, "-s:")) {
-            PASTE_WHAT("ftp script execution (LOLBin)");
+            PASTE_WHAT_SEV("ftp script execution (LOLBin)", 65);
         }
         if (ci_contains(text, "iexpress") &&
                    (ci_contains(text, "-") || ci_contains(text, "/n") ||
@@ -1452,7 +1460,7 @@ hlse_check_paste(const char *text) {
         if (ci_contains(text, "ieexec") &&
                    (ci_contains(text, "http") || ci_contains(text, ".exe") ||
                     ci_contains(text, ".dll"))) {
-            PASTE_WHAT("ieexec remote .NET execution (LOLBin)");
+            PASTE_WHAT_SEV("ieexec remote .NET execution (LOLBin)", 65);
         }
         if (ci_contains(text, "infdefaultinstall") &&
                    ci_contains(text, ".inf")) {
@@ -17709,7 +17717,7 @@ hlse_check_paste(const char *text) {
             int i;
             size_t off = 0;
             v.signals |= PASTE_WINDOWS_LOLBIN;
-            v.score += 45;
+            v.score += what_sev;
             extra[0] = '\0';
             for (i = 1; i < n_what_hits; i++) {
                 /* snprintf returns the would-be length: advance off
