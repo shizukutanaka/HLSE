@@ -405,6 +405,12 @@ jcheck "P8 multi-hold names secondary class hits" '"(also:" in str(d)' paste 'po
 # inflation): both hits are 65-tier remote-execution cradles → 65, not 130
 jcheck "P8 multi-hold keeps single top-tier score" 'd["score"] == 65' paste 'powershell -enc SQBFAFgA && certutil -urlcache http://x'
 
+# P8 severity tiers: state-changing primitive = 55, read-only enum /
+# name-mention = 45, remote-execution cradle = 65
+jcheck "P8 tier: host primitive scores 55" 'd["score"] == 55' paste 'schtasks /create /ru SYSTEM /tn t /tr c'
+jcheck "P8 tier: read-only enum stays 45" 'd["score"] == 45' paste 'find . -perm 4000'
+jcheck "P8 tier: mixed hits take max severity + label" 'd["score"] == 55 and "schtasks" in d["reasons"][0]' paste 'komga && schtasks /create /ru SYSTEM /tn t /tr c'
+
 # P8 (also:) overflow guard: 5 hits with 105-141-char labels must not
 # smash extra[192] — cycle-439 fixed a would-be-length advance that
 # underflowed the snprintf size (ASan stack-buffer-overflow).

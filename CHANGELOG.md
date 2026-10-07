@@ -4,6 +4,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Changed (cycle-475)
+- **P8 mid tier — host-primitive commands score 55:** continuing audit
+  B2, the ~195 qualified-verb classes in the ClickFix/LOLBin chain
+  (state-changing host primitives: exec proxies, persistence, exfil
+  channels, anti-forensics, defense-disable, credential theft,
+  escalation, package installs, cloud/k8s exec) now score **55** —
+  still ALERT band, but graded above the 45 name-mention / read-only
+  classes. Remote-pull consistency adds **five more 65 BLOCK** classes:
+  mpcmdrun -DownloadFile, desktopimgdownldr /lockscreenurl:,
+  cabinet/extexport remote pull, printui remote-driver load, and
+  presentationhost remote .xbap exec. Read-only enum/diagnostic and
+  bare-name classes (find -perm, printenv, attack-tool names, the
+  generated tool corpus) stay **45**.
+
 ### Changed (cycle-474)
 - **P8 per-class severity tiers (audit B2):** the Windows ClickFix/LOLBin
   else-if chain no longer scores a flat `+45` for every class. The new
