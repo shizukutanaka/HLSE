@@ -471,6 +471,23 @@ jcheck "crossfire: genuine v run still fires" 'd["score"] == 45' paste 'v run x'
 jcheck "crossfire: genuine nvi still fires" 'd["score"] == 45' paste 'nvi file'
 jcheck "crossfire: genuine vis still fires" 'd["score"] == 45' paste 'vis -x'
 
+# Token-boundary semantics (cycle-482): bare-alnum needles now match via
+# ci_contains_tok — left token boundary only, right side open. Mid-word
+# fires are rejected by construction (the cross-fire class cannot recur
+# for any future needle), tool-FAMILY members still fire (prefix: nix→
+# nixos-*, phast→phastCons; suffix: nvim⊃vim, pnpm⊃npm, autossh⊃ssh via
+# their own substring needles), and !ci_contains exclusions keep full
+# substring scope so 'setup' still blocks 'tup ' inside dmsetup.
+jcheck "tok: mid-word nix inside unix stays clean" 'd["score"] == 0' paste 'unix shell'
+jcheck "tok: suffix-family nvim -c fires via vim" 'd["score"] == 55' paste 'nvim -c cmd'
+jcheck "tok: suffix-family autossh -R fires via ssh" 'd["score"] == 55' paste 'autossh -R 1:x'
+jcheck "tok: suffix-family pnpm install fires via npm" 'd["score"] == 45' paste 'pnpm install x'
+jcheck "tok: prefix-family nixos-rebuild fires via ebuild" 'd["score"] == 45' paste 'nixos-rebuild switch'
+jcheck "tok: mid-word erasure pause inside unpause fires" 'd["score"] == 45' paste 'fly unpause x'
+jcheck "tok: exclusion substring scope kept (dmsetup)" 'd["score"] == 0' paste 'dmsetup info'
+jcheck "tok: exclusion substring scope kept (mongosh)" 'd["score"] == 0' paste 'mongosh --version'
+jcheck "tok: cryptsetup luksErase still blocks" 'd["action"] in ["BLOCK", "ISOLATE"]' paste 'cryptsetup luksErase x'
+
 # P8 (also:) overflow guard: 5 hits with 105-141-char labels must not
 # smash extra[192] — cycle-439 fixed a would-be-length advance that
 # underflowed the snprintf size (ASan stack-buffer-overflow).

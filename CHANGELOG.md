@@ -4,6 +4,27 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Fixed (cycle-482)
+- **Token-boundary matching for bare tool-name needles**: the cycle-481
+  exclusion sweep fixed eight cross-fire arms, but a probe found ~1,521
+  container-word hits across ~8,199 bare-alnum needles — whack-a-mole
+  could never cover the class. New matcher `ci_contains_tok` (token-
+  prefix): a needle fires only when preceded by a non-alphanumeric byte
+  or sitting at string start; the right side stays open so tool-FAMILY
+  members still match (`nix`→nixos-rebuild via `ebuild`,
+  `phast`→phastCons, `boinc`→boinctui). Mid-word fires are now
+  impossible *by construction*: "nix" cannot fire inside "unix"/
+  "phoenix", "rye" inside "dryer", "just" inside "adjust" — no
+  exclusion lists needed for future needles either. All ~8,199 bare-
+  alnum needle sites converted. Two semantics were preserved by revert:
+  exclusion lists stay `!ci_contains` (substring scope — "setup" must
+  still block "tup " inside "dmsetup"/"cryptsetup"), and ~111 needles
+  kept substring scope where the corpus pins mid-token family members
+  (vim⊂nvim, npm⊂pnpm, ssh⊂autossh, ebuild⊂debuild/nixos-rebuild,
+  mseed⊃ew2mseed, mplayer⊃smplayer, pause⊃unpause, erase⊃luksErase).
+  Net: cross-fire class eliminated structurally; suite 24,319 →
+  24,328 green.
+
 ### Fixed (cycle-481)
 - **Tool-name substring cross-fire sweep**: the cycle-480 `nx ` defect
   family recurred wherever a short tool name is a substring of a real
