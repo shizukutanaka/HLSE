@@ -1269,9 +1269,74 @@ hlse_scan_secrets(const char *text) {
     SecretVerdict v;
     const char *p;
     int i;
+    /* A leaked token hides cheaply behind invisible Unicode: the
+     * zero-width space inside `ghp_\u200b…` breaks every strstr needle
+     * and every suffix charset check while rendering identically to a
+     * human reader.  Strip zero-width/format codepoints (ZWSP/ZWNJ/ZWJ/
+     * LRM/RLM, soft hyphen, word joiner U+2060+, BOM, RTL marks) and map
+     * Unicode spaces to ' ' once at the door, then scan `clean`.  Only
+     * invisible characters are touched — every newline survives, so
+     * sv_line() still reports the true line number of each finding.
+     * The 1 MiB bound mirrors the stdin read cap in hlse_cli.c.       */
+    char clean[(1u << 20) + 1];
 
     memset(&v, 0, sizeof(v));
     if (!text) return v;
+    {
+        const char *raw = text;
+        size_t ci, n = 0;
+        int suspicious = 0;
+        for (ci = 0; raw[ci]; ci++) {
+            unsigned char uc = (unsigned char)raw[ci];
+            if (uc == 0xC2 || uc == 0xE1 || uc == 0xE2 || uc == 0xE3 ||
+                uc == 0xEF || uc == '\x0b' || uc == '\x0c') {
+                suspicious = 1;
+                break;
+            }
+        }
+        if (suspicious) {
+            for (ci = 0; raw[ci] && n < sizeof(clean) - 1; ci++) {
+                unsigned char uc = (unsigned char)raw[ci];
+                if (uc == 0xC2 && raw[ci+1] == '\xA0') {        /* NBSP */
+                    clean[n++] = ' '; ci++; continue;
+                }
+                if (uc == 0xC2 && raw[ci+1] == '\xAD') {        /* soft hyphen */
+                    ci++; continue;
+                }
+                if (uc == 0xE1 && raw[ci+1] == '\x9A' &&
+                    raw[ci+2] == '\x80') {                      /* ogham space */
+                    clean[n++] = ' '; ci += 2; continue;
+                }
+                if (uc == 0xE2 && raw[ci+1] == '\x80') {
+                    unsigned char b2 = (unsigned char)raw[ci+2];
+                    if (b2 <= 0x8A || b2 == 0xAF) {             /* 2000-200A, 202F */
+                        clean[n++] = ' ';
+                    }
+                    ci += 2; continue;     /* rest of E2 80 xx drops */
+                }
+                if (uc == 0xE2 && raw[ci+1] == '\x81' &&
+                    (unsigned char)raw[ci+2] >= 0x9F) {
+                    if (raw[ci+2] == '\x9F')                    /* U+205F */
+                        clean[n++] = ' ';
+                    ci += 2; continue;     /* U+2060+ drops */
+                }
+                if (uc == 0xE3 && raw[ci+1] == '\x80' &&
+                    raw[ci+2] == '\x80') {                      /* ideographic space */
+                    clean[n++] = ' '; ci += 2; continue;
+                }
+                if (uc == 0xEF && raw[ci+1] == '\xBB' &&
+                    raw[ci+2] == '\xBF') {                      /* BOM */
+                    ci += 2; continue;
+                }
+                if (uc == '\x0b' || uc == '\x0c') {
+                    clean[n++] = ' '; continue;
+                }
+                clean[n++] = raw[ci];
+            }
+            clean[n] = '\0';
+            text = clean;
+        }
+    }
 
     /* Pattern-based scanning */
     for (i = 0; SECRET_PATTERNS[i].prefix; i++) {

@@ -929,6 +929,17 @@ jcheck "lol: browser file url benign" 'd["score"] == 0' paste "chrome file:///tm
 printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | jcheck "secret finding reports correct line number" "'\"line\":4' in s" secret --stdin
 jcheck "secret single-line input reports line 1" "'\"line\":1' in s" secret 'key: 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d'
 
+# invisible-unicode normalization (cycle 501): zero-width/format chars
+# are dropped before scanning; unicode spaces map to ' '.
+jcheck "secret zwsp-spliced pat fires" 'd["score"] >= 80' secret "ghp_​ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij"
+jcheck "secret zwsp mid-token fires" 'd["score"] >= 80' secret "ghp_ABCDEFGHIJKLMN​OPQRSTUVWXYZabcdefghij"
+jcheck "secret zwj mid-token fires" 'd["score"] >= 80' secret "ghp_ABCDEFGHIJKLMN‍OPQRSTUVWXYZabcdefghij"
+jcheck "secret shy mid-token fires" 'd["score"] >= 80' secret "ghp_ABCDEFGHIJKLMN­OPQRSTUVWXYZabcdefghij"
+jcheck "secret bom-spliced pat fires" 'd["score"] >= 80' secret "ghp_﻿ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij"
+jcheck "secret line-num preserved through zwsp" "'\"line\":2' in s" secret "$(printf 'ok=1\nghp_​ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij')"
+jcheck "secret unicode-space kv fires" 'd["score"] >= 40' secret "api_key = abcdef1234567890abcdef12"
+jcheck "secret plain text benign" 'd["score"] == 0' secret 'the ghp_ prefix is a github token format'
+
 # audit findings[] carry stable HLSE-AUDIT-* ids (dedup/suppression key)
 jcheck "audit findings carry stable HLSE-AUDIT-* ids" "'\"id\":\"HLSE-AUDIT-A' in s" audit --json
 

@@ -2,6 +2,27 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 501 — Secrets scanner invisible-Unicode normalization
+
+### Changed
+- `hlse_scan_secrets` strips the same visual-deception layer the paste
+  checker gained in cycle 500: a zero-width space spliced into a token
+  (`ghp_\u200b…`) used to defeat every `strstr` prefix and every suffix
+  charset check while rendering identically to a reader.  Zero-width /
+  format codepoints (ZWSP/ZWNJ/ZWJ/LRM/RLM, soft hyphen, U+2060+, BOM,
+  RTL marks) now drop and Unicode spaces map to ' ' in a one-time
+  `clean` copy (stack, 1 MiB — mirrors the stdin cap; only built when a
+  suspicious lead byte is present).  Only invisible characters are
+  removed — newline positions are preserved so `sv_line()` keeps
+  reporting the true 1-based line of each finding.
+- `\x0b`/`\x0c` map to space as well.
+
+### Verified benign-by-design (probed, unchanged)
+Bare prefix mentions (`the ghp_ prefix is a github token format`) stay
+0; every baseline score is identical to pre-change (the transform only
+runs on inputs carrying the bytes it removes).
+
+
 ## Cycle 500 — Invisible-Unicode normalization + browser LOLBins
 
 ### Changed
