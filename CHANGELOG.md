@@ -2,6 +2,32 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 500 — Invisible-Unicode normalization + browser LOLBins
+
+### Changed
+- The entry normalization now handles the *visual* deception layer:
+  Unicode spaces (NBSP U+00A0, ogham, U+2000..U+200A, narrow NBSP,
+  math space, ideographic space) map to a plain space, and zero-width
+  or format characters (ZWSP/ZWNJ/ZWJ/LRM/RLM, soft hyphen, word
+  joiner U+2060+, BOM, RTL marks U+2028..U+202E) drop out — so
+  `cu\u200brl` reads `curl` and `curl\u00a0http://e` reads
+  `curl http://e`.  The P3 unicode-control arm now reads `raw`
+  (unchanged reporting: the deception itself still scores +20/+50),
+  which lets the clean copy safely erase the characters.
+- `\x0b`/`\x0c` also map to space.
+
+### Added
+- Browser LOLBin arm (P8 +45): `iexplore`, `msedge`, `chrome`,
+  `firefox` (+`.exe`) followed by an http(s) URL — the ClickFix lure
+  step that opens a remote page.  Bare names and `file://` benign.
+
+### Verified benign-by-design (probed, unchanged)
+`firefox --version`, `google-chrome --version`, `chrome file:///tmp/x`,
+`msedge file://x`, `the iexplore process` — all 0.  `curl\u200bhttp`
+keeps its honest 20 (the bytes stay one visual word); only the
+compound `cu\u200brl`-in-word deceptions newly match (+40/+20 P3).
+
+
 ## Cycle 499 — Backslash-escape + tab normalization
 
 ### Changed

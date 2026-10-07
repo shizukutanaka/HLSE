@@ -994,6 +994,67 @@ hlse_check_paste(const char *text) {
         int incmd = 1, seen = 0;
         for (i = 0; raw[i] && n < sizeof(clean) - 1; i++) {
             char c = raw[i];
+            /* Invisible-Unicode normalisation: the characters a lure
+             * uses to hide what a command really is.  Unicode spaces
+             * (NBSP, thin/ideographic/math) map to a plain space so
+             * `curl\u00a0http://e` reads `curl http://e`; zero-width
+             * and format characters (ZWSP/ZWNJ/ZWJ/LRM/RLM/BOM/word
+             * joiner/soft hyphen/RTL overrides) drop out so
+             * `cu\u200brl` reads `curl`.  The P3 unicode-control arm
+             * still sees the raw text — it reports the deception
+             * itself — so moving it to `raw` is required.          */
+            unsigned char uc = (unsigned char)c;
+            if (uc == 0xC2 && raw[i+1] == '\xA0') {          /* NBSP */
+                clean[n++] = ' ';
+                if (seen) incmd = 0;
+                i++;
+                continue;
+            }
+            if (uc == 0xC2 && raw[i+1] == '\xAD') {          /* soft hyphen */
+                i++;
+                continue;
+            }
+            if (uc == 0xE1 && raw[i+1] == '\x9A' &&
+                raw[i+2] == '\x80') {                        /* ogham space */
+                clean[n++] = ' ';
+                if (seen) incmd = 0;
+                i += 2;
+                continue;
+            }
+            if (uc == 0xE2 && raw[i+1] == '\x80') {
+                unsigned char b2 = (unsigned char)raw[i+2];
+                /* U+2000..U+200A and U+202F are spaces; U+200B..U+200F
+                 * and U+2028..U+202E (incl. RTL marks) are dropped.   */
+                if (b2 <= 0x8A || b2 == 0xAF) {
+                    clean[n++] = ' ';
+                    if (seen) incmd = 0;
+                }
+                i += 2;
+                continue;
+            }
+            if (uc == 0xE2 && raw[i+1] == '\x81' &&
+                (unsigned char)raw[i+2] >= 0x9F) {
+                /* U+205F math space -> ' '; U+2060+ (word joiner and
+                 * invisible operators, 2066..2069 isolates) drop.    */
+                if (raw[i+2] == '\x9F') {
+                    clean[n++] = ' ';
+                    if (seen) incmd = 0;
+                }
+                i += 2;
+                continue;
+            }
+            if (uc == 0xE3 && raw[i+1] == '\x80' &&
+                raw[i+2] == '\x80') {                        /* ideographic space */
+                clean[n++] = ' ';
+                if (seen) incmd = 0;
+                i += 2;
+                continue;
+            }
+            if (uc == 0xEF && raw[i+1] == '\xBB' &&
+                raw[i+2] == '\xBF') {                        /* BOM / ZWNBSP */
+                i += 2;
+                continue;
+            }
             if (c == '\'' || c == '"')
                 continue;
             if (c == '^' && isalnum((unsigned char)raw[i+1]))
@@ -1016,7 +1077,7 @@ hlse_check_paste(const char *text) {
                 i += (raw[i+2] == ':') ? 3 : (raw[i+2] == 't') ? 6 : 7;
                 continue;
             }
-            if (c == ' ' || c == '\t') {
+            if (c == ' ' || c == '\t' || c == '\x0b' || c == '\x0c') {
                 clean[n++] = ' ';
                 if (seen) incmd = 0;
                 continue;
@@ -1098,12 +1159,12 @@ hlse_check_paste(const char *text) {
 
     /* P3: Unicode control characters */
     {
-        size_t i;
+        size_t i, rlen = strlen(raw);
         int rtl_found = 0, zwc_found = 0;
-        for (i = 0; i + 2 < len; i++) {
-            unsigned char b0 = (unsigned char)text[i];
-            unsigned char b1 = (unsigned char)text[i+1];
-            unsigned char b2 = (unsigned char)text[i+2];
+        for (i = 0; i + 2 < rlen; i++) {
+            unsigned char b0 = (unsigned char)raw[i];
+            unsigned char b1 = (unsigned char)raw[i+1];
+            unsigned char b2 = (unsigned char)raw[i+2];
 
             /* U+202E RIGHT-TO-LEFT OVERRIDE = E2 80 AE */
             if (b0 == 0xE2 && b1 == 0x80 && b2 == 0xAE) rtl_found = 1;
@@ -1593,6 +1654,16 @@ hlse_check_paste(const char *text) {
         if (ci_contains(text, "syncappvpublishingserver") &&
                    ci_contains(raw, "\";")) {
             PASTE_WHAT_SEV("syncappvpublishingserver command injection (LOLBin)", 55);
+        }
+        if ((ci_contains_tok(text, "iexplore") ||
+             ci_contains(text, "iexplore.exe") ||
+             ci_contains_tok(text, "msedge") ||
+             ci_contains(text, "msedge.exe") ||
+             ci_contains_tok(text, "chrome") ||
+             ci_contains(text, "chrome.exe") ||
+             ci_contains_tok(text, "firefox")) &&
+            CI_HTTP) {
+            PASTE_WHAT_SEV("browser LOLBin remote navigation (ClickFix)", 45);
         }
         if (ci_contains(text, "hh.exe") &&
                    (CI_HTTP || ci_contains(text, ".chm"))) {
