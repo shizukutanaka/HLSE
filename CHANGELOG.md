@@ -2,6 +2,23 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 506 — File: whitespace/zero-width inside extensions
+
+### Added
+- New `norm_ext()` normalizer (lowercase + drop ASCII whitespace and
+  every non-ASCII byte) now backs `is_executable_ext`,
+  `is_document_ext` and `is_image_ext`: `report.pdf. exe` (one space
+  in the extension) and `report.pdf<U+200B>.exe` (zero-width padding)
+  previously scored 0 — both display and launch as executables on
+  Windows (trailing space stripped at open; invisible code points
+  hidden in Explorer).  `. pdf.exe` inner-extension padding now also
+  fires F1.
+
+### Verified benign-by-design (probed, unchanged)
+`a.pdf.exe` keeps 100; `g.sh.txt` 0; `b.scr` 30 — extension tables
+unchanged, only the lookup normalization moved.
+
+
 ## Cycle 505 — Text defang: bracketed scheme separators
 
 ### Added

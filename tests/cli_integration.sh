@@ -1028,6 +1028,17 @@ jcheck "F8 FP guard: legit .desktop has no F8" 'not ("HLSE-FILE-F8" in str(d["re
 
 # F1: double extension .pdf.desktop (APT36 masquerade) → flagged
 jcheck "F1: .pdf.desktop double extension flagged" '"DOUBLE EXTENSION" in str(d)' file nonexistent.pdf.desktop
+
+# F1/F3 (cycle 506): whitespace/zero-width inside the extension used to
+# fully evade the tables — '. exe' and '.pdf<U+200B>.exe' both launch as
+# executables on Windows.
+printf 'MZ' > "/tmp/hlse x.pdf. exe"
+jcheck "file: space-padded extension fires F1" '"DOUBLE EXTENSION" in str(d)' file "/tmp/hlse x.pdf. exe"
+printf 'MZ' > "/tmp/hlse x.pdf​.exe"
+jcheck "file: zero-width padded extension fires F1" '"DOUBLE EXTENSION" in str(d)' file "/tmp/hlse x.pdf​.exe"
+jcheck "file: space-padded ext reason F3" '"Executable extension" in str(d)' file "/tmp/hlse x.pdf. exe"
+rm -f "/tmp/hlse x.pdf. exe" "/tmp/hlse x.pdf​.exe"
+
 rm -rf "$LCH_DIR"
 
 # F9: weaponized .lnk (UTF-16LE powershell -enc + URL) → flagged

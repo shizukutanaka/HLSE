@@ -911,6 +911,25 @@ str_lower(const char *src, char *dst, size_t n) {
     dst[i] = '\0';
 }
 
+/* Normalize an extension for table lookup: lowercase plus drop ASCII
+ * whitespace and every non-ASCII byte.  'report.pdf. exe' and
+ * 'report.pdf\u200be.exe' both display and launch as executables on
+ * Windows (trailing spaces are stripped at open; zero-width padding
+ * is invisible in Explorer) — without this, inserting one space or
+ * one invisible code point inside the extension fully evades the
+ * F1/F3 tables. */
+static void
+norm_ext(const char *src, char *dst, size_t n) {
+    size_t i = 0;
+    const unsigned char *p = (const unsigned char *)src;
+    while (*p && i < n - 1) {
+        unsigned char c = *p++;
+        if (c == ' ' || c == '\t' || c >= 0x80) continue;
+        dst[i++] = (c >= 'A' && c <= 'Z') ? (char)(c + 32) : (char)c;
+    }
+    dst[i] = '\0';
+}
+
 /* ─── magic byte signatures ───────────────────────────────────────────── */
 
 typedef struct {
@@ -1432,7 +1451,7 @@ static int
 is_executable_ext(const char *ext) {
     char lower[32];
     int i;
-    str_lower(ext, lower, sizeof(lower));
+    norm_ext(ext, lower, sizeof(lower));
     for (i = 0; EXECUTABLE_EXTS[i]; i++) {
         if (strcmp(lower, EXECUTABLE_EXTS[i]) == 0) return 1;
     }
@@ -1452,7 +1471,7 @@ static int
 is_document_ext(const char *ext) {
     char lower[32];
     int i;
-    str_lower(ext, lower, sizeof(lower));
+    norm_ext(ext, lower, sizeof(lower));
     for (i = 0; DOCUMENT_EXTS[i]; i++) {
         if (strcmp(lower, DOCUMENT_EXTS[i]) == 0) return 1;
     }
@@ -1469,7 +1488,7 @@ static int
 is_image_ext(const char *ext) {
     char lower[32];
     int i;
-    str_lower(ext, lower, sizeof(lower));
+    norm_ext(ext, lower, sizeof(lower));
     for (i = 0; IMAGE_EXTS[i]; i++) {
         if (strcmp(lower, IMAGE_EXTS[i]) == 0) return 1;
     }
