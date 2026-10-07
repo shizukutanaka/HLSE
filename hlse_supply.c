@@ -511,7 +511,27 @@ static const char *PASTE_CRED_PATHS[] = {
     ".m2/settings", ".gradle/", "gradle.properties",
     ".cargo/credentials", ".composer/auth.json",
     "config/netlify", ".vultr", ".linode-cli",
-    ".huggingface", "credentials.json", NULL
+    ".huggingface", "credentials.json",
+    /* Windows-form variants — `%APPDATA%\…` paths use backslash
+     * separators, which the '/'-shaped needles above cannot match */
+    ".aws\\credentials", ".aws\\config", ".ssh\\id_",
+    ".kube\\config", ".docker\\config.json", ".gnupg\\",
+    "config\\gcloud", "config\\gh", ".m2\\settings",
+    ".doctl\\", ".huggingface", ".terraformrc", ".npmrc",
+    /* Windows credential stores — the top steal targets on that
+     * side: browser saved-login DBs, DPAPI, SAM/SYSTEM hives,
+     * SSH/FTP client stores                                        */
+    "login data", "logins.json", "key4.db", "key3.db",
+    "signons.sqlite", "cookies.sqlite", "web data",
+    "mozilla/firefox", "mozilla\\firefox",
+    "google-chrome\\default", "google-chrome/default",
+    "config\\google-chrome", "config/google-chrome",
+    "config\\chromium", "config/chromium",
+    "default\\cookies", "default/cookies",
+    "microsoft\\protect", "microsoft\\credentials",
+    "system32\\config\\sam", "system32\\config\\system",
+    "system32\\config\\security", "sitemanager.xml",
+    "filezilla\\", "winscp.ini", ".filezilla", NULL
 };
 /* `at <time>` fires only when commands are piped INTO at — bare
  * `at 5pm`/`at 12:00` is an interactive scheduler invocation the

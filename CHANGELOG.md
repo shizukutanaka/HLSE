@@ -2,6 +2,31 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 495 — Windows credential stores + backslash path parity
+
+### Added
+- Windows-form `\` variants for the credential paths whose Unix
+  `/`-shaped needles could not match `%APPDATA%\…` input:
+  `.aws\credentials`, `.aws\config`, `.ssh\id_`, `.kube\config`,
+  `.docker\config.json`, `.gnupg\`, `config\gcloud`, `config\gh`,
+  `.m2\settings`, `.doctl\` — and forward variants for
+  `mozilla/firefox`, `google-chrome/default`, `config/google-chrome`,
+  `config/chromium`, `default/cookies` so both separators work on
+  both sides.
+- Windows credential stores in `PASTE_CRED_PATHS` — the top steal
+  targets on that side were entirely absent: browser saved-login DBs
+  (`Login Data`, `logins.json`, `key4.db`, `key3.db`,
+  `signons.sqlite`, `cookies.sqlite`, `Web Data`), DPAPI
+  (`microsoft\protect`, `microsoft\credentials`), registry hives
+  (`system32\config\sam/system/security`), and client stores
+  (`sitemanager.xml`, `filezilla\`, `winscp.ini`, `.filezilla`).
+
+### Verified benign-by-design (probed, unchanged)
+- `type readme.txt`, `type %APPDATA%\x\y.ini`, `cat login
+  users.txt`, `cat key4.txt`, `cat logins.txt`, `cat firefox.md`,
+  `cat default cookies.txt` — generic filenames stay 0.
+
+
 ## Cycle 494 — P3–P7 residuals (local env-dump filters, su variants, cred files)
 
 ### Added

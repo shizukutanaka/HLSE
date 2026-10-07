@@ -807,6 +807,28 @@ jcheck "cred: credentials.json == 40" 'd["score"] == 40' paste "cat credentials.
 jcheck "cred: huggingface == 40" 'd["score"] == 40' paste "cat ~/.huggingface/token"
 jcheck "cred: npmrc.txt benign" 'd["score"] == 0' paste "cat ~/npmrc.txt"
 
+# Windows credential stores + backslash path variants (cycle 495):
+# browser saved-login DBs, DPAPI, SAM/SYSTEM hives, SSH/FTP client stores
+jcheck "cred: Chrome Login Data == 40" 'd["score"] == 40' paste "type %LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\Login Data"
+jcheck "cred: Firefox logins.json == 40" 'd["score"] == 40' paste "type %APPDATA%\\Mozilla\\Firefox\\Profiles\\x\\logins.json"
+jcheck "cred: Firefox key4.db == 40" 'd["score"] == 40' paste "type %APPDATA%\\Mozilla\\Firefox\\Profiles\\x\\key4.db"
+jcheck "cred: DPAPI Protect == 40" 'd["score"] == 40' paste "type %APPDATA%\\Microsoft\\Protect\\S-1-5-x"
+jcheck "cred: SAM hive == 40" 'd["score"] == 40' paste "type C:\\Windows\\System32\\config\\SAM"
+jcheck "cred: SYSTEM hive == 40" 'd["score"] == 40' paste "type C:\\Windows\\System32\\config\\SYSTEM"
+jcheck "cred: FileZilla sitemanager == 40" 'd["score"] == 40' paste "type %APPDATA%\\FileZilla\\sitemanager.xml"
+jcheck "cred: WinSCP ini == 40" 'd["score"] == 40' paste "type %APPDATA%\\Roaming\\x\\WinSCP.ini"
+jcheck "cred: backslash aws creds == 40" 'd["score"] == 40' paste "type %USERPROFILE%\\.aws\\credentials"
+jcheck "cred: backslash kube == 40" 'd["score"] == 40' paste "type %USERPROFILE%\\.kube\\config"
+jcheck "cred: backslash gnupg == 40" 'd["score"] == 40' paste "type %USERPROFILE%\\.gnupg\\secring.gpg"
+jcheck "cred: unix firefox == 40" 'd["score"] == 40' paste "cat ~/.mozilla/firefox/x/logins.json"
+jcheck "cred: unix chrome cookies == 40" 'd["score"] == 40' paste "cat ~/.config/google-chrome/Default/Cookies"
+jcheck "cred: chromium cookies == 40" 'd["score"] == 40' paste "cat ~/.config/chromium/Default/Cookies"
+jcheck "cred: win type benign" 'd["score"] == 0' paste "type readme.txt"
+jcheck "cred: win random ini benign" 'd["score"] == 0' paste "type %APPDATA%\\x\\y.ini"
+jcheck "cred: login users benign" 'd["score"] == 0' paste "cat login users.txt"
+jcheck "cred: key4.txt benign" 'd["score"] == 0' paste "cat key4.txt"
+jcheck "cred: firefox.md benign" 'd["score"] == 0' paste "cat firefox.md"
+
 # secret findings[] carry a 1-based line number (SIEM/remediation locus)
 printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | jcheck "secret finding reports correct line number" "'\"line\":4' in s" secret --stdin
 jcheck "secret single-line input reports line 1" "'\"line\":1' in s" secret 'key: 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d'
