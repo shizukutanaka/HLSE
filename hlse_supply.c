@@ -445,9 +445,11 @@ hay_any(const char *hay, const char *const needles[]) {
     return hlse_str_any(hay, needles);
 }
 
+/* 'fetch', 'ncat', 'netcat' are matched via ci_contains_tok in the
+ * P2/P12b gates instead — the substring forms fired inside
+ * 'prefetch ', 'concat ', 'mincat ' (real FP).                    */
 static const char *PASTE_DOWNLOADERS[] = {
-    "curl ", "wget ", "fetch ", "lynx ", "ncat ", "netcat ",
-    "socat ", "telnet ", NULL
+    "curl ", "wget ", "lynx ", "socat ", "telnet ", NULL
 };
 static const char *PASTE_PIPE_SHELLS[] = {
     "| sh", "| bash", "|sh", "|bash", "| sudo", "| /bin/sh",
@@ -547,11 +549,11 @@ static const char *PASTE_EVAL_VERBS[] = {
     "eval", "exec", "sh <(", NULL
 };
 static const char *PASTE_FETCHES[] = {
-    "$(", "`", "curl", "wget", "fetch", NULL
+    "$(", "`", "curl", "wget", NULL
 };
 static const char *PASTE_FETCH_TOOLS[] = {
-    "curl ", "wget ", "fetch ", "lynx ", "scp ", "sftp ", "rsync ",
-    "tftp ", "ncat ", "netcat ", "socat ", "telnet ",
+    "curl ", "wget ", "lynx ", "scp ", "sftp ", "rsync ",
+    "tftp ", "socat ", "telnet ",
     /* VCS clone/pull + alt downloaders — remote code into a
      * &&/; exec chain is the same download-execute cradle  */
     "git clone", "git pull", "svn co ", "svn checkout", "hg clone",
@@ -592,7 +594,12 @@ static int hay_any_tok(const char *t, const char *const *l) {
     return 0;
 }
 static const char *PASTE_LISTENERS[] = {
-    "nc -l", "ncat -l", "netcat -l", " -lv", "ncat --listen",
+    " -lv", NULL
+};
+/* nc-family listen verbs matched token-prefix so 'vnc -l',
+ * 'bnc -l', 'znc -l', 'sync -p' cannot fire the arm.          */
+static const char *PASTE_LISTEN_TOKS[] = {
+    "nc -l", "ncat -l", "netcat -l", "ncat --listen",
     "nc -p ", NULL
 };
 static const char *PASTE_SUID[] = {
@@ -642,7 +649,7 @@ static const char *PASTE_ENV_DUMP[] = {
     "env |", "env|", "printenv", "env >", "printenv >", NULL
 };
 static const char *PASTE_PIPE_NET[] = {
-    "| nc", "|nc", "nc ", "| curl", "|curl", "curl -F", "curl -d",
+    "| nc", "|nc", "| curl", "|curl", "curl -F", "curl -d",
     "wget --post", "| wget", "| socat", NULL
 };
 static const char *PASTE_PIPE_SUDO[] = {
@@ -748,7 +755,8 @@ hlse_check_paste(const char *text) {
          * 'sync', 'zinc', 'func') — token-prefix gate instead;
          * it also covers 'ncat '/'nc ' itself at token start. */
         int has_curl = hay_any(text, PASTE_DOWNLOADERS) ||
-            (ci_contains_tok(text, "nc") &&
+            ci_contains_tok(text, "fetch") ||
+            ((ci_contains_tok(text, "nc") || ci_contains_tok(text, "netcat")) &&
              !ci_contains_tok(text, "ncdu") &&
              !ci_contains_tok(text, "ncftp") &&
              !ci_contains_tok(text, "ncurses"));
@@ -938,8 +946,9 @@ hlse_check_paste(const char *text) {
     /* P12: eval/exec of fetched content — the non-pipe form of the
      * download cradle (P2 only catches the `| sh` shape) */
     if ((hay_any(text, PASTE_EVAL_VERBS) ||
-         ci_contains(text, "source ") || ci_contains(text, ". /")) &&
-        hay_any(text, PASTE_FETCHES)) {
+         ci_contains(text, "source ") || ci_contains(text, ". /") ||
+         ci_contains_tok(text, ". <") || ci_contains_tok(text, ". $")) &&
+        (hay_any(text, PASTE_FETCHES) || ci_contains_tok(text, "fetch"))) {
         v.signals |= PASTE_EVAL_FETCH;
         v.score += 45;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -953,7 +962,8 @@ hlse_check_paste(const char *text) {
      * `| sh` and P12 needs an eval/source verb; the `&&`/`;` exec
      * chain is the third shape of the same download cradle.       */
     if ((hay_any(text, PASTE_FETCH_TOOLS) ||
-         (ci_contains_tok(text, "nc") &&
+         ci_contains_tok(text, "fetch") ||
+         ((ci_contains_tok(text, "nc") || ci_contains_tok(text, "netcat")) &&
           !ci_contains_tok(text, "ncdu") &&
           !ci_contains_tok(text, "ncftp") &&
           !ci_contains_tok(text, "ncurses"))) &&
@@ -989,7 +999,8 @@ hlse_check_paste(const char *text) {
      * a staging/exfil HTTP server, or a SUID bit install. These are
      * pastejacked post-exploitation verbs, not admin commands: nobody
      * needs `nc -l` or `chmod +s` in pasted content.            */
-    if (hay_any(text, PASTE_LISTENERS)) {
+    if (hay_any(text, PASTE_LISTENERS) ||
+        hay_any_tok(text, PASTE_LISTEN_TOKS)) {
         v.signals |= PASTE_LISTENER_PRIV;
         v.score += 45;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -2521,7 +2532,8 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT_SEV("monitoring/EDR agent kill", 55);
         }
         if (hay_any(text, PASTE_ENV_DUMP) &&
-            hay_any(text, PASTE_PIPE_NET)) {
+            (hay_any(text, PASTE_PIPE_NET) ||
+             ci_contains_tok(text, "nc "))) {
             PASTE_WHAT_SEV("env-var dump piped to network (secrets exfil)", 55);
         }
         if (hay_any(text, PASTE_PIPE_SUDO)) {
@@ -17863,8 +17875,8 @@ hlse_check_paste(const char *text) {
         if (strstr(text, "/dev/tcp/") || strstr(text, "/dev/udp/"))
             is_revshell = 1;
         /* nc / ncat / netcat reverse shell: nc -e / -c or mkfifo pipe */
-        if (!is_revshell && !strstr(text, "sync") &&
-            hay_any(text, PASTE_NC_BINS) &&
+        if (!is_revshell &&
+            hay_any_tok(text, PASTE_NC_BINS) &&
             hay_any(text, PASTE_NC_EXEC))
             is_revshell = 1;
         /* telnet | sh — the double-telnet data-exfil shell */

