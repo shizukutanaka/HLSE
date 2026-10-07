@@ -2,6 +2,37 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 493 — persistence residual shapes (at-times, systemctl wiring, Startup drop, reg keys)
+
+### Added
+- `at` scheduled-exec variants in the P8 at-arm: `at_cmd_time()` helper
+  fires when commands are piped INTO `at` (`echo x | at noon`, `at
+  23:00`, `at +5 min`, `at midnight`, `at 4pm`) — the qualifier only
+  knew `now`/`-f`, so piped named/numeric times scored 0. Bare `at
+  5pm`/`at 12:00` stays benign by design (interactive invocation —
+  suite-pinned), and prose 'a talk at noon' never fires since `at`
+  must directly follow a `|`.
+- `systemctl link`/`add-wants` (+`--user` variants) in both
+  `PASTE_WRITE_VERBS` and `PASTE_PERSIST_TARGETS`: `link` imports a
+  unit file into systemd and `add-wants` wires a unit into boot
+  dependencies — enable-equivalent persistence shapes.
+- Windows Startup-folder persistence in P11: write verbs `copy `,
+  `xcopy `, `robocopy `, `copy-item`, `move-item`, `set-content`,
+  `out-file` + targets `start menu\programs\startup`,
+  `shell:startup`, `common startup` — dropping a file into the
+  Startup folder is the canonical Windows persistence write.
+- reg-add autostart arm targets: `userinitmprlogonscript` (Environment
+  key logon-script persistence) and `currentcontrolset\services`
+  (service registration via direct registry write).
+
+### Verified benign-by-design (probed, unchanged)
+- Bare `schtasks /create` stays 0 (explicit comment: only /ru /rl /xml
+  privileged forms flag) — same calibration as bare `apt install`.
+- `sc config start= auto`, `schtasks /change`, `systemctl edit`,
+  `Invoke-WmiMethod Win32_Process Create`, `copy a b`,
+  `reg add HKLM\SOFTWARE\x` — routine admin shapes, 0.
+
+
 ## Cycle 492 — persistence flag-variants + JSP XML-tag marker
 
 ### Added

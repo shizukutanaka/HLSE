@@ -506,12 +506,54 @@ static const char *PASTE_CRED_PATHS[] = {
     "auth.log", "/var/log/secure", "/var/log/btmp", "/var/log/wtmp",
     "/var/log/lastlog", "/var/log/faillog", NULL
 };
+/* `at <time>` fires only when commands are piped INTO at — bare
+ * `at 5pm`/`at 12:00` is an interactive scheduler invocation the
+ * suite pins benign (the operator then types the commands), while
+ * `echo x | at noon` delivers the payload through at's stdin: the
+ * char before `at` (skipping spaces) must be `|`.               */
+static int at_word(const char *q, const char *w) {
+    while (*w) {
+        if (tolower((unsigned char)*q) != *w) return 0;
+        q++; w++;
+    }
+    return 1;
+}
+
+static int at_cmd_time(const char *t) {
+    const char *p = t;
+    for (;;) {
+        while (*p && !((p[0] == 'a' || p[0] == 'A') &&
+                       (p[1] == 't' || p[1] == 'T') && p[2] == ' ' &&
+                       (p == t || !((p[-1] >= 'a' && p[-1] <= 'z') ||
+                                    (p[-1] >= 'A' && p[-1] <= 'Z') ||
+                                    (p[-1] >= '0' && p[-1] <= '9') ||
+                                    p[-1] == '_'))))
+            p++;
+        if (!*p) return 0;
+        {
+            const char *b = p, *q = p + 3;
+            int c0;
+            while (b > t && b[-1] == ' ') b--;
+            c0 = tolower((unsigned char)q[0]);
+            if (b > t && b[-1] == '|' &&
+                ((c0 >= '0' && c0 <= '9') || c0 == '+' ||
+                 at_word(q, "noon") || at_word(q, "midnight") ||
+                 at_word(q, "teatime")))
+                return 1;
+        }
+        p++;
+    }
+}
+
 static const char *PASTE_WRITE_VERBS[] = {
     "echo ", "crontab", "at now", "systemctl enable",
     "systemctl --user enable", "systemctl --now enable",
     "systemctl --global enable", "systemctl reenable",
-    "systemctl --user reenable", "launchctl load", "tee /", "tee .", "tee ~", "tee -",
-    "curl ", "wget ", NULL
+    "systemctl --user reenable", "systemctl link",
+    "systemctl --user link", "systemctl add-wants",
+    "systemctl --user add-wants", "launchctl load", "tee /", "tee .", "tee ~", "tee -",
+    "curl ", "wget ", "copy ", "xcopy ", "robocopy ",
+    "copy-item", "move-item", "set-content", "out-file", NULL
 };
 /* Persistence targets — deduplicated from the former || chain. */
 static const char *PASTE_PERSIST_TARGETS[] = {
@@ -519,6 +561,8 @@ static const char *PASTE_PERSIST_TARGETS[] = {
     "systemctl enable", "systemctl --user enable",
     "systemctl --now enable", "systemctl --global enable",
     "systemctl reenable", "systemctl --user reenable",
+    "systemctl link", "systemctl --user link",
+    "systemctl add-wants", "systemctl --user add-wants",
     "launchctl", "rc.local", ".xinitrc",
     ".zshenv", ".bash_profile", ".bash_login", ".zprofile",
     ".zlogin", ".xprofile", ".pam_environment", "ld.so.preload",
@@ -537,6 +581,8 @@ static const char *PASTE_PERSIST_TARGETS[] = {
     ".kderc", "kdeglobals", "kglobalshortcutsrc", "kwinrc",
     ".config/pulse", ".config/systemd",
     ".local/share/applications", "environment.d",
+    "start menu\\programs\\startup", "shell:startup",
+    "common startup",
     ".ssh/environment", ".ssh/sshrc", "native-messaging-hosts",
     "nativemessaginghosts", ".vscode/extensions", ".config/code",
     ".gcloud", "sources.list", "apt/preferences", "apt.conf.d",
@@ -1716,6 +1762,8 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "image file execution") ||
                     ci_contains(text, "silentprocessexit") ||
                     ci_contains(text, "ms-settings") ||
+                    ci_contains(text, "userinitmprlogonscript") ||
+                    ci_contains(text, "currentcontrolset\\services") ||
                     (ci_contains_tok(text, "winlogon") &&
                      (ci_contains_tok(text, "shell") || ci_contains_tok(text, "userinit"))))) {
             PASTE_WHAT_SEV("reg add autostart/IFEO write (persistence primitive)", 55);
@@ -5965,7 +6013,8 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, " ")) ||
                    (ci_contains_tok(text, "at ") &&
                     (ci_contains_tok(text, "now") ||
-                     ci_contains(text, " -f"))) ||
+                     ci_contains(text, " -f") ||
+                     at_cmd_time(text))) ||
                    (ci_contains_tok(text, "batch") &&
                     (ci_contains(text, " <") ||
                      ci_contains(text, " -f"))) ||

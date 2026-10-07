@@ -755,6 +755,27 @@ jcheck "persist: --user start benign" 'd["score"] == 0' paste "systemctl --user 
 jcheck "webshell: jsp scriptlet == 50" 'd["score"] == 50' paste "<jsp:scriptlet>Runtime.getRuntime().exec(request.getParameter(\"c\"))</jsp:scriptlet>"
 jcheck "webshell: jsp directive benign" 'd["score"] == 0' paste "<jsp:directive.page import=\"x\"/>"
 
+# persistence residual shapes (cycle 493): at time-variants, systemctl link/
+# add-wants wiring, Windows Startup-folder drops, reg service/logon-script keys
+jcheck "persist: at midnight == 45" 'd["score"] == 45' paste "echo x | at midnight"
+jcheck "persist: at noon == 45" 'd["score"] == 45' paste "echo x | at noon"
+jcheck "persist: at HH:MM == 45" 'd["score"] == 45' paste "echo x | at 23:00"
+jcheck "persist: at +N == 45" 'd["score"] == 45' paste "echo x | at +5 min"
+jcheck "persist: look at benign" 'd["score"] == 0' paste "look at this"
+jcheck "persist: systemctl link == 45" 'd["score"] == 45' paste "systemctl link /etc/x.service"
+jcheck "persist: systemctl --user link == 45" 'd["score"] == 45' paste "systemctl --user link /x.service"
+jcheck "persist: systemctl add-wants == 45" 'd["score"] == 45' paste "systemctl add-wants multi-user.target x.service"
+jcheck "persist: systemctl --user add-wants == 45" 'd["score"] == 45' paste "systemctl --user add-wants default.target x"
+jcheck "persist: copy to Startup == 45" 'd["score"] == 45' paste "copy x \"%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\x.bat\""
+jcheck "persist: xcopy ProgramData Startup == 45" 'd["score"] == 45' paste "xcopy x \"C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\""
+jcheck "persist: Copy-Item shell:startup == 45" 'd["score"] == 45' paste "Copy-Item x \"shell:startup\""
+jcheck "persist: Set-Content Startup == 45" 'd["score"] == 45' paste "Set-Content \"%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\x.bat\" y"
+jcheck "persist: copy a b benign" 'd["score"] == 0' paste "copy a b"
+jcheck "persist: xcopy benign" 'd["score"] == 0' paste "xcopy /s d e"
+jcheck "persist: reg userinit logon script == 55" 'd["score"] == 55' paste "reg add HKCU\\Environment /v UserInitMprLogonScript /d x"
+jcheck "persist: reg services key == 55" 'd["score"] == 55' paste "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\x\" /v ImagePath /d y"
+jcheck "persist: reg generic key benign" 'd["score"] == 0' paste "reg add \"HKLM\\SOFTWARE\\x\" /v y /d z"
+
 # secret findings[] carry a 1-based line number (SIEM/remediation locus)
 printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | jcheck "secret finding reports correct line number" "'\"line\":4' in s" secret --stdin
 jcheck "secret single-line input reports line 1" "'\"line\":1' in s" secret 'key: 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d'
