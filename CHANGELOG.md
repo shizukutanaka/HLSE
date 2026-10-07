@@ -2,6 +2,32 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 497 — Shell-escape obfuscation normalization + runas priv-esc
+
+### Changed
+- The cycle-496 quote-strip normalization is now a general
+  shell-escape normalization: the matching copy additionally
+  removes `^` before an alphanumeric (cmd caret escaping —
+  `cu^rl` executes curl), expands `${IFS}`/`$IFS` to a space
+  (`curl${IFS}http://e` is `curl http://e` at exec time), and
+  drops empty command substitutions `$(:)`/`$(true)`/`$(false)`
+  (`cu$(:)rl` → `curl`).
+- `^` before a metacharacter (`^|`, `^&`, `^^`, `^<`, `^>`) is
+  intentionally preserved — the escaped byte is literal input,
+  not an operator, so decoding it would manufacture pipes that
+  do not exist.
+
+### Added
+- `runas /user:`, `runas /savecred`, `runas /netonly` in
+  PASTE_PRIV_ESC — the Windows `su` (+15 tier; the credential
+  variants compound with existing LOLBin/cred arms as expected).
+
+### Verified benign-by-design (probed, unchanged)
+- `cu^^rl` (decodes to literal `cu^rl`, not curl), `echo a ^| clip`
+  (escaped pipe is not a pipe), `a^b file`, `x=$IFS`,
+  `runas /profile` — all 0.
+
+
 ## Cycle 496 — Quote-obfuscation normalization + PowerShell cradle coverage
 
 ### Changed

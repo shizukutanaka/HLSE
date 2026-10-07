@@ -461,7 +461,11 @@ static const char *PASTE_PIPE_SHELLS[] = {
 };
 static const char *PASTE_PRIV_ESC[] = {
     "sudo ", "su -c", "doas ", "su -", "su -l", "su root",
-    "su - root", NULL
+    "su - root",
+    /* runas is the Windows su — /user: switches account context,
+     * /savecred and /netonly are the common credential-abuse
+     * variants                                                   */
+    "runas /user:", "runas /savecred", "runas /netonly", NULL
 };
 /* script-interpreter inline-eval flags — `-e`/`-c`/`eval`/`--eval`
  * alone on a scripting runtime is the same obfuscated-code shape as
@@ -916,19 +920,42 @@ hlse_check_paste(const char *text) {
     memset(&v, 0, sizeof(v));
     if (!text) return v;
 
-    /* Quote-insertion obfuscation: cmd.exe and POSIX shells strip
+    /* Shell-escape obfuscation: cmd.exe and POSIX shells strip
      * inline ' and " before executing, so `c"u"rl` really runs
      * curl — a needle like 'curl ' can never match the raw text.
-     * Match against a quote-stripped copy instead.  The few arms
-     * that specifically look FOR quote characters (quote-injection
-     * markers) keep reading the original via `raw`.              */
+     * The same applies to cmd caret escapes (`cu^rl` runs curl),
+     * the $IFS space expansion, and empty $( ) substitutions
+     * (`c$(:)rl`).  Match against a normalised copy instead; the
+     * few arms that specifically look FOR quote characters
+     * (quote-injection markers) keep reading the original `raw`.
+     * `^` is removed only before an alphanumeric: `^|`/`^&`/`^^`
+     * are metachar escapes whose decoded byte stays meaningful.  */
     raw = text;
     {
         size_t i, n = 0;
         for (i = 0; raw[i] && n < sizeof(clean) - 1; i++) {
             char c = raw[i];
-            if (c != '\'' && c != '"')
-                clean[n++] = c;
+            if (c == '\'' || c == '"')
+                continue;
+            if (c == '^' && isalnum((unsigned char)raw[i+1]))
+                continue;
+            if (c == '$' && !strncmp(raw + i, "${IFS}", 6)) {
+                clean[n++] = ' ';
+                i += 5;
+                continue;
+            }
+            if (c == '$' && !strncmp(raw + i, "$IFS", 4)) {
+                clean[n++] = ' ';
+                i += 3;
+                continue;
+            }
+            if (c == '$' && (!strncmp(raw + i, "$(:)", 4) ||
+                             !strncmp(raw + i, "$(true)", 7) ||
+                             !strncmp(raw + i, "$(false)", 8))) {
+                i += (raw[i+2] == ':') ? 3 : (raw[i+2] == 't') ? 6 : 7;
+                continue;
+            }
+            clean[n++] = c;
         }
         clean[n] = '\0';
         text = clean;
