@@ -4,6 +4,31 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Changed (cycle-490)
+- **hay_any-table fused-needle sweep** — the cycle-489 sweep
+  converted `ci_contains` call sites; the same defect class lived
+  inside `hay_any` (substring) *tables*: needles with a ≤3-char
+  first word followed by a space/symbol fired inside longer
+  words. 18 tables converted to `hay_any_tok` (DECODERS,
+  DECODE_BINS, ENV_DUMP, ENV_PRIMS, ENV_RUNTIME, INSTALL_VERBS,
+  INSTALL_TARGETS, PERSIST_TARGETS, SUID, HTTPSRV,
+  HTTPSRV_HOSTS, WEBSHELL_EXEC, ASP_EXEC, PY_SOCK, PY_EXEC,
+  TCPEXEC, SOCK_TERMS, REVSCRIPTS). Real FPs closed:
+  `scp -i f h:` (cp), `openssl bench -d` (enc), `venv | x` (env),
+  `check that now` (at now), `spam.d`/`src.d`/`adapt.conf.d`/
+  `adapt/preferences`/`xfs destroy`/`alarm -rf`/`xshred`/
+  `devalue exec`/`the retrieval process`.
+- **Substring kept where the symbol IS the payload** — five
+  needles whose match position is mid-command by design stay as
+  literal `ci_contains` checks beside the converted table:
+  `:(){ :|:` (fork bomb), `> /dev/sd` (compact redirect),
+  `>>` (compact append, WRITE_VERBS + KEY_APPEND), `_history`
+  (shell history files — `.bash_history` needs mid-word),
+  `sh <(` (the `sh` prefix-family intentionally covers
+  zsh/fish/ksh/csh process substitution). Verified: every kept
+  literal still fires; every converted table still detects its
+  positives.
+
 ### Added (cycle-489)
 - **P12d heredoc arm (+45)** — `sh <<EOF`, `bash -s <<EOF`,
   `python3 - <<EOF`, `ssh host <<EOF` … an inline script fed to

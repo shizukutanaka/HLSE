@@ -478,13 +478,13 @@ static const char *PASTE_DECODERS[] = {
     "python2 -c", "perl -e", "ruby -e", "node -e", "php -r", NULL
 };
 static const char *PASTE_DESTRUCT[] = {
-    "rm -rf /", "rm -rf ~", "rm -rf $HOME", "rm -fr /", ":(){ :|:",
+    "rm -rf /", "rm -rf ~", "rm -rf $home", "rm -fr /",
     "mkfs.", "mkfs /", "mkfs -", "mke2fs /",
     "of=/dev/sd", "of=/dev/nvme", "of=/dev/hd", "of=/dev/vd",
     "of=/dev/mmc", "of=/dev/xvd",
     "if=/dev/mem", "if=/dev/kmem", "if=/dev/sd", "if=/dev/nvme",
-    "blkdiscard /", "blkdiscard -", "shred ", "> /dev/sd",
-    "chmod -R 777", "chmod -R 777 /",
+    "blkdiscard /", "blkdiscard -", "shred ",
+    "chmod -r 777", "chmod -r 777 /",
     /* storage/volume/RAID destruction */
     "nvme format", "nvme sanitize", "sg_sanitize", "sg_format",
     "sg_write_buffer",
@@ -501,12 +501,12 @@ static const char *PASTE_CRED_PATHS[] = {
     "/etc/passwd", ".pgpass", ".my.cnf", ".pypirc", ".s3cfg",
     ".boto", ".env", "master.passwd", "/etc/security", "/etc/group",
     "/etc/sudoers", "sudoers.d", "/etc/login.defs", "config/gcloud",
-    ".azure", "_history", ".viminfo", ".lesshst", ".wget-hsts",
+    ".azure", ".viminfo", ".lesshst", ".wget-hsts",
     "auth.log", "/var/log/secure", "/var/log/btmp", "/var/log/wtmp",
     "/var/log/lastlog", "/var/log/faillog", NULL
 };
 static const char *PASTE_WRITE_VERBS[] = {
-    ">>", "echo ", "crontab", "at now", "systemctl enable",
+    "echo ", "crontab", "at now", "systemctl enable",
     "launchctl load", "tee /", "tee .", "tee ~", "tee -",
     "curl ", "wget ", NULL
 };
@@ -525,14 +525,14 @@ static const char *PASTE_PERSIST_TARGETS[] = {
     "resolv.conf", "nsswitch", ".vimrc", ".tmux.conf", "config.fish",
     ".netrc", ".rhosts", "hosts.equiv", ".npmrc", ".curlrc",
     ".gitconfig", ".xsession", ".bash_logout", ".zlogout",
-    "ssh_config", ".gtkrc", ".Xresources", ".xmodmaprc", ".inputrc",
+    "ssh_config", ".gtkrc", ".xresources", ".xmodmaprc", ".inputrc",
     ".screenrc", ".muttrc", ".mailrc", ".procmailrc", ".pinerc",
     ".lynxrc", ".wgetrc", ".git-crypt", ".config/git", ".gnomerc",
     ".kderc", "kdeglobals", "kglobalshortcutsrc", "kwinrc",
     ".config/pulse", ".config/systemd",
     ".local/share/applications", "environment.d",
     ".ssh/environment", ".ssh/sshrc", "native-messaging-hosts",
-    "NativeMessagingHosts", ".vscode/extensions", ".config/Code",
+    "nativemessaginghosts", ".vscode/extensions", ".config/code",
     ".gcloud", "sources.list", "apt/preferences", "apt.conf.d",
     "yum.repos.d", "modprobe.d", "polkit-1", "dbus-1", "sudoers.d",
     "daemon.json", ".git/hooks", ".gitmodules", ".gitattributes",
@@ -557,7 +557,7 @@ static const char *PASTE_INSTALL_TARGETS[] = {
     "autostart", "authorized_keys", NULL
 };
 static const char *PASTE_EVAL_VERBS[] = {
-    "eval", "exec", "sh <(", NULL
+    "eval", "exec", NULL
 };
 static const char *PASTE_FETCHES[] = {
     "$(", "`", "curl", "wget", NULL
@@ -656,7 +656,7 @@ static const char *PASTE_SUID[] = {
     NULL
 };
 static const char *PASTE_HTTPSRV[] = {
-    "-m http.server", "php -S ", "SimpleHTTPServer", "busybox httpd",
+    "-m http.server", "php -s ", "simplehttpserver", "busybox httpd",
     "-ehttpd", NULL
 };
 static const char *PASTE_HTTPSRV_HOSTS[] = {
@@ -670,7 +670,7 @@ static const char *PASTE_WEBSHELL_INPUTS[] = {
 };
 static const char *PASTE_WEBSHELL_EXEC[] = {
     "system(", "eval(", "exec(", "shell_exec(", "passthru(",
-    "assert(", "popen(", "proc_open(", "getRuntime", NULL
+    "assert(", "popen(", "proc_open(", "getruntime", NULL
 };
 static const char *PASTE_ASP_MARKERS[] = {
     "<%", ".asp", ".aspx", NULL
@@ -712,28 +712,28 @@ static const char *PASTE_PIPE_SUDO[] = {
 
 /* environment-variable exec/poisoning keys */
 static const char *PASTE_ENV_PRIMS[] = {
-    "ENV=/", "LESSOPEN=|", "LESSOPEN=/", "LESSCLOSE=|", "LESSCLOSE=/",
-    "PAGER=/", "PAGER=sh", "PS4=$", "BASH_XTRACEFD=/", "BASH_XTRACEFD=",
-    "IFS=/", "IFS=:", "SHELLOPTS=", "GLOBIGNORE=", "MALLOC_TRACE=/",
-    "NLSPATH=/", "NLSPATH=%", "LD_ORIGIN_PATH=/", "GCC_EXEC_PREFIX=/",
-    "CPATH=/", "CPATH=:", "XDG_DATA_DIRS=/", "XDG_DATA_DIRS=:",
-    "MAILCAP=/", NULL
+    "env=/", "lessopen=|", "lessopen=/", "lessclose=|", "lessclose=/",
+    "pager=/", "pager=sh", "ps4=$", "bash_xtracefd=/", "bash_xtracefd=",
+    "ifs=/", "ifs=:", "shellopts=", "globignore=", "malloc_trace=/",
+    "nlspath=/", "nlspath=%", "ld_origin_path=/", "gcc_exec_prefix=/",
+    "cpath=/", "cpath=:", "xdg_data_dirs=/", "xdg_data_dirs=:",
+    "mailcap=/", NULL
 };
 static const char *PASTE_ENV_RUNTIME[] = {
-    "BASH_ENV=/", "PROMPT_COMMAND=", "EDITOR=/", "VISUAL=/",
-    "SUDO_EDITOR=/", "FCEDIT=/", "GIT_EDITOR=/", "GIT_DIR=/",
-    "GIT_EXEC_PATH=/", "GIT_TEMPLATE_DIR=/", "GIT_WORK_TREE=/",
-    "GIT_INDEX_FILE=/", "GIT_OBJECT_DIRECTORY=/", "GIT_CONFIG=/",
-    "GIT_CONFIG_PARAMETERS=", "GIT_SSH=", "GIT_PAGER=/", "PERL5LIB=",
-    "PERL5OPT=-", "PERL5DB=", "PYTHONSTARTUP=/", "PYTHONPATH=",
-    "PYTHONHOME=/", "NODE_OPTIONS=-", "NODE_PATH=", "RUBYLIB=",
-    "RUBYOPT=", "ZDOTDIR=/", "SUDO_ASKPASS=/", "SSH_AUTH_SOCK=/",
-    "QT_IM_MODULE=", "GTK_IM_MODULE=", "XMODIFIERS=",
-    "GLIBC_TUNABLES=", "LOCPATH=", "TZDIR=/", "HOSTALIASES=/",
-    "KRB5_CONFIG=/", "KRB5_KTNAME=", "KRB5CCNAME=",
-    "PKCS11_MODULE_PATH=", "MANPAGER=", "SYSTEMD_PAGER=", "LD_AUDIT=",
-    "LD_PROFILE=", "DISPLAY=:", "XAUTHORITY=/", "BROWSER=",
-    "GPG_AGENT_INFO=", "PINENTRY", NULL
+    "bash_env=/", "prompt_command=", "editor=/", "visual=/",
+    "sudo_editor=/", "fcedit=/", "git_editor=/", "git_dir=/",
+    "git_exec_path=/", "git_template_dir=/", "git_work_tree=/",
+    "git_index_file=/", "git_object_directory=/", "git_config=/",
+    "git_config_parameters=", "git_ssh=", "git_pager=/", "perl5lib=",
+    "perl5opt=-", "perl5db=", "pythonstartup=/", "pythonpath=",
+    "pythonhome=/", "node_options=-", "node_path=", "rubylib=",
+    "rubyopt=", "zdotdir=/", "sudo_askpass=/", "ssh_auth_sock=/",
+    "qt_im_module=", "gtk_im_module=", "xmodifiers=",
+    "glibc_tunables=", "locpath=", "tzdir=/", "hostaliases=/",
+    "krb5_config=/", "krb5_ktname=", "krb5ccname=",
+    "pkcs11_module_path=", "manpager=", "systemd_pager=", "ld_audit=",
+    "ld_profile=", "display=:", "xauthority=/", "browser=",
+    "gpg_agent_info=", "pinentry", NULL
 };
 
 /* reverse-shell vocabularies */
@@ -759,12 +759,12 @@ static const char *PASTE_REVSCRIPTS[] = {
     "php -r", "perl -e", NULL
 };
 static const char *PASTE_SOCK_TERMS[] = {
-    "fsockopen", "socket_create", "IO::Socket", NULL
+    "fsockopen", "socket_create", "io::socket", NULL
 };
 
 /* persistence-injection vocabularies */
 static const char *PASTE_KEY_APPEND[] = {
-    ">>", "echo ", NULL
+    "echo ", NULL
 };
 static const char *PASTE_CRON_TERMS[] = {
     "crontab -l", "(crontab", "| crontab", "|crontab", NULL
@@ -887,7 +887,7 @@ hlse_check_paste(const char *text) {
     }
 
     /* P5: Encoded payloads */
-    if (hay_any(text, PASTE_DECODERS) ||
+    if (hay_any_tok(text, PASTE_DECODERS) ||
         (strstr(text, "echo ") && strstr(text, "| base64"))) {
         v.signals |= PASTE_ENCODED_PAYLOAD;
         v.score += 30;
@@ -920,7 +920,9 @@ hlse_check_paste(const char *text) {
     }
 
     /* P9: Destructive commands — the classic baited one-liner */
-    if (hay_any(text, PASTE_DESTRUCT) ||
+    if ((hay_any_tok(text, PASTE_DESTRUCT) ||
+         ci_contains(text, ":(){ :|:") ||
+         ci_contains(text, "> /dev/sd")) ||
         /* c238: storage/volume/RAID destruction (compound terms) */
         (strstr(text, "hdparm") &&
          (strstr(text, "--security-erase") ||
@@ -988,7 +990,7 @@ hlse_check_paste(const char *text) {
 
     /* P10: Credential-file access — reading private keys/credentials is
      * the pre-exfiltration step of pastejacking */
-    if (hay_any(text, PASTE_CRED_PATHS)) {
+    if ((hay_any_tok(text, PASTE_CRED_PATHS) || ci_contains(text, "_history"))) {
         v.signals |= PASTE_CRED_ACCESS;
         v.score += 40;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -1001,10 +1003,10 @@ hlse_check_paste(const char *text) {
      * installs the payload to run on every login. Copy/move/install
      * verbs only fire on system-level targets (routine home-dir
      * backups must stay clean).                                 */
-    if ((hay_any(text, PASTE_WRITE_VERBS) &&
-         hay_any(text, PASTE_PERSIST_TARGETS)) ||
-        (hay_any(text, PASTE_INSTALL_VERBS) &&
-         hay_any(text, PASTE_INSTALL_TARGETS))) {
+    if (((hay_any_tok(text, PASTE_WRITE_VERBS) || ci_contains(text, ">>")) &&
+         hay_any_tok(text, PASTE_PERSIST_TARGETS)) ||
+        (hay_any_tok(text, PASTE_INSTALL_VERBS) &&
+         hay_any_tok(text, PASTE_INSTALL_TARGETS))) {
         v.signals |= PASTE_PERSIST_WRITE;
         v.score += 45;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -1015,7 +1017,7 @@ hlse_check_paste(const char *text) {
 
     /* P12: eval/exec of fetched content — the non-pipe form of the
      * download cradle (P2 only catches the `| sh` shape) */
-    if ((hay_any(text, PASTE_EVAL_VERBS) ||
+    if (((hay_any_tok(text, PASTE_EVAL_VERBS) || ci_contains(text, "sh <(")) ||
          ci_contains(text, "source ") || ci_contains(text, ". /") ||
          ci_contains_tok(text, ". <") || ci_contains_tok(text, ". $")) &&
         (hay_any(text, PASTE_FETCHES) || ci_contains_tok(text, "fetch"))) {
@@ -1108,7 +1110,7 @@ hlse_check_paste(const char *text) {
                 "P13: Bind-shell listener — 'nc -l'/'ncat -l' opens a "
                 "shell port for the attacker to connect back to");
     }
-    if (hay_any(text, PASTE_SUID)) {
+    if (hay_any_tok(text, PASTE_SUID)) {
         v.signals |= PASTE_LISTENER_PRIV;
         v.score += 55;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -1116,8 +1118,8 @@ hlse_check_paste(const char *text) {
                 "P13: SUID/setuid bit install — pasted privilege "
                 "escalation primitive");
     }
-    if (hay_any(text, PASTE_HTTPSRV) &&
-        hay_any(text, PASTE_HTTPSRV_HOSTS)) {
+    if (hay_any_tok(text, PASTE_HTTPSRV) &&
+        hay_any_tok(text, PASTE_HTTPSRV_HOSTS)) {
         v.signals |= PASTE_LISTENER_PRIV;
         v.score += 35;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -1131,9 +1133,9 @@ hlse_check_paste(const char *text) {
      * nobody pastes that benignly.                                   */
     if ((hay_any(text, PASTE_WEBSHELL_MARKERS) &&
          hay_any(text, PASTE_WEBSHELL_INPUTS) &&
-         hay_any(text, PASTE_WEBSHELL_EXEC)) ||
+         hay_any_tok(text, PASTE_WEBSHELL_EXEC)) ||
         (hay_any(text, PASTE_ASP_MARKERS) &&
-         hay_any(text, PASTE_ASP_EXEC) &&
+         hay_any_tok(text, PASTE_ASP_EXEC) &&
          strstr(text, "request")) ||
         (strstr(text, "getRuntime().exec") && strstr(text, ".jsp")) ||
         ci_contains(text, "<%eval") || ci_contains(text, "<% eval") ||
@@ -1151,7 +1153,7 @@ hlse_check_paste(const char *text) {
     /* P15: decode-then-pipe — `base64 -d | sh` / `openssl enc -d | sh`;
      * the decoder replaces the download side of the cradle (P2 needs a
      * fetch verb and P12 needs eval/source).                        */
-    if (hay_any(text, PASTE_DECODE_BINS) &&
+    if (hay_any_tok(text, PASTE_DECODE_BINS) &&
         hay_any(text, PASTE_PIPE_INTERP)) {
         v.signals |= PASTE_EVAL_FETCH;
         v.score += 45;
@@ -2631,7 +2633,7 @@ hlse_check_paste(const char *text) {
                     ci_contains_tok(text, "sentinel") || ci_contains(text, "elastic-agent"))) {
             PASTE_WHAT_SEV("monitoring/EDR agent kill", 55);
         }
-        if (hay_any(text, PASTE_ENV_DUMP) &&
+        if (hay_any_tok(text, PASTE_ENV_DUMP) &&
             (hay_any(text, PASTE_PIPE_NET) ||
              ci_contains_tok(text, "nc "))) {
             PASTE_WHAT_SEV("env-var dump piped to network (secrets exfil)", 55);
@@ -8621,7 +8623,7 @@ hlse_check_paste(const char *text) {
             ci_contains_tok(text, "lshw") || ci_contains_tok(text, "hwinfo") ||
             ci_contains_tok(text, "inxi") ||
             /* environment-variable exec/poisoning keys */
-            hay_any(text, PASTE_ENV_PRIMS)
+            hay_any_tok(text, PASTE_ENV_PRIMS)
         ) {
             PASTE_WHAT("storage/input/stealer/env/exec primitive");
         }
@@ -9055,7 +9057,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " -o forwardagent") || ci_contains(text, " -o proxyjump") ||
               ci_contains(text, " -o sendenv") || ci_contains(text, " -o permit"))) ||
             /* env-var injection keys (value-bound) */
-            hay_any(text, PASTE_ENV_RUNTIME)
+            hay_any_tok(text, PASTE_ENV_RUNTIME)
         ) {
                     PASTE_WHAT("time/procfs/kernel/tamper/exec-runtime primitive");
         }
@@ -17972,7 +17974,7 @@ hlse_check_paste(const char *text) {
             is_revshell = 1;
         /* ruby TCPSocket / perl -M module-load socket shells */
         if (!is_revshell && strstr(text, "TCPSocket") &&
-            hay_any(text, PASTE_TCPEXEC))
+            hay_any_tok(text, PASTE_TCPEXEC))
             is_revshell = 1;
         if (!is_revshell && strstr(text, "perl -M") &&
             strstr(text, "IO::Socket"))
@@ -17983,8 +17985,8 @@ hlse_check_paste(const char *text) {
             is_revshell = 1;
         /* Python socket reverse shell */
         if (!is_revshell &&
-            hay_any(text, PASTE_PY_SOCK) &&
-            hay_any(text, PASTE_PY_EXEC))
+            hay_any_tok(text, PASTE_PY_SOCK) &&
+            hay_any_tok(text, PASTE_PY_EXEC))
             is_revshell = 1;
         /* socat reverse shell — address keywords are case-insensitive */
         if (!is_revshell &&
@@ -17995,8 +17997,8 @@ hlse_check_paste(const char *text) {
             is_revshell = 1;
         /* php/perl one-liner reverse shells: fsockopen/socket → exec */
         if (!is_revshell &&
-            hay_any(text, PASTE_REVSCRIPTS) &&
-            hay_any(text, PASTE_SOCK_TERMS))
+            hay_any_tok(text, PASTE_REVSCRIPTS) &&
+            hay_any_tok(text, PASTE_SOCK_TERMS))
             is_revshell = 1;
         if (is_revshell) {
             v.score += 60;
@@ -18033,7 +18035,7 @@ hlse_check_paste(const char *text) {
         int is_persist = 0;
         const char *why = NULL;
         if ((strstr(text, ".ssh/authorized_keys") &&
-             hay_any(text, PASTE_KEY_APPEND)) ||
+             (hay_any_tok(text, PASTE_KEY_APPEND) || ci_contains(text, ">>"))) ||
             strstr(text, "> ~/.ssh/authorized_keys")) {
             is_persist = 1; why = "SSH authorized_keys injection";
         } else if (strstr(text, "crontab") &&

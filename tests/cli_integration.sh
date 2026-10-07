@@ -713,6 +713,23 @@ jcheck "tok: 'sudo shell script' P4 only" 'd["score"] == 15' paste "sudo shell s
 jcheck "tok: go run/build still fire" 'd["score"] == 45' paste "go run x"
 jcheck "tok: cred-path mention still fires P10" 'd["score"] == 40' paste "concat /etc/passwd"
 
+# hay_any-table fused-needle sweep (cycle 490): mid-word FPs gone
+for c in "scp -i key file host: && tee /etc/x" \
+    "openssl bench -d test" "use venv | grep X" \
+    "check that now and run" "edit spam.d config" \
+    "list src.d files" "update adapt.conf.d entry" \
+    "xfs destroy volume" "alarm -rf now" \
+    "the retrieval process" "xshred file" "devalue exec"; do
+    jcheck "tok2 FP: $c clean" 'd["score"] == 0 and d["reasons"] == []' paste "$c"
+done
+# substring-only needles kept: symbol-start literals still fire
+jcheck "tok2: fork-bomb literal kept" 'd["score"] == 60' paste ":(){ :|:& };:"
+jcheck "tok2: 'x > /dev/sda' kept" 'd["score"] == 60' paste "x > /dev/sda"
+jcheck "tok2: 'echo x>>auth_keys' kept" 'd["score"] == 100' paste "echo x>>~/.ssh/authorized_keys"
+jcheck "tok2: bash_history via _history" 'd["score"] == 40' paste "cat ~/.bash_history"
+jcheck "tok2: sh proc-sub kept" 'd["score"] == 45' paste 'sh <(curl x)'
+jcheck "tok2: install-verb persist fires" 'd["score"] == 45' paste "cp x /etc/cron.d/x && touch /etc/rc.local"
+
 # secret findings[] carry a 1-based line number (SIEM/remediation locus)
 printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | jcheck "secret finding reports correct line number" "'\"line\":4' in s" secret --stdin
 jcheck "secret single-line input reports line 1" "'\"line\":1' in s" secret 'key: 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d'
