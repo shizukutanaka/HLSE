@@ -4,6 +4,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-473)
+- **Generated paste benchmark corpus (audit B3):** `--benchmark` now
+  scores a deterministic 550-item sample derived from the
+  cli_integration paste jcheck stanzas — 400 flagged + 150 clean
+  tokens, each pinned to the score measured at regen time (same
+  floor/max convention as the handwritten corpus). The handwritten
+  paste corpus had 9 entries against the ~22k-needle paste surface;
+  the generated `hlse_paste_corpus_gen.h` (produced by
+  `tests/gen_paste_corpus.py` via `make gen-corpus`, committed so
+  builds need no Python) widens F1/FP measurement to the suite's own
+  claim space: a paste-needle regression now drops recall in the
+  benchmark, not just in the 10-minute suite. Corpus: 452 malicious /
+  190 legitimate scored in ~0.25 s; F1 = 1.000, FP = 0.0%.
+
 ### Fixed (cycle-472)
 - **`--json` verdict divergence on percent-encoded URLs:** the bare-operand
   and `--stdin` JSON paths re-ran `hlse_check_url` on the raw input, which

@@ -15,6 +15,9 @@
 #include "hlse_supply.h" /* PasteVerdict, hlse_check_paste */
 #include "hlse_secrets.h" /* SecretVerdict, hlse_scan_secrets */
 #include "hlse_file.h"   /* FileVerdict, hlse_check_filename */
+#include "hlse_paste_corpus_gen.h" /* generated paste benchmark corpus
+                                   * (tests/gen_paste_corpus.py —
+                                   * `make gen-corpus` regenerates) */
 
 
 
@@ -382,7 +385,11 @@ hlse_benchmark(void) {
         _LCHK_LFIL = 1 / (sizeof(legit_file)/sizeof(legit_file[0]) - 1
         == sizeof(legit_file_max)/sizeof(legit_file_max[0])),
         _LCHK_LPKG = 1 / (sizeof(legit_pkg)/sizeof(legit_pkg[0]) - 1
-        == sizeof(legit_pkg_max)/sizeof(legit_pkg_max[0])) };
+        == sizeof(legit_pkg_max)/sizeof(legit_pkg_max[0])),
+        _LCHK_GPST = 1 / (sizeof(gen_mal_paste)/sizeof(gen_mal_paste[0]) - 1
+        == sizeof(gen_mal_paste_min)/sizeof(gen_mal_paste_min[0])),
+        _LCHK_GLPST = 1 / (sizeof(gen_legit_paste)/sizeof(gen_legit_paste[0]) - 1
+        == sizeof(gen_legit_paste_max)/sizeof(gen_legit_paste_max[0])) };
 
     for (i = 0; malicious[i]; i++) {
         Verdict v = hlse_check_url(malicious[i]);
@@ -421,6 +428,32 @@ hlse_benchmark(void) {
             fp++;
             printf("LEGIT SCORE DRIFT paste %s [%d > %d]\n",
                    legit_paste[i], pv.score, legit_paste_max[i]);
+        }
+    }
+    /* Generated paste corpus (audit B3): a deterministic sample of the
+     * cli_integration paste stanzas, floors/maxes pinned at regen — so
+     * F1/FP measure the ~22k-needle paste surface, not just the 9
+     * handwritten entries above. */
+    for (i = 0; gen_mal_paste[i]; i++) {
+        PasteVerdict pv = hlse_check_paste(gen_mal_paste[i]);
+        n_mal++;
+        if (pv.score >= gen_mal_paste_min[i]) detected++;
+        else printf("MISSED gen-paste %s [%d < %d]\n",
+                    gen_mal_paste[i], pv.score,
+                    gen_mal_paste_min[i]);
+    }
+    for (i = 0; gen_legit_paste[i]; i++) {
+        PasteVerdict pv = hlse_check_paste(gen_legit_paste[i]);
+        n_legit++;
+        if (pv.score >= 40) {
+            fp++;
+            printf("FALSE POSITIVE gen-paste %s [%d]\n",
+                   gen_legit_paste[i], pv.score);
+        } else if (pv.score > gen_legit_paste_max[i]) {
+            fp++;
+            printf("LEGIT SCORE DRIFT gen-paste %s [%d > %d]\n",
+                   gen_legit_paste[i], pv.score,
+                   gen_legit_paste_max[i]);
         }
     }
     for (i = 0; malicious_secrets[i]; i++) {

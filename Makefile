@@ -141,7 +141,7 @@ install-workflows:   ## copy the shipped CI workflows into .github/workflows/
 
 # ─── primary targets ─────────────────────────────────────────────────────
 
-.PHONY: all cli lib static server server-check daemon daemon-check test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test install-workflows lint-needles mutation-smoke
+.PHONY: all cli lib static server server-check daemon daemon-check test bench clean install uninstall coverage fuzz fuzz-asan check-warnings asan-test install-workflows lint-needles mutation-smoke gen-corpus
 
 all: $(BINARY) $(SHARED) $(SERVER_BIN) $(DAEMON_BIN)
 
@@ -538,6 +538,13 @@ lint-needles:
 # Advisory — one incremental rebuild per case; not part of `make test`.
 mutation-smoke:
 	@bash tests/mutation_smoke.sh
+
+# Regenerate the paste benchmark corpus (hlse_paste_corpus_gen.h) from
+# the cli_integration jcheck stanzas — audit B3. Manual: run after
+# changing paste needles or the suite's paste stanzas, then `make`.
+gen-corpus:
+	@python3 tests/gen_paste_corpus.py ./$(BINARY) \
+		tests/cli_integration.sh hlse_paste_corpus_gen.h
 
 # Build the CLI + tests with ASan/UBSan and run the full self-test.
 # Catches memory errors, UB, and leaks that normal builds miss.
