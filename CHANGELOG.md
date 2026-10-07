@@ -2,6 +2,21 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 505 — Text defang: bracketed scheme separators
+
+### Added
+- `check_defanged_lures` now flags bracketed scheme separators —
+  `[:]//`, `[://]`, `(://)`, `{://}` (+35): the IOC-defang twin of
+  `hxxp://` (`https[:]//evil.com`, `https[://]evil.com`).  Re-fanging
+  restores a live link, so the marker alone is a finding, same tier
+  as the hxxp arm.
+
+### Verified benign-by-design (probed, unchanged)
+Bare `[:]` without the `//` continuation stays clean (`x[:]y`,
+`array[0] //c`, `a[:] b` all 0) — the marker requires the slash
+pair to be a scheme separator.
+
+
 ## Cycle 504 — Email E6b: IDN/homoglyph sender domains
 
 ### Added

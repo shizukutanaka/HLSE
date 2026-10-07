@@ -3595,6 +3595,24 @@ check_defanged_lures(const char *text, TextVerdict *v) {
                 return;
             }
         }
+        /* bracketed scheme separator — 'https[:]//', 'https[://]',
+         * 'http(://)': the IOC-defang twin of hxxp; re-fanging it
+         * restores a live link, so the marker alone is a finding. */
+        {
+            static const char *const seps[] = {
+                "[:]//", "[://]", "(://)", "{://}", NULL
+            };
+            int s;
+            for (s = 0; seps[s]; s++) {
+                if (strncmp(p, seps[s], strlen(seps[s])) == 0) {
+                    add_text_reason(v, 35,
+                        "Defanged scheme separator '%s' — re-fanging "
+                        "restores a live link", seps[s]);
+                    return;
+                }
+            }
+        }
+
         /* bracket-dot markers between domain characters */
         {
             int m;

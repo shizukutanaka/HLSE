@@ -9224,6 +9224,14 @@ Reply-To: b@pаypal.com'
 jcheck "email ascii domain unflagged" 'd["score"] < 40' email 'From: it@corp.com
 Subject: hello'
 
+# Defanged scheme separators (cycle 505): 'https[:]//', 'https[://]',
+# '(://)' — IOC-defang twin of hxxp; marker alone flags.
+jcheck "defang scheme colon-bracket flags" 'd["score"] >= 40' text 'https[:]//evil.com/x'
+jcheck "defang scheme bracket-url flags" 'd["score"] >= 40' text 'https[://]evil.com/x'
+jcheck "defang scheme paren flags" 'd["score"] >= 30' text 'http(://)evil.com'
+jcheck "plain bracket-colon clean" 'd["score"] < 30' text 'x[:]y'
+jcheck "array index comment clean" 'd["score"] < 30' text 'array[0] //comment'
+
 rm -rf "$XDIR99"
 
 # ── cycle-100: LOLBin download/exec command lines ──
