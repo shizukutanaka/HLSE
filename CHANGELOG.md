@@ -2,6 +2,43 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 509 — Text: customs-hold / payment-redirect / MFA-fatigue keywords
+
+### Added
+- `URGENCY_WORDS`: customs-hold family — `held at/in customs`,
+  `customs hold`, `held at the border`, `(your) package/shipment/
+  parcel is held`, `held for inspection`.
+- `BAIT_WORDS`: BEC payment-redirect (`new bank details`, `updated
+  bank account`, `new/updated iban`, `new beneficiary`, `different
+  bank account`, `our new bank`, `payment to the/a/our new account`),
+  MFA-fatigue approve family (`approve this/the request`,
+  `approve this sign-in/login`, `approve your sign-in`, `tap yes`,
+  `approve the prompt`, `push notification to approve`,
+  `respond to the prompt`, `if (this/it) wasn't you`, `if not you`,
+  `was this you`), and fee-action (`pay the/a fee`, `customs fee`,
+  `inspection fee`, `clearance fee`, `release your/the package`,
+  `release your shipment`, `release the consignment`).
+- `CALLBACK_PHISH_WORDS`: call-support family (`call support`,
+  `call our/customer support`, `call the support number`,
+  `call this number`, `call us immediately`, `call our/the
+  helpline`, `contact support at`, `dial the number`).
+- `FAKE_ALERT_WORDS`: standalone MFA-fatigue forms (`tap/press yes
+  to approve`, `tap yes to authorize`, `approve (this/the)
+  notification`, `approve the push (notification)`, `did you try to
+  sign in`, `was this you trying`, `did you request this`) and
+  standalone BEC redirect imperatives (`new/updated remittance
+  details`, `payment to our/the new account`, `remit to our/the
+  new account`, `send payment to our new`).
+
+### Verified benign-by-design (probed, unchanged)
+Single BAIT hits stay sub-threshold (bait is compound-gated);
+`import duty`/`customs duty` removed from URGENCY after probing
+showed a 43-point FP on topic nouns (they remain covered by the
+CALLBACK smishing table where the compound context gates them);
+`push notifications are enabled`, `held for inspection by the
+committee`, `the notification needs approval` all clean.
+
+
 ## Cycle 508 — Protect R3: ransom-note stem under carrier extensions
 
 ### Added

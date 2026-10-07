@@ -9245,6 +9245,19 @@ Reply-To: b@pаypal.com'
 jcheck "email ascii domain unflagged" 'd["score"] < 40' email 'From: it@corp.com
 Subject: hello'
 
+# Text BEC/smishing keyword families (cycle 509): customs-hold,
+# payment-redirect, MFA-fatigue, call-support, fee-action.
+jcheck "text customs-hold lure flags" 'd["score"] >= 30' text 'Your package is held at customs - pay the fee'
+jcheck "text payment-redirect flags" 'd["score"] >= 30' text 'payment to the new account'
+jcheck "text MFA-fatigue flags" 'd["score"] >= 30' text 'Someone tried to sign in - tap YES to approve'
+jcheck "text call-support vishing flags" 'd["score"] >= 30' text 'if not you, call support'
+jcheck "text approve-notification flags" 'd["score"] >= 30' text 'approve the notification to continue'
+jcheck "text bank-details-redirect flags" 'd["score"] >= 20' text 'new bank details for payment'
+jcheck "text import-duty noun benign" 'd["score"] < 30' text 'import duty on foreign cars'
+jcheck "text push-notification benign" 'd["score"] < 15' text 'push notifications are enabled'
+jcheck "text held-inspection benign" 'd["score"] < 20' text 'held for inspection by the committee'
+
+
 # Clipboard (cycle 507): invalid look-alike swap — pasted string fails
 # address format but shares both ends with the copied address.
 jcheck "clipboard cyrillic-lookalike swap flags" 'd["score"] >= 90' clipboard '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa' '1А1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'
@@ -9574,7 +9587,7 @@ check_url_hit 'confinstall://x' 'LOG' "url: confinstall: flagged"
 
 # ── cycle-122: BEC payment-diversion + InfoPath/RDM carriers ──
 check_text_hit 'please update the wire transfer instructions attached' 'LOG' "text: wire-instructions flagged"
-check_text_hit 'send the payment to our new account number' 'LOG' "text: account-number flagged"
+check_text_hit 'send the payment to our new account number' 'BLOCK' "text: account-number flagged"
 check_text_hit 'kindly process the invoice when free' 'OK' "text: benign invoice clean"
 check_text_hit 'remit to the address on file' 'OK' "text: benign remit clean"
 XDIR122=$(mktemp -d /tmp/hlse122.XXXXXX)

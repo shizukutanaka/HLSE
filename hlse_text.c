@@ -113,6 +113,11 @@ static const char *URGENCY_WORDS[] = {
     "claim package", "redelivery required", "delivery attempt failed",
     "package on hold", "package is on hold", "parcel is on hold",
     "customs clearance required",
+    /* Customs-hold smishing — the #1 parcel-fee lure claim; the hold
+     * itself IS the urgency hook ('held at customs - pay to release') */
+    "held at customs", "held in customs", "customs hold",
+    "held at the border", "package is held", "your package is held",
+    "shipment is held", "parcel is held", "held for inspection",
     /* Japanese (UTF-8) */
     "至急", "緊急", "即座", "本日中", "24時間以内", "48時間以内",
     "停止", "凍結", "ロック", "不正アクセス", "確認してください",
@@ -623,6 +628,14 @@ static const char *BAIT_WORDS[] = {
     "sign-in attempt blocked", "deny the sign-in",
     "deny this attempt", "approve the sign-in", "approve sign-in",
     "deny the request", "wasn't you button",
+    /* MFA fatigue / push-bombing — the approve prompt is the payload */
+    "approve this request", "approve the request",
+    "approve this sign-in", "approve this login",
+    "approve your sign-in", "tap yes", "approve the prompt",
+    "push notification to approve", "respond to the prompt",
+    "if this wasn't you", "if it wasn't you",
+    "if not you", "was this you", "if this was not you",
+    "if that wasn't you",
     "termination letter", "severance notice", "final paycheck",
     "employment is terminated", "severance agreement",
     "layoff notice", "termination of employment",
@@ -890,6 +903,10 @@ static const char *BAIT_WORDS[] = {
     "new bank account", "new payment account",
     "change of bank details", "change bank details",
     "updated bank details", "updated payment details",
+    "new bank details", "updated bank account", "new iban",
+    "updated iban", "new beneficiary", "different bank account",
+    "our new bank", "payment to the new account",
+    "payment to a different account", "payment to our new account",
     /* Highly specific BEC banking-change phrases — kept in BAIT so the
      * BEC compound amplifier (authority+bait) fires when combined with
      * sender impersonation. For standalone detection these need a second
@@ -1028,6 +1045,10 @@ static const char *PRIZE_WORDS[] = {
     "united nations compensation", "your atm card", "atm card package",
     "atm card worth", "activation fee", "insurance fee",
     "delivery fee", "coverage for your consignment",
+    /* the action form of every hold-lure: 'pay the fee' itself */
+    "pay the fee", "pay a fee", "customs fee", "inspection fee",
+    "clearance fee", "release your package", "release the package",
+    "release your shipment", "release the consignment",
     /* Celebrity crypto giveaway / doubling scam */
     "double your bitcoin", "double your btc", "double your crypto",
     "double your ethereum", "double your eth",
@@ -1812,6 +1833,15 @@ static const char *FAKE_ALERT_WORDS[] = {
      * the unsolicited 'unusual sign-in' / 'sign-in attempt'
      * panic line itself                                        */
     "unusual sign-in", "sign-in attempt",
+    /* MFA fatigue / push-bombing — the approve prompt IS the lure;
+     * standalone forms ('tap yes to approve') are scam-shaped enough
+     * to fire without a second signal                             */
+    "tap yes to approve", "tap yes to authorize",
+    "press yes to approve", "tap 'yes' to approve",
+    "approve the notification", "approve this notification",
+    "approve the push notification", "approve the push",
+    "did you try to sign in", "was this you trying",
+    "did you request this",
     "your microsoft account", "your google account has been",
     "account compromised", "your account has been compromised",
     "call us immediately", "call this number immediately",
@@ -2020,6 +2050,10 @@ static const char *FAKE_ALERT_WORDS[] = {
     "our bank account has changed", "our banking details have changed",
     "our payment details have changed", "our account details have changed",
     "new banking details", "updated banking details",
+    "new remittance details", "updated remittance details",
+    "payment to our new account", "payment to the new account",
+    "remit to our new account", "remit to the new account",
+    "send payment to our new",
     "please update our bank", "please update our payment",
     /* Marketplace/check overpayment scam — attacker "accidentally" overpays
      * and asks victim to wire back the difference. Near-zero legitimate use. */
@@ -2362,6 +2396,12 @@ static const char *CALLBACK_PHISH_WORDS[] = {
     "please call", "contact us by phone", "reach us at",
     "call +1", "call +44", "call +61", "call +81",
     "do not reply to this email", "call the number",
+    /* 'call support' / vishing imperatives — 'if not you, call
+     * support' is the credential-phish fallback action */
+    "call support", "call our support", "call customer support",
+    "call the support number", "call this number",
+    "call us immediately", "call our helpline", "call the helpline",
+    "contact support at", "dial the number",
     /* SMS / smishing lures */
     "reply stop to", "reply yes to", "txt stop to",
     "click to track your parcel", "your parcel is waiting",
