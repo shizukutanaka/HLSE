@@ -144,6 +144,17 @@ static const char *BAIT_WORDS[] = {
     "amazon gift", "walmart gift", "target gift", "best buy gift", "steam card",
     "purchase gift", "purchase google", "purchase itunes",
     "refund", "reimbursement", "claim your",
+    /* giftcard-scratch topic nouns — legitimate instructions
+     * ('scratch off the coating') use these too, so they stay
+     * compound-gated; the imperative forms are in FAKE_ALERT       */
+    "the code on the back", "the codes on the back",
+    "codes on the back", "scratch the back", "scratch off the panel",
+    "scratch off the coating", "reveal the code", "redeem the codes",
+    /* BEC opener family — 'are you busy / need a favor' is the
+     * canonical impersonation opener; benign alone, damning with
+     * a payment/giftcard follow-up                                 */
+    "need a favor", "do me a favor", "quick favor",
+    "favor to ask", "small favor", "a quick favor",
     /* Refund-department impersonation (Amazon/Geek Squad callback
      * scams) — a 'refund department' asking you to act is the scam's
      * defining claim; compound forms only                     */
@@ -1120,6 +1131,12 @@ static const char *AUTHORITY_WORDS[] = {
     "ceo here", "from the ceo", "this is the ceo",
     "this is your ceo", "this is the cfo", "this is your cfo",
     "from the cfo", "your manager", "from the director",
+    /* direct boss impersonation — 'this is your boss' is the BEC
+     * opener shape alongside the ceo/cfo forms                    */
+    "this is your boss", "your boss here", "this is your manager",
+    "it's your manager", "this is your supervisor",
+    "i am your supervisor", "from your manager",
+    "this is your director",
     "the chairman", "head of finance", "from legal", "legal department",
     "from accounts payable", "executive office",
     /* BEC variants where attacker signs as authority */
@@ -1208,6 +1225,14 @@ static const char *EMERGENCY_SCAM_WORDS[] = {
     /* WhatsApp/SMS contact-substitution scam ("new number" impersonation) */
     "i got a new number", "i have a new number", "i changed my number",
     "got a new phone", "new phone save", "save my new number",
+    /* direct substitution forms — 'hi mom ... this is my new number'
+     * / 'save this number' / 'text me on this number' bypass the
+     * subject pronouns above                                      */
+    "my new number", "it's my new number", "its my new number",
+    "save this number", "text me on this number",
+    "message me on this number", "contact me on this number",
+    "on my new number", "at my new number", "this is my new phone",
+    "use this number to reach me", "use this number instead",
     "please save this number", "please update my number",
     /* Grandparent-scam third-person framing — 'your grandchild is in
      * jail' claims a relative is detained; bail-demand phrases are
@@ -1744,6 +1769,14 @@ static const char *GROOMING_WORDS[] = {
     "vehicle warranty", "warranty is about to expire",
     "warranty is expiring", "warranty has expired",
     "warranty is about to", "final notice",
+    /* possessive/object-order warranty forms — 'warranty on your
+     * vehicle', "vehicle's warranty", 'warranty on your car' miss
+     * the 'warranty is' / 'car warranty' forms above              */
+    "warranty on your vehicle", "vehicle's warranty",
+    "warranty on your car", "your car's warranty",
+    "car's warranty", "warranty on your home", "home warranty is",
+    "vehicle warranty is", "warranty for your vehicle",
+    "warranty on the vehicle",
     /* Crypto pump-and-dump micro-signals — phrases specific to coordinated
      * "buy now before the pump" campaigns on Telegram/Discord.           */
     "about to moon", "going to moon", "will 10x",
@@ -1833,6 +1866,20 @@ static const char *FAKE_ALERT_WORDS[] = {
      * the unsolicited 'unusual sign-in' / 'sign-in attempt'
      * panic line itself                                        */
     "unusual sign-in", "sign-in attempt",
+    /* sign-in-alert bare forms — 'suspicious login attempt' missed
+     * 'suspicious login activity' by a word; brand-inserted activity
+     * claims ('unusual activity on your netflix account') miss the
+     * 'on your account' suffix — match the claim stem instead      */
+    "suspicious login", "suspicious sign-in", "suspicious signin",
+    "unusual login", "unusual activity on your",
+    "unusual activity in your", "suspicious activity on your",
+    /* giftcard-code harvest imperatives — the tech-support/refund
+     * scam's payout step; imperative 'send/read/text me the code(s)'
+     * never appears in legitimate conversation                    */
+    "send the codes", "send me the codes", "send me the code",
+    "text me the code", "text me the codes", "read me the code",
+    "read me the codes", "read the codes", "read the code to me",
+    "send the code to me", "text the code to me",
     /* MFA fatigue / push-bombing — the approve prompt IS the lure;
      * standalone forms ('tap yes to approve') are scam-shaped enough
      * to fire without a second signal                             */

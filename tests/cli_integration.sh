@@ -9272,6 +9272,24 @@ jcheck "paste ssh -R still flagged" 'd["score"] == 55' paste 'ssh -R 4444:localh
 jcheck "paste autossh -R flagged" 'd["score"] == 55' paste 'autossh -M 0 -R 2222 x'
 jcheck "paste ssh -Nf flagged" 'd["score"] == 55' paste 'ssh -Nf -R 2222 x'
 
+# Text scam-phrase gap fill (cycle 511): sign-in alert claim stems,
+# giftcard-code imperatives, new-number substitution, boss
+# impersonation, vehicle warranty, BEC favor openers.
+jcheck "text brand-activity claim flags" 'd["score"] >= 30' text 'unusual activity on your netflix account'
+jcheck "text suspicious-login-attempt flags" 'd["score"] >= 30' text 'chase: suspicious login attempt verify identity'
+jcheck "text send-the-codes flags" 'd["score"] >= 40' text 'buy 5 apple gift cards and send the codes'
+jcheck "text code-on-back imperative flags" 'd["score"] >= 40' text 'send the codes on the back'
+jcheck "text read-code imperative flags" 'd["score"] >= 40' text 'read the code to me'
+jcheck "text new-number sub flags" 'd["score"] >= 20' text 'this is my new number'
+jcheck "text text-this-number flags" 'd["score"] >= 20' text 'text me on this number'
+jcheck "text boss-impersonation compound" 'd["score"] >= 40' text 'this is your boss are you busy i need a favor'
+jcheck "text vehicle-warranty flags" 'd["score"] >= 20' text 'warranty on your vehicle is expiring'
+jcheck "text router-code-back benign" 'd["score"] < 20' text 'the code on the back of the router'
+jcheck "text scratch-coating benign" 'd["score"] < 15' text 'scratch the coating to reveal the code'
+jcheck "text favor-only benign" 'd["score"] < 15' text 'i need a favor can you pick up lunch'
+jcheck "text office-number benign" 'd["score"] < 15' text 'a new phone number for the office'
+
+
 
 
 # Clipboard (cycle 507): invalid look-alike swap — pasted string fails
@@ -9640,7 +9658,7 @@ rm -rf "$XDIR124"
 # ── cycle-125: travel-cancel/breach-activity lures ──
 check_text_hit 'your flight has been cancelled rebook here immediately' 'LOG' "text: flight-cancel flagged"
 check_text_hit 'unusual activity detected on your account confirm identity' 'ALERT' "text: unusual-activity flagged"
-check_text_hit 'unusual activity on your account verify your identity now' 'LOG' "text: account-activity flagged"
+check_text_hit 'unusual activity on your account verify your identity now' 'ALERT' "text: account-activity flagged"
 check_text_hit 'the flight was cancelled due to weather' 'OK' "text: benign flight clean"
 check_text_hit 'please rebook the meeting room' 'OK' "text: benign rebook clean"
 check_text_hit 'the data breach was disclosed last year' 'OK' "text: benign breach clean"

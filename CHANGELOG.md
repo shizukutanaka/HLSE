@@ -2,6 +2,45 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 511 — Text: sign-in alerts, giftcard-code, new-number, warranty
+
+### Added
+- `FAKE_ALERT_WORDS`: bare sign-in-claim stems (`suspicious login`,
+  `suspicious sign-in/signin`, `unusual login`) and brand-inserted
+  activity claims (`unusual activity on/in your`, `suspicious
+  activity on your`) — `unusual activity on your netflix account`
+  and `suspicious login attempt` previously missed by a word.
+  Giftcard-code harvest imperatives: `send me the code(s)`, `text
+  me the code(s)`, `read me the code(s)`, `read the codes`,
+  `send/read/text the code(s) to me` — the tech-support/refund
+  scam's payout step, never benign as an imperative.
+- `BAIT_WORDS` (compound): code-on-back topic nouns (`the code(s)
+  on the back`, `scratch the back/off the panel/off the coating`,
+  `reveal the code`, `redeem the codes` — legit scratch-off
+  instructions share the noun, so these stay gated) and BEC
+  favor openers (`need a favor`, `do me a favor`, `quick favor`,
+  `favor to ask`, `small favor`, `a quick favor`).
+- `EMERGENCY_SCAM_WORDS`: pronoun-free substitution forms
+  (`my new number`, `it's/its my new number`, `save this number`,
+  `text/message/contact me on this number`, `on/at my new number`,
+  `this is my new phone`, `use this number to reach me/instead`).
+- `AUTHORITY_WORDS`: direct boss impersonation (`this is your boss/
+  manager/supervisor/director`, `your boss here`, `it's your
+  manager`, `i am your supervisor`, `from your manager`).
+- `GROOMING_WORDS`: possessive warranty forms (`warranty on your
+  vehicle/car/home`, `vehicle's warranty`, `your car's warranty`,
+  `vehicle warranty is`, `warranty for/on the vehicle`,
+  `home warranty is`).
+
+### Verified
+`the code on the back of the router`, `scratch the coating to
+reveal the code`, `i need a favor can you pick up lunch`, `a new
+phone number for the office`, `she is your supervisor today` all
+clean. `save this number`/`my new number` give a 20-pt LOG on
+benign usage — same posture as `suspicious login activity` and the
+emergency-scam table's design.
+
+
 ## Cycle 510 — Paste: credential-dir bulk copy + ssh-arm .ssh fix
 
 ### Added
