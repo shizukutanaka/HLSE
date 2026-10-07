@@ -552,6 +552,10 @@ static const char *PASTE_FETCHES[] = {
 static const char *PASTE_FETCH_TOOLS[] = {
     "curl ", "wget ", "fetch ", "lynx ", "scp ", "sftp ", "rsync ",
     "tftp ", "ncat ", "netcat ", "socat ", "telnet ",
+    /* VCS clone/pull + alt downloaders — remote code into a
+     * &&/; exec chain is the same download-execute cradle  */
+    "git clone", "git pull", "svn co ", "svn checkout", "hg clone",
+    "aria2c ", "axel ", "lftp ", "rcp ", "wput ", "yafc ",
     "base64 -d", "base64 -D", "base64 --decode",
     "openssl enc", "openssl aes", "gpg -d", "gpg --decrypt",
     "xxd -r", NULL
