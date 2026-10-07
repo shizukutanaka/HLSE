@@ -2336,11 +2336,11 @@ hlse_check_paste(const char *text) {
         if ((ci_contains(text, "apt") ) &&
                    ci_contains(text, " install ") &&
                    (ci_contains(text, ".deb") || CI_HTTP)) {
-            PASTE_WHAT_SEV("apt bundle/URL install", 55);
+            PASTE_WHAT_SEV("apt bundle/URL install", 65);
         }
         if (ci_contains(text, "dpkg") && ci_contains(text, "-i ") &&
                    ci_contains(text, ".deb")) {
-            PASTE_WHAT_SEV("dpkg bundle install", 55);
+            PASTE_WHAT_SEV("dpkg bundle install", 65);
         }
         if (((ci_contains(text, "rpm") &&
                     (ci_contains(text, " -i") || ci_contains(text, " -u"))) ||

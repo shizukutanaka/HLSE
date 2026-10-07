@@ -4,6 +4,20 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Changed (cycle-479)
+- **pkg-mgr remote/bundle install tier parity** (audit-recorded
+  asymmetry). `apt install <url|.deb>` and `dpkg -i <x.deb>` scored 55
+  while `rpm -i`/`dnf`/`yum`/`zypper`/`pacman`/`xbps`/`brew`/`winget`/
+  `choco`/`scoop` remote+bundle installs already scored 65 — same
+  download-and-run-payload kill-chain shape, arbitrary tier split.
+  Both now 65 BLOCK. Investigation also resolved the recorded
+  bare-install asymmetry (apt/pip/gem/yum/pacman/apk install = 0 vs
+  brew/winget/choco/npm/dnf/zypper install = 45): the clean scores are
+  a *deliberate* FP calibration encoded by pre-existing suite guards
+  (bare mainstream-manager installs are the most common benign
+  commands), not an oversight — left intact and now documented in
+  the suite comment above the pkg-mgr checks.
+
 ### Added (cycle-478)
 - **`reason_ids` for paste verdicts + P9/P10 code-collision fix**
   (audit C3/D-surface parity). Paste reasons have always carried P1–P15
