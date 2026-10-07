@@ -593,6 +593,22 @@ static int hay_any_tok(const char *t, const char *const *l) {
     for (; *l; l++) if (ci_contains_tok(t, *l)) return 1;
     return 0;
 }
+/* P12d source/drop vocabularies — content sources that feed an
+ * interpreter pipe (`echo 'x'|sh`, `cat s|bash`, `tail -1 f|sh`,
+ * `cat <<EOF|sh`) and write-verbs that drop payload bytes to a
+ * file the &&/; chain then runs (`cat > s && sh s`, `tee s && sh
+ * s`, `dd of=s && sh s`, `install -m`). tok-matched so 'concat',
+ * 'guarantee', 'odds', 'shortcut', 'detail', 'ahead', 'used'
+ * cannot fire.                                                        */
+static const char *PASTE_PIPE_SRC[] = {
+    "echo ", "printf ", "cat ", "tee ",
+    "tail ", "head ", "sed ", "awk ", "gawk ", "mawk ", "nawk ",
+    "grep ", "egrep ", "fgrep ", "cut ", "tr ", "sort ",
+    "uniq ", "dd ", NULL
+};
+static const char *PASTE_DROP_VERBS[] = {
+    "cat >", "cat>", "cat <<", "tee ", "dd ", "install -m", NULL
+};
 static const char *PASTE_LISTENERS[] = {
     " -lv", NULL
 };
@@ -641,7 +657,12 @@ static const char *PASTE_DECODE_BINS[] = {
 };
 static const char *PASTE_PIPE_INTERP[] = {
     "| sh", "|sh", "| bash", "|bash", "| python", "|python",
-    "| perl", "| node", "| pwsh", "| powershell", NULL
+    "| perl", "|perl", "| node", "| pwsh", "| powershell",
+    "| zsh", "|zsh", "| dash", "| ksh", "| fish",
+    "| ruby", "|ruby", "| php", "|php",
+    "| /bin/sh", "| /bin/bash", "| /bin/zsh",
+    "| /usr/bin/sh", "| /usr/bin/bash",
+    "| sudo sh", "| sudo bash", NULL
 };
 
 /* env-dump → network exfiltration */
@@ -993,6 +1014,33 @@ hlse_check_paste(const char *text) {
             snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
                 "P12c: Unpack-then-execute chain — archive extracted "
                 "and payload run via &&/;");
+    }
+
+    /* P12d: source/drop-then-execute — the payload source is inline
+     * or a local file instead of a download:
+     *   (a) source piped to an interpreter — `echo 'x'|sh`,
+     *       `printf x|bash`, `cat s|sh`, `cat <<EOF|sh`,
+     *       `tail -1 f|sh`, `sed -n 2p f|sh` — the simplest
+     *       string-injection cradle, undetected until now;
+     *   (b) drop verb + exec chain — `cat > s && sh s`,
+     *       `echo x > s && sh s` (echo/printf flags sit between
+     *       verb and redirect, so a '>' anywhere suffices),
+     *       `tee s && sh s`, `dd of=s && sh s`, `install -m`.
+     * PIPE_INTERP deliberately excludes `| sudo` — `echo y | sudo
+     * apt` answer-piping is a common benign idiom.              */
+    if ((hay_any_tok(text, PASTE_PIPE_SRC) &&
+         hay_any(text, PASTE_PIPE_INTERP)) ||
+        (hay_any_tok(text, PASTE_DROP_VERBS) &&
+         hay_any(text, PASTE_EXEC_CHAINS)) ||
+        ((ci_contains_tok(text, "echo") || ci_contains_tok(text, "printf")) &&
+         strchr(text, '>') != NULL &&
+         hay_any(text, PASTE_EXEC_CHAINS))) {
+        v.signals |= PASTE_EVAL_FETCH;
+        v.score += 45;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P12d: Source/drop-then-execute — content piped to "
+                "an interpreter or written to a file then run");
     }
 
     /* P13: Listener / privilege-escalation one-liners — a bind shell,

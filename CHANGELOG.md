@@ -4,6 +4,35 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-488)
+- **P12d: source/drop-then-execute arm (+45)** — the payload
+  source is inline or a local file instead of a download, the
+  last uncovered materialise+exec cradle:
+  (a) *source piped to an interpreter*: `echo 'x'|sh`,
+  `printf x|bash`, `cat s|sh`, `cat <<EOF|sh`, `tail -1 f|sh`,
+  `sed -n 2p f|sh` — the simplest string-injection shape
+  (`echo x|sh`) was **completely undetected (score 0)**; now
+  sources echo/printf/cat/tee/tail/head/sed/awk/gawk/mawk/nawk/
+  grep/egrep/fgrep/cut/tr/sort/uniq/dd through
+  `PASTE_PIPE_INTERP` (extended with zsh/dash/ksh/fish/ruby/php,
+  `/bin|/usr/bin` shells, `| sudo sh|bash` — plain `| sudo` stays
+  excluded so `echo y | sudo apt` answer-piping keeps P4-only).
+  (b) *drop verb + exec chain*: `cat > s && sh s`, `cat>s`,
+  `cat >> s`, `cat <<EOF > s`, `echo x > s`, `printf 'x' > s`,
+  `tee s && sh s`, `dd of=s && sh s`, `install -m 755 s /t &&
+  /t/s` — write-verb needles are tok-matched (`cat >`, `cat>`,
+  `cat <<`, `tee `, `dd `, `install -m`) and echo/printf drops
+  use a bare `strchr('>')` since flags sit between verb and
+  redirect (`echo -e x > s`). +45 each, consistent with P12b/P12c
+  — same cradle tier, `PASTE_EVAL_FETCH` signal,
+  `HLSE-PASTE-OTHER` code. Tok matching blocks `concat`, `bobcat`,
+  `guarantee`, `odds`, `shortcut`, `detail`, `ahead`, `used`;
+  write-without-exec (`cat > s && cd`, `&& make`, `echo x >
+  f.txt`) and no-interpreter pipes (`cat f | grep`) stay clean.
+  Detection changes the persisted `reason_ids` of one prior pin
+  (`echo "...| sh" | crontab -` now also earns OTHER — updated to
+  the new intended semantics).
+
 ### Fixed (cycle-487)
 - **nc/fetch name-needle cross-fire sweep (real FPs)**: the
   substring needles `'ncat '`, `'netcat '`, `'fetch '`, `'nc '`,
