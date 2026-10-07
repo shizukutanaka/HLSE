@@ -4,6 +4,22 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Fixed (cycle-481)
+- **Tool-name substring cross-fire sweep**: the cycle-480 `nx ` defect
+  family recurred wherever a short tool name is a substring of a real
+  word — eight more arms false-fired on benign text: `nix` inside
+  `unix`/`phoenix` ("unix shell"=45), `uv` inside `luv` and `"v run"`
+  inside `"luv run"`, `rye` inside `dryer` ("dryer add x"=45), `just`
+  inside `adjust` ("adjust -x"=45), `mage` inside `magenta`, `"nx "`
+  inside `snx `/`phalanx `/`jinx `/`pinx `, `"nvi "` inside `"envi "`,
+  and `"vis "` inside `"pelvis "`. Each arm now excludes the containing
+  word via the established exclusion-list idiom (no word-boundary
+  helper exists; leading-space/compound needles cannot fix these
+  because the same space/verb pattern follows inside the word).
+  Genuine `nix run`, `uv run`, `v run`, `rye add`, `just -f`, `mage`,
+  `nx build`, `nvi`, `vis -x`, and `snx connect` (own class) still
+  fire 45.
+
 ### Fixed (cycle-480)
 - **`nx ` needle cross-fire**: the monorepo-tool needle `"nx "` matched
   inside `"lynx "` and `"manx "`, so every `lynx` invocation (a

@@ -446,6 +446,31 @@ jcheck "nx-needle: bare lynx fetch stays clean" 'd["score"] == 0' paste 'lynx -d
 jcheck "nx-needle: manx does not cross-fire" 'd["score"] == 0' paste 'manx cat'
 jcheck "nx-needle: genuine nx build still fires" 'd["score"] == 45' paste 'nx build app'
 
+# Tool-name substring cross-fire sweep (cycle-481): the same nx-needle defect
+# family recurred wherever a short tool name is a substring of a real word —
+# nix⊂unix/phoenix, uv⊂luv, "v run"⊂"luv run", rye⊂dryer, just⊂adjust,
+# mage⊂magenta, nx⊂snx/phalanx/jinx/pinx, "nvi "⊂"envi ", "vis "⊂"pelvis ".
+# Each arm now excludes the containing word; genuine tool names still fire.
+jcheck "crossfire: unix shell stays clean" 'd["score"] == 0' paste 'unix shell'
+jcheck "crossfire: phoenix run stays clean" 'd["score"] == 0' paste 'phoenix run'
+jcheck "crossfire: luv run stays clean" 'd["score"] == 0' paste 'luv run'
+jcheck "crossfire: dryer add stays clean" 'd["score"] == 0' paste 'dryer add x'
+jcheck "crossfire: adjust stays clean" 'd["score"] == 0' paste 'adjust -x'
+jcheck "crossfire: magenta stays clean" 'd["score"] == 0' paste 'magenta run'
+jcheck "crossfire: phalanx stays clean" 'd["score"] == 0' paste 'phalanx troops'
+jcheck "crossfire: jinx stays clean" 'd["score"] == 0' paste 'jinx -u'
+jcheck "crossfire: envi check stays clean" 'd["score"] == 0' paste 'envi check'
+jcheck "crossfire: pelvis stays clean" 'd["score"] == 0' paste 'pelvis -x'
+jcheck "crossfire: snx hits own class only" 'd["score"] == 45 and d["classes"] == ["esxi/msc-cpl/macos/fastlane/disk-quota/init-log/fw primitive"]' paste 'snx connect'
+jcheck "crossfire: genuine nix run still fires" 'd["score"] == 45' paste 'nix run'
+jcheck "crossfire: genuine uv run still fires" 'd["score"] == 45' paste 'uv run x'
+jcheck "crossfire: genuine rye add still fires" 'd["score"] == 45' paste 'rye add x'
+jcheck "crossfire: genuine just still fires" 'd["score"] == 45' paste 'just -f recipe'
+jcheck "crossfire: genuine mage still fires" 'd["score"] == 45' paste 'mage -l'
+jcheck "crossfire: genuine v run still fires" 'd["score"] == 45' paste 'v run x'
+jcheck "crossfire: genuine nvi still fires" 'd["score"] == 45' paste 'nvi file'
+jcheck "crossfire: genuine vis still fires" 'd["score"] == 45' paste 'vis -x'
+
 # P8 (also:) overflow guard: 5 hits with 105-141-char labels must not
 # smash extra[192] — cycle-439 fixed a would-be-length advance that
 # underflowed the snprintf size (ASan stack-buffer-overflow).

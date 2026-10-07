@@ -6522,7 +6522,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " tool") ||
               ci_contains(text, " publish") ||
               ci_contains(text, "x"))) ||
-            (ci_contains(text, "rye") &&
+            (ci_contains(text, "rye") && !ci_contains(text, "dryer") &&
              (ci_contains(text, " add ") ||
               ci_contains(text, " remove ") ||
               ci_contains(text, " sync ") ||
@@ -8701,7 +8701,8 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "nix-channel") || ci_contains(text, "nix-build") ||
              ci_contains(text, "nix-instantiate") || ci_contains(text, "nix-store") ||
              ci_contains(text, "nix-copy")) ||
-            (ci_contains(text, "nix") &&
+            (ci_contains(text, "nix") && !ci_contains(text, "unix") &&
+             !ci_contains(text, "phoenix") &&
              (ci_contains(text, " run") || ci_contains(text, " shell") ||
               ci_contains(text, " profile") ||
               ci_contains(text, " store") || ci_contains(text, " gc") ||
@@ -8710,7 +8711,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " flake archive") ||
               ci_contains(text, " eval") || ci_contains(text, " bundle") ||
               ci_contains(text, " copy"))) ||
-            (ci_contains(text, "uv") &&
+            (ci_contains(text, "uv") && !ci_contains(text, "luv") &&
              (ci_contains(text, " run") || ci_contains(text, " tool") ||
               ci_contains(text, " pip") || ci_contains(text, " sync") ||
               ci_contains(text, " add") || ci_contains(text, " remove") ||
@@ -8843,7 +8844,8 @@ hlse_check_paste(const char *text) {
             (ci_contains(text, "odin") &&
              (ci_contains(text, " run") || ci_contains(text, " build") ||
               ci_contains(text, " check"))) ||
-            (ci_contains(text, "v run") || ci_contains(text, "v -o") ||
+            (ci_contains(text, "v run") && !ci_contains(text, "luv")) ||
+            (ci_contains(text, "v -o") ||
              ci_contains(text, "v build") || ci_contains(text, "hare run") ||
              ci_contains(text, "hare build")) ||
             ci_contains(text, "tsx") || ci_contains(text, "ts-node") ||
@@ -11292,7 +11294,8 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "kak ") && ci_contains(text, " -")) ||
              (ci_contains(text, "vis ") && ci_contains(text, " -") &&
               !ci_contains(text, "visit") && !ci_contains(text, "vision") &&
-              !ci_contains(text, "visible") && !ci_contains(text, "trav")) ||
+              !ci_contains(text, "visible") && !ci_contains(text, "trav") &&
+              !ci_contains(text, "pelvis")) ||
              ci_contains(text, "bpython") || ci_contains(text, "ptpython") ||
              ci_contains(text, "jupytext")) {
         PASTE_WHAT("bench/distcompile/re/dbg/ide/repl primitive");
@@ -12838,13 +12841,16 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "flipdiff") || ci_contains(text, "rediff") ||
              ci_contains(text, "rbt") || ci_contains(text, "reviewdog") ||
              (ci_contains(text, "nx ") && !ci_contains(text, "sphinx") && !ci_contains(text, "minx") && !ci_contains(text, "nginx") &&
-              !ci_contains(text, "lynx") && !ci_contains(text, "manx")) ||
+              !ci_contains(text, "lynx") && !ci_contains(text, "manx") &&
+              !ci_contains(text, "snx") && !ci_contains(text, "phalanx") &&
+              !ci_contains(text, "jinx") && !ci_contains(text, "pinx")) ||
              (ci_contains(text, "turbo") && ci_contains(text, " -")) ||
              (ci_contains(text, "redo") && ci_contains(text, " -")) ||
              (ci_contains(text, "tup ") && !ci_contains(text, "setup") && !ci_contains(text, "startup")) ||
              ci_contains(text, "samu") || ci_contains(text, "kati") ||
-             (ci_contains(text, "just") && ci_contains(text, " -")) ||
-             (ci_contains(text, "mage") && !ci_contains(text, "image") && !ci_contains(text, "damage"))) {
+             (ci_contains(text, "just") && !ci_contains(text, "adjust") && ci_contains(text, " -")) ||
+             (ci_contains(text, "mage") && !ci_contains(text, "image") && !ci_contains(text, "damage") &&
+              !ci_contains(text, "magenta"))) {
         PASTE_WHAT("altvcs/patch/review/monorepo/build/task primitive");
         }
         if (
@@ -14874,8 +14880,8 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "epsilon") && ci_contains(text, " -")) ||
              (ci_contains(text, "lava") && ci_contains(text, " -")) ||
              ci_contains(text, "kak") ||
-             ci_contains(text, "nvi ") ||
-             (ci_contains(text, "elvis") && ci_contains(text, " -")) ||
+             (ci_contains(text, "nvi ") && !ci_contains(text, "envi")) ||
+             (ci_contains(text, "elvis") && !ci_contains(text, "pelvis") && ci_contains(text, " -")) ||
              (ci_contains(text, "vile") && ci_contains(text, " -")) ||
              ci_contains(text, "neatvi") || ci_contains(text, "visurf") ||
              ci_contains(text, "coedit") || ci_contains(text, "e3em") ||
