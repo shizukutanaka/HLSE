@@ -481,7 +481,7 @@ jcheck "crossfire: genuine vis still fires" 'd["score"] == 45' paste 'vis -x'
 jcheck "tok: mid-word nix inside unix stays clean" 'd["score"] == 0' paste 'unix shell'
 jcheck "tok: suffix-family nvim -c fires via vim" 'd["score"] == 55' paste 'nvim -c cmd'
 jcheck "tok: suffix-family autossh -R fires via ssh" 'd["score"] == 55' paste 'autossh -R 1:x'
-jcheck "tok: suffix-family pnpm install fires via npm" 'd["score"] == 45' paste 'pnpm install x'
+jcheck "tok: bare pnpm install benign like apt/pip" 'd["score"] == 0' paste 'pnpm install x'
 jcheck "tok: prefix-family nixos-rebuild fires via ebuild" 'd["score"] == 45' paste 'nixos-rebuild switch'
 jcheck "tok: mid-word erasure pause inside unpause fires" 'd["score"] == 45' paste 'fly unpause x'
 jcheck "tok: exclusion substring scope kept (dmsetup)" 'd["score"] == 0' paste 'dmsetup info'
@@ -663,6 +663,55 @@ jcheck "P8 (also:) long-label multi-hit still displays" '"(also:" in str(d)' pas
 jcheck "P8 JSON classes[] lists every matched class" "'\"classes\":[\"PowerShell hidden/encoded/download-execute\",\"mshta remote/script execution\",\"certutil download/decode (LOLBin)\",\"wmic process creation (LOLBin)\"' in s" paste 'powershell -enc XX && certutil -urlcache http://x && mshta http://y && wmic os get'
 jcheck "P8 classes[] absent on clean input" "not ('\"classes\"' in s)" paste 'hello world'
 jcheck "P8 classes_total reports true count beyond cap" "'\"classes_total\":12' in s" paste 'powershell -enc XX && certutil -urlcache http://x && mshta http://y && wmic os get && windbg -c x && kubeless deploy && orekit && komga && tunerstudio'
+
+# ─── cycle-489: P12d heredoc arm + eval-flag parity + fused-needle tok ──
+# heredoc-adjacent: <interp> <<EOF — body is the program (P12d)
+for c in "sh <<EOF" "bash <<EOF" "python3 - <<EOF" "perl <<EOF" "ruby <<EOF" \
+    "node <<EOF" "php <<EOF" "lua <<EOF" "julia <<EOF" "zsh <<EOF"; do
+    jcheck "heredoc: $c → P12d" 'd["score"] == 45 and "P12d" in str(d["reasons"])' paste "$c"
+done
+# arg-taking heredoc interpreters (name + << anywhere)
+for c in "ssh host <<EOF" "mysql db <<EOF" "psql -U x db <<EOF" \
+    "sqlite3 db <<EOF" "expect <<EOF" "redis-cli <<EOF"; do
+    jcheck "heredoc-named: $c → P12d" 'd["score"] == 45 and "P12d" in str(d["reasons"])' paste "$c"
+done
+# named interp + heredoc compounds with the name's own tier
+jcheck "heredoc: rscript - << compound" 'd["score"] == 90' paste "rscript - <<EOF"
+jcheck "heredoc: tclsh << compound" 'd["score"] == 90' paste "tclsh <<EOF"
+# boundary: script-file args, cat/echo heredoc, mid-token names stay clean
+for c in "sh script.sh" "cat <<EOF" "echo <<EOF" "wish <<EOF" "crash <<EOF"; do
+    jcheck "heredoc FP: $c clean" 'd["score"] == 0 and d["reasons"] == []' paste "$c"
+done
+# eval flags on common runtimes: P5 +30 (python2 -c joins DECODERS)
+for c in "python -c x" "perl -e x" "node -e x" "python3 -c x" "python2 -c x"; do
+    jcheck "evalflag: $c → 30" 'd["score"] == 30 and "P5" in str(d["reasons"])' paste "$c"
+done
+# rare-runtime eval flag = P8 +45 (bare name too common to flag alone)
+for c in "r -e foo" "deno eval x" "bun -e x" "bun --eval x" "nim e x" \
+    "crystal eval x" "octave --eval x" "the r -e"; do
+    jcheck "evalflag: $c → 45" 'd["score"] == 45' paste "$c"
+done
+# eval shapes already covered by existing arms stay at their tier
+for c in "lua -e x" "luajit -e x"; do
+    jcheck "evalflag: $c → 55" 'd["score"] == 55' paste "$c"
+done
+for c in "rscript -e foo" "guile -c x" "expect -c x" "racket -e x" \
+    "julia -e x" "node --eval x" "nodejs -e x" "tclsh -e x" "ghci -e x" \
+    "janet -e x" "janet -c x" "fennel -e x" "fennel --eval x" "bb -e x"; do
+    jcheck "evalflag: $c → 45" 'd["score"] == 45' paste "$c"
+done
+jcheck "evalflag: ruby -e compound → 75" 'd["score"] == 75' paste "ruby -e x"
+# fused-needle tok conversion: inside-word matches no longer fire
+for c in "number -e" "composer -e" "for -e" "bar -e" "superscript -e" \
+    "sharp -s x" "index -c" "model /s" "hoard /s" "shh" \
+    'desc \x' "reroute add 1.2.3.4" "docker -e FOO=x run img"; do
+    jcheck "tok FP: $c clean" 'd["score"] == 0 and d["reasons"] == []' paste "$c"
+done
+# do shell script tok: 'sudo' word no longer cross-fires the osascript arm
+jcheck "tok: 'sudo shell script' P4 only" 'd["score"] == 15' paste "sudo shell script"
+# intended detections unchanged after the sweep
+jcheck "tok: go run/build still fire" 'd["score"] == 45' paste "go run x"
+jcheck "tok: cred-path mention still fires P10" 'd["score"] == 40' paste "concat /etc/passwd"
 
 # secret findings[] carry a 1-based line number (SIEM/remediation locus)
 printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | jcheck "secret finding reports correct line number" "'\"line\":4' in s" secret --stdin

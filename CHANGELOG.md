@@ -4,6 +4,58 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-489)
+- **P12d heredoc arm (+45)** — `sh <<EOF`, `bash -s <<EOF`,
+  `python3 - <<EOF`, `ssh host <<EOF` … an inline script fed to
+  an interpreter via heredoc is the same string-injection shape
+  as `echo x|sh` yet scored **0** (pipe arm requires a literal
+  `|`). `PASTE_HEREDOC_ADJ` covers interpreter-adjacent `<<`
+  (27 needles: shells + scripting runtimes), `PASTE_HEREDOC_NAMED`
+  covers named tools whose `<<` carries payload
+  (ssh/autossh/expect/tclsh/mysql/psql/sqlite3/mongo/redis-cli/
+  osascript). Tok-matched: `wish <<EOF`, `crash <<EOF`,
+  `cat <<EOF` (writer, not interpreter), `sh script.sh` stay
+  clean; `/bin/sh <<EOF` still fires ('s' preceded by '/').
+  Compounds reach 90 (e.g. `rscript - <<EOF` name-tier+P12d).
+- **Eval-flag gap completion (+45)** — `PASTE_EVAL_TOK` (8
+  needles) covers the runtime+flag shapes that lost their
+  disambiguating qual in class arms: `r -e`, `deno eval`,
+  `bun -e`/`--eval`, `octave --eval`, `nim e`,
+  `crystal eval`, `ruby -e` (compounds to 75 with the
+  PASTE_DECODERS hit). The bare name is too common to flag
+  alone, so the flag is the detection qualifier — same +45
+  tier as the interp-exec class. Already-covered shapes
+  keep their arms: `lua -e`/`luajit -e` = 55 (lua arm's
+  ` -e ` qual restored), julia/racket/guile via the generic
+  ` -` qual arms, ghci/janet/fennel/bb via the
+  `(names) && (-e|-c)` arm, `python2 -c` joins
+  PASTE_DECODERS at +30 (parity with python -c/python3 -c).
+  `gawk -e` is not a real flag and `osascript -e` stays
+  pinned benign — both remain clean.
+
+### Fixed (cycle-489)
+- **Fused-needle cross-fire sweep (~205 sites)**: needles of
+  the form `firstword≤3chars + space/symbol` (e.g. `arp `,
+  `nc `, `dd `, `go run `, `node -e`, `python -c`, `ex -c`)
+  still used plain `ci_contains` after cycle-482 and fired
+  inside longer words — `cargo run`, `number -e`,
+  `composer -e`, `sharp -s`, `index -c`, `model /s`,
+  `hoard /s`, `shh`, `desc \x`, `reroute add`, `docker -e`
+  all produced real FPs. All converted to `ci_contains_tok`;
+  `hay_any_tok` now also gates PASTE_PRIV_ESC /
+  PASTE_FETCH_TOOLS / PASTE_DOWNLOADERS. The stale `r -e`
+  plain needle and the `!cargo` guard removed. Two intended
+  detections pinned in-suite: `sudo shell script` = 15 (P4),
+  `go run x` = 45 / `concat /etc/passwd` = 40. Restored the
+  Rust-toolchain 45-tier explicitly — `cargo install/run/
+  build/test` had been flagged only via `go *` cross-fire
+  (now tok-rejected); explicit tok needles added next to the
+  `go` entries in the build-tool class.
+- **Case-folded literals**: `pacman -Sw`/`-S -w`/`base64 -D`
+  needles lowercased — `ci_contains_tok` requires lowercase
+  needles (haystack side is lowered; an uppercase needle byte
+  never matches).
+
 ### Added (cycle-488)
 - **P12d: source/drop-then-execute arm (+45)** — the payload
   source is inline or a local file instead of a download, the

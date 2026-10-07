@@ -462,9 +462,20 @@ static const char *PASTE_PIPE_SHELLS[] = {
 static const char *PASTE_PRIV_ESC[] = {
     "sudo ", "su -c", "doas ", NULL
 };
+/* script-interpreter inline-eval flags — `-e`/`-c`/`eval`/`--eval`
+ * alone on a scripting runtime is the same obfuscated-code shape as
+ * `base64 -d`: score uniformly at the P5 tier. Compound usage
+ * (interpreter -e + exec verb) still escalates at c235, and shells
+ * keep their own -c tier — the flag alone is not the exec verb.
+ * Token-prefix matched so `docker -e`/`superscript -e`/`bar -e`
+ * cannot cross-fire ('r -e' etc. sit inside longer words).      */
+static const char *PASTE_EVAL_TOK[] = {
+    "r -e", "deno eval", "bun -e", "bun --eval", "octave --eval",
+    "nim e", "crystal eval", "ruby -e", NULL
+};
 static const char *PASTE_DECODERS[] = {
     "base64 -d", "base64 --decode", "python -c", "python3 -c",
-    "perl -e", "ruby -e", "node -e", "php -r", NULL
+    "python2 -c", "perl -e", "ruby -e", "node -e", "php -r", NULL
 };
 static const char *PASTE_DESTRUCT[] = {
     "rm -rf /", "rm -rf ~", "rm -rf $HOME", "rm -fr /", ":(){ :|:",
@@ -563,15 +574,37 @@ static const char *PASTE_FETCH_TOOLS[] = {
     "pip download", "pip3 download", "apt download", "apt-get download",
     "dnf download", "yum download", "zypper download",
     "yumdownloader ", "npm pack ", "pnpm pack ", "yarn pack ",
-    "pacman -Sw", "pacman -S -w", "gem fetch", "cargo fetch",
+    "pacman -sw", "pacman -s -w", "gem fetch", "cargo fetch",
     "go mod download", "brew fetch", "pnpm fetch", "yarn fetch",
-    "base64 -d", "base64 -D", "base64 --decode",
+    "base64 -d", "base64 -d", "base64 --decode",
     "openssl enc", "openssl aes", "gpg -d", "gpg --decrypt",
     "xxd -r", NULL
 };
 static const char *PASTE_EXEC_CHAINS[] = {
     "&& bash", "&& sh", "&& chmod", "&& sudo", "&& ./", "&& /",
     "; bash", "; sh", "; ./", "; chmod", "; sudo", "; /", NULL
+};
+/* <interp> <<EOF — the heredoc body IS the program: the same code
+ * route as `<interp> -c '<payload>'` and `cat <<EOF | sh`, with the
+ * payload absent from the command line entirely. Adjacent form only
+ * (`sh <<`, `python - <<`) so `sh script.sh` stays clean; shells and
+ * script interpreters both. Token-prefix matched so `wish <<`/`crash <<`
+ * cannot fire ('s'/'h' preceded by alnum fails the left boundary). */
+static const char *PASTE_HEREDOC_ADJ[] = {
+    "sh <<", "sh -s <<", "bash <<", "bash -s <<", "dash <<",
+    "ash <<", "zsh <<", "ksh <<", "csh <<", "tcsh <<", "fish <<",
+    "pwsh <<", "powershell <<", "python <<", "python3 <<",
+    "python - <<", "python3 - <<", "perl <<", "ruby <<",
+    "node <<", "nodejs <<", "php <<", "lua <<", "luajit <<",
+    "julia <<", "r - <<", "rscript - <<", NULL
+};
+/* arg-taking remote/RDB/script interpreters — arguments sit between
+ * the name and the heredoc (`ssh h <<EOF`, `mysql db <<EOF`), so the
+ * gate is name-token + `<<` anywhere; their heredoc body is always
+ * the executed payload */
+static const char *PASTE_HEREDOC_NAMED[] = {
+    "ssh", "autossh", "expect", "tclsh", "mysql", "psql",
+    "sqlite3", "mongo", "redis-cli", "osascript", NULL
 };
 /* P12c unpack verbs — extraction materialises the payload the
  * exec chain then runs. Matched with ci_contains_tok (token-prefix)
@@ -652,7 +685,7 @@ static const char *PASTE_ASP_EXEC[] = {
 
 /* P15: decode-then-pipe — the decoder side replaces the download */
 static const char *PASTE_DECODE_BINS[] = {
-    "base64 -d", "base64 -D", "base64 --decode", "enc -d",
+    "base64 -d", "base64 -d", "base64 --decode", "enc -d",
     "openssl enc", "gpg -d", "gpg --decrypt", NULL
 };
 static const char *PASTE_PIPE_INTERP[] = {
@@ -775,7 +808,7 @@ hlse_check_paste(const char *text) {
         /* 'nc' as a bare needle is a substring hazard (inside
          * 'sync', 'zinc', 'func') — token-prefix gate instead;
          * it also covers 'ncat '/'nc ' itself at token start. */
-        int has_curl = hay_any(text, PASTE_DOWNLOADERS) ||
+        int has_curl = hay_any_tok(text, PASTE_DOWNLOADERS) ||
             ci_contains_tok(text, "fetch") ||
             ((ci_contains_tok(text, "nc") || ci_contains_tok(text, "netcat")) &&
              !ci_contains_tok(text, "ncdu") &&
@@ -829,12 +862,28 @@ hlse_check_paste(const char *text) {
     }
 
     /* P4: Sudo / su injection */
-    if (hay_any(text, PASTE_PRIV_ESC)) {
+    if (hay_any_tok(text, PASTE_PRIV_ESC)) {
         v.signals |= PASTE_SUDO_INJECTION;
         v.score += 15;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
             snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
                 "P4: Privilege escalation command (sudo/su/doas)");
+    }
+
+    /* script-interpreter inline-eval flag — `<interp> -e/-c/eval/--eval`
+     * is the detection qualifier for runtimes whose bare name is too
+     * common to flag (r/deno/bun/octave/ghci/janet/fennel/nim/crystal/
+     * bb/nodejs/node/expect/ruby); same +45 tier as the interp-exec
+     * class arms. lua -e / luajit -e stay in the dedicated 55 lua
+     * arm; julia/racket/guile eval shapes are covered by the generic
+     * ` -` qual arms; python2 -c sits in PASTE_DECODERS; gawk has no
+     * -e flag and osascript -e is pinned benign.                     */
+    if (hay_any_tok(text, PASTE_EVAL_TOK)) {
+        v.signals |= PASTE_EVAL_FETCH;
+        v.score += 45;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P8: Script-interpreter inline eval flag");
     }
 
     /* P5: Encoded payloads */
@@ -926,7 +975,7 @@ hlse_check_paste(const char *text) {
           ci_contains(text, "--dco-identify") ||
           ci_contains(text, "--dco-restore") ||
           ci_contains(text, "--trim-sector-ranges"))) ||
-        (ci_contains(text, "mt ") &&
+        (ci_contains_tok(text, "mt ") &&
          (ci_contains(text, " -f") &&
           (ci_contains_tok(text, "erase") || ci_contains(text, "compression"))))) {
         v.signals |= PASTE_DESTRUCTIVE;
@@ -982,7 +1031,7 @@ hlse_check_paste(const char *text) {
      * `wget x; sh s`, `curl x && sudo bash s`. P2 needs a literal
      * `| sh` and P12 needs an eval/source verb; the `&&`/`;` exec
      * chain is the third shape of the same download cradle.       */
-    if ((hay_any(text, PASTE_FETCH_TOOLS) ||
+    if ((hay_any_tok(text, PASTE_FETCH_TOOLS) ||
          ci_contains_tok(text, "fetch") ||
          ((ci_contains_tok(text, "nc") || ci_contains_tok(text, "netcat")) &&
           !ci_contains_tok(text, "ncdu") &&
@@ -1034,7 +1083,10 @@ hlse_check_paste(const char *text) {
          hay_any(text, PASTE_EXEC_CHAINS)) ||
         ((ci_contains_tok(text, "echo") || ci_contains_tok(text, "printf")) &&
          strchr(text, '>') != NULL &&
-         hay_any(text, PASTE_EXEC_CHAINS))) {
+         hay_any(text, PASTE_EXEC_CHAINS)) ||
+        hay_any_tok(text, PASTE_HEREDOC_ADJ) ||
+        (hay_any_tok(text, PASTE_HEREDOC_NAMED) &&
+         ci_contains(text, "<<"))) {
         v.signals |= PASTE_EVAL_FETCH;
         v.score += 45;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -1178,7 +1230,7 @@ hlse_check_paste(const char *text) {
         }
         if (ci_contains_tok(text, "wmic") &&
                    (ci_contains(text, "process call create") ||
-                    ci_contains(text, "os get") )) {
+                    ci_contains_tok(text, "os get") )) {
             PASTE_WHAT_SEV("wmic process creation (LOLBin)", 55);
         }
         if (ci_contains_tok(text, "rundll32") &&
@@ -1188,7 +1240,7 @@ hlse_check_paste(const char *text) {
         if (ci_contains(text, "powershell") &&
                    (ci_contains(text, "invoke-restmethod") ||
                     ci_contains(text, "invoke-webrequest") ||
-                    ci_contains(text, "iwr ") || ci_contains(text, "irm ") ||
+                    ci_contains_tok(text, "iwr ") || ci_contains_tok(text, "irm ") ||
                     ci_contains(text, "iwr\t") || ci_contains(text, "irm\t"))) {
             PASTE_WHAT_SEV("PowerShell web download (iwr/irm)", 65);
         }
@@ -1245,7 +1297,7 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT_SEV("ms-appinstaller URI bypass (ClickFix 2025)", 65);
         }
         if (ci_contains(text, "osascript") &&
-                   (ci_contains(text, "do shell script") ||
+                   (ci_contains_tok(text, "do shell script") ||
                     CI_HTTP ||
                     ci_contains(text, "curl ") || ci_contains_tok(text, "bash"))) {
             PASTE_WHAT_SEV("osascript AppleScript shell execution (macOS ClickFix)", 65);
@@ -1310,7 +1362,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, ".dll") || ci_contains(text, ".bat"))) {
             PASTE_WHAT_SEV("download of executable via wget/iwr", 65);
         }
-        if ((ci_contains(text, "iwr ") || ci_contains(text, "irm ") ||
+        if ((ci_contains_tok(text, "iwr ") || ci_contains_tok(text, "irm ") ||
                     ci_contains(text, "iwr\t") || ci_contains(text, "irm\t") ||
                     ci_contains(text, "invoke-webrequest") ||
                     ci_contains(text, "invoke-restmethod")) &&
@@ -1318,13 +1370,13 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "invoke-expression") )) {
             PASTE_WHAT_SEV("PowerShell download-execute cradle (iwr|iex)", 65);
         }
-        if ((ci_contains(text, "pip install") ||
+        if ((ci_contains_tok(text, "pip install") ||
                     ci_contains(text, "pip3 install") ||
                     ci_contains(text, "pipx install") ||
                     ci_contains(text, "npm install") ||
                     ci_contains(text, "pnpm add") ||
                     ci_contains(text, "yarn add ") ||
-                    ci_contains(text, "gem install ")) &&
+                    ci_contains_tok(text, "gem install ")) &&
                    (ci_contains(text, "--index-url") ||
                     ci_contains(text, "--extra-index-url") ||
                     ci_contains(text, "--registry") ||
@@ -1517,11 +1569,11 @@ hlse_check_paste(const char *text) {
          * Control Panel applet; findstr /v "" prints every line —
          * a whole-file read primitive hidden inside a grep      */
         }
-        if (ci_contains(text, "sc create") &&
+        if (ci_contains_tok(text, "sc create") &&
                    (ci_contains_tok(text, "binpath") || ci_contains_tok(text, "obj"))) {
             PASTE_WHAT_SEV("sc service creation (persistence primitive)", 55);
         }
-        if (ci_contains(text, "sc config") &&
+        if (ci_contains_tok(text, "sc config") &&
                    (ci_contains_tok(text, "binpath") || ci_contains_tok(text, "obj"))) {
             PASTE_WHAT_SEV("sc service reconfig (persistence primitive)", 55);
         }
@@ -1649,8 +1701,8 @@ hlse_check_paste(const char *text) {
          * SilentProcessExit/Winlogon shell) is the classic
          * registry-persistence write                             */
         }
-        if ((ci_contains(text, "reg add") ||
-                    ci_contains(text, "reg.exe add")) &&
+        if ((ci_contains_tok(text, "reg add") ||
+                    ci_contains_tok(text, "reg.exe add")) &&
                    (ci_contains(text, "currentversion\\run") ||
                     ci_contains(text, "image file execution") ||
                     ci_contains(text, "silentprocessexit") ||
@@ -1704,17 +1756,17 @@ hlse_check_paste(const char *text) {
          * loads unsigned DLLs, desktopimgdownldr/wlrmdr fetch
          * and schedule exec (all LOLBAS)                          */
         }
-        if ((ci_contains(text, "csc ") || ci_contains(text, "csc.exe")) &&
+        if ((ci_contains_tok(text, "csc ") || ci_contains_tok(text, "csc.exe")) &&
                    (ci_contains(text, ".cs") || ci_contains(text, "/out") ||
                     ci_contains(text, "/t:") || ci_contains(text, "/target"))) {
             PASTE_WHAT_SEV("csc on-host compile (LOLBin)", 55);
         }
-        if ((ci_contains(text, "vbc ") || ci_contains(text, "vbc.exe")) &&
+        if ((ci_contains_tok(text, "vbc ") || ci_contains_tok(text, "vbc.exe")) &&
                    (ci_contains(text, ".vb") || ci_contains(text, "/out") ||
                     ci_contains(text, "/target"))) {
             PASTE_WHAT_SEV("vbc on-host compile (LOLBin)", 55);
         }
-        if ((ci_contains(text, "jsc ") || ci_contains(text, "jsc.exe")) &&
+        if ((ci_contains_tok(text, "jsc ") || ci_contains_tok(text, "jsc.exe")) &&
                    (ci_contains(text, ".js") || ci_contains(text, "/out"))) {
             PASTE_WHAT_SEV("jsc on-host compile (LOLBin)", 55);
         }
@@ -1775,7 +1827,7 @@ hlse_check_paste(const char *text) {
          * hive dump, the CLI-native credential-theft primitive
          * (regedit /e was already covered)                        */
         }
-        if ((ci_contains(text, "reg ") || ci_contains(text, "reg.exe")) &&
+        if ((ci_contains_tok(text, "reg ") || ci_contains_tok(text, "reg.exe")) &&
                    ci_contains_tok(text, "save") &&
                    (ci_contains(text, "\\sam") ||
                     ci_contains(text, "\\security") ||
@@ -1784,8 +1836,8 @@ hlse_check_paste(const char *text) {
         /* AV/EDR service kill — sc/net/taskkill targeting security
          * products by service or process name                    */
         }
-        if ((ci_contains(text, "sc ") || ci_contains(text, "sc.exe") ||
-                    ci_contains(text, "net ") || ci_contains(text, "net1 ") ||
+        if ((ci_contains_tok(text, "sc ") || ci_contains_tok(text, "sc.exe") ||
+                    ci_contains_tok(text, "net ") || ci_contains_tok(text, "net1 ") ||
                     ci_contains_tok(text, "taskkill") || ci_contains_tok(text, "tskill")) &&
                    (ci_contains_tok(text, "stop") || ci_contains_tok(text, "delete") ||
                     ci_contains_tok(text, "config") || ci_contains(text, "/f") ||
@@ -1857,10 +1909,10 @@ hlse_check_paste(const char *text) {
         if (ci_contains_tok(text, "tscon") && ci_contains(text, "/dest")) {
             PASTE_WHAT_SEV("tscon session hijack (LOLBin)", 55);
         }
-        if (ci_contains(text, "arp ") && ci_contains(text, "-s ")) {
+        if (ci_contains_tok(text, "arp ") && ci_contains(text, "-s ")) {
             PASTE_WHAT_SEV("arp static-poison entry (LOLBin)", 55);
         }
-        if (ci_contains(text, "sc ") && ci_contains_tok(text, "sdset") &&
+        if (ci_contains_tok(text, "sc ") && ci_contains_tok(text, "sdset") &&
                    ci_contains(text, "d:")) {
             PASTE_WHAT_SEV("sc sdset SDDL tamper (LOLBin)", 55);
         /* ── Unix-side post-compromise primitives ──────────────
@@ -1993,7 +2045,7 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT("ptrace process attach");
         }
         if (ci_contains_tok(text, "openssl") &&
-                   (ci_contains(text, "s_client") || ci_contains(text, "enc -d"))) {
+                   (ci_contains_tok(text, "s_client") || ci_contains_tok(text, "enc -d"))) {
             PASTE_WHAT("openssl TLS/decrypt channel");
         }
         if (ci_contains_tok(text, "awk") && ci_contains(text, "system(")) {
@@ -2171,11 +2223,11 @@ hlse_check_paste(const char *text) {
         }
         if ((ci_contains(text, "vim") || ci_contains(text, " vi ") ||
                     ci_contains(text, " ex ") || ci_contains(text, "vi -c") ||
-                    ci_contains(text, "ex -c")) &&
+                    ci_contains_tok(text, "ex -c")) &&
                    (ci_contains(text, "-c ") || ci_contains(text, "--cmd"))) {
             PASTE_WHAT_SEV("vi/ex -c command exec", 55);
         }
-        if (ci_contains(text, "man ") && ci_contains(text, "-p ")) {
+        if (ci_contains_tok(text, "man ") && ci_contains(text, "-p ")) {
             PASTE_WHAT_SEV("man -P pager exec", 55);
         }
         if (ci_contains_tok(text, "expect") && ci_contains_tok(text, "spawn")) {
@@ -2278,7 +2330,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, ">"))) {
             PASTE_WHAT_SEV("ip_forward pivot enable", 55);
         }
-        if ((ci_contains(text, "ip route") || ci_contains(text, "route ")) &&
+        if ((ci_contains(text, "ip route") || ci_contains_tok(text, "route ")) &&
                    (ci_contains(text, " add") || ci_contains(text, " replace"))) {
             PASTE_WHAT_SEV("route add pivot", 55);
         }
@@ -2314,7 +2366,7 @@ hlse_check_paste(const char *text) {
                    ci_contains_tok(text, "smbexec") || ci_contains_tok(text, "wmiexec") ||
                    ci_contains_tok(text, "atexec") || ci_contains_tok(text, "dcomexec") ||
                    ci_contains(text, "crackmapexec") || ci_contains_tok(text, "netexec") ||
-                   ci_contains(text, "nxc ") ||
+                   ci_contains_tok(text, "nxc ") ||
                    (ci_contains(text, "bloodhound") &&
                     (ci_contains(text, ".py") || ci_contains_tok(text, "python") ||
                      ci_contains(text, " -")))) {
@@ -2397,7 +2449,7 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, " copy") || ci_contains(text, " sync"))) {
             PASTE_WHAT_SEV("azcopy cloud exfil", 55);
         }
-        if (ci_contains(text, "az ") &&
+        if (ci_contains_tok(text, "az ") &&
                    (ci_contains(text, "run-command") ||
                     (ci_contains_tok(text, "storage") &&
                      (ci_contains_tok(text, "upload") || ci_contains_tok(text, "download") ||
@@ -2459,7 +2511,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, ".tar") || ci_contains(text, ".zip"))) {
             PASTE_WHAT_SEV("npm-family remote package install", 55);
         }
-        if ((ci_contains(text, "pip ") || ci_contains_tok(text, "pip3") ||
+        if ((ci_contains_tok(text, "pip ") || ci_contains_tok(text, "pip3") ||
                     ci_contains_tok(text, "pipx") || ci_contains(text, "poetry add ") ||
                     ci_contains(text, "poetry install ")) &&
                    (ci_contains(text, " install ") || ci_contains(text, " add ") ||
@@ -2471,9 +2523,9 @@ hlse_check_paste(const char *text) {
         }
         if ((ci_contains_tok(text, "uvx") &&
                     CI_HTTP) ||
-                   (ci_contains(text, "gem install ") &&
+                   (ci_contains_tok(text, "gem install ") &&
                     (CI_HTTP || ci_contains(text, ".gem"))) ||
-                   (ci_contains(text, "cargo install ") &&
+                   (ci_contains_tok(text, "cargo install ") &&
                     (ci_contains(text, "--git") || CI_HTTP ||
                      ci_contains(text, "--path"))) ||
                    (ci_contains_tok(text, "composer") &&
@@ -2620,13 +2672,13 @@ hlse_check_paste(const char *text) {
         /* ── c235: interpreter -e+exec-verb / npx-URL / git upload-pack /
          * exec -a / setcap+setfacl / netns+setpriv / misc ── */
         }
-        if ((ci_contains(text, "node -e") || ci_contains(text, "nodejs -e") ||
-                    ci_contains(text, "node --eval") || ci_contains(text, "python -c") ||
-                    ci_contains(text, "python2 -c") || ci_contains(text, "python3 -c") ||
-                    ci_contains(text, "perl -e") || ci_contains(text, "ruby -e") ||
-                    ci_contains(text, "php -r") || ci_contains(text, "lua -e") ||
-                    ci_contains(text, "luajit -e") || ci_contains(text, "gawk -e") ||
-                    ci_contains(text, "rscript -e") || ci_contains(text, "pwsh -c")) &&
+        if ((ci_contains_tok(text, "node -e") || ci_contains_tok(text, "nodejs -e") ||
+                    ci_contains_tok(text, "node --eval") || ci_contains_tok(text, "python -c") ||
+                    ci_contains_tok(text, "python2 -c") || ci_contains_tok(text, "python3 -c") ||
+                    ci_contains_tok(text, "perl -e") || ci_contains_tok(text, "ruby -e") ||
+                    ci_contains_tok(text, "php -r") || ci_contains_tok(text, "lua -e") ||
+                    ci_contains_tok(text, "luajit -e") || ci_contains_tok(text, "gawk -e") ||
+                    ci_contains_tok(text, "rscript -e") || ci_contains_tok(text, "pwsh -c")) &&
                    (ci_contains(text, "child_process") || ci_contains(text, "os.system") ||
                     ci_contains(text, "subprocess") || ci_contains(text, "os.popen")  || ci_contains(text, "system(") ||
                     ci_contains(text, "exec(") || ci_contains(text, "popen(") ||
@@ -2641,7 +2693,7 @@ hlse_check_paste(const char *text) {
                    (CI_HTTP || ci_contains(text, "git+"))) {
             PASTE_WHAT_SEV("npx-family remote package exec", 65);
         }
-        if (ci_contains(text, "git clone") &&
+        if (ci_contains_tok(text, "git clone") &&
                    (ci_contains(text, "--upload-pack") || ci_contains(text, " -u "))) {
             PASTE_WHAT_SEV("git clone upload-pack exec", 55);
         }
@@ -2746,9 +2798,9 @@ hlse_check_paste(const char *text) {
         }
         if ((ci_contains_tok(text, "schtasks") &&
                     (ci_contains(text, " /s ") || ci_contains(text, " /s\\"))) ||
-                   ci_contains(text, "sc \\") || ci_contains(text, "sc.exe \\") ||
-                   ci_contains(text, "reg add \\") ||
-                   ci_contains(text, "at \\")) {
+                   ci_contains_tok(text, "sc \\") || ci_contains_tok(text, "sc.exe \\") ||
+                   ci_contains_tok(text, "reg add \\") ||
+                   ci_contains_tok(text, "at \\")) {
             PASTE_WHAT("remote admin primitive (schtasks/sc/reg/at \\host)");
         }
         if (strstr(text, "\\\\") &&
@@ -2868,8 +2920,8 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " e:") || ci_contains(text, " f:") ||
                      ci_contains(text, " /q") || ci_contains(text, " /y"))) ||
                    ci_contains(text, "format.com") ||
-                   ci_contains(text, "del /s") || ci_contains(text, "del /f /s") ||
-                   ci_contains(text, "rmdir /s") || ci_contains(text, "rd /s")) {
+                   ci_contains_tok(text, "del /s") || ci_contains_tok(text, "del /f /s") ||
+                   ci_contains_tok(text, "rmdir /s") || ci_contains_tok(text, "rd /s")) {
             PASTE_WHAT_SEV("format/recursive-delete (Windows destructive)", 55);
         }
         if (ci_contains(text, "attrib ") &&
@@ -2917,7 +2969,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, " -r ") && CI_HTTP) ||
                    (ci_contains_tok(text, "make") && ci_contains(text, " -f ") &&
                     CI_HTTP) ||
-                   ci_contains(text, "at -f ")) {
+                   ci_contains_tok(text, "at -f ")) {
             PASTE_WHAT_SEV("remote recipe/makefile exec", 65);
         /* ── c238: systemctl/service/runlevel control + account mgmt +
          * firewall rule-add + sysctl security keys + kernel-module
@@ -3200,10 +3252,10 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "coredumpctl") &&
                     (ci_contains(text, " dump") || ci_contains(text, " gdb") ||
                      ci_contains(text, " debug"))) ||
-                   ((ci_contains(text, "cat ") || ci_contains(text, "head ") ||
-                     ci_contains(text, "xxd ") || ci_contains(text, "strings ") ||
-                     ci_contains_tok(text, "hexdump") || ci_contains(text, "tail ") ||
-                     ci_contains(text, "od ")) &&
+                   ((ci_contains_tok(text, "cat ") || ci_contains_tok(text, "head ") ||
+                     ci_contains_tok(text, "xxd ") || ci_contains_tok(text, "strings ") ||
+                     ci_contains_tok(text, "hexdump") || ci_contains_tok(text, "tail ") ||
+                     ci_contains_tok(text, "od ")) &&
                     (ci_contains(text, " /dev/mem") ||
                      ci_contains(text, " /dev/kmem") ||
                      ci_contains(text, " /dev/port"))) ||
@@ -3231,10 +3283,10 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "enable-linger"))) {
             PASTE_WHAT("namespace/dbus/systemd exec primitive");
         }
-        if (((ci_contains(text, "nc ") || ci_contains_tok(text, "ncat") ||
+        if (((ci_contains_tok(text, "nc ") || ci_contains_tok(text, "ncat") ||
                      ci_contains_tok(text, "netcat")) && ci_contains(text, " <")) ||
-                   ((ci_contains_tok(text, "tar") || ci_contains(text, "dd ") ||
-                     ci_contains(text, "cat ")) &&
+                   ((ci_contains_tok(text, "tar") || ci_contains_tok(text, "dd ") ||
+                     ci_contains_tok(text, "cat ")) &&
                     (ci_contains(text, "| nc") || ci_contains(text, "|nc") ||
                      ci_contains(text, "| ssh") || ci_contains(text, "|ssh") ||
                      ci_contains(text, "| socat") ||
@@ -3244,7 +3296,7 @@ hlse_check_paste(const char *text) {
                    (ci_contains_tok(text, "openssl") &&
                     ci_contains(text, "s_server")) ||
                    ci_contains_tok(text, "cryptcat") ||
-                   ci_contains(text, "php -s") ||
+                   ci_contains_tok(text, "php -s") ||
                    ci_contains(text, "-m http.server") ||
                    ci_contains(text, "ruby -run") ||
                    ci_contains(text, "darkhttpd") ||
@@ -3305,7 +3357,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, "logouthook") ||
                      ci_contains_tok(text, "autorun"))) ||
                    (ci_contains_tok(text, "hdiutil") && CI_HTTP) ||
-                   ci_contains(text, "do shell script") ||
+                   ci_contains_tok(text, "do shell script") ||
                    (ci_contains_tok(text, "security") &&
                     (ci_contains(text, "authorizationdb") ||
                      ci_contains(text, "set-keychain"))) ||
@@ -3349,7 +3401,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, " /generic")) ||
                    (ci_contains(text, "net group") &&
                     ci_contains(text, " /add")) ||
-                   (ci_contains(text, "sc ") &&
+                   (ci_contains_tok(text, "sc ") &&
                     (ci_contains(text, " failure") ||
                      ci_contains(text, " sdset"))) ||
                    (ci_contains_tok(text, "icacls") &&
@@ -3375,9 +3427,9 @@ hlse_check_paste(const char *text) {
                    ci_contains_tok(text, "nltest") ||
                    (ci_contains_tok(text, "w32tm") &&
                     ci_contains(text, " /config")) ||
-                   (ci_contains(text, "route ") &&
+                   (ci_contains_tok(text, "route ") &&
                     ci_contains(text, " delete")) ||
-                   (ci_contains(text, "reg ") &&
+                   (ci_contains_tok(text, "reg ") &&
                     (ci_contains(text, " save") ||
                      ci_contains(text, " export")) &&
                     (ci_contains_tok(text, "sam") ||
@@ -3433,7 +3485,7 @@ hlse_check_paste(const char *text) {
                    (ci_contains_tok(text, "brctl") &&
                     (ci_contains_tok(text, "addbr") || ci_contains_tok(text, "addif") ||
                      ci_contains_tok(text, "delbr") || ci_contains_tok(text, "delif"))) ||
-                   ((ci_contains(text, "iw ") ||
+                   ((ci_contains_tok(text, "iw ") ||
                      ci_contains_tok(text, "iwconfig")) &&
                     ci_contains_tok(text, "monitor")) ||
                    ci_contains(text, "airmon-ng") ||
@@ -3451,7 +3503,7 @@ hlse_check_paste(const char *text) {
                     (ci_contains_tok(text, "add") || ci_contains_tok(text, "flush") ||
                      ci_contains_tok(text, "delete") || ci_contains_tok(text, "pipe") ||
                      ci_contains_tok(text, "queue"))) ||
-                   (ci_contains(text, "svc ") &&
+                   (ci_contains_tok(text, "svc ") &&
                     ci_contains(text, " -d")) ||
                    (ci_contains_tok(text, "rcctl") &&
                     (ci_contains_tok(text, "stop") || ci_contains_tok(text, "disable") ||
@@ -3533,7 +3585,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, "s3api delete"))) ||
                    (ci_contains_tok(text, "gsutil") &&
                     (ci_contains(text, " rm") || ci_contains(text, " rb"))) ||
-                   (ci_contains(text, "az storage") &&
+                   (ci_contains_tok(text, "az storage") &&
                     (ci_contains(text, " delete") ||
                      ci_contains(text, " remove"))) ||
                    ci_contains_tok(text, "aria2c") || ci_contains_tok(text, "httpie") ||
@@ -3638,16 +3690,16 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " /s"))) ||
                    ci_contains_tok(text, "regini") ||
                    ci_contains(text, "hh.exe") ||
-                   ci_contains(text, "hh ") ||
+                   ci_contains_tok(text, "hh ") ||
                    ci_contains_tok(text, "sdbinst") ||
-                   ((ci_contains(text, "vbc ") ||
-                     ci_contains(text, "vbc.exe") ||
-                     ci_contains(text, "csc ") ||
-                     ci_contains(text, "csc.exe")) &&
+                   ((ci_contains_tok(text, "vbc ") ||
+                     ci_contains_tok(text, "vbc.exe") ||
+                     ci_contains_tok(text, "csc ") ||
+                     ci_contains_tok(text, "csc.exe")) &&
                     (ci_contains(text, " /") || ci_contains(text, "-") ||
                      ci_contains(text, ".cs") || ci_contains(text, ".vb"))) ||
-                   ((ci_contains(text, "jsc ") ||
-                     ci_contains(text, "jsc.exe")) &&
+                   ((ci_contains_tok(text, "jsc ") ||
+                     ci_contains_tok(text, "jsc.exe")) &&
                     (ci_contains(text, " /") || ci_contains(text, "-") ||
                      ci_contains(text, ".js"))) ||
                    (ci_contains_tok(text, "caspol") &&
@@ -3669,7 +3721,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, " -")) ||
                    (ci_contains_tok(text, "pscp") &&
                     ci_contains(text, " -")) ||
-                   ci_contains(text, "net1 ") ||
+                   ci_contains_tok(text, "net1 ") ||
                    (ci_contains_tok(text, "msra") &&
                     (ci_contains(text, "/offerra") ||
                      ci_contains(text, "/saveasfile") ||
@@ -4250,7 +4302,7 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, " uninstall") ||
                      ci_contains(text, " delete") ||
                      ci_contains(text, " rollback"))) ||
-                   (ci_contains(text, "oc ") &&
+                   (ci_contains_tok(text, "oc ") &&
                     (ci_contains(text, " rsh") ||
                      ci_contains(text, " exec") ||
                      ci_contains(text, " debug") ||
@@ -4590,7 +4642,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, "clusters delete") ||
                      ci_contains(text, "deployments delete") ||
                      ci_contains(text, " kms"))) ||
-                   (ci_contains(text, "az ") &&
+                   (ci_contains_tok(text, "az ") &&
                     (ci_contains_tok(text, "keyvault") ||
                      ci_contains(text, "run-command") ||
                      ci_contains_tok(text, "monitor"))) ||
@@ -4909,7 +4961,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " release") ||
                      ci_contains(text, " auth") ||
                      ci_contains(text, " repo delete"))) ||
-                   (ci_contains(text, "fly ") &&
+                   (ci_contains_tok(text, "fly ") &&
                     (ci_contains(text, "set-pipeline") ||
                      ci_contains(text, "destroy-pipeline") ||
                      ci_contains(text, " hijack")  ||
@@ -5523,7 +5575,7 @@ hlse_check_paste(const char *text) {
                    ci_contains_tok(text, "editcap") ||
                    ci_contains_tok(text, "trafgen") ||
                    ci_contains(text, "mausezahn") ||
-                   ci_contains(text, "mz -") ||
+                   ci_contains_tok(text, "mz -") ||
                    ci_contains_tok(text, "nemesis") ||
                    ci_contains(text, "parprouted") ||
                    ci_contains_tok(text, "zarp") ||
@@ -5631,7 +5683,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, " ")) ||
                    (ci_contains_tok(text, "syft") &&
                     ci_contains(text, " ")) ||
-                   (ci_contains(text, "op ") &&
+                   (ci_contains_tok(text, "op ") &&
                     (ci_contains_tok(text, "get") ||
                      ci_contains_tok(text, "inject") ||
                      ci_contains_tok(text, "signin") ||
@@ -5705,7 +5757,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "daemonize ") ||
                    (ci_contains(text, "start-stop-daemon") &&
                     ci_contains(text, " -b")) ||
-                   (ci_contains(text, "sg ") &&
+                   (ci_contains_tok(text, "sg ") &&
                     ci_contains(text, " -c")) ||
                    (ci_contains_tok(text, "newgrp") &&
                     ci_contains(text, " ")) ||
@@ -5831,16 +5883,8 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "openconnect") ||
                    ci_contains(text, "mkfifo /") ||
                    ci_contains_tok(text, "tclsh") ||
-                   (ci_contains_tok(text, "julia") &&
-                    ci_contains(text, " -e")) ||
-                   (ci_contains(text, "r -e") ||
-                    ci_contains(text, "rscript -e")) ||
-                   (ci_contains_tok(text, "octave") &&
-                    ci_contains(text, " --eval")) ||
                    (ci_contains_tok(text, "maxima") &&
                     ci_contains(text, " --batch")) ||
-                   (ci_contains_tok(text, "ghci") &&
-                    ci_contains(text, " -e")) ||
                    ci_contains(text, "runhaskell") ||
                    (ci_contains_tok(text, "fish") &&
                     ci_contains(text, " -c")) ||
@@ -5874,12 +5918,10 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " -windowstyle hidden"))) ||
                    (ci_contains_tok(text, "deno") &&
                     (ci_contains(text, " run ")  ||
-                     ci_contains(text, " eval ") ||
                      ci_contains(text, " task "))) ||
-                   (ci_contains(text, "bun ") &&
+                   (ci_contains_tok(text, "bun ") &&
                     (ci_contains(text, " run") ||
-                     ci_contains(text, " x ") ||
-                     ci_contains(text, " -e"))) ||
+                     ci_contains(text, " x "))) ||
                    ci_contains_tok(text, "bunx") ||
                    (ci_contains_tok(text, "npx") &&
                     ci_contains(text, " ")) ||
@@ -5891,7 +5933,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " exec"))) ||
                    (ci_contains_tok(text, "pipx") &&
                     ci_contains(text, " ")) ||
-                   (ci_contains(text, "go ") &&
+                   (ci_contains_tok(text, "go ") &&
                     (ci_contains(text, " install") ||
                      ci_contains(text, " run"))) ||
                    (ci_contains_tok(text, "composer") &&
@@ -5912,16 +5954,14 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " exec"))) ||
                    (ci_contains_tok(text, "luarocks") &&
                     ci_contains(text, " ")) ||
-                   (ci_contains_tok(text, "julia") &&
-                    ci_contains(text, " -e")) ||
-                   (ci_contains(text, "at ") &&
+                   (ci_contains_tok(text, "at ") &&
                     (ci_contains_tok(text, "now") ||
                      ci_contains(text, " -f"))) ||
                    (ci_contains_tok(text, "batch") &&
                     (ci_contains(text, " <") ||
                      ci_contains(text, " -f"))) ||
                    ci_contains(text, "env -i") ||
-                   (ci_contains(text, "env ") &&
+                   (ci_contains_tok(text, "env ") &&
                     (ci_contains(text, " -i") ||
                      (ci_contains(text, "=") &&
                       (ci_contains(text, " sh") ||
@@ -5941,7 +5981,7 @@ hlse_check_paste(const char *text) {
                        ci_contains(text, "php") ||
                        ci_contains_tok(text, "curl") ||
                        ci_contains_tok(text, "wget") ||
-                       ci_contains(text, "nc ") ||
+                       ci_contains_tok(text, "nc ") ||
                        ci_contains_tok(text, "socat") ||
                        ci_contains(text, " awk") ||
                        ci_contains_tok(text, "base64")))))) {
@@ -6015,7 +6055,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " rm") ||
               ci_contains(text, " mb") ||
               ci_contains(text, " rb"))) ||
-            (ci_contains(text, "mc ") &&
+            (ci_contains_tok(text, "mc ") &&
              (ci_contains(text, " cp") ||
               ci_contains(text, " mv") ||
               ci_contains(text, " rm") ||
@@ -6237,7 +6277,7 @@ hlse_check_paste(const char *text) {
             ci_contains_tok(text, "toutatis") ||
             ci_contains(text, "instaloader") ||
             ci_contains(text, "osintgram") ||
-            ci_contains(text, "git-dumper") ||
+            ci_contains_tok(text, "git-dumper") ||
             ci_contains(text, "gitgraber") ||
             ci_contains(text, "dvcs-ripper") ||
             ci_contains(text, "uro ") ||
@@ -6645,7 +6685,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " --depclean") ||
               ci_contains(text, " -c") ||
               ci_contains(text, " --sync"))) ||
-            (ci_contains(text, "pkg ") &&
+            (ci_contains_tok(text, "pkg ") &&
              (ci_contains(text, " install ") ||
               ci_contains(text, " delete ") ||
               ci_contains(text, " remove "))) ||
@@ -6666,7 +6706,7 @@ hlse_check_paste(const char *text) {
             (ci_contains_tok(text, "port") &&
              (ci_contains(text, " install ") ||
               ci_contains(text, " uninstall "))) ||
-            (ci_contains(text, "uv ") &&
+            (ci_contains_tok(text, "uv ") &&
              (ci_contains(text, " pip") ||
               ci_contains(text, " tool") ||
               ci_contains(text, " publish") ||
@@ -6744,7 +6784,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "escript ") ||
             (ci_contains_tok(text, "groovy") && ci_contains(text, " -")) ||
             ci_contains(text, "dart run ") ||
-            ci_contains(text, "zig run ") ||
+            ci_contains_tok(text, "zig run ") ||
             ci_contains(text, "crystal run ") ||
             ci_contains_tok(text, "sbcl") ||
             (ci_contains_tok(text, "newlisp") && ci_contains(text, " -")) ||
@@ -6771,7 +6811,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, " -e") || ci_contains(text, " -f") ||
               ci_contains(text, " -nwni"))) ||
             (ci_contains(text, "gp ") && ci_contains(text, " -")) ||
-            (ci_contains(text, "gap ") && ci_contains(text, " -")) ||
+            (ci_contains_tok(text, "gap ") && ci_contains(text, " -")) ||
             /* sysinternals recon/kill/cred suite */
             ci_contains(text, "pssuspend") ||
             ci_contains_tok(text, "psping") ||
@@ -7155,7 +7195,7 @@ hlse_check_paste(const char *text) {
             ci_contains_tok(text, "pescan") ||
             ci_contains_tok(text, "portex") ||
             ci_contains(text, "pe-bear") ||
-            (ci_contains(text, "die ") && ci_contains(text, " -")) ||
+            (ci_contains_tok(text, "die ") && ci_contains(text, " -")) ||
             ci_contains_tok(text, "diec") ||
             ci_contains_tok(text, "exeinfo") ||
             (ci_contains_tok(text, "trid") && !ci_contains(text, "strid")) ||
@@ -7426,10 +7466,10 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " export") || ci_contains(text, " pull") ||
               ci_contains(text, " push"))) ||
             (ci_contains_tok(text, "fossil") && ci_contains(text, " -")) ||
-            ci_contains(text, "git-annex") ||
-            ci_contains(text, "git-filter-repo") ||
+            ci_contains_tok(text, "git-annex") ||
+            ci_contains_tok(text, "git-filter-repo") ||
             ci_contains_tok(text, "bfg") ||
-            ci_contains(text, "git-hound") ||
+            ci_contains_tok(text, "git-hound") ||
             (ci_contains_tok(text, "sapling") && ci_contains(text, " -")) ||
             (ci_contains_tok(text, "jj") &&
              (ci_contains(text, " git ") || ci_contains(text, " checkout") ||
@@ -7510,7 +7550,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " tunnel service") ||
               ci_contains(text, " tunnel unregister")  || ci_contains(text, " tunnel -"))) ||
             (ci_contains_tok(text, "cursor") && ci_contains(text, " tunnel")) ||
-            (ci_contains(text, "zed ") && ci_contains(text, " -")) ||
+            (ci_contains_tok(text, "zed ") && ci_contains(text, " -")) ||
             ci_contains(text, "faketime") ||
             ci_contains(text, "datefudge")  ||
             /* file-sync/exfil upload clis */
@@ -7710,61 +7750,61 @@ hlse_check_paste(const char *text) {
               ci_contains(text, "--same-dir") || ci_contains(text, "--wait") ||
               ci_contains(text, " -e "))) ||
             /* traffic-control + ethtool + ip extras */
-            ci_contains(text, "tc qdisc add") ||
-            ci_contains(text, "tc qdisc del") ||
-            ci_contains(text, "tc qdisc change") ||
-            ci_contains(text, "tc qdisc replace") ||
-            ci_contains(text, "tc filter add") ||
-            ci_contains(text, "tc filter del") ||
-            ci_contains(text, "tc filter change") ||
-            ci_contains(text, "tc filter replace") ||
-            ci_contains(text, "tc class add") ||
-            ci_contains(text, "tc class del") ||
-            ci_contains(text, "tc class change") ||
-            ci_contains(text, "tc class replace") ||
-            ci_contains(text, "tc action") ||
+            ci_contains_tok(text, "tc qdisc add") ||
+            ci_contains_tok(text, "tc qdisc del") ||
+            ci_contains_tok(text, "tc qdisc change") ||
+            ci_contains_tok(text, "tc qdisc replace") ||
+            ci_contains_tok(text, "tc filter add") ||
+            ci_contains_tok(text, "tc filter del") ||
+            ci_contains_tok(text, "tc filter change") ||
+            ci_contains_tok(text, "tc filter replace") ||
+            ci_contains_tok(text, "tc class add") ||
+            ci_contains_tok(text, "tc class del") ||
+            ci_contains_tok(text, "tc class change") ||
+            ci_contains_tok(text, "tc class replace") ||
+            ci_contains_tok(text, "tc action") ||
             (ci_contains_tok(text, "ethtool") &&
              (ci_contains(text, " -k") || ci_contains(text, " --set"))) ||
             ci_contains(text, "ip maddress") ||
             ci_contains(text, "ip mroute") ||
             ci_contains(text, "ip vrf") ||
             /* git destructive / config-poison forms */
-            (ci_contains(text, "git push") &&
+            (ci_contains_tok(text, "git push") &&
              (ci_contains(text, " -f") || ci_contains(text, " --force") ||
               ci_contains(text, " --delete"))) ||
-            (ci_contains(text, "git branch") && ci_contains(text, " -d")) ||
-            (ci_contains(text, "git tag") && ci_contains(text, " -d")) ||
-            (ci_contains(text, "git rm") &&
+            (ci_contains_tok(text, "git branch") && ci_contains(text, " -d")) ||
+            (ci_contains_tok(text, "git tag") && ci_contains(text, " -d")) ||
+            (ci_contains_tok(text, "git rm") &&
              (ci_contains(text, " --cached") || ci_contains(text, " -r"))) ||
-            (ci_contains(text, "git update-index") &&
+            (ci_contains_tok(text, "git update-index") &&
              (ci_contains(text, " --assume") ||
               ci_contains(text, " --skip-worktree"))) ||
-            ci_contains(text, "git filter-") ||
-            (ci_contains(text, "git gc") && ci_contains(text, " --prune")) ||
-            (ci_contains(text, "git reflog") &&
+            ci_contains_tok(text, "git filter-") ||
+            (ci_contains_tok(text, "git gc") && ci_contains(text, " --prune")) ||
+            (ci_contains_tok(text, "git reflog") &&
              (ci_contains(text, " expire") || ci_contains(text, " delete"))) ||
-            (ci_contains(text, "git stash") &&
+            (ci_contains_tok(text, "git stash") &&
              (ci_contains(text, " drop") || ci_contains(text, " clear"))) ||
-            (ci_contains(text, "git clean") &&
+            (ci_contains_tok(text, "git clean") &&
              (ci_contains(text, " -f") || ci_contains(text, " -x") ||
               ci_contains(text, " -d"))) ||
-            (ci_contains(text, "git reset") && ci_contains(text, " --hard")) ||
-            (ci_contains(text, "git checkout") && ci_contains(text, " -- ")) ||
-            (ci_contains(text, "git remote") &&
+            (ci_contains_tok(text, "git reset") && ci_contains(text, " --hard")) ||
+            (ci_contains_tok(text, "git checkout") && ci_contains(text, " -- ")) ||
+            (ci_contains_tok(text, "git remote") &&
              (ci_contains(text, " set-url") || ci_contains(text, " add") ||
               ci_contains(text, " remove"))) ||
-            (ci_contains(text, "git config") &&
+            (ci_contains_tok(text, "git config") &&
              (ci_contains(text, " alias.") || ci_contains(text, " core.pager") ||
               ci_contains(text, " core.editor") || ci_contains(text, " core.hook") ||
               ci_contains(text, " include.") || ci_contains(text, " credential."))) ||
-            (ci_contains(text, "git submodule") &&
+            (ci_contains_tok(text, "git submodule") &&
              (ci_contains(text, " update") || ci_contains(text, " add"))) ||
-            (ci_contains(text, "git clone") &&
+            (ci_contains_tok(text, "git clone") &&
              (ci_contains(text, " -u ") || ci_contains(text, " --upload") ||
               ci_contains(text, " --template"))) ||
-            (ci_contains(text, "git bundle") && ci_contains(text, " create")) ||
-            (ci_contains(text, "git archive") && ci_contains(text, " --remote")) ||
-            (ci_contains(text, "git format-patch") &&
+            (ci_contains_tok(text, "git bundle") && ci_contains(text, " create")) ||
+            (ci_contains_tok(text, "git archive") && ci_contains(text, " --remote")) ||
+            (ci_contains_tok(text, "git format-patch") &&
              (ci_contains(text, " --stdout") || ci_contains(text, " -o"))) ||
             /* editor/exec/decode helpers */
             (ci_contains_tok(text, "nano") && ci_contains(text, " -s")) ||
@@ -7990,10 +8030,10 @@ hlse_check_paste(const char *text) {
         }
         if (
             /* interpreter / REPL inline-exec and editor escapes */
-            ci_contains(text, "nodejs -e") || ci_contains(text, "nodejs --eval") ||
+            ci_contains_tok(text, "nodejs -e") || ci_contains(text, "nodejs --eval") ||
             (ci_contains_tok(text, "irb") &&
              (ci_contains(text, " -e") || ci_contains(text, " -r"))) ||
-            ci_contains(text, "php -a") || ci_contains_tok(text, "groovysh") ||
+            ci_contains_tok(text, "php -a") || ci_contains_tok(text, "groovysh") ||
             ci_contains_tok(text, "nashorn") ||
             (ci_contains_tok(text, "scala") && ci_contains(text, " -e")) ||
             (ci_contains_tok(text, "clj") &&
@@ -8051,7 +8091,7 @@ hlse_check_paste(const char *text) {
             ((ci_contains_tok(text, "flock") || ci_contains(text, "nice") ||
               ci_contains_tok(text, "timeout") || ci_contains_tok(text, "stdbuf")  || ci_contains_tok(text, "taskset") ||
               ci_contains_tok(text, "chrt") || ci_contains(text, "schedtool") ||
-              ci_contains(text, "env ") || ci_contains_tok(text, "chroot") ||
+              ci_contains_tok(text, "env ") || ci_contains_tok(text, "chroot") ||
               ci_contains_tok(text, "unshare") || ci_contains_tok(text, "setpriv") ||
               ci_contains(text, "ssh-agent")) &&
              (ci_contains(text, " sh") || ci_contains(text, " bash") ||
@@ -8076,7 +8116,7 @@ hlse_check_paste(const char *text) {
             (ci_contains_tok(text, "gem") && ci_contains(text, " exec")) ||
             (ci_contains_tok(text, "bundle") && ci_contains(text, " exec")) ||
             (ci_contains_tok(text, "cpan") && ci_contains(text, " -e")) ||
-            (ci_contains(text, "go ") &&
+            (ci_contains_tok(text, "go ") &&
              (ci_contains(text, " tool ") || ci_contains(text, " generate"))) ||
             (ci_contains_tok(text, "dotnet") &&
              (ci_contains(text, " run") || ci_contains(text, " exec") ||
@@ -8355,7 +8395,7 @@ hlse_check_paste(const char *text) {
             (ci_contains_tok(text, "history") &&
              (ci_contains(text, " -a") || ci_contains(text, " -r") ||
               ci_contains(text, " -p") || ci_contains(text, " -s"))) ||
-            (ci_contains(text, "fc ") && ci_contains(text, " -l")) ||
+            (ci_contains_tok(text, "fc ") && ci_contains(text, " -l")) ||
             (ci_contains(text, " net ") &&
              (ci_contains(text, " view") || ci_contains(text, " share") ||
               ci_contains(text, " session") || ci_contains(text, " accounts") ||
@@ -8732,7 +8772,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " tun"))) ||
             (ci_contains_tok(text, "gawk") && ci_contains(text, "/inet")) ||
             (ci_contains_tok(text, "ruby") &&
-             (ci_contains(text, " -e") || ci_contains(text, " -rsocket") ||
+             (ci_contains(text, " -rsocket") ||
               ci_contains(text, " -rwebrick") || ci_contains(text, " -run") ||
               ci_contains(text, " -i"))) ||
             /* process kill flags */
@@ -8887,21 +8927,21 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " dump-autoload") || ci_contains(text, " config"))) ||
             (ci_contains_tok(text, "deno") &&
              (ci_contains(text, " install") || ci_contains(text, " compile") ||
-              ci_contains(text, " eval") || ci_contains(text, " task") ||
+              ci_contains(text, " task") ||
               ci_contains(text, " bundle") || ci_contains(text, " upgrade") ||
               ci_contains(text, " add") || ci_contains(text, " remove") ||
               ci_contains(text, " uninstall") || ci_contains(text, " vendor"))) ||
-            (ci_contains(text, "bun ") &&
-             (ci_contains(text, "run ") || ci_contains(text, "add ") ||
+            (ci_contains_tok(text, "bun ") &&
+             (ci_contains_tok(text, "run ") || ci_contains_tok(text, "add ") ||
               ci_contains(text, "remove ") || ci_contains(text, "install ") ||
-              ci_contains(text, "build ") || ci_contains(text, "pm ") ||
-              ci_contains(text, "x ") ||
+              ci_contains(text, "build ") || ci_contains_tok(text, "pm ") ||
+              ci_contains_tok(text, "x ") ||
               ci_contains(text, "create ") || ci_contains(text, "init ") ||
               ci_contains(text, "upgrade ") || ci_contains(text, "--bun"))) ||
-            (ci_contains(text, "go ") && !ci_contains(text, "cargo") &&
-             (ci_contains(text, "mod ") || ci_contains(text, "work ") ||
-              ci_contains_tok(text, "generate") || ci_contains(text, "get ") ||
-              ci_contains_tok(text, "install") || ci_contains(text, "run ") ||
+            (ci_contains_tok(text, "go ") &&
+             (ci_contains_tok(text, "mod ") || ci_contains(text, "work ") ||
+              ci_contains_tok(text, "generate") || ci_contains_tok(text, "get ") ||
+              ci_contains_tok(text, "install") || ci_contains_tok(text, "run ") ||
               ci_contains(text, "tool") || ci_contains(text, "env -w"))) ||
             (ci_contains_tok(text, "rustc") &&
              (ci_contains(text, " --emit") || ci_contains(text, " -o") ||
@@ -8910,29 +8950,27 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "jrunscript") || ci_contains_tok(text, "jjs") ||
             ci_contains_tok(text, "hhvm") || ci_contains(text, "php-cgi") ||
             ci_contains_tok(text, "qjs") || ci_contains(text, "d8 ") ||
-            ci_contains(text, "jsc ") || ci_contains_tok(text, "mujs") ||
+            ci_contains_tok(text, "jsc ") || ci_contains_tok(text, "mujs") ||
             ci_contains_tok(text, "duktape") || ci_contains_tok(text, "graaljs") ||
             ci_contains_tok(text, "hermes") ||
             (ci_contains_tok(text, "mono") &&
              (ci_contains(text, ".exe") || ci_contains(text, ".dll"))) ||
             ci_contains_tok(text, "runghc") || ci_contains(text, "runhaskell") ||
             (ci_contains_tok(text, "ghci") &&
-             (ci_contains(text, " -e") || ci_contains(text, " -ghci") ||
+             (ci_contains(text, " -ghci") ||
               ci_contains(text, " :") || ci_contains(text, " .hs"))) ||
             ci_contains_tok(text, "jython") ||
             ci_contains_tok(text, "jruby") || ci_contains_tok(text, "raku")  ||
             (ci_contains_tok(text, "guile") &&
-             (ci_contains(text, " -c") || ci_contains(text, " -l") ||
-              ci_contains(text, " -s") || ci_contains(text, " --eval") ||
+             (ci_contains(text, " -l") ||
               ci_contains(text, " .scm"))) ||
             ci_contains_tok(text, "sbcl") || ci_contains_tok(text, "clisp") ||
             (ci_contains(text, "ecl ") && ci_contains(text, " -")) ||
             ci_contains(text, "gcl ") ||
             (ci_contains_tok(text, "racket") &&
-             (ci_contains(text, " -e") || ci_contains(text, " -f") ||
+             (ci_contains(text, " -f") ||
               ci_contains(text, " -t") || ci_contains(text, " -i") ||
-              ci_contains(text, " -l") || ci_contains(text, " .rkt") ||
-              ci_contains(text, " --eval"))) ||
+              ci_contains(text, " -l") || ci_contains(text, " .rkt"))) ||
             (ci_contains_tok(text, "chez") &&
              (ci_contains(text, " --") || ci_contains(text, " -") ||
               ci_contains(text, " .ss") || ci_contains(text, " .scm"))) ||
@@ -8940,34 +8978,33 @@ hlse_check_paste(const char *text) {
             ci_contains_tok(text, "bigloo") || ci_contains(text, " gosh ") ||
             ci_contains_tok(text, "newlisp") || ci_contains_tok(text, "picolisp") ||
             (ci_contains_tok(text, "janet") &&
-             (ci_contains(text, " -e") || ci_contains(text, " -l") ||
-              ci_contains(text, " -d") || ci_contains(text, " -c") ||
+             (ci_contains(text, " -l") ||
+              ci_contains(text, " -d") ||
               ci_contains(text, " -m") || ci_contains(text, " -k") ||
               ci_contains(text, " -p") || ci_contains(text, " .janet") ||
               ci_contains(text, " .jdn") || ci_contains(text, " --"))) ||
             (ci_contains_tok(text, "fennel") &&
-             (ci_contains(text, " --eval") || ci_contains(text, " -e") ||
-              ci_contains(text, " .fnl") || ci_contains(text, " --"))) ||
-            ci_contains(text, " hy ") || ci_contains(text, "bb -e") ||
-            ci_contains(text, "bb -m") || ci_contains_tok(text, "gforth") ||
+             (ci_contains(text, " .fnl") || ci_contains(text, " --"))) ||
+            ci_contains(text, " hy ") ||
+            ci_contains_tok(text, "bb -m") || ci_contains_tok(text, "gforth") ||
             ci_contains_tok(text, "pforth") || ci_contains_tok(text, "rexx") ||
             ci_contains_tok(text, "regina") || ci_contains_tok(text, "swipl") ||
             ci_contains_tok(text, "gprolog") || ci_contains_tok(text, "tclsh") ||
             ci_contains_tok(text, "jimtcl") || ci_contains_tok(text, "kscript") ||
             ci_contains_tok(text, "kotlinc") || ci_contains(text, "bsh.") ||
-            ci_contains_tok(text, "rscript") || ci_contains(text, "r -e") ||
+            ci_contains_tok(text, "rscript") ||
             (ci_contains_tok(text, "julia") &&
-             (ci_contains(text, " -e") || ci_contains(text, " -p") ||
+             (ci_contains(text, " -p") ||
               ci_contains(text, " -o") || ci_contains(text, " -g") ||
-              ci_contains(text, " --eval") || ci_contains(text, " .jl"))) ||
+              ci_contains(text, " .jl"))) ||
             (ci_contains_tok(text, "octave") &&
-             (ci_contains(text, " --eval") || ci_contains(text, " -p") ||
+             (ci_contains(text, " -p") ||
               ci_contains(text, " --no-gui") || ci_contains(text, " --silent") ||
               ci_contains(text, " -w") || ci_contains(text, " .m"))) ||
             ci_contains_tok(text, "scilab") ||
             (ci_contains_tok(text, "maxima") &&
              (ci_contains(text, " -b") || ci_contains(text, " -r") ||
-              ci_contains(text, " --batch") || ci_contains(text, " --eval"))) ||
+              ci_contains(text, " --batch"))) ||
             (ci_contains(text, "sage ") && ci_contains(text, " -") &&
              !ci_contains(text, "usage") && !ci_contains(text, "message") &&
              !ci_contains(text, "advice")) ||
@@ -8978,14 +9015,13 @@ hlse_check_paste(const char *text) {
             (ci_contains_tok(text, "nim") &&
              !ci_contains(text, "nimbus") &&
              (ci_contains(text, " r") || ci_contains(text, " c") ||
-              ci_contains(text, " e")  ||
               ci_contains(text, " secret") || ci_contains(text, " js"))) ||
             (ci_contains_tok(text, "nimble") &&
              (ci_contains(text, " install") || ci_contains(text, " remove") ||
               ci_contains(text, " build") || ci_contains(text, " run") ||
               ci_contains(text, " task"))) ||
             (ci_contains_tok(text, "crystal") &&
-             (ci_contains(text, " run") || ci_contains(text, " eval") ||
+             (ci_contains(text, " run") ||
               ci_contains(text, " build") || ci_contains(text, " tool"))) ||
             (ci_contains_tok(text, "zig") &&
              (ci_contains(text, " run") || ci_contains(text, " cc") ||
@@ -8993,11 +9029,11 @@ hlse_check_paste(const char *text) {
             (ci_contains_tok(text, "odin") &&
              (ci_contains(text, " run") || ci_contains(text, " build") ||
               ci_contains(text, " check"))) ||
-            (ci_contains(text, "v run") && !ci_contains(text, "luv")) ||
-            (ci_contains(text, "v -o") ||
-             ci_contains(text, "v build") || ci_contains(text, "hare run") ||
+            (ci_contains_tok(text, "v run") && !ci_contains(text, "luv")) ||
+            (ci_contains_tok(text, "v -o") ||
+             ci_contains_tok(text, "v build") || ci_contains(text, "hare run") ||
              ci_contains(text, "hare build")) ||
-            ci_contains_tok(text, "tsx") || ci_contains(text, "ts-node") ||
+            ci_contains_tok(text, "tsx") || ci_contains_tok(text, "ts-node") ||
             ci_contains(text, "vite-node") || ci_contains(text, "swc ") ||
             (ci_contains_tok(text, "stack") &&
              (ci_contains(text, " run") || ci_contains(text, " exec") ||
@@ -9036,7 +9072,7 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " create") || ci_contains(text, " -"))) ||
              ci_contains_tok(text, "mavlink") || ci_contains_tok(text, "pastebin") ||
              ci_contains(text, "packagekit") || ci_contains(text, "openssl ca") ||
-             (ci_contains(text, "dnf ") &&
+             (ci_contains_tok(text, "dnf ") &&
               (ci_contains(text, " system-upgrade") || ci_contains(text, " upgrade") ||
                ci_contains(text, " install") || ci_contains(text, " remove") ||
                ci_contains(text, " autoremove") || ci_contains(text, " distro-sync") ||
@@ -9370,7 +9406,7 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " -"))) ||
              ci_contains(text, "sysupgrade")  ||
              ci_contains(text, "fw_setenv") || ci_contains(text, "uboot-env") ||
-             (ci_contains(text, "pm ") &&
+             (ci_contains_tok(text, "pm ") &&
               !ci_contains(text, "rpm") &&
               (ci_contains(text, " install") || ci_contains(text, " uninstall") ||
                ci_contains(text, " disable") || ci_contains(text, " enable") ||
@@ -9381,7 +9417,7 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " unhide") || ci_contains(text, " trim") ||
                ci_contains(text, " create-user") || ci_contains(text, " remove-user") ||
                ci_contains(text, " path") || ci_contains(text, " dump"))) ||
-             (ci_contains(text, "am ") &&
+             (ci_contains_tok(text, "am ") &&
               !ci_contains(text, "prog") && !ci_contains(text, "telegram") &&
               !ci_contains(text, "ham ") && !ci_contains(text, "yam") &&
               (ci_contains(text, " start -") || ci_contains(text, " broadcast") ||
@@ -9393,7 +9429,7 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " get") || ci_contains(text, " list"))) ||
              ci_contains_tok(text, "setprop") || ci_contains_tok(text, "appops") ||
              ci_contains_tok(text, "dumpsys") || ci_contains(text, "uiautomator") ||
-             (ci_contains(text, "svc ") &&
+             (ci_contains_tok(text, "svc ") &&
               (ci_contains(text, " data") || ci_contains(text, " wifi") ||
                ci_contains(text, " bluetooth") || ci_contains(text, " nfc") ||
                ci_contains(text, " power") || ci_contains(text, " usb"))) ||
@@ -9435,7 +9471,7 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " update") || ci_contains(text, " refresh") ||
                ci_contains(text, " -"))) ||
              ci_contains_tok(text, "pkmon") ||
-             (ci_contains(text, "rpm ") &&
+             (ci_contains_tok(text, "rpm ") &&
               (ci_contains(text, " --eval") || ci_contains(text, " --define") ||
                ci_contains(text, " --setperms") || ci_contains(text, " --setugids") ||
                ci_contains(text, " --import") || ci_contains(text, " --rebuilddb") ||
@@ -9480,7 +9516,7 @@ hlse_check_paste(const char *text) {
               (ci_contains(text, " create") || ci_contains(text, " destroy") ||
                ci_contains(text, " pause") || ci_contains(text, " shutdown") ||
                ci_contains(text, " -"))) ||
-             (ci_contains(text, "xe ") &&
+             (ci_contains_tok(text, "xe ") &&
               (ci_contains(text, " vm-") || ci_contains(text, " host") ||
                ci_contains(text, " pool") || ci_contains(text, " sr-") ||
                ci_contains(text, " -"))) ||
@@ -9504,9 +9540,9 @@ hlse_check_paste(const char *text) {
               (ci_contains(text, " -agentlib") || ci_contains(text, " -agentpath") ||
                ci_contains(text, " -javaagent") ||
                ci_contains(text, " -agent"))) ||
-             (ci_contains(text, "mvn ") &&
+             (ci_contains_tok(text, "mvn ") &&
               (ci_contains(text, " exec:") || ci_contains(text, " ant:"))) ||
-             (ci_contains(text, "ant ") &&
+             (ci_contains_tok(text, "ant ") &&
               (ci_contains(text, " -f") || ci_contains(text, " -buildfile") ||
                ci_contains(text, " -find"))) ||
              (ci_contains_tok(text, "gradle") &&
@@ -9574,8 +9610,8 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " -"))) ||
              (ci_contains_tok(text, "kermit") &&
               (ci_contains(text, " -s") || ci_contains(text, " -g"))) ||
-             ci_contains_tok(text, "lrzsz") || ci_contains(text, "rz -e") ||
-             ci_contains(text, "sz -e") || ci_contains_tok(text, "nc6") ||
+             ci_contains_tok(text, "lrzsz") || ci_contains_tok(text, "rz -e") ||
+             ci_contains_tok(text, "sz -e") || ci_contains_tok(text, "nc6") ||
              ci_contains_tok(text, "pnetcat") || ci_contains_tok(text, "sbd") ||
              ci_contains(text, "expand.exe") ||
              (ci_contains_tok(text, "expand") &&
@@ -9607,7 +9643,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "invoke-rc.d") &&
               (ci_contains(text, " stop") || ci_contains(text, " start") ||
                ci_contains(text, " restart"))) ||
-             (ci_contains(text, "sv ") &&
+             (ci_contains_tok(text, "sv ") &&
               !ci_contains(text, "csv") &&
               (ci_contains(text, " stop") || ci_contains(text, " start") ||
                ci_contains(text, " -d") || ci_contains(text, " -u") ||
@@ -9848,13 +9884,13 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, " filter.") &&
               (ci_contains(text, ".clean") || ci_contains(text, ".smudge") ||
                ci_contains(text, ".required"))) ||
-             ci_contains(text, "git daemon") || ci_contains_tok(text, "instaweb") ||
+             ci_contains_tok(text, "git daemon") || ci_contains_tok(text, "instaweb") ||
              (ci_contains_tok(text, "bisect") &&
               (ci_contains(text, " run ") || ci_contains(text, " exec"))) ||
              ci_contains(text, "remote-hg") || ci_contains(text, "remote-bzr") ||
-             ci_contains(text, "git svn") || ci_contains_tok(text, "svnserve") ||
+             ci_contains_tok(text, "git svn") || ci_contains_tok(text, "svnserve") ||
              ci_contains_tok(text, "svnsync") ||
-             (ci_contains(text, "hg ") &&
+             (ci_contains_tok(text, "hg ") &&
               ci_contains(text, " serve")) ||
              (ci_contains_tok(text, "watchman") &&
               (ci_contains(text, " watch ") || ci_contains(text, " trigger ") ||
@@ -9872,7 +9908,7 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " ."))) ||
              (ci_contains_tok(text, "reflex") &&
               (ci_contains(text, " -") || ci_contains(text, " --"))) ||
-             (ci_contains(text, "air ") &&
+             (ci_contains_tok(text, "air ") &&
               (ci_contains(text, " -c") || ci_contains(text, " init") ||
                ci_contains(text, ".toml"))) ||
              (ci_contains_tok(text, "gaze") &&
@@ -9884,12 +9920,11 @@ hlse_check_paste(const char *text) {
                ci_contains(text, " -p ") ||
                ci_contains(text, "--experimental"))) ||
              (ci_contains_tok(text, "deno") &&
-              (ci_contains(text, " eval") || ci_contains(text, " install") ||
+              (ci_contains(text, " install") ||
                ci_contains(text, " task") || ci_contains(text, " compile") ||
                ci_contains(text, " run -a") || ci_contains(text, " run --allow"))) ||
-             (ci_contains(text, "bun ") &&
-              (ci_contains(text, ".js") || ci_contains(text, ".ts") ||
-               ci_contains(text, " -e") || ci_contains(text, " --eval"))) ||
+             (ci_contains_tok(text, "bun ") &&
+              (ci_contains(text, ".js") || ci_contains(text, ".ts"))) ||
              (ci_contains_tok(text, "pear") &&
               (ci_contains(text, " install") || ci_contains(text, " channel") ||
                ci_contains(text, " -"))) ||
@@ -10606,12 +10641,12 @@ hlse_check_paste(const char *text) {
              (ci_contains_tok(text, "arcanist") && ci_contains(text, " -")) ||
              ci_contains_tok(text, "phab") ||
              ci_contains(text, "repo init") || ci_contains(text, "repo sync") ||
-             ci_contains(text, "repo upload") || ci_contains(text, "git-review") ||
-             ci_contains(text, "git-imerge") || ci_contains(text, "git-absorb") ||
-             ci_contains(text, "git-revise") || ci_contains_tok(text, "ghq") ||
+             ci_contains(text, "repo upload") || ci_contains_tok(text, "git-review") ||
+             ci_contains_tok(text, "git-imerge") || ci_contains_tok(text, "git-absorb") ||
+             ci_contains_tok(text, "git-revise") || ci_contains_tok(text, "ghq") ||
              (ci_contains_tok(text, "hub") && ci_contains(text, " -")) ||
              (ci_contains_tok(text, "laconic") && ci_contains(text, " -")) ||
-             ci_contains(text, "git-lfs") ||
+             ci_contains_tok(text, "git-lfs") ||
              (ci_contains_tok(text, "dolt") && ci_contains(text, " -")) ||
              ci_contains_tok(text, "lakefs") || ci_contains_tok(text, "xet") ||
              (ci_contains(text, "zookeeper") && ci_contains(text, " -")) ||
@@ -10994,7 +11029,7 @@ hlse_check_paste(const char *text) {
              (ci_contains_tok(text, "xcrun") && ci_contains(text, " -")) ||
              (ci_contains_tok(text, "sips") && ci_contains(text, " -")) ||
              ci_contains(text, "caffeinate") || ci_contains_tok(text, "scselect") ||
-             ci_contains_tok(text, "textutil") || ci_contains(text, "pod install") ||
+             ci_contains_tok(text, "textutil") || ci_contains_tok(text, "pod install") ||
              /* ios signing / delivery toolchain */
              (ci_contains_tok(text, "fastlane") && ci_contains(text, " -")) ||
              (ci_contains_tok(text, "sigh") && ci_contains(text, " -")) ||
@@ -11050,7 +11085,7 @@ hlse_check_paste(const char *text) {
              /* cycle-262: vcs-daemon/sci-re/build/js-runtime/firmware/pwmgr-cli/
                 re-tools/wsl-subshell/exfil-chan/scanner/sysinternals/gpg-aux/
                 cloud-cli/version-mgr/iac-aux/ci-runner/kv primitives */
-             ci_contains(text, "git-daemon") || ci_contains(text, "git-shell") ||
+             ci_contains_tok(text, "git-daemon") || ci_contains_tok(text, "git-shell") ||
              ci_contains_tok(text, "p4d") || ci_contains_tok(text, "p4admin") ||
              ci_contains_tok(text, "rscript") || ci_contains_tok(text, "sbcl") ||
              ci_contains_tok(text, "clisp") ||
@@ -11068,8 +11103,12 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "cargo publish") || ci_contains(text, "rustup install") ||
              ci_contains(text, "rustup target") ||
              (ci_contains(text, "rustc ") && !ci_contains(text, "--version")) ||
-             ci_contains(text, "go install") || ci_contains(text, "go run ") ||
-             ci_contains(text, "go build") || ci_contains(text, "go test ") ||
+             ci_contains_tok(text, "go install") || ci_contains_tok(text, "go run ") ||
+             ci_contains_tok(text, "go build") || ci_contains_tok(text, "go test ") ||
+             ci_contains_tok(text, "cargo install ") ||
+             ci_contains_tok(text, "cargo run ") ||
+             ci_contains_tok(text, "cargo build") ||
+             ci_contains_tok(text, "cargo test ") ||
              ci_contains_tok(text, "meson") || ci_contains_tok(text, "scons") ||
              (ci_contains(text, "waf ") && ci_contains(text, " -")) ||
              ci_contains_tok(text, "bazel") ||
@@ -11084,7 +11123,7 @@ hlse_check_paste(const char *text) {
              ci_contains_tok(text, "ctest") || ci_contains_tok(text, "premake") ||
              ci_contains_tok(text, "qmake") || ci_contains_tok(text, "gmake") ||
              (ci_contains_tok(text, "ninja") && ci_contains(text, " -")) ||
-             ci_contains(text, "ts-node") || ci_contains_tok(text, "esbuild") ||
+             ci_contains_tok(text, "ts-node") || ci_contains_tok(text, "esbuild") ||
              ci_contains(text, "swc ") || ci_contains_tok(text, "heroku") ||
              ci_contains_tok(text, "netlify") || ci_contains_tok(text, "vercel") ||
              ci_contains_tok(text, "flyctl") || ci_contains_tok(text, "supabase") ||
@@ -11119,7 +11158,7 @@ hlse_check_paste(const char *text) {
              (ci_contains(text, "cfr ") && ci_contains(text, " -")) ||
              ci_contains(text, "wslconfig") || ci_contains(text, "lxssmanager") ||
              ci_contains(text, "ubuntu.exe") || ci_contains_tok(text, "cygwin") ||
-             ci_contains_tok(text, "msys2") || ci_contains(text, "git-bash") ||
+             ci_contains_tok(text, "msys2") || ci_contains_tok(text, "git-bash") ||
              ci_contains_tok(text, "lsaars") || ci_contains(text, "outminidump") ||
              ci_contains_tok(text, "memshell") || ci_contains(text, "file.io") ||
              ci_contains_tok(text, "qrcp") || ci_contains_tok(text, "pingfs") ||
@@ -11168,16 +11207,16 @@ hlse_check_paste(const char *text) {
              ci_contains_tok(text, "uhubctl") || ci_contains_tok(text, "hidapi") ||
              ci_contains_tok(text, "libusb") || ci_contains_tok(text, "pyusb") ||
              ci_contains(text, "usb-modeswitch") || ci_contains_tok(text, "usbguard") ||
-             (ci_contains(text, "tio ") &&
+             (ci_contains_tok(text, "tio ") &&
               (ci_contains(text, " -") || ci_contains(text, " /dev"))) ||
-             (ci_contains(text, "cu ") &&
+             (ci_contains_tok(text, "cu ") &&
               (ci_contains(text, " -") || ci_contains(text, " /dev"))) ||
              ci_contains_tok(text, "jstat") || ci_contains(text, "jfr ") ||
              ci_contains(text, "async-profiler") || ci_contains_tok(text, "cgget") ||
              ci_contains_tok(text, "prlimit") || ci_contains_tok(text, "numactl") ||
              ci_contains_tok(text, "cpuset") || ci_contains(text, "dwarfdump") ||
              ci_contains_tok(text, "readelf")  ||
-             (ci_contains(text, "nm ") && ci_contains(text, " -") &&
+             (ci_contains_tok(text, "nm ") && ci_contains(text, " -") &&
               !ci_contains(text, ".nm")) ||
              ci_contains_tok(text, "drvload") ||
              ci_contains(text, "/add-provisionedpackage") ||
@@ -11238,7 +11277,7 @@ hlse_check_paste(const char *text) {
              ci_contains_tok(text, "fsharp") || ci_contains(text, "elm-reactor") ||
              ci_contains(text, "elm-make")  ||
              ci_contains_tok(text, "spago") || ci_contains(text, "rescript") ||
-             (ci_contains(text, "elm ") && ci_contains(text, " -")) ||
+             (ci_contains_tok(text, "elm ") && ci_contains(text, " -")) ||
              (ci_contains(text, "purs ") && ci_contains(text, " -")) ||
              (ci_contains(text, "bsc ") && ci_contains(text, " -")) ||
              (ci_contains(text, "chicken ") && ci_contains(text, " -")) ||
@@ -11441,7 +11480,7 @@ hlse_check_paste(const char *text) {
              (ci_contains_tok(text, "zed") && ci_contains(text, " -")) ||
              (ci_contains(text, "hx ") && ci_contains(text, " -")) ||
              (ci_contains(text, "kak ") && ci_contains(text, " -")) ||
-             (ci_contains(text, "vis ") && ci_contains(text, " -") &&
+             (ci_contains_tok(text, "vis ") && ci_contains(text, " -") &&
               !ci_contains(text, "visit") && !ci_contains(text, "vision") &&
               !ci_contains(text, "visible") && !ci_contains(text, "trav") &&
               !ci_contains(text, "pelvis")) ||
@@ -11633,7 +11672,7 @@ hlse_check_paste(const char *text) {
              ci_contains_tok(text, "microcom") ||
              (ci_contains_tok(text, "sx") && ci_contains(text, " -") &&
               !ci_contains(text, "lsx") && !ci_contains(text, "osx")) ||
-             (ci_contains(text, "sb ") && ci_contains(text, " -") && !ci_contains(text, "usb") && !ci_contains(text, "lsb")) ||
+             (ci_contains_tok(text, "sb ") && ci_contains(text, " -") && !ci_contains(text, "usb") && !ci_contains(text, "lsb")) ||
              (ci_contains_tok(text, "sz") && ci_contains(text, " -") &&
               !ci_contains(text, "lsz")) ||
              ci_contains_tok(text, "ckermit") || ci_contains_tok(text, "hylafax") ||
@@ -11882,7 +11921,7 @@ hlse_check_paste(const char *text) {
              ci_contains_tok(text, "qsstv") || ci_contains_tok(text, "freedv") ||
              ci_contains_tok(text, "codec2") || ci_contains_tok(text, "cubicsdr") ||
              ci_contains(text, "nntpcache") || ci_contains_tok(text, "leafnode") ||
-             (ci_contains(text, "tin ") && ci_contains(text, " -") &&
+             (ci_contains_tok(text, "tin ") && ci_contains(text, " -") &&
               !ci_contains(text, "latin ") && !ci_contains(text, "artin ") &&
               !ci_contains(text, "stin ")) ||
              (ci_contains_tok(text, "slrn") && ci_contains(text, " -")) ||
@@ -11980,11 +12019,11 @@ hlse_check_paste(const char *text) {
         if (
              /* cycle-272a: git-extra/convert/mail-infra/spam-filter/lists/
                 caldav/irc/xmpp/matrix/voip-server primitives */
-             ci_contains_tok(text, "jujutsu") || ci_contains(text, "git-branchless") ||
-             ci_contains(text, "git-secret")  ||
-             ci_contains(text, "git-quick-stats") || ci_contains(text, "git-extras") ||
+             ci_contains_tok(text, "jujutsu") || ci_contains_tok(text, "git-branchless") ||
+             ci_contains_tok(text, "git-secret")  ||
+             ci_contains_tok(text, "git-quick-stats") || ci_contains_tok(text, "git-extras") ||
              ci_contains_tok(text, "gitui") || ci_contains(text, "gitbutler") ||
-             ci_contains(text, "git-cliff") ||
+             ci_contains_tok(text, "git-cliff") ||
              (ci_contains_tok(text, "convco") && ci_contains(text, " -")) ||
              ci_contains(text, "cz-cli") || ci_contains(text, "semantic-release") ||
              ci_contains(text, "release-please") ||
@@ -12974,8 +13013,8 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "strawberry") || ci_contains(text, "audacious") ||
              ci_contains(text, "quodlibet") || ci_contains(text, "exa ") ||
              ci_contains_tok(text, "lsdeluxe") || ci_contains_tok(text, "eza") ||
-             ci_contains(text, "tre ") ||
-             (ci_contains(text, "fd ") && !ci_contains(text, "fdisk")) ||
+             ci_contains_tok(text, "tre ") ||
+             (ci_contains_tok(text, "fd ") && !ci_contains(text, "fdisk")) ||
              ci_contains_tok(text, "fdfind") || ci_contains_tok(text, "skim") ||
              (ci_contains_tok(text, "picker") && ci_contains(text, " -")) ||
              ci_contains(text, "navi ") || ci_contains(text, "navidrome") ||
@@ -12984,18 +13023,18 @@ hlse_check_paste(const char *text) {
         }
         if (
              /* cycle-288a: altvcs/patch/review/monorepo/build/task primitives */
-             (ci_contains(text, "got ") && !ci_contains(text, "forgot")) ||
+             (ci_contains_tok(text, "got ") && !ci_contains(text, "forgot")) ||
              ci_contains(text, "patchutils") || ci_contains(text, "interdiff") ||
              ci_contains(text, "filterdiff") || ci_contains(text, "combinediff") ||
              ci_contains_tok(text, "flipdiff") || ci_contains_tok(text, "rediff") ||
              ci_contains_tok(text, "rbt") || ci_contains(text, "reviewdog") ||
-             (ci_contains(text, "nx ") && !ci_contains(text, "sphinx") && !ci_contains(text, "minx") && !ci_contains(text, "nginx") &&
+             (ci_contains_tok(text, "nx ") && !ci_contains(text, "sphinx") && !ci_contains(text, "minx") && !ci_contains(text, "nginx") &&
               !ci_contains(text, "lynx") && !ci_contains(text, "manx") &&
               !ci_contains(text, "snx") && !ci_contains(text, "phalanx") &&
               !ci_contains(text, "jinx") && !ci_contains(text, "pinx")) ||
              (ci_contains_tok(text, "turbo") && ci_contains(text, " -")) ||
              (ci_contains_tok(text, "redo") && ci_contains(text, " -")) ||
-             (ci_contains(text, "tup ") && !ci_contains(text, "setup") && !ci_contains(text, "startup")) ||
+             (ci_contains_tok(text, "tup ") && !ci_contains(text, "setup") && !ci_contains(text, "startup")) ||
              ci_contains_tok(text, "samu") || ci_contains_tok(text, "kati") ||
              (ci_contains_tok(text, "just") && !ci_contains(text, "adjust") && ci_contains(text, " -")) ||
              (ci_contains_tok(text, "mage") && !ci_contains(text, "image") && !ci_contains(text, "damage") &&
@@ -15029,7 +15068,7 @@ hlse_check_paste(const char *text) {
              (ci_contains_tok(text, "epsilon") && ci_contains(text, " -")) ||
              (ci_contains_tok(text, "lava") && ci_contains(text, " -")) ||
              ci_contains_tok(text, "kak") ||
-             (ci_contains(text, "nvi ") && !ci_contains(text, "envi")) ||
+             (ci_contains_tok(text, "nvi ") && !ci_contains(text, "envi")) ||
              (ci_contains_tok(text, "elvis") && !ci_contains(text, "pelvis") && ci_contains(text, " -")) ||
              (ci_contains_tok(text, "vile") && ci_contains(text, " -")) ||
              ci_contains_tok(text, "neatvi") || ci_contains_tok(text, "visurf") ||
@@ -15791,7 +15830,7 @@ hlse_check_paste(const char *text) {
         if (
              /* cycle-385d: mail/feed primitives */
              ci_contains_tok(text, "yarr") || ci_contains_tok(text, "pyradio") ||
-             (ci_contains(text, "tin ") && ci_contains(text, " -")) ||
+             (ci_contains_tok(text, "tin ") && ci_contains(text, " -")) ||
              ci_contains(text, "trn ") || ci_contains(text, "nzb ") ||
              ci_contains_tok(text, "klibido") || ci_contains_tok(text, "lottanzb") ||
              ci_contains_tok(text, "pynzb") || ci_contains(text, "newsgroups") ||
