@@ -2054,6 +2054,10 @@ hlse_check_paste(const char *text) {
          * infdefaultinstall runs an .inf [DefaultInstall] payload,
          * msdeploy syncs attacker packages / runs commands        */
         }
+        if (ci_contains_tok(text, "iesetup") &&
+                   CI_HTTP) {
+            PASTE_WHAT_SEV("iesetup remote INF install (LOLBin)", 55);
+        }
         if (ci_contains_tok(text, "ieexec") &&
                    (CI_HTTP || ci_contains(text, ".exe") ||
                     ci_contains(text, ".dll"))) {
@@ -4147,6 +4151,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, "-retrieve") ||
                      ci_contains(text, "-new") ||
                      ci_contains(text, "-enroll") ||
+                     ci_contains(text, "-post") ||
                      ci_contains(text, "-config"))) ||
                    (ci_contains_tok(text, "certutil") &&
                     (ci_contains(text, "-exportpfx") ||

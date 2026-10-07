@@ -2,6 +2,22 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 503 — P8 LOLBin residuals (certreq -Post, iesetup)
+
+### Added
+- `certreq -post` joins the certmint qualifier list — the LOLBAS verb
+  that POSTs data to a remote CA/URL (`certreq -Post -config http://e`
+  already fired via `-config`; the bare-verb form escaped).
+- `iesetup` + http(s) → +55: remote INF install (LOLBAS), mirroring
+  the `ieexec`/`infdefaultinstall` wave.
+
+### Verified benign-by-design (probed, unchanged)
+`certreq show queue`, `iesetup local.inf`, bare `rundll32 zipfldr`
+(non-functional without the full `zipfldr.dll,RouteTheCall` entry
+point), bare `vbc`/`msdeploy`/`pip download` — all 0 / qualifier-
+gated as designed.
+
+
 ## Cycle 502 — Text engine invisible-carrier coverage
 
 ### Changed

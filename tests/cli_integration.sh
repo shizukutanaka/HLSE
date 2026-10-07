@@ -925,6 +925,14 @@ jcheck "lol: firefox url == 45" 'd["score"] == 45' paste "firefox http://e"
 jcheck "lol: browser version benign" 'd["score"] == 0' paste "firefox --version"
 jcheck "lol: browser file url benign" 'd["score"] == 0' paste "chrome file:///tmp/x"
 
+# P8 residual (cycle 503): certreq -Post network verb + iesetup remote
+# INF install.
+jcheck "lol: certreq post url == 45" 'd["score"] == 45' paste "certreq -Post http://e"
+jcheck "lol: certreq.exe post == 45" 'd["score"] == 45' paste "certreq.exe -post http://e"
+jcheck "lol: iesetup remote inf == 55" 'd["score"] == 55' paste "iesetup http://e/x.inf"
+jcheck "lol: certreq show benign" 'd["score"] == 0' paste "certreq show queue"
+jcheck "lol: iesetup local benign" 'd["score"] == 0' paste "iesetup local.inf"
+
 # secret findings[] carry a 1-based line number (SIEM/remediation locus)
 printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | jcheck "secret finding reports correct line number" "'\"line\":4' in s" secret --stdin
 jcheck "secret single-line input reports line 1" "'\"line\":1' in s" secret 'key: 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d'
