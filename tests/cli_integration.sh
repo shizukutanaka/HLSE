@@ -730,6 +730,15 @@ jcheck "tok2: bash_history via _history" 'd["score"] == 40' paste "cat ~/.bash_h
 jcheck "tok2: sh proc-sub kept" 'd["score"] == 45' paste 'sh <(curl x)'
 jcheck "tok2: install-verb persist fires" 'd["score"] == 45' paste "cp x /etc/cron.d/x && touch /etc/rc.local"
 
+# decode-family parity (cycle 491): base32/basenc join base64 tier
+jcheck "dec: base32 -d | sh == 75" 'd["score"] == 75' paste "base32 -d f | sh"
+jcheck "dec: base32 -d alone == 30" 'd["score"] == 30' paste "base32 -d f"
+jcheck "dec: base32 --decode | sh == 75" 'd["score"] == 75' paste "base32 --decode f | sh"
+jcheck "dec: basenc -d | sh >= 75" 'd["score"] >= 75' paste "basenc -d f | sh"
+jcheck "dec: base32 encode benign" 'd["score"] == 0' paste "base32 encode f"
+jcheck "dec: xbase32 no fire" 'd["score"] == 0' paste "xbase32 -d f | sh"
+jcheck "dec: base32 bare benign" 'd["score"] == 0' paste "base32 f"
+
 # secret findings[] carry a 1-based line number (SIEM/remediation locus)
 printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | jcheck "secret finding reports correct line number" "'\"line\":4' in s" secret --stdin
 jcheck "secret single-line input reports line 1" "'\"line\":1' in s" secret 'key: 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d'

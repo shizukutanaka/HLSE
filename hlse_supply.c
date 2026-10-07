@@ -474,7 +474,8 @@ static const char *PASTE_EVAL_TOK[] = {
     "nim e", "crystal eval", "ruby -e", NULL
 };
 static const char *PASTE_DECODERS[] = {
-    "base64 -d", "base64 --decode", "python -c", "python3 -c",
+    "base64 -d", "base64 --decode", "base32 -d", "base32 --decode",
+    "basenc -d", "basenc --decode", "python -c", "python3 -c",
     "python2 -c", "perl -e", "ruby -e", "node -e", "php -r", NULL
 };
 static const char *PASTE_DESTRUCT[] = {
@@ -685,7 +686,8 @@ static const char *PASTE_ASP_EXEC[] = {
 
 /* P15: decode-then-pipe — the decoder side replaces the download */
 static const char *PASTE_DECODE_BINS[] = {
-    "base64 -d", "base64 -d", "base64 --decode", "enc -d",
+    "base64 -d", "base64 -d", "base64 --decode", "base32 -d",
+    "base32 --decode", "basenc -d", "basenc --decode", "enc -d",
     "openssl enc", "gpg -d", "gpg --decrypt", NULL
 };
 static const char *PASTE_PIPE_INTERP[] = {
@@ -18041,8 +18043,8 @@ hlse_check_paste(const char *text) {
         } else if (strstr(text, "crontab") &&
                    hay_any(text, PASTE_CRON_TERMS)) {
             is_persist = 1; why = "crontab persistence injection";
-        } else if (hay_any(text, PASTE_STARTUP_FILES) &&
-                   hay_any(text, PASTE_BACKDOOR_FETCH)) {
+        } else if (hay_any_tok(text, PASTE_STARTUP_FILES) &&
+                   hay_any_tok(text, PASTE_BACKDOOR_FETCH)) {
             is_persist = 1; why = "shell startup file backdoor injection";
         }
         if (is_persist) {

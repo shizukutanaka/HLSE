@@ -4,6 +4,26 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-491)
+- **Decoder-family parity** — `base32 -d`/`base32 --decode` and
+  `basenc -d`/`basenc --decode` join PASTE_DECODERS (+30) and
+  PASTE_DECODE_BINS (+45 via P15): GNU coreutils decoders with the
+  exact `base64 -d` shape scored 0 while `base64 -d f | sh` = 75,
+  `uudecode` = 45, `xxd` = 55, `certutil` = 65. Now
+  `base32 -d f | sh` = 75 (base64 parity), `basenc -d f | sh` = 100
+  (its bare-name P8 primitive compounds). Bare `base32` stays
+  benign — same intentional 0 as bare `base64` (only the rare
+  decoders `basenc`/`uudecode`/`uuencode` flag by name).
+
+### Changed (cycle-491)
+- **Sweep residual**: the last two substring tables
+  (PASTE_STARTUP_FILES, PASTE_BACKDOOR_FETCH) moved to
+  `hay_any_tok` — all needles alnum/dot-start, boundary-safe.
+  The hay_any sweep is now complete: every remaining
+  `hay_any` call site is substring-reliant by design
+  (`|`, `>`, `&&`, ` -`, `$(`, backtick, `<?php`, `.php`,
+  `$_`-prefixed needles whose match position is mid-command).
+
 ### Changed (cycle-490)
 - **hay_any-table fused-needle sweep** — the cycle-489 sweep
   converted `ci_contains` call sites; the same defect class lived
