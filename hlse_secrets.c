@@ -2751,6 +2751,38 @@ hlse_check_crypto_swap(const char *copied, const char *pasted) {
             crypto_type_name(type_copied), crypto_type_name(type_pasted));
     }
 
+    /* Copied is crypto but pasted is NOT a recognized address — the
+     * deadliest clipper shape: a look-alike whose substitution makes it
+     * *invalid* (Cyrillic А for Latin A, or base58-illegal 0/O/I/l in a
+     * BTC address).  The pasted string still reads identical to the
+     * victim, so the user ships funds to it — while a format-blind check
+     * sees "not crypto" and waves it through.  Require the replacement
+     * to share a long prefix AND suffix with the original (the vanity
+     * grind tell) and near-identical length, keeping unrelated pasted
+     * text at 0. */
+    if (type_copied != CRYPTO_NONE && type_pasted == CRYPTO_NONE) {
+        int pre = common_prefix_len(copied, pasted);
+        int suf = common_suffix_len(copied, pasted);
+        long dlen = (long)strlen(pasted) - (long)strlen(copied);
+        /* Shared ends cover all but a few substituted bytes — the
+         * substitution sits wherever the attacker could not grind a
+         * vanity match (often early), so require the anchored suffix,
+         * not a long prefix. */
+        if (suf >= 4 && pre + suf >= (int)strlen(copied) - 4 &&
+            dlen >= -2 && dlen <= 4) {
+            v.score = 95;
+            v.is_swap = 1;
+            snprintf(v.original, sizeof(v.original), "%s", copied);
+            snprintf(v.swapped, sizeof(v.swapped), "%s", pasted);
+            snprintf(v.reason, sizeof(v.reason),
+                "CLIPBOARD HIJACK (invalid look-alike): copied %s address "
+                "but pasted a visually matching NON-address sharing first "
+                "%d and last %d chars — the substitution broke the format. "
+                "Original: %.12s... Pasted: %.12s...",
+                crypto_type_name(type_copied), pre, suf, copied, pasted);
+        }
+    }
+
     /* One is crypto, the other isn't — not a swap, just different content */
     return v;
 }

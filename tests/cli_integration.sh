@@ -9235,6 +9235,14 @@ Reply-To: b@pаypal.com'
 jcheck "email ascii domain unflagged" 'd["score"] < 40' email 'From: it@corp.com
 Subject: hello'
 
+# Clipboard (cycle 507): invalid look-alike swap — pasted string fails
+# address format but shares both ends with the copied address.
+jcheck "clipboard cyrillic-lookalike swap flags" 'd["score"] >= 90' clipboard '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa' '1А1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'
+jcheck "clipboard base58-illegal swap flags" 'd["score"] >= 90' clipboard '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa' '1AIzP1eP5QGefi2DMPTfTL5SLmv7DivfNa'
+jcheck "clipboard unrelated text benign" 'd["score"] < 30' clipboard '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa' 'unrelated strings here now'
+jcheck "clipboard identical benign" 'd["score"] < 10' clipboard '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa' '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'
+
+
 # Defanged scheme separators (cycle 505): 'https[:]//', 'https[://]',
 # '(://)' — IOC-defang twin of hxxp; marker alone flags.
 jcheck "defang scheme colon-bracket flags" 'd["score"] >= 40' text 'https[:]//evil.com/x'

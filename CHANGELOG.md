@@ -2,6 +2,22 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 507 — Clipboard: invalid look-alike swap detection
+
+### Added
+- `hlse_check_crypto_swap` now flags the deadliest clipper shape:
+  copied a crypto address, pasted a visually matching string that is
+  NOT a valid address — a Cyrillic-А or base58-illegal (0/O/I/l)
+  substitution the victim cannot see.  Previously it scored 0 because
+  "not a recognized address" was treated as different content.
+  Detection: shared suffix >= 4, shared ends cover all but <= 4
+  bytes, length within -2..+4 → +95.
+
+### Verified benign-by-design (probed, unchanged)
+Unrelated pasted text 0; identical addresses 0; different-value
+same-type swaps unchanged at 95/100.
+
+
 ## Cycle 506 — File: whitespace/zero-width inside extensions
 
 ### Added
