@@ -2,6 +2,36 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 494 — P3–P7 residuals (local env-dump filters, su variants, cred files)
+
+### Added
+- Local env-dump tier: `PASTE_ENV_DUMP` now scores +45 on the dump
+  shape itself (`env |`, `env|`, `env >`, `set |`, `declare -x`,
+  `typeset -x`, `compgen -e`, `export -p` …). The previous arm only
+  fired when the dump piped to a network channel (+55), so
+  `env | grep -i secret` — the pre-exfiltration filter step — scored
+  0 while bare `printenv` already flagged 45. The net-pipe arm still
+  wins its +55 on top (P8 is max-select).
+- `su` variants in `PASTE_PRIV_ESC`: `su -`, `su -l`, `su root`,
+  `su - root` — the table only had `su -c`, so every non-`-c`
+  invocation of the other canonical privilege-escalation command
+  scored 0 while all `sudo` shapes flagged.
+- Token-bearing credential files in `PASTE_CRED_PATHS`: `.npmrc`,
+  `.yarnrc`, `.terraformrc`, `config/gh` (GitHub CLI OAuth),
+  `.doctl/`, `rclone.conf`, `.gem/credentials`, `.m2/settings`,
+  `.gradle/`, `gradle.properties`, `.cargo/credentials`,
+  `.composer/auth.json`, `config/netlify`, `.vultr`, `.linode-cli`,
+  `.huggingface`, `credentials.json` — modern toolchain files holding
+  live tokens that the credential-read list (id_rsa/shadow/.aws era)
+  missed.
+
+### Verified benign-by-design (probed, unchanged)
+- Bare `ifconfig`/`ip a`/`netstat`/`whoami && id` host-recon stays 0
+  (ubiquitous benign — same calibration as bare `apt install`).
+- `env`, `su admin`, `environment | grep x`, `reset | grep x`,
+  `issue -`, `sushi root`, `cat ~/npmrc.txt` all stay 0.
+
+
 ## Cycle 493 — persistence residual shapes (at-times, systemctl wiring, Startup drop, reg keys)
 
 ### Added

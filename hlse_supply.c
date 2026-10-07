@@ -460,7 +460,8 @@ static const char *PASTE_PIPE_SHELLS[] = {
     NULL
 };
 static const char *PASTE_PRIV_ESC[] = {
-    "sudo ", "su -c", "doas ", NULL
+    "sudo ", "su -c", "doas ", "su -", "su -l", "su root",
+    "su - root", NULL
 };
 /* script-interpreter inline-eval flags — `-e`/`-c`/`eval`/`--eval`
  * alone on a scripting runtime is the same obfuscated-code shape as
@@ -504,7 +505,13 @@ static const char *PASTE_CRED_PATHS[] = {
     "/etc/sudoers", "sudoers.d", "/etc/login.defs", "config/gcloud",
     ".azure", ".viminfo", ".lesshst", ".wget-hsts",
     "auth.log", "/var/log/secure", "/var/log/btmp", "/var/log/wtmp",
-    "/var/log/lastlog", "/var/log/faillog", NULL
+    "/var/log/lastlog", "/var/log/faillog",
+    ".npmrc", ".yarnrc", ".terraformrc", "config/gh",
+    ".doctl/", "rclone.conf", ".gem/credentials",
+    ".m2/settings", ".gradle/", "gradle.properties",
+    ".cargo/credentials", ".composer/auth.json",
+    "config/netlify", ".vultr", ".linode-cli",
+    ".huggingface", "credentials.json", NULL
 };
 /* `at <time>` fires only when commands are piped INTO at — bare
  * `at 5pm`/`at 12:00` is an interactive scheduler invocation the
@@ -754,6 +761,14 @@ static const char *PASTE_PIPE_INTERP[] = {
 /* env-dump → network exfiltration */
 static const char *PASTE_ENV_DUMP[] = {
     "env |", "env|", "printenv", "env >", "printenv >", NULL
+};
+/* piped env-dump/filter shapes — `env | grep -i secret`, `set | tee f`
+ * is the local pre-exfiltration step; `env > f` alone is pinned
+ * benign (routine capture of env output to a file).            */
+static const char *PASTE_ENV_DUMP_PIPE[] = {
+    "env |", "env|", "set |", "set|", "declare -x |",
+    "typeset -x |", "compgen -e |", "export -p |",
+    "printenv |", "printenv|", NULL
 };
 static const char *PASTE_PIPE_NET[] = {
     "| nc", "|nc", "| curl", "|curl", "curl -F", "curl -d",
@@ -2687,6 +2702,12 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "velociraptor") || ci_contains_tok(text, "falcon") ||
                     ci_contains_tok(text, "sentinel") || ci_contains(text, "elastic-agent"))) {
             PASTE_WHAT_SEV("monitoring/EDR agent kill", 55);
+        }
+        /* env-dump shape alone flags at the printenv tier (P5):
+         * `env | grep -i secret` is the pre-exfiltration filter step;
+         * the network-pipe arm below adds the exfil channel on top. */
+        if (hay_any_tok(text, PASTE_ENV_DUMP_PIPE)) {
+            PASTE_WHAT_SEV("env-var dump piped to filter (pre-exfiltration)", 45);
         }
         if (hay_any_tok(text, PASTE_ENV_DUMP) &&
             (hay_any(text, PASTE_PIPE_NET) ||

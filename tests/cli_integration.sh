@@ -776,6 +776,37 @@ jcheck "persist: reg userinit logon script == 55" 'd["score"] == 55' paste "reg 
 jcheck "persist: reg services key == 55" 'd["score"] == 55' paste "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\x\" /v ImagePath /d y"
 jcheck "persist: reg generic key benign" 'd["score"] == 0' paste "reg add \"HKLM\\SOFTWARE\\x\" /v y /d z"
 
+# P3-P7 audit residuals (cycle 494): local env-dump filters, su variants,
+# token-bearing cred files
+jcheck "env: env|grep == 45" 'd["score"] == 45' paste "env | grep AWS"
+jcheck "env: env|grep pass == 45" 'd["score"] == 45' paste "env | grep password"
+jcheck "env: env>file benign" 'd["score"] == 0' paste "env > /tmp/x"
+jcheck "env: set|grep == 45" 'd["score"] == 45' paste "set | grep -i pass"
+jcheck "env: declare -x| == 45" 'd["score"] == 45' paste "declare -x | grep key"
+jcheck "env: compgen -e| == 45" 'd["score"] == 45' paste "compgen -e | grep tok"
+jcheck "env: env|nc == 55" 'd["score"] == 55' paste "env | nc e 1"
+jcheck "env: environment word benign" 'd["score"] == 0' paste "environment | grep x"
+jcheck "env: reset benign" 'd["score"] == 0' paste "reset | grep x"
+jcheck "priv: su - == 15" 'd["score"] == 15' paste "su -"
+jcheck "priv: su root == 15" 'd["score"] == 15' paste "su root"
+jcheck "priv: su -l root == 15" 'd["score"] == 15' paste "su -l root"
+jcheck "priv: su root -c == 15" 'd["score"] == 15' paste "su root -c id"
+jcheck "priv: issue benign" 'd["score"] == 0' paste "issue -"
+jcheck "priv: sushi benign" 'd["score"] == 0' paste "sushi root"
+jcheck "cred: .npmrc == 40" 'd["score"] == 40' paste "cat ~/.npmrc"
+jcheck "cred: gh config == 40" 'd["score"] == 40' paste "cat ~/.config/gh/hosts.yml"
+jcheck "cred: terraformrc == 40" 'd["score"] == 40' paste "cat ~/.terraformrc"
+jcheck "cred: gem credentials == 40" 'd["score"] == 40' paste "cat ~/.gem/credentials"
+jcheck "cred: m2 settings == 40" 'd["score"] == 40' paste "cat ~/.m2/settings.xml"
+jcheck "cred: gradle properties == 40" 'd["score"] == 40' paste "cat ~/.gradle/gradle.properties"
+jcheck "cred: cargo creds == 40" 'd["score"] == 40' paste "cat ~/.cargo/credentials.toml"
+jcheck "cred: composer auth == 40" 'd["score"] == 40' paste "cat ~/.composer/auth.json"
+jcheck "cred: doctl config == 40" 'd["score"] == 40' paste "cat ~/.doctl/config.yaml"
+jcheck "cred: rclone conf == 40" 'd["score"] == 40' paste "cat ~/.config/rclone/rclone.conf"
+jcheck "cred: credentials.json == 40" 'd["score"] == 40' paste "cat credentials.json"
+jcheck "cred: huggingface == 40" 'd["score"] == 40' paste "cat ~/.huggingface/token"
+jcheck "cred: npmrc.txt benign" 'd["score"] == 0' paste "cat ~/npmrc.txt"
+
 # secret findings[] carry a 1-based line number (SIEM/remediation locus)
 printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | jcheck "secret finding reports correct line number" "'\"line\":4' in s" secret --stdin
 jcheck "secret single-line input reports line 1" "'\"line\":1' in s" secret 'key: 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d'
