@@ -1064,6 +1064,19 @@ jcheck "escape: OSC 8 hyperlink spoof flagged" '"OSC 8" in str(d)' text "$(print
 # generic CSI erase sequence → flagged
 jcheck "escape: CSI erase flagged" '"Terminal control sequence" in str(d)' text "$(printf 'normal\x1b[2Jclear')"
 
+# invisible-unicode normalization (cycle 502): the zero-width strip now
+# covers soft hyphen / bidi marks / invisible operators and unicode
+# spaces, and runs on `normalized` (JP/ZH/KR matching too), not just
+# the EN lowercase copy.
+jcheck "text: shy-spliced keyword still fires" 'd["score"] >= 20' text 'send your see­d phrase now'
+jcheck "text: rlm-spliced keyword still fires" 'd["score"] >= 20' text 'verify your wa‎llet now'
+jcheck "text: lrm-spliced keyword still fires" 'd["score"] >= 20' text 'verify your wa‏llet now'
+jcheck "text: invisible-operator carrier flagged" 'd["score"] >= 40' text 'send bitcoin to bc1q⁡x address immediately'
+jcheck "text: glued multiword honest baseline" 'd["score"] == 0' text 'send your seed­phrase immediately'
+jcheck "text: nbsp benign paragraph" 'd["score"] == 0' text 'hello world, how are you today'
+jcheck "text: shy benign word" 'd["score"] <= 30' text 'invo­ice attached for review'
+
+
 # escape FP guard: plain text carries no terminal reason
 jcheck "escape FP guard: plain text has no terminal reason" 'not ("Terminal" in str(d))' text 'hello world'
 

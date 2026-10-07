@@ -3018,24 +3018,54 @@ normalize_fullwidth(char *buf, size_t len) {
 
 static size_t
 strip_zero_width(char *buf, size_t len) {
-    /* Zero-width bytes (3-byte UTF-8 sequences):
-     *   U+200B ZERO WIDTH SPACE     = E2 80 8B
-     *   U+200C ZERO WIDTH NON-JOIN  = E2 80 8C
-     *   U+200D ZERO WIDTH JOINER    = E2 80 8D
-     *   U+2060 WORD JOINER          = E2 81 A0
-     *   U+FEFF BOM (when not at pos 0) = EF BB BF                    */
+    /* Invisible/format codepoints drop; Unicode spaces map to ' '.
+     *   U+200B/200C/200D zero-width        = E2 80 8B/8C/8D
+     *   U+200E/200F bidi marks             = E2 80 8E/8F
+     *   U+2028..U+202E separators/bidi     = E2 80 A8..AE
+     *   U+2060+ word joiner/invisible ops  = E2 81 A0..A4
+     *   U+00AD soft hyphen                 = C2 AD
+     *   U+FEFF BOM (when not at pos 0)     = EF BB BF
+     *   NBSP / ogham / U+2000-200A / 202F /
+     *   205F / ideographic spaces -> ' '   = C2 A0, E1 9A 80,
+     *   E2 80 80..8A + AF, E2 81 9F, E3 80 80                     */
     size_t r = 0, w = 0;
     while (r < len) {
         unsigned char b0 = (unsigned char)buf[r];
+        if (r + 1 < len && b0 == 0xC2) {
+            unsigned char b1 = (unsigned char)buf[r+1];
+            if (b1 == 0xA0) { buf[w++] = ' '; r += 2; continue; } /* NBSP */
+            if (b1 == 0xAD) { r += 2; continue; }                 /* SHY  */
+        }
+        if (r + 2 < len && b0 == 0xE1) {
+            if (buf[r+1] == '\x9A' && buf[r+2] == '\x80') {
+                buf[w++] = ' '; r += 3; continue;      /* ogham space */
+            }
+        }
         if (r + 2 < len && b0 == 0xE2) {
             unsigned char b1 = (unsigned char)buf[r+1];
             unsigned char b2 = (unsigned char)buf[r+2];
-            if ((b1 == 0x80 && (b2 == 0x8B || b2 == 0x8C || b2 == 0x8D))
-                || (b1 == 0x80 && b2 == 0xAE)  /* RTL override */
-                || (b1 == 0x81 && b2 == 0xA0))  /* word joiner */
-            {
-                r += 3;
+            if (b1 == 0x80 &&
+                (b2 <= 0x8A || b2 == 0xAF)) {          /* U+2000-200A, 202F */
+                buf[w++] = ' '; r += 3; continue;
+            }
+            if (b1 == 0x81 && b2 == 0x9F) {            /* U+205F math sp */
+                buf[w++] = ' '; r += 3; continue;
+            }
+            if (b1 == 0x80 &&
+                (b2 == 0x8B || b2 == 0x8C || b2 == 0x8D ||
+                 b2 == 0x8E || b2 == 0x8F ||
+                 (b2 >= 0xA8 && b2 <= 0xAE))) {
+                r += 3;                              /* 200B-200F,2028-202E */
                 continue;
+            }
+            if (b1 == 0x81 && (b2 >= 0xA0 && b2 <= 0xA4)) {
+                r += 3;                              /* U+2060..U+2064 */
+                continue;
+            }
+        }
+        if (r + 2 < len && b0 == 0xE3) {
+            if (buf[r+1] == '\x80' && buf[r+2] == '\x80') {
+                buf[w++] = ' '; r += 3; continue;    /* ideographic sp */
             }
         }
         if (r + 2 < len && b0 == 0xEF) {
@@ -3621,6 +3651,7 @@ hlse_check_text(const char *raw_text) {
     check_defanged_lures(raw_text, &v);
 
     normalize_whitespace(raw_text, normalized, sizeof(normalized));
+    strip_zero_width(normalized, strlen(normalized));
 
     /* Make a separate ASCII-lowercased copy.
      * We match EN keywords against `lower` (case-insensitive),
@@ -3639,11 +3670,9 @@ hlse_check_text(const char *raw_text) {
         n = normalize_fullwidth(lower, strlen(lower));
         str_to_lower(lower);  /* safe: only touches ASCII bytes < 0x80 */
 
-        /* Evasion-resistant normalization (applied to EN matching only):
-         * 1. Strip zero-width Unicode chars that split keywords
-         * 2. Decode HTML entities (&#82; → r)
-         * 3. Normalize l33tspeak digits (3→e, 1→i, etc.)              */
-        n = strip_zero_width(lower, strlen(lower));
+        /* Evasion-resistant normalization (EN matching): the invisible-
+         * carrier strip already ran on `normalized` (it feeds `lower`),
+         * leaving homoglyph fold, entities and l33t here.            */
         n = normalize_homoglyphs(lower, n);
         decode_html_entities(lower);
         normalize_leet(lower);

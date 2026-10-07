@@ -2,6 +2,23 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 502 — Text engine invisible-carrier coverage
+
+### Changed
+- `strip_zero_width` (text scam engine) now covers the full format set:
+  soft hyphen, LRM/RLM bidi marks, U+2028..U+202E separators/direction
+  controls, and U+2060..U+2064 invisible operators drop; Unicode spaces
+  (NBSP, ogham, U+2000-200A, 202F, 205F, ideographic) map to ' '.
+- The strip now runs on `normalized` — feeding both the EN lowercase
+  copy *and* the JP/ZH/KR multibyte keyword path — instead of only the
+  EN copy.  Zero-width splices into CJK lures are covered too.
+
+### Verified benign-by-design (probed, unchanged)
+`hello\u00a0world` 0, `invo\u00adice attached` 27 (unchanged baseline),
+glued multi-word `seed\u00adphrase` honestly equals `seedphrase` — a
+word-boundary needle property, not a Unicode gap.
+
+
 ## Cycle 501 — Secrets scanner invisible-Unicode normalization
 
 ### Changed
