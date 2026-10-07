@@ -571,6 +571,26 @@ static const char *PASTE_EXEC_CHAINS[] = {
     "&& bash", "&& sh", "&& chmod", "&& sudo", "&& ./", "&& /",
     "; bash", "; sh", "; ./", "; chmod", "; sudo", "; /", NULL
 };
+/* P12c unpack verbs — extraction materialises the payload the
+ * exec chain then runs. Matched with ci_contains_tok (token-prefix)
+ * so `guitar x`, `ajar xf`, `star trek` cannot fire the arm.   */
+static const char *PASTE_UNPACK_TOOLS[] = {
+    "tar x", "tar -x", "gtar x", "gtar -x",
+    "star x", "star -x", "bsdtar x", "bsdtar -x",
+    "unzip ", "funzip ", "gunzip ", "gzip -d",
+    "unxz ", "xz -d", "bunzip2 ", "bzip2 -d",
+    "lzip -d", "lunzip ", "zcat ", "bzcat ", "xzcat ",
+    "7z x", "7z e", "7za x", "7za e", "7zz x", "7zz e",
+    "unrar x", "unrar e", "rar x ", "rar e ",
+    "jar xf", "jar -xf", "ar x ",
+    "dpkg -x", "dpkg-deb -x", "cpio -i", "cpio --extract",
+    "rpm2cpio ", "shar ", "unsquashfs ", "cabextract ",
+    "unshield ", "innoextract ", "unace ", "unlzh ", NULL
+};
+static int hay_any_tok(const char *t, const char *const *l) {
+    for (; *l; l++) if (ci_contains_tok(t, *l)) return 1;
+    return 0;
+}
 static const char *PASTE_LISTENERS[] = {
     "nc -l", "ncat -l", "netcat -l", " -lv", "ncat --listen",
     "nc -p ", NULL
@@ -944,6 +964,25 @@ hlse_check_paste(const char *text) {
             snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
                 "P12b: Download-then-execute chain — remote content "
                 "fetched and run via &&/;");
+    }
+
+    /* P12c: unpack-then-execute chaining — `tar xzf x.tgz && sh
+     * x/run.sh`, `unzip x.zip; sh x/s`. The archive bytes arrived
+     * earlier (download or attachment); extraction materialises the
+     * payload the exec chain then runs — the fourth shape of the
+     * same cradle. Token-prefix matching keeps `guitar x`/`ajar xf`
+     * out; list/test flags (`unzip -l/-Z/-t`, `cpio -it`) don't
+     * materialise a payload, so they exclude the arm.            */
+    if (hay_any_tok(text, PASTE_UNPACK_TOOLS) &&
+        !ci_contains(text, "unzip -l") && !ci_contains(text, "unzip -z") &&
+        !ci_contains(text, "unzip -t") && !ci_contains(text, "cpio -it") &&
+        hay_any(text, PASTE_EXEC_CHAINS)) {
+        v.signals |= PASTE_EVAL_FETCH;
+        v.score += 45;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P12c: Unpack-then-execute chain — archive extracted "
+                "and payload run via &&/;");
     }
 
     /* P13: Listener / privilege-escalation one-liners — a bind shell,

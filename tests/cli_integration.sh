@@ -544,6 +544,38 @@ jcheck "pkgdl: download+make stays clean" 'd["score"] == 0' paste 'apt download 
 jcheck "pkgdl: dnf list+exec stays clean" 'd["score"] == 0' paste 'dnf list && sh x'
 jcheck "pkgdl: pip list+exec stays clean" 'd["score"] == 0' paste 'pip list && sh x'
 
+# P12c unpack-then-execute (cycle-486): `tar xzf x.tgz && sh x/run.sh`
+# and every other extract+exec shape scored 0 — rpm2cpio/expand only
+# fired via their P8 name-mentions (coverage lottery). New P12c arm:
+# extraction materialises the payload the &&/; chain then runs —
+# fourth cradle shape. ci_contains_tok matching keeps `guitar x`,
+# `ajar xf`, `star trek` out; list/test flags don't materialise a
+# payload (`unzip -l/-z/-t`, `cpio -it`, `tar t`, `7z l`) so they
+# exclude or simply aren't needle forms. Needles must be lowercase.
+jcheck "unpack: tar+exec fires P12c" 'd["score"] == 45 and "P12c" in str(d["reasons"])' paste 'tar xzf x.tgz && sh x/run.sh'
+jcheck "unpack: tar -x+exec fires P12c" 'd["score"] == 45' paste 'tar -xzf x.tar.gz && ./x/install'
+jcheck "unpack: unzip+exec fires P12c" 'd["score"] == 45' paste 'unzip x.zip && sh x/s'
+jcheck "unpack: unzip -o;exec fires P12c" 'd["score"] == 45' paste 'unzip -o x.zip; sh x/s'
+jcheck "unpack: 7z x+exec fires P12c" 'd["score"] == 45' paste '7z x x.7z && sh x/s'
+jcheck "unpack: unrar x+exec fires P12c" 'd["score"] == 45' paste 'unrar x x.rar && sh x/s'
+jcheck "unpack: jar xf+exec fires P12c" 'd["score"] == 45' paste 'jar xf x.jar && sh x/s'
+jcheck "unpack: ar x+exec fires P12c" 'd["score"] == 45' paste 'ar x x.deb && sh x/s'
+jcheck "unpack: dpkg -x+exec fires P12c" 'd["score"] == 45' paste 'dpkg -x x.deb . && sh x/s'
+jcheck "unpack: gunzip+exec fires P12c" 'd["score"] == 45' paste 'gunzip x.gz && sh x'
+jcheck "unpack: unsquashfs+exec elevates" 'd["score"] == 90' paste 'unsquashfs x.sq && sh x/s'
+jcheck "unpack: innoextract+exec elevates" 'd["score"] == 90' paste 'innoextract s.exe && sh s/s'
+jcheck "unpack: rpm2cpio+cpio exec elevates" 'd["score"] == 90' paste 'rpm2cpio x.rpm | cpio -idmv && sh x/s'
+jcheck "unpack: guitar container stays clean" 'd["score"] == 0' paste 'guitar x && sh y'
+jcheck "unpack: ajar container stays clean" 'd["score"] == 0' paste 'ajar xf && sh y'
+jcheck "unpack: unzip -l stays clean" 'd["score"] == 0' paste 'unzip -l x.zip && sh x'
+jcheck "unpack: unzip -Z stays clean" 'd["score"] == 0' paste 'unzip -Z x.zip && sh x'
+jcheck "unpack: unzip -t stays clean" 'd["score"] == 0' paste 'unzip -t x.zip && sh x'
+jcheck "unpack: cpio -it stays clean" 'd["score"] == 0' paste 'cpio -it < x.cpio && sh x'
+jcheck "unpack: tar list stays clean" 'd["score"] == 0' paste 'tar tzf x.tgz && sh x'
+jcheck "unpack: bare tar extract stays clean" 'd["score"] == 0' paste 'tar xzf x.tgz'
+jcheck "unpack: extract+cd stays clean" 'd["score"] == 0' paste 'tar xzf x.tgz && cd x'
+jcheck "unpack: extract+make stays clean" 'd["score"] == 0' paste 'tar xzf x.tgz && make'
+
 # P8 (also:) overflow guard: 5 hits with 105-141-char labels must not
 # smash extra[192] — cycle-439 fixed a would-be-length advance that
 # underflowed the snprintf size (ASan stack-buffer-overflow).

@@ -4,6 +4,27 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Fixed (cycle-486)
+- **P12c unpack-then-execute chain**: `tar xzf x.tgz && sh
+  x/run.sh`, `unzip x.zip; sh x/s`, `7z x`/`unrar`/`jar xf`/
+  `dpkg -x`/`ar x` extract+exec shapes all scored 0 — only
+  `rpm2cpio`/`expand`/`unsquashfs`/`innoextract` fired, and only
+  via their P8 name-mentions (coverage lottery). New `P12c` arm +
+  `PASTE_UNPACK_TOOLS` table: tar/gtar/star/bsdtar extract verbs,
+  unzip/funzip/gunzip/unxz/bunzip2/lzip/xz|bz decompressors,
+  7z/unrar/rar extract verbs, jar/ar/dpkg/cpio/shar/squashfs/
+  cabextract/unshield/innoextract/unace/unlzh. Extraction
+  materialises the payload the `&&/;` exec chain then runs — the
+  fourth cradle shape, same +45 tier. Matched via new
+  `hay_any_tok` (token-prefix) so `guitar x`, `ajar xf`, `star
+  trek` cannot fire; list/test flags don't materialise a payload
+  and exclude the arm (`unzip -l/-z/-t`, `cpio -it`) or are
+  simply not needle forms (`tar t`, `7z l`). Bare extraction,
+  `+ cd`, `+ make`, `+ ls` stay clean; compounds with existing
+  P8 arms elevate to 90. Needles must be lowercase ASCII — the
+  `-Z` exclusion silently failed as uppercase (now `-z`, covering
+  both cases). Suite 24,364 → 24,387 (+23 checks).
+
 ### Fixed (cycle-485)
 - **Package-manager download-verb coverage in P12b**: cycle-479 raised
   remote *install* to 65 BLOCK, but `apt download`, `pip download`,
