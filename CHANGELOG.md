@@ -4,6 +4,26 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Fixed (cycle-485)
+- **Package-manager download-verb coverage in P12b**: cycle-479 raised
+  remote *install* to 65 BLOCK, but `apt download`, `pip download`,
+  `npm pack`, `dnf download`, `yumdownloader`, `zypper download`,
+  `pacman -Sw` fetch-without-install scored 0 — the same remote-
+  content-intake stage left open. `gem fetch`/`cargo fetch` fired 45
+  only by accident via the bare `fetch` name-mention (a coverage
+  lottery, not a design). Real download verbs join
+  `PASTE_FETCH_TOOLS`: `pip download`/`pip3 download`,
+  `apt download`/`apt-get download`, `dnf download`/`yum download`/
+  `zypper download`, `yumdownloader`, `npm/pnpm/yarn pack`,
+  `pacman -Sw`/`-S -w`, `gem fetch`, `cargo fetch`,
+  `go mod download`, `brew fetch`, `pnpm fetch`, `yarn fetch`. The
+  exec-chain gate still requires `&&/;` + `bash|sh|chmod|sudo|./|/`,
+  so bare `apt download x`=0, `apt download x && cd x`=0,
+  `apt download x && make`=0 all stay clean. Pure download chains
+  score 45 (P12b); `go mod download`/`uv pip download` chains
+  elevate to 90 via their existing P8 remote-install arms.
+  Suite 24,348 → 24,364 (+16 checks).
+
 ### Fixed (cycle-484)
 - **VCS-clone / alt-downloader fetch coverage in P12b**: the
   fake-repo-install ClickFix shape scored 0 —

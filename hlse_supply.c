@@ -556,6 +556,13 @@ static const char *PASTE_FETCH_TOOLS[] = {
      * &&/; exec chain is the same download-execute cradle  */
     "git clone", "git pull", "svn co ", "svn checkout", "hg clone",
     "aria2c ", "axel ", "lftp ", "rcp ", "wput ", "yafc ",
+    /* package-manager download verbs — fetch-without-install is the
+     * same remote-content-intake stage (exec-chain gate still applies) */
+    "pip download", "pip3 download", "apt download", "apt-get download",
+    "dnf download", "yum download", "zypper download",
+    "yumdownloader ", "npm pack ", "pnpm pack ", "yarn pack ",
+    "pacman -Sw", "pacman -S -w", "gem fetch", "cargo fetch",
+    "go mod download", "brew fetch", "pnpm fetch", "yarn fetch",
     "base64 -d", "base64 -D", "base64 --decode",
     "openssl enc", "openssl aes", "gpg -d", "gpg --decrypt",
     "xxd -r", NULL

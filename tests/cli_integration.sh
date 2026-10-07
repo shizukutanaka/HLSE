@@ -521,6 +521,29 @@ jcheck "vcsfetch: git clone+cd stays clean" 'd["score"] == 0' paste 'git clone x
 jcheck "vcsfetch: git status+exec stays clean" 'd["score"] == 0' paste 'git status && sh x'
 jcheck "vcsfetch: git pull+make stays clean" 'd["score"] == 0' paste 'git pull && make'
 
+# pkg-manager download-verb coverage (cycle-485): cycle-479 made remote
+# *install* 65, but `apt download`/`pip download`/`npm pack` fetch-without-
+# install scored 0 — the same remote-content-intake stage. gem fetch/
+# cargo fetch fired 45 only by accident via the bare "fetch" name-mention
+# (coverage lottery). Real download verbs join PASTE_FETCH_TOOLS — chain
+# gate still requires &&/; + exec verb, so bare `apt download x`=0.
+jcheck "pkgdl: pip download+exec fires P12b" 'd["score"] == 45 and "P12b" in str(d["reasons"])' paste 'pip download http://x -d . && sh s'
+jcheck "pkgdl: pip3 download+exec fires P12b" 'd["score"] == 45' paste 'pip3 download x && sh x'
+jcheck "pkgdl: apt download+exec fires P12b" 'd["score"] == 45' paste 'apt download x && sh x'
+jcheck "pkgdl: apt-get download+exec fires P12b" 'd["score"] == 45' paste 'apt-get download x && sh x'
+jcheck "pkgdl: dnf download+exec fires P12b" 'd["score"] == 45' paste 'dnf download x && sh x'
+jcheck "pkgdl: yumdownloader+exec fires P12b" 'd["score"] == 45' paste 'yumdownloader x && sh x'
+jcheck "pkgdl: npm pack+exec fires P12b" 'd["score"] == 45' paste 'npm pack x && sh x'
+jcheck "pkgdl: pacman -Sw+exec fires P12b" 'd["score"] == 45' paste 'pacman -Sw x && sh x'
+jcheck "pkgdl: go mod download+exec elevates" 'd["score"] == 90' paste 'go mod download && sh x'
+jcheck "pkgdl: uv pip download+exec elevates" 'd["score"] == 90' paste 'uv pip download http://x && sh s'
+jcheck "pkgdl: bare apt download stays clean" 'd["score"] == 0' paste 'apt download x'
+jcheck "pkgdl: bare npm pack stays clean" 'd["score"] == 0' paste 'npm pack x'
+jcheck "pkgdl: download+cd stays clean" 'd["score"] == 0' paste 'apt download x && cd x'
+jcheck "pkgdl: download+make stays clean" 'd["score"] == 0' paste 'apt download x && make'
+jcheck "pkgdl: dnf list+exec stays clean" 'd["score"] == 0' paste 'dnf list && sh x'
+jcheck "pkgdl: pip list+exec stays clean" 'd["score"] == 0' paste 'pip list && sh x'
+
 # P8 (also:) overflow guard: 5 hits with 105-141-char labels must not
 # smash extra[192] — cycle-439 fixed a would-be-length advance that
 # underflowed the snprintf size (ASan stack-buffer-overflow).
