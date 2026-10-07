@@ -446,7 +446,8 @@ hay_any(const char *hay, const char *const needles[]) {
 }
 
 static const char *PASTE_DOWNLOADERS[] = {
-    "curl ", "wget ", "fetch ", "lynx ", NULL
+    "curl ", "wget ", "fetch ", "lynx ", "ncat ", "netcat ",
+    "socat ", "telnet ", NULL
 };
 static const char *PASTE_PIPE_SHELLS[] = {
     "| sh", "| bash", "|sh", "|bash", "| sudo", "| /bin/sh",
@@ -550,7 +551,8 @@ static const char *PASTE_FETCHES[] = {
 };
 static const char *PASTE_FETCH_TOOLS[] = {
     "curl ", "wget ", "fetch ", "lynx ", "scp ", "sftp ", "rsync ",
-    "tftp ", "base64 -d", "base64 -D", "base64 --decode",
+    "tftp ", "ncat ", "netcat ", "socat ", "telnet ",
+    "base64 -d", "base64 -D", "base64 --decode",
     "openssl enc", "openssl aes", "gpg -d", "gpg --decrypt",
     "xxd -r", NULL
 };
@@ -711,7 +713,14 @@ hlse_check_paste(const char *text) {
 
     /* P2: curl/wget piped to shell */
     {
-        int has_curl = hay_any(text, PASTE_DOWNLOADERS);
+        /* 'nc' as a bare needle is a substring hazard (inside
+         * 'sync', 'zinc', 'func') — token-prefix gate instead;
+         * it also covers 'ncat '/'nc ' itself at token start. */
+        int has_curl = hay_any(text, PASTE_DOWNLOADERS) ||
+            (ci_contains_tok(text, "nc") &&
+             !ci_contains_tok(text, "ncdu") &&
+             !ci_contains_tok(text, "ncftp") &&
+             !ci_contains_tok(text, "ncurses"));
         int has_pipe_sh = hay_any(text, PASTE_PIPE_SHELLS);
         if (has_curl && has_pipe_sh) {
             v.signals |= PASTE_CURL_PIPE_SH;
@@ -912,7 +921,11 @@ hlse_check_paste(const char *text) {
      * `wget x; sh s`, `curl x && sudo bash s`. P2 needs a literal
      * `| sh` and P12 needs an eval/source verb; the `&&`/`;` exec
      * chain is the third shape of the same download cradle.       */
-    if (hay_any(text, PASTE_FETCH_TOOLS) &&
+    if ((hay_any(text, PASTE_FETCH_TOOLS) ||
+         (ci_contains_tok(text, "nc") &&
+          !ci_contains_tok(text, "ncdu") &&
+          !ci_contains_tok(text, "ncftp") &&
+          !ci_contains_tok(text, "ncurses"))) &&
         hay_any(text, PASTE_EXEC_CHAINS)) {
         v.signals |= PASTE_EVAL_FETCH;
         v.score += 45;
