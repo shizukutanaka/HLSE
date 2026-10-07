@@ -2,6 +2,42 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 496 — Quote-obfuscation normalization + PowerShell cradle coverage
+
+### Changed
+- `hlse_check_paste` now matches needles against a quote-stripped
+  copy of the input: cmd.exe and POSIX shells remove inline
+  `'`/`"` before executing, so `c"u"rl`/`'curl'`/`cu""rl` really
+  run curl — previously every such form scored 0. The four arms
+  whose needles intentionally contain quote characters
+  (quote-injection markers: `";`, `';`, `""`, sed `1e'`/` e'`)
+  still read the raw input via `raw`.
+
+### Added
+- `curl.exe`/`wget.exe` to PASTE_DOWNLOADERS (`.exe` suffix broke
+  the `curl ` trailing-space needle).
+- `powershell`/`pwsh` encoded-command flag variants: `-e`, `-ec`,
+  `-en`, `-enco`, `-encod`, `-encode`, `-encoded` — and `pwsh`
+  parity on the hidden/encoded arm (65).
+- Bare PowerShell cradle arms (65): `Net.WebClient` /
+  `DownloadString` / `DownloadFile` / `Start-BitsTransfer` with a
+  remote/iex qualifier, and bare `iwr`/`irm`/`Invoke-WebRequest` /
+  `Invoke-RestMethod` with http/-outfile/iex — no literal
+  `powershell` required.
+- `xcopy \\`, `copy \\`, `robocopy \\`, `move \\` in
+  PASTE_FETCH_TOOLS — UNC-source copy is the Windows download
+  equivalent (exec-chain gate keeps routine share backups clean).
+- Windows exec chains in PASTE_EXEC_CHAINS: `&&/;` `start`,
+  `call`, `cmd /c`; plus `chain_runs_executable()` — a `&&`/`;`
+  element whose first token is a bare `.exe`/`.bat`/`.ps1`/`.cmd`
+  (e.g. `xcopy \\s\x.exe d && x.exe`).
+
+### Verified benign-by-design (probed, unchanged)
+- `powershell Get-Process`, `certutil -verify`, `bitsadmin /list`,
+  `robocopy \\srv\share dst` (bare), `xcopy a b && dir`,
+  `a "quoted" word`, `cat login users.txt` — all 0.
+
+
 ## Cycle 495 — Windows credential stores + backslash path parity
 
 ### Added
