@@ -508,13 +508,18 @@ static const char *PASTE_CRED_PATHS[] = {
 };
 static const char *PASTE_WRITE_VERBS[] = {
     "echo ", "crontab", "at now", "systemctl enable",
-    "launchctl load", "tee /", "tee .", "tee ~", "tee -",
+    "systemctl --user enable", "systemctl --now enable",
+    "systemctl --global enable", "systemctl reenable",
+    "systemctl --user reenable", "launchctl load", "tee /", "tee .", "tee ~", "tee -",
     "curl ", "wget ", NULL
 };
 /* Persistence targets — deduplicated from the former || chain. */
 static const char *PASTE_PERSIST_TARGETS[] = {
     ".bashrc", ".zshrc", ".profile", "authorized_keys", "crontab",
-    "systemctl enable", "launchctl", "rc.local", ".xinitrc",
+    "systemctl enable", "systemctl --user enable",
+    "systemctl --now enable", "systemctl --global enable",
+    "systemctl reenable", "systemctl --user reenable",
+    "launchctl", "rc.local", ".xinitrc",
     ".zshenv", ".bash_profile", ".bash_login", ".zprofile",
     ".zlogin", ".xprofile", ".pam_environment", "ld.so.preload",
     "cron.d", "spool/cron", "autostart", "systemd/system", "inetd",
@@ -677,7 +682,7 @@ static const char *PASTE_ASP_MARKERS[] = {
     "<%", ".asp", ".aspx", NULL
 };
 static const char *PASTE_WEBSHELL_MARKERS[] = {
-    "<?php", "<?=", "<%", ".php", ".asp", ".jsp", ".cgi",
+    "<?php", "<?=", "<%", "<jsp", ".php", ".asp", ".jsp", ".cgi",
     ".war", NULL
 };
 static const char *PASTE_ASP_EXEC[] = {

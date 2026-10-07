@@ -739,6 +739,22 @@ jcheck "dec: base32 encode benign" 'd["score"] == 0' paste "base32 encode f"
 jcheck "dec: xbase32 no fire" 'd["score"] == 0' paste "xbase32 -d f | sh"
 jcheck "dec: base32 bare benign" 'd["score"] == 0' paste "base32 f"
 
+# persistence flag-variants + jsp webshell tag (cycle 492): '--user'/'--now'/'--global'
+# between systemctl and enable broke the fused 'systemctl enable' needle; user-scope
+# unit enable is persistence (runs at user login, no root needed)
+jcheck "persist: --user enable == 45" 'd["score"] == 45' paste "systemctl --user enable evil.service"
+jcheck "persist: --user enable timer == 45" 'd["score"] == 45' paste "systemctl --user enable x.timer"
+jcheck "persist: --now enable == 45" 'd["score"] == 45' paste "systemctl --now enable x.service"
+jcheck "persist: --global enable == 45" 'd["score"] == 45' paste "systemctl --global enable x.service"
+jcheck "persist: reenable == 45" 'd["score"] == 45' paste "systemctl reenable x.service"
+jcheck "persist: --user reenable == 45" 'd["score"] == 45' paste "systemctl --user reenable x.service"
+jcheck "persist: --user status benign" 'd["score"] == 0' paste "systemctl --user status x"
+jcheck "persist: list-unit-files benign" 'd["score"] == 0' paste "systemctl --user list-unit-files"
+jcheck "persist: --user start benign" 'd["score"] == 0' paste "systemctl --user start x.service"
+# JSP XML-syntax webshell: '<jsp:scriptlet>' tag (non-'<%' JSP shape)
+jcheck "webshell: jsp scriptlet == 50" 'd["score"] == 50' paste "<jsp:scriptlet>Runtime.getRuntime().exec(request.getParameter(\"c\"))</jsp:scriptlet>"
+jcheck "webshell: jsp directive benign" 'd["score"] == 0' paste "<jsp:directive.page import=\"x\"/>"
+
 # secret findings[] carry a 1-based line number (SIEM/remediation locus)
 printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | jcheck "secret finding reports correct line number" "'\"line\":4' in s" secret --stdin
 jcheck "secret single-line input reports line 1" "'\"line\":1' in s" secret 'key: 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d'

@@ -2,6 +2,25 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 492 — persistence flag-variants + JSP XML-tag marker
+
+### Added
+- `systemctl` flag-variant persistence needles in `PASTE_WRITE_VERBS`
+  *and* `PASTE_PERSIST_TARGETS`: `--user enable`, `--now enable`,
+  `--global enable`, `reenable`, `--user reenable`. The fused
+  `systemctl enable` needle lives in both tables, so flags inserted
+  between the tool name and the verb broke the match: user-scope
+  unit enable is persistence (runs at user login, needs no root)
+  and `reenable` is its re-installing synonym. Bare read-only
+  verbs (`status`, `list-unit-files`, `start`) stay clean.
+- `"<jsp"` in `PASTE_WEBSHELL_MARKERS`: JSP XML-syntax webshells
+  (`<jsp:scriptlet>Runtime.getRuntime().exec(request.getParameter…)`)
+  lacked the `<%` marker the ASP/JSP-servlet tag family shares, so
+  they scored 0 despite `getParameter`/`getRuntime`/`request` all
+  being covered. Benign JSP tags (`<jsp:directive.page>`) stay
+  clean.
+
+
 ## [Unreleased]
 
 ### Added (cycle-491)
