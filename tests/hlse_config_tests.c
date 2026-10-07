@@ -199,6 +199,30 @@ static void test_error_has_line_number(void) {
     cleanup_cfg();
 }
 
+static void test_daemon_keys(void) {
+    HlseConfig c;
+    TEST("config: daemon keys (watch/scan-interval/pid-file/state-file)");
+    write_cfg("watch = /etc\nwatch = /usr/bin\n"
+              "scan-interval = 30\npid-file = /run/hlsed.pid\n"
+              "state-file = /var/lib/hlsed/dedup.state\n");
+    if (hlse_config_load(cfgpath, &c, err, sizeof(err)) != 0) { FAIL(err); return; }
+    CHECK(c.n_watch == 2 && strcmp(c.watch[0], "/etc") == 0 &&
+          strcmp(c.watch[1], "/usr/bin") == 0 && c.scan_interval == 30 &&
+          strcmp(c.pid_file, "/run/hlsed.pid") == 0 &&
+          strcmp(c.state_file, "/var/lib/hlsed/dedup.state") == 0,
+          "field mismatch");
+    cleanup_cfg();
+}
+
+static void test_state_file_defaults_empty(void) {
+    HlseConfig c;
+    TEST("config: state-file defaults to empty (memory-only)");
+    write_cfg("watch = /tmp\n");
+    if (hlse_config_load(cfgpath, &c, err, sizeof(err)) != 0) { FAIL(err); return; }
+    CHECK(c.state_file[0] == '\0', "state-file should default empty");
+    cleanup_cfg();
+}
+
 int
 main(void) {
     printf("HLSE config loader tests\n\n");
@@ -217,6 +241,8 @@ main(void) {
     test_missing_value();
     test_unterminated_quote();
     test_error_has_line_number();
+    test_daemon_keys();
+    test_state_file_defaults_empty();
 
     printf("\n══════════════════════════════════════\n");
     printf("Config tests: %d/%d passed", passed, total);

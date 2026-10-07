@@ -66,6 +66,7 @@ typedef struct {
 static SeenEntry g_seen[DAEMON_SEEN_MAX];
 static int       g_seen_n;      /* entries appended (<= MAX) */
 static int       g_seen_evict;  /* next circular slot to overwrite */
+static int       g_seen_dirty;  /* table changed since last snapshot  */
 
 /* 1 when (path,mtime,size) is already recorded; records and returns 0
  * when new/changed. */
@@ -86,7 +87,86 @@ seen_lookup_or_record(const char *path, long long mtime, long long size) {
     snprintf(g_seen[i].path, sizeof(g_seen[i].path), "%s", path);
     g_seen[i].mtime = mtime;
     g_seen[i].size  = size;
+    g_seen_dirty = 1;
     return 0;
+}
+
+/* ── dedup snapshot (`state-file`, opt-in) ─────────────────────────────
+ * Host-local binary journal, written <file>.tmp then renamed so a crash
+ * mid-write can never leave a half-truncated snapshot. Records carry
+ * only the dedup tuple — no content, no verdicts — per the SECURITY.md
+ * carve-out. Layout (fixed-width, host-endian):
+ *   8B magic "HLSEDST1", u32 count, then count records of
+ *   { i64 mtime, i64 size, u16 pathlen, u8 path[pathlen] }.          */
+#define SEEN_MAGIC "HLSEDST1"
+
+static int
+seen_save(const char *sf) {
+    char tmp[1100];
+    FILE *fp;
+    unsigned int i, count;
+
+    if (snprintf(tmp, sizeof(tmp), "%s.tmp", sf) >= (int)sizeof(tmp))
+        return -1;
+    fp = fopen(tmp, "wb");
+    if (!fp) return -1;
+    count = (unsigned int)g_seen_n;
+    if (fwrite(SEEN_MAGIC, 8, 1, fp) != 1 ||
+        fwrite(&count, sizeof(count), 1, fp) != 1)
+        goto fail;
+    for (i = 0; i < count; i++) {
+        unsigned short plen = (unsigned short)strlen(g_seen[i].path);
+        if (fwrite(&g_seen[i].mtime, sizeof(g_seen[i].mtime), 1, fp) != 1 ||
+            fwrite(&g_seen[i].size,  sizeof(g_seen[i].size),  1, fp) != 1 ||
+            fwrite(&plen, sizeof(plen), 1, fp) != 1 ||
+            (plen && fwrite(g_seen[i].path, plen, 1, fp) != 1))
+            goto fail;
+    }
+    if (fclose(fp) != 0) { unlink(tmp); return -1; }
+    if (rename(tmp, sf) != 0) { unlink(tmp); return -1; }
+    return 0;
+fail:
+    fclose(fp);
+    unlink(tmp);
+    return -1;
+}
+
+/* Load a snapshot written by seen_save. Missing file is a normal first
+ * boot; a malformed file only forfeits dedup memory — never a reason to
+ * refuse monitoring, so it warns and starts empty. */
+static void
+seen_load(const char *sf) {
+    char magic[8];
+    unsigned int count, i;
+    FILE *fp = fopen(sf, "rb");
+
+    if (!fp) return;                     /* first boot */
+    if (fread(magic, 8, 1, fp) != 1 || memcmp(magic, SEEN_MAGIC, 8) != 0 ||
+        fread(&count, sizeof(count), 1, fp) != 1 ||
+        count > DAEMON_SEEN_MAX)
+        goto bad;
+    for (i = 0; i < count; i++) {
+        unsigned short plen;
+        if (fread(&g_seen[i].mtime, sizeof(g_seen[i].mtime), 1, fp) != 1 ||
+            fread(&g_seen[i].size,  sizeof(g_seen[i].size),  1, fp) != 1 ||
+            fread(&plen, sizeof(plen), 1, fp) != 1 ||
+            plen >= sizeof(g_seen[i].path) ||
+            (plen && fread(g_seen[i].path, plen, 1, fp) != 1))
+            goto bad;
+        g_seen[i].path[plen] = '\0';
+    }
+    fclose(fp);
+    g_seen_n = (int)count;
+    g_seen_evict = 0;
+    fprintf(stderr, "hlsed: restored %u dedup entries from %s\n",
+            count, sf);
+    return;
+bad:
+    fclose(fp);
+    g_seen_n = 0;
+    g_seen_evict = 0;
+    fprintf(stderr, "hlsed: ignoring malformed state-file '%s' — "
+            "starting with an empty dedup table\n", sf);
 }
 
 /* ── per-file detection ──────────────────────────────────────────────── */
@@ -315,10 +395,20 @@ hlse_daemon_run(const char *config_path) {
             HLSE_VERSION, cfg.n_watch, cfg.n_watch == 1 ? "y" : "ies",
             interval, threshold);
 
+    if (cfg.state_file[0])
+        seen_load(cfg.state_file);
+
     while (!g_stop) {
         long entries = 0;
         for (i = 0; i < cfg.n_watch && !g_stop; i++)
             walk(cfg.watch[i], 0, threshold, &entries);
+
+        if (cfg.state_file[0] && g_seen_dirty) {
+            if (seen_save(cfg.state_file) != 0)
+                fprintf(stderr, "hlsed: cannot snapshot dedup table to "
+                        "'%s': %s\n", cfg.state_file, strerror(errno));
+            g_seen_dirty = 0;
+        }
 
         if (g_reload) {
             HlseConfig ncfg;
@@ -360,6 +450,11 @@ hlse_daemon_run(const char *config_path) {
                 ;
         }
     }
+
+    if (cfg.state_file[0] && g_seen_dirty &&
+        seen_save(cfg.state_file) != 0)
+        fprintf(stderr, "hlsed: cannot snapshot dedup table to '%s': %s\n",
+                cfg.state_file, strerror(errno));
 
     fprintf(stderr, "hlsed: stopped (%d reload%s)\n",
             n_reloads, n_reloads == 1 ? "" : "s");

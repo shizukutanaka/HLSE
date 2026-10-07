@@ -53,7 +53,8 @@ systemctl status hlsed
 `hlsed` is a poll-based FIM (portable: Linux + macOS, rootless-capable).
 `SIGHUP` reloads config; `SIGTERM`/`SIGINT` exits cleanly; the pid file
 is flock-protected against double-start. Alerts go to the configured
-`hlse_alert` sinks (see `man hlsed`).
+`hlse_alert` sinks (see `man hlsed`). Set `state-file` in the config to
+persist the dedup table across restarts (path/mtime/size tuples only).
 
 ## 4. Verify the deployment
 

@@ -92,6 +92,46 @@ check "SIGTERM stops daemon" "$(kill -0 "$D" 2>/dev/null && echo alive || echo d
 check "pid file removed"     "$([ -f "$PIDF" ] && echo yes || echo no)"   "no"
 check "shutdown line"        "$(cat "$ERR")"                              "stopped"
 
+# ── state-file: dedup survives a restart ----------------------------------
+STATE="$ROOT/dedup.state"; CONF2="$ROOT/hlsed2.conf"; ERR2="$ROOT/stderr2.log"
+sed "s|pid-file.*|pid-file      = $ROOT/hlsed2.pid|;s|log-file.*|log-file      = $ROOT/alert2.log|" "$CONF" > "$CONF2"
+printf 'state-file    = %s\n' "$STATE" >> "$CONF2"
+"$HLSed" --config "$CONF2" >"$ERR2" 2>&1 &
+D2=$!
+i=0; while [ ! -f "$ROOT/hlsed2.pid" ] && [ $i -lt 30 ]; do sleep 0.1; i=$((i+1)); done
+sleep 1.4          # one sweep: existing findings recorded into the snapshot
+check "state snapshot written"  "$([ -f "$STATE" ] && echo yes || echo no)" "yes"
+check "snapshot magic"          "$(head -c8 "$STATE" 2>/dev/null)"          "HLSEDST1"
+kill -TERM "$D2" 2>/dev/null; i=0
+while kill -0 "$D2" 2>/dev/null && [ $i -lt 30 ]; do sleep 0.1; i=$((i+1)); done
+
+# restart with the same state-file: keys.txt must NOT re-alert --------------
+: > "$ROOT/alert2.log"
+"$HLSed" --config "$CONF2" >"$ERR2" 2>&1 &
+D2=$!
+i=0; while [ ! -f "$ROOT/hlsed2.pid" ] && [ $i -lt 30 ]; do sleep 0.1; i=$((i+1)); done
+sleep 1.4
+check "dedup restored on restart"  "$(cat "$ERR2")"                    "restored"
+case "$(cat "$ROOT/alert2.log")" in
+  *keys.txt*) fail "restart does not re-alert unchanged file (found: keys.txt)";;
+  *)          pass "restart does not re-alert unchanged file";;
+esac
+
+# a changed file still alerts after restart ---------------------------------
+printf 'aws_key = "AKIAQB3X7F2MN9T4KZWJ" extra\n' > "$WATCH/sub/keys.txt"
+sleep 1.4
+check "changed file re-alerts"     "$(cat "$ROOT/alert2.log")"              "keys.txt"
+kill -TERM "$D2" 2>/dev/null; wait "$D2" 2>/dev/null
+
+# a malformed state-file must not brick the daemon ----------------------------
+printf 'GARBAGEINPUT' > "$STATE"
+"$HLSed" --config "$CONF2" >"$ROOT/stderr3.log" 2>&1 &
+D3=$!
+i=0; while [ ! -f "$ROOT/hlsed2.pid" ] && [ $i -lt 30 ]; do sleep 0.1; i=$((i+1)); done
+check "malformed state tolerated"  "$(cat "$ROOT/stderr3.log")"        "malformed state-file"
+check "daemon still alive"         "$(kill -0 "$D3" 2>/dev/null && echo up || echo dead)" "up"
+kill -TERM "$D3" 2>/dev/null; wait "$D3" 2>/dev/null
+
 echo "════════════════════════════════════════"
 printf '%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

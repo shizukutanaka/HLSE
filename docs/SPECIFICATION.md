@@ -102,8 +102,10 @@ on Linux/macOS). Findings ≥ `fail-on` (daemon default: ALERT=40) flow to
 `hlse_alert` sinks (`log-file`, `syslog`) and stderr. Signals: SIGTERM/SIGINT
 stop cleanly; SIGHUP reloads the config. Optional `pid-file` is flock-ed for
 the process lifetime (a second instance exits 1). All state is in-memory and
-dies with the process — the scoped carve-out in `SECURITY.md` covers exactly
-this; on-disk state would need its own amendment.
+dies with the process by default; the optional `state-file` snapshots the
+dedup tuples (path/mtime/size only — never content or verdicts) so a restart
+does not re-alert unchanged files — the scoped carve-out in `SECURITY.md`
+covers exactly this journal.
 
 ## 4. Modules
 

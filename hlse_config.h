@@ -57,6 +57,7 @@ typedef struct {
     /* daemon-only (hlsed); ignored by hlse_core */
     int  scan_interval;                   /* 0 = unset -> 60  */
     char pid_file[1024];
+    char state_file[1024];                /* dedup snapshot; "" = memory-only */
     int  n_watch;
     char watch[HLSE_CONFIG_MAX_WATCH][1024];
 } HlseConfig;

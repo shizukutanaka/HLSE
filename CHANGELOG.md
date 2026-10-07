@@ -4,6 +4,22 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-477)
+- **`state-file`: optional dedup persistence for hlsed** (audit C2).
+  Previously the daemon's in-memory dedup table meant every restart
+  re-alerted every unchanged file below threshold — an alert storm on
+  each deploy. Setting `state-file = <path>` snapshots the table —
+  (path, mtime, size) tuples only, never content or verdicts — after
+  each recording sweep and on clean shutdown, and restores it at
+  startup. Written `<path>.tmp` and renamed atomically; a missing file
+  is a normal first boot, a malformed file warns on stderr and the
+  daemon continues with an empty table (dedup memory is forfeited,
+  monitoring never is). Omit the key for the original memory-only
+  behaviour — SECURITY.md's state carve-out is amended to cover the
+  opt-in journal explicitly. Daemon integration +7 checks
+  (snapshot, restart dedup, changed-file re-alert, malformed-file
+  tolerance); config loader +2 tests.
+
 ### Changed (cycle-476)
 - **P8 severity tiers completed + defanged-scheme + real-attack
   corpus:** finishing audit B2, the remaining ~47 qualified-verb

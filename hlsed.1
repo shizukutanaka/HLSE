@@ -35,7 +35,9 @@ O_RDONLY|O_NOFOLLOW|O_NONBLOCK and only ever read, matching the rules of
 the one-shot
 .BR "hlse_core scan" .
 .PP
-The daemon runs in the foreground and keeps all state in memory (see
+The daemon runs in the foreground and keeps all state in memory unless
+.B state\-file
+is configured (see
 .IR SECURITY.md
 for the scoped state carve-out). It never detaches: supervise it with
 systemd
@@ -84,6 +86,16 @@ on it for its lifetime; a second
 .B hlsed
 with the same pid-file refuses to start (exit 1). Removed on clean
 shutdown.
+.TP
+.BI state\-file " = " path
+When set, the daemon snapshots the dedup table — (path, mtime, size)
+tuples only, never file content or verdicts — after each sweep that
+recorded new entries and again on clean shutdown, and restores it at
+startup so a restart does not re-alert every unchanged file. Written
+.IR path .tmp
+and renamed atomically; a missing or malformed file only forfeits
+dedup memory (the daemon warns on stderr and continues with an empty
+table). Omit for memory-only dedup.
 .TP
 .BI fail\-on " = " band
 Alert threshold: \fBlog|alert|block|isolate\fR or 0\(en100. Daemon

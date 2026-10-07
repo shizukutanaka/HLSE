@@ -214,13 +214,17 @@ hlse_config_load(const char *path, HlseConfig *cfg,
             if (cfg_path(cfg->pid_file, sizeof(cfg->pid_file), v) != 0)
                 goto bad_path;
         }
+        else if (strcmp(key, "state-file")   == 0) {
+            if (cfg_path(cfg->state_file, sizeof(cfg->state_file), v) != 0)
+                goto bad_path;
+        }
         else {
             char msg[160];
             snprintf(msg, sizeof(msg),
                      "unknown config key '%s' (expected json|sarif|quiet|"
                      "syslog|fingerprints|git-history|fail-on|from|"
                      "baseline|log-file|patterns|watch|scan-interval|"
-                     "pid-file)", key);
+                     "pid-file|state-file)", key);
             cfg_err(err, errcap, path, lineno, msg);
             fclose(fp);
             return -1;

@@ -40,12 +40,16 @@ High:
   base64, non-standard whitespace)
 - Persistent state that survives across invocations when it shouldn't.
   Scoped carve-out: `hlsed`'s in-memory dedup table (path→mtime/size of
-  already-scanned files) lives only for the resident process's lifetime,
-  never touches disk, and dies with the process — it is intra-invocation
-  state and is NOT in this class. `hlsed` writes no on-disk state of its
-  own: the PID file is operator-visible bookkeeping, and findings flow to
-  the same `--log-file`/syslog sinks a one-shot run would use. Any future
-  on-disk state the daemon might gain needs its own amendment here.
+  already-scanned files) lives only for the resident process's lifetime
+  and dies with the process by default — it is intra-invocation
+  state and is NOT in this class. The optional `state-file` config key
+  extends it across restarts: when set, the daemon snapshots the dedup
+  tuples — (path, mtime, size) ONLY, never file content or verdicts —
+  to a host-local journal (`.tmp` + rename, format `HLSEDST1`) so a
+  restart does not re-alert every unchanged file. `hlsed` writes no
+  other on-disk state of its own: the PID file is operator-visible
+  bookkeeping, and findings flow to the same `--log-file`/syslog sinks
+  a one-shot run would use.
 
 Medium:
 - False positive rate exceeds 5% on a documented corpus
