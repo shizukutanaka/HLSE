@@ -2,6 +2,39 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 510 — Paste: credential-dir bulk copy + ssh-arm .ssh fix
+
+### Added
+- `cred_dir_copy()` arm: bulk copy of a credential directory
+  (cp/scp/pscp/rsync/mv/tar/zip/7z/xcopy/robocopy/ditto/rar/cpio
+  over `.ssh`, `.aws`, `.gnupg`, `.gpg`, `.kube`, `.docker`,
+  `.azure`, `.m2`, `.config/gcloud`, `.config/gh`, `.cargo`,
+  `.composer`, `.huggingface`, `.s3cfg`, `.config/rclone`,
+  `.terraform.d`, `.minikube`, both `/` and `\` separators)
+  scores +45 — the pre-exfiltration staging step.  The dir name
+  must appear as a copy operand ('~/.ssh', '~/.ssh/', '~/.ssh/*'),
+  not inside a file path: 'cp config ~/.ssh/config.bak' is routine
+  admin and stays clean (suite pin preserved); single sensitive
+  files like ~/.ssh/id_rsa still hit CRED_PATHS at 40.
+
+### Fixed
+- ssh-tunnel arm cross-fire: `ci_contains(text, "ssh")` matched the
+  '.ssh' substring inside paths, so any copy tool's generic `-r`
+  flag next to a credential dir fired "ssh tunnel / reverse
+  forward" at 55 (`cp -r ~/.ssh /mnt/usb`). New `has_ssh_ref()`
+  helper skips dot-prefixed occurrences ('.ssh'), so the arm only
+  fires on real ssh-tool mentions (autossh/sshd/ssh-keygen keep
+  working). `.ssh`-dir staging coverage is now deliberate via
+  cred_dir_copy at +45 instead of accidental at 55.
+
+### Verified
+- `ssh -R`, `ssh -D`, `ssh -Nf -R`, `autossh -M 0 -R`,
+  `autossh -R` all still 55; `cp file /tmp/x` clean.
+- `rsync -av ~/.aws`, `scp -r ~/.aws`, `tar czf b.tgz .aws`,
+  `mv ~/.gnupg`, `robocopy .docker` all 45 (was 0 for `.aws`
+  variants — `.ssh` copies only ever fired via the cross-fire).
+
+
 ## Cycle 509 — Text: customs-hold / payment-redirect / MFA-fatigue keywords
 
 ### Added

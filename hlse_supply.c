@@ -448,6 +448,93 @@ hay_any(const char *hay, const char *const needles[]) {
 /* 'fetch', 'ncat', 'netcat' are matched via ci_contains_tok in the
  * P2/P12b gates instead — the substring forms fired inside
  * 'prefetch ', 'concat ', 'mincat ' (real FP).                    */
+/* 'ssh' mention that is not part of a '.ssh' path — the ci table
+ * cannot tell '.ssh' (directory) from the ssh(1) tool name, and the
+ * tunnel-flag arm cross-fired on any copy tool's '-r' flag next to
+ * a .ssh path (cp -r ~/.ssh → 55).  Dot-prefixed occurrences are
+ * path components, not the tool; everything else (autossh, sshd,
+ * ssh-keygen, ...) keeps old substring behaviour.                 */
+static int
+has_ssh_ref(const char *text) {
+    const char *p;
+    if (!text) return 0;
+    for (p = text; p[0] && p[1] && p[2]; p++)
+        if ((p[0] == 's' || p[0] == 'S') &&
+            (p[1] == 's' || p[1] == 'S') &&
+            (p[2] == 'h' || p[2] == 'H') &&
+            (p == text || p[-1] != '.'))
+            return 1;
+    return 0;
+}
+
+/* Bulk copy of a credential directory — cp/scp/rsync/tar/zip/mv of
+ * .ssh/.aws/.gnupg/.kube/.docker/... is the classic staging step
+ * before exfiltration.  '.ssh'-dir copies previously detected only
+ * by accident (the ssh-tunnel cross-fire above); this arm makes the
+ * coverage deliberate and extends it to the other credential dirs.
+ * Single files (id_rsa, .aws/credentials) already hit CRED_PATHS.   */
+static const char *CRED_COPY_TOOLS[] = {
+    "cp", "scp", "pscp", "rsync", "mv", "tar", "zip", "7z",
+    "xcopy", "robocopy", "ditto", "rar", "cpio", "zipcloak", NULL
+};
+static const char *CRED_DIRS[] = {
+    ".ssh", ".aws", ".gnupg", ".gpg", ".kube", ".docker",
+    ".azure", ".m2", ".config/gcloud", ".config/gh",
+    ".config\\gcloud", ".config\\gh", ".cargo", ".composer",
+    ".huggingface", ".s3cfg", ".config/rclone", ".config\\rclone",
+    ".terraform.d", ".config\\azure", ".minikube", NULL
+};
+/* case-insensitive strstr — needle must be lowercase ASCII       */
+static const char *
+ci_find(const char *hay, const char *needle) {
+    size_t nl;
+    if (!hay || !needle) return NULL;
+    nl = strlen(needle);
+    for (; *hay; hay++) {
+        size_t k = 0;
+        while (k < nl && hay[k] &&
+               (char)tolower((unsigned char)hay[k]) == needle[k])
+            k++;
+        if (k == nl) return hay;
+    }
+    return NULL;
+}
+
+/* The dir name appears as a copy operand — '.ssh' itself, '.ssh/'
+ * or '.ssh/ *' (glob) — not as a file path inside it
+ * ('.ssh/config.bak'), which is routine admin and pinned benign.  */
+static int
+is_dir_operand(const char *m, const char *needle) {
+    const char *s = m + strlen(needle);
+    if (*s == '\0' || *s == ' ' || *s == '\t')
+        return 1;
+    if (*s == '/' || *s == '\\') {
+        s++;
+        if (*s == '\0' || *s == '*' || *s == ' ' || *s == '\t' ||
+            *s == '.')
+            return 1;
+    }
+    return 0;
+}
+static int
+cred_dir_copy(const char *text) {
+    int i, j;
+    for (i = 0; CRED_COPY_TOOLS[i]; i++)
+        if (ci_contains_tok(text, CRED_COPY_TOOLS[i])) {
+            for (j = 0; CRED_DIRS[j]; j++) {
+                const char *m = text;
+                size_t nl = strlen(CRED_DIRS[j]);
+                while ((m = ci_find(m, CRED_DIRS[j])) != NULL) {
+                    if (is_dir_operand(m, CRED_DIRS[j]))
+                        return 1;
+                    m += nl;
+                }
+            }
+            return 0;
+        }
+    return 0;
+}
+
 static const char *PASTE_DOWNLOADERS[] = {
     "curl ", "curl.exe", "wget ", "wget.exe", "lynx ", "socat ", "telnet ", NULL
 };
@@ -2379,10 +2466,15 @@ hlse_check_paste(const char *text) {
          * -Nf/-fN background-no-command; -L stays unflagged
          * (ci can't split -L forward from -l login)              */
         }
-        if ((ci_contains(text, "ssh") ) &&
+        if ((has_ssh_ref(text)) &&
                    (ci_contains(text, "-r ") || ci_contains(text, " -d ") ||
                     ci_contains(text, "-nf") || ci_contains(text, "-fn"))) {
             PASTE_WHAT_SEV("ssh tunnel / reverse forward", 55);
+        /* credential-dir bulk copy — cp/scp/rsync/tar of .ssh/.aws/
+         * .gnupg/.kube/... (staging for exfiltration)              */
+        }
+        if (cred_dir_copy(text)) {
+            PASTE_WHAT_SEV("credential directory bulk copy (pre-exfil staging)", 45);
         /* sudoers append — >> /etc/sudoers or NOPASSWD grant     */
         }
         if (ci_contains_tok(text, "sudoers") &&

