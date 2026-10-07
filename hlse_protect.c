@@ -342,11 +342,41 @@ hlse_ransomware_check_directory(const char *dir_path) {
                 lower[k] = (name[k] >= 'A' && name[k] <= 'Z')
                            ? (char)(name[k] + 32) : name[k];
             lower[k] = '\0';
+            int r3_hit = 0;
             for (i = 0; RANSOM_NOTE_NAMES[i]; i++) {
                 if (strcmp(lower, RANSOM_NOTE_NAMES[i]) == 0) {
                     pv_add_reason(&v, 35,
                         "R3: Ransom note detected: '%s'", name);
+                    r3_hit = 1;
                     break;
+                }
+            }
+            /* Stem match: families drop the same note name under a
+             * different carrier extension (.hta/.html/.bmp) — an
+             * exact-match table misses 'how_to_decrypt.html'.  Compare
+             * the name's stem against each entry's stem, gated on the
+             * real extension being a note-type carrier so 'readme.md'
+             * stays quiet. */
+            if (!r3_hit) {
+                const char *dot = strrchr(lower, '.');
+                if (dot && (strcmp(dot, ".txt") == 0 ||
+                            strcmp(dot, ".html") == 0 ||
+                            strcmp(dot, ".hta") == 0 ||
+                            strcmp(dot, ".bmp") == 0)) {
+                    for (i = 0; RANSOM_NOTE_NAMES[i]; i++) {
+                        const char *edot = strrchr(RANSOM_NOTE_NAMES[i], '.');
+                        if (edot &&
+                            (size_t)(edot - RANSOM_NOTE_NAMES[i]) ==
+                                (size_t)(dot - lower) &&
+                            strncmp(lower, RANSOM_NOTE_NAMES[i],
+                                    (size_t)(dot - lower)) == 0) {
+                            pv_add_reason(&v, 35,
+                                "R3: Ransom note detected: '%s' "
+                                "(note-name stem under '%s' carrier)",
+                                name, dot);
+                            break;
+                        }
+                    }
                 }
             }
         }

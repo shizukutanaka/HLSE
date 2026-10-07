@@ -2,6 +2,21 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 508 — Protect R3: ransom-note stem under carrier extensions
+
+### Added
+- The R3 filename check was exact-match: `how_to_decrypt.html`
+  slipped through because the table holds `how_to_decrypt.txt`.
+  Families routinely drop the same note name under .hta/.html/.bmp
+  carriers — now the name's stem is compared against every table
+  stem when the real extension is a note carrier (.txt/.html/.hta/
+  .bmp), keeping `readme.md` quiet.
+
+### Verified benign-by-design (probed, unchanged)
+`readme.md`, `notes.txt`, `manual.txt` all quiet; exact-match names
+fire as before.
+
+
 ## Cycle 507 — Clipboard: invalid look-alike swap detection
 
 ### Added

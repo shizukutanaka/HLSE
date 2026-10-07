@@ -3859,6 +3859,16 @@ for i in $(seq 1 10); do touch "$P52_DIR/doc_${i}.docx.locked"; done
 # p52: protect BLOCK shows ransomware pattern
 jcheck "p52: protect BLOCK shows ransomware pattern" '"ransomware" in d.get("pattern","").lower()' protect "$P52_DIR"
 
+# R3 stem match (cycle 508): a known note name under a different
+# note-carrier extension (.hta/.html/.bmp) fires; .md stays quiet.
+R3_DIR=$(mktemp -d)
+echo x > "$R3_DIR/how_to_decrypt.hta"
+jcheck "protect: ransom-note stem under .hta flags" '"R3: Ransom note" in str(d)' protect "$R3_DIR"
+R3B_DIR=$(mktemp -d)
+echo x > "$R3B_DIR/readme.md"
+jcheck "protect: readme.md stem non-carrier quiet" '"R3: Ransom note" not in str(d)' protect "$R3B_DIR"
+
+
 # p52: protect BLOCK shows attacker objective (data destruction)
 jcheck "p52: protect BLOCK shows data destruction objective" '"data destruction" in d.get("objective","").lower()' protect "$P52_DIR"
 
