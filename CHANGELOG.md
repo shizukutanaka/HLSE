@@ -4,6 +4,38 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Changed (cycle-476)
+- **P8 severity tiers completed + defanged-scheme + real-attack
+  corpus:** finishing audit B2, the remaining ~47 qualified-verb
+  classes in the P8 chain that the earlier span conversion missed
+  (remote channel exec — ansible/salt ad-hoc, WinRM/PSRemoting; host
+  primitives — systemctl verbs, Defender exclusion, timestomp,
+  docker-socket mount, credential materialization, key export,
+  GUI capture, curl/wget `-F` file-upload exfil, …) now score **55**;
+  eight remote fetch+install classes that deliver and execute remote
+  payloads (remote OS/bundle package install over http(s), ansible-pull
+  playbook fetch+run, npx-family remote package exec, explorer
+  remote-open, PSGallery install-module/script, remote recipe/makefile
+  exec) now score **65 BLOCK** — the same band as the download-execute
+  cradles. Name-only classes (AD-recon/malware-family/offensive-tool
+  name mentions), read-only credential-store enumeration, and
+  admin-share path mentions stay at 45.
+- **Defanged `hxxp(s)://` scheme recognised as remote:** threat reports
+  and lure write-ups routinely defang `http` as `hxxp`; every `http`
+  remote-qualifier in the P8 chain (48 sites) now also accepts the
+  defanged form via a `CI_HTTP` macro, so e.g.
+  `mshta hxxps://host/x.hta` still reaches 65 BLOCK instead of
+  degrading to a 45 name-class hit.
+- **Extended corpus gains a real-attack paste axis**
+  (`tests/hlse_corpus_extended.c`, now linked with `hlse_supply.c`):
+  23 cases transcribed from public ClickFix/pastejacking write-ups —
+  fake-CAPTCHA mshta/PowerShell/certutil/bitsadmin/expand/msiexec
+  cradles, post-delivery persistence (schtasks, Run key), Discord
+  webhook exfil, reverse shell, SUID privesc — plus six benign anchors
+  (git clone, scp, ssh, Get-ChildItem, reg query, xcode-select).
+  Extended corpus is now 52 cases at F1=1.000. The corpus also
+  surfaced the `hxxp` gap and completed the tier classification.
+
 ### Changed (cycle-475)
 - **P8 mid tier — host-primitive commands score 55:** continuing audit
   B2, the ~195 qualified-verb classes in the ClickFix/LOLBin chain

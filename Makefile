@@ -320,10 +320,10 @@ $(FUZZ_CONFIG_ASAN): tests/hlse_config_fuzz.c hlse_config.c hlse_config.h
 # Extended (out-of-distribution) corpus
 EXT_BIN   := tests/corpus_ext
 
-$(EXT_BIN): tests/hlse_corpus_extended.c hlse_core.c hlse_text.c hlse_text.h hlse_util.c hlse_util.h
+$(EXT_BIN): tests/hlse_corpus_extended.c hlse_core.c hlse_text.c hlse_text.h hlse_supply.c hlse_supply.h hlse_util.c hlse_util.h
 	@mkdir -p tests
 	$(CC) $(CFLAGS) -DHLSE_CORE_AS_LIB -o $@ \
-		tests/hlse_corpus_extended.c hlse_core.c hlse_text.c hlse_util.c -I. -lm
+		tests/hlse_corpus_extended.c hlse_core.c hlse_text.c hlse_supply.c hlse_util.c -I. -lm
 	@printf '  %-20s %s\n' "CC" "$@"
 
 # ─── coverage ────────────────────────────────────────────────────────────

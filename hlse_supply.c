@@ -994,6 +994,10 @@ hlse_check_paste(const char *text) {
         what_hits[n_what_hits++] = (s);                          \
 } while (0)
 #define PASTE_WHAT(s) PASTE_WHAT_SEV((s), 45)
+/* "hxxp(s)://" is the defanged form threat reports and lure docs use for
+ * http(s)://; it must still count as a remote reference for every
+ * "http" qualifier in the ClickFix block below. */
+#define CI_HTTP (ci_contains(text, "http") || ci_contains(text, "hxxp"))
         if (ci_contains(text, "powershell") &&
             (ci_contains(text, "-enc ")        || ci_contains(text, "encodedcommand") ||
              ci_contains(text, "downloadstring") || ci_contains(text, "frombase64string") ||
@@ -1002,7 +1006,7 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT_SEV("PowerShell hidden/encoded/download-execute", 65);
         }
         if (ci_contains(text, "mshta") &&
-                   (ci_contains(text, "http")  || ci_contains(text, "vbscript:") ||
+                   (CI_HTTP  || ci_contains(text, "vbscript:") ||
                     ci_contains(text, "javascript:"))) {
             PASTE_WHAT_SEV("mshta remote/script execution", 65);
         }
@@ -1016,11 +1020,11 @@ hlse_check_paste(const char *text) {
         if (ci_contains(text, "bitsadmin") && ci_contains(text, "/transfer")) {
             PASTE_WHAT_SEV("bitsadmin remote file transfer (LOLBin)", 65);
         }
-        if (ci_contains(text, "msiexec") && ci_contains(text, "http")) {
+        if (ci_contains(text, "msiexec") && CI_HTTP) {
             PASTE_WHAT_SEV("msiexec remote MSI install", 65);
         }
         if ((ci_contains(text, "wscript") || ci_contains(text, "cscript")) &&
-                   (ci_contains(text, "http") || ci_contains(text, ".vbs") ||
+                   (CI_HTTP || ci_contains(text, ".vbs") ||
                     ci_contains(text, ".js"))) {
             PASTE_WHAT_SEV("wscript/cscript remote/script execution (LOLBin)", 65);
         }
@@ -1030,7 +1034,7 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT_SEV("wmic process creation (LOLBin)", 55);
         }
         if (ci_contains(text, "rundll32") &&
-                   (ci_contains(text, "http") || ci_contains(text, "javascript"))) {
+                   (CI_HTTP || ci_contains(text, "javascript"))) {
             PASTE_WHAT_SEV("rundll32 remote/script execution (LOLBin)", 65);
         }
         if (ci_contains(text, "powershell") &&
@@ -1050,7 +1054,7 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT_SEV("odbcconf REGSVR execution (LOLBin)", 55);
         }
         if (ci_contains(text, "pcalua") &&
-                   (ci_contains(text, "-a ") || ci_contains(text, "http") ||
+                   (ci_contains(text, "-a ") || CI_HTTP ||
                     ci_contains(text, "\\\\"))) {
             PASTE_WHAT_SEV("pcalua program-launch LOLBin", 55);
         }
@@ -1071,7 +1075,7 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT_SEV("syncappvpublishingserver command injection (LOLBin)", 55);
         }
         if (ci_contains(text, "hh.exe") &&
-                   (ci_contains(text, "http") || ci_contains(text, ".chm"))) {
+                   (CI_HTTP || ci_contains(text, ".chm"))) {
             PASTE_WHAT_SEV("hh.exe remote CHM execution (LOLBin)", 65);
         }
         if (ci_contains(text, "cmstp") && ci_contains(text, "/s")) {
@@ -1079,7 +1083,7 @@ hlse_check_paste(const char *text) {
         }
         if (ci_contains(text, "xwizard") ||
                    (ci_contains(text, "appvlp") &&
-                    ci_contains(text, "http"))) {
+                    CI_HTTP)) {
             PASTE_WHAT("xwizard/appvlp proxy execution (LOLBin)");
         }
         if ((ci_contains(text, "cscript") ||
@@ -1089,12 +1093,12 @@ hlse_check_paste(const char *text) {
         }
         if (ci_contains(text, "ms-appinstaller:") ||
                    (ci_contains(text, "appinstaller") &&
-                    ci_contains(text, "http"))) {
+                    CI_HTTP)) {
             PASTE_WHAT_SEV("ms-appinstaller URI bypass (ClickFix 2025)", 65);
         }
         if (ci_contains(text, "osascript") &&
                    (ci_contains(text, "do shell script") ||
-                    ci_contains(text, "http") ||
+                    CI_HTTP ||
                     ci_contains(text, "curl ") || ci_contains(text, "bash"))) {
             PASTE_WHAT_SEV("osascript AppleScript shell execution (macOS ClickFix)", 65);
         }
@@ -1106,17 +1110,17 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT_SEV("Python download-execute one-liner", 65);
         }
         if (ci_contains(text, "regasm") &&
-                   (ci_contains(text, "http") || ci_contains(text, ".dll") ||
+                   (CI_HTTP || ci_contains(text, ".dll") ||
                     ci_contains(text, ".exe"))) {
             PASTE_WHAT_SEV("regasm.exe .NET assembly execution (LOLBin)", 55);
         }
         if (ci_contains(text, "installutil") &&
-                   (ci_contains(text, "http") || ci_contains(text, "/u ") ||
+                   (CI_HTTP || ci_contains(text, "/u ") ||
                     ci_contains(text, "/u\t"))) {
             PASTE_WHAT_SEV("installutil.exe .NET AppDomain execution (LOLBin)", 55);
         }
         if (ci_contains(text, "regsvcs") &&
-                   (ci_contains(text, "http") || ci_contains(text, ".dll") ||
+                   (CI_HTTP || ci_contains(text, ".dll") ||
                     ci_contains(text, ".exe"))) {
             PASTE_WHAT_SEV("regsvcs.exe .NET assembly execution (LOLBin)", 55);
         }
@@ -1139,11 +1143,11 @@ hlse_check_paste(const char *text) {
         }
         if (ci_contains(text, "msiexec") &&
                    (ci_contains(text, "/q") ) &&
-                   ci_contains(text, "http")) {
+                   CI_HTTP) {
             PASTE_WHAT_SEV("msiexec silent remote MSI install (ClickFix)", 65);
         }
         if (ci_contains(text, "expand") &&
-                   (ci_contains(text, "http") || ci_contains(text, "\\\\")) &&
+                   (CI_HTTP || ci_contains(text, "\\\\")) &&
                    ci_contains(text, "-f:")) {
             PASTE_WHAT_SEV("expand.exe remote file download (LOLBin)", 65);
         }
@@ -1211,7 +1215,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "extrac32") ||
                     ci_contains(text, "diantz") ||
                     ci_contains(text, "extexport")) &&
-                   (ci_contains(text, "http") || ci_contains(text, "\\\\"))) {
+                   (CI_HTTP || ci_contains(text, "\\\\"))) {
             PASTE_WHAT_SEV("cabinet/extexport remote file pull (LOLBin)", 65);
         }
         if (ci_contains(text, "syncappvpublishingserver") &&
@@ -1229,7 +1233,7 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT("finger remote data fetch (LOLBin channel)");
         }
         if (ci_contains(text, "regini") &&
-                   (ci_contains(text, ".ini") || ci_contains(text, "http"))) {
+                   (ci_contains(text, ".ini") || CI_HTTP)) {
             PASTE_WHAT_SEV("regini registry-script import (LOLBin)", 55);
         /* Ransomware preparation classics — bcdedit disables recovery /
          * forces safeboot, wevtutil wipes the event logs, wusa installs
@@ -1340,12 +1344,12 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT_SEV("ntdsutil ntds.dit extraction (credential dump)", 55);
         }
         if (ci_contains(text, "pubprn") &&
-                   (ci_contains(text, "script:") || ci_contains(text, "http") ||
+                   (ci_contains(text, "script:") || CI_HTTP ||
                     ci_contains(text, "\\\\"))) {
             PASTE_WHAT_SEV("pubprn remote-script proxy execution (LOLBin)", 65);
         }
         if (ci_contains(text, "printui") &&
-                   (ci_contains(text, "\\\\") || ci_contains(text, "http") ||
+                   (ci_contains(text, "\\\\") || CI_HTTP ||
                     ci_contains(text, "/u"))) {
             PASTE_WHAT_SEV("printui remote-driver DLL load (LOLBin)", 65);
         }
@@ -1460,7 +1464,7 @@ hlse_check_paste(const char *text) {
          * msdeploy syncs attacker packages / runs commands        */
         }
         if (ci_contains(text, "ieexec") &&
-                   (ci_contains(text, "http") || ci_contains(text, ".exe") ||
+                   (CI_HTTP || ci_contains(text, ".exe") ||
                     ci_contains(text, ".dll"))) {
             PASTE_WHAT_SEV("ieexec remote .NET execution (LOLBin)", 65);
         }
@@ -1538,7 +1542,7 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT_SEV("te.exe TAEF payload exec (LOLBin)", 55);
         }
         if (ci_contains(text, "presentationhost") &&
-                   (ci_contains(text, "http") || ci_contains(text, ".xbap") ||
+                   (CI_HTTP || ci_contains(text, ".xbap") ||
                     ci_contains(text, "\\\\"))) {
             PASTE_WHAT_SEV("presentationhost remote .xbap exec (LOLBin)", 65);
         /* replace.exe x c:\windows\... writes attacker files into
@@ -1591,7 +1595,7 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT_SEV("diaghub unsigned-DLL load (LOLBin)", 55);
         }
         if (ci_contains(text, "desktopimgdownldr") &&
-                   (ci_contains(text, "/") || ci_contains(text, "http"))) {
+                   (ci_contains(text, "/") || CI_HTTP)) {
             PASTE_WHAT_SEV("desktopimgdownldr fetch (LOLBin)", 55);
         }
         if (ci_contains(text, "wlrmdr") &&
@@ -2302,7 +2306,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " i "))) ||
                    ci_contains(text, "yarn add ") || ci_contains(text, "yarn install ") ||
                    ci_contains(text, "bun add ") || ci_contains(text, "bun install ")) &&
-                   (ci_contains(text, "http") || ci_contains(text, "git+") ||
+                   (CI_HTTP || ci_contains(text, "git+") ||
                     ci_contains(text, "file:") || ci_contains(text, ".tgz") ||
                     ci_contains(text, ".tar") || ci_contains(text, ".zip"))) {
             PASTE_WHAT_SEV("npm-family remote package install", 55);
@@ -2311,27 +2315,27 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "pipx") || ci_contains(text, "poetry add ") ||
                     ci_contains(text, "poetry install ")) &&
                    (ci_contains(text, " install ") || ci_contains(text, " add ") ||
-                    (ci_contains(text, " -r ") && ci_contains(text, "http"))) &&
-                   (ci_contains(text, "http") || ci_contains(text, "git+") ||
+                    (ci_contains(text, " -r ") && CI_HTTP)) &&
+                   (CI_HTTP || ci_contains(text, "git+") ||
                     ci_contains(text, ".whl") || ci_contains(text, ".zip") ||
                     ci_contains(text, ".tar"))) {
             PASTE_WHAT_SEV("python remote package install", 55);
         }
         if ((ci_contains(text, "uvx") &&
-                    ci_contains(text, "http")) ||
+                    CI_HTTP) ||
                    (ci_contains(text, "gem install ") &&
-                    (ci_contains(text, "http") || ci_contains(text, ".gem"))) ||
+                    (CI_HTTP || ci_contains(text, ".gem"))) ||
                    (ci_contains(text, "cargo install ") &&
-                    (ci_contains(text, "--git") || ci_contains(text, "http") ||
+                    (ci_contains(text, "--git") || CI_HTTP ||
                      ci_contains(text, "--path"))) ||
                    (ci_contains(text, "composer") &&
-                    ci_contains(text, " require ") && ci_contains(text, "http"))) {
+                    ci_contains(text, " require ") && CI_HTTP)) {
             PASTE_WHAT_SEV("remote package install/exec", 55);
         /* ── OS package remote/local-bundle installs ── */
         }
         if ((ci_contains(text, "apt") ) &&
                    ci_contains(text, " install ") &&
-                   (ci_contains(text, ".deb") || ci_contains(text, "http"))) {
+                   (ci_contains(text, ".deb") || CI_HTTP)) {
             PASTE_WHAT_SEV("apt bundle/URL install", 55);
         }
         if (ci_contains(text, "dpkg") && ci_contains(text, "-i ") &&
@@ -2349,33 +2353,33 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "winget") && ci_contains(text, " install ")) ||
                    (ci_contains(text, "choco") && ci_contains(text, " install ")) ||
                    (ci_contains(text, "scoop") && ci_contains(text, " install "))) &&
-                   ci_contains(text, "http")) {
-            PASTE_WHAT("remote OS package install");
+                   CI_HTTP) {
+            PASTE_WHAT_SEV("remote OS package install", 65);
         }
         if ((ci_contains(text, "apk") && ci_contains(text, " add ") &&
-                   (ci_contains(text, "http") ||
+                   (CI_HTTP ||
                     ci_contains(text, "--allow-untrusted"))) ||
                    (ci_contains(text, "snap") && ci_contains(text, " install ") &&
                     (ci_contains(text, ".snap") ||
                      ci_contains(text, "--dangerous"))) ||
                    (ci_contains(text, "flatpak") && ci_contains(text, " install ") &&
-                    (ci_contains(text, "http")  ||
+                    (CI_HTTP  ||
                      ci_contains(text, ".flatpak"))) ||
                    (ci_contains(text, "choco") && ci_contains(text, " install ") &&
                     ci_contains(text, ".nupkg"))) {
-            PASTE_WHAT("remote/bundle package install");
+            PASTE_WHAT_SEV("remote/bundle package install", 65);
         /* ── config-management remote exec — pull/exec primitives ── */
         }
         if (ci_contains(text, "ansible-pull") &&
-                   ci_contains(text, "http")) {
-            PASTE_WHAT("ansible-pull playbook fetch+run");
+                   CI_HTTP) {
+            PASTE_WHAT_SEV("ansible-pull playbook fetch+run", 65);
         }
         if ((ci_contains(text, "ansible-playbook") &&
-                    ci_contains(text, "http")) ||
+                    CI_HTTP) ||
                    (ci_contains(text, "ansible-galaxy") &&
                     ci_contains(text, " install ") &&
-                    (ci_contains(text, "http") || ci_contains(text, " -r ")))) {
-            PASTE_WHAT("ansible remote playbook install");
+                    (CI_HTTP || ci_contains(text, " -r ")))) {
+            PASTE_WHAT_SEV("ansible remote playbook install", 65);
         }
         if ((ci_contains(text, "ansible") &&
                     (ci_contains(text, " -m shell") ||
@@ -2385,7 +2389,7 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, "cmd.run") || ci_contains(text, "cmd.shell") ||
                      ci_contains(text, "cmd.exec_code"))) ||
                    (ci_contains(text, "salt-call") && ci_contains(text, "cmd"))) {
-            PASTE_WHAT("remote ad-hoc command exec");
+            PASTE_WHAT_SEV("remote ad-hoc command exec", 55);
         /* ── c234: miner exec / terminal injection / agent kill /
          * env exfil / winrm / timestomp / misc residuals ── */
         }
@@ -2405,13 +2409,13 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "viabtc") || ci_contains(text, "2miners") ||
                    ci_contains(text, "flypool") || ci_contains(text, "herominers") ||
                    ci_contains(text, "unmineable") || ci_contains(text, "miningpool")) {
-            PASTE_WHAT("cryptominer exec / pool config");
+            PASTE_WHAT_SEV("cryptominer exec / pool config", 55);
         }
         if (ci_contains(text, "tmux send-keys") ||
                    ci_contains(text, "send-keys ") ||
                    (ci_contains(text, "screen") &&
                     ci_contains(text, "-x stuff"))) {
-            PASTE_WHAT("terminal session injection");
+            PASTE_WHAT_SEV("terminal session injection", 55);
         }
         if ((ci_contains(text, "pkill") || ci_contains(text, "killall") ||
                     ci_contains(text, "kill -9")) &&
@@ -2425,25 +2429,25 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "insight-agent") || ci_contains(text, "sysmon") ||
                     ci_contains(text, "velociraptor") || ci_contains(text, "falcon") ||
                     ci_contains(text, "sentinel") || ci_contains(text, "elastic-agent"))) {
-            PASTE_WHAT("monitoring/EDR agent kill");
+            PASTE_WHAT_SEV("monitoring/EDR agent kill", 55);
         }
         if (hay_any(text, PASTE_ENV_DUMP) &&
             hay_any(text, PASTE_PIPE_NET)) {
-            PASTE_WHAT("env-var dump piped to network (secrets exfil)");
+            PASTE_WHAT_SEV("env-var dump piped to network (secrets exfil)", 55);
         }
         if (hay_any(text, PASTE_PIPE_SUDO)) {
-            PASTE_WHAT("stdin-password / su exec pipe");
+            PASTE_WHAT_SEV("stdin-password / su exec pipe", 55);
         }
         if ((ci_contains(text, "docker.sock") &&
                     (ci_contains(text, " -v ") || ci_contains(text, "--volume"))) ||
                    (ci_contains(text, "docker") &&
                     ci_contains(text, "--socket"))) {
-            PASTE_WHAT("docker socket mount (host control)");
+            PASTE_WHAT_SEV("docker socket mount (host control)", 55);
         }
         if (ci_contains(text, "credential.helper") &&
                    (ci_contains(text, "store") || ci_contains(text, "get") ||
                     ci_contains(text, "!"))) {
-            PASTE_WHAT("git credential.helper theft config");
+            PASTE_WHAT_SEV("git credential.helper theft config", 55);
         }
         if (((ci_contains(text, "enter-pssession") ||
                     ci_contains(text, "new-pssession") ||
@@ -2454,16 +2458,16 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "-computer ") || ci_contains(text, "-cn "))) ||
                   (ci_contains(text, "winrm") &&
                    ci_contains(text, "quickconfig"))) {
-            PASTE_WHAT("WinRM / PSRemoting remote exec");
+            PASTE_WHAT_SEV("WinRM / PSRemoting remote exec", 55);
         }
         if (ci_contains(text, "touch") &&
                    (ci_contains(text, " -r") || ci_contains(text, " -t") ||
                     ci_contains(text, " -d") || ci_contains(text, "--reference"))) {
-            PASTE_WHAT("timestomp (anti-forensic timestamp)");
+            PASTE_WHAT_SEV("timestomp (anti-forensic timestamp)", 55);
         }
         if (ci_contains(text, "batch -f") || ci_contains(text, "| batch") ||
                    ci_contains(text, "|batch")) {
-            PASTE_WHAT("batch (at-family) queued exec");
+            PASTE_WHAT_SEV("batch (at-family) queued exec", 55);
         /* ── c235: interpreter -e+exec-verb / npx-URL / git upload-pack /
          * exec -a / setcap+setfacl / netns+setpriv / misc ── */
         }
@@ -2481,32 +2485,32 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "passthru(") || ci_contains(text, "getruntime") ||
                     ci_contains(text, "os.execute") || ci_contains(text, "eval(") ||
                     ci_contains(text, "commands.getoutput") || ci_contains(text, "loadstring"))) {
-            PASTE_WHAT("interpreter -e/-c inline exec");
+            PASTE_WHAT_SEV("interpreter -e/-c inline exec", 55);
         }
         if ((ci_contains(text, "npx") || ci_contains(text, "pnpm dlx") ||
                     ci_contains(text, "bunx") || ci_contains(text, "yarn dlx")) &&
-                   (ci_contains(text, "http") || ci_contains(text, "git+"))) {
-            PASTE_WHAT("npx-family remote package exec");
+                   (CI_HTTP || ci_contains(text, "git+"))) {
+            PASTE_WHAT_SEV("npx-family remote package exec", 65);
         }
         if (ci_contains(text, "git clone") &&
                    (ci_contains(text, "--upload-pack") || ci_contains(text, " -u "))) {
-            PASTE_WHAT("git clone upload-pack exec");
+            PASTE_WHAT_SEV("git clone upload-pack exec", 55);
         }
         if (ci_contains(text, "exec -a")) {
-            PASTE_WHAT("argv0 masquerade (exec -a)");
+            PASTE_WHAT_SEV("argv0 masquerade (exec -a)", 55);
         }
         if (ci_contains(text, "setcap") &&
                    (ci_contains(text, "+ep") || ci_contains(text, "+ei"))) {
-            PASTE_WHAT("file-capability grant (setcap)");
+            PASTE_WHAT_SEV("file-capability grant (setcap)", 55);
         }
         if (ci_contains(text, "setfacl") &&
                    ci_contains(text, " -m") &&
                    (ci_contains(text, "/etc/") || ci_contains(text, "/root"))) {
-            PASTE_WHAT("acl grant on system file (setfacl)");
+            PASTE_WHAT_SEV("acl grant on system file (setfacl)", 55);
         }
         if (ci_contains(text, "swapoff -") ||
                    ci_contains(text, "swapoff /")) {
-            PASTE_WHAT("swap disable (ransomware-prep class)");
+            PASTE_WHAT_SEV("swap disable (ransomware-prep class)", 55);
         }
         if (
                    ci_contains(text, "netns exec") ||
@@ -2514,32 +2518,32 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, "--reuid") || ci_contains(text, "--inh-caps") ||
                      ci_contains(text, "--bounding-set") || ci_contains(text, "--ruid") ||
                      ci_contains(text, "--euid")))) {
-            PASTE_WHAT("namespace / privilege-context exec");
+            PASTE_WHAT_SEV("namespace / privilege-context exec", 55);
         }
         if (ci_contains(text, "bwrap") &&
                    (ci_contains(text, "--bind") || ci_contains(text, "--dev-bind") ||
                     ci_contains(text, "--ro-bind"))) {
-            PASTE_WHAT("bwrap bind-mount (namespace escape)");
+            PASTE_WHAT_SEV("bwrap bind-mount (namespace escape)", 55);
         }
         if (ci_contains(text, "emacs") &&
                    (ci_contains(text, " -l ") || ci_contains(text, "--eval") ||
                     ci_contains(text, "-batch"))) {
-            PASTE_WHAT("emacs batch/elisp exec");
+            PASTE_WHAT_SEV("emacs batch/elisp exec", 55);
         }
         if (ci_contains(text, "sed") &&
                    (ci_contains(text, "1e ") || ci_contains(text, "1e'") ||
                     ci_contains(text, "1e\"") || ci_contains(text, " e ") ||
                     ci_contains(text, " e'"))) {
-            PASTE_WHAT("sed e-flag exec");
+            PASTE_WHAT_SEV("sed e-flag exec", 55);
         }
         if (ci_contains(text, "rsync") && ci_contains(text, "--rsh")) {
-            PASTE_WHAT("rsync remote-shell exec");
+            PASTE_WHAT_SEV("rsync remote-shell exec", 55);
         }
         if ((ci_contains(text, "update-rc.d") || ci_contains(text, "chkconfig") ||
                     ci_contains(text, "rc-update")) &&
                    (ci_contains(text, " defaults") || ci_contains(text, " on") ||
                     ci_contains(text, " add") || ci_contains(text, " enable"))) {
-            PASTE_WHAT("sysvinit service enable");
+            PASTE_WHAT_SEV("sysvinit service enable", 55);
         /* ── c236: env-var injection (loader/interpreter/vcs/shell/proxy/
          * path hijack) + lateral movement (remote schtasks/sc/reg/at,
          * admin shares) + Defender exclusions + cred-enumeration ── */
@@ -2589,7 +2593,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "path=/var/tmp") ||
                    ci_contains(text, "path=.") ||
                    ci_contains(text, "path=/usr/tmp")) {
-            PASTE_WHAT("env-var injection (loader/interpreter/proxy/path hijack)");
+            PASTE_WHAT_SEV("env-var injection (loader/interpreter/proxy/path hijack)", 55);
         }
         if ((ci_contains(text, "schtasks") &&
                     (ci_contains(text, " /s ") || ci_contains(text, " /s\\"))) ||
@@ -2617,7 +2621,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "-disablearchive") ||
                    ci_contains(text, "-disableemailscanning") ||
                    ci_contains(text, "-disablenetworkprotection")) {
-            PASTE_WHAT("Defender exclusion/disable (AV weakening)");
+            PASTE_WHAT_SEV("Defender exclusion/disable (AV weakening)", 55);
         }
         if (ci_contains(text, "vaultcmd") ||
                    ci_contains(text, "keymgr") ||
@@ -2626,25 +2630,25 @@ hlse_check_paste(const char *text) {
             PASTE_WHAT("credential-store enumeration");
         }
         if (ci_contains(text, "explorer") &&
-                   (ci_contains(text, "http") || ci_contains(text, "shell:") ||
+                   (CI_HTTP || ci_contains(text, "shell:") ||
                     strstr(text, "\\\\"))) {
-            PASTE_WHAT("explorer remote-open (URL/shell:/UNC)");
+            PASTE_WHAT_SEV("explorer remote-open (URL/shell:/UNC)", 65);
         }
         if ((ci_contains(text, "start-process") &&
                     ci_contains(text, "-verb runas")) ||
                    ci_contains(text, "runas /netonly")) {
-            PASTE_WHAT("runas/elevation attempt");
+            PASTE_WHAT_SEV("runas/elevation attempt", 55);
         }
         if (ci_contains(text, "fsutil") &&
                    (ci_contains(text, "setzerodata") ||
                     ci_contains(text, "setvaliddata") ||
                     ci_contains(text, "behavior set"))) {
-            PASTE_WHAT("fsutil data-wipe/behavior change");
+            PASTE_WHAT_SEV("fsutil data-wipe/behavior change", 55);
         }
         if (ci_contains(text, "diskpart") &&
                    (ci_contains(text, "clean") || ci_contains(text, "create") ||
                     ci_contains(text, "format") || ci_contains(text, "select disk"))) {
-            PASTE_WHAT("diskpart partition destructive op");
+            PASTE_WHAT_SEV("diskpart partition destructive op", 55);
         /* ── c237: PowerShell cmdlets (in-memory load, persistence,
          * accounts, remoting, install, policy-bypass, MOTW strip) +
          * audit/anti-forensics + destructive Windows + sudo/key ops ── */
@@ -2653,7 +2657,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "assembly]::load") ||
                    ci_contains(text, "assembly.load") ||
                    ci_contains(text, "loadwithpartialname")  ) {
-            PASTE_WHAT("PowerShell/.NET in-memory assembly load");
+            PASTE_WHAT_SEV("PowerShell/.NET in-memory assembly load", 55);
         }
         if ((ci_contains(text, "new-service") &&
                     ci_contains(text, "-binarypathname")) ||
@@ -2666,17 +2670,17 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, "\\run") || ci_contains(text, "runonce") ||
                      ci_contains(text, "\\ifeo") || ci_contains(text, "winlogon") ||
                      ci_contains(text, "image file") || ci_contains(text, "shell\\")))) {
-            PASTE_WHAT("PowerShell persistence install (service/task/runkey)");
+            PASTE_WHAT_SEV("PowerShell persistence install (service/task/runkey)", 55);
         }
         if (ci_contains(text, "set-executionpolicy") &&
                    (ci_contains(text, "bypass") || ci_contains(text, "unrestricted"))) {
-            PASTE_WHAT("execution-policy bypass (cmdlet form)");
+            PASTE_WHAT_SEV("execution-policy bypass (cmdlet form)", 55);
         }
         if (ci_contains(text, "unblock-file") ||
                    (ci_contains(text, "zone.identifier") &&
                     (ci_contains(text, "remove") || ci_contains(text, "del") ||
                      ci_contains(text, "clear")))) {
-            PASTE_WHAT("MOTW strip (Unblock-File/Zone.Identifier removal)");
+            PASTE_WHAT_SEV("MOTW strip (Unblock-File/Zone.Identifier removal)", 55);
         }
         if (ci_contains(text, "new-localuser") ||
                    ci_contains(text, "add-localgroupmember") ||
@@ -2686,7 +2690,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "new-aduser") ||
                    ci_contains(text, "add-adgroupmember") ||
                    ci_contains(text, "set-adaccountpassword")) {
-            PASTE_WHAT("account creation/group grant (PowerShell)");
+            PASTE_WHAT_SEV("account creation/group grant (PowerShell)", 55);
         }
         if (ci_contains(text, "enable-psremoting") ||
                    ci_contains(text, "enable-wsmancredssp") ||
@@ -2697,18 +2701,18 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, "enable-windowsoptionalfeature")) &&
                     (ci_contains(text, "telnet") || ci_contains(text, "smb1") ||
                      ci_contains(text, "snmp") || ci_contains(text, "tftp")))) {
-            PASTE_WHAT("PS remoting/gallery-install/legacy-feature enable");
+            PASTE_WHAT_SEV("PS remoting/gallery-install/legacy-feature enable", 65);
         }
         if (ci_contains(text, "auditpol") &&
                    (ci_contains(text, "/clear") || ci_contains(text, "/remove") ||
                     ci_contains(text, "/set") || ci_contains(text, "/backup"))) {
-            PASTE_WHAT("audit-policy wipe (auditpol)");
+            PASTE_WHAT_SEV("audit-policy wipe (auditpol)", 55);
         }
         if (ci_contains(text, "shutdown") &&
                    (ci_contains(text, " /s") || ci_contains(text, " /r") ||
                     ci_contains(text, " /m") || ci_contains(text, " /p") ||
                     ci_contains(text, " -s") || ci_contains(text, " -r"))) {
-            PASTE_WHAT("shutdown/reboot (local or remote)");
+            PASTE_WHAT_SEV("shutdown/reboot (local or remote)", 55);
         }
         if ((ci_contains(text, "format") &&
                     (ci_contains(text, " c:") || ci_contains(text, " d:") ||
@@ -2717,18 +2721,18 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "format.com") ||
                    ci_contains(text, "del /s") || ci_contains(text, "del /f /s") ||
                    ci_contains(text, "rmdir /s") || ci_contains(text, "rd /s")) {
-            PASTE_WHAT("format/recursive-delete (Windows destructive)");
+            PASTE_WHAT_SEV("format/recursive-delete (Windows destructive)", 55);
         }
         if (ci_contains(text, "attrib ") &&
                    (ci_contains(text, "+h") || ci_contains(text, "+s") ||
                     ci_contains(text, " -h") || ci_contains(text, " -s"))) {
-            PASTE_WHAT("attrib hidden/system flag (evasion)");
+            PASTE_WHAT_SEV("attrib hidden/system flag (evasion)", 55);
         }
         if ((ci_contains(text, "net config") &&
                     ci_contains(text, "/hidden")) ||
                    (ci_contains(text, "netsh") &&
                     (ci_contains(text, " -r ") || ci_contains(text, " -f ")))) {
-            PASTE_WHAT("hidden-server flag / remote or scripted netsh");
+            PASTE_WHAT_SEV("hidden-server flag / remote or scripted netsh", 55);
         }
         if ((ci_contains(text, "klist") &&
                     (ci_contains(text, "purge") || ci_contains(text, "get"))) ||
@@ -2743,7 +2747,7 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "convertto-securestring") ||
                    ci_contains(text, "export-clixml") ||
                    ci_contains(text, "import-clixml")) {
-            PASTE_WHAT("credential materialization (PS cred cmdlets)");
+            PASTE_WHAT_SEV("credential materialization (PS cred cmdlets)", 55);
         }
         if (ci_contains(text, "gpg --export-secret") ||
                    (ci_contains(text, "pkcs12") && ci_contains(text, "-export")) ||
@@ -2755,17 +2759,17 @@ hlse_check_paste(const char *text) {
                    ci_contains(text, "iam create-access-key") ||
                    (ci_contains(text, "aws configure set") &&
                     (ci_contains(text, "access") || ci_contains(text, "secret")))) {
-            PASTE_WHAT("key-material export/creation");
+            PASTE_WHAT_SEV("key-material export/creation", 55);
         }
         if ((ci_contains(text, "puppet") && ci_contains(text, " apply ") &&
-                    ci_contains(text, "http")) ||
+                    CI_HTTP) ||
                    ((ci_contains(text, "chef-client") ||
                      ci_contains(text, "chef-solo")) &&
-                    ci_contains(text, " -r ") && ci_contains(text, "http")) ||
+                    ci_contains(text, " -r ") && CI_HTTP) ||
                    (ci_contains(text, "make") && ci_contains(text, " -f ") &&
-                    ci_contains(text, "http")) ||
+                    CI_HTTP) ||
                    ci_contains(text, "at -f ")) {
-            PASTE_WHAT("remote recipe/makefile exec");
+            PASTE_WHAT_SEV("remote recipe/makefile exec", 65);
         /* ── c238: systemctl/service/runlevel control + account mgmt +
          * firewall rule-add + sysctl security keys + kernel-module
          * load + boot/store-config + sniff/spoof tools ── */
@@ -2778,7 +2782,7 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, " suspend") || ci_contains(text, " hibernate") ||
                     ci_contains(text, " emergency") || ci_contains(text, " rescue") ||
                     ci_contains(text, " isolate") || ci_contains(text, " restart"))) {
-            PASTE_WHAT("systemctl stop/mask/shutdown verb");
+            PASTE_WHAT_SEV("systemctl stop/mask/shutdown verb", 55);
         }
         if ((ci_contains(text, "service ") &&
                     (ci_contains(text, " stop") || ci_contains(text, " start") ||
@@ -2819,14 +2823,14 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, "-m -1") || ci_contains(text, "-m 0") ||
                      ci_contains(text, "-e -1") || ci_contains(text, "-e 0") ||
                      ci_contains(text, "-i -1") || ci_contains(text, "-i 0")))) {
-            PASTE_WHAT("account-create/password/lockout-reset");
+            PASTE_WHAT_SEV("account-create/password/lockout-reset", 55);
         }
         if (((ci_contains(text, "iptables") ||
                      ci_contains(text, "ip6tables")) &&
                     ci_contains(text, "--policy")) ||
                    (ci_contains(text, "ufw") &&
                     ci_contains(text, "default allow"))) {
-            PASTE_WHAT("firewall default-policy neutralize");
+            PASTE_WHAT_SEV("firewall default-policy neutralize", 55);
         }
         if (ci_contains(text, "sysctl") &&
                    (ci_contains(text, " -w") || ci_contains(text, "=")) &&
@@ -2855,14 +2859,14 @@ hlse_check_paste(const char *text) {
                     ci_contains(text, "protected_fifos") ||
                     ci_contains(text, "protected_regular") ||
                     ci_contains(text, "kernel.sysrq"))) {
-            PASTE_WHAT("sysctl security-parameter write");
+            PASTE_WHAT_SEV("sysctl security-parameter write", 55);
         }
         if ((ci_contains(text, "modprobe") &&
                     (ci_contains(text, " /") || ci_contains(text, "--force") ||
                      ci_contains(text, " -f "))) ||
                    (ci_contains(text, "dkms") &&
                     (ci_contains(text, "install") || ci_contains(text, "add")))) {
-            PASTE_WHAT("kernel-module load (modprobe/dkms)");
+            PASTE_WHAT_SEV("kernel-module load (modprobe/dkms)", 55);
         }
         if ((ci_contains(text, "ldconfig") &&
                     (ci_contains(text, " /") || ci_contains(text, " -n "))) ||
@@ -2920,7 +2924,7 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, " -d") || ci_contains(text, " -t"))) ||
                    ci_contains(text, "logkeys") || ci_contains(text, "evsieve") ||
                    (ci_contains(text, "keyd") && ci_contains(text, "monitor"))) {
-            PASTE_WHAT("GUI-injection/screen-mic capture");
+            PASTE_WHAT_SEV("GUI-injection/screen-mic capture", 55);
         }
         if (ci_contains(text, "ttyd") || ci_contains(text, "gotty") ||
                    ci_contains(text, "shellinabox") || ci_contains(text, "tmate") ||
@@ -2938,7 +2942,7 @@ hlse_check_paste(const char *text) {
                        ci_contains(text, "--form") || ci_contains(text, "--data"))) ||
                      ci_contains(text, " -t ") || ci_contains(text, "--upload-file"))) ||
                    (ci_contains(text, "wget") && ci_contains(text, "--post-file"))) {
-            PASTE_WHAT("curl/wget file-upload exfil form");
+            PASTE_WHAT_SEV("curl/wget file-upload exfil form", 55);
         }
         if (ci_contains(text, "certipy") || ci_contains(text, "adidnsdump") ||
                    ci_contains(text, "windapsearch") || ci_contains(text, "ldeep") ||
@@ -3007,7 +3011,7 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, "cookies") || ci_contains(text, "logins")  || ci_contains(text, "login data") ||
                      ci_contains(text, "web data") || ci_contains(text, "places.sqlite"))) ||
                    (ci_contains(text, "msbuild") &&
-                    (ci_contains(text, " \\\\") || ci_contains(text, "http"))) ||
+                    (ci_contains(text, " \\\\") || CI_HTTP)) ||
                    (ci_contains(text, "esentutl") && ci_contains(text, " /y")) ||
                    ci_contains(text, "extrac32") || ci_contains(text, "wextract") ||
                    ci_contains(text, "pcwrun") || ci_contains(text, "masvc") ||
@@ -3151,7 +3155,7 @@ hlse_check_paste(const char *text) {
                     (ci_contains(text, "loginhook") ||
                      ci_contains(text, "logouthook") ||
                      ci_contains(text, "autorun"))) ||
-                   (ci_contains(text, "hdiutil") && ci_contains(text, "http")) ||
+                   (ci_contains(text, "hdiutil") && CI_HTTP) ||
                    ci_contains(text, "do shell script") ||
                    (ci_contains(text, "security") &&
                     (ci_contains(text, "authorizationdb") ||
@@ -3504,7 +3508,7 @@ hlse_check_paste(const char *text) {
                      ci_contains(text, " -en"))) ||
                    (ci_contains(text, "infdefaultinstall") &&
                     (ci_contains(text, " /") || ci_contains(text, "-") ||
-                     ci_contains(text, ".inf") || ci_contains(text, "http"))) ||
+                     ci_contains(text, ".inf") || CI_HTTP)) ||
                    ci_contains(text, "settingcontent") ||
                    ci_contains(text, "dfshim") || ci_contains(text, "dfsvc") ||
                    ci_contains(text, "xbap") ||
@@ -3582,7 +3586,7 @@ hlse_check_paste(const char *text) {
                      (ci_contains(text, " start") ||
                       ci_contains(text, " stop")))) ||
                    (ci_contains(text, "netsh") &&
-                    ci_contains(text, "http") &&
+                    CI_HTTP &&
                     (ci_contains(text, "add urlacl") ||
                      ci_contains(text, "add sslcert") ||
                      ci_contains(text, "delete urlacl") ||
@@ -7336,9 +7340,9 @@ hlse_check_paste(const char *text) {
             /* windows misc + fake-time + editor tunnel */
             (ci_contains(text, "winword") &&
              (ci_contains(text, " /q") || ci_contains(text, " /m") ||
-              ci_contains(text, "http"))) ||
+              CI_HTTP)) ||
             (ci_contains(text, "excel") &&
-             (ci_contains(text, " /e") || ci_contains(text, "http"))) ||
+             (ci_contains(text, " /e") || CI_HTTP)) ||
             ci_contains(text, "mspub") ||
             ci_contains(text, "msaccess") ||
             ci_contains(text, "odbcad32") ||
@@ -7659,7 +7663,7 @@ hlse_check_paste(const char *text) {
               ci_contains(text, " objectid"))) ||
             (ci_contains(text, "gpresult") && ci_contains(text, " /h")) ||
             (ci_contains(text, "pubprn") &&
-             (ci_contains(text, "http") || ci_contains(text, "\\\\"))) ||
+             (CI_HTTP || ci_contains(text, "\\\\"))) ||
             (ci_contains(text, "slmgr") && ci_contains(text, " /")) ||
             (ci_contains(text, "squirrel") && ci_contains(text, " --")) ||
             (ci_contains(text, "at.exe") && ci_contains(text, "\\\\"))) {
@@ -7809,7 +7813,7 @@ hlse_check_paste(const char *text) {
             ci_contains(text, "mktorrent") ||
             ci_contains(text, "ctorrent") ||
             (ci_contains(text, "axel") &&
-             (ci_contains(text, " -") || ci_contains(text, "http"))) ||
+             (ci_contains(text, " -") || CI_HTTP)) ||
             ci_contains(text, "prozilla") ||
             ci_contains(text, "mget") ||
             ci_contains(text, "getx") ||
@@ -17751,6 +17755,7 @@ hlse_check_paste(const char *text) {
                 v.classes[i] = what_hits[i];
         }
 #undef PASTE_WHAT
+#undef CI_HTTP
     }
 
     /* P9: Reverse shell payloads (Unix) */

