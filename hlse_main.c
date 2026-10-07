@@ -438,7 +438,20 @@ main(int argc, char **argv) {
              * inputs use the ScanResult directly (not hlse_check_text
              * alone) so embedded URL extraction is honoured. */
             if (sr.is_url) {
-                Verdict uv = hlse_check_url(input);
+                /* Reuse sr (not a fresh hlse_check_url on the raw
+                 * input) so the verdict hlse_scan's own percent-decode
+                 * redispatch produced is honoured — check_url alone
+                 * scores 0 on inputs like "javascript%3A…" whose
+                 * dangerous scheme only emerges after decoding. */
+                Verdict uv;
+                int ti;
+                memset(&uv, 0, sizeof(uv));
+                uv.score = sr.score;
+                uv.n_reasons = sr.n_reasons < (int)(sizeof(uv.reasons)/sizeof(uv.reasons[0]))
+                               ? sr.n_reasons : (int)(sizeof(uv.reasons)/sizeof(uv.reasons[0]));
+                for (ti = 0; ti < uv.n_reasons; ti++)
+                    snprintf(uv.reasons[ti], sizeof(uv.reasons[0]),
+                             "%s", sr.reasons[ti]);
                 hlse_print_json_url(input, &uv);
             } else {
                 TextVerdict tv;

@@ -4,6 +4,30 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Fixed (cycle-472)
+- **`--json` verdict divergence on percent-encoded URLs:** the bare-operand
+  and `--stdin` JSON paths re-ran `hlse_check_url` on the raw input, which
+  lacks the percent-decode redispatch living inside `hlse_scan` —
+  `javascript%3Aalert(1)` scored ISOLATE/100 in human output but SAFE/0 in
+  JSON. Both sites now build the emitted `Verdict` from the `ScanResult`
+  the unified scan already produced (hlse_main.c, hlse_emit.c). Found by
+  the jcheck migration below — the structural assertions caught what
+  wording-grep never compared.
+
+### Changed (cycle-472)
+- `tests/cli_integration.sh` non-paste stanzas migrated to `jcheck`
+  JSON-structural assertions (~1,240 stanzas across file, secret, text,
+  package/manifest, scan, url, audit, esp, protect, network and email
+  faces plus the `check_text_hit`/`check_url_hit`/`check_secret_hit`
+  helpers, now one-line jcheck wrappers). `tests/json_check.py` gained
+  an NDJSON fallback plus `L` (record list for `scan`/manifest output,
+  which emits per-record lines + a trailing summary record) and `s`
+  (raw text for JSON-fragment asserts). Stanzas whose subjects are not
+  JSON verdicts — `--help`, `--version`, `--benchmark`, `--self-test`,
+  the no-arg demo, error paths, SARIF output, the human-only `Fix:`
+  label, and `$(...)` captures — intentionally keep grep checks.
+  Suite: **24,277 passed / 0 failed**.
+
 ### Changed (cycle-471)
 - `tests/cli_integration.sh` paste stanzas migrated from `| grep -q`
   output-wording checks to JSON-structural assertions: new `jcheck`

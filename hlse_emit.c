@@ -766,7 +766,19 @@ hlse_stdin_mode(int json_out, int fail_threshold) {
              * For text lines, reuse sr (not hlse_check_text alone) so
              * embedded URL extraction is honoured — same as GAP-N fix. */
             if (sr.is_url) {
-                Verdict uv = hlse_check_url(line);
+                /* Reuse sr (not a fresh hlse_check_url on the raw
+                 * line) so the verdict hlse_scan's percent-decode
+                 * redispatch produced is honoured — check_url alone
+                 * scores 0 on inputs like "javascript%3A…". */
+                Verdict uv;
+                int ti;
+                memset(&uv, 0, sizeof(uv));
+                uv.score = sr.score;
+                uv.n_reasons = sr.n_reasons < (int)(sizeof(uv.reasons)/sizeof(uv.reasons[0]))
+                               ? sr.n_reasons : (int)(sizeof(uv.reasons)/sizeof(uv.reasons[0]));
+                for (ti = 0; ti < uv.n_reasons; ti++)
+                    snprintf(uv.reasons[ti], sizeof(uv.reasons[0]),
+                             "%s", sr.reasons[ti]);
                 hlse_print_json_url(line, &uv);
             } else {
                 TextVerdict tv;

@@ -41,11 +41,26 @@ def main():
     raw = sys.stdin.read()
     try:
         data = json.loads(raw)
-    except json.JSONDecodeError as e:
-        sys.stderr.write('json_check: verdict is not JSON: %s\n' % e)
-        return 1
+    except json.JSONDecodeError:
+        # Not a single verdict — try NDJSON (`scan` emits one verdict
+        # per line plus a trailing scan_summary record) and bind `d`
+        # to the list of per-line objects instead.
+        try:
+            data = [json.loads(l) for l in raw.splitlines() if l.strip()]
+        except json.JSONDecodeError as e:
+            sys.stderr.write('json_check: output is not JSON: %s\n' % e)
+            return 1
+        if not data:
+            sys.stderr.write('json_check: no JSON records on stdin\n')
+            return 1
     try:
-        ok = bool(eval(sys.argv[1], SAFE_GLOBALS, {'d': data}))
+        # `d` is the parsed verdict (dict) or list of per-line records
+        # (NDJSON); `L` is the same records normalized to a list even when
+        # the output was a single object; `s` is the raw output text —
+        # grep-style substring asserts over the JSON serialization use `s`.
+        ok = bool(eval(sys.argv[1], SAFE_GLOBALS,
+                       {'d': data, 's': raw,
+                        'L': data if isinstance(data, list) else [data]}))
     except Exception as e:  # bad expression = failed assertion, not a crash
         sys.stderr.write('json_check: %s: %s\n' %
                          (type(e).__name__, e))
