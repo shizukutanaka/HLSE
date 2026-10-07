@@ -2180,6 +2180,35 @@ e6_done:;
         }
     }
 
+    /* E6b: non-ASCII bytes in the From/Reply-To domain — a raw UTF-8
+     * homoglyph (Cyrillic/Greek/CJK lookalike) in the sender address.
+     * Legit transport punycodes IDN domains, so a literal non-ASCII
+     * byte here is a crafted or display-form sender — the canonical
+     * BEC impersonation trick the ASCII-only squat table above cannot
+     * see ('it@cоrp.com' with Cyrillic о slipped through entirely).  */
+    {
+        const char *const dset[2] = { from_domain, reply_domain };
+        static const char *const dname[2] = { "From", "Reply-To" };
+        int di2;
+        for (di2 = 0; di2 < 2; di2++) {
+            const char *p;
+            int nonascii = 0;
+            if (!dset[di2][0]) continue;
+            for (p = dset[di2]; *p; p++) {
+                if ((unsigned char)*p >= 0x80) { nonascii = 1; break; }
+            }
+            if (nonascii && v.n_reasons < HLSE_EMAIL_MAX_REASONS) {
+                v.score += 35;
+                snprintf(v.reasons[v.n_reasons++],
+                    sizeof(v.reasons[0]),
+                    "E6: %s domain '%.80s' contains non-ASCII characters — "
+                    "possible IDN/homoglyph impersonation", dname[di2],
+                    dset[di2]);
+            }
+        }
+    }
+
+
     /* E3: Free email used in corporate/authority context */
     if (from_domain[0] && is_free_email(from_domain)) {
         if (display_name[0]) {

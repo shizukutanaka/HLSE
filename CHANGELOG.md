@@ -2,6 +2,22 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 504 — Email E6b: IDN/homoglyph sender domains
+
+### Added
+- `hlse_check_email_headers` now flags non-ASCII bytes in the
+  From/Reply-To domain (+35 each): a literal UTF-8 homoglyph
+  (Cyrillic/Greek/CJK lookalike) in a transport domain means a crafted
+  or display-form sender — legit mail punycodes IDN in transit.  This
+  is the canonical BEC impersonation trick the ASCII-only leet/Damerau
+  squat table cannot see (`it@cоrp.com` with Cyrillic о slipped
+  through entirely, scoring only the generic E5).
+
+### Verified benign-by-design (probed, unchanged)
+ASCII senders unchanged (`it@corp.com` = E5 only); multi-word BEC
+lures keep their honest compound-gated scores.
+
+
 ## Cycle 503 — P8 LOLBin residuals (certreq -Post, iesetup)
 
 ### Added

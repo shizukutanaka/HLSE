@@ -9214,6 +9214,16 @@ mv "$XDIR99/.directory2" "$XDIR99/local/.directory" 2>/dev/null || {
 jcheck "file: .directory local icon clean" 'd["score"] == 0 and d["reasons"] == []' file "$XDIR99/local/.directory"
 printf 'To: x@y.com\nSubject: hi\n' > "$XDIR99/benign.eml"
 jcheck "email: benign headers stay low" 'd["action"] in ["SAFE", "LOG"]' email "$(cat "$XDIR99/benign.eml")"
+
+# E6b (cycle 504): non-ASCII (IDN homoglyph) bytes in From/Reply-To
+# domains — literal UTF-8 in a transport domain means crafted sender.
+jcheck "email cyrillic domain flagged" 'd["score"] >= 40' email 'From: "IT" <it@cоrp.com>
+Subject: password reset'
+jcheck "email cyrillic replyto flagged" 'd["score"] >= 60' email 'From: a@corp.com
+Reply-To: b@pаypal.com'
+jcheck "email ascii domain unflagged" 'd["score"] < 40' email 'From: it@corp.com
+Subject: hello'
+
 rm -rf "$XDIR99"
 
 # ── cycle-100: LOLBin download/exec command lines ──
