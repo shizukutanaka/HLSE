@@ -17758,7 +17758,9 @@ hlse_check_paste(const char *text) {
 #undef CI_HTTP
     }
 
-    /* P9: Reverse shell payloads (Unix) */
+    /* P16: Reverse shell payloads (Unix) — renumbered from P9: the
+     * earlier P9 already meant destructive payload; one code must not
+     * carry two detection meanings (finding-identity collision). */
     {
         int is_revshell = 0;
         /* bash /dev/tcp redirect: bash -i >& /dev/tcp/IP/PORT 0>&1 */
@@ -17805,7 +17807,7 @@ hlse_check_paste(const char *text) {
             v.score += 60;
             if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
                 snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
-                    "P9: Reverse shell payload (/dev/tcp, nc -e, socat)");
+                    "P16: Reverse shell payload (/dev/tcp, nc -e, socat)");
         }
     }
 
@@ -17826,7 +17828,9 @@ hlse_check_paste(const char *text) {
                 "Compound: sudo + remote code = root-level pastejacking");
     }
 
-    /* P10: Persistence injection — SSH key, crontab, shell startup modification.
+    /* P17: Persistence injection — SSH key, crontab, shell startup modification.
+     * Renumbered from P10: the earlier P10 already meant credential-file
+     * access; one code must not carry two detection meanings.
      * Appending to ~/.ssh/authorized_keys or (cron|at)tab in a paste is a
      * classic post-exploitation persistence vector; almost never legitimate
      * in a clipboard context. Shell startup modification also covered.     */
@@ -17848,7 +17852,7 @@ hlse_check_paste(const char *text) {
             v.score += 50;
             if (v.n_reasons < HLSE_PASTE_MAX_REASONS)
                 snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
-                    "P10: Persistence injection — %s", why);
+                    "P17: Persistence injection — %s", why);
         }
     }
 

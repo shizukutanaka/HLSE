@@ -270,7 +270,29 @@ static const struct pattern_entry g_pattern_registry[] = {
     { "HLSE-AUDIT-A8-HOME-UNSET-UNITS",     "audit", "systemd user units with HOME unset" },
     { "HLSE-AUDIT-A8-NO-USER-UNITS",        "audit", "No user systemd units found" },
     { "HLSE-AUDIT-A8-UNITS-CLEAN",          "audit", "systemd units clean" },
-    { "HLSE-AUDIT-AX-HOME-SECRET-MODE",     "audit", "Secret-bearing home file mode too open" }
+    { "HLSE-AUDIT-AX-HOME-SECRET-MODE",     "audit", "Secret-bearing home file mode too open" },
+    /* paste finding ids (hlse_check_paste P-coded reasons) — per-finding
+     * keys; P9/P10 hold their original meanings (destructive payload /
+     * credential-file access), the later colliding blocks were renumbered
+     * to P16/P17 so every code maps to exactly one detection. */
+    { "HLSE-PASTE-P1",           "paste",     "Hidden newline — first line shown differs from executed" },
+    { "HLSE-PASTE-P2",           "paste",     "Remote code execution — download piped to shell" },
+    { "HLSE-PASTE-P3",           "paste",     "Unicode smuggling — RTL override / zero-width character" },
+    { "HLSE-PASTE-P4",           "paste",     "Privilege-escalation command (sudo/su/doas)" },
+    { "HLSE-PASTE-P5",           "paste",     "Encoded/interpreted payload — obfuscated command" },
+    { "HLSE-PASTE-P6",           "paste",     "Leading space — shell history evasion" },
+    { "HLSE-PASTE-P7",           "paste",     "Trailing '&' — background execution" },
+    { "HLSE-PASTE-P8",           "paste",     "Windows ClickFix / LOLBin chain" },
+    { "HLSE-PASTE-P9",           "paste",     "Destructive payload — recursive delete / disk wipe" },
+    { "HLSE-PASTE-P10",          "paste",     "Credential/key file access — private key, cloud creds" },
+    { "HLSE-PASTE-P11",          "paste",     "Persistence write — appends/enables autostart code" },
+    { "HLSE-PASTE-P12",          "paste",     "Eval/source of fetched content — RCE class" },
+    { "HLSE-PASTE-P13",          "paste",     "Listener/staging — bind shell, SUID install, ad-hoc HTTP server" },
+    { "HLSE-PASTE-P14",          "paste",     "Webshell write — script/web extension + request handler" },
+    { "HLSE-PASTE-P15",          "paste",     "Decode-then-pipe — base64/openssl decode piped to shell" },
+    { "HLSE-PASTE-P16",          "paste",     "Reverse shell payload (/dev/tcp, nc -e, socat)" },
+    { "HLSE-PASTE-P17",          "paste",     "Persistence injection — SSH key, crontab, shell startup" },
+    { "HLSE-PASTE-OTHER",        "paste",     "Paste finding without a P code (compound amplifiers)" }
 };
 
 /* Emit the full pattern-ID registry. JSON mode → an array of

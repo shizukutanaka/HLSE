@@ -302,11 +302,11 @@ hlse_email_reason_id(const char *reason) {
 }
 
 /* Stable machine-readable id for a code-prefixed reason on the
- * protect / esp / network / file surfaces — the same per-finding dedup
- * key email got with HLSE-EMAIL-*. Each surface's reason strings lead
+ * protect / esp / network / file / paste surfaces — the same per-finding
+ * dedup key email got with HLSE-EMAIL-*. Each surface's reason strings lead
  * with "<letter><digits>:" (R/N/S on protect, E/M on esp, N on network,
- * F on file); the code is emitted as "HLSE-<FAMILY>-<CODE>" so a SIEM
- * rule like "suppress HLSE-PROTECT-S4" needs no free-text matching.
+ * F on file, P on paste); the code is emitted as "HLSE-<FAMILY>-<CODE>" so
+ * a SIEM rule like "suppress HLSE-PROTECT-S4" needs no free-text matching.
  * The letter is validated per kind because code namespaces overlap
  * between surfaces (network N1 = ARP poisoning, protect N1 = SMB mount).
  * Returns `buf` or NULL when the reason carries no valid code. */
@@ -323,6 +323,7 @@ hlse_reason_code_id(const char *kind, const char *reason,
     else if (strcmp(kind, "esp") == 0)     { family = "HLSE-ESP-";     allowed = "EM"; }
     else if (strcmp(kind, "network") == 0) { family = "HLSE-NET-";     allowed = "N"; }
     else if (strcmp(kind, "file") == 0)    { family = "HLSE-FILE-";    allowed = "F"; }
+    else if (strcmp(kind, "paste") == 0)   { family = "HLSE-PASTE-";   allowed = "P"; }
     else return NULL;
     /* parse "<LETTER><DIGITS>:" */
     p = (const unsigned char *)reason;

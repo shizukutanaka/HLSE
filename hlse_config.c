@@ -219,7 +219,7 @@ hlse_config_load(const char *path, HlseConfig *cfg,
                 goto bad_path;
         }
         else {
-            char msg[160];
+            char msg[192];
             snprintf(msg, sizeof(msg),
                      "unknown config key '%s' (expected json|sarif|quiet|"
                      "syslog|fingerprints|git-history|fail-on|from|"

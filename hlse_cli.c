@@ -778,6 +778,8 @@ hlse_cmd_paste(const HlseCli *o, int argc, char **argv, int idx) {
                 for (i = 0; i < pv.n_reasons; i++)
                         hlse_json_str_elem(i, pv.reasons[i]);
                 printf("]");
+                emit_reason_ids("paste", "HLSE-PASTE-OTHER",
+                                pv.reasons, pv.n_reasons);
                 if (pv.n_classes > 0) {
                     /* machine-readable P8 class list — every matched chain
                      * class, where the reason string truncates to 3 names. */

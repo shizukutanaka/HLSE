@@ -4,6 +4,26 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Added (cycle-478)
+- **`reason_ids` for paste verdicts + P9/P10 code-collision fix**
+  (audit C3/D-surface parity). Paste reasons have always carried P1–P15
+  code prefixes but no stable tokens — a SIEM could not write
+  "suppress HLSE-PASTE-P9". The code-prefix mapper now covers the
+  `paste` kind: every reason emits `HLSE-PASTE-P<n>` (uncoded compound
+  amplifiers fall back to `HLSE-PASTE-OTHER`, keeping `reason_ids` 1:1
+  with `reasons`, `[]` on clean). JSON verdict + alert sinks
+  (JSONL/syslog via the same mapper) + 18 registry tokens (226→244).
+  **Collision discovered and fixed**: the later reverse-shell and
+  persistence-injection blocks had been assigned P9/P10 while those
+  codes already meant destructive payload / credential-file access —
+  one code carrying two detection meanings. Renumbered to P16/P17 so
+  every code maps to exactly one detection; spec §5.2 documents it.
+
+### Fixed (cycle-478)
+- `hlse_config.c` unknown-key message buffer 160→192: the cycle-477
+  `state-file` key pushed the format string past the buffer, tripping
+  `-Wformat-truncation` in non-strict builds.
+
 ### Added (cycle-477)
 - **`state-file`: optional dedup persistence for hlsed** (audit C2).
   Previously the daemon's in-memory dedup table meant every restart

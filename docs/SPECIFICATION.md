@@ -178,6 +178,9 @@ Additional fields vary by kind:
   token for each reason (per-finding dedup key); `body_pattern`/`body_score`
   when a body was inspected; `remediation` on detections.
 - `paste`: `signals` (bitmask of fired `PASTE_*` signal families), `reasons:[...]`;
+  `reason_ids:[...]` — the stable `HLSE-PASTE-P<n>` token for each reason
+  (per-finding dedup key; P16=reverse shell and P17=persistence injection
+  were renumbered off P9/P10 so no code carries two detection meanings);
   `classes` (every matched P8 chain class — the reason string names only
   the first 3) and `classes_total` (true match count, only when it
   exceeds the `classes` cap) on multi-class detections.

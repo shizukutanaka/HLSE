@@ -112,11 +112,11 @@ build_line(char *out, size_t cap, const char *kind, int score, int severity,
            const char *target, const char **reasons, int n_reasons) {
     char ts[32], num[16], esc[1024];
     /* per-reason stable ids, resolved three ways: the generic code
-     * mapper for coded kinds (file/protect/esp/network), the email
+     * mapper for coded kinds (file/protect/esp/network/paste), the email
      * mapper for E-coded reasons, or a verbatim embedded HLSE-*
      * token. Elements with no resolvable id emit null so the array
      * stays 1:1-aligned with "reasons"; the field is omitted entirely
-     * when nothing resolved (scheme-free kinds like url/text/paste). */
+     * when nothing resolved (scheme-free kinds like url/text). */
     #define ALERT_MAX_IDS 64
     const char *ids[ALERT_MAX_IDS];
     char idb[ALERT_MAX_IDS][48];
