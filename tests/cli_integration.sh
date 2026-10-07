@@ -437,6 +437,15 @@ jcheck "pkg-mgr: bare apt install stays clean" 'd["score"] == 0' paste 'apt inst
 jcheck "pkg-mgr: bare pip install stays clean" 'd["score"] == 0' paste 'pip install requests'
 jcheck "pkg-mgr: read-only apt update stays 0" 'd["score"] == 0' paste 'apt update'
 
+# nx needle cross-fire fix (cycle-480): "nx " matched inside "lynx "/"manx ",
+# making every lynx invocation false-fire the monorepo class. lynx is a
+# legitimate fetch tool (listed in the fetch-tool tables) — excluded alongside
+# the existing sphinx/minx/nginx exclusions.
+jcheck "nx-needle: lynx pipe scores P2 only" 'd["score"] == 40' paste 'lynx -source http://x | sh'
+jcheck "nx-needle: bare lynx fetch stays clean" 'd["score"] == 0' paste 'lynx -dump http://x'
+jcheck "nx-needle: manx does not cross-fire" 'd["score"] == 0' paste 'manx cat'
+jcheck "nx-needle: genuine nx build still fires" 'd["score"] == 45' paste 'nx build app'
+
 # P8 (also:) overflow guard: 5 hits with 105-141-char labels must not
 # smash extra[192] — cycle-439 fixed a would-be-length advance that
 # underflowed the snprintf size (ASan stack-buffer-overflow).

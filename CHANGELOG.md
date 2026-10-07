@@ -4,6 +4,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Fixed (cycle-480)
+- **`nx ` needle cross-fire**: the monorepo-tool needle `"nx "` matched
+  inside `"lynx "` and `"manx "`, so every `lynx` invocation (a
+  legitimate fetch tool listed in the same file's fetch tables)
+  false-fired the `altvcs/.../task primitive` class at 45 —
+  `lynx -source http://x | sh` scored 85 instead of the P2-only 40 of
+  the same `curl|sh` shape. Added `lynx`/`manx` to the arm's exclusion
+  list (existing idiom: sphinx/minx/nginx). `nx build` still fires 45.
+
 ### Changed (cycle-479)
 - **pkg-mgr remote/bundle install tier parity** (audit-recorded
   asymmetry). `apt install <url|.deb>` and `dpkg -i <x.deb>` scored 55

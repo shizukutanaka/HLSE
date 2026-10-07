@@ -12837,7 +12837,8 @@ hlse_check_paste(const char *text) {
              ci_contains(text, "filterdiff") || ci_contains(text, "combinediff") ||
              ci_contains(text, "flipdiff") || ci_contains(text, "rediff") ||
              ci_contains(text, "rbt") || ci_contains(text, "reviewdog") ||
-             (ci_contains(text, "nx ") && !ci_contains(text, "sphinx") && !ci_contains(text, "minx") && !ci_contains(text, "nginx")) ||
+             (ci_contains(text, "nx ") && !ci_contains(text, "sphinx") && !ci_contains(text, "minx") && !ci_contains(text, "nginx") &&
+              !ci_contains(text, "lynx") && !ci_contains(text, "manx")) ||
              (ci_contains(text, "turbo") && ci_contains(text, " -")) ||
              (ci_contains(text, "redo") && ci_contains(text, " -")) ||
              (ci_contains(text, "tup ") && !ci_contains(text, "setup") && !ci_contains(text, "startup")) ||
