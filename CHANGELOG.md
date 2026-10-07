@@ -2,6 +2,28 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 499 — Backslash-escape + tab normalization
+
+### Changed
+- The normalization now decodes the last shell-escape class that
+  still scored 0: `\x` -> `x` **in command position only**
+  (`cu\rl` really runs `curl`, `powe\rshell` runs powershell),
+  `\\` -> `\` in command position, and `\t` -> ` ` everywhere
+  (shells treat tab as a word separator).
+- Command position = the first token after a command separator
+  (start / `;` `&` `|` `(` `)` `` ` `` newline).  `>` `<` end the
+  slot — a redirect target is a file arg.  This is what resolves
+  the cycle-497 ambiguity: argument text keeps every `\` verbatim,
+  so `.aws\credentials`, `\\srv\share`, `%APPDATA%\x` still hit
+  the credential and UNC needles.
+
+### Verified benign-by-design (probed, unchanged)
+`cu\\rl` (literal `cu\rl`, not curl), `type .aws\credentials`
+(+40 cred intact), `type .aws\credentials | nc` (exfil arm
+intact), `xcopy \\e\s\x && x.exe` (UNC arm intact),
+`cat a\b.txt`, `c:\x\y`, `find . -name a\*b` — all correct.
+
+
 ## Cycle 498 — Dynamic-command cradle (P12e): variable/glob exec names
 
 ### Added

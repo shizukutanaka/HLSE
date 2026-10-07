@@ -979,7 +979,19 @@ hlse_check_paste(const char *text) {
      * are metachar escapes whose decoded byte stays meaningful.  */
     raw = text;
     {
+        /* incmd tracks "inside the first token after a command
+         * separator" (start / ; & | ( ) ` newline).  The backslash
+         * un-escaping below applies ONLY there: a command-position
+         * `cu\rl` really runs `curl`, but the same byte sequence in
+         * an argument is usually a Windows path segment
+         * (`.aws\credentials`, `\\srv\share`) whose `\` must stay
+         * verbatim for the credential/UNC needles.  `>` `<` end the
+         * command slot too — a redirect target is a file arg.
+         * `\\` collapses to a literal `\` (only in command
+         * position, for the same reason).  `\t` maps to space —
+         * shells treat it as a word separator.                        */
         size_t i, n = 0;
+        int incmd = 1, seen = 0;
         for (i = 0; raw[i] && n < sizeof(clean) - 1; i++) {
             char c = raw[i];
             if (c == '\'' || c == '"')
@@ -988,11 +1000,13 @@ hlse_check_paste(const char *text) {
                 continue;
             if (c == '$' && !strncmp(raw + i, "${IFS}", 6)) {
                 clean[n++] = ' ';
+                incmd = 0;
                 i += 5;
                 continue;
             }
             if (c == '$' && !strncmp(raw + i, "$IFS", 4)) {
                 clean[n++] = ' ';
+                incmd = 0;
                 i += 3;
                 continue;
             }
@@ -1002,7 +1016,41 @@ hlse_check_paste(const char *text) {
                 i += (raw[i+2] == ':') ? 3 : (raw[i+2] == 't') ? 6 : 7;
                 continue;
             }
+            if (c == ' ' || c == '\t') {
+                clean[n++] = ' ';
+                if (seen) incmd = 0;
+                continue;
+            }
+            if (c == '>' || c == '<') {
+                clean[n++] = c;
+                incmd = 0;
+                seen = 0;
+                continue;
+            }
+            if (c == ';' || c == '&' || c == '|' || c == '(' ||
+                c == ')' || c == '\n' || c == '`') {
+                clean[n++] = c;
+                incmd = 1;
+                seen = 0;
+                continue;
+            }
+            if (c == '\\' && incmd) {
+                if (raw[i+1] == '\\') {
+                    clean[n++] = '\\';
+                    i++;
+                    seen = 1;
+                    continue;
+                }
+                /* `\x` -> `x` only mid-word (preceded by an
+                 * alphanumeric): `cu\rl` decodes to `curl`, while a
+                 * leading `\` or `c:\x` keeps its byte.             */
+                if (seen && n > 0 &&
+                    isalnum((unsigned char)raw[i+1]) &&
+                    isalnum((unsigned char)clean[n-1]))
+                    continue;
+            }
             clean[n++] = c;
+            seen = 1;
         }
         clean[n] = '\0';
         text = clean;

