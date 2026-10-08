@@ -536,7 +536,15 @@ cred_dir_copy(const char *text) {
 }
 
 static const char *PASTE_DOWNLOADERS[] = {
-    "curl ", "curl.exe", "wget ", "wget.exe", "lynx ", "socat ", "telnet ", NULL
+    "curl ", "curl.exe", "wget ", "wget.exe", "lynx ", "socat ", "telnet ",
+    /* second-echelon fetch CLIs — the `X url | sh` cradle form is
+     * flagged on shape like `wget url | sh` even where the tool
+     * does not stream the payload on stdout; `http`/`https`/`xh`
+     * are the HTTPie/xh clients, `lwp-*` the Perl LWP family     */
+    "wget2 ", "aria2c ", "axel ", "lftp ", "ftp ", "ftpget ",
+    "ftpput ", "ncftpget ", "ncftpput ", "smbget ", "lwp-request",
+    "lwp-download", "lwp-mirror", "http ", "https ", "xh ",
+    "scp ", "sftp ", "rsync ", "tftp ", "rcp ", "wput ", "yafc ", NULL
 };
 static const char *PASTE_PIPE_SHELLS[] = {
     "| sh", "| bash", "|sh", "|bash", "| sudo", "| /bin/sh",
@@ -752,7 +760,14 @@ static const char *PASTE_FETCH_TOOLS[] = {
     /* UNC-source copy — fetching from a remote share is
      * the Windows download equivalent; the exec-chain gate
      * keeps routine `robocopy \\srv\share dst` backups clean */
-    "xcopy \\\\", "copy \\\\", "robocopy \\\\", "move \\\\", NULL
+    "xcopy \\\\", "copy \\\\", "robocopy \\\\", "move \\\\",
+    /* second-echelon fetch CLIs — same intake stage, exec-chain
+     * gate keeps benign use clean (`http`/`https`/`xh` are the
+     * HTTPie/xh clients; `lwp-*`/`getstore` are the Perl LWP
+     * family; `ftpget`/`ncftpget`/`smbget` the batch clients) */
+    "wget2 ", "ftp ", "ftpget ", "ftpput ", "ncftpget ",
+    "ncftpput ", "smbget ", "lwp-request", "lwp-download",
+    "lwp-mirror", "getstore", "http ", "https ", "xh ", NULL
 };
 static const char *PASTE_EXEC_CHAINS[] = {
     "&& bash", "&& sh", "&& chmod", "&& sudo", "&& ./", "&& /",
@@ -1644,8 +1659,8 @@ hlse_check_paste(const char *text) {
         if ((ci_contains(text, "powershell") || ci_contains_tok(text, "pwsh")) &&
             (ci_contains(text, "-enc ")        || ci_contains(text, "encodedcommand") ||
              ci_contains(text, "-e ")          || ci_contains(text, "-ec ") ||
-             ci_contains(text, "-en ")         || ci_contains(text, "-enco") ||
-             ci_contains(text, "-encod")       || ci_contains(text, "-encode") ||
+             ci_contains(text, "-en ")         || ci_contains(text, "-enco ") ||
+             ci_contains(text, "-encod ")      || ci_contains(text, "-encode ") ||
              ci_contains(text, "-encoded ")    ||
              ci_contains(text, "downloadstring") || ci_contains(text, "frombase64string") ||
              ci_contains_tok(text, "iex")          || ci_contains(text, "invoke-expression") ||
@@ -1669,6 +1684,38 @@ hlse_check_paste(const char *text) {
         }
         if (ci_contains_tok(text, "msiexec") && CI_HTTP) {
             PASTE_WHAT_SEV("msiexec remote MSI install", 65);
+        }
+        /* Run-payload-straight-off-UNC — the tool itself executes
+         * the remote file, no exec chain needed. ` \\` (space then
+         * share) means a UNC path in argument position; fused
+         * `cmd /c \\`/`-file \\` forms are used so generic
+         * `/c`/`-f` flags on copy tools cannot collide. */
+        if ((ci_contains_tok(text, "rundll32") ||
+             ci_contains_tok(text, "regsvr32") ||
+             ci_contains_tok(text, "mshta")) &&
+            ci_contains(text, " \\\\")) {
+            PASTE_WHAT_SEV("UNC remote script/dll execution", 65);
+        }
+        if (ci_contains(text, "cmd /c \\\\") ||
+            ci_contains(text, "cmd.exe /c \\\\") ||
+            ci_contains(text, "powershell -file \\\\") ||
+            ci_contains(text, "powershell.exe -file \\\\") ||
+            ci_contains(text, "powershell -f \\\\") ||
+            ci_contains(text, "powershell.exe -f \\\\") ||
+            ci_contains(text, "pwsh -file \\\\") ||
+            ci_contains(text, "pwsh -f \\\\")) {
+            PASTE_WHAT_SEV("UNC remote shell/script execution", 65);
+        }
+        /* content-launch tier: real remote-code loads but also a
+         * plausible admin action (deploy from a share) — LOG tier */
+        if ((ci_contains_tok(text, "msiexec") ||
+             ci_contains_tok(text, "installutil") ||
+             ci_contains_tok(text, "regasm") ||
+             ci_contains_tok(text, "regsvcs") ||
+             ci_contains(text, "java -jar") ||
+             ci_contains(text, "javaw -jar")) &&
+            ci_contains(text, " \\\\")) {
+            PASTE_WHAT_SEV("UNC remote content launch", 45);
         }
         if ((ci_contains_tok(text, "wscript") || ci_contains_tok(text, "cscript")) &&
                    (CI_HTTP || ci_contains(text, ".vbs") ||
@@ -1786,6 +1833,26 @@ hlse_check_paste(const char *text) {
                    (ci_contains(text, "exec(") || ci_contains(text, "eval(") ||
                     ci_contains(text, ".read()") || ci_contains(text, "subprocess"))) {
             PASTE_WHAT_SEV("Python download-execute one-liner", 65);
+        }
+        if (ci_contains_tok(text, "ruby") &&
+                   (ci_contains(text, "eval(") ||
+                    ci_contains(text, "instance_eval") ||
+                    ci_contains(text, "module_eval") ||
+                    ci_contains(text, "system(")) &&
+                   CI_HTTP) {
+            PASTE_WHAT_SEV("Ruby download-execute one-liner", 65);
+        }
+        if (ci_contains_tok(text, "perl") &&
+                   (ci_contains(text, "eval") || ci_contains(text, "system(") ||
+                    ci_contains(text, "exec(") || ci_contains(text, "getstore")) &&
+                   CI_HTTP) {
+            PASTE_WHAT_SEV("Perl download-execute one-liner", 65);
+        }
+        if (ci_contains_tok(text, "node") &&
+                   (ci_contains(text, "eval") || ci_contains(text, "exec(") ||
+                    ci_contains(text, "child_process")) &&
+                   CI_HTTP) {
+            PASTE_WHAT_SEV("Node download-execute one-liner", 65);
         }
         if (ci_contains_tok(text, "regasm") &&
                    (CI_HTTP || ci_contains(text, ".dll") ||

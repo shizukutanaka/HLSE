@@ -2,6 +2,47 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 515 — Paste: UNC direct-execution + interp builtin-fetch parity
+
+### Added
+- `P8` UNC direct-execution arms: `rundll32`/`regsvr32`/`mshta` +
+  ` \\` (space then share) → 65; fused forms `cmd (.exe) /c \\`,
+  `powershell(.exe) -file/-f \\`, `pwsh -file/-f \\` → 65
+  (fused needles so generic `/c`/`-f` flags on copy tools cannot
+  collide — `xcopy /c \\srv` stays 0); content-launch tier
+  `msiexec`/`installutil`/`regasm`/`regsvcs`/`java -jar`/
+  `javaw -jar` + ` \\` → 45 (real remote-code loads but also a
+  plausible admin deploy action — LOG tier).
+- `P8` interpreter builtin-fetch arms (parity with the existing
+  Python arm at 65): `ruby`/`perl`/`node` + `eval`/`system(`/
+  `exec(`/`child_process`/`getstore`/`instance_eval` +
+  `CI_HTTP` → 65. `ruby -ropen-uri -e 'eval(open(u).read)'`
+  and `perl -MLWP::Simple -e 'eval(get(u))'` were 0.
+- `PASTE_DOWNLOADERS` (P2 `| sh` cradle) and `PASTE_FETCH_TOOLS`
+  (P12b `&&`/`;` exec chain) second-echelon fill: `wget2`,
+  `aria2c`, `axel`, `lftp`, `ftp`, `ftpget`, `ftpput`,
+  `ncftpget`, `ncftpput`, `smbget`, `lwp-request`,
+  `lwp-download`, `lwp-mirror`, `getstore`, `http`/`https`/`xh`
+  (HTTPie/xh clients), `scp`, `sftp`, `rsync`, `tftp`, `rcp`,
+  `wput`, `yafc` — exec-connector gate keeps every bare
+  invocation benign.
+
+### Precision fixes
+- `-enco`/`-encod`/`-encode` PowerShell flag needles gained a
+  trailing space — `-Encoding` is a real parameter sharing the
+  prefix, so `powershell Get-ChildItem -Encoding utf8` tripped
+  P8 since cycle-496 (latent: the benign unit test only caught
+  it now that the suite rebuilt). Abbreviated `-encod`/
+  `-encode` payload invocations still fire at 65.
+
+### Verified
+`xcopy /c \\srv\share` (legit `/c` flag), `powershell -File
+C:\x\y.ps1`, `powershell -file x.ps1 \\srv\logs\out` (UNC
+as argument, not target), `msiexec /i x.msi TARGETDIR=\\srv\s`,
+`node server.js http://x`, `ruby app.rb http://x`, `scp f
+u@e:/x`, `ftp ftp.gnu.org` all clean.
+
+
 ## Cycle 514 — Text: extortion, advance-fee, impersonation fill
 
 ### Added

