@@ -235,6 +235,57 @@ static const char *BAIT_WORDS[] = {
     "unclaimed grant", "federal grant", "grant you qualified",
     "qualify for a grant", "qualified for a grant",
     "processing fee to receive", "fee to release",
+    /* Advance-fee demand vocabulary — 'pay a fee to release X' is the
+     * 419/universal advance-fee signature; fee nouns are benign in
+     * commerce, so these stay compound-bait                          */
+    "transfer fee to", "a fee to release",
+    "fee to unlock",
+    "release your funds", "release your payment",
+    "release your inheritance", "release your winnings",
+    "release your money", "release the payment",
+    /* Reshipper / parcel-mule job scam — 'reship our packages' */
+    "reship", "reshipping", "repackaging",
+    "receive and forward", "forward packages and", "packages to our",
+    "ship to our warehouse", "parcel forwarding", "shipping agent",
+    "freight forwarding agent", "forwarding agent", "processing agent",
+    "logistics agent", "inspect packages", "inspect the packages",
+    "quality control agent", "distribution agent",
+    /* Pig-butchering broker personas — the 'personal account manager'
+     * who helps you 'withdraw profits' from the fake platform         */
+    "personal account manager", "dedicated account manager",
+    "your account manager", "assigned account manager",
+    "account manager will", "personal broker", "assigned broker",
+    "withdraw profits", "withdraw your profits", "withdraw the profits",
+    "trading profits", "manage your trades", "expert trader",
+    "trading expert", "trading signals", "vip signals",
+    "premium signals", "trading analyst",
+    /* Romance emergency-fee claims — hospital/customs/leave fees the
+     * 'partner' needs paid before they can 'come home'                */
+    "hospital bill", "medical bills", "pay my bills",
+    "pay for surgery", "surgery costs", "come home to you",
+    "fly home to", "get home to you", "leave request fee",
+    "vacation fee", "fee for leave", "leave fees",
+    "deployed on a mission", "peacekeeping mission",
+    "come home on leave", "apply for leave",
+    /* Loan-forgiveness impersonation — real servicer mail shares the
+     * vocabulary, so compound only                                    */
+    "loan forgiveness", "forgiveness program",
+    "eligible for forgiveness", "forgive your",
+    "loans are eligible",
+    "loan is eligible", "loans have been forgiven",
+    "forgiveness application",
+    /* Bank fraud-alert impersonation — the #1 smishing shape; real
+     * fraud texts share it, so LOG-tier compound                      */
+    "did you make this", "authorize this",
+    "if you did not make", "did not make this", "did not authorize",
+    "dispute this transaction", "dispute this charge",
+    "unauthorized charge", "unauthorized transaction",
+    "unauthorized payment", "unauthorized purchase",
+    "unauthorized activity", "was this your transaction",
+    "not your transaction", "report this transaction",
+    "cancel this transaction", "unauthorized login",
+    "unauthorized paypal", "paypal charge",
+    "unauthorized debit", "unauthorized withdrawal",
     /* Voicemail / health-scam lures — 'you have a new voicemail'
      * carries the click link (vishing delivery), and fake
      * insurance/medical lures target elders                     */
@@ -999,6 +1050,14 @@ static const char *BAIT_WORDS[] = {
      * overpayment back". Common in marketplace/job-offer scams.           */
     "send the remainder", "wire the overpayment", "wire the difference back",
     "deposit the check and send", "send back the excess",
+    /* check-kiting split-payment — 'keep $200 and send the rest' */
+    "send the rest", "wire the rest", "keep the rest",
+    "for yourself and send",
+    "keep some for yourself", "keep your share",
+    "send the difference back",
+    "accidental deposit", "accidentally deposited", "deposited too much",
+    "sent too much", "deposit it and keep", "cash it and keep",
+    "keep a part",
     /* Rental / housing scam deposit demand */
     /* 'deposit to hold' already listed above */
     "send deposit via", "wire the deposit",
@@ -1134,6 +1193,12 @@ static const char *PRIZE_WORDS[] = {
     "processing fee to release", "release the funds",
     "transfer of funds", "next of kin", "legal beneficiary",
     "unclaimed inheritance", "deceased customer",
+    "deceased relative", "contact our attorney",
+    "contact the attorney", "speak with our attorney",
+    "the estate attorney", "left you an inheritance", "you inherited",
+    "inherited from", "your inheritance", "the inheritance",
+    "inheritance fund", "named beneficiary", "you are the beneficiary",
+    "as the beneficiary", "legal heir", "rightful heir",
     "receive your share", "your percentage", "your commission",
     "percentage of the funds", "you will receive",
     "sum of money", "million usd", "million euros",
@@ -1872,7 +1937,8 @@ static const char *GROOMING_WORDS[] = {
     "receive packages and reship", "receive and reship",
     "receive shipments and forward", "repack and ship",
     "shipping agent position", "reshipping agent",
-    "process shipments from home", "forward packages to",
+    "process shipments from home", "forward packages to our",
+    "forward the packages to", "forward our packages",
     "reship to our", "reship to a", "reship to the",
     "receive packages at your", "packages to your address",
     /* Upfront-fee job fraud: victim pays for a "starter kit" or "equipment"
@@ -2287,6 +2353,11 @@ static const char *FAKE_ALERT_WORDS[] = {
     "accidentally sent you", "accidentally transferred", "accidentally paid you",
     "mistakenly sent you", "sent you by mistake", "paid you by mistake",
     "overpaid you", "paid too much",
+    /* Password-compromise claims — sextortion and alert-phishing both
+     * open with 'your password was leaked' credibility hooks          */
+    "password was leaked", "password has been leaked",
+    "password is compromised", "password was compromised",
+    "password has been compromised", "passwords were leaked",
     /* Fake check deposit — "I'll send a check, cash it, wire the rest" */
     "cash the check and wire", "cash the check and send back",
     "deposit the check and send", "deposit the check and wire",
@@ -2383,7 +2454,7 @@ static const char *RANSOM_WORDS[] = {
     /* Sextortion / webcam extortion (2023-2025 high-volume campaigns) */
     "i have footage of you", "i have a video of you", "i have photos of you",
     "i have a recording of you", "recording of you", "private video of you",
-    "your private video", "recorded you", "i recorded you",
+    "your private video", "recorded you ", "i recorded you ",
     "watching adult sites", "adult sites", "adult websites",
     "send to all contacts", "sent to all contacts", "to all contacts",
     "i activated your webcam", "your camera was hacked",
@@ -2397,6 +2468,34 @@ static const char *RANSOM_WORDS[] = {
     "access to your camera", "access to your webcam",
     "have compromising footage", "compromising material of you",
     "have been watching you", "have been monitoring you",
+    /* device-infection claims — 'your device was infected with
+     * spyware and i recorded everything' variants                    */
+    "infected with spyware", "infected with malware",
+    "infected with a trojan", "device was infected",
+    "trojan on your device", "spyware on your", "recorded everything",
+    "recorded your screen", "recorded you while",
+    "screen recording of you", "have video of you",
+    "video of you watching",
+    /* data-theft claims — 'i have all your data' */
+    "i have all your data", "i have your data",
+    "downloaded your data", "copied your data", "stole your data",
+    "have your browsing", "copied your contacts",
+    /* contact-delivery extortion — 'the video goes to your contacts' */
+    "goes to your contacts", "sent to your contacts",
+    "to everyone in your contacts", "to your entire contact",
+    "friends and family list", "to your friends and",
+    "share it with your contacts", "send it to your contacts",
+    "the video to your",
+    /* bitcoin extortion demands — 'pay me in bitcoin or...' */
+    "pay me in bitcoin", "pay in bitcoin", "pay us in bitcoin",
+    "bitcoin to this address",
+    "to this bitcoin address", "pay in btc", "btc to this address",
+    "pay the bitcoin", "bitcoin payment to",
+    /* file-loss threats */
+    "lose your files", "lose your data", "lose access to your files",
+    "never see your files", "files will be deleted",
+    "files will be destroyed", "files will be lost",
+    "files will be encrypted",
     /* Group/pronoun variants — campaigns swap "i" for "we" and
      * contacts for family/friends; the threat shape is identical  */
     "we have footage of you", "we recorded you", "we have a video of you",

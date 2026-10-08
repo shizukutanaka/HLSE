@@ -9334,6 +9334,30 @@ jcheck "text dmv-errand benign" 'd["score"] < 15' text 'renewed my drivers licen
 jcheck "text visa-embassy benign" 'd["score"] < 30' text 'plane ticket prices went up today'
 jcheck "text qualify-discount benign" 'd["score"] < 15' text 'you qualify for the discount program'
 
+# Text extortion/advance-fee fill (cycle 514): sextortion device/data
+# claims, bitcoin demands, inheritance/contact-delivery forms,
+# check-kiting remainder, reshipper, broker, romance emergency-fee,
+# loan forgiveness, fraud-alert impersonation.
+jcheck "text device-infected sextortion" 'd["score"] >= 40' text 'your device was infected with spyware and i recorded everything'
+jcheck "text bitcoin-video extortion" 'd["score"] >= 40' text 'pay me in bitcoin or the video goes to your contacts'
+jcheck "text password-leaked sextortion" 'd["score"] >= 40' text 'your password was leaked and i have all your data'
+jcheck "text inheritance-attorney flags" 'd["score"] >= 20' text 'deceased relative left you an inheritance contact our attorney'
+jcheck "text transfer-fee-release flags" 'd["score"] >= 40' text 'you must pay a transfer fee to release your inheritance'
+jcheck "text check-keep-rest flags" 'd["score"] >= 30' text 'deposit the check keep 200 for yourself and send the rest'
+jcheck "text reship-mule flags" 'd["score"] >= 20' text 'reship the packages to our warehouse and get paid weekly'
+jcheck "text account-manager broker" 'd["score"] >= 20' text 'your account manager will help you trade and withdraw profits'
+jcheck "text hospital-bill romance" 'd["score"] >= 20' text 'help me pay hospital bills so i can come home to you'
+jcheck "text loan-forgiveness flags" 'd["score"] >= 20' text 'you are eligible for the loan forgiveness program apply now'
+jcheck "text dispute-this-txn flags" 'd["score"] >= 20' text 'did you make this payment if not dispute this transaction'
+jcheck "text paypal-charge flags" 'd["score"] >= 20' text 'there was an unauthorized paypal charge on your account'
+jcheck "text leave-request-fee flags" 'd["score"] >= 20' text 'i am deployed on a mission and need money for a leave request fee'
+jcheck "text fee-process benign" 'd["score"] < 20' text 'please pay the fee to process your application'
+jcheck "text forward-packages benign" 'd["score"] < 15' text 'forward packages to the new address'
+jcheck "text recorded-your benign" 'd["score"] < 15' text 'i recorded your presentation at the conference'
+jcheck "text deployed-work benign" 'd["score"] < 15' text 'i am deployed overseas for work'
+jcheck "text will-reading benign" 'd["score"] < 20' text 'contact our attorney for the will reading'
+
+
 
 
 
@@ -9532,7 +9556,7 @@ check_secret_hit "$WK" 'WakaTime API Key' "secret: waka_ flagged"
 PD="pd_oauth_"; PD="${PD}8qAbCdEfGhIjKlMnOpQrStUvWxYz12"
 check_secret_hit "$PD" 'PagerDuty OAuth Token' "secret: pd_oauth_ flagged"
 check_text_hit 'we help victims recover lost bitcoin funds' 'LOG' "text: recovery scam flagged"
-check_text_hit 'earn money working from home reshipping packages' 'LOG' "text: reshipping mule flagged"
+check_text_hit 'earn money working from home reshipping packages' 'ALERT' "text: reshipping mule flagged"
 check_text_hit 'the recovery agent fixed my laptop' 'OK' "text: benign recovery clean"
 XDIR112=$(mktemp -d /tmp/hlse112.XXXXXX)
 for e in vdi ocx mst; do

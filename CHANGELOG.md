@@ -2,6 +2,103 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 514 — Text: extortion, advance-fee, impersonation fill
+
+### Added
+- `RANSOM_WORDS`: device-infection sextortion claims (`infected
+  with spyware/malware/a trojan`, `device was infected`, `trojan/
+  spyware on your device`, `recorded everything`, `recorded your
+  screen`, `recorded you while`, `screen recording of you`, `have/
+  video of you watching`); data-theft claims (`i have your data`,
+  `downloaded/copied/stole your data`, `have your browsing`,
+  `copied your contacts`); contact-delivery (`goes to your
+  contacts`, `sent to your contacts`, `to everyone in your
+  contacts`, `to your entire contact`, `friends and family
+  list`, `to your friends and`, `share/send it to your
+  contacts`, `the video to your`); bitcoin extortion demands
+  (`pay me/us/in bitcoin`, `bitcoin to this address`, `to this
+  bitcoin address`, `pay in btc`, `btc to this address`, `pay
+  the bitcoin`, `bitcoin payment to`); file-loss threats (`lose
+  your files/data`, `lose access to your files`, `never see your
+  files`, `files will be deleted/destroyed/lost/encrypted`).
+- `FAKE_ALERT_WORDS`: password-compromise claims (`password was/
+  has been leaked`, `password is/was/has been compromised`,
+  `passwords were leaked`).
+- `PRIZE_WORDS`: inheritance prose forms (`deceased relative`,
+  `contact our/the attorney`, `speak with our attorney`, `the
+  estate attorney`, `left you an inheritance`, `you inherited`,
+  `inherited from`, `your/the inheritance`, `inheritance fund`,
+  `named beneficiary`, `you are the beneficiary`, `as the
+  beneficiary`, `legal heir`, `rightful heir`).
+- `BAIT_WORDS`: advance-fee demand vocab (`transfer fee to`, `a
+  fee to release`, `fee to unlock`, `release your funds/
+  payment/inheritance/winnings/money`, `release the payment`);
+  reshipper/parcel-mule (`reship`, `reshipping`, `repackaging`,
+  `receive and forward`, `forward packages and`, `packages to
+  our`, `ship to our warehouse`, `parcel forwarding`, `shipping
+  agent`, `freight forwarding agent`, `forwarding agent`,
+  `processing agent`, `logistics agent`, `inspect (the)
+  packages`, `quality control agent`, `distribution agent`);
+  pig-butchering broker (`personal/dedicated/your/assigned
+  account manager`, `account manager will`, `personal/assigned
+  broker`, `withdraw (your/the) profits`, `trading profits`,
+  `manage your trades`, `expert trader`, `trading expert`,
+  `trading/vip/premium signals`, `trading analyst`); romance
+  emergency-fee (`hospital bill`, `medical bills`, `pay my
+  bills`, `pay for surgery`, `surgery costs`, `come home to
+  you`, `fly home to`, `get home to you`, `leave request fee`,
+  `vacation fee`, `fee for leave`, `leave fees`, `deployed on a
+  mission`, `peacekeeping mission`, `come home on leave`,
+  `apply for leave`); loan-forgiveness impersonation (`loan
+  forgiveness`, `forgiveness program`, `eligible for
+  forgiveness`, `forgive your`, `loans are/is eligible`,
+  `loans have been forgiven`, `forgiveness application`);
+  fraud-alert impersonation (`did you make this`, `authorize
+  this`, `if you did not make`, `did not make this`, `did not
+  authorize`, `dispute this transaction/charge`, `unauthorized
+  charge/transaction/payment/purchase/activity/login/paypal/
+  debit/withdrawal`, `paypal charge`, `was this your
+  transaction`, `not your transaction`, `report/cancel this
+  transaction`); check-kiting remainder (`send/wire/keep the
+  rest`, `for yourself and send`, `keep some for yourself`,
+  `keep your share`, `send the difference back`, `accidental
+  deposit`, `accidentally deposited`, `deposited/sent too
+  much`, `deposit/cash it and keep`, `keep a part`).
+
+### Precision fixes (substring traps + dedup surfaced this cycle)
+- `recorded you`/`i recorded you` -> trailing-space bound: the
+  bare needle matched 'i recorded your <anything>' — every
+  benign 'recorded your presentation/voice/call' hit RANSOM(35).
+- `forward packages to` -> `forward packages to our` + bound
+  forms: legit mail-forwarding ('forward packages to the new
+  address') hit the mule needle.
+- `deployed overseas`/`i am deployed` dropped — real deployed
+  personnel write exactly this; kept `deployed on a mission`.
+- Commerce-fee forms dropped (`pay a/the fee to`, `fee to
+  process/activate/verify`, `transfer fee` bare, `send the
+  difference`) — visa/shipping/accounting talk compounds;
+  release/winnings-bound fee claims stay.
+- Dedup pass removed 14 candidate needles already covered by
+  existing tables (`military leave`, `debt relief/forgiveness`,
+  `student debt relief`, `fee to withdraw`, `processing fee to
+  release`, `fee to receive your`, `keep a portion`, `estate of
+  the late`, `late mr`, `next-of-kin`, `send bitcoin to`,
+  `device is infected`, `your device is infected`, `found on the
+  dark web`, `did you authorize this`, `a paypal charge`,
+  `have all your data`, `wire the difference to`); `authorize
+  this` added back so 'did you authorize this transaction'
+  still reaches 2 hits (24).
+
+### Verified
+`please pay the fee to process your application`, `forward
+packages to the new address`, `i recorded your presentation at
+the conference`, `i am deployed overseas for work`, `contact our
+attorney for the will reading`, `the transfer fee at western
+union is five dollars` all clean. Residual: bare 'i recorded
+you' at string end no longer fires (trailing-space bound);
+mid-sentence 'recorded you <x>' forms all covered.
+
+
 ## Cycle 513 — Text: task scams, vishing IVR, drainer CTAs
 
 ### Added
