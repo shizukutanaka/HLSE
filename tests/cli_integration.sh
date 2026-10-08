@@ -23429,6 +23429,22 @@ jcheck "interp: ruby app benign" 'd["score"] == 0' paste 'ruby app.rb http://x'
 jcheck "dl: scp alone benign" 'd["score"] == 0' paste 'scp f u@e:/x'
 jcheck "dl: ftp alone benign" 'd["score"] == 0' paste 'ftp ftp.gnu.org'
 
+# ── cycle-516: kernel/boot-code + shell/console script carriers ──────────
+for ext in sys drv vxd 386 ko kext efi msh msh1 msh2 psc1 psc2 wbt dex; do
+  touch "/tmp/hlse_c516.$ext"
+  jcheck "ext: .$ext carrier flagged >= 30" 'd["score"] >= 30' file "/tmp/hlse_c516.$ext"
+  rm -f "/tmp/hlse_c516.$ext"
+done
+touch /tmp/hlse_c516.sys.txt
+jcheck "ext: .sys.txt benign" 'd["score"] == 0' file /tmp/hlse_c516.sys.txt
+rm -f /tmp/hlse_c516.sys.txt
+touch /tmp/hlse_c516.ko.zip
+jcheck "ext: .ko.zip benign" 'd["score"] == 0' file /tmp/hlse_c516.ko.zip
+rm -f /tmp/hlse_c516.ko.zip
+touch /tmp/hlse_c516.dex.apk
+jcheck "ext: .dex.apk double-ext flagged" 'd["action"] in ["ISOLATE", "BLOCK", "ALERT"]' file /tmp/hlse_c516.dex.apk
+rm -f /tmp/hlse_c516.dex.apk
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

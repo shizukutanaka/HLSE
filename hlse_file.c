@@ -1444,6 +1444,22 @@ static const char *EXECUTABLE_EXTS[] = {
      * .pex/.shiv/.shivam self-contained archives: all run under a
      * python interpreter without a build step                      */
     ".pyc", ".pyo", ".pyz", ".pex", ".shiv", ".shivam",
+    /* Kernel/boot-code carriers — .sys is the BYOVD/rootkit drop
+     * class (vulnerable-driver delivery is the dominant modern
+     * defense-evasion technique; .dll is already flagged as its
+     * userspace sibling), .drv its legacy twin, .vxd/.386 the Win9x
+     * VxD ancestors; .ko feeds insmod/modprobe on Linux; .kext is
+     * the macOS kernel-extension bundle; .efi is a UEFI binary —
+     * the same bootkit carrier HLSE's own `esp` subcommand scans  */
+    ".sys", ".drv", ".vxd", ".386", ".ko", ".kext", ".efi",
+    /* Remaining shell/console script carriers — .msh/.msh1/.msh2 are
+     * Monad/MSH scripts (the pre-PowerShell shell, exec-on-open like
+     * .ps1); .psc1/.psc2 are PowerShell console files whose XML
+     * snap-in list loads arbitrary DLLs via powershell
+     * -PSConsoleFile; .wbt is a WinBatch script (enterprise
+     * automation runtime — the .btm sibling already flagged); .dex
+     * is Dalvik bytecode — Android's .class twin                 */
+    ".msh", ".msh1", ".msh2", ".psc1", ".psc2", ".wbt", ".dex",
     NULL
 };
 

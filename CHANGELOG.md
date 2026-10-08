@@ -2,6 +2,36 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 516 — File: kernel/boot-code + shell/console script carriers
+
+### Added
+- `EXECUTABLE_EXTS` kernel/boot-code carriers: `.sys` (the BYOVD /
+  rootkit drop class — vulnerable-driver delivery is the dominant
+  modern defense-evasion technique; `.dll` was already flagged as
+  its userspace sibling), `.drv` (legacy twin), `.vxd`/`.386`
+  (Win9x VxD ancestors), `.ko` (insmod/modprobe carrier on Linux),
+  `.kext` (macOS kernel-extension bundle), `.efi` (UEFI binary —
+  the same bootkit carrier HLSE's own `esp` subcommand scans).
+  Every one scored 0 as a bare attachment filename.
+- `EXECUTABLE_EXTS` shell/console script carriers: `.msh`/`.msh1`/
+  `.msh2` (Monad/MSH — the pre-PowerShell shell, exec-on-open like
+  `.ps1`), `.psc1`/`.psc2` (PowerShell console files whose XML
+  snap-in list loads arbitrary DLLs via `powershell
+  -PSConsoleFile`), `.wbt` (WinBatch — enterprise automation
+  runtime, sibling of the already-flagged `.btm`), `.dex` (Dalvik
+  bytecode — Android's `.class` twin, `.class` already flagged).
+
+### Notes
+- `.mobileconfig` stays deliberately content-gated (F38 flags only
+  root-CA/proxy payloads — a wifi profile is benign); `.sln`/
+  `.csproj` stay unlisted (everyday dev files; the MSBuild
+  inline-task lure surface is covered by `.targets`/`.props`/
+  `.user`/`.wixproj`); `make -f`/`awk -f`/local-script execution
+  stays benign by design (the payload lives inside the file, not
+  in the invocation).
+- Suite: +17 jchecks (14 fire ≥ 30, .sys.txt / .ko.zip benign
+  0, .dex.apk double-ext flagged).
+
 ## Cycle 515 — Paste: UNC direct-execution + interp builtin-fetch parity
 
 ### Added
