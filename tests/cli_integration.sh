@@ -23445,6 +23445,14 @@ touch /tmp/hlse_c516.dex.apk
 jcheck "ext: .dex.apk double-ext flagged" 'd["action"] in ["ISOLATE", "BLOCK", "ALERT"]' file /tmp/hlse_c516.dex.apk
 rm -f /tmp/hlse_c516.dex.apk
 
+# ── cycle-517: email E4 auth-results runs without a From header ─────────
+jcheck "email: auth-fail without From flagged" 'd["score"] == 80' email 'Authentication-Results: mx.google.com; spf=fail; dkim=fail; dmarc=fail'
+jcheck "email: spf-fail alone without From flagged" 'd["score"] == 25' email 'Authentication-Results: mx; spf=fail'
+jcheck "email: all-none without From flagged" 'd["score"] == 20' email 'Authentication-Results: mx; spf=none dkim=none dmarc=none'
+jcheck "email: auth-pass without From benign" 'd["score"] == 0' email 'Authentication-Results: mx; spf=pass dkim=pass dmarc=pass'
+jcheck "email: auth-fail with From unchanged" 'd["score"] == 45' email 'From: bank@secure-alerts.evil.xyz
+Authentication-Results: spf=fail'
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

@@ -2,6 +2,26 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 517 — Email: Authentication-Results evaluated without From
+
+### Fixed
+- `hlse_check_email`: the `if (!from_val) return v;` early return
+  fired *before* the E4 block, so an input containing only an
+  `Authentication-Results:` header (a stripped header paste, a log
+  fragment, an admin's triage line) scored **0 even on a
+  spf=fail+dkim=fail+dmarc=fail triple failure** — the strongest
+  single BEC/spoof signal the module can see. E4 now runs before
+  the From gate; every other rule keeps its From dependency.
+  Behavior for From-present inputs is bit-identical (E4 still runs
+  exactly once).
+- Scores: `spf=fail+dkim=fail+dmarc=fail` alone → 80; `spf=fail`
+  alone → 25; `spf/dkim/dmarc=none` triple → 20 (all were 0);
+  `spf=pass dkim=pass dmarc=pass` stays 0.
+
+### Notes
+- Suite: +5 jchecks (auth-fail without From = 80/25/20, auth-pass
+  = 0, From-present composite unchanged at 45).
+
 ## Cycle 516 — File: kernel/boot-code + shell/console script carriers
 
 ### Added

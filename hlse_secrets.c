@@ -2011,6 +2011,39 @@ hlse_check_email_headers(const char *raw_headers) {
     auth_val = find_header(raw_headers, "Authentication-Results");
     subject_val = find_header(raw_headers, "Subject");
 
+    /* E4: SPF/DKIM fail in Authentication-Results — evaluated before
+     * the From: early return: an auth-failure header carries full
+     * forensic signal even when the From line was stripped or the
+     * analyst pasted only the Authentication-Results line.          */
+    if (auth_val) {
+        if (strstr(auth_val, "spf=fail") || strstr(auth_val, "spf=softfail")) {
+            v.score += 25;
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "E4: SPF check failed — sender domain not authorized");
+        }
+        if (strstr(auth_val, "dkim=fail")) {
+            v.score += 25;
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "E4: DKIM signature invalid — message may be tampered");
+        }
+        if (strstr(auth_val, "dmarc=fail")) {
+            v.score += 30;
+            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                "E4: DMARC failed — high confidence of spoofing");
+        }
+        /* All three returning "none" means no authentication was performed
+         * at all — a legitimate corporate mailer always publishes at least
+         * SPF or DKIM records.                                             */
+        if (strstr(auth_val, "spf=none") && strstr(auth_val, "dkim=none") &&
+            strstr(auth_val, "dmarc=none")) {
+            v.score += 20;
+            if (v.n_reasons < HLSE_EMAIL_MAX_REASONS)
+                snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
+                    "E4: No SPF/DKIM/DMARC records — sender domain has no "
+                    "email authentication (uncommon for legitimate senders)");
+        }
+    }
+
     if (!from_val) return v; /* No From header → cannot analyze */
 
     extract_domain(from_val, from_domain, sizeof(from_domain));
@@ -2237,36 +2270,6 @@ e6_done:;
                     break;
                 }
             }
-        }
-    }
-
-    /* E4: SPF/DKIM fail in Authentication-Results */
-    if (auth_val) {
-        if (strstr(auth_val, "spf=fail") || strstr(auth_val, "spf=softfail")) {
-            v.score += 25;
-            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
-                "E4: SPF check failed — sender domain not authorized");
-        }
-        if (strstr(auth_val, "dkim=fail")) {
-            v.score += 25;
-            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
-                "E4: DKIM signature invalid — message may be tampered");
-        }
-        if (strstr(auth_val, "dmarc=fail")) {
-            v.score += 30;
-            snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
-                "E4: DMARC failed — high confidence of spoofing");
-        }
-        /* All three returning "none" means no authentication was performed
-         * at all — a legitimate corporate mailer always publishes at least
-         * SPF or DKIM records.                                             */
-        if (strstr(auth_val, "spf=none") && strstr(auth_val, "dkim=none") &&
-            strstr(auth_val, "dmarc=none")) {
-            v.score += 20;
-            if (v.n_reasons < HLSE_EMAIL_MAX_REASONS)
-                snprintf(v.reasons[v.n_reasons++], sizeof(v.reasons[0]),
-                    "E4: No SPF/DKIM/DMARC records — sender domain has no "
-                    "email authentication (uncommon for legitimate senders)");
         }
     }
 
