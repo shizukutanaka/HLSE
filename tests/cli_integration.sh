@@ -23475,6 +23475,16 @@ jcheck "url: ms-settings bare benign floor" 'd["score"] == 35' -- 'ms-settings:p
 jcheck "url: vscode bare benign floor" 'd["score"] == 35' -- 'vscode://file/abc'
 jcheck "url: ms-word remote unchanged" 'd["score"] == 60' -- 'ms-word:ofv|u|http://evil.xyz/x.doc'
 
+# ── cycle-520: Notion legacy secret_ token ──────────────────────────────
+# (token literals split per AGENTS.md rule 7 so push-protection can't see
+# a contiguous secret_+40 run in the diff)
+jcheck "secret: notion secret_ bare flagged" 'd["score"] == 80' secret 'secret_'CkhvMdgaKjIg8xNbe3nNyjOq9wMxEhh2FDEEtfjgVvV
+jcheck "secret: secret_ dashed tail flagged" 'd["score"] == 80' secret 'secret_'abcdefghij-klmnopqrst-uvwxyz-0123456789ab
+jcheck "secret: secret_ long tail flagged" 'd["score"] == 80' secret 'secret_'QazWsxEdcRfvTgbYhnUjmIkOlPqawsxdecfgthbnjmkliuyt
+jcheck "secret: secret_ short benign" 'd["score"] == 0' secret 'secret_short'
+jcheck "secret: secret_ underscores benign" 'd["score"] == 0' secret 'secret_token_value_here'
+jcheck "secret: secret_sauce benign" 'd["score"] == 0' secret 'secret_sauce'
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

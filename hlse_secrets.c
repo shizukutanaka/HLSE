@@ -413,9 +413,15 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "PMAK-",         5,  24, is_alnum_or_dash,   "Postman API Key",     80 },
     { "dckr_pat_",     9,  20, is_alnum_or_dash,   "Docker Hub Personal Access Token", 80 },
     /* Notion integration token — ntn_ + base62 secret (current
-     * format; older `secret_` tokens already match the generic
-     * key rules)                                                  */
+     * format). The legacy `secret_` form (pre-2021 internal
+     * integrations, still live in old workspaces) scores 0 bare —
+     * the earlier note's "generic key rules" only fire inside an
+     * assignment context (`key = "secret_…"`), never on a bare
+     * pasted token. is_alnum_or_dash excludes '_', so ordinary
+     * identifiers like `secret_token_value` truncate their tail
+     * at the first underscore and stay under the length gate.   */
     { "ntn_",          4,  30, is_alnum_or_dash,   "Notion Integration Token", 80 },
+    { "secret_",       7,  40, is_alnum_or_dash,   "Notion Integration Token (legacy)", 80 },
     /* Square application secret — sq0csp- sibling of the access
      * (sq0atp-) and ID-prefixed (sq0idp-) tokens already listed   */
     { "sq0csp-",       7,  30, is_alnum_or_dash,   "Square Application Secret", 80 },

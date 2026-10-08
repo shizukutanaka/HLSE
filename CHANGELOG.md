@@ -2,6 +2,32 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 520 — Secrets: Notion legacy `secret_` integration token
+
+### Fixed
+- `SECRET_PATTERNS` covered the current `ntn_` Notion token but not
+  the legacy `secret_` form (pre-2021 internal integrations, still
+  live in old workspaces) — the table's own comment claimed the
+  "generic key rules" covered it, but those rules only fire inside
+  an assignment context (`key = "secret_…"` = 65); a bare pasted
+  `secret_` + 43-char token scored **0**.
+- Added `{ "secret_", 7, 40, is_alnum_or_dash, …, 80 }` beside
+  `ntn_`. `is_alnum_or_dash` excludes `_`, so ordinary identifiers
+  (`secret_token_value`, `secret_sauce`) truncate their tail at
+  the first underscore and stay under the 40-char length gate.
+- Scores: `secret_` + 43/48/60-char tails → 80; `secret_short`,
+  `secret_token_value_here`, `secret_sauce`, env-context stubs
+  stay 0.
+
+### Notes
+- Probe artifacts recorded this cycle (not gaps): `pypi-` needs
+  the fixed `pypi-AgEIcHlwaS5vcmc` prefix body and `shp*` Shopify
+  rows need `is_hex` tails — fabricated tokens lacking them score
+  0 correctly. Discord bot tokens carry no fixed prefix (three
+  dot-separated base64 segments) — documented blind spot, no
+  dedicated row added.
+- Suite: +6 jchecks (three positive tails, three benign shapes).
+
 ## Cycle 519 — URL: abuse-only URI-handler scheme floor
 
 ### Fixed
