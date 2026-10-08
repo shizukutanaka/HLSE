@@ -2404,7 +2404,7 @@ echo "$FROM_TEXT_OUT" | grep -q "Channel (sms)" \
     || check "p37: --from sms applies channel prior to text verdicts" "0" "1"
 
 # p37: channel delta raises effective score (LOG+15 = ALERT, shown in header)
-echo "$FROM_TEXT_OUT" | grep -q "ALERT\s*\[40\]" \
+echo "$FROM_TEXT_OUT" | grep -q "ALERT\s*\[52\]" \
     && check "p37: --from sms elevates LOG text to ALERT in display" "0" "0" \
     || check "p37: --from sms elevates LOG text to ALERT in display" "0" "1"
 
@@ -9308,6 +9308,32 @@ jcheck "text meeting-reschedule benign" 'd["score"] < 15' text 'i am in a meetin
 jcheck "text wfh-policy benign" 'd["score"] < 15' text 'work from home policy updated monday'
 jcheck "text cousin-number benign" 'd["score"] < 15' text 'my cousin number is saved'
 jcheck "text debt-advice benign" 'd["score"] < 15' text 'pay off your debt faster with these tips'
+
+# Text task-scam / vishing / drainer-CTA fill (cycle 513): press-N
+# verbs, task-scam forms, connect-your-wallet, hold-pressure,
+# license-expiry, IRS-division, visa-fee, unpaid/DMV props.
+jcheck "text rate-products taskscam" 'd["score"] >= 40' text 'rate products to earn money daily tasks'
+jcheck "text unlock-salary taskscam" 'd["score"] >= 40' text 'complete 3 orders to unlock your salary'
+jcheck "text deposit-continue taskscam" 'd["score"] >= 40' text 'your task account needs a deposit to continue'
+jcheck "text scan-code-reschedule" 'd["score"] >= 30' text 'scan the code to reschedule your delivery'
+jcheck "text press2-cancel vishing" 'd["score"] >= 30' text 'press 2 to cancel the transaction'
+jcheck "text norton-renewal flags" 'd["score"] >= 30' text 'your norton plan has been renewed amount 499.99'
+jcheck "text medicare-benefits flags" 'd["score"] >= 20' text 'free medicare benefits you qualify for'
+jcheck "text orphanage-donation flags" 'd["score"] >= 30' text 'help the orphanage send donations now'
+jcheck "text visa-fee romance flags" 'd["score"] >= 20' text 'help me pay for my visa to come see you'
+jcheck "text connect-wallet drainer" 'd["score"] >= 20' text 'connect your wallet to claim the airdrop'
+jcheck "text outstanding-warrant flags" 'd["score"] >= 40' text 'you have an outstanding warrant for missed jury'
+jcheck "text license-expired flags" 'd["score"] >= 30' text 'your windows license key has expired'
+jcheck "text irs-division flags" 'd["score"] >= 40' text 'internal revenue service criminal division'
+jcheck "text unpaid-parking flags" 'd["score"] >= 20' text 'you have an unpaid parking violation'
+jcheck "text license-needs-verify" 'd["score"] >= 30' text 'your drivers license needs verification'
+jcheck "text press2-ivr benign" 'd["score"] < 15' text 'press 2 to continue in english'
+jcheck "text stay-on-line benign" 'd["score"] < 15' text 'stay on the line for assistance'
+jcheck "text irs-website benign" 'd["score"] < 15' text 'the internal revenue service website has forms'
+jcheck "text dmv-errand benign" 'd["score"] < 15' text 'renewed my drivers license at the dmv'
+jcheck "text visa-embassy benign" 'd["score"] < 30' text 'plane ticket prices went up today'
+jcheck "text qualify-discount benign" 'd["score"] < 15' text 'you qualify for the discount program'
+
 
 
 

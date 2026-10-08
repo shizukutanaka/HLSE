@@ -159,6 +159,26 @@ static const char *BAIT_WORDS[] = {
     "amazon gift", "walmart gift", "target gift", "best buy gift", "steam card",
     "purchase gift", "purchase google", "purchase itunes",
     "refund", "reimbursement", "claim your",
+    /* overcharge-refund scam props — 'we overcharged you' and
+     * 'going out of business' refund pretexts                    */
+    "you were overcharged", "we overcharged", "charged in error",
+    "charged by mistake", "refund is due", "refund is pending",
+    "process your refund", "process a refund",
+    "going out of business", "out of business",
+    "refund department", "refund the difference",
+    /* fraud-department purchase-verify asks — the bank-impersonation
+     * call opener; real bank texts share them so they compound    */
+    "did you make a purchase", "did you authorize",
+    "did you attempt", "a purchase of", "did you recently",
+    "verify this purchase", "confirm this purchase",
+    "was this your purchase",
+    /* unpaid-fine + DMV/license smishing props */
+    "unpaid parking", "unpaid violation", "unpaid ticket",
+    "unpaid toll", "unpaid fee", "unpaid fine", "unpaid citation",
+    "outstanding violation", "outstanding ticket",
+    "ezpass", "ez-pass", "sunpass", "fastrak",
+    "license needs", "license verification",
+    "registration is suspended", "license suspended",
     /* giftcard-scratch topic nouns — legitimate instructions
      * ('scratch off the coating') use these too, so they stay
      * compound-gated; the imperative forms are in FAKE_ALERT       */
@@ -179,6 +199,12 @@ static const char *BAIT_WORDS[] = {
     /* Crypto wallet theft */
     "seed phrase", "recovery phrase", "mnemonic", "private key",
     "connect wallet", "wallet passphrase",
+    /* 'connect YOUR wallet' — the drainer's #1 CTA missed by a
+     * pronoun; link/pair variants + airdrop-claim nouns          */
+    "connect your wallet", "connect the wallet",
+    "link your wallet", "pair your wallet",
+    "claim the airdrop", "claim your airdrop", "free airdrop",
+    "airdrop claim", "airdrop eligibility", "check your eligibility",
     /* Drainer imperative forms — 'validate/restore/import your wallet'
      * are the wallet-drain landing verbs that the noun-only list
      * missed (a bare 'recovery phrase' doc mention stays OK)       */
@@ -326,6 +352,14 @@ static const char *BAIT_WORDS[] = {
     "subscription will renew",
     "auto-renewed", "auto-renewal", "renewal charge",
     "renewal order", "antivirus subscription", "geek squad",
+    /* AV-brand impersonation props + renewed-claim forms —
+     * norton/mcafee invoices are the renewal-scam's favourite
+     * mask; benign brand talk stays single-hit                  */
+    "norton", "mcafee", "avast", "lifelock", "kaspersky",
+    "webroot", "bitdefender", "antivirus plan",
+    "was renewed", "plan has been renewed", "subscription renewed",
+    "renewed for", "renewed amount", "renewal of your",
+    "licence renewal",
     "if you did not authorize", "cancel this purchase",
     /* 'call to cancel' lives in CALLBACK_PHISH_WORDS (same reason) */
     "cancel this order", "click allow",
@@ -342,6 +376,14 @@ static const char *BAIT_WORDS[] = {
     "order medications", "donate now to help", "donate to the victims",
     "help the victims", "victims of the", "disaster victims",
     "victims of the earthquake", "flood victims", "urgent donation",
+    /* donation-ask imperatives — fake-fundraiser wording; real
+     * charities share the nouns so they compound                 */
+    "orphanage", "send donations", "donations now",
+    "make a donation", "donate to the", "donate today",
+    "donate now", "support the victims", "help the victims",
+    "donate to our", "your donation", "every donation",
+    "small donation", "relief fund", "victims fund",
+    "relief donations",
     "donation needed urgently", "fundraising campaign for",
     "disaster relief fund", "relief fund", "charity donation",
     /* Payroll-diversion BEC (HR targeted: redirect the victim's
@@ -591,6 +633,13 @@ static const char *BAIT_WORDS[] = {
     /* 'medicare benefits' already listed above */
     "medicare advantage", "medicare plan",
     "switch your coverage", "medicaid renewal", "medicare card",
+    /* benefits-update / qualify-for lures — 'your medicare
+     * benefits are being updated' and 'free benefits you
+     * qualify for' robocall openers                              */
+    "you qualify for", "qualify for free",
+    "qualify for new", "benefits are being updated",
+    "benefits have been updated", "benefits update",
+    "new benefits card", "benefits card", "updated benefits",
     "claim settlement", "settlement offer", "insurance payout",
     "settlement amount", "payout approved",
     /* Insurance-proof + deposit-return + vacation-rental + debt +
@@ -1026,7 +1075,7 @@ static const char *BAIT_WORDS[] = {
      * smishing actor's props; each alone is a legit word, so they
      * compound-gate like every bait noun ('ups' excluded: substring
      * in backups/groups)                                          */
-    "usps", "fedex", "dhl",
+    "usps", "fedex", "dhl", "internal revenue service",
     "confirm your delivery address", "confirm delivery address",
     "update your address", "verify your address",
     "track your package", "track your order", "track your shipment",
@@ -1048,11 +1097,26 @@ static const char *BAIT_WORDS[] = {
     "do not call just text", "don't call just text",
     "do not call me", "don't call me", "just text me",
     "text me instead", "text me here",
+    /* vishing hold-pressure — 'stay on the line' is also every
+     * legit call-centre's IVR line, so these compound            */
+    "stay on the line", "remain on the line",
+    "do not hang up", "stay on this call",
+    /* verification-need claims */
+    "needs verification", "requires verification",
+    "license needs verification", "verify your license",
     /* Work-from-home / debt / grant topic nouns */
     "work from home", "working from home", "no experience needed",
     "no experience necessary", "income from home",
     "weekly payments", "weekly paycheck",
     "pay off your debt", "pay down your debt",
+    /* travel-fee advance props — routine expense phrases benign
+     * alone ('pay for my visa application'), damning in the
+     * romance scam's pay-to-visit compound                        */
+    "pay for my visa", "visa fee", "visa fees", "pay for my ticket",
+    "pay for my flight", "pay for my passport",
+    "plane ticket", "airline ticket", "travel funds",
+    "help me pay", "fly to see you", "fly to meet you",
+    "come visit me", "come meet me",
     /* Arabic credential/account security (suspension phrases live in FAKE_ALERT_WORDS) */
     "تحقق من هويتك", "تأكيد هويتك", "تحديث معلومات الدفع",
     "بيانات بطاقتك",
@@ -1179,6 +1243,14 @@ static const char *AUTHORITY_WORDS[] = {
     "national insurance number", "insurance number has been suspended", 
     "amazon security", "paypal security",
     "under investigation", "criminal charges", "warrant for your arrest",
+    /* outstanding-warrant + federal-division impersonation —
+     * 'an outstanding warrant in your name' and the IRS
+     * 'Criminal Division' robocall agency names                  */
+    "outstanding warrant", "a warrant for", "warrant for missed",
+    "warrant in your name", "an active warrant", "active warrant",
+    "criminal division",
+    "crime and enforcement", "investigation division",
+    "enforcement division", "federal crime",
     "federal agent", "federal officer", "law enforcement officer",
     "social security has been compromised", "ssn has been compromised",
     "social security number compromised",
@@ -1728,6 +1800,10 @@ static const char *GROOMING_WORDS[] = {
     /* Romance scam openers */
     "i'm a widower", "my wife passed away", "working on an oil rig",
     "military overseas", "doctor without borders",
+    /* travel-fee romance advance — 'pay for my visa / plane
+     * ticket so I can visit you' is the classic ask that ends
+     * the grooming arc                                           */
+    "buy my ticket", "money for my flight",
     "successful trader", "successful investor",
     "crypto trader with", "years of experience in trading",
     /* Sugar-daddy / romance-compensation scam — the 'paid to chat'
@@ -1948,6 +2024,14 @@ static const char *FAKE_ALERT_WORDS[] = {
      * 'sin number' alone cross-fires 'cousin number', so the
      * needles carry the your/the/has-been context                */
     "your sin number", "the sin number", "sin number has been",
+    /* license-expiry tech scam — 'your windows license key has
+     * expired' is the cold-call claim that opens the
+     * renewal-fee/remote-access sequence                         */
+    "license key has expired", "license has expired",
+    "license key expired", "license expired",
+    "windows license has", "your windows license",
+    "windows license key", "product key has expired",
+    "windows product key", "software license has",
     "your sin has been", "sin has been suspended",
     "social insurance number has been",
     /* MFA fatigue / push-bombing — the approve prompt IS the lure;
@@ -2118,6 +2202,14 @@ static const char *FAKE_ALERT_WORDS[] = {
     "improve their ranking", "boost product ranking",
     "like videos to earn", "rate apps to earn", "daily task quota",
     "merchant task", "earn per click",
+    /* remaining task-scam verb-object forms — 'rate products',
+     * 'daily tasks', order-unlock and deposit-to-continue steps  */
+    "rate products", "rate products to earn", "daily tasks to earn", "earn from daily tasks",
+    "complete orders", "orders to unlock", "unlock your salary",
+    "unlock your earnings", "unlock your commission",
+    "unlock your account balance", "task account",
+    "deposit to continue", "needs a deposit", "recharge to continue",
+    "each task pays", "submit orders", "optimize apps",
     /* Unauthorized order / account fraud impersonation */
     "order you did not authorize", "purchase you did not make",
     "unauthorized purchase on your account", "did not make this purchase",
@@ -2147,6 +2239,20 @@ static const char *FAKE_ALERT_WORDS[] = {
     "press 1 to speak", "press one to speak",
     "press 1 to authorize", "press one to authorize",
     "press 1 to cancel", "press one to cancel",
+    /* remaining IVR-script forms — any digit + the canonical
+     * vishing verbs (verify/confirm/dispute/claim/report/refund)
+     * and 'stay on the line' hold-pressure                       */
+    "press 1 to verify", "press 1 to confirm the", "press 1 to confirm a charge", "press 1 to dispute",
+    "press 1 to claim", "press 1 to report", "press 1 to refund",
+    "press 1 to be connected",
+    /* digit-bound-to-scam-verb only — bare 'press 2/3/9 to' fires
+     * on real IVR instructions ('press 2 to continue in english') */
+    "press 2 to cancel", "press 2 to speak", "press 2 to authorize",
+    "press 2 to verify", "press 2 to confirm", "press 2 to claim",
+    "press 2 to dispute", "press 2 to report", "press 2 to refund",
+    "press 2 to be connected", "press 3 to cancel",
+    "press 3 to speak", "press 9 to cancel", "press 9 to speak",
+    "press 9 to hear", "press zero to speak",
     /* OTP relay / reverse-OTP scam: attacker asks victim to read them the
      * code that was actually triggered by the attacker's login attempt.   */
     "read me the code", "read the code to me",
@@ -2624,6 +2730,10 @@ static const char *CALLBACK_PHISH_WORDS[] = {
  * than click a link, bypassing URL filters on email gateways.          */
 static const char *QR_PHISH_WORDS[] = {
     "scan the qr code", "scan qr code", "scan this qr",
+    /* 'scan the code' without the QR noun — the code may be any
+     * matrix; kept purpose-bound ('to verify', 'to reschedule')  */
+    "scan the code to", "scan this code", "scan the qr to",
+    "scan the qr and", "the qr code to",
     "scan the code below", "scan with your phone",
     "scan with your camera", "use your camera to scan",
     "open your camera", "point your camera",

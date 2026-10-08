@@ -2,6 +2,82 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 513 — Text: task scams, vishing IVR, drainer CTAs
+
+### Added
+- `FAKE_ALERT_WORDS`: task-scam forms (`rate products`, `daily
+  tasks`, `orders to unlock`, `unlock your salary/earnings/
+  commission`, `task account`, `deposit to continue`, `needs a
+  deposit`, `recharge to continue`, `each task pays`, `optimize
+  apps`); generalized vishing IVR (`press 1/2/3/9/zero to
+  cancel/speak/authorize/verify/confirm/claim/dispute/report/
+  refund/be-connected`, `stay on the line`... moved to BAIT —
+  see Dropped); license-expiry tech scam (`license key has
+  expired`, `license has expired`, `windows license key`,
+  `product key has expired`, `windows product key`, `software
+  license has`).
+- `QR_PHISH_WORDS`: pronoun/purpose forms (`scan the code to`,
+  `scan this code`, `scan the qr to`, `the qr code to`).
+- `BAIT_WORDS`: AV-brand props (`norton`, `mcafee`, `avast`,
+  `lifelock`, `kaspersky`, `webroot`, `bitdefender`) + renewal
+  claims (`has been renewed`, `was renewed`, `plan has been
+  renewed`, `subscription renewed`, `renewed amount`, `renewal
+  of your`, `licence renewal`); medicare lures (`you qualify
+  for`, `qualify for free`, `benefits are being updated`,
+  `new benefits card`); charity (`orphanage`, `send donations`,
+  `make a donation`, `donate now`, `help the victims`, `relief
+  fund`, `relief donations`); wallet drainer (`connect your
+  wallet`, `link your wallet`, `pair your wallet`, `claim the/
+  your airdrop`, `airdrop eligibility`); overcharge-refund
+  (`you were overcharged`, `charged in error`, `refund is due`,
+  `going out of business`, `refund department`); fraud-dept
+  purchase-verify (`did you make a purchase`, `did you
+  authorize`, `a purchase of`, `verify this purchase`);
+  unpaid/DMV props (`unpaid parking/violation/ticket/toll/fee/
+  fine/citation`, `outstanding violation/ticket`, `ezpass`,
+  `sunpass`, `fastrak`, `license needs`, `license verification`,
+  `registration is suspended`, `license suspended`,
+  `needs verification`, `verify your license`); vishing
+  hold-pressure (`stay on the line`, `remain on the line`,
+  `do not hang up`, `stay on this call` — legit call-centre
+  IVR too, so compound); romance travel-fee props (`pay for my
+  visa/ticket/flight/passport`, `visa fee(s)`, `plane/airline
+  ticket`, `travel funds`, `help me pay`, `fly to see/meet
+  you`, `come visit me`, `come meet me`).
+- `AUTHORITY_WORDS`: outstanding-warrant forms (`outstanding
+  warrant`, `a warrant for`, `warrant for missed`, `warrant in
+  your name`, `an active warrant`) and federal-division
+  impersonation (`criminal division`, `crime and enforcement`,
+  `investigation division`, `enforcement division`,
+  `federal crime`; `internal revenue service` in BAIT).
+- `GROOMING_WORDS`: `buy my ticket`, `money for my flight`.
+
+### Dropped after probing
+- Bare `press 2/3/9 to`, `press star/pound/hash` — fires on real
+  IVR ('press 2 to continue in english'); kept verb-bound.
+- `stay on the line` family from FAKE_ALERT — legit call-centre
+  IVR shares it; compound-gated in BAIT instead.
+- `dmv`, `drivers license`, `driver's license` — benign errand
+  text compounds on the pair ('renewed my drivers license at
+  the dmv' = 24); `license needs`/`license verification`/
+  `needs verification` carry the shape without them.
+- `internal revenue service` moved AUTHORITY->BAIT — the
+  official name appears in real tax text; `criminal division`
+  etc. carry the impersonation claim standalone.
+- `you qualify` bare — double-counts inside `you qualify for`.
+
+### Verified
+`press 2 to continue in english`, `stay on the line for
+assistance`, `the internal revenue service website has forms`,
+`renewed my drivers license at the dmv`, `plane ticket prices
+went up today`, `you qualify for the discount program`,
+`we overcharged for the subscription sorry`, `norton antivirus
+installed on the laptop`, `unpaid fees must be settled
+quarterly` all clean. Residual: `pay for my visa application
+at the embassy` fires 24 (visa + payment = the actual
+romance-scam shape; LOG defensible).
+
+
 ## Cycle 512 — Text: delivery smishing, income lures, confidential BEC
 
 ### Added
