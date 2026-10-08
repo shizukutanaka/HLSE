@@ -2,6 +2,43 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 523 — Secrets: duplicate-prefix consolidation (deletion pass)
+
+### Fixed
+- **11 duplicate-prefix rows in `SECRET_PATTERNS` double-counted real
+  tokens** — `sv_add` accumulates (`score += delta`, capped 100), so
+  two rows sharing a prefix stack into one finding's score. Later
+  cycles had re-added rows without noticing earlier coverage:
+  - `dapi` (30/85 + 32/80), `hvs.` (24b64url/95 + 50/80),
+    `hvb.` (24b64url/90 + 50/80): the surviving row already covered
+    the duplicate's whole range (50+ alnum ⊂ 24+ b64url) — pure
+    redundancy, rows deleted. Real tokens now score their intended
+    tier (85/95/90, was 100).
+  - `sdk-`/`mob-`: a 40-char alnum row at 70 duplicated the
+    hex_dash-32 row at 80 added for LaunchDarkly UUIDs. Merged to
+    one alnum-32 row at 80 — covers UUID *and* non-hex vendor keys
+    (the union both rows expressed), single finding, no stacking.
+    `api-` stays hex_dash: the loosest prefix keeps strictest gate.
+  - `sq0csp-` (40/85 + 30/80), `ntn_` (30/80 + 40/85),
+    `re_` (32/80 + 30/80), `pul-` (40alnum/85 + 28hex/80): merged
+    to a single row at the *wider* bound (sq0csp-/ntn_ 30/85,
+    re_ 30/80, pul- 28alnum/85) — same coverage as the pair,
+    no double-count.
+  - `access_token$production$`/`$sandbox$` (16-field + 12-field):
+    the looser 12-field rows stacked on every real 16-field token;
+    deleting restores intended tiering — production 85, **sandbox
+    back to 40** (the duplicate had silently raised it to 100).
+- `hlse_supply.c`: literal `"base64 -d", "base64 -d"` duplicated
+  inside two needle tables — dead entries removed (matching is
+  presence-based, so no behaviour change).
+
+### Notes
+- Verified each surviving row fires once per real token shape
+  (findings=1) at the intended score; suite pins were action/label
+  buckets, unaffected.
+- The needle-lint report's cross-block duplicates are intentional —
+  arms share vocabulary under different co-presence gates.
+
 ## Cycle 522 — File: residual executable-extension carriers
 
 ### Fixed

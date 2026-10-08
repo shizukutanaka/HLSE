@@ -270,8 +270,9 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * Stripe pk_live_/pk_test_ (suffix 'live_'/'test_' + 24 = 29)
      * below the bar, so each Stripe row still wins its own match */
     { "pk_",           3,  30, is_alnum_or_dash,   "Klaviyo Private API Key", 80 },
-    /* Square application secret / personal token (sq0csp-/sq0atp-) */
-    { "sq0csp-",       7,  40, is_alnum_or_dash,   "Square Application Secret", 85 },
+    /* Square application secret / personal token (sq0csp-/sq0atp-) —
+     * single row covers the 30+ tail band real secrets occupy      */
+    { "sq0csp-",       7,  30, is_alnum_or_dash,   "Square Application Secret", 85 },
     /* Remaining payment processors — Razorpay (IN's dominant gateway),
      * Mercado Pago (LATAM's dominant), Flutterwave (Africa's dominant),
      * Shippo (shipping API) — each fixed prefix hands over money-moving
@@ -335,8 +336,7 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "squ_",          4,  36, is_alnum_or_dash,   "SonarQube User Token",     80 },
     /* LaunchDarkly client keys — sdk- (server-side SDK key) and
      * mob- (mobile key); public-facing but still auth material    */
-    { "sdk-",          4,  40, is_alnum_or_dash,   "LaunchDarkly SDK Key",     70 },
-    { "mob-",          4,  40, is_alnum_or_dash,   "LaunchDarkly Mobile Key",  70 },
+
 
     /* age encryption secret key — fixed "AGE-SECRET-KEY-1" prefix,
      * bech32-style lowercase body (~58 chars) */
@@ -365,8 +365,11 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * 32 hex) — both gate mail/API infrastructure               */
     { "key-",          4,  30, is_hex,             "Mailgun API Key",        80 },
     { "dapi",          4,  30, is_hex,             "Databricks Personal Access Token", 85 },
-    { "sdk-",          4,  32, is_hex_dash,        "LaunchDarkly SDK Key",     80 },
-    { "mob-",          4,  32, is_hex_dash,        "LaunchDarkly Mobile Key",  80 },
+    /* sdk-/mob- accept alnum tails ≥32 — UUIDs are the common
+     * shape, but other vendors issue non-hex keys under the same
+     * prefixes; the length gate keeps 'sdk-version' prose clean  */
+    { "sdk-",          4,  32, is_alnum_or_dash,   "LaunchDarkly SDK Key",     80 },
+    { "mob-",          4,  32, is_alnum_or_dash,   "LaunchDarkly Mobile Key",  80 },
     { "api-",          4,  32, is_hex_dash,        "LaunchDarkly-style API Token", 80 },
     /* Google OAuth2 refresh token — fixed '1//0' lead, ~60-70 chars
      * of base64url body; the '1//' token shape does not occur in
@@ -434,11 +437,12 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * pasted token. is_alnum_or_dash excludes '_', so ordinary
      * identifiers like `secret_token_value` truncate their tail
      * at the first underscore and stay under the length gate.   */
-    { "ntn_",          4,  30, is_alnum_or_dash,   "Notion Integration Token", 80 },
+    /* ntn_ covered by the 40/85 row below — the 30-min row
+     * only double-counted real tokens                          */
     { "secret_",       7,  40, is_alnum_or_dash,   "Notion Integration Token (legacy)", 80 },
     /* Square application secret — sq0csp- sibling of the access
      * (sq0atp-) and ID-prefixed (sq0idp-) tokens already listed   */
-    { "sq0csp-",       7,  30, is_alnum_or_dash,   "Square Application Secret", 80 },
+    /* sq0csp- covered by the 40/85 row above                  */
     /* Dynatrace ingest token — dt0s01.; the dt0c01./dt0s16.
      * API-token rows below carry the b64url-dot charset          */
     { "dt0s01.",       7,  30, is_b64url_dot,     "Dynatrace Ingest Token", 80 },
@@ -555,7 +559,7 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* Linear */
     { "lin_api_",      8,  40, is_alnum_or_dash,   "Linear API Key",        85 },
     { "lin_oauth_",   10,  30, is_alnum_or_dash,   "Linear OAuth Token",    85 },
-    { "re_",           3,  32, is_alnum_or_dash,   "Resend API Key",        80 },
+    { "re_",           3,  30, is_alnum_or_dash,   "Resend API Key",        80 },
     { "xaai-",         5,  30, is_alnum_or_dash,   "Axiom API Token",       80 },
     { "waka_",         5,  32, is_alnum_or_dash,   "WakaTime API Key",      80 },
     { "pd_oauth_",     9,  20, is_alnum_or_dash,   "PagerDuty OAuth Token", 80 },
@@ -568,11 +572,10 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "NRAL-",         5,  38, is_hex_c,           "New Relic License Key",  85 },
     { "NRAK-",         5,  27, is_alnum_or_dash,   "New Relic API Key",     85 },
 
-    /* Databricks */
-    { "dapi",          4,  32, is_hex,             "Databricks Access Token", 80 },
+    /* Databricks — single row at 367 covers 30+ hex at 85      */
 
-    /* HashiCorp Vault service token v2 (hvs. prefix, long body) */
-    { "hvs.",           4, 50, is_alnum_or_dash, "HashiCorp Vault Token",     80 },
+    /* hvs. covered by the b64url-24/95 row above (alnum tails
+     * are a b64url subset — a 50+ row only double-counted)      */
 
     /* Netlify Personal Access Token */
     { "nfp_",           4, 32, is_alnum_or_dash, "Netlify Personal Access Token", 85 },
@@ -602,7 +605,7 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "atlasv1.",      8,  30, is_alnum_or_dash, "Terraform Cloud Token", 80 },
 
     /* IaC / CI/CD platform tokens */
-    { "pul-",          4,  40, is_alnum_or_dash, "Pulumi Access Token",  85 },
+    { "pul-",          4,  28, is_alnum_or_dash, "Pulumi Access Token",  85 },
     { "ccipat_",       7,  40, is_hex_c,         "CircleCI Personal API Token", 80 },
     { "pscale_tkn_",  11,  30, is_alnum_or_dash, "PlanetScale Token",    85 },
     { "pscale_pw_",   11,  30, is_alnum_or_dash, "PlanetScale Password", 85 },
@@ -630,8 +633,8 @@ static const SecretPattern SECRET_PATTERNS[] = {
     /* SendGrid API Key — SG. + 22+ base64url chars (format: SG.<22>.<43>) */
     { "SG.",             3, 22, is_b64url_dot,     "SendGrid API Key",      85 },
 
-    /* HashiCorp Vault batch and recovery tokens */
-    { "hvb.",            4, 50, is_alnum_or_dash,   "HashiCorp Vault Batch Token",    80 },
+    /* HashiCorp Vault batch and recovery tokens — hvb. covered
+     * by the b64url-24/90 row above                            */
     { "hvr.",            4, 50, is_alnum_or_dash,   "HashiCorp Vault Recovery Token", 80 },
 
     /* Vercel deploy hook / automation token */
@@ -680,7 +683,7 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "lsv2_sk_",       8, 30, is_alnum_or_dash, "LangSmith Service Key",         90 },
 
     /* Notion integration token (ntn_) — full workspace access. */
-    { "ntn_",           4, 40, is_alnum_or_dash, "Notion Integration Token",      85 },
+    { "ntn_",           4, 30, is_alnum_or_dash, "Notion Integration Token",      85 },
 
     /* Meta/Facebook long-lived tokens: EAA + variant letter + long
      * base62ish tail (EAAB/EAAI/EAAA/EAAC…). Grants account/page
@@ -693,12 +696,12 @@ static const SecretPattern SECRET_PATTERNS[] = {
 
     /* Dev-tooling / data-platform keys: RubyGems 'rubygems_' + 48 hex,
      * NVIDIA NGC 'nvapi-', Prefect 'pnu_', Apify 'apify_api_',
-     * Pulumi 'pul-' + 40-hex */
+     * Pulumi 'pul-' + 40-hex (the alnum-40/85 row above covers
+     * hex tails too — hex ⊂ alnum) */
     { "rubygems_",     9, 40, is_hex,            "RubyGems API Key",              85 },
     { "nvapi-",        6, 36, is_alnum_or_dash,  "NVIDIA NGC API Key",            80 },
     { "pnu_",          4, 30, is_alnum_or_dash,  "Prefect Cloud API Key",         80 },
     { "apify_api_",   10, 30, is_alnum_or_dash,  "Apify API Token",               80 },
-    { "pul-",          4, 28, is_hex,            "Pulumi Access Token",           80 },
 
     /* HubSpot private-app PATs — 'pat-na1-'/'pat-eu1-' + UUID tail;
      * Covalent 'cqt_'/'ckey_' blockchain-data keys */
@@ -717,19 +720,18 @@ static const SecretPattern SECRET_PATTERNS[] = {
     { "Y2lzY29zcGFyazovL", 17, 24, is_base64,    "Webex/Cisco Spark Bot Token",   80 },
 
     /* Generic 'sk-' + 32 (DeepSeek / legacy OpenAI-class) — a
-     * generic-looking prefix gated by a long tail; Braintree tokens
-     * carry 'access_token$<env>$' — the '$' breaks the tail charset,
-     * so the env-qualified prefixes gate instead. (Mailgun 'key-' is
+     * generic-looking prefix gated by a long tail. Braintree
+     * 'access_token$<env>$' tokens gate on the env-qualified
+     * prefix + 16-char field above — a looser 12-char row here
+     * only double-counted real tokens. (Mailgun 'key-' is
      * covered above with a hex gate — documented keys are 32-hex.) */
-    { "access_token$production$", 24, 12, is_alnum_or_dash, "Braintree Access Token", 80 },
-    { "access_token$sandbox$", 21, 12, is_alnum_or_dash, "Braintree Sandbox Token", 70 },
     { "sk-",           3, 32, is_alnum_or_dash,  "Generic sk- Secret Key",        80 },
 
     /* More platform keys: Segment 'sgp_', Resend 're_', dbt Cloud
      * 'dbtc.', Trigger.dev env-scoped 'tr_dev_/tr_stg_/tr_prod_',
      * Hex.pm 'hex_', Akamai EdgeGrid 'akab-'                     */
     { "sgp_",          4, 30, is_alnum_or_dash,  "Segment API Key",               80 },
-    { "re_",           3, 30, is_alnum_or_dash,  "Resend API Key",                80 },
+    /* re_ covered by the 32/80 row above                       */
     { "dbtc.",         5, 30, is_b64url,         "dbt Cloud Service Token",       80 },
     { "tr_dev_",       7, 20, is_alnum_or_dash,  "Trigger.dev API Key (dev)",     70 },
     { "tr_stg_",       7, 20, is_alnum_or_dash,  "Trigger.dev API Key (staging)", 70 },

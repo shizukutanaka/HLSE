@@ -757,7 +757,7 @@ static const char *PASTE_FETCH_TOOLS[] = {
     "yumdownloader ", "npm pack ", "pnpm pack ", "yarn pack ",
     "pacman -sw", "pacman -s -w", "gem fetch", "cargo fetch",
     "go mod download", "brew fetch", "pnpm fetch", "yarn fetch",
-    "base64 -d", "base64 -d", "base64 --decode",
+    "base64 -d", "base64 --decode",
     "openssl enc", "openssl aes", "gpg -d", "gpg --decrypt",
     "xxd -r",
     /* UNC-source copy — fetching from a remote share is
@@ -879,7 +879,7 @@ static const char *PASTE_ASP_EXEC[] = {
 
 /* P15: decode-then-pipe — the decoder side replaces the download */
 static const char *PASTE_DECODE_BINS[] = {
-    "base64 -d", "base64 -d", "base64 --decode", "base32 -d",
+    "base64 -d", "base64 --decode", "base32 -d",
     "base32 --decode", "basenc -d", "basenc --decode", "enc -d",
     "openssl enc", "gpg -d", "gpg --decrypt", NULL
 };
