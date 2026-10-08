@@ -142,6 +142,13 @@ is_alnum_plain(char c) {
            (c >= '0' && c <= '9');
 }
 
+/* hex plus '-' — UUID-shaped token bodies (LaunchDarkly keys are
+ * `sdk-`/`mob-`/`api-` + a UUID); alnum would admit plain words    */
+static int
+is_hex_dash(char c) {
+    return is_hex(c) || c == '-';
+}
+
 /* Case-insensitive substring search (returns pointer to first match in
  * `hay`, or NULL). Needed because real-world credential files use mixed
  * case for the same key (AWS_SECRET_ACCESS_KEY vs aws_secret_access_key). */
@@ -358,6 +365,13 @@ static const SecretPattern SECRET_PATTERNS[] = {
      * 32 hex) — both gate mail/API infrastructure               */
     { "key-",          4,  30, is_hex,             "Mailgun API Key",        80 },
     { "dapi",          4,  30, is_hex,             "Databricks Personal Access Token", 85 },
+    { "sdk-",          4,  32, is_hex_dash,        "LaunchDarkly SDK Key",     80 },
+    { "mob-",          4,  32, is_hex_dash,        "LaunchDarkly Mobile Key",  80 },
+    { "api-",          4,  32, is_hex_dash,        "LaunchDarkly-style API Token", 80 },
+    /* Google OAuth2 refresh token — fixed '1//0' lead, ~60-70 chars
+     * of base64url body; the '1//' token shape does not occur in
+     * ordinary prose or code                                      */
+    { "1//0",          4,  40, is_b64url,          "Google OAuth2 Refresh Token", 85 },
     /* Foursquare Places API key — 'fsq3' + base64-flavoured token;
      * controls the venue/location-data API surface                  */
     { "fsq3",          4,  24, is_b64url,          "Foursquare API Key",    80 },

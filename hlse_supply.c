@@ -552,6 +552,9 @@ static const char *PASTE_PIPE_SHELLS[] = {
     /* interpreter cradles — same RCE class */
     "| python", "| perl", "| node", "| ruby", "| php", "|pwsh",
     "| pwsh", "| powershell", "| zsh", "| fish", "| dash", "| ksh",
+    /* iex is the canonical ClickFix cradle target — `curl u | iex`
+     * is the pastejacking twin of the covered `iwr u | iex`        */
+    "| iex", "|iex", "| invoke-expression", "|invoke-expression",
     NULL
 };
 static const char *PASTE_PRIV_ESC[] = {

