@@ -23453,6 +23453,18 @@ jcheck "email: auth-pass without From benign" 'd["score"] == 0' email 'Authentic
 jcheck "email: auth-fail with From unchanged" 'd["score"] == 45' email 'From: bank@secure-alerts.evil.xyz
 Authentication-Results: spf=fail'
 
+# ── cycle-518: generic bech32-family clipboard swap detection ───────────
+jcheck "clip: bnb1 swap flagged" 'd["score"] >= 90' clipboard 'bnb1grpf095jsf8mefzwmf4p2xhlpk2zq3s4krcd' 'bnb1grpf095jsf8mefzwmf4p2xhlpk2zq3s4krce'
+jcheck "clip: osmo1 swap flagged" 'd["score"] >= 90' clipboard 'osmo1grpf095jsf8mefzwmf4p2xhlpk2zq3s4krcd' 'osmo1grpf095jsf8mefzwmf4p2xhlpk2zq3s4krce'
+jcheck "clip: zil1 swap flagged" 'd["score"] >= 90' clipboard 'zil1grpf095jsf8mefzwmf4p2xhlpk2zq3s4krcd' 'zil1grpf095jsf8mefzwmf4p2xhlpk2zq3s4krce'
+jcheck "clip: kaspa: swap flagged" 'd["score"] >= 90' clipboard 'kaspa:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq' 'kaspa:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqp'
+jcheck "clip: addr_test1 swap flagged" 'd["score"] >= 90' clipboard 'addr_test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq' 'addr_test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqp'
+jcheck "clip: https: colon benign" 'd["score"] == 0' clipboard 'https:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq' 'https:pppppppppppppppppppppppppppppppp'
+jcheck "clip: mailto: colon benign" 'd["score"] == 0' clipboard 'mailto:qqqqqqqqqqqqqqqqqqqqqqqqqqqq' 'mailto:pppppppppppppppppppppppppppp'
+jcheck "clip: uppercase hrp benign" 'd["score"] == 0' clipboard 'Upper1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq' 'Upper1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq'
+jcheck "clip: short body benign" 'd["score"] == 0' clipboard 'bnb1short' 'bnb1shorz'
+jcheck "clip: punct body benign" 'd["score"] == 0' clipboard 'note:review-the-pull-request-and-merge-it' 'note:review-the-pull-request-and-merge-x'
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

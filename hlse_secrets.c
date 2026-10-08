@@ -2408,6 +2408,7 @@ typedef enum {
     CRYPTO_XTZ,           /* tz1/tz2/tz3/KT1... (36 chars, base58) */
     CRYPTO_DOT,           /* 1... (47-48 chars, SS58 base58) */
     CRYPTO_ALGO,          /* 58 chars, base32 [A-Z2-7] */
+    CRYPTO_BECH32,        /* generic bech32 HRP: bnb1/osmo1/zil1/kaspa:/… */
 } CryptoType;
 
 static int
@@ -2605,6 +2606,64 @@ detect_crypto_type(const char *addr) {
         if (ok) return CRYPTO_DOT;
     }
 
+    /* Generic Bech32-family address — catches every HRP not listed
+     * above (bnb1/osmo1/terra1/zil1/one1/iota1/egld1/erd1/dgb1/… plus
+     * the colon-separated kaspa:/ecash: family): a 2–12-char lowercase
+     * HRP ('_' allowed — Cardano testnet 'addr_test' is legal US-ASCII
+     * HRP), a '1' or ':' separator (last occurrence wins, per BIP-173
+     * the last '1' is the separator), and a >=25-char body in the
+     * strict bech32 charset. The charset is what keeps this generic
+     * rule near-zero FP: 'b'/'i'/'o'/'1' and every punctuation mark
+     * are excluded, so 'https:', 'mailto:', note text, and ordinary
+     * words (nearly all contain i/o/b) all fail the body check.      */
+    if (len >= 30 && len <= 110) {
+        const char *sep1 = strrchr(addr, '1');
+        const char *sepc = strrchr(addr, ':');
+        const char *sep = (sep1 && sepc) ? (sep1 > sepc ? sep1 : sepc)
+                                         : (sep1 ? sep1 : sepc);
+        if (sep) {
+            size_t hlen = (size_t)(sep - addr);
+            const char *body = sep + 1;
+            size_t blen = len - hlen - 1;
+            int i, ok = 1;
+            /* A ':' separator is also a URI scheme delimiter — 'https:'
+             * plus a long punct-free opaque part would collide, so the
+             * colon form is limited to the enumerable cashaddr-family
+             * prefixes; the '1' form stays fully generic.             */
+            if (*sep == ':') {
+                static const char *COLON_HRPS[] = {
+                    "kaspa", "ecash", "etoken", "simpleledger",
+                    "bchtest", "bchreg", "lotus", NULL
+                };
+                char hrpbuf[16];
+                int hi, match = 0;
+                if (hlen < sizeof(hrpbuf)) {
+                    memcpy(hrpbuf, addr, hlen);
+                    hrpbuf[hlen] = '\0';
+                    for (hi = 0; COLON_HRPS[hi]; hi++)
+                        if (strcmp(hrpbuf, COLON_HRPS[hi]) == 0) {
+                            match = 1; break;
+                        }
+                }
+                ok = match;
+            }
+            if (ok && hlen >= 2 && hlen <= 12 && blen >= 25) {
+                for (i = 0; i < (int)hlen; i++) {
+                    if (!((addr[i] >= 'a' && addr[i] <= 'z') ||
+                          addr[i] == '_')) { ok = 0; break; }
+                }
+                if (ok) {
+                    for (i = 0; i < (int)blen; i++) {
+                        if (!is_bech32(body[i]) || body[i] == '1') {
+                            ok = 0; break;
+                        }
+                    }
+                }
+                if (ok) return CRYPTO_BECH32;
+            }
+        }
+    }
+
     /* Solana: base58, 32-44 chars, no fixed prefix. Checked LAST so the
      * prefixed / fixed-length formats above (BTC 1/3, USDT T, ETH 0x, …)
      * win; only an otherwise-unclassified base58 string of Solana length
@@ -2644,6 +2703,7 @@ crypto_type_name(CryptoType t) {
         case CRYPTO_XTZ:         return "XTZ (Tezos)";
         case CRYPTO_DOT:         return "DOT (Polkadot)";
         case CRYPTO_ALGO:        return "ALGO (Algorand)";
+        case CRYPTO_BECH32:      return "Bech32-family (generic chain)";
         default:                 return "Unknown";
     }
 }

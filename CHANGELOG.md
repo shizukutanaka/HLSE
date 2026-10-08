@@ -2,6 +2,38 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 518 — Clipboard: generic bech32-family crypto addresses
+
+### Fixed
+- `detect_crypto_type` in `hlse_secrets.c` classified only the
+  explicitly listed chains — every other bech32-family address
+  (`bnb1…` BNB Beacon Chain, `osmo1`, `terra1`, `zil1`, `one1`,
+  `iota1`, `egld1`/`erd1` Elrond, `dgb1`, `kava1`, … and the
+  colon-separated `kaspa:`/`ecash:` family) scored **CRYPTO_NONE**,
+  so a clipboard swap on any of them reported 0. BNB in
+  particular is a top-10 clipper target.
+- Added `CRYPTO_BECH32`: a 2–12-char lowercase HRP (`_` allowed —
+  Cardano testnet `addr_test` is a legal US-ASCII HRP), the last
+  `1` as separator per BIP-173, and a ≥25-char body in the strict
+  bech32 charset (`is_bech32`, `1` excluded from the body). The
+  strict charset is what keeps the generic rule near-zero FP:
+  `b`/`i`/`o`/`1` and all punctuation are excluded, so ordinary
+  words — which almost all contain i/o/b — fail the body check.
+- The `:` separator is deliberately *not* generic: it is also a
+  URI scheme delimiter (`https:` + a long punct-free opaque part
+  collided at 95 on probe), so the colon form is limited to the
+  enumerable cashaddr-family prefixes (`kaspa`, `ecash`, `etoken`,
+  `simpleledger`, `bchtest`, `bchreg`, `lotus`).
+- Scores: bnb1/osmo1/terra1/zil1/one1/egld1/nsec1/addr_test1
+  swaps → 95; kaspa:/ecash: swaps → 95; `https:`/`file:`/`mailto:`
+  colon strings, uppercase HRPs, short bodies, and punctuated
+  bodies stay 0.
+
+### Notes
+- Suite: +10 jchecks (five swap positives across `1` and `:` HRP
+  forms, five benign pairs covering colon-URI / case / length /
+  punctuation guards).
+
 ## Cycle 517 — Email: Authentication-Results evaluated without From
 
 ### Fixed
