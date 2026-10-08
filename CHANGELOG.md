@@ -2,6 +2,28 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 522 — File: residual executable-extension carriers
+
+### Fixed
+- `EXECUTABLE_EXTS` residual fill after a whole-table probe — every
+  modern lure carrier (.one/.iso/.vhd/.library-ms/.url/.lnk/.xll/
+  .jse/.hta/.chm/.pub…) already sits at the 5 floor; two carrier
+  classes were missing:
+  - `.rgs` — ATL Registrar script: writes registry keys when loaded
+    by regsvr32 (the `.reg` sibling that was absent).
+  - `.mshxml`/`.msh1xml`/`.msh2xml` — PowerShell console files in
+    the `.xml` suffix form: the same `-PSConsoleFile` snap-in-load
+    surface as `.psc1`/`.psc2`/`.ps1xml` (already listed).
+- `.xsl` deliberately stays on `SAFE_EXTS` — the msxsl LOLBin path
+  is loader-side, not name-side; a bare `.xsl` is legitimate
+  stylesheet data.
+
+### Notes
+- The 5 score on a bare executable extension is the intended
+  informational floor: this engine scores masquerade, not the
+  presence of an executable format.
+- Suite: +5 jchecks (three positive, two benign).
+
 ## Cycle 521 — `| iex` pipe cradle + LaunchDarkly / GCP-refresh secrets
 
 ### Fixed
