@@ -23497,6 +23497,13 @@ jcheck "secret: api-tokens benign" 'd["score"] == 0' secret 'api-tokens list'
 jcheck "secret: 1//0 bare benign" 'd["score"] == 0' secret '1//0'
 jcheck "paste: pipe json_pp benign" 'd["score"] == 0' paste 'curl http://e | json_pp'
 
+# ── cycle-522: residual executable-extension carriers ─────────────────
+jcheck "file: rgs registry script flagged" 'd["score"] == 5' file 'x.rgs'
+jcheck "file: mshxml console file flagged" 'd["score"] == 5' file 'x.mshxml'
+jcheck "file: msh2xml console file flagged" 'd["score"] == 5' file 'x.msh2xml'
+jcheck "file: xsl stays safe-listed" 'd["score"] == 0' file 'x.xsl'
+jcheck "file: plain xml benign" 'd["score"] == 0' file 'x.xml'
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""

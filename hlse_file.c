@@ -1113,6 +1113,9 @@ static const char *EXECUTABLE_EXTS[] = {
     ".z", ".lz", ".lzo", ".tz", ".taz", ".txz", ".tlz",
     ".tbz", ".tb2", ".pax", ".cpio", ".afsplit",
     ".pif", ".hta", ".cpl", ".inf", ".reg", ".lnk", ".shs",
+    /* ATL Registrar script — writes registry keys when loaded by
+     * regsvr32 (same 'registry-modifying script' class as .reg)   */
+    ".rgs",
     /* Linux/macOS */
     ".sh", ".bash", ".command", ".app", ".run",
     /* Alternate shells — zsh/fish/nushell scripts execute on open
@@ -1456,10 +1459,13 @@ static const char *EXECUTABLE_EXTS[] = {
      * Monad/MSH scripts (the pre-PowerShell shell, exec-on-open like
      * .ps1); .psc1/.psc2 are PowerShell console files whose XML
      * snap-in list loads arbitrary DLLs via powershell
-     * -PSConsoleFile; .wbt is a WinBatch script (enterprise
-     * automation runtime — the .btm sibling already flagged); .dex
-     * is Dalvik bytecode — Android's .class twin                 */
+     * -PSConsoleFile (the .mshxml/.msh1xml/.msh2xml siblings are the
+     * same console-file format with the .xml suffix form); .wbt is a
+     * WinBatch script (enterprise automation runtime — the .btm
+     * sibling already flagged); .dex is Dalvik bytecode — Android's
+     * .class twin                                                */
     ".msh", ".msh1", ".msh2", ".psc1", ".psc2", ".wbt", ".dex",
+    ".mshxml", ".msh1xml", ".msh2xml",
     NULL
 };
 
