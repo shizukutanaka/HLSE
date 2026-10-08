@@ -1990,6 +1990,21 @@ static const char *const URL_HANDLER_SCHEMES[] = {
      * the rtmp tunnelled/encrypted siblings                        */
     "mmsh:", "rtmpe:", "rtmpt:", "rtmte:", "rtmfp:", NULL
 };
+/* Abuse-only URI handlers — the bare form is already weaponised, so
+ * they floor at ALERT even without a remote indicator. ms-msdt was
+ * retired by Microsoft after Follina (CVE-2022-30190) — no current
+ * Windows build ships the handler, so a link can only target the
+ * exploit population; ms-officecmd exists solely as a remote-doc
+ * invocation primitive (Varonis/eSentire campaigns); mso-offcrypto
+ * routes documents through the Office encryption handler with no
+ * user-facing click purpose; ms-appinstaller(-https) became the top
+ * fake-installer lure family in the 2023-24 campaigns; and
+ * applescript: is a code-exec-by-click primitive on macOS.        */
+static const char *const URL_HANDLER_HOSTILE[] = {
+    "ms-msdt:", "ms-officecmd:", "mso-offcrypto:",
+    "ms-appinstaller:", "ms-appinstaller-https:",
+    "applescript:", NULL
+};
 /* Remote-mount schemes: clicking one attaches a remote filesystem or
  * session — smb: is the same NetNTLM-leak class as a \\ UNC path,
  * nfs:/afp: mount attacker shares, vnc:/rdp: open a remote console. */
@@ -2319,16 +2334,22 @@ check_url(const char *raw_url) {
                     size_t hl = strlen(URL_HANDLER_SCHEMES[i]);
                     if (strncmp(raw_url, URL_HANDLER_SCHEMES[i], hl) == 0) {
                         const char *arg = raw_url + hl;
+                        int hostile = url_has_scheme(raw_url,
+                                                     URL_HANDLER_HOSTILE);
                         int remote = strstr(arg, "http") != NULL ||
                                      hlse_str_any(arg, CORE_TBL_001) ||
                                      strstr(arg, "LOCATION=") != NULL;
-                        add_reason(&v, remote ? 60 : 35,
+                        add_reason(&v, remote ? 60 :
+                                       (hostile ? 55 : 35),
                             "URI-handler scheme '%.*s' — launches a local "
                             "app that resolves remote content outside URL "
                             "parsing%s",
                             (int)hl - 1, URL_HANDLER_SCHEMES[i],
                             remote ? " (remote target embedded)"
-                                   : "");
+                                   : (hostile
+                                       ? " (abuse-only scheme — no "
+                                         "benign click surface)"
+                                       : ""));
                         break;
                     }
                 }

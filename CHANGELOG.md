@@ -2,6 +2,31 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 519 — URL: abuse-only URI-handler scheme floor
+
+### Fixed
+- `URL_HANDLER_SCHEMES` scored every handler `remote ? 60 : 35` —
+  correct for schemes with a legitimate click surface, but six of
+  them have **none**: a bare `ms-msdt:/id PCWDiagnostic` (Follina,
+  CVE-2022-30190) scored 35, in the same band as a benign
+  `ms-settings:` deep link. The remote payload in a Follina URI
+  lives in the invoking .docx, not in the URI, so these schemes
+  are weaponised in exactly the shape that left them at LOG.
+- New `URL_HANDLER_HOSTILE` floor list: `ms-msdt:` (Microsoft
+  retired the handler — a link can only target the exploit
+  population), `ms-officecmd:` (remote-doc invocation primitive),
+  `mso-offcrypto:`, `ms-appinstaller:`/`ms-appinstaller-https:`
+  (top fake-installer lure family), `applescript:` (code-exec-by-
+  click on macOS). Bare form → 55; remote indicator still 60+.
+- Scores: ms-msdt/ms-officecmd/mso-offcrypto/ms-appinstaller/
+  applescript bare → 55 (was 35); `ms-appinstaller:?source=https:`
+  → 80; `search-ms:` with UNC location stays 60; benign
+  `ms-settings:`/`vscode:`/`ms-word:`/`apturl:` unchanged.
+
+### Notes
+- Suite: +8 jchecks (hostile bare floor ×5, remote escalation,
+  benign handler floors ×2).
+
 ## Cycle 518 — Clipboard: generic bech32-family crypto addresses
 
 ### Fixed

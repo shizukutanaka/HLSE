@@ -10086,7 +10086,7 @@ check_text_hit 'timeshare exit get out of your timeshare contract' 'LOG' "text: 
 check_text_hit 'power disconnection notice utility shutoff today' 'LOG' "text: shutoff-variant flagged"
 check_text_hit 'we sold our timeshare years ago' 'OK' "text: benign timeshare clean"
 check_text_hit 'the eps file rendered correctly' 'OK' "text: benign eps clean"
-check_url_hit 'applescript:do shell script "x"' 'LOG' "url: applescript flagged"
+check_url_hit 'applescript:do shell script "x"' 'ALERT' "url: applescript flagged"
 XDIR155=$(mktemp -d /tmp/hlse155.XXXXXX)
 for e in eps ps wmf emf; do printf 'x\n' > "$XDIR155/drop.$e"; jcheck "$XDIR155/drop.$e flagged" 'd["action"] in ["LOG", "ALERT", "BLOCK"]' file "$XDIR155/drop.$e"; done
 rm -rf "$XDIR155"
@@ -23464,6 +23464,16 @@ jcheck "clip: mailto: colon benign" 'd["score"] == 0' clipboard 'mailto:qqqqqqqq
 jcheck "clip: uppercase hrp benign" 'd["score"] == 0' clipboard 'Upper1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq' 'Upper1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq'
 jcheck "clip: short body benign" 'd["score"] == 0' clipboard 'bnb1short' 'bnb1shorz'
 jcheck "clip: punct body benign" 'd["score"] == 0' clipboard 'note:review-the-pull-request-and-merge-it' 'note:review-the-pull-request-and-merge-x'
+
+# ── cycle-519: abuse-only URI-handler scheme floor ──────────────────────
+jcheck "url: ms-msdt bare flagged" 'd["score"] == 55' -- 'ms-msdt:/id PCWDiagnostic'
+jcheck "url: ms-officecmd bare flagged" 'd["score"] == 55' -- 'ms-officecmd:evil'
+jcheck "url: mso-offcrypto bare flagged" 'd["score"] == 55' -- 'mso-offcrypto:file.docx'
+jcheck "url: ms-appinstaller remote escalated" 'd["score"] >= 60' -- 'ms-appinstaller:?source=https://evil.xyz/x.appinstaller'
+jcheck "url: applescript flagged" 'd["score"] == 55' -- 'applescript:com.apple.ScriptEditor?id=123'
+jcheck "url: ms-settings bare benign floor" 'd["score"] == 35' -- 'ms-settings:privacy-location'
+jcheck "url: vscode bare benign floor" 'd["score"] == 35' -- 'vscode://file/abc'
+jcheck "url: ms-word remote unchanged" 'd["score"] == 60' -- 'ms-word:ofv|u|http://evil.xyz/x.doc'
 
 # ─── results ────────────────────────────────────────────────────────────
 
