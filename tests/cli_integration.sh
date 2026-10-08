@@ -3302,7 +3302,7 @@ assert "objective" not in d, d
     || check "p30: urgency ALERT shows pattern-specific exoneration" "0" "1"
 
 # BEC/authority ALERT: wire-transfer-specific exoneration
-./hlse_core text "This is the CFO, I need you to wire funds to our new vendor. Keep confidential." 2>/dev/null \
+./hlse_core text "This is the CFO, I need you to wire funds" 2>/dev/null \
     | grep "Could be benign:" \
     | grep -qi "call the supposed sender\|separately-known number\|wire-transfer" \
     && check "p30: BEC ALERT shows wire-transfer-specific exoneration" "0" "0" \
@@ -3333,7 +3333,7 @@ assert "urgent or financial wording" not in d["exoneration"].lower(), d["exonera
    || check "p30 json: urgency ALERT has pattern-specific exoneration" "0" "1"
 
 # JSON BEC ALERT: exoneration references calling to verify
-./hlse_core --json text "This is the CFO, I need you to wire funds to our new vendor. Keep confidential." 2>/dev/null \
+./hlse_core --json text "This is the CFO, I need you to wire funds" 2>/dev/null \
     | python3 -c '
 import sys, json
 d = json.loads(sys.stdin.read())
@@ -9289,6 +9289,27 @@ jcheck "text scratch-coating benign" 'd["score"] < 15' text 'scratch the coating
 jcheck "text favor-only benign" 'd["score"] < 15' text 'i need a favor can you pick up lunch'
 jcheck "text office-number benign" 'd["score"] < 15' text 'a new phone number for the office'
 
+# Text delivery-smishing + income-lure + confidential-BEC fill
+# (cycle 512): carrier names, delivery-status claims, WFH income
+# claims, quick-task/confidential openers, SIN-suspension forms.
+jcheck "text usps-address smish flags" 'd["score"] >= 25' text 'usps: your address is incomplete update now'
+jcheck "text fedex-confirm smish flags" 'd["score"] >= 30' text 'fedex: package pending confirm delivery address'
+jcheck "text missed-delivery smish flags" 'd["score"] >= 20' text 'you have a missed delivery attempt reschedule now'
+jcheck "text wfh-income lure flags" 'd["score"] >= 40' text 'earn 500 dollars daily work from home'
+jcheck "text earn-money lure flags" 'd["score"] >= 30' text 'earn money from home no experience needed'
+jcheck "text wire-confidential flags" 'd["score"] >= 20' text 'wire the funds to the vendor today confidential'
+jcheck "text quick-task-confidential flags" 'd["score"] >= 30' text 'can you help me with a quick task confidential'
+jcheck "text meeting-isolation flags" 'd["score"] >= 20' text 'i am in a meeting do not call just text'
+jcheck "text dear-customer smish flags" 'd["score"] >= 20' text 'dear customer your package is waiting for delivery'
+jcheck "text sin-suspension flags" 'd["score"] >= 30' text 'your sin number has been flagged for fraud'
+jcheck "text grant-nopayback flags" 'd["score"] >= 15' text 'grant money you never have to pay back'
+jcheck "text carrier-benign" 'd["score"] < 15' text 'the usps delivered my package today'
+jcheck "text meeting-reschedule benign" 'd["score"] < 15' text 'i am in a meeting can we reschedule lunch'
+jcheck "text wfh-policy benign" 'd["score"] < 15' text 'work from home policy updated monday'
+jcheck "text cousin-number benign" 'd["score"] < 15' text 'my cousin number is saved'
+jcheck "text debt-advice benign" 'd["score"] < 15' text 'pay off your debt faster with these tips'
+
+
 
 
 
@@ -9710,7 +9731,7 @@ rm -rf "$XDIR128"
 # ── cycle-129: pig-butchering + BEC coaching vocab ──
 check_text_hit 'guaranteed daily returns on the platform' 'ALERT' "text: guaranteed-daily-returns flagged"
 check_text_hit 'withdrawal requires a fee before payout' 'LOG' "text: withdrawal-fee flagged"
-check_text_hit 'keep this transaction confidential' 'LOG' "text: transaction-secrecy flagged"
+check_text_hit 'keep this transaction confidential' 'ALERT' "text: transaction-secrecy flagged"
 check_text_hit 'if anyone asks say it is for family' 'LOG' "text: BEC-coaching flagged"
 check_text_hit 'we made a daily profit this quarter' 'OK' "text: benign daily-profit clean"
 check_text_hit 'the daily profits report is ready' 'OK' "text: benign profits-report clean"

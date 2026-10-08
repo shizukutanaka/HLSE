@@ -2,6 +2,61 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 512 — Text: delivery smishing, income lures, confidential BEC
+
+### Added
+- `URGENCY_WORDS`: delivery-status claim forms (`missed delivery`,
+  `delivery was attempted`, `unable to deliver`, `could not be
+  delivered`, `package is waiting`, `waiting for delivery`,
+  `delivery is pending`, `package pending`, `order has shipped`,
+  `redelivery`, `schedule a redelivery`, `reschedule your
+  delivery`, `address is incomplete`) and penalty-avoidance
+  pressure (`avoid penalties`, `avoid a penalty`, `late fees`,
+  `to avoid legal action`, `to avoid suspension`, `to avoid
+  closure`).
+- `BAIT_WORDS`: carrier names (`usps`, `fedex`, `dhl` — 'ups'
+  excluded as substring of backups/groups); address/track asks
+  (`confirm delivery address`, `update your address`, `verify
+  your address`, `track your package/order/shipment`, `click to
+  reschedule`, `reschedule now/today`, `tap to reschedule`,
+  `shipping info`); confidential-BEC openers (`confidential`,
+  `a quick task`, `quick task`, `see the attached`,
+  `for payment`, `urgent payment`, `payment needed/required`,
+  `new vendor`, `vendor account` — 'a favor' and
+  'government/federal grant' were tried then dropped: 'a favor'
+  double-counts inside the existing 'need a favor' needles, and
+  'government grant' is benign-ubiquitous prose that already
+  exists in BAIT from an earlier cycle); isolation imperative family
+  (`in a meeting`, `stuck in a meeting`, `do not call just text`,
+  `do not call me`, `just text me`, `text me instead`); WFH/debt/
+  grant topic nouns (`work from home`, `working from home`,
+  `no experience needed/necessary`, `income from home`, `weekly
+  payments`, `pay off your debt`, `social insurance number`).
+- `GROOMING_WORDS`: income-claim lures (`dollars a day/a week/
+  daily/per day/per week`, `usd a day`, `earn/make money from
+  home`, `earn/make money online`, `a day/a week working from
+  home`, `daily working from home`, `no experience needed/
+  necessary`).
+- `PRIZE_WORDS`: mass-phish salutations (`dear customer`,
+  `dear user`, `dear sir or madam`, `dear madam or sir`) and
+  bare grant lures (`free grant`, `free government money`,
+  `never have to pay back`, `never pay it back`, `never have to
+  repay`, `pennies on the dollar`, `for pennies`).
+- `FAKE_ALERT_WORDS`: Canadian SIN suspension scam (`your sin
+  number`, `the sin number`, `sin number has been`, `your sin
+  has been`, `sin has been suspended`, `social insurance number
+  has been` — 'sin number' bare excluded: cross-fires
+  'cousin number').
+
+### Verified
+`the usps delivered my package today`, `i am in a meeting can we
+reschedule lunch`, `work from home policy updated monday`,
+`pay off your debt faster with these tips`, `my cousin number is
+saved`, `please reschedule now for friday meeting` all clean.
+Residual: bare `customs clearance required` + `pay off your debt`
+topic claims stay invisible single-hits by design.
+
+
 ## Cycle 511 — Text: sign-in alerts, giftcard-code, new-number, warranty
 
 ### Added

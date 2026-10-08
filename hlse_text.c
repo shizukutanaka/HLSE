@@ -113,6 +113,20 @@ static const char *URGENCY_WORDS[] = {
     "claim package", "redelivery required", "delivery attempt failed",
     "package on hold", "package is on hold", "parcel is on hold",
     "customs clearance required",
+    /* Delivery-status smishing claims — same family as
+     * 'delivery attempt failed' above: missed/attempted/pending
+     * delivery lures that end in a 'confirm address' link        */
+    "missed delivery", "delivery was attempted",
+    "a delivery was attempted", "unable to deliver",
+    "could not be delivered", "package is waiting",
+    "waiting for delivery", "delivery is pending",
+    "package pending", "order has shipped", "order has been shipped",
+    "redelivery", "schedule a redelivery", "reschedule your delivery",
+    "your address is incomplete", "address is incomplete",
+    /* Penalty-avoidance pressure — 'act or else' consequence forms */
+    "avoid penalties", "avoid a penalty", "to avoid a penalty",
+    "late fees", "to avoid legal action", "avoid legal action",
+    "to avoid suspension", "to avoid closure",
     /* Customs-hold smishing — the #1 parcel-fee lure claim; the hold
      * itself IS the urgency hook ('held at customs - pay to release') */
     "held at customs", "held in customs", "customs hold",
@@ -134,6 +148,7 @@ static const char *BAIT_WORDS[] = {
     "password", "passcode", "pin number", "your account pin", "account pin",
     "credit card", "debit card",
     "card number", "cvv", "social security", "ssn", "date of birth",
+    "social insurance number",
     "bank account", "routing number", "wire transfer", "bank wire",
     "please wire", "wire the funds", "transfer funds to", "transfer money to",
     "wire the payment", "wire this payment", "process the wire",
@@ -1007,6 +1022,37 @@ static const char *BAIT_WORDS[] = {
     "dados do cartão", "informações bancárias", "acesse sua conta",
     "redefinir sua senha",
     "informações de pagamento atualizadas",
+    /* Carrier-name impersonation + delivery/track asks — the
+     * smishing actor's props; each alone is a legit word, so they
+     * compound-gate like every bait noun ('ups' excluded: substring
+     * in backups/groups)                                          */
+    "usps", "fedex", "dhl",
+    "confirm your delivery address", "confirm delivery address",
+    "update your address", "verify your address",
+    "track your package", "track your order", "track your shipment",
+    "click to reschedule", "reschedule now", "reschedule today",
+    "tap to reschedule", "reschedule a delivery",
+    "shipping info", "shipping information",
+    "delivery to your address", "delivered to your address",
+    /* Confidential-BEC openers — the 'quick task / favor' shape
+     * that precedes the wire or giftcard ask; 'confidential' is
+     * benign alone but damning with a payment directive          */
+    "confidential", "a quick task", "quick task",
+    "see the attached", "for payment", "urgent payment",
+    "payment needed", "payment required", "new vendor",
+    "vendor account", "the vendor's account",
+    /* Isolation imperative — 'do not call, just text' is the BEC
+     * 'I can't talk' opener; casual benign use exists, hence
+     * compound-gated rather than SECRECY                          */
+    "in a meeting", "stuck in a meeting", "in a meeting right",
+    "do not call just text", "don't call just text",
+    "do not call me", "don't call me", "just text me",
+    "text me instead", "text me here",
+    /* Work-from-home / debt / grant topic nouns */
+    "work from home", "working from home", "no experience needed",
+    "no experience necessary", "income from home",
+    "weekly payments", "weekly paycheck",
+    "pay off your debt", "pay down your debt",
     /* Arabic credential/account security (suspension phrases live in FAKE_ALERT_WORDS) */
     "تحقق من هويتك", "تأكيد هويتك", "تحديث معلومات الدفع",
     "بيانات بطاقتك",
@@ -1045,6 +1091,15 @@ static const char *PRIZE_WORDS[] = {
      * so 'kindly note' business prose stays clean              */
     "dear beneficiary", "dear account holder",
     "dear valued customer", "attention account holder",
+    /* remaining mass-phish salutation forms */
+    "dear customer", "dear user", "dear sir or madam",
+    "dear madam or sir", "dear customer service member",
+    /* bare grant / no-repayment lures — 'grant money you never
+     * have to pay back' is the grant-scam signature pitch         */
+    "free grant", "free government money",
+    "never have to pay back",
+    "never pay it back", "never have to repay",
+    "pennies on the dollar", "for pennies",
     "kindly confirm", "kindly update", "kindly verify",
     "kindly provide",
     /* Proof-of-payment bait + remaining advance-fee props: a fake
@@ -1727,6 +1782,15 @@ static const char *GROOMING_WORDS[] = {
     "per week working from home", "per week from home",
     /* 'earn per week' already listed above */
     "weekly income from home",
+    /* Income-claim lures — 'earn $X a day from home' fused forms
+     * the bare 'work from home' nouns above can't reach           */
+    "dollars a day", "dollars a week", "dollars daily",
+    "dollars per day", "dollars per week", "usd a day",
+    "earn money from home", "make money from home",
+    "earn money online", "make money online",
+    "a day working from home", "a week working from home",
+    "daily working from home", "no experience needed",
+    "no experience necessary",
     /* Package reshipping mule recruitment — victim receives stolen goods and
      * reships to attacker; often described as "international shipping agent" */
     "receive packages and reship", "receive and reship",
@@ -1880,6 +1944,12 @@ static const char *FAKE_ALERT_WORDS[] = {
     "text me the code", "text me the codes", "read me the code",
     "read me the codes", "read the codes", "read the code to me",
     "send the code to me", "text the code to me",
+    /* Canadian SIN scam — 'your SIN has been suspended' calls;
+     * 'sin number' alone cross-fires 'cousin number', so the
+     * needles carry the your/the/has-been context                */
+    "your sin number", "the sin number", "sin number has been",
+    "your sin has been", "sin has been suspended",
+    "social insurance number has been",
     /* MFA fatigue / push-bombing — the approve prompt IS the lure;
      * standalone forms ('tap yes to approve') are scam-shaped enough
      * to fire without a second signal                             */
