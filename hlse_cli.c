@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include "hlse_core.h"
 #include "hlse_protect.h"
@@ -41,6 +42,15 @@ static const char *CLI_TBL_002[] = {
     "npm", "cargo", "go",
     NULL
 };
+
+static int
+scan_chunk_separator(unsigned char c) {
+        return isspace(c) ||
+               c == '"' || c == '\'' || c == '`' || c == ',' ||
+               c == ';' || c == '(' || c == ')' || c == '[' ||
+               c == ']' || c == '{' || c == '}' || c == '<' ||
+               c == '>';
+}
 
 
 /* Emit the "reason_ids":[...] array parallel to a reasons[] array for the
@@ -2806,7 +2816,7 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                         }
                         if (fp) {
                             char line[4096];
-                            int lineno = 0;
+                            int lineno = 0, at_bol = 1;
                             /* Bound the bytes inspected per file (8 MB) so a
                              * giant file cannot stall the scan, while still
                              * covering far more than the old 1 MB hard skip. */
@@ -2814,8 +2824,36 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                             const size_t SCAN_BUDGET = 8u * 1024u * 1024u;
                             while (scanned_bytes < SCAN_BUDGET &&
                                    fgets(line, sizeof(line), fp)) {
-                                lineno++;
-                                scanned_bytes += strlen(line);
+                                size_t line_len = strlen(line);
+                                /* Keep chunk boundaries at nearby separators. */
+                                if (line_len == sizeof(line) - 1u &&
+                                    line[line_len - 1u] != '\n') {
+                                    size_t min_pos = line_len > 512u
+                                        ? line_len - 512u : 0u;
+                                    size_t cut = line_len;
+                                    size_t pos = line_len - 1u;
+                                    for (;;) {
+                                        if (pos + 1u < line_len &&
+                                            scan_chunk_separator(
+                                                (unsigned char)line[pos])) {
+                                            cut = pos + 1u;
+                                            break;
+                                        }
+                                        if (pos == min_pos) break;
+                                        pos--;
+                                    }
+                                    if (cut < line_len &&
+                                        fseeko(fp,
+                                               -(off_t)(line_len - cut),
+                                               SEEK_CUR) == 0) {
+                                        line[cut] = '\0';
+                                        line_len = cut;
+                                    }
+                                }
+                                if (at_bol) lineno++;
+                                at_bol = line_len > 0u &&
+                                    line[line_len - 1u] == '\n';
+                                scanned_bytes += line_len;
                                 /* Indirect prompt injection: an agent reading
                                  * a repo consumes these files directly, so the
                                  * poisoned-document/skill-file path runs

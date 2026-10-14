@@ -2,6 +2,13 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 527 — scan long-line chunk boundary
+
+- `scan` now rewinds split `fgets` chunks to nearby separators, preserving
+  secrets across 4 KB boundaries and reporting physical line numbers.
+  Added first/second-boundary positives, a 20 KB benign minified-line
+  regression, and line-number integration coverage; no detector changes.
+
 ## Cycle 526 — scan: report unreadable paths instead of silent skip
 
 - Directory scans now warn on stderr when files or directories could not

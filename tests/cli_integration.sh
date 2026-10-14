@@ -23584,6 +23584,44 @@ else
     trap - EXIT
 fi
 
+# ─── Cycle 527: scan long-line chunk boundary ────────────────────────────────
+C527_DIR="/tmp/hlse_cycle527_$$"
+C527_JSON="/tmp/hlse_cycle527_lineno_$$"
+C527_TOKEN='ghp_''abcdefghijklmnopqrstuvwxyz0123456789'
+p527_restore() {
+    rm -rf "$C527_DIR"
+    rm -f "$C527_JSON"
+}
+mkdir -p "$C527_DIR/pos1" "$C527_DIR/pos2" "$C527_DIR/benign" \
+    "$C527_DIR/lineno"
+trap p527_restore EXIT
+
+# The separator immediately before each token is within the rewind window.
+python3 -c 'import sys; p,off,t=sys.argv[1:]; off=int(off); prefix="var x=\""; suffix="\";t=\""; filler="x"*(off-len(prefix)-len(suffix)); open(p,"w",encoding="ascii").write(prefix+filler+suffix+t+"\";\n")' \
+    "$C527_DIR/pos1/boundary.js" 4090 "$C527_TOKEN"
+./hlse_core -q scan "$C527_DIR/pos1" >/dev/null 2>&1 && rc=0 || rc=$?
+check "cycle527: token crossing first fgets boundary is detected" "1" "$rc"
+
+python3 -c 'import sys; p,off,t=sys.argv[1:]; off=int(off); prefix="var x=\""; suffix="\";t=\""; filler="x"*(off-len(prefix)-len(suffix)); open(p,"w",encoding="ascii").write(prefix+filler+suffix+t+"\";\n")' \
+    "$C527_DIR/pos2/boundary.js" 8180 "$C527_TOKEN"
+./hlse_core -q scan "$C527_DIR/pos2" >/dev/null 2>&1 && rc=0 || rc=$?
+check "cycle527: token crossing second fgets boundary is detected" "1" "$rc"
+
+python3 -c 'import sys; p=sys.argv[1]; open(p,"w",encoding="ascii").write(("x"*98+"; ")*200+"\n")' \
+    "$C527_DIR/benign/bundle.js"
+./hlse_core -q scan "$C527_DIR/benign" >/dev/null 2>&1 && rc=0 || rc=$?
+check "cycle527: 20KB minified benign line stays clean" "0" "$rc"
+
+python3 -c 'import sys; p,t=sys.argv[1:]; open(p,"w",encoding="ascii").write("x"*6000+"\n"+"t=\""+t+"\"\n")' \
+    "$C527_DIR/lineno/lines.js" "$C527_TOKEN"
+./hlse_core --json scan "$C527_DIR/lineno" >"$C527_JSON" 2>/dev/null && rc=0 || rc=$?
+check "cycle527: long first line plus secret keeps exit code 1" "1" "$rc"
+python3 -c 'import json,sys; rows=[json.loads(x) for x in open(sys.argv[1]) if x.strip()]; assert any(d.get("kind") == "secret" and d.get("line") == 2 for d in rows), rows' "$C527_JSON" \
+    && check "cycle527: secret after long line reports physical line 2" "0" "0" \
+    || check "cycle527: secret after long line reports physical line 2" "0" "1"
+p527_restore
+trap - EXIT
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
