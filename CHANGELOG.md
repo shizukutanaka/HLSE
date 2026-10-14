@@ -2,6 +2,16 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 525 — Convergence: extended-corpus oracle correction
+
+- `tests/hlse_corpus_extended.c`: the `sudo curl … | sudo bash` paste
+  case pinned `min_score` 85, but bisect shows that value was only ever
+  reached via a spurious P8 hit (`"amp"` matched inside `example`) that
+  cycle-482's token-boundary fix correctly removed. The legitimate
+  signals sum to 70 (P2 40 + P4 15 + sudo compound 15, BLOCK band) —
+  re-pinned to 70. No engine change; extended corpus now 52/52 with
+  zero FAIL lines.
+
 ## Cycle 524 — `support` subcommand: sustainability surface
 
 ### Added
