@@ -282,7 +282,11 @@ CI enforces this with a privacy tripwire job.
 
 ## Support the project
 
-If HLSE is useful to you, see the Sponsor button on the repository page or
+If HLSE is useful to you, run `hlse_core support` (or `--json support`
+for a scriptable view) — it prints the license, funding channels, and
+the commercial-support route (audits, integrations, custom
+secret-pattern packs, priority engineering) via the repository issue
+tracker. See also the Sponsor button on the repository page or
 [.github/FUNDING.yml](.github/FUNDING.yml) for donation options.
 
 ## License

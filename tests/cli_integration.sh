@@ -23504,6 +23504,14 @@ jcheck "file: msh2xml console file flagged" 'd["score"] == 5' file 'x.msh2xml'
 jcheck "file: xsl stays safe-listed" 'd["score"] == 0' file 'x.xsl'
 jcheck "file: plain xml benign" 'd["score"] == 0' file 'x.xml'
 
+
+# ── cycle-524: support subcommand (sustainability surface) ──────────
+jcheck "support: kind is support" 'd.get("kind") == "support"' support
+jcheck "support: license MIT" 'd.get("license") == "MIT"' support
+jcheck "support: funding points at FUNDING.yml" 'any(f.get("type") == "funding_file" and f.get("url","").endswith(".github/FUNDING.yml") for f in d.get("funding",[]))' support
+jcheck "support: no embedded crypto address (p113)" '"bc1q" not in s' support
+jcheck "support: commercial route present" '"issues" in d.get("commercial_support",{}).get("contact","")' support
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
@@ -23512,3 +23520,4 @@ echo "  CLI Integration: $PASS passed, $FAIL failed"
 echo "═════════════════════════════════"
 
 [ "$FAIL" -eq 0 ]
+

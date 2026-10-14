@@ -66,6 +66,9 @@ static const struct {
     { "text",      hlse_cmd_text      },
     { "network",   cmd_network_       },
     { "audit",     cmd_audit_         },
+    /* hlse_core support — license + funding + commercial-support
+     * surface (sustainability channel, no operands)              */
+    { "support",   hlse_cmd_support   },
 };
 
 int

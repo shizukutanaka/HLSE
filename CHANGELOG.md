@@ -2,6 +2,22 @@
 
 All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Cycle 524 — `support` subcommand: sustainability surface
+
+### Added
+- **`hlse_core support`** — prints the project's monetization channel,
+  offline and scriptable: license (MIT), funding channels (the
+  repository Sponsor button and a link to `.github/FUNDING.yml`; the
+  address itself stays out of the binary per Perspective 113 E-2), and the
+  commercial-support route (security audits, integration work, custom
+  secret-pattern packs, priority engineering) via the repository issue
+  tracker. `--json support` emits the same surface as
+  `{"kind":"support","license","funding":[...],"commercial_support":{...}}`
+  for procurement/sponsor tooling. Pure print — no operand, no network,
+  always exit 0. Registered in `SUBCOMMANDS`, `hlse.1` COMMANDS, the
+  usage block, and the README "Support the project" section.
+- Suite +5 jchecks (kind/license/FUNDING.yml link/no embedded address/commercial route).
+
 ## Cycle 523 — Secrets: duplicate-prefix consolidation (deletion pass)
 
 ### Fixed

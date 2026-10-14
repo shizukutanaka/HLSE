@@ -3204,3 +3204,36 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
         }
 #pragma GCC diagnostic pop
 }
+
+/* `hlse_core support` — project-sustainability surface: license, funding
+ * channels, and the commercial-support route, emitted offline so a
+ * sponsor or procurement reviewer can script it without the tool ever
+ * phoning home. Funding addresses live only in .github/FUNDING.yml
+ * (the GitHub-recognized location) — never embedded in the binary. */
+int
+hlse_cmd_support(const HlseCli *o, int argc, char **argv, int idx) {
+    static const char *REPO = "https://github.com/shizukutanaka/HLSE";
+    (void)argc; (void)argv; (void)idx;
+    if (o->json_out) {
+        hlse_json_open("support");
+        hlse_json_str_field("license", "MIT");
+        printf(",\"funding\":["
+               "{\"type\":\"github_sponsor\",\"url\":\"%s\"},"
+               "{\"type\":\"funding_file\",\"url\":\"%s/blob/HEAD/.github/FUNDING.yml\"}]",
+               REPO, REPO);
+        printf(",\"commercial_support\":{"
+               "\"contact\":\"%s/issues\","
+               "\"services\":[\"security audits\",\"integration work\","
+               "\"custom secret-pattern packs\",\"priority engineering\"]}"
+               "}\n", REPO);
+        return 0;
+    }
+    printf("HLSE %s — Human-Layer Security Engine\n\n", HLSE_VERSION);
+    printf("License:  MIT\n");
+    printf("Sponsor:  %s (Sponsor button on the repository page)\n", REPO);
+    printf("          %s/blob/HEAD/.github/FUNDING.yml\n", REPO);
+    printf("Support:  %s/issues\n", REPO);
+    printf("          audits, integrations, custom secret-pattern\n");
+    printf("          packs, priority engineering\n");
+    return 0;
+}

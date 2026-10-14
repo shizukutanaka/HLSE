@@ -900,6 +900,7 @@ hlse_print_usage(const char *prog) {
         "  %s network                  ARP / DNS / hosts safety check\n"
         "  %s file <path>              File masquerade detection\n"
         "  %s audit                    System hardening audit\n"
+        "  %s support                  License, sponsor & commercial-support info\n"
         "\n"
         "Options:\n"
         "  %s --json <subcommand>      JSON output\n"
@@ -937,7 +938,7 @@ hlse_print_usage(const char *prog) {
         "Exit code: 0 = safe, 1 = threat (>= --fail-on, default block/60), 2 = usage error\n",
         HLSE_VERSION,
         prog, prog, prog,                                /* scanning: 3 */
-        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 14 */
+        prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* protection: 15 */
         prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, prog, /* options: 18 */
         prog, prog, prog); /* baseline workflow: 2 + custom patterns: 1 */
 }
