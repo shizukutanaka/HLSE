@@ -2542,7 +2542,7 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
 #pragma GCC diagnostic ignored "-Wformat-truncation"
         {
             const char *root = argv[idx + 1];
-            int threats = 0, files_scanned = 0, max_depth = 20;
+            int threats = 0, files_scanned = 0, unreadable = 0, max_depth = 20;
             int gate_hits = 0;  /* findings at/above o->fail_threshold (exit gate) */
             int max_score = 0;  /* highest score seen — for max_severity in summary */
             unsigned asset_mask = 0;  /* blast-radius: classes seen across scan */
@@ -2579,7 +2579,10 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                 snprintf(cur_path, sizeof(cur_path), "%s", stack[sp].path);
                 depth = stack[sp].depth;
                 d = opendir(cur_path);
-                if (!d) continue;
+                if (!d) {
+                    unreadable++;
+                    continue;
+                }
 
                 while ((ent = readdir(d)) != NULL) {
                     char fullpath[8192];
@@ -3126,10 +3129,18 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                                 }
                             }
                             fclose(fp);
+                        } else {
+                            unreadable++;
                         }
                     }
                 }
                 closedir(d);
+            }
+
+            if (unreadable > 0) {
+                char db[8192];
+                fprintf(stderr, "hlse: warning: %d path(s) under '%s' could not be read (permission denied or removed during scan) \xe2\x80\x94 skipped, so a clean result is NOT authoritative for the full tree\n",
+                        unreadable, hlse_display_copy(db, sizeof(db), root));
             }
 
             /* --fingerprints mode emits only the per-finding fingerprint lines
@@ -3187,6 +3198,8 @@ hlse_cmd_scan(const HlseCli *o, int argc, char **argv, int idx) {
                        hlse_severity_for_score(max_score),
                        gate_hits, o->fail_threshold,
                        nclasses, classes);
+                if (unreadable > 0)
+                    printf(",\"unreadable\":%d", unreadable);
                 if (threats == 0) {
                     const char *bs = hlse_blindspot_for("scan");
                     if (bs) {

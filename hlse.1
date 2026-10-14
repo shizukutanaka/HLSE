@@ -63,7 +63,8 @@ l33tspeak, and full-width evasion.
 .B scan \fIdirectory\fR
 Recursively scan a directory for leaked secrets, file masquerade, and
 embedded phishing URLs. Skips vendor and build directories. Intended for
-CI/CD use.
+CI/CD use. Unreadable paths are counted and reported on stderr (and as
+\fBunreadable\fR in the JSON summary); the exit code is unchanged.
 .TP
 .B scan \fIdirectory\fR " --git-history"
 Scan every commit ever made to the repository at

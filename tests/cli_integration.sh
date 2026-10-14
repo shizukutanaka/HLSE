@@ -23512,6 +23512,78 @@ jcheck "support: funding points at FUNDING.yml" 'any(f.get("type") == "funding_f
 jcheck "support: no embedded crypto address (p113)" '"bc1q" not in s' support
 jcheck "support: commercial route present" '"issues" in d.get("commercial_support",{}).get("contact","")' support
 
+# ─── Cycle 526: scan reports unreadable paths ───────────────────────────────
+if [ "$(id -u)" -eq 0 ]; then
+    echo "SKIP  cycle526: unreadable-path scan tests require a non-root user"
+else
+    C526_DIR="/tmp/hlse_cycle526_$$"
+    C526_HUMAN_ERR="/tmp/hlse_cycle526_human_err_$$"
+    C526_JSON_OUT="/tmp/hlse_cycle526_json_out_$$"
+    C526_JSON_ERR="/tmp/hlse_cycle526_json_err_$$"
+    C526_SARIF_ERR="/tmp/hlse_cycle526_sarif_err_$$"
+    C526_QUIET_ERR="/tmp/hlse_cycle526_quiet_err_$$"
+    C526_BENIGN_ERR="/tmp/hlse_cycle526_benign_err_$$"
+    C526_BENIGN_JSON="/tmp/hlse_cycle526_benign_json_$$"
+    p526_restore() {
+        chmod 700 "$C526_DIR" 2>/dev/null || true
+        chmod 700 "$C526_DIR/locked" 2>/dev/null || true
+        chmod 600 "$C526_DIR/leak.env" 2>/dev/null || true
+        rm -rf "$C526_DIR"
+        rm -f "$C526_HUMAN_ERR" "$C526_JSON_OUT" "$C526_JSON_ERR" \
+            "$C526_SARIF_ERR" "$C526_QUIET_ERR" "$C526_BENIGN_ERR" \
+            "$C526_BENIGN_JSON"
+    }
+    mkdir -p "$C526_DIR/locked"
+    printf 'ordinary text\n' >"$C526_DIR/ok.txt"
+    printf '%s\n' 'ghp_''abcdefghijklmnopqrstuvwxyz0123456789' >"$C526_DIR/leak.env"
+    trap p526_restore EXIT
+    chmod 000 "$C526_DIR/leak.env"
+    chmod 000 "$C526_DIR/locked"
+
+    ./hlse_core scan "$C526_DIR" >/dev/null 2>"$C526_HUMAN_ERR" && rc=0 || rc=$?
+    check "cycle526: unreadable clean scan keeps exit code 0" "0" "$rc"
+    grep -qi "NOT authoritative" "$C526_HUMAN_ERR" \
+        && check "cycle526: human scan warns unreadable paths are not authoritative" "0" "0" \
+        || check "cycle526: human scan warns unreadable paths are not authoritative" "0" "1"
+    grep -q "2 path(s)" "$C526_HUMAN_ERR" \
+        && check "cycle526: human scan counts unreadable file and directory" "0" "0" \
+        || check "cycle526: human scan counts unreadable file and directory" "0" "1"
+
+    ./hlse_core --json scan "$C526_DIR" >"$C526_JSON_OUT" 2>"$C526_JSON_ERR" && rc=0 || rc=$?
+    check "cycle526: unreadable JSON scan keeps exit code 0" "0" "$rc"
+    python3 -c 'import json,sys; d=json.loads(open(sys.argv[1]).readlines()[-1]); assert d["kind"] == "scan_summary" and d["unreadable"] == 2, d' "$C526_JSON_OUT" \
+        && check "cycle526: JSON scan_summary counts unreadable paths" "0" "0" \
+        || check "cycle526: JSON scan_summary counts unreadable paths" "0" "1"
+    grep -qi "NOT authoritative" "$C526_JSON_ERR" \
+        && check "cycle526: JSON scan warns on stderr" "0" "0" \
+        || check "cycle526: JSON scan warns on stderr" "0" "1"
+
+    ./hlse_core --sarif scan "$C526_DIR" >/dev/null 2>"$C526_SARIF_ERR" || true
+    grep -qi "NOT authoritative" "$C526_SARIF_ERR" \
+        && check "cycle526: SARIF scan warns on stderr" "0" "0" \
+        || check "cycle526: SARIF scan warns on stderr" "0" "1"
+    ./hlse_core -q scan "$C526_DIR" >/dev/null 2>"$C526_QUIET_ERR" || true
+    grep -qi "NOT authoritative" "$C526_QUIET_ERR" \
+        && check "cycle526: quiet scan warns on stderr" "0" "0" \
+        || check "cycle526: quiet scan warns on stderr" "0" "1"
+
+    chmod 700 "$C526_DIR/locked"
+    chmod 600 "$C526_DIR/leak.env"
+    printf 'ordinary benign text\n' >"$C526_DIR/leak.env"
+    ./hlse_core scan "$C526_DIR" >/dev/null 2>"$C526_BENIGN_ERR" || true
+    if grep -qi "NOT authoritative" "$C526_BENIGN_ERR"; then
+        check "cycle526: readable clean tree has no warning" "0" "1"
+    else
+        check "cycle526: readable clean tree has no warning" "0" "0"
+    fi
+    ./hlse_core --json scan "$C526_DIR" >"$C526_BENIGN_JSON" 2>/dev/null || true
+    python3 -c 'import json,sys; d=json.loads(open(sys.argv[1]).readlines()[-1]); assert "unreadable" not in d, d' "$C526_BENIGN_JSON" \
+        && check "cycle526: clean JSON summary omits unreadable field" "0" "0" \
+        || check "cycle526: clean JSON summary omits unreadable field" "0" "1"
+    p526_restore
+    trap - EXIT
+fi
+
 # ─── results ────────────────────────────────────────────────────────────
 
 echo ""
@@ -23520,4 +23592,3 @@ echo "  CLI Integration: $PASS passed, $FAIL failed"
 echo "═════════════════════════════════"
 
 [ "$FAIL" -eq 0 ]
-
