@@ -3708,7 +3708,7 @@ cmd_audit(int argc, char **argv, int idx, const CliOpts *o) {
             const char *sev_str[] = {
                 "PASS", "INFO", "LOW", "MED", "HIGH", "CRIT"
             };
-            int s = av.findings[i].severity;
+            int s = (int)av.findings[i].severity;
             if (s < 0 || s > 5) s = 0;
             printf("  [%4s] %s\n", sev_str[s],
                    av.findings[i].description);

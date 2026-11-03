@@ -4,6 +4,22 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Fixed
+- **The tree compiles and tests green on macOS again.** `-D_POSIX_C_SOURCE=200809L`
+  hides `O_NOFOLLOW`/`strcasestr` on Darwin, so every symlink-protected `open()`
+  and the server's header parse failed to compile; the strict-warning spellings
+  `-Wformat-*=2` are GCC-only and `-pie` is a no-op clang flags on every link.
+  `PLATFORM_CFLAGS` now adds `-D_DARWIN_C_SOURCE` on macOS on every compile
+  line, the format-warning levels are compiler-conditional, and `PIE_LDFLAGS`
+  is empty on Darwin. Test side: `p111` invoked a hardcoded `/home/user/HLSE`
+  path (a `HLSE_BIN` absolute path now), the `hardening_band` assertion
+  predated the `"partial"` band, the p53/p61 HIGH-finding checks assumed a
+  NOPASSWD sudoers on the host (now probed and SKIPPED when absent), and the
+  p130 "no unchecked modules" checks required a readable `/proc/mounts` (now
+  preconditioned on it). `hlse_audit.c` dropped a dead `nameserver_count` and
+  the audit printout gained an explicit `AuditSeverity`→`int` cast for clang
+  `-Wsign-conversion`.
+
 ### Changed
 - **The CLI moved out of the engine file.** `hlse_core.c` was 9,510 lines, half
   of it inside an `#ifndef HLSE_CORE_AS_LIB` block. That block is now
