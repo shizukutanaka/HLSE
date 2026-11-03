@@ -1,5 +1,6 @@
 /* hlse_cli.h -- entry points shared between the CLI translation units
- * (hlse_cli.c, hlse_selftest.c, hlse_patterns.c, hlse_githistory.c).
+ * (hlse_cli.c, hlse_selftest.c, hlse_patterns.c, hlse_githistory.c,
+ * hlse_suppress.c).
  * Executable-only; never part of the library. */
 #ifndef HLSE_CLI_H
 #define HLSE_CLI_H
@@ -23,6 +24,9 @@ void        sarif_add(const char *path, int line, const char *rule,
 void        sarif_emit(const char *tool_version);
 int         hlse_scan_suppress(const char *relpath, const char *pattern_id,
                                const char *match, const char *line);
+int         hlse_baseline_load(const char *path); /* -1 when file unreadable */
+void        hlse_baseline_clear(void);
+extern int  g_hlse_emit_fingerprints;             /* --fingerprints */
 const char *file_pattern_id(const char *fpat);
 const char *file_verdict_pattern_id(const FileVerdict *fv);
 const char *file_classify_pattern(const FileVerdict *fv);

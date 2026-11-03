@@ -60,6 +60,15 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
     `--git-history` output modes (plain / `--json` / `--sarif`, finding and
     clean paths) are byte-identical to a reference binary built from the
     previous commit.
+  - A fifth cut followed: the post-detection output filters —
+    the SARIF sink (`SarifFinding`, `sarif_add`, `sarif_emit`) and the
+    baseline/fingerprint/inline-allow machinery (`hlse_fingerprint`,
+    `hlse_baseline_*`, `hlse_line_allowed`, `hlse_scan_suppress`) — now live
+    in `hlse_suppress.c`. `--fingerprints` state crossed the boundary as the
+    exported `g_hlse_emit_fingerprints` rather than a duplicated flag.
+    `scan` in plain / `--json` / `--sarif` / `--fingerprints` /
+    `--baseline`-suppressed modes and `scan --git-history --sarif` are all
+    byte-identical to a reference binary built from the previous commit.
   Aggregate coverage is 69.44% (the denominator now includes `hlse_cli.c`),
   above the 65% gate.
 
