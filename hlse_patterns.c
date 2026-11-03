@@ -8,9 +8,11 @@
  */
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
+#include <string.h>      /* strstr */
 
 #include "hlse_core.h"   /* HLSE_VERSION */
-#include "hlse_cli.h"    /* cli_list_patterns */
+#include "hlse_file.h"   /* FileVerdict */
+#include "hlse_cli.h"    /* cli_list_patterns + pattern-id helpers */
 
 /* ── Pattern-ID registry (Perspective 88) ──────────────────────────────────
  * The stable HLSE-* pattern_id tokens introduced across P78–P87 exist so SIEM
@@ -131,4 +133,99 @@ cli_list_patterns(int json_out) {
                    g_pattern_registry[i].desc);
     }
     return 0;
+}
+
+/* ── Pattern-id ladders (moved from hlse_cli.c) ────────────────────────────
+ * The HLSE-* token classification lives here, next to the registry that
+ * documents every emitted token. FileVerdict-dependent helpers need
+ * hlse_file.h; the rest are pure string matching.                            */
+/* Stable machine-readable pattern id for a file-masquerade verdict — the file
+ * counterpart of hlse_text_pattern_id (P86). Keyed to the prose label computed
+ * inline at the file display sites so the same append-only HLSE-FILE-* tokens
+ * are emitted everywhere a file `pattern` is shown. Returns "HLSE-FILE-MASQUERADE"
+ * for the catch-all masquerade label; never NULL when called with a non-NULL
+ * fpat. */
+const char *
+file_pattern_id(const char *fpat) {
+    if (!fpat) return NULL;
+    if (strstr(fpat, "RTL override"))    return "HLSE-FILE-RTL-OVERRIDE";
+    if (strstr(fpat, "double-extension")) return "HLSE-FILE-DOUBLE-EXT";
+    if (strstr(fpat, "macro"))            return "HLSE-FILE-MACRO";
+    if (strstr(fpat, "embedded JavaScript")) return "HLSE-FILE-PDF-JS";
+    return "HLSE-FILE-MASQUERADE";
+}
+
+/* Stable file pattern_id derived directly from a FileVerdict's first reason —
+ * mirrors the prose-label ladder at the file display sites so the SARIF scan
+ * path (P91) emits the same HLSE-FILE-* token as the standalone `file` JSON. */
+const char *
+file_verdict_pattern_id(const FileVerdict *fv) {
+    if (fv->n_reasons > 0) {
+        const char *r = fv->reasons[0];
+        if (strstr(r, "RLO") || strstr(r, "Unicode"))
+            return "HLSE-FILE-RTL-OVERRIDE";
+        if (strstr(r, "DOUBLE EXTENSION") || strstr(r, "double"))
+            return "HLSE-FILE-DOUBLE-EXT";
+        if (strstr(r, "macro") || strstr(r, "Macro"))
+            return "HLSE-FILE-MACRO";
+        if (strstr(r, "PDF") || strstr(r, "JavaScript"))
+            return "HLSE-FILE-PDF-JS";
+    }
+    return "HLSE-FILE-MASQUERADE";
+}
+
+/* Socratic question (Perspective 101): "The same RLO/DOUBLE-EXTENSION/macro/
+ * PDF if-else classification ladder is copy-pasted at all four file display
+ * sites (standalone `file` JSON, standalone plaintext, `scan`'s embedded-file
+ * JSON, `scan`'s embedded-file plaintext) as an inline local `fpat` variable —
+ * four independent copies of the same four conditions, right next to the
+ * single shared file_verdict_pattern_id() a few lines above that already
+ * performs the identical match for the pattern_id token. Four independently
+ * maintained copies is exactly how the standalone-vs-scan field asymmetry
+ * that Perspective 95 had to fix originally happened. Shouldn't the
+ * human-readable label share one function the way the token already does?"
+ *
+ * Consolidates the four inline copies into one function so pattern label and
+ * pattern_id can never again drift apart between the standalone and scan
+ * code paths. Pure refactor — every branch and return value is unchanged. */
+const char *
+file_classify_pattern(const FileVerdict *fv) {
+    if (fv->n_reasons > 0) {
+        const char *r = fv->reasons[0];
+        if (strstr(r, "RLO") || strstr(r, "Unicode"))
+            return "Unicode RTL override trick (hidden file extension)";
+        if (strstr(r, "DOUBLE EXTENSION") || strstr(r, "double"))
+            return "double-extension file masquerade (disguised executable)";
+        if (strstr(r, "macro") || strstr(r, "Macro"))
+            return "Office macro delivery (document-based malware lure)";
+        if (strstr(r, "PDF") || strstr(r, "JavaScript"))
+            return "PDF with embedded JavaScript (drive-by execution lure)";
+    }
+    return "file masquerade / malicious file delivery";
+}
+
+/* Stable machine-readable pattern id for an exposed-credential verdict — the
+ * secret counterpart of hlse_text_pattern_id (P86). Keyed to the credential
+ * type label (sv.findings[0].type) so SIEM rules route on a stable HLSE-SECRET-*
+ * token instead of the freeform provider string. Returns "HLSE-SECRET-GENERIC"
+ * for unrecognised types; never NULL when called with a non-NULL ftype. */
+const char *
+secret_pattern_id(const char *ftype) {
+    if (!ftype) return NULL;
+    if (strstr(ftype, "AWS"))     return "HLSE-SECRET-AWS";
+    if (strstr(ftype, "GitHub"))  return "HLSE-SECRET-GITHUB";
+    if (strstr(ftype, "Stripe"))  return "HLSE-SECRET-STRIPE";
+    if (strstr(ftype, "Slack"))   return "HLSE-SECRET-SLACK";
+    if (strstr(ftype, "Google"))  return "HLSE-SECRET-GOOGLE";
+    if (strstr(ftype, "OpenAI"))  return "HLSE-SECRET-OPENAI";
+    if (strstr(ftype, "Anthropic")) return "HLSE-SECRET-ANTHROPIC";
+    if (strstr(ftype, "Azure"))   return "HLSE-SECRET-AZURE";
+    if (strstr(ftype, "Private key") || strstr(ftype, "private key"))
+                                  return "HLSE-SECRET-PRIVATE-KEY";
+    /* Checked before the generic JWT arm: an unsigned token is a distinct
+     * finding class (forgeable credential / misconfiguration, not a leak) and
+     * deserves its own routing token downstream. */
+    if (strstr(ftype, "JWT_ALG_NONE")) return "HLSE-SECRET-JWT-ALG-NONE";
+    if (strstr(ftype, "JWT"))     return "HLSE-SECRET-JWT";
+    return "HLSE-SECRET-GENERIC";
 }

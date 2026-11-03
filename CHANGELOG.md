@@ -48,6 +48,18 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
     `hlse_patterns.c`, reached through `hlse_cli.h`. Both `--list-patterns`
     modes are byte-identical to a reference binary built from the previous
     commit; library exports unchanged (the file is `CLI_SRC` only).
+  - A fourth cut followed: `scan <dir> --git-history` (`git_history_open` +
+    `cli_scan_git_history`) now lives in `hlse_githistory.c`, and the
+    pattern-id ladders (`file_pattern_id`, `file_verdict_pattern_id`,
+    `file_classify_pattern`, `secret_pattern_id`) joined the registry in
+    `hlse_patterns.c`. The helpers the scanner shares with the working-tree
+    walker (`sarif_add`/`sarif_emit`, `hlse_scan_suppress`,
+    `asset_class_of`/`asset_mask_describe`) are declared in `hlse_cli.h`
+    instead of duplicated, and the `--fail-on` threshold is passed as an
+    argument rather than reached through file-scope state. All three
+    `--git-history` output modes (plain / `--json` / `--sarif`, finding and
+    clean paths) are byte-identical to a reference binary built from the
+    previous commit.
   Aggregate coverage is 69.44% (the denominator now includes `hlse_cli.c`),
   above the 65% gate.
 
