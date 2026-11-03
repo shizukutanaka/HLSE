@@ -43,6 +43,11 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
     no state with the handlers) now live in `hlse_selftest.c`, reached through
     `hlse_cli.h`. 23 invocations byte-identical to a reference built from the
     previous commit; library exports still the same 87 symbols.
+  - A third cut followed: the `--list-patterns` registry (`struct
+    pattern_entry`, `g_pattern_registry`, `cli_list_patterns`) now lives in
+    `hlse_patterns.c`, reached through `hlse_cli.h`. Both `--list-patterns`
+    modes are byte-identical to a reference binary built from the previous
+    commit; library exports unchanged (the file is `CLI_SRC` only).
   Aggregate coverage is 69.44% (the denominator now includes `hlse_cli.c`),
   above the 65% gate.
 
