@@ -250,11 +250,6 @@ response. The JSON parser/escaper/rate limiter are unit-tested in
 Zero network calls. Zero file I/O outside stdin/stdout. Zero telemetry.
 CI enforces this with a privacy tripwire job.
 
-## Support the project
-
-If HLSE is useful to you, see the Sponsor button on the repository page or
-[.github/FUNDING.yml](.github/FUNDING.yml) for donation options.
-
 ## License
 
 MIT. See [LICENSE](LICENSE).
