@@ -55,6 +55,17 @@
       },
       "description": "Per-signal detector reasons (ransomware entropy, SMB canary access, mass rename, MBR/GPT anomaly). Empty array for SAFE verdicts."
     },
+    "target_scanned": {
+      "type": "boolean",
+      "description": "Whether the target could be opened and examined. False when the target could not be opened, meaning a score of 0 covers nothing that was actually examined."
+    },
+    "modules_unchecked": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Ids of modules whose evidence existed but was unreadable (ransomware, network_drive, smb, mbr). Emitted only when non-empty."
+    },
     "blind_spot": {
       "type": "string",
       "description": "What HLSE cannot detect for ransomware/integrity scanning (score 0 only)."

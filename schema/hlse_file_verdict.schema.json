@@ -94,6 +94,14 @@
         "type": "string"
       },
       "description": "Per-signal detector reasons. Empty array for SAFE verdicts."
+    },
+    "content_inspected": {
+      "type": "boolean",
+      "description": "Whether the file's bytes were actually read. False when the bytes were not read, so the magic-byte checks did not run and the verdict rests on the filename alone. Always present in standalone `file` verdicts."
+    },
+    "coverage": {
+      "type": "string",
+      "description": "Why coverage is partial, naming the reason the bytes were not read (e.g. 'no such file here'). Present only when `content_inspected` is false."
     }
   },
   "additionalProperties": false
