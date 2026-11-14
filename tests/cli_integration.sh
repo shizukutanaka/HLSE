@@ -5869,6 +5869,11 @@ rm -f "$P110_PAT"
 # streams `git log --all -p` (one subprocess, fork+execlp — never a shell)
 # and scans every added line across every commit.
 
+# Absolute path to the binary under test: the p111 checks cd into a temp
+# git repo, so a relative ./hlse_core would not resolve there. (This block
+# previously hardcoded a checkout path from the maintainer's own machine,
+# which made every p111 check fail anywhere else.)
+P111_BIN="$(pwd)/hlse_core"
 P111_DIR=$(mktemp -d)
 (
     cd "$P111_DIR"
@@ -5884,7 +5889,7 @@ P111_DIR=$(mktemp -d)
 )
 
 # Working-tree scan sees nothing — the secret was deleted before this scan
-P111_WT=$(cd "$P111_DIR" && /home/user/HLSE/hlse_core scan . 2>/dev/null || true)
+P111_WT=$(cd "$P111_DIR" && "$P111_BIN" scan . 2>/dev/null || true)
 echo "$P111_WT" | grep -q "0 threats" \
     && check "p111: working-tree scan is clean (secret was deleted)" "0" "0" \
     || check "p111: working-tree scan is clean (secret was deleted)" "0" "1"
@@ -5892,16 +5897,16 @@ echo "$P111_WT" | grep -q "0 threats" \
 # --git-history finds the deleted-but-once-committed secret; exit 1
 # (the finding is redacted in display output — "AKIA1234..." not the full
 # key — so match the redacted prefix and the AWS type label, not the key.)
-P111_GH=$(cd "$P111_DIR" && /home/user/HLSE/hlse_core scan . --git-history 2>/dev/null || true)
+P111_GH=$(cd "$P111_DIR" && "$P111_BIN" scan . --git-history 2>/dev/null || true)
 echo "$P111_GH" | grep -q "AWS Access Key ID" \
     && echo "$P111_GH" | grep -q "config.env" \
     && check "p111: --git-history finds the deleted secret still in history" "0" "0" \
     || check "p111: --git-history finds the deleted secret still in history" "0" "1"
-(cd "$P111_DIR" && /home/user/HLSE/hlse_core scan . --git-history >/dev/null 2>&1) && rc=0 || rc=$?
+(cd "$P111_DIR" && "$P111_BIN" scan . --git-history >/dev/null 2>&1) && rc=0 || rc=$?
 check "p111: --git-history exits 1 when a historical secret is found" "1" "$rc"
 
 # JSON mode: findings carry "commit"; scan_summary carries mode=git-history
-(cd "$P111_DIR" && /home/user/HLSE/hlse_core --json scan . --git-history 2>/dev/null) | python3 -c '
+(cd "$P111_DIR" && "$P111_BIN" --json scan . --git-history 2>/dev/null) | python3 -c '
 import sys, json
 lines = [json.loads(l) for l in sys.stdin if l.strip()]
 secrets = [d for d in lines if d["kind"] == "secret"]
@@ -5915,7 +5920,7 @@ assert summaries[0]["commits_scanned"] == 3, summaries[0]
    || check "p111 json: findings carry full commit SHA, summary carries mode" "0" "1"
 
 # SARIF mode is valid and carries the finding
-(cd "$P111_DIR" && /home/user/HLSE/hlse_core --sarif scan . --git-history 2>/dev/null) | python3 -c '
+(cd "$P111_DIR" && "$P111_BIN" --sarif scan . --git-history 2>/dev/null) | python3 -c '
 import sys, json
 d = json.load(sys.stdin)
 assert d["version"] == "2.1.0"
@@ -5925,14 +5930,14 @@ assert d["runs"][0]["results"][0]["ruleId"] == "secret"
    || check "p111 sarif: --git-history emits valid SARIF with the finding" "0" "1"
 
 # --fingerprints works for git-history mode (baseline generation)
-P111_FP=$(cd "$P111_DIR" && /home/user/HLSE/hlse_core --fingerprints scan . --git-history 2>/dev/null || true)
+P111_FP=$(cd "$P111_DIR" && "$P111_BIN" --fingerprints scan . --git-history 2>/dev/null || true)
 echo "$P111_FP" | grep -qE '^[0-9a-f]{16}  HLSE-SECRET-AWS' \
     && check "p111: --fingerprints emits a stable fingerprint for a historical finding" "0" "0" \
     || check "p111: --fingerprints emits a stable fingerprint for a historical finding" "0" "1"
 
 # --baseline suppresses the historical finding — only NEW history entries fail
 echo "$P111_FP" > "$P111_DIR.baseline"
-(cd "$P111_DIR" && /home/user/HLSE/hlse_core --baseline "$P111_DIR.baseline" scan . --git-history >/dev/null 2>&1) && rc=0 || rc=$?
+(cd "$P111_DIR" && "$P111_BIN" --baseline "$P111_DIR.baseline" scan . --git-history >/dev/null 2>&1) && rc=0 || rc=$?
 check "p111: --baseline suppresses a known historical secret (exit 0)" "0" "$rc"
 rm -f "$P111_DIR.baseline"
 
@@ -6111,11 +6116,20 @@ rm -f "$P112_PAT"
 grep -rl "bitcoin:bc1q" *.c *.h >/dev/null 2>&1 && rc=0 || rc=1
 check "p113: no source file header comment references the donation address" "1" "$rc"
 
-# .github/FUNDING.yml exists and carries the address in the standard,
-# GitHub-recognized location instead of scattered through source comments
-[ -f .github/FUNDING.yml ] && grep -q "bitcoin:bc1q" .github/FUNDING.yml \
-    && check "p113: .github/FUNDING.yml carries the donation address" "0" "0" \
-    || check "p113: .github/FUNDING.yml carries the donation address" "0" "1"
+# .github/FUNDING.yml must NOT carry the donation address. The owner
+# removed it in two steps: bd11c11 replaced the bitcoin custom entry with
+# GitHub Sponsors, and a939927 deleted FUNDING.yml entirely (donation
+# prompts off the repo page, kept on the profile only). This check used to
+# assert the pre-removal state — that the file exists and carries the
+# address — so it failed on every run since and, worse, would have passed
+# only if the removed address came back. Guard the current invariant:
+# no bitcoin address in the funding file (an absent file satisfies it).
+if [ -f .github/FUNDING.yml ] && grep -q "bitcoin:bc1q" .github/FUNDING.yml; then
+    rc=1
+else
+    rc=0
+fi
+check "p113: .github/FUNDING.yml carries no donation address" "0" "$rc"
 
 # release.yml exists, is valid YAML, and gates on the full test suite +
 # F1 + a tag/HLSE_VERSION consistency check before publishing

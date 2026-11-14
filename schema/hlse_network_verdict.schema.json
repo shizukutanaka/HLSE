@@ -50,6 +50,13 @@
       },
       "description": "Suspicious activity indicators. Empty for SAFE verdicts."
     },
+    "sources_unavailable": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Evidence sources that could not be opened (/proc/net/arp, /proc/net/route, /etc/resolv.conf, /etc/hosts). Emitted only when non-empty: a score of 0 with sources listed means nothing was found in what could be read, not that nothing is wrong."
+    },
     "blind_spot": {
       "type": "string",
       "description": "What HLSE cannot detect (score 0 only)."

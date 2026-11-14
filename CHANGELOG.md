@@ -4,6 +4,30 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 
 ## [Unreleased]
 
+### Fixed
+- **The normative JSON Schemas rejected the disclosure fields the engine
+  actually emits.** The p127–p131 honesty work added `content_inspected` +
+  `coverage` (file), `target_scanned` (protect/esp), `modules_unchecked`
+  (protect), `sources_unavailable` (network), `checks_run`/`checks_skipped`
+  plus the `partial` hardening band (audit), `dirs_unreadable` +
+  `blind_spot` (scan summary), the git-history summary shape (`mode` +
+  `commits_scanned` in place of `files_scanned`) and the secret record's
+  `commit` — all documented in `docs/SPECIFICATION.md` §5.2 — but the
+  schemas under `schema/` (all `additionalProperties: false`) were never
+  updated, so a conformant consumer rejected valid verdicts and the p83 /
+  p89 / p100 / p101 schema checks failed whenever a disclosure path was
+  exercised. The schemas now declare every emitted field; the scan-summary
+  schema expresses the two summary shapes with `anyOf` instead of dropping
+  the `files_scanned` requirement.
+- **Two CLI-integration checks could only pass on the maintainer's own
+  machine / an outdated tree.** The p111 block invoked the binary through a
+  hardcoded absolute path from the original build machine, so all seven
+  git-history checks failed anywhere else; it now uses the binary in the
+  checkout under test. The p113 FUNDING check still asserted the state
+  before the owner removed the donation address (bd11c11, then a939927
+  deleted FUNDING.yml); it now guards the current invariant — no bitcoin
+  address in the funding file.
+
 ### Changed
 - **The CLI moved out of the engine file.** `hlse_core.c` was 9,510 lines, half
   of it inside an `#ifndef HLSE_CORE_AS_LIB` block. That block is now

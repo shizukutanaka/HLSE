@@ -50,6 +50,10 @@
       },
       "description": "Detected bootkit indicators or system state. Empty array for SAFE verdicts."
     },
+    "target_scanned": {
+      "type": "boolean",
+      "description": "Whether any .efi binary was actually examined. False when no .efi binary was examined — absent, unreadable, or empty ESP — so a score of 0 covers nothing."
+    },
     "blind_spot": {
       "type": "string",
       "description": "What HLSE cannot detect for ESP analysis (score 0 only)."
