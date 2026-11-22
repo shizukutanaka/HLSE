@@ -247,8 +247,12 @@ response. The JSON parser/escaper/rate limiter are unit-tested in
 
 ## Privacy
 
-Zero network calls. Zero file I/O outside stdin/stdout. Zero telemetry.
-CI enforces this with a privacy tripwire job.
+Zero network calls. Zero telemetry. The analysis functions (URL, text,
+secret, email, clipboard, file, package, paste) perform no file I/O at
+all; the host functions (`protect`, `audit`, `network`) only read the
+files they examine. The zero-network promise is enforced by
+`make privacy-check`, a build-time tripwire — there is no hosted CI;
+the Makefile carries the gates (see `AGENTS.md`).
 
 ## License
 
