@@ -4148,6 +4148,13 @@ cmd_network(int argc, char **argv, int idx, const CliOpts *o) {
                hlse_action_for_score(nv.score), nv.score);
         for (i = 0; i < nv.n_reasons; i++)
             printf("  \xc2\xb7 %s\n", nv.reasons[i]);
+        if (n_unread > 0) {
+            int u;
+            printf("  \xe2\x9a\xa0 Not checked (unreadable): ");
+            for (u = 0; u < n_unread; u++)
+                printf("%s%s", u > 0 ? ", " : "", unread[u]);
+            printf("\n");
+        }
         if (nv.score >= 40) {
             printf("  \xe2\x96\xb8 Pattern: %s\n", net_pattern_text());
             printf("  \xe2\x97\x89 Attacker's goal: %s\n", network_objective_text());
