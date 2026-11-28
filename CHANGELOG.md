@@ -5,6 +5,13 @@ All notable changes to HLSE Core (C reference) follow [Keep a Changelog](https:/
 ## [Unreleased]
 
 ### Fixed
+- **The `--json audit has hardening_index` CLI check rejected the `partial`
+  band the specification mandates.** `docs/SPECIFICATION.md` defines the
+  audit hardening band as `partial` whenever `checks_skipped > 0`, and the
+  engine emits exactly that, but the check's allowed set omitted `partial`,
+  so the integration suite failed on hosts where audit checks are skipped
+  (e.g. unprivileged runs). The check now asserts `partial` when
+  `checks_skipped > 0` and the original band set otherwise.
 - **The normative JSON Schemas rejected the disclosure fields the engine
   actually emits.** The p127–p131 honesty work added `content_inspected` +
   `coverage` (file), `target_scanned` (protect/esp), `modules_unchecked`
