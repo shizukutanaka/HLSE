@@ -311,7 +311,11 @@ assert "findings" in data
 hi = data["hardening_index"]
 assert 0 <= hi <= 100
 assert hi == 100 - min(data["score"], 100)
-assert data["hardening_band"] in ("hardened", "good", "fair", "weak")
+assert "checks_skipped" in data
+if data["checks_skipped"] > 0:
+    assert data["hardening_band"] == "partial"
+else:
+    assert data["hardening_band"] in ("hardened", "good", "fair", "weak")
 ' && check "--json audit has hardening_index" "0" "0" \
    || check "--json audit has hardening_index" "0" "1"
 
